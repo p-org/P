@@ -116,7 +116,8 @@ namespace Plang.PrtSharp.Values
 
         public override int GetHashCode()
         {
-            return fieldValues.GetHashCode();
+            var hashCode = HashHelper.ComputeHash<IPrtValue>(fieldValues);
+            return hashCode;
         }
 
         public override string ToString()

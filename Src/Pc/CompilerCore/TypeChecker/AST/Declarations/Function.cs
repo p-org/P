@@ -23,6 +23,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         private readonly HashSet<Function> callees = new HashSet<Function>();
         private readonly HashSet<Function> callers = new HashSet<Function>();
         private readonly List<Variable> localVariables = new List<Variable>();
+        private readonly List<Interface> createsInterfaces = new List<Interface>();
 
         public Function(string name, ParserRuleContext sourceNode)
         {
@@ -41,6 +42,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public Function ParentFunction { get; set; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
         public IEnumerable<Variable> LocalVariables => localVariables;
+        public IEnumerable<Interface> CreatsInterfaces => createsInterfaces;
         public FunctionRole Role { get; set; }
 
         public CompoundStmt Body { get; set; }
@@ -54,6 +56,10 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             localVariables.Add(local);
         }
 
+        public void AddCreatesInterface(Interface i)
+        {
+            createsInterfaces.Add(i);
+        }
         public void AddLocalVariables(IEnumerable<Variable> variables)
         {
             localVariables.AddRange(variables);

@@ -24,7 +24,7 @@ namespace Plang.Compiler.TypeChecker
             switch (tree)
             {
                 case Function function:
-                    if (function.IsForeign) return Enumerable.Empty<Interface>();
+                    if (function.IsForeign) return function.CreatsInterfaces;
                     return InferCreates(function.Body, handler);
                 case AnnounceStmt announce:
                     return InferCreatesForExpr(announce.PEvent, handler)

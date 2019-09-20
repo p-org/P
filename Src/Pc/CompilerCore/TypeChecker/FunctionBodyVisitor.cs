@@ -41,6 +41,14 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitForeignFunDecl(PParser.ForeignFunDeclContext context)
         {
+            foreach(var _interface in context._interfaces)
+            {
+                if(!method.Scope.Get(_interface.GetText(), out Interface @interface))
+                    throw handler.MissingDeclaration(@interface.SourceLocation, "interface", @interface.Name);
+
+                method.AddCreatesInterface(@interface);
+            }
+            
             return null;
         }
 

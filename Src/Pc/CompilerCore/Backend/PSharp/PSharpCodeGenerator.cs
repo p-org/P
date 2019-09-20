@@ -686,7 +686,7 @@ namespace Plang.Compiler.Backend.PSharp
                     context.WriteLine(output, "throw new PUnreachableCodeException();");
                     break;
                 case PrintStmt printStmt:
-                    context.Write(output, $"PModule.runtime.Logger.WriteLine(\"{printStmt.Message}\"");
+                    context.Write(output, $"PModule.runtime.Logger.WriteLine(\"<PrintLog> {printStmt.Message}\"");
                     foreach (var printArg in printStmt.Args)
                     {
                         context.Write(output, ", ");

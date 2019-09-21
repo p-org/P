@@ -93,6 +93,7 @@ namespace Plang.Compiler.Backend
                         // And is short-circuiting, so we need to treat it differently from other binary operators
                         deps.AddRange(lhsDeps);
                         var (andTemp, andInitialStore) = SaveInTemporary(lhsTemp);
+                        deps.Add(andInitialStore);
                         var reassignFromRhs = new CompoundStmt(location, rhsDeps.Append(new AssignStmt(location, andTemp, rhsTemp)));
                         deps.Add(new IfStmt(location, andTemp, reassignFromRhs, null));
                         return (andTemp, deps);
@@ -102,8 +103,9 @@ namespace Plang.Compiler.Backend
                         // Or is short-circuiting, so we need to treat it differently from other binary operators
                         deps.AddRange(lhsDeps);
                         var (orTemp, orInitialStore) = SaveInTemporary(lhsTemp);
+                        deps.Add(orInitialStore);
                         var reassignFromRhs = new CompoundStmt(location, rhsDeps.Append(new AssignStmt(location, orTemp, rhsTemp)));
-                        deps.Add(new IfStmt(location, orTemp, new NoStmt(), reassignFromRhs));
+                        deps.Add(new IfStmt(location, orTemp, new NoStmt(location), reassignFromRhs));
                         return (orTemp, deps);
                     }
                     else

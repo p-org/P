@@ -92,9 +92,9 @@ namespace Plang.Compiler.Backend
                     {
                         // And is short-circuiting, so we need to treat it differently from other binary operators
                         deps.AddRange(lhsDeps);
-                        var (andTemp, andInitialStore) = SaveInTemporary(lhsTemp);
+                        var (andTemp, andInitialStore) = SaveInTemporary(new CloneExpr(lhsTemp));
                         deps.Add(andInitialStore);
-                        var reassignFromRhs = new CompoundStmt(location, rhsDeps.Append(new AssignStmt(location, andTemp, rhsTemp)));
+                        var reassignFromRhs = new CompoundStmt(location, rhsDeps.Append(new AssignStmt(location, andTemp, new CloneExpr(rhsTemp))));
                         deps.Add(new IfStmt(location, andTemp, reassignFromRhs, null));
                         return (andTemp, deps);
                     }
@@ -102,9 +102,9 @@ namespace Plang.Compiler.Backend
                     {
                         // Or is short-circuiting, so we need to treat it differently from other binary operators
                         deps.AddRange(lhsDeps);
-                        var (orTemp, orInitialStore) = SaveInTemporary(lhsTemp);
+                        var (orTemp, orInitialStore) = SaveInTemporary(new CloneExpr(lhsTemp));
                         deps.Add(orInitialStore);
-                        var reassignFromRhs = new CompoundStmt(location, rhsDeps.Append(new AssignStmt(location, orTemp, rhsTemp)));
+                        var reassignFromRhs = new CompoundStmt(location, rhsDeps.Append(new AssignStmt(location, orTemp, new CloneExpr(rhsTemp))));
                         deps.Add(new IfStmt(location, orTemp, new NoStmt(location), reassignFromRhs));
                         return (orTemp, deps);
                     }

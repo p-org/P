@@ -40,11 +40,8 @@ machine Main {
 		  s -= (1);                 
 		  assert (sizeof(s) == 1);   //holds
 		  
-                  // P does not support short-circuit evaulation in conditional expressions.
-                  // If we start supporting it later, we should uncomment the following two 
-                  // lines to create a suitable XYZ case for it.
-		  // if (false && (s[1] == 1)) {;};  
-		  // if (true || (s[1] == 1)) {;};   
+		  if (false && (s[1] == 1)) {;};  
+		  if (true || (s[1] == 1)) {;};   
 
 		  raise halt;
        }    

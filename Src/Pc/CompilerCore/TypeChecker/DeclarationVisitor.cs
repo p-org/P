@@ -702,6 +702,15 @@ namespace Plang.Compiler.TypeChecker
             // SEMI
             // no function body
             fun.Role |= FunctionRole.Foreign;
+
+            // Creates 
+            foreach(var createdInterface in context._interfaces)
+            {
+                if (CurrentScope.Lookup(createdInterface.GetText(), out Interface @interface))
+                    fun.AddCreatesInterface(@interface);
+                else
+                    throw Handler.MissingDeclaration(createdInterface, "interface", createdInterface.GetText());
+            }
             return fun;
         }
 

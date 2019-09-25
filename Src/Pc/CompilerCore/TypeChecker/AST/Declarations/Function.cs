@@ -42,7 +42,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public Function ParentFunction { get; set; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
         public IEnumerable<Variable> LocalVariables => localVariables;
-        public IEnumerable<Interface> CreatsInterfaces => createsInterfaces;
+        public IEnumerable<Interface> CreatesInterfaces => createsInterfaces;
         public FunctionRole Role { get; set; }
 
         public CompoundStmt Body { get; set; }

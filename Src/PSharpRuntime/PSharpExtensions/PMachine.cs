@@ -118,6 +118,11 @@ namespace Plang.PrtSharp
             return RandomInteger(maxValue);
         }
 
+        public int RandomInt(int minValue, int maxValue)
+        {
+            return minValue + RandomInteger(maxValue - minValue);
+        }
+
         public bool RandomBool(int maxValue)
         {
             return Random(maxValue);

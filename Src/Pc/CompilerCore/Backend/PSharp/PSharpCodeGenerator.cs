@@ -1038,7 +1038,7 @@ namespace Plang.Compiler.Backend.PSharp
                         separator = ", ";
                     }
 
-                    if (isStatic) context.Write(output, separator + "this");
+                    if (isStatic) context.Write(output, separator + "currentMachine");
 
                     context.Write(output, ")");
                     break;

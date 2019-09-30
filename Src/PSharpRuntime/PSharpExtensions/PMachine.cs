@@ -63,7 +63,7 @@ namespace Plang.PrtSharp
             Assert(creates.Contains(createdInterface),
                 $"Machine {GetType().Name} cannot create interface {createdInterface}, not in its creates set");
             var createMachine = PModule.interfaceDefinitionMap[createdInterface];
-            var machineId = CreateMachine(createMachine,
+            var machineId = CreateMachine(createMachine, createdInterface.Substring(2),
                 new InitializeParametersEvent(new InitializeParameters(createdInterface, payload)));
             return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
         }

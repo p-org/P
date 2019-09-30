@@ -44,7 +44,9 @@ namespace Plang.PrtSharp.Values
 
         public override string ToString()
         {
-            return Id.Name;
+            return Id.Name.Split('.').Last();
         }
+
+
     }
 }

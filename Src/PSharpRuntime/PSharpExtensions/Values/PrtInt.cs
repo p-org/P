@@ -34,6 +34,11 @@ namespace Plang.PrtSharp.Values
             return value.GetHashCode();
         }
 
+        public override string ToString()
+        {
+            return value.ToString();
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator PrtInt(byte val)
         {

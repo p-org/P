@@ -102,7 +102,7 @@ machineEntry : varDecl
 
 varDecl : VAR idenList COLON type SEMI ;
 
-funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? SEMI # ForeignFunDecl
+funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? (CREATES interfaces+=iden)? SEMI # ForeignFunDecl
         | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
         ;
 

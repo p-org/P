@@ -63,7 +63,7 @@ namespace Plang.PrtSharp
             Assert(creates.Contains(createdInterface),
                 $"Machine {GetType().Name} cannot create interface {createdInterface}, not in its creates set");
             var createMachine = PModule.interfaceDefinitionMap[createdInterface];
-            var machineId = CreateMachine(createMachine,
+            var machineId = CreateMachine(createMachine, createdInterface.Substring(2),
                 new InitializeParametersEvent(new InitializeParameters(createdInterface, payload)));
             return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
         }
@@ -116,6 +116,11 @@ namespace Plang.PrtSharp
         public int RandomInt(int maxValue)
         {
             return RandomInteger(maxValue);
+        }
+
+        public int RandomInt(int minValue, int maxValue)
+        {
+            return minValue + RandomInteger(maxValue - minValue);
         }
 
         public bool RandomBool(int maxValue)

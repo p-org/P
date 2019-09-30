@@ -20,6 +20,11 @@ namespace Plang.PrtSharp.Values
             return this;
         }
 
+        public override string ToString()
+        {
+            return value.ToString();
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(IPrtValue other)
         {

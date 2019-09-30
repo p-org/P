@@ -41,5 +41,12 @@ namespace Plang.PrtSharp.Values
         {
             return new PMachineValue(Id, new List<string>(Permissions));
         }
+
+        public override string ToString()
+        {
+            return Id.Name.Split('.').Last();
+        }
+
+
     }
 }

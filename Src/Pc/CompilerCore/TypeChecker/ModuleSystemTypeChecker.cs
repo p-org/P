@@ -115,7 +115,7 @@ namespace Plang.Compiler.TypeChecker
             var @interface = notImplementedInterface as Interface[] ?? notImplementedInterface.ToArray();
             if (@interface.Any())
                 throw handler.NotClosed(test.SourceLocation,
-                    $"LHS test module is not closed with respect to created interfaces; interface {@interface.First()} is created but not implemented inside the module");
+                    $"LHS test module is not closed with respect to created interfaces; interface {@interface.First().Name} is created but not implemented inside the module");
 
 
             //check that the test module main machine exists
@@ -132,7 +132,7 @@ namespace Plang.Compiler.TypeChecker
             @interface = notImplementedInterface as Interface[] ?? notImplementedInterface.ToArray();
             if (@interface.Any())
                 throw handler.NotClosed(test.SourceLocation,
-                    $"RHS test module is not closed with respect to created interfaces; interface {@interface.First()} is created but not implemented inside the module");
+                    $"RHS test module is not closed with respect to created interfaces; interface {@interface.First().Name} is created but not implemented inside the module");
 
 
             //check that the test module main machine exists
@@ -155,7 +155,7 @@ namespace Plang.Compiler.TypeChecker
             var @interface = notImplementedInterface as Interface[] ?? notImplementedInterface.ToArray();
             if (@interface.Any())
                 throw handler.NotClosed(test.SourceLocation,
-                    $"test module is not closed with respect to created interfaces; interface {@interface.First()} is created but not implemented inside the module");
+                    $"test module is not closed with respect to created interfaces; interface {@interface.First().Name} is created but not implemented inside the module");
 
 
             //check that the test module main machine exists

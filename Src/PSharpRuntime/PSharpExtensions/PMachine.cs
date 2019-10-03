@@ -81,6 +81,7 @@ namespace Plang.PrtSharp
 
             AnnounceInternal(ev);
             Send(target.Id, ev);
+            this.Logger.WriteLine($"<SendPayloadLog> Event {ev.GetType().Name} with payload {((PEvent)ev).Payload}");
         }
 
         public void RaiseEvent(Event ev, object payload = null)
@@ -133,9 +134,14 @@ namespace Plang.PrtSharp
             return Random();
         }
 
-        public void Log(string message)
+        public void LogLine(string message)
         {
             this.Logger.WriteLine($"<PrintLog> {message}");
+        }
+
+        public void Log(string message)
+        {
+            this.Logger.Write($"{message}");
         }
 
         public void Announce(Event ev, object payload = null)

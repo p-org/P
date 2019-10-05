@@ -63,7 +63,7 @@ namespace Plang.PrtSharp
             Assert(creates.Contains(createdInterface),
                 $"Machine {GetType().Name} cannot create interface {createdInterface}, not in its creates set");
             var createMachine = PModule.interfaceDefinitionMap[createdInterface];
-            var machineId = CreateMachine(createMachine,
+            var machineId = CreateMachine(createMachine, createdInterface.Substring(2),
                 new InitializeParametersEvent(new InitializeParameters(createdInterface, payload)));
             return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
         }
@@ -81,6 +81,7 @@ namespace Plang.PrtSharp
 
             AnnounceInternal(ev);
             Send(target.Id, ev);
+            this.Logger.WriteLine($"<SendPayloadLog> Event {ev.GetType().Name} with payload {((PEvent)ev).Payload}");
         }
 
         public void RaiseEvent(Event ev, object payload = null)
@@ -118,6 +119,11 @@ namespace Plang.PrtSharp
             return RandomInteger(maxValue);
         }
 
+        public int RandomInt(int minValue, int maxValue)
+        {
+            return minValue + RandomInteger(maxValue - minValue);
+        }
+
         public bool RandomBool(int maxValue)
         {
             return Random(maxValue);
@@ -128,9 +134,14 @@ namespace Plang.PrtSharp
             return Random();
         }
 
-        public void Log(string message)
+        public void LogLine(string message)
         {
             this.Logger.WriteLine($"<PrintLog> {message}");
+        }
+
+        public void Log(string message)
+        {
+            this.Logger.Write($"{message}");
         }
 
         public void Announce(Event ev, object payload = null)

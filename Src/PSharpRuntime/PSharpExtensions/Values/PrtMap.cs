@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Plang.PrtSharp.Exceptions;
 
 namespace Plang.PrtSharp.Values
@@ -161,6 +162,27 @@ namespace Plang.PrtSharp.Values
         private int ComputeHashCode()
         {
             return HashHelper.ComputeHash(map.Keys);
+        }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.Append("(");
+            var sep = "";
+            foreach (var value in map)
+            {
+                
+                sb.Append(sep);
+                sb.Append("<");
+                sb.Append(value.Key);
+                sb.Append("->");
+                sb.Append(value.Value);
+                sb.Append(">");
+                sep = ", ";
+            }
+
+            sb.Append(")");
+            return sb.ToString();
         }
     }
 }

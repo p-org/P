@@ -626,7 +626,7 @@ namespace Plang.Compiler.Backend.PSharp
                         separator = ", ";
                     }
 
-                    if (isStatic) context.Write(output, separator + "this");
+                    if (isStatic) context.Write(output, separator + "currentMachine");
 
                     context.WriteLine(output, ");");
                     break;
@@ -686,7 +686,7 @@ namespace Plang.Compiler.Backend.PSharp
                     context.WriteLine(output, "throw new PUnreachableCodeException();");
                     break;
                 case PrintStmt printStmt:
-                    context.Write(output, $"PModule.runtime.Logger.WriteLine(\"{printStmt.Message}\"");
+                    context.Write(output, $"PModule.runtime.Logger.WriteLine(\"<PrintLog> {printStmt.Message}\"");
                     foreach (var printArg in printStmt.Args)
                     {
                         context.Write(output, ", ");
@@ -1038,7 +1038,7 @@ namespace Plang.Compiler.Backend.PSharp
                         separator = ", ";
                     }
 
-                    if (isStatic) context.Write(output, separator + "this");
+                    if (isStatic) context.Write(output, separator + "currentMachine");
 
                     context.Write(output, ")");
                     break;

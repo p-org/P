@@ -87,11 +87,36 @@ namespace Plang.Compiler.Backend
                 case BinOpExpr binOpExpr:
                     var (lhsTemp, lhsDeps) = SimplifyExpression(binOpExpr.Lhs);
                     var (rhsTemp, rhsDeps) = SimplifyExpression(binOpExpr.Rhs);
-                    var (binOpTemp, binOpStore) =
-                        SaveInTemporary(new BinOpExpr(location, binOpExpr.Operation, lhsTemp, rhsTemp));
-                    deps.AddRange(lhsDeps.Concat(rhsDeps));
-                    deps.Add(binOpStore);
-                    return (binOpTemp, deps);
+
+                    if (binOpExpr.Operation == BinOpType.And)
+                    {
+                        // And is short-circuiting, so we need to treat it differently from other binary operators
+                        deps.AddRange(lhsDeps);
+                        var (andTemp, andInitialStore) = SaveInTemporary(new CloneExpr(lhsTemp));
+                        deps.Add(andInitialStore);
+                        var reassignFromRhs = new CompoundStmt(location, rhsDeps.Append(new AssignStmt(location, andTemp, new CloneExpr(rhsTemp))));
+                        deps.Add(new IfStmt(location, andTemp, reassignFromRhs, null));
+                        return (andTemp, deps);
+                    }
+                    else if (binOpExpr.Operation == BinOpType.Or)
+                    {
+                        // Or is short-circuiting, so we need to treat it differently from other binary operators
+                        deps.AddRange(lhsDeps);
+                        var (orTemp, orInitialStore) = SaveInTemporary(new CloneExpr(lhsTemp));
+                        deps.Add(orInitialStore);
+                        var reassignFromRhs = new CompoundStmt(location, rhsDeps.Append(new AssignStmt(location, orTemp, new CloneExpr(rhsTemp))));
+                        deps.Add(new IfStmt(location, orTemp, new NoStmt(location), reassignFromRhs));
+                        return (orTemp, deps);
+                    }
+                    else
+                    {
+                        var (binOpTemp, binOpStore) =
+                            SaveInTemporary(new BinOpExpr(location, binOpExpr.Operation, lhsTemp, rhsTemp));
+                        deps.AddRange(lhsDeps.Concat(rhsDeps));
+                        deps.Add(binOpStore);
+                        return (binOpTemp, deps);
+                    }
+
                 case CastExpr castExpr:
                     var (castSubExpr, castDeps) = SimplifyExpression(castExpr.SubExpr);
                     var (castTemp, castStore) = SaveInTemporary(new CastExpr(location, castSubExpr, castExpr.Type));

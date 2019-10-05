@@ -40,7 +40,7 @@ namespace Plang.Compiler.TypeChecker
         }
 
         public override object VisitForeignFunDecl(PParser.ForeignFunDeclContext context)
-        {
+        {  
             return null;
         }
 

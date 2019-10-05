@@ -73,7 +73,7 @@ namespace Plang.Compiler
                             {
                                 case null:
                                     CommandlineOutput.WriteMessage(
-                                        "Missing generation argument, expecting generate:[C,P#]", SeverityKind.Error);
+                                        "Missing generation argument, expecting generate:[C,P#,Symbolic]", SeverityKind.Error);
                                     return Failure;
                                 case "c":
                                     outputLanguage = CompilerOutput.C;
@@ -81,9 +81,12 @@ namespace Plang.Compiler
                                 case "p#":
                                     outputLanguage = CompilerOutput.PSharp;
                                     break;
+                                case "symbolic":
+                                    outputLanguage = CompilerOutput.Symbolic;
+                                    break;
                                 default:
                                     CommandlineOutput.WriteMessage(
-                                        $"Unrecognized generate option '{colonArg}', expecting C or P#",
+                                        $"Unrecognized generate option '{colonArg}', expecting C, P#, or Symbolic",
                                         SeverityKind.Error);
                                     return Failure;
                             }
@@ -193,10 +196,11 @@ namespace Plang.Compiler
                 SeverityKind.Info);
             CommandlineOutput.WriteMessage("    -outputDir:path            -- where to write the generated files",
                 SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -generate:[C,P#]           -- select a target language to generate",
+            CommandlineOutput.WriteMessage("    -generate:[C,P#,Symbolic]  -- select a target language to generate",
                 SeverityKind.Info);
-            CommandlineOutput.WriteMessage("        C   : generate C code using the Prt runtime", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("        P#  : generate C# code using the P# runtime", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("        C        : generate C code using the Prt runtime", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("        P#       : generate C# code using the P# runtime", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("        Symbolic : generate Java code using the symbolic execution runtime", SeverityKind.Info);
             CommandlineOutput.WriteMessage("    -sourcemaps[:(true|false)] -- enable or disable generating source maps",
                 SeverityKind.Info);
             CommandlineOutput.WriteMessage("                                  in the compiled output. may confuse some",

@@ -10,7 +10,7 @@ namespace Plang.PrtSharp.Exceptions
         Pop
     }
 
-    internal class PNonStandardReturnException : Exception
+    public class PNonStandardReturnException : Exception
     {
         public PNonStandardReturnException()
         {

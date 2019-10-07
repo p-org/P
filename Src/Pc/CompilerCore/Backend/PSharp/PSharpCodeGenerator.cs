@@ -505,11 +505,17 @@ namespace Plang.Compiler.Backend.PSharp
         {
             context.WriteLine(output, "{");
 
+            // if its a monitor and an annon function catch the exceptions using try-catch
+            if(function.Owner != null && function.Owner.IsSpec && function.IsAnon)
+            {
+                context.WriteLine(output, "try {");
+            }
             //add the declaration of currentMachine
             if (function.Owner != null)
                 context.WriteLine(output, $"{context.Names.GetNameForDecl(function.Owner)} currentMachine = this;");
 
             if (function.IsAnon)
+            {
                 if (function.Signature.Parameters.Any())
                 {
                     var param = function.Signature.Parameters.First();
@@ -517,6 +523,8 @@ namespace Plang.Compiler.Backend.PSharp
                         $"{GetCSharpType(param.Type)} {context.Names.GetNameForDecl(param)} = ({GetCSharpType(param.Type)})(gotoPayload ?? ((PEvent)currentMachine.ReceivedEvent).Payload);");
                     context.WriteLine(output, "this.gotoPayload = null;");
                 }
+            }
+                
 
             foreach (var local in function.LocalVariables)
             {
@@ -527,6 +535,12 @@ namespace Plang.Compiler.Backend.PSharp
 
             foreach (var bodyStatement in function.Body.Statements) WriteStmt(context, output, bodyStatement);
 
+            // if its a monitor and an annon function catch the exceptions using try-catch
+            if (function.Owner != null && function.Owner.IsSpec && function.IsAnon)
+            {
+                context.WriteLine(output, "}");
+                context.WriteLine(output, "catch(PNonStandardReturnException) {}");
+            }
             context.WriteLine(output, "}");
         }
 

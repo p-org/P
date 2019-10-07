@@ -11,7 +11,7 @@ namespace Plang.PrtSharp
 
         public object gotoPayload;
 
-        public void RaiseEvent(PMachine source, Event ev, object payload = null)
+        public void RaiseEvent(Event ev, object payload = null)
         {
             Assert(!(ev is Default), "Monitor cannot raise a null event");
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
@@ -25,6 +25,17 @@ namespace Plang.PrtSharp
             gotoPayload = payload;
             Goto<T>();
             throw new PNonStandardReturnException {ReturnKind = NonStandardReturn.Goto};
+        }
+
+
+        public new void Assert(bool predicate)
+        {
+            base.Assert(predicate);
+        }
+
+        public new void Assert(bool predicate, string s, params object[] args)
+        {
+            base.Assert(predicate, s, args);
         }
     }
 }

@@ -40,25 +40,34 @@ namespace UnitTests.Core
             ICompilerTestRunner runner;
             ITestResultsValidator validator;
 
-            string expectedOutput;
-            if (output.Equals(CompilerOutput.C))
+            string expectedOutput = null;
+            if (testName.Contains("/DynamicError/"))
             {
-                var nativeFiles = testDir.GetFiles("*.c");
-                runner = new PrtRunner(inputFiles, nativeFiles);
-                expectedOutput =
-                    File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
+                expectedOutput = "EXIT: 1";
             }
-            else if (output.Equals(CompilerOutput.PSharp))
+            else if (testName.Contains("/Correct/") && output.Equals(CompilerOutput.PSharp))
             {
-                var nativeFiles = testDir.GetFiles("*.cs");
-                runner = new PSharpRunner(inputFiles, nativeFiles);
-                var prtGoldenOutputFile = Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName);
                 var prtSharpGoldenOutputFile =
                     Path.Combine(testDir.FullName, "PrtSharp", Constants.CorrectOutputFileName);
                 if (File.Exists(prtSharpGoldenOutputFile))
                     expectedOutput = File.ReadAllText(prtSharpGoldenOutputFile);
                 else
-                    expectedOutput = File.ReadAllText(prtGoldenOutputFile);
+                    expectedOutput = "EXIT: 0";
+            }
+            if (output.Equals(CompilerOutput.C))
+            {
+                var nativeFiles = testDir.GetFiles("*.c");
+                runner = new PrtRunner(inputFiles, nativeFiles);
+                if (expectedOutput == null)
+                {
+                    expectedOutput =
+                    File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
+                }
+            }
+            else if (output.Equals(CompilerOutput.PSharp))
+            {
+                var nativeFiles = testDir.GetFiles("*.cs");
+                runner = new PSharpRunner(inputFiles, nativeFiles);
             }
             else
             {

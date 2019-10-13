@@ -61,7 +61,7 @@ namespace UnitTests.Core
                 if (expectedOutput == null)
                 {
                     expectedOutput =
-                    File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
+                       File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
                 }
             }
             else if (output.Equals(CompilerOutput.PSharp))

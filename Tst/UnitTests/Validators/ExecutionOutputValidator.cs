@@ -19,14 +19,16 @@ namespace UnitTests.Validators
             this.expectedStderr = expectedStderr;
         }
 
+
         public bool ValidateResult(string stdout, string stderr, int? exitCode)
         {
-            if (expectedStdout != null && !expectedStdout.Equals(stdout)) return false;
+            if (expectedStdout != "" && !expectedStdout.Equals(stdout)) return false;
 
-            if (expectedStderr != null && !expectedStderr.Equals(stderr)) return false;
+            if (expectedStderr != "" && !expectedStderr.Equals(stderr)) return false;
 
             return exitCode == expectedExitCode;
         }
+
 
         public bool ValidateException(CompilerTestException compilerTestException)
         {

@@ -1,3 +1,0 @@
-OUT: monitors.p(8,13,8,26): error PC1001: Cannot create a spec machine
-OUT: Compilation failed
-EXIT: -1

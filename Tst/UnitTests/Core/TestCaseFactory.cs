@@ -54,15 +54,14 @@ namespace UnitTests.Core
                 else
                     expectedOutput = "EXIT: 0";
             }
+            else
+            {
+                expectedOutput = "EXIT: 0";
+            }
             if (output.Equals(CompilerOutput.C))
             {
                 var nativeFiles = testDir.GetFiles("*.c");
                 runner = new PrtRunner(inputFiles, nativeFiles);
-                if (expectedOutput == null)
-                {
-                    expectedOutput =
-                       File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
-                }
             }
             else if (output.Equals(CompilerOutput.PSharp))
             {
@@ -74,13 +73,7 @@ namespace UnitTests.Core
                 throw new ArgumentOutOfRangeException();
             }
 
-            // TODO: fix golden outputs for dynamic error assertions (79 tests)
             ParseExpectedOutput(expectedOutput, out var stdout, out var stderr, out var exitCode);
-            if (testName.Contains("/DynamicError/") || output.Equals(CompilerOutput.PSharp))
-            {
-                stdout = null;
-                stderr = null;
-            }
 
             validator = new ExecutionOutputValidator(exitCode, stdout, stderr);
 

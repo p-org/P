@@ -1,3 +1,0 @@
-OUT: Duplicates.p(9,9,9,13): error PC1001: Syntax error - A machine with name Main already declared
-OUT: Compilation failed
-EXIT: -1

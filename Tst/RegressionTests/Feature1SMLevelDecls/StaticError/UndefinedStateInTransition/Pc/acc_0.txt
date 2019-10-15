@@ -1,3 +1,0 @@
-OUT: TransDecl_DoDecl.p(13,3,13,10): error PC1001: Transition to an undefined state
-OUT: Compilation failed
-EXIT: -1

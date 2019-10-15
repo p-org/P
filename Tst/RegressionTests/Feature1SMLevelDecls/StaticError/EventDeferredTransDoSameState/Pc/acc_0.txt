@@ -1,3 +1,0 @@
-OUT: EventDeferredTransDoSameState.p(24,9,24,19): error PC1001: Action and transition over the same event
-OUT: Compilation failed
-EXIT: -1

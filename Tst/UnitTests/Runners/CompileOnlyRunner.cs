@@ -34,7 +34,9 @@ namespace UnitTests.Runners
         /// <param name="scratchDirectory">Unused. Caller is responsible for cleanup.</param>
         /// <param name="stdout">The output produced by the P compiler</param>
         /// <param name="stderr">The error output produced by the P compiler</param>
-        /// <returns>Always returns 0, otherwise throws.</returns>
+        /// <returns>0 if compilation successful, 1 if a Translation Exception is thrown, throws a 
+        ///     CompilerTestException if the compiler crashes.
+        /// </returns>
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
             var compiler = new Compiler();
@@ -47,15 +49,20 @@ namespace UnitTests.Runners
             try
             {
                 compiler.Compile(job);
+            }
+            catch (TranslationException)
+            {
                 stdout = stdoutWriter.ToString().Trim();
                 stderr = stderrWriter.ToString().Trim();
+                return 1;
             }
-            catch (TranslationException exception)
+            catch (Exception exception)
             {
                 job.Output.WriteMessage(exception.Message, SeverityKind.Error);
                 throw new CompilerTestException(TestCaseError.TranslationFailed, exception.Message);
             }
-
+            stdout = stdoutWriter.ToString().Trim();
+            stderr = stderrWriter.ToString().Trim();
             return 0;
         }
 

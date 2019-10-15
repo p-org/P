@@ -1,3 +1,0 @@
-OUT: function.p(11,3,11,9): error PC1001: Return value has incorrect type
-OUT: Compilation failed
-EXIT: -1

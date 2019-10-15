@@ -1,2 +1,0 @@
-OUT: [breakoutsideloop.p:10,13] Loop control flow statement 'break' cannot appear outside a loop body
-EXIT: -1

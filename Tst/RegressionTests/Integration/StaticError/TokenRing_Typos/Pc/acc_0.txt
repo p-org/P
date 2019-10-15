@@ -1,9 +1,0 @@
-OUT: TokenRing_Typos.p(99,9,99,13): error PC1001: Argument 2 of send expects an event value
-OUT: TokenRing_Typos.p(99,9,99,13): error PC1001: Invalid payload type in send
-OUT: TokenRing_Typos.p(137,17,137,19): error PC1001: Boolean value expected
-OUT: TokenRing_Typos.p(137,39,137,41): error PC1001: Values cannot be compared because their types are incompatible
-OUT: TokenRing_Typos.p(159,17,159,22): error PC1001: Argument 1 of raise expects an event value
-OUT: TokenRing_Typos.p(159,17,159,22): error PC1001: Invalid payload type in raise (cannot send null value)
-OUT: TokenRing_Typos.p(159,23,159,27): error PC1001: Undefined symbol
-OUT: Compilation failed
-EXIT: -1

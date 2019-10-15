@@ -1,7 +1,0 @@
-OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state Main.S1
-OUT: <EnqueueLog> Enqueued event XYZ with payload ((1, (100, false)), [(1, (100, false))]) on Machine Main(1)
-OUT: <DequeueLog> Dequeued event XYZ with payload ((1, (100, false)), [(1, (100, false))]) by Machine Main(1)
-OUT: <ActionLog> Machine Main(1) executed action in state Main.S1
-OUT: 
-EXIT: 0

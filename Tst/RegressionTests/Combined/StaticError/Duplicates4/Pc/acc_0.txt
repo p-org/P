@@ -1,3 +1,0 @@
-OUT: Duplicates.p(6,6,6,7): error PC1001: Syntax error - A variable with name x already declared
-OUT: Compilation failed
-EXIT: -1

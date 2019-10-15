@@ -1,7 +1,0 @@
-OUT: EventExprSendRaise.p(17,4,17,12): error PC1001: Argument 1 of announce expects an event value
-OUT: EventExprSendRaise.p(17,4,17,12): error PC1001: Invalid payload type in announce
-OUT: EventExprSendRaise.p(17,4,17,12): error PC1001: Invalid payload type in announce (cannot send null value)
-OUT: EventExprSendRaise.p(19,3,19,9): error PC1001: Action on an undefined event
-OUT: EventExprSendRaise.p(21,3,21,9): error PC1001: Action on an undefined event
-OUT: Compilation failed
-EXIT: -1

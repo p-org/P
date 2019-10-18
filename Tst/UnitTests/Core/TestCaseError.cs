@@ -16,7 +16,7 @@
         GeneratedSourceCompileFailed,
 
         /// <summary>
-        ///     The test case type is unregcognized
+        ///     The test case type is unrecognized
         /// </summary>
         UnrecognizedTestCaseType
     }

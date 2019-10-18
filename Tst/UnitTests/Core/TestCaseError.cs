@@ -16,8 +16,8 @@
         GeneratedSourceCompileFailed,
 
         /// <summary>
-        ///     The golden output file has a formatting error
+        ///     The test case type is unregcognized
         /// </summary>
-        InvalidOutputSpec
+        UnrecognizedTestCaseType
     }
 }

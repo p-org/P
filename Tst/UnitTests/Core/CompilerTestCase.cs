@@ -43,7 +43,7 @@ namespace UnitTests.Core
             try
             {
                 exitCode = runner.RunTest(ScratchDirectory, out stdout, out stderr);
-                return validator.ValidateResult(stdout, stderr, exitCode);
+                return validator.ValidateResult(exitCode);
             }
             catch (CompilerTestException e)
             {

@@ -25,9 +25,12 @@ namespace UnitTests.Core
         {
             return from testDir in TestDirs
                 let baseDirectory = new DirectoryInfo(Path.Combine(directoryName, testDir))
-                from testCaseDir in baseDirectory.EnumerateDirectories("*.*", SearchOption.AllDirectories)
-                where testCaseDir.GetDirectories().Select(dir => dir.Name).Any(info => testDirNames.Contains(info))
-                select DirectoryToTestCase(testCaseDir, baseDirectory);
+                   from testCaseDir in baseDirectory.EnumerateDirectories("*.*", SearchOption.AllDirectories)
+                   //from testTypeDir in baseDirectory.GetDirectories()
+                       //where testDirNames.Contains(testTypeDir.Name) && testTy
+                   where testDirNames.Contains(testCaseDir.Parent.Name)
+                   //where testCaseDir.GetDirectories().Select(dir => dir.Name).Any(info => testDirNames.Contains(info))
+                   select DirectoryToTestCase(testCaseDir, baseDirectory);
         }
 
         private static TestCaseData DirectoryToTestCase(DirectoryInfo dir, DirectoryInfo testRoot)

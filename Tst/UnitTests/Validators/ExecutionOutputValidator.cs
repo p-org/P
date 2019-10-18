@@ -9,23 +9,15 @@ namespace UnitTests.Validators
     public class ExecutionOutputValidator : ITestResultsValidator
     {
         private readonly int expectedExitCode;
-        private readonly string expectedStderr;
-        private readonly string expectedStdout;
 
-        public ExecutionOutputValidator(int expectedExitCode, string expectedStdout, string expectedStderr)
+        public ExecutionOutputValidator(int expectedExitCode)
         {
             this.expectedExitCode = expectedExitCode;
-            this.expectedStdout = expectedStdout;
-            this.expectedStderr = expectedStderr;
         }
 
 
-        public bool ValidateResult(string stdout, string stderr, int? exitCode)
+        public bool ValidateResult(int? exitCode)
         {
-            if (expectedStdout != "" && !expectedStdout.Equals(stdout)) return false;
-
-            if (expectedStderr != "" && !expectedStderr.Equals(stderr)) return false;
-
             return exitCode == expectedExitCode;
         }
 

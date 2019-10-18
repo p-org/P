@@ -32,7 +32,7 @@ namespace UnitTests
     public class CompileOnlyRegressionTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
-            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] {"Pc"});
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] {"StaticError"});
 
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestRegressions(DirectoryInfo testDir)
@@ -49,7 +49,7 @@ namespace UnitTests
     public class PrtRegressionTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
-            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] {"Prt"});
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] {"DynamicError", "Correct"});
 
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestRegressions(DirectoryInfo testDir)
@@ -81,7 +81,7 @@ namespace UnitTests
     public class PrtSharpRegressionTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
-            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] {"Prt", "PrtSharp" });
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] {"DynamicError", "DynamicErrorPrtSharp", "Correct" });
 
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestRegressions(DirectoryInfo testDir)

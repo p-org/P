@@ -8,7 +8,7 @@ namespace UnitTests.Validators
     /// </summary>
     public class StaticErrorValidator : ITestResultsValidator
     {
-        public bool ValidateResult(string stdout, string stderr, int? exitCode)
+        public bool ValidateResult(int? exitCode)
         {
             // TODO: use golden output to check stderr/stdout.
             return exitCode == 1;

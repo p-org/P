@@ -13,6 +13,7 @@ namespace UnitTests.Core
     /// </summary>
     public class TestCaseFactory
     {
+
         private readonly DirectoryInfo testTempBaseDir;
 
         /// <summary>
@@ -39,25 +40,21 @@ namespace UnitTests.Core
 
             ICompilerTestRunner runner;
             ITestResultsValidator validator;
+    
+            int expectedExitCode;
 
-            string expectedOutput = null;
-            if (testName.Contains("/DynamicError/"))
+            if (testName.Contains("/DynamicError/") || testName.Contains("/DynamicErrorPrtSharp/"))
             {
-                expectedOutput = "EXIT: 1";
+                expectedExitCode = 1;
             }
-            else if (testName.Contains("/Correct/") && output.Equals(CompilerOutput.PSharp))
+            else if (testName.Contains("/Correct/"))
             {
-                var prtSharpGoldenOutputFile =
-                    Path.Combine(testDir.FullName, "PrtSharp", Constants.CorrectOutputFileName);
-                if (File.Exists(prtSharpGoldenOutputFile))
-                    expectedOutput = File.ReadAllText(prtSharpGoldenOutputFile);
-                else
-                    expectedOutput = "EXIT: 0";
+                expectedExitCode = 0;
             }
-            else
-            {
-                expectedOutput = "EXIT: 0";
+            else {
+                throw new CompilerTestException(TestCaseError.UnrecognizedTestCaseType);
             }
+            
             if (output.Equals(CompilerOutput.C))
             {
                 var nativeFiles = testDir.GetFiles("*.c");
@@ -73,9 +70,7 @@ namespace UnitTests.Core
                 throw new ArgumentOutOfRangeException();
             }
 
-            ParseExpectedOutput(expectedOutput, out var stdout, out var stderr, out var exitCode);
-
-            validator = new ExecutionOutputValidator(exitCode, stdout, stderr);
+            validator = new ExecutionOutputValidator(expectedExitCode);
 
             var tempDirName =
                 Directory.CreateDirectory(Path.Combine(testTempBaseDir.FullName, output.ToString(), testName));
@@ -104,54 +99,6 @@ namespace UnitTests.Core
             var tempDirName =
                 Directory.CreateDirectory(Path.Combine(testTempBaseDir.FullName, output.ToString(), testName));
             return new CompilerTestCase(tempDirName, runner, validator);
-        }
-
-        /// <summary>
-        ///     Parses an expected (golden) output file.
-        /// </summary>
-        /// <param name="expected">The file contents to parse</param>
-        /// <param name="stdout">The expected standard output</param>
-        /// <param name="stderr">The expected error output</param>
-        /// <param name="exitCode">The expected exit code</param>
-        private void ParseExpectedOutput(string expected, out string stdout, out string stderr, out int exitCode)
-        {
-            exitCode = 0;
-
-            var stdoutBuilder = new StringBuilder();
-            var stderrBuilder = new StringBuilder();
-            var sawExitCode = false;
-            foreach (var line in expected.Split('\r', '\n'))
-            {
-                if (string.IsNullOrWhiteSpace(line)) continue;
-
-                var match = Regex.Match(line, @"^(?<tag>OUT|ERROR|EXIT): (?<text>.*)$");
-                if (!match.Success) throw new CompilerTestException(TestCaseError.InvalidOutputSpec);
-
-                var tag = match.Groups["tag"].Value;
-                var lineText = match.Groups["text"].Value;
-                switch (tag)
-                {
-                    case "OUT":
-                        stdoutBuilder.Append($"{lineText}\n");
-                        break;
-                    case "ERROR":
-                        stderrBuilder.Append($"{lineText}\n");
-                        break;
-                    case "EXIT":
-                        if (sawExitCode || !int.TryParse(lineText, out exitCode))
-                            throw new CompilerTestException(TestCaseError.InvalidOutputSpec);
-
-                        sawExitCode = true;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(expected));
-                }
-            }
-
-            if (!sawExitCode) throw new CompilerTestException(TestCaseError.InvalidOutputSpec);
-
-            stdout = stdoutBuilder.ToString();
-            stderr = stderrBuilder.ToString();
         }
     }
 }

@@ -47,7 +47,7 @@ namespace UnitTests.Core
             {
                 expectedExitCode = 1;
             }
-            else if (testName.Contains("/Correct/"))
+            else if (testName.Contains("/Correct/") || testName.Contains("/CorrectPrtSharp/"))
             {
                 expectedExitCode = 0;
             }

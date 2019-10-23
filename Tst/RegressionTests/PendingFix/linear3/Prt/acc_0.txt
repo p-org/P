@@ -1,8 +1,0 @@
-OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state Main.S
-OUT: <CreateLog> Machine Client1(2) is created
-OUT: <StateLog> Machine Client1(2) entered state Client1.S
-OUT: <RaiseLog> Machine Main(1) raised event E1 with payload 7
-OUT: <ActionLog> Machine Main(1) executed action in state Main.S
-OUT: 
-EXIT: 0

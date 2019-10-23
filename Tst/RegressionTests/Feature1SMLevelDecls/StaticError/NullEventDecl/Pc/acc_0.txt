@@ -1,3 +1,0 @@
-OUT: NullEventDecl.p(3,6,3,10): error PC1001: Syntax error - Syntax error, unexpected NULL, expecting ID
-OUT: Compilation failed
-EXIT: -1

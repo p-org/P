@@ -1,4 +1,0 @@
-OUT: RaisedNullEvent.p(8,4,8,9): error PC1001: Argument 1 of raise expects an event value
-OUT: RaisedNullEvent.p(8,4,8,9): error PC1001: Invalid payload type in raise (cannot send null value)
-OUT: Compilation failed
-EXIT: -1

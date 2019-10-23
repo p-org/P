@@ -1,5 +1,0 @@
-OUT: SentNullEvent.p(12,13,12,17): error PC1001: Argument 2 of send expects an event value
-OUT: SentNullEvent.p(12,13,12,17): error PC1001: Invalid payload type in send
-OUT: SentNullEvent.p(12,13,12,17): error PC1001: Invalid payload type in send (cannot send null value)
-OUT: Compilation failed
-EXIT: -1

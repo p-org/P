@@ -1,9 +1,0 @@
-OUT: lvalues.p(2,5,38,3): error PC1001: No start state in machine
-OUT: lvalues.p(10,11,10,12): error PC1001: Invalid LHS: must have the form LHS ::= var | LHS[expr] | LHS.name
-OUT: lvalues.p(12,11,12,26): error PC1001: Invalid LHS: must have the form LHS ::= var | LHS[expr] | LHS.name
-OUT: lvalues.p(13,24,13,28): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
-OUT: lvalues.p(15,5,15,6): error PC1001: Function requires arguments
-OUT: lvalues.p(16,5,16,6): error PC1001: Function arguments have incorrect types
-OUT: lvalues.p(36,2,36,3): error PC1001: function must return a value
-OUT: Compilation failed
-EXIT: -1

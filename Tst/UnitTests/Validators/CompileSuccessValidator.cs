@@ -8,7 +8,7 @@ namespace UnitTests.Validators
     /// </summary>
     public class CompileSuccessValidator : ITestResultsValidator
     {
-        public bool ValidateResult(string stdout, string stderr, int? exitCode)
+        public bool ValidateResult(int? exitCode)
         {
             return exitCode == 0;
         }

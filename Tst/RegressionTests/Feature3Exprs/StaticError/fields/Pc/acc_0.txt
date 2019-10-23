@@ -1,8 +1,0 @@
-OUT: fields.p(2,3,11,3): error PC1001: No start state in machine
-OUT: fields.p(9,4,9,5): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: fields.p(9,10,9,11): error PC1001: Bad field name
-OUT: fields.p(9,12,9,13): error PC1001: Operator expected first argument to be an integer or float or enum constant value
-OUT: fields.p(9,12,9,13): error PC1001: Operator expected second argument to be an integer or float or enum constant value
-OUT: fields.p(9,16,9,21): error PC1001: Bad field name
-OUT: Compilation failed
-EXIT: -1

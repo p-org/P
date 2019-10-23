@@ -1,2 +1,0 @@
-OUT: [continueoutsideloop.p:10,13] Loop control flow statement 'continue' cannot appear outside a loop body
-EXIT: -1

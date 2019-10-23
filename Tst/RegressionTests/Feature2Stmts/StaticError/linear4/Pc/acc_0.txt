@@ -1,3 +1,0 @@
-OUT: linear4.p(9,4,9,7): error PC1001: Parameter passed with swap not available at callee return
-OUT: Compilation failed
-EXIT: -1

@@ -1,7 +1,0 @@
-OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state Main.S
-OUT: <CreateLog> Machine XYZ(2) is created
-OUT: <StateLog> Machine XYZ(2) entered state XYZ.init
-OUT: 
-ERROR: ASSERT: Invalid type cast
-EXIT: 1

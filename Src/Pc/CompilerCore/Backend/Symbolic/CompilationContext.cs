@@ -1,14 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Symbolic
 {
     internal class CompilationContext : CompilationContextBase
     {
         int nextPathConstraintScopeId;
+        int nextLoopId;
+        int nextBranchId;
+        int nextTempVarId;
 
         internal readonly List<ValueSummaryOpsDef> PendingValueSummaryOpsDefs;
         private readonly Dictionary<ValueSummaryOpsDef, ValueSummaryOps> CachedValueSummaryOpsDefs;
@@ -33,7 +39,9 @@ namespace Plang.Compiler.Backend.Symbolic
 
         internal string FileName => $"{MainClassName}.java";
 
-        internal static readonly string BddLib = "psymbolic.Bdd.getBddLib()";
+        internal static readonly string BddLib = "Bdd.getLib()";
+
+        internal static readonly string ReturnValue = "retval";
 
         internal string GetNameForDecl(IPDecl decl)
         {
@@ -41,9 +49,31 @@ namespace Plang.Compiler.Backend.Symbolic
             return $"decl_{decl.Name}";
         }
 
+        internal static string GetVar(string rawName)
+        {
+            return $"var_{rawName}";
+        }
+
         internal PathConstraintScope FreshPathConstraintScope()
         {
             return new PathConstraintScope(nextPathConstraintScopeId++);
+        }
+
+        internal LoopScope FreshLoopScope()
+        {
+            return new LoopScope(nextLoopId++);
+        }
+
+        internal BranchScope FreshBranchScope()
+        {
+            return new BranchScope(nextBranchId++);
+        }
+
+        internal string FreshTempVar()
+        {
+            var id = nextTempVarId;
+            nextTempVarId++;
+            return $"temp_var_{id}";
         }
 
         internal ValueSummaryOps ValueSummaryOpsForDef(ValueSummaryOpsDef def)
@@ -106,12 +136,33 @@ namespace Plang.Compiler.Backend.Symbolic
             this.id = id;
         }
 
-        internal string GetVar(string rawName)
+        internal string PathConstraintVar => $"pc_{id}";
+    }
+
+    internal struct LoopScope
+    {
+        internal readonly int id;
+
+        internal LoopScope(int id)
         {
-            return $"var_{rawName}_{id}";
+            this.id = id;
         }
 
-        internal string PathConstraintVar => $"pc_{id}";
+        internal string LoopExitsList => $"loop_exits_{id}";
+
+        internal string LoopEarlyReturnFlag => $"loop_early_ret_{id}";
+    }
+
+    internal struct BranchScope
+    {
+        internal readonly int id;
+
+        internal BranchScope(int id)
+        {
+            this.id = id;
+        }
+
+        internal string JumpedOutFlag => $"jumpedOut_{id}";
     }
 
     internal struct ValueSummaryOpsDef

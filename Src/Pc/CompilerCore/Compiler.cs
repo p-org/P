@@ -33,7 +33,7 @@ namespace Plang.Compiler
             System.Collections.Generic.IEnumerable<CompiledFile> compiledFiles = job.Backend.GenerateCode(job, scope);
             foreach (CompiledFile file in compiledFiles)
             {
-                job.Output.WriteMessage($"Writing {file.FileName}...", SeverityKind.Info);
+                job.Output.WriteMessage($"Generated {file.FileName}...", SeverityKind.Info);
                 job.Output.WriteFile(file);
             }
         }

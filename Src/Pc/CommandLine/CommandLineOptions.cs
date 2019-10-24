@@ -243,7 +243,7 @@ namespace Plang.Compiler
                 {
                     if (IsLegalPFile(inputFileName.Value, out FileInfo pFilePathName))
                     {
-                        inputFiles.Add(fullPathName);
+                        inputFiles.Add(pFilePathName);
                     }
                     else
                     {
@@ -356,6 +356,7 @@ namespace Plang.Compiler
         public static void PrintUsage()
         {
             CommandlineOutput.WriteMessage("USAGE: Pc.exe file1.p [file2.p ...] [-t:tfile] [options]", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("USAGE: Pc.exe -proj:<.pproj file>", SeverityKind.Info);
             CommandlineOutput.WriteMessage("    -t:[tfileName]             -- name of output file produced for this compilation unit; if not supplied then file1", SeverityKind.Info);
             CommandlineOutput.WriteMessage("    -outputDir:[path]          -- where to write the generated files", SeverityKind.Info);
             CommandlineOutput.WriteMessage("    -generate:[C,P#]           -- select a target language to generate", SeverityKind.Info);

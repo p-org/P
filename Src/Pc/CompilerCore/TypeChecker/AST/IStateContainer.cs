@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using Plang.Compiler.TypeChecker.AST.States;
+using System.Collections.Generic;
 
 namespace Plang.Compiler.TypeChecker.AST
 {
@@ -8,9 +8,13 @@ namespace Plang.Compiler.TypeChecker.AST
         IStateContainer ParentStateContainer { get; }
         IEnumerable<State> States { get; }
         IEnumerable<StateGroup> Groups { get; }
+
         void AddState(State state);
+
         void AddGroup(StateGroup group);
+
         IStateContainer GetGroup(string groupName);
+
         State GetState(string stateName);
     }
 }

@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.PSharp;
+﻿using Microsoft.PSharp;
 using Microsoft.PSharp.Runtime;
 using Plang.PrtSharp.Exceptions;
 using Plang.PrtSharp.Values;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Plang.PrtSharp
 {
@@ -31,9 +31,11 @@ namespace Plang.PrtSharp
         protected void InitializeParametersFunction()
         {
             if (!(ReceivedEvent is InitializeParametersEvent @event))
+            {
                 throw new ArgumentException("Event type is incorrect: " + ReceivedEvent.GetType().Name);
+            }
 
-            var initParam = @event.Payload as InitializeParameters;
+            InitializeParameters initParam = @event.Payload as InitializeParameters;
             interfaceName = initParam.InterfaceName;
             self = new PMachineValue(Id, receives.ToList());
             RaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
@@ -46,11 +48,14 @@ namespace Plang.PrtSharp
 
         protected override OnExceptionOutcome OnException(string methodName, Exception ex)
         {
-            var v = ex is UnhandledEventException;
+            bool v = ex is UnhandledEventException;
             if (!v)
+            {
                 return ex is PNonStandardReturnException
                     ? OnExceptionOutcome.HandledException
                     : base.OnException(methodName, ex);
+            }
+
             return (ex as UnhandledEventException).UnhandledEvent is PHalt
                 ? OnExceptionOutcome.HaltMachine
                 : base.OnException(methodName, ex);
@@ -59,11 +64,11 @@ namespace Plang.PrtSharp
         public PMachineValue CreateInterface<T>(PMachine creator, IPrtValue payload = null)
             where T : PMachineValue
         {
-            var createdInterface = PModule.linkMap[creator.interfaceName][typeof(T).Name];
+            string createdInterface = PModule.linkMap[creator.interfaceName][typeof(T).Name];
             Assert(creates.Contains(createdInterface),
                 $"Machine {GetType().Name} cannot create interface {createdInterface}, not in its creates set");
-            var createMachine = PModule.interfaceDefinitionMap[createdInterface];
-            var machineId = CreateMachine(createMachine, createdInterface.Substring(2),
+            Type createMachine = PModule.interfaceDefinitionMap[createdInterface];
+            MachineId machineId = CreateMachine(createMachine, createdInterface.Substring(2),
                 new InitializeParametersEvent(new InitializeParameters(createdInterface, payload)));
             return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
         }
@@ -72,29 +77,26 @@ namespace Plang.PrtSharp
         {
             Assert(ev != null, "Machine cannot send a null event");
             Assert(sends.Contains(ev.GetType().Name),
-                $"Event {ev.GetType().Name} is not in the sends set of the Machine {this.GetType().Name}");
+                $"Event {ev.GetType().Name} is not in the sends set of the Machine {GetType().Name}");
             Assert(target.Permissions.Contains(ev.GetType().Name),
                 $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
-            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            ev = (Event) oneArgConstructor.Invoke(new[] {payload});
-
+            System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+            ev = (Event)oneArgConstructor.Invoke(new[] { payload });
 
             AnnounceInternal(ev);
             Send(target.Id, ev);
-            this.Logger.WriteLine($"<SendPayloadLog> Event {ev.GetType().Name} with payload {((PEvent)ev).Payload}");
+            Logger.WriteLine($"<SendPayloadLog> Event {ev.GetType().Name} with payload {((PEvent)ev).Payload}");
         }
 
         public void RaiseEvent(Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot raise a null event");
-            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            ev = (Event) oneArgConstructor.Invoke(new[] {payload});
+            System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+            ev = (Event)oneArgConstructor.Invoke(new[] { payload });
 
-
-            this.Raise(ev);
-            throw new PNonStandardReturnException {ReturnKind = NonStandardReturn.Raise};
+            Raise(ev);
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
-
 
         public Task<Event> ReceiveEvent(params Type[] events)
         {
@@ -105,13 +107,13 @@ namespace Plang.PrtSharp
         {
             gotoPayload = payload;
             Goto<T>();
-            throw new PNonStandardReturnException {ReturnKind = NonStandardReturn.Goto};
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
         public void PopState()
         {
             Pop();
-            throw new PNonStandardReturnException {ReturnKind = NonStandardReturn.Pop};
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Pop };
         }
 
         public int RandomInt(int maxValue)
@@ -136,30 +138,42 @@ namespace Plang.PrtSharp
 
         public void LogLine(string message)
         {
-            this.Logger.WriteLine($"<PrintLog> {message}");
+            Logger.WriteLine($"<PrintLog> {message}");
         }
 
         public void Log(string message)
         {
-            this.Logger.Write($"{message}");
+            Logger.Write($"{message}");
         }
 
         public void Announce(Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot announce a null event");
-            if (ev is PHalt) ev = new Halt();
-            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            var @event = (Event) oneArgConstructor.Invoke(new[] {payload});
+            if (ev is PHalt)
+            {
+                ev = new Halt();
+            }
+
+            System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+            Event @event = (Event)oneArgConstructor.Invoke(new[] { payload });
             AnnounceInternal(@event);
         }
 
         private void AnnounceInternal(Event ev)
         {
             Assert(ev != null, "cannot send a null event");
-            if (!PModule.monitorMap.ContainsKey(interfaceName)) return;
-            foreach (var monitor in PModule.monitorMap[interfaceName])
+            if (!PModule.monitorMap.ContainsKey(interfaceName))
+            {
+                return;
+            }
+
+            foreach (Type monitor in PModule.monitorMap[interfaceName])
+            {
                 if (PModule.monitorObserves[monitor.Name].Contains(ev.GetType().Name))
+                {
                     Monitor(monitor, ev);
+                }
+            }
         }
 
         public class InitializeParameters : IPrtValue
@@ -190,7 +204,5 @@ namespace Plang.PrtSharp
             {
             }
         }
-
-        
     }
 }

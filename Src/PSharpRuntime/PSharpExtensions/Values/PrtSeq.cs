@@ -1,8 +1,8 @@
-﻿using System.Collections;
+﻿using Plang.PrtSharp.Exceptions;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Plang.PrtSharp.Exceptions;
 
 namespace Plang.PrtSharp.Values
 {
@@ -30,7 +30,10 @@ namespace Plang.PrtSharp.Values
             get => isDirty;
             set
             {
-                if (value && isFrozen) throw new PFrozenMutationException();
+                if (value && isFrozen)
+                {
+                    throw new PFrozenMutationException();
+                }
 
                 isDirty = value;
             }
@@ -38,7 +41,10 @@ namespace Plang.PrtSharp.Values
 
         public void Freeze()
         {
-            foreach (var value in values) MutabilityHelper.EnsureFrozen(value);
+            foreach (IPrtValue value in values)
+            {
+                MutabilityHelper.EnsureFrozen(value);
+            }
 
             isFrozen = true;
         }
@@ -70,7 +76,10 @@ namespace Plang.PrtSharp.Values
             get => values[index];
             set
             {
-                if (isFrozen) throw new PFrozenMutationException();
+                if (isFrozen)
+                {
+                    throw new PFrozenMutationException();
+                }
 
                 values[index] = value;
             }
@@ -111,7 +120,11 @@ namespace Plang.PrtSharp.Values
 
         public override int GetHashCode()
         {
-            if (!IsDirty) return hashCode;
+            if (!IsDirty)
+            {
+                return hashCode;
+            }
+
             hashCode = ComputeHashCode();
             IsDirty = false;
 
@@ -120,10 +133,10 @@ namespace Plang.PrtSharp.Values
 
         public override string ToString()
         {
-            var sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder();
             sb.Append("(");
-            var sep = "";
-            foreach (var value in values)
+            string sep = "";
+            foreach (IPrtValue value in values)
             {
                 sb.Append(sep);
                 sb.Append(value);

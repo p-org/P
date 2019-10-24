@@ -1,6 +1,6 @@
+using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
-using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.TypeChecker.Types
 {
@@ -18,7 +18,6 @@ namespace Plang.Compiler.TypeChecker.Types
 
         public override string CanonicalRepresentation => TypeDefDecl.Type.CanonicalRepresentation;
         public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
-
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {

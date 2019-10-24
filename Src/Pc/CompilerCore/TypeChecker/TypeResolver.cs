@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.Types;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -36,12 +36,18 @@ namespace Plang.Compiler.TypeChecker
 
             public override PLanguageType VisitNamedType(PParser.NamedTypeContext context)
             {
-                var typeName = context.name.GetText();
-                if (scope.Lookup(typeName, out PEnum pEnum)) return new EnumType(pEnum);
+                string typeName = context.name.GetText();
+                if (scope.Lookup(typeName, out PEnum pEnum))
+                {
+                    return new EnumType(pEnum);
+                }
 
                 if (scope.Lookup(typeName, out TypeDef typeDef))
                 {
-                    if (visitedTypeDefs.Contains(typeDef)) throw handler.CircularTypeDef(context.name, typeDef);
+                    if (visitedTypeDefs.Contains(typeDef))
+                    {
+                        throw handler.CircularTypeDef(context.name, typeDef);
+                    }
 
                     if (typeDef.Type == null)
                     {
@@ -51,9 +57,11 @@ namespace Plang.Compiler.TypeChecker
                             case PParser.ForeignTypeDefContext foreignType:
                                 typeDef.Type = new ForeignType(foreignType.name.GetText());
                                 break;
+
                             case PParser.PTypeDefContext typedefDecl:
                                 typeDef.Type = Visit(typedefDecl.type());
                                 break;
+
                             default:
                                 throw handler.InternalError(typeDef.SourceLocation,
                                     new ArgumentOutOfRangeException(nameof(context)));
@@ -63,11 +71,20 @@ namespace Plang.Compiler.TypeChecker
                     return new TypeDefType(typeDef);
                 }
 
-                if (scope.Lookup(typeName, out NamedEventSet eventSet)) return new PermissionType(eventSet);
+                if (scope.Lookup(typeName, out NamedEventSet eventSet))
+                {
+                    return new PermissionType(eventSet);
+                }
 
-                if (scope.Lookup(typeName, out Interface pInterface)) return new PermissionType(pInterface);
+                if (scope.Lookup(typeName, out Interface pInterface))
+                {
+                    return new PermissionType(pInterface);
+                }
 
-                if (scope.Lookup(typeName, out Machine machine)) return new PermissionType(machine);
+                if (scope.Lookup(typeName, out Machine machine))
+                {
+                    return new PermissionType(machine);
+                }
 
                 throw handler.MissingDeclaration(context.name, "enum, typedef, event set, machine, or interface",
                     typeName);
@@ -75,24 +92,35 @@ namespace Plang.Compiler.TypeChecker
 
             public override PLanguageType VisitTupleType(PParser.TupleTypeContext context)
             {
-                if (context._tupTypes.Count > 8) throw handler.TupleSizeMoreThanEight(context);
+                if (context._tupTypes.Count > 8)
+                {
+                    throw handler.TupleSizeMoreThanEight(context);
+                }
+
                 return new TupleType(context._tupTypes.Select(Visit).ToArray());
             }
 
             public override PLanguageType VisitNamedTupleType(PParser.NamedTupleTypeContext context)
             {
-                var names = new HashSet<string>();
-                var namedTupleFields = context.idenTypeList().idenType();
-                if (context.idenTypeList().idenType().Length > 8) throw handler.TupleSizeMoreThanEight(context);
-                var fields = new NamedTupleEntry[namedTupleFields.Length];
-                for (var i = 0; i < namedTupleFields.Length; i++)
+                HashSet<string> names = new HashSet<string>();
+                PParser.IdenTypeContext[] namedTupleFields = context.idenTypeList().idenType();
+                if (context.idenTypeList().idenType().Length > 8)
                 {
-                    var field = namedTupleFields[i];
-                    var fieldName = field.name.GetText();
-                    if (names.Contains(fieldName)) throw handler.DuplicateNamedTupleEntry(field.name, fieldName);
+                    throw handler.TupleSizeMoreThanEight(context);
+                }
+
+                NamedTupleEntry[] fields = new NamedTupleEntry[namedTupleFields.Length];
+                for (int i = 0; i < namedTupleFields.Length; i++)
+                {
+                    PParser.IdenTypeContext field = namedTupleFields[i];
+                    string fieldName = field.name.GetText();
+                    if (names.Contains(fieldName))
+                    {
+                        throw handler.DuplicateNamedTupleEntry(field.name, fieldName);
+                    }
 
                     names.Add(fieldName);
-                    fields[i] = new NamedTupleEntry {Name = fieldName, FieldNo = i, Type = Visit(field.type())};
+                    fields[i] = new NamedTupleEntry { Name = fieldName, FieldNo = i, Type = Visit(field.type()) };
                 }
 
                 return new NamedTupleType(fields);
@@ -100,7 +128,7 @@ namespace Plang.Compiler.TypeChecker
 
             public override PLanguageType VisitPrimitiveType(PParser.PrimitiveTypeContext context)
             {
-                var name = context.GetText();
+                string name = context.GetText();
                 switch (name)
                 {
                     case "bool": return PrimitiveType.Bool;

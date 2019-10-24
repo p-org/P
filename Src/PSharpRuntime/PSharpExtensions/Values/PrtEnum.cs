@@ -13,7 +13,10 @@ namespace Plang.PrtSharp.Values
 
         public static void AddEnumElements(string[] names, int[] values)
         {
-            for (var i = 0; i < names.Length; i++) enumElements.Add(names[i], values[i]);
+            for (int i = 0; i < names.Length; i++)
+            {
+                enumElements.Add(names[i], values[i]);
+            }
         }
 
         public static void Clear()

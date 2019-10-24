@@ -1,8 +1,8 @@
+using Antlr4.Runtime;
+using Plang.Compiler.TypeChecker.AST.Statements;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker.AST.Statements;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
@@ -60,6 +60,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         {
             createsInterfaces.Add(i);
         }
+
         public void AddLocalVariables(IEnumerable<Variable> variables)
         {
             localVariables.AddRange(variables);
@@ -75,6 +76,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         // TODO: decouple this? turn it into flags? a mix?
         public bool IsForeign => Body == null;
+
         public bool IsAnon => string.IsNullOrEmpty(Name);
 
         public bool? CanChangeState { get; set; }
@@ -85,6 +87,6 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public IEnumerable<Function> Callers => callers;
         public IEnumerable<Function> Callees => callees;
 
-        #endregion
+        #endregion Analysis results
     }
 }

@@ -1,5 +1,5 @@
-﻿using System.IO;
-using NUnit.Framework;
+﻿using NUnit.Framework;
+using System.IO;
 using UnitTests.Core;
 using UnitTests.Runners;
 using UnitTests.Validators;
@@ -13,15 +13,18 @@ namespace UnitTests
         [Test]
         public void TestCompilePSharpTemp()
         {
-            var tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPSharpTemp"));
-            var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "test.p"));
+            DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPSharpTemp"));
+            FileInfo tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "test.p"));
             //var foreignFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "Foreign.cs"));
 
-            if (!tempFilePath.Exists) return;
+            if (!tempFilePath.Exists)
+            {
+                return;
+            }
 
-            var testCase = new CompilerTestCase(
+            CompilerTestCase testCase = new CompilerTestCase(
                 tempDir,
-                new PSharpRunner(new[] {tempFilePath}),
+                new PSharpRunner(new[] { tempFilePath }),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);

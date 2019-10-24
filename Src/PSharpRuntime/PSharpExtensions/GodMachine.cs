@@ -1,5 +1,5 @@
-﻿using System;
-using Microsoft.PSharp;
+﻿using Microsoft.PSharp;
+using System;
 
 namespace Plang.PrtSharp
 {
@@ -7,7 +7,7 @@ namespace Plang.PrtSharp
     {
         private void InitOnEntry()
         {
-            var mainMachine = (ReceivedEvent as Config).MainMachine;
+            Type mainMachine = (ReceivedEvent as Config).MainMachine;
             CreateMachine(mainMachine,
                 new PMachine.InitializeParametersEvent(
                     new PMachine.InitializeParameters("I_" + mainMachine.Name, null)));

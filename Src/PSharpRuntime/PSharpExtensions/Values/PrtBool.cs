@@ -13,7 +13,11 @@ namespace Plang.PrtSharp.Values
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
             return obj is PrtBool other && Equals(other);
         }
 
@@ -113,7 +117,6 @@ namespace Plang.PrtSharp.Values
         {
             return pValue1 is PrtBool prtBool && pValue2.value != prtBool.value;
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(IPrtValue obj)

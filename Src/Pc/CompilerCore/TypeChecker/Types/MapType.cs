@@ -1,7 +1,7 @@
+using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.TypeChecker.Types
 {
@@ -12,11 +12,15 @@ namespace Plang.Compiler.TypeChecker.Types
             KeyType = keyType;
             ValueType = valueType;
             if (KeyType.AllowedPermissions == null || ValueType.AllowedPermissions == null)
+            {
                 AllowedPermissions = null;
+            }
             else
+            {
                 AllowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => KeyType
                     .AllowedPermissions.Value.Concat(ValueType.AllowedPermissions.Value)
                     .ToList());
+            }
         }
 
         public PLanguageType KeyType { get; }

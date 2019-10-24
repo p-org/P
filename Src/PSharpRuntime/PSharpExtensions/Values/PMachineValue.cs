@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.PSharp;
+using System.Collections.Generic;
 using System.Linq;
-using Microsoft.PSharp;
 
 namespace Plang.PrtSharp.Values
 {
@@ -32,6 +32,7 @@ namespace Plang.PrtSharp.Values
         {
             return other is PMachineValue machine && Equals(Id, machine.Id);
         }
+
         public override int GetHashCode()
         {
             return Id.GetHashCode();
@@ -46,7 +47,5 @@ namespace Plang.PrtSharp.Values
         {
             return Id.Name.Split('.').Last();
         }
-
-
     }
 }

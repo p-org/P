@@ -34,7 +34,6 @@ void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST* ptr)
 	}
 }
 
-
 HANDLE threadsTerminated;
 long threadsRunning = 0;
 static PRT_BOOLEAN cooperative = PRT_FALSE;
@@ -145,7 +144,6 @@ void PRT_CALL_CONV MyAssert(PRT_INT32 condition, PRT_CSTRING message)
 	exit(1);
 }
 
-
 static void RunToIdle(LPVOID process)
 {
 	// In the tester we run the state machines until there is no more work to do then we exit
@@ -179,7 +177,7 @@ int main(int argc, char* argv[])
 	PRT_DBG_START_MEM_BALANCED_REGION
 	{
 #ifdef REPORT_MEMORY_LEAK
-		// if there is a memory leak, then #define REPORT_MEMORY_LEAK, and run again, the report will 
+		// if there is a memory leak, then #define REPORT_MEMORY_LEAK, and run again, the report will
 		// output the block number in the Debug Output window.  Copy that number to the following line and
 		// uncomment it.  In this example, it was block number 105.  But when you put the right block number in here
 		// then re-run the test, you will get the full call stack in the debugger where the block was allocated.
@@ -196,18 +194,15 @@ int main(int argc, char* argv[])
 		if (cooperative)
 		{
 			PrtSetSchedulingPolicy(process, PRT_SCHEDULINGPOLICY_COOPERATIVE);
-		
 		}
 		if (parg == NULL)
 		{
 			payload = PrtMkNullValue();
-		
 		}
 		else
 		{
 			int i = atoi(parg);
 			payload = PrtMkIntValue(i);
-		
 		}
 
 		PrtUpdateAssertFn(MyAssert);
@@ -225,22 +220,18 @@ int main(int argc, char* argv[])
 			{
 				DWORD threadId;
 				CreateThread(NULL, 16000, (LPTHREAD_START_ROUTINE)RunToIdle, process, 0, &threadId);
-			
 			}
 			WaitForSingleObject(threadsTerminated, INFINITE);
-		
 		}
 
 		PrtFreeValue(payload);
 		PrtStopProcess(process);
-	
 	}
 #ifdef REPORT_MEMORY_LEAK
-    }
-	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
-	_CrtDumpMemoryLeaks();
+}
+_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
+_CrtDumpMemoryLeaks();
 #else
-	PRT_DBG_END_MEM_BALANCED_REGION
+		PRT_DBG_END_MEM_BALANCED_REGION
 #endif
-
 }

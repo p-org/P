@@ -53,7 +53,6 @@ namespace UnitTests
             Assert.AreEqual(float1, +float1);
         }
 
-
         [Test]
         public void TestPrtIntComparisions()
         {

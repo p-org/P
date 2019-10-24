@@ -1,8 +1,6 @@
-﻿using System;
+﻿using Plang.Compiler;
+using System;
 using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
-using Plang.Compiler;
 using UnitTests.Runners;
 using UnitTests.Validators;
 
@@ -13,7 +11,6 @@ namespace UnitTests.Core
     /// </summary>
     public class TestCaseFactory
     {
-
         private readonly DirectoryInfo testTempBaseDir;
 
         /// <summary>
@@ -33,14 +30,14 @@ namespace UnitTests.Core
         /// <returns>The test case in a runnable state.</returns>
         public CompilerTestCase CreateTestCase(DirectoryInfo testDir, CompilerOutput output)
         {
-            var inputFiles = testDir.GetFiles("*.p");
-            var testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
+            FileInfo[] inputFiles = testDir.GetFiles("*.p");
+            string testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
                 .MakeRelativeUri(new Uri(testDir.FullName))
                 .ToString();
 
             ICompilerTestRunner runner;
             ITestResultsValidator validator;
-    
+
             int expectedExitCode;
 
             if (testName.Contains("/DynamicError/") || testName.Contains("/DynamicErrorPrtSharp/"))
@@ -51,18 +48,19 @@ namespace UnitTests.Core
             {
                 expectedExitCode = 0;
             }
-            else {
+            else
+            {
                 throw new CompilerTestException(TestCaseError.UnrecognizedTestCaseType);
             }
-            
+
             if (output.Equals(CompilerOutput.C))
             {
-                var nativeFiles = testDir.GetFiles("*.c");
+                FileInfo[] nativeFiles = testDir.GetFiles("*.c");
                 runner = new PrtRunner(inputFiles, nativeFiles);
             }
             else if (output.Equals(CompilerOutput.PSharp))
             {
-                var nativeFiles = testDir.GetFiles("*.cs");
+                FileInfo[] nativeFiles = testDir.GetFiles("*.cs");
                 runner = new PSharpRunner(inputFiles, nativeFiles);
             }
             else
@@ -72,31 +70,31 @@ namespace UnitTests.Core
 
             validator = new ExecutionOutputValidator(expectedExitCode);
 
-            var tempDirName =
+            DirectoryInfo tempDirName =
                 Directory.CreateDirectory(Path.Combine(testTempBaseDir.FullName, output.ToString(), testName));
             return new CompilerTestCase(tempDirName, runner, validator);
         }
 
         public CompilerTestCase CreateTestCase(DirectoryInfo testDir)
         {
-            var inputFiles = testDir.GetFiles("*.p");
-            var testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
+            FileInfo[] inputFiles = testDir.GetFiles("*.p");
+            string testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
                 .MakeRelativeUri(new Uri(testDir.FullName))
                 .ToString();
 
             ICompilerTestRunner runner;
             ITestResultsValidator validator;
 
-            var output = CompilerOutput.C;
+            CompilerOutput output = CompilerOutput.C;
             runner = new CompileOnlyRunner(output, inputFiles);
 
             // TODO: validate information about the particular kind of compiler error
-            var isStaticError = testName.Contains("/StaticError/");
+            bool isStaticError = testName.Contains("/StaticError/");
             validator = isStaticError
-                ? (ITestResultsValidator) new StaticErrorValidator()
+                ? (ITestResultsValidator)new StaticErrorValidator()
                 : new CompileSuccessValidator();
 
-            var tempDirName =
+            DirectoryInfo tempDirName =
                 Directory.CreateDirectory(Path.Combine(testTempBaseDir.FullName, output.ToString(), testName));
             return new CompilerTestCase(tempDirName, runner, validator);
         }

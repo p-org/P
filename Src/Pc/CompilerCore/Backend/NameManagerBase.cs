@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Plang.Compiler.TypeChecker.AST;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using Plang.Compiler.TypeChecker.AST;
 
 namespace Plang.Compiler.Backend
 {
@@ -25,8 +25,8 @@ namespace Plang.Compiler.Backend
 
         protected string UniquifyName(string baseName)
         {
-            var name = baseName;
-            while (nameUsages.TryGetValue(name, out var usages))
+            string name = baseName;
+            while (nameUsages.TryGetValue(name, out int usages))
             {
                 nameUsages[name] = usages + 1;
                 name = $"{baseName}_{usages}";
@@ -40,9 +40,12 @@ namespace Plang.Compiler.Backend
         {
             Contract.Requires(decl != null);
 
-            if (TryGetNameForNode(decl, out var name)) return name;
+            if (TryGetNameForNode(decl, out string name))
+            {
+                return name;
+            }
 
-            var declName = ComputeNameForDecl(decl);
+            string declName = ComputeNameForDecl(decl);
             return SetNameForNode(decl, declName);
         }
 
@@ -50,8 +53,10 @@ namespace Plang.Compiler.Backend
 
         private string SetNameForNode(IPDecl node, string name)
         {
-            if (declNames.TryGetValue(node, out var existing))
+            if (declNames.TryGetValue(node, out string existing))
+            {
                 throw new ArgumentException($"Decl {node.Name} already has name {existing}", nameof(node));
+            }
 
             declNames.Add(node, name);
             return name;

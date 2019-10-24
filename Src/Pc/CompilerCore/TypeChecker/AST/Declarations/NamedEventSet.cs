@@ -1,19 +1,26 @@
+using Antlr4.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Antlr4.Runtime;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
     public interface IEventSet
     {
         IEnumerable<PEvent> Events { get; }
+
         bool AddEvent(PEvent pEvent);
+
         void AddEvents(IEnumerable<PEvent> evts);
+
         bool Contains(PEvent pEvent);
+
         bool IsSame(IEventSet eventSet);
+
         bool IsSubsetEqOf(IEventSet eventSet);
+
         bool IsSubsetEqOf(IEnumerable<PEvent> eventSet);
+
         bool Intersects(IEnumerable<PEvent> eventSet);
     }
 
@@ -33,7 +40,10 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public void AddEvents(IEnumerable<PEvent> evts)
         {
-            foreach (var pEvent in evts) AddEvent(pEvent);
+            foreach (PEvent pEvent in evts)
+            {
+                AddEvent(pEvent);
+            }
         }
 
         public bool Contains(PEvent pEvent)
@@ -98,7 +108,10 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public void AddEvents(IEnumerable<PEvent> evts)
         {
-            foreach (var pEvent in evts) AddEvent(pEvent);
+            foreach (PEvent pEvent in evts)
+            {
+                AddEvent(pEvent);
+            }
         }
 
         public bool IsSubsetEqOf(IEventSet eventSet)

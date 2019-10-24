@@ -66,15 +66,14 @@ namespace Plang.PrtSharp.Values
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator PrtInt(in PrtFloat val)
         {
-            return new PrtInt((long) val);
+            return new PrtInt((long)val);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator int(in PrtInt val)
         {
-            return (int) val.value;
+            return (int)val.value;
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator long(in PrtInt val)

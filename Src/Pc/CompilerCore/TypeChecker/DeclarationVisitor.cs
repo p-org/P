@@ -1,13 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 using Plang.Compiler.Util;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -37,7 +37,7 @@ namespace Plang.Compiler.TypeChecker
             PParser.ProgramContext context,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
-            var visitor = new DeclarationVisitor(handler, topLevelScope, nodesToDeclarations);
+            DeclarationVisitor visitor = new DeclarationVisitor(handler, topLevelScope, nodesToDeclarations);
             visitor.Visit(context);
         }
 
@@ -46,30 +46,30 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitEventDecl(PParser.EventDeclContext context)
         {
             // EVENT name=Iden
-            var pEvent = (PEvent) nodesToDeclarations.Get(context);
+            PEvent pEvent = (PEvent)nodesToDeclarations.Get(context);
 
             // cardinality?
-            var hasAssume = context.cardinality()?.ASSUME() != null;
-            var hasAssert = context.cardinality()?.ASSERT() != null;
-            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
+            bool hasAssume = context.cardinality()?.ASSUME() != null;
+            bool hasAssert = context.cardinality()?.ASSERT() != null;
+            int cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
             pEvent.Assume = hasAssume ? cardinality : -1;
             pEvent.Assert = hasAssert ? cardinality : -1;
 
             // (COLON type)?
             pEvent.PayloadType = ResolveType(context.type());
 
-            // SEMI 
+            // SEMI
             return pEvent;
         }
 
-        #endregion
+        #endregion Events
 
         #region Interfaces
 
         public override object VisitInterfaceDecl(PParser.InterfaceDeclContext context)
         {
             // TYPE name=Iden
-            var mInterface = (Interface) nodesToDeclarations.Get(context);
+            Interface mInterface = (Interface)nodesToDeclarations.Get(context);
 
             // LPAREN type? RPAREN
             mInterface.PayloadType = ResolveType(context.type());
@@ -83,15 +83,19 @@ namespace Plang.Compiler.TypeChecker
             {
                 eventSet = new EventSet();
                 if (context.nonDefaultEventList()?._events is IList<PParser.NonDefaultEventContext> events)
-                    foreach (var eventContext in events)
-                        eventSet.AddEvent((PEvent) Visit(eventContext));
+                {
+                    foreach (PParser.NonDefaultEventContext eventContext in events)
+                    {
+                        eventSet.AddEvent((PEvent)Visit(eventContext));
+                    }
+                }
             }
 
             mInterface.ReceivableEvents = eventSet;
             return mInterface;
         }
 
-        #endregion
+        #endregion Interfaces
 
         private PLanguageType ResolveType(PParser.TypeContext typeContext)
         {
@@ -100,7 +104,7 @@ namespace Plang.Compiler.TypeChecker
 
         private Function CreateAnonFunction(PParser.AnonEventHandlerContext context)
         {
-            var fun = new Function(context)
+            Function fun = new Function(context)
             {
                 Owner = CurrentMachine,
                 Scope = CurrentScope.MakeChildScope()
@@ -110,7 +114,7 @@ namespace Plang.Compiler.TypeChecker
 
             if (context.funParam() is PParser.FunParamContext paramContext)
             {
-                var param = fun.Scope.Put(paramContext.name.GetText(), paramContext, VariableRole.Param);
+                Variable param = fun.Scope.Put(paramContext.name.GetText(), paramContext, VariableRole.Param);
                 param.Type = ResolveType(paramContext.type());
                 nodesToDeclarations.Put(paramContext, param);
                 fun.Signature.Parameters.Add(param);
@@ -122,7 +126,7 @@ namespace Plang.Compiler.TypeChecker
 
         private Function CreateAnonFunction(PParser.NoParamAnonEventHandlerContext context)
         {
-            var fun = new Function(context)
+            Function fun = new Function(context)
             {
                 Owner = CurrentMachine,
                 Scope = CurrentScope.MakeChildScope()
@@ -136,16 +140,22 @@ namespace Plang.Compiler.TypeChecker
 
         private State FindState(PParser.StateNameContext context)
         {
-            var scope = CurrentMachine.Scope;
-            foreach (var groupToken in context._groups)
+            Scope scope = CurrentMachine.Scope;
+            foreach (PParser.IdenContext groupToken in context._groups)
             {
                 if (!scope.Get(groupToken.GetText(), out StateGroup group))
+                {
                     throw Handler.MissingDeclaration(groupToken, "group", groupToken.GetText());
+                }
+
                 scope = group.Scope;
             }
 
             if (!scope.Get(context.state.GetText(), out State state))
+            {
                 throw Handler.MissingDeclaration(context.state, "state", context.state.GetText());
+            }
+
             return state;
         }
 
@@ -153,8 +163,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitForeignTypeDef(PParser.ForeignTypeDefContext context)
         {
-            // TYPE name=iden 
-            var typedef = (TypeDef) nodesToDeclarations.Get(context);
+            // TYPE name=iden
+            TypeDef typedef = (TypeDef)nodesToDeclarations.Get(context);
             // SEMI
             typedef.Type = new ForeignType(typedef.Name);
             return typedef;
@@ -162,30 +172,30 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitPTypeDef(PParser.PTypeDefContext context)
         {
-            // TYPE name=iden 
-            var typedef = (TypeDef) nodesToDeclarations.Get(context);
-            // ASSIGN type 
+            // TYPE name=iden
+            TypeDef typedef = (TypeDef)nodesToDeclarations.Get(context);
+            // ASSIGN type
             typedef.Type = ResolveType(context.type());
             // SEMI
             return typedef;
         }
 
-        #endregion
+        #endregion Typedefs
 
         #region Enum typedef
 
         public override object VisitEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
         {
             // ENUM name=iden
-            var pEnum = (PEnum) nodesToDeclarations.Get(context);
+            PEnum pEnum = (PEnum)nodesToDeclarations.Get(context);
 
             // LBRACE enumElemList RBRACE
             if (context.enumElemList() is PParser.EnumElemListContext elemList)
             {
-                var elems = (EnumElem[]) Visit(elemList);
-                for (var i = 0; i < elems.Length; i++)
+                EnumElem[] elems = (EnumElem[])Visit(elemList);
+                for (int i = 0; i < elems.Length; i++)
                 {
-                    var elem = elems[i];
+                    EnumElem elem = elems[i];
                     elem.Value = i;
                     pEnum.AddElement(elem);
                 }
@@ -193,8 +203,11 @@ namespace Plang.Compiler.TypeChecker
             // | LBRACE numberedEnumElemList RBRACE
             else if (context.numberedEnumElemList() is PParser.NumberedEnumElemListContext numberedElemList)
             {
-                var numberedElems = (EnumElem[]) Visit(numberedElemList);
-                foreach (var elem in numberedElems) pEnum.AddElement(elem);
+                EnumElem[] numberedElems = (EnumElem[])Visit(numberedElemList);
+                foreach (EnumElem elem in numberedElems)
+                {
+                    pEnum.AddElement(elem);
+                }
             }
             else
             {
@@ -213,7 +226,7 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitEnumElem(PParser.EnumElemContext context)
         {
             // name=iden
-            return (EnumElem) nodesToDeclarations.Get(context);
+            return (EnumElem)nodesToDeclarations.Get(context);
         }
 
         public override object VisitNumberedEnumElemList(PParser.NumberedEnumElemListContext context)
@@ -225,21 +238,21 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitNumberedEnumElem(PParser.NumberedEnumElemContext context)
         {
             // name=iden ASSIGN value=IntLiteral
-            var elem = (EnumElem) nodesToDeclarations.Get(context);
+            EnumElem elem = (EnumElem)nodesToDeclarations.Get(context);
             elem.Value = int.Parse(context.value.Text);
             return elem;
         }
 
-        #endregion
+        #endregion Enum typedef
 
         #region Event sets
 
         public override object VisitEventSetDecl(PParser.EventSetDeclContext context)
         {
-            // EVENTSET name=iden 
-            var es = (NamedEventSet) nodesToDeclarations.Get(context);
-            // ASSIGN LBRACE eventSetLiteral RBRACE 
-            es.AddEvents((PEvent[]) Visit(context.eventSetLiteral()));
+            // EVENTSET name=iden
+            NamedEventSet es = (NamedEventSet)nodesToDeclarations.Get(context);
+            // ASSIGN LBRACE eventSetLiteral RBRACE
+            es.AddEvents((PEvent[])Visit(context.eventSetLiteral()));
             // SEMI
             return es;
         }
@@ -253,43 +266,64 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitNonDefaultEvent(PParser.NonDefaultEventContext context)
         {
             // HALT | iden
-            var eventName = context.GetText();
+            string eventName = context.GetText();
             if (!CurrentScope.Lookup(eventName, out PEvent pEvent))
+            {
                 throw Handler.MissingDeclaration(context, "event", eventName);
+            }
+
             return pEvent;
         }
 
-        #endregion
+        #endregion Event sets
 
         #region Machines
 
         public override object VisitImplMachineDecl(PParser.ImplMachineDeclContext context)
         {
-            // MACHINE name=iden 
-            var machine = (Machine) nodesToDeclarations.Get(context);
+            // MACHINE name=iden
+            Machine machine = (Machine)nodesToDeclarations.Get(context);
 
-            // cardinality? 
-            var hasAssume = context.cardinality()?.ASSUME() != null;
-            var hasAssert = context.cardinality()?.ASSERT() != null;
-            var cardinality = long.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
-            if (cardinality > uint.MaxValue) throw Handler.ValueOutOfRange(context.cardinality(), "uint32");
-            machine.Assume = hasAssume ? (uint?) cardinality : null;
-            machine.Assert = hasAssert ? (uint?) cardinality : null;
+            // cardinality?
+            bool hasAssume = context.cardinality()?.ASSUME() != null;
+            bool hasAssert = context.cardinality()?.ASSERT() != null;
+            long cardinality = long.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
+            if (cardinality > uint.MaxValue)
+            {
+                throw Handler.ValueOutOfRange(context.cardinality(), "uint32");
+            }
+
+            machine.Assume = hasAssume ? (uint?)cardinality : null;
+            machine.Assert = hasAssert ? (uint?)cardinality : null;
 
             // receivesSends*
-            foreach (var receivesSends in context.receivesSends())
+            foreach (PParser.ReceivesSendsContext receivesSends in context.receivesSends())
             {
-                var recvSendTuple = (Tuple<string, PEvent[]>) Visit(receivesSends);
-                var eventSetType = recvSendTuple.Item1;
+                Tuple<string, PEvent[]> recvSendTuple = (Tuple<string, PEvent[]>)Visit(receivesSends);
+                string eventSetType = recvSendTuple.Item1;
                 if (eventSetType.Equals("RECV", StringComparison.InvariantCulture))
                 {
-                    if (machine.Receives == null) machine.Receives = new EventSet();
-                    foreach (var @event in recvSendTuple.Item2) machine.Receives.AddEvent(@event);
+                    if (machine.Receives == null)
+                    {
+                        machine.Receives = new EventSet();
+                    }
+
+                    foreach (PEvent @event in recvSendTuple.Item2)
+                    {
+                        machine.Receives.AddEvent(@event);
+                    }
                 }
                 else if (eventSetType.Equals("SEND", StringComparison.InvariantCulture))
                 {
-                    if (machine.Sends == null) machine.Sends = new EventSet();
-                    foreach (var @event in recvSendTuple.Item2) machine.Sends.AddEvent(@event);
+                    if (machine.Sends == null)
+                    {
+                        machine.Sends = new EventSet();
+                    }
+
+                    foreach (PEvent @event in recvSendTuple.Item2)
+                    {
+                        machine.Sends.AddEvent(@event);
+                    }
                 }
                 else
                 {
@@ -297,9 +331,15 @@ namespace Plang.Compiler.TypeChecker
                 }
             }
 
-            if (machine.Receives == null) machine.Receives = CurrentScope.UniversalEventSet;
+            if (machine.Receives == null)
+            {
+                machine.Receives = CurrentScope.UniversalEventSet;
+            }
 
-            if (machine.Sends == null) machine.Sends = CurrentScope.UniversalEventSet;
+            if (machine.Sends == null)
+            {
+                machine.Sends = CurrentScope.UniversalEventSet;
+            }
 
             // machineBody
             using (currentScope.NewContext(machine.Scope))
@@ -318,24 +358,24 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitMachineReceive(PParser.MachineReceiveContext context)
         {
-            var events = context.eventSetLiteral() == null
+            PEvent[] events = context.eventSetLiteral() == null
                 ? new PEvent[0]
-                : (PEvent[]) Visit(context.eventSetLiteral());
+                : (PEvent[])Visit(context.eventSetLiteral());
             return Tuple.Create("RECV", events);
         }
 
         public override object VisitMachineSend(PParser.MachineSendContext context)
         {
-            var events = context.eventSetLiteral() == null
+            PEvent[] events = context.eventSetLiteral() == null
                 ? new PEvent[0]
-                : (PEvent[]) Visit(context.eventSetLiteral());
+                : (PEvent[])Visit(context.eventSetLiteral());
             return Tuple.Create("SEND", events);
         }
 
         public override object VisitSpecMachineDecl(PParser.SpecMachineDeclContext context)
         {
-            // SPEC name=Iden 
-            var specMachine = (Machine) nodesToDeclarations.Get(context);
+            // SPEC name=Iden
+            Machine specMachine = (Machine)nodesToDeclarations.Get(context);
 
             // spec machines neither send nor receive events.
             specMachine.Receives = new EventSet();
@@ -343,7 +383,10 @@ namespace Plang.Compiler.TypeChecker
 
             // OBSERVES eventSetLiteral
             specMachine.Observes = new EventSet();
-            foreach (var pEvent in (PEvent[]) Visit(context.eventSetLiteral())) specMachine.Observes.AddEvent(pEvent);
+            foreach (PEvent pEvent in (PEvent[])Visit(context.eventSetLiteral()))
+            {
+                specMachine.Observes.AddEvent(pEvent);
+            }
 
             // machineBody
             using (currentScope.NewContext(specMachine.Scope))
@@ -357,33 +400,40 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitMachineBody(PParser.MachineBodyContext context)
         {
-            foreach (var machineEntryContext in context.machineEntry())
+            foreach (PParser.MachineEntryContext machineEntryContext in context.machineEntry())
+            {
                 switch (Visit(machineEntryContext))
                 {
                     case Variable[] fields:
                         CurrentMachine.AddFields(fields);
                         break;
+
                     case Function method:
                         CurrentMachine.AddMethod(method);
                         break;
+
                     case State state:
                         CurrentMachine.AddState(state);
                         break;
+
                     case StateGroup group:
                         CurrentMachine.AddGroup(group);
                         break;
+
                     default:
                         throw Handler.InternalError(machineEntryContext,
                             new ArgumentOutOfRangeException(nameof(context)));
                 }
+            }
+
             return null;
         }
 
         public override object VisitMachineEntry(PParser.MachineEntryContext context)
         {
-            var subExpr = context.varDecl() ??
+            IParseTree subExpr = context.varDecl() ??
                           context.funDecl() ??
-                          (IParseTree) context.group() ??
+                          (IParseTree)context.group() ??
                           context.stateDecl() ??
                           throw Handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context)));
             return Visit(subExpr);
@@ -392,14 +442,14 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitVarDecl(PParser.VarDeclContext context)
         {
             // COLON type
-            var variableType = ResolveType(context.type());
+            PLanguageType variableType = ResolveType(context.type());
 
             // VAR idenList
-            var variables = new Variable[context.idenList()._names.Count];
-            var varNameCtxs = context.idenList()._names;
-            for (var i = 0; i < varNameCtxs.Count; i++)
+            Variable[] variables = new Variable[context.idenList()._names.Count];
+            IList<PParser.IdenContext> varNameCtxs = context.idenList()._names;
+            for (int i = 0; i < varNameCtxs.Count; i++)
             {
-                var variable = (Variable) nodesToDeclarations.Get(varNameCtxs[i]);
+                Variable variable = (Variable)nodesToDeclarations.Get(varNameCtxs[i]);
                 variable.Type = variableType;
                 variables[i] = variable;
             }
@@ -410,23 +460,27 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitGroup(PParser.GroupContext context)
         {
-            var group = (StateGroup) nodesToDeclarations.Get(context);
+            StateGroup group = (StateGroup)nodesToDeclarations.Get(context);
             group.OwningMachine = CurrentMachine;
             using (currentScope.NewContext(group.Scope))
             {
-                foreach (var groupItemContext in context.groupItem())
+                foreach (PParser.GroupItemContext groupItemContext in context.groupItem())
+                {
                     switch (Visit(groupItemContext))
                     {
                         case StateGroup subGroup:
                             group.AddGroup(subGroup);
                             break;
+
                         case State state:
                             group.AddState(state);
                             break;
+
                         default:
                             throw Handler.InternalError(groupItemContext,
                                 new ArgumentOutOfRangeException(nameof(context)));
                     }
+                }
             }
 
             return group;
@@ -434,7 +488,7 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitGroupItem(PParser.GroupItemContext context)
         {
-            var item = (IParseTree) context.stateDecl() ??
+            IParseTree item = (IParseTree)context.stateDecl() ??
                        context.group() ??
                        throw Handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context)));
             return Visit(item);
@@ -443,10 +497,10 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitStateDecl(PParser.StateDeclContext context)
         {
             // STATE name=iden
-            var state = (State) nodesToDeclarations.Get(context);
+            State state = (State)nodesToDeclarations.Get(context);
             state.OwningMachine = CurrentMachine;
 
-            // START? 
+            // START?
             state.IsStart = context.START() != null;
 
             // temperature=(HOT | COLD)?
@@ -457,45 +511,63 @@ namespace Plang.Compiler.TypeChecker
                     : StateTemperature.Cold;
 
             // LBRACE stateBodyItem* RBRACE ;
-            foreach (var stateBodyItemContext in context.stateBodyItem())
+            foreach (PParser.StateBodyItemContext stateBodyItemContext in context.stateBodyItem())
+            {
                 switch (Visit(stateBodyItemContext))
                 {
                     case IStateAction[] actions:
-                        foreach (var action in actions)
+                        foreach (IStateAction action in actions)
                         {
                             if (state.HasHandler(action.Trigger))
+                            {
                                 throw Handler.DuplicateEventAction(action.SourceLocation, state[action.Trigger], state);
+                            }
 
                             if (action.Trigger.Name.Equals("null") && CurrentMachine.IsSpec)
+                            {
                                 throw Handler.NullTransitionInMonitor(action.SourceLocation, CurrentMachine);
+                            }
+
                             state[action.Trigger] = action;
                         }
 
                         break;
+
                     case Tuple<string, Function> entryOrExit:
                         if (entryOrExit.Item1.Equals("ENTRY"))
                         {
                             if (state.Entry != null)
+                            {
                                 throw Handler.DuplicateStateEntry(stateBodyItemContext, state.Entry, state);
+                            }
+
                             state.Entry = entryOrExit.Item2;
                         }
                         else
                         {
                             if (state.Exit != null)
+                            {
                                 throw Handler.DuplicateStateExitHandler(stateBodyItemContext, state.Exit, state);
+                            }
+
                             state.Exit = entryOrExit.Item2;
                         }
 
                         break;
+
                     default:
                         throw Handler.InternalError(stateBodyItemContext,
                             new ArgumentOutOfRangeException(nameof(context)));
                 }
+            }
 
             if (state.IsStart)
             {
                 if (CurrentMachine.StartState != null)
+                {
                     throw Handler.DuplicateStartState(context, state, CurrentMachine.StartState, CurrentMachine);
+                }
+
                 CurrentMachine.StartState = state;
                 CurrentMachine.PayloadType =
                     state.Entry?.Signature.Parameters.ElementAtOrDefault(0)?.Type ?? PrimitiveType.Null;
@@ -513,9 +585,11 @@ namespace Plang.Compiler.TypeChecker
             }
             else
             {
-                var funName = context.funName.GetText();
+                string funName = context.funName.GetText();
                 if (!CurrentScope.Lookup(funName, out fun))
+                {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
+                }
             }
 
             fun.Role |= FunctionRole.EntryHandler;
@@ -532,9 +606,11 @@ namespace Plang.Compiler.TypeChecker
             }
             else
             {
-                var funName = context.funName.GetText();
+                string funName = context.funName.GetText();
                 if (!CurrentScope.Lookup(funName, out fun))
+                {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
+                }
             }
 
             fun.Role |= FunctionRole.ExitHandler;
@@ -543,16 +619,22 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitStateDefer(PParser.StateDeferContext context)
         {
-            if (CurrentMachine.IsSpec) throw Handler.DeferredEventInMonitor(context, CurrentMachine);
+            if (CurrentMachine.IsSpec)
+            {
+                throw Handler.DeferredEventInMonitor(context, CurrentMachine);
+            }
 
             // DEFER nonDefaultEventList
-            var eventContexts = context.nonDefaultEventList()._events;
-            var actions = new IStateAction[eventContexts.Count];
-            for (var i = 0; i < eventContexts.Count; i++)
+            IList<PParser.NonDefaultEventContext> eventContexts = context.nonDefaultEventList()._events;
+            IStateAction[] actions = new IStateAction[eventContexts.Count];
+            for (int i = 0; i < eventContexts.Count; i++)
             {
-                var token = eventContexts[i];
+                PParser.NonDefaultEventContext token = eventContexts[i];
                 if (!CurrentScope.Lookup(token.GetText(), out PEvent evt))
+                {
                     throw Handler.MissingDeclaration(token, "event", token.GetText());
+                }
+
                 actions[i] = new EventDefer(token, evt);
             }
 
@@ -562,11 +644,14 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitStateIgnore(PParser.StateIgnoreContext context)
         {
             // IGNORE nonDefaultEventList
-            var actions = new List<IStateAction>();
-            foreach (var token in context.nonDefaultEventList()._events)
+            List<IStateAction> actions = new List<IStateAction>();
+            foreach (PParser.NonDefaultEventContext token in context.nonDefaultEventList()._events)
             {
                 if (!CurrentScope.Lookup(token.GetText(), out PEvent evt))
+                {
                     throw Handler.MissingDeclaration(token, "event", token.GetText());
+                }
+
                 actions.Add(new EventIgnore(token, evt));
             }
 
@@ -584,20 +669,24 @@ namespace Plang.Compiler.TypeChecker
             else
             {
                 // DO funName=Iden
-                var funName = context.funName.GetText();
+                string funName = context.funName.GetText();
                 if (!CurrentScope.Lookup(funName, out fun))
+                {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
+                }
             }
 
             // TODO: is this correct?
             fun.Role |= FunctionRole.EventHandler;
 
             // ON eventList
-            var actions = new List<IStateAction>();
-            foreach (var eventIdContext in context.eventList().eventId())
+            List<IStateAction> actions = new List<IStateAction>();
+            foreach (PParser.EventIdContext eventIdContext in context.eventList().eventId())
             {
                 if (!CurrentScope.Lookup(eventIdContext.GetText(), out PEvent evt))
+                {
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
+                }
 
                 actions.Add(new EventDoAction(eventIdContext, evt, fun));
             }
@@ -607,15 +696,17 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitOnEventPushState(PParser.OnEventPushStateContext context)
         {
-            // PUSH stateName 
-            var targetState = FindState(context.stateName());
+            // PUSH stateName
+            State targetState = FindState(context.stateName());
 
             // ON eventList
-            var actions = new List<IStateAction>();
-            foreach (var token in context.eventList().eventId())
+            List<IStateAction> actions = new List<IStateAction>();
+            foreach (PParser.EventIdContext token in context.eventList().eventId())
             {
                 if (!CurrentScope.Lookup(token.GetText(), out PEvent evt))
+                {
                     throw Handler.MissingDeclaration(token, "event", token.GetText());
+                }
 
                 actions.Add(new EventPushState(token, evt, targetState));
             }
@@ -629,9 +720,12 @@ namespace Plang.Compiler.TypeChecker
             if (context.funName != null)
             {
                 // WITH funName=Iden
-                var funName = context.funName.GetText();
+                string funName = context.funName.GetText();
                 if (!CurrentScope.Lookup(funName, out transitionFunction))
+                {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
+                }
+
                 transitionFunction.Role |= FunctionRole.TransitionFunction;
             }
             else if (context.anonEventHandler() != null)
@@ -646,15 +740,17 @@ namespace Plang.Compiler.TypeChecker
                 transitionFunction = null;
             }
 
-            // GOTO stateName 
-            var target = FindState(context.stateName());
+            // GOTO stateName
+            State target = FindState(context.stateName());
 
             // ON eventList
-            var actions = new List<IStateAction>();
-            foreach (var eventIdContext in context.eventList().eventId())
+            List<IStateAction> actions = new List<IStateAction>();
+            foreach (PParser.EventIdContext eventIdContext in context.eventList().eventId())
             {
                 if (!CurrentScope.Lookup(eventIdContext.GetText(), out PEvent evt))
+                {
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
+                }
 
                 actions.Add(new EventGotoState(eventIdContext, evt, target, transitionFunction));
             }
@@ -662,18 +758,18 @@ namespace Plang.Compiler.TypeChecker
             return actions.ToArray();
         }
 
-        #endregion
+        #endregion Machines
 
         #region Functions
 
         public override object VisitPFunDecl(PParser.PFunDeclContext context)
         {
             // FUN name=Iden
-            var fun = (Function) nodesToDeclarations.Get(context);
+            Function fun = (Function)nodesToDeclarations.Get(context);
 
             // LPAREN funParamList? RPAREN
-            var paramList = context.funParamList() != null
-                ? (Variable[]) Visit(context.funParamList())
+            Variable[] paramList = context.funParamList() != null
+                ? (Variable[])Visit(context.funParamList())
                 : new Variable[0];
             fun.Signature.Parameters.AddRange(paramList);
 
@@ -688,11 +784,11 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitForeignFunDecl(PParser.ForeignFunDeclContext context)
         {
             // FUN name=Iden
-            var fun = (Function) nodesToDeclarations.Get(context);
+            Function fun = (Function)nodesToDeclarations.Get(context);
 
             // LPAREN funParamList? RPAREN
-            var paramList = context.funParamList() != null
-                ? (Variable[]) Visit(context.funParamList())
+            Variable[] paramList = context.funParamList() != null
+                ? (Variable[])Visit(context.funParamList())
                 : new Variable[0];
             fun.Signature.Parameters.AddRange(paramList);
 
@@ -703,13 +799,17 @@ namespace Plang.Compiler.TypeChecker
             // no function body
             fun.Role |= FunctionRole.Foreign;
 
-            // Creates 
-            foreach(var createdInterface in context._interfaces)
+            // Creates
+            foreach (PParser.IdenContext createdInterface in context._interfaces)
             {
                 if (CurrentScope.Lookup(createdInterface.GetText(), out Interface @interface))
+                {
                     fun.AddCreatesInterface(@interface);
+                }
                 else
+                {
                     throw Handler.MissingDeclaration(createdInterface, "interface", createdInterface.GetText());
+                }
             }
             return fun;
         }
@@ -723,11 +823,11 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitFunParam(PParser.FunParamContext context)
         {
             // funParam : name=iden COLON type ;
-            var param = (Variable) nodesToDeclarations.Get(context);
+            Variable param = (Variable)nodesToDeclarations.Get(context);
             param.Type = ResolveType(context.type());
             return param;
         }
 
-        #endregion
+        #endregion Functions
     }
 }

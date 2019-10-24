@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using static Plang.Compiler.CommandLineParseResult;
 
 namespace Plang.Compiler
@@ -17,9 +19,9 @@ namespace Plang.Compiler
     {
         private static readonly Lazy<bool> isFileSystemCaseInsensitive = new Lazy<bool>(() =>
         {
-            var file = Path.GetTempPath() + Guid.NewGuid().ToString().ToLower() + "-lower";
+            string file = Path.GetTempPath() + Guid.NewGuid().ToString().ToLower() + "-lower";
             File.CreateText(file).Close();
-            var isCaseInsensitive = File.Exists(file.ToUpper());
+            bool isCaseInsensitive = File.Exists(file.ToUpper());
             File.Delete(file);
             return isCaseInsensitive;
         });
@@ -33,21 +35,29 @@ namespace Plang.Compiler
         {
             job = null;
 
-            var outputLanguage = CompilerOutput.C;
+            CompilerOutput outputLanguage = CompilerOutput.C;
             DirectoryInfo outputDirectory = null;
 
-            var commandLineFileNames = new List<string>();
-            var inputFiles = new List<FileInfo>();
+            List<string> commandLineFileNames = new List<string>();
+            List<FileInfo> inputFiles = new List<FileInfo>();
             string targetName = null;
-            var generateSourceMaps = false;
+            bool generateSourceMaps = false;
 
-            foreach (var x in args)
+            // enforce the argument prority
+            // proj takes priority over everything else and no other arguments should be passed
+            if (args.Where(a => a.ToLowerInvariant().Contains("-proj:")).Any() && args.Count() > 1)
             {
-                var arg = x;
+                CommandlineOutput.WriteMessage("-proj cannot be combined with other commandline options", SeverityKind.Error);
+                return Failure;
+            }
+
+            foreach (string x in args)
+            {
+                string arg = x;
                 string colonArg = null;
                 if (arg[0] == '-')
                 {
-                    var colonIndex = arg.IndexOf(':');
+                    int colonIndex = arg.IndexOf(':');
                     if (colonIndex >= 0)
                     {
                         arg = x.Substring(0, colonIndex);
@@ -59,11 +69,17 @@ namespace Plang.Compiler
                         case "t":
                         case "target":
                             if (colonArg == null)
+                            {
                                 CommandlineOutput.WriteMessage("Missing target name", SeverityKind.Error);
+                            }
                             else if (targetName == null)
+                            {
                                 targetName = colonArg;
+                            }
                             else
+                            {
                                 CommandlineOutput.WriteMessage("Only one target must be specified", SeverityKind.Error);
+                            }
 
                             break;
 
@@ -75,12 +91,15 @@ namespace Plang.Compiler
                                     CommandlineOutput.WriteMessage(
                                         "Missing generation argument, expecting generate:[C,P#]", SeverityKind.Error);
                                     return Failure;
+
                                 case "c":
                                     outputLanguage = CompilerOutput.C;
                                     break;
+
                                 case "p#":
                                     outputLanguage = CompilerOutput.PSharp;
                                     break;
+
                                 default:
                                     CommandlineOutput.WriteMessage(
                                         $"Unrecognized generate option '{colonArg}', expecting C or P#",
@@ -102,6 +121,25 @@ namespace Plang.Compiler
                             outputDirectory = Directory.CreateDirectory(colonArg);
                             break;
 
+                        case "proj":
+                            if (colonArg == null)
+                            {
+                                CommandlineOutput.WriteMessage("Must supply project file for compilation",
+                                    SeverityKind.Error);
+                                return Failure;
+                            }
+                            else
+                            {
+                                // Parse the project file and generate the compilation job, ignore all other arguments passed
+                                if (ParseProjectFile(colonArg, out job))
+                                {
+                                    return Success;
+                                }
+                                else
+                                {
+                                    return Failure;
+                                }
+                            }
                         case "s":
                         case "sourcemaps":
                             switch (colonArg?.ToLowerInvariant())
@@ -110,9 +148,11 @@ namespace Plang.Compiler
                                 case "true":
                                     generateSourceMaps = true;
                                     break;
+
                                 case "false":
                                     generateSourceMaps = false;
                                     break;
+
                                 default:
                                     CommandlineOutput.WriteMessage(
                                         "sourcemaps argument must be either 'true' or 'false'", SeverityKind.Error);
@@ -120,10 +160,12 @@ namespace Plang.Compiler
                             }
 
                             break;
+
                         case "h":
                         case "help":
                         case "-help":
                             return HelpRequested;
+
                         default:
                             commandLineFileNames.Add(arg);
                             CommandlineOutput.WriteMessage($"Unknown Command {arg.Substring(1)}", SeverityKind.Error);
@@ -136,13 +178,21 @@ namespace Plang.Compiler
                 }
             }
 
+            // We are here so no project file supplied lets create a compilation job with other arguments
+
             // Each command line file name must be a legal P file name
-            foreach (var inputFileName in commandLineFileNames)
-                if (IsLegalPFile(inputFileName, out var fullPathName))
+            foreach (string inputFileName in commandLineFileNames)
+            {
+                if (IsLegalPFile(inputFileName, out FileInfo fullPathName))
+                {
                     inputFiles.Add(fullPathName);
+                }
                 else
+                {
                     CommandlineOutput.WriteMessage(
-                        $"Illegal P file name {fullPathName} or file {fullPathName} not found", SeverityKind.Error);
+                        $"Illegal P file name {inputFileName} or file {fullPathName.FullName} not found", SeverityKind.Error);
+                }
+            }
 
             if (inputFiles.Count == 0)
             {
@@ -150,19 +200,114 @@ namespace Plang.Compiler
                 return Failure;
             }
 
-            var projectName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
+            string projectName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
             if (!IsLegalUnitName(projectName))
             {
                 CommandlineOutput.WriteMessage($"{projectName} is not a legal project name", SeverityKind.Error);
                 return Failure;
             }
 
+            if (outputDirectory == null)
+            {
+                outputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
+            }
 
-            if (outputDirectory == null) outputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
-
-            job = new CompilationJob(new DefaultCompilerOutput(outputDirectory), outputLanguage, inputFiles,
-                projectName, generateSourceMaps);
+            job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, generateSourceMaps: generateSourceMaps);
             return Success;
+        }
+
+        private static bool ParseProjectFile(string projectFile, out CompilationJob job)
+        {
+            job = null;
+            if (!IsLegalPProjFile(projectFile, out FileInfo fullPathName))
+            {
+                CommandlineOutput.WriteMessage(
+                    $"Illegal P project file name {projectFile} or file {fullPathName.FullName} not found", SeverityKind.Error);
+                return false;
+            }
+
+            CommandlineOutput.WriteMessage($".... Parsing the project file: {projectFile}", SeverityKind.Info);
+
+            CompilerOutput outputLanguage = CompilerOutput.C;
+            DirectoryInfo outputDirectory = null;
+            List<FileInfo> inputFiles = new List<FileInfo>();
+            string targetName = null;
+            bool generateSourceMaps = false;
+
+            XElement projectXML = XElement.Load(fullPathName.FullName);
+
+            // get all files to be compiled
+            foreach (XElement inputs in projectXML.Elements("InputFiles"))
+            {
+                foreach (XElement inputFileName in inputs.Elements("PFile"))
+                {
+                    if (IsLegalPFile(inputFileName.Value, out FileInfo pFilePathName))
+                    {
+                        inputFiles.Add(fullPathName);
+                    }
+                    else
+                    {
+                        CommandlineOutput.WriteMessage(
+                            $"Illegal P file name {inputFileName} or file {pFilePathName.FullName} not found", SeverityKind.Error);
+                    }
+                }
+            }
+
+            if (inputFiles.Count == 0)
+            {
+                CommandlineOutput.WriteMessage("At least one .p file must be provided as input files", SeverityKind.Error);
+                return false;
+            }
+
+            // get target file name
+            if (projectXML.Elements("TargetFileName").Any())
+            {
+                targetName = projectXML.Element("TargetFileName").Value;
+                if (!IsLegalUnitName(targetName))
+                {
+                    CommandlineOutput.WriteMessage($"{targetName} is not a legal target file name", SeverityKind.Error);
+                    return false;
+                }
+            }
+
+            string projectName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
+
+            // get output directory
+            outputDirectory = projectXML.Elements("OutputDir").Any() ? Directory.CreateDirectory(projectXML.Element("OutputDir").Value) : new DirectoryInfo(Directory.GetCurrentDirectory());
+
+            // get target language
+            if (projectXML.Elements("Target").Any())
+            {
+                switch (projectXML.Element("Target").Value.ToLowerInvariant())
+                {
+                    case "c":
+                        outputLanguage = CompilerOutput.C;
+                        // check for generate source maps attribute
+                        try
+                        {
+                            if (projectXML.Element("Target").Attributes("sourcemaps").Any())
+                            {
+                                generateSourceMaps = bool.Parse(projectXML.Element("Target").Attribute("sourcemaps").Value);
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            CommandlineOutput.WriteMessage($"Expected true or false, received {projectXML.Element("Target").Attribute("sourcemaps").Value}", SeverityKind.Error);
+                        }
+                        break;
+
+                    case "p#":
+                        outputLanguage = CompilerOutput.PSharp;
+                        break;
+
+                    default:
+                        outputLanguage = CompilerOutput.C;
+                        break;
+                }
+            }
+
+            job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, generateSourceMaps: generateSourceMaps);
+            return true;
         }
 
         private static bool IsLegalUnitName(string unitFileName)
@@ -174,10 +319,34 @@ namespace Plang.Compiler
         {
             file = null;
             if (fileName.Length <= 2 || !fileName.EndsWith(".p") || !File.Exists(Path.GetFullPath(fileName)))
+            {
                 return false;
+            }
 
-            var path = Path.GetFullPath(fileName);
-            if (IsFileSystemCaseInsensitive) path = path.ToLowerInvariant();
+            string path = Path.GetFullPath(fileName);
+            if (IsFileSystemCaseInsensitive)
+            {
+                path = path.ToLowerInvariant();
+            }
+
+            file = new FileInfo(path);
+
+            return true;
+        }
+
+        private static bool IsLegalPProjFile(string fileName, out FileInfo file)
+        {
+            file = null;
+            if (fileName.Length <= 2 || !fileName.EndsWith(".pproj") || !File.Exists(Path.GetFullPath(fileName)))
+            {
+                return false;
+            }
+
+            string path = Path.GetFullPath(fileName);
+            if (IsFileSystemCaseInsensitive)
+            {
+                path = path.ToLowerInvariant();
+            }
 
             file = new FileInfo(path);
 
@@ -186,24 +355,17 @@ namespace Plang.Compiler
 
         public static void PrintUsage()
         {
-            CommandlineOutput.WriteMessage("USAGE: Pc.exe file1.p [file2.p ...] [-t:tfile] [options]",
-                SeverityKind.Info);
-            CommandlineOutput.WriteMessage(
-                "    -t:tfile                   -- name of output file produced for this compilation unit; if not supplied then file1",
-                SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -outputDir:path            -- where to write the generated files",
-                SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -generate:[C,P#]           -- select a target language to generate",
-                SeverityKind.Info);
+            CommandlineOutput.WriteMessage("USAGE: Pc.exe file1.p [file2.p ...] [-t:tfile] [options]", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    -t:[tfileName]             -- name of output file produced for this compilation unit; if not supplied then file1", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    -outputDir:[path]          -- where to write the generated files", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    -generate:[C,P#]           -- select a target language to generate", SeverityKind.Info);
             CommandlineOutput.WriteMessage("        C   : generate C code using the Prt runtime", SeverityKind.Info);
             CommandlineOutput.WriteMessage("        P#  : generate C# code using the P# runtime", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -sourcemaps[:(true|false)] -- enable or disable generating source maps",
-                SeverityKind.Info);
-            CommandlineOutput.WriteMessage("                                  in the compiled output. may confuse some",
-                SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    -proj:[.pprojfile]         -- the p project to be compiled", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    -sourcemaps[:(true|false)] -- enable or disable generating source maps", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("                                  in the compiled C output. may confuse some", SeverityKind.Info);
             CommandlineOutput.WriteMessage("                                  debuggers.", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -h, -help, --help          -- display this help message",
-                SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    -h, -help, --help          -- display this help message", SeverityKind.Info);
         }
     }
 }

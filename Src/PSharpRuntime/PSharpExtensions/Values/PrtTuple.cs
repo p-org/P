@@ -14,13 +14,14 @@ namespace Plang.PrtSharp.Values
             fieldValues = new List<IPrtValue>();
         }
 
-
         public PrtTuple(params IPrtValue[] elems)
         {
             fieldValues = new List<IPrtValue>(elems.Count());
-            foreach (var elem in elems) fieldValues.Add(elem?.Clone());
+            foreach (IPrtValue elem in elems)
+            {
+                fieldValues.Add(elem?.Clone());
+            }
         }
-
 
         public IPrtValue this[int key]
         {
@@ -28,23 +29,43 @@ namespace Plang.PrtSharp.Values
             set => fieldValues[key] = value;
         }
 
-
         public IPrtValue Clone()
         {
-            var clone = new PrtTuple();
-            foreach (var val in fieldValues) clone.fieldValues.Add(val?.Clone());
+            PrtTuple clone = new PrtTuple();
+            foreach (IPrtValue val in fieldValues)
+            {
+                clone.fieldValues.Add(val?.Clone());
+            }
+
             return clone;
         }
 
         public bool Equals(IPrtValue val)
         {
-            if (val is PrtNamedTuple) return false;
-            var tupValue = val as PrtTuple;
-            if (tupValue == null) return false;
-            if (tupValue.fieldValues.Count != fieldValues.Count) return false;
-            for (var i = 0; i < fieldValues.Count; i++)
-                if (!PrtValues.SafeEquals(fieldValues[i],tupValue.fieldValues[i]))
+            if (val is PrtNamedTuple)
+            {
+                return false;
+            }
+
+            PrtTuple tupValue = val as PrtTuple;
+            if (tupValue == null)
+            {
+                return false;
+            }
+
+            if (tupValue.fieldValues.Count != fieldValues.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < fieldValues.Count; i++)
+            {
+                if (!PrtValues.SafeEquals(fieldValues[i], tupValue.fieldValues[i]))
+                {
                     return false;
+                }
+            }
+
             return true;
         }
 
@@ -55,14 +76,18 @@ namespace Plang.PrtSharp.Values
 
         public override int GetHashCode()
         {
-            var hashCode = HashHelper.ComputeHash<IPrtValue>(fieldValues);
+            int hashCode = HashHelper.ComputeHash<IPrtValue>(fieldValues);
             return hashCode;
         }
 
         public override string ToString()
         {
-            var retStr = "<";
-            foreach (var field in fieldValues) retStr = retStr + field + ",";
+            string retStr = "<";
+            foreach (IPrtValue field in fieldValues)
+            {
+                retStr = retStr + field + ",";
+            }
+
             retStr += ">";
             return retStr;
         }
@@ -80,7 +105,6 @@ namespace Plang.PrtSharp.Values
             fieldValues = new List<IPrtValue>();
         }
 
-
         public PrtNamedTuple(string[] fieldNames, params IPrtValue[] fieldValues)
         {
             this.fieldNames = fieldNames.ToList();
@@ -95,20 +119,43 @@ namespace Plang.PrtSharp.Values
 
         public IPrtValue Clone()
         {
-            var clone = new PrtNamedTuple();
-            foreach (var name in fieldNames) clone.fieldNames.Add(name);
-            foreach (var val in fieldValues) clone.fieldValues.Add(val?.Clone());
+            PrtNamedTuple clone = new PrtNamedTuple();
+            foreach (string name in fieldNames)
+            {
+                clone.fieldNames.Add(name);
+            }
+
+            foreach (IPrtValue val in fieldValues)
+            {
+                clone.fieldValues.Add(val?.Clone());
+            }
+
             return clone;
         }
 
         public bool Equals(IPrtValue val)
         {
-            if (!(val is PrtNamedTuple tup)) return false;
-            if (tup.fieldValues.Count != fieldValues.Count) return false;
-            for (var i = 0; i < tup.fieldValues.Count; i++)
+            if (!(val is PrtNamedTuple tup))
             {
-                if (fieldNames[i] != tup.fieldNames[i]) return false;
-                if (!PrtValues.SafeEquals(fieldValues[i], tup.fieldValues[i])) return false;
+                return false;
+            }
+
+            if (tup.fieldValues.Count != fieldValues.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < tup.fieldValues.Count; i++)
+            {
+                if (fieldNames[i] != tup.fieldNames[i])
+                {
+                    return false;
+                }
+
+                if (!PrtValues.SafeEquals(fieldValues[i], tup.fieldValues[i]))
+                {
+                    return false;
+                }
             }
 
             return true;
@@ -116,14 +163,18 @@ namespace Plang.PrtSharp.Values
 
         public override int GetHashCode()
         {
-            var hashCode = HashHelper.ComputeHash<IPrtValue>(fieldValues);
+            int hashCode = HashHelper.ComputeHash<IPrtValue>(fieldValues);
             return hashCode;
         }
 
         public override string ToString()
         {
-            var retStr = "<";
-            for (var i = 0; i < fieldValues.Count; i++) retStr += fieldNames[i] + ":" + fieldValues[i] + ", ";
+            string retStr = "<";
+            for (int i = 0; i < fieldValues.Count; i++)
+            {
+                retStr += fieldNames[i] + ":" + fieldValues[i] + ", ";
+            }
+
             retStr += ">";
             return retStr;
         }

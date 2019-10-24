@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.Types;
+using System.Diagnostics;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
@@ -25,7 +25,6 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public bool IsHaltEvent => string.Equals(Name, "halt");
         public bool IsNullEvent => string.Equals(Name, "null");
         public bool IsBuiltIn => IsHaltEvent || IsNullEvent;
-
 
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }

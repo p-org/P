@@ -1,8 +1,8 @@
-using System.IO;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
+using System.IO;
 
 namespace Plang.Compiler
 {
@@ -13,12 +13,14 @@ namespace Plang.Compiler
         public SourceLocation GetLocation(ParserRuleContext decl)
         {
             if (decl == null || decl.Equals(ParserRuleContext.EmptyContext))
+            {
                 return new SourceLocation
                 {
                     Line = -1,
                     Column = -1,
                     File = null
                 };
+            }
 
             return new SourceLocation
             {
@@ -31,12 +33,14 @@ namespace Plang.Compiler
         public SourceLocation GetLocation(IParseTree ctx, IToken tok)
         {
             if (ctx == null || tok == null)
+            {
                 return new SourceLocation
                 {
                     Line = -1,
                     Column = -1,
                     File = null
                 };
+            }
 
             return new SourceLocation
             {
@@ -58,7 +62,10 @@ namespace Plang.Compiler
 
         private static IParseTree GetRoot(IParseTree node)
         {
-            while (node?.Parent != null) node = node.Parent;
+            while (node?.Parent != null)
+            {
+                node = node.Parent;
+            }
 
             return node;
         }

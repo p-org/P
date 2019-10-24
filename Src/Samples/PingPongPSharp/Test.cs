@@ -1,6 +1,6 @@
-using System;
 using Microsoft.PSharp;
 using Microsoft.PSharp.TestingServices;
+using System;
 using System.Linq;
 
 namespace pingpong
@@ -10,13 +10,15 @@ namespace pingpong
         public static void Main(string[] args)
         {
             // Optional: increases verbosity level to see the P# runtime log.
-            var configuration = Configuration.Create();
+            Configuration configuration = Configuration.Create();
             configuration.SchedulingIterations = 10;
-            var engine = TestingEngineFactory.CreateBugFindingEngine(configuration, DefaultImpl.Execute);
+            ITestingEngine engine = TestingEngineFactory.CreateBugFindingEngine(configuration, DefaultImpl.Execute);
             engine.Run();
-            var bug = engine.TestReport.BugReports.FirstOrDefault();
+            string bug = engine.TestReport.BugReports.FirstOrDefault();
             if (bug != null)
+            {
                 Console.WriteLine(bug);
+            }
 
             /*
             // Creates a new P# runtime instance, and passes an optional configuration.

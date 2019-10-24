@@ -1,8 +1,8 @@
+using Antlr4.Runtime;
+using Plang.Compiler.TypeChecker.Types;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
@@ -26,10 +26,15 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
     public interface IInterfaceSet
     {
         IEnumerable<Interface> Interfaces { get; }
+
         bool AddInterface(Interface @interface);
+
         void AddInterfaces(IEnumerable<Interface> interfaces);
+
         bool Contains(Interface @interface);
+
         bool Intersects(IInterfaceSet interfaceSet);
+
         bool Intersects(IEnumerable<Interface> interfaceSet);
     }
 
@@ -49,7 +54,10 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public void AddInterfaces(IEnumerable<Interface> its)
         {
-            foreach (var @interface in its) interfaces.Add(@interface);
+            foreach (Interface @interface in its)
+            {
+                interfaces.Add(@interface);
+            }
         }
 
         public bool Contains(Interface @interface)

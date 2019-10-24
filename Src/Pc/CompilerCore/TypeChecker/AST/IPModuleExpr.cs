@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using Plang.Compiler.TypeChecker.AST.Declarations;
+﻿using Plang.Compiler.TypeChecker.AST.Declarations;
+using System.Collections.Generic;
 
 namespace Plang.Compiler.TypeChecker.AST
 {
@@ -22,6 +22,7 @@ namespace Plang.Compiler.TypeChecker.AST
 
         //Attributes of module expression
         public readonly IEventSet PrivateEvents = new EventSet();
+
         public readonly IInterfaceSet PrivateInterfaces = new InterfaceSet();
         public readonly IEventSet Receives = new EventSet();
         public readonly IEventSet Sends = new EventSet();

@@ -57,7 +57,7 @@ PRT_UINT64 P_CLONE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
 
 VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue)
 {
-	//printf("Entering Timer Callback\n");	
+	//printf("Entering Timer Callback\n");
 	TimerContext* timerContext = (TimerContext *)arg;
 	PRT_MACHINEINST* context = timerContext->clientContext;
 	PRT_VALUE* ev = &P_EVENT_TIMEOUT.value;

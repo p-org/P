@@ -1,8 +1,8 @@
-﻿using System.Collections;
+﻿using Plang.PrtSharp.Exceptions;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Plang.PrtSharp.Exceptions;
 
 namespace Plang.PrtSharp.Values
 {
@@ -30,7 +30,10 @@ namespace Plang.PrtSharp.Values
             get => isDirty;
             set
             {
-                if (value && isFrozen) throw new PFrozenMutationException();
+                if (value && isFrozen)
+                {
+                    throw new PFrozenMutationException();
+                }
 
                 isDirty = value;
             }
@@ -66,12 +69,15 @@ namespace Plang.PrtSharp.Values
 
         public void CopyTo(KeyValuePair<IPrtValue, IPrtValue>[] array, int arrayIndex)
         {
-            foreach (var kv in map) array[arrayIndex++] = kv;
+            foreach (KeyValuePair<IPrtValue, IPrtValue> kv in map)
+            {
+                array[arrayIndex++] = kv;
+            }
         }
 
         public bool Remove(KeyValuePair<IPrtValue, IPrtValue> item)
         {
-            var removed = map.Remove(item.Key);
+            bool removed = map.Remove(item.Key);
             IsDirty = true;
             return removed;
         }
@@ -93,7 +99,7 @@ namespace Plang.PrtSharp.Values
 
         public bool Remove(IPrtValue key)
         {
-            var removed = map.Remove(key);
+            bool removed = map.Remove(key);
             IsDirty = true;
             return removed;
         }
@@ -134,7 +140,11 @@ namespace Plang.PrtSharp.Values
 
         public void Freeze()
         {
-            foreach (var key in map.Keys) MutabilityHelper.EnsureFrozen(key);
+            foreach (IPrtValue key in map.Keys)
+            {
+                MutabilityHelper.EnsureFrozen(key);
+            }
+
             isFrozen = true;
         }
 
@@ -166,12 +176,11 @@ namespace Plang.PrtSharp.Values
 
         public override string ToString()
         {
-            var sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder();
             sb.Append("(");
-            var sep = "";
-            foreach (var value in map)
+            string sep = "";
+            foreach (KeyValuePair<IPrtValue, IPrtValue> value in map)
             {
-                
                 sb.Append(sep);
                 sb.Append("<");
                 sb.Append(value.Key);

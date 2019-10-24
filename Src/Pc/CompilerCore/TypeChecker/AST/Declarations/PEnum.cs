@@ -1,6 +1,6 @@
+using Antlr4.Runtime;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Antlr4.Runtime;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
@@ -23,9 +23,12 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool AddElement(EnumElem elem)
         {
-            if (values.Contains(elem.Value)) return false;
+            if (values.Contains(elem.Value))
+            {
+                return false;
+            }
 
-            var success = elem.ParentEnum?.RemoveElement(elem);
+            bool? success = elem.ParentEnum?.RemoveElement(elem);
             Debug.Assert(success != false);
             elem.ParentEnum = this;
             elements.Add(elem);
@@ -35,9 +38,12 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool RemoveElement(EnumElem elem)
         {
-            if (elem.ParentEnum != this) return false;
+            if (elem.ParentEnum != this)
+            {
+                return false;
+            }
 
-            var success = elements.Remove(elem);
+            bool success = elements.Remove(elem);
             Debug.Assert(success);
             values.Remove(elem.Value);
             elem.ParentEnum = null;

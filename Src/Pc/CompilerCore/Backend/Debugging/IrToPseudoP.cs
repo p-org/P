@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using Plang.Compiler.Backend.ASTExt;
+﻿using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -10,6 +6,10 @@ using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 
 namespace Plang.Compiler.Backend.Debugging
 {
@@ -21,7 +21,7 @@ namespace Plang.Compiler.Backend.Debugging
 
         public static string Dump(Scope scope)
         {
-            var dumper = new IrToPseudoP();
+            IrToPseudoP dumper = new IrToPseudoP();
             return dumper.Render(scope);
         }
 
@@ -37,8 +37,12 @@ namespace Plang.Compiler.Backend.Debugging
 
         protected override void WriteDeclRef(IPDecl decl)
         {
-            var name = decl.Name;
-            if (decl is State state) name = state.QualifiedName;
+            string name = decl.Name;
+            if (decl is State state)
+            {
+                name = state.QualifiedName;
+            }
+
             WriteParts(name);
         }
 
@@ -59,7 +63,10 @@ namespace Plang.Compiler.Backend.Debugging
             switch (tree)
             {
                 case Function function:
-                    if (string.IsNullOrEmpty(function.Name)) return;
+                    if (string.IsNullOrEmpty(function.Name))
+                    {
+                        return;
+                    }
 
                     WriteStmt("fun ",
                         function,
@@ -69,12 +76,16 @@ namespace Plang.Compiler.Backend.Debugging
                         function.Signature.ReturnType);
                     WriteStmt("{");
                     Indent();
-                    foreach (var localVariable in function.LocalVariables) WriteTree(localVariable);
+                    foreach (Variable localVariable in function.LocalVariables)
+                    {
+                        WriteTree(localVariable);
+                    }
 
                     WriteTree(function.Body);
                     Dedent();
                     WriteStmt("}");
                     break;
+
                 case Interface @interface:
                     WriteStmt("interface ",
                         @interface,
@@ -84,30 +95,47 @@ namespace Plang.Compiler.Backend.Debugging
                         WriteEventSet(@interface.ReceivableEvents),
                         ";");
                     break;
+
                 case Machine machine:
                     WriteStmt(machine.IsSpec ? "spec " : "",
                         "machine ",
                         machine);
-                    var machineAssume = machine.Assume?.ToString() ?? "max";
-                    var machineAssert = machine.Assert?.ToString() ?? "max";
+                    string machineAssume = machine.Assume?.ToString() ?? "max";
+                    string machineAssert = machine.Assert?.ToString() ?? "max";
                     WriteStmt("  assert ", machineAssert, " assume ", machineAssume);
                     WriteStmt("  receives ", WriteEventSet(machine.Receives));
                     WriteStmt("  sends ", WriteEventSet(machine.Sends));
-                    if (machine.IsSpec) WriteStmt("  observes ", WriteEventSet(machine.Observes));
+                    if (machine.IsSpec)
+                    {
+                        WriteStmt("  observes ", WriteEventSet(machine.Observes));
+                    }
 
                     WriteStmt("{");
                     Indent();
-                    foreach (var machineField in machine.Fields) WriteTree(machineField);
+                    foreach (Variable machineField in machine.Fields)
+                    {
+                        WriteTree(machineField);
+                    }
 
-                    foreach (var machineMethod in machine.Methods) WriteTree(machineMethod);
+                    foreach (Function machineMethod in machine.Methods)
+                    {
+                        WriteTree(machineMethod);
+                    }
 
-                    foreach (var machineGroup in machine.Groups) WriteTree(machineGroup);
+                    foreach (StateGroup machineGroup in machine.Groups)
+                    {
+                        WriteTree(machineGroup);
+                    }
 
-                    foreach (var machineState in machine.States) WriteTree(machineState);
+                    foreach (State machineState in machine.States)
+                    {
+                        WriteTree(machineState);
+                    }
 
                     Dedent();
                     WriteStmt("}");
                     break;
+
                 case NamedEventSet namedEventSet:
                     WriteStmt("eventset ",
                         namedEventSet,
@@ -115,6 +143,7 @@ namespace Plang.Compiler.Backend.Debugging
                         string.Join(", ", namedEventSet.Events.Select(x => x.Name)),
                         " };");
                     break;
+
                 case PEnum pEnum:
                     WriteStmt("enum ",
                         pEnum,
@@ -122,6 +151,7 @@ namespace Plang.Compiler.Backend.Debugging
                         pEnum.Values.Select(x => $"{x.Name} = {x.Value}"),
                         " };");
                     break;
+
                 case PEvent pEvent:
                     WriteStmt("event ",
                         pEvent,
@@ -133,34 +163,47 @@ namespace Plang.Compiler.Backend.Debugging
                         pEvent.PayloadType,
                         ";");
                     break;
+
                 case TypeDef typeDef:
                     WriteStmt("type ", typeDef, " = ", typeDef.Type, ";");
                     break;
+
                 case Variable variable:
                     WriteStmt("var ", variable, " : ", variable.Type, ";");
                     break;
+
                 case AnnounceStmt announceStmt:
                     WriteStmt("announce ", announceStmt.PEvent, ", ", announceStmt.Payload, ";");
                     break;
+
                 case AssertStmt assertStmt:
                     WriteStmt("assert ", assertStmt.Assertion, ", \"", assertStmt.Message, "\";");
                     break;
+
                 case AssignStmt assignStmt:
                     WriteStmt(assignStmt.Location, " = ", assignStmt.Value, ";");
                     break;
+
                 case CompoundStmt compoundStmt:
-                    foreach (var stmt in compoundStmt.Statements) WriteTree(stmt);
+                    foreach (IPStmt stmt in compoundStmt.Statements)
+                    {
+                        WriteTree(stmt);
+                    }
 
                     break;
+
                 case CtorStmt ctorStmt:
                     WriteStmt("new ", ctorStmt.Interface, "(", ctorStmt.Arguments, ");");
                     break;
+
                 case FunCallStmt funCallStmt:
                     WriteStmt(funCallStmt.Function, "(", funCallStmt.ArgsList, ");");
                     break;
+
                 case GotoStmt gotoStmt:
                     WriteStmt("goto ", gotoStmt.State, ", ", gotoStmt.Payload, ";");
                     break;
+
                 case IfStmt ifStmt:
                     WriteStmt("if (", ifStmt.Condition, ")");
                     WriteStmt("{");
@@ -175,28 +218,35 @@ namespace Plang.Compiler.Backend.Debugging
                     Dedent();
                     WriteStmt("}");
                     break;
+
                 case InsertStmt insertStmt:
                     WriteStmt(insertStmt.Variable, " += (", insertStmt.Index, ", ", insertStmt.Value, ");");
                     break;
+
                 case MoveAssignStmt moveAssignStmt:
                     WriteStmt(moveAssignStmt.ToLocation, " <- ", moveAssignStmt.FromVariable, " move;");
                     break;
+
                 case NoStmt _:
                     WriteStmt("; // no action");
                     break;
+
                 case PopStmt _:
                     WriteStmt("pop;");
                     break;
+
                 case PrintStmt printStmt:
                     WriteStmt("print \"", printStmt.Message, "\", ", printStmt.Args, ";");
                     break;
+
                 case RaiseStmt raiseStmt:
                     WriteStmt("raise ", raiseStmt.PEvent, ", ", raiseStmt.Payload, ";");
                     break;
+
                 case ReceiveStmt receiveStmt:
                     WriteStmt("receive {");
                     Indent();
-                    foreach (var recvCase in receiveStmt.Cases)
+                    foreach (KeyValuePair<PEvent, Function> recvCase in receiveStmt.Cases)
                     {
                         WriteStmt("case ",
                             recvCase.Key,
@@ -212,27 +262,34 @@ namespace Plang.Compiler.Backend.Debugging
                     Dedent();
                     WriteStmt("}");
                     break;
+
                 case RemoveStmt removeStmt:
                     WriteStmt(removeStmt.Variable, " -= ", removeStmt.Value, ";");
                     break;
+
                 case ReturnStmt returnStmt:
                     WriteStmt("return ", returnStmt.ReturnValue, ";");
                     break;
+
                 case BreakStmt breakStmt:
                     WriteStmt("break;");
                     break;
+
                 case ContinueStmt continueStmt:
                     WriteStmt("continue;");
                     break;
+
                 case SendStmt sendStmt:
                     WriteStmt("send ", sendStmt.MachineExpr, ", ", sendStmt.Evt, ", ", sendStmt.Arguments, ";");
                     break;
+
                 case SwapAssignStmt swapAssignStmt:
                     WriteStmt(swapAssignStmt.NewLocation,
                         " = ",
                         swapAssignStmt.OldLocation,
                         " swap; //swap assign");
                     break;
+
                 case WhileStmt whileStmt:
                     WriteStmt("while (", whileStmt.Condition, ")");
                     WriteStmt("{");
@@ -241,26 +298,32 @@ namespace Plang.Compiler.Backend.Debugging
                     Dedent();
                     WriteStmt("}");
                     break;
+
                 case EventDefer eventDefer:
                     WriteStmt("defer ", eventDefer.Trigger, ";");
                     break;
+
                 case EventDoAction eventDoAction:
                     WriteParts(Padding, "on ", eventDoAction.Trigger, " do ");
                     PrintFunctionRef(eventDoAction.Target);
                     break;
+
                 case EventGotoState eventGotoState:
                     WriteStmt("on ", eventGotoState.Trigger, " goto ", eventGotoState.Target, " with ");
                     PrintFunctionRef(eventGotoState.TransitionFunction);
                     break;
+
                 case EventIgnore eventIgnore:
                     WriteStmt("ignore ", eventIgnore.Trigger, ";");
                     break;
+
                 case EventPushState eventPushState:
                     WriteStmt("on ", eventPushState.Trigger, " push ", eventPushState.Target, ";");
                     break;
+
                 case State state:
-                    var start = state.IsStart ? "start " : "";
-                    var temp = state.Temperature.Equals(StateTemperature.Cold) ? "cold " :
+                    string start = state.IsStart ? "start " : "";
+                    string temp = state.Temperature.Equals(StateTemperature.Cold) ? "cold " :
                         state.Temperature.Equals(StateTemperature.Hot) ? "hot " : "warm ";
                     WriteStmt(start, temp, "state ", state);
                     WriteStmt("{");
@@ -276,7 +339,10 @@ namespace Plang.Compiler.Backend.Debugging
                         Indent();
                         if (state.Entry is Function stateEntry)
                         {
-                            foreach (var localVariable in stateEntry.LocalVariables) WriteTree(localVariable);
+                            foreach (Variable localVariable in stateEntry.LocalVariables)
+                            {
+                                WriteTree(localVariable);
+                            }
 
                             WriteTree(stateEntry.Body);
                         }
@@ -300,7 +366,10 @@ namespace Plang.Compiler.Backend.Debugging
                         Indent();
                         if (state.Exit is Function stateExit)
                         {
-                            foreach (var localVariable in stateExit.LocalVariables) WriteTree(localVariable);
+                            foreach (Variable localVariable in stateExit.LocalVariables)
+                            {
+                                WriteTree(localVariable);
+                            }
 
                             WriteTree(stateExit.Body);
                         }
@@ -313,24 +382,36 @@ namespace Plang.Compiler.Backend.Debugging
                         WriteStmt("}");
                     }
 
-                    foreach (var handler in state.AllEventHandlers) WriteTree(handler.Value);
+                    foreach (KeyValuePair<PEvent, IStateAction> handler in state.AllEventHandlers)
+                    {
+                        WriteTree(handler.Value);
+                    }
 
                     Dedent();
                     WriteStmt("}");
                     break;
+
                 case StateGroup stateGroup:
                     WriteStmt("group ", stateGroup);
                     WriteStmt("{");
                     Indent();
-                    foreach (var subGroup in stateGroup.Groups) WriteTree(subGroup);
+                    foreach (StateGroup subGroup in stateGroup.Groups)
+                    {
+                        WriteTree(subGroup);
+                    }
 
-                    foreach (var state in stateGroup.States) WriteTree(state);
+                    foreach (State state in stateGroup.States)
+                    {
+                        WriteTree(state);
+                    }
 
                     Dedent();
                     WriteStmt("}");
                     break;
+
                 case EnumElem _:
                     break;
+
                 default:
                     WriteStmt($"// UNKNOWN declaration {tree.GetType().FullName}");
                     break;
@@ -366,28 +447,34 @@ namespace Plang.Compiler.Backend.Debugging
 
         private void JoinObjects(IEnumerable<object> items)
         {
-            var actualSep = "";
-            foreach (var item in items)
+            string actualSep = "";
+            foreach (object item in items)
             {
                 WriteParts(actualSep);
                 WriteParts(item);
                 actualSep = ", ";
             }
 
-            if (actualSep == "") WriteParts("<<null>>");
+            if (actualSep == "")
+            {
+                WriteParts("<<null>>");
+            }
         }
 
         protected override void WriteExprList(IEnumerable<IPExpr> items)
         {
-            var actualSep = "";
-            foreach (var item in items)
+            string actualSep = "";
+            foreach (IPExpr item in items)
             {
                 WriteParts(actualSep);
                 WriteExpr(item);
                 actualSep = ", ";
             }
 
-            if (actualSep == "") WriteParts("<<null>>");
+            if (actualSep == "")
+            {
+                WriteParts("<<null>>");
+            }
         }
 
         protected override void WriteExpr(IPExpr expr)
@@ -397,66 +484,85 @@ namespace Plang.Compiler.Backend.Debugging
                 case null:
                     WriteParts("<<null>>");
                     break;
+
                 case BinOpExpr binOpExpr:
                     WriteParts("(", binOpExpr.Lhs, ") ", WriteBinOp(binOpExpr.Operation), " (", binOpExpr.Rhs, ")");
                     break;
+
                 case BoolLiteralExpr boolLiteralExpr:
                     WriteParts(boolLiteralExpr.Value);
                     break;
+
                 case CastExpr castExpr:
                     WriteParts("(", castExpr.SubExpr, ") as ", castExpr.Type);
                     break;
+
                 case CoerceExpr coerceExpr:
                     WriteParts("(", coerceExpr.SubExpr, ") to ", coerceExpr.Type);
                     break;
+
                 case ContainsExpr containsKeyExpr:
                     WriteParts("(", containsKeyExpr.Item, ") in (", containsKeyExpr.Collection, ")");
                     break;
+
                 case CloneExpr cloneExpr:
                     WriteParts("$Clone(", cloneExpr.Term, ")");
                     break;
+
                 case CtorExpr ctorExpr:
                     WriteParts("new ", ctorExpr.Interface, "(", ctorExpr.Arguments, ")");
                     break;
+
                 case DefaultExpr defaultExpr:
                     WriteParts("default(", defaultExpr.Type, ")");
                     break;
+
                 case EnumElemRefExpr enumElemRefExpr:
                     WriteParts(enumElemRefExpr.Value);
                     break;
+
                 case EventRefExpr eventRefExpr:
                     WriteParts(eventRefExpr.Value);
                     break;
+
                 case FairNondetExpr _:
                     WriteParts("$$");
                     break;
+
                 case FloatLiteralExpr floatLiteralExpr:
                     WriteParts(floatLiteralExpr.Value.ToString(CultureInfo.InvariantCulture));
                     break;
+
                 case FunCallExpr funCallExpr:
                     WriteParts(funCallExpr.Function, "(", funCallExpr.Arguments, ")");
                     break;
+
                 case IntLiteralExpr intLiteralExpr:
                     WriteParts(intLiteralExpr.Value.ToString());
                     break;
+
                 case KeysExpr keysExpr:
                     WriteParts("keys(", keysExpr.Expr, ")");
                     break;
+
                 case LinearAccessRefExpr linearAccessRefExpr:
                     WriteParts(linearAccessRefExpr.Variable.Name,
                         linearAccessRefExpr.LinearType.Equals(LinearType.Move) ? " move" : " swap");
                     break;
+
                 case MapAccessExpr mapAccessExpr:
                     WriteParts("(", mapAccessExpr.MapExpr, ")[", mapAccessExpr.IndexExpr, "]");
                     break;
+
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     WriteParts("(", namedTupleAccessExpr.SubExpr, ").", namedTupleAccessExpr.FieldName);
                     break;
+
                 case NamedTupleExpr namedTupleExpr:
-                    var ntType = (NamedTupleType) namedTupleExpr.Type;
+                    NamedTupleType ntType = (NamedTupleType)namedTupleExpr.Type;
                     WriteParts("(");
-                    var ntSep = "";
-                    for (var i = 0; i < ntType.Fields.Count; i++)
+                    string ntSep = "";
+                    for (int i = 0; i < ntType.Fields.Count; i++)
                     {
                         WriteParts(ntSep, ntType.Fields[i].Name, " = ", namedTupleExpr.TupleFields[i]);
                         ntSep = ", ";
@@ -464,36 +570,47 @@ namespace Plang.Compiler.Backend.Debugging
 
                     WriteParts(")");
                     break;
+
                 case NondetExpr _:
                     WriteParts("$");
                     break;
+
                 case NullLiteralExpr _:
                     WriteParts("null");
                     break;
+
                 case SeqAccessExpr seqAccessExpr:
                     WriteParts("(", seqAccessExpr.SeqExpr, ")[", seqAccessExpr.IndexExpr, "]");
                     break;
+
                 case SizeofExpr sizeofExpr:
                     WriteParts("sizeof(", sizeofExpr.Expr, ")");
                     break;
+
                 case ThisRefExpr _:
                     WriteParts("this");
                     break;
+
                 case TupleAccessExpr tupleAccessExpr:
                     WriteParts("(", tupleAccessExpr.SubExpr, ").", tupleAccessExpr.FieldNo);
                     break;
+
                 case UnaryOpExpr unaryOpExpr:
                     WriteParts(WriteUnOp(unaryOpExpr.Operation), "(", unaryOpExpr.SubExpr, ")");
                     break;
+
                 case UnnamedTupleExpr unnamedTupleExpr:
                     WriteParts("(", unnamedTupleExpr.TupleFields, ")");
                     break;
+
                 case ValuesExpr valuesExpr:
                     WriteParts("values(", valuesExpr.Expr, ")");
                     break;
+
                 case VariableAccessExpr variableAccessExpr:
                     WriteParts(variableAccessExpr.Variable.Name);
                     break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
@@ -505,8 +622,10 @@ namespace Plang.Compiler.Backend.Debugging
             {
                 case UnaryOpType.Negate:
                     return "-";
+
                 case UnaryOpType.Not:
                     return "!";
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(operation), operation, null);
             }
@@ -518,28 +637,40 @@ namespace Plang.Compiler.Backend.Debugging
             {
                 case BinOpType.Add:
                     return "+";
+
                 case BinOpType.Sub:
                     return "-";
+
                 case BinOpType.Mul:
                     return "*";
+
                 case BinOpType.Div:
                     return "/";
+
                 case BinOpType.Eq:
                     return "==";
+
                 case BinOpType.Neq:
                     return "!=";
+
                 case BinOpType.Lt:
                     return "<";
+
                 case BinOpType.Le:
                     return "<=";
+
                 case BinOpType.Gt:
                     return ">";
+
                 case BinOpType.Ge:
                     return ">=";
+
                 case BinOpType.And:
                     return "&&";
+
                 case BinOpType.Or:
                     return "||";
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(operation), operation, null);
             }
@@ -551,10 +682,13 @@ namespace Plang.Compiler.Backend.Debugging
             {
                 case EventSet eventSet1:
                     return $"{{ {string.Join(", ", eventSet1.Events.Select(x => x.Name))} }}";
+
                 case NamedEventSet namedEventSet:
                     return namedEventSet.Name;
+
                 case null:
                     return "<all>";
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(eventSet));
             }

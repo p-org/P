@@ -1,7 +1,7 @@
+using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.TypeChecker.Types
 {
@@ -27,7 +27,7 @@ namespace Plang.Compiler.TypeChecker.Types
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
-            // Tuples must be of the same size, and other tuple's fields must subtype this one's 
+            // Tuples must be of the same size, and other tuple's fields must subtype this one's
             return otherType.Canonicalize() is TupleType other &&
                    Types.Count == other.Types.Count &&
                    Types.Zip(other.Types, (myT, otherT) => myT.IsAssignableFrom(otherT))

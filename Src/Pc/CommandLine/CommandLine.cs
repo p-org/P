@@ -6,14 +6,16 @@ namespace Plang.Compiler
     {
         public static int Main(string[] args)
         {
-            switch (CommandLineOptions.ParseArguments(args, out var job))
+            switch (CommandLineOptions.ParseArguments(args, out CompilationJob job))
             {
                 case Failure:
                     CommandLineOptions.PrintUsage();
                     return 1;
+
                 case HelpRequested:
                     CommandLineOptions.PrintUsage();
                     return 0;
+
                 default:
                     try
                     {

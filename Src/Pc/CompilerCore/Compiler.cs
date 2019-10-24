@@ -1,10 +1,10 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using Antlr4.Runtime;
+﻿using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Plang.Compiler.Backend;
 using Plang.Compiler.TypeChecker;
+using System;
+using System.IO;
+using System.Linq;
 
 namespace Plang.Compiler
 {
@@ -13,22 +13,25 @@ namespace Plang.Compiler
         public void Compile(ICompilationJob job)
         {
             // Run parser on every input file
-            var trees = job.InputFiles.Select(file =>
+            PParser.ProgramContext[] trees = job.InputFiles.Select(file =>
             {
-                var tree = Parse(job, file);
+                PParser.ProgramContext tree = Parse(job, file);
                 job.LocationResolver.RegisterRoot(tree, file);
                 return tree;
             }).ToArray();
 
             // Run typechecker and produce AST
-            var scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
+            Scope scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
 
             // Convert functions to lowered SSA form with explicit cloning
-            foreach (var fun in scope.GetAllMethods()) IRTransformer.SimplifyMethod(fun);
+            foreach (TypeChecker.AST.Declarations.Function fun in scope.GetAllMethods())
+            {
+                IRTransformer.SimplifyMethod(fun);
+            }
 
             // Run the selected backend on the project and write the files.
-            var compiledFiles = job.Backend.GenerateCode(job, scope);
-            foreach (var file in compiledFiles)
+            System.Collections.Generic.IEnumerable<CompiledFile> compiledFiles = job.Backend.GenerateCode(job, scope);
+            foreach (CompiledFile file in compiledFiles)
             {
                 job.Output.WriteMessage($"Writing {file.FileName}...", SeverityKind.Info);
                 job.Output.WriteFile(file);
@@ -37,11 +40,11 @@ namespace Plang.Compiler
 
         private static PParser.ProgramContext Parse(ICompilationJob job, FileInfo inputFile)
         {
-            var fileText = File.ReadAllText(inputFile.FullName);
-            var fileStream = new AntlrInputStream(fileText);
-            var lexer = new PLexer(fileStream);
-            var tokens = new CommonTokenStream(lexer);
-            var parser = new PParser(tokens);
+            string fileText = File.ReadAllText(inputFile.FullName);
+            AntlrInputStream fileStream = new AntlrInputStream(fileText);
+            PLexer lexer = new PLexer(fileStream);
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            PParser parser = new PParser(tokens);
             parser.RemoveErrorListeners();
 
             // As currently implemented, P can be parsed by SLL. However, if extensions to the

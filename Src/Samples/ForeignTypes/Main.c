@@ -50,7 +50,7 @@ extern PRT_UINT32 UserHashForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 
 extern PRT_STRING UserToStringForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal);
 
 extern PRT_BOOLEAN UserIsEqualForeignValue(_In_ PRT_UINT16 typeTag1, _In_ PRT_UINT64 frgnVal1, _In_ PRT_UINT16 typeTag2,
-                                           _In_ PRT_UINT64 frgnVal2);
+	_In_ PRT_UINT64 frgnVal2);
 
 int main(int argc, char* argv[])
 {

@@ -1,6 +1,6 @@
+using Plang.Compiler.Backend;
 using System;
 using System.IO;
-using Plang.Compiler.Backend;
 
 namespace Plang.Compiler
 {
@@ -15,18 +15,21 @@ namespace Plang.Compiler
 
         public void WriteMessage(string msg, SeverityKind severity)
         {
-            var defaultColor = Console.ForegroundColor;
+            ConsoleColor defaultColor = Console.ForegroundColor;
             switch (severity)
             {
                 case SeverityKind.Info:
                     Console.ForegroundColor = ConsoleColor.Cyan;
                     break;
+
                 case SeverityKind.Warning:
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     break;
+
                 case SeverityKind.Error:
                     Console.ForegroundColor = ConsoleColor.Red;
                     break;
+
                 default:
                     Console.ForegroundColor = ConsoleColor.White;
                     break;
@@ -38,7 +41,7 @@ namespace Plang.Compiler
 
         public void WriteFile(CompiledFile file)
         {
-            var outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
+            string outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
             File.WriteAllText(outputPath, file.Contents);
         }
     }

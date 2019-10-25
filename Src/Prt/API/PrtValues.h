@@ -65,9 +65,11 @@ typedef enum PRT_VALUE_KIND
 	/**< The kind of all (named) tuple values    */
 	PRT_VALUE_KIND_SEQ = 8,
 	/**< The kind of all sequence values         */
-	PRT_VALUE_KIND_MAP = 9,
+	PRT_VALUE_KIND_SET = 9,
+	/**< The kind of all set values         */
+	PRT_VALUE_KIND_MAP = 10,
 	/**< The kind of all map values              */
-	PRT_VALUE_KIND_COUNT = 10,
+	PRT_VALUE_KIND_COUNT = 11,
 	/**< The number of value kinds               */
 } PRT_VALUE_KIND;
 
@@ -85,6 +87,7 @@ typedef struct PRT_VALUE
 		struct PRT_FOREIGNVALUE* frgn; /**< A foreign value            */
 		struct PRT_TUPVALUE* tuple; /**< A (named) tuple value      */
 		struct PRT_SEQVALUE* seq; /**< A sequence value	        */
+		struct PRT_SETVALUE* set; /**< A set value	        */
 		struct PRT_MAPVALUE* map; /**< A map value		        */
 	} valueUnion;
 } PRT_VALUE;
@@ -132,6 +135,25 @@ typedef struct PRT_MAPNODE
 	struct PRT_MAPNODE* insertPrev; /**< The previous node in insertion order. */
 } PRT_MAPNODE;
 
+/** A set value is represented as a hash-table. */
+typedef struct PRT_SETVALUE
+{
+	PRT_UINT32 size; /**< The number of elements in the set.      */
+	PRT_UINT32 capNum; /**< An opaque number related to the number of buckets */
+	struct PRT_SETNODE* first; /**< First element inserted into the set. */
+	struct PRT_SETNODE* last; /**< Last element inserted into the set. */
+	struct PRT_SETNODE** buckets; /**< An array of pointers to chained nodes.  */
+} PRT_SETVALUE;
+
+/** A key-value node of a map. */
+typedef struct PRT_SETNODE
+{
+	PRT_VALUE* item; /**< The key of this node. */
+	struct PRT_SETNODE* bucketNext; /**< The next node in this bucket.         */
+	struct PRT_SETNODE* insertNext; /**< The next node in insertion order.     */
+	struct PRT_SETNODE* insertPrev; /**< The previous node in insertion order. */
+} PRT_SETNODE;
+
 /** A foreign value is foreign type paired with a char *. */
 typedef struct PRT_FOREIGNVALUE
 {
@@ -149,9 +171,10 @@ typedef struct PRT_FOREIGNVALUE
 * 6.  def(machine)             = `null : machine`.
 * 7.  def(int)                 = `0 : int`.
 * 8.  def(map[S, T])           = `[] : map[S, T]`.
-* 9. def((l1: S1,.., ln: Sn)) = `(l1 = def(S1),..., ln = def(Sn)) : (l1: S1,..., ln: Sn)`.
-* 10. def([S])                 = `[] : [S]`.
-* 11. def((S1,..,Sn))          = `(def(S1),..., def(S2)) : (S1,..., Sn)`.
+* 9.  def(set[S])           = `[] : set[S, T]`.
+* 10. def((l1: S1,.., ln: Sn)) = `(l1 = def(S1),..., ln = def(Sn)) : (l1: S1,..., ln: Sn)`.
+* 11. def([S])                 = `[] : [S]`.
+* 12. def((S1,..,Sn))          = `(def(S1),..., def(S2)) : (S1,..., Sn)`.
 * @param[in] type A type expression (will be cloned).
 * @returns The default value of the type. Caller is responsible for freeing.
 * @see PrtFreeValue
@@ -466,6 +489,59 @@ PRT_API PRT_VALUE* PRT_CALL_CONV PrtSeqGet(
 */
 PRT_API PRT_UINT32 PRT_CALL_CONV PrtSeqSizeOf(_In_ PRT_VALUE* seq);
 
+
+/** Adds item to set.
+* If item is not in the set, then adds it.
+* If item is already in the set, then ignores it.
+* @param[in,out] set   A set to mutate.
+* @param[in]     item   The item to add.
+* @param[in]     cloneItem Only set to PRT_FALSE if item will be forever owned by this set.
+*/
+PRT_API void PRT_CALL_CONV PrtSetAddEx(
+	_Inout_	        PRT_VALUE* set,
+	_In_	        PRT_VALUE* item,
+	_In_	        PRT_BOOLEAN cloneIey);
+
+/** Adds item to set.
+* If key is not in the set, then adds it.
+* If key is already in the set, then ignores it.
+* @param[in,out] set   A set to mutate.
+* @param[in]     item   The item to add (will be cloned).
+*/
+PRT_API void PRT_CALL_CONV PrtSetAdd(
+	_Inout_	        PRT_VALUE* set,
+	_In_	        PRT_VALUE* item);
+
+/** Remove the item from the set.
+* If the key is not in then set, then the set is unchanged.
+* @param[in,out] set   A set to mutate.
+* @param[in]     item   The item to remove.
+*/
+PRT_API void PRT_CALL_CONV PrtSetRemove(
+	_Inout_	        PRT_VALUE* set,
+	_In_	        PRT_VALUE* item);
+
+/** Returns true if the set contains item; false otherwise.
+* @param[in] set A set.
+* @param[in] item The item to lookup.
+* @returns Returns true if the set contains item; false otherwise.
+*/
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtSetExists(
+	_In_	     PRT_VALUE* set,
+	_In_	     PRT_VALUE* item);
+
+/** Gets the size of a set.
+* @param[in] set A set.
+* @returns The size of the set.
+*/
+PRT_API PRT_UINT32 PRT_CALL_CONV PrtSetSizeOf(_In_ PRT_VALUE* set);
+
+/** The hypothetical maximum number of items that could be accessed in constant-time.
+* @param[in] set A set.
+* @returns The capacity of the set.
+*/
+PRT_API PRT_UINT32 PRT_CALL_CONV PrtSetCapacity(_In_ PRT_VALUE* set);
+
 /** Updates the map at key.
 * If key is not in the map, then adds it.
 * If key is already in the map, then changes its mapping.
@@ -597,14 +673,12 @@ PRT_API PRT_VALUE* PRT_CALL_CONV PrtConvertValue(_In_ PRT_VALUE* value, _In_ PRT
 */
 PRT_API PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* value);
 
-/** Removes the value at index from the sequence, and shortens the sequence by one.
-* seq[index] must be defined. Removal causes:
-* For all i > index, if seq[i] is defined, then seq'[i - 1] = seq[i].
-* For all i < index, if seq[i] is defined, then seq'[i] = seq[i].
-* @param[in,out] seq   A sequence to mutate.
-* @param[in]     index An 0-based index s.t. 0 <= index < size(seq).
+/** Removes the value at index from the collection
+* collection[index] must be defined.
+* @param[in,out] collection   A collection to mutate.
+* @param[in]     key The key to remove.
 */
-PRT_API void PRT_CALL_CONV PrtRemoveByKey(_Inout_ PRT_VALUE* mapOrSeq, _In_ PRT_VALUE* key);
+PRT_API void PRT_CALL_CONV PrtRemoveByKey(_Inout_ PRT_VALUE* collection, _In_ PRT_VALUE* key);
 
 /** Returns `true` if values are equivalent; `false` otherwise.
 * @param[in] value1 The first value.

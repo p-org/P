@@ -26,6 +26,9 @@ namespace Plang.Compiler.TypeChecker
                 case Function function:
                     if (function.IsForeign) return function.CreatesInterfaces;
                     return InferCreates(function.Body, handler);
+                case AddStmt addStmt:
+                    return InferCreatesForExpr(addStmt.Variable, handler)
+                        .Union(InferCreatesForExpr(addStmt.Value, handler));
                 case AnnounceStmt announce:
                     return InferCreatesForExpr(announce.PEvent, handler)
                         .Union(InferCreatesForExpr(announce.Payload, handler));

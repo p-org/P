@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Misc;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -140,6 +141,36 @@ namespace Plang.Compiler.TypeChecker
             return new AssignStmt(context, variable, value);
         }
 
+        public override IPStmt VisitAddStmt(PParser.AddStmtContext context)
+        {
+            var variable = exprVisitor.Visit(context.lvalue());
+            var value = exprVisitor.Visit(context.rvalue());
+
+            // Check linear types
+            var valueIsInvariant = false;
+            if (value is ILinearRef linearRef) valueIsInvariant = linearRef.LinearType.Equals(LinearType.Swap);
+
+            // Check subtyping
+            var valueType = value.Type;
+
+            PLanguageType expectedValueType;
+
+            switch (variable.Type.Canonicalize())
+            {
+                case SetType setType:
+                    expectedValueType = setType.ElementType;
+                    break;
+                default:
+                    throw handler.TypeMismatch(variable, TypeKind.Set);
+            }
+
+            if (valueIsInvariant && !expectedValueType.IsSameTypeAs(valueType)
+                || !valueIsInvariant && !expectedValueType.IsAssignableFrom(valueType))
+                throw handler.TypeMismatch(context.rvalue(), valueType, expectedValueType);
+
+            return new AddStmt(context, variable, value);
+        }
+
         public override IPStmt VisitInsertStmt(PParser.InsertStmtContext context)
         {
             var variable = exprVisitor.Visit(context.lvalue());
@@ -196,6 +227,12 @@ namespace Plang.Compiler.TypeChecker
                 var map = (MapType) variable.Type.Canonicalize();
                 if (!map.KeyType.IsAssignableFrom(value.Type))
                     throw handler.TypeMismatch(context.expr(), value.Type, map.KeyType);
+            }
+            else if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Set))
+            {
+                var set = (SetType)variable.Type.Canonicalize();
+                if (!set.ElementType.IsAssignableFrom(value.Type))
+                    throw handler.TypeMismatch(context.expr(), value.Type, set.ElementType);
             }
             else
             {

@@ -175,6 +175,9 @@ namespace Plang.Compiler.Backend.Debugging
                     Dedent();
                     WriteStmt("}");
                     break;
+                case AddStmt addStmt:
+                    WriteStmt(addStmt.Variable, " += (", addStmt.Value, ");");
+                    break;
                 case InsertStmt insertStmt:
                     WriteStmt(insertStmt.Variable, " += (", insertStmt.Index, ", ", insertStmt.Value, ");");
                     break;

@@ -12,6 +12,7 @@ INT       : 'int' ;
 MACHINE   : 'machine' ;
 INTERFACE : 'interface' ;
 MAP       : 'map' ;
+SET       : 'set' ;
 SEQ       : 'seq' ;
 DATA      : 'data' ;
 

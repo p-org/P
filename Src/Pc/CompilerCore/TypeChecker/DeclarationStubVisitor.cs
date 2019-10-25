@@ -345,6 +345,11 @@ namespace Plang.Compiler.TypeChecker
             return null;
         }
 
+        public override object VisitAddStmt(PParser.AddStmtContext context)
+        {
+            return null;
+        }
+
         public override object VisitInsertStmt(PParser.InsertStmtContext context)
         {
             return null;
@@ -420,6 +425,11 @@ namespace Plang.Compiler.TypeChecker
         }
 
         public override object VisitMapType(PParser.MapTypeContext context)
+        {
+            return null;
+        }
+
+        public override object VisitSetType(PParser.SetTypeContext context)
         {
             return null;
         }

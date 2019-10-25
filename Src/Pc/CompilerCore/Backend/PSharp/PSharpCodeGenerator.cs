@@ -664,6 +664,13 @@ namespace Plang.Compiler.Backend.PSharp
                     }
 
                     break;
+                case AddStmt addStmt:
+                    context.Write(output, "((PrtSet)");
+                    WriteExpr(context, output, addStmt.Variable);
+                    context.Write(output, ").Add(");
+                    WriteExpr(context, output, addStmt.Value);
+                    context.WriteLine(output, ");");
+                    break;
                 case InsertStmt insertStmt:
                     var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
                     var castOp = isMap ? "(PrtMap)" : "(PrtSeq)";
@@ -755,7 +762,9 @@ namespace Plang.Compiler.Backend.PSharp
                 {
                     var castOperation = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map)
                         ? "(PrtMap)"
-                        : "(PrtSeq)";
+                        : PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Sequence)
+                        ? "(PrtSeq)"
+                        : "(PrtSet)";
                     context.Write(output, $"({castOperation}");
                     switch (removeStmt.Variable.Type.Canonicalize())
                     {
@@ -768,6 +777,12 @@ namespace Plang.Compiler.Backend.PSharp
                         case SequenceType _:
                             WriteExpr(context, output, removeStmt.Variable);
                             context.Write(output, ").RemoveAt(");
+                            WriteExpr(context, output, removeStmt.Value);
+                            context.WriteLine(output, ");");
+                            break;
+                        case SetType _:
+                            WriteExpr(context, output, removeStmt.Variable);
+                            context.Write(output, ").Remove(");
                             WriteExpr(context, output, removeStmt.Value);
                             context.WriteLine(output, ");");
                             break;
@@ -965,7 +980,10 @@ namespace Plang.Compiler.Backend.PSharp
                     break;
                 case ContainsExpr containsExpr:
                     var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
-                    var castOp = isMap ? "(PrtMap)" : "(PrtSeq)";
+                    var isSeq = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Sequence);
+                    var castOp = isMap ? "(PrtMap)" 
+                        : isSeq ? "(PrtSeq)"
+                        : "(PrtSet)";
 
                     context.Write(output, "((PrtBool)(");
                     context.Write(output, $"({castOp}");
@@ -1174,6 +1192,8 @@ namespace Plang.Compiler.Backend.PSharp
                     return isVar ? "IPrtValue" : "void";
                 case SequenceType _:
                     return "PrtSeq";
+                case SetType _:
+                    return "PrtSet";
                 case TupleType _:
                     return "PrtTuple";
                 default:
@@ -1191,6 +1211,8 @@ namespace Plang.Compiler.Backend.PSharp
                     return $"new {GetCSharpType(mapType)}()";
                 case SequenceType sequenceType:
                     return $"new {GetCSharpType(sequenceType)}()";
+                case SetType setType:
+                    return $"new {GetCSharpType(setType)}()";
                 case NamedTupleType namedTupleType:
                     var fieldNamesArray = string.Join(",", namedTupleType.Names.Select(n => $"\"{n}\""));
                     fieldNamesArray = $"new string[]{{{fieldNamesArray}}}";

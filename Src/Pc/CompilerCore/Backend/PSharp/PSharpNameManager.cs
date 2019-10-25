@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using Plang.Compiler.TypeChecker.AST;
+﻿using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.Types;
+using System.Collections.Generic;
 
 namespace Plang.Compiler.Backend.PSharp
 {
@@ -18,7 +18,10 @@ namespace Plang.Compiler.Backend.PSharp
         public string GetTypeName(PLanguageType type)
         {
             type = type.Canonicalize();
-            if (typeNames.TryGetValue(type, out var name)) return name;
+            if (typeNames.TryGetValue(type, out string name))
+            {
+                return name;
+            }
 
             // TODO: generate "nicer" names for generated types.
             name = UniquifyName(type.TypeKind.Name);
@@ -28,23 +31,33 @@ namespace Plang.Compiler.Backend.PSharp
 
         protected override string ComputeNameForDecl(IPDecl decl)
         {
-            var name = decl.Name;
+            string name = decl.Name;
 
             //Handle null and halt events separately
             switch (decl)
             {
                 case PEvent pEvent:
-                    if (pEvent.IsNullEvent) name = "Default";
+                    if (pEvent.IsNullEvent)
+                    {
+                        name = "Default";
+                    }
 
-                    if (pEvent.IsHaltEvent) name = "PHalt";
+                    if (pEvent.IsHaltEvent)
+                    {
+                        name = "PHalt";
+                    }
 
                     return name;
+
                 case Interface _:
                     return "I_" + name;
             }
 
             name = string.IsNullOrEmpty(name) ? "Anon" : name;
-            if (name.StartsWith("$")) name = "TMP_" + name.Substring(1);
+            if (name.StartsWith("$"))
+            {
+                name = "TMP_" + name.Substring(1);
+            }
 
             return UniquifyName(name);
         }

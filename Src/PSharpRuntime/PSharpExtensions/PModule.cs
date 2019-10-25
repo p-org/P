@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Microsoft.PSharp;
+using System;
 using System.Collections.Generic;
-using Microsoft.PSharp;
 
 namespace Plang.PrtSharp
 {

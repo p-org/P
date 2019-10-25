@@ -26,7 +26,7 @@ namespace Plang.Compiler.TypeChecker
             PParser.ProgramContext context,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
-            var visitor = new DeclarationStubVisitor(globalScope, nodesToDeclarations);
+            DeclarationStubVisitor visitor = new DeclarationStubVisitor(globalScope, nodesToDeclarations);
             visitor.Visit(context);
         }
 
@@ -34,38 +34,38 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitEventDecl(PParser.EventDeclContext context)
         {
-            var symbolName = context.name.GetText();
-            var decl = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            PEvent decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             CurrentScope.UniversalEventSet.AddEvent(decl);
             return null;
         }
 
-        #endregion
+        #endregion Events
 
         #region Event sets
 
         public override object VisitEventSetDecl(PParser.EventSetDeclContext context)
         {
-            var symbolName = context.name.GetText();
-            var decl = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            NamedEventSet decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
 
-        #endregion
+        #endregion Event sets
 
         #region Interfaces
 
         public override object VisitInterfaceDecl(PParser.InterfaceDeclContext context)
         {
-            var symbolName = context.name.GetText();
-            var decl = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            Interface decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
 
-        #endregion
+        #endregion Interfaces
 
         private object VisitChildrenWithNewScope(IHasScope decl, IRuleNode context)
         {
@@ -80,73 +80,73 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitPTypeDef(PParser.PTypeDefContext context)
         {
-            var symbolName = context.name.GetText();
-            var typeDef = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            TypeDef typeDef = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, typeDef);
             return null;
         }
 
         public override object VisitForeignTypeDef(PParser.ForeignTypeDefContext context)
         {
-            var symbolName = context.name.GetText();
-            var typeDef = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            TypeDef typeDef = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, typeDef);
             return null;
         }
 
-        #endregion
+        #endregion Typedefs
 
         #region Enum typedef
 
         public override object VisitEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
         {
-            var symbolName = context.name.GetText();
-            var pEnum = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            PEnum pEnum = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, pEnum);
             return VisitChildren(context);
         }
 
         public override object VisitEnumElem(PParser.EnumElemContext context)
         {
-            var symbolName = context.name.GetText();
-            var elem = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            EnumElem elem = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, elem);
             return null;
         }
 
         public override object VisitNumberedEnumElem(PParser.NumberedEnumElemContext context)
         {
-            var symbolName = context.name.GetText();
-            var elem = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            EnumElem elem = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, elem);
             return null;
         }
 
-        #endregion
+        #endregion Enum typedef
 
         #region Machines
 
         public override object VisitImplMachineDecl(PParser.ImplMachineDeclContext context)
         {
-            var symbolName = context.name.GetText();
-            var decl = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            Machine decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return VisitChildrenWithNewScope(decl, context);
         }
 
         public override object VisitSpecMachineDecl(PParser.SpecMachineDeclContext context)
         {
-            var symbolName = context.name.GetText();
-            var decl = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            Machine decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return VisitChildrenWithNewScope(decl, context);
         }
 
         public override object VisitVarDecl(PParser.VarDeclContext context)
         {
-            foreach (var varName in context.idenList()._names)
+            foreach (PParser.IdenContext varName in context.idenList()._names)
             {
-                var decl = CurrentScope.Put(varName.GetText(), varName, VariableRole.Field);
+                Variable decl = CurrentScope.Put(varName.GetText(), varName, VariableRole.Field);
                 nodesToDeclarations.Put(varName, decl);
             }
 
@@ -155,36 +155,36 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitGroup(PParser.GroupContext context)
         {
-            var symbolName = context.name.GetText();
-            var group = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            AST.States.StateGroup group = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, group);
             return VisitChildrenWithNewScope(group, context);
         }
 
         public override object VisitStateDecl(PParser.StateDeclContext context)
         {
-            var symbolName = context.name.GetText();
-            var decl = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            AST.States.State decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
 
-        #endregion
+        #endregion Machines
 
         #region Functions
 
         public override object VisitPFunDecl(PParser.PFunDeclContext context)
         {
-            var symbolName = context.name.GetText();
-            var decl = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            Function decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return VisitChildrenWithNewScope(decl, context);
         }
 
         public override object VisitFunParam(PParser.FunParamContext context)
         {
-            var symbolName = context.name.GetText();
-            var decl = CurrentScope.Put(symbolName, context, VariableRole.Param);
+            string symbolName = context.name.GetText();
+            Variable decl = CurrentScope.Put(symbolName, context, VariableRole.Param);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
@@ -196,29 +196,29 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitForeignFunDecl(PParser.ForeignFunDeclContext context)
         {
-            var symbolName = context.name.GetText();
-            var decl = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            Function decl = CurrentScope.Put(symbolName, context);
             decl.Scope = CurrentScope.MakeChildScope();
             nodesToDeclarations.Put(context, decl);
             return VisitChildrenWithNewScope(decl, context);
         }
 
-        #endregion
+        #endregion Functions
 
         #region Module System
 
         public override object VisitNamedModuleDecl([NotNull] PParser.NamedModuleDeclContext context)
         {
-            var symbolName = context.name.GetText();
-            var decl = CurrentScope.Put(symbolName, context);
+            string symbolName = context.name.GetText();
+            NamedModule decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
 
         public override object VisitSafetyTestDecl([NotNull] PParser.SafetyTestDeclContext context)
         {
-            var symbolName = context.testName.GetText();
-            var decl = CurrentScope.Put(symbolName, context);
+            string symbolName = context.testName.GetText();
+            SafetyTest decl = CurrentScope.Put(symbolName, context);
             decl.Main = context.mainMachine?.GetText();
             nodesToDeclarations.Put(context, decl);
             return null;
@@ -226,8 +226,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitRefinementTestDecl([NotNull] PParser.RefinementTestDeclContext context)
         {
-            var symbolName = context.testName.GetText();
-            var decl = CurrentScope.Put(symbolName, context);
+            string symbolName = context.testName.GetText();
+            RefinementTest decl = CurrentScope.Put(symbolName, context);
             decl.Main = context.mainMachine?.GetText();
             nodesToDeclarations.Put(context, decl);
             return null;
@@ -235,14 +235,14 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitImplementationDecl([NotNull] PParser.ImplementationDeclContext context)
         {
-            var symbolName = context.implName.GetText();
-            var decl = CurrentScope.Put(symbolName, context);
+            string symbolName = context.implName.GetText();
+            Implementation decl = CurrentScope.Put(symbolName, context);
             decl.Main = context.mainMachine?.GetText();
             nodesToDeclarations.Put(context, decl);
             return null;
         }
 
-        #endregion
+        #endregion Module System
 
         #region Tree clipping expressions
 
@@ -316,7 +316,7 @@ namespace Plang.Compiler.TypeChecker
             return null;
         }
 
-        #endregion
+        #endregion Tree clipping expressions
 
         #region Tree clipping non-receive (containing) statements
 
@@ -395,7 +395,7 @@ namespace Plang.Compiler.TypeChecker
             return null;
         }
 
-        #endregion
+        #endregion Tree clipping non-receive (containing) statements
 
         #region Tree clipping types
 
@@ -454,6 +454,6 @@ namespace Plang.Compiler.TypeChecker
             return null;
         }
 
-        #endregion
+        #endregion Tree clipping types
     }
 }

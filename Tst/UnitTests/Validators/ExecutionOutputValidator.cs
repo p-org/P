@@ -15,12 +15,10 @@ namespace UnitTests.Validators
             this.expectedExitCode = expectedExitCode;
         }
 
-
         public bool ValidateResult(int? exitCode)
         {
             return exitCode == expectedExitCode;
         }
-
 
         public bool ValidateException(CompilerTestException compilerTestException)
         {

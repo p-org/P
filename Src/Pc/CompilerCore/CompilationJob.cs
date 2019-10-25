@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Plang.Compiler.Backend;
+using Plang.Compiler.TypeChecker;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Plang.Compiler.Backend;
-using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler
 {
@@ -13,7 +13,9 @@ namespace Plang.Compiler
             string projectName = null, bool generateSourceMaps = false)
         {
             if (!inputFiles.Any())
+            {
                 throw new ArgumentException("Must supply at least one input file", nameof(inputFiles));
+            }
 
             Output = output;
             InputFiles = inputFiles;

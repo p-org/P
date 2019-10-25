@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
@@ -9,6 +6,9 @@ using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
+using System;
+using System.IO;
+using System.Linq;
 
 namespace Plang.Compiler
 {
@@ -83,7 +83,7 @@ namespace Plang.Compiler
 
         public Exception IllegalInterfaceCoerce(ParserRuleContext context, PLanguageType oldType, PLanguageType newType)
         {
-            var outlierEvent =
+            PEvent outlierEvent =
                 newType.AllowedPermissions.Value.First(x => !oldType.AllowedPermissions.Value.Contains(x));
             return IssueError(context,
                 $"illegal Coerce, {oldType.OriginalRepresentation} permissions is not a superset of {newType.OriginalRepresentation} (e.g., event {outlierEvent.Name})");
@@ -125,7 +125,6 @@ namespace Plang.Compiler
             return IssueError(location,
                 $"types {lhsType.OriginalRepresentation} and {rhsType.OriginalRepresentation} are incomparable");
         }
-
 
         public Exception MisplacedThis(PParser.PrimitiveContext location)
         {

@@ -5,7 +5,10 @@
         public static void EnsureFrozen<T>(T value)
             where T : IPrtValue
         {
-            if (value is IPrtMutableValue mutable) mutable.Freeze();
+            if (value is IPrtMutableValue mutable)
+            {
+                mutable.Freeze();
+            }
         }
     }
 }

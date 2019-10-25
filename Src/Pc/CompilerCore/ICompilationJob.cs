@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using Plang.Compiler.Backend;
+﻿using Plang.Compiler.Backend;
 using Plang.Compiler.TypeChecker;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Plang.Compiler
 {

@@ -1,6 +1,6 @@
+using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
-using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.TypeChecker.Types
 {
@@ -40,7 +40,7 @@ namespace Plang.Compiler.TypeChecker.Types
 
         public override bool Equals(object obj)
         {
-            return !(obj is null) && (this == obj || obj.GetType() == GetType() && IsSameTypeAs((PLanguageType) obj));
+            return !(obj is null) && (this == obj || obj.GetType() == GetType() && IsSameTypeAs((PLanguageType)obj));
         }
 
         public override int GetHashCode()

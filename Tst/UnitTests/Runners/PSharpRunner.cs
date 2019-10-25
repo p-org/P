@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Microsoft.PSharp.TestingServices;
+using Plang.Compiler;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Plang.Compiler;
-using Microsoft.PSharp.TestingServices;
 using UnitTests.Core;
 
 namespace UnitTests.Runners
@@ -31,21 +31,21 @@ namespace UnitTests.Runners
 
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
-            var compiledFiles = DoCompile(scratchDirectory).ToArray();
+            FileInfo[] compiledFiles = DoCompile(scratchDirectory).ToArray();
             CreateFileWithMainFunction(scratchDirectory);
             CreateProjectFile(scratchDirectory);
 
-            var psharpExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "AnyCPU", "Binaries", "PrtSharp.dll");
+            string psharpExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "AnyCPU", "Binaries", "PrtSharp.dll");
             File.Copy(psharpExtensionsPath, Path.Combine(scratchDirectory.FullName, "PrtSharp.dll"), true);
 
-            foreach (var nativeFile in nativeSources)
+            foreach (FileInfo nativeFile in nativeSources)
             {
                 File.Copy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
             }
 
-            var args = new[] { "build", "Test.csproj" };
+            string[] args = new[] { "build", "Test.csproj" };
 
-            var exitCode =
+            int exitCode =
                 ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindDotnet(), args);
 
             /*foreach (var compiledFile in compiledFiles)
@@ -54,7 +54,7 @@ namespace UnitTests.Runners
             if (exitCode == 0)
             {
                 exitCode = RunPSharpTester(scratchDirectory.FullName,
-                    Path.Combine(scratchDirectory.FullName, "Test.dll"), out var testStdout, out var testStderr);
+                    Path.Combine(scratchDirectory.FullName, "Test.dll"), out string testStdout, out string testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
 
@@ -70,7 +70,7 @@ namespace UnitTests.Runners
 
         private void CreateFileWithMainFunction(DirectoryInfo dir)
         {
-            var testCode = @"
+            string testCode = @"
 using Microsoft.PSharp;
 using System;
 
@@ -94,7 +94,7 @@ namespace Main
         }
     }
 }";
-            using (var outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.cs"), false))
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.cs"), false))
             {
                 outputFile.WriteLine(testCode);
             }
@@ -102,7 +102,7 @@ namespace Main
 
         private void CreateProjectFile(DirectoryInfo dir)
         {
-            var projectFileContents = @"
+            string projectFileContents = @"
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
     <TargetFramework >netcoreapp2.1</TargetFramework>
@@ -121,7 +121,7 @@ namespace Main
     <Reference Include = ""PrtSharp.dll""/>
   </ItemGroup>
 </Project>";
-            using (var outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.csproj"), false))
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.csproj"), false))
             {
                 outputFile.WriteLine(projectFileContents);
             }
@@ -136,9 +136,9 @@ namespace Main
 
         private IEnumerable<FileInfo> DoCompile(DirectoryInfo scratchDirectory)
         {
-            var compiler = new Compiler();
-            var outputStream = new TestExecutionStream(scratchDirectory);
-            var compilationJob = new CompilationJob(outputStream, CompilerOutput.PSharp, sources, "Main");
+            Compiler compiler = new Compiler();
+            TestExecutionStream outputStream = new TestExecutionStream(scratchDirectory);
+            CompilationJob compilationJob = new CompilationJob(outputStream, CompilerOutput.PSharp, sources, "Main");
             compiler.Compile(compilationJob);
             return outputStream.OutputFiles;
         }
@@ -152,14 +152,16 @@ namespace Main
                 Environment.GetEnvironmentVariable("DOTNET") ?? ""
             };
 
-            var dotnetPath = dotnetPaths.FirstOrDefault(File.Exists);
+            string dotnetPath = dotnetPaths.FirstOrDefault(File.Exists);
             if (dotnetPath == null)
+            {
                 throw new CompilerTestException(TestCaseError.GeneratedSourceCompileFailed, "Could not find MSBuild");
+            }
 
             return dotnetPath;
         }
 
-            private static string FindCsc()
+        private static string FindCsc()
         {
             string[] cscPaths =
             {
@@ -168,9 +170,11 @@ namespace Main
                 Environment.GetEnvironmentVariable("CSC") ?? ""
             };
 
-            var cscPath = cscPaths.FirstOrDefault(File.Exists);
+            string cscPath = cscPaths.FirstOrDefault(File.Exists);
             if (cscPath == null)
+            {
                 throw new CompilerTestException(TestCaseError.GeneratedSourceCompileFailed, "Could not find MSBuild");
+            }
 
             return cscPath;
         }

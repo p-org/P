@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using Plang.Compiler.TypeChecker.AST.Declarations;
+﻿using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
+using System.Collections.Generic;
 
 namespace Plang.Compiler.Backend.Prt
 {
@@ -70,7 +70,10 @@ namespace Plang.Compiler.Backend.Prt
 
         private static int GetOrAddNumber<T>(IDictionary<T, int> dict, T declaration)
         {
-            if (dict.TryGetValue(declaration, out var number)) return number;
+            if (dict.TryGetValue(declaration, out int number))
+            {
+                return number;
+            }
 
             number = dict.Count;
             dict.Add(declaration, number);
@@ -89,9 +92,15 @@ namespace Plang.Compiler.Backend.Prt
 
         public int GetDeclNumber(PEvent ev)
         {
-            if (ev.IsNullEvent) return 0;
+            if (ev.IsNullEvent)
+            {
+                return 0;
+            }
 
-            if (ev.IsHaltEvent) return 1;
+            if (ev.IsHaltEvent)
+            {
+                return 1;
+            }
 
             // There are two built-in events, which have predetermined numbers.
             // User-defined events have a minimum id of 2, but GetOrAddNumber
@@ -101,8 +110,8 @@ namespace Plang.Compiler.Backend.Prt
 
         public int GetDeclNumber(State state)
         {
-            var machine = state.OwningMachine;
-            if (!stateNumbering.TryGetValue(machine, out var internalNumbering))
+            Machine machine = state.OwningMachine;
+            if (!stateNumbering.TryGetValue(machine, out Dictionary<State, int> internalNumbering))
             {
                 internalNumbering = new Dictionary<State, int>();
                 stateNumbering.Add(machine, internalNumbering);
@@ -111,6 +120,6 @@ namespace Plang.Compiler.Backend.Prt
             return GetOrAddNumber(internalNumbering, state);
         }
 
-        #endregion
+        #endregion Numbering helpers
     }
 }

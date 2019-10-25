@@ -62,12 +62,12 @@ namespace Plang.PrtSharp
         {
             name = typeName;
             enumConstants = new Dictionary<long, string>();
-            var i = 0;
+            int i = 0;
             while (i < args.Count())
             {
-                var enumConstantName = (string) args[i];
+                string enumConstantName = (string)args[i];
                 i++;
-                var enumConstantValue = (int) args[i];
+                int enumConstantValue = (int)args[i];
                 i++;
                 enumConstants[enumConstantValue] = enumConstantName;
             }
@@ -146,7 +146,6 @@ namespace Plang.PrtSharp
         }
     }
 
-
     public class PrtTupleType : PrtType
     {
         public List<PrtType> fieldTypes;
@@ -163,13 +162,20 @@ namespace Plang.PrtSharp
         {
             Debug.Assert(fields.Any());
             fieldTypes = new List<PrtType>();
-            foreach (var f in fields) fieldTypes.Add(f);
+            foreach (PrtType f in fields)
+            {
+                fieldTypes.Add(f);
+            }
         }
 
         public override string ToString()
         {
-            var retStr = "<";
-            foreach (var f in fieldTypes) retStr += f + ", ";
+            string retStr = "<";
+            foreach (PrtType f in fieldTypes)
+            {
+                retStr += f + ", ";
+            }
+
             retStr += ">";
             return retStr;
         }
@@ -185,20 +191,20 @@ namespace Plang.PrtSharp
             fieldNames = new List<string>();
             fieldTypes = new List<PrtType>();
 
-            var index = 0;
+            int index = 0;
             while (index < args.Count())
             {
-                fieldNames.Add((string) args[index]);
+                fieldNames.Add((string)args[index]);
                 index++;
-                fieldTypes.Add((PrtType) args[index]);
+                fieldTypes.Add((PrtType)args[index]);
                 index++;
             }
         }
 
         public override string ToString()
         {
-            var retStr = "<";
-            var index = 0;
+            string retStr = "<";
+            int index = 0;
             while (index < fieldTypes.Count)
             {
                 retStr += fieldNames[index] + ":" + fieldTypes[index] + ", ";

@@ -6,7 +6,6 @@
 PRT_PROCESS* ContainerProcess;
 PRT_INT64 sendMessageSeqNumber = 0;
 
-
 /**
 * The main function performs the following steps
 * 1) If the createMain option is true then it create the main machine.
@@ -42,7 +41,7 @@ void PrintUsage()
 
 int main(int argc, char* argv[])
 {
-	//The commandline arguments 
+	//The commandline arguments
 	FirstArgument = argv[0];
 
 	if (argc != 5)
@@ -88,7 +87,7 @@ int main(int argc, char* argv[])
 
 	//	if (createMain)
 	//	{
-	//		//create main machine 
+	//		//create main machine
 	//		PRT_VALUE* payload = PrtMkNullValue();
 	//		PrtMkMachine(ContainerProcess, P_MACHINE_Driver, 1, PRT_FUN_PARAM_CLONE,payload);
 	//		PrtFreeValue(payload);

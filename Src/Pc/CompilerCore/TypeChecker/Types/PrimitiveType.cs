@@ -1,6 +1,6 @@
+using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
-using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.TypeChecker.Types
 {
@@ -25,6 +25,7 @@ namespace Plang.Compiler.TypeChecker.Types
                 case "machine":
                     AllowedPermissions = null;
                     break;
+
                 default:
                     AllowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => new List<PEvent>());
                     break;
@@ -43,15 +44,19 @@ namespace Plang.Compiler.TypeChecker.Types
             {
                 case "any":
                     return true;
+
                 case "machine":
                     return otherType.CanonicalRepresentation.Equals("machine") ||
                            otherType.CanonicalRepresentation.Equals("null") ||
                            otherType is PermissionType;
+
                 case "int":
                     return otherType.CanonicalRepresentation.Equals("int");
+
                 case "event":
                     return otherType.CanonicalRepresentation.Equals("event") ||
                            otherType.CanonicalRepresentation.Equals("null");
+
                 default:
                     return CanonicalRepresentation.Equals(otherType.CanonicalRepresentation);
             }

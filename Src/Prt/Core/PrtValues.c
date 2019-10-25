@@ -19,7 +19,7 @@ const PRT_UINT32 PrtHashtableCapacities[] =
 };
 
 /** The null machine id */
-const PRT_MACHINEID PrtNullMachineId = {{0, 0, 0, 0}, PRT_SPECIAL_EVENT_NULL};
+const PRT_MACHINEID PrtNullMachineId = { {0, 0, 0, 0}, PRT_SPECIAL_EVENT_NULL };
 
 // this function is not used.
 //static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeFieldName(_In_ PRT_STRING name)
@@ -71,7 +71,7 @@ static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodePrtFloat(_In_ PRT_FLOAT value)
 {
 	if (value == 0)
 	{
-		// Ensure that 0 and -0 have the same hash code 
+		// Ensure that 0 and -0 have the same hash code
 		return 0;
 	}
 	if (sizeof(PRT_FLOAT) == 4)
@@ -232,7 +232,7 @@ PRT_VALUE* PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_MACHINEID value)
 
 PRT_VALUE* PRT_CALL_CONV PrtMkForeignValue(
 	_In_	     PRT_UINT64 value,
-	    	     _In_	     PRT_TYPE* type)
+	_In_	     PRT_TYPE* type)
 {
 	PrtAssert(type->typeKind == PRT_KIND_FOREIGN, "Bad type");
 	PRT_UINT32 typeTag = type->typeUnion.foreignType->declIndex;
@@ -274,92 +274,92 @@ PRT_VALUE* PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE* type)
 	case PRT_KIND_NULL:
 		return PrtMkNullValue();
 	case PRT_KIND_FOREIGN:
-		{
-			PRT_UINT32 declIndex = type->typeUnion.foreignType->declIndex;
-			PrtAssert(declIndex < program->nForeignTypes && program->foreignTypes[declIndex]->declIndex == declIndex,
-				"Invalid type expression.");
-			PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-			PRT_FOREIGNVALUE* frgn = (PRT_FOREIGNVALUE *)PrtMalloc(sizeof(PRT_FOREIGNVALUE));
-			retVal->discriminator = PRT_VALUE_KIND_FOREIGN;
-			retVal->valueUnion.frgn = frgn;
-			frgn->typeTag = declIndex;
-			frgn->value = program->foreignTypes[declIndex]->mkDefValueFun();
-			return retVal;
-		}
+	{
+		PRT_UINT32 declIndex = type->typeUnion.foreignType->declIndex;
+		PrtAssert(declIndex < program->nForeignTypes && program->foreignTypes[declIndex]->declIndex == declIndex,
+			"Invalid type expression.");
+		PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_FOREIGNVALUE* frgn = (PRT_FOREIGNVALUE *)PrtMalloc(sizeof(PRT_FOREIGNVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_FOREIGN;
+		retVal->valueUnion.frgn = frgn;
+		frgn->typeTag = declIndex;
+		frgn->value = program->foreignTypes[declIndex]->mkDefValueFun();
+		return retVal;
+	}
 	case PRT_KIND_SET:
-		{
-			PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-			PRT_SETVALUE* set = (PRT_SETVALUE *)PrtMalloc(sizeof(PRT_SETVALUE));
-			retVal->discriminator = PRT_VALUE_KIND_SET;
-			retVal->valueUnion.set = set;
+	{
+		PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_SETVALUE* set = (PRT_SETVALUE *)PrtMalloc(sizeof(PRT_SETVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_SET;
+		retVal->valueUnion.set = set;
 
-			set->size = 0;
-			set->capNum = 0;
-			set->buckets = (PRT_SETNODE **)PrtCalloc(PrtHashtableCapacities[0], sizeof(PRT_SETNODE *));
-			set->first = NULL;
-			set->last = NULL;
-			return retVal;
-		}
+		set->size = 0;
+		set->capNum = 0;
+		set->buckets = (PRT_SETNODE **)PrtCalloc(PrtHashtableCapacities[0], sizeof(PRT_SETNODE *));
+		set->first = NULL;
+		set->last = NULL;
+		return retVal;
+	}
 	case PRT_KIND_MAP:
-		{
-			PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-			PRT_MAPVALUE* map = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
-			retVal->discriminator = PRT_VALUE_KIND_MAP;
-			retVal->valueUnion.map = map;
+	{
+		PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_MAPVALUE* map = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_MAP;
+		retVal->valueUnion.map = map;
 
-			map->size = 0;
-			map->capNum = 0;
-			map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[0], sizeof(PRT_MAPNODE *));
-			map->first = NULL;
-			map->last = NULL;
-			return retVal;
-		}
+		map->size = 0;
+		map->capNum = 0;
+		map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[0], sizeof(PRT_MAPNODE *));
+		map->first = NULL;
+		map->last = NULL;
+		return retVal;
+	}
 	case PRT_KIND_NMDTUP:
+	{
+		PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_TUPVALUE* tup = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_TUPLE;
+		retVal->valueUnion.tuple = tup;
+		PRT_UINT32 i;
+		PRT_NMDTUPTYPE* ntype = type->typeUnion.nmTuple;
+		tup->size = ntype->arity;
+		tup->values = (PRT_VALUE **)PrtCalloc(ntype->arity, sizeof(PRT_VALUE*));
+		for (i = 0; i < ntype->arity; ++i)
 		{
-			PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-			PRT_TUPVALUE* tup = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-			retVal->discriminator = PRT_VALUE_KIND_TUPLE;
-			retVal->valueUnion.tuple = tup;
-			PRT_UINT32 i;
-			PRT_NMDTUPTYPE* ntype = type->typeUnion.nmTuple;
-			tup->size = ntype->arity;
-			tup->values = (PRT_VALUE **)PrtCalloc(ntype->arity, sizeof(PRT_VALUE*));
-			for (i = 0; i < ntype->arity; ++i)
-			{
-				tup->values[i] = PrtMkDefaultValue(ntype->fieldTypes[i]);
-			}
-
-			return retVal;
+			tup->values[i] = PrtMkDefaultValue(ntype->fieldTypes[i]);
 		}
+
+		return retVal;
+	}
 	case PRT_KIND_SEQ:
-		{
-			PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-			PRT_SEQVALUE* seq = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
-			retVal->discriminator = PRT_VALUE_KIND_SEQ;
-			retVal->valueUnion.seq = seq;
+	{
+		PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_SEQVALUE* seq = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_SEQ;
+		retVal->valueUnion.seq = seq;
 
-			seq->size = 0;
-			seq->capacity = 0;
-			seq->values = NULL;
-			return retVal;
-		}
+		seq->size = 0;
+		seq->capacity = 0;
+		seq->values = NULL;
+		return retVal;
+	}
 	case PRT_KIND_TUPLE:
+	{
+		PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_TUPVALUE* tup = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_TUPLE;
+		retVal->valueUnion.tuple = tup;
+		PRT_UINT32 i;
+		PRT_TUPTYPE* ttype = type->typeUnion.tuple;
+		tup->size = ttype->arity;
+		tup->values = (PRT_VALUE **)PrtCalloc(ttype->arity, sizeof(PRT_VALUE*));
+		for (i = 0; i < ttype->arity; ++i)
 		{
-			PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-			PRT_TUPVALUE* tup = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-			retVal->discriminator = PRT_VALUE_KIND_TUPLE;
-			retVal->valueUnion.tuple = tup;
-			PRT_UINT32 i;
-			PRT_TUPTYPE* ttype = type->typeUnion.tuple;
-			tup->size = ttype->arity;
-			tup->values = (PRT_VALUE **)PrtCalloc(ttype->arity, sizeof(PRT_VALUE*));
-			for (i = 0; i < ttype->arity; ++i)
-			{
-				tup->values[i] = PrtMkDefaultValue(ttype->fieldTypes[i]);
-			}
-
-			return retVal;
+			tup->values[i] = PrtMkDefaultValue(ttype->fieldTypes[i]);
 		}
+
+		return retVal;
+	}
 	default:
 		PrtAssert(PRT_FALSE, "PrtMkDefaultValue: Invalid type");
 		return NULL;
@@ -442,9 +442,8 @@ PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE* prmVal)
 	return *prmVal->valueUnion.mid;
 }
 
-
 void PRT_CALL_CONV PrtTupleSetEx(_Inout_ PRT_VALUE* tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE* value,
-                                         PRT_BOOLEAN cloneValue)
+	PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
@@ -489,7 +488,7 @@ PRT_VALUE* PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE* tuple, _In_ PRT_UINT32 in
 }
 
 void PRT_CALL_CONV PrtSeqUpdateEx(_Inout_ PRT_VALUE* seq, _In_ PRT_VALUE* index, _In_ PRT_VALUE* value,
-                                          PRT_BOOLEAN cloneValue)
+	PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
@@ -516,7 +515,7 @@ void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE* seq, _In_ PRT_VALUE* index, _
 }
 
 void PRT_CALL_CONV PrtSeqInsertExIntIndex(_Inout_ PRT_VALUE* seq, _In_ PRT_INT index, _In_ PRT_VALUE* value,
-                                                  PRT_BOOLEAN cloneValue)
+	PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
@@ -575,7 +574,6 @@ void PRT_CALL_CONV PrtSeqInsertExIntIndex(_Inout_ PRT_VALUE* seq, _In_ PRT_INT i
 	seq->valueUnion.seq->size = seq->valueUnion.seq->size + 1;
 }
 
-
 PRT_VALUE** PrtSeqGetNCIntIndex(_In_ PRT_VALUE* seq, _In_ PRT_INT index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
@@ -585,9 +583,8 @@ PRT_VALUE** PrtSeqGetNCIntIndex(_In_ PRT_VALUE* seq, _In_ PRT_INT index)
 	return &seq->valueUnion.seq->values[index];
 }
 
-
 void PRT_CALL_CONV PrtSeqInsertEx(_Inout_ PRT_VALUE* seq, _In_ PRT_VALUE* index, _In_ PRT_VALUE* value,
-                                          PRT_BOOLEAN cloneValue)
+	PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
 	PrtSeqInsertExIntIndex(seq, index->valueUnion.nt, value, cloneValue);
@@ -919,7 +916,7 @@ static void PRT_CALL_CONV PrtMapExpand(_Inout_ PRT_VALUE* map)
 	//// Resize buckets
 	PrtFree(map->valueUnion.map->buckets);
 	map->valueUnion.map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[map->valueUnion.map->capNum],
-	                                                         sizeof(PRT_MAPNODE *));
+		sizeof(PRT_MAPNODE *));
 
 	//// Do the rehash, updating the bucketNext pointers
 	PRT_UINT32 bucketNum;
@@ -940,8 +937,8 @@ static void PRT_CALL_CONV PrtMapExpand(_Inout_ PRT_VALUE* map)
 }
 
 PRT_VALUE** PrtMapUpdateHelper(_Inout_ PRT_VALUE* map, _In_ PRT_VALUE* key, _In_ PRT_BOOLEAN cloneKey,
-                                       _In_                                       PRT_VALUE* value,
-                                       _In_                                       PRT_BOOLEAN cloneValue)
+	_In_                                       PRT_VALUE* value,
+	_In_                                       PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
@@ -1017,14 +1014,12 @@ PRT_VALUE** PrtMapUpdateHelper(_Inout_ PRT_VALUE* map, _In_ PRT_VALUE* key, _In_
 	return &node->value;
 }
 
-
 void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE* map, _In_ PRT_VALUE* key, _In_ PRT_BOOLEAN cloneKey,
-                                          _In_                                          PRT_VALUE* value,
-                                          _In_                                          PRT_BOOLEAN cloneValue)
+	_In_                                          PRT_VALUE* value,
+	_In_                                          PRT_BOOLEAN cloneValue)
 {
 	PrtMapUpdateHelper(map, key, cloneKey, value, cloneValue);
 }
-
 
 void PRT_CALL_CONV PrtMapUpdate(_Inout_ PRT_VALUE* map, _In_ PRT_VALUE* key, _In_ PRT_VALUE* value)
 {
@@ -1156,8 +1151,8 @@ static PRT_MAPNODE* PrtMapGetValueNode(_Inout_ PRT_VALUE* map, _In_ PRT_VALUE* k
 }
 
 PRT_VALUE** PRT_CALL_CONV PrtMapGetLValue(_Inout_ PRT_VALUE* map, _In_ PRT_VALUE* key, _In_ PRT_BOOLEAN cloneKey,
-                                                  _In_                                                  PRT_TYPE*
-                                                  mapType)
+	_In_                                                  PRT_TYPE*
+	mapType)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid map in map-lvalue.");
 	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Map argument must be a map.");
@@ -1383,101 +1378,101 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 	case PRT_VALUE_KIND_FLOAT:
 		return PrtGetHashCodePrtFloat((inputValue->valueUnion.ft));
 	case PRT_VALUE_KIND_FOREIGN:
-		{
-			return 0x08000000 ^ program->foreignTypes[inputValue->valueUnion.frgn->typeTag]->hashFun(
-				inputValue->valueUnion.frgn->value);
-		}
+	{
+		return 0x08000000 ^ program->foreignTypes[inputValue->valueUnion.frgn->typeTag]->hashFun(
+			inputValue->valueUnion.frgn->value);
+	}
 	case PRT_VALUE_KIND_MAP:
+	{
+		//// Hash function designed so two maps with same key-value pairs are hashed equally (independently of order).
+		//// Hash codes are added on the finite field Z_{PRT_HASH_AC_COMPOSEMOD}.
+		PRT_MAPVALUE* mVal = inputValue->valueUnion.map;
+		PRT_MAPNODE* next = mVal->first;
+		PRT_UINT64 code = 1;
+		PRT_UINT64 pointCode;
+		while (next != NULL)
 		{
-			//// Hash function designed so two maps with same key-value pairs are hashed equally (independently of order).
-			//// Hash codes are added on the finite field Z_{PRT_HASH_AC_COMPOSEMOD}.
-			PRT_MAPVALUE* mVal = inputValue->valueUnion.map;
-			PRT_MAPNODE* next = mVal->first;
-			PRT_UINT64 code = 1;
-			PRT_UINT64 pointCode;
-			while (next != NULL)
+			pointCode = (PRT_UINT64)PrtGetHashCodeTwoUInt32(PrtGetHashCodeValue(next->key),
+				PrtGetHashCodeValue(next->value));
+			if (pointCode == 0)
 			{
-				pointCode = (PRT_UINT64)PrtGetHashCodeTwoUInt32(PrtGetHashCodeValue(next->key),
-				                                                PrtGetHashCodeValue(next->value));
-				if (pointCode == 0)
-				{
-					pointCode = 1;
-				}
-
-				code = (code + pointCode) % PRT_HASH_AC_COMPOSEMOD;
-				next = next->insertNext;
+				pointCode = 1;
 			}
 
-			return 0x10000000 ^ (PRT_UINT32)code;
+			code = (code + pointCode) % PRT_HASH_AC_COMPOSEMOD;
+			next = next->insertNext;
 		}
+		return 0x10000000 ^ (PRT_UINT32)code;
+	}
 	case PRT_VALUE_KIND_SET:
+	{
+		PRT_SETVALUE* uVal = inputValue->valueUnion.set;
+		PRT_SETNODE* next = uVal->first;
+		PRT_UINT64 code = 1;
+		PRT_UINT64 pointCode;
+		while (next != NULL)
 		{
-			PRT_SETVALUE* uVal = inputValue->valueUnion.set;
-			PRT_SETNODE* next = uVal->first;
-			PRT_UINT64 code = 1;
-			PRT_UINT64 pointCode;
-			while (next != NULL)
+			pointCode = (PRT_UINT64)PrtGetHashCodeUInt32(PrtGetHashCodeValue(next->item));
+			if (pointCode == 0)
 			{
-				pointCode = (PRT_UINT64)PrtGetHashCodeUInt32(PrtGetHashCodeValue(next->item));
-				if (pointCode == 0)
-				{
-					pointCode = 1;
-				}
-
-				code = (code + pointCode) % PRT_HASH_AC_COMPOSEMOD;
-				next = next->insertNext;
+				pointCode = 1;
 			}
 
-			return 0x10000000 ^ (PRT_UINT32)code;
+			code = (code + pointCode) % PRT_HASH_AC_COMPOSEMOD;
+			next = next->insertNext;
 		}
+
+		return 0x10000000 ^ (PRT_UINT32)code;
+	}
+
 	case PRT_VALUE_KIND_SEQ:
+	{
+		PRT_UINT32 i;
+		PRT_UINT32 j;
+		PRT_UINT32 code = 0;
+		PRT_UINT32 pointCode;
+		PRT_SEQVALUE* sVal = inputValue->valueUnion.seq;
+		for (i = 0; i < sVal->size; ++i)
 		{
-			PRT_UINT32 i;
-			PRT_UINT32 j;
-			PRT_UINT32 code = 0;
-			PRT_UINT32 pointCode;
-			PRT_SEQVALUE* sVal = inputValue->valueUnion.seq;
-			for (i = 0; i < sVal->size; ++i)
+			pointCode = PrtGetHashCodeValue(sVal->values[i]);
+			for (j = 0; j < 4; ++j)
 			{
-				pointCode = PrtGetHashCodeValue(sVal->values[i]);
-				for (j = 0; j < 4; ++j)
-				{
-					code += (pointCode & 0x000000FF);
-					code += (code << 10);
-					code ^= (code >> 6);
-					pointCode = (pointCode >> 8);
-				}
+				code += (pointCode & 0x000000FF);
+				code += (code << 10);
+				code ^= (code >> 6);
+				pointCode = (pointCode >> 8);
 			}
-
-			code += (code << 3);
-			code ^= (code >> 11);
-			code += (code << 15);
-			return 0x40000000 ^ code;
 		}
+
+		code += (code << 3);
+		code ^= (code >> 11);
+		code += (code << 15);
+		return 0x40000000 ^ code;
+	}
 	case PRT_VALUE_KIND_TUPLE:
+	{
+		PRT_UINT32 i;
+		PRT_UINT32 j;
+		PRT_UINT32 code = 0;
+		PRT_UINT32 pointCode;
+		PRT_TUPVALUE* tVal = inputValue->valueUnion.tuple;
+		for (i = 0; i < tVal->size; ++i)
 		{
-			PRT_UINT32 i;
-			PRT_UINT32 j;
-			PRT_UINT32 code = 0;
-			PRT_UINT32 pointCode;
-			PRT_TUPVALUE* tVal = inputValue->valueUnion.tuple;
-			for (i = 0; i < tVal->size; ++i)
+			pointCode = PrtGetHashCodeValue(tVal->values[i]);
+			for (j = 0; j < 4; ++j)
 			{
-				pointCode = PrtGetHashCodeValue(tVal->values[i]);
-				for (j = 0; j < 4; ++j)
-				{
-					code += (pointCode & 0x000000FF);
-					code += (code << 10);
-					code ^= (code >> 6);
-					pointCode = (pointCode >> 8);
-				}
+				code += (pointCode & 0x000000FF);
+				code += (code << 10);
+				code ^= (code >> 6);
+				pointCode = (pointCode >> 8);
 			}
-
-			code += (code << 3);
-			code ^= (code >> 11);
-			code += (code << 15);
-			return 0x80000000 ^ code;
 		}
+
+		code += (code << 3);
+		code ^= (code >> 11);
+		code += (code << 15);
+		return 0x80000000 ^ code;
+	}
 	default:
 		PrtAssert(PRT_FALSE, "PrtGetHashCodeValue: Invalid value");
 		return 0;
@@ -1537,18 +1532,18 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE* value1, _In_ PRT_VALUE
 		return
 			value1->valueUnion.ev == value2->valueUnion.ev ? PRT_TRUE : PRT_FALSE;
 	case PRT_VALUE_KIND_MID:
-		{
-			PRT_MACHINEID* id1 = value1->valueUnion.mid;
-			PRT_MACHINEID* id2 = value2->valueUnion.mid;
-			return
-				id1->processId.data1 == id2->processId.data1 &&
-				id1->processId.data2 == id2->processId.data2 &&
-				id1->processId.data3 == id2->processId.data3 &&
-				id1->processId.data4 == id2->processId.data4 &&
-				id1->machineId == id2->machineId
-					? PRT_TRUE
-					: PRT_FALSE;
-		}
+	{
+		PRT_MACHINEID* id1 = value1->valueUnion.mid;
+		PRT_MACHINEID* id2 = value2->valueUnion.mid;
+		return
+			id1->processId.data1 == id2->processId.data1 &&
+			id1->processId.data2 == id2->processId.data2 &&
+			id1->processId.data3 == id2->processId.data3 &&
+			id1->processId.data4 == id2->processId.data4 &&
+			id1->machineId == id2->machineId
+			? PRT_TRUE
+			: PRT_FALSE;
+	}
 	case PRT_VALUE_KIND_INT:
 		return
 			value1->valueUnion.nt == value2->valueUnion.nt ? PRT_TRUE : PRT_FALSE;
@@ -1585,71 +1580,72 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE* value1, _In_ PRT_VALUE
 
 			return PRT_TRUE;
 		}
+
 	case PRT_VALUE_KIND_MAP:
-		{
-			PRT_MAPVALUE* mVal1 = value1->valueUnion.map;
-			PRT_MAPVALUE* mVal2 = value2->valueUnion.map;
+	{
+		PRT_MAPVALUE* mVal1 = value1->valueUnion.map;
+		PRT_MAPVALUE* mVal2 = value2->valueUnion.map;
 
-			if (mVal1->size != mVal2->size)
+		if (mVal1->size != mVal2->size)
+		{
+			return PRT_FALSE;
+		}
+
+		PRT_MAPNODE* next = mVal1->first;
+		while (next != NULL)
+		{
+			if (!PrtMapIsSameMapping(value2, next->key, next->value))
 			{
 				return PRT_FALSE;
 			}
 
-			PRT_MAPNODE* next = mVal1->first;
-			while (next != NULL)
-			{
-				if (!PrtMapIsSameMapping(value2, next->key, next->value))
-				{
-					return PRT_FALSE;
-				}
-
-				next = next->insertNext;
-			}
-
-			return PRT_TRUE;
+			next = next->insertNext;
 		}
+
+		return PRT_TRUE;
+	}
 	case PRT_VALUE_KIND_SEQ:
-		{
-			PRT_UINT32 i;
-			PRT_SEQVALUE* sVal1 = value1->valueUnion.seq;
-			PRT_SEQVALUE* sVal2 = value2->valueUnion.seq;
+	{
+		PRT_UINT32 i;
+		PRT_SEQVALUE* sVal1 = value1->valueUnion.seq;
+		PRT_SEQVALUE* sVal2 = value2->valueUnion.seq;
 
-			if (sVal1->size != sVal2->size)
+		if (sVal1->size != sVal2->size)
+		{
+			return PRT_FALSE;
+		}
+
+		for (i = 0; i < sVal1->size; ++i)
+		{
+			if (!PrtIsEqualValue(sVal1->values[i], sVal2->values[i]))
 			{
 				return PRT_FALSE;
 			}
-
-			for (i = 0; i < sVal1->size; ++i)
-			{
-				if (!PrtIsEqualValue(sVal1->values[i], sVal2->values[i]))
-				{
-					return PRT_FALSE;
-				}
-			}
-
-			return PRT_TRUE;
 		}
+
+		return PRT_TRUE;
+	}
 	case PRT_VALUE_KIND_TUPLE:
-		{
-			PRT_UINT32 i;
-			PRT_TUPVALUE* tVal1 = value1->valueUnion.tuple;
-			PRT_TUPVALUE* tVal2 = value2->valueUnion.tuple;
+	{
+		PRT_UINT32 i;
+		PRT_TUPVALUE* tVal1 = value1->valueUnion.tuple;
+		PRT_TUPVALUE* tVal2 = value2->valueUnion.tuple;
 
-			if (tVal1->size != tVal2->size)
+		if (tVal1->size != tVal2->size)
+		{
+			return PRT_FALSE;
+		}
+
+		for (i = 0; i < tVal1->size; ++i)
+		{
+			if (!PrtIsEqualValue(tVal1->values[i], tVal2->values[i]))
 			{
 				return PRT_FALSE;
 			}
-
-			for (i = 0; i < tVal1->size; ++i)
-			{
-				if (!PrtIsEqualValue(tVal1->values[i], tVal2->values[i]))
-				{
-					return PRT_FALSE;
-				}
-			}
-
-			return PRT_TRUE;
 		}
+
+		return PRT_TRUE;
+	}
 	default:
 		PrtAssert(PRT_FALSE, "PrtIsEqualValue: Invalid value");
 		return PRT_FALSE;
@@ -1676,37 +1672,38 @@ PRT_VALUE* PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE* value)
 	case PRT_VALUE_KIND_FLOAT:
 		return PrtMkFloatValue(value->valueUnion.ft);
 	case PRT_VALUE_KIND_FOREIGN:
-		{
-			PRT_VALUE* retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-			PRT_FOREIGNVALUE* fVal = value->valueUnion.frgn;
-			PRT_FOREIGNVALUE* cVal = (PRT_FOREIGNVALUE *)PrtMalloc(sizeof(PRT_FOREIGNVALUE));
-			retVal->discriminator = PRT_VALUE_KIND_FOREIGN;
-			retVal->valueUnion.frgn = cVal;
-			cVal->typeTag = fVal->typeTag;
-			cVal->value = program->foreignTypes[fVal->typeTag]->cloneFun(fVal->value);
-			return retVal;
-		}
+	{
+		PRT_VALUE* retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_FOREIGNVALUE* fVal = value->valueUnion.frgn;
+		PRT_FOREIGNVALUE* cVal = (PRT_FOREIGNVALUE *)PrtMalloc(sizeof(PRT_FOREIGNVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_FOREIGN;
+		retVal->valueUnion.frgn = cVal;
+		cVal->typeTag = fVal->typeTag;
+		cVal->value = program->foreignTypes[fVal->typeTag]->cloneFun(fVal->value);
+		return retVal;
+	}
 	case PRT_VALUE_KIND_MAP:
+	{
+		PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_MAPVALUE* map = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_MAP;
+		retVal->valueUnion.map = map;
+		PRT_MAPVALUE* mVal = value->valueUnion.map;
+		map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
+		map->capNum = mVal->capNum;
+		map->size = 0;
+		map->first = NULL;
+		map->last = NULL;
+		PRT_MAPNODE* next = mVal->first;
+		while (next != NULL)
 		{
-			PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-			PRT_MAPVALUE* map = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
-			retVal->discriminator = PRT_VALUE_KIND_MAP;
-			retVal->valueUnion.map = map;
-			PRT_MAPVALUE* mVal = value->valueUnion.map;
-			map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
-			map->capNum = mVal->capNum;
-			map->size = 0;
-			map->first = NULL;
-			map->last = NULL;
-			PRT_MAPNODE* next = mVal->first;
-			while (next != NULL)
-			{
-				PrtMapUpdate(retVal, next->key, next->value);
-				next = next->insertNext;
-			}
-
-			return retVal;
+			PrtMapUpdate(retVal, next->key, next->value);
+			next = next->insertNext;
 		}
+
+		return retVal;
+	}
+
 	case PRT_VALUE_KIND_SET:
 		{
 			PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
@@ -1728,51 +1725,52 @@ PRT_VALUE* PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE* value)
 
 			return retVal;
 		}
+
 	case PRT_VALUE_KIND_TUPLE:
+	{
+		PRT_VALUE* retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_TUPVALUE* cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_TUPLE;
+		retVal->valueUnion.tuple = cVal;
+
+		PRT_UINT32 i;
+		PRT_TUPVALUE* tVal = value->valueUnion.tuple;
+		PRT_UINT32 arity = value->valueUnion.tuple->size;
+		cVal->size = arity;
+		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE *));
+		for (i = 0; i < arity; ++i)
 		{
-			PRT_VALUE* retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-			PRT_TUPVALUE* cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-			retVal->discriminator = PRT_VALUE_KIND_TUPLE;
-			retVal->valueUnion.tuple = cVal;
-
-			PRT_UINT32 i;
-			PRT_TUPVALUE* tVal = value->valueUnion.tuple;
-			PRT_UINT32 arity = value->valueUnion.tuple->size;
-			cVal->size = arity;
-			cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE *));
-			for (i = 0; i < arity; ++i)
-			{
-				cVal->values[i] = PrtCloneValue(tVal->values[i]);
-			}
-
-			return retVal;
+			cVal->values[i] = PrtCloneValue(tVal->values[i]);
 		}
+
+		return retVal;
+	}
 	case PRT_VALUE_KIND_SEQ:
+	{
+		PRT_VALUE* retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_SEQVALUE* cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_SEQ;
+		retVal->valueUnion.seq = cVal;
+
+		PRT_SEQVALUE* sVal = value->valueUnion.seq;
+		cVal->capacity = sVal->capacity;
+		cVal->size = sVal->size;
+		if (sVal->capacity == 0)
 		{
-			PRT_VALUE* retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-			PRT_SEQVALUE* cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
-			retVal->discriminator = PRT_VALUE_KIND_SEQ;
-			retVal->valueUnion.seq = cVal;
-
-			PRT_SEQVALUE* sVal = value->valueUnion.seq;
-			cVal->capacity = sVal->capacity;
-			cVal->size = sVal->size;
-			if (sVal->capacity == 0)
-			{
-				cVal->values = NULL;
-			}
-			else
-			{
-				PRT_UINT32 i;
-				cVal->values = (PRT_VALUE **)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE *));
-				for (i = 0; i < sVal->size; ++i)
-				{
-					cVal->values[i] = PrtCloneValue(sVal->values[i]);
-				}
-			}
-
-			return retVal;
+			cVal->values = NULL;
 		}
+		else
+		{
+			PRT_UINT32 i;
+			cVal->values = (PRT_VALUE **)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE *));
+			for (i = 0; i < sVal->size; ++i)
+			{
+				cVal->values[i] = PrtCloneValue(sVal->values[i]);
+			}
+		}
+
+		return retVal;
+	}
 	default:
 		PrtAssert(PRT_FALSE, "PrtCloneValue: Invalid value");
 		return NULL;
@@ -1791,17 +1789,17 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE* value)
 	case PRT_VALUE_KIND_EVENT:
 		return value->valueUnion.ev == PRT_SPECIAL_EVENT_NULL ? PRT_TRUE : PRT_FALSE;
 	case PRT_VALUE_KIND_MID:
-		{
-			PRT_MACHINEID* id = value->valueUnion.mid;
-			return
-				id->processId.data1 == PrtNullMachineId.processId.data1 &&
-				id->processId.data2 == PrtNullMachineId.processId.data2 &&
-				id->processId.data3 == PrtNullMachineId.processId.data3 &&
-				id->processId.data4 == PrtNullMachineId.processId.data4 &&
-				id->machineId == PrtNullMachineId.machineId
-					? PRT_TRUE
-					: PRT_FALSE;
-		}
+	{
+		PRT_MACHINEID* id = value->valueUnion.mid;
+		return
+			id->processId.data1 == PrtNullMachineId.processId.data1 &&
+			id->processId.data2 == PrtNullMachineId.processId.data2 &&
+			id->processId.data3 == PrtNullMachineId.processId.data3 &&
+			id->processId.data4 == PrtNullMachineId.processId.data4 &&
+			id->machineId == PrtNullMachineId.machineId
+			? PRT_TRUE
+			: PRT_FALSE;
+	}
 	case PRT_VALUE_KIND_BOOL:
 	case PRT_VALUE_KIND_INT:
 	case PRT_VALUE_KIND_FLOAT:
@@ -1834,12 +1832,12 @@ PRT_VALUE* PRT_CALL_CONV PrtConvertValue(_In_ PRT_VALUE* value, _In_ PRT_TYPE* t
 		return PrtCloneValue(value);
 	case PRT_KIND_INT:
 		return PrtMkIntValue(value->discriminator == PRT_VALUE_KIND_FLOAT
-			                     ? (PRT_INT)value->valueUnion.ft
-			                     : value->valueUnion.nt);
+			? (PRT_INT)value->valueUnion.ft
+			: value->valueUnion.nt);
 	case PRT_KIND_FLOAT:
 		return PrtMkFloatValue(value->discriminator == PRT_VALUE_KIND_FLOAT
-			                       ? value->valueUnion.ft
-			                       : value->valueUnion.nt);
+			? value->valueUnion.ft
+			: value->valueUnion.nt);
 	default:
 		PrtAssert(PRT_FALSE, "Illegal convert invocation");
 		return NULL;
@@ -1883,32 +1881,31 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE* value, _In_ PRT_TYPE* 
 		return vkind == PRT_VALUE_KIND_FLOAT ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_FOREIGN:
 		return (vkind == PRT_VALUE_KIND_FOREIGN && value->valueUnion.frgn->typeTag == type
-		                                                                              ->typeUnion.foreignType->declIndex
-		       )
-			       ? PRT_TRUE
-			       : PRT_FALSE;
+			->typeUnion.foreignType->declIndex
+			)
+			? PRT_TRUE
+			: PRT_FALSE;
 	case PRT_KIND_MAP:
+	{
+		if (vkind != PRT_VALUE_KIND_MAP)
 		{
-			if (vkind != PRT_VALUE_KIND_MAP)
+			return PRT_FALSE;
+		}
+
+		PRT_MAPVALUE* mVal = value->valueUnion.map;
+		PRT_MAPTYPE* mType = type->typeUnion.map;
+		PRT_MAPNODE* next = mVal->first;
+		while (next != NULL)
+		{
+			if (!PrtInhabitsType(next->key, mType->domType) || !PrtInhabitsType(next->value, mType->codType))
 			{
 				return PRT_FALSE;
 			}
 
-			PRT_MAPVALUE* mVal = value->valueUnion.map;
-			PRT_MAPTYPE* mType = type->typeUnion.map;
-			PRT_MAPNODE* next = mVal->first;
-			while (next != NULL)
-			{
-				if (!PrtInhabitsType(next->key, mType->domType) || !PrtInhabitsType(next->value, mType->codType))
-				{
-					return PRT_FALSE;
-				}
-
-				next = next->insertNext;
-			}
-
-			return PRT_TRUE;
+			next = next->insertNext;
 		}
+	}
+
 	case PRT_KIND_SET:
 	{
 		if (vkind != PRT_VALUE_KIND_SET)
@@ -1932,77 +1929,77 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE* value, _In_ PRT_TYPE* 
 		return PRT_TRUE;
 	}
 	case PRT_KIND_NMDTUP:
+	{
+		if (vkind != PRT_VALUE_KIND_TUPLE)
 		{
-			if (vkind != PRT_VALUE_KIND_TUPLE)
-			{
-				return PRT_FALSE;
-			}
-
-			PRT_TUPVALUE* tVal = value->valueUnion.tuple;
-			PRT_NMDTUPTYPE* tType = type->typeUnion.nmTuple;
-			if (tType->arity != tVal->size)
-			{
-				return PRT_FALSE;
-			}
-
-			for (PRT_UINT32 i = 0; i < tType->arity; ++i)
-			{
-				if (!PrtInhabitsType(tVal->values[i], tType->fieldTypes[i]))
-				{
-					return PRT_FALSE;
-				}
-			}
-
-			return PRT_TRUE;
+			return PRT_FALSE;
 		}
+
+		PRT_TUPVALUE* tVal = value->valueUnion.tuple;
+		PRT_NMDTUPTYPE* tType = type->typeUnion.nmTuple;
+		if (tType->arity != tVal->size)
+		{
+			return PRT_FALSE;
+		}
+
+		for (PRT_UINT32 i = 0; i < tType->arity; ++i)
+		{
+			if (!PrtInhabitsType(tVal->values[i], tType->fieldTypes[i]))
+			{
+				return PRT_FALSE;
+			}
+		}
+
+		return PRT_TRUE;
+	}
 	case PRT_KIND_TUPLE:
+	{
+		if (vkind != PRT_VALUE_KIND_TUPLE)
 		{
-			if (vkind != PRT_VALUE_KIND_TUPLE)
-			{
-				return PRT_FALSE;
-			}
-
-			PRT_TUPVALUE* tVal = value->valueUnion.tuple;
-			PRT_TUPTYPE* tType = type->typeUnion.tuple;
-			if (tType->arity != tVal->size)
-			{
-				return PRT_FALSE;
-			}
-
-			for (PRT_UINT32 i = 0; i < tType->arity; ++i)
-			{
-				if (!PrtInhabitsType(tVal->values[i], tType->fieldTypes[i]))
-				{
-					return PRT_FALSE;
-				}
-			}
-
-			return PRT_TRUE;
+			return PRT_FALSE;
 		}
+
+		PRT_TUPVALUE* tVal = value->valueUnion.tuple;
+		PRT_TUPTYPE* tType = type->typeUnion.tuple;
+		if (tType->arity != tVal->size)
+		{
+			return PRT_FALSE;
+		}
+
+		for (PRT_UINT32 i = 0; i < tType->arity; ++i)
+		{
+			if (!PrtInhabitsType(tVal->values[i], tType->fieldTypes[i]))
+			{
+				return PRT_FALSE;
+			}
+		}
+
+		return PRT_TRUE;
+	}
 	case PRT_KIND_SEQ:
+	{
+		if (vkind != PRT_VALUE_KIND_SEQ)
 		{
-			if (vkind != PRT_VALUE_KIND_SEQ)
+			return PRT_FALSE;
+		}
+
+		PRT_SEQVALUE* sVal = value->valueUnion.seq;
+		PRT_SEQTYPE* sType = type->typeUnion.seq;
+		if (sVal->size == 0)
+		{
+			return PRT_TRUE;
+		}
+		PRT_UINT32 i;
+		for (i = 0; i < sVal->size; ++i)
+		{
+			if (!PrtInhabitsType(sVal->values[i], sType->innerType))
 			{
 				return PRT_FALSE;
 			}
-
-			PRT_SEQVALUE* sVal = value->valueUnion.seq;
-			PRT_SEQTYPE* sType = type->typeUnion.seq;
-			if (sVal->size == 0)
-			{
-				return PRT_TRUE;
-			}
-			PRT_UINT32 i;
-			for (i = 0; i < sVal->size; ++i)
-			{
-				if (!PrtInhabitsType(sVal->values[i], sType->innerType))
-				{
-					return PRT_FALSE;
-				}
-			}
-
-			return PRT_TRUE;
 		}
+
+		return PRT_TRUE;
+	}
 	default:
 		PrtAssert(PRT_FALSE, "PrtInhabitsType: Invalid type");
 		return PRT_FALSE;
@@ -2024,44 +2021,44 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE* value)
 	case PRT_VALUE_KIND_INT:
 	case PRT_VALUE_KIND_FLOAT:
 	case PRT_VALUE_KIND_NULL:
-		{
-			PrtFree(value);
-			break;
-		}
+	{
+		PrtFree(value);
+		break;
+	}
 	case PRT_VALUE_KIND_MID:
-		{
-			PRT_MACHINEID* id = value->valueUnion.mid;
-			PrtFree(id);
-			PrtFree(value);
-			break;
-		}
+	{
+		PRT_MACHINEID* id = value->valueUnion.mid;
+		PrtFree(id);
+		PrtFree(value);
+		break;
+	}
 	case PRT_VALUE_KIND_FOREIGN:
-		{
-			PRT_FOREIGNVALUE* fVal = value->valueUnion.frgn;
-			program->foreignTypes[fVal->typeTag]->freeFun(fVal->value);
-			PrtFree(fVal);
-			PrtFree(value);
-			break;
-		}
+	{
+		PRT_FOREIGNVALUE* fVal = value->valueUnion.frgn;
+		program->foreignTypes[fVal->typeTag]->freeFun(fVal->value);
+		PrtFree(fVal);
+		PrtFree(value);
+		break;
+	}
 	case PRT_VALUE_KIND_MAP:
+	{
+		PRT_MAPVALUE* mVal = value->valueUnion.map;
+		PRT_MAPNODE* next = mVal->first;
+		PRT_MAPNODE* tmp;
+		while (next != NULL)
 		{
-			PRT_MAPVALUE* mVal = value->valueUnion.map;
-			PRT_MAPNODE* next = mVal->first;
-			PRT_MAPNODE* tmp;
-			while (next != NULL)
-			{
-				tmp = next->insertNext;
-				PrtFreeValue(next->key);
-				PrtFreeValue(next->value);
-				PrtFree(next);
-				next = tmp;
-			}
-
-			PrtFree(mVal->buckets);
-			PrtFree(mVal);
-			PrtFree(value);
-			break;
+			tmp = next->insertNext;
+			PrtFreeValue(next->key);
+			PrtFreeValue(next->value);
+			PrtFree(next);
+			next = tmp;
 		}
+
+		PrtFree(mVal->buckets);
+		PrtFree(mVal);
+		PrtFree(value);
+		break;
+	}
 	case PRT_VALUE_KIND_SET:
 	{
 		PRT_SETVALUE* uVal = value->valueUnion.set;
@@ -2081,41 +2078,43 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE* value)
 		break;
 	}
 	case PRT_VALUE_KIND_TUPLE:
+	{
+		PRT_UINT32 i;
+		PRT_TUPVALUE* tVal = value->valueUnion.tuple;
+		PRT_UINT32 arity = tVal->size;
+		for (i = 0; i < arity; ++i)
+		{
+			PrtFreeValue(tVal->values[i]);
+		}
+
+		PrtFree(tVal->values);
+		PrtFree(tVal);
+		PrtFree(value);
+		break;
+	}
+	case PRT_VALUE_KIND_SEQ:
+	{
+		PRT_SEQVALUE* sVal = value->valueUnion.seq;
+		if (sVal->values != NULL)
 		{
 			PRT_UINT32 i;
-			PRT_TUPVALUE* tVal = value->valueUnion.tuple;
-			PRT_UINT32 arity = tVal->size;
-			for (i = 0; i < arity; ++i)
+			for (i = 0; i < sVal->size; ++i)
 			{
-				PrtFreeValue(tVal->values[i]);
+				PrtFreeValue(sVal->values[i]);
 			}
 
-			PrtFree(tVal->values);
-			PrtFree(tVal);
-			PrtFree(value);
-			break;
+			PrtFree(sVal->values);
 		}
-	case PRT_VALUE_KIND_SEQ:
-		{
-			PRT_SEQVALUE* sVal = value->valueUnion.seq;
-			if (sVal->values != NULL)
-			{
-				PRT_UINT32 i;
-				for (i = 0; i < sVal->size; ++i)
-				{
-					PrtFreeValue(sVal->values[i]);
-				}
 
-				PrtFree(sVal->values);
-			}
-
-			PrtFree(sVal);
-			PrtFree(value);
-			break;
-		}
+		PrtFree(sVal);
+		PrtFree(value);
+		break;
+	}
 	default:
+	{
 		PrtAssert(PRT_FALSE, "PrtFreeValue: Invalid value");
 		break;
+	}
 	}
 }
 

@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Text;
-using Plang.Compiler.TypeChecker;
+﻿using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.Types;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Plang.Compiler.Backend.Debugging
 {
@@ -30,7 +30,10 @@ namespace Plang.Compiler.Backend.Debugging
 
         public string Render(Scope scope)
         {
-            foreach (var decl in scope.AllDecls) WriteDecl(decl);
+            foreach (IPDecl decl in scope.AllDecls)
+            {
+                WriteDecl(decl);
+            }
 
             return writer.ToString();
         }
@@ -52,33 +55,43 @@ namespace Plang.Compiler.Backend.Debugging
 
         protected void WriteParts(params string[] parts)
         {
-            foreach (var part in parts) writer.Append(part);
+            foreach (string part in parts)
+            {
+                writer.Append(part);
+            }
         }
 
         protected void WriteParts(params object[] parts)
         {
-            foreach (var part in parts)
+            foreach (object part in parts)
+            {
                 switch (part)
                 {
                     case IPExpr expr:
                         WriteExpr(expr);
                         break;
+
                     case IEnumerable<IPExpr> exprs:
                         WriteExprList(exprs);
                         break;
+
                     case IEnumerable<string> strs:
                         WriteStringList(strs);
                         break;
+
                     case IPDecl decl:
                         WriteDeclRef(decl);
                         break;
+
                     case PLanguageType type:
                         WriteTypeRef(type);
                         break;
+
                     default:
                         writer.Append(part);
                         break;
                 }
+            }
         }
 
         protected abstract void WriteDecl(IPDecl decl);

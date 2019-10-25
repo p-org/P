@@ -1,7 +1,7 @@
-using System.Collections.Generic;
-using System.Diagnostics;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Plang.Compiler.TypeChecker.AST.States
 {
@@ -45,12 +45,12 @@ namespace Plang.Compiler.TypeChecker.AST.States
 
         public IStateContainer GetGroup(string groupName)
         {
-            return groups.TryGetValue(groupName, out var group) ? group : null;
+            return groups.TryGetValue(groupName, out StateGroup group) ? group : null;
         }
 
         public State GetState(string stateName)
         {
-            return states.TryGetValue(stateName, out var state) ? state : null;
+            return states.TryGetValue(stateName, out State state) ? state : null;
         }
     }
 }

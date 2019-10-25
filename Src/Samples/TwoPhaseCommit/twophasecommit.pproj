@@ -1,0 +1,14 @@
+<Project name = "TwoPhaseCommit">
+<InputFiles>
+	<PFile>./PSrc/Client.p</PFile>
+	<PFile>./PSrc/Coordinator.p</PFile>
+	<PFile>./PSrc/Events.p</PFile>
+	<PFile>./PSrc/Participant.p</PFile>
+	<PFile>./PSrc/Spec.p</PFile>
+	<PFile>./PSrc/TestDriver.p</PFile>
+	<PFile>./PSrc/Timer.p</PFile>
+</InputFiles>
+<Target>P#</Target>
+<TargetFileName>TwoPhaseCommit</TargetFileName>
+<OutputDir>./PGenerated/</OutputDir>
+</Project>

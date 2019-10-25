@@ -6,7 +6,6 @@
 PRT_PROCESS* ContainerProcess;
 PRT_INT64 sendMessageSeqNumber = 0;
 
-
 /**
 * The main function performs the following steps
 * 1) If the createMain option is true then it create the main machine.
@@ -47,7 +46,7 @@ void PrintUsage()
 
 int main(int argc, char* argv[])
 {
-	//The commandline arguments 
+	//The commandline arguments
 	FirstArgument = argv[0];
 
 	if (argc != 5)
@@ -62,7 +61,7 @@ int main(int argc, char* argv[])
 	int processId = atoi(argv[3]);
 	PrtAssert(processId >= 0, "Process Id should be positive");
 	int nodeId = atoi(argv[4]);
-	
+
 	PRT_DBG_START_MEM_BALANCED_REGION
 	{
 		//Initialize the cluster configuration.
@@ -90,12 +89,11 @@ int main(int argc, char* argv[])
 			GetExitCodeThread(listener, &status);
 			if (status != STILL_ACTIVE)
 				PrtDistLog("ERROR : Thread terminated");
-
 		}
 
 		if (createMain)
 		{
-			//create main machine 
+			//create main machine
 			PRT_VALUE* payload = PrtMkNullValue();
 			PrtMkMachine(ContainerProcess, P_MACHINE_GodMachine, 1, PRT_FUN_PARAM_CLONE, payload);
 			PrtFreeValue(payload);
@@ -107,14 +105,12 @@ int main(int argc, char* argv[])
 			PRT_VALUE* payload = PrtMkNullValue();
 			PrtMkMachine(ContainerProcess, P_MACHINE_Container, 1, PRT_FUN_PARAM_CLONE, payload);
 			PrtFreeValue(payload);
-
 		}
 
 		//after performing all operations block and wait
 		WaitForSingleObject(listener, INFINITE);
 
 		PrtStopProcess(ContainerProcess);
-		
 	}
 	PRT_DBG_END_MEM_BALANCED_REGION
 	*/

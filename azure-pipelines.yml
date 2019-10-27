@@ -12,7 +12,10 @@ jobs:
   variables:
     buildConfiguration: 'Release'
   steps:
-    - script: dotnet build --configuration $(buildConfiguration)
+    - task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    arguments: --configuration $(buildConfiguration)
     
 - job: macOS
   displayName: 'Building on MacOS'
@@ -21,7 +24,7 @@ jobs:
   variables:
     buildConfiguration: 'Release'
   steps:
-    - script: dotnet build --configuration $(buildConfiguration)
+    - script: dotnet build 
     
 - job: Windows
   displayName: 'Building on Windows'

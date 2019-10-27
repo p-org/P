@@ -12,7 +12,7 @@ jobs:
     buildConfiguration: 'Release'
   steps:
     - script: dotnet build --configuration $(buildConfiguration)
-    displayName: 'dotnet build $(buildConfiguration)'
+    - displayName: 'dotnet build $(buildConfiguration)'
     
 - job: macOS
   pool:
@@ -21,7 +21,7 @@ jobs:
     buildConfiguration: 'Release'
   steps:
     - script: dotnet build --configuration $(buildConfiguration)
-    displayName: 'dotnet build $(buildConfiguration)'
+    - displayName: 'dotnet build $(buildConfiguration)'
     
 - job: Windows
   pool:
@@ -30,7 +30,7 @@ jobs:
     buildConfiguration: 'Release'
   steps:
     - script: dotnet build --configuration $(buildConfiguration)
-    displayName: 'dotnet build $(buildConfiguration)'
+    - displayName: 'dotnet build $(buildConfiguration)'
 
 
 

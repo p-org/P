@@ -66,6 +66,7 @@ namespace Plang.Compiler.TypeChecker
                     break;
 
                 // None of the following statement types can contain child statements, so we can safely skip them
+                case AddStmt _:
                 case AnnounceStmt _:
                 case AssertStmt _:
                 case AssignStmt _:

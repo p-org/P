@@ -158,6 +158,11 @@ namespace Plang.Compiler.TypeChecker
 
                     break;
 
+                case AddStmt addStmt:
+                    unavailable = ProcessExpr(unavailable, addStmt.Variable);
+                    unavailable = ProcessExpr(unavailable, addStmt.Value);
+                    break;
+
                 case InsertStmt insertStmt:
                     unavailable = ProcessExpr(unavailable, insertStmt.Variable);
                     unavailable = ProcessExpr(unavailable, insertStmt.Index);

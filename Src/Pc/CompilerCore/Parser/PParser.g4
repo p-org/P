@@ -28,6 +28,7 @@ iden : Iden ;
 int  : IntLiteral ;
 
 type : SEQ LBRACK type RBRACK     # SeqType
+     | SET LBRACK type RBRACK     # SetType
      | MAP LBRACK keyType=type COMMA valueType=type RBRACK  # MapType
      | LPAREN tupTypes+=type (COMMA tupTypes+=type)* RPAREN # TupleType
      | LPAREN idenTypeList RPAREN # NamedTupleType
@@ -143,6 +144,7 @@ statement : LBRACE statement* RBRACE                      # CompoundStmt
           | CONTINUE SEMI                                 # ContinueStmt
           | lvalue ASSIGN rvalue SEMI                     # AssignStmt
           | lvalue INSERT LPAREN expr COMMA rvalue RPAREN SEMI # InsertStmt
+	  | lvalue INSERT LPAREN rvalue RPAREN SEMI        # AddStmt
           | lvalue REMOVE expr SEMI                       # RemoveStmt
           | WHILE LPAREN expr RPAREN statement            # WhileStmt
           | IF LPAREN expr RPAREN thenBranch=statement 

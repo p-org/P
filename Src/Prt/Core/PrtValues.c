@@ -286,6 +286,20 @@ PRT_VALUE* PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE* type)
 		frgn->value = program->foreignTypes[declIndex]->mkDefValueFun();
 		return retVal;
 	}
+	case PRT_KIND_SET:
+	{
+		PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_SETVALUE* set = (PRT_SETVALUE *)PrtMalloc(sizeof(PRT_SETVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_SET;
+		retVal->valueUnion.set = set;
+
+		set->size = 0;
+		set->capNum = 0;
+		set->buckets = (PRT_SETNODE **)PrtCalloc(PrtHashtableCapacities[0], sizeof(PRT_SETNODE *));
+		set->first = NULL;
+		set->last = NULL;
+		return retVal;
+	}
 	case PRT_KIND_MAP:
 	{
 		PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
@@ -651,6 +665,235 @@ PRT_UINT32 PRT_CALL_CONV PrtSeqSizeOf(_In_ PRT_VALUE* seq)
 
 	return seq->valueUnion.seq->size;
 }
+
+/** Expands the set and rehashes its items */
+static void PRT_CALL_CONV PrtSetExpand(_Inout_ PRT_VALUE* set)
+{
+	if (set->valueUnion.set->capNum + 1 >= sizeof(PrtHashtableCapacities) / sizeof(PRT_UINT32))
+	{
+		//// Set has reached maximum capacity.
+		return;
+	}
+
+	set->valueUnion.set->capNum = set->valueUnion.set->capNum + 1;
+	//// Erase all bucket-next pointers
+	PRT_SETNODE* next = set->valueUnion.set->first;
+	while (next != NULL)
+	{
+		next->bucketNext = NULL;
+		next = next->insertNext;
+	}
+
+	//// Resize buckets
+	PrtFree(set->valueUnion.set->buckets);
+	set->valueUnion.set->buckets = (PRT_SETNODE **)PrtCalloc(PrtHashtableCapacities[set->valueUnion.set->capNum],
+		sizeof(PRT_SETNODE *));
+
+	//// Do the rehash, updating the bucketNext pointers
+	PRT_UINT32 bucketNum;
+	PRT_SETNODE* bucket;
+	next = set->valueUnion.set->first;
+	while (next != NULL)
+	{
+		bucketNum = PrtGetHashCodeValue(next->item) % PrtHashtableCapacities[set->valueUnion.set->capNum];
+		bucket = set->valueUnion.set->buckets[bucketNum];
+		if (bucket != NULL)
+		{
+			next->bucketNext = bucket;
+		}
+
+		set->valueUnion.set->buckets[bucketNum] = next;
+		next = next->insertNext;
+	}
+}
+
+PRT_VALUE** PrtSetAddHelper(_Inout_ PRT_VALUE* set, _In_ PRT_VALUE* item, _In_ PRT_BOOLEAN cloneItem)
+{
+	PrtAssert(PrtIsValidValue(set), "Invalid value expression.");
+	PrtAssert(PrtIsValidValue(item), "Invalid value expression.");
+	PrtAssert(set->discriminator == PRT_VALUE_KIND_SET, "Invalid value");
+
+	PRT_SETNODE* node;
+
+	const PRT_UINT32 bucket_num = PrtGetHashCodeValue(item) % PrtHashtableCapacities[set->valueUnion.set->capNum];
+	PRT_SETNODE* bucket = set->valueUnion.set->buckets[bucket_num];
+	if (bucket == NULL)
+	{
+		node = (PRT_SETNODE *)PrtMalloc(sizeof(PRT_SETNODE));
+		node->item = cloneItem == PRT_TRUE ? PrtCloneValue(item) : item;
+		node->bucketNext = NULL;
+		node->insertNext = NULL;
+		set->valueUnion.set->buckets[bucket_num] = node;
+	}
+	else
+	{
+		PRT_SETNODE* next = bucket;
+		while (next != NULL)
+		{
+			if (PrtIsEqualValue(next->item, item))
+			{
+				//// Then need to free the unused item.
+				if (cloneItem != PRT_TRUE)
+				{
+					PrtFreeValue(item);
+				}
+				return &next->item;
+			}
+			next = next->bucketNext;
+		}
+
+		node = (PRT_SETNODE *)PrtMalloc(sizeof(PRT_SETNODE));
+		node->item = cloneItem == PRT_TRUE ? PrtCloneValue(item) : item;
+		node->bucketNext = bucket;
+		node->insertNext = NULL;
+		set->valueUnion.set->buckets[bucket_num] = node;
+	}
+
+	if (set->valueUnion.set->last == NULL)
+	{
+		set->valueUnion.set->first = node;
+		set->valueUnion.set->last = node;
+		node->insertPrev = NULL;
+	}
+	else
+	{
+		node->insertPrev = set->valueUnion.set->last;
+		set->valueUnion.set->last->insertNext = node;
+		set->valueUnion.set->last = node;
+	}
+
+	set->valueUnion.set->size = set->valueUnion.set->size + 1;
+
+	if (((double)set->valueUnion.set->size) / ((double)PrtHashtableCapacities[set->valueUnion.set->capNum]) > ((double)
+		PRT_MAXHASHLOAD))
+	{
+		PrtSetExpand(set);
+	}
+
+	return &node->item;
+}
+
+
+void PRT_CALL_CONV PrtSetAddEx(_Inout_ PRT_VALUE* set, _In_ PRT_VALUE* item, _In_ PRT_BOOLEAN cloneItem)
+{
+	PrtSetAddHelper(set, item, cloneItem);
+}
+
+
+void PRT_CALL_CONV PrtSetAdd(_Inout_ PRT_VALUE* set, _In_ PRT_VALUE* item)
+{
+	PrtSetAddEx(set, item, PRT_TRUE);
+}
+
+void PRT_CALL_CONV PrtSetRemove(_Inout_ PRT_VALUE* set, _In_ PRT_VALUE* item)
+{
+	PrtAssert(PrtIsValidValue(set), "Invalid value expression.");
+	PrtAssert(PrtIsValidValue(item), "Invalid value expression.");
+	PrtAssert(set->discriminator == PRT_VALUE_KIND_SET, "Invalid value");
+
+	PRT_UINT32 bucketNum;
+	PRT_SETNODE* bucket;
+	bucketNum = PrtGetHashCodeValue(item) % PrtHashtableCapacities[set->valueUnion.set->capNum];
+	bucket = set->valueUnion.set->buckets[bucketNum];
+	if (bucket == NULL)
+	{
+		return;
+	}
+
+	PRT_SETNODE* next = bucket;
+	PRT_SETNODE* prev = NULL;
+	while (next != NULL)
+	{
+		if (PrtIsEqualValue(next->item, item))
+		{
+			PrtFreeValue(next->item);
+			if (next == bucket)
+			{
+				set->valueUnion.set->buckets[bucketNum] = next->bucketNext;
+			}
+			else
+			{
+				prev->bucketNext = next->bucketNext;
+			}
+
+			if (next->insertPrev == NULL)
+			{
+				//// Then this was the first item
+				set->valueUnion.set->first = next->insertNext;
+			}
+			else
+			{
+				//// Otherwise the next of the previous item is the next of this item
+				next->insertPrev->insertNext = next->insertNext;
+			}
+
+			if (next->insertNext == NULL)
+			{
+				//// Then this was the last item
+				set->valueUnion.set->last = next->insertPrev;
+			}
+			else
+			{
+				//// Otherwise the previous of the next item is the previous of this item
+				next->insertNext->insertPrev = next->insertPrev;
+			}
+
+			PrtFree(next);
+			set->valueUnion.set->size = set->valueUnion.set->size - 1;
+			return;
+		}
+
+		prev = next;
+		next = next->bucketNext;
+	}
+}
+
+PRT_BOOLEAN PRT_CALL_CONV PrtSetExists(_In_ PRT_VALUE* set, _In_ PRT_VALUE* item)
+{
+	PrtAssert(PrtIsValidValue(set), "Invalid value expression.");
+	PrtAssert(PrtIsValidValue(item), "Invalid value expression.");
+	PrtAssert((set->discriminator == PRT_VALUE_KIND_SET), "Invalid value");
+
+	PRT_UINT32 bucketNum;
+	PRT_SETNODE* bucket;
+	bucketNum = PrtGetHashCodeValue(item) % PrtHashtableCapacities[set->valueUnion.set->capNum];
+	bucket = set->valueUnion.set->buckets[bucketNum];
+	if (bucket == NULL)
+	{
+		return PRT_FALSE;
+	}
+
+	PRT_SETNODE* next = bucket;
+	while (next != NULL)
+	{
+		if (PrtIsEqualValue(next->item, item))
+		{
+			return PRT_TRUE;
+		}
+
+		next = next->bucketNext;
+	}
+
+	return PRT_FALSE;
+}
+
+
+PRT_UINT32 PRT_CALL_CONV PrtSetSizeOf(_In_ PRT_VALUE* set)
+{
+	PrtAssert(PrtIsValidValue(set), "Invalid value expression.");
+	PrtAssert(set->discriminator == PRT_VALUE_KIND_SET, "Invalid value");
+
+	return set->valueUnion.set->size;
+}
+
+PRT_UINT32 PRT_CALL_CONV PrtSetCapacity(_In_ PRT_VALUE* set)
+{
+	PrtAssert(PrtIsValidValue(set), "Invalid value expression.");
+	PrtAssert(set->discriminator == PRT_VALUE_KIND_SET, "Invalid value");
+
+	return PrtHashtableCapacities[set->valueUnion.set->capNum];
+}
+
 
 /** Expands the map and rehashes its key-value pairs */
 static void PRT_CALL_CONV PrtMapExpand(_Inout_ PRT_VALUE* map)
@@ -1159,9 +1402,29 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 			code = (code + pointCode) % PRT_HASH_AC_COMPOSEMOD;
 			next = next->insertNext;
 		}
+		return 0x10000000 ^ (PRT_UINT32)code;
+	}
+	case PRT_VALUE_KIND_SET:
+	{
+		PRT_SETVALUE* uVal = inputValue->valueUnion.set;
+		PRT_SETNODE* next = uVal->first;
+		PRT_UINT64 code = 1;
+		PRT_UINT64 pointCode;
+		while (next != NULL)
+		{
+			pointCode = (PRT_UINT64)PrtGetHashCodeUInt32(PrtGetHashCodeValue(next->item));
+			if (pointCode == 0)
+			{
+				pointCode = 1;
+			}
+
+			code = (code + pointCode) % PRT_HASH_AC_COMPOSEMOD;
+			next = next->insertNext;
+		}
 
 		return 0x10000000 ^ (PRT_UINT32)code;
 	}
+
 	case PRT_VALUE_KIND_SEQ:
 	{
 		PRT_UINT32 i;
@@ -1216,19 +1479,23 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 	}
 }
 
-PRT_API void PRT_CALL_CONV PrtRemoveByKey(_Inout_ PRT_VALUE* mapOrSeq, _In_ PRT_VALUE* key)
+PRT_API void PRT_CALL_CONV PrtRemoveByKey(_Inout_ PRT_VALUE* collection, _In_ PRT_VALUE* key)
 {
-	if (mapOrSeq->discriminator == PRT_VALUE_KIND_MAP)
+	if (collection->discriminator == PRT_VALUE_KIND_MAP)
 	{
-		PrtMapRemove(mapOrSeq, key);
+		PrtMapRemove(collection, key);
 	}
-	else if (mapOrSeq->discriminator == PRT_VALUE_KIND_SEQ)
+	else if (collection->discriminator == PRT_VALUE_KIND_SEQ)
 	{
-		PrtSeqRemove(mapOrSeq, key);
+		PrtSeqRemove(collection, key);
+	}
+	else if (collection->discriminator == PRT_VALUE_KIND_SET)
+	{
+		PrtSetRemove(collection, key);
 	}
 	else
 	{
-		PrtAssert(PRT_FALSE, "Can only remove elements from a map or sequence.");
+		PrtAssert(PRT_FALSE, "Can only remove elements from a map, set or sequence.");
 	}
 }
 
@@ -1284,13 +1551,36 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE* value1, _In_ PRT_VALUE
 		return
 			value1->valueUnion.ft == value2->valueUnion.ft ? PRT_TRUE : PRT_FALSE;
 	case PRT_VALUE_KIND_FOREIGN:
-	{
-		PRT_FOREIGNVALUE* fVal1 = value1->valueUnion.frgn;
-		PRT_FOREIGNVALUE* fVal2 = value2->valueUnion.frgn;
-		return (fVal1->typeTag == fVal2->typeTag)
-			? program->foreignTypes[fVal1->typeTag]->isEqualFun(fVal1->value, fVal2->value)
-			: PRT_FALSE;
-	}
+		{
+			PRT_FOREIGNVALUE* fVal1 = value1->valueUnion.frgn;
+			PRT_FOREIGNVALUE* fVal2 = value2->valueUnion.frgn;
+			return (fVal1->typeTag == fVal2->typeTag)
+				       ? program->foreignTypes[fVal1->typeTag]->isEqualFun(fVal1->value, fVal2->value)
+				       : PRT_FALSE;
+		}
+	case PRT_VALUE_KIND_SET: 
+		{
+			PRT_SETVALUE* uVal1 = value1->valueUnion.set;
+			PRT_SETVALUE* uVal2 = value2->valueUnion.set;
+			if (uVal1->size != uVal2->size)
+			{
+				return PRT_FALSE;
+			}
+
+			PRT_SETNODE* next = uVal1->first;
+			while (next != NULL)
+			{
+				if (!PrtSetExists(value2, next->item))
+				{
+					return PRT_FALSE;
+				}
+
+				next = next->insertNext;
+			}
+
+			return PRT_TRUE;
+		}
+
 	case PRT_VALUE_KIND_MAP:
 	{
 		PRT_MAPVALUE* mVal1 = value1->valueUnion.map;
@@ -1413,6 +1703,29 @@ PRT_VALUE* PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE* value)
 
 		return retVal;
 	}
+
+	case PRT_VALUE_KIND_SET:
+		{
+			PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+			PRT_SETVALUE* set = (PRT_SETVALUE *)PrtMalloc(sizeof(PRT_SETVALUE));
+			retVal->discriminator = PRT_VALUE_KIND_SET;
+			retVal->valueUnion.set = set;
+			PRT_SETVALUE* uVal = value->valueUnion.set;
+			set->buckets = (PRT_SETNODE **)PrtCalloc(PrtHashtableCapacities[uVal->capNum], sizeof(PRT_SETNODE *));
+			set->capNum = uVal->capNum;
+			set->size = 0;
+			set->first = NULL;
+			set->last = NULL;
+			PRT_SETNODE* next = uVal->first;
+			while (next != NULL)
+			{
+				PrtSetAdd(retVal, next->item);
+				next = next->insertNext;
+			}
+
+			return retVal;
+		}
+
 	case PRT_VALUE_KIND_TUPLE:
 	{
 		PRT_VALUE* retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
@@ -1491,6 +1804,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE* value)
 	case PRT_VALUE_KIND_INT:
 	case PRT_VALUE_KIND_FLOAT:
 	case PRT_VALUE_KIND_FOREIGN:
+	case PRT_VALUE_KIND_SET:
 	case PRT_VALUE_KIND_MAP:
 	case PRT_VALUE_KIND_TUPLE:
 	case PRT_VALUE_KIND_SEQ:
@@ -1584,6 +1898,27 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE* value, _In_ PRT_TYPE* 
 		while (next != NULL)
 		{
 			if (!PrtInhabitsType(next->key, mType->domType) || !PrtInhabitsType(next->value, mType->codType))
+			{
+				return PRT_FALSE;
+			}
+
+			next = next->insertNext;
+		}
+	}
+
+	case PRT_KIND_SET:
+	{
+		if (vkind != PRT_VALUE_KIND_SET)
+		{
+			return PRT_FALSE;
+		}
+
+		PRT_SETVALUE* uVal = value->valueUnion.set;
+		PRT_SETTYPE* uType = type->typeUnion.set;
+		PRT_SETNODE* next = uVal->first;
+		while (next != NULL)
+		{
+			if (!PrtInhabitsType(next->item, uType->innerType))
 			{
 				return PRT_FALSE;
 			}
@@ -1724,6 +2059,24 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE* value)
 		PrtFree(value);
 		break;
 	}
+	case PRT_VALUE_KIND_SET:
+	{
+		PRT_SETVALUE* uVal = value->valueUnion.set;
+		PRT_SETNODE* next = uVal->first;
+		PRT_SETNODE* tmp;
+		while (next != NULL)
+		{
+			tmp = next->insertNext;
+			PrtFreeValue(next->item);
+			PrtFree(next);
+			next = tmp;
+		}
+
+		PrtFree(uVal->buckets);
+		PrtFree(uVal);
+		PrtFree(value);
+		break;
+	}
 	case PRT_VALUE_KIND_TUPLE:
 	{
 		PRT_UINT32 i;
@@ -1758,8 +2111,10 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE* value)
 		break;
 	}
 	default:
+	{
 		PrtAssert(PRT_FALSE, "PrtFreeValue: Invalid value");
 		break;
+	}
 	}
 }
 
@@ -1795,6 +2150,9 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE* value)
 	case PRT_VALUE_KIND_MAP:
 		return value->discriminator == PRT_VALUE_KIND_MAP &&
 			value->valueUnion.map != NULL;
+	case PRT_VALUE_KIND_SET:
+		return value->discriminator == PRT_VALUE_KIND_SET &&
+			value->valueUnion.set != NULL;
 	case PRT_VALUE_KIND_SEQ:
 		return value->discriminator == PRT_VALUE_KIND_SEQ &&
 			value->valueUnion.seq != NULL;

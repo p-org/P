@@ -23,78 +23,158 @@ extern "C" {
 
 	/** Structure for representing a standard GUID */
 #pragma pack()
-	typedef struct PRT_GUID
-	{
-		PRT_UINT32 data1; /**< 0 First data field (32 bits)  */
-		PRT_UINT16 data2; /**< 0 Second data field (16 bits) */
-		PRT_UINT16 data3; /**< 0 Third data field (16 bits)  */
-		PRT_UINT64 data4; /**< 0 Fourth data field (64 bits) */
-	} PRT_GUID;
 
-	typedef enum PRT_SPECIAL_EVENT
-	{
-		PRT_SPECIAL_EVENT_NULL = 0,
-		/**< The id of the null event */
-		PRT_SPECIAL_EVENT_HALT = 1,
-		/**< The id of the halt event */
-		PRT_EVENT_USER_START = 2 /**< The first event id available to user code */
-	} PRT_SPECIAL_EVENT;
+typedef struct PRT_GUID
+{
+	PRT_UINT32 data1; /**< 0 First data field (32 bits)  */
+	PRT_UINT16 data2; /**< 0 Second data field (16 bits) */
+	PRT_UINT16 data3; /**< 0 Third data field (16 bits)  */
+	PRT_UINT64 data4; /**< 0 Fourth data field (64 bits) */
+} PRT_GUID;
 
-	/**
-	* \enum
-	* These are the kinds of values in the P type system.
-	**/
-	typedef enum PRT_VALUE_KIND
-	{
-		PRT_VALUE_KIND_NULL = 0,
-		/**< The kind of the null value in type null */
-		PRT_VALUE_KIND_BOOL = 1,
-		/**< The kind of bool values                 */
-		PRT_VALUE_KIND_INT = 2,
-		/**< The kind of int values                  */
-		PRT_VALUE_KIND_FLOAT = 3,
-		/**< The kind of int values                  */
-		PRT_VALUE_KIND_EVENT = 4,
-		/**< The kind of event id values             */
-		PRT_VALUE_KIND_MID = 5,
-		/**< The kind of machine id values   */
-		PRT_VALUE_KIND_FOREIGN = 6,
-		/**< The kind of all foreign values          */
-		PRT_VALUE_KIND_TUPLE = 7,
-		/**< The kind of all (named) tuple values    */
-		PRT_VALUE_KIND_SEQ = 8,
-		/**< The kind of all sequence values         */
-		PRT_VALUE_KIND_MAP = 9,
-		/**< The kind of all map values              */
-		PRT_VALUE_KIND_COUNT = 10,
-		/**< The number of value kinds               */
-	} PRT_VALUE_KIND;
+typedef enum PRT_SPECIAL_EVENT
+{
+	PRT_SPECIAL_EVENT_NULL = 0,
+	/**< The id of the null event */
+	PRT_SPECIAL_EVENT_HALT = 1,
+	/**< The id of the halt event */
+	PRT_EVENT_USER_START = 2 /**< The first event id available to user code */
+} PRT_SPECIAL_EVENT;
 
-	/** A Union type to discriminate the Prt value */
-	typedef struct PRT_VALUE
-	{
-		PRT_VALUE_KIND discriminator; /**< A value kind to discriminate the union */
-		union
-		{
-			PRT_BOOLEAN bl; /**< A boolean value            */
-			PRT_INT nt; /**< An integer value           */
-			PRT_FLOAT ft; /**< An float value           */
-			PRT_UINT32 ev; /**< An event id value          */
-			struct PRT_MACHINEID* mid; /**< A machine id value */
-			struct PRT_FOREIGNVALUE* frgn; /**< A foreign value            */
-			struct PRT_TUPVALUE* tuple; /**< A (named) tuple value      */
-			struct PRT_SEQVALUE* seq; /**< A sequence value	        */
-			struct PRT_MAPVALUE* map; /**< A map value		        */
-		} valueUnion;
-	} PRT_VALUE;
+/**
+* \enum
+* These are the kinds of values in the P type system.
+**/
+typedef enum PRT_VALUE_KIND
+{
+	PRT_VALUE_KIND_NULL = 0,
+	/**< The kind of the null value in type null */
+	PRT_VALUE_KIND_BOOL = 1,
+	/**< The kind of bool values                 */
+	PRT_VALUE_KIND_INT = 2,
+	/**< The kind of int values                  */
+	PRT_VALUE_KIND_FLOAT = 3,
+	/**< The kind of int values                  */
+	PRT_VALUE_KIND_EVENT = 4,
+	/**< The kind of event id values             */
+	PRT_VALUE_KIND_MID = 5,
+	/**< The kind of machine id values   */
+	PRT_VALUE_KIND_FOREIGN = 6,
+	/**< The kind of all foreign values          */
+	PRT_VALUE_KIND_TUPLE = 7,
+	/**< The kind of all (named) tuple values    */
+	PRT_VALUE_KIND_SEQ = 8,
+	/**< The kind of all sequence values         */
+	PRT_VALUE_KIND_SET = 9,
+	/**< The kind of all set values         */
+	PRT_VALUE_KIND_MAP = 10,
+	/**< The kind of all map values              */
+	PRT_VALUE_KIND_COUNT = 11,
+	/**< The number of value kinds               */
+} PRT_VALUE_KIND;
 
-	/** The id of a machine is a combination of the id of the owner process and an id unique to that process.
-	*/
-	typedef struct PRT_MACHINEID
+/** A Union type to discriminate the Prt value */
+typedef struct PRT_VALUE
+{
+	PRT_VALUE_KIND discriminator; /**< A value kind to discriminate the union */
+	union
 	{
-		PRT_GUID processId;
-		PRT_UINT32 machineId;
-	} PRT_MACHINEID;
+		PRT_BOOLEAN bl; /**< A boolean value            */
+		PRT_INT nt; /**< An integer value           */
+		PRT_FLOAT ft; /**< An float value           */
+		PRT_UINT32 ev; /**< An event id value          */
+		struct PRT_MACHINEID* mid; /**< A machine id value */
+		struct PRT_FOREIGNVALUE* frgn; /**< A foreign value            */
+		struct PRT_TUPVALUE* tuple; /**< A (named) tuple value      */
+		struct PRT_SEQVALUE* seq; /**< A sequence value	        */
+		struct PRT_SETVALUE* set; /**< A set value	        */
+		struct PRT_MAPVALUE* map; /**< A map value		        */
+	} valueUnion;
+} PRT_VALUE;
+
+/** The id of a machine is a combination of the id of the owner process and an id unique to that process.
+*/
+typedef struct PRT_MACHINEID
+{
+	PRT_GUID processId;
+	PRT_UINT32 machineId;
+} PRT_MACHINEID;
+
+/** A set value is represented as a hash-table. */
+typedef struct PRT_SETVALUE
+{
+	PRT_UINT32 size; /**< The number of elements in the set.      */
+	PRT_UINT32 capNum; /**< An opaque number related to the number of buckets */
+	struct PRT_SETNODE* first; /**< First element inserted into the set. */
+	struct PRT_SETNODE* last; /**< Last element inserted into the set. */
+	struct PRT_SETNODE** buckets; /**< An array of pointers to chained nodes.  */
+} PRT_SETVALUE;
+
+/** A key-value node of a map. */
+typedef struct PRT_SETNODE
+{
+	PRT_VALUE* item; /**< The key of this node. */
+	struct PRT_SETNODE* bucketNext; /**< The next node in this bucket.         */
+	struct PRT_SETNODE* insertNext; /**< The next node in insertion order.     */
+	struct PRT_SETNODE* insertPrev; /**< The previous node in insertion order. */
+} PRT_SETNODE;
+
+
+
+
+
+/** Adds item to set.
+* If item is not in the set, then adds it.
+* If item is already in the set, then ignores it.
+* @param[in,out] set   A set to mutate.
+* @param[in]     item   The item to add.
+* @param[in]     cloneItem Only set to PRT_FALSE if item will be forever owned by this set.
+*/
+PRT_API void PRT_CALL_CONV PrtSetAddEx(
+	_Inout_	        PRT_VALUE* set,
+	_In_	        PRT_VALUE* item,
+	_In_	        PRT_BOOLEAN cloneIey);
+
+/** Adds item to set.
+* If key is not in the set, then adds it.
+* If key is already in the set, then ignores it.
+* @param[in,out] set   A set to mutate.
+* @param[in]     item   The item to add (will be cloned).
+*/
+PRT_API void PRT_CALL_CONV PrtSetAdd(
+	_Inout_	        PRT_VALUE* set,
+	_In_	        PRT_VALUE* item);
+
+/** Remove the item from the set.
+* If the key is not in then set, then the set is unchanged.
+* @param[in,out] set   A set to mutate.
+* @param[in]     item   The item to remove.
+*/
+PRT_API void PRT_CALL_CONV PrtSetRemove(
+	_Inout_	        PRT_VALUE* set,
+	_In_	        PRT_VALUE* item);
+
+/** Returns true if the set contains item; false otherwise.
+* @param[in] set A set.
+* @param[in] item The item to lookup.
+* @returns Returns true if the set contains item; false otherwise.
+*/
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtSetExists(
+	_In_	     PRT_VALUE* set,
+	_In_	     PRT_VALUE* item);
+
+/** Gets the size of a set.
+* @param[in] set A set.
+* @returns The size of the set.
+*/
+PRT_API PRT_UINT32 PRT_CALL_CONV PrtSetSizeOf(_In_ PRT_VALUE* set);
+
+/** The hypothetical maximum number of items that could be accessed in constant-time.
+* @param[in] set A set.
+* @returns The capacity of the set.
+*/
+PRT_API PRT_UINT32 PRT_CALL_CONV PrtSetCapacity(_In_ PRT_VALUE* set);
+
 
 	/** A tuple value is a (named) tuple represented as an array. */
 	typedef struct PRT_TUPVALUE
@@ -147,9 +227,10 @@ extern "C" {
 	* 6.  def(machine)             = `null : machine`.
 	* 7.  def(int)                 = `0 : int`.
 	* 8.  def(map[S, T])           = `[] : map[S, T]`.
-	* 9. def((l1: S1,.., ln: Sn)) = `(l1 = def(S1),..., ln = def(Sn)) : (l1: S1,..., ln: Sn)`.
-	* 10. def([S])                 = `[] : [S]`.
-	* 11. def((S1,..,Sn))          = `(def(S1),..., def(S2)) : (S1,..., Sn)`.
+	* 9.  def(set[S])           = `[] : set[S, T]`.
+	* 10. def((l1: S1,.., ln: Sn)) = `(l1 = def(S1),..., ln = def(Sn)) : (l1: S1,..., ln: Sn)`.
+	* 11. def([S])                 = `[] : [S]`.
+	* 12. def((S1,..,Sn))          = `(def(S1),..., def(S2)) : (S1,..., Sn)`.
 	* @param[in] type A type expression (will be cloned).
 	* @returns The default value of the type. Caller is responsible for freeing.
 	* @see PrtFreeValue

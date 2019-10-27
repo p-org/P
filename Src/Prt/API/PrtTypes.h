@@ -51,11 +51,13 @@ extern "C" {
 		/**< The kind of all named tuple types */
 		PRT_KIND_NULL = 9,
 		/**< The kind of the `NULL` type		  */
-		PRT_KIND_SEQ = 10,
+		PRT_KIND_SET = 10,
+		/**< The kind of all set types    */
+		PRT_KIND_SEQ = 11,
 		/**< The kind of all sequence types    */
-		PRT_KIND_TUPLE = 11,
+		PRT_KIND_TUPLE = 12,
 		/**< The kind of all tuple types       */
-		PRT_TYPE_KIND_COUNT = 12,
+		PRT_TYPE_KIND_COUNT = 13,
 		/**< The number of type kinds        */
 		PRT_TYPE_KIND_CANARY = 0xFF /**< A freed type will have this as its kind */
 	} PRT_TYPE_KIND;
@@ -73,6 +75,7 @@ extern "C" {
 			struct PRT_MAPTYPE* map; /**< Map type		    */
 			struct PRT_NMDTUPTYPE* nmTuple; /**< Named Tuple type	*/
 			struct PRT_SEQTYPE* seq; /**< Sequence type		*/
+			struct PRT_SETTYPE* set; /**< Set type		*/
 			struct PRT_TUPTYPE* tuple; /**< Tuple type		    */
 			struct PRT_FOREIGNTYPEDECL* foreignType; /**< Foreign type       */
 		} typeUnion;
@@ -108,15 +111,26 @@ extern "C" {
 		PRT_TYPE* innerType; /**< Inner type of the sequence */
 	} PRT_SEQTYPE;
 
+
 	/**
 	* \struct
-	* The layout for tuple types.
+	* The layout for sequence types.
+	*/
+	typedef struct PRT_SETTYPE
+	{
+		PRT_TYPE* innerType; /**< Inner type of the sequence */
+	} PRT_SETTYPE;
+
+	/** 
+	* \struct 
+	* The layout for tuple types. 
 	*/
 	typedef struct PRT_TUPTYPE
 	{
 		PRT_UINT32 arity; /**< Arity of tuple type; arity > 0 */
 		PRT_TYPE** fieldTypes; /**< Array of field types; length = arity */
 	} PRT_TUPTYPE;
+
 
 	/** The PRT_FOREIGN_MKDEF function is called whenever a default foreign value is created.
 	*/
@@ -206,6 +220,13 @@ extern "C" {
 	*/
 	PRT_API PRT_TYPE* PRT_CALL_CONV PrtMkSeqType(_In_ PRT_TYPE* innerType);
 
+	/** Makes a set type.
+	* @param innerType The type of set's elements (will be deeply cloned).
+	* @returns An instance of a set type. Caller is responsible for freeing.
+	* @see PrtFreeType
+	*/
+	PRT_API PRT_TYPE* PRT_CALL_CONV PrtMkSetType(_In_ PRT_TYPE* innerType);
+
 	/** Makes a tuple type with arity. Caller must fill in field types.
 	* @param[in] arity The arity of the tuple type; arity > 0.
 	* @returns A tuple type with space for field types. Caller is responsible for freeing.
@@ -244,6 +265,7 @@ extern "C" {
 	*/
 	PRT_API PRT_TYPE* PRT_CALL_CONV PrtCloneType(_In_ PRT_TYPE* type);
 
+
 	/** Recursively frees a type expression. Should only be called on types created using PrtMkXType()
 	* @param[in,out] type The type to free.
 	* @see PrtMkPrimitiveType
@@ -251,9 +273,11 @@ extern "C" {
 	* @see PrtMkMapType
 	* @see PrtMkNmdTupType
 	* @see PrtMkSeqType
+	* @see PrtMkSetType
 	* @see PrtMkTupType
 	*/
 	PRT_API void PRT_CALL_CONV PrtFreeType(_Inout_ PRT_TYPE* type);
+
 
 	/** Shallow test that type members are non-null.
 	* @param[in] type The type to check.

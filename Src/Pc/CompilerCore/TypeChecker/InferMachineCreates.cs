@@ -34,6 +34,10 @@ namespace Plang.Compiler.TypeChecker
 
                     return InferCreates(function.Body, handler);
 
+                case AddStmt addStmt:
+                    return InferCreatesForExpr(addStmt.Variable, handler)
+                        .Union(InferCreatesForExpr(addStmt.Value, handler));
+
                 case AnnounceStmt announce:
                     return InferCreatesForExpr(announce.PEvent, handler)
                         .Union(InferCreatesForExpr(announce.Payload, handler));

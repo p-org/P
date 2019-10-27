@@ -128,12 +128,11 @@ namespace Plang.Compiler.TypeChecker
                     }
                 case "sizeof":
                     {
-                        IPExpr expr = Visit(context.expr());
-                        if (!(expr.Type.Canonicalize() is SequenceType) && !(expr.Type.Canonicalize() is MapType))
-                        {
-                            throw handler.TypeMismatch(expr, TypeKind.Map, TypeKind.Sequence);
-                        }
-
+                        var expr = Visit(context.expr());
+                        if (!(expr.Type.Canonicalize() is SequenceType) 
+                                && !(expr.Type.Canonicalize() is MapType)
+                                && !(expr.Type.Canonicalize() is SetType))
+                            throw handler.TypeMismatch(expr, TypeKind.Map, TypeKind.Sequence, TypeKind.Set);
                         return new SizeofExpr(context, expr);
                     }
                 case "default":
@@ -308,6 +307,13 @@ namespace Plang.Compiler.TypeChecker
                         if (!rhsSeq.ElementType.IsAssignableFrom(lhs.Type))
                         {
                             throw handler.TypeMismatch(context.lhs, lhs.Type, rhsSeq.ElementType);
+                        }
+                    }
+                    else if (rhsType is SetType rhsSet)
+                    {
+                        if (!rhsSet.ElementType.IsAssignableFrom(lhs.Type))
+                        {
+                            throw handler.TypeMismatch(context.lhs, lhs.Type, rhsSet.ElementType);
                         }
                     }
                     else

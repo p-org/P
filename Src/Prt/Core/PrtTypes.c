@@ -88,6 +88,17 @@ PRT_TYPE* PRT_CALL_CONV PrtMkSeqType(_In_ PRT_TYPE* innerType)
 	return type;
 }
 
+PRT_TYPE* PRT_CALL_CONV PrtMkSetType(_In_ PRT_TYPE* innerType)
+{
+	PrtAssert(PrtIsValidType(innerType), "Invalid type expression");
+	PRT_TYPE* type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
+	PRT_SETTYPE* set = (PRT_SETTYPE *)PrtMalloc(sizeof(PRT_SETTYPE));
+	type->typeKind = PRT_KIND_SET;
+	type->typeUnion.set = set;
+	set->innerType = PrtCloneType(innerType);
+	return type;
+}
+
 void PRT_CALL_CONV PrtSetFieldType(_Inout_ PRT_TYPE* tupleType, _In_ PRT_UINT32 index, _In_ PRT_TYPE* fieldType)
 {
 	PrtAssert(PrtIsValidType(tupleType), "Invalid type expression");
@@ -222,10 +233,23 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsSubtype(_In_ PRT_TYPE* subType, _In_ PRT_TYPE* su
 		{
 			return PRT_FALSE;
 		}
-
 		subSeq = (PRT_SEQTYPE *)subType->typeUnion.seq;
 		supSeq = (PRT_SEQTYPE *)supType->typeUnion.seq;
 		return PrtIsSubtype(subSeq->innerType, supSeq->innerType);
+	}
+	case PRT_KIND_SET:
+	{
+		//// Both types are setss and inner types are in subtype relationship.
+		PRT_SETTYPE* subSet;
+		PRT_SETTYPE* supSet;
+		if (subKind != PRT_KIND_SET)
+		{
+			return PRT_FALSE;
+		}
+
+		subSet = (PRT_SETTYPE *)subType->typeUnion.set;
+		supSet = (PRT_SETTYPE *)supType->typeUnion.set;
+		return PrtIsSubtype(subSet->innerType, supSet->innerType);
 	}
 	case PRT_KIND_TUPLE:
 	{
@@ -305,6 +329,11 @@ PRT_TYPE* PRT_CALL_CONV PrtCloneType(_In_ PRT_TYPE* type)
 		PRT_SEQTYPE* stype = type->typeUnion.seq;
 		return PrtMkSeqType(stype->innerType);
 	}
+	case PRT_KIND_SET:
+	{
+		PRT_SETTYPE* stype = type->typeUnion.set;
+		return PrtMkSetType(stype->innerType);
+	}
 	case PRT_KIND_TUPLE:
 	{
 		PRT_UINT32 i;
@@ -375,6 +404,15 @@ void PRT_CALL_CONV PrtFreeType(_Inout_ PRT_TYPE* type)
 		PrtFree(type);
 		break;
 	}
+	case PRT_KIND_SET:
+	{
+		PRT_SETTYPE* stype = type->typeUnion.set;
+		PrtFreeType(stype->innerType);
+		type->typeKind = PRT_TYPE_KIND_CANARY;
+		PrtFree(stype);
+		PrtFree(type);
+		break;
+	}
 	case PRT_KIND_TUPLE:
 	{
 		PRT_UINT32 i;
@@ -429,6 +467,11 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidType(_In_ PRT_TYPE* type)
 	{
 		PRT_SEQTYPE* seq = type->typeUnion.seq;
 		return seq != NULL && seq->innerType != NULL;
+	}
+	case PRT_KIND_SET:
+	{
+		PRT_SETTYPE* set = type->typeUnion.set;
+		return set != NULL && set->innerType != NULL;
 	}
 	case PRT_KIND_TUPLE:
 	{

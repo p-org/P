@@ -34,6 +34,11 @@ namespace Plang.Compiler.TypeChecker
                 return new SequenceType(Visit(context.type()));
             }
 
+            public override PLanguageType VisitSetType(PParser.SetTypeContext context)
+            {
+                return new SetType(Visit(context.type()));
+            }
+
             public override PLanguageType VisitNamedType(PParser.NamedTypeContext context)
             {
                 string typeName = context.name.GetText();

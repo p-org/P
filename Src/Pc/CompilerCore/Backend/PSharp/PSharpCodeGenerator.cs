@@ -779,6 +779,14 @@ namespace Plang.Compiler.Backend.PSharp
 
                     break;
 
+                case AddStmt addStmt:
+                    context.Write(output, "((PrtSet)");
+                    WriteExpr(context, output, addStmt.Variable);
+                    context.Write(output, ").Add(");
+                    WriteExpr(context, output, addStmt.Value);
+                    context.WriteLine(output, ");");
+                    break;
+
                 case InsertStmt insertStmt:
                     bool isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
                     string castOp = isMap ? "(PrtMap)" : "(PrtSeq)";
@@ -888,7 +896,9 @@ namespace Plang.Compiler.Backend.PSharp
                     {
                         string castOperation = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map)
                         ? "(PrtMap)"
-                        : "(PrtSeq)";
+                        : PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Sequence)
+                        ? "(PrtSeq)"
+                        : "(PrtSet)";
                         context.Write(output, $"({castOperation}");
                         switch (removeStmt.Variable.Type.Canonicalize())
                         {
@@ -898,20 +908,24 @@ namespace Plang.Compiler.Backend.PSharp
                                 WriteExpr(context, output, removeStmt.Value);
                                 context.WriteLine(output, ");");
                                 break;
-
                             case SequenceType _:
                                 WriteExpr(context, output, removeStmt.Variable);
                                 context.Write(output, ").RemoveAt(");
                                 WriteExpr(context, output, removeStmt.Value);
                                 context.WriteLine(output, ");");
                                 break;
-
+                            case SetType _:
+                                WriteExpr(context, output, removeStmt.Variable);
+                                context.Write(output, ").Remove(");
+                                WriteExpr(context, output, removeStmt.Value);
+                                context.WriteLine(output, ");");
+                                break;
                             default:
                                 throw new ArgumentOutOfRangeException(
                                     $"Remove cannot be applied to type {removeStmt.Variable.Type.OriginalRepresentation}");
                         }
+                        break;
                     }
-                    break;
 
                 case ReturnStmt returnStmt:
                     context.Write(output, "return ");
@@ -1123,9 +1137,11 @@ namespace Plang.Compiler.Backend.PSharp
                     break;
 
                 case ContainsExpr containsExpr:
-                    bool isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
-                    string castOp = isMap ? "(PrtMap)" : "(PrtSeq)";
-
+                    var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
+                    var isSeq = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Sequence);
+                    var castOp = isMap ? "(PrtMap)" 
+                        : isSeq ? "(PrtSeq)"
+                        : "(PrtSet)";
                     context.Write(output, "((PrtBool)(");
                     context.Write(output, $"({castOp}");
                     WriteExpr(context, output, containsExpr.Collection);
@@ -1379,6 +1395,9 @@ namespace Plang.Compiler.Backend.PSharp
                 case SequenceType _:
                     return "PrtSeq";
 
+                case SetType _:
+                    return "PrtSet";
+
                 case TupleType _:
                     return "PrtTuple";
 
@@ -1399,6 +1418,9 @@ namespace Plang.Compiler.Backend.PSharp
 
                 case SequenceType sequenceType:
                     return $"new {GetCSharpType(sequenceType)}()";
+
+                case SetType setType:
+                    return $"new {GetCSharpType(setType)}()";
 
                 case NamedTupleType namedTupleType:
                     string fieldNamesArray = string.Join(",", namedTupleType.Names.Select(n => $"\"{n}\""));

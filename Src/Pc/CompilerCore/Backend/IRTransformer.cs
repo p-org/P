@@ -363,6 +363,17 @@ namespace Plang.Compiler.Backend
                         })
                         .ToList();
 
+                case AddStmt addStmt:
+                    var (addVar, addVarDeps) = SimplifyLvalue(addStmt.Variable);
+                    var (addVal, addValDeps) = SimplifyArgPack(new[] { addStmt.Value });
+                    Debug.Assert(addVal.Count == 1);
+                    return addVarDeps.Concat(addValDeps)
+                        .Concat(new[]
+                        {
+                            new AddStmt(location, addVar, addVal[0])
+                        })
+                        .ToList();
+
                 case InsertStmt insertStmt:
                     (IPExpr insVar, List<IPStmt> insVarDeps) = SimplifyLvalue(insertStmt.Variable);
                     (IExprTerm insIdx, List<IPStmt> insIdxDeps) = SimplifyExpression(insertStmt.Index);

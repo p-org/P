@@ -201,8 +201,12 @@ namespace Plang.Compiler.Backend.Prt
 
                 case PrimitiveType _:
                     throw new ArgumentException("unrecognized primitive type", nameof(type));
+
                 case SequenceType sequenceType:
                     return $"S{SimplifiedRep(sequenceType.ElementType)}";
+
+                case SetType setType:
+                    return $"U{SimplifiedRep(setType.ElementType)}";
 
                 case TupleType tupleType:
                     return $"T{tupleType.Types.Count}{string.Join("", tupleType.Types.Select(SimplifiedRep))}";

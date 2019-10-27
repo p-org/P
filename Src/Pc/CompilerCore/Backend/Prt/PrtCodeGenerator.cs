@@ -489,6 +489,15 @@ namespace Plang.Compiler.Backend.Prt
                         $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_MAP, {{ .map = &{mapTypeDeclName} }} }};");
                     break;
 
+                case SetType setType:
+                    var setElementTypeName = WriteTypeDefinition(output, setType.ElementType);
+                    var setTypeDeclName = context.Names.GetTemporaryName("SETTYPE");
+                    context.WriteLine(output,
+                        $"static PRT_SETTYPE {setTypeDeclName} = {{ &{setElementTypeName}}};");
+                    context.WriteLine(output,
+                        $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_SET, {{ .set = &{setTypeDeclName} }} }};");
+                    break;
+
                 case NamedTupleType namedTupleType:
                     string ntNamesArrayName = context.Names.GetTemporaryName("NMDTUP_N");
                     string ntTypesArrayName = context.Names.GetTemporaryName("NMDTUP_T");
@@ -867,6 +876,17 @@ namespace Plang.Compiler.Backend.Prt
             {
                 case AnnounceStmt _:
                     // TODO: Ankush needs to implement this in Prt
+                    break;
+
+                case AddStmt addStmt:
+                    context.Write(output, "PrtSetAddEx(");
+                    WriteLValue(output, function, addStmt.Variable);
+                    context.Write(output, ", ");
+                    Debug.Assert(addStmt.Value is IVariableRef);
+                    WriteExpr(output, function, addStmt.Value);
+                    context.WriteLine(output, ", PRT_FALSE);");
+                    var addValueVar = (IVariableRef)addStmt.Value;
+                    context.WriteLine(output, $"*({GetVariableReference(function, addValueVar)}) = NULL;");
                     break;
 
                 case AssertStmt assertStmt:
@@ -1404,8 +1424,9 @@ namespace Plang.Compiler.Backend.Prt
                     break;
 
                 case ContainsExpr containsKeyExpr:
-                    bool isMap = PLanguageType.TypeIsOfKind(containsKeyExpr.Collection.Type, TypeKind.Map);
-                    bool isSeq = PLanguageType.TypeIsOfKind(containsKeyExpr.Collection.Type, TypeKind.Sequence);
+                    var isMap = PLanguageType.TypeIsOfKind(containsKeyExpr.Collection.Type, TypeKind.Map);
+                    var isSeq = PLanguageType.TypeIsOfKind(containsKeyExpr.Collection.Type, TypeKind.Sequence);
+                    var isSet = PLanguageType.TypeIsOfKind(containsKeyExpr.Collection.Type, TypeKind.Set);
                     if (isMap)
                     {
                         context.Write(output, "PrtMkBoolValue(PrtMapExists(");
@@ -1414,8 +1435,9 @@ namespace Plang.Compiler.Backend.Prt
                     {
                         context.Write(output, "PrtMkBoolValue(PrtSeqExists(");
                     }
-                    else
-                    {
+                    else if (isSet) {
+                        context.Write(output, "PrtMkBoolValue(PrtSetExists(");
+                    } else {
                         throw new InvalidOperationException("Unsupported operation for non-map or sequence type");
                     }
                     WriteExpr(output, function, containsKeyExpr.Collection);
@@ -1532,7 +1554,9 @@ namespace Plang.Compiler.Backend.Prt
                 case SizeofExpr sizeofExpr:
                     string sizeofFun = PLanguageType.TypeIsOfKind(sizeofExpr.Expr.Type, TypeKind.Map)
                         ? "PrtMapSizeOf"
-                        : "PrtSeqSizeOf";
+                        : PLanguageType.TypeIsOfKind(sizeofExpr.Expr.Type, TypeKind.Sequence)
+                        ? "PrtSeqSizeOf"
+                        : "PrtSetSizeOf";
                     context.Write(output, $"PrtMkIntValue({sizeofFun}(");
                     WriteExpr(output, function, sizeofExpr.Expr);
                     context.Write(output, "))");

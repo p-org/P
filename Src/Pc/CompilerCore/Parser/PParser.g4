@@ -144,7 +144,7 @@ statement : LBRACE statement* RBRACE                      # CompoundStmt
           | CONTINUE SEMI                                 # ContinueStmt
           | lvalue ASSIGN rvalue SEMI                     # AssignStmt
           | lvalue INSERT LPAREN expr COMMA rvalue RPAREN SEMI # InsertStmt
-		  | lvalue INSERT LPAREN rvalue RPAREN            # AddStmt
+	  | lvalue INSERT LPAREN rvalue RPAREN SEMI        # AddStmt
           | lvalue REMOVE expr SEMI                       # RemoveStmt
           | WHILE LPAREN expr RPAREN statement            # WhileStmt
           | IF LPAREN expr RPAREN thenBranch=statement 

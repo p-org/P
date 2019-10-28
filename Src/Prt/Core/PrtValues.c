@@ -1904,6 +1904,8 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE* value, _In_ PRT_TYPE* 
 
 			next = next->insertNext;
 		}
+
+		return PRT_TRUE;
 	}
 
 	case PRT_KIND_SET:

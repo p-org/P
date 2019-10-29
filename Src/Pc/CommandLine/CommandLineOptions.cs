@@ -222,7 +222,7 @@ namespace Plang.Compiler
             if (!IsLegalPProjFile(projectFile, out FileInfo fullPathName))
             {
                 CommandlineOutput.WriteMessage(
-                    $"Illegal P project file name {projectFile} or file {fullPathName.FullName} not found", SeverityKind.Error);
+                    $"Illegal P project file name {projectFile} or file {fullPathName?.FullName} not found", SeverityKind.Error);
                 return false;
             }
 
@@ -237,18 +237,37 @@ namespace Plang.Compiler
             XElement projectXML = XElement.Load(fullPathName.FullName);
 
             // get all files to be compiled
+
             foreach (XElement inputs in projectXML.Elements("InputFiles"))
             {
                 foreach (XElement inputFileName in inputs.Elements("PFile"))
                 {
-                    if (IsLegalPFile(inputFileName.Value, out FileInfo pFilePathName))
+                    var pFiles = new List<string>();
+
+                    if(Directory.Exists(inputFileName.Value))
                     {
-                        inputFiles.Add(pFilePathName);
+                        foreach(var files in Directory.GetFiles(inputFileName.Value, "*.p"))
+                        {
+                            pFiles.Add(files);
+                        }
                     }
                     else
                     {
-                        CommandlineOutput.WriteMessage(
-                            $"Illegal P file name {inputFileName} or file {pFilePathName.FullName} not found", SeverityKind.Error);
+                        pFiles.Add(inputFileName.Value);   
+                    }
+
+                    foreach(var pFile in pFiles)
+                    {
+                        if (IsLegalPFile(pFile, out FileInfo pFilePathName))
+                        {
+                            CommandlineOutput.WriteMessage($"....... project includes: {pFilePathName.FullName}", SeverityKind.Info);
+                            inputFiles.Add(pFilePathName);
+                        }
+                        else
+                        {
+                            CommandlineOutput.WriteMessage(
+                                $"Illegal P file name {pFile} or file {pFilePathName?.FullName} not found", SeverityKind.Error);
+                        }
                     }
                 }
             }

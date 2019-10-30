@@ -1,5 +1,5 @@
-using Microsoft.PSharp;
-using Microsoft.PSharp.TestingServices;
+using Microsoft.Coyote;
+using Microsoft.Coyote.TestingServices;
 using System;
 using System.Linq;
 

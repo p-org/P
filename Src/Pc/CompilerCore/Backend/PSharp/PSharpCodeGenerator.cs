@@ -82,7 +82,9 @@ namespace Plang.Compiler.Backend.PSharp
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
-            context.WriteLine(output, "using Microsoft.PSharp;");
+            context.WriteLine(output, "using Microsoft.Coyote;");
+            context.WriteLine(output, "using Microsoft.Coyote.Machines;");
+            context.WriteLine(output, "using Microsoft.Coyote.Specifications;");
             context.WriteLine(output, "using System;");
             context.WriteLine(output, "using System.Runtime;");
             context.WriteLine(output, "using System.Collections.Generic;");
@@ -286,7 +288,7 @@ namespace Plang.Compiler.Backend.PSharp
         private void WriteTestFunction(CompilationContext context, StringWriter output, string main)
         {
             context.WriteLine(output);
-            context.WriteLine(output, "[Microsoft.PSharp.Test]");
+            context.WriteLine(output, "[Microsoft.Coyote.Test]");
             context.WriteLine(output, "public static void Execute(IMachineRuntime runtime) {");
             context.WriteLine(output, "runtime.SetLogWriter(new PLogger());");
             context.WriteLine(output, "PModule.runtime = runtime;");

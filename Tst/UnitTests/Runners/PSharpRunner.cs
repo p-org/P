@@ -1,4 +1,4 @@
-﻿using Microsoft.PSharp.TestingServices;
+﻿using Microsoft.Coyote.TestingServices;
 using Plang.Compiler;
 using System;
 using System.Collections.Generic;
@@ -35,8 +35,8 @@ namespace UnitTests.Runners
             CreateFileWithMainFunction(scratchDirectory);
             CreateProjectFile(scratchDirectory);
 
-            string psharpExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "AnyCPU", "Binaries", "PrtSharp.dll");
-            File.Copy(psharpExtensionsPath, Path.Combine(scratchDirectory.FullName, "PrtSharp.dll"), true);
+            string psharpExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "AnyCPU", "Binaries", "PSharpRuntime.dll");
+            File.Copy(psharpExtensionsPath, Path.Combine(scratchDirectory.FullName, "PSharpRuntime.dll"), true);
 
             foreach (FileInfo nativeFile in nativeSources)
             {
@@ -47,9 +47,6 @@ namespace UnitTests.Runners
 
             int exitCode =
                 ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindDotnet(), args);
-
-            /*foreach (var compiledFile in compiledFiles)
-                stdout += $"{compiledFile.Name}\n===\n{File.ReadAllText(compiledFile.FullName)}\n\n";*/
 
             if (exitCode == 0)
             {
@@ -71,26 +68,25 @@ namespace UnitTests.Runners
         private void CreateFileWithMainFunction(DirectoryInfo dir)
         {
             string testCode = @"
-using Microsoft.PSharp;
+using Microsoft.Coyote;
+using Microsoft.Coyote.TestingServices;
 using System;
+using System.Linq;
 
 namespace Main
 {
     public class _TestRegression {
         public static void Main(string[] args)
         {
-            // Optional: increases verbosity level to see the P# runtime log.
-            var configuration = Configuration.Create().WithVerbosityEnabled(2);
-
-            // Creates a new P# runtime instance, and passes an optional configuration.
-            var runtime = PSharpRuntime.Create(configuration);
-
-            // Executes the P# program.
-            DefaultImpl.Execute(runtime);
-
-            // The P# runtime executes asynchronously, so we wait
-            // to not terminate the process.
-            Console.WriteLine(""Press Enter to terminate..."");
+            Configuration configuration = Configuration.Create();
+            configuration.SchedulingIterations = 10;
+            ITestingEngine engine = TestingEngineFactory.CreateBugFindingEngine(configuration, DefaultImpl.Execute);
+            engine.Run();
+            string bug = engine.TestReport.BugReports.FirstOrDefault();
+            if (bug != null)
+            {
+                Console.WriteLine(bug);
+            }
         }
     }
 }";
@@ -117,8 +113,8 @@ namespace Main
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.PSharp"" Version=""1.6.9""/>
-    <Reference Include = ""PrtSharp.dll""/>
+    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.0-rc2""/>
+    <Reference Include = ""PSharpRuntime.dll""/>
   </ItemGroup>
 </Project>";
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.csproj"), false))
@@ -130,8 +126,8 @@ namespace Main
         private int RunPSharpTester(string directory, string dllPath, out string stdout, out string stderr)
         {
             // TODO: bug P# team for how to run a test w/o invoking executable
-            string testerPath = Path.Combine(PSharpAssemblyLocation, "..", "netcoreapp2.1", "PSharpTester.dll");
-            return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, "dotnet", testerPath, $"\"/test:{dllPath}\"", $"\"/max-steps:1000\"", $"\"/i:2000\"", $"\"/sch:dfs\"");
+            string testerPath = Path.Combine(PSharpAssemblyLocation, "..", "netcoreapp2.2", "coyote.dll");
+            return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, "dotnet", testerPath, "test", $"\"{dllPath}\"", "--iterations", "100", "-ms", "100");
         }
 
         private IEnumerable<FileInfo> DoCompile(DirectoryInfo scratchDirectory)

@@ -1,4 +1,5 @@
-﻿using Microsoft.PSharp;
+﻿using Microsoft.Coyote.Machines;
+using Microsoft.Coyote;
 using System;
 
 namespace Plang.PrtSharp

@@ -1,5 +1,6 @@
-﻿using Microsoft.PSharp;
-using Microsoft.PSharp.IO;
+﻿using Microsoft.Coyote;
+using Microsoft.Coyote.IO;
+using Microsoft.Coyote.Machines;
 using Plang.PrtSharp.Exceptions;
 using System;
 using System.Linq;

@@ -1,4 +1,6 @@
-﻿using Microsoft.PSharp;
+﻿using Microsoft.Coyote;
+using Microsoft.Coyote.Machines;
+using Microsoft.Coyote.Specifications;
 using Plang.PrtSharp.Exceptions;
 using System.Collections.Generic;
 using System.Linq;

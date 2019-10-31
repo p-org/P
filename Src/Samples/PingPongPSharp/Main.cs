@@ -1,4 +1,6 @@
-using Microsoft.PSharp;
+using Microsoft.Coyote;
+using Microsoft.Coyote.Machines;
+using Microsoft.Coyote.Specifications;
 using Plang.PrtSharp;
 using Plang.PrtSharp.Exceptions;
 using Plang.PrtSharp.Values;
@@ -234,7 +236,7 @@ namespace pingpong
             PModule.monitorMap.Clear();
         }
 
-        [Microsoft.PSharp.Test]
+        [Microsoft.Coyote.Test]
         public static void Execute(IMachineRuntime runtime)
         {
             runtime.SetLogWriter(new PLogger());

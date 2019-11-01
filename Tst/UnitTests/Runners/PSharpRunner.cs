@@ -101,7 +101,7 @@ namespace Main
             string projectFileContents = @"
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <TargetFramework >netcoreapp2.1</TargetFramework>
+    <TargetFramework >netcoreapp2.2</TargetFramework>
     <ApplicationIcon />
     <OutputType>library</OutputType>
     <StartupObject />

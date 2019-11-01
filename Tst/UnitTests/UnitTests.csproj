@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <ProjectGuid>{71691381-D3C9-478C-BA37-A94032A536DF}</ProjectGuid>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
     <IsPackable>false</IsPackable>

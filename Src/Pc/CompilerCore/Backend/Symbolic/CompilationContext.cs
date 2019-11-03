@@ -39,8 +39,6 @@ namespace Plang.Compiler.Backend.Symbolic
 
         internal string FileName => $"{MainClassName}.java";
 
-        internal static readonly string BddLib = "Bdd.getLib()";
-
         internal static readonly string ReturnValue = "retval";
 
         internal string GetNameForDecl(IPDecl decl)

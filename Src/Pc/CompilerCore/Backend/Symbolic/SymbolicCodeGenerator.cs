@@ -98,18 +98,13 @@ namespace Plang.Compiler.Backend.Symbolic
             context.Write(output, functionName);
 
             context.WriteLine(output, $"(");
-            context.WriteLine(output, $"    Bdd {rootPCScope.PathConstraintVar},");
-
-            for (int i = 0; i < function.Signature.Parameters.Count; i++)
+            context.Write(output, $"    Bdd {rootPCScope.PathConstraintVar}");
+            foreach (var param in function.Signature.Parameters)
             {
-                var param = function.Signature.Parameters[i];
+                context.WriteLine(output, ",");
                 context.Write(output, $"    {GetSymbolicType(param.Type, true)} {CompilationContext.GetVar(param.Name)}");
-                if (i + 1 != function.Signature.Parameters.Count)
-                    context.WriteLine(output, ",");
-                else
-                    context.WriteLine(output);
             }
-
+            context.WriteLine(output);
             context.Write(output, ") ");
 
             context.WriteLine(output, "{");
@@ -129,7 +124,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
-                context.WriteLine(output, $"java.util.List<{GetSymbolicType(function.Signature.ReturnType)}> {CompilationContext.ReturnValue} = {GetValueSummaryOps(context, function.Signature.ReturnType).GetName()}.empty();");
+                context.WriteLine(output, $"{GetSymbolicType(function.Signature.ReturnType)} {CompilationContext.ReturnValue} = {GetValueSummaryOps(context, function.Signature.ReturnType).GetName()}.empty();");
                 context.WriteLine(output);
             }
 
@@ -295,7 +290,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.WriteLine(output, $");");
                     }
 
-                    context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = {CompilationContext.BddLib}.constFalse();");
+                    context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = Bdd.constFalse();");
 
                     if (!(flowContext.loopScope is null))
                     {
@@ -318,7 +313,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.WriteLine(output, $"{flowContext.branchScope.Value.JumpedOutFlag} = true;");
                     }
 
-                    context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = {CompilationContext.BddLib}.constFalse();");
+                    context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = Bdd.constFalse();");
                     break;
 
                 case CompoundStmt compoundStmt:
@@ -335,7 +330,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
                         if (CanJumpOut(subStmt))
                         {
-                            context.WriteLine(output, $"if (!{CompilationContext.BddLib}.isConstFalse({flowContext.pcScope.PathConstraintVar})) {{");
+                            context.WriteLine(output, $"if (!{flowContext.pcScope.PathConstraintVar}.isConstFalse()) {{");
                             nestedEarlyExitCheckCount++;
                         }
                     }
@@ -361,13 +356,13 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"Bdd {loopContext.pcScope.PathConstraintVar} = {flowContext.pcScope.PathConstraintVar};");
 
                     /* Loop body */
-                    context.WriteLine(output, $"while (!{CompilationContext.BddLib}.isConstFalse({loopContext.pcScope.PathConstraintVar})) {{");
+                    context.WriteLine(output, $"while (!{loopContext.pcScope.PathConstraintVar}.isConstFalse()) {{");
                     WriteStmt(function, context, output, loopContext, whileStmt.Body);
                     context.WriteLine(output, "}");
 
                     /* Epilogue */
                     context.WriteLine(output, $"if ({loopContext.loopScope.Value.LoopEarlyReturnFlag}) {{");
-                    context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = {CompilationContext.BddLib}.orMany({loopContext.loopScope.Value.LoopExitsList});");
+                    context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = Bdd.orMany({loopContext.loopScope.Value.LoopExitsList});");
                     if (flowContext.branchScope.HasValue)
                     {
                         context.WriteLine(output, $"{flowContext.branchScope.Value.JumpedOutFlag} = true;");
@@ -396,14 +391,14 @@ namespace Plang.Compiler.Backend.Symbolic
 
                     /* Body */
 
-                    context.WriteLine(output, $"if (!{CompilationContext.BddLib}.isConstFalse({thenContext.pcScope.PathConstraintVar})) {{");
+                    context.WriteLine(output, $"if (!{thenContext.pcScope.PathConstraintVar}.isConstFalse()) {{");
                     context.WriteLine(output, "// 'then' branch");
                     WriteStmt(function, context, output, thenContext, ifStmt.ThenBranch);
                     context.WriteLine(output, "}");
                     
                     if (!(ifStmt.ElseBranch is null))
                     {
-                        context.WriteLine(output, $"if (!{CompilationContext.BddLib}.isConstFalse({elseContext.pcScope.PathConstraintVar})) {{");
+                        context.WriteLine(output, $"if (!{elseContext.pcScope.PathConstraintVar}.isConstFalse()) {{");
                         context.WriteLine(output, "// 'else' branch");
                         WriteStmt(function, context, output, elseContext, ifStmt.ElseBranch);
                         context.WriteLine(output, "}");
@@ -412,7 +407,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     /* Epilogue */
 
                     context.WriteLine(output, $"if ({thenContext.branchScope.Value.JumpedOutFlag} || {elseContext.branchScope.Value.JumpedOutFlag}) {{");
-                    context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = {CompilationContext.BddLib}.or({thenContext.pcScope.PathConstraintVar}, {elseContext.pcScope.PathConstraintVar});");
+                    context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = {thenContext.pcScope.PathConstraintVar}.or({elseContext.pcScope.PathConstraintVar});");
 
                     if (flowContext.branchScope.HasValue)
                     {
@@ -424,33 +419,97 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case FunCallStmt funCallStmt:
-                    var isStatic = funCallStmt.Function.Owner == null;
-                    if (!isStatic)
-                    {
-                        throw new NotImplementedException("Calls to non-static methods not yet supported");
-                    }
-
-                    var isAsync = funCallStmt.Function.CanReceive == true;
-                    if (isAsync)
-                    {
-                        throw new NotImplementedException("Calls to async methods not yet supported");
-                    }
-
-                    context.Write(output, $"{context.GetNameForDecl(funCallStmt.Function)}({flowContext.pcScope.PathConstraintVar}");
-                    foreach (var param in funCallStmt.ArgsList)
-                    {
-                        context.Write(output, ", ");
-                        WriteExpr(context, output, flowContext.pcScope, param);
-                    }
-                    context.WriteLine(output, ");");
-
+                    WriteFunCall(context, output, flowContext.pcScope, funCallStmt.Function, funCallStmt.ArgsList);
+                    context.WriteLine(output,";");
                     break;
- 
+
+                case InsertStmt insertStmt:
+                    {
+                        var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
+
+                        WriteWithLValueMutationContext(
+                            context,
+                            output,
+                            flowContext.pcScope,
+                            insertStmt.Variable,
+                            true,
+                            (structureTemp) =>
+                            {
+                                var structureOps = GetValueSummaryOps(context, insertStmt.Variable.Type);
+
+                                context.Write(output, $"{structureTemp} = ");
+
+                                if (isMap)
+                                    context.Write(output, $"{structureOps.GetName()}.add(");
+                                else
+                                    context.Write(output, $"{structureOps.GetName()}.insert(");
+
+                                WriteExpr(context, output, flowContext.pcScope, insertStmt.Index);
+                                context.Write(output, ", ");
+                                WriteExpr(context, output, flowContext.pcScope, insertStmt.Value);
+                                context.WriteLine(output, ");");
+                            }
+                        );
+
+                        break;
+                    }
+
+                case RemoveStmt removeStmt:
+                    {
+                        var isMap = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map);
+
+                        WriteWithLValueMutationContext(
+                            context,
+                            output,
+                            flowContext.pcScope,
+                            removeStmt.Variable,
+                            true,
+                            (structureTemp) =>
+                            {
+                                var structureOps = GetValueSummaryOps(context, removeStmt.Variable.Type);
+
+                                context.Write(output, $"{structureTemp} = ");
+
+                                if (isMap)
+                                    context.Write(output, $"{structureOps.GetName()}.remove(");
+                                else
+                                    context.Write(output, $"{structureOps.GetName()}.removeAt(");
+
+                                WriteExpr(context, output, flowContext.pcScope, removeStmt.Value);
+                                context.WriteLine(output, ");");
+                            }
+                        );
+                    }
+                    break;
+
                 default:
                     context.WriteLine(output, $"/* Skipping statement '{stmt.GetType().Name}' */");
                     // throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported");
                     break;
             }
+        }
+
+        private void WriteFunCall(CompilationContext context, StringWriter output, PathConstraintScope pcScope, Function function, IReadOnlyList<IPExpr> args)
+        {
+            var isStatic = function.Owner == null;
+            if (!isStatic)
+            {
+                throw new NotImplementedException("Calls to non-static methods not yet supported");
+            }
+
+            var isAsync = function.CanReceive == true;
+            if (isAsync)
+            {
+                throw new NotImplementedException("Calls to async methods not yet supported");
+            }
+
+            context.Write(output, $"{context.GetNameForDecl(function)}({pcScope.PathConstraintVar}");
+            foreach (var param in args)
+            {
+                context.Write(output, ", ");
+                WriteExpr(context, output, pcScope, param);
+            }
+            context.Write(output, ")");
         }
 
         private void WriteWithLValueMutationContext(
@@ -553,7 +612,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
                     context.WriteLine(output,
                         $"{unguarded} = {summaryOps}.merge2(" +
-                        $"{summaryOps}.guard({unguarded}, {CompilationContext.BddLib}.not({pcScope.PathConstraintVar}))," +
+                        $"{summaryOps}.guard({unguarded}, {pcScope.PathConstraintVar}.not())," +
                         $"{guardedTemp});");
 
                     break;
@@ -569,6 +628,12 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 case CloneExpr cloneExpr:
                     WriteExpr(context, output, pcScope, cloneExpr.Term);
+                    break;
+                case UnaryOpExpr unaryOpExpr:
+                    var lambdaTemp = context.FreshTempVar();
+                    context.Write(output, "(");
+                    WriteExpr(context, output, pcScope, unaryOpExpr.SubExpr);
+                    context.Write(output, $").map(({lambdaTemp}) => {UnOpToStr(unaryOpExpr.Operation)}{lambdaTemp})");
                     break;
                 case BinOpExpr binOpExpr:
                     if (binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq)
@@ -590,15 +655,14 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, pcScope, binOpExpr.Rhs);
                     context.Write(
                         output,
-                        $", {CompilationContext.BddLib}, " +
-                        $"({lhsLambdaTemp}, {rhsLambdaTemp}) => " +
+                        $", ({lhsLambdaTemp}, {rhsLambdaTemp}) => " +
                         $"{lhsLambdaTemp} {BinOpToStr(binOpExpr.Operation)} {rhsLambdaTemp})"
                     );
 
                     break;
                 case BoolLiteralExpr boolLiteralExpr:
                     {
-                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Bool) }({ CompilationContext.BddLib}, {boolLiteralExpr.Value})";
+                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Bool) }({boolLiteralExpr.Value})";
                         var guarded = $"{GetValueSummaryOps(context, PrimitiveType.Bool).GetName()}.guard({unguarded}, {pcScope.PathConstraintVar})";
                         context.Write(output, guarded);
                         break;
@@ -608,14 +672,14 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case FloatLiteralExpr floatLiteralExpr:
                     {
-                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Float) }({ CompilationContext.BddLib}, {floatLiteralExpr.Value})";
+                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Float) }({floatLiteralExpr.Value})";
                         var guarded = $"{GetValueSummaryOps(context, PrimitiveType.Float).GetName()}.guard({unguarded}, {pcScope.PathConstraintVar})";
                         context.Write(output, guarded);
                         break;
                     }
                 case IntLiteralExpr intLiteralExpr:
                     {
-                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Int) }({ CompilationContext.BddLib}, {intLiteralExpr.Value})";
+                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Int) }({intLiteralExpr.Value})";
                         var guarded = $"{GetValueSummaryOps(context, PrimitiveType.Int).GetName()}.guard({unguarded}, {pcScope.PathConstraintVar})";
                         context.Write(output, guarded);
                         break;
@@ -646,6 +710,24 @@ namespace Plang.Compiler.Backend.Symbolic
                         $"{CompilationContext.GetVar(linearAccessExpr.Variable.Name)}, " +
                         $"{pcScope.PathConstraintVar})");
                     break;
+                case FunCallExpr funCallExpr:
+                    WriteFunCall(context, output, pcScope, funCallExpr.Function, funCallExpr.Arguments);
+                    break;
+                case ContainsExpr containsExpr:
+                    var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
+
+                    var structureOps = GetValueSummaryOps(context, containsExpr.Collection.Type);
+
+                    if (isMap)
+                        context.Write(output, $"{structureOps.GetName()}.containsKey(");
+                    else
+                        context.Write(output, $"{structureOps.GetName()}.contains(");
+
+                    WriteExpr(context, output, pcScope, containsExpr.Collection);
+                    context.Write(output, ", ");
+                    WriteExpr(context, output, pcScope, containsExpr.Item);
+                    context.Write(output, ")");
+                    break;
                 default:
                     context.Write(output, $"/* Skipping expr '{expr.GetType().Name}' */");
                     break;
@@ -653,7 +735,7 @@ namespace Plang.Compiler.Backend.Symbolic
         }
 
         // TODO: This is copied from PSharpCodeGenerator.cs.  Should we factor this out into some common location?
-        private object BinOpToStr(BinOpType binOpType)
+        private string BinOpToStr(BinOpType binOpType)
         {
             switch (binOpType)
             {
@@ -682,6 +764,19 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        // TODO: This is copied from PSharpCodeGenerator.cs.  Should we refactor this into some common location?
+        private static string UnOpToStr(UnaryOpType operation)
+        {
+            switch (operation)
+            {
+                case UnaryOpType.Negate:
+                    return "-";
+                case UnaryOpType.Not:
+                    return "!";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(operation));
+            }
+        }
         private string GetConcreteBoxedType(PLanguageType type)
         {
             switch (type)
@@ -702,21 +797,20 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (type.Canonicalize())
             {
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
-                    return "PrimVS<Bdd, Boolean>";
+                    return "PrimVS<Boolean>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                    return "PrimVS<Bdd, Integer>";
+                    return "PrimVS<Integer>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
-                    return "PrimVS<Bdd, Float>";
+                    return "PrimVS<Float>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     if (isVar)
                         throw new NotImplementedException("Variables of type 'null' not yet supported");
                     else
                         return "void";
                 case SequenceType sequenceType:
-                    return $"ListVS<Bdd, {GetSymbolicType(sequenceType.ElementType, true)}>";
+                    return $"ListVS<{GetSymbolicType(sequenceType.ElementType, true)}>";
                 case MapType mapType:
                     return $"MapVS<" +
-                        $"Bdd, " +
                         $"{GetConcreteBoxedType(mapType.KeyType)}, " +
                         $"{GetSymbolicType(mapType.ValueType, true)}>";
                 default:
@@ -731,16 +825,15 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (type)
             {
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
-                    return "PrimVS.Ops<Bdd, Boolean>";
+                    return "PrimVS.Ops<Boolean>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                    return "PrimVS.Ops<Bdd, Integer>";
+                    return "PrimVS.Ops<Integer>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
-                    return "PrimVS.Ops<Bdd, Float>";
+                    return "PrimVS.Ops<Float>";
                 case SequenceType sequenceType:
-                    return $"ListVS.Ops<Bdd, {GetSymbolicType(sequenceType.ElementType, true)}>";
+                    return $"ListVS.Ops<{GetSymbolicType(sequenceType.ElementType, true)}>";
                 case MapType mapType:
                     return $"MapVS.Ops<" +
-                        $"Bdd, " +
                         $"{GetConcreteBoxedType(mapType.KeyType)}, " +
                         $"{GetSymbolicType(mapType.ValueType, true)}>";
                 default:
@@ -759,16 +852,16 @@ namespace Plang.Compiler.Backend.Symbolic
                     primitiveType.IsSameTypeAs(PrimitiveType.Int) ||
                     primitiveType.IsSameTypeAs(PrimitiveType.Float):
 
-                    defBody = $"new {opsType}({CompilationContext.BddLib})";
+                    defBody = $"new {opsType}()";
                     break;
 
                 case SequenceType sequenceType:
                     var elemOps = GetValueSummaryOps(context, sequenceType.ElementType);
-                    defBody = $"new {opsType}({CompilationContext.BddLib}, {elemOps.GetName()})";
+                    defBody = $"new {opsType}({elemOps.GetName()})";
                     break;
                 case MapType mapType:
                     var valOps = GetValueSummaryOps(context, mapType.ValueType);
-                    defBody = $"new {opsType}({CompilationContext.BddLib}, {valOps.GetName()})";
+                    defBody = $"new {opsType}({valOps.GetName()})";
                     break;
                 default:
                     throw new NotImplementedException($"Symbolic type '{type.OriginalRepresentation}' ops not supported");
@@ -783,19 +876,19 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (type.Canonicalize())
             {
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
-                    unguarded = $"new {GetSymbolicType(type)}({CompilationContext.BddLib}, false)";
+                    unguarded = $"new {GetSymbolicType(type)}(false)";
                     break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                    unguarded = $"new {GetSymbolicType(type)}({CompilationContext.BddLib}, 0)";
+                    unguarded = $"new {GetSymbolicType(type)}(0)";
                     break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
-                    unguarded = $"new {GetSymbolicType(type)}({CompilationContext.BddLib}, 0.0f)";
+                    unguarded = $"new {GetSymbolicType(type)}(0.0f)";
                     break;
-                case SequenceType sequenceType:
-                    unguarded = $"new {GetSymbolicType(type)}({CompilationContext.BddLib})";
+                case SequenceType _:
+                    unguarded = $"new {GetSymbolicType(type)}()";
                     break;
-                case MapType mapType:
-                    unguarded = $"new {GetSymbolicType(type)}({CompilationContext.BddLib})";
+                case MapType _:
+                    unguarded = $"new {GetSymbolicType(type)}()";
                     break;
                 default:
                     throw new NotImplementedException($"Default value for symbolic type '{type.OriginalRepresentation}' not supported");

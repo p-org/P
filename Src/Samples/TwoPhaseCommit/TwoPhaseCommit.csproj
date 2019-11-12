@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
@@ -14,12 +14,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\PSharpRuntime\PSharpExtensions\PrtSharp.csproj" />
-    <PackageReference Include="Microsoft.PSharp" Version="1.6.9" />
+    <ProjectReference Include="..\..\PSharpRuntime\PSharpRuntime.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="PSrc\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Coyote" Version="1.0.0-rc2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Main.cs" />
+  </ItemGroup>
 </Project>

@@ -1,4 +1,3 @@
-using Microsoft.PSharp;
 using System;
 using System.Runtime;
 using System.Collections.Generic;
@@ -11,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 #pragma warning disable 162, 219, 414
-namespace Main
+namespace TwoPhaseCommit
 {
     public static partial class GlobalFunctions {
 		public static PrtNamedTuple ChooseTransaction(PMachine pMachine)

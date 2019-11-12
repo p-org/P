@@ -1,9 +1,9 @@
 ﻿using System;
-using Microsoft.PSharp;
-using Microsoft.PSharp.TestingServices;
+using Microsoft.Coyote;
+using Microsoft.Coyote.TestingServices;
 using System.Linq;
 
-namespace Main
+namespace TwoPhaseCommit
 {
     public class _TestRegression
     {

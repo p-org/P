@@ -1,0 +1,50 @@
+
+machine PeriodicTimer
+{
+    var Target: machine;
+
+    start state Init
+    {
+        on PConfigureEvent do (payload: machine) {
+            Configure(payload);
+        }
+        on PStartTimer goto Active;
+    }
+
+    fun Configure(payload: machine)
+    {
+        Target = payload;
+    }
+
+    state Active
+    {
+        entry
+        {
+            send this, PTickEvent;
+        }
+
+        on PTickEvent do Tick;
+        on PCancelTimer goto Inactive;
+        defer PStartTimer;
+    }
+
+    fun Tick()
+    {
+        if ($)
+        {
+            //this.Logger.WriteLine("\n [PeriodicTimer] " + this.Target + " | timed out\n");
+            print "Periodic Timer timed out";
+            send Target, PTimeout;
+        }
+
+        raise PCancelTimer;
+    }
+
+    state Inactive
+    {
+        on PStartTimer goto Active;
+        defer PCancelTimer, PTickEvent;
+    }
+}
+
+

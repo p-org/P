@@ -3,7 +3,7 @@ using Microsoft.Coyote;
 using Microsoft.Coyote.TestingServices;
 using System.Linq;
 
-namespace TwoPhaseCommit
+namespace Raft
 {
     public class _TestRegression
     {

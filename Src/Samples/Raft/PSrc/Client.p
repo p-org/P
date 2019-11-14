@@ -23,7 +23,7 @@ machine Client
 
     start state Init
     {
-        entry (payload: machine)
+        entry
         {
             LatestCommand = -1;
             Counter = 0;

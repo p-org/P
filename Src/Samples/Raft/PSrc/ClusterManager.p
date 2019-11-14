@@ -37,12 +37,12 @@ machine ClusterManager
 
 			while(idx < NumberOfServers)
 			{	
-				mac = default(machine);
+				mac = new Server();
 				Servers += (idx, mac);
 				idx = idx + 1;
 			}
 
-			Client = default(machine);
+			Client = new Client();
 			raise LocalEvent;
 		}
 
@@ -57,7 +57,7 @@ machine ClusterManager
 			idx = 0;
 			while(idx < NumberOfServers)
 			{
-				send Servers[idx], SConfigureEvent, (Id=idx, Servers=Servers, ClusterManager=this);
+				send Servers[idx], SConfigureEvent, (Id = idx, Servers = Servers, ClusterManager = this);
 				idx = idx + 1;
 			}
 

@@ -51,10 +51,10 @@ machine Server
             Servers = payload.Servers;
             ClusterManager = payload.ClusterManager;
 
-            ElectionTimer = default(machine);
+            ElectionTimer = new ElectionTimer();
             send ElectionTimer, EConfigureEvent, this;
 
-            PeriodicTimer = default(machine);
+            PeriodicTimer = new PeriodicTimer();
             send PeriodicTimer, PConfigureEvent, this;
 
             raise BecomeFollower;

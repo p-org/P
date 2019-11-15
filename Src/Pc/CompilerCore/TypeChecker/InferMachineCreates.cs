@@ -99,6 +99,10 @@ namespace Plang.Compiler.TypeChecker
                 case ReturnStmt returnStmt:
                     return InferCreatesForExpr(returnStmt.ReturnValue, handler);
 
+                case StringAssignStmt stringAssignStmt:
+                    return InferCreatesForExpr(stringAssignStmt.Location, handler)
+                        .Union(stringAssignStmt.Args.SelectMany(expr => InferCreatesForExpr(expr, handler)));
+
                 case BreakStmt breakStmt:
                     return Enumerable.Empty<Interface>();
 

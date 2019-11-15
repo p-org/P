@@ -106,6 +106,14 @@ namespace Plang.PrtSharp
         }
     }
 
+    public class PrtStringType : PrtType
+    {
+        public override string ToString()
+        {
+            return "STRING";
+        }
+    }
+
     public class PrtEventType : PrtType
     {
         public override string ToString()
@@ -143,6 +151,21 @@ namespace Plang.PrtSharp
         public override string ToString()
         {
             return $"seq[{elemType}]";
+        }
+    }
+
+    public class PrtSetType : PrtType
+    {
+        public PrtType elemType;
+
+        public PrtSetType(PrtType s)
+        {
+            elemType = s;
+        }
+
+        public override string ToString()
+        {
+            return $"set[{elemType}]";
         }
     }
 

@@ -35,6 +35,7 @@ type : SEQ LBRACK type RBRACK     # SeqType
      | BOOL      # PrimitiveType
      | INT       # PrimitiveType
      | FLOAT     # PrimitiveType
+     | STRING    # PrimitiveType
      | EVENT     # PrimitiveType
      | MACHINE   # PrimitiveType
      | DATA      # PrimitiveType
@@ -143,6 +144,7 @@ statement : LBRACE statement* RBRACE                      # CompoundStmt
           | BREAK SEMI                                    # BreakStmt
           | CONTINUE SEMI                                 # ContinueStmt
           | lvalue ASSIGN rvalue SEMI                     # AssignStmt
+		  | lvalue ASSIGN StringLiteral COMMA rvalueList SEMI  # StringAssignStmt
           | lvalue INSERT LPAREN expr COMMA rvalue RPAREN SEMI # InsertStmt
 	  | lvalue INSERT LPAREN rvalue RPAREN SEMI        # AddStmt
           | lvalue REMOVE expr SEMI                       # RemoveStmt
@@ -198,6 +200,7 @@ primitive : iden
           | BoolLiteral
           | IntLiteral
           | NullLiteral
+		  | StringLiteral
           | NONDET
           | FAIRNONDET
           | HALT

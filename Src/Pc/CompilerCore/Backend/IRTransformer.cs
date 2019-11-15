@@ -460,6 +460,20 @@ namespace Plang.Compiler.Backend
                         })
                         .ToList();
 
+                case StringAssignStmt stringAssignStmt:
+                    (IPExpr stringAssignLV, List<IPStmt> stringAssignLVDeps) = SimplifyLvalue(stringAssignStmt.Location);
+                    deps = new List<IPStmt>();
+                    newArgs = new List<IPExpr>();
+                    foreach (IPExpr stringAssignStmtArg in stringAssignStmt.Args)
+                    {
+                        (IExprTerm arg, List<IPStmt> argDeps) = SimplifyExpression(stringAssignStmtArg);
+                        newArgs.Add(arg);
+                        deps.AddRange(argDeps);
+                    }
+
+                    return stringAssignLVDeps.Concat(deps).Concat(new[] { new StringAssignStmt(location, stringAssignLV, stringAssignStmt.BaseString, newArgs) }).ToList();
+
+
                 case BreakStmt breakStmt:
                     return new List<IPStmt> { breakStmt };
 

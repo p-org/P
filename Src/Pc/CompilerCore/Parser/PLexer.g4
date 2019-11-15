@@ -13,6 +13,7 @@ MACHINE   : 'machine' ;
 INTERFACE : 'interface' ;
 MAP       : 'map' ;
 SET       : 'set' ;
+STRING    : 'string' ;
 SEQ       : 'seq' ;
 DATA      : 'data' ;
 

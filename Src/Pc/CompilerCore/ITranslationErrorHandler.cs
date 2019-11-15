@@ -70,6 +70,8 @@ namespace Plang.Compiler
 
         Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol);
 
+        Exception InvalidStringAssignFormat(PParser.StringAssignStmtContext context, IToken symbol);
+
         // module system related
         Exception InvalidBindExpr(ParserRuleContext location, string message);
 
@@ -107,6 +109,8 @@ namespace Plang.Compiler
         Exception PopInNonVoidFunction(ParserRuleContext context);
 
         Exception PrintStmtLinearArgument(ParserRuleContext argSourceLocation);
+
+        Exception StringAssignStmtLinearArgument(ParserRuleContext argSourceLocation);
 
         Exception DuplicateReceiveCase(ParserRuleContext location, PEvent pEvent);
 

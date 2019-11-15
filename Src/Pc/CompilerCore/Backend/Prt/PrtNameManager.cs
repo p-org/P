@@ -193,6 +193,9 @@ namespace Plang.Compiler.Backend.Prt
                 case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Machine):
                     return "m";
 
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.String):
+                    return "r";
+
                 case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Any):
                     return "a";
 

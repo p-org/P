@@ -11,9 +11,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Plang.Compiler.Backend.PSharp
+namespace Plang.Compiler.Backend.Coyote
 {
-    public class PSharpCodeGenerator : ICodeGenerator
+    public class CoyoteCodeGenerator : ICodeGenerator
     {
         public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
         {
@@ -54,7 +54,7 @@ namespace Plang.Compiler.Backend.PSharp
             {
                 context.WriteLine(output, $"public class {context.Names.GetNameForDecl(iface)} : PMachineValue {{");
                 context.WriteLine(output,
-                    $"public {context.Names.GetNameForDecl(iface)} (MachineId machine, List<string> permissions) : base(machine, permissions) {{ }}");
+                    $"public {context.Names.GetNameForDecl(iface)} (ActorId machine, List<string> permissions) : base(machine, permissions) {{ }}");
                 context.WriteLine(output, "}");
                 context.WriteLine(output);
             }
@@ -83,7 +83,8 @@ namespace Plang.Compiler.Backend.PSharp
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
             context.WriteLine(output, "using Microsoft.Coyote;");
-            context.WriteLine(output, "using Microsoft.Coyote.Machines;");
+            context.WriteLine(output, "using Microsoft.Coyote.Actors;");
+            context.WriteLine(output, "using Microsoft.Coyote.Runtime;");
             context.WriteLine(output, "using Microsoft.Coyote.Specifications;");
             context.WriteLine(output, "using System;");
             context.WriteLine(output, "using System.Runtime;");
@@ -288,9 +289,9 @@ namespace Plang.Compiler.Backend.PSharp
         private void WriteTestFunction(CompilationContext context, StringWriter output, string main)
         {
             context.WriteLine(output);
-            context.WriteLine(output, "[Microsoft.Coyote.Test]");
-            context.WriteLine(output, "public static void Execute(IMachineRuntime runtime) {");
-            context.WriteLine(output, "runtime.SetLogWriter(new PLogger());");
+            context.WriteLine(output, "[Microsoft.Coyote.TestingServices.Test]");
+            context.WriteLine(output, "public static void Execute(IActorRuntime runtime) {");
+            context.WriteLine(output, "runtime.SetLogFormatter(new PLogFormatter());");
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "PHelper.InitializeEnums();");
@@ -299,7 +300,7 @@ namespace Plang.Compiler.Backend.PSharp
             context.WriteLine(output, "InitializeMonitorMap(runtime);");
             context.WriteLine(output, "InitializeMonitorObserves();");
             context.WriteLine(output,
-                $"runtime.CreateMachine(typeof(_GodMachine), new _GodMachine.Config(typeof({main})));");
+                $"runtime.CreateActor(typeof(_GodMachine), new _GodMachine.Config(typeof({main})));");
             context.WriteLine(output, "}");
         }
 
@@ -321,7 +322,7 @@ namespace Plang.Compiler.Backend.PSharp
                 }
             }
 
-            context.WriteLine(output, "public static void InitializeMonitorMap(IMachineRuntime runtime) {");
+            context.WriteLine(output, "public static void InitializeMonitorMap(IActorRuntime runtime) {");
             context.WriteLine(output, "PModule.monitorMap.Clear();");
             foreach (KeyValuePair<Interface, List<Machine>> machine in machineMap)
             {
@@ -461,7 +462,7 @@ namespace Plang.Compiler.Backend.PSharp
                 context.WriteLine(output, "[OnEntry(nameof(InitializeParametersFunction))]");
                 context.WriteLine(output,
                     $"[OnEventGotoState(typeof(ConstructorEvent), typeof({context.Names.GetNameForDecl(state)}))]");
-                context.WriteLine(output, "class __InitState__ : MachineState { }");
+                context.WriteLine(output, "class __InitState__ : State { }");
                 context.WriteLine(output);
             }
 
@@ -544,8 +545,7 @@ namespace Plang.Compiler.Backend.PSharp
                 context.WriteLine(output, $"[OnExit(nameof({context.Names.GetNameForDecl(state.Exit)}))]");
             }
 
-            string stateType = state.OwningMachine.IsSpec ? "MonitorState" : "MachineState";
-            context.WriteLine(output, $"class {context.Names.GetNameForDecl(state)} : {stateType}");
+            context.WriteLine(output, $"class {context.Names.GetNameForDecl(state)} : State");
             context.WriteLine(output, "{");
             context.WriteLine(output, "}");
         }
@@ -655,7 +655,7 @@ namespace Plang.Compiler.Backend.PSharp
                     break;
 
                 case AssertStmt assertStmt:
-                    context.Write(output, "currentMachine.Assert(");
+                    context.Write(output, "currentMachine.TryAssert(");
                     WriteExpr(context, output, assertStmt.Assertion);
                     context.Write(output, ",");
                     context.Write(output, $"\"Assertion Failed: {assertStmt.Message}\"");
@@ -757,7 +757,7 @@ namespace Plang.Compiler.Backend.PSharp
                     break;
 
                 case GotoStmt gotoStmt:
-                    context.Write(output, $"currentMachine.GotoState<{gotoStmt.State.QualifiedName}>(");
+                    context.Write(output, $"currentMachine.TryGotoState<{gotoStmt.State.QualifiedName}>(");
                     if (gotoStmt.Payload != null)
                     {
                         WriteExpr(context, output, gotoStmt.Payload);
@@ -829,7 +829,7 @@ namespace Plang.Compiler.Backend.PSharp
                     break;
 
                 case PopStmt _:
-                    context.WriteLine(output, "currentMachine.PopState();");
+                    context.WriteLine(output, "currentMachine.TryPopState();");
                     //last statement
                     context.WriteLine(output, "throw new PUnreachableCodeException();");
                     break;
@@ -846,7 +846,7 @@ namespace Plang.Compiler.Backend.PSharp
                     break;
 
                 case RaiseStmt raiseStmt:
-                    context.Write(output, "currentMachine.RaiseEvent((Event)");
+                    context.Write(output, "currentMachine.TryRaiseEvent((Event)");
                     WriteExpr(context, output, raiseStmt.PEvent);
                     if (raiseStmt.Payload.Any())
                     {
@@ -864,7 +864,7 @@ namespace Plang.Compiler.Backend.PSharp
                     string[] eventTypeNames = receiveStmt.Cases.Keys.Select(evt => context.Names.GetNameForDecl(evt))
                         .ToArray();
                     string recvArgs = string.Join(", ", eventTypeNames.Select(name => $"typeof({name})"));
-                    context.WriteLine(output, $"var {eventName} = await currentMachine.ReceiveEvent({recvArgs});");
+                    context.WriteLine(output, $"var {eventName} = await currentMachine.TryReceiveEvent({recvArgs});");
                     context.WriteLine(output, $"switch ({eventName}) {{");
                     foreach (KeyValuePair<PEvent, Function> recvCase in receiveStmt.Cases)
                     {
@@ -948,7 +948,7 @@ namespace Plang.Compiler.Backend.PSharp
                     break;
 
                 case SendStmt sendStmt:
-                    context.Write(output, "currentMachine.SendEvent(");
+                    context.Write(output, "currentMachine.TrySendEvent(");
                     WriteExpr(context, output, sendStmt.MachineExpr);
                     context.Write(output, ", (Event)");
                     WriteExpr(context, output, sendStmt.Evt);
@@ -1284,7 +1284,7 @@ namespace Plang.Compiler.Backend.PSharp
                     break;
 
                 case NondetExpr _:
-                    context.Write(output, "((PrtBool)currentMachine.Random())");
+                    context.Write(output, "((PrtBool)currentMachine.TryRandomBool())");
                     break;
 
                 case NullLiteralExpr _:

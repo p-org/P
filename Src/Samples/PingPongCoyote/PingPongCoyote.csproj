@@ -13,11 +13,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Coyote" Version="1.0.0-rc2" />
+    <PackageReference Include="Microsoft.Coyote" Version="1.0.0-rc5" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\PSharpRuntime\PSharpRuntime.csproj" />
+    <ProjectReference Include="..\..\CoyoteRuntime\CoyoteRuntime.csproj" />
   </ItemGroup>
 
 </Project>

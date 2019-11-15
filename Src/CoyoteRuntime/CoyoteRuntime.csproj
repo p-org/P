@@ -5,7 +5,7 @@
     <OutputPath>$(PSdkFolder)\$(TargetFramework)\Binaries</OutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Coyote" Version="1.0.0-rc2" />
+    <PackageReference Include="Microsoft.Coyote" Version="1.0.0-rc5" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
   </ItemGroup>
 </Project>

@@ -9,21 +9,21 @@ using UnitTests.Core;
 
 namespace UnitTests.Runners
 {
-    internal class PSharpRunner : ICompilerTestRunner
+    internal class CoyoteRunner : ICompilerTestRunner
     {
-        private static readonly string PSharpAssemblyLocation =
+        private static readonly string CoyoteAssemblyLocation =
             Path.GetDirectoryName(typeof(TestingEngineFactory).GetTypeInfo().Assembly.Location);
 
         private readonly FileInfo[] nativeSources;
         private readonly FileInfo[] sources;
 
-        public PSharpRunner(FileInfo[] sources)
+        public CoyoteRunner(FileInfo[] sources)
         {
             this.sources = sources;
             nativeSources = new FileInfo[] { };
         }
 
-        public PSharpRunner(FileInfo[] sources, FileInfo[] nativeSources)
+        public CoyoteRunner(FileInfo[] sources, FileInfo[] nativeSources)
         {
             this.sources = sources;
             this.nativeSources = nativeSources;
@@ -35,8 +35,8 @@ namespace UnitTests.Runners
             CreateFileWithMainFunction(scratchDirectory);
             CreateProjectFile(scratchDirectory);
 
-            string psharpExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "AnyCPU", "Binaries", "PSharpRuntime.dll");
-            File.Copy(psharpExtensionsPath, Path.Combine(scratchDirectory.FullName, "PSharpRuntime.dll"), true);
+            string coyoteExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "AnyCPU", "Binaries", "CoyoteRuntime.dll");
+            File.Copy(coyoteExtensionsPath, Path.Combine(scratchDirectory.FullName, "CoyoteRuntime.dll"), true);
 
             foreach (FileInfo nativeFile in nativeSources)
             {
@@ -50,12 +50,12 @@ namespace UnitTests.Runners
 
             if (exitCode == 0)
             {
-                exitCode = RunPSharpTester(scratchDirectory.FullName,
+                exitCode = RunCoyoteTester(scratchDirectory.FullName,
                     Path.Combine(scratchDirectory.FullName, "Test.dll"), out string testStdout, out string testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
 
-                // TODO: bug P# folks to either set an exit code or print obvious indicator that can be machine-processed.
+                // TODO: bug Coyote folks to either set an exit code or print obvious indicator that can be machine-processed.
                 if (testStdout.Contains("buggy schedules"))
                 {
                     exitCode = 1;
@@ -113,8 +113,8 @@ namespace Main
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.0-rc2""/>
-    <Reference Include = ""PSharpRuntime.dll""/>
+    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.0-rc5""/>
+    <Reference Include = ""CoyoteRuntime.dll""/>
   </ItemGroup>
 </Project>";
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.csproj"), false))
@@ -123,10 +123,10 @@ namespace Main
             }
         }
 
-        private int RunPSharpTester(string directory, string dllPath, out string stdout, out string stderr)
+        private int RunCoyoteTester(string directory, string dllPath, out string stdout, out string stderr)
         {
-            // TODO: bug P# team for how to run a test w/o invoking executable
-            string testerPath = Path.Combine(PSharpAssemblyLocation, "..", "netcoreapp2.2", "coyote.dll");
+            // TODO: bug Coyote team for how to run a test w/o invoking executable
+            string testerPath = Path.Combine(CoyoteAssemblyLocation, "..", "netcoreapp2.2", "coyote.dll");
             return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, "dotnet", testerPath, "test", $"\"{dllPath}\"", "--iterations", "1000", "-ms", "100");
         }
 
@@ -134,7 +134,7 @@ namespace Main
         {
             Compiler compiler = new Compiler();
             TestExecutionStream outputStream = new TestExecutionStream(scratchDirectory);
-            CompilationJob compilationJob = new CompilationJob(outputStream, CompilerOutput.PSharp, sources, "Main");
+            CompilationJob compilationJob = new CompilationJob(outputStream, CompilerOutput.Coyote, sources, "Main");
             compiler.Compile(compilationJob);
             return outputStream.OutputFiles;
         }

@@ -8,7 +8,7 @@
 	<PFile>./PSrc/TestDriver.p</PFile>
 	<PFile>./PSrc/Timer.p</PFile>
 </InputFiles>
-<Target>P#</Target>
+<Target>Coyote</Target>
 <TargetFileName>TwoPhaseCommit</TargetFileName>
 <OutputDir>./PGenerated/</OutputDir>
 </Project>

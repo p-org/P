@@ -3,13 +3,13 @@ using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.Types;
 using System.Collections.Generic;
 
-namespace Plang.Compiler.Backend.PSharp
+namespace Plang.Compiler.Backend.Coyote
 {
-    internal class PSharpNameManager : NameManagerBase
+    internal class CoyoteNameManager : NameManagerBase
     {
         private readonly Dictionary<PLanguageType, string> typeNames = new Dictionary<PLanguageType, string>();
 
-        public PSharpNameManager(string namePrefix) : base(namePrefix)
+        public CoyoteNameManager(string namePrefix) : base(namePrefix)
         {
         }
 

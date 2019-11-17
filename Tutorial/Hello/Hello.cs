@@ -113,7 +113,7 @@ namespace Hello
         class WaitForReq : MachineState
         {
         }
-        [OnEventGotoState(typeof(Default), typeof(WaitForReq), nameof(Anon_1))]
+        [OnEventGotoState(typeof(DefaultEvent), typeof(WaitForReq), nameof(Anon_1))]
         [IgnoreEvents(typeof(START))]
         class WaitForTimeout : MachineState
         {

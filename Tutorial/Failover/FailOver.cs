@@ -222,14 +222,14 @@ namespace FailOver
         {
             FaultTolerantMachine currentMachine = this;
             IEventWithPayload TMP_tmp0_4 = null;
-            var PGEN_recvEvent_1 = await currentMachine.ReceiveEvent(typeof(PHalt), typeof(Default));
+            var PGEN_recvEvent_1 = await currentMachine.ReceiveEvent(typeof(PHalt), typeof(DefaultEvent));
             switch (PGEN_recvEvent_1) {
                 case PHalt PGEN_evt_1: {
                     TMP_tmp0_4 = new PHalt(null);
                     currentMachine.RaiseEvent(currentMachine, (Event)TMP_tmp0_4);
                     throw new PUnreachableCodeException();
                 } break;
-                case Default PGEN_evt_2: {
+                case DefaultEvent PGEN_evt_2: {
                 } break;
             }
         }

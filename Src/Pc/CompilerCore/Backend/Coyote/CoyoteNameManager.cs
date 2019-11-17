@@ -39,7 +39,7 @@ namespace Plang.Compiler.Backend.Coyote
                 case PEvent pEvent:
                     if (pEvent.IsNullEvent)
                     {
-                        name = "Default";
+                        name = "DefaultEvent";
                     }
 
                     if (pEvent.IsHaltEvent)

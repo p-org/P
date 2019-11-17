@@ -1207,7 +1207,7 @@ namespace Plang.Compiler.Backend.Coyote
                             context.Write(output, "new PHalt()");
                             break;
 
-                        case "Default":
+                        case "DefaultEvent":
                             context.Write(output, "new DefaultEvent()");
                             break;
 

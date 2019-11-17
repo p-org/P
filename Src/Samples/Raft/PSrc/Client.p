@@ -47,6 +47,7 @@ machine Client
             LatestCommand = ChooseVal();
             Counter = Counter + 1;
             //Logger.WriteLine("\n [Client] new request " + this.LatestCommand + "\n");
+            print "\n[Client] new request {0}\n", LatestCommand;
             send Cluster, Request, (Client=this, Command=LatestCommand);
         }    
 
@@ -75,8 +76,10 @@ machine Client
 
     fun ProcessResponse()
     {
+        print "In ProcessResponse of Client";
         if (Counter == 3)
         {
+
             send Cluster, ShutDown;
             raise halt;
         }

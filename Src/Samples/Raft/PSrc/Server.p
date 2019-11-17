@@ -67,6 +67,7 @@ machine Server
     {
         entry
         {
+            print "[follower] {0} onEntry", this;
             LeaderId = default(machine);
             VotesReceived = 0;
 
@@ -84,6 +85,7 @@ machine Server
             }
         }
         on VoteRequest do (payload: (Term: int, CandidateId: machine, LastLogIndex: int, LastLogTerm: int)) {
+            print "OnVoteRequest in state Follower for server {0}", this;
             if (payload.Term > CurrentTerm)
             {
                 CurrentTerm = payload.Term;
@@ -140,6 +142,7 @@ machine Server
             send ElectionTimer, EStartTimer;
 
             //Logger.WriteLine("\n [Candidate] " + this.ServerId + " | term " + this.CurrentTerm + " | election votes " + this.VotesReceived + " | log " + this.Logs.Count + "\n");
+            print "\n In state [Canidate] {0} | term {1} | election votes {2} | log {3}\n", this, CurrentTerm, VotesReceived, sizeof(Logs); 
 
             BroadcastVoteRequests();
         }
@@ -185,6 +188,7 @@ machine Server
                 {
                    // this.Logger.WriteLine("\n [Leader] " + this.ServerId + " | term " + this.CurrentTerm +
                     //    " | election votes " + this.VotesReceived + " | log " + this.Logs.Count + "\n");
+                    print "\n [Leader] {0} | term {1} | election votes {2} | log {3}\n", this, CurrentTerm, VotesReceived, sizeof(Logs); 
                     VotesReceived = 0;
                     raise BecomeLeader;
                 }
@@ -233,8 +237,10 @@ machine Server
             lastLogIndex = sizeof(Logs);
             lastLogTerm = GetLogTermForIndex(lastLogIndex);
 
+            print "Sending VoteRequest from Server {0} to Server {1}", this, Servers[idx];
             send Servers[idx], VoteRequest, (Term=CurrentTerm, CandidateId=this, LastLogIndex=lastLogIndex, LastLogTerm=lastLogTerm);
             idx = idx + 1;
+            print "After send";
         }
     }
 
@@ -333,6 +339,7 @@ machine Server
         var prevLogTerm: int;
         var server: machine;
         var logsAppend: seq[Log];
+        print "\n[Leader] {0} sends append requests | term {1} | log {2}\n", this, CurrentTerm, sizeof(Logs);
 
         lastLogIndex = sizeof(Logs);
         VotesReceived = 1;
@@ -436,7 +443,7 @@ machine Server
             {
                 //this.Logger.WriteLine("\n [Leader] " + this.ServerId + " | term " + this.CurrentTerm +
                   //  " | append votes " + this.VotesReceived + " | append success\n");
-
+                print "\n[Leader] {0} | term {1} | append votes {2} | append success\n", this, CurrentTerm, VotesReceived; 
                 commitIndex = MatchIndex[request.Server];
                 if (commitIndex > CommitIndex &&
                     Logs[commitIndex - 1].Term == CurrentTerm)
@@ -444,6 +451,8 @@ machine Server
                     CommitIndex = commitIndex;
 
                    // this.Logger.WriteLine("\n [Leader] " + this.ServerId + " | term " + this.CurrentTerm + " | log " + this.Logs.Count + " | command " + this.Logs[commitIndex - 1].Command + "\n");
+                    print "\n[Leader] {0} | term {1} | log {2} | command {3}\n", this, CurrentTerm, sizeof(Logs), Logs[commitIndex - 1].Command; 
+
                 }
 
                 VotesReceived = 0;
@@ -471,7 +480,7 @@ machine Server
             prevLogTerm = GetLogTermForIndex(prevLogIndex);
 
             //this.Logger.WriteLine("\n [Leader] " + this.ServerId + " | term " + this.CurrentTerm + " | log " + this.Logs.Count + " | append votes " + this.VotesReceived + " | append fail (next idx = " + this.NextIndex[request.Server] + ")\n");
-
+            print "\n[Leader] {0} | term {1} | log {2} | append votes {3} | append fail (next idx = {4})\n", this, CurrentTerm, sizeof(Logs), VotesReceived, NextIndex[request.Server];
             send request.Server, AppendEntriesRequest, (Term=CurrentTerm, LeaderId=this, PrevLogIndex=prevLogIndex,
                 PrevLogTerm=prevLogTerm, Entries=Logs, LeaderCommit=CommitIndex, ReceiverEndpoint=request.ReceiverEndpoint);
         }
@@ -491,12 +500,14 @@ machine Server
         {
             //this.Logger.WriteLine("\n [Server] " + this.ServerId + " | term " + this.CurrentTerm +
               //  " | log " + this.Logs.Count + " | vote false\n");
+            print "\n [Server] {0} | term {1} | log {2} | vote false", ServerId, CurrentTerm, sizeof(Logs);
             send request.CandidateId, VoteResponse, (Term=CurrentTerm, VoteGranted=false);
         }
         else
         {
             //this.Logger.WriteLine("\n [Server] " + this.ServerId + " | term " + this.CurrentTerm +
                // " | log " + this.Logs.Count + " | vote true\n");
+            print "\n [Server] {0} | term {1} | log {2} | vote true", ServerId, CurrentTerm, sizeof(Logs);
 
             VotedFor = request.CandidateId;
             LeaderId = default(machine);
@@ -527,7 +538,7 @@ machine Server
             {
                 //this.Logger.WriteLine("\n [Server] " + this.ServerId + " | term " + this.CurrentTerm + " | log " +
                   //  this.Logs.Count + " | last applied: " + this.LastApplied + " | append false (not in log)\n");
-
+                print "\n[Leader] {0} | term {1} | log {2} | last applied: {3} | append false (not in log)\n", this, CurrentTerm, sizeof(Logs), LastApplied; 
                 send request.LeaderId, AppendEntriesResponse, (Term=CurrentTerm, Success=false, Server=this, ReceiverEndpoint=request.ReceiverEndpoint);
             }
             else
@@ -576,6 +587,7 @@ machine Server
                 //this.Logger.WriteLine("\n [Server] " + this.ServerId + " | term " + this.CurrentTerm + " | log " +
                   //  this.Logs.Count + " | entries received " + request.Entries.Count + " | last applied " +
                     //this.LastApplied + " | append true\n");
+                print "\n[Server] {0} | term {1} | log {2} | entries received {3} | last applied {4} | append true\n", this, CurrentTerm, sizeof(Logs), sizeof(request.Entries), LastApplied; 
 
                 LeaderId = request.LeaderId;
                 send request.LeaderId, AppendEntriesResponse, (Term=CurrentTerm, Success=true, Server=this, ReceiverEndpoint=request.ReceiverEndpoint);

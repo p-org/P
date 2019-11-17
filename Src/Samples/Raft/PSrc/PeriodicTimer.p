@@ -33,7 +33,7 @@ machine PeriodicTimer
         if ($)
         {
             //this.Logger.WriteLine("\n [PeriodicTimer] " + this.Target + " | timed out\n");
-            print "Periodic Timer timed out";
+            print "[PeriodicTimer] {0} | timed out\n", Target;
             send Target, PTimeout;
         }
 

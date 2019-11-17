@@ -32,7 +32,7 @@ machine ElectionTimer
         if ($)
         {
             //this.Logger.WriteLine("\n [ElectionTimer] " + this.Target + " | timed out\n");
-            print "Election timer timed out";
+            print "[ElectionTimer] {0} | timed out", Target;
             send Target, ETimeout;
         }
 

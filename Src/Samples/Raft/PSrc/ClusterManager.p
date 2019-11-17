@@ -30,10 +30,11 @@ machine ClusterManager
 		{
 			var idx: int;
 			var mac: machine;
-			NumberOfServers = 5;
+			NumberOfServers = 1;
 			LeaderTerm = 0;
 			idx = 0;
 			Servers = default(seq[machine]);
+			print "clustermanager";
 
 			while(idx < NumberOfServers)
 			{	
@@ -41,6 +42,8 @@ machine ClusterManager
 				Servers += (idx, mac);
 				idx = idx + 1;
 			}
+			print "made servers";
+			
 
 			Client = new Client();
 			raise LocalEvent;
@@ -57,6 +60,7 @@ machine ClusterManager
 			idx = 0;
 			while(idx < NumberOfServers)
 			{
+				print "Sending to server Sc";
 				send Servers[idx], SConfigureEvent, (Id = idx, Servers = Servers, ClusterManager = this);
 				idx = idx + 1;
 			}
@@ -106,8 +110,6 @@ machine ClusterManager
 		on Request do (payload: (Client: machine, Command: int)){
 			send Leader, Request, (Client=payload.Client, Command=payload.Command);
 		}
-
-		//TODO: How to address payloads that are events themselves
 		on RedirectRequest do (payload : (Client: machine, Command: int)){
 			send this, Request, payload;
 		}

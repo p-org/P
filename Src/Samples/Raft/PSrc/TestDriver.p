@@ -9,7 +9,9 @@ machine TestDriver0 {
 		entry {
 			var clusterManager : machine;
 			//var client : machine;
+			print "testdriver0";
 			clusterManager = new ClusterManager();
+			print "eliot";
 			//new Client(clusterManager);
 		}
 	}

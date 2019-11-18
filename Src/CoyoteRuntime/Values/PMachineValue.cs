@@ -1,4 +1,4 @@
-﻿using Microsoft.Coyote.Machines;
+﻿using Microsoft.Coyote.Actors;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,14 +6,14 @@ namespace Plang.PrtSharp.Values
 {
     public class I_Main : PMachineValue
     {
-        public I_Main(MachineId machine, List<string> permissions) : base(machine, permissions)
+        public I_Main(ActorId machine, List<string> permissions) : base(machine, permissions)
         {
         }
     }
 
     public class PMachineValue : IPrtValue
     {
-        public PMachineValue(MachineId machine, List<string> permissions)
+        public PMachineValue(ActorId machine, List<string> permissions)
         {
             Id = machine;
             Permissions = permissions.ToList();
@@ -25,7 +25,7 @@ namespace Plang.PrtSharp.Values
             Permissions = mValue.Permissions.ToList();
         }
 
-        public MachineId Id { get; }
+        public ActorId Id { get; }
         public List<string> Permissions { get; }
 
         public bool Equals(IPrtValue other)

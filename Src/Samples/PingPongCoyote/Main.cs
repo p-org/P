@@ -1,5 +1,6 @@
 using Microsoft.Coyote;
-using Microsoft.Coyote.Machines;
+using Microsoft.Coyote.Actors;
+using Microsoft.Coyote.Runtime;
 using Microsoft.Coyote.Specifications;
 using Plang.PrtSharp;
 using Plang.PrtSharp.Exceptions;
@@ -96,7 +97,7 @@ namespace pingpong
             TMP_tmp0 = currentMachine.CreateInterface<I_PONG>(currentMachine);
             pongId = TMP_tmp0;
             TMP_tmp1 = new Success(null);
-            currentMachine.RaiseEvent(TMP_tmp1);
+            currentMachine.TryRaiseEvent(TMP_tmp1);
             throw new PUnreachableCodeException();
         }
 
@@ -110,35 +111,35 @@ namespace pingpong
             TMP_tmp0_1 = ((PMachineValue)((IPrtValue)pongId)?.Clone());
             TMP_tmp1_1 = new Ping(null);
             TMP_tmp2 = currentMachine.self;
-            currentMachine.SendEvent(TMP_tmp0_1, TMP_tmp1_1, TMP_tmp2);
+            currentMachine.TrySendEvent(TMP_tmp0_1, TMP_tmp1_1, TMP_tmp2);
             TMP_tmp3 = new Success(null);
-            currentMachine.RaiseEvent(TMP_tmp3);
+            currentMachine.TryRaiseEvent(TMP_tmp3);
             throw new PUnreachableCodeException();
         }
 
         [Start]
         [OnEntry(nameof(InitializeParametersFunction))]
         [OnEventGotoState(typeof(ConstructorEvent), typeof(Ping_Init))]
-        private class __InitState__ : MachineState { }
+        private class __InitState__ : State { }
 
         [OnEntry(nameof(Anon))]
         [OnEventGotoState(typeof(Success), typeof(Ping_SendPing))]
-        private class Ping_Init : MachineState
+        private class Ping_Init : State
         {
         }
 
         [OnEntry(nameof(Anon_1))]
         [OnEventGotoState(typeof(Success), typeof(Ping_WaitPong))]
-        private class Ping_SendPing : MachineState
+        private class Ping_SendPing : State
         {
         }
 
         [OnEventGotoState(typeof(Pong), typeof(Ping_SendPing))]
-        private class Ping_WaitPong : MachineState
+        private class Ping_WaitPong : State
         {
         }
 
-        private class Done : MachineState
+        private class Done : State
         {
         }
     }
@@ -183,26 +184,26 @@ namespace pingpong
             PEvent TMP_tmp2_1 = null;
             TMP_tmp0_2 = ((PMachineValue)((IPrtValue)payload)?.Clone());
             TMP_tmp1_2 = new Pong(null);
-            currentMachine.SendEvent(TMP_tmp0_2, TMP_tmp1_2);
+            currentMachine.TrySendEvent(TMP_tmp0_2, TMP_tmp1_2);
             TMP_tmp2_1 = new Success(null);
-            currentMachine.RaiseEvent(TMP_tmp2_1);
+            currentMachine.TryRaiseEvent(TMP_tmp2_1);
             throw new PUnreachableCodeException();
         }
 
         [Start]
         [OnEntry(nameof(InitializeParametersFunction))]
         [OnEventGotoState(typeof(ConstructorEvent), typeof(Pong_WaitPing))]
-        private class __InitState__ : MachineState { }
+        private class __InitState__ : State { }
 
         [OnEntry(nameof(Anon_2))]
         [OnEventGotoState(typeof(Ping), typeof(Pong_SendPong))]
-        private class Pong_WaitPing : MachineState
+        private class Pong_WaitPing : State
         {
         }
 
         [OnEntry(nameof(Anon_3))]
         [OnEventGotoState(typeof(Success), typeof(Pong_WaitPing))]
-        private class Pong_SendPong : MachineState
+        private class Pong_SendPong : State
         {
         }
     }
@@ -231,15 +232,15 @@ namespace pingpong
             PModule.monitorObserves.Clear();
         }
 
-        public static void InitializeMonitorMap(IMachineRuntime runtime)
+        public static void InitializeMonitorMap(IActorRuntime runtime)
         {
             PModule.monitorMap.Clear();
         }
 
-        [Microsoft.Coyote.Test]
-        public static void Execute(IMachineRuntime runtime)
+        [Microsoft.Coyote.TestingServices.Test]
+        public static void Execute(IActorRuntime runtime)
         {
-            runtime.SetLogWriter(new PLogger());
+            runtime.SetLogFormatter(new PLogFormatter());
             PModule.runtime = runtime;
             PHelper.InitializeInterfaces();
             PHelper.InitializeEnums();
@@ -247,20 +248,20 @@ namespace pingpong
             InitializeInterfaceDefMap();
             InitializeMonitorMap(runtime);
             InitializeMonitorObserves();
-            runtime.CreateMachine(typeof(_GodMachine), new _GodMachine.Config(typeof(Main)));
+            runtime.CreateActor(typeof(_GodMachine), new _GodMachine.Config(typeof(Main)));
         }
     }
 
     public class I_Main : PMachineValue
     {
-        public I_Main(MachineId machine, List<string> permissions) : base(machine, permissions)
+        public I_Main(ActorId machine, List<string> permissions) : base(machine, permissions)
         {
         }
     }
 
     public class I_PONG : PMachineValue
     {
-        public I_PONG(MachineId machine, List<string> permissions) : base(machine, permissions)
+        public I_PONG(ActorId machine, List<string> permissions) : base(machine, permissions)
         {
         }
     }

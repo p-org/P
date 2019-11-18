@@ -1,5 +1,5 @@
 ﻿using Microsoft.Coyote;
-using Microsoft.Coyote.Machines;
+using Microsoft.Coyote.Actors;
 using Microsoft.Coyote.Runtime;
 using Plang.PrtSharp.Exceptions;
 using Plang.PrtSharp.Values;
@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Plang.PrtSharp
 {
-    public class PMachine : Machine
+    public class PMachine : StateMachine
     {
         public List<string> creates = new List<string>();
         protected IPrtValue gotoPayload;
@@ -19,12 +19,12 @@ namespace Plang.PrtSharp
         public PMachineValue self;
         public List<string> sends = new List<string>();
 
-        public new void Assert(bool predicate)
+        public void TryAssert(bool predicate)
         {
             base.Assert(predicate);
         }
 
-        public new void Assert(bool predicate, string s, params object[] args)
+        public void TryAssert(bool predicate, string s, params object[] args)
         {
             base.Assert(predicate, s, args);
         }
@@ -39,7 +39,7 @@ namespace Plang.PrtSharp
             InitializeParameters initParam = @event.Payload as InitializeParameters;
             interfaceName = initParam.InterfaceName;
             self = new PMachineValue(Id, receives.ToList());
-            RaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
+            TryRaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
         }
 
         protected virtual Event GetConstructorEvent(IPrtValue value)
@@ -58,7 +58,7 @@ namespace Plang.PrtSharp
             }
 
             return (ex as UnhandledEventException).UnhandledEvent is PHalt
-                ? OnExceptionOutcome.HaltMachine
+                ? OnExceptionOutcome.Halt
                 : base.OnException(methodName, ex);
         }
 
@@ -69,12 +69,12 @@ namespace Plang.PrtSharp
             Assert(creates.Contains(createdInterface),
                 $"Machine {GetType().Name} cannot create interface {createdInterface}, not in its creates set");
             Type createMachine = PModule.interfaceDefinitionMap[createdInterface];
-            MachineId machineId = CreateMachine(createMachine, createdInterface.Substring(2),
+            ActorId machineId = base.CreateActor(createMachine, createdInterface.Substring(2),
                 new InitializeParametersEvent(new InitializeParameters(createdInterface, payload)));
             return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
         }
 
-        public void SendEvent(PMachineValue target, Event ev, object payload = null)
+        public void TrySendEvent(PMachineValue target, Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot send a null event");
             Assert(sends.Contains(ev.GetType().Name),
@@ -85,56 +85,56 @@ namespace Plang.PrtSharp
             ev = (Event)oneArgConstructor.Invoke(new[] { payload });
 
             AnnounceInternal(ev);
-            Send(target.Id, ev);
+            base.SendEvent(target.Id, ev);
             Logger.WriteLine($"<SendPayloadLog> Event {ev.GetType().Name} with payload {((PEvent)ev).Payload}");
         }
 
-        public void RaiseEvent(Event ev, object payload = null)
+        public void TryRaiseEvent(Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot raise a null event");
             System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             ev = (Event)oneArgConstructor.Invoke(new[] { payload });
 
-            Raise(ev);
+            base.RaiseEvent(ev);
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
 
-        public Task<Event> ReceiveEvent(params Type[] events)
+        public Task<Event> TryReceiveEvent(params Type[] events)
         {
-            return Receive(events);
+            return base.ReceiveEventAsync(events);
         }
 
-        public void GotoState<T>(IPrtValue payload = null) where T : MachineState
+        public void TryGotoState<T>(IPrtValue payload = null) where T : State
         {
             gotoPayload = payload;
-            Goto<T>();
+            base.Goto<T>();
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
-        public void PopState()
+        public void TryPopState()
         {
-            Pop();
+            base.Pop();
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Pop };
         }
 
-        public int RandomInt(int maxValue)
+        public int TryRandomInt(int maxValue)
         {
-            return RandomInteger(maxValue);
+            return base.RandomInteger(maxValue);
         }
 
-        public int RandomInt(int minValue, int maxValue)
+        public int TryRandomInt(int minValue, int maxValue)
         {
-            return minValue + RandomInteger(maxValue - minValue);
+            return minValue + base.RandomInteger(maxValue - minValue);
         }
 
-        public bool RandomBool(int maxValue)
+        public bool TryRandomBool(int maxValue)
         {
-            return Random(maxValue);
+            return base.Random(maxValue);
         }
 
-        public bool RandomBool()
+        public bool TryRandomBool()
         {
-            return Random();
+            return base.Random();
         }
 
         public void LogLine(string message)
@@ -152,7 +152,7 @@ namespace Plang.PrtSharp
             Assert(ev != null, "Machine cannot announce a null event");
             if (ev is PHalt)
             {
-                ev = new Halt();
+                ev = new HaltEvent();
             }
 
             System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);

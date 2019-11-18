@@ -1,5 +1,5 @@
 ﻿using Microsoft.Coyote;
-using Microsoft.Coyote.Machines;
+using Microsoft.Coyote.Actors;
 using Microsoft.Coyote.Specifications;
 using Plang.PrtSharp.Exceptions;
 using System.Collections.Generic;
@@ -13,28 +13,28 @@ namespace Plang.PrtSharp
 
         public object gotoPayload;
 
-        public void RaiseEvent(Event ev, object payload = null)
+        public void TryRaiseEvent(Event ev, object payload = null)
         {
-            Assert(!(ev is Default), "Monitor cannot raise a null event");
+            Assert(!(ev is DefaultEvent), "Monitor cannot raise a null event");
             System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             Event @event = (Event)oneArgConstructor.Invoke(new[] { payload });
-            Raise(@event);
+            base.RaiseEvent(@event);
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
 
-        public void GotoState<T>(object payload = null) where T : MonitorState
+        public void TryGotoState<T>(object payload = null) where T : State
         {
             gotoPayload = payload;
-            Goto<T>();
+            base.Goto<T>();
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
-        public new void Assert(bool predicate)
+        public void TryAssert(bool predicate)
         {
             base.Assert(predicate);
         }
 
-        public new void Assert(bool predicate, string s, params object[] args)
+        public void TryAssert(bool predicate, string s, params object[] args)
         {
             base.Assert(predicate, s, args);
         }

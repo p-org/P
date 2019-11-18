@@ -8,12 +8,12 @@ namespace UnitTests
 {
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    public class PSharpBackendTests
+    public class CoyoteBackendTests
     {
         [Test]
-        public void TestCompilePSharpTemp()
+        public void TestCompileCoyoteTemp()
         {
-            DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPSharpTemp"));
+            DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestCoyoteTemp"));
             FileInfo tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "test.p"));
             //var foreignFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "Foreign.cs"));
 
@@ -24,7 +24,7 @@ namespace UnitTests
 
             CompilerTestCase testCase = new CompilerTestCase(
                 tempDir,
-                new PSharpRunner(new[] { tempFilePath }),
+                new CoyoteRunner(new[] { tempFilePath }),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);
@@ -34,7 +34,7 @@ namespace UnitTests
         [Test]
         public void TestModuleSystem()
         {
-            var tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPSharpTemp"));
+            var tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestCoyoteTemp"));
             var allFiles = new[]
             {
                 new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "PingPong", "Main.p")),
@@ -48,7 +48,7 @@ namespace UnitTests
 
             var testCase = new CompilerTestCase(
                 tempDir,
-                new PSharpRunner(allFiles),
+                new CoyoteRunner(allFiles),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);
@@ -76,7 +76,7 @@ namespace UnitTests
 
             var testCase = new CompilerTestCase(
                 tempDir,
-                new PSharpRunner(allPFiles, foreignCode),
+                new CoyoteRunner(allPFiles, foreignCode),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);

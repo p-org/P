@@ -2,20 +2,20 @@
 using Plang.Compiler.TypeChecker.Types;
 using System.Collections.Generic;
 
-namespace Plang.Compiler.Backend.PSharp
+namespace Plang.Compiler.Backend.Coyote
 {
     internal class CompilationContext : CompilationContextBase
     {
         public CompilationContext(ICompilationJob job)
             : base(job)
         {
-            Names = new PSharpNameManager("PGEN_");
+            Names = new CoyoteNameManager("PGEN_");
 
             FileName = $"{ProjectName}.cs";
             GlobalFunctionClassName = "GlobalFunctions";
         }
 
-        public PSharpNameManager Names { get; }
+        public CoyoteNameManager Names { get; }
 
         public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
 

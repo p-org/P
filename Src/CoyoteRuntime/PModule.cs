@@ -1,4 +1,4 @@
-﻿using Microsoft.Coyote;
+﻿using Microsoft.Coyote.Runtime;
 using System;
 using System.Collections.Generic;
 
@@ -13,6 +13,6 @@ namespace Plang.PrtSharp
         public static IDictionary<string, Dictionary<string, string>> linkMap =
             new Dictionary<string, Dictionary<string, string>>();
 
-        public static IMachineRuntime runtime;
+        public static IActorRuntime runtime;
     }
 }

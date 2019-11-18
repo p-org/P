@@ -86,11 +86,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Prt", "Prt", "{EF1EE1AD-F41
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhandler", "Ext\libhandler\ide\msvc\libhandler.vcxproj", "{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PSharp", "PSharp", "{B74C167C-243B-4B99-9271-F70FFCB46132}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Coyote", "Coyote", "{B74C167C-243B-4B99-9271-F70FFCB46132}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PingPongPSharp", "Src\Samples\PingPongPSharp\PingPongPSharp.csproj", "{462FD13C-FB4D-4F4C-A4F4-7CCD95B0A20C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PingPongCoyote", "Src\Samples\PingPongCoyote\PingPongCoyote.csproj", "{462FD13C-FB4D-4F4C-A4F4-7CCD95B0A20C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PSharpRuntime", "Src\PSharpRuntime\PSharpRuntime.csproj", "{63E0EB77-BDA0-4222-94F7-A9D5264912CF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoyoteRuntime", "Src\CoyoteRuntime\CoyoteRuntime.csproj", "{63E0EB77-BDA0-4222-94F7-A9D5264912CF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -89,20 +89,20 @@ namespace Plang.Compiler
                             {
                                 case null:
                                     CommandlineOutput.WriteMessage(
-                                        "Missing generation argument, expecting generate:[C,P#]", SeverityKind.Error);
+                                        "Missing generation argument, expecting generate:[C,Coyote]", SeverityKind.Error);
                                     return Failure;
 
                                 case "c":
                                     outputLanguage = CompilerOutput.C;
                                     break;
 
-                                case "p#":
-                                    outputLanguage = CompilerOutput.PSharp;
+                                case "coyote":
+                                    outputLanguage = CompilerOutput.Coyote;
                                     break;
 
                                 default:
                                     CommandlineOutput.WriteMessage(
-                                        $"Unrecognized generate option '{colonArg}', expecting C or P#",
+                                        $"Unrecognized generate option '{colonArg}', expecting C or Coyote",
                                         SeverityKind.Error);
                                     return Failure;
                             }
@@ -315,8 +315,8 @@ namespace Plang.Compiler
                         }
                         break;
 
-                    case "p#":
-                        outputLanguage = CompilerOutput.PSharp;
+                    case "coyote":
+                        outputLanguage = CompilerOutput.Coyote;
                         break;
 
                     default:
@@ -378,9 +378,9 @@ namespace Plang.Compiler
             CommandlineOutput.WriteMessage("USAGE: Pc.exe -proj:<.pproj file>", SeverityKind.Info);
             CommandlineOutput.WriteMessage("    -t:[tfileName]             -- name of output file produced for this compilation unit; if not supplied then file1", SeverityKind.Info);
             CommandlineOutput.WriteMessage("    -outputDir:[path]          -- where to write the generated files", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -generate:[C,P#]           -- select a target language to generate", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    -generate:[C,Coyote]       -- select a target language to generate", SeverityKind.Info);
             CommandlineOutput.WriteMessage("        C   : generate C code using the Prt runtime", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("        P#  : generate C# code using the P# runtime", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("        Coyote  : generate C# code using the Coyote runtime", SeverityKind.Info);
             CommandlineOutput.WriteMessage("    -proj:[.pprojfile]         -- the p project to be compiled", SeverityKind.Info);
             CommandlineOutput.WriteMessage("    -sourcemaps[:(true|false)] -- enable or disable generating source maps", SeverityKind.Info);
             CommandlineOutput.WriteMessage("                                  in the compiled C output. may confuse some", SeverityKind.Info);

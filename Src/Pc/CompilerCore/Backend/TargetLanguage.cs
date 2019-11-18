@@ -1,5 +1,5 @@
 ﻿using Plang.Compiler.Backend.Prt;
-using Plang.Compiler.Backend.PSharp;
+using Plang.Compiler.Backend.Coyote;
 using System.Collections.Generic;
 
 namespace Plang.Compiler.Backend
@@ -11,7 +11,7 @@ namespace Plang.Compiler.Backend
 
         static TargetLanguage()
         {
-            RegisterCodeGenerator(CompilerOutput.PSharp, new PSharpCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.Coyote, new CoyoteCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.C, new PrtCodeGenerator());
         }
 

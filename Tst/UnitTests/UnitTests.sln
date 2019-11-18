@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27703.2035
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTests", "UnitTests.csproj", "{71691381-D3C9-478C-BA37-A94032A536DF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrtSharp", "..\..\Src\PSharpRuntime\PSharpExtensions\PrtSharp.csproj", "{C1A5C046-365F-4717-B1EB-D0675E9C5A32}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrtSharp", "..\..\Src\CoyoteRuntime\CoyoteExtensions\PrtSharp.csproj", "{C1A5C046-365F-4717-B1EB-D0675E9C5A32}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompilerCore", "..\..\Src\Pc\CompilerCore\CompilerCore.csproj", "{6A496574-35E0-4603-B642-C937BB9A2FA8}"
 EndProject

@@ -5,7 +5,7 @@ using Plang.PrtSharp.Values;
 namespace UnitTests
 {
     [TestFixture]
-    public class PSharpValuesTest
+    public class CoyoteValuesTest
     {
         [Test]
         public void TestPrtBoolOverloading()

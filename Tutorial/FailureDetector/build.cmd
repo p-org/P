@@ -13,7 +13,7 @@ if NOT errorlevel 0 goto :eof
 
 if NOT errorlevel 0 goto :eof
 
-%pt% /psharp Test0.dll
+%pt% /coyote Test0.dll
 
 goto :eof
 :noP

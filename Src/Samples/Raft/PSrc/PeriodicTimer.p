@@ -7,6 +7,7 @@ machine PeriodicTimer
     {
         on PConfigureEvent do (payload: machine) {
             Configure(payload);
+            print "Configured PeriodicTimer {0} for {1}", this, payload;
         }
         on PStartTimer goto Active;
     }
@@ -20,6 +21,7 @@ machine PeriodicTimer
     {
         entry
         {
+            print "Entered Active for PeriodicTimer {0}", this;
             send this, PTickEvent;
         }
 

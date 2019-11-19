@@ -1,5 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <ApplicationIcon />
@@ -7,20 +6,22 @@
     <StartupObject />
     <LangVersion>latest</LangVersion>
     <OutputPath>.\bin\$(TargetFramework)\$(Configuration)</OutputPath>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <ProjectGuid>{23F40FF7-ABDE-4477-99F5-7CE2F6BD9D30}</ProjectGuid>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <WarningLevel>0</WarningLevel>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\PSharpRuntime\PSharpRuntime.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="PSrc\" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.Coyote" Version="1.0.0-rc2" />
   </ItemGroup>

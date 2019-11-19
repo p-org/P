@@ -232,6 +232,7 @@ machine Server
         idx = 0;
         while (idx < sizeof(Servers)) {
            if (idx == ServerId) {
+                idx = idx + 1;
                 continue;
            }
             lastLogIndex = sizeof(Logs);
@@ -287,10 +288,13 @@ machine Server
             idx = 0;
             while (idx < sizeof(Servers))
             {
-                if (idx == ServerId)
+                if (idx == ServerId){
+                    idx = idx + 1;
                     continue;
+                }
                 send Servers[idx], AppendEntriesRequest, 
                     (Term=CurrentTerm, LeaderId=this, PrevLogIndex=logIndex, PrevLogTerm=logTerm, Entries=default(seq[Log]), LeaderCommit=CommitIndex, ReceiverEndpoint=default(machine));
+                idx = idx + 1;
             }
         }
 
@@ -345,11 +349,15 @@ machine Server
         VotesReceived = 1;
         while (idx < sizeof(Servers))
         {
-            if (idx == ServerId)
+            if (idx == ServerId){
+                idx = idx + 1;
                 continue;
+            }
             server = Servers[idx];
-            if (lastLogIndex < NextIndex[server])
+            if (lastLogIndex < NextIndex[server]){
+                idx = idx + 1;
                 continue;
+            }
 
            // List<Log> logs = this.Logs.GetRange(this.NextIndex[server] - 1,
               //  this.Logs.Count - (this.NextIndex[server] - 1));

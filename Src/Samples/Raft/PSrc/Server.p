@@ -232,6 +232,7 @@ machine Server
         idx = 0;
         while (idx < sizeof(Servers)) {
            if (idx == ServerId) {
+               idx = idx + 1;
                 continue;
            }
             lastLogIndex = sizeof(Logs);
@@ -240,7 +241,6 @@ machine Server
             print "Sending VoteRequest from Server {0} to Server {1}", this, Servers[idx];
             send Servers[idx], VoteRequest, (Term=CurrentTerm, CandidateId=this, LastLogIndex=lastLogIndex, LastLogTerm=lastLogTerm);
             idx = idx + 1;
-            print "After send";
         }
     }
 
@@ -264,7 +264,7 @@ machine Server
 
             announce EMonitorInit, (NotifyLeaderElected, CurrentTerm);
             //monitor<SafetyMonitor>(NotifyLeaderElected, CurrentTerm);
-            send ClusterManager, NotifyLeaderUpdate, this, CurrentTerm;
+            send ClusterManager, NotifyLeaderUpdate, (Leader=this, Term=CurrentTerm);
 
             logIndex = sizeof(Logs);
             logTerm = GetLogTermForIndex(logIndex);
@@ -277,8 +277,11 @@ machine Server
             idx = 0;
             while (idx < sizeof(Servers))
             {
-                if (idx == ServerId)
+                if (idx == ServerId) {
+                    idx = idx + 1;
                     continue;
+                }
+                
                 NextIndex[Servers[idx]] = logIndex + 1;
                 MatchIndex[Servers[idx]] = 0;
                 idx = idx + 1;
@@ -287,10 +290,12 @@ machine Server
             idx = 0;
             while (idx < sizeof(Servers))
             {
-                if (idx == ServerId)
+                if (idx == ServerId) {
+                    idx = idx + 1;
                     continue;
-                send Servers[idx], AppendEntriesRequest, 
-                    (Term=CurrentTerm, LeaderId=this, PrevLogIndex=logIndex, PrevLogTerm=logTerm, Entries=default(seq[Log]), LeaderCommit=CommitIndex, ReceiverEndpoint=default(machine));
+                }
+                send Servers[idx], AppendEntriesRequest, (Term=CurrentTerm, LeaderId=this, PrevLogIndex=logIndex, PrevLogTerm=logTerm, Entries=default(seq[(Term: int, Command: int)]), LeaderCommit=CommitIndex, ReceiverEndpoint=default(machine));
+                idx = idx + 1;
             }
         }
 
@@ -323,6 +328,7 @@ machine Server
         log = default(Log);
         log.Term = CurrentTerm;
         log.Command = LastClientRequest.Command;
+        print "eliot {0}",i;
         Logs += (i, log);
         i = i + 1;
 
@@ -345,11 +351,15 @@ machine Server
         VotesReceived = 1;
         while (idx < sizeof(Servers))
         {
-            if (idx == ServerId)
+            if (idx == ServerId) {
+                idx = idx + 1;
                 continue;
+            }
             server = Servers[idx];
-            if (lastLogIndex < NextIndex[server])
+            if (lastLogIndex < NextIndex[server]) {
+                idx = idx + 1;
                 continue;
+            }
 
            // List<Log> logs = this.Logs.GetRange(this.NextIndex[server] - 1,
               //  this.Logs.Count - (this.NextIndex[server] - 1));
@@ -527,6 +537,7 @@ machine Server
         {
             //print "\n [Server] " + ServerId + " | term " + CurrentTerm + " | log " +
               //  this.Logs.Count + " | last applied: " + this.LastApplied + " | append false (< term)\n";
+            print "\n[Server] {0} | term {1} | log {2} | last applied {3} | append false (<term) \n", this, CurrentTerm, sizeof(Logs), LastApplied;
 
             send request.LeaderId, AppendEntriesResponse, (Term=CurrentTerm, Success=false, Server=this, ReceiverEndpoint=request.ReceiverEndpoint);
         }

@@ -34,8 +34,7 @@ machine ElectionTimer
             //this.Logger.WriteLine("\n [ElectionTimer] " + this.Target + " | timed out\n");
             print "[ElectionTimer] {0} | timed out", Target;
             send Target, ETimeout;
-        }
-
+        } 
         raise ECancelTimer;
     }
 

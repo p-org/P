@@ -37,8 +37,7 @@ machine PeriodicTimer
             //this.Logger.WriteLine("\n [PeriodicTimer] " + this.Target + " | timed out\n");
             print "[PeriodicTimer] {0} | timed out\n", Target;
             send Target, PTimeout;
-        }
-
+        } 
         raise PCancelTimer;
     }
 

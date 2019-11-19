@@ -232,11 +232,7 @@ machine Server
         idx = 0;
         while (idx < sizeof(Servers)) {
            if (idx == ServerId) {
-<<<<<<< HEAD
-                idx = idx + 1;
-=======
                idx = idx + 1;
->>>>>>> ddae0aa9e869c5e873c39dc5b49b83f490ca8918
                 continue;
            }
             lastLogIndex = sizeof(Logs);
@@ -294,20 +290,12 @@ machine Server
             idx = 0;
             while (idx < sizeof(Servers))
             {
-<<<<<<< HEAD
                 if (idx == ServerId){
                     idx = idx + 1;
                     continue;
                 }
                 send Servers[idx], AppendEntriesRequest, 
                     (Term=CurrentTerm, LeaderId=this, PrevLogIndex=logIndex, PrevLogTerm=logTerm, Entries=default(seq[Log]), LeaderCommit=CommitIndex, ReceiverEndpoint=default(machine));
-=======
-                if (idx == ServerId) {
-                    idx = idx + 1;
-                    continue;
-                }
-                send Servers[idx], AppendEntriesRequest, (Term=CurrentTerm, LeaderId=this, PrevLogIndex=logIndex, PrevLogTerm=logTerm, Entries=default(seq[(Term: int, Command: int)]), LeaderCommit=CommitIndex, ReceiverEndpoint=default(machine));
->>>>>>> ddae0aa9e869c5e873c39dc5b49b83f490ca8918
                 idx = idx + 1;
             }
         }
@@ -336,13 +324,14 @@ machine Server
     fun ProcessClientRequest(trigger: (Client: machine, Command: int))
     {
         var log: Log;
-
+        print "[ProcessClientRequest] Leader {0} processing Client {1}", this, trigger.Client;
         LastClientRequest = trigger;
         log = default(Log);
         log.Term = CurrentTerm;
         log.Command = LastClientRequest.Command;
-        print "eliot {0}",i;
+        print "[ProcessClientRequest] Log Term: {0}, Command: {1}, idx: {2}", log.Term, log.Command, i;
         Logs += (i, log);
+        print "[ProcessClientRequest] Num entries: {0}, i: {1}", sizeof(Logs), i;
         i = i + 1;
 
         BroadcastLastClientRequest();
@@ -358,7 +347,7 @@ machine Server
         var prevLogTerm: int;
         var server: machine;
         var logsAppend: seq[Log];
-        print "\n[Leader] {0} sends append requests | term {1} | log {2}\n", this, CurrentTerm, sizeof(Logs);
+        print "\n[PCR: BroadcastLastClientRequest] [Leader] {0} sends append requests | term {1} | log {2}\n", this, CurrentTerm, sizeof(Logs);
 
         lastLogIndex = sizeof(Logs);
         VotesReceived = 1;
@@ -577,6 +566,7 @@ machine Server
                         if (sizeof(Logs) < currentIndex)
                         {
                             Logs += (idx, logEntry);
+                            print "[AppendEntries] Num entries: {0}, i: {1}", sizeof(Logs), i;
                         }
                         else if (Logs[currentIndex - 1].Term != logEntry.Term)
                         {
@@ -587,6 +577,7 @@ machine Server
                                 decIdx = decIdx - 1;
                             }
                             Logs += (decIdx, logEntry);
+                            print "[AppendEntries] Num entries: {0}, i: {1}", sizeof(Logs), i;
                         }
                         idx = idx + 1;
                         currentIndex = currentIndex + 1;

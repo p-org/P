@@ -60,7 +60,7 @@ machine ClusterManager
 			idx = 0;
 			while(idx < NumberOfServers)
 			{
-				print "Sending to server Sc";
+				print "[ClusterManager | Configure] Configuring server {0}", idx;
 				send Servers[idx], SConfigureEvent, (Id = idx, Servers = Servers, ClusterManager = this);
 				idx = idx + 1;
 			}

@@ -3,21 +3,8 @@
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------------------------------------------
 
-// using System;
-// using System.Collections.Generic;
-// using System.Linq;
-// using System.Text;
-// using System.Threading.Tasks;
-
-// namespace Raft
-// {
 machine ClusterManager
 {
-	//List<machine> Servers;
-    //int NumberOfServers;
-    //machine Leader;
-    //int LeaderTerm;
-    //machine Client;
 	var Servers: seq[machine];
 	var NumberOfServers: int;
 	var Leader: machine;
@@ -31,7 +18,7 @@ machine ClusterManager
 			var idx: int;
 			var mac: machine;
 			NumberOfServers = 2;
-			LeaderTerm = 0;
+			LeaderTerm = -1;
 			idx = 0;
 			Servers = default(seq[machine]);
 			print "clustermanager";
@@ -108,11 +95,12 @@ machine ClusterManager
 	state Available
 	{
 		on Request do (payload: (Client: machine, Command: int)){
-			print "[ClusterManager] Request {0} sent to client {1}", payload.Command, payload.Client;
+			print "[ClusterManager] Request {0} sent from client {1}", payload.Command, payload.Client;
 			send Leader, Request, (Client=payload.Client, Command=payload.Command);
 		}
 		on RedirectRequest do (payload : (Client: machine, Command: int)){
 			send this, Request, payload;
+			raise LocalEvent;
 		}
 		on NotifyLeaderUpdate do (payload: (Leader: machine, Term: int)){
 			UpdateLeader(payload);

@@ -54,15 +54,20 @@ machine Server
             Servers = payload.Servers;
             ClusterManager = payload.ClusterManager;
 
-            ElectionTimer = new ElectionTimer();
-            send ElectionTimer, EConfigureEvent, this;
+            // ElectionTimer = new ElectionTimer();
+            // send ElectionTimer, EConfigureEvent, this;
 
-            PeriodicTimer = new PeriodicTimer();
-            send PeriodicTimer, PConfigureEvent, this;
-
-            raise BecomeFollower;
+            // PeriodicTimer = new PeriodicTimer();
+            // send PeriodicTimer, PConfigureEvent, this;
+            if (payload.Id == 0){
+                raise BecomeLeader;
+            } else {
+                raise BecomeFollower;
+            }
+            
         }
         on BecomeFollower goto Follower;
+        on BecomeLeader goto Leader;
         defer VoteRequest, AppendEntriesRequest;
     }
 
@@ -74,7 +79,7 @@ machine Server
             LeaderId = default(machine);
             VotesReceived = 0;
 
-            send ElectionTimer, EStartTimer;
+            // send ElectionTimer, EStartTimer;
         }
 
         on Request do (payload: (Client: machine, Command: int)) {
@@ -150,7 +155,7 @@ machine Server
             VotedFor = this;
             VotesReceived = 1;
 
-            send ElectionTimer, EStartTimer;
+            // send ElectionTimer, EStartTimer;
 
             //Logger.WriteLine("\n [Candidate] " + this.ServerId + " | term " + this.CurrentTerm + " | election votes " + this.VotesReceived + " | log " + this.Logs.Count + "\n");
             print "\n [Candidate] {0} on Entry | Term {1} | Votes Received {2} | Log # entries: {3}\n", this, CurrentTerm, VotesReceived, sizeof(Logs); 
@@ -247,7 +252,7 @@ machine Server
         var lastLogIndex: int;
         var lastLogTerm: int; 
 
-        send PeriodicTimer, PStartTimer;
+        // send PeriodicTimer, PStartTimer;
         idx = 0;
         while (idx < sizeof(Servers)) {
            if (idx == ServerId) {
@@ -344,6 +349,7 @@ machine Server
     fun ProcessClientRequest(trigger: (Client: machine, Command: int))
     {
         var log: Log;
+        var print_idx: int;
         print "[Leader | Request] Leader {0} processing Client {1}", this, trigger.Client;
         LastClientRequest = trigger;
         log = default(Log);
@@ -353,6 +359,11 @@ machine Server
         Logs += (i, log);
         print "[Leader | Request] Num entries: {0}, i: {1}", sizeof(Logs), i;
         i = i + 1;
+        print_idx = 0;
+        while (print_idx < i){
+            print "[Leader | Request] Log element {0}: {1}", print_idx, Logs[print_idx];
+            print_idx = print_idx + 1;
+        }
 
         BroadcastLastClientRequest();
     }
@@ -378,6 +389,7 @@ machine Server
                 continue;
             }
             server = Servers[idx];
+            print "[Leader | PCR | BroadcastLastClientReq] Next index: {0}", NextIndex[server];
             if (lastLogIndex < NextIndex[server]) {
                 idx = idx + 1;
                 continue;
@@ -387,10 +399,13 @@ machine Server
 
             idx2 = NextIndex[server] - 1;
             while (idx2 < sizeof(Logs)) {
-                logsAppend += (idx2, Logs[idx2]);
+                print "[Leader | PCR | BroadcastLastClientReq] Appending to log";
+                logsAppend += (idx2 - (NextIndex[server] - 1), Logs[idx2]);
                 idx2 = idx2 + 1;
             }
+            print "Before prevLogIndex";
             prevLogIndex = NextIndex[server] - 1;
+            print "After prevLogIndex";
             prevLogTerm = GetLogTermForIndex(prevLogIndex);
             print "[Leader | PCR | BroadcastLastClientReq] {0} appendEntryRequest to {1}", this, idx;
             send server, AppendEntriesRequest, (Term=CurrentTerm, LeaderId=this, PrevLogIndex=prevLogIndex,
@@ -467,12 +482,19 @@ machine Server
 
         else if (request.Success)
         {
+            print "[Leader | AppendEntriesResponse] Success; preparing commit.";
+            print "[Leader | AppendEntriesResponse] NextIndex: {0}, MatchIndex: {1}", NextIndex[request.Server], MatchIndex[request.Server];
             NextIndex[request.Server] = sizeof(Logs) + 1;
             MatchIndex[request.Server] = sizeof(Logs);
-
+            print "[Leader | AppendEntriesResponse] NextIndex: {0}, MatchIndex: {1}", NextIndex[request.Server], MatchIndex[request.Server];
+            
             VotesReceived = VotesReceived + 1;
+            print "[Leader | AppendEntriesResponse] VotesReceived: {0}", VotesReceived;
+            if (request.ReceiverEndpoint == null){
+                print "[Leader | AppendEntriesResponse] request.ReceiverEndpoint: null";    
+            }        
             if (request.ReceiverEndpoint != null &&
-                VotesReceived >= (sizeof(Servers) / 2) + 1)
+                VotesReceived >= ((sizeof(Servers)-1) / 2) + 1)
             {
                 //this.Logger.WriteLine("\n [Leader] " + this.ServerId + " | term " + this.CurrentTerm +
                   //  " | append votes " + this.VotesReceived + " | append success\n");
@@ -635,6 +657,7 @@ machine Server
     {
         var logTerm: int;
         logTerm = 0;
+        print "LogIndex: {0}", logIndex;
         if (logIndex > 0)
         {
             logTerm = Logs[logIndex - 1].Term;
@@ -645,8 +668,8 @@ machine Server
 
     fun ShuttingDown()
     {
-        send ElectionTimer, halt;
-        send PeriodicTimer, halt;
+        // send ElectionTimer, halt;
+        // send PeriodicTimer, halt;
 
         raise halt;
     }

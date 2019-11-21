@@ -47,7 +47,7 @@ machine Client
             LatestCommand = ChooseVal();
             Counter = Counter + 1;
             //Logger.WriteLine("\n [Client] new request " + this.LatestCommand + "\n");
-            print "\n[Client] new request {0}\n", LatestCommand;
+            print "\n\n\n[Client] new request {0}\n", LatestCommand;
             send Cluster, Request, (Client=this, Command=LatestCommand);
         }    
 
@@ -60,24 +60,25 @@ machine Client
 
     fun ChooseVal() : int {
         // return a random value between 0 - 100
-        var index : int;
-        index = 0;
-        while(index < 100)
-        {
-            if($)
-            {
-                return index;
-            }
-            index = index + 1;
-        }
+        return Counter;
+        // var index : int;
+        // index = 0;
+        // while(index < 100)
+        // {
+        //     if($)
+        //     {
+        //         return index;
+        //     }
+        //     index = index + 1;
+        // }
 
-        return index;
+        // return index;
     }
 
     fun ProcessResponse()
     {
         print "In ProcessResponse of Client";
-        if (Counter == 3)
+        if (Counter == 100)
         {
 
             send Cluster, ShutDown;

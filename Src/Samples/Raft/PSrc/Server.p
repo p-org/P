@@ -384,8 +384,6 @@ machine Server
                 continue;
             }
 
-           // List<Log> logs = this.Logs.GetRange(this.NextIndex[server] - 1,
-              //  this.Logs.Count - (this.NextIndex[server] - 1));
             logsAppend = default(seq[Log]);
 
             idx2 = NextIndex[server] - 1;

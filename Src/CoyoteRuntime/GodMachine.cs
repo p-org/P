@@ -1,15 +1,15 @@
-﻿using Microsoft.Coyote.Machines;
+﻿using Microsoft.Coyote.Actors;
 using Microsoft.Coyote;
 using System;
 
 namespace Plang.PrtSharp
 {
-    public class _GodMachine : Machine
+    public class _GodMachine : StateMachine
     {
         private void InitOnEntry()
         {
             Type mainMachine = (ReceivedEvent as Config).MainMachine;
-            CreateMachine(mainMachine,
+            CreateActor(mainMachine,
                 new PMachine.InitializeParametersEvent(
                     new PMachine.InitializeParameters("I_" + mainMachine.Name, null)));
         }
@@ -26,7 +26,7 @@ namespace Plang.PrtSharp
 
         [Start]
         [OnEntry(nameof(InitOnEntry))]
-        private class Init : MachineState
+        private class Init : State
         {
         }
     }

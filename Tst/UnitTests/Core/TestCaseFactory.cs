@@ -58,10 +58,10 @@ namespace UnitTests.Core
                 FileInfo[] nativeFiles = testDir.GetFiles("*.c");
                 runner = new PrtRunner(inputFiles, nativeFiles);
             }
-            else if (output.Equals(CompilerOutput.PSharp))
+            else if (output.Equals(CompilerOutput.Coyote))
             {
                 FileInfo[] nativeFiles = testDir.GetFiles("*.cs");
-                runner = new PSharpRunner(inputFiles, nativeFiles);
+                runner = new CoyoteRunner(inputFiles, nativeFiles);
             }
             else
             {

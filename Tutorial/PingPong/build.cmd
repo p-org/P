@@ -3,7 +3,7 @@ pushd %THISDIR%
 set pc=..\..\bld\drops\Release\Binaries\win-x64\pc.exe
 if not exist "%pc%" goto :noP
 
-%pc% -generate:P# -t:PingPong ..\Timer\Timer.p ..\Env\Env.p Main.p PingPong.p Safety.p Liveness.p TestScript.p
+%pc% -generate:Coyote -t:PingPong ..\Timer\Timer.p ..\Env\Env.p Main.p PingPong.p Safety.p Liveness.p TestScript.p
 
 if NOT errorlevel 0 goto :eof
 

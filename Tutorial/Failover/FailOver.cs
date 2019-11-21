@@ -1,4 +1,4 @@
-using Microsoft.PSharp;
+using Microsoft.Coyote;
 using System;
 using System.Runtime;
 using System.Collections.Generic;
@@ -222,14 +222,14 @@ namespace FailOver
         {
             FaultTolerantMachine currentMachine = this;
             IEventWithPayload TMP_tmp0_4 = null;
-            var PGEN_recvEvent_1 = await currentMachine.ReceiveEvent(typeof(PHalt), typeof(Default));
+            var PGEN_recvEvent_1 = await currentMachine.ReceiveEvent(typeof(PHalt), typeof(DefaultEvent));
             switch (PGEN_recvEvent_1) {
                 case PHalt PGEN_evt_1: {
                     TMP_tmp0_4 = new PHalt(null);
                     currentMachine.RaiseEvent(currentMachine, (Event)TMP_tmp0_4);
                     throw new PUnreachableCodeException();
                 } break;
-                case Default PGEN_evt_2: {
+                case DefaultEvent PGEN_evt_2: {
                 } break;
             }
         }
@@ -409,20 +409,20 @@ namespace FailOver
         public static void InitializeMonitorObserves() {
         }
         
-        public static void InitializeMonitorMap(PSharpRuntime runtime) {
+        public static void InitializeMonitorMap(IActorRuntime runtime) {
         }
         
         
-        [Microsoft.PSharp.Test]
-        public static void Execute(PSharpRuntime runtime) {
-            runtime.SetLogger(new PLogger());
+        [Microsoft.Coyote.TestingServices.Test]
+        public static void Execute(IActorRuntime runtime) {
+            runtime.SetLogFormatter(new PLogFormatter());
             PModule.runtime = runtime;
             PHelper.InitializeInterfaces();
             InitializeLinkMap();
             InitializeInterfaceDefMap();
             InitializeMonitorMap(runtime);
             InitializeMonitorObserves();
-            runtime.CreateMachine(typeof(_GodMachine), new _GodMachine.Config(typeof(TestDriver)));
+            runtime.CreateActor(typeof(_GodMachine), new _GodMachine.Config(typeof(TestDriver)));
         }
     }
     public class I_TestDriver : PMachineValue {

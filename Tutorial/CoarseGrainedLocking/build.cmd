@@ -15,7 +15,7 @@ if NOT errorlevel 0 goto :eof
 
 if NOT errorlevel 0 goto :eof
 
-%pt% /psharp linker.dll
+%pt% /coyote linker.dll
 
 goto :eof
 :noP

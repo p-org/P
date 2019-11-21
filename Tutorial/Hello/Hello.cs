@@ -1,4 +1,4 @@
-using Microsoft.PSharp;
+using Microsoft.Coyote;
 using System;
 using System.Runtime;
 using System.Collections.Generic;
@@ -113,7 +113,7 @@ namespace Hello
         class WaitForReq : MachineState
         {
         }
-        [OnEventGotoState(typeof(Default), typeof(WaitForReq), nameof(Anon_1))]
+        [OnEventGotoState(typeof(DefaultEvent), typeof(WaitForReq), nameof(Anon_1))]
         [IgnoreEvents(typeof(START))]
         class WaitForTimeout : MachineState
         {
@@ -224,13 +224,13 @@ namespace Hello
             PModule.monitorObserves.Clear();
         }
         
-        public static void InitializeMonitorMap(PSharpRuntime runtime) {
+        public static void InitializeMonitorMap(IActorRuntime runtime) {
             PModule.monitorMap.Clear();
         }
         
         
-        [Microsoft.PSharp.Test]
-        public static void Execute(PSharpRuntime runtime) {
+        [Microsoft.Coyote.TestingServices.Test]
+        public static void Execute(IActorRuntime runtime) {
             PModule.runtime = runtime;
             PHelper.InitializeInterfaces();
             PHelper.InitializeEnums();
@@ -238,7 +238,7 @@ namespace Hello
             InitializeInterfaceDefMap();
             InitializeMonitorMap(runtime);
             InitializeMonitorObserves();
-            runtime.CreateMachine(typeof(_GodMachine), new _GodMachine.Config(typeof(Hello)));
+            runtime.CreateActor(typeof(_GodMachine), new _GodMachine.Config(typeof(Hello)));
         }
     }
     public class I_Timer : PMachineValue {

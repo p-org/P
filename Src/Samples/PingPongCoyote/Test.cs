@@ -9,7 +9,7 @@ namespace pingpong
     {
         public static void Main(string[] args)
         {
-            // Optional: increases verbosity level to see the P# runtime log.
+            // Optional: increases verbosity level to see the Coyote runtime log.
             Configuration configuration = Configuration.Create();
             configuration.SchedulingIterations = 10;
             ITestingEngine engine = TestingEngineFactory.CreateBugFindingEngine(configuration, DefaultImpl.Execute);
@@ -19,18 +19,6 @@ namespace pingpong
             {
                 Console.WriteLine(bug);
             }
-
-            /*
-            // Creates a new P# runtime instance, and passes an optional configuration.
-            var runtime = PSharpRuntime.Create(configuration);
-
-            // Executes the P# program.
-            DefaultImpl.Execute(runtime);
-
-            // The P# runtime executes asynchronously, so we wait
-            // to not terminate the process.
-            Console.WriteLine("Press Enter to terminate...");
-            */
         }
     }
 }

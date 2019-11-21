@@ -108,6 +108,7 @@ machine ClusterManager
 	state Available
 	{
 		on Request do (payload: (Client: machine, Command: int)){
+			print "[ClusterManager] Request {0} sent to client {1}", payload.Command, payload.Client;
 			send Leader, Request, (Client=payload.Client, Command=payload.Command);
 		}
 		on RedirectRequest do (payload : (Client: machine, Command: int)){

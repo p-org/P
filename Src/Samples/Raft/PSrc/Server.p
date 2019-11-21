@@ -309,7 +309,7 @@ machine Server
             idx = 0;
             while (idx < sizeof(Servers))
             {
-                print "[Leader | Entry] {0} appendEntryRequest to {1}", this, idx;
+                print "[Leader | Entry] {0} Heartbeat appendEntryRequest to {1}", this, idx;
                 if (idx == ServerId){
                     idx = idx + 1;
                     continue;
@@ -349,7 +349,7 @@ machine Server
         log = default(Log);
         log.Term = CurrentTerm;
         log.Command = LastClientRequest.Command;
-        print "[Leader | Request] Log Term: {0}, Command: {1}, idx: {2}", log.Term, log.Command, i;
+        print "[Leader | Request] Log Term: {0}, Log Command: {1}, idx: {2}", log.Term, log.Command, i;
         Logs += (i, log);
         print "[Leader | Request] Num entries: {0}, i: {1}", sizeof(Logs), i;
         i = i + 1;
@@ -371,7 +371,6 @@ machine Server
         print "\n[Leader | PCR | BroadcastLastClientReq] [Leader] {0} sends append requests | term {1} | log {2}\n", this, CurrentTerm, sizeof(Logs);
 
         lastLogIndex = sizeof(Logs);
-        VotesReceived = 1;
         while (idx < sizeof(Servers))
         {
             if (idx == ServerId) {
@@ -389,14 +388,14 @@ machine Server
             idx2 = NextIndex[server] - 1;
             while (idx2 < sizeof(Logs)) {
                 logsAppend += (idx2, Logs[idx2]);
-                idx2 = idx + 1;
+                idx2 = idx2 + 1;
             }
-
             prevLogIndex = NextIndex[server] - 1;
             prevLogTerm = GetLogTermForIndex(prevLogIndex);
             print "[Leader | PCR | BroadcastLastClientReq] {0} appendEntryRequest to {1}", this, idx;
             send server, AppendEntriesRequest, (Term=CurrentTerm, LeaderId=this, PrevLogIndex=prevLogIndex,
                 PrevLogTerm=prevLogTerm, Entries=logsAppend, LeaderCommit=CommitIndex, ReceiverEndpoint=LastClientRequest.Client);
+            idx = idx + 1;
         }
     }
 

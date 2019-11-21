@@ -68,6 +68,11 @@ namespace Plang.Compiler.Backend.Prt
             return registeredStrings.RegisterValue(function, value);
         }
 
+        public IEnumerable<KeyValuePair<string, string>> GetRegisteredStringLiterals(Function function)
+        {
+            return registeredStrings.GetValues(function);
+        }
+
         public IEnumerable<KeyValuePair<bool, string>> GetRegisteredBoolLiterals(Function function)
         {
             return registeredBools.GetValues(function);

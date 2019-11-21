@@ -532,6 +532,10 @@ namespace Plang.Compiler.Backend.Prt
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_FLOAT, {{ NULL }} }};");
                     break;
 
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.String):
+                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_STRING, {{ NULL }} }};");
+                    break;
+
                 case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Bool):
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_BOOL, {{ NULL }} }};");
                     break;
@@ -840,6 +844,13 @@ namespace Plang.Compiler.Backend.Prt
                 context.WriteLine(
                     output,
                     $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_BOOL, {{ .bl = {(literal.Key ? "PRT_TRUE" : "PRT_FALSE")} }} }};");
+            }
+
+            foreach (KeyValuePair<string, string> literal in context.GetRegisteredStringLiterals(function))
+            {
+                context.WriteLine(
+                    output,
+                    $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_STRING, {{ .str = {literal.Key} }} }};");
             }
         }
 
@@ -1252,7 +1263,7 @@ namespace Plang.Compiler.Backend.Prt
    
             // Build parameter pack
             int k = (assignBaseParts.Length - 1) / 2;
-            context.Write(output, "PrtFormatString(\"");
+            context.Write(output, "PrtMkStringValue(PrtFormatString(\"");
             context.Write(output, (string)assignBaseParts[0]);
             context.Write(output, "\", ");
             context.Write(output, stringAssignStmt.Args.Count.ToString());
@@ -1275,7 +1286,7 @@ namespace Plang.Compiler.Backend.Prt
                 context.Write(output, "\"");
             }
 
-            context.WriteLine(output, ");");
+            context.WriteLine(output, "));");
         }
 
         private void WritePrintStmt(TextWriter output, PrintStmt printStmt, Function function)
@@ -1392,14 +1403,10 @@ namespace Plang.Compiler.Backend.Prt
                         PrimitiveType.String.IsSameTypeAs(binOpRhs.Type) &&
                         binOpType == BinOpType.Add)
                     {
-                        (string binOpGetter, string _) = GetTypeStructureFuns(binOpLhs.Type);
                         context.Write(output, $"PrtStringConcat(");
-                        context.Write(output, $"{binOpGetter}(");
                         WriteExpr(output, function, binOpLhs);
-                        context.Write(output, "),");
-                        context.Write(output, $"{binOpGetter}(");
+                        context.Write(output, ",");
                         WriteExpr(output, function, binOpRhs);
-                        context.Write(output, ")");
                         context.Write(output, ")");
                     }
                     else

@@ -834,11 +834,13 @@ extern "C" {
 
 	PRT_API void PRT_CALL_CONV PrtFormatPrintf(_In_ PRT_CSTRING msg, ...);
 
+
 	/** Interpolates a string from provided parameters.
 	* @param[in] String literal as the base string.
 	* @returns a string representing value. You must call PrtFreeString to release the string memory when you are done.
 	*/
 	PRT_API PRT_STRING PRT_CALL_CONV PrtFormatString(_In_ PRT_CSTRING baseString, ...);
+
 
 #ifdef __cplusplus
 }

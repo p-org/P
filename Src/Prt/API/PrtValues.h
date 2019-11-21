@@ -272,7 +272,7 @@ PRT_API PRT_UINT32 PRT_CALL_CONV PrtSetCapacity(_In_ PRT_VALUE* set);
 	* @returns A proper string value. Caller is responsible for freeing.
 	* @see PrtFreeValue
 	*/
-	PRT_API PRT_VALUE* PRT_CALL_CONV PrtMkFloatValue(_In_ PRT_STRING value);
+	PRT_API PRT_VALUE* PRT_CALL_CONV PrtMkStringValue(_In_ PRT_STRING value);
 
 	/** Makes null value.
 	* The types null, event, and machine all share the null value.
@@ -380,7 +380,7 @@ PRT_API PRT_UINT32 PRT_CALL_CONV PrtSetCapacity(_In_ PRT_VALUE* set);
 	* @param[in]     str1 first input string.
 	* @param[in]     str2 second input string.
 	*/
-	PRT_API PRT_STRING PRT_CALL_CONV PrtStringConcat(_In_ PRT_VALUE* str1, _In_ PRT_VALUE* str2);
+	PRT_API PRT_VALUE* PRT_CALL_CONV PrtStringConcat(_In_ PRT_VALUE* str1, _In_ PRT_VALUE* str2);
 
 	/** Sets an element in a (named) tuple by index.
 	* @param[in,out] tuple A (named) tuple to mutate.

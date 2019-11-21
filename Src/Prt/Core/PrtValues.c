@@ -226,7 +226,7 @@ PRT_VALUE* PRT_CALL_CONV PrtMkFloatValue(_In_ PRT_FLOAT value)
 PRT_VALUE* PRT_CALL_CONV PrtMkStringValue(_In_ PRT_STRING value)
 {
 	PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-	retVal->discriminator = PRT_VALUE_KIND_FLOAT;
+	retVal->discriminator = PRT_VALUE_KIND_STRING;
 	retVal->valueUnion.str = value;
 	return retVal;
 }
@@ -481,17 +481,21 @@ PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE* prmVal)
 	return *prmVal->valueUnion.mid;
 }
 
-PRT_STRING PRT_CALL_CONV PrtStringConcat(_In_ PRT_VALUE* str1, _In_ PRT_VALUE* str2)
+PRT_VALUE* PRT_CALL_CONV PrtStringConcat(_In_ PRT_VALUE* str1, _In_ PRT_VALUE* str2)
 {
+	printf("hi0");
 	PrtAssert(PrtIsValidValue(str1), "Invalid value expression.");
+	printf("hi1");
 	PrtAssert(PrtIsValidValue(str2), "Invalid value expression.");
+	printf("hi2");
 	PrtAssert(str1->discriminator == PRT_VALUE_KIND_STRING, "Cannot perform string concatenation on this value");
 	PrtAssert(str2->discriminator == PRT_VALUE_KIND_STRING, "Cannot perform concatenation on this value");
-	PRT_STRING ret = PrtCalloc(1, sizeof(PRT_CHAR) * (strlen(str1->valueUnion.str) + 1));
+	PRT_STRING ret = PrtCalloc(1, sizeof(PRT_CHAR) * (strlen(str1->valueUnion.str) + strlen(str2->valueUnion.str) + 1));
 	strcat(ret, str1->valueUnion.str);
 	strcat(ret, str2->valueUnion.str);
-	return ret;
+	return PrtMkStringValue(ret);
 }
+
 
 void PRT_CALL_CONV PrtTupleSetEx(_Inout_ PRT_VALUE* tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE* value,
 	PRT_BOOLEAN cloneValue)
@@ -1869,6 +1873,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE* value)
 	case PRT_VALUE_KIND_SET:
 	case PRT_VALUE_KIND_MAP:
 	case PRT_VALUE_KIND_TUPLE:
+	case PRT_VALUE_KIND_STRING:
 	case PRT_VALUE_KIND_SEQ:
 		return PRT_FALSE;
 	default:

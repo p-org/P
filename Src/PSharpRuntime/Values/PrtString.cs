@@ -6,9 +6,20 @@ namespace Plang.PrtSharp.Values
     [Serializable]
     public readonly struct PrtString : IPrtValue
     {
+
         public bool Equals(PrtString other)
         {
             return string.Equals(value, other.value);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is PrtString other && Equals(other);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -18,6 +29,18 @@ namespace Plang.PrtSharp.Values
         }
 
         private readonly string value;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator PrtString(string val)
+        {
+            return new PrtString(val);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator string(PrtString val)
+        {
+            return val.value;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private PrtString(string value)
@@ -77,6 +100,11 @@ namespace Plang.PrtSharp.Values
         public override int GetHashCode()
         {
             return value.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return value;
         }
     }
 }

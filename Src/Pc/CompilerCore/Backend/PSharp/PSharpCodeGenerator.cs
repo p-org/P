@@ -696,7 +696,7 @@ namespace Plang.Compiler.Backend.PSharp
                 case StringAssignStmt stringAssignStmt:
                     WriteLValue(context, output, stringAssignStmt.Location);
                     context.Write(output, $" = (PrtString)(");
-                    context.Write(output, $"string.Format(\"{stringAssignStmt.BaseString}\"");
+                    context.Write(output, $"String.Format(\"{stringAssignStmt.BaseString}\"");
                     foreach (IPExpr stringArg in stringAssignStmt.Args)
                     {
                         context.Write(output, ", ");

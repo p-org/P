@@ -2825,7 +2825,9 @@ PRT_STRING PRT_CALL_CONV PrtFormatString(_In_ PRT_CSTRING baseString, ...)
 		ret = PrtRealloc(ret, sizeof(PRT_CHAR) * (strlen(ret) + 1 + strlen(arg) + strlen(seg)));
 		strcat(ret, arg);
 		strcat(ret, seg);
+		PrtFree(arg);
 	}
 	va_end(argp);
 	PrtFree(args);
+	return ret;
 }

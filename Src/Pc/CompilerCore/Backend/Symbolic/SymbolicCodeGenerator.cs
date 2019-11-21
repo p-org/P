@@ -557,8 +557,71 @@ namespace Plang.Compiler.Backend.Symbolic
                         }
                     );
                     break;
+
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    throw new NotImplementedException("Named tuples not yet supported");
+                    WriteWithLValueMutationContext(
+                        context,
+                        output,
+                        pcScope,
+                        namedTupleAccessExpr.SubExpr,
+                        true,
+                        namedTupleTemp =>
+                        {
+                            var fieldTemp = context.FreshTempVar();
+                            var fieldType = GetSymbolicType(namedTupleAccessExpr.Type);
+                            context.Write(output, $"{fieldType} {fieldTemp}");
+                            if (needOrigValue)
+                            {
+                                context.WriteLine(output, $" = ({fieldType}){namedTupleTemp}.getField(\"{namedTupleAccessExpr.FieldName}\");");
+                            }
+                            else
+                            {
+                                context.WriteLine(output, ";");
+                            }
+
+                            writeMutator(fieldTemp);
+
+                            context.WriteLine(
+                                output,
+                                $"{namedTupleTemp} = {namedTupleTemp}.setField(" +
+                                $"\"{namedTupleAccessExpr.FieldName}\", " +
+                                $"{fieldTemp});");
+                        }
+                    );
+                    break;
+
+                case TupleAccessExpr tupleAccessExpr:
+                    WriteWithLValueMutationContext(
+                        context,
+                        output,
+                        pcScope,
+                        tupleAccessExpr.SubExpr,
+                        true,
+                        tupleTemp =>
+                        {
+                            var fieldTemp = context.FreshTempVar();
+                            var fieldType = GetSymbolicType(tupleAccessExpr.Type);
+                            context.Write(output, $"{fieldType} {fieldTemp}");
+                            if (needOrigValue)
+                            {
+                                context.Write(output, $"({fieldType}){tupleTemp}.getField({tupleAccessExpr.FieldNo});");
+                            }
+                            else
+                            {
+                                context.Write(output, ";");
+                            }
+
+                            writeMutator(fieldTemp);
+
+                            context.WriteLine(
+                                output,
+                                $"{tupleTemp} = {tupleTemp}.setField(" +
+                                $"{tupleAccessExpr.FieldNo}," +
+                                $"{fieldTemp});");
+                        }
+                    );
+                    break;
+
                 case SeqAccessExpr seqAccessExpr:
                     PLanguageType elementType = seqAccessExpr.Type;
 
@@ -593,8 +656,6 @@ namespace Plang.Compiler.Backend.Symbolic
                         }
                     );
                     break;
-                case TupleAccessExpr tupleAccessExpr:
-                    throw new NotImplementedException("Tuples not yet supported");
                 case VariableAccessExpr variableAccessExpr:
                     var name = variableAccessExpr.Variable.Name;
                     var type = variableAccessExpr.Variable.Type;
@@ -604,9 +665,16 @@ namespace Plang.Compiler.Backend.Symbolic
 
                     var guardedTemp = context.FreshTempVar();
 
-                    context.WriteLine(output, 
-                        $"{GetSymbolicType(variableAccessExpr.Type)} {guardedTemp} = " +
-                        $"{summaryOps}.guard({unguarded}, {pcScope.PathConstraintVar})");
+                    context.Write(output, $"{GetSymbolicType(variableAccessExpr.Type)} {guardedTemp}");
+                    
+                    if (needOrigValue)
+                    {
+                        context.WriteLine(output, $" = {summaryOps}.guard({unguarded}, {pcScope.PathConstraintVar});    ");
+                    }
+                    else
+                    {
+                        context.WriteLine(output, ";");
+                    }
 
                     writeMutator(guardedTemp);
 
@@ -636,14 +704,13 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, $").map(({lambdaTemp}) => {UnOpToStr(unaryOpExpr.Operation)}{lambdaTemp})");
                     break;
                 case BinOpExpr binOpExpr:
-                    if (binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq)
-                    {
-                        throw new NotImplementedException("'==' and '!=' operations not yet supported");
-                    }
+                    var isPrimitive = binOpExpr.Lhs.Type is PrimitiveType && binOpExpr.Rhs.Type is PrimitiveType;
+                    var isEnum = binOpExpr.Lhs.Type is EnumType && binOpExpr.Rhs.Type is EnumType;
+                    var isEquality = binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq;
 
-                    if (!(binOpExpr.Lhs.Type is PrimitiveType && binOpExpr.Rhs.Type is PrimitiveType))
+                    if (!(isPrimitive || (isEnum && isEquality)))
                     {
-                        throw new NotImplementedException("Binary operations are currently only supported between primitive types");
+                        throw new NotImplementedException("Binary operations are currently only supported between primitive types and enums");
                     }
 
                     var lhsLambdaTemp = context.FreshTempVar();
@@ -698,6 +765,47 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, pcScope, seqAccessExpr.IndexExpr);
                     context.Write(output, "))");
                     break;
+                case NamedTupleAccessExpr namedTupleAccessExpr:
+                    context.Write(output, $"({GetSymbolicType(namedTupleAccessExpr.Type)})(");
+                    WriteExpr(context, output, pcScope, namedTupleAccessExpr.SubExpr);
+                    context.Write(output, $").getNamedField(\"{namedTupleAccessExpr.FieldName}\")");
+                    break;
+                case TupleAccessExpr tupleAccessExpr:
+                    context.Write(output, $"({GetSymbolicType(tupleAccessExpr.Type)})(");
+                    WriteExpr(context, output, pcScope, tupleAccessExpr.SubExpr);
+                    context.Write(output, $").getField({tupleAccessExpr.FieldNo})");
+                    break;
+                case NamedTupleExpr namedTupleExpr:
+                    context.Write(output, "new NamedTupleVS(");
+                    var fields = (namedTupleExpr.Type.Canonicalize() as NamedTupleType).Fields;
+                    for (int i = 0; i < namedTupleExpr.TupleFields.Count; i++)
+                    {
+                        var fieldName = fields[i].Name;
+                        var field = namedTupleExpr.TupleFields[i];
+                        context.Write(output, $"\"{fieldName}\", ");
+                        WriteExpr(context, output, pcScope, field);
+                        if (i + 1 != namedTupleExpr.TupleFields.Count)
+                            context.Write(output, ", ");
+                    }
+                    context.Write(output, ")");
+                    break;
+                case UnnamedTupleExpr unnamedTupleExpr:
+                    context.Write(output, "new TupleVS(");
+                    for (int i = 0; i < unnamedTupleExpr.TupleFields.Count; i++)
+                    {
+                        WriteExpr(context, output, pcScope, unnamedTupleExpr.TupleFields[i]);
+                        if (i + 1 != unnamedTupleExpr.TupleFields.Count)
+                            context.Write(output, ", ");
+                    }
+                    context.Write(output, ")");
+                    break;
+                case EnumElemRefExpr enumElemRefExpr:
+                    {
+                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Int) }({enumElemRefExpr.Value.Value} /* enum {enumElemRefExpr.Type.OriginalRepresentation} elem {enumElemRefExpr.Value.Name} */)";
+                        var guarded = $"{GetValueSummaryOps(context, PrimitiveType.Int).GetName()}.guard({unguarded}, {pcScope.PathConstraintVar})";
+                        context.Write(output, guarded);
+                        break;
+                    }
                 case VariableAccessExpr variableAccessExpr:
                     context.Write(output,
                         $"{GetValueSummaryOps(context, variableAccessExpr.Type).GetName()}.guard(" +
@@ -759,6 +867,10 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "&&";
                 case BinOpType.Or:
                     return "||";
+                case BinOpType.Eq:
+                    return "==";
+                case BinOpType.Neq:
+                    return "!=";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
             }
@@ -813,11 +925,15 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"MapVS<" +
                         $"{GetConcreteBoxedType(mapType.KeyType)}, " +
                         $"{GetSymbolicType(mapType.ValueType, true)}>";
+                case NamedTupleType _:
+                    return "NamedTupleVS";
+                case TupleType _:
+                    return "TupleVS";
+                case EnumType enumType:
+                    return $"PrimVS<Integer> /* enum {enumType.OriginalRepresentation} */";
                 default:
                     throw new NotImplementedException($"Symbolic type '{type.OriginalRepresentation}' not supported");
             }
-
-            throw new NotImplementedException();
         }
 
         private string GetValueSummaryOpsType(PLanguageType type)
@@ -836,6 +952,12 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"MapVS.Ops<" +
                         $"{GetConcreteBoxedType(mapType.KeyType)}, " +
                         $"{GetSymbolicType(mapType.ValueType, true)}>";
+                case NamedTupleType _:
+                    return "NamedTupleVs.Ops";
+                case TupleType _:
+                    return "TupleVS.Ops";
+                case EnumType enumType:
+                    return $"PrimVS.Ops<Integer> /* enum {enumType.OriginalRepresentation} */";
                 default:
                     throw new NotImplementedException($"Symbolic type '{type.OriginalRepresentation}' ops type not supported");
             }
@@ -863,6 +985,35 @@ namespace Plang.Compiler.Backend.Symbolic
                     var valOps = GetValueSummaryOps(context, mapType.ValueType);
                     defBody = $"new {opsType}({valOps.GetName()})";
                     break;
+
+                case NamedTupleType namedTupleType:
+                    {
+                        var allFieldOps = new List<string>();
+                        foreach (var field in namedTupleType.Fields)
+                        {
+                            var fieldOps = GetValueSummaryOps(context, field.Type);
+                            allFieldOps.Add($"\"{field.Name}\", {fieldOps.GetName()}");
+                        }
+                        defBody = $"new {opsType}({string.Join(", ", allFieldOps)})";
+                    }
+                    break;
+
+                case TupleType tupleType:
+                    {
+                        var allFieldOps = new List<string>();
+                        foreach (var field in tupleType.Types)
+                        {
+                            var fieldOps = GetValueSummaryOps(context, field);
+                            allFieldOps.Add(fieldOps.GetName());
+                        }
+                        defBody = $"new {opsType}({string.Join(", ", allFieldOps)})";
+                    }
+                    break;
+
+                case EnumType enumType:
+                    defBody = $"new {opsType} ()";
+                    break;
+
                 default:
                     throw new NotImplementedException($"Symbolic type '{type.OriginalRepresentation}' ops not supported");
             }
@@ -890,6 +1041,26 @@ namespace Plang.Compiler.Backend.Symbolic
                 case MapType _:
                     unguarded = $"new {GetSymbolicType(type)}()";
                     break;
+                case NamedTupleType namedTupleType:
+                    {
+                        var allFieldDefaults = new List<string>();
+                        foreach (var field in namedTupleType.Fields)
+                        {
+                            var fieldDefault = GetDefaultValue(context, pcScope, field.Type);
+                            allFieldDefaults.Add($"\"{field.Name}\", {fieldDefault}");
+                        }
+                        return $"new {GetSymbolicType(type)}({string.Join(", ", allFieldDefaults)})";
+                    }
+                case TupleType tupleType:
+                    {
+                        var allFieldDefaults = new List<string>();
+                        foreach (var field in tupleType.Types)
+                        {
+                            var fieldDefault = GetDefaultValue(context, pcScope, field);
+                            allFieldDefaults.Add(fieldDefault);
+                        }
+                        return $"new {GetSymbolicType(type)}({string.Join(", ", allFieldDefaults)})";
+                    }
                 default:
                     throw new NotImplementedException($"Default value for symbolic type '{type.OriginalRepresentation}' not supported");
             }

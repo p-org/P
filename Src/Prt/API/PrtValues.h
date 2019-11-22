@@ -223,16 +223,16 @@ PRT_API PRT_UINT32 PRT_CALL_CONV PrtSetCapacity(_In_ PRT_VALUE* set);
 	* 1.  def(null)                = `null : null`.
 	* 2.  def(any)                 = `null : null`.
 	* 3.  def(bool)                = `false : bool`.
-	* 3.  def(string)              = `"" : string`.
-	* 4.  def(event)               = `null : event`.
-	* 5.  def(foreign)             = `MkDef_foreign_IMPL() : foreign`.
-	* 6.  def(machine)             = `null : machine`.
-	* 7.  def(int)                 = `0 : int`.
-	* 8.  def(map[S, T])           = `[] : map[S, T]`.
-	* 9.  def(set[S])           = `[] : set[S, T]`.
-	* 10. def((l1: S1,.., ln: Sn)) = `(l1 = def(S1),..., ln = def(Sn)) : (l1: S1,..., ln: Sn)`.
-	* 11. def([S])                 = `[] : [S]`.
-	* 12. def((S1,..,Sn))          = `(def(S1),..., def(S2)) : (S1,..., Sn)`.
+	* 4.  def(string)              = `"" : string`.
+	* 5.  def(event)               = `null : event`.
+	* 6.  def(foreign)             = `MkDef_foreign_IMPL() : foreign`.
+	* 7.  def(machine)             = `null : machine`.
+	* 8.  def(int)                 = `0 : int`.
+	* 9.  def(map[S, T])           = `[] : map[S, T]`.
+	* 10.  def(set[S])           = `[] : set[S, T]`.
+	* 11. def((l1: S1,.., ln: Sn)) = `(l1 = def(S1),..., ln = def(Sn)) : (l1: S1,..., ln: Sn)`.
+	* 12. def([S])                 = `[] : [S]`.
+	* 13. def((S1,..,Sn))          = `(def(S1),..., def(S2)) : (S1,..., Sn)`.
 	* @param[in] type A type expression (will be cloned).
 	* @returns The default value of the type. Caller is responsible for freeing.
 	* @see PrtFreeValue

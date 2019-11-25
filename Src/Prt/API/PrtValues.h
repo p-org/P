@@ -55,21 +55,23 @@ typedef enum PRT_VALUE_KIND
 	/**< The kind of int values                  */
 	PRT_VALUE_KIND_FLOAT = 3,
 	/**< The kind of int values                  */
-	PRT_VALUE_KIND_EVENT = 4,
+	PRT_VALUE_KIND_STRING = 4,
+	/**< The kind of string values                  */
+	PRT_VALUE_KIND_EVENT = 5,
 	/**< The kind of event id values             */
-	PRT_VALUE_KIND_MID = 5,
+	PRT_VALUE_KIND_MID = 6,
 	/**< The kind of machine id values   */
-	PRT_VALUE_KIND_FOREIGN = 6,
+	PRT_VALUE_KIND_FOREIGN = 7,
 	/**< The kind of all foreign values          */
-	PRT_VALUE_KIND_TUPLE = 7,
+	PRT_VALUE_KIND_TUPLE = 8,
 	/**< The kind of all (named) tuple values    */
-	PRT_VALUE_KIND_SEQ = 8,
+	PRT_VALUE_KIND_SEQ = 9,
 	/**< The kind of all sequence values         */
-	PRT_VALUE_KIND_SET = 9,
+	PRT_VALUE_KIND_SET = 10,
 	/**< The kind of all set values         */
-	PRT_VALUE_KIND_MAP = 10,
+	PRT_VALUE_KIND_MAP = 11,
 	/**< The kind of all map values              */
-	PRT_VALUE_KIND_COUNT = 11,
+	PRT_VALUE_KIND_COUNT = 12,
 	/**< The number of value kinds               */
 } PRT_VALUE_KIND;
 
@@ -82,6 +84,7 @@ typedef struct PRT_VALUE
 		PRT_BOOLEAN bl; /**< A boolean value            */
 		PRT_INT nt; /**< An integer value           */
 		PRT_FLOAT ft; /**< An float value           */
+		PRT_STRING str; /*< A string value           */
 		PRT_UINT32 ev; /**< An event id value          */
 		struct PRT_MACHINEID* mid; /**< A machine id value */
 		struct PRT_FOREIGNVALUE* frgn; /**< A foreign value            */
@@ -118,8 +121,6 @@ typedef struct PRT_SETNODE
 	struct PRT_SETNODE* insertNext; /**< The next node in insertion order.     */
 	struct PRT_SETNODE* insertPrev; /**< The previous node in insertion order. */
 } PRT_SETNODE;
-
-
 
 
 
@@ -222,15 +223,16 @@ PRT_API PRT_UINT32 PRT_CALL_CONV PrtSetCapacity(_In_ PRT_VALUE* set);
 	* 1.  def(null)                = `null : null`.
 	* 2.  def(any)                 = `null : null`.
 	* 3.  def(bool)                = `false : bool`.
-	* 4.  def(event)               = `null : event`.
-	* 5.  def(foreign)             = `MkDef_foreign_IMPL() : foreign`.
-	* 6.  def(machine)             = `null : machine`.
-	* 7.  def(int)                 = `0 : int`.
-	* 8.  def(map[S, T])           = `[] : map[S, T]`.
-	* 9.  def(set[S])           = `[] : set[S, T]`.
-	* 10. def((l1: S1,.., ln: Sn)) = `(l1 = def(S1),..., ln = def(Sn)) : (l1: S1,..., ln: Sn)`.
-	* 11. def([S])                 = `[] : [S]`.
-	* 12. def((S1,..,Sn))          = `(def(S1),..., def(S2)) : (S1,..., Sn)`.
+	* 4.  def(string)              = `"" : string`.
+	* 5.  def(event)               = `null : event`.
+	* 6.  def(foreign)             = `MkDef_foreign_IMPL() : foreign`.
+	* 7.  def(machine)             = `null : machine`.
+	* 8.  def(int)                 = `0 : int`.
+	* 9.  def(map[S, T])           = `[] : map[S, T]`.
+	* 10.  def(set[S])           = `[] : set[S, T]`.
+	* 11. def((l1: S1,.., ln: Sn)) = `(l1 = def(S1),..., ln = def(Sn)) : (l1: S1,..., ln: Sn)`.
+	* 12. def([S])                 = `[] : [S]`.
+	* 13. def((S1,..,Sn))          = `(def(S1),..., def(S2)) : (S1,..., Sn)`.
 	* @param[in] type A type expression (will be cloned).
 	* @returns The default value of the type. Caller is responsible for freeing.
 	* @see PrtFreeValue
@@ -264,6 +266,13 @@ PRT_API PRT_UINT32 PRT_CALL_CONV PrtSetCapacity(_In_ PRT_VALUE* set);
 	* @see PrtFreeValue
 	*/
 	PRT_API PRT_VALUE* PRT_CALL_CONV PrtMkFloatValue(_In_ PRT_FLOAT value);
+
+	/** Makes an string value.
+	* @param[in] value A string value.
+	* @returns A proper string value. Caller is responsible for freeing.
+	* @see PrtFreeValue
+	*/
+	PRT_API PRT_VALUE* PRT_CALL_CONV PrtMkStringValue(_In_ PRT_STRING value);
 
 	/** Makes null value.
 	* The types null, event, and machine all share the null value.
@@ -306,6 +315,18 @@ PRT_API PRT_UINT32 PRT_CALL_CONV PrtSetCapacity(_In_ PRT_VALUE* set);
 	* @returns A boolean.
 	*/
 	PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtPrimGetBool(_In_ PRT_VALUE* prmVal);
+
+	/** Sets the value of a string.
+	* @param[in,out] prmVal A primitive string value to mutate.
+	* @param[in]     value The value to set.
+	*/
+	PRT_API void PRT_CALL_CONV PrtPrimSetString(_Inout_ PRT_VALUE* prmVal, _In_ PRT_STRING value);
+
+	/** Gets the value of a string.
+	* @param[in] prmVal A primitive string value.
+	* @returns A string.
+	*/
+	PRT_API PRT_STRING PRT_CALL_CONV PrtPrimGetString(_In_ PRT_VALUE* prmVal);
 
 	/** Sets the value of an event.
 	* @param[in,out] prmVal A primitive event value to mutate.
@@ -354,6 +375,12 @@ PRT_API PRT_UINT32 PRT_CALL_CONV PrtSetCapacity(_In_ PRT_VALUE* set);
 	* @returns A machine machine
 	*/
 	PRT_API PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE* prmVal);
+
+	/** Concatenates two strings. 
+	* @param[in]     str1 first input string.
+	* @param[in]     str2 second input string.
+	*/
+	PRT_API PRT_VALUE* PRT_CALL_CONV PrtStringConcat(_In_ PRT_VALUE* str1, _In_ PRT_VALUE* str2);
 
 	/** Sets an element in a (named) tuple by index.
 	* @param[in,out] tuple A (named) tuple to mutate.

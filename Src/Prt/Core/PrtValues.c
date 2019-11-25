@@ -81,6 +81,21 @@ static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodePrtFloat(_In_ PRT_FLOAT value)
 	return PrtGetHashCodeUInt32((PRT_UINT32)value) ^ PrtGetHashCodeUInt32((PRT_UINT64)value >> 32);
 }
 
+static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodePrtString(_In_ PRT_STRING value)
+{
+	if (value == NULL)
+	{
+		return 0;
+	}
+	PRT_UINT32 code = 5381;
+	int c;
+	while (c = *value++) 
+	{
+		code = ((code << 5) + code) + c; /* code * 33 + c */	
+	}
+	return code;
+}
+
 static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeTwoUInt32(_In_ PRT_UINT32 value1, _In_ PRT_UINT32 value2)
 {
 	PRT_UINT32 i;
@@ -208,6 +223,14 @@ PRT_VALUE* PRT_CALL_CONV PrtMkFloatValue(_In_ PRT_FLOAT value)
 	return retVal;
 }
 
+PRT_VALUE* PRT_CALL_CONV PrtMkStringValue(_In_ PRT_STRING value)
+{
+	PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+	retVal->discriminator = PRT_VALUE_KIND_STRING;
+	retVal->valueUnion.str = value;
+	return retVal;
+}
+
 PRT_VALUE* PRT_CALL_CONV PrtMkNullValue()
 {
 	PRT_VALUE* retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
@@ -271,6 +294,8 @@ PRT_VALUE* PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE* type)
 		return PrtMkIntValue(0);
 	case PRT_KIND_FLOAT:
 		return PrtMkFloatValue(0);
+	case PRT_KIND_STRING:
+		return PrtMkStringValue((PRT_STRING) PrtCalloc(1, sizeof(PRT_CHAR)));
 	case PRT_KIND_NULL:
 		return PrtMkNullValue();
 	case PRT_KIND_FOREIGN:
@@ -423,6 +448,20 @@ PRT_FLOAT PRT_CALL_CONV PrtPrimGetFloat(_In_ PRT_VALUE* prmVal)
 	return prmVal->valueUnion.ft;
 }
 
+void PRT_CALL_CONV PrtPrimSetString(_Inout_ PRT_VALUE* prmVal, _In_ PRT_STRING value)
+{
+	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
+	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_STRING, "Invalid type on primitive set");
+	prmVal->valueUnion.str = value;
+}
+
+PRT_STRING PRT_CALL_CONV PrtPrimGetString(_In_ PRT_VALUE* prmVal)
+{
+	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
+	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_STRING, "Invalid type on primitive get");
+	return prmVal->valueUnion.str;
+}
+
 void PRT_CALL_CONV PrtPrimSetMachine(_Inout_ PRT_VALUE* prmVal, _In_ PRT_MACHINEID value)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
@@ -441,6 +480,22 @@ PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE* prmVal)
 	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_MID, "Invalid type on primitive get");
 	return *prmVal->valueUnion.mid;
 }
+
+PRT_VALUE* PRT_CALL_CONV PrtStringConcat(_In_ PRT_VALUE* str1, _In_ PRT_VALUE* str2)
+{
+	printf("hi0");
+	PrtAssert(PrtIsValidValue(str1), "Invalid value expression.");
+	printf("hi1");
+	PrtAssert(PrtIsValidValue(str2), "Invalid value expression.");
+	printf("hi2");
+	PrtAssert(str1->discriminator == PRT_VALUE_KIND_STRING, "Cannot perform string concatenation on this value");
+	PrtAssert(str2->discriminator == PRT_VALUE_KIND_STRING, "Cannot perform concatenation on this value");
+	PRT_STRING ret = PrtCalloc(1, sizeof(PRT_CHAR) * (strlen(str1->valueUnion.str) + strlen(str2->valueUnion.str) + 1));
+	strcat(ret, str1->valueUnion.str);
+	strcat(ret, str2->valueUnion.str);
+	return PrtMkStringValue(ret);
+}
+
 
 void PRT_CALL_CONV PrtTupleSetEx(_Inout_ PRT_VALUE* tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE* value,
 	PRT_BOOLEAN cloneValue)
@@ -1377,6 +1432,8 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 		return PrtGetHashCodePrtInt(0x02000000 ^ ((PRT_INT)inputValue->valueUnion.nt));
 	case PRT_VALUE_KIND_FLOAT:
 		return PrtGetHashCodePrtFloat((inputValue->valueUnion.ft));
+	case PRT_VALUE_KIND_STRING:
+		return PrtGetHashCodePrtString((inputValue->valueUnion.str));
 	case PRT_VALUE_KIND_FOREIGN:
 	{
 		return 0x08000000 ^ program->foreignTypes[inputValue->valueUnion.frgn->typeTag]->hashFun(
@@ -1550,6 +1607,9 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE* value1, _In_ PRT_VALUE
 	case PRT_VALUE_KIND_FLOAT:
 		return
 			value1->valueUnion.ft == value2->valueUnion.ft ? PRT_TRUE : PRT_FALSE;
+	case PRT_VALUE_KIND_STRING:
+		return 
+			strcmp(value1->valueUnion.str, value2->valueUnion.str)==0 ? PRT_TRUE : PRT_FALSE;
 	case PRT_VALUE_KIND_FOREIGN:
 		{
 			PRT_FOREIGNVALUE* fVal1 = value1->valueUnion.frgn;
@@ -1671,6 +1731,12 @@ PRT_VALUE* PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE* value)
 		return PrtMkIntValue(value->valueUnion.nt);
 	case PRT_VALUE_KIND_FLOAT:
 		return PrtMkFloatValue(value->valueUnion.ft);
+	case PRT_VALUE_KIND_STRING: 
+	{
+		PRT_STRING copy = (PRT_STRING) PrtMalloc(strlen(value->valueUnion.str) + 1);
+		strcpy(copy, value->valueUnion.str);
+		return PrtMkStringValue(copy);
+	}
 	case PRT_VALUE_KIND_FOREIGN:
 	{
 		PRT_VALUE* retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
@@ -1807,6 +1873,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE* value)
 	case PRT_VALUE_KIND_SET:
 	case PRT_VALUE_KIND_MAP:
 	case PRT_VALUE_KIND_TUPLE:
+	case PRT_VALUE_KIND_STRING:
 	case PRT_VALUE_KIND_SEQ:
 		return PRT_FALSE;
 	default:
@@ -1879,6 +1946,8 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE* value, _In_ PRT_TYPE* 
 		return vkind == PRT_VALUE_KIND_INT ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_FLOAT:
 		return vkind == PRT_VALUE_KIND_FLOAT ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_STRING:
+		return vkind == PRT_VALUE_KIND_STRING ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_FOREIGN:
 		return (vkind == PRT_VALUE_KIND_FOREIGN && value->valueUnion.frgn->typeTag == type
 			->typeUnion.foreignType->declIndex
@@ -2027,6 +2096,12 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE* value)
 		PrtFree(value);
 		break;
 	}
+	case PRT_VALUE_KIND_STRING:
+	{
+		PrtFree(value->valueUnion.str);
+		PrtFree(value);
+		break;
+	}
 	case PRT_VALUE_KIND_MID:
 	{
 		PRT_MACHINEID* id = value->valueUnion.mid;
@@ -2141,6 +2216,8 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE* value)
 		return value->discriminator == PRT_VALUE_KIND_INT;
 	case PRT_VALUE_KIND_FLOAT:
 		return value->discriminator == PRT_VALUE_KIND_FLOAT;
+	case PRT_VALUE_KIND_STRING:
+		return value->discriminator == PRT_VALUE_KIND_STRING;
 	case PRT_VALUE_KIND_NULL:
 		return value->discriminator == PRT_VALUE_KIND_NULL &&
 			value->valueUnion.ev == PRT_SPECIAL_EVENT_NULL;

@@ -276,6 +276,16 @@ namespace Plang.Compiler.TypeChecker
             switch (op)
             {
                 case "+":
+                    if (  PrimitiveType.String.IsAssignableFrom(lhs.Type) &&
+                          PrimitiveType.String.IsAssignableFrom(rhs.Type) ||
+                          PrimitiveType.Int.IsAssignableFrom(lhs.Type) &&
+                          PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
+                          PrimitiveType.Float.IsAssignableFrom(lhs.Type) &&
+                          PrimitiveType.Float.IsAssignableFrom(rhs.Type))
+                    {
+                        return arithCtors[op](lhs, rhs);
+                    }
+                    throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
                 case "*":
                 case "/":
                 case "-":
@@ -283,15 +293,15 @@ namespace Plang.Compiler.TypeChecker
                 case ">":
                 case ">=":
                 case "<=":
-                    if (!(PrimitiveType.Int.IsAssignableFrom(lhs.Type) &&
-                          PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
-                          PrimitiveType.Float.IsAssignableFrom(lhs.Type) &&
-                          PrimitiveType.Float.IsAssignableFrom(rhs.Type)))
+                    if (PrimitiveType.Int.IsAssignableFrom(lhs.Type) &&
+                        PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
+                        PrimitiveType.Float.IsAssignableFrom(lhs.Type) &&
+                        PrimitiveType.Float.IsAssignableFrom(rhs.Type))
                     {
-                        throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
+                        return arithCtors[op](lhs, rhs);
+                        
                     }
-
-                    return arithCtors[op](lhs, rhs);
+                    throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
 
                 case "in":
                     PLanguageType rhsType = rhs.Type.Canonicalize();
@@ -470,6 +480,11 @@ namespace Plang.Compiler.TypeChecker
             if (context.floatLiteral() != null)
             {
                 return Visit(context.floatLiteral());
+            }
+
+            if (context.StringLiteral() != null)
+            {
+                return new StringLiteralExpr(context, context.StringLiteral().GetText());
             }
 
             if (context.BoolLiteral() != null)

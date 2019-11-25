@@ -158,6 +158,19 @@ namespace Plang.Compiler.TypeChecker
 
                     break;
 
+                case StringAssignStmt stringAssignStmt:
+                    if (stringAssignStmt.Location is VariableAccessExpr stringAssignAccess)
+                    {
+                        unavailable.Remove(stringAssignAccess.Variable);
+                    }
+                    else
+                    {
+                        unavailable = ProcessExpr(unavailable, stringAssignStmt.Location);
+                    }
+                    unavailable = ProcessArgList(stringAssignStmt.Args, unavailable, ArgOptions.SwapNotAllowed);
+                    break;
+
+
                 case AddStmt addStmt:
                     unavailable = ProcessExpr(unavailable, addStmt.Variable);
                     unavailable = ProcessExpr(unavailable, addStmt.Value);
@@ -397,6 +410,7 @@ namespace Plang.Compiler.TypeChecker
                 case FairNondetExpr _:
                 case FloatLiteralExpr _:
                 case IntLiteralExpr _:
+                case StringLiteralExpr _:
                 case NondetExpr _:
                 case NullLiteralExpr _:
                 case ThisRefExpr _:

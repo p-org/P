@@ -105,6 +105,39 @@ namespace Plang.Compiler.TypeChecker
             return new PrintStmt(context, message, args);
         }
 
+        public override IPStmt VisitStringAssignStmt(PParser.StringAssignStmtContext context)
+        {
+
+            IPExpr variable = exprVisitor.Visit(context.lvalue());
+            string baseString = context.StringLiteral().GetText();
+            baseString = baseString.Substring(1, baseString.Length - 2); // strip beginning / end double quote
+            int numNecessaryArgs = TypeCheckingUtils.PrintStmtNumArgs(baseString);
+            if (numNecessaryArgs == -1)
+            {
+                throw handler.InvalidStringAssignFormat(context, context.StringLiteral().Symbol);
+            }
+
+            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+            foreach (IPExpr arg in args)
+            {
+                if (arg is LinearAccessRefExpr)
+                {
+                    throw handler.StringAssignStmtLinearArgument(arg.SourceLocation);
+                }
+            }
+
+            if (args.Count != numNecessaryArgs)
+            {
+                throw handler.IncorrectArgumentCount(context, args.Count, numNecessaryArgs);
+            }
+
+            if (variable.Type != PrimitiveType.String) {
+                throw handler.TypeMismatch(context, variable.Type, PrimitiveType.String);
+            }
+
+            return new StringAssignStmt(context, variable, baseString, args);
+        }
+
         public override IPStmt VisitReturnStmt(PParser.ReturnStmtContext context)
         {
             IPExpr returnValue = context.expr() == null ? null : exprVisitor.Visit(context.expr());

@@ -2449,6 +2449,9 @@ static void PrtUserPrintValue(_In_ PRT_VALUE* value, _Inout_ char** buffer, _Ino
 	case PRT_VALUE_KIND_FLOAT:
 		PrtUserPrintFloat(PrtPrimGetFloat(value), buffer, bufferSize, numCharsWritten);
 		break;
+	case PRT_VALUE_KIND_STRING:
+		PrtUserPrintString(PrtPrimGetString(value), buffer, bufferSize, numCharsWritten);
+		break;
 	case PRT_VALUE_KIND_EVENT:
 		PrtUserPrintString("<", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintUint32(PrtPrimGetEvent(value), buffer, bufferSize, numCharsWritten);
@@ -2799,4 +2802,32 @@ void PRT_CALL_CONV PrtFormatPrintf(_In_ PRT_CSTRING msg, ...)
 	}
 	va_end(argp);
 	PrtFree(args);
+}
+
+PRT_STRING PRT_CALL_CONV PrtFormatString(_In_ PRT_CSTRING baseString, ...)
+{
+	PRT_STRING ret = PrtMalloc(sizeof(PRT_CHAR) * (strlen(baseString) + 1));
+	strcpy(ret, baseString);
+	va_list argp;
+	va_start(argp, baseString);
+	PRT_UINT32 numArgs = va_arg(argp, PRT_UINT32);
+	PRT_VALUE** args = (PRT_VALUE **)PrtCalloc(numArgs, sizeof(PRT_VALUE *));
+	for (PRT_UINT32 i = 0; i < numArgs; i++)
+	{
+		args[i] = va_arg(argp, PRT_VALUE *);
+	}
+	PRT_UINT32 numSegs = va_arg(argp, PRT_UINT32);
+	for (PRT_UINT32 i = 0; i < numSegs; i++)
+	{
+		PRT_UINT32 argIndex = va_arg(argp, PRT_UINT32);
+		PRT_STRING arg = PrtToStringValue(args[argIndex]);
+		PRT_CSTRING seg = va_arg(argp, PRT_CSTRING);
+		ret = PrtRealloc(ret, sizeof(PRT_CHAR) * (strlen(ret) + 1 + strlen(arg) + strlen(seg)));
+		strcat(ret, arg);
+		strcat(ret, seg);
+		PrtFree(arg);
+	}
+	va_end(argp);
+	PrtFree(args);
+	return ret;
 }

@@ -693,6 +693,18 @@ namespace Plang.Compiler.Backend.Coyote
                     context.WriteLine(output, ");");
                     break;
 
+                case StringAssignStmt stringAssignStmt:
+                    WriteLValue(context, output, stringAssignStmt.Location);
+                    context.Write(output, $" = (PrtString)(");
+                    context.Write(output, $"String.Format(\"{stringAssignStmt.BaseString}\"");
+                    foreach (IPExpr stringArg in stringAssignStmt.Args)
+                    {
+                        context.Write(output, ", ");
+                        WriteExpr(context, output, stringArg);
+                    }
+                    context.WriteLine(output, "));");
+                    break;
+
                 case CompoundStmt compoundStmt:
                     context.WriteLine(output, "{");
                     foreach (IPStmt subStmt in compoundStmt.Statements)
@@ -1297,6 +1309,10 @@ namespace Plang.Compiler.Backend.Coyote
                     context.Write(output, ").Count)");
                     break;
 
+                case StringLiteralExpr stringLiteralExpr:
+                    context.Write(output, $"((PrtString){stringLiteralExpr.Value})");
+                    break;
+
                 case ThisRefExpr _:
                     context.Write(output, "currentMachine.self");
                     break;
@@ -1385,6 +1401,9 @@ namespace Plang.Compiler.Backend.Coyote
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return "PrtFloat";
 
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
+                    return "PrtString";
+
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return "PEvent";
 
@@ -1444,6 +1463,9 @@ namespace Plang.Compiler.Backend.Coyote
 
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return "((PrtFloat)0.0)";
+
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
+                    return "((PrtString)\"\")";
 
                 case PrimitiveType eventType when eventType.IsSameTypeAs(PrimitiveType.Event):
                 case PermissionType _:

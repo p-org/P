@@ -44,20 +44,22 @@ extern "C" {
 		PRT_KIND_INT = 5,
 		/**< The kind of the `int` type        */
 		PRT_KIND_FLOAT = 6,
-		/**< The kind of the `int` type        */
-		PRT_KIND_MAP = 7,
+		/**< The kind of the `float` type        */
+		PRT_KIND_STRING = 7,
+		/**< The kind of the `float` type        */
+		PRT_KIND_MAP = 8,
 		/**< The kind of all map types         */
-		PRT_KIND_NMDTUP = 8,
+		PRT_KIND_NMDTUP = 9,
 		/**< The kind of all named tuple types */
-		PRT_KIND_NULL = 9,
+		PRT_KIND_NULL = 10,
 		/**< The kind of the `NULL` type		  */
-		PRT_KIND_SET = 10,
+		PRT_KIND_SET = 11,
 		/**< The kind of all set types    */
-		PRT_KIND_SEQ = 11,
+		PRT_KIND_SEQ = 12,
 		/**< The kind of all sequence types    */
-		PRT_KIND_TUPLE = 12,
+		PRT_KIND_TUPLE = 13,
 		/**< The kind of all tuple types       */
-		PRT_TYPE_KIND_COUNT = 13,
+		PRT_TYPE_KIND_COUNT = 14,
 		/**< The number of type kinds        */
 		PRT_TYPE_KIND_CANARY = 0xFF /**< A freed type will have this as its kind */
 	} PRT_TYPE_KIND;

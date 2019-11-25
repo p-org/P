@@ -13,6 +13,7 @@ namespace Plang.Compiler.Backend.Prt
         private readonly ValueInternmentManager<bool> registeredBools;
         private readonly ValueInternmentManager<double> registeredFloats;
         private readonly ValueInternmentManager<int> registeredInts;
+        private readonly ValueInternmentManager<string> registeredStrings;
 
         private readonly Dictionary<Machine, Dictionary<State, int>> stateNumbering =
             new Dictionary<Machine, Dictionary<State, int>>();
@@ -27,6 +28,7 @@ namespace Plang.Compiler.Backend.Prt
             registeredInts = new ValueInternmentManager<int>(Names);
             registeredFloats = new ValueInternmentManager<double>(Names);
             registeredBools = new ValueInternmentManager<bool>(Names);
+            registeredStrings = new ValueInternmentManager<string>(Names);
         }
 
         public PrtNameManager Names { get; }
@@ -59,6 +61,16 @@ namespace Plang.Compiler.Backend.Prt
         public string RegisterLiteral(Function function, bool value)
         {
             return registeredBools.RegisterValue(function, value);
+        }
+
+        public string RegisterLiteral(Function function, string value)
+        {
+            return registeredStrings.RegisterValue(function, value);
+        }
+
+        public IEnumerable<KeyValuePair<string, string>> GetRegisteredStringLiterals(Function function)
+        {
+            return registeredStrings.GetValues(function);
         }
 
         public IEnumerable<KeyValuePair<bool, string>> GetRegisteredBoolLiterals(Function function)

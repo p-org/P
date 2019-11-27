@@ -127,7 +127,6 @@ machine Server
                 CurrentTerm = payload.Term;
                 VotedFor = default(machine);
             }
-
             Vote(payload);
         }
 
@@ -148,7 +147,7 @@ machine Server
                 CurrentTerm = request.Term;
                 VotedFor = default(machine);
             }
-
+            TickCounter = 0;
             AppendEntries(request);
         }
 
@@ -612,6 +611,7 @@ machine Server
             //this.Logger.WriteLine("\n [Server] " + this.ServerId + " | term " + this.CurrentTerm +
                // " | log " + this.Logs.Count + " | vote true\n");
             print "\n [Server] {0} | term {1} | log {2} | Approve {3}", ServerId, CurrentTerm, sizeof(Logs), request.CandidateId;
+            TickCounter = 0;
 
             VotedFor = request.CandidateId;
             LeaderId = default(machine);
@@ -643,6 +643,12 @@ machine Server
             }
             else
             {
+                // On AppendEntries RPC from current leader, reset ElectionTimer
+                if (LeaderId == request.LeaderId) {
+                    TickCounter = 0;
+                }
+
+
                 if (sizeof(request.Entries) > 0)
                 {
                     currentIndex = request.PrevLogIndex + 1;

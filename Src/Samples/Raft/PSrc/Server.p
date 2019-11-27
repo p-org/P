@@ -18,8 +18,8 @@ machine Server
     var ClusterManager : machine;
     var Servers: seq[machine];
     var LeaderId: machine;
-    var ElectionTimer: machine;
-    var PeriodicTimer: machine;
+    //var ElectionTimer: machine;
+    //var PeriodicTimer: machine;
     var CurrentTerm: int;
     var VotedFor: machine;
     var Logs: seq[Log];
@@ -30,6 +30,10 @@ machine Server
     var VotesReceived: int;
     var LastClientRequest: (Client: machine, Command: int);
     var i: int;
+
+    var MaxTicks: int;  // Randomly set ceiling for tick count
+    var TickCounter: int; // Ticks seen so far. Reset at certain points.
+
 
     start state Init
     {
@@ -53,22 +57,44 @@ machine Server
             ServerId = payload.Id;
             Servers = payload.Servers;
             ClusterManager = payload.ClusterManager;
+            
+            TickCounter = 0;
+            MaxTicks = getMaxTickValue();
+           
 
             // ElectionTimer = new ElectionTimer();
             // send ElectionTimer, EConfigureEvent, this;
 
             // PeriodicTimer = new PeriodicTimer();
             // send PeriodicTimer, PConfigureEvent, this;
-            if (payload.Id == 0){
-                raise BecomeLeader;
-            } else {
-                raise BecomeFollower;
-            }
+
+            // if (payload.Id == 0){
+            //     raise BecomeLeader;
+            // } else {
+            //     raise BecomeFollower;
+            // }
             
         }
         on BecomeFollower goto Follower;
         on BecomeLeader goto Leader;
-        defer VoteRequest, AppendEntriesRequest;
+        defer VoteRequest, AppendEntriesRequest, TickEvent;
+    }
+
+    // Get "random" value for MaxTicks
+    fun getMaxTickValue() : int {
+        var i: int;
+        i = 500;
+        while (i > 250) {    
+            i = i - 5;
+            if ($) {
+                if ($) {
+                    print "MaxTicks {0} for {1}", i, this;
+                    return i;
+                }
+            }
+        }
+        print "MaxTicks {0} for {1}", i, this;
+        return i;
     }
 
     state Follower
@@ -135,15 +161,21 @@ machine Server
                 VotedFor = default(machine);
             }
         }
-        on ETimeout do {
-            raise BecomeCandidate;
+        // on ETimeout do {
+        //     raise BecomeCandidate;
+        // }
+        on TickEvent do {
+            TickCounter = TickCounter + 1;
+            if (TickCounter >= MaxTicks) {
+                raise BecomeCandidate;
+            }
         }
         on ShutDown do { 
             ShuttingDown();
         }
         on BecomeFollower goto Follower;
         on BecomeCandidate goto Candidate;
-        ignore PTimeout;
+        //ignore PTimeout;
     }
 
 
@@ -154,6 +186,7 @@ machine Server
             CurrentTerm = CurrentTerm + 1;
             VotedFor = this;
             VotesReceived = 1;
+            TickCounter = 0;  // Reset on entry
 
             // send ElectionTimer, EStartTimer;
 
@@ -235,10 +268,16 @@ machine Server
             print "[Candidate | AppendEntriesResponse] Server {0}", this;
             RespondAppendEntriesAsCandidate(request);
         }
-        on ETimeout do {
-            raise BecomeCandidate;
+        // on ETimeout do {
+        //     raise BecomeCandidate;
+        // }
+       // on PTimeout do BroadcastVoteRequests;
+        on TickEvent do {
+            TickCounter = TickCounter + 1;
+            if (TickCounter >= MaxTicks) {
+                raise BecomeCandidate;
+            }
         }
-        on PTimeout do BroadcastVoteRequests;
         on ShutDown do ShuttingDown;
         on BecomeLeader goto Leader;
         on BecomeFollower goto Follower;
@@ -289,6 +328,9 @@ machine Server
             announce EMonitorInit, (NotifyLeaderElected, CurrentTerm);
             //monitor<SafetyMonitor>(NotifyLeaderElected, CurrentTerm);
             send ClusterManager, NotifyLeaderUpdate, (Leader=this, Term=CurrentTerm);
+
+            // Fixed Leader MaxTicks. Used for heartbeat
+            MaxTicks = 5;
 
             logIndex = sizeof(Logs);
             logTerm = GetLogTermForIndex(logIndex);
@@ -343,7 +385,14 @@ machine Server
         }
         on ShutDown do ShuttingDown;
         on BecomeFollower goto Follower;
-        ignore ETimeout, PTimeout;
+
+        on TickEvent do {
+            TickCounter = TickCounter + 1;
+            if (TickCounter >= MaxTicks) {
+                // TODO : sent heartbeat here
+            }
+        }
+        //ignore ETimeout, PTimeout;
     }
 
     fun ProcessClientRequest(trigger: (Client: machine, Command: int))

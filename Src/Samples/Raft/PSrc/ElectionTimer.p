@@ -1,48 +1,48 @@
-machine ElectionTimer
-{
-    var Target: machine;
+// machine ElectionTimer
+// {
+//     var Target: machine;
 
-    start state Init
-    {
-        on EConfigureEvent do (payload: machine) {
-            Configure(payload);
-        }
-        on EStartTimer goto Active;
-    }
+//     start state Init
+//     {
+//         on EConfigureEvent do (payload: machine) {
+//             Configure(payload);
+//         }
+//         on EStartTimer goto Active;
+//     }
 
-    fun Configure(payload: machine)
-    {
-        Target = payload;
-    }
+//     fun Configure(payload: machine)
+//     {
+//         Target = payload;
+//     }
 
-    state Active
-    {
-        entry
-        {
-            send this, ETickEvent;
-        }
+//     state Active
+//     {
+//         entry
+//         {
+//             send this, ETickEvent;
+//         }
 
-        on ETickEvent do Tick;
-        on ECancelTimer goto Inactive;
-        defer EStartTimer;
-    }
+//         on ETickEvent do Tick;
+//         on ECancelTimer goto Inactive;
+//         defer EStartTimer;
+//     }
 
-    fun Tick()
-    {
-        if ($)
-        {
-            //this.Logger.WriteLine("\n [ElectionTimer] " + this.Target + " | timed out\n");
-            print "[ElectionTimer] {0} | timed out", Target;
-            send Target, ETimeout;
-        } 
-        raise ECancelTimer;
-    }
+//     fun Tick()
+//     {
+//         if ($)
+//         {
+//             //this.Logger.WriteLine("\n [ElectionTimer] " + this.Target + " | timed out\n");
+//             print "[ElectionTimer] {0} | timed out", Target;
+//             send Target, ETimeout;
+//         } 
+//         raise ECancelTimer;
+//     }
 
-    state Inactive
-    {
-        on EStartTimer goto Active;
-        defer ECancelTimer, ETickEvent;
-    }
-}
+//     state Inactive
+//     {
+//         on EStartTimer goto Active;
+//         defer ECancelTimer, ETickEvent;
+//     }
+// }
 
 

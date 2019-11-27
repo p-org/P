@@ -10,6 +10,7 @@ machine ClusterManager
 	var Leader: machine;
 	var LeaderTerm: int;
 	var Client: machine;
+	var Timer: machine;
 
 	start state Init
 	{
@@ -37,6 +38,7 @@ machine ClusterManager
 		}
 
 		on LocalEvent goto Configuring;
+		defer SentAllTicks;
 	}
 
 	state Configuring
@@ -45,13 +47,14 @@ machine ClusterManager
 		{
 			var idx: int;
 			idx = 0;
+			Timer = new WallclockTimer();
+            send Timer, ConfigureWallclock, (Servers=Servers, ClusterManager=this);
 			while(idx < NumberOfServers)
 			{
 				print "[ClusterManager | Configure] Configuring server {0}", idx;
 				send Servers[idx], SConfigureEvent, (Id = idx, Servers = Servers, ClusterManager = this);
 				idx = idx + 1;
 			}
-
 			send Client, CConfigureEvent, this;
 			raise LocalEvent;
 		}
@@ -61,12 +64,18 @@ machine ClusterManager
 
 	state Unavailable
 	{
+		entry {
+			send Timer, StartTimer;
+		}
 		on NotifyLeaderUpdate do (payload: (Leader: machine, Term: int)) {
 			UpdateLeader(payload);
         	raise LocalEvent;
 		}
 		on ShutDown do ShuttingDown;
 		on LocalEvent goto Available;
+		on SentAllTicks do {
+			send Timer, TickEvent;
+		}
 		defer Request;
 	}
 
@@ -107,6 +116,9 @@ machine ClusterManager
 		}
 		on ShutDown do ShuttingDown;
 		on LocalEvent goto Unavailable;
+		on SentAllTicks do {
+			send Timer, TickEvent;
+		}
 	}
 
 	fun BecomeUnavailable()

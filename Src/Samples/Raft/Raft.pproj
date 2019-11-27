@@ -6,8 +6,7 @@
 	<PFile>./PSrc/SafetyMonitor.p</PFile>
 	<PFile>./PSrc/Server.p</PFile>
 	<PFile>./PSrc/TestDriver.p</PFile>
-	<PFile>./PSrc/PeriodicTimer.p</PFile>
-	<PFile>./PSrc/ElectionTimer.p</PFile>
+	<PFile>./PSrc/WallclockTimer.p</PFile>
 </InputFiles>
 <Target>P#</Target>
 <TargetFileName>Raft</TargetFileName>

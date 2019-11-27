@@ -73,7 +73,7 @@ machine Server
             // } else {
             //     raise BecomeFollower;
             // }
-            
+            raise BecomeFollower;
         }
         on BecomeFollower goto Follower;
         on BecomeLeader goto Leader;

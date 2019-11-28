@@ -174,10 +174,10 @@ namespace pingpong
             PONG currentMachine = this;
         }
 
-        public void Anon_3()
+        public void Anon_3(Event currentMachine_dequeuedEvent)
         {
             PONG currentMachine = this;
-            PMachineValue payload = (PMachineValue)(gotoPayload ?? ((PEvent)currentMachine.ReceivedEvent).Payload);
+            PMachineValue payload = (PMachineValue)(gotoPayload ?? ((PEvent)currentMachine_dequeuedEvent).Payload);
             gotoPayload = null;
             PMachineValue TMP_tmp0_2 = null;
             PEvent TMP_tmp1_2 = null;

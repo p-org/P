@@ -25,7 +25,7 @@ namespace Plang.PrtSharp
         public void TryGotoState<T>(object payload = null) where T : State
         {
             gotoPayload = payload;
-            base.Goto<T>();
+            base.GotoState<T>();
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 

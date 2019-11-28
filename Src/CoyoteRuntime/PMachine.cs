@@ -29,11 +29,11 @@ namespace Plang.PrtSharp
             base.Assert(predicate, s, args);
         }
 
-        protected void InitializeParametersFunction()
+        protected void InitializeParametersFunction(Event e)
         {
-            if (!(ReceivedEvent is InitializeParametersEvent @event))
+            if (!(e is InitializeParametersEvent @event))
             {
-                throw new ArgumentException("Event type is incorrect: " + ReceivedEvent.GetType().Name);
+                throw new ArgumentException("Event type is incorrect: " + e.GetType().Name);
             }
 
             InitializeParameters initParam = @event.Payload as InitializeParameters;
@@ -47,19 +47,19 @@ namespace Plang.PrtSharp
             throw new NotImplementedException();
         }
 
-        protected override OnExceptionOutcome OnException(string methodName, Exception ex)
+        protected override OnExceptionOutcome OnException(Exception ex, string methodName, Event e)
         {
             bool v = ex is UnhandledEventException;
             if (!v)
             {
                 return ex is PNonStandardReturnException
                     ? OnExceptionOutcome.HandledException
-                    : base.OnException(methodName, ex);
+                    : base.OnException(ex, methodName, e);
             }
 
             return (ex as UnhandledEventException).UnhandledEvent is PHalt
                 ? OnExceptionOutcome.Halt
-                : base.OnException(methodName, ex);
+                : base.OnException(ex, methodName, e);
         }
 
         public PMachineValue CreateInterface<T>(PMachine creator, IPrtValue payload = null)
@@ -107,13 +107,13 @@ namespace Plang.PrtSharp
         public void TryGotoState<T>(IPrtValue payload = null) where T : State
         {
             gotoPayload = payload;
-            base.Goto<T>();
+            base.GotoState<T>();
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
         public void TryPopState()
         {
-            base.Pop();
+            base.PopState();
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Pop };
         }
 
@@ -152,7 +152,7 @@ namespace Plang.PrtSharp
             Assert(ev != null, "Machine cannot announce a null event");
             if (ev is PHalt)
             {
-                ev = new HaltEvent();
+                ev = HaltEvent.Instance;
             }
 
             System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);

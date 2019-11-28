@@ -572,7 +572,11 @@ namespace Plang.Compiler.Backend.Coyote
 
             string functionName = context.Names.GetNameForDecl(function);
             string functionParameters = "";
-            if (!function.IsAnon)
+            if (function.IsAnon)
+            {
+                functionParameters = "Event currentMachine_dequeuedEvent";
+            }
+            else
             {
                 functionParameters = string.Join(
                     ", ",
@@ -612,7 +616,7 @@ namespace Plang.Compiler.Backend.Coyote
                 {
                     Variable param = function.Signature.Parameters.First();
                     context.WriteLine(output,
-                        $"{GetCSharpType(param.Type)} {context.Names.GetNameForDecl(param)} = ({GetCSharpType(param.Type)})(gotoPayload ?? ((PEvent)currentMachine.ReceivedEvent).Payload);");
+                        $"{GetCSharpType(param.Type)} {context.Names.GetNameForDecl(param)} = ({GetCSharpType(param.Type)})(gotoPayload ?? ((PEvent)currentMachine_dequeuedEvent).Payload);");
                     context.WriteLine(output, "this.gotoPayload = null;");
                 }
             }
@@ -1220,7 +1224,7 @@ namespace Plang.Compiler.Backend.Coyote
                             break;
 
                         case "DefaultEvent":
-                            context.Write(output, "new DefaultEvent()");
+                            context.Write(output, "DefaultEvent.Instance");
                             break;
 
                         default:

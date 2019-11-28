@@ -80,10 +80,10 @@ namespace Hello
             this.receives.Add(nameof(START));
         }
         
-        public void Anon()
+        public void Anon(Event currentMachine_dequeuedEvent)
         {
             Timer currentMachine = this;
-            PMachineValue payload = (PMachineValue)(gotoPayload ?? ((PEvent)currentMachine.ReceivedEvent).Payload);
+            PMachineValue payload = (PMachineValue)(gotoPayload ?? ((PEvent)currentMachine_dequeuedEvent).Payload);
             this.gotoPayload = null;
             client = (PMachineValue)(((PMachineValue)((IPrtValue)payload)?.Clone()));
             currentMachine.GotoState<Timer.WaitForReq>();

@@ -6,9 +6,9 @@ namespace Plang.PrtSharp
 {
     public class _GodMachine : StateMachine
     {
-        private void InitOnEntry()
+        private void InitOnEntry(Event e)
         {
-            Type mainMachine = (ReceivedEvent as Config).MainMachine;
+            Type mainMachine = (e as Config).MainMachine;
             CreateActor(mainMachine,
                 new PMachine.InitializeParametersEvent(
                     new PMachine.InitializeParameters("I_" + mainMachine.Name, null)));

@@ -148,10 +148,10 @@ namespace FailOver
             this.receives.Add(nameof(PHalt));
         }
         
-        public async Task Anon_1()
+        public async Task Anon_1(Event currentMachine_dequeuedEvent)
         {
             FaultTolerantMachine currentMachine = this;
-            PrtTuple<PMachineValue, PMachineValue> arg = ((PEvent<PrtTuple<PMachineValue, PMachineValue>>)currentMachine.ReceivedEvent).PayloadT;
+            PrtTuple<PMachineValue, PMachineValue> arg = ((PEvent<PrtTuple<PMachineValue, PMachineValue>>)currentMachine_dequeuedEvent).PayloadT;
             PMachineValue TMP_tmp0_1 = null;
             PMachineValue TMP_tmp1_1 = null;
             PMachineValue TMP_tmp2_1 = null;
@@ -352,10 +352,10 @@ namespace FailOver
             ReliableStorageMachine currentMachine = this;
             s_1 = ((PrtInt)(long)MyState.State0);
         }
-        public void Anon_7()
+        public void Anon_7(Event currentMachine_dequeuedEvent)
         {
             ReliableStorageMachine currentMachine = this;
-            PMachineValue m_1 = ((PEvent<PMachineValue>)currentMachine.ReceivedEvent).PayloadT;
+            PMachineValue m_1 = ((PEvent<PMachineValue>)currentMachine_dequeuedEvent).PayloadT;
             PMachineValue TMP_tmp0_7 = null;
             IEventWithPayload TMP_tmp1_6 = null;
             MyState TMP_tmp2_6 = (MyState)(0);

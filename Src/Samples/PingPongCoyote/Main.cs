@@ -89,32 +89,50 @@ namespace pingpong
             creates.Add(nameof(I_PONG));
         }
 
-        public void Anon()
+        public Transition Anon()
         {
-            Main currentMachine = this;
-            PMachineValue TMP_tmp0 = null;
-            PEvent TMP_tmp1 = null;
-            TMP_tmp0 = currentMachine.CreateInterface<I_PONG>(currentMachine);
-            pongId = TMP_tmp0;
-            TMP_tmp1 = new Success(null);
-            currentMachine.TryRaiseEvent(TMP_tmp1);
-            throw new PUnreachableCodeException();
+            try
+            {
+                Main currentMachine = this;
+                PMachineValue TMP_tmp0 = null;
+                PEvent TMP_tmp1 = null;
+                TMP_tmp0 = currentMachine.CreateInterface<I_PONG>(currentMachine);
+                pongId = TMP_tmp0;
+                TMP_tmp1 = new Success(null);
+                currentMachine.TryRaiseEvent(TMP_tmp1);
+                throw new PUnreachableCodeException();
+            }
+            catch (PMachineTransitionException ex)
+            {
+                return ex.Transition;
+            }
+
+            return default;
         }
 
-        public void Anon_1()
+        public Transition Anon_1()
         {
-            Main currentMachine = this;
-            PMachineValue TMP_tmp0_1 = null;
-            PEvent TMP_tmp1_1 = null;
-            PMachineValue TMP_tmp2 = null;
-            PEvent TMP_tmp3 = null;
-            TMP_tmp0_1 = ((PMachineValue)((IPrtValue)pongId)?.Clone());
-            TMP_tmp1_1 = new Ping(null);
-            TMP_tmp2 = currentMachine.self;
-            currentMachine.TrySendEvent(TMP_tmp0_1, TMP_tmp1_1, TMP_tmp2);
-            TMP_tmp3 = new Success(null);
-            currentMachine.TryRaiseEvent(TMP_tmp3);
-            throw new PUnreachableCodeException();
+            try
+            {
+                Main currentMachine = this;
+                PMachineValue TMP_tmp0_1 = null;
+                PEvent TMP_tmp1_1 = null;
+                PMachineValue TMP_tmp2 = null;
+                PEvent TMP_tmp3 = null;
+                TMP_tmp0_1 = ((PMachineValue)((IPrtValue)pongId)?.Clone());
+                TMP_tmp1_1 = new Ping(null);
+                TMP_tmp2 = currentMachine.self;
+                currentMachine.TrySendEvent(TMP_tmp0_1, TMP_tmp1_1, TMP_tmp2);
+                TMP_tmp3 = new Success(null);
+                currentMachine.TryRaiseEvent(TMP_tmp3);
+                throw new PUnreachableCodeException();
+            }
+            catch (PMachineTransitionException ex)
+            {
+                return ex.Transition;
+            }
+
+            return default;
         }
 
         [Start]
@@ -174,20 +192,29 @@ namespace pingpong
             PONG currentMachine = this;
         }
 
-        public void Anon_3(Event currentMachine_dequeuedEvent)
+        public Transition Anon_3(Event currentMachine_dequeuedEvent)
         {
-            PONG currentMachine = this;
-            PMachineValue payload = (PMachineValue)(gotoPayload ?? ((PEvent)currentMachine_dequeuedEvent).Payload);
-            gotoPayload = null;
-            PMachineValue TMP_tmp0_2 = null;
-            PEvent TMP_tmp1_2 = null;
-            PEvent TMP_tmp2_1 = null;
-            TMP_tmp0_2 = ((PMachineValue)((IPrtValue)payload)?.Clone());
-            TMP_tmp1_2 = new Pong(null);
-            currentMachine.TrySendEvent(TMP_tmp0_2, TMP_tmp1_2);
-            TMP_tmp2_1 = new Success(null);
-            currentMachine.TryRaiseEvent(TMP_tmp2_1);
-            throw new PUnreachableCodeException();
+            try
+            {
+                PONG currentMachine = this;
+                PMachineValue payload = (PMachineValue)(gotoPayload ?? ((PEvent)currentMachine_dequeuedEvent).Payload);
+                gotoPayload = null;
+                PMachineValue TMP_tmp0_2 = null;
+                PEvent TMP_tmp1_2 = null;
+                PEvent TMP_tmp2_1 = null;
+                TMP_tmp0_2 = ((PMachineValue)((IPrtValue)payload)?.Clone());
+                TMP_tmp1_2 = new Pong(null);
+                currentMachine.TrySendEvent(TMP_tmp0_2, TMP_tmp1_2);
+                TMP_tmp2_1 = new Success(null);
+                currentMachine.TryRaiseEvent(TMP_tmp2_1);
+                throw new PUnreachableCodeException();
+            }
+            catch (PMachineTransitionException ex)
+            {
+                return ex.Transition;
+            }
+
+            return default;
         }
 
         [Start]

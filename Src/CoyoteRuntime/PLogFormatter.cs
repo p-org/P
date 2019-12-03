@@ -148,7 +148,8 @@ namespace Plang.PrtSharp
 
         public override bool GetExceptionHandledLog(ActorId id, string stateName, string actionName, Exception ex, out string text)
         {
-            if (ex is PNonStandardReturnException)
+            if (ex is PMachineTransitionException ||
+                ex is PMonitorTransitionException)
             {
                 text = string.Empty;
                 return false;
@@ -159,7 +160,8 @@ namespace Plang.PrtSharp
 
         public override bool GetExceptionThrownLog(ActorId id, string stateName, string actionName, Exception ex, out string text)
         {
-            if (ex is PNonStandardReturnException)
+            if (ex is PMachineTransitionException ||
+                ex is PMonitorTransitionException)
             {
                 text = string.Empty;
                 return false;

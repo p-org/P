@@ -18,15 +18,15 @@ namespace Plang.PrtSharp
             Assert(!(ev is DefaultEvent), "Monitor cannot raise a null event");
             System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             Event @event = (Event)oneArgConstructor.Invoke(new[] { payload });
-            base.RaiseEvent(@event);
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
+            Transition transition = base.RaiseEvent(@event);
+            throw new PMonitorTransitionException(transition);
         }
 
         public void TryGotoState<T>(object payload = null) where T : State
         {
             gotoPayload = payload;
-            base.GotoState<T>();
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
+            Transition transition = base.GotoState<T>();
+            throw new PMonitorTransitionException(transition);
         }
 
         public void TryAssert(bool predicate)

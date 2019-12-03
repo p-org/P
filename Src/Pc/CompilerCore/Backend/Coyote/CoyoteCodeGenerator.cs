@@ -565,7 +565,18 @@ namespace Plang.Compiler.Backend.Coyote
             string asyncKeyword = isAsync ? "async " : "";
             string returnType = GetCSharpType(signature.ReturnType);
 
-            if (isAsync)
+            if (!isStatic && function.IsAnon)
+            {
+                if (isAsync)
+                {
+                    returnType = returnType == "void" ? "Task<Transition>" : $"Task<{returnType}>";
+                }
+                else if (returnType == "void")
+                {
+                    returnType = "Transition";
+                }
+            }
+            else if (isAsync)
             {
                 returnType = returnType == "void" ? "Task" : $"Task<{returnType}>";
             }
@@ -600,10 +611,11 @@ namespace Plang.Compiler.Backend.Coyote
             context.WriteLine(output, "{");
 
             // if its a monitor and an annon function catch the exceptions using try-catch
-            if (function.Owner != null && function.Owner.IsSpec && function.IsAnon)
+            if (function.Owner != null && function.IsAnon)
             {
                 context.WriteLine(output, "try {");
             }
+
             //add the declaration of currentMachine
             if (function.Owner != null)
             {
@@ -634,11 +646,24 @@ namespace Plang.Compiler.Backend.Coyote
             }
 
             // if its a monitor and an annon function catch the exceptions using try-catch
-            if (function.Owner != null && function.Owner.IsSpec && function.IsAnon)
+            if (function.Owner != null && function.IsAnon)
             {
                 context.WriteLine(output, "}");
-                context.WriteLine(output, "catch(PNonStandardReturnException) {}");
+                if (function.Owner.IsSpec)
+                {
+                    context.WriteLine(output, "catch(PMonitorTransitionException ex)");
+                }
+                else
+                {
+                    context.WriteLine(output, "catch(PMachineTransitionException ex)");
+                }
+
+                context.WriteLine(output, "{");
+                context.WriteLine(output, "return ex.Transition;");
+                context.WriteLine(output, "}");
+                context.WriteLine(output, "return default;");
             }
+
             context.WriteLine(output, "}");
         }
 

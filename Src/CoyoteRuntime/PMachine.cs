@@ -29,17 +29,26 @@ namespace Plang.PrtSharp
             base.Assert(predicate, s, args);
         }
 
-        protected void InitializeParametersFunction(Event e)
+        protected Transition InitializeParametersFunction(Event e)
         {
-            if (!(e is InitializeParametersEvent @event))
+            try
             {
-                throw new ArgumentException("Event type is incorrect: " + e.GetType().Name);
+                if (!(e is InitializeParametersEvent @event))
+                {
+                    throw new ArgumentException("Event type is incorrect: " + e.GetType().Name);
+                }
+
+                InitializeParameters initParam = @event.Payload as InitializeParameters;
+                interfaceName = initParam.InterfaceName;
+                self = new PMachineValue(Id, receives.ToList());
+                TryRaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
+            }
+            catch (PMachineTransitionException ex)
+            {
+                return ex.Transition;
             }
 
-            InitializeParameters initParam = @event.Payload as InitializeParameters;
-            interfaceName = initParam.InterfaceName;
-            self = new PMachineValue(Id, receives.ToList());
-            TryRaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
+            return default;
         }
 
         protected virtual Event GetConstructorEvent(IPrtValue value)
@@ -49,10 +58,15 @@ namespace Plang.PrtSharp
 
         protected override OnExceptionOutcome OnException(Exception ex, string methodName, Event e)
         {
+            if (ex is PUnreachableCodeException)
+            {
+                Console.WriteLine("PUnreachableCodeException");
+            }
+
             bool v = ex is UnhandledEventException;
             if (!v)
             {
-                return ex is PNonStandardReturnException
+                return ex is PMachineTransitionException
                     ? OnExceptionOutcome.HandledException
                     : base.OnException(ex, methodName, e);
             }
@@ -95,8 +109,8 @@ namespace Plang.PrtSharp
             System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             ev = (Event)oneArgConstructor.Invoke(new[] { payload });
 
-            base.RaiseEvent(ev);
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
+            Transition transition = base.RaiseEvent(ev);
+            throw new PMachineTransitionException(transition);
         }
 
         public Task<Event> TryReceiveEvent(params Type[] events)
@@ -107,14 +121,14 @@ namespace Plang.PrtSharp
         public void TryGotoState<T>(IPrtValue payload = null) where T : State
         {
             gotoPayload = payload;
-            base.GotoState<T>();
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
+            Transition transition = base.GotoState<T>();
+            throw new PMachineTransitionException(transition);
         }
 
         public void TryPopState()
         {
-            base.PopState();
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Pop };
+            Transition transition = base.PopState();
+            throw new PMachineTransitionException(transition);
         }
 
         public int TryRandomInt(int maxValue)

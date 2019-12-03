@@ -18,8 +18,6 @@ machine Server
     var ClusterManager : machine;
     var Servers: seq[machine];
     var LeaderId: machine;
-    //var ElectionTimer: machine;
-    //var PeriodicTimer: machine;
     var CurrentTerm: int;
     var VotedFor: machine;
     var Logs: seq[Log];
@@ -60,13 +58,6 @@ machine Server
             
             TickCounter = 0;
             MaxTicks = getMaxTickValue();
-           
-
-            // ElectionTimer = new ElectionTimer();
-            // send ElectionTimer, EConfigureEvent, this;
-
-            // PeriodicTimer = new PeriodicTimer();
-            // send PeriodicTimer, PConfigureEvent, this;
 
             // if (payload.Id == 0){
             //     raise BecomeLeader;

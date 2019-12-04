@@ -58,11 +58,6 @@ namespace Plang.PrtSharp
 
         protected override OnExceptionOutcome OnException(Exception ex, string methodName, Event e)
         {
-            if (ex is PUnreachableCodeException)
-            {
-                Console.WriteLine("PUnreachableCodeException");
-            }
-
             bool v = ex is UnhandledEventException;
             if (!v)
             {

@@ -616,6 +616,12 @@ namespace Plang.Compiler.Backend.Coyote
                 context.WriteLine(output, $"{context.Names.GetNameForDecl(function.Owner)} currentMachine = this;");
             }
 
+            // add the declaration of p_calleeTransition
+            if (function.CanChangeState == true || function.CanRaiseEvent == true)
+            {
+                context.WriteLine(output, "Transition p_calleeTransition = default;");
+            }
+
             if (function.IsAnon)
             {
                 if (function.Signature.Parameters.Any())
@@ -643,7 +649,7 @@ namespace Plang.Compiler.Backend.Coyote
             // then always return the default transition in the end
             if (function.CanChangeState == true || function.CanRaiseEvent == true)
             {
-                context.WriteLine(output, "return default;");
+                context.WriteLine(output, "return p_calleeTransition;");
             }
 
             context.WriteLine(output, "}");
@@ -759,7 +765,7 @@ namespace Plang.Compiler.Backend.Coyote
                 case FunCallStmt funCallStmt:
                     if (funCallStmt.Function.CanChangeState == true || funCallStmt.Function.CanRaiseEvent == true)
                     {
-                        context.Write(output, "return ");
+                        context.Write(output, "p_calleeTransition = ");
                     }
 
                     bool isStatic = funCallStmt.Function.Owner == null;
@@ -782,6 +788,13 @@ namespace Plang.Compiler.Backend.Coyote
                     }
 
                     context.WriteLine(output, ");");
+                    if (funCallStmt.Function.CanChangeState == true || funCallStmt.Function.CanRaiseEvent == true)
+                    {
+                        context.WriteLine(output, "if (p_calleeTransition.TypeValue != Transition.Type.Default)");
+                        context.WriteLine(output, "{");
+                        context.WriteLine(output, "return p_calleeTransition;");
+                        context.WriteLine(output, "}");
+                    }
                     break;
 
                 case GotoStmt gotoStmt:

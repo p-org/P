@@ -148,25 +148,11 @@ namespace Plang.PrtSharp
 
         public override bool GetExceptionHandledLog(ActorId id, string stateName, string actionName, Exception ex, out string text)
         {
-            if (ex is PMachineTransitionException ||
-                ex is PMonitorTransitionException)
-            {
-                text = string.Empty;
-                return false;
-            }
-
             return base.GetExceptionHandledLog(id, stateName.Split('.').Last(), actionName, ex, out text);
         }
 
         public override bool GetExceptionThrownLog(ActorId id, string stateName, string actionName, Exception ex, out string text)
         {
-            if (ex is PMachineTransitionException ||
-                ex is PMonitorTransitionException)
-            {
-                text = string.Empty;
-                return false;
-            }
-
             return base.GetExceptionThrownLog(id, stateName.Split('.').Last(), actionName, ex, out text);
         }
     }

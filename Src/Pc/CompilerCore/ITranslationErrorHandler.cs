@@ -106,7 +106,9 @@ namespace Plang.Compiler
 
         Exception ExpectedMonitor(ParserRuleContext location, Machine machine);
 
-        Exception PopInNonVoidFunction(ParserRuleContext context);
+        Exception RaiseEventInNonVoidFunction(ParserRuleContext context);
+
+        Exception ChangeStateInNonVoidFunction(ParserRuleContext context);
 
         Exception PrintStmtLinearArgument(ParserRuleContext argSourceLocation);
 

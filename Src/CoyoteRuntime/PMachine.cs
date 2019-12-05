@@ -1,6 +1,5 @@
 ﻿using Microsoft.Coyote;
 using Microsoft.Coyote.Actors;
-using Microsoft.Coyote.Runtime;
 using Plang.PrtSharp.Exceptions;
 using Plang.PrtSharp.Values;
 using System;
@@ -31,24 +30,15 @@ namespace Plang.PrtSharp
 
         protected Transition InitializeParametersFunction(Event e)
         {
-            try
+            if (!(e is InitializeParametersEvent @event))
             {
-                if (!(e is InitializeParametersEvent @event))
-                {
-                    throw new ArgumentException("Event type is incorrect: " + e.GetType().Name);
-                }
-
-                InitializeParameters initParam = @event.Payload as InitializeParameters;
-                interfaceName = initParam.InterfaceName;
-                self = new PMachineValue(Id, receives.ToList());
-                TryRaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
-            }
-            catch (PMachineTransitionException ex)
-            {
-                return ex.Transition;
+                throw new ArgumentException("Event type is incorrect: " + e.GetType().Name);
             }
 
-            return default;
+            InitializeParameters initParam = @event.Payload as InitializeParameters;
+            interfaceName = initParam.InterfaceName;
+            self = new PMachineValue(Id, receives.ToList());
+            return TryRaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
         }
 
         protected virtual Event GetConstructorEvent(IPrtValue value)
@@ -61,9 +51,7 @@ namespace Plang.PrtSharp
             bool v = ex is UnhandledEventException;
             if (!v)
             {
-                return ex is PMachineTransitionException
-                    ? OnExceptionOutcome.HandledException
-                    : base.OnException(ex, methodName, e);
+                return base.OnException(ex, methodName, e);
             }
 
             return (ex as UnhandledEventException).UnhandledEvent is PHalt
@@ -98,14 +86,12 @@ namespace Plang.PrtSharp
             Logger.WriteLine($"<SendPayloadLog> Event {ev.GetType().Name} with payload {((PEvent)ev).Payload}");
         }
 
-        public void TryRaiseEvent(Event ev, object payload = null)
+        public Transition TryRaiseEvent(Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot raise a null event");
             System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             ev = (Event)oneArgConstructor.Invoke(new[] { payload });
-
-            Transition transition = base.RaiseEvent(ev);
-            throw new PMachineTransitionException(transition);
+            return base.RaiseEvent(ev);
         }
 
         public Task<Event> TryReceiveEvent(params Type[] events)
@@ -113,17 +99,15 @@ namespace Plang.PrtSharp
             return base.ReceiveEventAsync(events);
         }
 
-        public void TryGotoState<T>(IPrtValue payload = null) where T : State
+        public Transition TryGotoState<T>(IPrtValue payload = null) where T : State
         {
             gotoPayload = payload;
-            Transition transition = base.GotoState<T>();
-            throw new PMachineTransitionException(transition);
+            return base.GotoState<T>();
         }
 
-        public void TryPopState()
+        public Transition TryPopState()
         {
-            Transition transition = base.PopState();
-            throw new PMachineTransitionException(transition);
+            return base.PopState();
         }
 
         public int TryRandomInt(int maxValue)

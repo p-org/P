@@ -2,10 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <OutputPath>D:\Workspace\P\Bld\Drops\Release\Binaries</OutputPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <OutputPath>D:\Workspace\P\Bld\Drops\Debug\Binaries</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Coyote" Version="1.0.0-rc7" />

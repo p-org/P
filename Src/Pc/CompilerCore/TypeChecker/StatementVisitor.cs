@@ -49,7 +49,7 @@ namespace Plang.Compiler.TypeChecker
 
             if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
-                throw handler.PopInNonVoidFunction(context);
+                throw handler.ChangeStateInNonVoidFunction(context);
             }
 
             method.CanChangeState = true;
@@ -386,6 +386,11 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPStmt VisitRaiseStmt(PParser.RaiseStmtContext context)
         {
+            if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            {
+                throw handler.RaiseEventInNonVoidFunction(context);
+            }
+
             IPExpr evtExpr = exprVisitor.Visit(context.expr());
             if (IsDefinitelyNullEvent(evtExpr))
             {
@@ -471,6 +476,11 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPStmt VisitGotoStmt(PParser.GotoStmtContext context)
         {
+            if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            {
+                throw handler.ChangeStateInNonVoidFunction(context);
+            }
+
             PParser.StateNameContext stateNameContext = context.stateName();
             string stateName = stateNameContext.state.GetText();
             IStateContainer current = machine;
@@ -570,6 +580,31 @@ namespace Plang.Compiler.TypeChecker
                     {
                         throw handler.TypeMismatch(caseContext.anonEventHandler(), expectedType,
                             pEvent.PayloadType);
+                    }
+
+                    if (recvHandler.CanChangeState == true)
+                    {
+                        if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+                        {
+                            throw handler.ChangeStateInNonVoidFunction(context);
+                        }
+
+                        method.CanChangeState = true;
+                    }
+
+                    if (recvHandler.CanRaiseEvent == true)
+                    {
+                        if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+                        {
+                            throw handler.RaiseEventInNonVoidFunction(context);
+                        }
+
+                        method.CanRaiseEvent = true;
+                    }
+
+                    foreach (var callee in recvHandler.Callees)
+                    {
+                        method.AddCallee(callee);
                     }
 
                     cases.Add(pEvent, recvHandler);

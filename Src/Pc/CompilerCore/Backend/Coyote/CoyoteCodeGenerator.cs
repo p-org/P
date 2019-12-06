@@ -565,7 +565,18 @@ namespace Plang.Compiler.Backend.Coyote
             string asyncKeyword = isAsync ? "async " : "";
             string returnType = GetCSharpType(signature.ReturnType);
 
-            if (isAsync)
+            if (function.CanChangeState == true || function.CanRaiseEvent == true)
+            {
+                if (isAsync)
+                {
+                    returnType = returnType == "void" ? "Task<Transition>" : $"Task<{returnType}>";
+                }
+                else if (returnType == "void")
+                {
+                    returnType = "Transition";
+                }
+            }
+            else if (isAsync)
             {
                 returnType = returnType == "void" ? "Task" : $"Task<{returnType}>";
             }
@@ -599,15 +610,16 @@ namespace Plang.Compiler.Backend.Coyote
         {
             context.WriteLine(output, "{");
 
-            // if its a monitor and an annon function catch the exceptions using try-catch
-            if (function.Owner != null && function.Owner.IsSpec && function.IsAnon)
-            {
-                context.WriteLine(output, "try {");
-            }
             //add the declaration of currentMachine
             if (function.Owner != null)
             {
                 context.WriteLine(output, $"{context.Names.GetNameForDecl(function.Owner)} currentMachine = this;");
+            }
+
+            // add the declaration of p_calleeTransition
+            if (function.CanChangeState == true || function.CanRaiseEvent == true)
+            {
+                context.WriteLine(output, "Transition p_calleeTransition = default;");
             }
 
             if (function.IsAnon)
@@ -630,19 +642,20 @@ namespace Plang.Compiler.Backend.Coyote
 
             foreach (IPStmt bodyStatement in function.Body.Statements)
             {
-                WriteStmt(context, output, bodyStatement);
+                WriteStmt(context, output, function, bodyStatement);
             }
 
-            // if its a monitor and an annon function catch the exceptions using try-catch
-            if (function.Owner != null && function.Owner.IsSpec && function.IsAnon)
+            // if its a function of a machine or monitor that returns a transition
+            // then always return the default transition in the end
+            if (function.CanChangeState == true || function.CanRaiseEvent == true)
             {
-                context.WriteLine(output, "}");
-                context.WriteLine(output, "catch(PNonStandardReturnException) {}");
+                context.WriteLine(output, "return p_calleeTransition;");
             }
+
             context.WriteLine(output, "}");
         }
 
-        private void WriteStmt(CompilationContext context, StringWriter output, IPStmt stmt)
+        private void WriteStmt(CompilationContext context, StringWriter output, Function function, IPStmt stmt)
         {
             switch (stmt)
             {
@@ -713,7 +726,7 @@ namespace Plang.Compiler.Backend.Coyote
                     context.WriteLine(output, "{");
                     foreach (IPStmt subStmt in compoundStmt.Statements)
                     {
-                        WriteStmt(context, output, subStmt);
+                        WriteStmt(context, output, function, subStmt);
                     }
 
                     context.WriteLine(output, "}");
@@ -750,6 +763,11 @@ namespace Plang.Compiler.Backend.Coyote
                     break;
 
                 case FunCallStmt funCallStmt:
+                    if (funCallStmt.Function.CanChangeState == true || funCallStmt.Function.CanRaiseEvent == true)
+                    {
+                        context.Write(output, "p_calleeTransition = ");
+                    }
+
                     bool isStatic = funCallStmt.Function.Owner == null;
                     string awaitMethod = funCallStmt.Function.CanReceive == true ? "await " : "";
                     string globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
@@ -770,29 +788,35 @@ namespace Plang.Compiler.Backend.Coyote
                     }
 
                     context.WriteLine(output, ");");
+                    if (funCallStmt.Function.CanChangeState == true || funCallStmt.Function.CanRaiseEvent == true)
+                    {
+                        context.WriteLine(output, "if (p_calleeTransition.TypeValue != Transition.Type.Default)");
+                        context.WriteLine(output, "{");
+                        context.WriteLine(output, "return p_calleeTransition;");
+                        context.WriteLine(output, "}");
+                    }
                     break;
 
                 case GotoStmt gotoStmt:
-                    context.Write(output, $"currentMachine.TryGotoState<{gotoStmt.State.QualifiedName}>(");
+                    //last statement
+                    context.Write(output, $"return currentMachine.TryGotoState<{gotoStmt.State.QualifiedName}>(");
                     if (gotoStmt.Payload != null)
                     {
                         WriteExpr(context, output, gotoStmt.Payload);
                     }
 
                     context.WriteLine(output, ");");
-                    //last statement
-                    context.WriteLine(output, "throw new PUnreachableCodeException();");
                     break;
 
                 case IfStmt ifStmt:
                     context.Write(output, "if (");
                     WriteExpr(context, output, ifStmt.Condition);
                     context.WriteLine(output, ")");
-                    WriteStmt(context, output, ifStmt.ThenBranch);
+                    WriteStmt(context, output, function, ifStmt.ThenBranch);
                     if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Any())
                     {
                         context.WriteLine(output, "else");
-                        WriteStmt(context, output, ifStmt.ElseBranch);
+                        WriteStmt(context, output, function, ifStmt.ElseBranch);
                     }
 
                     break;
@@ -845,9 +869,8 @@ namespace Plang.Compiler.Backend.Coyote
                     break;
 
                 case PopStmt _:
-                    context.WriteLine(output, "currentMachine.TryPopState();");
                     //last statement
-                    context.WriteLine(output, "throw new PUnreachableCodeException();");
+                    context.WriteLine(output, "return currentMachine.TryPopState();");
                     break;
 
                 case PrintStmt printStmt:
@@ -862,7 +885,8 @@ namespace Plang.Compiler.Backend.Coyote
                     break;
 
                 case RaiseStmt raiseStmt:
-                    context.Write(output, "currentMachine.TryRaiseEvent((Event)");
+                    //last statement
+                    context.Write(output, "return currentMachine.TryRaiseEvent((Event)");
                     WriteExpr(context, output, raiseStmt.PEvent);
                     if (raiseStmt.Payload.Any())
                     {
@@ -871,8 +895,6 @@ namespace Plang.Compiler.Backend.Coyote
                     }
 
                     context.WriteLine(output, ");");
-                    //last statement
-                    context.WriteLine(output, "throw new PUnreachableCodeException();");
                     break;
 
                 case ReceiveStmt receiveStmt:
@@ -901,7 +923,7 @@ namespace Plang.Compiler.Backend.Coyote
 
                         foreach (IPStmt caseStmt in recvCase.Value.Body.Statements)
                         {
-                            WriteStmt(context, output, caseStmt);
+                            WriteStmt(context, output, function, caseStmt);
                         }
 
                         context.WriteLine(output, "} break;");
@@ -950,6 +972,10 @@ namespace Plang.Compiler.Backend.Coyote
                     if (returnStmt.ReturnValue != null)
                     {
                         WriteExpr(context, output, returnStmt.ReturnValue);
+                    }
+                    else if (function.CanChangeState == true || function.CanRaiseEvent == true)
+                    {
+                        context.Write(output, "default");
                     }
 
                     context.WriteLine(output, ";");
@@ -1005,7 +1031,7 @@ namespace Plang.Compiler.Backend.Coyote
                     context.Write(output, "while (");
                     WriteExpr(context, output, whileStmt.Condition);
                     context.WriteLine(output, ")");
-                    WriteStmt(context, output, whileStmt.Body);
+                    WriteStmt(context, output, function, whileStmt.Body);
                     break;
 
                 default:

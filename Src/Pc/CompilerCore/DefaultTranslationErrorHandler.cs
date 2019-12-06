@@ -301,9 +301,14 @@ namespace Plang.Compiler
             return IssueError(location, $"expected a specification machine, but got {machine.Name}");
         }
 
-        public Exception PopInNonVoidFunction(ParserRuleContext context)
+        public Exception RaiseEventInNonVoidFunction(ParserRuleContext context)
         {
-            return IssueError(context, "pop only allowed in functions that do not return a value.");
+            return IssueError(context, "raising an event only allowed in functions that do not return a value.");
+        }
+
+        public Exception ChangeStateInNonVoidFunction(ParserRuleContext context)
+        {
+            return IssueError(context, "changing a state only allowed in functions that do not return a value.");
         }
 
         public Exception PrintStmtLinearArgument(ParserRuleContext argSourceLocation)

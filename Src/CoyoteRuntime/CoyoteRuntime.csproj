@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <OutputPath>$(PSdkFolder)\$(TargetFramework)\Binaries</OutputPath>
+    <OutputPath>D:\Workspace\P\Bld\Drops\Debug\Binaries</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Coyote" Version="1.0.0-rc7" />

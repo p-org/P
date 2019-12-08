@@ -21,7 +21,7 @@ namespace Plang.Compiler.TypeChecker
         {
             private readonly ITranslationErrorHandler handler;
             private readonly Scope scope;
-            private readonly HashSet<TypeDef> visitedTypeDefs = new HashSet<TypeDef>();
+            private readonly Stack<TypeDef> visitedTypeDefs = new Stack<TypeDef>();
 
             public TypeVisitor(Scope scope, ITranslationErrorHandler handler)
             {
@@ -56,7 +56,7 @@ namespace Plang.Compiler.TypeChecker
 
                     if (typeDef.Type == null)
                     {
-                        visitedTypeDefs.Add(typeDef);
+                        visitedTypeDefs.Push(typeDef);
                         switch (typeDef.SourceLocation)
                         {
                             case PParser.ForeignTypeDefContext foreignType:
@@ -66,11 +66,13 @@ namespace Plang.Compiler.TypeChecker
                             case PParser.PTypeDefContext typedefDecl:
                                 typeDef.Type = Visit(typedefDecl.type());
                                 break;
-
+                            case InterpreterRuleContext _:
+                            case RuleContextWithAltNum _:
                             default:
                                 throw handler.InternalError(typeDef.SourceLocation,
                                     new ArgumentOutOfRangeException(nameof(context)));
                         }
+                        visitedTypeDefs.Pop();
                     }
 
                     return new TypeDefType(typeDef);

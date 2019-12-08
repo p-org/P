@@ -51,7 +51,7 @@ namespace UnitTests
         }
     }
 
-    [TestFixture]
+    /*[TestFixture]
     [Parallelizable(ParallelScope.Children)]
     public class PrtRegressionTests
     {
@@ -80,8 +80,8 @@ namespace UnitTests
                 new ExecutionOutputValidator(0, null, null));
 
             TestAssertions.AssertTestCase(testCase);
-        }*/
-    }
+        }
+    }*/
 
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]

@@ -10,9 +10,9 @@ machine Main {
 		on E2 goto Init with Bar;
 	}
 
-	fun Foo(x : int, y: machine) {
-		print "{0} {1}", x , y;
-		send y, E2, x;
+	fun Foo(payload: (x : int, y: machine)) {
+		print "{0} {1}", payload.x , payload.y;
+		send payload.y, E2, payload.x;
 	}
 
 	fun Bar(x: int) {

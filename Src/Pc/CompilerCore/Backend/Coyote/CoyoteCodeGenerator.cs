@@ -501,9 +501,11 @@ namespace Plang.Compiler.Backend.Coyote
                         break;
 
                     case EventDoAction eventDoAction:
+                        var targetDoFunctionName = context.Names.GetNameForDecl(eventDoAction.Target);
+                        targetDoFunctionName = eventDoAction.Target.IsAnon ? targetDoFunctionName : $"Wrapped_{targetDoFunctionName}";
                         context.WriteLine(
                             output,
-                            $"[OnEventDoAction(typeof({context.Names.GetNameForDecl(pEvent)}), nameof({context.Names.GetNameForDecl(eventDoAction.Target)}))]");
+                            $"[OnEventDoAction(typeof({context.Names.GetNameForDecl(pEvent)}), nameof({targetDoFunctionName}))]");
                         break;
 
                     case EventGotoState eventGotoState when eventGotoState.TransitionFunction == null:
@@ -513,9 +515,11 @@ namespace Plang.Compiler.Backend.Coyote
                         break;
 
                     case EventGotoState eventGotoState when eventGotoState.TransitionFunction != null:
+                        var targetGotoFunctionName = context.Names.GetNameForDecl(eventGotoState.TransitionFunction);
+                        targetGotoFunctionName = eventGotoState.TransitionFunction.IsAnon ? targetGotoFunctionName : $"Wrapped_{targetGotoFunctionName}";
                         context.WriteLine(
                             output,
-                            $"[OnEventGotoState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventGotoState.Target)}), nameof({context.Names.GetNameForDecl(eventGotoState.TransitionFunction)}))]");
+                            $"[OnEventGotoState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventGotoState.Target)}), nameof({targetGotoFunctionName}))]");
                         break;
 
                     case EventIgnore _:
@@ -550,6 +554,53 @@ namespace Plang.Compiler.Backend.Coyote
             context.WriteLine(output, "}");
         }
 
+        private void WriteNamedFunctionWrapper(CompilationContext context, StringWriter output, Function function)
+        {
+            if (function.Role == FunctionRole.Method || function.Role == FunctionRole.Foreign)
+                return;
+
+            bool isAsync = function.CanReceive == true;
+            FunctionSignature signature = function.Signature;
+            string awaitMethod = isAsync ? "await " : "";
+            string returnType = "void";
+
+            if (function.CanChangeState == true || function.CanRaiseEvent == true)
+            {
+                returnType = "Transition";
+            }
+
+            string functionName = context.Names.GetNameForDecl(function);
+            string functionParameters = "Event currentMachine_dequeuedEvent";
+
+            context.WriteLine(output,
+                $"public {returnType} {$"Wrapped_{functionName}"}({functionParameters})");
+
+            context.WriteLine(output, "{");
+
+            //add the declaration of currentMachine
+            if (function.Owner != null)
+            {
+                context.WriteLine(output, $"{context.Names.GetNameForDecl(function.Owner)} currentMachine = this;");
+            }
+
+            // add the declaration of p_calleeTransition
+            if (function.CanChangeState == true || function.CanRaiseEvent == true)
+            {
+                context.WriteLine(output, "Transition p_calleeTransition = default;");
+            }
+
+            if (function.CanChangeState == true || function.CanRaiseEvent == true)
+            {
+                context.Write(output, "p_calleeTransition = ");
+            }
+            var parameter = function.Signature.Parameters.Any()? $"({GetCSharpType(function.Signature.ParameterTypes.First())})((PEvent)currentMachine_dequeuedEvent).Payload":"";
+            context.WriteLine(output, $"{awaitMethod}{functionName}({parameter});");
+            if (function.CanChangeState == true || function.CanRaiseEvent == true)
+            {
+                context.WriteLine(output, "return p_calleeTransition;");
+            }
+            context.WriteLine(output, "}");
+        }
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)
         {
             if (function.IsForeign)
@@ -558,6 +609,12 @@ namespace Plang.Compiler.Backend.Coyote
             }
 
             bool isStatic = function.Owner == null;
+
+            if (!function.IsAnon && !isStatic)
+            {
+                WriteNamedFunctionWrapper(context, output, function);
+            }
+
             bool isAsync = function.CanReceive == true;
             FunctionSignature signature = function.Signature;
 
@@ -642,7 +699,7 @@ namespace Plang.Compiler.Backend.Coyote
 
             foreach (IPStmt bodyStatement in function.Body.Statements)
             {
-                WriteStmt(context, output, function, bodyStatement);
+                WriteStmt(context: context, output: output, function: function, stmt: bodyStatement);
             }
 
             // if its a function of a machine or monitor that returns a transition

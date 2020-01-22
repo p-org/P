@@ -2,6 +2,7 @@ using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -15,7 +16,53 @@ namespace Plang.Compiler.TypeChecker
             State startState = FindStartState(machine, handler);
             PLanguageType startStatePayloadType = GetStatePayload(startState);
             Debug.Assert(startStatePayloadType.IsSameTypeAs(machine.PayloadType));
+            ValidateHandlers(handler, machine);
             ValidateTransitions(handler, machine);
+        }
+
+        private static void ValidateHandlers(ITranslationErrorHandler handler, Machine machine)
+        {
+            foreach(var state in machine.AllStates())
+            {
+                if (state.Entry?.Signature.Parameters.Count > 1)
+                {
+                    throw handler.MoreThanOneParameterForHandlers(state.SourceLocation, state.Entry.Signature.Parameters.Count);
+                }
+
+                if (state.Exit?.Signature.Parameters.Count > 0)
+                {
+                    throw handler.ExitFunctionCannotTakeParameters(state.SourceLocation, state.Exit.Signature.Parameters.Count);
+                }
+
+                foreach (KeyValuePair<PEvent, AST.IStateAction> pair in state.AllEventHandlers)
+                {
+                    PEvent handledEvent = pair.Key;
+                    switch (pair.Value)
+                    {
+                        case EventDoAction eventDoAction:
+                            if (eventDoAction.Target != null && eventDoAction.Target.Signature.ParameterTypes.Count() > 1)
+                            {
+                                throw handler.MoreThanOneParameterForHandlers(eventDoAction.SourceLocation, 
+                                    eventDoAction.Target.Signature.ParameterTypes.Count());
+                            }
+                            break;
+
+                        case EventGotoState eventGotoState:
+                            if (eventGotoState.TransitionFunction != null && eventGotoState.TransitionFunction.Signature.ParameterTypes.Count() > 1)
+                            {
+                                throw handler.MoreThanOneParameterForHandlers(eventGotoState.SourceLocation,
+                                    eventGotoState.TransitionFunction.Signature.ParameterTypes.Count());
+                            }
+                            break;
+                        case EventPushState _:
+                        case EventDefer _:
+                        case EventIgnore _:
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         public static void ValidateNoStaticHandlers(ITranslationErrorHandler handler, Machine machine)
@@ -58,6 +105,14 @@ namespace Plang.Compiler.TypeChecker
                             }
 
                             break;
+                        case EventDefer _:
+                        case EventIgnore _:
+                        case EventPushState _:
+                            break;
+                        default:
+                            throw handler.InternalError(pair.Value.SourceLocation, 
+                                new System.Exception("Unknown transition type parsed, report to the P team"));
+                          
                     }
                 }
             }
@@ -80,8 +135,8 @@ namespace Plang.Compiler.TypeChecker
                         case EventDoAction eventDoAction:
                             if (eventDoAction.Target != null)
                             {
-                                ValidateEventPayloadToTransitionTarget(handler, eventDoAction.SourceLocation,
-                                    handledEvent.PayloadType, eventDoAction.Target);
+                                ValidateEventPayloadToTransitionTarget(handler: handler, sourceLocation: eventDoAction.SourceLocation, 
+                                    eventPayloadType: handledEvent.PayloadType, targetFunction: eventDoAction.Target);
                             }
 
                             break;
@@ -89,16 +144,14 @@ namespace Plang.Compiler.TypeChecker
                         case EventGotoState eventGotoState:
                             if (eventGotoState.Target.Entry != null)
                             {
-                                ValidateEventPayloadToTransitionTarget(handler, eventGotoState.SourceLocation,
-                                    handledEvent.PayloadType,
-                                    eventGotoState.Target.Entry);
+                                ValidateEventPayloadToTransitionTarget(handler: handler, sourceLocation: eventGotoState.SourceLocation, 
+                                    eventPayloadType: handledEvent.PayloadType, targetFunction: eventGotoState.Target.Entry);
                             }
 
                             if (eventGotoState.TransitionFunction != null)
                             {
-                                ValidateEventPayloadToTransitionTarget(handler, eventGotoState.SourceLocation,
-                                    handledEvent.PayloadType,
-                                    eventGotoState.TransitionFunction);
+                                ValidateEventPayloadToTransitionTarget(handler: handler, sourceLocation: eventGotoState.SourceLocation, 
+                                    eventPayloadType: handledEvent.PayloadType, targetFunction: eventGotoState.TransitionFunction);
                             }
 
                             break;
@@ -106,20 +159,21 @@ namespace Plang.Compiler.TypeChecker
                         case EventPushState eventPushState:
                             if (eventPushState.Target.Entry != null)
                             {
-                                ValidateEventPayloadToTransitionTarget(handler, eventPushState.SourceLocation,
-                                    handledEvent.PayloadType,
-                                    eventPushState.Target.Entry);
+                                ValidateEventPayloadToTransitionTarget(handler: handler, sourceLocation: eventPushState.SourceLocation, 
+                                    eventPayloadType: handledEvent.PayloadType, targetFunction: eventPushState.Target.Entry);
                             }
 
                             break;
+
+                        case EventDefer _:
+                        case EventIgnore _:
+                            {
+                                break;
+                            }
                     }
                 }
 
-                if (state.Exit?.Signature.Parameters.Count > 0)
-                {
-                    throw handler.IncorrectArgumentCount(state.SourceLocation, state.Exit.Signature.Parameters.Count,
-                        0);
-                }
+                
             }
         }
 
@@ -132,6 +186,11 @@ namespace Plang.Compiler.TypeChecker
             if (entrySignature.Count == 0)
             {
                 return;
+            }
+
+            if (entrySignature.Count > 1)
+            {
+                throw handler.InternalError(sourceLocation, new System.Exception("Target function cannot have multiple parameters (report this to the P developers)"));
             }
 
             if (entrySignature.Count == 1 && entrySignature[0].IsAssignableFrom(eventPayloadType))

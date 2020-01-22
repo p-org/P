@@ -111,7 +111,7 @@ namespace Plang.PrtSharp.Values
 
         public IPrtValue this[IPrtValue key]
         {
-            get => map[key];
+            get { if (ContainsKey(key)) return map[key]; else throw new System.Exception($"Key {key} not found in the map"); }
             set
             {
                 MutabilityHelper.EnsureFrozen(key);

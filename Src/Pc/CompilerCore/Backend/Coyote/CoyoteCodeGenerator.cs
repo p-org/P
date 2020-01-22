@@ -502,7 +502,7 @@ namespace Plang.Compiler.Backend.Coyote
 
                     case EventDoAction eventDoAction:
                         var targetDoFunctionName = context.Names.GetNameForDecl(eventDoAction.Target);
-                        targetDoFunctionName = eventDoAction.Target.IsAnon ? targetDoFunctionName : $"Wrapped_{targetDoFunctionName}";
+                        targetDoFunctionName = eventDoAction.Target.IsAnon ? targetDoFunctionName : $"_{targetDoFunctionName}";
                         context.WriteLine(
                             output,
                             $"[OnEventDoAction(typeof({context.Names.GetNameForDecl(pEvent)}), nameof({targetDoFunctionName}))]");
@@ -516,7 +516,7 @@ namespace Plang.Compiler.Backend.Coyote
 
                     case EventGotoState eventGotoState when eventGotoState.TransitionFunction != null:
                         var targetGotoFunctionName = context.Names.GetNameForDecl(eventGotoState.TransitionFunction);
-                        targetGotoFunctionName = eventGotoState.TransitionFunction.IsAnon ? targetGotoFunctionName : $"Wrapped_{targetGotoFunctionName}";
+                        targetGotoFunctionName = eventGotoState.TransitionFunction.IsAnon ? targetGotoFunctionName : $"_{targetGotoFunctionName}";
                         context.WriteLine(
                             output,
                             $"[OnEventGotoState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventGotoState.Target)}), nameof({targetGotoFunctionName}))]");
@@ -573,7 +573,7 @@ namespace Plang.Compiler.Backend.Coyote
             string functionParameters = "Event currentMachine_dequeuedEvent";
 
             context.WriteLine(output,
-                $"public {returnType} {$"Wrapped_{functionName}"}({functionParameters})");
+                $"public {returnType} {$"_{functionName}"}({functionParameters})");
 
             context.WriteLine(output, "{");
 

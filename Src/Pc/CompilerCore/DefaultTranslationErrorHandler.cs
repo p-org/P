@@ -142,6 +142,10 @@ namespace Plang.Compiler
                 $"expected either both float or both int; got {lhsType.OriginalRepresentation} and {rhsType.OriginalRepresentation}");
         }
 
+        public Exception MoreThanOneParameterForHandlers(ParserRuleContext sourceLocation, int count)
+        {
+            return IssueError(sourceLocation, $"functions at entry or exit and do or goto transitions cannot take more than 1 parameter, provided function expects {count} parameters");
+        }
         public Exception ParseFailure(FileInfo file, string message)
         {
             return new TranslationException($"[{file.Name}] parse error: {message}");
@@ -260,7 +264,7 @@ namespace Plang.Compiler
 
         public Exception InternalError(ParserRuleContext location, Exception inner)
         {
-            return IssueError(location, inner.Message);
+            return IssueError(location, "[Internal Error]: " + inner.Message);
         }
 
         public Exception TwoStartStates(Machine machine, State state)
@@ -336,6 +340,10 @@ namespace Plang.Compiler
             return IssueError(context, $"Loop control flow statement '{stmtName}' cannot appear outside a loop body");
         }
 
+        public Exception ExitFunctionCannotTakeParameters(ParserRuleContext sourceLocation, int count)
+        {
+            return IssueError(sourceLocation, $"Exit functions cannot have input parameters, the provided function expects {count} parameters");
+        }
         private Exception IssueError(ParserRuleContext location, string message)
         {
             return IssueError(location, location.Start, message);

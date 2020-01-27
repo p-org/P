@@ -562,18 +562,18 @@ namespace Plang.Compiler.Backend.Coyote
             bool isAsync = function.CanReceive == true;
             FunctionSignature signature = function.Signature;
             string awaitMethod = isAsync ? "await " : "";
-            string returnType = "void";
+            string returnType = "Task";
 
             if (function.CanChangeState == true || function.CanRaiseEvent == true)
             {
-                returnType = "Transition";
+                returnType = "Task<Transition>";
             }
 
             string functionName = context.Names.GetNameForDecl(function);
             string functionParameters = "Event currentMachine_dequeuedEvent";
 
             context.WriteLine(output,
-                $"public {returnType} {$"_{functionName}"}({functionParameters})");
+                $"public async {returnType} {$"_{functionName}"}({functionParameters})");
 
             context.WriteLine(output, "{");
 

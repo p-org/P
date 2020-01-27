@@ -92,6 +92,78 @@ namespace Plang.PrtSharp.Values
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator <(in PrtString prtString1, in PrtString prtString2)
+        {
+            return string.Compare(prtString1.value, prtString2.value)==-1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator <(in IPrtValue pValue1, in PrtString pValue2)
+        {
+            return pValue1 is PrtString prtString && string.Compare(prtString.value, pValue2.value) == -1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator <(in PrtString pValue1, in IPrtValue pValue2)
+        {
+            return pValue2 is PrtString prtString && string.Compare(prtString.value, pValue1.value) == -1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator >(in PrtString prtString1, in PrtString prtString2)
+        {
+            return string.Compare(prtString1.value, prtString2.value) == 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator >(in IPrtValue pValue1, in PrtString pValue2)
+        {
+            return pValue1 is PrtString prtString && string.Compare(prtString.value, pValue2.value) == 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator >(in PrtString pValue1, in IPrtValue pValue2)
+        {
+            return pValue2 is PrtString prtString && string.Compare(prtString.value, pValue1.value) == 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator <=(in PrtString prtString1, in PrtString prtString2)
+        {
+            return string.Compare(prtString1.value, prtString2.value) != 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator <=(in IPrtValue pValue1, in PrtString pValue2)
+        {
+            return pValue1 is PrtString prtString && string.Compare(prtString.value, pValue2.value) != 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator <=(in PrtString pValue1, in IPrtValue pValue2)
+        {
+            return pValue2 is PrtString prtString && string.Compare(prtString.value, pValue1.value) != 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator >=(in PrtString prtString1, in PrtString prtString2)
+        {
+            return string.Compare(prtString1.value, prtString2.value) != -1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator >=(in IPrtValue pValue1, in PrtString pValue2)
+        {
+            return pValue1 is PrtString prtString && string.Compare(prtString.value, pValue2.value) != -1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator >=(in PrtString pValue1, in IPrtValue pValue2)
+        {
+            return pValue2 is PrtString prtString && string.Compare(prtString.value, pValue1.value) != -1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(IPrtValue obj)
         {
             return obj is PrtString other && string.Equals(value, other.value);

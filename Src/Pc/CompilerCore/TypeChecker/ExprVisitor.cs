@@ -296,7 +296,9 @@ namespace Plang.Compiler.TypeChecker
                     if (PrimitiveType.Int.IsAssignableFrom(lhs.Type) &&
                         PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
                         PrimitiveType.Float.IsAssignableFrom(lhs.Type) &&
-                        PrimitiveType.Float.IsAssignableFrom(rhs.Type))
+                        PrimitiveType.Float.IsAssignableFrom(rhs.Type) ||
+                        PrimitiveType.String.IsAssignableFrom(lhs.Type) &&
+                        PrimitiveType.String.IsAssignableFrom(rhs.Type))
                     {
                         return arithCtors[op](lhs, rhs);
                         

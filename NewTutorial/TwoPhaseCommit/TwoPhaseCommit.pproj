@@ -1,0 +1,10 @@
+<Project name = "TwoPhaseCommit">
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+	<PFile>./PSpec/</PFile>
+	<PFile>./PTst/</PFile>
+</InputFiles>
+<Target>Coyote</Target>
+<TargetFileName>TwoPhaseCommit</TargetFileName>
+<OutputDir>./PGenerated/</OutputDir>
+</Project>

@@ -1,0 +1,10 @@
+<Project name = "ClientServer">
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+	<PFile>./PSpec/</PFile>
+	<PFile>./PTst/</PFile>
+</InputFiles>
+<Target>Coyote</Target>
+<TargetFileName>ClientServer</TargetFileName>
+<OutputDir>./PGenerated/</OutputDir>
+</Project>

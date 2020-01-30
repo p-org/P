@@ -17,44 +17,59 @@ namespace Plang.PrtSharp
         {
         }
 
+        private string GetShortName(string stateName)
+        {
+            return stateName.Split('.').Last();
+        }
+        private string GetEventName(Event e)
+        {
+            return e.GetType().Name;
+        }
+
         public override void OnStateTransition(ActorId id, string stateName, bool isEntry)
         {
             if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
                 return;
             }
-
-            base.OnStateTransition(id, stateName, isEntry);
+            
+            base.OnStateTransition(id, this.GetShortName(stateName), isEntry);
         }
 
         public override void OnDefaultEventHandler(ActorId id, string stateName)
         {
-            base.OnDefaultEventHandler(id, stateName);
+            base.OnDefaultEventHandler(id, this.GetShortName(stateName));
         }
 
         public override void OnPopState(ActorId id, string currStateName, string restoredStateName)
         {
-            base.OnPopState(id, currStateName, restoredStateName);
+            base.OnPopState(id, this.GetShortName(currStateName), this.GetShortName(restoredStateName));
         }
 
         public override void OnPopUnhandledEvent(ActorId id, string stateName, Event e)
         {
-            base.OnPopUnhandledEvent(id, stateName, e);
+            stateName = this.GetShortName(stateName);
+            string eventName = this.GetEventName(e);
+            var reenteredStateName = string.IsNullOrEmpty(stateName)
+                ? string.Empty
+                : $" and reentered state '{stateName}";
+            var text = $"<PopLog> '{id}' popped with unhandled event '{eventName}'{reenteredStateName}.";
+            this.Logger.WriteLine(text);
         }
 
         public override void OnPushState(ActorId id, string currStateName, string newStateName)
         {
-            base.OnPushState(id, currStateName, newStateName);
+            base.OnPushState(id, this.GetShortName(currStateName), this.GetShortName(newStateName));
         }
 
         public override void OnWaitEvent(ActorId id, string stateName, params Type[] eventTypes)
         {
-            base.OnWaitEvent(id, stateName, eventTypes);
+            base.OnWaitEvent(id, this.GetShortName(stateName), eventTypes);
         }
 
         public override void OnWaitEvent(ActorId id, string stateName, Type eventType)
         {
-            base.OnWaitEvent(id, stateName, eventType);
+            base.OnWaitEvent(id, this.GetShortName(stateName), eventType);
         }
 
         public override void OnMonitorStateTransition(string monitorTypeName, ActorId id, string stateName, bool isEntry, bool? isInHotState)
@@ -64,7 +79,7 @@ namespace Plang.PrtSharp
                 return;
             }
 
-            base.OnMonitorStateTransition(monitorTypeName, id, stateName, isEntry, isInHotState);
+            base.OnMonitorStateTransition(monitorTypeName, id, this.GetShortName(stateName), isEntry, isInHotState);
         }
 
         public override void OnCreateActor(ActorId id, ActorId creator)
@@ -79,44 +94,90 @@ namespace Plang.PrtSharp
 
         public override void OnDequeueEvent(ActorId id, string stateName, Event e)
         {
-
             if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
                 return;
             }
 
-            base.OnDequeueEvent(id, stateName, e);
+            stateName = this.GetShortName(stateName);
+            string eventName = this.GetEventName(e);
+            string text = null;
+            if (stateName is null)
+            {
+                text = $"<DequeueLog> '{id}' dequeued event '{eventName}'.";
+            }
+            else
+            {
+                text = $"<DequeueLog> '{id}' dequeued event '{eventName}' in state '{stateName}'.";
+            }
+
+            this.Logger.WriteLine(text);
         }
 
         public override void OnRaiseEvent(ActorId id, string stateName, Event e)
         {
-            string eventName = e.GetType().FullName;
+            stateName = this.GetShortName(stateName);
+            string eventName = this.GetEventName(e);
             if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine") || eventName.Contains("GotoStateEvent"))
             {
                 return;
             }
 
-            base.OnRaiseEvent(id, stateName, e);
+            string text = null;
+            if (stateName is null)
+            {
+                text = $"<RaiseLog> '{id}' raised event '{eventName}'.";
+            }
+            else
+            {
+                text = $"<RaiseLog> '{id}' raised event '{eventName}' in state '{stateName}'.";
+            }
+
+            this.Logger.WriteLine(text);
         }
 
         public override void OnEnqueueEvent(ActorId id, Event e)
         {
-            base.OnEnqueueEvent(id, e);
+            string eventName = this.GetEventName(e);
+            string text = $"<EnqueueLog> '{id}' enqueued event '{eventName}'.";
+            this.Logger.WriteLine(text);
         }
 
         public override void OnReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)
         {
-            base.OnReceiveEvent(id, stateName, e, wasBlocked);
+            stateName = this.GetShortName(stateName);
+            string eventName = this.GetEventName(e);
+            string text = null;
+            var unblocked = wasBlocked ? " and unblocked" : string.Empty;
+            if (stateName is null)
+            {
+                text = $"<ReceiveLog> '{id}' dequeued event '{eventName}'{unblocked}.";
+            }
+            else
+            {
+                text = $"<ReceiveLog> '{id}' dequeued event '{eventName}'{unblocked} in state '{stateName}'.";
+            }
+
+            this.Logger.WriteLine(text);
         }
 
         public override void OnMonitorRaiseEvent(string monitorTypeName, ActorId id, string stateName, Event e)
         {
-            base.OnMonitorRaiseEvent(monitorTypeName, id, stateName, e);
+            stateName = this.GetShortName(stateName);
+            string eventName = this.GetEventName(e);
+            string text = $"<MonitorLog> Monitor '{monitorTypeName}' with id '{id}' raised event '{eventName}' in state '{stateName}'.";
+            this.Logger.WriteLine(text);
         }
 
         public override void OnSendEvent(ActorId targetActorId, ActorId senderId, string senderStateName, Event e, Guid opGroupId, bool isTargetHalted)
         {
-            base.OnSendEvent(targetActorId, senderId, senderStateName, e, opGroupId, isTargetHalted);
+            senderStateName = this.GetShortName(senderStateName);
+            string eventName = this.GetEventName(e);
+            var opGroupIdMsg = opGroupId != Guid.Empty ? $" (operation group '{opGroupId}')" : string.Empty;
+            var isHalted = isTargetHalted ? $" which has halted" : string.Empty;
+            var sender = senderId != null ? $"'{senderId}' in state '{senderStateName}'" : $"The runtime";
+            var text = $"<SendLog> {sender} sent event '{eventName}' to '{targetActorId}'{isHalted}{opGroupIdMsg}.";
+            this.Logger.WriteLine(text);
         }
 
         public override void OnGotoState(ActorId id, string currStateName, string newStateName)
@@ -126,7 +187,7 @@ namespace Plang.PrtSharp
                 return;
             }
 
-            base.OnGotoState(id, currStateName, newStateName);
+            base.OnGotoState(id, this.GetShortName(currStateName), this.GetShortName(newStateName));
         }
 
         public override void OnExecuteAction(ActorId id, string stateName, string actionName)
@@ -139,12 +200,12 @@ namespace Plang.PrtSharp
 
         public override void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
         {
-            base.OnExceptionHandled(id, stateName, actionName, ex);
+            base.OnExceptionHandled(id, this.GetShortName(stateName), actionName, ex);
         }
 
         public override void OnExceptionThrown(ActorId id, string stateName, string actionName, Exception ex)
         {
-            base.OnExceptionThrown(id, stateName, actionName, ex);
+            base.OnExceptionThrown(id, this.GetShortName(stateName), actionName, ex);
         }
     }
 }

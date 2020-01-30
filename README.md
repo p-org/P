@@ -10,7 +10,7 @@ Publications
 Ankush Desai, Amar Phanishayee, Shaz Qadeer, and Sanjit Seshia.
 International Conference on Object-Oriented Programming, Systems, Languages, and Applications (OOPSLA), 2018.
 
-- **[DRONA: A Framework for Safe Distributed Mobile Robotics](https://people.eecs.berkeley.edu/~ankush/Papers/drona.pdf)**.
+- **[DRONA: A Framework for Safe Distributed Mobile Robotics](http://people.eecs.berkeley.edu/~ankush/assets/papers/drona.pdf)**.
 Ankush Desai, Indranil Saha, Jianqiao Yang, Shaz Qadeer, and Sanjit A. Seshia.
 In Proceedings of the 8th ACM/IEEE International Conference on Cyber-Physical Systems (ICCPS), 2017.
 

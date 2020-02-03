@@ -21,9 +21,17 @@ namespace Plang.PrtSharp
         {
             return stateName.Split('.').Last();
         }
-        private string GetEventName(Event e)
+        private string GetEventNameWithPayload(Event e)
         {
-            return e.GetType().Name;
+            if (e.GetType().Name.Contains("GotoStateEvent"))
+            {
+                return e.GetType().Name;
+            }    
+            else
+            {
+                var withPayload = ((PEvent)e).Payload == null ? "" : $" with payload ({((PEvent)e).Payload})";
+                return $"{e.GetType().Name}{withPayload}";
+            }
         }
 
         public override void OnStateTransition(ActorId id, string stateName, bool isEntry)
@@ -49,7 +57,7 @@ namespace Plang.PrtSharp
         public override void OnPopUnhandledEvent(ActorId id, string stateName, Event e)
         {
             stateName = this.GetShortName(stateName);
-            string eventName = this.GetEventName(e);
+            string eventName = this.GetEventNameWithPayload(e);
             var reenteredStateName = string.IsNullOrEmpty(stateName)
                 ? string.Empty
                 : $" and reentered state '{stateName}";
@@ -79,7 +87,7 @@ namespace Plang.PrtSharp
                 return;
             }
 
-            base.OnMonitorStateTransition(monitorTypeName, id, this.GetShortName(stateName), isEntry, isInHotState);
+            base.OnMonitorStateTransition(monitorTypeName: this.GetShortName(monitorTypeName), id: id, stateName: this.GetShortName(stateName), isEntry: isEntry, isInHotState: isInHotState);
         }
 
         public override void OnCreateActor(ActorId id, ActorId creator)
@@ -100,7 +108,7 @@ namespace Plang.PrtSharp
             }
 
             stateName = this.GetShortName(stateName);
-            string eventName = this.GetEventName(e);
+            string eventName = this.GetEventNameWithPayload(e);
             string text = null;
             if (stateName is null)
             {
@@ -117,7 +125,7 @@ namespace Plang.PrtSharp
         public override void OnRaiseEvent(ActorId id, string stateName, Event e)
         {
             stateName = this.GetShortName(stateName);
-            string eventName = this.GetEventName(e);
+            string eventName = this.GetEventNameWithPayload(e);
             if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine") || eventName.Contains("GotoStateEvent"))
             {
                 return;
@@ -138,15 +146,17 @@ namespace Plang.PrtSharp
 
         public override void OnEnqueueEvent(ActorId id, Event e)
         {
-            string eventName = this.GetEventName(e);
+            
+            string eventName = this.GetEventNameWithPayload(e);
             string text = $"<EnqueueLog> '{id}' enqueued event '{eventName}'.";
             this.Logger.WriteLine(text);
+            
         }
 
         public override void OnReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)
         {
             stateName = this.GetShortName(stateName);
-            string eventName = this.GetEventName(e);
+            string eventName = this.GetEventNameWithPayload(e);
             string text = null;
             var unblocked = wasBlocked ? " and unblocked" : string.Empty;
             if (stateName is null)
@@ -164,15 +174,15 @@ namespace Plang.PrtSharp
         public override void OnMonitorRaiseEvent(string monitorTypeName, ActorId id, string stateName, Event e)
         {
             stateName = this.GetShortName(stateName);
-            string eventName = this.GetEventName(e);
-            string text = $"<MonitorLog> Monitor '{monitorTypeName}' with id '{id}' raised event '{eventName}' in state '{stateName}'.";
+            string eventName = this.GetEventNameWithPayload(e);
+            string text = $"<MonitorLog> Monitor '{GetShortName(monitorTypeName)}' with id '{id}' raised event '{eventName}' in state '{stateName}'.";
             this.Logger.WriteLine(text);
         }
 
         public override void OnSendEvent(ActorId targetActorId, ActorId senderId, string senderStateName, Event e, Guid opGroupId, bool isTargetHalted)
         {
             senderStateName = this.GetShortName(senderStateName);
-            string eventName = this.GetEventName(e);
+            string eventName = this.GetEventNameWithPayload(e);
             var opGroupIdMsg = opGroupId != Guid.Empty ? $" (operation group '{opGroupId}')" : string.Empty;
             var isHalted = isTargetHalted ? $" which has halted" : string.Empty;
             var sender = senderId != null ? $"'{senderId}' in state '{senderStateName}'" : $"The runtime";
@@ -200,12 +210,12 @@ namespace Plang.PrtSharp
 
         public override void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
         {
-            base.OnExceptionHandled(id, this.GetShortName(stateName), actionName, ex);
+            base.OnExceptionHandled(id: id, stateName: this.GetShortName(stateName), actionName: actionName, ex: ex);
         }
 
         public override void OnExceptionThrown(ActorId id, string stateName, string actionName, Exception ex)
         {
-            base.OnExceptionThrown(id, this.GetShortName(stateName), actionName, ex);
+            base.OnExceptionThrown(id: id, stateName: this.GetShortName(stateName), actionName: actionName, ex: ex);
         }
     }
 }

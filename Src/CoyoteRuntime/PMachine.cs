@@ -83,7 +83,6 @@ namespace Plang.PrtSharp
 
             AnnounceInternal(ev);
             base.SendEvent(target.Id, ev);
-            Logger.WriteLine($"<SendPayloadLog> Event {ev.GetType().Name} with payload {((PEvent)ev).Payload}");
         }
 
         public Transition TryRaiseEvent(Event ev, object payload = null)

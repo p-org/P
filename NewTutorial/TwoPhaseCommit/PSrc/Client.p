@@ -35,8 +35,6 @@ machine Client {
 			raise halt;
 		}
 	}
-
-	
 }
 
 

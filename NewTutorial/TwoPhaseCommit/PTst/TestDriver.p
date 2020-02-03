@@ -48,7 +48,6 @@ On dequeueing a halt event, the P machine destroyes itself safely.
 This is one way of modeling node failures in P.
 Note that as the model-checker explores all possible interleavings. The failure injecture is exhaustive and can add a failure at all possible interleaving points.
 */
-
 machine FailureInjector {
 	start state Init {
 		entry (participants: seq[machine]){
@@ -65,12 +64,3 @@ machine FailureInjector {
 		}
 	}
 }
-
-// checks that alll events are handled correctly and also the local assertions in the P machines.
-test Test0[main = TestDriver0]: { TestDriver0, Coordinator, Participant, Timer, Client };
-
-// asserts the liveness monitor along with the default properties
-test Test1[main = TestDriver1]: assert Progress in { TestDriver1, Coordinator, Participant, Timer, Client, FailureInjector };
-
-// asserts the atomicity monitor along with the default properties
-test Test2[main = TestDriver0]: assert Atomicity in { TestDriver0, Coordinator, Participant, Timer, Client };

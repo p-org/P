@@ -12,7 +12,9 @@ spec Atomicity observes eWriteTransSuccess, eWriteTransFailed, eMonitor_LocalCom
 
 	state WaitForEvents {
 		on eMonitor_LocalCommit do (payload: (participant:machine, transId: int)){
-			assert(!(payload.participant in receivedLocalCommits));
+		    if(payload.participant in receivedLocalCommits)
+			    assert (receivedLocalCommits[payload.participant] != payload.transId), "Multiple local commits received from the same participant";
+
 			receivedLocalCommits[payload.participant] = payload.transId;
 		}
 		on eWriteTransSuccess do {
@@ -20,25 +22,36 @@ spec Atomicity observes eWriteTransSuccess, eWriteTransFailed, eMonitor_LocalCom
 			// reset the map with default value which is empty map.
 			receivedLocalCommits = default(map[machine, int]);
 		}
-		on eWriteTransFailed do { receivedLocalCommits = default(map[machine, int]); }
+		on eWriteTransFailed do {
+		    // reset the map with default value which is empty map.
+		    receivedLocalCommits = default(map[machine, int]);
+        }
 	}
 }
 
 /* 
 Every received transaction from a client must be eventually responded back.
-TODO: This spec is not complete.
 */
 spec Progress observes eWriteTransaction, eWriteTransSuccess, eWriteTransFailed {
+    var pendingTransactions: int;
 	start state Init {
 		ignore eWriteTransFailed, eWriteTransSuccess;
-		on eWriteTransaction goto WaitForOperationToFinish;
+		on eWriteTransaction goto WaitForOperationToFinish with { pendingTransactions = pendingTransactions + 1; }
 	}
 
 	hot state WaitForOperationToFinish 
 	{
-		ignore eWriteTransaction;
-		on eWriteTransSuccess, eWriteTransFailed goto Init;
+		on eWriteTransSuccess, eWriteTransFailed do {
+		    pendingTransactions = pendingTransactions - 1;
+		    if(pendingTransactions == 0)
+		    {
+		        goto AllTransactionsFinished;
+		    }
+        }
+        on eWriteTransaction do { pendingTransactions = pendingTransactions + 1; }
 	}
 
-
+	cold state AllTransactionsFinished {
+	    on eWriteTransaction goto WaitForOperationToFinish with { pendingTransactions = pendingTransactions + 1; }
+	}
 }

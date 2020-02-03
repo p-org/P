@@ -27,7 +27,6 @@ machine Coordinator
 	}
 
 	state WaitForTransactions {
-
 		on eWriteTransaction do (wTrans : tWriteTransaction) {
 			pendingWrTrans = wTrans;
 			currTransId = currTransId + 1;

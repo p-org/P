@@ -1,5 +1,7 @@
-﻿using Microsoft.Coyote.Actors;
+﻿using Microsoft.Coyote;
+using Microsoft.Coyote.Actors;
 using Microsoft.Coyote.Runtime;
+using Microsoft.Coyote.Runtime.Logging;
 using Plang.PrtSharp.Exceptions;
 using System;
 using System.Linq;
@@ -9,151 +11,224 @@ namespace Plang.PrtSharp
     /// <summary>
     ///     Formatter for the Coyote runtime log.
     /// </summary>
-    public class PLogFormatter : ActorRuntimeLogFormatter
+    public class PLogFormatter : ActorRuntimeLogTextFormatter
     {
         public PLogFormatter() : base()
         {
         }
 
-        public override bool GetStateTransitionLog(ActorId id, string stateName, bool isEntry, out string text)
+        private string GetShortName(string stateName)
+        {
+            return stateName.Split('.').Last();
+        }
+        private string GetEventNameWithPayload(Event e)
+        {
+            if (e.GetType().Name.Contains("GotoStateEvent"))
+            {
+                return e.GetType().Name;
+            }    
+            else
+            {
+                var withPayload = ((PEvent)e).Payload == null ? "" : $" with payload ({((PEvent)e).Payload})";
+                return $"{e.GetType().Name}{withPayload}";
+            }
+        }
+
+        public override void OnStateTransition(ActorId id, string stateName, bool isEntry)
         {
             if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
-                text = string.Empty;
-                return false;
+                return;
             }
-
-            return base.GetStateTransitionLog(id, stateName.Split('.').Last(), isEntry, out text);
+            
+            base.OnStateTransition(id, this.GetShortName(stateName), isEntry);
         }
 
-        public override bool GetDefaultEventHandlerLog(ActorId id, string stateName, out string text)
+        public override void OnDefaultEventHandler(ActorId id, string stateName)
         {
-            return base.GetDefaultEventHandlerLog(id, stateName.Split('.').Last(), out text);
+            base.OnDefaultEventHandler(id, this.GetShortName(stateName));
         }
 
-        public override bool GetPopStateLog(ActorId id, string currStateName, string restoredStateName, out string text)
+        public override void OnPopState(ActorId id, string currStateName, string restoredStateName)
         {
-            return base.GetPopStateLog(id, currStateName.Split('.').Last(), restoredStateName.Split('.').Last(), out text);
+            base.OnPopState(id, this.GetShortName(currStateName), this.GetShortName(restoredStateName));
         }
 
-        public override bool GetPopUnhandledEventLog(ActorId id, string stateName, string eventName, out string text)
+        public override void OnPopUnhandledEvent(ActorId id, string stateName, Event e)
         {
-            return base.GetPopUnhandledEventLog(id, stateName.Split('.').Last(), eventName, out text);
+            stateName = this.GetShortName(stateName);
+            string eventName = this.GetEventNameWithPayload(e);
+            var reenteredStateName = string.IsNullOrEmpty(stateName)
+                ? string.Empty
+                : $" and reentered state '{stateName}";
+            var text = $"<PopLog> '{id}' popped with unhandled event '{eventName}'{reenteredStateName}.";
+            this.Logger.WriteLine(text);
         }
 
-        public override bool GetPushStateLog(ActorId id, string currStateName, string newStateName, out string text)
+        public override void OnPushState(ActorId id, string currStateName, string newStateName)
         {
-            return base.GetPushStateLog(id, currStateName.Split('.').Last(), newStateName.Split('.').Last(), out text);
+            base.OnPushState(id, this.GetShortName(currStateName), this.GetShortName(newStateName));
         }
 
-        public override bool GetWaitEventLog(ActorId id, string stateName, Type[] eventTypes, out string text)
+        public override void OnWaitEvent(ActorId id, string stateName, params Type[] eventTypes)
         {
-            return base.GetWaitEventLog(id, stateName.Split('.').Last(), eventTypes, out text);
+            base.OnWaitEvent(id, this.GetShortName(stateName), eventTypes);
         }
 
-        public override bool GetWaitEventLog(ActorId id, string stateName, Type eventType, out string text)
+        public override void OnWaitEvent(ActorId id, string stateName, Type eventType)
         {
-            return base.GetWaitEventLog(id, stateName.Split('.').Last(), eventType, out text);
+            base.OnWaitEvent(id, this.GetShortName(stateName), eventType);
         }
 
-        public override bool GetMonitorStateTransitionLog(string monitorTypeName, ActorId id, string stateName,
-            bool isEntry, bool? isInHotState, out string text)
+        public override void OnMonitorStateTransition(string monitorTypeName, ActorId id, string stateName, bool isEntry, bool? isInHotState)
         {
             if (stateName.Contains("__InitState__"))
             {
-                text = string.Empty;
-                return false;
+                return;
             }
 
-            return base.GetMonitorStateTransitionLog(monitorTypeName, id, stateName.Split('.').Last(), isEntry, isInHotState, out text);
+            base.OnMonitorStateTransition(monitorTypeName: this.GetShortName(monitorTypeName), id: id, stateName: this.GetShortName(stateName), isEntry: isEntry, isInHotState: isInHotState);
         }
 
-        public override bool GetCreateActorLog(ActorId id, ActorId creator, out string text)
+        public override void OnCreateActor(ActorId id, ActorId creator)
         {
             if (id.Name.Contains("GodMachine"))
             {
-                text = string.Empty;
-                return false;
+                return;
             }
 
-            return base.GetCreateActorLog(id, creator, out text);
+            base.OnCreateActor(id, creator);
         }
 
-        public override bool GetDequeueEventLog(ActorId id, string stateName, string eventName, out string text)
+        public override void OnDequeueEvent(ActorId id, string stateName, Event e)
         {
             if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
-                text = string.Empty;
-                return false;
+                return;
             }
 
-            return base.GetDequeueEventLog(id, stateName.Split('.').Last(), eventName.Split('.').Last(), out text);
+            stateName = this.GetShortName(stateName);
+            string eventName = this.GetEventNameWithPayload(e);
+            string text = null;
+            if (stateName is null)
+            {
+                text = $"<DequeueLog> '{id}' dequeued event '{eventName}'.";
+            }
+            else
+            {
+                text = $"<DequeueLog> '{id}' dequeued event '{eventName}' in state '{stateName}'.";
+            }
+
+            this.Logger.WriteLine(text);
         }
 
-        public override bool GetRaiseEventLog(ActorId id, string stateName, string eventName, out string text)
+        public override void OnRaiseEvent(ActorId id, string stateName, Event e)
         {
+            stateName = this.GetShortName(stateName);
+            string eventName = this.GetEventNameWithPayload(e);
             if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine") || eventName.Contains("GotoStateEvent"))
             {
-                text = string.Empty;
-                return false;
+                return;
             }
 
-            return base.GetRaiseEventLog(id, stateName.Split('.').Last(), eventName.Split('.').Last(), out text);
+            string text = null;
+            if (stateName is null)
+            {
+                text = $"<RaiseLog> '{id}' raised event '{eventName}'.";
+            }
+            else
+            {
+                text = $"<RaiseLog> '{id}' raised event '{eventName}' in state '{stateName}'.";
+            }
+
+            this.Logger.WriteLine(text);
         }
 
-        public override bool GetEnqueueEventLog(ActorId id, string eventName, out string text)
+        public override void OnEnqueueEvent(ActorId id, Event e)
         {
-            return base.GetEnqueueEventLog(id, eventName.Split('.').Last(), out text);
+            
+            string eventName = this.GetEventNameWithPayload(e);
+            string text = $"<EnqueueLog> '{id}' enqueued event '{eventName}'.";
+            this.Logger.WriteLine(text);
+            
         }
 
-        public override bool GetReceiveEventLog(ActorId id, string stateName, string eventName, bool wasBlocked, out string text)
+        public override void OnReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)
         {
-            return base.GetReceiveEventLog(id, stateName.Split('.').Last(), eventName.Split('.').Last(), wasBlocked, out text);
+            stateName = this.GetShortName(stateName);
+            string eventName = this.GetEventNameWithPayload(e);
+            string text = null;
+            var unblocked = wasBlocked ? " and unblocked" : string.Empty;
+            if (stateName is null)
+            {
+                text = $"<ReceiveLog> '{id}' dequeued event '{eventName}'{unblocked}.";
+            }
+            else
+            {
+                text = $"<ReceiveLog> '{id}' dequeued event '{eventName}'{unblocked} in state '{stateName}'.";
+            }
+
+            this.Logger.WriteLine(text);
         }
 
-        public override bool GetMonitorRaiseEventLog(string monitorTypeName, ActorId id, string stateName, string eventName, out string text)
+        public override void OnMonitorRaiseEvent(string monitorTypeName, ActorId id, string stateName, Event e)
         {
-            return base.GetMonitorRaiseEventLog(monitorTypeName, id, stateName.Split('.').Last(), eventName.Split('.').Last(), out text);
+            stateName = this.GetShortName(stateName);
+            string eventName = this.GetEventNameWithPayload(e);
+            string text = $"<MonitorLog> Monitor '{GetShortName(monitorTypeName)}' with id '{id}' raised event '{eventName}' in state '{stateName}'.";
+            this.Logger.WriteLine(text);
         }
 
-        public override bool GetSendEventLog(ActorId targetActorId, ActorId senderId, string senderStateName,
-            string eventName, Guid opGroupId, bool isTargetHalted, out string text)
+        public override void OnSendEvent(ActorId targetActorId, ActorId senderId, string senderStateName, Event e, Guid opGroupId, bool isTargetHalted)
         {
-            return base.GetSendEventLog(targetActorId, senderId, senderStateName.Split('.').Last(), eventName.Split('.').Last(), opGroupId, isTargetHalted, out text);
+            senderStateName = this.GetShortName(senderStateName);
+            string eventName = this.GetEventNameWithPayload(e);
+            var opGroupIdMsg = opGroupId != Guid.Empty ? $" (operation group '{opGroupId}')" : string.Empty;
+            var isHalted = isTargetHalted ? $" which has halted" : string.Empty;
+            var sender = senderId != null ? $"'{senderId}' in state '{senderStateName}'" : $"The runtime";
+            var text = $"<SendLog> {sender} sent event '{eventName}' to '{targetActorId}'{isHalted}{opGroupIdMsg}.";
+            this.Logger.WriteLine(text);
         }
 
-        public override bool GetGotoStateLog(ActorId id, string currStateName, string newStateName, out string text)
+        public override void OnGotoState(ActorId id, string currStateName, string newStateName)
         {
             if (currStateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
-                text = string.Empty;
-                return false;
+                return;
             }
 
-            return base.GetGotoStateLog(id, currStateName.Split('.').Last(), newStateName.Split('.').Last(), out text);
+            base.OnGotoState(id, this.GetShortName(currStateName), this.GetShortName(newStateName));
         }
 
-        public override bool GetExecuteActionLog(ActorId id, string stateName, string actionName, out string text)
+        public override void OnExecuteAction(ActorId id, string stateName, string actionName)
         {
-            text = string.Empty;
-            return false;
         }
 
-        public override bool GetMonitorExecuteActionLog(string monitorTypeName, ActorId id,
-            string stateName, string actionName, out string text)
+        public override void OnMonitorExecuteAction(string monitorTypeName, ActorId id, string stateName, string actionName)
         {
-            text = string.Empty;
-            return false;
         }
 
-        public override bool GetExceptionHandledLog(ActorId id, string stateName, string actionName, Exception ex, out string text)
+        public override void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
         {
-            return base.GetExceptionHandledLog(id, stateName.Split('.').Last(), actionName, ex, out text);
+            base.OnExceptionHandled(id: id, stateName: this.GetShortName(stateName), actionName: actionName, ex: ex);
         }
 
-        public override bool GetExceptionThrownLog(ActorId id, string stateName, string actionName, Exception ex, out string text)
+        public override void OnExceptionThrown(ActorId id, string stateName, string actionName, Exception ex)
         {
-            return base.GetExceptionThrownLog(id, stateName.Split('.').Last(), actionName, ex, out text);
+            base.OnExceptionThrown(id: id, stateName: this.GetShortName(stateName), actionName: actionName, ex: ex);
+        }
+
+        public override void OnCreateMonitor(string monitorTypeName, ActorId id)
+        {
+            base.OnCreateMonitor(this.GetShortName(monitorTypeName), id);
+        }
+
+        public override void OnHandleRaisedEvent(ActorId id, string stateName, Event e)
+        {
+        }
+
+        public override void OnMonitorProcessEvent(ActorId senderId, string senderStateName, string monitorTypeName, ActorId id, string stateName, Event e)
+        {
         }
     }
 }

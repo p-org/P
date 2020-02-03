@@ -291,7 +291,7 @@ namespace Plang.Compiler.Backend.Coyote
             context.WriteLine(output);
             context.WriteLine(output, "[Microsoft.Coyote.TestingServices.Test]");
             context.WriteLine(output, "public static void Execute(IActorRuntime runtime) {");
-            context.WriteLine(output, "runtime.SetLogFormatter(new PLogFormatter());");
+            context.WriteLine(output, "runtime.RegisterLog(new PLogFormatter());");
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "PHelper.InitializeEnums();");

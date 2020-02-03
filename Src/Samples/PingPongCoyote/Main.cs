@@ -237,7 +237,7 @@ namespace pingpong
         [Microsoft.Coyote.TestingServices.Test]
         public static void Execute(IActorRuntime runtime)
         {
-            runtime.SetLogFormatter(new PLogFormatter());
+            runtime.RegisterLog(new PLogFormatter());
             PModule.runtime = runtime;
             PHelper.InitializeInterfaces();
             PHelper.InitializeEnums();

@@ -217,5 +217,18 @@ namespace Plang.PrtSharp
         {
             base.OnExceptionThrown(id: id, stateName: this.GetShortName(stateName), actionName: actionName, ex: ex);
         }
+
+        public override void OnCreateMonitor(string monitorTypeName, ActorId id)
+        {
+            base.OnCreateMonitor(this.GetShortName(monitorTypeName), id);
+        }
+
+        public override void OnHandleRaisedEvent(ActorId id, string stateName, Event e)
+        {
+        }
+
+        public override void OnMonitorProcessEvent(ActorId senderId, string senderStateName, string monitorTypeName, ActorId id, string stateName, Event e)
+        {
+        }
     }
 }

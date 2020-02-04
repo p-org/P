@@ -65,9 +65,9 @@ namespace Plang.Compiler.Backend.Symbolic
                 this.branchScope = branchScope;
             }
 
-            internal static ControlFlowContext FreshFuncContext(CompilationContext context)
+            internal static ControlFlowContext FreshFuncContext(CompilationContext context, PathConstraintScope pathConstraintScope)
             {
-                return new ControlFlowContext(context.FreshPathConstraintScope(), null, null);
+                return new ControlFlowContext(pathConstraintScope, null, null);
             }
 
             internal static ControlFlowContext FreshLoopContext(CompilationContext context)
@@ -128,7 +128,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output);
             }
 
-            WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context), function.Body);
+            WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context, rootPCScope), function.Body);
 
             if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {

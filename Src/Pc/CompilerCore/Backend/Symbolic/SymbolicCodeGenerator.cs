@@ -383,8 +383,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     ControlFlowContext thenContext = flowContext.FreshBranchSubContext(context);
                     ControlFlowContext elseContext = flowContext.FreshBranchSubContext(context);
 
-                    context.WriteLine(output, $"Bdd {thenContext.pcScope.PathConstraintVar} = trueCond({condTemp});");
-                    context.WriteLine(output, $"Bdd {elseContext.pcScope.PathConstraintVar} = falseCond({condTemp});");
+                    context.WriteLine(output, $"Bdd {thenContext.pcScope.PathConstraintVar} = BoolUtils.trueCond({condTemp});");
+                    context.WriteLine(output, $"Bdd {elseContext.pcScope.PathConstraintVar} = BoolUtils.falseCond({condTemp});");
 
                     context.WriteLine(output, $"boolean {thenContext.branchScope.Value.JumpedOutFlag} = false;");
                     context.WriteLine(output, $"boolean {elseContext.branchScope.Value.JumpedOutFlag} = false;");
@@ -701,7 +701,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     var lambdaTemp = context.FreshTempVar();
                     context.Write(output, "(");
                     WriteExpr(context, output, pcScope, unaryOpExpr.SubExpr);
-                    context.Write(output, $").map(({lambdaTemp}) => {UnOpToStr(unaryOpExpr.Operation)}{lambdaTemp})");
+                    context.Write(output, $").map(({lambdaTemp}) -> {UnOpToStr(unaryOpExpr.Operation)}{lambdaTemp})");
                     break;
                 case BinOpExpr binOpExpr:
                     var isPrimitive = binOpExpr.Lhs.Type is PrimitiveType && binOpExpr.Rhs.Type is PrimitiveType;
@@ -722,7 +722,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, pcScope, binOpExpr.Rhs);
                     context.Write(
                         output,
-                        $", ({lhsLambdaTemp}, {rhsLambdaTemp}) => " +
+                        $", ({lhsLambdaTemp}, {rhsLambdaTemp}) -> " +
                         $"{lhsLambdaTemp} {BinOpToStr(binOpExpr.Operation)} {rhsLambdaTemp})"
                     );
 
@@ -835,6 +835,11 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, ", ");
                     WriteExpr(context, output, pcScope, containsExpr.Item);
                     context.Write(output, ")");
+                    break;
+                case NondetExpr _:
+                case FairNondetExpr _:
+                    context.Write(output, $"{GetValueSummaryOps(context, PrimitiveType.Bool).GetName()}" +
+                        $".guard(BoolUtils.fromTrueGuard(Bdd.newVar()), {pcScope.PathConstraintVar})");
                     break;
                 default:
                     context.Write(output, $"/* Skipping expr '{expr.GetType().Name}' */");
@@ -1071,7 +1076,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
-            context.WriteLine(output, "/* TODO: Import appropriate symbols from runtime library */");
+            context.WriteLine(output, "import symbolicp.*;");
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.MainClassName} {{");
         }

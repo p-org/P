@@ -1,5 +1,5 @@
 /* 
-This file implements the model machine for a asynchronous timer
+This file implements the model for an asynchronous timer
 */
 
 machine Timer 
@@ -21,6 +21,7 @@ sends eTimeOut, eCancelTimerFailed, eCancelTimerSuccess;
 
 	state TimerStarted {
 		entry (payload: int) {
+			//non-deterministically choose to send a timeout or not
 			if ($) {
 				send target, eTimeOut;
 				goto WaitForStartTimer;
@@ -28,14 +29,21 @@ sends eTimeOut, eCancelTimerFailed, eCancelTimerSuccess;
 		}
 		on eCancelTimer goto WaitForStartTimer with {
 			if ($) {
+				//the timeout can happen concurrently when the user calls cancel-timer
 				send target, eCancelTimerFailed;
-				//send target, eTimeOut;
+				send target, eTimeOut;
 			} else {
 				send target, eCancelTimerSuccess;
 			}		
 		}
 	}
 }
+
+
+
+/* 
+helper functions to interact with the timer machine 
+*/
 
 fun CreateTimer(client: machine) : machine
 {
@@ -53,9 +61,9 @@ fun CancelTimer(timer: machine)
 	receive {
 		case eCancelTimerSuccess: { print "Timer Cancelled Successful"; }
 		case eCancelTimerFailed: {
-			/*receive {
+			receive {
 				case eTimeOut: { print "Timer Cancelled Successful"; }
-			}*/
+			}
 		}
 	}
 }

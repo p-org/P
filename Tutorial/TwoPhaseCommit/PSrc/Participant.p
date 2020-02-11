@@ -1,12 +1,11 @@
 machine Participant {
-	var coordinator: machine;
     var kvStore: map[int,int];
 	var pendingWrTrans: tPrepareForTrans;
 	var lastTransId: int;
 
     start state Init {
-	    entry (payload : machine){
-		  	coordinator = payload; lastTransId = 0;
+	    entry {
+			lastTransId = 0;
 			goto WaitForRequests;
 		}
 	}
@@ -18,11 +17,11 @@ machine Participant {
 				lastTransId = transId;
 			}
 		}
+		
 		on eGlobalCommit do (transId:int) {
 			assert (pendingWrTrans.transId == transId);
 			if (pendingWrTrans.transId == transId) {
 				kvStore[pendingWrTrans.key] = pendingWrTrans.val;
-				announce eMonitor_LocalCommit, (participant = this, transId = transId);
 				lastTransId = transId;
 			}
 		}
@@ -31,9 +30,21 @@ machine Participant {
 			pendingWrTrans = prepareReq;
 			assert (pendingWrTrans.transId > lastTransId);
 			if ($) {
-				send coordinator, ePrepareSuccess, pendingWrTrans.transId;
+				announce eMonitor_LocalCommit, (participant = this, transId = pendingWrTrans.transId);
+				send prepareReq.coordinator, ePrepareSuccess, pendingWrTrans.transId;
 			} else {
-				send coordinator, ePrepareFailed, pendingWrTrans.transId;
+				send prepareReq.coordinator, ePrepareFailed, pendingWrTrans.transId;
+			}
+		}
+
+		on eReadTransaction do (payload: tReadTransaction) {
+			if(payload.key in kvStore)
+			{
+				send payload.client, eReadTransSuccess, kvStore[payload.key];
+			}
+			else
+			{
+				send payload.client, eReadTransFailed;
 			}
 		}
 	}

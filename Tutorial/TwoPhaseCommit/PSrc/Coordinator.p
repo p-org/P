@@ -6,9 +6,6 @@ guarantees atomicity accross participants for write transactions
 */
 
 machine Coordinator
-//this is list is not complete
-//receives eWriteTransaction, eReadTransaction, ePrepareSuccess, ePrepareFailed, eTimeOut;
-//sends eGlobalAbort, eGlobalCommit, ePrepare, eWriteTransFailed, eWriteTransSuccess, eStartTimer;
 {
 	var participants: seq[machine];
 	var pendingWrTrans: tWriteTransaction;
@@ -16,33 +13,24 @@ machine Coordinator
 	var timer: machine;
 
 	start state Init {
-		entry (numParticipants : int){
+		entry (payload: seq[machine]){
 			var i : int; 
 			//initialize variables
+			participants = payload;
 			i = 0; currTransId = 0;
 			timer = CreateTimer(this);
-			assert (numParticipants > 0);
-			//create all the participants
-			announce eMonitor_AtomicityInitialize, numParticipants;
-			while (i < numParticipants) {
-				participants += (i, new Participant(this));
-				i = i + 1;
-			}
+
+			announce eMonitor_AtomicityInitialize, sizeof(payload);
 			//wait for requests
 			goto WaitForTransactions;
 		}
 	}
 
-
-
 	state WaitForTransactions {
-		// when in this state it is fine to drop these messages
-		ignore ePrepareSuccess, ePrepareFailed, eTimeOut;
-
 		on eWriteTransaction do (wTrans : tWriteTransaction) {
 			pendingWrTrans = wTrans;
 			currTransId = currTransId + 1;
-			SendToAllParticipants(ePrepare, (transId = currTransId, key = pendingWrTrans.key, val = pendingWrTrans.val));
+			SendToAllParticipants(ePrepare, (coordinator = this, transId = currTransId, key = pendingWrTrans.key, val = pendingWrTrans.val));
 
 			//start timer while waiting for responses from all participants
 			StartTimer(timer, 100);
@@ -51,21 +39,25 @@ machine Coordinator
 		}
 
 		on eReadTransaction do (rTrans : tReadTransaction) {
-			// todo: randomly choose a participant and read the value
+			// non-deterministically pick a participant to read from.
+			if($)
+			{
+				send participants[0], eReadTransaction, rTrans;
+			}
+			else
+			{
+				send participants[sizeof(participants) - 1], eReadTransaction, rTrans;
+			}
 		}
 
 		on local_event push WaitForPrepareResponses;
-	}
 
-	
-
-	fun DoGlobalAbort() {
-		// ask all participants to abort and fail the transaction
-		SendToAllParticipants(eGlobalAbort, currTransId);
-		send pendingWrTrans.client, eWriteTransFailed;
+		// when in this state it is fine to drop these messages
+		ignore ePrepareSuccess, ePrepareFailed;
 	}
 
 	var countPrepareResponses: int;
+
 	state WaitForPrepareResponses {
 		// we are going to process transactions sequentially
 		defer eWriteTransaction;
@@ -85,7 +77,7 @@ machine Coordinator
 					SendToAllParticipants(eGlobalCommit, currTransId);
 					send pendingWrTrans.client, eWriteTransSuccess;
 					CancelTimer(timer);
-					//it is not safe to pop back to the parent state
+					//it is now safe to pop back to the parent state
 					pop;
 				}
 			}
@@ -107,6 +99,12 @@ machine Coordinator
 		exit {
 			print "Going back to WaitForTransactions";
 		}
+	}
+
+	fun DoGlobalAbort() {
+		// ask all participants to abort and fail the transaction
+		SendToAllParticipants(eGlobalAbort, currTransId);
+		send pendingWrTrans.client, eWriteTransFailed;
 	}
 
 	//helper function to send messages to all replicas

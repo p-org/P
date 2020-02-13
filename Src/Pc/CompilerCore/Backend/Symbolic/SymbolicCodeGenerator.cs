@@ -9,6 +9,7 @@ using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
+using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Symbolic
@@ -46,10 +47,43 @@ namespace Plang.Compiler.Backend.Symbolic
                     
                     WriteFunction(context, output, function);
                     break;
+                case Machine machine:
+                    if (machine.IsSpec)
+                        context.WriteLine(output, $"// Skipping monitor {machine.Name}");
+                    else
+                        WriteMachine(context, output, machine);
+                    break;
                 default:
                     context.WriteLine(output, $"// Skipping {decl.GetType().Name} '{decl.Name}'\n");
                     break;
             }
+        }
+
+        private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
+        {
+            // TODO: Properly generate initialization logic for machine variables
+            // Initialization needs to occur under a path constraint.
+
+            var declName = context.GetNameForDecl(machine);
+            context.WriteLine(output, $"private static class {declName} {{");
+
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"private {GetSymbolicType(field.Type)} {CompilationContext.GetVar(field.Name)};");
+
+            context.WriteLine(output);
+
+            foreach (var method in machine.Methods)
+                WriteFunction(context, output, method);
+
+            foreach (var state in machine.States)
+                WriteState(context, output, state);
+
+            context.WriteLine(output, "}");
+        }
+
+        private void WriteState(CompilationContext context, StringWriter output, State state)
+        {
+            context.WriteLine(output, $"// Skipping state {state.Name}");
         }
 
         internal struct ControlFlowContext
@@ -83,18 +117,19 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)
         {
-            if (function.Owner != null)
-                throw new NotImplementedException("Non-static functions are not yet supported");
+            var isStatic = function.Owner == null;
 
             if (function.CanReceive == true)
                 throw new NotImplementedException("Async functions are not supported");
+
+            var staticKeyword = isStatic ? "static " : "";
 
             var rootPCScope = context.FreshPathConstraintScope();
 
             var returnType = GetSymbolicType(function.Signature.ReturnType);
             var functionName = context.GetNameForDecl(function);
 
-            context.WriteLine(output, $"static {returnType} ");
+            context.WriteLine(output, $"{staticKeyword}{returnType} ");
             context.Write(output, functionName);
 
             context.WriteLine(output, $"(");
@@ -503,7 +538,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 throw new NotImplementedException("Calls to async methods not yet supported");
             }
 
-            context.Write(output, $"{context.GetNameForDecl(function)}({pcScope.PathConstraintVar}");
+            context.Write(output, $"{context.MainClassName}.{context.GetNameForDecl(function)}({pcScope.PathConstraintVar}");
             foreach (var param in args)
             {
                 context.Write(output, ", ");

@@ -61,14 +61,23 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
         {
-            // TODO: Properly generate initialization logic for machine variables
-            // Initialization needs to occur under a path constraint.
-
             var declName = context.GetNameForDecl(machine);
             context.WriteLine(output, $"private static class {declName} {{");
 
             foreach (var field in machine.Fields)
                 context.WriteLine(output, $"private {GetSymbolicType(field.Type)} {CompilationContext.GetVar(field.Name)};");
+
+            context.WriteLine(output);
+
+            // In the future, we will return the side effects of initialization, so we can't use a constructor for initialization.
+            // TODO: Take an event payload as input.
+            var initPcScope = context.FreshPathConstraintScope();
+            context.WriteLine(output, $"void initialize(Bdd {initPcScope.PathConstraintVar}) {{");
+            foreach (var field in machine.Fields)
+            {
+                context.WriteLine(output, $"this.{CompilationContext.GetVar(field.Name)} = {GetDefaultValue(context, initPcScope, field.Type)};");
+            }
+            context.WriteLine(output, "}");
 
             context.WriteLine(output);
 

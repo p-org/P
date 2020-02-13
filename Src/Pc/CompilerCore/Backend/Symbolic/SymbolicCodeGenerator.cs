@@ -70,6 +70,8 @@ namespace Plang.Compiler.Backend.Symbolic
             foreach (var field in machine.Fields)
                 context.WriteLine(output, $"private {GetSymbolicType(field.Type)} {CompilationContext.GetVar(field.Name)};");
 
+            context.WriteLine(output);
+
             foreach (var method in machine.Methods)
                 WriteFunction(context, output, method);
 
@@ -126,8 +128,6 @@ namespace Plang.Compiler.Backend.Symbolic
 
             var returnType = GetSymbolicType(function.Signature.ReturnType);
             var functionName = context.GetNameForDecl(function);
-
-            // TODO: Properly generate identifiers for anonymous functions arising from event handlers
 
             context.WriteLine(output, $"{staticKeyword}{returnType} ");
             context.Write(output, functionName);

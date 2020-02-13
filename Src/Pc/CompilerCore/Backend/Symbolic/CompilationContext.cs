@@ -18,6 +18,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         internal readonly List<ValueSummaryOpsDef> PendingValueSummaryOpsDefs;
         private readonly Dictionary<ValueSummaryOpsDef, ValueSummaryOps> CachedValueSummaryOpsDefs;
+        internal Dictionary<Function, int> anonFuncIds;
 
         internal CompilationContext(ICompilationJob job)
             : base(job)
@@ -30,9 +31,9 @@ namespace Plang.Compiler.Backend.Symbolic
 
             MainClassName = ProjectName;
 
-
             PendingValueSummaryOpsDefs = new List<ValueSummaryOpsDef>();
             CachedValueSummaryOpsDefs = new Dictionary<ValueSummaryOpsDef, ValueSummaryOps>();
+            anonFuncIds = new Dictionary<Function, int>();
         }
 
         internal string MainClassName { get; }
@@ -45,7 +46,19 @@ namespace Plang.Compiler.Backend.Symbolic
         {
             switch (decl) {
                 case Function func:
-                    return $"func_{func.Name}";
+                    if (string.IsNullOrEmpty(func.Name))
+                    {
+                        if (!anonFuncIds.ContainsKey(func))
+                        {
+                            int newId = anonFuncIds.Count;
+                            anonFuncIds.Add(func, newId);
+                        }
+                        return $"anonfunc_{anonFuncIds[func]}";
+                    }
+                    else
+                    {
+                        return $"func_{func.Name}";
+                    }
                 case Machine machine:
                     return $"machine_{machine.Name}";
                 default:

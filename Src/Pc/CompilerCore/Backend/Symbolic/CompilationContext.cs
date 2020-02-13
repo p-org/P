@@ -43,8 +43,14 @@ namespace Plang.Compiler.Backend.Symbolic
 
         internal string GetNameForDecl(IPDecl decl)
         {
-            // TODO: We will probably need to add more namespacing logic as we support more declaration types
-            return $"decl_{decl.Name}";
+            switch (decl) {
+                case Function func:
+                    return $"func_{func.Name}";
+                case Machine machine:
+                    return $"machine_{machine.Name}";
+                default:
+                    throw new NotImplementedException($"decl type {decl.GetType().Name} not supported");
+            }
         }
 
         internal static string GetVar(string rawName)

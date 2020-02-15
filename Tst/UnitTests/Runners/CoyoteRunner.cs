@@ -29,6 +29,28 @@ namespace UnitTests.Runners
             this.nativeSources = nativeSources;
         }
 
+        private void FileCopy(string src, string target, bool overwrite)
+        {
+            // during parallel testing we might get "The process cannot access the file because it is being used by another process."
+            int retries = 5;
+            while (retries-- > 0)
+            {
+                try
+                {
+                    File.Copy(src, target, overwrite);
+                    return;
+                } 
+                catch (System.IO.IOException)
+                {
+                    if (retries == 1)
+                    {
+                        throw;
+                    }
+                    System.Threading.Thread.Sleep(1000);
+                }
+            }
+        }
+
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
             FileInfo[] compiledFiles = DoCompile(scratchDirectory).ToArray();
@@ -36,11 +58,11 @@ namespace UnitTests.Runners
             CreateProjectFile(scratchDirectory);
 
             string coyoteExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "Binaries", "CoyoteRuntime.dll");
-            File.Copy(coyoteExtensionsPath, Path.Combine(scratchDirectory.FullName, "CoyoteRuntime.dll"), true);
+            FileCopy(coyoteExtensionsPath, Path.Combine(scratchDirectory.FullName, "CoyoteRuntime.dll"), true);
 
             foreach (FileInfo nativeFile in nativeSources)
             {
-                File.Copy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
+                FileCopy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
             }
 
             string[] args = new[] { "build", "Test.csproj" };

@@ -28,7 +28,7 @@ namespace Plang.PrtSharp
             base.Assert(predicate, s, args);
         }
 
-        protected Transition InitializeParametersFunction(Event e)
+        protected void InitializeParametersFunction(Event e)
         {
             if (!(e is InitializeParametersEvent @event))
             {
@@ -38,7 +38,7 @@ namespace Plang.PrtSharp
             InitializeParameters initParam = @event.Payload as InitializeParameters;
             interfaceName = initParam.InterfaceName;
             self = new PMachineValue(Id, receives.ToList());
-            return TryRaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
+            TryRaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
         }
 
         protected virtual Event GetConstructorEvent(IPrtValue value)
@@ -85,12 +85,12 @@ namespace Plang.PrtSharp
             base.SendEvent(target.Id, ev);
         }
 
-        public Transition TryRaiseEvent(Event ev, object payload = null)
+        public void TryRaiseEvent(Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot raise a null event");
             System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             ev = (Event)oneArgConstructor.Invoke(new[] { payload });
-            return base.RaiseEvent(ev);
+            base.RaiseEvent(ev);
         }
 
         public Task<Event> TryReceiveEvent(params Type[] events)
@@ -98,15 +98,15 @@ namespace Plang.PrtSharp
             return base.ReceiveEventAsync(events);
         }
 
-        public Transition TryGotoState<T>(IPrtValue payload = null) where T : State
+        public void TryGotoState<T>(IPrtValue payload = null) where T : State
         {
             gotoPayload = payload;
-            return base.GotoState<T>();
+            base.RaiseGotoStateEvent<T>();
         }
 
-        public Transition TryPopState()
+        public void TryPopState()
         {
-            return base.PopState();
+            base.RaisePopStateEvent();
         }
 
         public int TryRandomInt(int maxValue)

@@ -564,11 +564,6 @@ namespace Plang.Compiler.Backend.Coyote
             string awaitMethod = isAsync ? "await " : "";
             string returnType = "Task";
 
-            if (function.CanChangeState == true || function.CanRaiseEvent == true)
-            {
-                returnType = "Task<Transition>";
-            }
-
             string functionName = context.Names.GetNameForDecl(function);
             string functionParameters = "Event currentMachine_dequeuedEvent";
 
@@ -583,22 +578,8 @@ namespace Plang.Compiler.Backend.Coyote
                 context.WriteLine(output, $"{context.Names.GetNameForDecl(function.Owner)} currentMachine = this;");
             }
 
-            // add the declaration of p_calleeTransition
-            if (function.CanChangeState == true || function.CanRaiseEvent == true)
-            {
-                context.WriteLine(output, "Transition p_calleeTransition = default;");
-            }
-
-            if (function.CanChangeState == true || function.CanRaiseEvent == true)
-            {
-                context.Write(output, "p_calleeTransition = ");
-            }
             var parameter = function.Signature.Parameters.Any()? $"({GetCSharpType(function.Signature.ParameterTypes.First())})((PEvent)currentMachine_dequeuedEvent).Payload":"";
             context.WriteLine(output, $"{awaitMethod}{functionName}({parameter});");
-            if (function.CanChangeState == true || function.CanRaiseEvent == true)
-            {
-                context.WriteLine(output, "return p_calleeTransition;");
-            }
             context.WriteLine(output, "}");
         }
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)
@@ -626,11 +607,7 @@ namespace Plang.Compiler.Backend.Coyote
             {
                 if (isAsync)
                 {
-                    returnType = returnType == "void" ? "Task<Transition>" : $"Task<{returnType}>";
-                }
-                else if (returnType == "void")
-                {
-                    returnType = "Transition";
+                    returnType = (returnType == "void") ? "Task" : $"Task<{returnType}>";
                 }
             }
             else if (isAsync)
@@ -673,12 +650,6 @@ namespace Plang.Compiler.Backend.Coyote
                 context.WriteLine(output, $"{context.Names.GetNameForDecl(function.Owner)} currentMachine = this;");
             }
 
-            // add the declaration of p_calleeTransition
-            if (function.CanChangeState == true || function.CanRaiseEvent == true)
-            {
-                context.WriteLine(output, "Transition p_calleeTransition = default;");
-            }
-
             if (function.IsAnon)
             {
                 if (function.Signature.Parameters.Any())
@@ -700,13 +671,6 @@ namespace Plang.Compiler.Backend.Coyote
             foreach (IPStmt bodyStatement in function.Body.Statements)
             {
                 WriteStmt(context: context, output: output, function: function, stmt: bodyStatement);
-            }
-
-            // if its a function of a machine or monitor that returns a transition
-            // then always return the default transition in the end
-            if (function.CanChangeState == true || function.CanRaiseEvent == true)
-            {
-                context.WriteLine(output, "return p_calleeTransition;");
             }
 
             context.WriteLine(output, "}");
@@ -820,11 +784,6 @@ namespace Plang.Compiler.Backend.Coyote
                     break;
 
                 case FunCallStmt funCallStmt:
-                    if (funCallStmt.Function.CanChangeState == true || funCallStmt.Function.CanRaiseEvent == true)
-                    {
-                        context.Write(output, "p_calleeTransition = ");
-                    }
-
                     bool isStatic = funCallStmt.Function.Owner == null;
                     string awaitMethod = funCallStmt.Function.CanReceive == true ? "await " : "";
                     string globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
@@ -845,24 +804,18 @@ namespace Plang.Compiler.Backend.Coyote
                     }
 
                     context.WriteLine(output, ");");
-                    if (funCallStmt.Function.CanChangeState == true || funCallStmt.Function.CanRaiseEvent == true)
-                    {
-                        context.WriteLine(output, "if (p_calleeTransition.TypeValue != Transition.Type.Default)");
-                        context.WriteLine(output, "{");
-                        context.WriteLine(output, "return p_calleeTransition;");
-                        context.WriteLine(output, "}");
-                    }
                     break;
 
                 case GotoStmt gotoStmt:
                     //last statement
-                    context.Write(output, $"return currentMachine.TryGotoState<{gotoStmt.State.QualifiedName}>(");
+                    context.Write(output, $"currentMachine.TryGotoState<{gotoStmt.State.QualifiedName}>(");
                     if (gotoStmt.Payload != null)
                     {
                         WriteExpr(context, output, gotoStmt.Payload);
                     }
 
                     context.WriteLine(output, ");");
+                    context.WriteLine(output, "return;");
                     break;
 
                 case IfStmt ifStmt:
@@ -927,7 +880,8 @@ namespace Plang.Compiler.Backend.Coyote
 
                 case PopStmt _:
                     //last statement
-                    context.WriteLine(output, "return currentMachine.TryPopState();");
+                    context.WriteLine(output, "currentMachine.TryPopState();");
+                    context.WriteLine(output, "return;");
                     break;
 
                 case PrintStmt printStmt:
@@ -943,7 +897,7 @@ namespace Plang.Compiler.Backend.Coyote
 
                 case RaiseStmt raiseStmt:
                     //last statement
-                    context.Write(output, "return currentMachine.TryRaiseEvent((Event)");
+                    context.Write(output, "currentMachine.TryRaiseEvent((Event)");
                     WriteExpr(context, output, raiseStmt.PEvent);
                     if (raiseStmt.Payload.Any())
                     {
@@ -952,6 +906,7 @@ namespace Plang.Compiler.Backend.Coyote
                     }
 
                     context.WriteLine(output, ");");
+                    context.WriteLine(output, "return;");
                     break;
 
                 case ReceiveStmt receiveStmt:

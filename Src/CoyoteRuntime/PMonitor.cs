@@ -12,18 +12,18 @@ namespace Plang.PrtSharp
 
         public object gotoPayload;
 
-        public Transition TryRaiseEvent(Event ev, object payload = null)
+        public void TryRaiseEvent(Event ev, object payload = null)
         {
             Assert(!(ev is DefaultEvent), "Monitor cannot raise a null event");
             System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             Event @event = (Event)oneArgConstructor.Invoke(new[] { payload });
-            return base.RaiseEvent(@event);
+            base.RaiseEvent(@event);
         }
 
-        public Transition TryGotoState<T>(object payload = null) where T : State
+        public void TryGotoState<T>(object payload = null) where T : State
         {
             gotoPayload = payload;
-            return base.GotoState<T>();
+            base.RaiseGotoStateEvent<T>();
         }
 
         public void TryAssert(bool predicate)

@@ -29,12 +29,27 @@ namespace Plang.Compiler.Backend.Symbolic
 
             WriteSourcePrologue(context, source.Stream);
 
+            WriteEventDefs(context, source.Stream, globalScope.Events);
+
+            context.WriteLine(source.Stream);
+
             foreach (var decl in globalScope.AllDecls)
                 WriteDecl(context, source.Stream, decl);
 
             WriteSourceEpilogue(context, source.Stream);
 
             return source;
+        }
+
+        private void WriteEventDefs(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
+        {
+            context.Write(output, "enum Event { ");
+            context.WriteCommaSeparated(output, events, (pEvent) =>
+            {
+                context.Write(output, context.GetNameForDecl(pEvent));
+            });
+            context.WriteLine(output, " }");
+            context.WriteLine(output, "PrimVS.Ops<Event> eventOps = new PrimVS.Ops<Event>();");
         }
 
         private void WriteDecl(CompilationContext context, StringWriter output, IPDecl decl)
@@ -64,6 +79,18 @@ namespace Plang.Compiler.Backend.Symbolic
             var declName = context.GetNameForDecl(machine);
             context.WriteLine(output, $"private static class {declName} {{");
 
+            context.Write(output, "private enum State { ");
+            context.WriteCommaSeparated(output, machine.States, (state) =>
+            {
+                context.Write(output, context.GetNameForDecl(state));
+            });
+            context.WriteLine(output, " }");
+            context.WriteLine(output, "private static final PrimVS.Ops<State> stateOps = new PrimVS.Ops<State>();");
+
+            context.WriteLine(output);
+
+            context.WriteLine(output, $"private PrimVS<State> state;");
+
             foreach (var field in machine.Fields)
                 context.WriteLine(output, $"private {GetSymbolicType(field.Type)} {CompilationContext.GetVar(field.Name)};");
 
@@ -77,22 +104,72 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 context.WriteLine(output, $"this.{CompilationContext.GetVar(field.Name)} = {GetDefaultValue(context, initPcScope, field.Type)};");
             }
+            context.WriteLine(output, $"this.state = stateOps.guard(new PrimVS(State.{context.GetNameForDecl(machine.StartState)}), {initPcScope.PathConstraintVar});");
+            // TODO: Call entry function for start state here
             context.WriteLine(output, "}");
+
+            context.WriteLine(output);
+
+            WriteEventDispatcher(context, output, machine);
 
             context.WriteLine(output);
 
             foreach (var method in machine.Methods)
                 WriteFunction(context, output, method);
 
-            foreach (var state in machine.States)
-                WriteState(context, output, state);
-
             context.WriteLine(output, "}");
         }
 
-        private void WriteState(CompilationContext context, StringWriter output, State state)
+        private void WriteEventDispatcher(CompilationContext context, StringWriter output, Machine machine)
         {
-            context.WriteLine(output, $"// Skipping state {state.Name}");
+            PathConstraintScope rootPcScope = context.FreshPathConstraintScope();
+            // TODO: Support payload!
+            context.WriteLine(output, $"InternalOutcome<Event, State> processEvent(Bdd {rootPcScope.PathConstraintVar}, PrimVS<Event> event) {{");
+            context.WriteLine(output, $"InternalOutcome<Event, State> outcome = InternalOutcome<Event, State>.empty();");
+            foreach (var state in machine.States)
+            {
+                var statePcScope = context.FreshPathConstraintScope();
+                var stateName = context.GetNameForDecl(state);
+                context.WriteLine(output, $"Bdd {statePcScope.PathConstraintVar} = this.state.guardedValues.get(State.{stateName});");
+                context.WriteLine(output, $"if ({statePcScope.PathConstraintVar} != null && !{statePcScope.PathConstraintVar}.isConstFalse()) {{");
+                context.WriteLine(output, $"Bdd hasHandler = Bdd.constFalse();");
+                context.WriteLine(output, $"PrimVS<Event> guardedEvent = eventOps.guard(event, {statePcScope.PathConstraintVar});");
+                foreach (var handler in state.AllEventHandlers)
+                {
+                    var handlerPcScope = context.FreshPathConstraintScope();
+                    var eventName = context.GetNameForDecl(handler.Key);
+                    context.WriteLine(output, $"Bdd {handlerPcScope.PathConstraintVar} = guardedEvent.guardedValues.get(Event.{eventName});");
+                    context.WriteLine(output, $"if ({handlerPcScope.PathConstraintVar} != null && !{handlerPcScope.PathConstraintVar}.isConstFalse()) {{");
+                    context.WriteLine(output, $"hasHandler = hasHandler.or({handlerPcScope.PathConstraintVar});");
+                    switch (handler.Value)
+                    {
+                        case EventDefer defer:
+                            context.WriteLine(output, "/* TODO: Defer event */");
+                            break;
+                        case EventDoAction action:
+                            context.WriteLine(output, "/* TODO: Do action */");
+                            break;
+                        case EventGotoState gotoState:
+                            context.WriteLine(output, "/* TODO: Emit call to transition function */");
+                            context.WriteLine(output, $"outcome.addGoto({handlerPcScope.PathConstraintVar}, State.{context.GetNameForDecl(gotoState.Target)});");
+                            break;
+                        case EventIgnore ignore:
+                            context.WriteLine(output, "// Ignore");
+                            break;
+                        case EventPushState pushState:
+                            context.WriteLine(output, "/* TODO: Push state */");
+                            break;
+                        default:
+                            throw new NotImplementedException($"Unrecognized handler type {handler.Value.GetType().Name}");
+                    }
+                    context.WriteLine(output, "}");
+                }
+                context.WriteLine(output, $"if (!{statePcScope.PathConstraintVar}.and(hasHandler.not()).isConstFalse()) {{");
+                context.WriteLine(output, $"throw new BugFoundException({statePcScope.PathConstraintVar});");
+                context.WriteLine(output, "}");
+                context.WriteLine(output, "}");
+            }
+            context.WriteLine(output, "}");
         }
 
         internal struct ControlFlowContext

@@ -68,6 +68,8 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        internal static string NullEventName => "event_null";
+
         internal static string GetVar(string rawName)
         {
             return $"var_{rawName}";

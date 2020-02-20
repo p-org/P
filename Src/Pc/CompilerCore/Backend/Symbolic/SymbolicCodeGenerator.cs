@@ -83,6 +83,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     else
                         WriteMachine(context, output, machine);
                     break;
+                case PEvent _:
+                    // Handled in WriteEventDefs
+                    break;
                 default:
                     context.WriteLine(output, $"// Skipping {decl.GetType().Name} '{decl.Name}'\n");
                     break;
@@ -135,17 +138,15 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "}");
         }
 
-        private bool FuncHasMachineOutcome(Function func)
-        {
-            return (func.CanChangeState ?? false) || (func.CanRaiseEvent ?? false);
-        }
-
         private void WriteEventDispatcher(CompilationContext context, StringWriter output, Machine machine)
         {
             PathConstraintScope rootPcScope = context.FreshPathConstraintScope();
-            // TODO: Support payload!
-            context.WriteLine(output, $"MachineOutcome<EventVS<EventTag>, State> processEvent(Bdd {rootPcScope.PathConstraintVar}, EventVS<EventTag> event) {{");
-            context.WriteLine(output, $"MachineOutcome<EventVS<EventTag>, State> outcome = MachineOutcome<EventVS<EventTag>, State>.empty();");
+            context.WriteLine(output, $"void processEvent(");
+            context.WriteLine(output, $"    Bdd {rootPcScope.PathConstraintVar},");
+            context.WriteLine(output, "    GotoOutcome<State> gotoOutcome,");
+            context.WriteLine(output, "    RaiseOutcome<EventVS<EventTag>> raiseOutcome, ");
+            context.WriteLine(output, "    EventVS<EventTag> event");
+            context.WriteLine(output, ") {");
             context.WriteLine(output);
             foreach (var state in machine.States)
             {
@@ -175,7 +176,8 @@ namespace Plang.Compiler.Backend.Symbolic
                             if (gotoState.TransitionFunction != null)
                             {
                                 var transitionFunc = gotoState.TransitionFunction;
-                                Debug.Assert(!FuncHasMachineOutcome(transitionFunc));
+                                Debug.Assert(!(transitionFunc.CanChangeState ?? false));
+                                Debug.Assert(!(transitionFunc.CanRaiseEvent ?? false));
                                 if (transitionFunc.Signature.Parameters.Count() == 1)
                                 {
                                     Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
@@ -187,7 +189,7 @@ namespace Plang.Compiler.Backend.Symbolic
                                     context.WriteLine(output, $"this.{context.GetNameForDecl(transitionFunc)}({handlerPcScope.PathConstraintVar});");
                                 }
                             }
-                            context.WriteLine(output, $"outcome.addGoto({handlerPcScope.PathConstraintVar}, State.{context.GetNameForDecl(gotoState.Target)});");
+                            context.WriteLine(output, $"gotoOutcome.addGuardedGoto({handlerPcScope.PathConstraintVar}, State.{context.GetNameForDecl(gotoState.Target)});");
                             break;
                         case EventIgnore ignore:
                             context.WriteLine(output, "// Ignore");
@@ -207,7 +209,6 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, "}");
                 context.WriteLine(output);
             }
-            context.WriteLine(output, "return outcome;");
             context.WriteLine(output, "}");
         }
 
@@ -1084,6 +1085,8 @@ namespace Plang.Compiler.Backend.Symbolic
                         throw new NotImplementedException("Variables of type 'null' not yet supported");
                     else
                         return "void";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
+                    return "PrimVS<EventTag>";
                 case SequenceType sequenceType:
                     return $"ListVS<{GetSymbolicType(sequenceType.ElementType, true)}>";
                 case MapType mapType:
@@ -1111,6 +1114,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "PrimVS.Ops<Integer>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return "PrimVS.Ops<Float>";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
+                    return "PrimVS.Ops<EventTag>";
                 case SequenceType sequenceType:
                     return $"ListVS.Ops<{GetSymbolicType(sequenceType.ElementType, true)}>";
                 case MapType mapType:
@@ -1137,7 +1142,8 @@ namespace Plang.Compiler.Backend.Symbolic
                 case PrimitiveType primitiveType when
                     primitiveType.IsSameTypeAs(PrimitiveType.Bool) ||
                     primitiveType.IsSameTypeAs(PrimitiveType.Int) ||
-                    primitiveType.IsSameTypeAs(PrimitiveType.Float):
+                    primitiveType.IsSameTypeAs(PrimitiveType.Float) ||
+                    primitiveType.IsSameTypeAs(PrimitiveType.Event):
 
                     defBody = $"new {opsType}()";
                     break;
@@ -1199,6 +1205,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     unguarded = $"new {GetSymbolicType(type)}(0.0f)";
+                    break;
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
+                    unguarded = $"new {GetSymbolicType(type)}(EventTag.{CompilationContext.NullEventName})";
                     break;
                 case SequenceType _:
                     unguarded = $"new {GetSymbolicType(type)}()";

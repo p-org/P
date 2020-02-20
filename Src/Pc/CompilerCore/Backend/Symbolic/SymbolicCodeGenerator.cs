@@ -241,6 +241,37 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        private bool MayExitWithOutcome(Function func)
+        {
+            return (func.CanChangeState ?? false) || (func.CanRaiseEvent ?? false);
+        }
+
+        private enum FunctionReturnConvention
+        {
+            RETURN_VALUE,
+            RETURN_VOID,
+            RETURN_VALUE_OR_EXIT,
+            // BDD indicates path constraint after the call, which may be more restricted
+            // than the path constraint before the call if the function exited with an
+            // outcome (i.e. a 'raise' or 'goto' statement) along some paths
+            RETURN_BDD
+        }
+
+        private FunctionReturnConvention GetReturnConvention(Function function)
+        {
+            bool mayExit = MayExitWithOutcome(function);
+            bool voidReturn = function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null);
+            if (!voidReturn && !mayExit)
+                return FunctionReturnConvention.RETURN_VALUE;
+            if (voidReturn && !mayExit)
+                return FunctionReturnConvention.RETURN_VOID;
+            if (!voidReturn && mayExit)
+                return FunctionReturnConvention.RETURN_VALUE_OR_EXIT;
+            if (voidReturn && mayExit)
+                return FunctionReturnConvention.RETURN_BDD;
+            throw new InvalidOperationException();
+        }
+
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)
         {
             var isStatic = function.Owner == null;
@@ -252,7 +283,23 @@ namespace Plang.Compiler.Backend.Symbolic
 
             var rootPCScope = context.FreshPathConstraintScope();
 
-            var returnType = GetSymbolicType(function.Signature.ReturnType);
+            string returnType = null;
+            switch (GetReturnConvention(function))
+            {
+                case FunctionReturnConvention.RETURN_VALUE:
+                    returnType = GetSymbolicType(function.Signature.ReturnType);
+                    break;
+                case FunctionReturnConvention.RETURN_VOID:
+                    returnType = "void";
+                    break;
+                case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
+                    returnType = $"MaybeExited<{GetSymbolicType(function.Signature.ReturnType)}>";
+                    break;
+                case FunctionReturnConvention.RETURN_BDD:
+                    returnType = "Bdd";
+                    break;
+            }
+
             var functionName = context.GetNameForDecl(function);
 
             context.WriteLine(output, $"{staticKeyword}{returnType} ");
@@ -260,6 +307,17 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output, $"(");
             context.Write(output, $"    Bdd {rootPCScope.PathConstraintVar}");
+            if (function.CanChangeState ?? false)
+            {
+                Debug.Assert(function.Owner != null);
+                context.WriteLine(output, ",");
+                context.Write(output, "    GotoOutcome<State> gotoOutcome");
+            }
+            if (function.CanRaiseEvent ?? false)
+            {
+                context.WriteLine(output, ",");
+                context.Write(output, "    RaiseOutcome<EventVS<EventTag>> raiseOutcome");
+            }
             foreach (var param in function.Signature.Parameters)
             {
                 context.WriteLine(output, ",");
@@ -283,22 +341,54 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output);
             }
 
-            if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            var returnConvention = GetReturnConvention(function);
+            switch (returnConvention)
             {
-                context.WriteLine(output, $"{GetSymbolicType(function.Signature.ReturnType)} {CompilationContext.ReturnValue} = {GetValueSummaryOps(context, function.Signature.ReturnType).GetName()}.empty();");
-                context.WriteLine(output);
+                case FunctionReturnConvention.RETURN_VALUE:
+                case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
+                    context.WriteLine(output, $"{GetSymbolicType(function.Signature.ReturnType)} {CompilationContext.ReturnValue} = {GetValueSummaryOps(context, function.Signature.ReturnType).GetName()}.empty();");
+                    break;
+                case FunctionReturnConvention.RETURN_VOID:
+                case FunctionReturnConvention.RETURN_BDD:
+                    break;
             }
 
             WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context, rootPCScope), function.Body);
 
-            if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            switch (returnConvention)
             {
-                context.WriteLine(output, $"return {CompilationContext.ReturnValue};");
+                case FunctionReturnConvention.RETURN_VALUE:
+                    context.WriteLine(output, $"return {CompilationContext.ReturnValue};");
+                    break;
+                case FunctionReturnConvention.RETURN_VOID:
+                    break;
+                case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
+                    context.WriteLine(output, $"return new MaybeExited({CompilationContext.ReturnValue}, {rootPCScope.PathConstraintVar});");
+                    break;
+                case FunctionReturnConvention.RETURN_BDD:
+                    context.WriteLine(output, $"return {rootPCScope.PathConstraintVar};");
+                    break;
             }
+        }
+
+        private FunCallExpr TryGetCallInAssignment(IPStmt stmt)
+        {
+            if (stmt is AssignStmt assign)
+            {
+                if (assign.Value is FunCallExpr call)
+                {
+                    return call;
+                }
+            }
+            return null;
         }
 
         private bool CanEarlyReturn(IPStmt stmt)
         {
+            var callExpr = TryGetCallInAssignment(stmt);
+            if (callExpr != null)
+                return MayExitWithOutcome(callExpr.Function);
+
             switch (stmt)
             {
                 case CompoundStmt compoundStmt:
@@ -307,6 +397,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return CanEarlyReturn(ifStmt.ThenBranch) || CanEarlyReturn(ifStmt.ElseBranch);
                 case WhileStmt whileStmt:
                     return CanEarlyReturn(whileStmt.Body);
+                case FunCallStmt callStmt:
+                    return MayExitWithOutcome(callStmt.Function);
 
                 case GotoStmt _:
                 case PopStmt _:
@@ -343,6 +435,10 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private bool CanJumpOut(IPStmt stmt)
         {
+            var callExpr = TryGetCallInAssignment(stmt);
+            if (callExpr != null)
+                return MayExitWithOutcome(callExpr.Function);
+
             switch (stmt)
             {
                 case CompoundStmt compoundStmt:
@@ -353,6 +449,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     // Any breaks or continues inside this loop body will be "caught" by the loop,
                     // so we only want to consider statements which return from the entire function.
                     return CanEarlyReturn(whileStmt.Body);
+                case FunCallStmt callStmt:
+                    return MayExitWithOutcome(callStmt.Function);
 
                 case GotoStmt _:
                 case PopStmt _:
@@ -395,6 +493,12 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteStmt(Function function, CompilationContext context, StringWriter output, ControlFlowContext flowContext, IPStmt stmt)
         {
+            if (TryGetCallInAssignment(stmt) is FunCallExpr callExpr)
+            {
+                WriteFunCallStmt(context, output, flowContext, callExpr.Function, callExpr.Arguments, dest: (stmt as AssignStmt).Location);
+                return;
+            }
+
             switch (stmt)
             {
                 case AssignStmt assignStmt:
@@ -580,8 +684,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case FunCallStmt funCallStmt:
-                    WriteFunCall(context, output, flowContext.pcScope, funCallStmt.Function, funCallStmt.ArgsList);
-                    context.WriteLine(output,";");
+                    WriteFunCallStmt(context, output, flowContext, funCallStmt.Function, funCallStmt.ArgsList);
                     break;
 
                 case InsertStmt insertStmt:
@@ -650,27 +753,96 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
-        private void WriteFunCall(CompilationContext context, StringWriter output, PathConstraintScope pcScope, Function function, IReadOnlyList<IPExpr> args)
+        private void WriteFunCallStmt(CompilationContext context, StringWriter output, ControlFlowContext flowContext, Function function, IReadOnlyList<IPExpr> args, IPExpr dest=null)
         {
-            var isStatic = function.Owner == null;
-            if (!isStatic)
-            {
-                throw new NotImplementedException("Calls to non-static methods not yet supported");
-            }
-
             var isAsync = function.CanReceive == true;
             if (isAsync)
             {
                 throw new NotImplementedException("Calls to async methods not yet supported");
             }
 
-            context.Write(output, $"{context.MainClassName}.{context.GetNameForDecl(function)}({pcScope.PathConstraintVar}");
+            var returnConvention = GetReturnConvention(function);
+            string returnTemp = null;
+            switch (returnConvention)
+            {
+                case FunctionReturnConvention.RETURN_VALUE:
+                    returnTemp = context.FreshTempVar();
+                    context.Write(output, $"{GetSymbolicType(function.Signature.ReturnType)} {returnTemp} = ");
+                    break;
+                case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
+                    returnTemp = context.FreshTempVar();
+                    context.Write(output, $"MaybeExited<{GetSymbolicType(function.Signature.ReturnType)}> {returnTemp} = ");
+                    break;
+                case FunctionReturnConvention.RETURN_BDD:
+                    returnTemp = context.FreshTempVar();
+                    context.Write(output, $"Bdd {returnTemp} = ");
+                    break;
+                case FunctionReturnConvention.RETURN_VOID:
+                    break;
+            }
+
+            context.Write(output, $"{context.GetNameForDecl(function)}({flowContext.pcScope.PathConstraintVar}");
+
+            if (function.CanChangeState ?? false)
+                context.Write(output, ", gotoOutcome");
+
+            if (function.CanRaiseEvent ?? false)
+                context.Write(output, ", raiseOutcome");
+            
             foreach (var param in args)
             {
                 context.Write(output, ", ");
-                WriteExpr(context, output, pcScope, param);
+                WriteExpr(context, output, flowContext.pcScope, param);
             }
-            context.Write(output, ")");
+            context.WriteLine(output, ");");
+
+            switch (returnConvention)
+            {
+                case FunctionReturnConvention.RETURN_VALUE:
+                    if (dest != null)
+                        WriteWithLValueMutationContext(context, output, flowContext.pcScope, dest, false, (lhs) => context.WriteLine(output, $"{lhs} = {returnTemp};"));
+                    break;
+                case FunctionReturnConvention.RETURN_VOID:
+                    Debug.Assert(dest == null);
+                    break;
+                case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
+                    context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = {returnTemp}.getNewPc();");
+
+                    // Conservatively set control flow flags.
+                    // It is always safe to set these flags to true, because they exist only as a performance optimization.
+                    // In the future, we may want to optimize this to be more precise.
+                    // TODO: Should we unify this with other places where we emit code to set the flags?
+                    if (!(flowContext.loopScope is null))
+                    {
+                        context.WriteLine(output, $"{flowContext.loopScope.Value.LoopEarlyReturnFlag} = true;");
+                    }
+                    if (!(flowContext.branchScope is null))
+                    {
+                        context.WriteLine(output, $"{flowContext.branchScope.Value.JumpedOutFlag} = true;");
+                    }
+
+                    if (dest != null)
+                        WriteWithLValueMutationContext(context, output, flowContext.pcScope, dest, false, (lhs) => context.WriteLine(output, $"{lhs} = {returnTemp}.getValue();"));
+                    break;
+                case FunctionReturnConvention.RETURN_BDD:
+                    context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = {returnTemp};");
+
+                    // Conservatively set control flow flags.
+                    // It is always safe to set these flags to true, because they exist only as a performance optimization.
+                    // In the future, we may want to optimize this to be more precise.
+                    // TODO: Should we unify this with other places where we emit code to set the flags?
+                    if (!(flowContext.loopScope is null))
+                    {
+                        context.WriteLine(output, $"{flowContext.loopScope.Value.LoopEarlyReturnFlag} = true;");
+                    }
+                    if (!(flowContext.branchScope is null))
+                    {
+                        context.WriteLine(output, $"{flowContext.branchScope.Value.JumpedOutFlag} = true;");
+                    }
+
+                    Debug.Assert(dest == null);
+                    break;
+            }
         }
 
         private void WriteWithLValueMutationContext(
@@ -980,8 +1152,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         $"{pcScope.PathConstraintVar})");
                     break;
                 case FunCallExpr funCallExpr:
-                    WriteFunCall(context, output, pcScope, funCallExpr.Function, funCallExpr.Arguments);
-                    break;
+                    throw new InvalidOperationException("Compilation of call expressions should be handled as part of assignment statements");
                 case ContainsExpr containsExpr:
                     var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
 

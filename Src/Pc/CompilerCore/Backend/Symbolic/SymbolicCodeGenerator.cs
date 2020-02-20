@@ -43,13 +43,28 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteEventDefs(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
         {
-            context.Write(output, "enum Event { ");
+            context.Write(output, "enum EventTag { ");
             context.WriteCommaSeparated(output, events, (pEvent) =>
             {
                 context.Write(output, context.GetNameForDecl(pEvent));
             });
             context.WriteLine(output, " }");
-            context.WriteLine(output, "PrimVS.Ops<Event> eventOps = new PrimVS.Ops<Event>();");
+
+            context.Write(output, "final static EventVS.Ops<EventTag> eventOps = new EventVS.Ops<EventTag>(");
+            context.WriteCommaSeparated(output, events, (pEvent) =>
+            {
+                context.Write(output, $"EventTag.{context.GetNameForDecl(pEvent)}, ");
+                var payloadType = pEvent.PayloadType;
+                if (payloadType.IsSameTypeAs(PrimitiveType.Null))
+                {
+                    context.Write(output, "null");
+                } else
+                {
+                    var payloadOps = GetValueSummaryOps(context, payloadType);
+                    context.Write(output, payloadOps.GetName());
+                }
+            });
+            context.Write(output, ");");
         }
 
         private void WriteDecl(CompilationContext context, StringWriter output, IPDecl decl)
@@ -124,8 +139,9 @@ namespace Plang.Compiler.Backend.Symbolic
         {
             PathConstraintScope rootPcScope = context.FreshPathConstraintScope();
             // TODO: Support payload!
-            context.WriteLine(output, $"InternalOutcome<Event, State> processEvent(Bdd {rootPcScope.PathConstraintVar}, PrimVS<Event> event) {{");
-            context.WriteLine(output, $"InternalOutcome<Event, State> outcome = InternalOutcome<Event, State>.empty();");
+            context.WriteLine(output, $"InternalOutcome<EventVS<EventTag>, State> processEvent(Bdd {rootPcScope.PathConstraintVar}, EventVS<EventTag> event) {{");
+            context.WriteLine(output, $"InternalOutcome<EventVS<EventTag>, State> outcome = InternalOutcome<EventVS<EventTag>, State>.empty();");
+            context.WriteLine(output);
             foreach (var state in machine.States)
             {
                 var statePcScope = context.FreshPathConstraintScope();
@@ -133,12 +149,13 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, $"Bdd {statePcScope.PathConstraintVar} = this.state.guardedValues.get(State.{stateName});");
                 context.WriteLine(output, $"if ({statePcScope.PathConstraintVar} != null && !{statePcScope.PathConstraintVar}.isConstFalse()) {{");
                 context.WriteLine(output, $"Bdd hasHandler = Bdd.constFalse();");
-                context.WriteLine(output, $"PrimVS<Event> guardedEvent = eventOps.guard(event, {statePcScope.PathConstraintVar});");
+                context.WriteLine(output, $"EventVS<EventTag> guardedEvent = eventOps.guard(event, {statePcScope.PathConstraintVar});");
+                context.WriteLine(output);
                 foreach (var handler in state.AllEventHandlers)
                 {
                     var handlerPcScope = context.FreshPathConstraintScope();
                     var eventName = context.GetNameForDecl(handler.Key);
-                    context.WriteLine(output, $"Bdd {handlerPcScope.PathConstraintVar} = guardedEvent.guardedValues.get(Event.{eventName});");
+                    context.WriteLine(output, $"Bdd {handlerPcScope.PathConstraintVar} = guardedEvent.getCondForTag(EventTag.{eventName});");
                     context.WriteLine(output, $"if ({handlerPcScope.PathConstraintVar} != null && !{handlerPcScope.PathConstraintVar}.isConstFalse()) {{");
                     context.WriteLine(output, $"hasHandler = hasHandler.or({handlerPcScope.PathConstraintVar});");
                     switch (handler.Value)
@@ -164,11 +181,14 @@ namespace Plang.Compiler.Backend.Symbolic
                     }
                     context.WriteLine(output, "}");
                 }
+                context.WriteLine(output);
                 context.WriteLine(output, $"if (!{statePcScope.PathConstraintVar}.and(hasHandler.not()).isConstFalse()) {{");
                 context.WriteLine(output, $"throw new BugFoundException({statePcScope.PathConstraintVar});");
                 context.WriteLine(output, "}");
                 context.WriteLine(output, "}");
+                context.WriteLine(output);
             }
+            context.WriteLine(output, "return outcome;");
             context.WriteLine(output, "}");
         }
 

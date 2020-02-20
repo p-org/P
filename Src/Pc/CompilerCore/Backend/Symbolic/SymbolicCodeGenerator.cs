@@ -167,7 +167,22 @@ namespace Plang.Compiler.Backend.Symbolic
                             context.WriteLine(output, "/* TODO: Do action */");
                             break;
                         case EventGotoState gotoState:
-                            context.WriteLine(output, "/* TODO: Emit call to transition function */");
+                            if (gotoState.TransitionFunction != null)
+                            {
+                                var transitionFunc = gotoState.TransitionFunction;
+                                Debug.Assert(!(transitionFunc.CanChangeState ?? false));
+                                Debug.Assert(!(transitionFunc.CanRaiseEvent ?? false));
+                                if (transitionFunc.Signature.Parameters.Count() == 1)
+                                {
+                                    Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
+                                    context.WriteLine(output, $"this.{context.GetNameForDecl(transitionFunc)}({handlerPcScope.PathConstraintVar}, guardedEvent.getPayload(EventTag.{eventName}));");
+                                }
+                                else
+                                {
+                                    Debug.Assert(transitionFunc.Signature.Parameters.Count() == 0);
+                                    context.WriteLine(output, $"this.{context.GetNameForDecl(transitionFunc)}({handlerPcScope.PathConstraintVar});");
+                                }
+                            }
                             context.WriteLine(output, $"outcome.addGoto({handlerPcScope.PathConstraintVar}, State.{context.GetNameForDecl(gotoState.Target)});");
                             break;
                         case EventIgnore ignore:

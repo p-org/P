@@ -491,6 +491,19 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        private void SetFlagsForPossibleReturn(CompilationContext context, StringWriter output, ControlFlowContext flowContext)
+        {
+            if (!(flowContext.loopScope is null))
+            {
+                context.WriteLine(output, $"{flowContext.loopScope.Value.LoopEarlyReturnFlag} = true;");
+            }
+
+            if (!(flowContext.branchScope is null))
+            {
+                context.WriteLine(output, $"{flowContext.branchScope.Value.JumpedOutFlag} = true;");
+            }
+        }
+
         private void WriteStmt(Function function, CompilationContext context, StringWriter output, ControlFlowContext flowContext, IPStmt stmt)
         {
             if (TryGetCallInAssignment(stmt) is FunCallExpr callExpr)
@@ -556,16 +569,39 @@ namespace Plang.Compiler.Backend.Symbolic
                     }
 
                     context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = Bdd.constFalse();");
+                    SetFlagsForPossibleReturn(context, output, flowContext);
 
-                    if (!(flowContext.loopScope is null))
-                    {
-                        context.WriteLine(output, $"{flowContext.loopScope.Value.LoopEarlyReturnFlag} = true;");
-                    }
+                    break;
 
-                    if (!(flowContext.branchScope is null))
+                case GotoStmt gotoStmt:
+                    if (gotoStmt.Payload != null)
+                        throw new NotImplementedException("Goto statements with payloads not yet supported");
+
+                    context.WriteLine(output, $"gotoOutcome.addGuardedGoto({flowContext.pcScope.PathConstraintVar}, State.{context.GetNameForDecl(gotoStmt.State)});");
+
+                    context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = Bdd.constFalse();");
+                    SetFlagsForPossibleReturn(context, output, flowContext);
+
+                    break;
+
+                case RaiseStmt raiseStmt:
+                    // TODO: Add type checking for the payload!
+                    context.WriteLine(output, "// NOTE (TODO): We currently perform no typechecking on the payload!");
+
+                    context.Write(output, $"raiseOutcome.addGuardedRaise({flowContext.pcScope.PathConstraintVar}, ");
+                    WriteExpr(context, output, flowContext.pcScope, raiseStmt.PEvent);
+                    if (raiseStmt.Payload != null)
                     {
-                        context.WriteLine(output, $"{flowContext.branchScope.Value.JumpedOutFlag} = true;");
+                        // TODO: Determine how multi-payload raise statements are supposed to work
+                        Debug.Assert(raiseStmt.Payload.Count == 1);
+                        context.Write(output, ", ");
+                        WriteExpr(context, output, flowContext.pcScope, raiseStmt.Payload[0]);
                     }
+                    context.WriteLine(output, ");");
+
+
+                    context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = Bdd.constFalse();");
+                    SetFlagsForPossibleReturn(context, output, flowContext);
 
                     break;
 
@@ -811,15 +847,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     // Conservatively set control flow flags.
                     // It is always safe to set these flags to true, because they exist only as a performance optimization.
                     // In the future, we may want to optimize this to be more precise.
-                    // TODO: Should we unify this with other places where we emit code to set the flags?
-                    if (!(flowContext.loopScope is null))
-                    {
-                        context.WriteLine(output, $"{flowContext.loopScope.Value.LoopEarlyReturnFlag} = true;");
-                    }
-                    if (!(flowContext.branchScope is null))
-                    {
-                        context.WriteLine(output, $"{flowContext.branchScope.Value.JumpedOutFlag} = true;");
-                    }
+                    SetFlagsForPossibleReturn(context, output, flowContext);
 
                     if (dest != null)
                         WriteWithLValueMutationContext(context, output, flowContext.pcScope, dest, false, (lhs) => context.WriteLine(output, $"{lhs} = {returnTemp}.getValue();"));
@@ -830,15 +858,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     // Conservatively set control flow flags.
                     // It is always safe to set these flags to true, because they exist only as a performance optimization.
                     // In the future, we may want to optimize this to be more precise.
-                    // TODO: Should we unify this with other places where we emit code to set the flags?
-                    if (!(flowContext.loopScope is null))
-                    {
-                        context.WriteLine(output, $"{flowContext.loopScope.Value.LoopEarlyReturnFlag} = true;");
-                    }
-                    if (!(flowContext.branchScope is null))
-                    {
-                        context.WriteLine(output, $"{flowContext.branchScope.Value.JumpedOutFlag} = true;");
-                    }
+                    SetFlagsForPossibleReturn(context, output, flowContext);
 
                     Debug.Assert(dest == null);
                     break;
@@ -1136,6 +1156,13 @@ namespace Plang.Compiler.Backend.Symbolic
                     {
                         var unguarded = $"new { GetSymbolicType(PrimitiveType.Int) }({enumElemRefExpr.Value.Value} /* enum {enumElemRefExpr.Type.OriginalRepresentation} elem {enumElemRefExpr.Value.Name} */)";
                         var guarded = $"{GetValueSummaryOps(context, PrimitiveType.Int).GetName()}.guard({unguarded}, {pcScope.PathConstraintVar})";
+                        context.Write(output, guarded);
+                        break;
+                    }
+                case EventRefExpr eventRefExpr:
+                    {
+                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Event) }(EventTag.{context.GetNameForDecl(eventRefExpr.Value)})";
+                        var guarded = $"{GetValueSummaryOps(context, PrimitiveType.Event).GetName()}.guard({unguarded}, {pcScope.PathConstraintVar})";
                         context.Write(output, guarded);
                         break;
                     }

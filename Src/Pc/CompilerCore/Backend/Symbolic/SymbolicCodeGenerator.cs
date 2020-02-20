@@ -135,12 +135,17 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "}");
         }
 
+        private bool FuncHasMachineOutcome(Function func)
+        {
+            return (func.CanChangeState ?? false) || (func.CanRaiseEvent ?? false);
+        }
+
         private void WriteEventDispatcher(CompilationContext context, StringWriter output, Machine machine)
         {
             PathConstraintScope rootPcScope = context.FreshPathConstraintScope();
             // TODO: Support payload!
-            context.WriteLine(output, $"InternalOutcome<EventVS<EventTag>, State> processEvent(Bdd {rootPcScope.PathConstraintVar}, EventVS<EventTag> event) {{");
-            context.WriteLine(output, $"InternalOutcome<EventVS<EventTag>, State> outcome = InternalOutcome<EventVS<EventTag>, State>.empty();");
+            context.WriteLine(output, $"MachineOutcome<EventVS<EventTag>, State> processEvent(Bdd {rootPcScope.PathConstraintVar}, EventVS<EventTag> event) {{");
+            context.WriteLine(output, $"MachineOutcome<EventVS<EventTag>, State> outcome = MachineOutcome<EventVS<EventTag>, State>.empty();");
             context.WriteLine(output);
             foreach (var state in machine.States)
             {
@@ -170,8 +175,7 @@ namespace Plang.Compiler.Backend.Symbolic
                             if (gotoState.TransitionFunction != null)
                             {
                                 var transitionFunc = gotoState.TransitionFunction;
-                                Debug.Assert(!(transitionFunc.CanChangeState ?? false));
-                                Debug.Assert(!(transitionFunc.CanRaiseEvent ?? false));
+                                Debug.Assert(!FuncHasMachineOutcome(transitionFunc));
                                 if (transitionFunc.Signature.Parameters.Count() == 1)
                                 {
                                     Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));

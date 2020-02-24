@@ -1,3 +1,4 @@
+using Antlr4.Runtime.Misc;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -242,7 +243,7 @@ namespace Plang.Compiler.TypeChecker
                         new ArgumentException($"Unknown unary op `{context.op.Text}`", nameof(context)));
             }
         }
-
+        
         public override IPExpr VisitBinExpr(PParser.BinExprContext context)
         {
             IPExpr lhs = Visit(context.lhs);
@@ -360,6 +361,30 @@ namespace Plang.Compiler.TypeChecker
                 default:
                     throw handler.InternalError(context,
                         new ArgumentException($"unknown binary operation {op}", nameof(context)));
+            }
+        }
+
+        public override IPExpr VisitChooseExpr(PParser.ChooseExprContext context)
+        {
+            // if choose is without an argument then its a choose boolean
+            if (context.expr() == null)
+            {
+                return new ChooseExpr(context, null, PrimitiveType.Bool);
+            }
+
+            IPExpr subExpr = Visit(context.expr());
+            PLanguageType subExprType = subExpr.Type;
+
+            switch(subExprType.Canonicalize())
+            {
+                case SequenceType seqType:
+                    return new ChooseExpr(context, subExpr, seqType.ElementType);
+                case SetType setType:
+                    return new ChooseExpr(context, subExpr, setType.ElementType);
+                case PrimitiveType primType when primType.IsSameTypeAs(PrimitiveType.Int):
+                    return new ChooseExpr(context, subExpr, PrimitiveType.Int);
+                default:
+                    throw handler.IllegalChooseSubExprType(context, subExprType);
             }
         }
 

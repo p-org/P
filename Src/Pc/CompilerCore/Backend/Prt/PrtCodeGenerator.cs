@@ -129,6 +129,7 @@ namespace Plang.Compiler.Backend.Prt
         {
             string declName = context.Names.GetNameForDecl(decl);
             SourceLocation declLocation = context.LocationResolver.GetLocation(decl);
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (decl)
             {
                 case EnumElem _:
@@ -394,6 +395,7 @@ namespace Plang.Compiler.Backend.Prt
 
                     break;
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
 
             context.WriteLine(output);
         }
@@ -1333,6 +1335,7 @@ namespace Plang.Compiler.Backend.Prt
 
         private void WriteLValue(TextWriter output, Function function, IPExpr expr)
         {
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
                 case MapAccessExpr mapAccessExpr:
@@ -1372,10 +1375,12 @@ namespace Plang.Compiler.Backend.Prt
                     throw context.Handler.InternalError(expr.SourceLocation,
                         new ArgumentOutOfRangeException(nameof(expr)));
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private void WriteExpr(TextWriter output, Function function, IPExpr expr)
         {
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
                 case CloneExpr cloneExpr:
@@ -1675,7 +1680,11 @@ namespace Plang.Compiler.Backend.Prt
                 case VariableAccessExpr variableAccessExpr:
                     WriteVariableAccess(output, function, variableAccessExpr.Variable);
                     break;
+
+                case ChooseExpr chooseExpr:
+                    throw new NotSupportedException("choose expression is not supported in C code generation yet!");
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private string GetVariablePointer(Function function, Variable variable)
@@ -1819,6 +1828,7 @@ namespace Plang.Compiler.Backend.Prt
         private void WriteExternDeclaration(TextWriter output, IPDecl decl)
         {
             string declName = context.Names.GetNameForDecl(decl);
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (decl)
             {
                 case EnumElem _:
@@ -1892,6 +1902,7 @@ namespace Plang.Compiler.Backend.Prt
                     context.WriteLine(output, $"// DECL(StateGroup, {decl.Name}) => {declName}");
                     break;
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private void WriteHeaderEpilogue(TextWriter output)

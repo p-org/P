@@ -146,7 +146,7 @@ statement : LBRACE statement* RBRACE                      # CompoundStmt
           | lvalue ASSIGN rvalue SEMI                     # AssignStmt
 		  | lvalue ASSIGN StringLiteral COMMA rvalueList SEMI  # StringAssignStmt
           | lvalue INSERT LPAREN expr COMMA rvalue RPAREN SEMI # InsertStmt
-	  | lvalue INSERT LPAREN rvalue RPAREN SEMI        # AddStmt
+		  | lvalue INSERT LPAREN rvalue RPAREN SEMI        # AddStmt
           | lvalue REMOVE expr SEMI                       # RemoveStmt
           | WHILE LPAREN expr RPAREN statement            # WhileStmt
           | IF LPAREN expr RPAREN thenBranch=statement 
@@ -193,6 +193,7 @@ expr : primitive                                      # PrimitiveExpr
      | lhs=expr op=(EQ | NE) rhs=expr                 # BinExpr
      | lhs=expr op=LAND rhs=expr                      # BinExpr
      | lhs=expr op=LOR rhs=expr                       # BinExpr
+	 | CHOOSE LPAREN expr? RPAREN					  # ChooseExpr
      ;
 
 primitive : iden

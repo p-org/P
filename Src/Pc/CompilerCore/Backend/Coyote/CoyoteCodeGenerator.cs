@@ -1098,6 +1098,7 @@ namespace Plang.Compiler.Backend.Coyote
 
         private void WriteLValue(CompilationContext context, StringWriter output, IPExpr lvalue)
         {
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (lvalue)
             {
                 case MapAccessExpr mapAccessExpr:
@@ -1135,10 +1136,12 @@ namespace Plang.Compiler.Backend.Coyote
                 default:
                     throw new ArgumentOutOfRangeException(nameof(lvalue));
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private void WriteExpr(CompilationContext context, StringWriter output, IPExpr pExpr)
         {
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (pExpr)
             {
                 case CloneExpr cloneExpr:
@@ -1234,9 +1237,20 @@ namespace Plang.Compiler.Backend.Coyote
                             throw new ArgumentOutOfRangeException(
                                 @"unexpected coercion operation to:" + coerceExpr.Type.CanonicalRepresentation);
                     }
-
+               
                     break;
-
+                case ChooseExpr chooseExpr:
+                    if(chooseExpr.SubExpr == null)
+                    {
+                        context.Write(output, "((PrtBool)currentMachine.TryRandomBool())");
+                    }
+                    else
+                    {
+                        context.Write(output, $"(({GetCSharpType(chooseExpr.Type)})currentMachine.TryRandom(");
+                        WriteExpr(context, output, chooseExpr.SubExpr);
+                        context.Write(output, $"))");
+                    }
+                    break;
                 case ContainsExpr containsExpr:
                     var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
                     var isSeq = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Sequence);
@@ -1440,6 +1454,7 @@ namespace Plang.Compiler.Backend.Coyote
                 default:
                     throw new ArgumentOutOfRangeException(nameof(pExpr), $"type was {pExpr?.GetType().FullName}");
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private void WriteClone(CompilationContext context, StringWriter output, IExprTerm cloneExprTerm)

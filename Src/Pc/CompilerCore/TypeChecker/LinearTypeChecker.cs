@@ -306,6 +306,7 @@ namespace Plang.Compiler.TypeChecker
         private ISet<Variable> ProcessExpr(ISet<Variable> unavailable, IPExpr expression)
         {
             Contract.Requires(expression != null);
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expression)
             {
                 case CloneExpr cloneExpr:
@@ -414,6 +415,7 @@ namespace Plang.Compiler.TypeChecker
                 case NondetExpr _:
                 case NullLiteralExpr _:
                 case ThisRefExpr _:
+                case ChooseExpr _:
                     // nothing to do
                     break;
 
@@ -421,6 +423,7 @@ namespace Plang.Compiler.TypeChecker
                     throw handler.InternalError(expression.SourceLocation,
                         new ArgumentOutOfRangeException(nameof(expression)));
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
 
             return unavailable;
         }

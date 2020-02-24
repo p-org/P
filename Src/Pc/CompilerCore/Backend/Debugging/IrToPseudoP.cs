@@ -487,6 +487,7 @@ namespace Plang.Compiler.Backend.Debugging
 
         protected override void WriteExpr(IPExpr expr)
         {
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
                 case null:
@@ -622,6 +623,7 @@ namespace Plang.Compiler.Backend.Debugging
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private string WriteUnOp(UnaryOpType operation)

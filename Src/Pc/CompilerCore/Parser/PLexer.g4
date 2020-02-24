@@ -64,6 +64,7 @@ VALUES    : 'values' ;
 VAR       : 'var' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
+CHOOSE    : 'choose' ;
 
 // module-system-specific keywords
 

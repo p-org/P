@@ -54,6 +54,7 @@ namespace Plang.Compiler.Backend
             // TODO: I am suspicious.
             Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
             PLanguageType type = expr.Type;
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
                 case MapAccessExpr mapAccessExpr:
@@ -82,12 +83,14 @@ namespace Plang.Compiler.Backend
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private (IExprTerm, List<IPStmt>) SimplifyExpression(IPExpr expr)
         {
             Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
             List<IPStmt> deps = new List<IPStmt>();
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
                 case IExprTerm term:
@@ -132,6 +135,22 @@ namespace Plang.Compiler.Backend
                     deps.AddRange(castDeps);
                     deps.Add(castStore);
                     return (castTemp, deps);
+
+                case ChooseExpr chooseExpr:
+                    if (chooseExpr.SubExpr != null)
+                    {
+                        (IExprTerm chooseSubExpr, List<IPStmt> chooseDeps) = SimplifyExpression(chooseExpr.SubExpr);
+                        (VariableAccessExpr chooseTemp, IPStmt chooseStore) = SaveInTemporary(new ChooseExpr(location, chooseSubExpr, chooseExpr.Type));
+                        deps.AddRange(chooseDeps);
+                        deps.Add(chooseStore);
+                        return (chooseTemp, deps);
+                    }
+                    else
+                    {
+                        (VariableAccessExpr chooseTemp, IPStmt chooseStore) = SaveInTemporary(chooseExpr);
+                        deps.Add(chooseStore);
+                        return (chooseTemp, deps);
+                    }
 
                 case CoerceExpr coerceExpr:
                     (IExprTerm coerceSubExpr, List<IPStmt> coerceDeps) = SimplifyExpression(coerceExpr.SubExpr);
@@ -264,6 +283,7 @@ namespace Plang.Compiler.Backend
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private List<IPStmt> SimplifyStatement(IPStmt statement)

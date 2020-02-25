@@ -1,3 +1,4 @@
+using Antlr4.Runtime.Misc;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -242,7 +243,7 @@ namespace Plang.Compiler.TypeChecker
                         new ArgumentException($"Unknown unary op `{context.op.Text}`", nameof(context)));
             }
         }
-
+        
         public override IPExpr VisitBinExpr(PParser.BinExprContext context)
         {
             IPExpr lhs = Visit(context.lhs);
@@ -360,6 +361,30 @@ namespace Plang.Compiler.TypeChecker
                 default:
                     throw handler.InternalError(context,
                         new ArgumentException($"unknown binary operation {op}", nameof(context)));
+            }
+        }
+
+        public override IPExpr VisitChooseExpr(PParser.ChooseExprContext context)
+        {
+            // if choose is without an argument then its a choose boolean
+            if (context.expr() == null)
+            {
+                return new ChooseExpr(context, null, PrimitiveType.Bool);
+            }
+
+            IPExpr subExpr = Visit(context.expr());
+            PLanguageType subExprType = subExpr.Type;
+
+            switch(subExprType.Canonicalize())
+            {
+                case SequenceType seqType:
+                    return new ChooseExpr(context, subExpr, seqType.ElementType);
+                case SetType setType:
+                    return new ChooseExpr(context, subExpr, setType.ElementType);
+                case PrimitiveType primType when primType.IsSameTypeAs(PrimitiveType.Int):
+                    return new ChooseExpr(context, subExpr, PrimitiveType.Int);
+                default:
+                    throw handler.IllegalChooseSubExprType(context, subExprType);
             }
         }
 
@@ -484,11 +509,6 @@ namespace Plang.Compiler.TypeChecker
                 return Visit(context.floatLiteral());
             }
 
-            if (context.StringLiteral() != null)
-            {
-                return new StringLiteralExpr(context, context.StringLiteral().GetText());
-            }
-
             if (context.BoolLiteral() != null)
             {
                 return new BoolLiteralExpr(context, context.BoolLiteral().GetText().Equals("true"));
@@ -602,22 +622,39 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitRvalue(PParser.RvalueContext context)
         {
-            // If it's just an expr, then there's no special handling
-            if (context.linear == null)
+            return Visit(context.expr());
+        }
+
+        public override IPExpr VisitFormatedString([NotNull] PParser.FormatedStringContext context)
+        {
+            string baseString = context.StringLiteral().GetText();
+            baseString = baseString.Substring(1, baseString.Length - 2); // strip beginning / end double quote
+            int numNecessaryArgs = TypeCheckingUtils.PrintStmtNumArgs(baseString);
+            if (numNecessaryArgs == -1)
             {
-                return Visit(context.expr());
+                throw handler.InvalidStringExprFormat(context, context.StringLiteral().Symbol);
             }
 
-            // In the linear case, it must be a local variable or parameter
-            string varName = context.iden().GetText();
-            if (!table.Lookup(varName, out Variable variable))
+            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToList();
+            foreach (IPExpr arg in args)
             {
-                throw handler.MissingDeclaration(context.iden(), "variable", varName);
+                if (arg is LinearAccessRefExpr)
+                {
+                    throw handler.StringAssignStmtLinearArgument(arg.SourceLocation);
+                }
             }
 
-            return context.linear.Text.Equals("move")
-                ? new LinearAccessRefExpr(context, variable, LinearType.Move)
-                : new LinearAccessRefExpr(context, variable, LinearType.Swap);
+            if (args.Count != numNecessaryArgs)
+            {
+                throw handler.IncorrectArgumentCount(context, args.Count, numNecessaryArgs);
+            }
+
+            return new StringExpr(context, baseString, args);
+        }
+
+        public override IPExpr VisitStringExpr(PParser.StringExprContext context)
+        {
+            return VisitFormatedString(context.formatedString());
         }
 
         public override IPExpr VisitVarLvalue(PParser.VarLvalueContext context)

@@ -63,80 +63,37 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPStmt VisitAssertStmt(PParser.AssertStmtContext context)
         {
-            IPExpr assertion = exprVisitor.Visit(context.expr());
+            IPExpr assertion = exprVisitor.Visit(context.assertion);
             if (!PrimitiveType.Bool.IsSameTypeAs(assertion.Type))
             {
-                throw handler.TypeMismatch(context.expr(), assertion.Type, PrimitiveType.Bool);
+                throw handler.TypeMismatch(context.assertion, assertion.Type, PrimitiveType.Bool);
             }
-
-            string message = context.StringLiteral()?.GetText() ?? "";
-            if (message.StartsWith("\""))
+            IPExpr message;
+            if (context.message == null)
+                message = new StringExpr(context, "", new List<IPExpr>());
+            else
             {
-                message = message.Substring(1, message.Length - 2);
+                message = exprVisitor.Visit(context.message);
+                if(!message.Type.IsSameTypeAs(PrimitiveType.String))
+                {
+                    throw handler.TypeMismatch(context.message, message.Type, PrimitiveType.String);
+                }
             }
-
+                
             return new AssertStmt(context, assertion, message);
         }
 
         public override IPStmt VisitPrintStmt(PParser.PrintStmtContext context)
         {
-            string message = context.StringLiteral().GetText();
-            message = message.Substring(1, message.Length - 2); // strip beginning / end double quote
-            int numNecessaryArgs = TypeCheckingUtils.PrintStmtNumArgs(message);
-            if (numNecessaryArgs == -1)
+            IPExpr message = exprVisitor.Visit(context.message);
+            if (!message.Type.IsSameTypeAs(PrimitiveType.String))
             {
-                throw handler.InvalidPrintFormat(context, context.StringLiteral().Symbol);
+                throw handler.TypeMismatch(context.message, message.Type, PrimitiveType.String);
             }
-
-            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
-            foreach (IPExpr arg in args)
-            {
-                if (arg is LinearAccessRefExpr)
-                {
-                    throw handler.PrintStmtLinearArgument(arg.SourceLocation);
-                }
-            }
-
-            if (args.Count != numNecessaryArgs)
-            {
-                throw handler.IncorrectArgumentCount(context, args.Count, numNecessaryArgs);
-            }
-
-            return new PrintStmt(context, message, args);
+            return new PrintStmt(context, message);
         }
 
-        public override IPStmt VisitStringAssignStmt(PParser.StringAssignStmtContext context)
-        {
-
-            IPExpr variable = exprVisitor.Visit(context.lvalue());
-            string baseString = context.StringLiteral().GetText();
-            baseString = baseString.Substring(1, baseString.Length - 2); // strip beginning / end double quote
-            int numNecessaryArgs = TypeCheckingUtils.PrintStmtNumArgs(baseString);
-            if (numNecessaryArgs == -1)
-            {
-                throw handler.InvalidStringAssignFormat(context, context.StringLiteral().Symbol);
-            }
-
-            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
-            foreach (IPExpr arg in args)
-            {
-                if (arg is LinearAccessRefExpr)
-                {
-                    throw handler.StringAssignStmtLinearArgument(arg.SourceLocation);
-                }
-            }
-
-            if (args.Count != numNecessaryArgs)
-            {
-                throw handler.IncorrectArgumentCount(context, args.Count, numNecessaryArgs);
-            }
-
-            if (variable.Type != PrimitiveType.String) {
-                throw handler.TypeMismatch(context, variable.Type, PrimitiveType.String);
-            }
-
-            return new StringAssignStmt(context, variable, baseString, args);
-        }
+        
 
         public override IPStmt VisitReturnStmt(PParser.ReturnStmtContext context)
         {

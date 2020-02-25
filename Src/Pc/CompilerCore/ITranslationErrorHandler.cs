@@ -70,7 +70,7 @@ namespace Plang.Compiler
 
         Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol);
 
-        Exception InvalidStringAssignFormat(PParser.StringAssignStmtContext context, IToken symbol);
+        Exception InvalidStringExprFormat(PParser.FormatedStringContext context, IToken symbol);
 
         // module system related
         Exception InvalidBindExpr(ParserRuleContext location, string message);
@@ -129,5 +129,6 @@ namespace Plang.Compiler
         Exception BareLoopControlFlow(string stmtName, ParserRuleContext context);
         Exception ExitFunctionCannotTakeParameters(ParserRuleContext sourceLocation, int count);
         Exception MoreThanOneParameterForHandlers(ParserRuleContext sourceLocation, int count);
+        Exception IllegalChooseSubExprType(PParser.ChooseExprContext context, PLanguageType subExprType);
     }
 }

@@ -63,7 +63,7 @@ namespace Plang.Compiler.TypeChecker
             }
 
             // Step 6: Check linear type ownership
-            LinearTypeChecker.AnalyzeMethods(handler, allFunctions);
+            // LinearTypeChecker.AnalyzeMethods(handler, allFunctions);
 
             // Step 7: Check control flow well-formedness
             ControlFlowChecker.AnalyzeMethods(handler, allFunctions);

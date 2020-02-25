@@ -151,6 +151,11 @@ namespace Plang.Compiler
             return new TranslationException($"[{file.Name}] parse error: {message}");
         }
 
+        public Exception IllegalChooseSubExprType(PParser.ChooseExprContext context, PLanguageType subExprType)
+        {
+            return IssueError(context, $"choose expects a parameter of type int (max value) or a seq or a set, got a parameter of type {subExprType}");
+        }
+
         public Exception EmittedNullEvent(IPExpr evtExpr)
         {
             return IssueError(evtExpr.SourceLocation, "cannot send null events");
@@ -208,11 +213,11 @@ namespace Plang.Compiler
                 "Print format placeholders must contain only digits. Escape braces by doubling them.");
         }
 
-        public Exception InvalidStringAssignFormat(PParser.StringAssignStmtContext context, IToken symbol)
+        public Exception InvalidStringExprFormat(PParser.FormatedStringContext context, IToken symbol)
         {
             return IssueError(context,
                 symbol,
-                "String assign format placeholders must contain only digits. Escape braces by doubling them.");
+                "String expr format placeholders must contain only digits. Escape braces by doubling them.");
         }
 
         public Exception InvalidBindExpr(ParserRuleContext location, string message)

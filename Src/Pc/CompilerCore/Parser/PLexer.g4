@@ -33,6 +33,7 @@ DO        : 'do' ;
 ELSE      : 'else' ;
 ENTRY     : 'entry' ;
 EXIT      : 'exit' ;
+FORMAT	  : 'format' ;
 FUN       : 'fun' ;
 GOTO      : 'goto' ;
 GROUP     : 'group' ;
@@ -42,7 +43,6 @@ IF        : 'if' ;
 IGNORE    : 'ignore' ;
 IN        : 'in' ;
 KEYS      : 'keys' ;
-MOVE      : 'move' ;
 NEW       : 'new' ;
 OBSERVES  : 'observes' ;
 ON        : 'on' ;
@@ -57,13 +57,13 @@ SIZEOF    : 'sizeof' ;
 SPEC      : 'spec' ;
 START     : 'start' ;
 STATE     : 'state' ;
-SWAP      : 'swap' ;
 THIS      : 'this' ;
 TYPE      : 'type' ;
 VALUES    : 'values' ;
 VAR       : 'var' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
+CHOOSE    : 'choose' ;
 
 // module-system-specific keywords
 

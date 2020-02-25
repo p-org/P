@@ -129,6 +129,26 @@ namespace Plang.PrtSharp
             return base.Random();
         }
 
+        public IPrtValue TryRandom(IPrtValue param)
+        {
+            switch(param)
+            {
+                case PrtInt maxValue:
+                    return (PrtInt)TryRandomInt(maxValue);
+                case PrtSeq seq:
+                    {
+                        TryAssert(seq.Count() > 0, "Trying to choose from an empty sequence!");
+                        return seq[TryRandomInt(seq.Count)];
+                    }
+                case PrtSet set:
+                    {
+                        TryAssert(set.Count() > 0, "Trying to choose from an empty set!");
+                        return set.ElementAt(TryRandomInt(set.Count));
+                    }
+                default:
+                    throw new PInternalException("This is an unexpected (internal) P exception. Please report to the P Developers");
+            }
+        }
         public void LogLine(string message)
         {
             Logger.WriteLine($"<PrintLog> {message}");

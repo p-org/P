@@ -7,7 +7,7 @@ machine Main {
         entry
         {
         	var x: Idxs;
-            print "{0}", x;
+            print format("{0}", x);
         }
     }
 

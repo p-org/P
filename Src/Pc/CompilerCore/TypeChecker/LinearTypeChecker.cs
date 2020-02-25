@@ -10,6 +10,7 @@ using System.Linq;
 
 namespace Plang.Compiler.TypeChecker
 {
+    /*
     public class LinearTypeChecker
     {
         private readonly HashSet<Variable> allUnavailableParams = new HashSet<Variable>();
@@ -158,19 +159,6 @@ namespace Plang.Compiler.TypeChecker
 
                     break;
 
-                case StringAssignStmt stringAssignStmt:
-                    if (stringAssignStmt.Location is VariableAccessExpr stringAssignAccess)
-                    {
-                        unavailable.Remove(stringAssignAccess.Variable);
-                    }
-                    else
-                    {
-                        unavailable = ProcessExpr(unavailable, stringAssignStmt.Location);
-                    }
-                    unavailable = ProcessArgList(stringAssignStmt.Args, unavailable, ArgOptions.SwapNotAllowed);
-                    break;
-
-
                 case AddStmt addStmt:
                     unavailable = ProcessExpr(unavailable, addStmt.Variable);
                     unavailable = ProcessExpr(unavailable, addStmt.Value);
@@ -306,6 +294,7 @@ namespace Plang.Compiler.TypeChecker
         private ISet<Variable> ProcessExpr(ISet<Variable> unavailable, IPExpr expression)
         {
             Contract.Requires(expression != null);
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expression)
             {
                 case CloneExpr cloneExpr:
@@ -414,6 +403,7 @@ namespace Plang.Compiler.TypeChecker
                 case NondetExpr _:
                 case NullLiteralExpr _:
                 case ThisRefExpr _:
+                case ChooseExpr _:
                     // nothing to do
                     break;
 
@@ -421,6 +411,7 @@ namespace Plang.Compiler.TypeChecker
                     throw handler.InternalError(expression.SourceLocation,
                         new ArgumentOutOfRangeException(nameof(expression)));
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
 
             return unavailable;
         }
@@ -431,4 +422,5 @@ namespace Plang.Compiler.TypeChecker
             SwapNotAllowed
         }
     }
+    */
 }

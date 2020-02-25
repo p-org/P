@@ -27,7 +27,7 @@ machine Receiver {
 						x = xx;
 					}
 				}
-				print "x = {0}\n", x;
+				print format("x = {0}\n", x);
 				i = i + 1;
 			}
 			print "done!\n";

@@ -279,7 +279,12 @@ namespace Plang.Compiler.Backend
                     deps.AddRange(valuesDeps);
                     deps.Add(valuesStore);
                     return (valuesTemp, deps);
-
+                case StringExpr stringExpr:
+                    (IPExpr[] stringArgs, List< IPStmt > stringArgsDeps) = SimplifyFunArgs(stringExpr.Args);
+                    (VariableAccessExpr stringTemp, IPStmt stringStore) = SaveInTemporary(new StringExpr(location, stringExpr.BaseString, stringArgs.ToList()));
+                    deps.AddRange(stringArgsDeps);
+                    deps.Add(stringStore);
+                    return (stringTemp, deps);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
@@ -307,9 +312,11 @@ namespace Plang.Compiler.Backend
 
                 case AssertStmt assertStmt:
                     (IExprTerm assertExpr, List<IPStmt> assertDeps) = SimplifyExpression(assertStmt.Assertion);
-                    return assertDeps.Concat(new[]
+                    (IExprTerm messageExpr, List<IPStmt> messageDeps) = SimplifyExpression(assertStmt.Message);
+
+                    return assertDeps.Concat(messageDeps).Concat(new[]
                         {
-                            new AssertStmt(location, assertExpr, assertStmt.Message)
+                            new AssertStmt(location, assertExpr, messageExpr)
                         })
                         .ToList();
 
@@ -423,15 +430,9 @@ namespace Plang.Compiler.Backend
 
                 case PrintStmt printStmt:
                     List<IPStmt> deps = new List<IPStmt>();
-                    List<IPExpr> newArgs = new List<IPExpr>();
-                    foreach (IPExpr printStmtArg in printStmt.Args)
-                    {
-                        (IExprTerm arg, List<IPStmt> argDeps) = SimplifyExpression(printStmtArg);
-                        newArgs.Add(arg);
-                        deps.AddRange(argDeps);
-                    }
-
-                    return deps.Concat(new[] { new PrintStmt(location, printStmt.Message, newArgs) }).ToList();
+                    (IExprTerm newMessage, List<IPStmt> printDeps) = SimplifyExpression(printStmt.Message);
+                    deps.AddRange(printDeps);
+                    return deps.Concat(new[] { new PrintStmt(location, newMessage) }).ToList();
 
                 case RaiseStmt raiseStmt:
                     (IExprTerm raiseEvent, List<IPStmt> raiseEventDeps) = SimplifyExpression(raiseStmt.PEvent);
@@ -479,20 +480,6 @@ namespace Plang.Compiler.Backend
                             new ReturnStmt(location, new CloneExpr(returnValue))
                         })
                         .ToList();
-
-                case StringAssignStmt stringAssignStmt:
-                    (IPExpr stringAssignLV, List<IPStmt> stringAssignLVDeps) = SimplifyLvalue(stringAssignStmt.Location);
-                    deps = new List<IPStmt>();
-                    newArgs = new List<IPExpr>();
-                    foreach (IPExpr stringAssignStmtArg in stringAssignStmt.Args)
-                    {
-                        (IExprTerm arg, List<IPStmt> argDeps) = SimplifyExpression(stringAssignStmtArg);
-                        newArgs.Add(arg);
-                        deps.AddRange(argDeps);
-                    }
-
-                    return stringAssignLVDeps.Concat(deps).Concat(new[] { new StringAssignStmt(location, stringAssignLV, stringAssignStmt.BaseString, newArgs) }).ToList();
-
 
                 case BreakStmt breakStmt:
                     return new List<IPStmt> { breakStmt };

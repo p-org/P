@@ -70,7 +70,7 @@ namespace Plang.Compiler
 
         Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol);
 
-        Exception InvalidStringAssignFormat(PParser.StringAssignStmtContext context, IToken symbol);
+        Exception InvalidStringExprFormat(PParser.FormatedStringContext context, IToken symbol);
 
         // module system related
         Exception InvalidBindExpr(ParserRuleContext location, string message);

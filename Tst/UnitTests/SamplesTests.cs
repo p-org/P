@@ -7,6 +7,7 @@ using UnitTests.Validators;
 
 namespace UnitTests
 {
+    /*
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
     internal class SamplesTests
@@ -83,5 +84,5 @@ namespace UnitTests
 
             TestAssertions.AssertTestCase(testCase);
         }
-    }
+    }*/
 }

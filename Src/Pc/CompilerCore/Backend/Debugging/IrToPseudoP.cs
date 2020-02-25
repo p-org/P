@@ -240,7 +240,7 @@ namespace Plang.Compiler.Backend.Debugging
                     break;
 
                 case PrintStmt printStmt:
-                    WriteStmt("print \"", printStmt.Message, "\", ", printStmt.Args, ";");
+                    WriteStmt("print \"", printStmt.Message, "\", ", printStmt.Message, ";");
                     break;
 
                 case RaiseStmt raiseStmt:
@@ -285,10 +285,6 @@ namespace Plang.Compiler.Backend.Debugging
 
                 case SendStmt sendStmt:
                     WriteStmt("send ", sendStmt.MachineExpr, ", ", sendStmt.Evt, ", ", sendStmt.Arguments, ";");
-                    break;
-
-                case StringAssignStmt stringAssignStmt:
-                    WriteStmt(stringAssignStmt.SourceLocation, " = ", "\"", stringAssignStmt.BaseString, "\", ", stringAssignStmt.Args, ";");
                     break;
 
                 case SwapAssignStmt swapAssignStmt:

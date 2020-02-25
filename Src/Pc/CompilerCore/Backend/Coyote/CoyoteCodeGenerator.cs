@@ -732,7 +732,8 @@ namespace Plang.Compiler.Backend.Coyote
                     context.Write(output, "currentMachine.TryAssert(");
                     WriteExpr(context, output, assertStmt.Assertion);
                     context.Write(output, ",");
-                    context.Write(output, $"\"Assertion Failed: {assertStmt.Message}\"");
+                    context.Write(output, $"\"Assertion Failed: \" + ");
+                    WriteExpr(context, output, assertStmt.Message);
                     context.WriteLine(output, ");");
                     //last statement
                     if (FunctionValidator.SurelyReturns(assertStmt))
@@ -765,18 +766,6 @@ namespace Plang.Compiler.Backend.Coyote
                     }
 
                     context.WriteLine(output, ");");
-                    break;
-
-                case StringAssignStmt stringAssignStmt:
-                    WriteLValue(context, output, stringAssignStmt.Location);
-                    context.Write(output, $" = (PrtString)(");
-                    context.Write(output, $"String.Format(\"{stringAssignStmt.BaseString}\"");
-                    foreach (IPExpr stringArg in stringAssignStmt.Args)
-                    {
-                        context.Write(output, ", ");
-                        WriteExpr(context, output, stringArg);
-                    }
-                    context.WriteLine(output, "));");
                     break;
 
                 case CompoundStmt compoundStmt:
@@ -931,13 +920,8 @@ namespace Plang.Compiler.Backend.Coyote
                     break;
 
                 case PrintStmt printStmt:
-                    context.Write(output, $"PModule.runtime.Logger.WriteLine(\"<PrintLog> {printStmt.Message}\"");
-                    foreach (IPExpr printArg in printStmt.Args)
-                    {
-                        context.Write(output, ", ");
-                        WriteExpr(context, output, printArg);
-                    }
-
+                    context.Write(output, $"PModule.runtime.Logger.WriteLine(\"<PrintLog> \" + ");
+                    WriteExpr(context, output, printStmt.Message);
                     context.WriteLine(output, ");");
                     break;
 
@@ -1410,10 +1394,17 @@ namespace Plang.Compiler.Backend.Coyote
                     context.Write(output, ").Count)");
                     break;
 
-                case StringLiteralExpr stringLiteralExpr:
-                    context.Write(output, $"((PrtString){stringLiteralExpr.Value})");
+                case StringExpr stringExpr:
+                    context.Write(output, $"((PrtString) String.Format(");
+                    context.Write(output,  $"\"{stringExpr.BaseString}\"");
+                    foreach(var arg in stringExpr.Args)
+                    {
+                        context.Write(output, ",");
+                        WriteExpr(context, output, arg);
+                    }
+                    context.Write(output, "))");
                     break;
-
+                    
                 case ThisRefExpr _:
                     context.Write(output, "currentMachine.self");
                     break;

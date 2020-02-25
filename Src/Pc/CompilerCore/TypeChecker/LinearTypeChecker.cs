@@ -10,6 +10,7 @@ using System.Linq;
 
 namespace Plang.Compiler.TypeChecker
 {
+    /*
     public class LinearTypeChecker
     {
         private readonly HashSet<Variable> allUnavailableParams = new HashSet<Variable>();
@@ -157,19 +158,6 @@ namespace Plang.Compiler.TypeChecker
                     }
 
                     break;
-
-                case StringAssignStmt stringAssignStmt:
-                    if (stringAssignStmt.Location is VariableAccessExpr stringAssignAccess)
-                    {
-                        unavailable.Remove(stringAssignAccess.Variable);
-                    }
-                    else
-                    {
-                        unavailable = ProcessExpr(unavailable, stringAssignStmt.Location);
-                    }
-                    unavailable = ProcessArgList(stringAssignStmt.Args, unavailable, ArgOptions.SwapNotAllowed);
-                    break;
-
 
                 case AddStmt addStmt:
                     unavailable = ProcessExpr(unavailable, addStmt.Variable);
@@ -434,4 +422,5 @@ namespace Plang.Compiler.TypeChecker
             SwapNotAllowed
         }
     }
+    */
 }

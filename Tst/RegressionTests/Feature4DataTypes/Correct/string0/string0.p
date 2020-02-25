@@ -17,7 +17,7 @@ machine Main {
 		s = "h";
 		t = s + "f";
 		assert "hf"==t;
-		v = "a{0}l{1}", s, "l";
+		v = format("a{0}l{1}", s, "l");
 		assert v == "ahll";
 		
 	    }

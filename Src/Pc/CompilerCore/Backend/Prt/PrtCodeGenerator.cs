@@ -931,21 +931,6 @@ namespace Plang.Compiler.Backend.Prt
 
                     break;
 
-                case StringAssignStmt stringAssignStmt:
-                    // Lookup lvalue
-                    lvalName = context.Names.GetTemporaryName("LVALUE");
-                    context.Write(output, $"PRT_VALUE** {lvalName} = &(");
-                    WriteLValue(output, function, stringAssignStmt.Location);
-                    context.WriteLine(output, ");");
-
-                    // Free old value
-                    context.WriteLine(output, $"PrtFreeValue(*{lvalName});");
-
-                    // Assign new value
-                    context.Write(output, $"*{lvalName} = ");
-                    WriteStringAssignStmt(output, stringAssignStmt, function);
-                    break;
-
                 case CompoundStmt compoundStmt:
                     context.WriteLine(output, "{");
                     foreach (IPStmt pStmt in compoundStmt.Statements)
@@ -1258,79 +1243,10 @@ namespace Plang.Compiler.Backend.Prt
             context.WriteLine(output);
         }
 
-        private void WriteStringAssignStmt(TextWriter output, StringAssignStmt stringAssignStmt, Function function)
-        {
-            // format is {str0, n1, str1, n2, ..., nK, strK}
-            object[] assignBaseParts = PrtTranslationUtils.ParsePrintMessage(stringAssignStmt.BaseString);
-   
-            // Build parameter pack
-            int k = (assignBaseParts.Length - 1) / 2;
-            context.Write(output, "PrtMkStringValue(PrtFormatString(\"");
-            context.Write(output, (string)assignBaseParts[0]);
-            context.Write(output, "\", ");
-            context.Write(output, stringAssignStmt.Args.Count.ToString());
-            foreach (IPExpr printArg in stringAssignStmt.Args)
-            {
-                context.Write(output, ", ");
-                WriteExpr(output, function, printArg);
-            }
-
-            context.Write(output, ", ");
-            context.Write(output, k.ToString());
-            for (int i = 0; i < k; i++)
-            {
-                int n = (int)assignBaseParts[1 + 2 * i];
-                string s = (string)assignBaseParts[1 + 2 * i + 1];
-                context.Write(output, ", ");
-                context.Write(output, n.ToString());
-                context.Write(output, ", \"");
-                context.Write(output, s);
-                context.Write(output, "\"");
-            }
-
-            context.WriteLine(output, "));");
-        }
 
         private void WritePrintStmt(TextWriter output, PrintStmt printStmt, Function function)
         {
-            // format is {str0, n1, str1, n2, ..., nK, strK}
-            object[] printMessageParts = PrtTranslationUtils.ParsePrintMessage(printStmt.Message);
-
-            // Optimize for simple case.
-            if (printMessageParts.Length == 1)
-            {
-                context.Write(output, "PrtPrintf(\"");
-                context.Write(output, (string)printMessageParts[0]);
-                context.WriteLine(output, "\");");
-                return;
-            }
-
-            // Otherwise build full parameter pack...
-            int k = (printMessageParts.Length - 1) / 2;
-            context.Write(output, "PrtFormatPrintf(\"");
-            context.Write(output, (string)printMessageParts[0]);
-            context.Write(output, "\", ");
-            context.Write(output, printStmt.Args.Count.ToString());
-            foreach (IPExpr printArg in printStmt.Args)
-            {
-                context.Write(output, ", ");
-                WriteExpr(output, function, printArg);
-            }
-
-            context.Write(output, ", ");
-            context.Write(output, k.ToString());
-            for (int i = 0; i < k; i++)
-            {
-                int n = (int)printMessageParts[1 + 2 * i];
-                string s = (string)printMessageParts[1 + 2 * i + 1];
-                context.Write(output, ", ");
-                context.Write(output, n.ToString());
-                context.Write(output, ", \"");
-                context.Write(output, s);
-                context.Write(output, "\"");
-            }
-
-            context.WriteLine(output, ");");
+            throw new NotImplementedException("Print statement support for the C runtime is currently broken, please contact the P developers!");
         }
 
         private void WriteLValue(TextWriter output, Function function, IPExpr expr)
@@ -1625,10 +1541,8 @@ namespace Plang.Compiler.Backend.Prt
                     context.Write(output, ")");
                     break;
 
-                case StringLiteralExpr stringLiteralExpr:
-                    string stringLiteralName = context.RegisterLiteral(function, stringLiteralExpr.Value);
-                    context.Write(output, $"(&{stringLiteralName})");
-                    break;
+                case StringExpr stringExpr:
+                    throw new NotImplementedException("String not fully supported in the C code gen");
 
                 case SizeofExpr sizeofExpr:
                     string sizeofFun = PLanguageType.TypeIsOfKind(sizeofExpr.Expr.Type, TypeKind.Map)

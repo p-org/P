@@ -213,11 +213,11 @@ namespace Plang.Compiler
                 "Print format placeholders must contain only digits. Escape braces by doubling them.");
         }
 
-        public Exception InvalidStringAssignFormat(PParser.StringAssignStmtContext context, IToken symbol)
+        public Exception InvalidStringExprFormat(PParser.FormatedStringContext context, IToken symbol)
         {
             return IssueError(context,
                 symbol,
-                "String assign format placeholders must contain only digits. Escape braces by doubling them.");
+                "String expr format placeholders must contain only digits. Escape braces by doubling them.");
         }
 
         public Exception InvalidBindExpr(ParserRuleContext location, string message)

@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
+using System.IO;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
-using Plang.Compiler.TypeChecker.Types;
+using Plang.Compiler.TypeChecker.AST.States;
 
 namespace Plang.Compiler.Backend.Symbolic
 {
@@ -61,10 +59,16 @@ namespace Plang.Compiler.Backend.Symbolic
                     }
                 case Machine machine:
                     return $"machine_{machine.Name}";
+                case State state:
+                    return $"state_{state.Name}";
+                case PEvent pEvent:
+                    return $"event_{pEvent.Name}";
                 default:
                     throw new NotImplementedException($"decl type {decl.GetType().Name} not supported");
             }
         }
+
+        internal static string NullEventName => "event_null";
 
         internal static string GetVar(string rawName)
         {
@@ -105,6 +109,20 @@ namespace Plang.Compiler.Backend.Symbolic
                 PendingValueSummaryOpsDefs.Add(def);
                 CachedValueSummaryOpsDefs[def] = result;
                 return result;
+            }
+        }
+
+        internal void WriteCommaSeparated<T>(TextWriter output, IEnumerable<T> items, Action<T> writeItem)
+        {
+            var needComma = false;
+            foreach (var item in items)
+            {
+                if (needComma)
+                {
+                    Write(output, ", ");
+                }
+                writeItem(item);
+                needComma = true;
             }
         }
         

@@ -97,7 +97,7 @@ namespace Plang.Compiler.Backend.Coyote
             context.WriteLine(output, "using System.Threading;");
             context.WriteLine(output, "using System.Threading.Tasks;");
             context.WriteLine(output);
-            context.WriteLine(output, "#pragma warning disable 162, 219, 414");
+            context.WriteLine(output, "#pragma warning disable 162, 219, 414, 1998");
             context.WriteLine(output, $"namespace {context.ProjectName}");
             context.WriteLine(output, "{");
             context.WriteLine(output, $"public static partial class {context.GlobalFunctionClassName} {{}}");

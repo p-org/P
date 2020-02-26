@@ -562,7 +562,7 @@ namespace Plang.Compiler.Backend.Coyote
             bool isAsync = function.CanReceive == true;
             FunctionSignature signature = function.Signature;
             string awaitMethod = isAsync ? "await " : "";
-            string returnType = "Task";
+            string returnType = "Task<Transition>";
 
             if (function.CanChangeState == true || function.CanRaiseEvent == true)
             {
@@ -584,10 +584,7 @@ namespace Plang.Compiler.Backend.Coyote
             }
 
             // add the declaration of p_calleeTransition
-            if (function.CanChangeState == true || function.CanRaiseEvent == true)
-            {
-                context.WriteLine(output, "Transition p_calleeTransition = default;");
-            }
+            context.WriteLine(output, "Transition p_calleeTransition = default;");
 
             if (function.CanChangeState == true || function.CanRaiseEvent == true)
             {
@@ -595,10 +592,9 @@ namespace Plang.Compiler.Backend.Coyote
             }
             var parameter = function.Signature.Parameters.Any()? $"({GetCSharpType(function.Signature.ParameterTypes.First())})((PEvent)currentMachine_dequeuedEvent).Payload":"";
             context.WriteLine(output, $"{awaitMethod}{functionName}({parameter});");
-            if (function.CanChangeState == true || function.CanRaiseEvent == true)
-            {
-                context.WriteLine(output, "return p_calleeTransition;");
-            }
+            
+            context.WriteLine(output, "return p_calleeTransition;");
+            
             context.WriteLine(output, "}");
         }
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)

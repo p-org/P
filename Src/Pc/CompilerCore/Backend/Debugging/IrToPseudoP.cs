@@ -240,7 +240,7 @@ namespace Plang.Compiler.Backend.Debugging
                     break;
 
                 case PrintStmt printStmt:
-                    WriteStmt("print \"", printStmt.Message, "\", ", printStmt.Args, ";");
+                    WriteStmt("print \"", printStmt.Message, "\", ", printStmt.Message, ";");
                     break;
 
                 case RaiseStmt raiseStmt:
@@ -285,10 +285,6 @@ namespace Plang.Compiler.Backend.Debugging
 
                 case SendStmt sendStmt:
                     WriteStmt("send ", sendStmt.MachineExpr, ", ", sendStmt.Evt, ", ", sendStmt.Arguments, ";");
-                    break;
-
-                case StringAssignStmt stringAssignStmt:
-                    WriteStmt(stringAssignStmt.SourceLocation, " = ", "\"", stringAssignStmt.BaseString, "\", ", stringAssignStmt.Args, ";");
                     break;
 
                 case SwapAssignStmt swapAssignStmt:
@@ -487,6 +483,7 @@ namespace Plang.Compiler.Backend.Debugging
 
         protected override void WriteExpr(IPExpr expr)
         {
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
                 case null:
@@ -622,6 +619,7 @@ namespace Plang.Compiler.Backend.Debugging
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private string WriteUnOp(UnaryOpType operation)

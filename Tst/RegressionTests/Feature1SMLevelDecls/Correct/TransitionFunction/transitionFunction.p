@@ -11,7 +11,7 @@ machine Main {
 	}
 
 	fun Foo(payload: (x : int, y: machine)) {
-		print "{0} {1}", payload.x , payload.y;
+		print format("{0} {1}", payload.x , payload.y);
 		send payload.y, E2, payload.x;
 	}
 

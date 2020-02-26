@@ -4,7 +4,7 @@ namespace Plang.Compiler.TypeChecker.AST.Statements
 {
     public class AssertStmt : IPStmt
     {
-        public AssertStmt(ParserRuleContext sourceLocation, IPExpr assertion, string message)
+        public AssertStmt(ParserRuleContext sourceLocation, IPExpr assertion, IPExpr message)
         {
             SourceLocation = sourceLocation;
             Assertion = assertion;
@@ -12,7 +12,7 @@ namespace Plang.Compiler.TypeChecker.AST.Statements
         }
 
         public IPExpr Assertion { get; }
-        public string Message { get; }
+        public IPExpr Message { get; }
 
         public ParserRuleContext SourceLocation { get; }
     }

@@ -136,30 +136,29 @@ eventId : NullLiteral | HALT | iden ;
 stateName : (groups+=iden DOT)* state=iden ; // First few Idens are groups
 
 functionBody : LBRACE varDecl* statement* RBRACE ;
-statement : LBRACE statement* RBRACE                      # CompoundStmt
-          | POP SEMI                                      # PopStmt
-          | ASSERT expr (COMMA StringLiteral)? SEMI       # AssertStmt
-          | PRINT StringLiteral (COMMA rvalueList)? SEMI  # PrintStmt
-          | RETURN expr? SEMI                             # ReturnStmt
-          | BREAK SEMI                                    # BreakStmt
-          | CONTINUE SEMI                                 # ContinueStmt
-          | lvalue ASSIGN rvalue SEMI                     # AssignStmt
-		  | lvalue ASSIGN StringLiteral COMMA rvalueList SEMI  # StringAssignStmt
-          | lvalue INSERT LPAREN expr COMMA rvalue RPAREN SEMI # InsertStmt
-	  | lvalue INSERT LPAREN rvalue RPAREN SEMI        # AddStmt
-          | lvalue REMOVE expr SEMI                       # RemoveStmt
-          | WHILE LPAREN expr RPAREN statement            # WhileStmt
+statement : LBRACE statement* RBRACE							# CompoundStmt
+          | POP SEMI											# PopStmt
+          | ASSERT assertion=expr (COMMA message=expr)? SEMI	# AssertStmt
+          | PRINT message=expr SEMI								# PrintStmt
+          | RETURN expr? SEMI									# ReturnStmt
+          | BREAK SEMI											# BreakStmt
+          | CONTINUE SEMI										# ContinueStmt
+          | lvalue ASSIGN rvalue SEMI							# AssignStmt
+          | lvalue INSERT LPAREN expr COMMA rvalue RPAREN SEMI	# InsertStmt
+		  | lvalue INSERT LPAREN rvalue RPAREN SEMI				# AddStmt
+          | lvalue REMOVE expr SEMI								# RemoveStmt
+          | WHILE LPAREN expr RPAREN statement					# WhileStmt
           | IF LPAREN expr RPAREN thenBranch=statement 
-                            (ELSE elseBranch=statement)?  # IfStmt
-          | NEW iden LPAREN rvalueList? RPAREN SEMI       # CtorStmt
-          | fun=iden LPAREN rvalueList? RPAREN SEMI       # FunCallStmt
-          | RAISE expr (COMMA rvalueList)? SEMI           # RaiseStmt
+                            (ELSE elseBranch=statement)?		# IfStmt
+          | NEW iden LPAREN rvalueList? RPAREN SEMI				# CtorStmt
+          | fun=iden LPAREN rvalueList? RPAREN SEMI				# FunCallStmt
+          | RAISE expr (COMMA rvalueList)? SEMI					# RaiseStmt
           | SEND machine=expr COMMA event=expr 
-                              (COMMA rvalueList)? SEMI    # SendStmt
-          | ANNOUNCE expr (COMMA rvalueList)? SEMI        # AnnounceStmt
-          | GOTO stateName (COMMA rvalueList)? SEMI       # GotoStmt
-          | RECEIVE LBRACE recvCase+ RBRACE               # ReceiveStmt
-          | SEMI                                          # NoStmt
+                              (COMMA rvalueList)? SEMI			# SendStmt
+          | ANNOUNCE expr (COMMA rvalueList)? SEMI				# AnnounceStmt
+          | GOTO stateName (COMMA rvalueList)? SEMI				# GotoStmt
+          | RECEIVE LBRACE recvCase+ RBRACE						# ReceiveStmt
+          | SEMI												# NoStmt
           ;
 
 lvalue : name=iden                 # VarLvalue
@@ -193,14 +192,19 @@ expr : primitive                                      # PrimitiveExpr
      | lhs=expr op=(EQ | NE) rhs=expr                 # BinExpr
      | lhs=expr op=LAND rhs=expr                      # BinExpr
      | lhs=expr op=LOR rhs=expr                       # BinExpr
+	 | CHOOSE LPAREN expr? RPAREN					  # ChooseExpr
+	 | formatedString								  # StringExpr
      ;
+
+formatedString	:	StringLiteral
+				|	FORMAT LPAREN StringLiteral (COMMA rvalueList)? RPAREN 
+				;	 
 
 primitive : iden
           | floatLiteral
           | BoolLiteral
           | IntLiteral
           | NullLiteral
-		  | StringLiteral
           | NONDET
           | FAIRNONDET
           | HALT
@@ -220,10 +224,7 @@ namedTupleBody : names+=iden ASSIGN values+=rvalue COMMA
                ;
 
 rvalueList : rvalue (COMMA rvalue)* ;
-rvalue : iden linear=(SWAP | MOVE)
-       | expr
-       ;
-
+rvalue : expr ;
 
 // module system related
 

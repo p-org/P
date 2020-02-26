@@ -54,6 +54,7 @@ namespace Plang.Compiler.Backend
             // TODO: I am suspicious.
             Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
             PLanguageType type = expr.Type;
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
                 case MapAccessExpr mapAccessExpr:
@@ -82,12 +83,14 @@ namespace Plang.Compiler.Backend
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private (IExprTerm, List<IPStmt>) SimplifyExpression(IPExpr expr)
         {
             Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
             List<IPStmt> deps = new List<IPStmt>();
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
                 case IExprTerm term:
@@ -132,6 +135,22 @@ namespace Plang.Compiler.Backend
                     deps.AddRange(castDeps);
                     deps.Add(castStore);
                     return (castTemp, deps);
+
+                case ChooseExpr chooseExpr:
+                    if (chooseExpr.SubExpr != null)
+                    {
+                        (IExprTerm chooseSubExpr, List<IPStmt> chooseDeps) = SimplifyExpression(chooseExpr.SubExpr);
+                        (VariableAccessExpr chooseTemp, IPStmt chooseStore) = SaveInTemporary(new ChooseExpr(location, chooseSubExpr, chooseExpr.Type));
+                        deps.AddRange(chooseDeps);
+                        deps.Add(chooseStore);
+                        return (chooseTemp, deps);
+                    }
+                    else
+                    {
+                        (VariableAccessExpr chooseTemp, IPStmt chooseStore) = SaveInTemporary(chooseExpr);
+                        deps.Add(chooseStore);
+                        return (chooseTemp, deps);
+                    }
 
                 case CoerceExpr coerceExpr:
                     (IExprTerm coerceSubExpr, List<IPStmt> coerceDeps) = SimplifyExpression(coerceExpr.SubExpr);
@@ -260,10 +279,16 @@ namespace Plang.Compiler.Backend
                     deps.AddRange(valuesDeps);
                     deps.Add(valuesStore);
                     return (valuesTemp, deps);
-
+                case StringExpr stringExpr:
+                    (IPExpr[] stringArgs, List< IPStmt > stringArgsDeps) = SimplifyFunArgs(stringExpr.Args);
+                    (VariableAccessExpr stringTemp, IPStmt stringStore) = SaveInTemporary(new StringExpr(location, stringExpr.BaseString, stringArgs.ToList()));
+                    deps.AddRange(stringArgsDeps);
+                    deps.Add(stringStore);
+                    return (stringTemp, deps);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private List<IPStmt> SimplifyStatement(IPStmt statement)
@@ -287,9 +312,11 @@ namespace Plang.Compiler.Backend
 
                 case AssertStmt assertStmt:
                     (IExprTerm assertExpr, List<IPStmt> assertDeps) = SimplifyExpression(assertStmt.Assertion);
-                    return assertDeps.Concat(new[]
+                    (IExprTerm messageExpr, List<IPStmt> messageDeps) = SimplifyExpression(assertStmt.Message);
+
+                    return assertDeps.Concat(messageDeps).Concat(new[]
                         {
-                            new AssertStmt(location, assertExpr, assertStmt.Message)
+                            new AssertStmt(location, assertExpr, messageExpr)
                         })
                         .ToList();
 
@@ -403,15 +430,9 @@ namespace Plang.Compiler.Backend
 
                 case PrintStmt printStmt:
                     List<IPStmt> deps = new List<IPStmt>();
-                    List<IPExpr> newArgs = new List<IPExpr>();
-                    foreach (IPExpr printStmtArg in printStmt.Args)
-                    {
-                        (IExprTerm arg, List<IPStmt> argDeps) = SimplifyExpression(printStmtArg);
-                        newArgs.Add(arg);
-                        deps.AddRange(argDeps);
-                    }
-
-                    return deps.Concat(new[] { new PrintStmt(location, printStmt.Message, newArgs) }).ToList();
+                    (IExprTerm newMessage, List<IPStmt> printDeps) = SimplifyExpression(printStmt.Message);
+                    deps.AddRange(printDeps);
+                    return deps.Concat(new[] { new PrintStmt(location, newMessage) }).ToList();
 
                 case RaiseStmt raiseStmt:
                     (IExprTerm raiseEvent, List<IPStmt> raiseEventDeps) = SimplifyExpression(raiseStmt.PEvent);
@@ -459,20 +480,6 @@ namespace Plang.Compiler.Backend
                             new ReturnStmt(location, new CloneExpr(returnValue))
                         })
                         .ToList();
-
-                case StringAssignStmt stringAssignStmt:
-                    (IPExpr stringAssignLV, List<IPStmt> stringAssignLVDeps) = SimplifyLvalue(stringAssignStmt.Location);
-                    deps = new List<IPStmt>();
-                    newArgs = new List<IPExpr>();
-                    foreach (IPExpr stringAssignStmtArg in stringAssignStmt.Args)
-                    {
-                        (IExprTerm arg, List<IPStmt> argDeps) = SimplifyExpression(stringAssignStmtArg);
-                        newArgs.Add(arg);
-                        deps.AddRange(argDeps);
-                    }
-
-                    return stringAssignLVDeps.Concat(deps).Concat(new[] { new StringAssignStmt(location, stringAssignLV, stringAssignStmt.BaseString, newArgs) }).ToList();
-
 
                 case BreakStmt breakStmt:
                     return new List<IPStmt> { breakStmt };

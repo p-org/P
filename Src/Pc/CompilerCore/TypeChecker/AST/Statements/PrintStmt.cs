@@ -5,15 +5,13 @@ namespace Plang.Compiler.TypeChecker.AST.Statements
 {
     public class PrintStmt : IPStmt
     {
-        public PrintStmt(ParserRuleContext sourceLocation, string message, List<IPExpr> args)
+        public PrintStmt(ParserRuleContext sourceLocation, IPExpr message)
         {
             SourceLocation = sourceLocation;
             Message = message;
-            Args = args;
         }
 
-        public string Message { get; }
-        public List<IPExpr> Args { get; }
+        public IPExpr Message { get; }
 
         public ParserRuleContext SourceLocation { get; }
     }

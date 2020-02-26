@@ -24,6 +24,7 @@ namespace Plang.Compiler.TypeChecker
 
         private static IEnumerable<Interface> InferCreates(IPAST tree, ITranslationErrorHandler handler)
         {
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (tree)
             {
                 case Function function:
@@ -43,7 +44,8 @@ namespace Plang.Compiler.TypeChecker
                         .Union(InferCreatesForExpr(announce.Payload, handler));
 
                 case AssertStmt assertStmt:
-                    return InferCreatesForExpr(assertStmt.Assertion, handler);
+                    return InferCreatesForExpr(assertStmt.Assertion, handler)
+                        .Union(InferCreatesForExpr(assertStmt.Message, handler));
 
                 case AssignStmt assignStmt:
                     return InferCreatesForExpr(assignStmt.Location, handler)
@@ -83,7 +85,7 @@ namespace Plang.Compiler.TypeChecker
                     return Enumerable.Empty<Interface>();
 
                 case PrintStmt printStmt:
-                    return printStmt.Args.SelectMany(expr => InferCreatesForExpr(expr, handler));
+                    return InferCreatesForExpr(printStmt.Message, handler);
 
                 case RaiseStmt raiseStmt:
                     return InferCreatesForExpr(raiseStmt.PEvent, handler)
@@ -98,10 +100,6 @@ namespace Plang.Compiler.TypeChecker
 
                 case ReturnStmt returnStmt:
                     return InferCreatesForExpr(returnStmt.ReturnValue, handler);
-
-                case StringAssignStmt stringAssignStmt:
-                    return InferCreatesForExpr(stringAssignStmt.Location, handler)
-                        .Union(stringAssignStmt.Args.SelectMany(expr => InferCreatesForExpr(expr, handler)));
 
                 case BreakStmt breakStmt:
                     return Enumerable.Empty<Interface>();
@@ -124,6 +122,7 @@ namespace Plang.Compiler.TypeChecker
                 default:
                     throw handler.InternalError(tree.SourceLocation, new ArgumentOutOfRangeException(nameof(tree)));
             }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private static IEnumerable<Interface> InferCreatesForExpr(IPExpr expr, ITranslationErrorHandler handler)

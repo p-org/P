@@ -95,45 +95,21 @@ namespace Plang.Compiler.Backend.Symbolic
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
         {
             var declName = context.GetNameForDecl(machine);
-            context.WriteLine(output, $"private static class {declName} {{");
+            context.WriteLine(output, $"private static class {declName} extends BaseMachine<{declName}.StateTag, EventTag> {{");
 
-            context.Write(output, "private enum State { ");
+            context.Write(output, "public enum StateTag { ");
             context.WriteCommaSeparated(output, machine.States, (state) =>
             {
                 context.Write(output, context.GetNameForDecl(state));
             });
             context.WriteLine(output, " }");
-            context.WriteLine(output, "private static final PrimVS.Ops<State> stateOps = new PrimVS.Ops<State>();");
-
-            context.WriteLine(output);
-
-            context.WriteLine(output, $"private PrimVS<State> state;");
 
             foreach (var field in machine.Fields)
                 context.WriteLine(output, $"private {GetSymbolicType(field.Type)} {CompilationContext.GetVar(field.Name)};");
 
             context.WriteLine(output);
 
-            // In the future, we will return the side effects of initialization, so we can't use a constructor for initialization.
-            // TODO: Take an event payload as input.
-            var initPcScope = context.FreshPathConstraintScope();
-            context.WriteLine(output, $"void initialize(Bdd {initPcScope.PathConstraintVar}) {{");
-            foreach (var field in machine.Fields)
-            {
-                context.WriteLine(output, $"this.{CompilationContext.GetVar(field.Name)} = {GetDefaultValue(context, initPcScope, field.Type)};");
-            }
-            // context.WriteLine(output, $"this.state = stateOps.guard(new PrimVS(State.{context.GetNameForDecl(machine.StartState)}), {initPcScope.PathConstraintVar});");
-            // TODO: Call entry function for start state here
-            context.WriteLine(output, $"this.runOutcomesToCompletion(GotoOutcome<>.singleState({initPcScope.PathConstraintVar}, State.{context.GetNameForDecl(machine.StartState)}), RaiseOutcome<>.empty());");
-            context.WriteLine(output, "}");
-
-            context.WriteLine(output);
-
-            WriteRunOutcomesToCompletion(context, output, machine);
-            context.WriteLine(output);
-            WriteStateTransitionDispatcher(context, output, machine);
-            context.WriteLine(output);
-            WriteEventDispatcher(context, output, machine);
+            WriteMachineConstructor(context, output, machine);
 
             context.WriteLine(output);
 
@@ -143,164 +119,122 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "}");
         }
 
-        private void WriteRunOutcomesToCompletion(CompilationContext context, StringWriter output, Machine machine)
+        private void WriteMachineConstructor(CompilationContext context, StringWriter output, Machine machine)
         {
-            // TODO: Should this logic be in the runtime instead?
-            context.WriteLine(output, "void runOutcomesToCompletion(GotoOutcome<State> gotoOutcome, RaiseOutcome<EventVS<EventTag>> raiseOutcome) {");
-            context.WriteLine(output, "while (!(gotoOutcome.isEmpty() && raiseOutcome.isEmpty())) {");
-            context.WriteLine(output, "GotoOutcome<State> nextGotoOutcome = new GotoOutcome<State>();");
-            context.WriteLine(output, "RaiseOutcome<EventVS<EventTag>> nextRaiseOutcome = new RaiseOutcome<EventVS<EventTag>>();");
-            context.WriteLine(output, "if (!gotoOutcome.isEmpty()) {");
-            context.WriteLine(output, "processStateTransition(gotoOutcome.getGotoCond(), nextGotoOutcome, nextRaiseOutcome, gotoOutcome.getStateSummary());");
-            context.WriteLine(output, "}");
-            context.WriteLine(output, "if (!raiseOutcome.isEmpty()) {");
-            context.WriteLine(output, "processEvent(raiseOutcome.getRaiseCond(), nextGotoOutcome, nextRaiseOutcome, raiseOutcome.getEventSummary());");
-            context.WriteLine(output, "}");
-            context.WriteLine(output, "gotoOutcome = nextGotoOutcome;");
-            context.WriteLine(output, "raiseOutcome = nextRaiseOutcome;");
-            context.WriteLine(output, "}");
+            var declName = context.GetNameForDecl(machine);
+            context.WriteLine(output, $"{declName}() {{");
+            context.Write(output, $"super(eventOps, StateTag.{context.GetNameForDecl(machine.StartState)}");
+            foreach (var state in machine.States)
+            {
+                context.WriteLine(output, ",");
+                WriteState(context, output, state);
+            }
+            context.WriteLine(output);
+            context.WriteLine(output, ");");
             context.WriteLine(output, "}");
         }
 
-        private void WriteStateTransitionDispatcher(CompilationContext context, StringWriter output, Machine machine)
+        private void WriteState(CompilationContext context, StringWriter output, State state)
         {
-            PathConstraintScope rootPcScope = context.FreshPathConstraintScope();
-            context.WriteLine(output, $"void processStateTransition(");
-            context.WriteLine(output, $"    Bdd {rootPcScope.PathConstraintVar},");
-            context.WriteLine(output, "    GotoOutcome<State> gotoOutcome, // 'out' parameter");
-            context.WriteLine(output, "    RaiseOutcome<EventVS<EventTag>> raiseOutcome, // 'out' parameter");
-            context.WriteLine(output, "    PrimVS<State> newState");
-            context.WriteLine(output, ") {");
-            context.WriteLine(output, "// Exit functions");
-            context.WriteLine(output, "if (this.state != null) { // special case for initialization");
-            context.WriteLine(output, $"PrimVS<State> guardedState = stateOps.guard(this.state, {rootPcScope.PathConstraintVar});");
-            foreach (var state in machine.States)
+            context.Write(output, $"new State(StateTag.{context.GetNameForDecl(state)}");
+            foreach (var handler in state.AllEventHandlers)
             {
-                if (state.Exit != null)
-                {
-                    Debug.Assert(!MayExitWithOutcome(state.Exit));
-                    var statePcScope = context.FreshPathConstraintScope();
-                    var stateName = context.GetNameForDecl(state);
-                    context.WriteLine(output, $"Bdd {statePcScope.PathConstraintVar} = guardedState.guardedValues.get(State.{stateName});");
-                    context.WriteLine(output, $"if ({statePcScope.PathConstraintVar} != null && !{statePcScope.PathConstraintVar}.isConstFalse()) {{");
-                    context.WriteLine(output, $"this.{context.GetNameForDecl(state.Exit)}({statePcScope.PathConstraintVar});");
-                    context.WriteLine(output, "}");
-                }
+                context.WriteLine(output, ",");
+                WriteEventHandler(context, output, handler);
             }
-            context.WriteLine(output, "}");
             context.WriteLine(output);
-            context.WriteLine(output, $"this.state = stateOps.merge(newState, stateOps.guard(this.state, {rootPcScope.PathConstraintVar}.not()))");
-            context.WriteLine(output);
-            context.WriteLine(output, "// Entry functions");
-            foreach (var state in machine.States)
+            context.WriteLine(output, ") {");
+            if (state.Entry != null)
             {
-                if (state.Entry != null)
-                {
-                    var statePcScope = context.FreshPathConstraintScope();
-                    var stateName = context.GetNameForDecl(state);
-                    context.WriteLine(output, $"Bdd {statePcScope.PathConstraintVar} = newState.guardedValues.get(State.{stateName});");
-                    context.WriteLine(output, $"if ({statePcScope.PathConstraintVar} != null && !{statePcScope.PathConstraintVar}.isConstFalse()) {{");
-                    context.Write(output, $"this.{context.GetNameForDecl(state.Entry)}({statePcScope.PathConstraintVar}");
-                    if (state.Entry.CanChangeState ?? false)
+                context.WriteLine(output, "@Override public void entry(Bdd pc, BaseMachine machine, GotoOutcome<StateTag> gotoOutcome, RaiseOutcome<EventTag> raiseOutcome) {");
+
+                var entryFunc = state.Entry;
+                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}(pc");
+                if (entryFunc.CanChangeState ?? false)
+                    context.Write(output, ", gotoOutcome");
+                if (entryFunc.CanRaiseEvent ?? false)
+                    context.Write(output, ", raiseOutcome");
+                if (entryFunc.Signature.Parameters.Count() != 0)
+                    throw new NotImplementedException("Entry functions with payloads are not yet supported");
+                context.WriteLine(output, ");");
+
+                context.WriteLine(output, "}");
+            }
+            if (state.Exit != null)
+            {
+                context.WriteLine(output, "@Override public void exit(Bdd pc, BaseMachine machine, GotoOutcome<StateTag> gotoOutcome, RaiseOutcome<EventTag> raiseOutcome) {");
+
+                var exitFunc = state.Exit;
+                Debug.Assert(!(exitFunc.CanChangeState ?? false));
+                Debug.Assert(!(exitFunc.CanRaiseEvent ?? false));
+                if (exitFunc.Signature.Parameters.Count() != 0)
+                    throw new NotImplementedException("Exit functions with payloads are not yet supported");
+                context.WriteLine(output, $"(({context.GetNameForDecl(exitFunc.Owner)})machine).{context.GetNameForDecl(exitFunc)}(pc);");
+
+                context.WriteLine(output, "}");
+            }
+            context.Write(output, "}");
+        }
+
+        private void WriteEventHandler(CompilationContext context, StringWriter output, KeyValuePair<PEvent, IStateAction> handler)
+        {
+            var eventTag = $"EventTag.{context.GetNameForDecl(handler.Key)}";
+            switch (handler.Value)
+            {
+                case EventDefer _:
+                    context.Write(output, "/* TODO: Defer handler */");
+                    break;
+                case EventDoAction action:
+                    context.WriteLine(output, $"new EventHandler({eventTag}) {{");
+                    context.WriteLine(output, "@Override public void handleEvent(Bdd pc, Object payload, BaseMachine machine, GotoOutcome<StateTag> gotoOutcome, RaiseOutcome<EventTag> raiseOutcome) {");
+                    var actionFunc = action.Target;
+                    context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc");
+                    if (actionFunc.CanChangeState ?? false)
                         context.Write(output, ", gotoOutcome");
-                    if (state.Entry.CanRaiseEvent ?? false)
+                    if (actionFunc.CanRaiseEvent ?? false)
                         context.Write(output, ", raiseOutcome");
+                    if (actionFunc.Signature.Parameters.Count() == 1)
+                    {
+                        Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
+                        var payloadVSType = GetSymbolicType(handler.Key.PayloadType);
+                        context.Write(output, $", ({payloadVSType})payload");
+                    }
                     context.WriteLine(output, ");");
                     context.WriteLine(output, "}");
-                }
-            }
-            context.WriteLine(output, "}");
-        }
-
-        private void WriteEventDispatcher(CompilationContext context, StringWriter output, Machine machine)
-        {
-            PathConstraintScope rootPcScope = context.FreshPathConstraintScope();
-            context.WriteLine(output, $"void processEvent(");
-            context.WriteLine(output, $"    Bdd {rootPcScope.PathConstraintVar},");
-            context.WriteLine(output, "    GotoOutcome<State> gotoOutcome, // 'out' parameter");
-            context.WriteLine(output, "    RaiseOutcome<EventVS<EventTag>> raiseOutcome, // 'out' parameter");
-            context.WriteLine(output, "    EventVS<EventTag> event");
-            context.WriteLine(output, ") {");
-            context.WriteLine(output);
-            foreach (var state in machine.States)
-            {
-                var statePcScope = context.FreshPathConstraintScope();
-                var stateName = context.GetNameForDecl(state);
-                context.WriteLine(output, $"Bdd {statePcScope.PathConstraintVar} = this.state.guardedValues.get(State.{stateName});");
-                context.WriteLine(output, $"if ({statePcScope.PathConstraintVar} != null && !{statePcScope.PathConstraintVar}.isConstFalse()) {{");
-                context.WriteLine(output, $"Bdd hasHandler = Bdd.constFalse();");
-                context.WriteLine(output, $"EventVS<EventTag> guardedEvent = eventOps.guard(event, {statePcScope.PathConstraintVar});");
-                context.WriteLine(output);
-                foreach (var handler in state.AllEventHandlers)
-                {
-                    var handlerPcScope = context.FreshPathConstraintScope();
-                    var eventName = context.GetNameForDecl(handler.Key);
-                    context.WriteLine(output, $"Bdd {handlerPcScope.PathConstraintVar} = guardedEvent.getCondForTag(EventTag.{eventName});");
-                    context.WriteLine(output, $"if ({handlerPcScope.PathConstraintVar} != null && !{handlerPcScope.PathConstraintVar}.isConstFalse()) {{");
-                    context.WriteLine(output, $"hasHandler = hasHandler.or({handlerPcScope.PathConstraintVar});");
-                    switch (handler.Value)
+                    context.Write(output, "}");
+                    break;
+                case EventGotoState gotoState:
+                    context.Write(output, $"new GotoEventHandler({eventTag}) ");
+                    if (gotoState.TransitionFunction != null)
                     {
-                        case EventDefer defer:
-                            context.WriteLine(output, "/* TODO: Defer event */");
-                            break;
-                        case EventDoAction action:
-                            {
-                                var actionFunc = action.Target;
-                                context.Write(output, $"this.{context.GetNameForDecl(actionFunc)}({handlerPcScope.PathConstraintVar}");
-                                if (actionFunc.CanChangeState ?? false)
-                                    context.Write(output, ", gotoOutcome");
-                                if (actionFunc.CanRaiseEvent ?? false)
-                                    context.Write(output, ", raiseOutcome");
-                                if (actionFunc.Signature.Parameters.Count() == 1)
-                                {
-                                    Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
-                                    context.Write(output, $", guardedEvent.getPayload(EventTag.{eventName})");
-                                }
-                                else
-                                {
-                                    Debug.Assert(actionFunc.Signature.Parameters.Count() == 0);
-                                }
-                                context.WriteLine(output, ");");
-                            }
-                            break;
-                        case EventGotoState gotoState:
-                            if (gotoState.TransitionFunction != null)
-                            {
-                                var transitionFunc = gotoState.TransitionFunction;
-                                Debug.Assert(!(transitionFunc.CanChangeState ?? false));
-                                Debug.Assert(!(transitionFunc.CanRaiseEvent ?? false));
-                                if (transitionFunc.Signature.Parameters.Count() == 1)
-                                {
-                                    Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
-                                    context.WriteLine(output, $"this.{context.GetNameForDecl(transitionFunc)}({handlerPcScope.PathConstraintVar}, guardedEvent.getPayload(EventTag.{eventName}));");
-                                }
-                                else
-                                {
-                                    Debug.Assert(transitionFunc.Signature.Parameters.Count() == 0);
-                                    context.WriteLine(output, $"this.{context.GetNameForDecl(transitionFunc)}({handlerPcScope.PathConstraintVar});");
-                                }
-                            }
-                            context.WriteLine(output, $"gotoOutcome.addGuardedGoto({handlerPcScope.PathConstraintVar}, State.{context.GetNameForDecl(gotoState.Target)});");
-                            break;
-                        case EventIgnore ignore:
-                            context.WriteLine(output, "// Ignore");
-                            break;
-                        case EventPushState pushState:
-                            context.WriteLine(output, "/* TODO: Push state */");
-                            break;
-                        default:
-                            throw new NotImplementedException($"Unrecognized handler type {handler.Value.GetType().Name}");
+                        context.WriteLine(output, "{");
+                        context.WriteLine(output, "@Override public void transitionAction(Bdd pc, BaseMachine machine, Object payload) {");
+
+                        var transitionFunc = gotoState.TransitionFunction;
+                        Debug.Assert(!(transitionFunc.CanChangeState ?? false));
+                        Debug.Assert(!(transitionFunc.CanRaiseEvent ?? false));
+
+                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc)})machine).{context.GetNameForDecl(transitionFunc)}(pc");
+                        if (transitionFunc.Signature.Parameters.Count() == 1)
+                        {
+                            Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
+                            var payloadVSType = GetSymbolicType(handler.Key.PayloadType);
+                            context.Write(output, $", ({payloadVSType})payload");
+                        }
+                        context.Write(output, ");");
+                        context.WriteLine(output, "}");
+                        context.Write(output, "}");
                     }
-                    context.WriteLine(output, "}");
-                }
-                context.WriteLine(output);
-                context.WriteLine(output, $"if (!{statePcScope.PathConstraintVar}.and(hasHandler.not()).isConstFalse()) {{");
-                context.WriteLine(output, $"throw new BugFoundException({statePcScope.PathConstraintVar});");
-                context.WriteLine(output, "}");
-                context.WriteLine(output, "}");
-                context.WriteLine(output);
+                    break;
+                case EventIgnore _:
+                    context.WriteLine(output, $"new IgnoreEventHandler({eventTag})");
+                    break;
+                case EventPushState _:
+                    context.WriteLine(output, "/* TODO: Push state */");
+                    break;
+                default:
+                    throw new NotImplementedException($"Unrecognized handler type {handler.Value.GetType().Name}");
             }
-            context.WriteLine(output, "}");
         }
 
         internal struct ControlFlowContext

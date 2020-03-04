@@ -1,6 +1,6 @@
 // Foreign declarations
-type StringType;
-fun GetPassword() : StringType;
+type StringForeignType;
+fun GetPassword() : StringForeignType;
 
 // Event declarations
 event sendback : (machine, any);
@@ -9,7 +9,7 @@ event getback : any;
 // Machines
 machine TestMachine
 {
-	var someStringV : StringType;
+	var someStringV : StringForeignType;
 
 	start state Init {
 		entry {

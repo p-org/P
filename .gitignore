@@ -297,3 +297,8 @@ Src/PrtDist/Binaries/clusterconfiguration.xml
 nupkgs/
 /Tst/temp_builds
 *.db
+Src/Samples/ForeignTypes/CMakeCache.txt
+Src/Samples/ForeignTypes/CMakeFiles/
+Src/Samples/ForeignTypes/Makefile
+Src/Samples/ForeignTypes/cmake_install.cmake
+

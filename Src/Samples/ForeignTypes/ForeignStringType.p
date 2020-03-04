@@ -20,8 +20,8 @@ machine TestMachine
 		}
 
 		on getback do (payload: any) {
-			assert((payload as StringType) == someStringV);
-			print "{0}: success!", payload;
+			assert((payload as StringForeignType) == someStringV);
+			// print "{0}: success!", payload;
 		}
 	}
 }

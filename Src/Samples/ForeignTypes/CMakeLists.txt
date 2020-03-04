@@ -3,7 +3,7 @@ project (P)
 set(projectName ForeignTypes)
 find_package (Threads)
 add_definitions(-DPRT_PLAT_LINUXUSER)
-include_directories(~/Documents/P/Bld/Drops/Prt/include)
+include_directories(${CMAKE_SOURCE_DIR}/../../../../P/Bld/Drops/Prt/include)
 add_executable(foreign_types
 	ForeignStringType.c
 	ForeignStringType.h

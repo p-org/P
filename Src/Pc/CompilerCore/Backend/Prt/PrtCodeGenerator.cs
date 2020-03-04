@@ -1056,7 +1056,9 @@ namespace Plang.Compiler.Backend.Prt
                     break;
 
                 case PrintStmt printStmt:
-                    WritePrintStmt(output, printStmt, function);
+                    context.Write(output, $"PrtPrintf(");
+                    WriteExpr(output, function, printStmt.Message);
+                    context.WriteLine(output, ");");
                     break;
 
                 case RaiseStmt raiseStmt:
@@ -1241,12 +1243,7 @@ namespace Plang.Compiler.Backend.Prt
             }
 
             context.WriteLine(output);
-        }
-
-
-        private void WritePrintStmt(TextWriter output, PrintStmt printStmt, Function function)
-        {
-            throw new NotImplementedException("Print statement support for the C runtime is currently broken, please contact the P developers!");
+    
         }
 
         private void WriteLValue(TextWriter output, Function function, IPExpr expr)
@@ -1542,7 +1539,36 @@ namespace Plang.Compiler.Backend.Prt
                     break;
 
                 case StringExpr stringExpr:
-                    throw new NotImplementedException("String not fully supported in the C code gen");
+                    // format is {str0, n1, str1, n2, ..., nK, strK}
+                    object[] assignBaseParts = PrtTranslationUtils.ParsePrintMessage(stringExpr.BaseString);
+
+                    // Build parameter pack
+                    int k = (assignBaseParts.Length - 1) / 2;
+                    context.Write(output, "PrtMkStringValue(PrtFormatString(\"");
+                    context.Write(output, (string)assignBaseParts[0]);
+                    context.Write(output, "\", ");
+                    context.Write(output, stringExpr.Args.Count.ToString());
+                    foreach (IPExpr arg in stringExpr.Args)
+                    {
+                        context.Write(output, ", ");
+                        WriteExpr(output, function, arg);
+                    }
+
+                    context.Write(output, ", ");
+                    context.Write(output, k.ToString());
+                    for (int i = 0; i < k; i++)
+                    {
+                        int n = (int)assignBaseParts[1 + 2 * i];
+                        string s = (string)assignBaseParts[1 + 2 * i + 1];
+                        context.Write(output, ", ");
+                        context.Write(output, n.ToString());
+                        context.Write(output, ", \"");
+                        context.Write(output, s);
+                        context.Write(output, "\"");
+                    }
+
+                    context.WriteLine(output, "));");
+                    break;
 
                 case SizeofExpr sizeofExpr:
                     string sizeofFun = PLanguageType.TypeIsOfKind(sizeofExpr.Expr.Type, TypeKind.Map)

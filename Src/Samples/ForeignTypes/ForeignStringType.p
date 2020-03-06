@@ -1,6 +1,6 @@
 // Foreign declarations
-type StringType;
-fun GetPassword() : StringType;
+type StringForeignType;
+fun GetPassword() : StringForeignType;
 
 // Event declarations
 event sendback : (machine, any);
@@ -9,7 +9,7 @@ event getback : any;
 // Machines
 machine TestMachine
 {
-	var someStringV : StringType;
+	var someStringV : StringForeignType;
 
 	start state Init {
 		entry {
@@ -20,8 +20,8 @@ machine TestMachine
 		}
 
 		on getback do (payload: any) {
-			assert((payload as StringType) == someStringV);
-			print "{0}: success!", payload;
+			assert((payload as StringForeignType) == someStringV);
+			// print "{0}: success!", payload;
 		}
 	}
 }

@@ -74,7 +74,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case Function function:
                     if (function.IsForeign)
                         throw new NotImplementedException("Foreign functions are not yet supported");
-                    
+
                     WriteFunction(context, output, function);
                     break;
                 case Machine machine:
@@ -136,7 +136,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteState(CompilationContext context, StringWriter output, State state)
         {
-            context.Write(output, $"new State(StateTag.{context.GetNameForDecl(state)}");
+            context.Write(output, $"new State<StateTag, EventTag>(StateTag.{context.GetNameForDecl(state)}");
             foreach (var handler in state.AllEventHandlers)
             {
                 context.WriteLine(output, ",");
@@ -162,7 +162,7 @@ namespace Plang.Compiler.Backend.Symbolic
             }
             if (state.Exit != null)
             {
-                context.WriteLine(output, "@Override public void exit(Bdd pc, BaseMachine machine, GotoOutcome<StateTag> gotoOutcome, RaiseOutcome<EventTag> raiseOutcome) {");
+                context.WriteLine(output, "@Override public void exit(Bdd pc, BaseMachine machine) {");
 
                 var exitFunc = state.Exit;
                 Debug.Assert(!(exitFunc.CanChangeState ?? false));
@@ -185,7 +185,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, "/* TODO: Defer handler */");
                     break;
                 case EventDoAction action:
-                    context.WriteLine(output, $"new EventHandler({eventTag}) {{");
+                    context.WriteLine(output, $"new EventHandler<StateTag, EventTag>({eventTag}) {{");
                     context.WriteLine(output, "@Override public void handleEvent(Bdd pc, Object payload, BaseMachine machine, GotoOutcome<StateTag> gotoOutcome, RaiseOutcome<EventTag> raiseOutcome) {");
                     var actionFunc = action.Target;
                     context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc");
@@ -204,7 +204,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, "}");
                     break;
                 case EventGotoState gotoState:
-                    context.Write(output, $"new GotoEventHandler({eventTag}) ");
+                    var destTag = $"StateTag.{context.GetNameForDecl(gotoState.Target)}";
+                    context.Write(output, $"new GotoEventHandler<StateTag, EventTag>({eventTag}, {destTag}) ");
                     if (gotoState.TransitionFunction != null)
                     {
                         context.WriteLine(output, "{");
@@ -214,23 +215,23 @@ namespace Plang.Compiler.Backend.Symbolic
                         Debug.Assert(!(transitionFunc.CanChangeState ?? false));
                         Debug.Assert(!(transitionFunc.CanRaiseEvent ?? false));
 
-                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc)})machine).{context.GetNameForDecl(transitionFunc)}(pc");
+                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(pc");
                         if (transitionFunc.Signature.Parameters.Count() == 1)
                         {
                             Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
                             var payloadVSType = GetSymbolicType(handler.Key.PayloadType);
                             context.Write(output, $", ({payloadVSType})payload");
                         }
-                        context.Write(output, ");");
+                        context.WriteLine(output, ");");
                         context.WriteLine(output, "}");
                         context.Write(output, "}");
                     }
                     break;
                 case EventIgnore _:
-                    context.WriteLine(output, $"new IgnoreEventHandler({eventTag})");
+                    context.Write(output, $"new IgnoreEventHandler<StateTag, EventTag>({eventTag})");
                     break;
                 case EventPushState _:
-                    context.WriteLine(output, "/* TODO: Push state */");
+                    context.Write(output, "/* TODO: Push state */");
                     break;
                 default:
                     throw new NotImplementedException($"Unrecognized handler type {handler.Value.GetType().Name}");
@@ -331,22 +332,22 @@ namespace Plang.Compiler.Backend.Symbolic
             context.Write(output, functionName);
 
             context.WriteLine(output, $"(");
-            context.Write(output, $"    Bdd {rootPCScope.PathConstraintVar}");
+            context.Write(output, $"Bdd {rootPCScope.PathConstraintVar}");
             if (function.CanChangeState ?? false)
             {
                 Debug.Assert(function.Owner != null);
                 context.WriteLine(output, ",");
-                context.Write(output, "    GotoOutcome<State> gotoOutcome");
+                context.Write(output, "GotoOutcome<StateTag> gotoOutcome");
             }
             if (function.CanRaiseEvent ?? false)
             {
                 context.WriteLine(output, ",");
-                context.Write(output, "    RaiseOutcome<EventVS<EventTag>> raiseOutcome");
+                context.Write(output, "RaiseOutcome<EventVS<EventTag>> raiseOutcome");
             }
             foreach (var param in function.Signature.Parameters)
             {
                 context.WriteLine(output, ",");
-                context.Write(output, $"    {GetSymbolicType(param.Type, true)} {CompilationContext.GetVar(param.Name)}");
+                context.Write(output, $"{GetSymbolicType(param.Type, true)} {CompilationContext.GetVar(param.Name)}");
             }
             context.WriteLine(output);
             context.Write(output, ") ");
@@ -430,7 +431,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case RaiseStmt _:
                 case ReturnStmt _:
                     return true;
-                
+
                 default:
                     return false;
             }
@@ -602,7 +603,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     if (gotoStmt.Payload != null)
                         throw new NotImplementedException("Goto statements with payloads not yet supported");
 
-                    context.WriteLine(output, $"gotoOutcome.addGuardedGoto({flowContext.pcScope.PathConstraintVar}, State.{context.GetNameForDecl(gotoStmt.State)});");
+                    context.WriteLine(output, $"gotoOutcome.addGuardedGoto({flowContext.pcScope.PathConstraintVar}, StateTag.{context.GetNameForDecl(gotoStmt.State)});");
 
                     context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = Bdd.constFalse();");
                     SetFlagsForPossibleReturn(context, output, flowContext);
@@ -721,7 +722,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, "// 'then' branch");
                     WriteStmt(function, context, output, thenContext, ifStmt.ThenBranch);
                     context.WriteLine(output, "}");
-                    
+
                     if (!(ifStmt.ElseBranch is null))
                     {
                         context.WriteLine(output, $"if (!{elseContext.pcScope.PathConstraintVar}.isConstFalse()) {{");
@@ -849,7 +850,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             if (function.CanRaiseEvent ?? false)
                 context.Write(output, ", raiseOutcome");
-            
+
             foreach (var param in args)
             {
                 context.Write(output, ", ");
@@ -1044,7 +1045,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     var guardedTemp = context.FreshTempVar();
 
                     context.Write(output, $"{GetSymbolicType(variableAccessExpr.Type)} {guardedTemp}");
-                    
+
                     if (needOrigValue)
                     {
                         context.WriteLine(output, $" = {summaryOps}.guard({unguarded}, {pcScope.PathConstraintVar});    ");
@@ -1062,7 +1063,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         $"{guardedTemp});");
 
                     break;
-                
+
                 default:
                     throw new ArgumentOutOfRangeException($"Expression type '{lvalue.GetType().Name}' is not an lvalue");
             }
@@ -1469,6 +1470,9 @@ namespace Plang.Compiler.Backend.Symbolic
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
             context.WriteLine(output, "import symbolicp.*;");
+            context.WriteLine(output, "import symbolicp.bdd.*;");
+            context.WriteLine(output, "import symbolicp.vs.*;");
+            context.WriteLine(output, "import symbolicp.runtime.*;");
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.MainClassName} {{");
         }

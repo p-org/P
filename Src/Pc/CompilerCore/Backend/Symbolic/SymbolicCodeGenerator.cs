@@ -29,19 +29,25 @@ namespace Plang.Compiler.Backend.Symbolic
 
             WriteSourcePrologue(context, source.Stream);
 
-            WriteEventDefs(context, source.Stream, globalScope.Events);
+            context.WriteLine(source.Stream);
+
+            WriteEventTagDef(context, source.Stream, globalScope.Events);
 
             context.WriteLine(source.Stream);
 
             foreach (var decl in globalScope.AllDecls)
                 WriteDecl(context, source.Stream, decl);
 
+            WriteValueSummaryOpsDefs(context, source.Stream);
+
+            WriteEventOps(context, source.Stream, globalScope.Events);
+
             WriteSourceEpilogue(context, source.Stream);
 
             return source;
         }
 
-        private void WriteEventDefs(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
+        private void WriteEventTagDef(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
         {
             context.Write(output, "enum EventTag { ");
             context.WriteCommaSeparated(output, events, (pEvent) =>
@@ -49,7 +55,10 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.Write(output, context.GetNameForDecl(pEvent));
             });
             context.WriteLine(output, " }");
+        }
 
+        private void WriteEventOps(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
+        {
             context.Write(output, "final static EventVS.Ops<EventTag> eventOps = new EventVS.Ops<EventTag>(");
             context.WriteCommaSeparated(output, events, (pEvent) =>
             {
@@ -64,7 +73,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, payloadOps.GetName());
                 }
             });
-            context.Write(output, ");");
+            context.WriteLine(output, ");");
         }
 
         private void WriteDecl(CompilationContext context, StringWriter output, IPDecl decl)
@@ -1477,7 +1486,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, $"public class {context.MainClassName} {{");
         }
 
-        private void WriteSourceEpilogue(CompilationContext context, StringWriter output)
+        private void WriteValueSummaryOpsDefs(CompilationContext context, StringWriter output)
         {
             for (int i = 0; i < context.PendingValueSummaryOpsDefs.Count; i++)
             {
@@ -1487,7 +1496,10 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, $"    {def.opsDef};");
                 context.WriteLine(output);
             }
+        }
 
+        private void WriteSourceEpilogue(CompilationContext context, StringWriter output)
+        {
             context.WriteLine(output, "}");
         }
     }

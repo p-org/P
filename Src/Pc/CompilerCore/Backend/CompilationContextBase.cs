@@ -37,7 +37,7 @@ namespace Plang.Compiler.Backend
             // of one past the last leading }.
             int i;
             for (i = 0; i < format.Length; i++)
-                if (format[i] == '}')
+                if (format[i] == '}' || format[i] == ')')
                     IndentationLevel--;
                 else if (!char.IsWhiteSpace(format[i])) break;
 
@@ -51,9 +51,9 @@ namespace Plang.Compiler.Backend
 
             // Compute indentation for future lines starting from after last leading }.
             for (; i < format.Length; i++)
-                if (format[i] == '{')
+                if (format[i] == '{' || format[i] == '(')
                     IndentationLevel++;
-                else if (format[i] == '}') IndentationLevel--;
+                else if (format[i] == '}' || format[i] == ')') IndentationLevel--;
         }
 
         public void Write(TextWriter output, string format)
@@ -62,7 +62,7 @@ namespace Plang.Compiler.Backend
             // of one past the last leading }.
             int i;
             for (i = 0; i < format.Length; i++)
-                if (format[i] == '}')
+                if (format[i] == '}' || format[i] == ')')
                     IndentationLevel--;
                 else if (!char.IsWhiteSpace(format[i])) break;
 
@@ -76,9 +76,9 @@ namespace Plang.Compiler.Backend
 
             // Compute indentation for future lines starting from after last leading }.
             for (; i < format.Length; i++)
-                if (format[i] == '{')
+                if (format[i] == '{' || format[i] == '(')
                     IndentationLevel++;
-                else if (format[i] == '}') IndentationLevel--;
+                else if (format[i] == '}' || format[i] == ')') IndentationLevel--;
         }
     }
 }

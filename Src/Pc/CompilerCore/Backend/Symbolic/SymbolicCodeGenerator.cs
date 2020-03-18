@@ -640,6 +640,17 @@ namespace Plang.Compiler.Backend.Symbolic
 
                     break;
 
+                case PrintStmt printStmt:
+                    context.Write(output, $"RuntimeLogger.log(\"{printStmt.Message}\"");
+                    foreach (var printArg in printStmt.Args)
+                    {
+                        context.Write(output, ", ");
+                        WriteExpr(context, output, flowContext.pcScope, printArg);
+                    }
+
+                    context.WriteLine(output, ");");
+                    break;
+
                 case BreakStmt breakStmt:
                     Debug.Assert(flowContext.loopScope.HasValue);
                     context.WriteLine(output, $"{flowContext.loopScope.Value.LoopExitsList}.add({flowContext.pcScope.PathConstraintVar});");

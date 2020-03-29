@@ -31,7 +31,11 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(source.Stream);
 
-            WriteEventTagDef(context, source.Stream, globalScope.Events);
+            WriteEventTagDefs(context, source.Stream, globalScope.Events);
+
+            context.WriteLine(source.Stream);
+
+            WriteMachineTagDefs(context, source.Stream, globalScope.Machines);
 
             context.WriteLine(source.Stream);
 
@@ -47,14 +51,22 @@ namespace Plang.Compiler.Backend.Symbolic
             return source;
         }
 
-        private void WriteEventTagDef(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
+        private void WriteEventTagDefs(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
         {
-            context.Write(output, "enum EventTag { ");
-            context.WriteCommaSeparated(output, events, (pEvent) =>
+            for (int i = 0; i < events.Count(); i++)
             {
-                context.Write(output, context.GetNameForDecl(pEvent));
-            });
-            context.WriteLine(output, " }");
+                var pEvent = events.ElementAt(i);
+                context.WriteLine(output, $"final static EventTag {context.GetNameForDecl(pEvent)} = new EventTag(\"{pEvent.Name}\", {i});");
+            }
+        }
+
+        private void WriteMachineTagDefs(CompilationContext context, StringWriter output, IEnumerable<Machine> machines)
+        {
+            for (int i = 0; i < machines.Count(); i++)
+            {
+                var machine = machines.ElementAt(i);
+                context.WriteLine(output, $"final static MachineTag {context.GetMachineTag(machine)} = new MachineTag(\"{machine.Name}\", {i});");
+            }
         }
 
         private void WriteEventOps(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
@@ -62,7 +74,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.Write(output, "final static EventVS.Ops<EventTag> eventOps = new EventVS.Ops<EventTag>(");
             context.WriteCommaSeparated(output, events, (pEvent) =>
             {
-                context.Write(output, $"EventTag.{context.GetNameForDecl(pEvent)}, ");
+                context.Write(output, $"{context.GetNameForDecl(pEvent)}, ");
                 var payloadType = pEvent.PayloadType;
                 if (payloadType.IsSameTypeAs(PrimitiveType.Null))
                 {
@@ -104,14 +116,15 @@ namespace Plang.Compiler.Backend.Symbolic
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
         {
             var declName = context.GetNameForDecl(machine);
-            context.WriteLine(output, $"private static class {declName} extends BaseMachine<{declName}.StateTag, EventTag> {{");
+            context.WriteLine(output, $"private static class {declName} extends BaseMachine {{");
 
-            context.Write(output, "public enum StateTag { ");
-            context.WriteCommaSeparated(output, machine.States, (state) =>
+            for (int i = 0; i < machine.States.Count(); i++)
             {
-                context.Write(output, context.GetNameForDecl(state));
-            });
-            context.WriteLine(output, " }");
+                var state = machine.States.ElementAt(i);
+                context.WriteLine(output, $"private final static StateTag {context.GetNameForDecl(state)} = new StateTag(\"{state.Name}\", {i});");
+            }
+
+            context.WriteLine(output);
 
             foreach (var field in machine.Fields)
                 context.WriteLine(output, $"private {GetSymbolicType(field.Type)} {CompilationContext.GetVar(field.Name)};");
@@ -126,13 +139,14 @@ namespace Plang.Compiler.Backend.Symbolic
                 WriteFunction(context, output, method);
 
             context.WriteLine(output, "}");
+            context.WriteLine(output);
         }
 
         private void WriteMachineConstructor(CompilationContext context, StringWriter output, Machine machine)
         {
             var declName = context.GetNameForDecl(machine);
             context.WriteLine(output, $"{declName}() {{");
-            context.Write(output, $"super(eventOps, StateTag.{context.GetNameForDecl(machine.StartState)}");
+            context.Write(output, $"super(eventOps, {context.GetNameForDecl(machine.StartState)}");
             foreach (var state in machine.States)
             {
                 context.WriteLine(output, ",");
@@ -145,7 +159,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteState(CompilationContext context, StringWriter output, State state)
         {
-            context.Write(output, $"new State<StateTag, EventTag>(StateTag.{context.GetNameForDecl(state)}");
+            context.Write(output, $"new State({context.GetNameForDecl(state)}");
             foreach (var handler in state.AllEventHandlers)
             {
                 context.WriteLine(output, ",");
@@ -155,10 +169,10 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, ") {");
             if (state.Entry != null)
             {
-                context.WriteLine(output, "@Override public void entry(Bdd pc, BaseMachine machine, GotoOutcome<StateTag> gotoOutcome, RaiseOutcome<EventTag> raiseOutcome) {");
+                context.WriteLine(output, "@Override public void entry(Bdd pc, BaseMachine machine, GotoOutcome gotoOutcome, RaiseOutcome raiseOutcome) {");
 
                 var entryFunc = state.Entry;
-                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}(pc");
+                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}(pc, machine.effectQueue");
                 if (entryFunc.CanChangeState ?? false)
                     context.Write(output, ", gotoOutcome");
                 if (entryFunc.CanRaiseEvent ?? false)
@@ -187,17 +201,17 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteEventHandler(CompilationContext context, StringWriter output, KeyValuePair<PEvent, IStateAction> handler)
         {
-            var eventTag = $"EventTag.{context.GetNameForDecl(handler.Key)}";
+            var eventTag = context.GetNameForDecl(handler.Key);
             switch (handler.Value)
             {
                 case EventDefer _:
                     context.Write(output, "/* TODO: Defer handler */");
                     break;
                 case EventDoAction action:
-                    context.WriteLine(output, $"new EventHandler<StateTag, EventTag>({eventTag}) {{");
-                    context.WriteLine(output, "@Override public void handleEvent(Bdd pc, Object payload, BaseMachine machine, GotoOutcome<StateTag> gotoOutcome, RaiseOutcome<EventTag> raiseOutcome) {");
+                    context.WriteLine(output, $"new EventHandler({eventTag}) {{");
+                    context.WriteLine(output, "@Override public void handleEvent(Bdd pc, Object payload, BaseMachine machine, GotoOutcome gotoOutcome, RaiseOutcome raiseOutcome) {");
                     var actionFunc = action.Target;
-                    context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc");
+                    context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc, machine.effectQueue");
                     if (actionFunc.CanChangeState ?? false)
                         context.Write(output, ", gotoOutcome");
                     if (actionFunc.CanRaiseEvent ?? false)
@@ -213,8 +227,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, "}");
                     break;
                 case EventGotoState gotoState:
-                    var destTag = $"StateTag.{context.GetNameForDecl(gotoState.Target)}";
-                    context.Write(output, $"new GotoEventHandler<StateTag, EventTag>({eventTag}, {destTag}) ");
+                    var destTag = $"{context.GetNameForDecl(gotoState.Target)}";
+                    context.Write(output, $"new GotoEventHandler({eventTag}, {destTag}) ");
                     if (gotoState.TransitionFunction != null)
                     {
                         context.WriteLine(output, "{");
@@ -224,7 +238,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         Debug.Assert(!(transitionFunc.CanChangeState ?? false));
                         Debug.Assert(!(transitionFunc.CanRaiseEvent ?? false));
 
-                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(pc");
+                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(pc, machine.effectQueue");
                         if (transitionFunc.Signature.Parameters.Count() == 1)
                         {
                             Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
@@ -237,7 +251,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     }
                     break;
                 case EventIgnore _:
-                    context.Write(output, $"new IgnoreEventHandler<StateTag, EventTag>({eventTag})");
+                    context.Write(output, $"new IgnoreEventHandler({eventTag})");
                     break;
                 case EventPushState _:
                     context.Write(output, "/* TODO: Push state */");
@@ -341,17 +355,18 @@ namespace Plang.Compiler.Backend.Symbolic
             context.Write(output, functionName);
 
             context.WriteLine(output, $"(");
-            context.Write(output, $"Bdd {rootPCScope.PathConstraintVar}");
+            context.WriteLine(output, $"Bdd {rootPCScope.PathConstraintVar},");
+            context.Write(output, $"EffectQueue {CompilationContext.EffectQueueVar}");
             if (function.CanChangeState ?? false)
             {
                 Debug.Assert(function.Owner != null);
                 context.WriteLine(output, ",");
-                context.Write(output, "GotoOutcome<StateTag> gotoOutcome");
+                context.Write(output, "GotoOutcome gotoOutcome");
             }
             if (function.CanRaiseEvent ?? false)
             {
                 context.WriteLine(output, ",");
-                context.Write(output, "RaiseOutcome<EventVS<EventTag>> raiseOutcome");
+                context.Write(output, "RaiseOutcome raiseOutcome");
             }
             foreach (var param in function.Signature.Parameters)
             {
@@ -550,10 +565,7 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (stmt)
             {
                 case AssignStmt assignStmt:
-                    if (!assignStmt.Value.Type.IsSameTypeAs(assignStmt.Location.Type))
-                    {
-                        throw new NotImplementedException($"Cannot yet handle assignment to variable of type {assignStmt.Location.Type.CanonicalRepresentation} from value of type {assignStmt.Value.Type.CanonicalRepresentation}");
-                    }
+                    CheckIsSupportedAssignment(assignStmt.Value.Type, assignStmt.Location.Type);
 
                     WriteWithLValueMutationContext(
                         context,
@@ -572,10 +584,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case MoveAssignStmt moveStmt:
-                    if (!moveStmt.FromVariable.Type.IsSameTypeAs(moveStmt.ToLocation.Type))
-                    {
-                        throw new NotImplementedException($"Cannot yet handle assignment to variable of type {moveStmt.ToLocation.Type.CanonicalRepresentation} from value of type {moveStmt.FromVariable.Type.CanonicalRepresentation}");
-                    }
+                    CheckIsSupportedAssignment(moveStmt.FromVariable.Type, moveStmt.ToLocation.Type);
 
                     WriteWithLValueMutationContext(
                         context,
@@ -612,7 +621,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     if (gotoStmt.Payload != null)
                         throw new NotImplementedException("Goto statements with payloads not yet supported");
 
-                    context.WriteLine(output, $"gotoOutcome.addGuardedGoto({flowContext.pcScope.PathConstraintVar}, StateTag.{context.GetNameForDecl(gotoStmt.State)});");
+                    context.WriteLine(output, $"gotoOutcome.addGuardedGoto({flowContext.pcScope.PathConstraintVar}, {context.GetNameForDecl(gotoStmt.State)});");
 
                     context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = Bdd.constFalse();");
                     SetFlagsForPossibleReturn(context, output, flowContext);
@@ -769,6 +778,26 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteFunCallStmt(context, output, flowContext, funCallStmt.Function, funCallStmt.ArgsList);
                     break;
 
+                case CtorStmt ctorStmt:
+                    WriteCtorExpr(context, output, flowContext.pcScope, ctorStmt.Interface, ctorStmt.Arguments);
+                    context.WriteLine(output, ";");
+                    break;
+
+                case SendStmt sendStmt:
+                    context.Write(output, $"{CompilationContext.EffectQueueVar}.send({flowContext.pcScope.PathConstraintVar}, ");
+                    WriteExpr(context, output, flowContext.pcScope, sendStmt.MachineExpr);
+                    context.Write(output, ", ");
+                    WriteExpr(context, output, flowContext.pcScope, sendStmt.Evt);
+                    context.Write(output, ", ");
+                    if (sendStmt.Arguments.Count == 0)
+                        context.Write(output, "null");
+                    else if (sendStmt.Arguments.Count == 1)
+                        WriteExpr(context, output, flowContext.pcScope, sendStmt.Arguments[0]);
+                    else
+                        throw new NotImplementedException("Send statements with more than one payload argument are not supported");
+                    context.WriteLine(output, ");");
+                    break;
+
                 case InsertStmt insertStmt:
                     {
                         var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
@@ -835,6 +864,22 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        private void CheckIsSupportedAssignment(PLanguageType valueType, PLanguageType locationType)
+        {
+            var valueIsMachineRef = valueType.IsSameTypeAs(PrimitiveType.Machine) || valueType is PermissionType;
+            var locationIsMachineRef = locationType.IsSameTypeAs(PrimitiveType.Machine) || locationType is PermissionType;
+
+            if (valueIsMachineRef && locationIsMachineRef)
+                return;
+
+            if (!valueType.IsSameTypeAs(locationType))
+            {
+                throw new NotImplementedException(
+                    $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
+                    $"from value of type {valueType.CanonicalRepresentation}");
+            }
+        }
+
         private void WriteFunCallStmt(CompilationContext context, StringWriter output, ControlFlowContext flowContext, Function function, IReadOnlyList<IPExpr> args, IPExpr dest=null)
         {
             var isAsync = function.CanReceive == true;
@@ -863,7 +908,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
             }
 
-            context.Write(output, $"{context.GetNameForDecl(function)}({flowContext.pcScope.PathConstraintVar}");
+            context.Write(output, $"{context.GetNameForDecl(function)}({flowContext.pcScope.PathConstraintVar}, {CompilationContext.EffectQueueVar}");
 
             if (function.CanChangeState ?? false)
                 context.Write(output, ", gotoOutcome");
@@ -1169,6 +1214,13 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, pcScope, namedTupleAccessExpr.SubExpr);
                     context.Write(output, $").getNamedField(\"{namedTupleAccessExpr.FieldName}\")");
                     break;
+                case ThisRefExpr thisRefExpr:
+                    context.Write(
+                        output,
+                        $"{GetValueSummaryOps(context, PrimitiveType.Machine).GetName()}.guard(" +
+                        $"this.getMachineRef(), " +
+                        $"{pcScope.PathConstraintVar})");
+                    break;
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, $"({GetSymbolicType(tupleAccessExpr.Type)})(");
                     WriteExpr(context, output, pcScope, tupleAccessExpr.SubExpr);
@@ -1207,7 +1259,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     }
                 case EventRefExpr eventRefExpr:
                     {
-                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Event) }(EventTag.{context.GetNameForDecl(eventRefExpr.Value)})";
+                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Event) }({context.GetNameForDecl(eventRefExpr.Value)})";
                         var guarded = $"{GetValueSummaryOps(context, PrimitiveType.Event).GetName()}.guard({unguarded}, {pcScope.PathConstraintVar})";
                         context.Write(output, guarded);
                         break;
@@ -1241,6 +1293,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, pcScope, containsExpr.Item);
                     context.Write(output, ")");
                     break;
+                case CtorExpr ctorExpr:
+                    WriteCtorExpr(context, output, pcScope, ctorExpr.Interface, ctorExpr.Arguments);
+                    break;
                 case NondetExpr _:
                 case FairNondetExpr _:
                     context.Write(output, $"{GetValueSummaryOps(context, PrimitiveType.Bool).GetName()}" +
@@ -1250,6 +1305,21 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, $"/* Skipping expr '{expr.GetType().Name}' */");
                     break;
             }
+        }
+
+        private static void WriteCtorExpr(CompilationContext context, StringWriter output, PathConstraintScope pcScope, Interface ctorInterface, IReadOnlyList<IPExpr> ctorArguments)
+        {
+            if (ctorArguments.Count != 0)
+                throw new NotImplementedException("Constructor payloads are not yet supported");
+
+            // TODO: Is it safe to take an interface's name and treat it as if it were a machine's name?
+            context.Write(
+                output,
+                $"{CompilationContext.EffectQueueVar}.create(" +
+                $"{pcScope.PathConstraintVar}, " +
+                $"{CompilationContext.SchedulerVar}, " +
+                $"{context.GetMachineTag(ctorInterface)}, " +
+                $"new {context.GetNameForDecl(ctorInterface)})");
         }
 
         // TODO: This is copied from PSharpCodeGenerator.cs.  Should we factor this out into some common location?
@@ -1331,6 +1401,9 @@ namespace Plang.Compiler.Backend.Symbolic
                         return "void";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return "PrimVS<EventTag>";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
+                case PermissionType _:
+                    return "MachineRefVS";
                 case SequenceType sequenceType:
                     return $"ListVS<{GetSymbolicType(sequenceType.ElementType, true)}>";
                 case MapType mapType:
@@ -1343,6 +1416,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "TupleVS";
                 case EnumType enumType:
                     return $"PrimVS<Integer> /* enum {enumType.OriginalRepresentation} */";
+                    
                 default:
                     throw new NotImplementedException($"Symbolic type '{type.OriginalRepresentation}' not supported");
             }
@@ -1360,6 +1434,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "PrimVS.Ops<Float>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return "PrimVS.Ops<EventTag>";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
+                case PermissionType _:
+                    return "MachineRefVS.Ops";
                 case SequenceType sequenceType:
                     return $"ListVS.Ops<{GetSymbolicType(sequenceType.ElementType, true)}>";
                 case MapType mapType:
@@ -1367,7 +1444,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         $"{GetConcreteBoxedType(mapType.KeyType)}, " +
                         $"{GetSymbolicType(mapType.ValueType, true)}>";
                 case NamedTupleType _:
-                    return "NamedTupleVs.Ops";
+                    return "NamedTupleVS.Ops";
                 case TupleType _:
                     return "TupleVS.Ops";
                 case EnumType enumType:
@@ -1387,8 +1464,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     primitiveType.IsSameTypeAs(PrimitiveType.Bool) ||
                     primitiveType.IsSameTypeAs(PrimitiveType.Int) ||
                     primitiveType.IsSameTypeAs(PrimitiveType.Float) ||
-                    primitiveType.IsSameTypeAs(PrimitiveType.Event):
-
+                    primitiveType.IsSameTypeAs(PrimitiveType.Event) ||
+                    primitiveType.IsSameTypeAs(PrimitiveType.Machine):
+                case PermissionType _:
                     defBody = $"new {opsType}()";
                     break;
 
@@ -1396,6 +1474,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     var elemOps = GetValueSummaryOps(context, sequenceType.ElementType);
                     defBody = $"new {opsType}({elemOps.GetName()})";
                     break;
+
                 case MapType mapType:
                     var valOps = GetValueSummaryOps(context, mapType.ValueType);
                     defBody = $"new {opsType}({valOps.GetName()})";
@@ -1451,7 +1530,11 @@ namespace Plang.Compiler.Backend.Symbolic
                     unguarded = $"new {GetSymbolicType(type)}(0.0f)";
                     break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
-                    unguarded = $"new {GetSymbolicType(type)}(EventTag.{CompilationContext.NullEventName})";
+                    unguarded = $"new {GetSymbolicType(type)}({CompilationContext.NullEventName})";
+                    break;
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
+                case PermissionType _:
+                    unguarded = $"{GetSymbolicType(type)}.nullMachineRef()";
                     break;
                 case SequenceType _:
                     unguarded = $"new {GetSymbolicType(type)}()";
@@ -1495,6 +1578,8 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import symbolicp.runtime.*;");
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.MainClassName} {{");
+            context.WriteLine(output);
+            context.WriteLine(output, $"static Scheduler {CompilationContext.SchedulerVar};");
         }
 
         private void WriteValueSummaryOpsDefs(CompilationContext context, StringWriter output)

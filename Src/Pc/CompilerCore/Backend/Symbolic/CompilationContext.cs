@@ -59,6 +59,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     }
                 case Machine machine:
                     return $"machine_{machine.Name}";
+                case Interface @interface:
+                    // TODO: Is it safe to take an interface's name and treat it as if it were a machine's name?
+                    return $"machine_{@interface.Name}";
                 case State state:
                     return $"state_{state.Name}";
                 case PEvent pEvent:
@@ -68,7 +71,22 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        internal object GetMachineTag(Machine machine)
+        {
+            return $"machineTag_{machine.Name}";
+        }
+
+        internal object GetMachineTag(Interface @interface)
+        {
+            // TODO: Is it safe to take an interface's name and treat it as if it were a machine's name?
+            return $"machineTag_{@interface.Name}";
+        }
+
         internal static string NullEventName => "event_null";
+
+        internal static string SchedulerVar => "scheduler";
+
+        internal static string EffectQueueVar => "effects";
 
         internal static string GetVar(string rawName)
         {

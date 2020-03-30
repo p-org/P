@@ -145,6 +145,7 @@ namespace Main
             {
                 @"C:\Program Files\dotnet\dotnet.exe",
                 @"C:\Program Files (x86)\dotnet\dotnet.exe",
+                @"/usr/local/share/dotnet/dotnet",
                 Environment.GetEnvironmentVariable("DOTNET") ?? ""
             };
 

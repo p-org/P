@@ -31,7 +31,7 @@ jobs:
     buildConfiguration: 'Release'
   steps:
     - script: dotnet build --configuration $(buildConfiguration)
-    - script: dotnet test --configuration $(buildConfiguration) --filter "PrtSharpRegressionTests"
+    - script: dotnet test --configuration $(buildConfiguration)
 
 
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.Coyote.TestingServices;
+﻿using Microsoft.Coyote.SystematicTesting;
 using Plang.Compiler;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ namespace UnitTests.Runners
     internal class CoyoteRunner : ICompilerTestRunner
     {
         private static readonly string CoyoteAssemblyLocation =
-            Path.GetDirectoryName(typeof(TestingEngineFactory).GetTypeInfo().Assembly.Location);
+            Path.GetDirectoryName(typeof(TestingEngine).GetTypeInfo().Assembly.Location);
 
         private readonly FileInfo[] nativeSources;
         private readonly FileInfo[] sources;

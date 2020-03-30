@@ -121,12 +121,12 @@ namespace Plang.PrtSharp
 
         public bool TryRandomBool(int maxValue)
         {
-            return base.Random(maxValue);
+            return base.RandomBoolean(maxValue);
         }
 
         public bool TryRandomBool()
         {
-            return base.Random();
+            return base.RandomBoolean();
         }
 
         public void LogLine(string message)

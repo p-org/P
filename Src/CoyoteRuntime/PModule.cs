@@ -1,4 +1,4 @@
-﻿using Microsoft.Coyote.Runtime;
+﻿using Microsoft.Coyote.Actors;
 using System;
 using System.Collections.Generic;
 

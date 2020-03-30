@@ -234,7 +234,7 @@ namespace pingpong
             PModule.monitorMap.Clear();
         }
 
-        [Microsoft.Coyote.TestingServices.Test]
+        [Microsoft.Coyote.SystematicTesting.Test]
         public static void Execute(IActorRuntime runtime)
         {
             runtime.RegisterLog(new PLogFormatter());

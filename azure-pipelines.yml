@@ -12,6 +12,12 @@ jobs:
   variables:
     buildConfiguration: 'Release'
   steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET Core sdk'
+      inputs:
+      packageType: sdk
+      version: 2.2.203
+      installationPath: /usr/local/share/dotnet
     - script: dotnet build --configuration $(buildConfiguration)
     - script: dotnet test --configuration $(buildConfiguration)
     

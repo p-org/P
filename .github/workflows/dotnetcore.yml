@@ -1,4 +1,4 @@
-name: Build using .NET Core
+name: Build on Ubuntu using .NET Core
 
 on: [push]
 
@@ -14,4 +14,4 @@ jobs:
       with:
         dotnet-version: 2.2.108
     - name: Build with dotnet
-      run: dotnet build --configuration Release
+      run: dotnet test --configuration Release

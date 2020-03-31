@@ -25,7 +25,7 @@ jobs:
     - task: UseDotNet@2
       inputs:
         version: '2.2.x'
-        packageType: runtime
+        packageType: sdk
     - script: dotnet build --configuration $(buildConfiguration)
     - script: dotnet test --configuration $(buildConfiguration)
 

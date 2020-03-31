@@ -46,7 +46,7 @@ namespace UnitTests.Runners
             string[] args = new[] { "build", "Test.csproj" };
 
             int exitCode =
-                ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindDotnet(), args);
+                ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, "dotnet", args);
 
             if (exitCode == 0)
             {
@@ -137,42 +137,6 @@ namespace Main
             CompilationJob compilationJob = new CompilationJob(outputStream, CompilerOutput.Coyote, sources, "Main");
             compiler.Compile(compilationJob);
             return outputStream.OutputFiles;
-        }
-
-        private static string FindDotnet()
-        {
-            string[] dotnetPaths =
-            {
-                @"C:\Program Files\dotnet\dotnet.exe",
-                @"C:\Program Files (x86)\dotnet\dotnet.exe",
-                Environment.GetEnvironmentVariable("DOTNET") ?? ""
-            };
-
-            string dotnetPath = dotnetPaths.FirstOrDefault(File.Exists);
-            if (dotnetPath == null)
-            {
-                throw new CompilerTestException(TestCaseError.GeneratedSourceCompileFailed, "Could not find MSBuild");
-            }
-
-            return dotnetPath;
-        }
-
-        private static string FindCsc()
-        {
-            string[] cscPaths =
-            {
-                @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\Roslyn\csc.exe",
-                @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\Roslyn\csc.exe",
-                Environment.GetEnvironmentVariable("CSC") ?? ""
-            };
-
-            string cscPath = cscPaths.FirstOrDefault(File.Exists);
-            if (cscPath == null)
-            {
-                throw new CompilerTestException(TestCaseError.GeneratedSourceCompileFailed, "Could not find MSBuild");
-            }
-
-            return cscPath;
         }
     }
 }

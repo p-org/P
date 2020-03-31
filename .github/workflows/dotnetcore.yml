@@ -1,4 +1,4 @@
-name: GitHub Action on Ubuntu using .NET Core
+name: GitHub Action (Build using .NET Core)
 
 on: [push]
 

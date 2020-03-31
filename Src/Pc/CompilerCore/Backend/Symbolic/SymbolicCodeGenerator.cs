@@ -127,7 +127,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output);
 
             foreach (var field in machine.Fields)
-                context.WriteLine(output, $"private {GetSymbolicType(field.Type)} {CompilationContext.GetVar(field.Name)};");
+                context.WriteLine(output, $"private {GetSymbolicType(field.Type)} {CompilationContext.GetVar(field.Name)} = {GetDefaultValueNoGuard(context, field.Type)};");
 
             context.WriteLine(output);
 
@@ -1565,9 +1565,52 @@ namespace Plang.Compiler.Backend.Symbolic
                 default:
                     throw new NotImplementedException($"Default value for symbolic type '{type.OriginalRepresentation}' not supported");
             }
-
             var guarded = $"{GetValueSummaryOps(context, type).GetName()}.guard({unguarded}, {pcScope.PathConstraintVar})";
+           
             return guarded;
+        }
+
+        private string GetDefaultValueNoGuard(CompilationContext context, PLanguageType type) {
+            switch (type.Canonicalize())
+            {
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
+                    return $"new {GetSymbolicType(type)}(false)";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
+                    return $"new {GetSymbolicType(type)}(0)";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
+                    return $"new {GetSymbolicType(type)}(0.0f)";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
+                    return $"new {GetSymbolicType(type)}({CompilationContext.NullEventName})";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
+                case PermissionType _:
+                    return $"{GetSymbolicType(type)}.nullMachineRef()";
+                case SequenceType _:
+                    return $"new {GetSymbolicType(type)}()";
+                case MapType _:
+                    return $"new {GetSymbolicType(type)}()";
+                case NamedTupleType namedTupleType:
+                    {
+                        var allFieldDefaults = new List<string>();
+                        foreach (var field in namedTupleType.Fields)
+                        {
+                            var fieldDefault = GetDefaultValueNoGuard(context, field.Type);
+                            allFieldDefaults.Add($"\"{field.Name}\", {fieldDefault}");
+                        }
+                        return $"new {GetSymbolicType(type)}({string.Join(", ", allFieldDefaults)})";
+                    }
+                case TupleType tupleType:
+                    {
+                        var allFieldDefaults = new List<string>();
+                        foreach (var field in tupleType.Types)
+                        {
+                            var fieldDefault = GetDefaultValueNoGuard(context, field);
+                            allFieldDefaults.Add(fieldDefault);
+                        }
+                        return $"new {GetSymbolicType(type)}({string.Join(", ", allFieldDefaults)})";
+                    }
+                default:
+                    throw new NotImplementedException($"Default value for symbolic type '{type.OriginalRepresentation}' not supported");
+            }
         }
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)

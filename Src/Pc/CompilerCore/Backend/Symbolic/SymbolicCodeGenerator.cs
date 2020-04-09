@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -71,7 +71,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteEventOps(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
         {
-            context.Write(output, "final static EventVS.Ops<EventTag> eventOps = new EventVS.Ops<EventTag>(");
+            context.Write(output, "final static EventVS.Ops eventOps = new EventVS.Ops(");
             context.WriteCommaSeparated(output, events, (pEvent) =>
             {
                 context.Write(output, $"{context.GetNameForDecl(pEvent)}, ");
@@ -145,8 +145,8 @@ namespace Plang.Compiler.Backend.Symbolic
         private void WriteMachineConstructor(CompilationContext context, StringWriter output, Machine machine)
         {
             var declName = context.GetNameForDecl(machine);
-            context.WriteLine(output, $"{declName}() {{");
-            context.Write(output, $"super(eventOps, {context.GetNameForDecl(machine.StartState)}");
+            context.WriteLine(output, $"{declName}(int id) {{");
+            context.Write(output, $"super(eventOps, {context.GetMachineTag(machine)}, id, {context.GetNameForDecl(machine.StartState)}");
             foreach (var state in machine.States)
             {
                 context.WriteLine(output, ",");
@@ -1319,7 +1319,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 $"{pcScope.PathConstraintVar}, " +
                 $"{CompilationContext.SchedulerVar}, " +
                 $"{context.GetMachineTag(ctorInterface)}, " +
-                $"new {context.GetNameForDecl(ctorInterface)})");
+                $"(i) -> new {context.GetNameForDecl(ctorInterface)}(i))");
         }
 
         // TODO: This is copied from PSharpCodeGenerator.cs.  Should we factor this out into some common location?
@@ -1416,7 +1416,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "TupleVS";
                 case EnumType enumType:
                     return $"PrimVS<Integer> /* enum {enumType.OriginalRepresentation} */";
-                    
+
                 default:
                     throw new NotImplementedException($"Symbolic type '{type.OriginalRepresentation}' not supported");
             }

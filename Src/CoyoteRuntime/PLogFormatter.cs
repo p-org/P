@@ -210,11 +210,19 @@ namespace Plang.PrtSharp
 
         public override void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
         {
+            if (ex is PNonStandardReturnException)
+            {
+                return;
+            }
             base.OnExceptionHandled(id: id, stateName: this.GetShortName(stateName), actionName: actionName, ex: ex);
         }
 
         public override void OnExceptionThrown(ActorId id, string stateName, string actionName, Exception ex)
         {
+            if (ex is PNonStandardReturnException)
+            {
+                return;
+            }
             base.OnExceptionThrown(id: id, stateName: this.GetShortName(stateName), actionName: actionName, ex: ex);
         }
 

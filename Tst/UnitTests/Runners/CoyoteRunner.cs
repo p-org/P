@@ -91,7 +91,7 @@ namespace UnitTests.Runners
         {
             string testCode = @"
 using Microsoft.Coyote;
-using Microsoft.Coyote.TestingServices;
+using Microsoft.Coyote.SystematicTesting;
 using System;
 using System.Linq;
 
@@ -100,9 +100,9 @@ namespace Main
     public class _TestRegression {
         public static void Main(string[] args)
         {
-            Configuration configuration = Configuration.Create();
-            configuration.SchedulingIterations = 10;
-            ITestingEngine engine = TestingEngineFactory.CreateBugFindingEngine(configuration, DefaultImpl.Execute);
+            // Optional: increases verbosity level to see the Coyote runtime log.
+            Configuration configuration = Configuration.Create().WithTestingIterations(10);
+            TestingEngine engine = TestingEngine.Create(configuration, DefaultImpl.Execute);
             engine.Run();
             string bug = engine.TestReport.BugReports.FirstOrDefault();
             if (bug != null)
@@ -135,7 +135,7 @@ namespace Main
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.0-rc9""/>
+    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.3""/>
     <Reference Include = ""CoyoteRuntime.dll""/>
   </ItemGroup>
 </Project>";

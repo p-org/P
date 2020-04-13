@@ -51,12 +51,15 @@ namespace Plang.PrtSharp
             bool v = ex is UnhandledEventException;
             if (!v)
             {
-                return base.OnException(ex, methodName, e);
+                return ex is PNonStandardReturnException
+                    ? OnExceptionOutcome.HandledException
+                    : base.OnException(ex, methodName, e);
             }
 
             return (ex as UnhandledEventException).UnhandledEvent is PHalt
                 ? OnExceptionOutcome.Halt
                 : base.OnException(ex, methodName, e);
+
         }
 
         public PMachineValue CreateInterface<T>(PMachine creator, IPrtValue payload = null)
@@ -91,6 +94,7 @@ namespace Plang.PrtSharp
             System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             ev = (Event)oneArgConstructor.Invoke(new[] { payload });
             base.RaiseEvent(ev);
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
 
         public Task<Event> TryReceiveEvent(params Type[] events)
@@ -102,11 +106,13 @@ namespace Plang.PrtSharp
         {
             gotoPayload = payload;
             base.RaiseGotoStateEvent<T>();
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
         public void TryPopState()
         {
             base.RaisePopStateEvent();
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Pop };
         }
 
         public int TryRandomInt(int maxValue)

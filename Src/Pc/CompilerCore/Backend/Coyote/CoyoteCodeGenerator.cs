@@ -289,7 +289,7 @@ namespace Plang.Compiler.Backend.Coyote
         private void WriteTestFunction(CompilationContext context, StringWriter output, string main)
         {
             context.WriteLine(output);
-            context.WriteLine(output, "[Microsoft.Coyote.TestingServices.Test]");
+            context.WriteLine(output, "[Microsoft.Coyote.SystematicTesting.Test]");
             context.WriteLine(output, "public static void Execute(IActorRuntime runtime) {");
             context.WriteLine(output, "runtime.RegisterLog(new PLogFormatter());");
             context.WriteLine(output, "PModule.runtime = runtime;");
@@ -502,7 +502,7 @@ namespace Plang.Compiler.Backend.Coyote
 
                     case EventDoAction eventDoAction:
                         var targetDoFunctionName = context.Names.GetNameForDecl(eventDoAction.Target);
-                        targetDoFunctionName = eventDoAction.Target.IsAnon ? targetDoFunctionName : $"_{targetDoFunctionName}";
+                        targetDoFunctionName = eventDoAction.Target.IsAnon ? targetDoFunctionName : $"{targetDoFunctionName}";
                         context.WriteLine(
                             output,
                             $"[OnEventDoAction(typeof({context.Names.GetNameForDecl(pEvent)}), nameof({targetDoFunctionName}))]");
@@ -516,7 +516,7 @@ namespace Plang.Compiler.Backend.Coyote
 
                     case EventGotoState eventGotoState when eventGotoState.TransitionFunction != null:
                         var targetGotoFunctionName = context.Names.GetNameForDecl(eventGotoState.TransitionFunction);
-                        targetGotoFunctionName = eventGotoState.TransitionFunction.IsAnon ? targetGotoFunctionName : $"_{targetGotoFunctionName}";
+                        targetGotoFunctionName = eventGotoState.TransitionFunction.IsAnon ? targetGotoFunctionName : $"{targetGotoFunctionName}";
                         context.WriteLine(
                             output,
                             $"[OnEventGotoState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventGotoState.Target)}), nameof({targetGotoFunctionName}))]");
@@ -554,34 +554,6 @@ namespace Plang.Compiler.Backend.Coyote
             context.WriteLine(output, "}");
         }
 
-        private void WriteNamedFunctionWrapper(CompilationContext context, StringWriter output, Function function)
-        {
-            if (function.Role == FunctionRole.Method || function.Role == FunctionRole.Foreign)
-                return;
-
-            bool isAsync = function.CanReceive == true;
-            FunctionSignature signature = function.Signature;
-            string awaitMethod = isAsync ? "await " : "";
-            string returnType = function.Owner.IsSpec? "Transition" : "async Task<Transition>";
-
-            string functionName = context.Names.GetNameForDecl(function);
-            string functionParameters = "Event currentMachine_dequeuedEvent";
-
-            context.WriteLine(output,
-                $"public {returnType} {$"_{functionName}"}({functionParameters})");
-
-            context.WriteLine(output, "{");
-
-            //add the declaration of currentMachine
-            if (function.Owner != null)
-            {
-                context.WriteLine(output, $"{context.Names.GetNameForDecl(function.Owner)} currentMachine = this;");
-            }
-
-            var parameter = function.Signature.Parameters.Any()? $"({GetCSharpType(function.Signature.ParameterTypes.First())})((PEvent)currentMachine_dequeuedEvent).Payload":"";
-            context.WriteLine(output, $"{awaitMethod}{functionName}({parameter});");
-            context.WriteLine(output, "}");
-        }
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)
         {
             if (function.IsForeign)
@@ -591,11 +563,6 @@ namespace Plang.Compiler.Backend.Coyote
 
             bool isStatic = function.Owner == null;
 
-            if (!function.IsAnon && !isStatic)
-            {
-                WriteNamedFunctionWrapper(context, output, function);
-            }
-
             bool isAsync = function.CanReceive == true;
             FunctionSignature signature = function.Signature;
 
@@ -603,14 +570,7 @@ namespace Plang.Compiler.Backend.Coyote
             string asyncKeyword = isAsync ? "async " : "";
             string returnType = GetCSharpType(signature.ReturnType);
 
-            if (function.CanChangeState == true || function.CanRaiseEvent == true)
-            {
-                if (isAsync)
-                {
-                    returnType = (returnType == "void") ? "Task" : $"Task<{returnType}>";
-                }
-            }
-            else if (isAsync)
+            if (isAsync)
             {
                 returnType = returnType == "void" ? "Task" : $"Task<{returnType}>";
             }

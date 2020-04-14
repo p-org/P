@@ -1,17 +1,17 @@
-name: Build using .NET Core
+name: GitHub Action (Build using .NET Core)
 
 on: [push]
 
 jobs:
-  build:
-
+  Build-And-Test:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v1
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 2.2.108
-    - name: Build with dotnet
+    - name: Build
       run: dotnet build --configuration Release
+    - name: Test
+      run: dotnet test --configuration Release

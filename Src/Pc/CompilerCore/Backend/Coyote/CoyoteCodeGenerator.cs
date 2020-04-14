@@ -502,7 +502,7 @@ namespace Plang.Compiler.Backend.Coyote
 
                     case EventDoAction eventDoAction:
                         var targetDoFunctionName = context.Names.GetNameForDecl(eventDoAction.Target);
-                        targetDoFunctionName = eventDoAction.Target.IsAnon ? targetDoFunctionName : $"{targetDoFunctionName}";
+                        targetDoFunctionName = eventDoAction.Target.IsAnon ? targetDoFunctionName : $"_{targetDoFunctionName}";
                         context.WriteLine(
                             output,
                             $"[OnEventDoAction(typeof({context.Names.GetNameForDecl(pEvent)}), nameof({targetDoFunctionName}))]");
@@ -516,7 +516,7 @@ namespace Plang.Compiler.Backend.Coyote
 
                     case EventGotoState eventGotoState when eventGotoState.TransitionFunction != null:
                         var targetGotoFunctionName = context.Names.GetNameForDecl(eventGotoState.TransitionFunction);
-                        targetGotoFunctionName = eventGotoState.TransitionFunction.IsAnon ? targetGotoFunctionName : $"{targetGotoFunctionName}";
+                        targetGotoFunctionName = eventGotoState.TransitionFunction.IsAnon ? targetGotoFunctionName : $"_{targetGotoFunctionName}";
                         context.WriteLine(
                             output,
                             $"[OnEventGotoState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventGotoState.Target)}), nameof({targetGotoFunctionName}))]");
@@ -554,6 +554,32 @@ namespace Plang.Compiler.Backend.Coyote
             context.WriteLine(output, "}");
         }
 
+        private void WriteNamedFunctionWrapper(CompilationContext context, StringWriter output, Function function)
+        {
+            if (function.Role == FunctionRole.Method || function.Role == FunctionRole.Foreign)
+                return;
+
+            bool isAsync = function.CanReceive == true;
+            FunctionSignature signature = function.Signature;
+
+            string functionName = context.Names.GetNameForDecl(function);
+            string functionParameters = "Event currentMachine_dequeuedEvent";
+            string awaitMethod = isAsync ? "await " : "";
+            context.WriteLine(output,
+                $"public void {$"_{functionName}"}({functionParameters})");
+
+            context.WriteLine(output, "{");
+
+            //add the declaration of currentMachine
+            if (function.Owner != null)
+            {
+                context.WriteLine(output, $"{context.Names.GetNameForDecl(function.Owner)} currentMachine = this;");
+            }
+
+            var parameter = function.Signature.Parameters.Any()? $"({GetCSharpType(function.Signature.ParameterTypes.First())})((PEvent)currentMachine_dequeuedEvent).Payload":"";
+            context.WriteLine(output, $"{awaitMethod}{functionName}({parameter});");
+            context.WriteLine(output, "}");
+        }
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)
         {
             if (function.IsForeign)
@@ -562,6 +588,11 @@ namespace Plang.Compiler.Backend.Coyote
             }
 
             bool isStatic = function.Owner == null;
+
+            if (!function.IsAnon && !isStatic)
+            {
+                WriteNamedFunctionWrapper(context, output, function);
+            }
 
             bool isAsync = function.CanReceive == true;
             FunctionSignature signature = function.Signature;

@@ -1,7 +1,6 @@
 ﻿using Microsoft.Coyote;
 using Microsoft.Coyote.Actors;
 using Microsoft.Coyote.Runtime;
-using Microsoft.Coyote.Runtime.Logging;
 using Plang.PrtSharp.Exceptions;
 using System;
 using System.Linq;
@@ -54,7 +53,7 @@ namespace Plang.PrtSharp
             base.OnPopState(id, this.GetShortName(currStateName), this.GetShortName(restoredStateName));
         }
 
-        public override void OnPopUnhandledEvent(ActorId id, string stateName, Event e)
+        public override void OnPopStateUnhandledEvent(ActorId id, string stateName, Event e)
         {
             stateName = this.GetShortName(stateName);
             string eventName = this.GetEventNameWithPayload(e);
@@ -80,24 +79,25 @@ namespace Plang.PrtSharp
             base.OnWaitEvent(id, this.GetShortName(stateName), eventType);
         }
 
-        public override void OnMonitorStateTransition(string monitorTypeName, ActorId id, string stateName, bool isEntry, bool? isInHotState)
+
+        public override void OnMonitorStateTransition(string monitorType, string stateName, bool isEntry, bool? isInHotState)
         {
             if (stateName.Contains("__InitState__"))
             {
                 return;
             }
 
-            base.OnMonitorStateTransition(monitorTypeName: this.GetShortName(monitorTypeName), id: id, stateName: this.GetShortName(stateName), isEntry: isEntry, isInHotState: isInHotState);
+            base.OnMonitorStateTransition(monitorType: this.GetShortName(monitorType), stateName: this.GetShortName(stateName), isEntry: isEntry, isInHotState: isInHotState);
         }
 
-        public override void OnCreateActor(ActorId id, ActorId creator)
+        public override void OnCreateActor(ActorId id, string creatorName, string creatorType)
         {
             if (id.Name.Contains("GodMachine"))
             {
                 return;
             }
 
-            base.OnCreateActor(id, creator);
+            base.OnCreateActor(id, creatorName, creatorType);
         }
 
         public override void OnDequeueEvent(ActorId id, string stateName, Event e)
@@ -171,21 +171,21 @@ namespace Plang.PrtSharp
             this.Logger.WriteLine(text);
         }
 
-        public override void OnMonitorRaiseEvent(string monitorTypeName, ActorId id, string stateName, Event e)
+        public override void OnMonitorRaiseEvent(string monitorType, string stateName, Event e)
         {
             stateName = this.GetShortName(stateName);
             string eventName = this.GetEventNameWithPayload(e);
-            string text = $"<MonitorLog> Monitor '{GetShortName(monitorTypeName)}' with id '{id}' raised event '{eventName}' in state '{stateName}'.";
+            string text = $"<MonitorLog> Monitor '{GetShortName(monitorType)}' raised event '{eventName}' in state '{stateName}'.";
             this.Logger.WriteLine(text);
         }
 
-        public override void OnSendEvent(ActorId targetActorId, ActorId senderId, string senderStateName, Event e, Guid opGroupId, bool isTargetHalted)
+        public override void OnSendEvent(ActorId targetActorId, string senderName, string senderType, string senderStateName, Event e, Guid opGroupId, bool isTargetHalted)
         {
             senderStateName = this.GetShortName(senderStateName);
             string eventName = this.GetEventNameWithPayload(e);
             var opGroupIdMsg = opGroupId != Guid.Empty ? $" (operation group '{opGroupId}')" : string.Empty;
             var isHalted = isTargetHalted ? $" which has halted" : string.Empty;
-            var sender = senderId != null ? $"'{senderId}' in state '{senderStateName}'" : $"The runtime";
+            var sender = !string.IsNullOrEmpty(senderName) ? $"'{senderName}' in state '{senderStateName}'" : $"The runtime";
             var text = $"<SendLog> {sender} sent event '{eventName}' to '{targetActorId}'{isHalted}{opGroupIdMsg}.";
             this.Logger.WriteLine(text);
         }
@@ -200,36 +200,43 @@ namespace Plang.PrtSharp
             base.OnGotoState(id, this.GetShortName(currStateName), this.GetShortName(newStateName));
         }
 
-        public override void OnExecuteAction(ActorId id, string stateName, string actionName)
+        public override void OnExecuteAction(ActorId id, string handlingStateName, string currentStateName, string actionName)
         {
         }
 
-        public override void OnMonitorExecuteAction(string monitorTypeName, ActorId id, string stateName, string actionName)
+        public override void OnMonitorExecuteAction(string monitorType, string stateName, string actionName)
         {
         }
 
         public override void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
         {
+            if (ex is PNonStandardReturnException)
+            {
+                return;
+            }
             base.OnExceptionHandled(id: id, stateName: this.GetShortName(stateName), actionName: actionName, ex: ex);
         }
 
         public override void OnExceptionThrown(ActorId id, string stateName, string actionName, Exception ex)
         {
+            if (ex is PNonStandardReturnException)
+            {
+                return;
+            }
             base.OnExceptionThrown(id: id, stateName: this.GetShortName(stateName), actionName: actionName, ex: ex);
         }
 
-        public override void OnCreateMonitor(string monitorTypeName, ActorId id)
+        public override void OnCreateMonitor(string monitorType)
         {
-            base.OnCreateMonitor(this.GetShortName(monitorTypeName), id);
+            base.OnCreateMonitor(this.GetShortName(monitorType));
         }
 
         public override void OnHandleRaisedEvent(ActorId id, string stateName, Event e)
         {
         }
 
-        public override void OnRandom(ActorId id, object result)
+        public override void OnMonitorProcessEvent(string monitorType, string stateName, string senderName, string senderType, string senderStateName, Event e)
         {
-
         }
     }
 }

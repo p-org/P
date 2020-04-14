@@ -28,7 +28,7 @@ namespace Plang.PrtSharp
             base.Assert(predicate, s, args);
         }
 
-        protected Transition InitializeParametersFunction(Event e)
+        protected void InitializeParametersFunction(Event e)
         {
             if (!(e is InitializeParametersEvent @event))
             {
@@ -38,7 +38,7 @@ namespace Plang.PrtSharp
             InitializeParameters initParam = @event.Payload as InitializeParameters;
             interfaceName = initParam.InterfaceName;
             self = new PMachineValue(Id, receives.ToList());
-            return TryRaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
+            TryRaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
         }
 
         protected virtual Event GetConstructorEvent(IPrtValue value)
@@ -51,12 +51,15 @@ namespace Plang.PrtSharp
             bool v = ex is UnhandledEventException;
             if (!v)
             {
-                return base.OnException(ex, methodName, e);
+                return ex is PNonStandardReturnException
+                    ? OnExceptionOutcome.HandledException
+                    : base.OnException(ex, methodName, e);
             }
 
             return (ex as UnhandledEventException).UnhandledEvent is PHalt
                 ? OnExceptionOutcome.Halt
                 : base.OnException(ex, methodName, e);
+
         }
 
         public PMachineValue CreateInterface<T>(PMachine creator, IPrtValue payload = null)
@@ -85,12 +88,13 @@ namespace Plang.PrtSharp
             base.SendEvent(target.Id, ev);
         }
 
-        public Transition TryRaiseEvent(Event ev, object payload = null)
+        public void TryRaiseEvent(Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot raise a null event");
             System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             ev = (Event)oneArgConstructor.Invoke(new[] { payload });
-            return base.RaiseEvent(ev);
+            base.RaiseEvent(ev);
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
 
         public Task<Event> TryReceiveEvent(params Type[] events)
@@ -98,15 +102,17 @@ namespace Plang.PrtSharp
             return base.ReceiveEventAsync(events);
         }
 
-        public Transition TryGotoState<T>(IPrtValue payload = null) where T : State
+        public void TryGotoState<T>(IPrtValue payload = null) where T : State
         {
             gotoPayload = payload;
-            return base.GotoState<T>();
+            base.RaiseGotoStateEvent<T>();
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
-        public Transition TryPopState()
+        public void TryPopState()
         {
-            return base.PopState();
+            base.RaisePopStateEvent();
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Pop };
         }
 
         public int TryRandomInt(int maxValue)
@@ -121,12 +127,12 @@ namespace Plang.PrtSharp
 
         public bool TryRandomBool(int maxValue)
         {
-            return base.Random(maxValue);
+            return base.RandomBoolean(maxValue);
         }
 
         public bool TryRandomBool()
         {
-            return base.Random();
+            return base.RandomBoolean();
         }
 
         public IPrtValue TryRandom(IPrtValue param)

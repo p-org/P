@@ -1,5 +1,5 @@
 using Microsoft.Coyote;
-using Microsoft.Coyote.TestingServices;
+using Microsoft.Coyote.SystematicTesting;
 using System;
 using System.Linq;
 
@@ -10,9 +10,8 @@ namespace pingpong
         public static void Main(string[] args)
         {
             // Optional: increases verbosity level to see the Coyote runtime log.
-            Configuration configuration = Configuration.Create();
-            configuration.SchedulingIterations = 10;
-            ITestingEngine engine = TestingEngineFactory.CreateBugFindingEngine(configuration, DefaultImpl.Execute);
+            Configuration configuration = Configuration.Create().WithTestingIterations(10);
+            TestingEngine engine = TestingEngine.Create(configuration, DefaultImpl.Execute);
             engine.Run();
             string bug = engine.TestReport.BugReports.FirstOrDefault();
             if (bug != null)

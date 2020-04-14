@@ -1,4 +1,4 @@
-﻿using Microsoft.Coyote.TestingServices;
+﻿using Microsoft.Coyote.SystematicTesting;
 using Plang.Compiler;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ namespace UnitTests.Runners
     internal class CoyoteRunner : ICompilerTestRunner
     {
         private static readonly string CoyoteAssemblyLocation =
-            Path.GetDirectoryName(typeof(TestingEngineFactory).GetTypeInfo().Assembly.Location);
+            Path.GetDirectoryName(typeof(TestingEngine).GetTypeInfo().Assembly.Location);
 
         private readonly FileInfo[] nativeSources;
         private readonly FileInfo[] sources;
@@ -29,6 +29,28 @@ namespace UnitTests.Runners
             this.nativeSources = nativeSources;
         }
 
+        private void FileCopy(string src, string target, bool overwrite)
+        {
+            // during parallel testing we might get "The process cannot access the file because it is being used by another process."
+            int retries = 5;
+            while (retries-- > 0)
+            {
+                try
+                {
+                    File.Copy(src, target, overwrite);
+                    return;
+                } 
+                catch (System.IO.IOException)
+                {
+                    if (retries == 1)
+                    {
+                        throw;
+                    }
+                    System.Threading.Thread.Sleep(1000);
+                }
+            }
+        }
+
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
             FileInfo[] compiledFiles = DoCompile(scratchDirectory).ToArray();
@@ -36,11 +58,11 @@ namespace UnitTests.Runners
             CreateProjectFile(scratchDirectory);
 
             string coyoteExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "Binaries", "CoyoteRuntime.dll");
-            File.Copy(coyoteExtensionsPath, Path.Combine(scratchDirectory.FullName, "CoyoteRuntime.dll"), true);
+            FileCopy(coyoteExtensionsPath, Path.Combine(scratchDirectory.FullName, "CoyoteRuntime.dll"), true);
 
             foreach (FileInfo nativeFile in nativeSources)
             {
-                File.Copy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
+                FileCopy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
             }
 
             string[] args = new[] { "build", "Test.csproj" };
@@ -69,7 +91,7 @@ namespace UnitTests.Runners
         {
             string testCode = @"
 using Microsoft.Coyote;
-using Microsoft.Coyote.TestingServices;
+using Microsoft.Coyote.SystematicTesting;
 using System;
 using System.Linq;
 
@@ -78,9 +100,9 @@ namespace Main
     public class _TestRegression {
         public static void Main(string[] args)
         {
-            Configuration configuration = Configuration.Create();
-            configuration.SchedulingIterations = 10;
-            ITestingEngine engine = TestingEngineFactory.CreateBugFindingEngine(configuration, DefaultImpl.Execute);
+            // Optional: increases verbosity level to see the Coyote runtime log.
+            Configuration configuration = Configuration.Create().WithTestingIterations(10);
+            TestingEngine engine = TestingEngine.Create(configuration, DefaultImpl.Execute);
             engine.Run();
             string bug = engine.TestReport.BugReports.FirstOrDefault();
             if (bug != null)
@@ -113,7 +135,7 @@ namespace Main
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.0-rc9""/>
+    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.3""/>
     <Reference Include = ""CoyoteRuntime.dll""/>
   </ItemGroup>
 </Project>";

@@ -46,6 +46,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
             WriteEventOps(context, source.Stream, globalScope.Events);
 
+            WriteMainDriver(context, source.Stream, globalScope);
+
             WriteSourceEpilogue(context, source.Stream);
 
             return source;
@@ -1566,7 +1568,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     throw new NotImplementedException($"Default value for symbolic type '{type.OriginalRepresentation}' not supported");
             }
             var guarded = $"{GetValueSummaryOps(context, type).GetName()}.guard({unguarded}, {pcScope.PathConstraintVar})";
-           
+
             return guarded;
         }
 
@@ -1634,6 +1636,46 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, $"private static final {def.opsType} {name} =");
                 context.WriteLine(output, $"    {def.opsDef};");
                 context.WriteLine(output);
+            }
+        }
+
+        private void WriteMainDriver(CompilationContext context, StringWriter output, Scope globalScope)
+        {
+            // TODO: Determine how main machine should be selected.  Should the 'main' method even
+            // be generated from the P program, or should it be provided externally?
+            Machine mainMachine = null;
+            foreach (Machine machine in globalScope.Machines)
+            {
+                if (machine.Name == "Main")
+                {
+                    if (mainMachine != null)
+                        throw new NotImplementedException("Cannot have multiple main machines.");
+
+                    mainMachine = machine;
+                }
+            }
+
+            if (mainMachine != null)
+            {
+                context.WriteLine(output, "public static void main(String[] args) {");
+
+                context.WriteLine(output, "// TODO: Make maxDepth configurable");
+                context.WriteLine(output, "int maxDepth = 10;");
+
+                context.Write(output, "scheduler = new Scheduler(eventOps");
+                foreach (Machine machine in globalScope.Machines)
+                {
+                    context.Write(output, $", {context.GetMachineTag(machine)}");
+                }
+                context.WriteLine(output, ");");
+
+                context.WriteLine(output, $"scheduler.startWith({context.GetMachineTag(mainMachine)}, new {context.GetNameForDecl(mainMachine)}(0));");
+
+                context.WriteLine(output, "for (int i = 0; i < maxDepth; i++) {");
+                context.WriteLine(output, "scheduler.step();");
+                context.WriteLine(output, "}");
+
+                context.WriteLine(output, "}");
             }
         }
 

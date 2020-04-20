@@ -196,12 +196,12 @@
   <ItemGroup>
     <PCompile Include="test.p" />
     <PCompile Include="Events.p" />
-    <PCompile Include="..\Timer\TimerHeader.p"/>
+    <PCompile Include="..\Timer\TimerHeader.p" />
   </ItemGroup>
   <ItemGroup>
     <None Include="test.p" />
     <None Include="Events.p" />
-    <None Include="..\Timer\TimerHeader.p"/>
+    <None Include="..\Timer\TimerHeader.p" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), P.sln))\Bld\Targets\p.targets" />

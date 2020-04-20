@@ -123,7 +123,7 @@ namespace Main
             string projectFileContents = @"
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <TargetFramework >netcoreapp2.2</TargetFramework>
+    <TargetFramework >netcoreapp3.1</TargetFramework>
     <ApplicationIcon />
     <OutputType>library</OutputType>
     <StartupObject />
@@ -135,7 +135,7 @@ namespace Main
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.3""/>
+    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.4""/>
     <Reference Include = ""CoyoteRuntime.dll""/>
   </ItemGroup>
 </Project>";
@@ -148,7 +148,7 @@ namespace Main
         private int RunCoyoteTester(string directory, string dllPath, out string stdout, out string stderr)
         {
             // TODO: bug Coyote team for how to run a test w/o invoking executable
-            string testerPath = Path.Combine(CoyoteAssemblyLocation, "..", "netcoreapp2.2", "coyote.dll");
+            string testerPath = Path.Combine(CoyoteAssemblyLocation, "..", "netcoreapp3.1", "coyote.dll");
             return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, "dotnet", testerPath, "test", $"\"{dllPath}\"", "--iterations", "1000", "-ms", "100");
         }
 

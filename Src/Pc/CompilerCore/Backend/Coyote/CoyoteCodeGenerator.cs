@@ -336,7 +336,7 @@ namespace Plang.Compiler.Backend.Coyote
 
             foreach (Machine monitor in monitorMap.Keys)
             {
-                context.WriteLine(output, $"runtime.RegisterMonitor(typeof({context.Names.GetNameForDecl(monitor)}));");
+                context.WriteLine(output, $"runtime.RegisterMonitor<{context.Names.GetNameForDecl(monitor)}>();");
             }
 
             context.WriteLine(output, "}");
@@ -565,8 +565,9 @@ namespace Plang.Compiler.Backend.Coyote
             string functionName = context.Names.GetNameForDecl(function);
             string functionParameters = "Event currentMachine_dequeuedEvent";
             string awaitMethod = isAsync ? "await " : "";
+            string asyncMethod = isAsync ? "async" : "";
             context.WriteLine(output,
-                $"public void {$"_{functionName}"}({functionParameters})");
+                $"public {asyncMethod} void {$"_{functionName}"}({functionParameters})");
 
             context.WriteLine(output, "{");
 
@@ -960,11 +961,6 @@ namespace Plang.Compiler.Backend.Coyote
                     {
                         WriteExpr(context, output, returnStmt.ReturnValue);
                     }
-                    else if (function.CanChangeState == true || function.CanRaiseEvent == true)
-                    {
-                        context.Write(output, "default");
-                    }
-
                     context.WriteLine(output, ";");
                     break;
 
@@ -1263,7 +1259,7 @@ namespace Plang.Compiler.Backend.Coyote
                     break;
 
                 case FairNondetExpr _:
-                    context.Write(output, "((PrtBool)currentMachine.FairRandom())");
+                    context.Write(output, "((PrtBool)currentMachine.TryRandomBool())");
                     break;
 
                 case FloatLiteralExpr floatLiteralExpr:

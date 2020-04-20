@@ -101,7 +101,24 @@ namespace Main
         public static void Main(string[] args)
         {
             // Optional: increases verbosity level to see the Coyote runtime log.
-            Configuration configuration = Configuration.Create().WithTestingIterations(10);
+            Configuration configuration = Configuration.Create().WithTestingIterations(100);
+            configuration.WithMaxSchedulingSteps(1000);
+            TestingEngine engine = TestingEngine.Create(configuration, DefaultImpl.Execute);
+            engine.Run();
+            string bug = engine.TestReport.BugReports.FirstOrDefault();
+            if (bug != null)
+            {
+                Console.WriteLine(bug);
+                Environment.Exit(1);
+            }
+            Environment.Exit(0);
+
+            // for debugging:
+            /* For replaying a bug and single stepping
+            Configuration configuration = Configuration.Create();
+            configuration.WithVerbosityEnabled(true);
+            // update the path to the schedule file.
+            configuration.WithReplayStrategy(""AfterNewUpdate.schedule"");
             TestingEngine engine = TestingEngine.Create(configuration, DefaultImpl.Execute);
             engine.Run();
             string bug = engine.TestReport.BugReports.FirstOrDefault();
@@ -109,6 +126,7 @@ namespace Main
             {
                 Console.WriteLine(bug);
             }
+            */
         }
     }
 }";
@@ -123,9 +141,9 @@ namespace Main
             string projectFileContents = @"
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <TargetFramework >netcoreapp2.2</TargetFramework>
+    <TargetFramework >netcoreapp3.1</TargetFramework>
     <ApplicationIcon />
-    <OutputType>library</OutputType>
+    <OutputType>Exe</OutputType>
     <StartupObject />
     <LangVersion >latest</LangVersion>
     <OutputPath>.</OutputPath>
@@ -135,7 +153,7 @@ namespace Main
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.3""/>
+    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.4""/>
     <Reference Include = ""CoyoteRuntime.dll""/>
   </ItemGroup>
 </Project>";
@@ -147,9 +165,7 @@ namespace Main
 
         private int RunCoyoteTester(string directory, string dllPath, out string stdout, out string stderr)
         {
-            // TODO: bug Coyote team for how to run a test w/o invoking executable
-            string testerPath = Path.Combine(CoyoteAssemblyLocation, "..", "netcoreapp2.2", "coyote.dll");
-            return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, "dotnet", testerPath, "test", $"\"{dllPath}\"", "--iterations", "1000", "-ms", "100");
+            return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, "dotnet", dllPath);
         }
 
         private IEnumerable<FileInfo> DoCompile(DirectoryInfo scratchDirectory)

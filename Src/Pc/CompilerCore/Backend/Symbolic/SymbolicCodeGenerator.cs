@@ -67,13 +67,13 @@ namespace Plang.Compiler.Backend.Symbolic
             for (int i = 0; i < machines.Count(); i++)
             {
                 var machine = machines.ElementAt(i);
-                context.WriteLine(output, $"final static MachineTag {context.GetMachineTag(machine)} = new MachineTag(\"{machine.Name}\", {i});");
+                context.WriteLine(output, $"public final static MachineTag {context.GetMachineTag(machine)} = new MachineTag(\"{machine.Name}\", {i});");
             }
         }
 
         private void WriteEventOps(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
         {
-            context.Write(output, "final static EventVS.Ops eventOps = new EventVS.Ops(");
+            context.Write(output, "public final static EventVS.Ops eventOps = new EventVS.Ops(");
             context.WriteCommaSeparated(output, events, (pEvent) =>
             {
                 context.Write(output, $"{context.GetNameForDecl(pEvent)}, ");
@@ -118,7 +118,7 @@ namespace Plang.Compiler.Backend.Symbolic
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
         {
             var declName = context.GetNameForDecl(machine);
-            context.WriteLine(output, $"private static class {declName} extends BaseMachine {{");
+            context.WriteLine(output, $"public static class {declName} extends BaseMachine {{");
 
             for (int i = 0; i < machine.States.Count(); i++)
             {
@@ -147,7 +147,7 @@ namespace Plang.Compiler.Backend.Symbolic
         private void WriteMachineConstructor(CompilationContext context, StringWriter output, Machine machine)
         {
             var declName = context.GetNameForDecl(machine);
-            context.WriteLine(output, $"{declName}(int id) {{");
+            context.WriteLine(output, $"public {declName}(int id) {{");
             context.Write(output, $"super(eventOps, {context.GetMachineTag(machine)}, id, {context.GetNameForDecl(machine.StartState)}");
             foreach (var state in machine.States)
             {
@@ -1617,6 +1617,10 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
+            bool generateForTesting = true;
+            if (generateForTesting) {
+                context.WriteLine(output, "package symbolicp.testCase;");
+            }
             context.WriteLine(output, "import symbolicp.*;");
             context.WriteLine(output, "import symbolicp.bdd.*;");
             context.WriteLine(output, "import symbolicp.vs.*;");
@@ -1624,7 +1628,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.MainClassName} {{");
             context.WriteLine(output);
-            context.WriteLine(output, $"static Scheduler {CompilationContext.SchedulerVar};");
+            context.WriteLine(output, $"public static Scheduler {CompilationContext.SchedulerVar};");
         }
 
         private void WriteValueSummaryOpsDefs(CompilationContext context, StringWriter output)

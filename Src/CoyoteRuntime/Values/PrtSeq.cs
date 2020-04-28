@@ -93,13 +93,13 @@ namespace Plang.PrtSharp.Values
         public void Add(IPrtValue item)
         {
             IsDirty = true;
-            values.Add(item);
+            values.Add(item.Clone());
         }
 
         public void Insert(int index, IPrtValue item)
         {
             IsDirty = true;
-            values.Insert(index, item);
+            values.Insert(index, item.Clone());
         }
 
         public void RemoveAt(int index)

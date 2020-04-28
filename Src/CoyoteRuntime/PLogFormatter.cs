@@ -235,7 +235,7 @@ namespace Plang.PrtSharp
         {
         }
 
-        public override void OnMonitorProcessEvent(string monitorType, string stateName, string senderName, string senderType, string senderStateName, Event e)
+        public override void OnRandom(object result, string callerName, string callerType)
         {
         }
     }

@@ -52,7 +52,7 @@ namespace Plang.PrtSharp.Values
         public void Add(KeyValuePair<IPrtValue, IPrtValue> item)
         {
             MutabilityHelper.EnsureFrozen(item.Key);
-            map.Add(item.Key, item.Value);
+            map.Add(item.Key?.Clone(), item.Value?.Clone());
             IsDirty = true;
         }
 
@@ -88,7 +88,7 @@ namespace Plang.PrtSharp.Values
         public void Add(IPrtValue key, IPrtValue value)
         {
             MutabilityHelper.EnsureFrozen(key);
-            map.Add(key, value);
+            map.Add(key?.Clone(), value?.Clone());
             IsDirty = true;
         }
 

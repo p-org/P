@@ -45,7 +45,7 @@ namespace Plang.Compiler.Backend
             Debug.Assert(tempType.IsAssignableFrom(expr.Type));
             temp.Type = tempType;
             function.AddLocalVariable(temp);
-            AssignStmt stmt = new AssignStmt(location, new VariableAccessExpr(location, temp), expr);
+            AssignStmt stmt = new AssignStmt(location, new VariableAccessExpr(location, temp), new CloneExpr(expr));
             return (new VariableAccessExpr(location, temp), stmt);
         }
 

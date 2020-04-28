@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Plang.PrtSharp.Exceptions;
+using System.Linq;
+
 namespace Plang.PrtSharp.Values
 {
     public sealed class PrtSet : IPrtMutableValue, ISet<IPrtValue> {
@@ -46,7 +48,7 @@ namespace Plang.PrtSharp.Values
         {
             MutabilityHelper.EnsureFrozen(item);
             IsDirty = true;
-            return set.Add(item);
+            return set.Add(item.Clone());
         }
 
         public void Clear()
@@ -113,7 +115,7 @@ namespace Plang.PrtSharp.Values
 
         public void UnionWith(IEnumerable<IPrtValue> other)
         {
-            set.UnionWith(other);
+            set.UnionWith(other.Select(i => i.Clone()));
         }
 
         public void IntersectWith(IEnumerable<IPrtValue> other)

@@ -3,4 +3,4 @@
 	url = https://github.com/koka-lang/libhandler.git
 [submodule "PSymbolic"]
 	path = PSymbolic
-	url = git@github.com:p-org/PSymbolic.git
+	url = https://github.com/p-org/PSymbolic.git

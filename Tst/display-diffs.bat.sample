@@ -1,3 +1,0 @@
-kdiff3 D:\PLanguage\PLang1001\plang\Tst\RegressionTests\Integration\StaticError\TokenRing_Typos\acc_0.txt D:\PLanguage\PLang1001\plang\Tst\RegressionTests\Integration\StaticError\TokenRing_Typos\check-output.log
-kdiff3 D:\PLanguage\PLang1001\plang\Tst\RegressionTests\Integration\DynamicError\PushStatement_1\acc_0.txt D:\PLanguage\PLang1001\plang\Tst\RegressionTests\Integration\DynamicError\PushStatement_1\check-output.log
-kdiff3 D:\PLanguage\PLang1001\plang\Tst\RegressionTests\Integration\DynamicError\Actions_6\acc_0.txt D:\PLanguage\PLang1001\plang\Tst\RegressionTests\Integration\DynamicError\Actions_6\check-output.log

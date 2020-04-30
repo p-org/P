@@ -88,7 +88,7 @@ namespace UnitTests
     public class CoyoteRuntimeRegressionTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
-            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] { "DynamicError", "DynamicErrorCoyoteRuntime", "Correct", "CorrectCoyoteRuntime" });
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] { "DynamicError", "Correct" });
 
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestRegressions(DirectoryInfo testDir)

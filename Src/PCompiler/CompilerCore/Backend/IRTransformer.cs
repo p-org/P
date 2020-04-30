@@ -86,6 +86,27 @@ namespace Plang.Compiler.Backend
 #pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
+        private (IExprTerm, List<IPStmt>) SimplifyRvalue(IPExpr expr)
+        {
+            // TODO: I am suspicious.
+            Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
+            PLanguageType type = expr.Type;
+#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
+            switch (expr)
+            {
+                case NamedTupleAccessExpr _:
+                case SeqAccessExpr _:
+                case TupleAccessExpr _:
+                case MapAccessExpr _:
+                    (IExprTerm dataTypeItem, List<IPStmt> dataTypeItemDeps) = SimplifyExpression(expr);
+                    (IExprTerm cloneddataTypeItem, IPStmt cloneddataTypeItemDeps) = SaveInTemporary(new CloneExpr(dataTypeItem));
+                    return (cloneddataTypeItem, dataTypeItemDeps.Append(cloneddataTypeItemDeps).ToList());
+                default:
+                    return SimplifyExpression(expr);
+
+            }
+#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
+        }
         private (IExprTerm, List<IPStmt>) SimplifyExpression(IPExpr expr)
         {
             Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
@@ -322,7 +343,7 @@ namespace Plang.Compiler.Backend
 
                 case AssignStmt assignStmt:
                     (IPExpr assignLV, List<IPStmt> assignLVDeps) = SimplifyLvalue(assignStmt.Location);
-                    (IExprTerm assignRV, List<IPStmt> assignRVDeps) = SimplifyExpression(assignStmt.Value);
+                    (IExprTerm assignRV, List<IPStmt> assignRVDeps) = SimplifyRvalue(assignStmt.Value);
                     IPStmt assignment;
                     // If temporary returned, then automatically move.
                     if (assignRV is VariableAccessExpr variableRef &&

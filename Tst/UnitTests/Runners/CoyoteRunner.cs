@@ -153,7 +153,7 @@ namespace Main
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.4""/>
+    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
     <Reference Include = ""CoyoteRuntime.dll""/>
   </ItemGroup>
 </Project>";

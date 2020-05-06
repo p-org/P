@@ -7,8 +7,6 @@ using Plang.CoyoteRuntime.Exceptions;
 using Plang.CoyoteRuntime.Values;
 using System.Collections.Generic;
 
-#pragma warning disable 162, 219, 414
-
 namespace pingpong
 {
     public static partial class GlobalFunctions { }
@@ -281,5 +279,3 @@ namespace pingpong
         }
     }
 }
-
-#pragma warning restore 162, 219, 414

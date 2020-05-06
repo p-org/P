@@ -106,7 +106,6 @@ namespace Plang.Compiler.Backend.Prt
         protected override string ComputeNameForDecl(IPDecl decl)
         {
             string enumName = "";
-#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (decl)
             {
                 case EnumElem enumElem:
@@ -129,7 +128,6 @@ namespace Plang.Compiler.Backend.Prt
                 case Implementation impl:
                     return $"P_GEND_IMPL_{impl.Name}";
             }
-#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
 
             if (DeclNameParts.TryGetValue(decl.GetType(), out string declTypePart))
             {

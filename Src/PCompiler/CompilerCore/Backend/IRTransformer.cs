@@ -54,7 +54,6 @@ namespace Plang.Compiler.Backend
             // TODO: I am suspicious.
             Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
             PLanguageType type = expr.Type;
-#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
                 case MapAccessExpr mapAccessExpr:
@@ -83,7 +82,6 @@ namespace Plang.Compiler.Backend
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
-#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private (IExprTerm, List<IPStmt>) SimplifyRvalue(IPExpr expr)
@@ -91,7 +89,6 @@ namespace Plang.Compiler.Backend
             // TODO: I am suspicious.
             Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
             PLanguageType type = expr.Type;
-#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
                 case NamedTupleAccessExpr _:
@@ -105,13 +102,11 @@ namespace Plang.Compiler.Backend
                     return SimplifyExpression(expr);
 
             }
-#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
         private (IExprTerm, List<IPStmt>) SimplifyExpression(IPExpr expr)
         {
             Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
             List<IPStmt> deps = new List<IPStmt>();
-#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
                 case IExprTerm term:
@@ -309,7 +304,6 @@ namespace Plang.Compiler.Backend
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
-#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private List<IPStmt> SimplifyStatement(IPStmt statement)

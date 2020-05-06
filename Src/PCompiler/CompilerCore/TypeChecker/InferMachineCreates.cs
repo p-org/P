@@ -24,7 +24,6 @@ namespace Plang.Compiler.TypeChecker
 
         private static IEnumerable<Interface> InferCreates(IPAST tree, ITranslationErrorHandler handler)
         {
-#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (tree)
             {
                 case Function function:
@@ -122,7 +121,6 @@ namespace Plang.Compiler.TypeChecker
                 default:
                     throw handler.InternalError(tree.SourceLocation, new ArgumentOutOfRangeException(nameof(tree)));
             }
-#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private static IEnumerable<Interface> InferCreatesForExpr(IPExpr expr, ITranslationErrorHandler handler)

@@ -9,7 +9,6 @@ using Plang.CoyoteRuntime.Exceptions;
 using System.Threading;
 using System.Threading.Tasks;
 
-#pragma warning disable 162, 219, 414
 namespace TwoPhaseCommit
 {
     public static partial class GlobalFunctions {

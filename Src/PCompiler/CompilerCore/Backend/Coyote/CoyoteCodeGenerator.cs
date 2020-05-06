@@ -97,7 +97,6 @@ namespace Plang.Compiler.Backend.Coyote
             context.WriteLine(output, "using System.Threading;");
             context.WriteLine(output, "using System.Threading.Tasks;");
             context.WriteLine(output);
-            context.WriteLine(output, "#pragma warning disable 162, 219, 414, 1998");
             context.WriteLine(output, $"namespace {context.ProjectName}");
             context.WriteLine(output, "{");
             context.WriteLine(output, $"public static partial class {context.GlobalFunctionClassName} {{}}");
@@ -106,7 +105,6 @@ namespace Plang.Compiler.Backend.Coyote
         private void WriteSourceEpilogue(CompilationContext context, StringWriter output)
         {
             context.WriteLine(output, "}");
-            context.WriteLine(output, "#pragma warning restore 162, 219, 414");
         }
 
         private void WriteDecl(CompilationContext context, StringWriter output, IPDecl decl)
@@ -1024,7 +1022,6 @@ namespace Plang.Compiler.Backend.Coyote
 
         private void WriteLValue(CompilationContext context, StringWriter output, IPExpr lvalue)
         {
-#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (lvalue)
             {
                 case MapAccessExpr mapAccessExpr:
@@ -1062,12 +1059,10 @@ namespace Plang.Compiler.Backend.Coyote
                 default:
                     throw new ArgumentOutOfRangeException(nameof(lvalue));
             }
-#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private void WriteExpr(CompilationContext context, StringWriter output, IPExpr pExpr)
         {
-#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (pExpr)
             {
                 case CloneExpr cloneExpr:
@@ -1387,7 +1382,6 @@ namespace Plang.Compiler.Backend.Coyote
                 default:
                     throw new ArgumentOutOfRangeException(nameof(pExpr), $"type was {pExpr?.GetType().FullName}");
             }
-#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         private void WriteClone(CompilationContext context, StringWriter output, IExprTerm cloneExprTerm)

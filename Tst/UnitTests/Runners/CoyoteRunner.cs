@@ -149,7 +149,7 @@ namespace Main
     <OutputPath>.</OutputPath>
   </PropertyGroup >
   <PropertyGroup Condition = ""'$(Configuration)|$(Platform)'=='Debug|AnyCPU'"">
-    <WarningLevel>0</WarningLevel>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
   <ItemGroup>

@@ -34,7 +34,6 @@ namespace Plang.Compiler.Backend.Coyote
             string name = decl.Name;
 
             //Handle null and halt events separately
-#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (decl)
             {
                 case PEvent pEvent:
@@ -53,7 +52,6 @@ namespace Plang.Compiler.Backend.Coyote
                 case Interface _:
                     return "I_" + name;
             }
-#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
 
             name = string.IsNullOrEmpty(name) ? "Anon" : name;
             if (name.StartsWith("$"))

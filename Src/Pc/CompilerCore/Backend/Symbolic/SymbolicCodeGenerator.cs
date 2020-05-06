@@ -604,6 +604,12 @@ namespace Plang.Compiler.Backend.Symbolic
 
                     break;
 
+                case AssertStmt assertStmt:
+                    context.Write(output, "assert (");
+                    WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
+                    context.Write(output, ").guardedValues.getOrDefault(Boolean.FALSE, Bdd.constFalse()).equals(Bdd.constFalse());");
+                    break;
+
                 case ReturnStmt returnStmt:
                     if (!(returnStmt.ReturnValue is null))
                     {

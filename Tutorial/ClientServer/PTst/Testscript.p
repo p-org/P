@@ -9,5 +9,5 @@ test testcase0 [main=TestDriver0]: (union { TestDriver0 },
     (assert ReqIdsAreMonotonicallyIncreasing, RespIdsAreMonotonicallyIncreasing in (union ClientModule, AbstractServerModule)));
 
 
-test testcase0 [main=TestDriver0]: (union { TestDriver0 },
+test testcase1 [main=TestDriver0]: (union { TestDriver0 },
     (assert ReqIdsAreMonotonicallyIncreasing, RespIdsAreMonotonicallyIncreasing in (union ClientModule, ServerModule)));

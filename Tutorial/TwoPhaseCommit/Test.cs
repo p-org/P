@@ -1,6 +1,6 @@
 ﻿using System;
 using Microsoft.Coyote;
-using Microsoft.Coyote.TestingServices;
+using Microsoft.Coyote.SystematicTesting;
 using System.Linq;
 
 namespace TwoPhaseCommit
@@ -10,9 +10,8 @@ namespace TwoPhaseCommit
         public static void Main(string[] args)
         {
             // Optional: increases verbosity level to see the Coyote runtime log.
-            var configuration = Configuration.Create();
-            configuration.SchedulingIterations = 10;
-            var engine = TestingEngineFactory.CreateBugFindingEngine(configuration, Test0.Execute);
+            var configuration = Configuration.Create().WithTestingIterations(10);
+            var engine = TestingEngine.Create(configuration, Test0.Execute);
             engine.Run();
             var bug = engine.TestReport.BugReports.FirstOrDefault();
             if (bug != null)

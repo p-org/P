@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.Coyote;
-using Microsoft.Coyote.TestingServices;
 using System.Linq;
 
 namespace ClientServer

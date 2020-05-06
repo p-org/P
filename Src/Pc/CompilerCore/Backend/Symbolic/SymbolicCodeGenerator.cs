@@ -194,7 +194,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 Debug.Assert(!(exitFunc.CanRaiseEvent ?? false));
                 if (exitFunc.Signature.Parameters.Count() != 0)
                     throw new NotImplementedException("Exit functions with payloads are not yet supported");
-                context.WriteLine(output, $"(({context.GetNameForDecl(exitFunc.Owner)})machine).{context.GetNameForDecl(exitFunc)}(pc);");
+                context.WriteLine(output, $"(({context.GetNameForDecl(exitFunc.Owner)})machine).{context.GetNameForDecl(exitFunc)}(pc, machine.effectQueue);");
 
                 context.WriteLine(output, "}");
             }
@@ -1175,7 +1175,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case BoolLiteralExpr boolLiteralExpr:
                     {
-                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Bool) }({boolLiteralExpr.Value})";
+                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Bool) }" + $"({boolLiteralExpr.Value})".ToLower();
                         var guarded = $"{GetValueSummaryOps(context, PrimitiveType.Bool).GetName()}.guard({unguarded}, {pcScope.PathConstraintVar})";
                         context.Write(output, guarded);
                         break;
@@ -1185,7 +1185,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case FloatLiteralExpr floatLiteralExpr:
                     {
-                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Float) }({floatLiteralExpr.Value})";
+                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Float) }({floatLiteralExpr.Value}f)";
                         var guarded = $"{GetValueSummaryOps(context, PrimitiveType.Float).GetName()}.guard({unguarded}, {pcScope.PathConstraintVar})";
                         context.Write(output, guarded);
                         break;

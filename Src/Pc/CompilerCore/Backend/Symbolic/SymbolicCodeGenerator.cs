@@ -171,16 +171,24 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, ") {");
             if (state.Entry != null)
             {
-                context.WriteLine(output, "@Override public void entry(Bdd pc, BaseMachine machine, GotoOutcome gotoOutcome, RaiseOutcome raiseOutcome) {");
+                var entryPcScope = context.FreshPathConstraintScope();
+
+                context.WriteLine(output, $"@Override public void entry(Bdd {entryPcScope.PathConstraintVar}, BaseMachine machine, GotoOutcome gotoOutcome, RaiseOutcome raiseOutcome, Object payload) {{");
 
                 var entryFunc = state.Entry;
-                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}(pc, machine.effectQueue");
+                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}({entryPcScope.PathConstraintVar}, machine.effectQueue");
                 if (entryFunc.CanChangeState ?? false)
                     context.Write(output, ", gotoOutcome");
                 if (entryFunc.CanRaiseEvent ?? false)
                     context.Write(output, ", raiseOutcome");
-                if (entryFunc.Signature.Parameters.Count() != 0)
-                    throw new NotImplementedException("Entry functions with payloads are not yet supported");
+                if (entryFunc.Signature.Parameters.Count() > 0)
+                {
+                    Debug.Assert(entryFunc.Signature.Parameters.Count() == 1);
+                    var payloadType = entryFunc.Signature.Parameters[0].Type;
+                    var payloadTypeSymbolic = GetSymbolicType(payloadType);
+                    var defaultPayload = GetDefaultValue(context, entryPcScope, payloadType);
+                    context.Write(output, $", payload != null ? ({payloadTypeSymbolic})payload : {defaultPayload}");
+                }
                 context.WriteLine(output, ");");
 
                 context.WriteLine(output, "}");
@@ -230,10 +238,16 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case EventGotoState gotoState:
                     var destTag = $"{context.GetNameForDecl(gotoState.Target)}";
-                    context.Write(output, $"new GotoEventHandler({eventTag}, {destTag}) ");
+                    context.Write(output, $"new GotoEventHandler({eventTag}, {destTag}");
+                    if (!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null))
+                    {
+                        context.Write(output, $", {GetValueSummaryOps(context, handler.Key.PayloadType).GetName()}");
+                    }
+                    context.Write(output, ")");
+
                     if (gotoState.TransitionFunction != null)
                     {
-                        context.WriteLine(output, "{");
+                        context.WriteLine(output, " {");
                         context.WriteLine(output, "@Override public void transitionAction(Bdd pc, BaseMachine machine, Object payload) {");
 
                         var transitionFunc = gotoState.TransitionFunction;
@@ -605,9 +619,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case AssertStmt assertStmt:
-                    context.Write(output, "assert (");
+                    context.Write(output, "assert !(");
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
-                    context.Write(output, ").guardedValues.getOrDefault(Boolean.FALSE, Bdd.constFalse()).equals(Bdd.constFalse());");
+                    context.Write(output, ").guardedValues.containsKey(Boolean.FALSE);");
                     break;
 
                 case ReturnStmt returnStmt:
@@ -626,10 +640,13 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case GotoStmt gotoStmt:
+                    context.Write(output, $"gotoOutcome.addGuardedGoto({flowContext.pcScope.PathConstraintVar}, {context.GetNameForDecl(gotoStmt.State)}");
                     if (gotoStmt.Payload != null)
-                        throw new NotImplementedException("Goto statements with payloads not yet supported");
-
-                    context.WriteLine(output, $"gotoOutcome.addGuardedGoto({flowContext.pcScope.PathConstraintVar}, {context.GetNameForDecl(gotoStmt.State)});");
+                    {
+                        context.Write(output, $", {GetValueSummaryOps(context, gotoStmt.Payload.Type).GetName()}, ");
+                        WriteExpr(context, output, flowContext.pcScope, gotoStmt.Payload);
+                    }
+                    context.WriteLine(output, ");");
 
                     context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = Bdd.constFalse();");
                     SetFlagsForPossibleReturn(context, output, flowContext);
@@ -642,7 +659,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
                     context.Write(output, $"raiseOutcome.addGuardedRaise({flowContext.pcScope.PathConstraintVar}, ");
                     WriteExpr(context, output, flowContext.pcScope, raiseStmt.PEvent);
-                    if (raiseStmt.Payload != null)
+                    if (raiseStmt.Payload.Count > 0)
                     {
                         // TODO: Determine how multi-payload raise statements are supposed to work
                         Debug.Assert(raiseStmt.Payload.Count == 1);
@@ -996,7 +1013,7 @@ namespace Plang.Compiler.Backend.Symbolic
                             context.Write(output, $"{GetSymbolicType(valueType)} {valueTemp}");
                             if (needOrigValue)
                             {
-                                context.WriteLine(output, $" = unwrapOrThrow({GetValueSummaryOps(context, mapAccessExpr.Type).GetName()}.get({mapTemp}, {indexTemp}));");
+                                context.WriteLine(output, $" = unwrapOrThrow({GetValueSummaryOps(context, mapAccessExpr.MapExpr.Type).GetName()}.get({mapTemp}, {indexTemp}));");
                             }
                             else
                             {
@@ -1005,7 +1022,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
                             writeMutator(valueTemp);
 
-                            context.WriteLine(output, $"{mapTemp} = {GetValueSummaryOps(context, mapAccessExpr.Type).GetName()}.put({mapTemp}, {indexTemp}, {valueTemp})");
+                            context.WriteLine(output, $"{mapTemp} = {GetValueSummaryOps(context, mapAccessExpr.MapExpr.Type).GetName()}.put({mapTemp}, {indexTemp}, {valueTemp});");
                         }
                     );
                     break;
@@ -1315,18 +1332,26 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
-        private static void WriteCtorExpr(CompilationContext context, StringWriter output, PathConstraintScope pcScope, Interface ctorInterface, IReadOnlyList<IPExpr> ctorArguments)
+        private void WriteCtorExpr(CompilationContext context, StringWriter output, PathConstraintScope pcScope, Interface ctorInterface, IReadOnlyList<IPExpr> ctorArguments)
         {
-            if (ctorArguments.Count != 0)
-                throw new NotImplementedException("Constructor payloads are not yet supported");
-
             // TODO: Is it safe to take an interface's name and treat it as if it were a machine's name?
             context.Write(
                 output,
                 $"{CompilationContext.EffectQueueVar}.create(" +
                 $"{pcScope.PathConstraintVar}, " +
                 $"{CompilationContext.SchedulerVar}, " +
-                $"{context.GetMachineTag(ctorInterface)}, " +
+                $"{context.GetMachineTag(ctorInterface)}, ");
+
+            if (ctorArguments.Count > 0)
+            {
+                Debug.Assert(ctorArguments.Count == 1);
+                context.Write(output, $"{GetValueSummaryOps(context, ctorArguments[0].Type).GetName()}, ");
+                WriteExpr(context, output, pcScope, ctorArguments[0]);
+                context.Write(output, ", ");
+            }
+
+            context.Write(
+                output,
                 $"(i) -> new {context.GetNameForDecl(ctorInterface)}(i))");
         }
 
@@ -1623,10 +1648,6 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
-            bool generateForTesting = true;
-            if (generateForTesting) {
-                context.WriteLine(output, "package symbolicp.testCase;");
-            }
             context.WriteLine(output, "import symbolicp.*;");
             context.WriteLine(output, "import symbolicp.bdd.*;");
             context.WriteLine(output, "import symbolicp.vs.*;");

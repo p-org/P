@@ -215,7 +215,7 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (handler.Value)
             {
                 case EventDefer _:
-                    context.Write(output, "/* TODO: Defer handler */");
+                    context.WriteLine(output, $"new DeferEventHandler({eventTag})");
                     break;
                 case EventDoAction action:
                     context.WriteLine(output, $"new EventHandler({eventTag}) {{");

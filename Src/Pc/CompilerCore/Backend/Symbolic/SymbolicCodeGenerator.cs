@@ -1691,7 +1691,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, "public static void main(String[] args) {");
 
                 context.WriteLine(output, "// TODO: Make maxDepth configurable");
-                context.WriteLine(output, "int maxDepth = 10;");
+                context.WriteLine(output, "int maxDepth = 13;");
 
                 context.Write(output, "scheduler = new Scheduler(eventOps");
                 foreach (Machine machine in globalScope.Machines)

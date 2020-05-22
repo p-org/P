@@ -44,6 +44,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
             WriteValueSummaryOpsDefs(context, source.Stream);
 
+            WriteAnyOps(context, source.Stream);
+
             WriteEventOps(context, source.Stream, globalScope.Events);
 
             WriteMainDriver(context, source.Stream, globalScope);
@@ -71,9 +73,26 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        private void WriteAnyOps(CompilationContext context, StringWriter output)
+        {
+            context.Write(output, "public final static UnionVS.Ops<TypeTag> anyOps = new UnionVS.Ops<>(");
+            for (int i = 0; i < context.PendingValueSummaryOpsDefs.Count; i++)
+            { 
+                var name = new ValueSummaryOps(i).GetName();
+                if (i < context.PendingValueSummaryOpsDefs.Count - 1)
+                {
+                    context.WriteLine(output, $"type_{i}, {name}, ");
+                }
+                else {
+                    context.WriteLine(output, $"type_{i}, {name}");
+                }
+            }
+            context.WriteLine(output, ");");
+        }
+
         private void WriteEventOps(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
         {
-            context.Write(output, "public final static EventVS.Ops eventOps = new EventVS.Ops(");
+            context.Write(output, "public final static UnionVS.Ops<EventTag> eventOps = new UnionVS.Ops<>(");
             context.WriteCommaSeparated(output, events, (pEvent) =>
             {
                 context.Write(output, $"{context.GetNameForDecl(pEvent)}, ");
@@ -897,6 +916,9 @@ namespace Plang.Compiler.Backend.Symbolic
             if (valueIsMachineRef && locationIsMachineRef)
                 return;
 
+            //if (locationType.IsSameTypeAs(PrimitiveType.Any))
+            //    return;
+
             if (!valueType.IsSameTypeAs(locationType))
             {
                 throw new NotImplementedException(
@@ -1189,10 +1211,14 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, pcScope, binOpExpr.Lhs);
                     context.Write(output, ").map2(");
                     WriteExpr(context, output, pcScope, binOpExpr.Rhs);
+                    String lambda;
+                    if (binOpExpr.Operation == BinOpType.Eq) lambda = $"{lhsLambdaTemp}.equals({rhsLambdaTemp}))";
+                    else if (binOpExpr.Operation == BinOpType.Neq) lambda = $"!{lhsLambdaTemp}.equals({rhsLambdaTemp}))";
+                    else lambda = $"{lhsLambdaTemp} {BinOpToStr(binOpExpr.Operation)} {rhsLambdaTemp})";
                     context.Write(
                         output,
                         $", ({lhsLambdaTemp}, {rhsLambdaTemp}) -> " +
-                        $"{lhsLambdaTemp} {BinOpToStr(binOpExpr.Operation)} {rhsLambdaTemp})"
+                        lambda
                     );
 
                     break;
@@ -1434,6 +1460,8 @@ namespace Plang.Compiler.Backend.Symbolic
                         return "void";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return "PrimVS<EventTag>";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
+                    return "UnionVS<TypeTag>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
                     return "MachineRefVS";
@@ -1467,6 +1495,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "PrimVS.Ops<Float>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return "PrimVS.Ops<EventTag>";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
+                    return "UnionVS.Ops<TypeTag>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
                     return "MachineRefVS.Ops";
@@ -1502,7 +1532,9 @@ namespace Plang.Compiler.Backend.Symbolic
                 case PermissionType _:
                     defBody = $"new {opsType}()";
                     break;
-
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
+                    defBody = "anyOps";
+                    break;
                 case SequenceType sequenceType:
                     var elemOps = GetValueSummaryOps(context, sequenceType.ElementType);
                     defBody = $"new {opsType}({elemOps.GetName()})";
@@ -1565,6 +1597,9 @@ namespace Plang.Compiler.Backend.Symbolic
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     unguarded = $"new {GetSymbolicType(type)}({CompilationContext.NullEventName})";
                     break;
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
+                    unguarded = "anyOps.empty()";
+                    break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
                     unguarded = $"{GetSymbolicType(type)}.nullMachineRef()";
@@ -1614,6 +1649,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"new {GetSymbolicType(type)}(0.0f)";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return $"new {GetSymbolicType(type)}({CompilationContext.NullEventName})";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
+                    return "anyOps.empty()";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
                     return $"{GetSymbolicType(type)}.nullMachineRef()";
@@ -1666,6 +1703,8 @@ namespace Plang.Compiler.Backend.Symbolic
                 var name = new ValueSummaryOps(i).GetName();
                 context.WriteLine(output, $"private static final {def.opsType} {name} =");
                 context.WriteLine(output, $"    {def.opsDef};");
+                context.WriteLine(output, $"private static final TypeTag type_{i} =");
+                context.WriteLine(output, $"    new TypeTag(\"{def.opsType}\", {i});");
                 context.WriteLine(output);
             }
         }

@@ -601,7 +601,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 case AssignStmt assignStmt:
                     CheckIsSupportedAssignment(assignStmt.Value.Type, assignStmt.Location.Type);
-
+                    
                     WriteWithLValueMutationContext(
                         context,
                         output,
@@ -610,8 +610,10 @@ namespace Plang.Compiler.Backend.Symbolic
                         false,
                         locationTemp =>
                         {
-                            context.Write(output, $"{locationTemp} = ");
+                            string inlineCastPrefix = GetInlineCastPrefix(assignStmt.Value.Type, assignStmt.Location.Type, context, flowContext.pcScope);
+                            context.Write(output, $"{locationTemp} = {inlineCastPrefix}");
                             WriteExpr(context, output, flowContext.pcScope, assignStmt.Value);
+                            if (inlineCastPrefix != "") context.Write(output, ")");
                             context.WriteLine(output, ";");
                         }
                     );
@@ -629,8 +631,10 @@ namespace Plang.Compiler.Backend.Symbolic
                         false,
                         locationTemp =>
                         {
-                            context.Write(output, $"{locationTemp} = ");
+                            string inlineCastPrefix = GetInlineCastPrefix(moveStmt.FromVariable.Type, moveStmt.ToLocation.Type, context, flowContext.pcScope);
+                            context.Write(output, $"{locationTemp} = {inlineCastPrefix}");
                             WriteExpr(context, output, flowContext.pcScope, new VariableAccessExpr(moveStmt.FromVariable.SourceLocation, moveStmt.FromVariable));
+                            if (inlineCastPrefix != "") context.Write(output, ")");
                             context.WriteLine(output, ";");
                         }
                     );
@@ -916,8 +920,8 @@ namespace Plang.Compiler.Backend.Symbolic
             if (valueIsMachineRef && locationIsMachineRef)
                 return;
 
-            //if (locationType.IsSameTypeAs(PrimitiveType.Any))
-            //    return;
+            if (locationType.IsSameTypeAs(PrimitiveType.Any))
+                return;
 
             if (!valueType.IsSameTypeAs(locationType))
             {
@@ -925,6 +929,29 @@ namespace Plang.Compiler.Backend.Symbolic
                     $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
                     $"from value of type {valueType.CanonicalRepresentation}");
             }
+        }
+
+        private string GetInlineCastPrefix(PLanguageType valueType, PLanguageType locationType, CompilationContext context, PathConstraintScope pcScope) {
+            var valueIsMachineRef = valueType.IsSameTypeAs(PrimitiveType.Machine) || valueType is PermissionType;
+            var locationIsMachineRef = locationType.IsSameTypeAs(PrimitiveType.Machine) || locationType is PermissionType;
+
+            if (valueIsMachineRef && locationIsMachineRef)
+                return "";
+            if (valueType.IsSameTypeAs(locationType)) return "";
+
+            if (locationType.IsSameTypeAs(PrimitiveType.Any)) {
+                string typeTag = GetValueSummaryOps(context, valueType).GetTypeName();
+                return $"new UnionVS<TypeTag> ({pcScope.PathConstraintVar}, {typeTag}, ";
+            } else if (valueType.IsSameTypeAs(PrimitiveType.Any))
+            {
+                ValueSummaryOps ops = GetValueSummaryOps(context, locationType);
+                string typeTag = ops.GetTypeName();
+                string opsVar = ops.GetName();
+                return $"{opsVar}.fromAny({pcScope.PathConstraintVar}, {typeTag}, ";
+            }
+            throw new NotImplementedException(
+                    $"Cannot yet handle casting to variable of type {locationType.CanonicalRepresentation} " +
+                    $"from value of type {valueType.CanonicalRepresentation}");
         }
 
         private void WriteFunCallStmt(CompilationContext context, StringWriter output, ControlFlowContext flowContext, Function function, IReadOnlyList<IPExpr> args, IPExpr dest=null)
@@ -1211,7 +1238,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, pcScope, binOpExpr.Lhs);
                     context.Write(output, ").map2(");
                     WriteExpr(context, output, pcScope, binOpExpr.Rhs);
-                    String lambda;
+                    string lambda;
                     if (binOpExpr.Operation == BinOpType.Eq) lambda = $"{lhsLambdaTemp}.equals({rhsLambdaTemp}))";
                     else if (binOpExpr.Operation == BinOpType.Neq) lambda = $"!{lhsLambdaTemp}.equals({rhsLambdaTemp}))";
                     else lambda = $"{lhsLambdaTemp} {BinOpToStr(binOpExpr.Operation)} {rhsLambdaTemp})";
@@ -1229,6 +1256,12 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output, guarded);
                         break;
                     }
+                case CastExpr castExpr:
+                    string prefix = GetInlineCastPrefix(castExpr.SubExpr.Type, castExpr.Type, context, pcScope);
+                    context.Write(output, prefix);
+                    WriteExpr(context, output, pcScope, castExpr.SubExpr);
+                    if (prefix != "") context.Write(output, ")");
+                    break;
                 case DefaultExpr defaultExpr:
                     context.Write(output, GetDefaultValue(context, pcScope, defaultExpr.Type));
                     break;
@@ -1597,7 +1630,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     unguarded = $"new {GetSymbolicType(type)}({CompilationContext.NullEventName})";
                     break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
-                    unguarded = "anyOps.empty()";
+                    unguarded = "ops_any.empty()";
                     break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
@@ -1649,7 +1682,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return $"new {GetSymbolicType(type)}({CompilationContext.NullEventName})";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
-                    return "anyOps.empty()";
+                    return "ops_any.empty()";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
                     return $"{GetSymbolicType(type)}.nullMachineRef()";

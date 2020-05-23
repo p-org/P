@@ -75,7 +75,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteAnyOps(CompilationContext context, StringWriter output)
         {
-            context.Write(output, "public final static UnionVS.Ops<TypeTag> anyOps = new UnionVS.Ops<>(");
+            context.Write(output, "public final static UnionVS.Ops<TypeTag> ops_any = new UnionVS.Ops<>(");
             for (int i = 0; i < context.PendingValueSummaryOpsDefs.Count; i++)
             { 
                 var name = new ValueSummaryOps(i).GetName();
@@ -1533,8 +1533,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     defBody = $"new {opsType}()";
                     break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
-                    defBody = "anyOps";
-                    break;
+                    return new ValueSummaryOps("any");
                 case SequenceType sequenceType:
                     var elemOps = GetValueSummaryOps(context, sequenceType.ElementType);
                     defBody = $"new {opsType}({elemOps.GetName()})";

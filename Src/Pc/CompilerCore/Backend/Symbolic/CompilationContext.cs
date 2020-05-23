@@ -245,15 +245,30 @@ namespace Plang.Compiler.Backend.Symbolic
     internal struct ValueSummaryOps
     {
         internal readonly int id;
+        internal readonly string name;
 
         internal ValueSummaryOps(int id)
         {
             this.id = id;
+            name = null;
+        }
+
+        internal ValueSummaryOps(string name)
+        {
+            id = -1;
+            this.name = name;
         }
 
         internal string GetName()
         {
-            return $"ops_{id}";
+            if (name == null) return $"ops_{id}";
+            return $"ops_{name}";
+        }
+
+        internal string GetTypeName()
+        {
+            if (name == null) return $"type_{id}";
+            return $"type_{name}";
         }
     }
 }

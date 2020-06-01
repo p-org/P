@@ -789,7 +789,7 @@ namespace Plang.Compiler.Backend.Coyote
 
                 case GotoStmt gotoStmt:
                     //last statement
-                    context.Write(output, $"currentMachine.TryGotoState<{gotoStmt.State.QualifiedName}>(");
+                    context.Write(output, $"currentMachine.TryGotoState<{context.Names.GetNameForDecl(gotoStmt.State)}>(");
                     if (gotoStmt.Payload != null)
                     {
                         WriteExpr(context, output, gotoStmt.Payload);

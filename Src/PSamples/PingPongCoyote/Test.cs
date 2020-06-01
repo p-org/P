@@ -3,7 +3,7 @@ using Microsoft.Coyote.SystematicTesting;
 using System;
 using System.Linq;
 
-namespace pingpong
+namespace elevator
 {
     public class _TestRegression
     {

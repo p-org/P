@@ -69,6 +69,11 @@ namespace Plang.CoyoteRuntime.Values
             return true;
         }
 
+        public override bool Equals(object obj)
+        {
+            return base.Equals((IPrtValue)obj);
+        }
+
         public void Update(int index, IPrtValue val)
         {
             fieldValues[index] = val;
@@ -159,6 +164,11 @@ namespace Plang.CoyoteRuntime.Values
             }
 
             return true;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return base.Equals((IPrtValue)obj);
         }
 
         public override int GetHashCode()

@@ -38,6 +38,11 @@ namespace Plang.CoyoteRuntime.Values
             return Id.GetHashCode();
         }
 
+        public override bool Equals(object obj)
+        {
+            return base.Equals((IPrtValue)obj);
+        }
+       
         public IPrtValue Clone()
         {
             return new PMachineValue(Id, new List<string>(Permissions));

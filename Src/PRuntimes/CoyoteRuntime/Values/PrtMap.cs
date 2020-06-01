@@ -158,6 +158,11 @@ namespace Plang.CoyoteRuntime.Values
             return new PrtSeq(map.Values.Select(v => v.Clone()));
         }
 
+        public override bool Equals(object obj)
+        {
+            return base.Equals((IPrtValue)obj);
+        }
+
         public override int GetHashCode()
         {
             if (IsDirty)

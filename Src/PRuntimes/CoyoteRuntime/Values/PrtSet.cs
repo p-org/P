@@ -77,6 +77,22 @@ namespace Plang.CoyoteRuntime.Values
                    && set.SetEquals(otherSet.set);
         }
 
+        public override bool Equals(object obj)
+        {
+            return base.Equals((IPrtValue)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            if (IsDirty)
+            {
+                hashCode = ComputeHashCode();
+                IsDirty = false;
+            }
+
+            return hashCode;
+        }
+
         public IPrtValue Clone()
         {
             PrtSet clone = new PrtSet(new HashSet<IPrtValue>());

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Coyote.SystematicTesting;
 using Plang.Compiler;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -153,7 +152,7 @@ namespace Main
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
+    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.8""/>
     <Reference Include = ""CoyoteRuntime.dll""/>
   </ItemGroup>
 </Project>";

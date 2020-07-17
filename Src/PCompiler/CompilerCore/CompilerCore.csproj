@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>Plang.Compiler</RootNamespace>
-    <Antlr4JavaExecutable Condition=" '$(OS)' != 'Windows_NT' ">/usr/bin/java</Antlr4JavaExecutable>
+    <Antlr4JavaExecutable Condition=" '$(OS)' != 'Windows_NT' ">java</Antlr4JavaExecutable>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>

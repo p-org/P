@@ -701,14 +701,24 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case PrintStmt printStmt:
-                    context.Write(output, $"RuntimeLogger.log(\"{printStmt.Message}\"");
-                    foreach (var printArg in printStmt.Args)
-                    {
-                        context.Write(output, ", ");
-                        WriteExpr(context, output, flowContext.pcScope, printArg);
+                    context.Write(output, $"RuntimeLogger.log(");
+                    //TODO: use WriteExpr(context, output, flowContext.pcScope, printStmt.Message);
+                    switch (printStmt.Message) {
+                        case StringExpr stringExpr:
+                            context.Write(output, $"\"{stringExpr.BaseString}\"");
+                            foreach(var arg in stringExpr.Args)
+                            {
+                                context.Write(output, ", ");
+                                WriteExpr(context, output, flowContext.pcScope, arg);
+                            }
+                            context.Write(output, "));");
+                            break;
+                        default:
+                            context.Write(output, "(");
+                            WriteExpr(context, output, flowContext.pcScope, printStmt.Message);
+                            context.Write(output, ").toString());");
+                            break;
                     }
-
-                    context.WriteLine(output, ");");
                     break;
 
                 case BreakStmt breakStmt:
@@ -1405,6 +1415,15 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, pcScope, sizeOfExpr.Expr);
                     context.Write(output, ".size()");
                     break;
+                case StringExpr stringExpr:
+                    context.Write(output, $"new { GetSymbolicType(PrimitiveType.String) }(String.format(\"{stringExpr.BaseString}\"");
+                    foreach(var arg in stringExpr.Args)
+                    {
+                        throw new NotImplementedException("Cannot yet handle formatted strings.");
+                    }
+                    context.Write(output, "))");
+                    context.Write(output, $".guard({pcScope.PathConstraintVar})");
+                    break;
                 default:
                     context.Write(output, $"/* Skipping expr '{expr.GetType().Name}' */");
                     break;
@@ -1528,6 +1547,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "PrimVS<EventName>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return "UnionVS";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
+                    return "PrimVS<String>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
                     return "PrimVS<Machine>";
@@ -1543,7 +1564,6 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "TupleVS";
                 case EnumType enumType:
                     return $"PrimVS<Integer> /* enum {enumType.OriginalRepresentation} */";
-
                 default:
                     throw new NotImplementedException($"Symbolic type '{type.OriginalRepresentation}' not supported");
             }
@@ -1568,6 +1588,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     unguarded = $"new {GetSymbolicType(type)}()";
+                    break;
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
+                    unguarded = $"new {GetSymbolicType(type)}(\"\")";
                     break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:

@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Plang.Compiler;
+using Plang.Compiler.Backend;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using Plang.Compiler;
-using Plang.Compiler.Backend;
 
 namespace UnitTests.Core
 {
@@ -20,13 +20,17 @@ namespace UnitTests.Core
 
         public void WriteMessage(string msg, SeverityKind severity)
         {
-            if (severity != SeverityKind.Info) Console.Write($"{severity}: ");
+            if (severity != SeverityKind.Info)
+            {
+                Console.Write($"{severity}: ");
+            }
+
             Console.WriteLine(msg);
         }
 
         public void WriteFile(CompiledFile file)
         {
-            var fileName = Path.Combine(outputDirectory.FullName, file.FileName);
+            string fileName = Path.Combine(outputDirectory.FullName, file.FileName);
             File.WriteAllText(fileName, file.Contents);
             outputFiles.Add(new FileInfo(fileName));
         }

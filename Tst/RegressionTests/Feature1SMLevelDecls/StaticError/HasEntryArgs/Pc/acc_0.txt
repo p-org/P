@@ -1,3 +1,0 @@
-OUT: entryExit_2.p(36,2,33,3): error PC1001: Entry function cannot take arguments
-OUT: Compilation failed
-EXIT: -1

@@ -1,3 +1,0 @@
-OUT: EnclosedFunCalls.p(27,3,27,8): error PC1001: Transition function may cause a change in current state
-OUT: Compilation failed
-EXIT: -1

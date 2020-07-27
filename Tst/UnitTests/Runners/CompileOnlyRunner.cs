@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Plang.Compiler;
+using Plang.Compiler.Backend;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using Plang.Compiler;
-using Plang.Compiler.Backend;
 using UnitTests.Core;
 
 namespace UnitTests.Runners
@@ -34,28 +34,35 @@ namespace UnitTests.Runners
         /// <param name="scratchDirectory">Unused. Caller is responsible for cleanup.</param>
         /// <param name="stdout">The output produced by the P compiler</param>
         /// <param name="stderr">The error output produced by the P compiler</param>
-        /// <returns>Always returns 0, otherwise throws.</returns>
+        /// <returns>0 if compilation successful, 1 if a Translation Exception is thrown, throws a
+        ///     CompilerTestException if the compiler crashes.
+        /// </returns>
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
-            var compiler = new Compiler();
-            var stdoutWriter = new StringWriter();
-            var stderrWriter = new StringWriter();
-            var outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);
+            Compiler compiler = new Compiler();
+            StringWriter stdoutWriter = new StringWriter();
+            StringWriter stderrWriter = new StringWriter();
+            TestCaseOutputStream outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);
 
-            var job = new CompilationJob(outputStream, compilerOutput, inputFiles);
+            CompilationJob job = new CompilationJob(outputStream, compilerOutput, inputFiles);
 
             try
             {
                 compiler.Compile(job);
+            }
+            catch (TranslationException)
+            {
                 stdout = stdoutWriter.ToString().Trim();
                 stderr = stderrWriter.ToString().Trim();
+                return 1;
             }
-            catch (TranslationException exception)
+            catch (Exception exception)
             {
                 job.Output.WriteMessage(exception.Message, SeverityKind.Error);
                 throw new CompilerTestException(TestCaseError.TranslationFailed, exception.Message);
             }
-
+            stdout = stdoutWriter.ToString().Trim();
+            stderr = stderrWriter.ToString().Trim();
             return 0;
         }
 
@@ -77,10 +84,12 @@ namespace UnitTests.Runners
                     case SeverityKind.Info:
                         stdout.WriteLine(msg);
                         break;
+
                     case SeverityKind.Warning:
                     case SeverityKind.Error:
                         stderr.WriteLine(msg);
                         break;
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(severity), severity, null);
                 }
@@ -88,16 +97,19 @@ namespace UnitTests.Runners
 
             public void WriteFile(CompiledFile file)
             {
-                var nameLength = file.FileName.Length;
-                var headerWidth = Math.Max(40, nameLength + 4);
-                var hdash = new string('=', headerWidth);
+                int nameLength = file.FileName.Length;
+                int headerWidth = Math.Max(40, nameLength + 4);
+                string hdash = new string('=', headerWidth);
                 stdout.WriteLine(hdash);
-                var prePadding = (headerWidth - nameLength) / 2 - 1;
-                var postPadding = headerWidth - prePadding - nameLength - 2;
+                int prePadding = (headerWidth - nameLength) / 2 - 1;
+                int postPadding = headerWidth - prePadding - nameLength - 2;
                 stdout.WriteLine($"={new string(' ', prePadding)}{file.FileName}{new string(' ', postPadding)}=");
                 stdout.WriteLine(hdash);
                 stdout.Write(file.Contents);
-                if (!file.Contents.EndsWith(Environment.NewLine)) stdout.WriteLine();
+                if (!file.Contents.EndsWith(Environment.NewLine))
+                {
+                    stdout.WriteLine();
+                }
 
                 stdout.WriteLine(hdash);
                 stdout.WriteLine();

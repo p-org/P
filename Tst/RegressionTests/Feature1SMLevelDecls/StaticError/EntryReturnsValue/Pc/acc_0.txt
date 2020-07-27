@@ -1,3 +1,0 @@
-OUT: function.p(6,4,6,10): error PC1001: Anonymous function cannot return a value
-OUT: Compilation failed
-EXIT: -1

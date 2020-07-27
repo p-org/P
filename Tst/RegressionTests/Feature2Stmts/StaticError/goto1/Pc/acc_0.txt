@@ -1,5 +1,0 @@
-OUT: goto1.p(21,2,21,6): error PC1001: Global function must not use goto statement
-OUT: goto1.p(27,5,27,9): error PC1001: Invalid payload type in goto
-OUT: goto1.p(31,15,31,19): error PC1001: Undefined state
-OUT: Compilation failed
-EXIT: -1

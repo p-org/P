@@ -1,5 +1,0 @@
-OUT: ExprOperators.p(16,6,16,7): error PC1001: Operator expected first argument to be an integer value
-OUT: ExprOperators.p(17,6,17,11): error PC1001: Operator expected first argument to be an integer value
-OUT: ExprOperators.p(19,11,19,23): error PC1001: Operator expected second argument to be a map or sequence value
-OUT: Compilation failed
-EXIT: -1

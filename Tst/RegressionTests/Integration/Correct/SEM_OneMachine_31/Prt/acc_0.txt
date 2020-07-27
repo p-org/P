@@ -1,9 +1,0 @@
-OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state Main.Real1_Init
-OUT: <EnqueueLog> Enqueued event E1 with payload null on Machine Main(1)
-OUT: <RaiseLog> Machine Main(1) raised event halt with payload null
-OUT: <ExitLog> Machine Main(1) exiting state Main.Real1_Init
-OUT: <EnqueueLog> Enqueued event E2 with payload null on Machine Main(1)
-OUT: <HaltLog> Machine Main(1) halted in state Main.Real1_Init
-OUT: 
-EXIT: 0

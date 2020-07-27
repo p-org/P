@@ -1,7 +1,0 @@
-OUT: payloadEntry.p(41,4,41,8): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: payloadEntry.p(42,4,42,7): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: payloadEntry.p(60,4,60,8): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: payloadEntry.p(66,4,66,7): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: payloadEntry.p(66,23,66,24): error PC1001: Index may not be in the domain of the map
-OUT: Compilation failed
-EXIT: -1

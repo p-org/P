@@ -1,7 +1,0 @@
-OUT: payloadTransitions.p(31,4,31,7): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: payloadTransitions.p(35,4,35,7): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: payloadTransitions.p(35,23,35,24): error PC1001: Index may not be in the domain of the map
-OUT: payloadTransitions.p(45,4,45,8): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: payloadTransitions.p(46,4,46,7): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: Compilation failed
-EXIT: -1

@@ -1,7 +1,0 @@
-OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state Main.S
-OUT: <RaiseLog> Machine Main(1) raised event E with payload 1
-OUT: <ExitLog> Machine Main(1) exiting state Main.S
-OUT: <StateLog> Machine Main(1) entered state Main.T
-OUT: 
-EXIT: 0

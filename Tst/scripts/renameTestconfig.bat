@@ -1,1 +1,0 @@
-for /R %x in (testconfig*.txt) do ren "%x" testconfig.txt

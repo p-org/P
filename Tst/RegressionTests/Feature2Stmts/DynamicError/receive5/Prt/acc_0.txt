@@ -1,8 +1,0 @@
-OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state Main.Init
-OUT: <EnqueueLog> Enqueued event E with payload null on Machine Main(1)
-OUT: <DequeueLog> Dequeued event E with payload null by Machine Main(1)
-OUT: <ExitLog> Machine Main(1) exiting state Main.Init
-OUT: exiting with PRT_STATUS_EVENT_UNHANDLED
-OUT: 
-EXIT: 1

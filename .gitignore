@@ -233,7 +233,7 @@ stubs.c
 
 Src/PrtDist/Binaries/clusterconfiguration.xml
 *.idb
-/Ext/PsTools
+/Ext
 /Src/Prt/Samples/ForeignTypes/Tester.ipdb
 /Src/Prt/Samples/ForeignTypes/Tester.iobj
 /Src/Prt/Samples/ForeignTypes/Tester.exe
@@ -297,3 +297,8 @@ Src/PrtDist/Binaries/clusterconfiguration.xml
 nupkgs/
 /Tst/temp_builds
 *.db
+Src/Samples/ForeignTypes/CMakeCache.txt
+Src/Samples/ForeignTypes/CMakeFiles/
+Src/Samples/ForeignTypes/Makefile
+Src/Samples/ForeignTypes/cmake_install.cmake
+

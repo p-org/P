@@ -1,3 +1,0 @@
-OUT: linear.p(23,4,23,8): error PC1001: Variable is not available
-OUT: Compilation failed
-EXIT: -1

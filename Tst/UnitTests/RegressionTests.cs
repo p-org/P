@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using NUnit.Framework;
+using Plang.Compiler;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Plang.Compiler;
-using NUnit.Framework;
 using UnitTests.Core;
-using UnitTests.Runners;
-using UnitTests.Validators;
 
 namespace UnitTests
 {
@@ -15,15 +13,24 @@ namespace UnitTests
         [OneTimeTearDown]
         public void RemoveEmptyDirectories()
         {
-            var baseDir = new DirectoryInfo(Constants.ScratchParentDirectory);
-            if (baseDir.Exists) RecursiveRemoveEmptyDirectories(baseDir);
+            DirectoryInfo baseDir = new DirectoryInfo(Constants.ScratchParentDirectory);
+            if (baseDir.Exists)
+            {
+                RecursiveRemoveEmptyDirectories(baseDir);
+            }
         }
 
         private static void RecursiveRemoveEmptyDirectories(DirectoryInfo dir)
         {
-            foreach (var subdir in dir.EnumerateDirectories()) RecursiveRemoveEmptyDirectories(subdir);
+            foreach (DirectoryInfo subdir in dir.EnumerateDirectories())
+            {
+                RecursiveRemoveEmptyDirectories(subdir);
+            }
 
-            if (!dir.EnumerateFileSystemInfos().Any()) dir.Delete();
+            if (!dir.EnumerateFileSystemInfos().Any())
+            {
+                dir.Delete();
+            }
         }
     }
 
@@ -32,31 +39,31 @@ namespace UnitTests
     public class CompileOnlyRegressionTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
-            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] {"Pc"});
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] { "StaticError" });
 
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestRegressions(DirectoryInfo testDir)
         {
-            var scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
-            var factory = new TestCaseFactory(scratchDir);
-            var testCaseC = factory.CreateTestCase(testDir);
+            DirectoryInfo scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
+            TestCaseFactory factory = new TestCaseFactory(scratchDir);
+            CompilerTestCase testCaseC = factory.CreateTestCase(testDir);
             TestAssertions.AssertTestCase(testCaseC);
         }
     }
 
-    [TestFixture]
+    /*[TestFixture]
     [Parallelizable(ParallelScope.Children)]
     public class PrtRegressionTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
-            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] {"Prt"});
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] { "DynamicError", "Correct" });
 
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestRegressions(DirectoryInfo testDir)
         {
-            var scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
-            var factory = new TestCaseFactory(scratchDir);
-            var testCaseC = factory.CreateTestCase(testDir, CompilerOutput.C);
+            DirectoryInfo scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
+            TestCaseFactory factory = new TestCaseFactory(scratchDir);
+            CompilerTestCase testCaseC = factory.CreateTestCase(testDir, CompilerOutput.C);
             TestAssertions.AssertTestCase(testCaseC);
         }
 
@@ -73,23 +80,23 @@ namespace UnitTests
                 new ExecutionOutputValidator(0, null, null));
 
             TestAssertions.AssertTestCase(testCase);
-        }*/
-    }
+        }
+    }*/
 
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    public class PrtSharpRegressionTests
+    public class CoyoteRuntimeRegressionTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
-            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] {"Prt", "PrtSharp" });
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] { "DynamicError", "Correct" });
 
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestRegressions(DirectoryInfo testDir)
         {
-            var scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
-            var factory = new TestCaseFactory(scratchDir);
-            var testCasePSharp = factory.CreateTestCase(testDir, CompilerOutput.PSharp);
-            TestAssertions.AssertTestCase(testCasePSharp);
+            DirectoryInfo scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
+            TestCaseFactory factory = new TestCaseFactory(scratchDir);
+            CompilerTestCase testCaseCoyote = factory.CreateTestCase(testDir, CompilerOutput.Coyote);
+            TestAssertions.AssertTestCase(testCaseCoyote);
         }
     }
 }

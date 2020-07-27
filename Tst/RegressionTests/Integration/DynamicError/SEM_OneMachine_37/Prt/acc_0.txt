@@ -1,7 +1,0 @@
-OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state Main.Real1_Init
-OUT: <ExitLog> Machine Main(1) exiting state Main.Real1_Init
-OUT: <StateLog> Machine Main(1) entered state Main.Real1_S2
-OUT: exiting with PRT_STATUS_ASSERT (assertion failure)
-OUT: 
-EXIT: 1

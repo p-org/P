@@ -1,12 +1,13 @@
-﻿using System.IO;
+﻿using NUnit.Framework;
 using Plang.Compiler;
-using NUnit.Framework;
+using System.IO;
 using UnitTests.Core;
 using UnitTests.Runners;
 using UnitTests.Validators;
 
 namespace UnitTests
 {
+    /*
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
     internal class SamplesTests
@@ -14,22 +15,22 @@ namespace UnitTests
         [Test]
         public void TestFailureDetector()
         {
-            var tempDir =
+            DirectoryInfo tempDir =
                 Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, nameof(TestForeignTypes)));
-            var driverPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "FailureDetector",
+            FileInfo driverPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "FailureDetector",
                 "Driver.p"));
-            var failureDetectorPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples",
+            FileInfo failureDetectorPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples",
                 "FailureDetector",
                 "FailureDetector.p"));
-            var prtDistPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples",
+            FileInfo prtDistPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples",
                 "FailureDetector",
                 "PrtDistHelp.p"));
-            var timerPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "Timer",
+            FileInfo timerPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "Timer",
                 "TimerHeader.p"));
-            var testCase = new CompilerTestCase(
+            CompilerTestCase testCase = new CompilerTestCase(
                 tempDir,
                 new CompileOnlyRunner(CompilerOutput.C,
-                    new[] {driverPath, failureDetectorPath, prtDistPath, timerPath}),
+                    new[] { driverPath, failureDetectorPath, prtDistPath, timerPath }),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);
@@ -38,14 +39,14 @@ namespace UnitTests
         [Test]
         public void TestForeignTypes()
         {
-            var tempDir =
+            DirectoryInfo tempDir =
                 Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, nameof(TestForeignTypes)));
-            var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "ForeignTypes",
+            FileInfo tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "ForeignTypes",
                 "ForeignStringType.p"));
 
-            var testCase = new CompilerTestCase(
+            CompilerTestCase testCase = new CompilerTestCase(
                 tempDir,
-                new CompileOnlyRunner(CompilerOutput.C, new[] {tempFilePath}),
+                new CompileOnlyRunner(CompilerOutput.C, new[] { tempFilePath }),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);
@@ -54,15 +55,15 @@ namespace UnitTests
         [Test]
         public void TestPingPong()
         {
-            var tempDir =
+            DirectoryInfo tempDir =
                 Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, nameof(TestForeignTypes)));
-            var pingPongPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "PingPong",
+            FileInfo pingPongPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "PingPong",
                 "PingPong.p"));
-            var prtDistPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "PingPong",
+            FileInfo prtDistPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "PingPong",
                 "PrtDistHelp.p"));
-            var testCase = new CompilerTestCase(
+            CompilerTestCase testCase = new CompilerTestCase(
                 tempDir,
-                new CompileOnlyRunner(CompilerOutput.C, new[] {pingPongPath, prtDistPath}),
+                new CompileOnlyRunner(CompilerOutput.C, new[] { pingPongPath, prtDistPath }),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);
@@ -71,17 +72,17 @@ namespace UnitTests
         [Test]
         public void TestTimer()
         {
-            var tempDir =
+            DirectoryInfo tempDir =
                 Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, nameof(TestForeignTypes)));
-            var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "Timer",
+            FileInfo tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "Timer",
                 "TimerHeader.p"));
 
-            var testCase = new CompilerTestCase(
+            CompilerTestCase testCase = new CompilerTestCase(
                 tempDir,
-                new CompileOnlyRunner(CompilerOutput.C, new[] {tempFilePath}),
+                new CompileOnlyRunner(CompilerOutput.C, new[] { tempFilePath }),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);
         }
-    }
+    }*/
 }

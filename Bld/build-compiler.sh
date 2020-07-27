@@ -8,6 +8,6 @@ cd "$(dirname "${0}")/.."
 git submodule update --init --recursive
 
 # Run the build!
-dotnet publish -c Release ./Src/Pc/CommandLine/CommandLine.csproj
+dotnet publish -c Release ./Src/PCompiler/CommandLine/CommandLine.csproj
 
 echo "Compiler located in Bld/Drops/Release/Binaries/Pc.dll"

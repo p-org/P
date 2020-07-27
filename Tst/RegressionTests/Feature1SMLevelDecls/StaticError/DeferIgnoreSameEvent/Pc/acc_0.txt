@@ -1,4 +1,0 @@
-OUT: DeferIgnore1.p(25,3,25,9): error PC1001: Multiple actions over the same event
-OUT: DeferIgnore1.p(26,3,26,8): error PC1001: Multiple actions over the same event
-OUT: Compilation failed
-EXIT: -1

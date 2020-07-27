@@ -1,9 +1,0 @@
-OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state Main.Init
-OUT: <CreateLog> Machine B(2) is created
-OUT: <StateLog> Machine B(2) entered state B.Init
-OUT: <EnqueueLog> Enqueued event E with payload null on Machine B(2)
-OUT: <DequeueLog> Dequeued event E with payload null by Machine B(2)
-OUT: exiting with PRT_STATUS_ASSERT (assertion failure)
-OUT: 
-EXIT: 1

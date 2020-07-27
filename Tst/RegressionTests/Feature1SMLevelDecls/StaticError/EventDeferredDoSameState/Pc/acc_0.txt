@@ -1,4 +1,0 @@
-OUT: EventDeferredDoSameState.p(14,3,14,10): error PC1001: Multiple actions over the same event
-OUT: EventDeferredDoSameState.p(15,3,15,8): error PC1001: Multiple actions over the same event
-OUT: Compilation failed
-EXIT: -1

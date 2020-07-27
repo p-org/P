@@ -1,3 +1,0 @@
-OUT: ControlImpureInExit.p(31,2,30,6): error PC1001: Exit function may cause a change in current state
-OUT: Compilation failed
-EXIT: -1

@@ -1,7 +1,0 @@
-OUT: payloadActionsFuns.p(13,4,13,8): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: payloadActionsFuns.p(38,4,38,7): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: payloadActionsFuns.p(38,23,38,24): error PC1001: Index may not be in the domain of the map
-OUT: payloadActionsFuns.p(48,4,48,8): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: payloadActionsFuns.p(49,4,49,7): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
-OUT: Compilation failed
-EXIT: -1

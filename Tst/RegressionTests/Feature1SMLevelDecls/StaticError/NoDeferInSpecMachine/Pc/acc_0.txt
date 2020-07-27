@@ -1,3 +1,0 @@
-OUT: monitors.p(13,3,13,8): error PC1001: Event cannot be deferred in spec machine
-OUT: Compilation failed
-EXIT: -1

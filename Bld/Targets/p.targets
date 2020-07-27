@@ -1,60 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <UnifiedPlatform>$(Platform)</UnifiedPlatform>
-    <!-- C++ projects use "Win32" for "x86" platform and .NET projects use 'x86' -->
-    <!-- So this new property unifies that difference and moves everything to 'x86' -->
-    <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
-    <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
-    <PExePath>"$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\AnyCPU\Binaries\pc.dll"</PExePath>
-    <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
-    <PGeneratedDir>$(ProjectDir)PGenerated</PGeneratedDir>
-    <PCompileOptions>-generate:C "-t:$(ProjectName)" "-outputDir:$(PGeneratedDir)"</PCompileOptions>
+    <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\</DropFolder>
   </PropertyGroup>
 
-  <!-- Invoke pc.exe - pc.exe will do the right thing based on which p files (or include files) have actually changed. -->
-  <Target Name="CompileP" Inputs="@(PCompile);"
-          Outputs="$(PGeneratedDir)\$(ProjectName).c;$(PGeneratedDir)\$(ProjectName).h;"
-          BeforeTargets="BeforeBuildGenerateSources" >
-
-    <ItemGroup>
-      <ClCompile Include="$(PGeneratedDir)\$(ProjectName).c" Condition=" '$(PLibBuild)' != 'TRUE'"/>
-    </ItemGroup>
-
-      <ItemGroup>
-        <FileWrites Include="$(PGeneratedDir)\$(ProjectName).c" />
-        <FileWrites Include="$(PGeneratedDir)\$(ProjectName).h" />
-      </ItemGroup>
-      
-      <Message Importance="high" Text="########## compiling p files @(PCompile)  ##################" />
-      <Exec Command="dotnet $(PExePath) $(PCompileOptions) @(PCompile->'&quot;%(FullPath)&quot;',' ')"/>
-      <Message Importance="high" Text="########## compiling p files complete ##################" />
-
-    </Target>
-
-  <Target Name="CleanCompileP" Condition="'@(PCompile)' != ''" >   
-    <RemoveDir Directories="$(PGeneratedDir)"/>
-  </Target>
-
+  
   <Target Name="CopySdkHeaders" Inputs="@(ClInclude)"  Outputs="$(DropFolder)\Headers\%(Filename)" BeforeTargets="PrepareForBuild">
     <CreateItem Include="@(ClInclude)" Condition="'%(ClInclude.CopyToHeaders)'=='True'" >
       <Output TaskParameter="Include" ItemName="SdkHeaders"/>
     </CreateItem>
     <Copy SourceFiles="@(SdkHeaders)" DestinationFolder="$(DropFolder)\Headers" />
-  </Target>
-
-  <Target Name="CleanSdkHeaders">
-    <CreateItem Include="@(ClInclude)" Condition="'%(ClInclude.CopyToHeaders)'=='True'" >
-      <Output TaskParameter="Include" ItemName="SdkHeaders"/>
-    </CreateItem>
-    <Delete Files="@(SdkHeaders->'$(DropFolder)\Headers\%(Filename)%(Extension)')"/>
-  </Target>
-
-  <Target Name="CopyClientFiles" Inputs="@(ClientFile)"  Outputs="$(DropFolder)\ClientFiles\%(Filename)" BeforeTargets="PrepareForBuild">
-    <Copy SourceFiles="@(ClientFile)" DestinationFolder="$(DropFolder)\ClientFiles" />
-  </Target>
-
-  <Target Name="CleanClientFiles">
-    <Delete Files="@(ClientFile->'$(DropFolder)\ClientFiles\%(Filename)%(Extension)')" />
   </Target>
 </Project>

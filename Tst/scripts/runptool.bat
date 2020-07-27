@@ -1,1 +1,0 @@
-D:\PLanguage-0216\P\Tst\..\Bld\Drops\Debug\x86\Binaries\RunPTool.exe %1 %2 %3

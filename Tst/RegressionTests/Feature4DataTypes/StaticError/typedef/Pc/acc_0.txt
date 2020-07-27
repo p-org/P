@@ -1,5 +1,0 @@
-OUT: ?(0,0,0,0): error PC1001: Undefined type: X
-OUT: typedef.p(1,1,1,5): error PC1001: Type depends on itself
-OUT: typedef.p(2,1,2,5): error PC1001: Type depends on itself
-OUT: Compilation failed
-EXIT: -1

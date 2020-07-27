@@ -1,3 +1,0 @@
-OUT: functionAnyAnon.p(6,5,6,11): error PC1001: Anonymous function cannot return a value
-OUT: Compilation failed
-EXIT: -1

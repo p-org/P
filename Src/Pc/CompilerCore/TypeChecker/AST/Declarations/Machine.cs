@@ -25,6 +25,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public bool IsSpec { get; }
         public uint? Assume { get; set; }
         public uint? Assert { get; set; }
+        public string Semantics { get; set; }
         public IEventSet Receives { get; set; }
         public IEventSet Sends { get; set; }
         public IInterfaceSet Creates { get; set; }

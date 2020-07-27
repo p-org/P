@@ -80,6 +80,10 @@ RENAME         : 'rename' ;
 SAFE           : 'safe' ;
 MAIN		   : 'main' ;
 
+// machine queue annotations
+BAG       : 'bag' ;
+QUEUE     : 'queue' ;
+
 // machine annotations
 RECEIVES  : 'receives' ;
 SENDS     : 'sends' ;

@@ -268,6 +268,13 @@ namespace Plang.Compiler.TypeChecker
             // MACHINE name=iden 
             var machine = (Machine) nodesToDeclarations.Get(context);
 
+            // bufferSemantics?
+            machine.Semantics = context.annotations()?.bufferSemantics()?.GetText();
+            if (machine.Semantics == null)
+            {
+                machine.Semantics = "queue";
+            }
+
             // cardinality? 
             var hasAssume = context.cardinality()?.ASSUME() != null;
             var hasAssert = context.cardinality()?.ASSERT() != null;

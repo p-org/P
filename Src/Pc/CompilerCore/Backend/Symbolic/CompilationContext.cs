@@ -14,8 +14,6 @@ namespace Plang.Compiler.Backend.Symbolic
         int nextBranchId;
         int nextTempVarId;
 
-        internal readonly List<ValueSummaryOpsDef> PendingValueSummaryOpsDefs;
-        private readonly Dictionary<ValueSummaryOpsDef, ValueSummaryOps> CachedValueSummaryOpsDefs;
         internal Dictionary<Function, int> anonFuncIds;
 
         internal CompilationContext(ICompilationJob job)
@@ -28,9 +26,6 @@ namespace Plang.Compiler.Backend.Symbolic
                     "begin with an alphabetic character and contain only alphanumeric characters");
 
             MainClassName = ProjectName;
-
-            PendingValueSummaryOpsDefs = new List<ValueSummaryOpsDef>();
-            CachedValueSummaryOpsDefs = new Dictionary<ValueSummaryOpsDef, ValueSummaryOps>();
             anonFuncIds = new Dictionary<Function, int>();
         }
 
@@ -53,6 +48,10 @@ namespace Plang.Compiler.Backend.Symbolic
                         }
                         return $"anonfunc_{anonFuncIds[func]}";
                     }
+                    else if (func.IsForeign)
+                    {
+                        return $"PForeignFunction.{func.Name}";
+                    }
                     else
                     {
                         return $"func_{func.Name}";
@@ -65,28 +64,27 @@ namespace Plang.Compiler.Backend.Symbolic
                 case State state:
                     return $"state_{state.Name}";
                 case PEvent pEvent:
-                    return $"event_{pEvent.Name}";
+                    return $"Events.event_{pEvent.Name}";
                 default:
                     throw new NotImplementedException($"decl type {decl.GetType().Name} not supported");
             }
         }
 
-        internal object GetMachineTag(Machine machine)
+        internal object GetMachineName(Machine machine)
         {
-            return $"machineTag_{machine.Name}";
+            return $"machine_{machine.Name}";
         }
 
-        internal object GetMachineTag(Interface @interface)
+        internal string GetBufferSemantics(Machine machine)
         {
-            // TODO: Is it safe to take an interface's name and treat it as if it were a machine's name?
-            return $"machineTag_{@interface.Name}";
+            return machine.Semantics;
         }
 
-        internal static string NullEventName => "event_null";
+        internal static string NullEventName => "Events.event_null";
 
         internal static string SchedulerVar => "scheduler";
 
-        internal static string EffectQueueVar => "effects";
+        internal static string EffectCollectionVar => "effects";
 
         internal static string GetVar(string rawName)
         {
@@ -113,21 +111,6 @@ namespace Plang.Compiler.Backend.Symbolic
             var id = nextTempVarId;
             nextTempVarId++;
             return $"temp_var_{id}";
-        }
-
-        internal ValueSummaryOps ValueSummaryOpsForDef(ValueSummaryOpsDef def)
-        {
-            if (CachedValueSummaryOpsDefs.ContainsKey(def))
-            {
-                return CachedValueSummaryOpsDefs[def];
-            }
-            else
-            {
-                ValueSummaryOps result = new ValueSummaryOps(CachedValueSummaryOpsDefs.Count);
-                PendingValueSummaryOpsDefs.Add(def);
-                CachedValueSummaryOpsDefs[def] = result;
-                return result;
-            }
         }
 
         internal void WriteCommaSeparated<T>(TextWriter output, IEnumerable<T> items, Action<T> writeItem)
@@ -218,57 +201,4 @@ namespace Plang.Compiler.Backend.Symbolic
         internal string JumpedOutFlag => $"jumpedOut_{id}";
     }
 
-    internal struct ValueSummaryOpsDef
-    {
-        internal readonly string opsType;
-        internal readonly string opsDef;
-
-        internal ValueSummaryOpsDef(string opsType, string opsDef)
-        {
-            this.opsType = opsType;
-            this.opsDef = opsDef;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is ValueSummaryOpsDef def &&
-                   opsType == def.opsType &&
-                   opsDef == def.opsDef;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(opsType, opsDef);
-        }
-    }
-
-    internal struct ValueSummaryOps
-    {
-        internal readonly int id;
-        internal readonly string name;
-
-        internal ValueSummaryOps(int id)
-        {
-            this.id = id;
-            name = null;
-        }
-
-        internal ValueSummaryOps(string name)
-        {
-            id = -1;
-            this.name = name;
-        }
-
-        internal string GetName()
-        {
-            if (name == null) return $"ops_{id}";
-            return $"ops_{name}";
-        }
-
-        internal string GetTypeName()
-        {
-            if (name == null) return $"type_{id}";
-            return $"type_{name}";
-        }
-    }
 }

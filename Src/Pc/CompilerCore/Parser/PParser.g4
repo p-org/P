@@ -84,8 +84,14 @@ eventSetLiteral : events+=nonDefaultEvent (COMMA events+=nonDefaultEvent)* ;
 interfaceDecl : INTERFACE name=iden LPAREN type? RPAREN (RECEIVES nonDefaultEventList?) SEMI ;
 
 // has scope
-implMachineDecl : MACHINE name=iden cardinality? receivesSends* machineBody ;
+implMachineDecl : annotations? MACHINE name=iden cardinality? receivesSends* machineBody ;
 idenList : names+=iden (COMMA names+=iden)* ;
+
+annotations : LBRACK bufferSemantics RBRACK ;
+
+bufferSemantics : BAG   #BagSemantics
+                | QUEUE #QueueSemantics
+                ;
 
 receivesSends : RECEIVES eventSetLiteral? SEMI # MachineReceive
               | SENDS eventSetLiteral? SEMI    # MachineSend

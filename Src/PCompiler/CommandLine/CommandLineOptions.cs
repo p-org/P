@@ -219,58 +219,27 @@ namespace Plang.Compiler
         private static bool ParseProjectFile(string projectFile, out CompilationJob job)
         {
             job = null;
-            if (!IsLegalPProjFile(projectFile, out FileInfo fullPathName))
+            if (!IsLegalPProjFile(projectFile, out FileInfo projectFilePath))
             {
                 CommandlineOutput.WriteMessage(
-                    $"Illegal P project file name {projectFile} or file {fullPathName?.FullName} not found", SeverityKind.Error);
+                    $"Illegal P project file name {projectFile} or file {projectFilePath?.FullName} not found", SeverityKind.Error);
                 return false;
             }
 
             CommandlineOutput.WriteMessage($".... Parsing the project file: {projectFile}", SeverityKind.Info);
 
             CompilerOutput outputLanguage = CompilerOutput.C;
-            DirectoryInfo outputDirectory = null;
             List<FileInfo> inputFiles = new List<FileInfo>();
-            string targetName = null;
             bool generateSourceMaps = false;
+            List<string> projectDependencies = new List<string>();
 
-            XElement projectXML = XElement.Load(fullPathName.FullName);
+            // get all project dependencies and the input files
+            var dependencies = GetAllProjectDependencies(projectFilePath);
 
-            // get all files to be compiled
-
-            foreach (XElement inputs in projectXML.Elements("InputFiles"))
-            {
-                foreach (XElement inputFileName in inputs.Elements("PFile"))
-                {
-                    var pFiles = new List<string>();
-
-                    if(Directory.Exists(inputFileName.Value))
-                    {
-                        foreach(var files in Directory.GetFiles(inputFileName.Value, "*.p"))
-                        {
-                            pFiles.Add(files);
-                        }
-                    }
-                    else
-                    {
-                        pFiles.Add(inputFileName.Value);   
-                    }
-
-                    foreach(var pFile in pFiles)
-                    {
-                        if (IsLegalPFile(pFile, out FileInfo pFilePathName))
-                        {
-                            CommandlineOutput.WriteMessage($"....... project includes: {pFilePathName.FullName}", SeverityKind.Info);
-                            inputFiles.Add(pFilePathName);
-                        }
-                        else
-                        {
-                            CommandlineOutput.WriteMessage(
-                                $"Illegal P file name {pFile} or file {pFilePathName?.FullName} not found", SeverityKind.Error);
-                        }
-                    }
-                }
-            }
+            inputFiles.AddRange(dependencies.inputFiles);
+            projectDependencies.AddRange(dependencies.projectDependencies);
+            // add all input files from the current project
+            inputFiles.AddRange(ReadAllInputFiles(projectFilePath));
 
             if (inputFiles.Count == 0)
             {
@@ -278,23 +247,86 @@ namespace Plang.Compiler
                 return false;
             }
 
-            // get target file name
-            if (projectXML.Elements("TargetFileName").Any())
-            {
-                targetName = projectXML.Element("TargetFileName").Value;
-                if (!IsLegalUnitName(targetName))
-                {
-                    CommandlineOutput.WriteMessage($"{targetName} is not a legal target file name", SeverityKind.Error);
-                    return false;
-                }
-            }
-
-            string projectName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
+            // get project name
+            string projectName = GetProjectName(projectFilePath);
 
             // get output directory
-            outputDirectory = projectXML.Elements("OutputDir").Any() ? Directory.CreateDirectory(projectXML.Element("OutputDir").Value) : new DirectoryInfo(Directory.GetCurrentDirectory());
+            DirectoryInfo outputDirectory = GetOutputDirectory(projectFilePath);
+
 
             // get target language
+            GetTargetLanguage(projectFilePath, ref outputLanguage, ref generateSourceMaps);
+
+            job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, generateSourceMaps: generateSourceMaps, projectDependencies);
+            return true;
+        }
+
+        private static (List<FileInfo> inputFiles, List<string> projectDependencies) GetAllProjectDependencies(FileInfo fullPathName)
+        {
+            var projectDependencies = new List<string>();
+            var inputFiles = new List<FileInfo>();
+            XElement projectXML = XElement.Load(fullPathName.FullName);
+            projectDependencies.Add(GetProjectName(fullPathName));
+            // get project dependencies
+            foreach (XElement projectDepen in projectXML.Elements("IncludeProject"))
+            {
+
+                if (!IsLegalPProjFile(projectDepen.Value, out FileInfo fullProjectDepenPathName))
+                {
+                    CommandlineOutput.WriteMessage(
+                        $"Illegal P project file name {projectDepen.Value} or file {fullProjectDepenPathName?.FullName} not found", SeverityKind.Error);
+                    Environment.Exit(1);
+                }
+
+                var inputsAndDependencies = GetAllProjectDependencies(fullProjectDepenPathName);
+                projectDependencies.AddRange(inputsAndDependencies.projectDependencies);
+                inputFiles.AddRange(inputsAndDependencies.inputFiles);
+                if(projectDependencies.Count != projectDependencies.Distinct().Count())
+                {
+                    CommandlineOutput.WriteMessage(
+                        $"Cyclic project dependencies: {projectDependencies}", SeverityKind.Error);
+                    Environment.Exit(1);
+                }
+                // pull in the target names
+                string projectName = GetProjectName(fullProjectDepenPathName);
+                projectDependencies.Add(projectName);
+            }
+
+            return (inputFiles, projectDependencies);
+        }
+
+        private static string GetProjectName(FileInfo fullPathName)
+        {
+            string targetName = null;
+            XElement projectXML = XElement.Load(fullPathName.FullName);
+            if (projectXML.Elements("ProjectName").Any())
+            {
+                targetName = projectXML.Element("ProjectName").Value;
+                if (!IsLegalUnitName(targetName))
+                {
+                    CommandlineOutput.WriteMessage($"{targetName} is not a legal project name", SeverityKind.Error);
+                    Environment.Exit(1);
+                }
+            }
+            else
+            {
+                CommandlineOutput.WriteMessage($"Missing project name field in {fullPathName.FullName}", SeverityKind.Error);
+                Environment.Exit(1);
+            }
+
+            return targetName;
+        }
+
+        private static DirectoryInfo GetOutputDirectory(FileInfo fullPathName)
+        {
+            XElement projectXML = XElement.Load(fullPathName.FullName);
+            DirectoryInfo outputDirectory = projectXML.Elements("OutputDir").Any() ? Directory.CreateDirectory(projectXML.Element("OutputDir").Value) : new DirectoryInfo(Directory.GetCurrentDirectory());
+            return outputDirectory;
+        }
+
+        private static void GetTargetLanguage(FileInfo fullPathName, ref CompilerOutput outputLanguage, ref bool generateSourceMaps)
+        {
+            XElement projectXML = XElement.Load(fullPathName.FullName);
             if (projectXML.Elements("Target").Any())
             {
                 switch (projectXML.Element("Target").Value.ToLowerInvariant())
@@ -312,6 +344,7 @@ namespace Plang.Compiler
                         catch (Exception)
                         {
                             CommandlineOutput.WriteMessage($"Expected true or false, received {projectXML.Element("Target").Attribute("sourcemaps").Value}", SeverityKind.Error);
+                            Environment.Exit(1);
                         }
                         break;
 
@@ -324,9 +357,50 @@ namespace Plang.Compiler
                         break;
                 }
             }
+        }
 
-            job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, generateSourceMaps: generateSourceMaps);
-            return true;
+        private static List<FileInfo> ReadAllInputFiles(FileInfo fullPathName)
+        {
+            List<FileInfo> inputFiles = new List<FileInfo>();
+            XElement projectXML = XElement.Load(fullPathName.FullName);
+
+            // get all files to be compiled
+            foreach (XElement inputs in projectXML.Elements("InputFiles"))
+            {
+                foreach (XElement inputFileName in inputs.Elements("PFile"))
+                {
+                    var pFiles = new List<string>();
+
+                    if (Directory.Exists(inputFileName.Value))
+                    {
+                        foreach (var files in Directory.GetFiles(inputFileName.Value, "*.p"))
+                        {
+                            pFiles.Add(files);
+                        }
+                    }
+                    else
+                    {
+                        pFiles.Add(inputFileName.Value);
+                    }
+
+                    foreach (var pFile in pFiles)
+                    {
+                        if (IsLegalPFile(pFile, out FileInfo pFilePathName))
+                        {
+                            CommandlineOutput.WriteMessage($"....... project includes: {pFilePathName.FullName}", SeverityKind.Info);
+                            inputFiles.Add(pFilePathName);
+                        }
+                        else
+                        {
+                            CommandlineOutput.WriteMessage(
+                                $"Illegal P file name {pFile} or file {pFilePathName?.FullName} not found", SeverityKind.Error);
+                            Environment.Exit(1);
+                        }
+                    }
+                }
+            }
+
+            return inputFiles;
         }
 
         private static bool IsLegalUnitName(string unitFileName)

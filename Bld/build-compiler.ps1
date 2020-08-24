@@ -4,8 +4,8 @@ pushd (Join-Path $PSScriptRoot ..)
 git submodule update --init --recursive
 
 # Run the build! :D
-dotnet publish -c Release -r win-x64 .\Src\PCompiler\CommandLine\CommandLine.csproj
+dotnet publish -c Release .\Src\PCompiler\CommandLine\CommandLine.csproj
 
-echo "Compiler located in Bld\Drops\Release\Binaries\win-x64\Pc.exe"
+echo "Compiler located in Bld\Drops\Release\Binaries\Pc.exe"
 
 popd

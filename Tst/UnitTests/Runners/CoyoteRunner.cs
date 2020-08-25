@@ -101,7 +101,7 @@ namespace Main
         public static void Main(string[] args)
         {
             // Optional: increases verbosity level to see the Coyote runtime log.
-            Configuration configuration = Configuration.Create().WithTestingIterations(100);
+            Configuration configuration = Configuration.Create().WithTestingIterations(1000);
             configuration.WithMaxSchedulingSteps(1000);
             TestingEngine engine = TestingEngine.Create(configuration, DefaultImpl.Execute);
             engine.Run();

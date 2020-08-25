@@ -12,6 +12,7 @@ namespace Plang.Compiler.Backend.Coyote
             Names = new CoyoteNameManager("PGEN_");
 
             FileName = $"{ProjectName}.cs";
+            ProjectDependencies = job.ProjectDependencies;
             GlobalFunctionClassName = "GlobalFunctions";
         }
 
@@ -22,6 +23,8 @@ namespace Plang.Compiler.Backend.Coyote
         public string GlobalFunctionClassName { get; }
 
         public string FileName { get; }
+
+        public IReadOnlyList<string> ProjectDependencies { get; }
 
         public string GetStaticMethodQualifiedName(Function function)
         {

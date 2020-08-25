@@ -10,7 +10,7 @@ namespace Plang.Compiler
     public class CompilationJob : ICompilationJob
     {
         public CompilationJob(ICompilerOutput output, CompilerOutput outputLanguage, IReadOnlyList<FileInfo> inputFiles,
-            string projectName = null, bool generateSourceMaps = false)
+            string projectName = null, bool generateSourceMaps = false, IReadOnlyList<string> projectDependencies = null)
         {
             if (!inputFiles.Any())
             {
@@ -24,6 +24,7 @@ namespace Plang.Compiler
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
             Backend = TargetLanguage.GetCodeGenerator(outputLanguage);
             GenerateSourceMaps = generateSourceMaps;
+            ProjectDependencies = projectDependencies?? new List<string>();
         }
 
         public bool GenerateSourceMaps { get; }
@@ -34,5 +35,7 @@ namespace Plang.Compiler
         public IReadOnlyList<FileInfo> InputFiles { get; }
         public ILocationResolver LocationResolver { get; }
         public ITranslationErrorHandler Handler { get; }
+
+        public IReadOnlyList<string> ProjectDependencies { get; }
     }
 }

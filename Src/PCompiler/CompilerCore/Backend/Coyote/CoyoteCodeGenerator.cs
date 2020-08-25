@@ -96,6 +96,10 @@ namespace Plang.Compiler.Backend.Coyote
             context.WriteLine(output, "using Plang.CoyoteRuntime.Exceptions;");
             context.WriteLine(output, "using System.Threading;");
             context.WriteLine(output, "using System.Threading.Tasks;");
+            foreach(var depen in context.ProjectDependencies)
+            {
+                context.WriteLine(output, $"using {depen};");
+            }
             context.WriteLine(output);
             context.WriteLine(output, "#pragma warning disable 162, 219, 414, 1998");
             context.WriteLine(output, $"namespace {context.ProjectName}");

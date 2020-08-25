@@ -238,9 +238,7 @@ namespace Plang.Compiler
 
             inputFiles.AddRange(dependencies.inputFiles);
             projectDependencies.AddRange(dependencies.projectDependencies);
-            // add all input files from the current project
-            inputFiles.AddRange(ReadAllInputFiles(projectFilePath));
-
+            
             if (inputFiles.Count == 0)
             {
                 CommandlineOutput.WriteMessage("At least one .p file must be provided as input files", SeverityKind.Error);
@@ -267,7 +265,10 @@ namespace Plang.Compiler
             var inputFiles = new List<FileInfo>();
             XElement projectXML = XElement.Load(fullPathName.FullName);
             projectDependencies.Add(GetProjectName(fullPathName));
-            // get project dependencies
+            // add all input files from the current project
+            inputFiles.AddRange(ReadAllInputFiles(fullPathName));
+
+            // get recursive project dependencies
             foreach (XElement projectDepen in projectXML.Elements("IncludeProject"))
             {
 
@@ -278,6 +279,8 @@ namespace Plang.Compiler
                     Environment.Exit(1);
                 }
 
+                CommandlineOutput.WriteMessage($".... Parsing the project file: {fullProjectDepenPathName.FullName}", SeverityKind.Info);
+
                 var inputsAndDependencies = GetAllProjectDependencies(fullProjectDepenPathName);
                 projectDependencies.AddRange(inputsAndDependencies.projectDependencies);
                 inputFiles.AddRange(inputsAndDependencies.inputFiles);
@@ -287,9 +290,6 @@ namespace Plang.Compiler
                         $"Cyclic project dependencies: {projectDependencies}", SeverityKind.Error);
                     Environment.Exit(1);
                 }
-                // pull in the target names
-                string projectName = GetProjectName(fullProjectDepenPathName);
-                projectDependencies.Add(projectName);
             }
 
             return (inputFiles, projectDependencies);
@@ -370,17 +370,18 @@ namespace Plang.Compiler
                 foreach (XElement inputFileName in inputs.Elements("PFile"))
                 {
                     var pFiles = new List<string>();
+                    var inputFileNameFull = Path.Combine(Path.GetDirectoryName(fullPathName.FullName), inputFileName.Value);
 
-                    if (Directory.Exists(inputFileName.Value))
+                    if (Directory.Exists(inputFileNameFull))
                     {
-                        foreach (var files in Directory.GetFiles(inputFileName.Value, "*.p"))
+                        foreach (var files in Directory.GetFiles(inputFileNameFull, "*.p"))
                         {
                             pFiles.Add(files);
                         }
                     }
                     else
                     {
-                        pFiles.Add(inputFileName.Value);
+                        pFiles.Add(inputFileNameFull);
                     }
 
                     foreach (var pFile in pFiles)

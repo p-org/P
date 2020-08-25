@@ -12,7 +12,7 @@ namespace Plang.Compiler.Backend.Coyote
             Names = new CoyoteNameManager("PGEN_");
 
             FileName = $"{ProjectName}.cs";
-            ProjectDependencies = job.ProjectDependencies;
+            ProjectDependencies = job.ProjectDependencies.Count == 0? new List<string>() { ProjectName } : job.ProjectDependencies;
             GlobalFunctionClassName = "GlobalFunctions";
         }
 

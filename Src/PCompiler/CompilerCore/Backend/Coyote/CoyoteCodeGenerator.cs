@@ -611,8 +611,15 @@ namespace Plang.Compiler.Backend.Coyote
             string functionParameters = "Event currentMachine_dequeuedEvent";
             string awaitMethod = isAsync ? "await " : "";
             string asyncMethod = isAsync ? "async" : "";
+            string returnType = "void";
+
+            if (isAsync)
+            {
+                returnType = "Task"; 
+            }
+
             context.WriteLine(output,
-                $"public {asyncMethod} void {$"_{functionName}"}({functionParameters})");
+                $"public {asyncMethod} {returnType} {$"_{functionName}"}({functionParameters})");
 
             context.WriteLine(output, "{");
 

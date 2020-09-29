@@ -1,4 +1,4 @@
-name: GitHub Action (Build and Test using .NET Core)
+name: GitHub Action (Build and Test using .NET Core on Ubuntu, MacOS, and Windows)
 
 on: [push]
 

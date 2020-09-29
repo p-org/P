@@ -57,15 +57,12 @@ namespace UnitTests.Runners
             CreateFileWithMainFunction(scratchDirectory);
             CreateProjectFile(scratchDirectory);
 
-            string coyoteExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "Binaries", "CoyoteRuntime.dll");
-            FileCopy(coyoteExtensionsPath, Path.Combine(scratchDirectory.FullName, "CoyoteRuntime.dll"), true);
-
             foreach (FileInfo nativeFile in nativeSources)
             {
                 FileCopy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
             }
 
-            string[] args = new[] { "build", "Test.csproj" };
+            string[] args = new[] { "publish", "Test.csproj" };
 
             int exitCode =
                 ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, "dotnet", args);
@@ -73,15 +70,10 @@ namespace UnitTests.Runners
             if (exitCode == 0)
             {
                 exitCode = RunCoyoteTester(scratchDirectory.FullName,
-                    Path.Combine(scratchDirectory.FullName, "Test.dll"), out string testStdout, out string testStderr);
+                    Path.Combine(scratchDirectory.FullName, "./netcoreapp3.1/Test.dll"), out string testStdout, out string testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
 
-                // TODO: bug Coyote folks to either set an exit code or print obvious indicator that can be machine-processed.
-                if (testStdout.Contains("buggy schedules"))
-                {
-                    exitCode = 1;
-                }
             }
 
             return exitCode;
@@ -141,20 +133,16 @@ namespace Main
             string projectFileContents = @"
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <TargetFramework >netcoreapp3.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject />
     <LangVersion >latest</LangVersion>
     <OutputPath>.</OutputPath>
   </PropertyGroup >
-  <PropertyGroup Condition = ""'$(Configuration)|$(Platform)'=='Debug|AnyCPU'"">
-    <WarningLevel>0</WarningLevel>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
-    <Reference Include = ""CoyoteRuntime.dll""/>
+    <PackageReference Include=""PCSharpRuntime"" Version=""1.0.0""/>
   </ItemGroup>
 </Project>";
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.csproj"), false))
@@ -172,7 +160,7 @@ namespace Main
         {
             Compiler compiler = new Compiler();
             TestExecutionStream outputStream = new TestExecutionStream(scratchDirectory);
-            CompilationJob compilationJob = new CompilationJob(outputStream, CompilerOutput.Coyote, sources, "Main");
+            CompilationJob compilationJob = new CompilationJob(outputStream, CompilerOutput.CSharp, sources, "Main");
             compiler.Compile(compilationJob);
             return outputStream.OutputFiles;
         }

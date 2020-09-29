@@ -3,14 +3,14 @@ using System.Runtime;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using Plang.CoyoteRuntime;
-using Plang.CoyoteRuntime.Values;
-using Plang.CoyoteRuntime.Exceptions;
+using Plang.CSharpRuntime;
+using Plang.CSharpRuntime.Values;
+using Plang.CSharpRuntime.Exceptions;
 using System.Threading;
 using System.Threading.Tasks;
 
 #pragma warning disable 162, 219, 414
-namespace TwoPhaseCommit
+namespace PGlobalFunctions
 {
     public static partial class GlobalFunctions {
 		public static PrtNamedTuple ChooseTransaction(PMachine pMachine)

@@ -5,6 +5,6 @@
 	<PFile>./PSpec/</PFile>
 	<PFile>./PTst/</PFile>
 </InputFiles>
-<Target>Coyote</Target>
+<Target>CSharp</Target>
 <OutputDir>./PGenerated/</OutputDir>
 </Project>

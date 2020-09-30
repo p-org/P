@@ -95,7 +95,7 @@ namespace UnitTests
         {
             DirectoryInfo scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
             TestCaseFactory factory = new TestCaseFactory(scratchDir);
-            CompilerTestCase testCaseCoyote = factory.CreateTestCase(testDir, CompilerOutput.Coyote);
+            CompilerTestCase testCaseCoyote = factory.CreateTestCase(testDir, CompilerOutput.CSharp);
             TestAssertions.AssertTestCase(testCaseCoyote);
         }
     }

@@ -172,7 +172,7 @@ namespace Main
         {
             Compiler compiler = new Compiler();
             TestExecutionStream outputStream = new TestExecutionStream(scratchDirectory);
-            CompilationJob compilationJob = new CompilationJob(outputStream, CompilerOutput.Coyote, sources, "Main");
+            CompilationJob compilationJob = new CompilationJob(outputStream, CompilerOutput.CSharp, sources, "Main");
             compiler.Compile(compilationJob);
             return outputStream.OutputFiles;
         }

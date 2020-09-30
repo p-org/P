@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Main.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ForeignTypesImpl.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{ea1bcc9d-f819-4b61-aec9-fc4a23f9267c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{3f8d2e46-06ec-4c3e-a55c-9f00c9312d5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="P Sources">
+      <UniqueIdentifier>{d992f9d8-d85f-4eb8-8628-451ba68099c0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <PCompile Include="ForeignStringType.p">
+      <Filter>P Sources</Filter>
+    </PCompile>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,70 @@
+<PSolution name= "FaultTolerantSystems">
+  <PProject name= "timer" outputdir="./CommonUtilities/PGenerated">
+    <Source>
+      <Include>./CommonUtilities/PSrc/Timer.p</Include>
+      <Include>./CommonUtilities/PSrc/TimerHeader.p</Include>
+      <Include>./CommonUtilities/PSrc/Helper.p</Include>
+    </Source>
+  </PProject>
+  <PProject name= "smrabs" outputdir="./SMR/PGenerated">
+    <Source>
+      <Include>./SMR/PSrc/StateMachineReplicationAbs.p</Include>
+      <Include>./SMR/PSrc/StateMachineReplicationHeader.p</Include>
+    </Source>
+  </PProject>
+  <PProject name= "datastructures" outputdir= "./DataStructures/PGenerated">
+    <Source>
+      <Include>./DataStructures/PSrc/DataStructuresClient.p</Include>
+      <Include>./DataStructures/PSrc/DataStructuresHeader.p</Include>
+      <Include>./DataStructures/PSrc/HashSet.p</Include>
+      <Include>./DataStructures/PSrc/List.p</Include>
+      <Include>./DataStructures/Test/TestDrivers.p</Include>
+    </Source>
+    <Link>
+      <Include>./DataStructures/Test/TestScript.p</Include>
+    </Link>
+    <Depends>timer</Depends>
+    <Depends>smrabs</Depends>
+  </PProject>
+  <PProject name= "tpc" outputdir ="./TwoPhaseCommit/PGenerated">
+    <Source>
+      <Include>./TwoPhaseCommit/PSrc/TwoPhaseCommitClient.p</Include>
+      <Include>./TwoPhaseCommit/PSrc/TwoPhaseCommitHeader.p</Include>
+      <Include>./TwoPhaseCommit/PSrc/TwoPhaseCommitSpec.p</Include>
+      <Include>./TwoPhaseCommit/PSrc/TwoPhaseCommit.p</Include>
+      <Include>./TwoPhaseCommit/Test/TestDrivers.p</Include>
+    </Source>
+    <Link>
+      <Include>./TwoPhaseCommit/Test/TestScript.p</Include>
+    </Link>
+    <Depends>timer</Depends>
+    <Depends>smrabs</Depends>
+  </PProject>
+  <PProject name= "chainreplication" outputdir ="./ChainReplication/PGenerated">
+    <Source>
+      <Include>./ChainReplication/PSrc/ChainReplicationHeader.p</Include>
+      <Include>./ChainReplication/PSrc/ChainReplicationNodes.p</Include>
+      <Include>./ChainReplication/PSrc/ChainReplicationSpec.p</Include>
+      <Include>./ChainReplication/PSrc/ChainReplicationMasterAndFaultDetector.p</Include>
+      <Include>./ChainReplication/Test/TestDrivers.p</Include>   
+    </Source>
+    <Link>
+      <Include>./ChainReplication/Test/TestScript.p</Include>
+    </Link>
+    <Depends>timer</Depends>
+    <Depends>smrabs</Depends>
+  </PProject>
+    <PProject name= "multipaxos" outputdir ="./MultiPaxos/PGenerated">
+    <Source>
+      <Include>./MultiPaxos/PSrc/MultiPaxosHeader.p</Include>
+      <Include>./MultiPaxos/PSrc/MultiPaxos.p</Include>
+      <Include>./MultiPaxos/PSrc/LeaderElection.p</Include>
+      <Include>./MultiPaxos/Test/TestDrivers.p</Include>   
+    </Source>
+    <Link>
+      <Include>./MultiPaxos/Test/TestScript.p</Include>
+    </Link>
+    <Depends>timer</Depends>
+    <Depends>smrabs</Depends>
+  </PProject>
+</PSolution>

@@ -15,6 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Src\PCompiler\CompilerCore\CompilerCore.csproj" />
-    <ProjectReference Include="..\..\Src\PRuntimes\CoyoteRuntime\CSharpRuntime.csproj" />
+    <ProjectReference Include="..\..\Src\PRuntimes\CSharpRuntime\CSharpRuntime.csproj" />
   </ItemGroup>
 </Project>

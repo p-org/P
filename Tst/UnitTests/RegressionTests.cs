@@ -85,7 +85,7 @@ namespace UnitTests
 
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    public class CoyoteRuntimeRegressionTests
+    public class CSharpRuntimeRegressionTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
             TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] { "DynamicError", "Correct" });

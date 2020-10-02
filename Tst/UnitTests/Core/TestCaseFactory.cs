@@ -40,11 +40,11 @@ namespace UnitTests.Core
 
             int expectedExitCode;
 
-            if (testName.Contains("/DynamicError/") || testName.Contains("/DynamicErrorCoyoteRuntime/"))
+            if (testName.Contains("/DynamicError/") || testName.Contains("/DynamicErrorCSharpRuntime/"))
             {
                 expectedExitCode = 1;
             }
-            else if (testName.Contains("/Correct/") || testName.Contains("/CorrectCoyoteRuntime/"))
+            else if (testName.Contains("/Correct/") || testName.Contains("/CorrectCSharpRuntime/"))
             {
                 expectedExitCode = 0;
             }

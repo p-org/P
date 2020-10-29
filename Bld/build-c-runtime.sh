@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "${0}")"
-
+echo "Initializing submodules"
 # Initialize submodules
 pushd ..
 git submodule update --init --recursive
@@ -12,3 +11,5 @@ mkdir -p build
 cd build
 cmake ../../Src
 make
+
+

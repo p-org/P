@@ -40,11 +40,11 @@ namespace UnitTests.Core
 
             int expectedExitCode;
 
-            if (testName.Contains("/DynamicError/") || testName.Contains("/DynamicErrorCSharpRuntime/"))
+            if (testName.Contains("/DynamicError/") || testName.Contains("/DynamicErrorCoyoteRuntime/"))
             {
                 expectedExitCode = 1;
             }
-            else if (testName.Contains("/Correct/") || testName.Contains("/CorrectCSharpRuntime/"))
+            else if (testName.Contains("/Correct/") || testName.Contains("/CorrectCoyoteRuntime/"))
             {
                 expectedExitCode = 0;
             }
@@ -58,7 +58,7 @@ namespace UnitTests.Core
                 FileInfo[] nativeFiles = testDir.GetFiles("*.c");
                 runner = new PrtRunner(inputFiles, nativeFiles);
             }
-            else if (output.Equals(CompilerOutput.CSharp))
+            else if (output.Equals(CompilerOutput.Coyote))
             {
                 FileInfo[] nativeFiles = testDir.GetFiles("*.cs");
                 runner = new CoyoteRunner(inputFiles, nativeFiles);

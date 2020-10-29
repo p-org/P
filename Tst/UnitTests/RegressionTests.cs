@@ -85,7 +85,7 @@ namespace UnitTests
 
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    public class CSharpRuntimeRegressionTests
+    public class CoyoteRuntimeRegressionTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
             TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] { "DynamicError", "Correct" });
@@ -95,7 +95,7 @@ namespace UnitTests
         {
             DirectoryInfo scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
             TestCaseFactory factory = new TestCaseFactory(scratchDir);
-            CompilerTestCase testCaseCoyote = factory.CreateTestCase(testDir, CompilerOutput.CSharp);
+            CompilerTestCase testCaseCoyote = factory.CreateTestCase(testDir, CompilerOutput.Coyote);
             TestAssertions.AssertTestCase(testCaseCoyote);
         }
     }

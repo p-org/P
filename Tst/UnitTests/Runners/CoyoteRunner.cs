@@ -57,8 +57,8 @@ namespace UnitTests.Runners
             CreateFileWithMainFunction(scratchDirectory);
             CreateProjectFile(scratchDirectory);
 
-            string coyoteExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "Binaries", "CoyoteRuntime.dll");
-            FileCopy(coyoteExtensionsPath, Path.Combine(scratchDirectory.FullName, "CoyoteRuntime.dll"), true);
+            string coyoteExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "Binaries", "CSharpRuntime.dll");
+            FileCopy(coyoteExtensionsPath, Path.Combine(scratchDirectory.FullName, "CSharpRuntime.dll"), true);
 
             foreach (FileInfo nativeFile in nativeSources)
             {
@@ -154,7 +154,7 @@ namespace Main
 
   <ItemGroup>
     <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
-    <Reference Include = ""CoyoteRuntime.dll""/>
+    <Reference Include = ""CSharpRuntime.dll""/>
   </ItemGroup>
 </Project>";
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.csproj"), false))
@@ -172,7 +172,7 @@ namespace Main
         {
             Compiler compiler = new Compiler();
             TestExecutionStream outputStream = new TestExecutionStream(scratchDirectory);
-            CompilationJob compilationJob = new CompilationJob(outputStream, CompilerOutput.Coyote, sources, "Main");
+            CompilationJob compilationJob = new CompilationJob(outputStream, CompilerOutput.CSharp, sources, "Main");
             compiler.Compile(compilationJob);
             return outputStream.OutputFiles;
         }

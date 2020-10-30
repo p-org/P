@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>Plang.Compiler</RootNamespace>
-    <AssemblyName>Pc</AssemblyName>
+    <AssemblyName>Pmc</AssemblyName>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
     <LangVersion>latest</LangVersion>
@@ -14,7 +15,9 @@
     <RepositoryUrl>https://github.com/p-org/P</RepositoryUrl>
     <PackageTags>P programming language, safe asynchrony, state machines, model checkers</PackageTags>
   </PropertyGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
+    <PackageReference Include="Microsoft.Coyote" Version="1.0.5" />
   </ItemGroup>
+
 </Project>

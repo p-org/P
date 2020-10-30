@@ -9,16 +9,8 @@
     <OutputPath>.\bin\$(TargetFramework)\$(Configuration)</OutputPath>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <WarningLevel>0</WarningLevel>
-  </PropertyGroup>
-
   <ItemGroup>
-    <ProjectReference Include="..\..\Src\PRuntimes\CoyoteRuntime\CoyoteRuntime.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="PSrc\" />
+    <ProjectReference Include="..\..\Src\PRuntimes\CSharpRuntime\CSharpRuntime.csproj" />
   </ItemGroup>
 
   <ItemGroup>

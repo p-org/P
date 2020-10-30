@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Src\PRuntimes\CoyoteRuntime\CoyoteRuntime.csproj" />
+    <ProjectReference Include="..\..\Src\PRuntimes\CSharpRuntime\CSharpRuntime.csproj" />
   </ItemGroup>
 
   <ItemGroup>

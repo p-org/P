@@ -353,7 +353,8 @@ namespace Plang.Compiler
                         break;
 
                     default:
-                        outputLanguage = CompilerOutput.C;
+                        CommandlineOutput.WriteMessage($"Expected C or CSharp as target, received {projectXML.Element("Target").Value}", SeverityKind.Error);
+                        Environment.Exit(1);
                         break;
                 }
             }

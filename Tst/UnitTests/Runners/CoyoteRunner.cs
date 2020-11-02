@@ -57,9 +57,6 @@ namespace UnitTests.Runners
             CreateFileWithMainFunction(scratchDirectory);
             CreateProjectFile(scratchDirectory);
 
-            string coyoteExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "Binaries", "CSharpRuntime.dll");
-            FileCopy(coyoteExtensionsPath, Path.Combine(scratchDirectory.FullName, "CSharpRuntime.dll"), true);
-
             foreach (FileInfo nativeFile in nativeSources)
             {
                 FileCopy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
@@ -154,7 +151,7 @@ namespace Main
 
   <ItemGroup>
     <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
-    <Reference Include = ""CSharpRuntime.dll""/>
+    <PackageReference Include=""PCSharpRuntime"" Version=""1.0.0""/>
   </ItemGroup>
 </Project>";
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.csproj"), false))

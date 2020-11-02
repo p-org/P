@@ -16,10 +16,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' " />
   <ItemGroup>
     <PackageReference Include="Microsoft.Coyote" Version="1.0.5" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\PRuntimes\CoyoteRuntime\CSharpRuntime.csproj" />
+    <PackageReference Include="PCSharpRuntime" Version="1.0.0" />
   </ItemGroup>
 
 </Project>

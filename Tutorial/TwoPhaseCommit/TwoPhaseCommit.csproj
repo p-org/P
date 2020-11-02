@@ -14,15 +14,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Src\PRuntimes\CSharpRuntime\CSharpRuntime.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="PSrc\" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Coyote" Version="1.0.5" />
+    <PackageReference Include="PCSharpRuntime" Version="1.0.0" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Main.cs" />

@@ -62,7 +62,7 @@ namespace UnitTests.Runners
                 FileCopy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
             }
 
-            string[] args = new[] { "build", "Test.csproj" };
+            string[] args = new[] { "publish", "Test.csproj" };
 
             int exitCode =
                 ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, "dotnet", args);
@@ -70,15 +70,10 @@ namespace UnitTests.Runners
             if (exitCode == 0)
             {
                 exitCode = RunCoyoteTester(scratchDirectory.FullName,
-                    Path.Combine(scratchDirectory.FullName, "Test.dll"), out string testStdout, out string testStderr);
+                    Path.Combine(scratchDirectory.FullName, "./netcoreapp3.1/Test.dll"), out string testStdout, out string testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
 
-                // TODO: bug Coyote folks to either set an exit code or print obvious indicator that can be machine-processed.
-                if (testStdout.Contains("buggy schedules"))
-                {
-                    exitCode = 1;
-                }
             }
 
             return exitCode;
@@ -138,17 +133,13 @@ namespace Main
             string projectFileContents = @"
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <TargetFramework >netcoreapp3.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject />
     <LangVersion >latest</LangVersion>
     <OutputPath>.</OutputPath>
   </PropertyGroup >
-  <PropertyGroup Condition = ""'$(Configuration)|$(Platform)'=='Debug|AnyCPU'"">
-    <WarningLevel>0</WarningLevel>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
     <PackageReference Include=""PCSharpRuntime"" Version=""1.0.0""/>

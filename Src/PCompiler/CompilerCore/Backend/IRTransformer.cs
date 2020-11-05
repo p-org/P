@@ -152,7 +152,7 @@ namespace Plang.Compiler.Backend
 
                 case CastExpr castExpr:
                     (IExprTerm castSubExpr, List<IPStmt> castDeps) = SimplifyExpression(castExpr.SubExpr);
-                    (VariableAccessExpr castTemp, IPStmt castStore) = SaveInTemporary(new CastExpr(location, castSubExpr, castExpr.Type));
+                    (VariableAccessExpr castTemp, IPStmt castStore) = SaveInTemporary(new CastExpr(location, new CloneExpr(castSubExpr), castExpr.Type));
                     deps.AddRange(castDeps);
                     deps.Add(castStore);
                     return (castTemp, deps);

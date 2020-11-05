@@ -1,12 +1,40 @@
 ﻿using System;
+using System.IO;
 
-namespace Plang.Checker
+namespace Plang.PChecker
 {
+    /// <summary>
+    /// This class is a wrapper over the Coyote Tester to provide simple interface for analyzing P programs
+    /// </summary>
     class PChecker
     {
-        static void Main(string[] args)
+        
+        static int Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            /*
+            var exitStatus = 0;
+            switch (CommandLineOptions.ParseArguments(args, out PCheckerJobConfiguration job))
+            {
+                case CommandLineParseResult.Failure:
+                    CommandLineOptions.PrintUsage();
+                    return 1;
+
+                case CommandLineParseResult.HelpRequested:
+                    CommandLineOptions.PrintUsage();
+                    return 0;
+
+                default:
+                    try
+                    {
+                        return 0;
+                    }
+                    catch (Exception e)
+                    {
+                        
+                        return 1;
+                    }
+            }*/
+            return 0;
         }
     }
 }

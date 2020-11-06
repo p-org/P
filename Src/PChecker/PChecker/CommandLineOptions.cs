@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-/*
+
 namespace Plang.PChecker
 {
     /// <summary>
@@ -149,4 +149,4 @@ namespace Plang.PChecker
             return CommandLineParseResult.Success;
         }
     }
-}*/
+}

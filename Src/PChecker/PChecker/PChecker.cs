@@ -11,7 +11,7 @@ namespace Plang.PChecker
         
         static int Main(string[] args)
         {
-            /*
+           
             var exitStatus = 0;
             switch (CommandLineOptions.ParseArguments(args, out PCheckerJobConfiguration job))
             {
@@ -33,7 +33,7 @@ namespace Plang.PChecker
                         
                         return 1;
                     }
-            }*/
+            }
             return 0;
         }
     }

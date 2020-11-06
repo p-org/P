@@ -19,10 +19,9 @@
     <Authors>The P team</Authors>
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/p-org/P</RepositoryUrl>
-    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
-    <None Include="..\..\..\images\icon.png" Pack="true" PackagePath="" />
+    <None Include="..\..\..\images\icon.png" Pack="true" PackagePath=""/>
   </ItemGroup>
 </Project>

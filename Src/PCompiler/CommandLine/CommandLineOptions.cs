@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
+
 using static Plang.Compiler.CommandLineParseResult;
 
 namespace Plang.Compiler
 {
+    /// <summary>
+    /// Result of parsing the command line arguments of P Compiler
+    /// </summary>
     public enum CommandLineParseResult
     {
         Success,
@@ -17,20 +19,18 @@ namespace Plang.Compiler
 
     public static class CommandLineOptions
     {
-        private static readonly Lazy<bool> isFileSystemCaseInsensitive = new Lazy<bool>(() =>
-        {
-            string file = Path.GetTempPath() + Guid.NewGuid().ToString().ToLower() + "-lower";
-            File.CreateText(file).Close();
-            bool isCaseInsensitive = File.Exists(file.ToUpper());
-            File.Delete(file);
-            return isCaseInsensitive;
-        });
-
+        /// <summary>
+        /// Command line output: default is on console.
+        /// </summary>
         private static readonly DefaultCompilerOutput CommandlineOutput =
             new DefaultCompilerOutput(new DirectoryInfo(Directory.GetCurrentDirectory()));
 
-        private static bool IsFileSystemCaseInsensitive => isFileSystemCaseInsensitive.Value;
-
+        /// <summary>
+        /// Parse commandline arguments
+        /// </summary>
+        /// <param name="args">list of commandline inputs</param>
+        /// <param name="job">P's compilation job</param>
+        /// <returns></returns>
         public static CommandLineParseResult ParseArguments(IEnumerable<string> args, out CompilationJob job)
         {
             job = null;
@@ -44,7 +44,7 @@ namespace Plang.Compiler
             bool generateSourceMaps = false;
 
             // enforce the argument prority
-            // proj takes priority over everything else and no other arguments should be passed
+            // proj takes priority over everything else and no other arguments should be allowed
             if (args.Where(a => a.ToLowerInvariant().Contains("-proj:")).Any() && args.Count() > 1)
             {
                 CommandlineOutput.WriteMessage("-proj cannot be combined with other commandline options", SeverityKind.Error);
@@ -66,6 +66,26 @@ namespace Plang.Compiler
 
                     switch (arg.Substring(1).ToLowerInvariant())
                     {
+                        case "proj":
+                        if (colonArg == null)
+                        {
+                            CommandlineOutput.WriteMessage("Must supply project file for compilation",
+                                SeverityKind.Error);
+                            return Failure;
+                        }
+                        else
+                        {
+                            // Parse the project file and generate the compilation job, ignore all other arguments passed
+                            var projectParser = new ParseCommandlineOptions(CommandlineOutput);
+                            if (projectParser.ParseProjectFile(colonArg, out job))
+                            {
+                                return Success;
+                            }
+                            else
+                            {
+                                return Failure;
+                            }
+                        }
                         case "t":
                         case "target":
                             if (colonArg == null)
@@ -121,25 +141,7 @@ namespace Plang.Compiler
                             outputDirectory = Directory.CreateDirectory(colonArg);
                             break;
 
-                        case "proj":
-                            if (colonArg == null)
-                            {
-                                CommandlineOutput.WriteMessage("Must supply project file for compilation",
-                                    SeverityKind.Error);
-                                return Failure;
-                            }
-                            else
-                            {
-                                // Parse the project file and generate the compilation job, ignore all other arguments passed
-                                if (ParseProjectFile(colonArg, out job))
-                                {
-                                    return Success;
-                                }
-                                else
-                                {
-                                    return Failure;
-                                }
-                            }
+                        
                         case "s":
                         case "sourcemaps":
                             switch (colonArg?.ToLowerInvariant())
@@ -216,237 +218,8 @@ namespace Plang.Compiler
             return Success;
         }
 
-        private static bool ParseProjectFile(string projectFile, out CompilationJob job)
-        {
-            job = null;
-            if (!IsLegalPProjFile(projectFile, out FileInfo projectFilePath))
-            {
-                CommandlineOutput.WriteMessage(
-                    $"Illegal P project file name {projectFile} or file {projectFilePath?.FullName} not found", SeverityKind.Error);
-                return false;
-            }
+        
 
-            CommandlineOutput.WriteMessage($".... Parsing the project file: {projectFile}", SeverityKind.Info);
-
-            CompilerOutput outputLanguage = CompilerOutput.C;
-            List<FileInfo> inputFiles = new List<FileInfo>();
-            bool generateSourceMaps = false;
-            List<string> projectDependencies = new List<string>();
-
-            // get all project dependencies and the input files
-            var dependencies = GetAllProjectDependencies(projectFilePath);
-
-            inputFiles.AddRange(dependencies.inputFiles);
-            projectDependencies.AddRange(dependencies.projectDependencies);
-            
-            if (inputFiles.Count == 0)
-            {
-                CommandlineOutput.WriteMessage("At least one .p file must be provided as input files", SeverityKind.Error);
-                return false;
-            }
-
-            // get project name
-            string projectName = GetProjectName(projectFilePath);
-
-            // get output directory
-            DirectoryInfo outputDirectory = GetOutputDirectory(projectFilePath);
-
-
-            // get target language
-            GetTargetLanguage(projectFilePath, ref outputLanguage, ref generateSourceMaps);
-
-            job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, generateSourceMaps: generateSourceMaps, projectDependencies);
-            return true;
-        }
-
-        private static (List<FileInfo> inputFiles, List<string> projectDependencies) GetAllProjectDependencies(FileInfo fullPathName)
-        {
-            var projectDependencies = new List<string>();
-            var inputFiles = new List<FileInfo>();
-            XElement projectXML = XElement.Load(fullPathName.FullName);
-            projectDependencies.Add(GetProjectName(fullPathName));
-            // add all input files from the current project
-            inputFiles.AddRange(ReadAllInputFiles(fullPathName));
-
-            // get recursive project dependencies
-            foreach (XElement projectDepen in projectXML.Elements("IncludeProject"))
-            {
-
-                if (!IsLegalPProjFile(projectDepen.Value, out FileInfo fullProjectDepenPathName))
-                {
-                    CommandlineOutput.WriteMessage(
-                        $"Illegal P project file name {projectDepen.Value} or file {fullProjectDepenPathName?.FullName} not found", SeverityKind.Error);
-                    Environment.Exit(1);
-                }
-
-                CommandlineOutput.WriteMessage($".... Parsing the project file: {fullProjectDepenPathName.FullName}", SeverityKind.Info);
-
-                var inputsAndDependencies = GetAllProjectDependencies(fullProjectDepenPathName);
-                projectDependencies.AddRange(inputsAndDependencies.projectDependencies);
-                inputFiles.AddRange(inputsAndDependencies.inputFiles);
-                if(projectDependencies.Count != projectDependencies.Distinct().Count())
-                {
-                    CommandlineOutput.WriteMessage(
-                        $"Cyclic project dependencies: {projectDependencies}", SeverityKind.Error);
-                    Environment.Exit(1);
-                }
-            }
-
-            return (inputFiles, projectDependencies);
-        }
-
-        private static string GetProjectName(FileInfo fullPathName)
-        {
-            string targetName = null;
-            XElement projectXML = XElement.Load(fullPathName.FullName);
-            if (projectXML.Elements("ProjectName").Any())
-            {
-                targetName = projectXML.Element("ProjectName").Value;
-                if (!IsLegalUnitName(targetName))
-                {
-                    CommandlineOutput.WriteMessage($"{targetName} is not a legal project name", SeverityKind.Error);
-                    Environment.Exit(1);
-                }
-            }
-            else
-            {
-                CommandlineOutput.WriteMessage($"Missing project name field in {fullPathName.FullName}", SeverityKind.Error);
-                Environment.Exit(1);
-            }
-
-            return targetName;
-        }
-
-        private static DirectoryInfo GetOutputDirectory(FileInfo fullPathName)
-        {
-            XElement projectXML = XElement.Load(fullPathName.FullName);
-            DirectoryInfo outputDirectory = projectXML.Elements("OutputDir").Any() ? Directory.CreateDirectory(projectXML.Element("OutputDir").Value) : new DirectoryInfo(Directory.GetCurrentDirectory());
-            return outputDirectory;
-        }
-
-        private static void GetTargetLanguage(FileInfo fullPathName, ref CompilerOutput outputLanguage, ref bool generateSourceMaps)
-        {
-            XElement projectXML = XElement.Load(fullPathName.FullName);
-            if (projectXML.Elements("Target").Any())
-            {
-                switch (projectXML.Element("Target").Value.ToLowerInvariant())
-                {
-                    case "c":
-                        outputLanguage = CompilerOutput.C;
-                        // check for generate source maps attribute
-                        try
-                        {
-                            if (projectXML.Element("Target").Attributes("sourcemaps").Any())
-                            {
-                                generateSourceMaps = bool.Parse(projectXML.Element("Target").Attribute("sourcemaps").Value);
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            CommandlineOutput.WriteMessage($"Expected true or false, received {projectXML.Element("Target").Attribute("sourcemaps").Value}", SeverityKind.Error);
-                            Environment.Exit(1);
-                        }
-                        break;
-
-                    case "csharp":
-                        outputLanguage = CompilerOutput.CSharp;
-                        break;
-
-                    default:
-                        CommandlineOutput.WriteMessage($"Expected C or CSharp as target, received {projectXML.Element("Target").Value}", SeverityKind.Error);
-                        Environment.Exit(1);
-                        break;
-                }
-            }
-        }
-
-        private static List<FileInfo> ReadAllInputFiles(FileInfo fullPathName)
-        {
-            List<FileInfo> inputFiles = new List<FileInfo>();
-            XElement projectXML = XElement.Load(fullPathName.FullName);
-
-            // get all files to be compiled
-            foreach (XElement inputs in projectXML.Elements("InputFiles"))
-            {
-                foreach (XElement inputFileName in inputs.Elements("PFile"))
-                {
-                    var pFiles = new List<string>();
-                    var inputFileNameFull = Path.Combine(Path.GetDirectoryName(fullPathName.FullName), inputFileName.Value);
-
-                    if (Directory.Exists(inputFileNameFull))
-                    {
-                        foreach (var files in Directory.GetFiles(inputFileNameFull, "*.p"))
-                        {
-                            pFiles.Add(files);
-                        }
-                    }
-                    else
-                    {
-                        pFiles.Add(inputFileNameFull);
-                    }
-
-                    foreach (var pFile in pFiles)
-                    {
-                        if (IsLegalPFile(pFile, out FileInfo pFilePathName))
-                        {
-                            CommandlineOutput.WriteMessage($"....... project includes: {pFilePathName.FullName}", SeverityKind.Info);
-                            inputFiles.Add(pFilePathName);
-                        }
-                        else
-                        {
-                            CommandlineOutput.WriteMessage(
-                                $"Illegal P file name {pFile} or file {pFilePathName?.FullName} not found", SeverityKind.Error);
-                            Environment.Exit(1);
-                        }
-                    }
-                }
-            }
-
-            return inputFiles;
-        }
-
-        private static bool IsLegalUnitName(string unitFileName)
-        {
-            return Regex.IsMatch(unitFileName, "^[A-Za-z_][A-Za-z_0-9]*$");
-        }
-
-        private static bool IsLegalPFile(string fileName, out FileInfo file)
-        {
-            file = null;
-            if (fileName.Length <= 2 || !fileName.EndsWith(".p") || !File.Exists(Path.GetFullPath(fileName)))
-            {
-                return false;
-            }
-
-            string path = Path.GetFullPath(fileName);
-            if (IsFileSystemCaseInsensitive)
-            {
-                path = path.ToLowerInvariant();
-            }
-
-            file = new FileInfo(path);
-
-            return true;
-        }
-
-        private static bool IsLegalPProjFile(string fileName, out FileInfo file)
-        {
-            file = null;
-            if (fileName.Length <= 2 || !fileName.EndsWith(".pproj") || !File.Exists(Path.GetFullPath(fileName)))
-            {
-                return false;
-            }
-
-            string path = Path.GetFullPath(fileName);
-            if (IsFileSystemCaseInsensitive)
-            {
-                path = path.ToLowerInvariant();
-            }
-
-            file = new FileInfo(path);
-
-            return true;
-        }
 
         public static void PrintUsage()
         {

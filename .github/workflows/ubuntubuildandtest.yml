@@ -1,4 +1,4 @@
-name: GitHub Action (Build and Test using .NET Core on Ubuntu)
+name: CI on Ubuntu
 
 on: [push]
 

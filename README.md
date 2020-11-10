@@ -1,5 +1,7 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/p-org/P/master/LICENSE.txt)
-![GitHub Action (Build and Test using .NET Core on Ubuntu, MacOS, and Windows)](https://github.com/p-org/P/workflows/GitHub%20Action%20(Build%20and%20Test%20using%20.NET%20Core%20on%20Ubuntu,%20MacOS,%20and%20Windows)/badge.svg)
+![GitHub Action (CI on Windows)](https://github.com/p-org/P/workflows/CI%on%20Windows)/badge.svg)
+![GitHub Action (CI on Ubuntu)](https://github.com/p-org/P/workflows/CI%on%20Ubuntu)/badge.svg)
+![GitHub Action (CI on MacOS)](https://github.com/p-org/P/workflows/CI%on%20MacOS)/badge.svg)
 
 P is a language for asynchronous event-driven programming. P allows the programmer to specify the system as a collection of interacting state machines, which communicate with each other using events. P unifies modeling and programming into one activity for the programmer. Not only can a P program be compiled into executable code, but it can also be systematically tested using Model Checking. P has been used to implement and validate the USB device driver stack that ships with Microsoft Windows 8 and Windows Phone. P is currently being used extensively inside Amazon (AWS) for model checking complex distributed systems.
 

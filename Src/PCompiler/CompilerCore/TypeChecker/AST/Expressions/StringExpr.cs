@@ -1,7 +1,7 @@
 ﻿using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.Types;
-using System.Diagnostics.Contracts;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 
 namespace Plang.Compiler.TypeChecker.AST.Expressions
 {

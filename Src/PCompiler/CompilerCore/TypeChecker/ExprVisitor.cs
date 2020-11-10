@@ -130,7 +130,7 @@ namespace Plang.Compiler.TypeChecker
                 case "sizeof":
                     {
                         var expr = Visit(context.expr());
-                        if (!(expr.Type.Canonicalize() is SequenceType) 
+                        if (!(expr.Type.Canonicalize() is SequenceType)
                                 && !(expr.Type.Canonicalize() is MapType)
                                 && !(expr.Type.Canonicalize() is SetType))
                             throw handler.TypeMismatch(expr, TypeKind.Map, TypeKind.Sequence, TypeKind.Set);
@@ -243,7 +243,7 @@ namespace Plang.Compiler.TypeChecker
                         new ArgumentException($"Unknown unary op `{context.op.Text}`", nameof(context)));
             }
         }
-        
+
         public override IPExpr VisitBinExpr(PParser.BinExprContext context)
         {
             IPExpr lhs = Visit(context.lhs);
@@ -277,7 +277,7 @@ namespace Plang.Compiler.TypeChecker
             switch (op)
             {
                 case "+":
-                    if (  PrimitiveType.String.IsAssignableFrom(lhs.Type) &&
+                    if (PrimitiveType.String.IsAssignableFrom(lhs.Type) &&
                           PrimitiveType.String.IsAssignableFrom(rhs.Type) ||
                           PrimitiveType.Int.IsAssignableFrom(lhs.Type) &&
                           PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
@@ -302,7 +302,6 @@ namespace Plang.Compiler.TypeChecker
                         PrimitiveType.String.IsAssignableFrom(rhs.Type))
                     {
                         return arithCtors[op](lhs, rhs);
-                        
                     }
                     throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
 
@@ -375,14 +374,17 @@ namespace Plang.Compiler.TypeChecker
             IPExpr subExpr = Visit(context.expr());
             PLanguageType subExprType = subExpr.Type;
 
-            switch(subExprType.Canonicalize())
+            switch (subExprType.Canonicalize())
             {
                 case SequenceType seqType:
                     return new ChooseExpr(context, subExpr, seqType.ElementType);
+
                 case SetType setType:
                     return new ChooseExpr(context, subExpr, setType.ElementType);
+
                 case PrimitiveType primType when primType.IsSameTypeAs(PrimitiveType.Int):
                     return new ChooseExpr(context, subExpr, PrimitiveType.Int);
+
                 default:
                     throw handler.IllegalChooseSubExprType(context, subExprType);
             }

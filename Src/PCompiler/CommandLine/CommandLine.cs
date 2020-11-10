@@ -1,5 +1,5 @@
-﻿using static Plang.Compiler.CommandLineParseResult;
-using System;
+﻿using System;
+using static Plang.Compiler.CommandLineParseResult;
 
 namespace Plang.Compiler
 {

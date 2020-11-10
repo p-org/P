@@ -1243,7 +1243,6 @@ namespace Plang.Compiler.Backend.C
             }
 
             context.WriteLine(output);
-    
         }
 
         private void WriteLValue(TextWriter output, Function function, IPExpr expr)
@@ -1422,9 +1421,12 @@ namespace Plang.Compiler.Backend.C
                     {
                         context.Write(output, "PrtMkBoolValue(PrtSeqExists(");
                     }
-                    else if (isSet) {
+                    else if (isSet)
+                    {
                         context.Write(output, "PrtMkBoolValue(PrtSetExists(");
-                    } else {
+                    }
+                    else
+                    {
                         throw new InvalidOperationException("Unsupported operation for non-map or sequence type");
                     }
                     WriteExpr(output, function, containsKeyExpr.Collection);

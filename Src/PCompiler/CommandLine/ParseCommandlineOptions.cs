@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace Plang.Compiler
 {
-    class ParseCommandlineOptions
+    internal class ParseCommandlineOptions
     {
         private static readonly Lazy<bool> isFileSystemCaseInsensitive = new Lazy<bool>(() =>
         {
@@ -18,6 +18,7 @@ namespace Plang.Compiler
             File.Delete(file);
             return isCaseInsensitive;
         });
+
         private static bool IsFileSystemCaseInsensitive => isFileSystemCaseInsensitive.Value;
 
         private readonly DefaultCompilerOutput CommandlineOutput;
@@ -35,7 +36,6 @@ namespace Plang.Compiler
         /// <returns></returns>
         public bool ParseProjectFile(string projectFile, out CompilationJob job)
         {
-            
             job = null;
             try
             {
@@ -75,12 +75,12 @@ namespace Plang.Compiler
 
                 return true;
             }
-            catch(CommandlineParsingError ex)
+            catch (CommandlineParsingError ex)
             {
                 CommandlineOutput.WriteError($"<Error parsing project file>:\n {ex.Message}");
                 return false;
             }
-            catch(Exception other)
+            catch (Exception other)
             {
                 CommandlineOutput.WriteError($"<Internal Error>:\n {other.Message}\n <Please report to the P team (p-devs@amazon.com) or create a issue on GitHub, Thanks!>");
                 return false;
@@ -139,9 +139,11 @@ namespace Plang.Compiler
                                     case "c":
                                         outputLanguage = CompilerOutput.C;
                                         break;
+
                                     case "csharp":
                                         outputLanguage = CompilerOutput.CSharp;
                                         break;
+
                                     default:
                                         throw new CommandlineParsingError($"Unrecognized generate option '{colonArg}', expecting C or CSharp");
                                 }
@@ -195,18 +197,16 @@ namespace Plang.Compiler
                 job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName);
                 return true;
             }
-            catch(CommandlineParsingError ex)
+            catch (CommandlineParsingError ex)
             {
                 CommandlineOutput.WriteError($"<Error parsing commandline>:\n {ex.Message}");
                 return false;
             }
-            catch(Exception other)
+            catch (Exception other)
             {
                 CommandlineOutput.WriteError($"<Internal Error>:\n {other.Message}\n <Please report to the P team (p-devs@amazon.com) or create an issue on GitHub, Thanks!>");
                 return false;
             }
-
-            
         }
 
         /// <summary>
@@ -226,7 +226,6 @@ namespace Plang.Compiler
             // get recursive project dependencies
             foreach (XElement projectDepen in projectXML.Elements("IncludeProject"))
             {
-
                 if (!IsLegalPProjFile(projectDepen.Value, out FileInfo fullProjectDepenPathName))
                 {
                     throw new CommandlineParsingError($"Illegal P project file name {projectDepen.Value} or file {fullProjectDepenPathName?.FullName} not found");
@@ -349,7 +348,8 @@ namespace Plang.Compiler
             return inputFiles;
         }
 
-        #region Functions to check if the commandline inputs are legal 
+        #region Functions to check if the commandline inputs are legal
+
         private bool IsLegalProjectName(string projectName)
         {
             return Regex.IsMatch(projectName, "^[A-Za-z_][A-Za-z_0-9]*$");
@@ -392,7 +392,8 @@ namespace Plang.Compiler
 
             return true;
         }
-        #endregion
+
+        #endregion Functions to check if the commandline inputs are legal
 
         /// <summary>
         /// Exception to capture errors when parsing commandline arguments
@@ -415,6 +416,5 @@ namespace Plang.Compiler
             {
             }
         }
-
     }
 }

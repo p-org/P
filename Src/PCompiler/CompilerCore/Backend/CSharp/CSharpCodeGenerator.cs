@@ -615,7 +615,7 @@ namespace Plang.Compiler.Backend.CSharp
 
             if (isAsync)
             {
-                returnType = "Task"; 
+                returnType = "Task";
             }
 
             context.WriteLine(output,
@@ -629,10 +629,11 @@ namespace Plang.Compiler.Backend.CSharp
                 context.WriteLine(output, $"{context.Names.GetNameForDecl(function.Owner)} currentMachine = this;");
             }
 
-            var parameter = function.Signature.Parameters.Any()? $"({GetCSharpType(function.Signature.ParameterTypes.First())})((PEvent)currentMachine_dequeuedEvent).Payload":"";
+            var parameter = function.Signature.Parameters.Any() ? $"({GetCSharpType(function.Signature.ParameterTypes.First())})((PEvent)currentMachine_dequeuedEvent).Payload" : "";
             context.WriteLine(output, $"{awaitMethod}{functionName}({parameter});");
             context.WriteLine(output, "}");
         }
+
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)
         {
             if (function.IsForeign)
@@ -988,18 +989,21 @@ namespace Plang.Compiler.Backend.CSharp
                                 WriteExpr(context, output, removeStmt.Value);
                                 context.WriteLine(output, ");");
                                 break;
+
                             case SequenceType _:
                                 WriteExpr(context, output, removeStmt.Variable);
                                 context.Write(output, ").RemoveAt(");
                                 WriteExpr(context, output, removeStmt.Value);
                                 context.WriteLine(output, ");");
                                 break;
+
                             case SetType _:
                                 WriteExpr(context, output, removeStmt.Variable);
                                 context.Write(output, ").Remove(");
                                 WriteExpr(context, output, removeStmt.Value);
                                 context.WriteLine(output, ");");
                                 break;
+
                             default:
                                 throw new ArgumentOutOfRangeException(
                                     $"Remove cannot be applied to type {removeStmt.Variable.Type.OriginalRepresentation}");
@@ -1215,10 +1219,11 @@ namespace Plang.Compiler.Backend.CSharp
                             throw new ArgumentOutOfRangeException(
                                 @"unexpected coercion operation to:" + coerceExpr.Type.CanonicalRepresentation);
                     }
-               
+
                     break;
+
                 case ChooseExpr chooseExpr:
-                    if(chooseExpr.SubExpr == null)
+                    if (chooseExpr.SubExpr == null)
                     {
                         context.Write(output, "((PrtBool)currentMachine.TryRandomBool())");
                     }
@@ -1229,10 +1234,11 @@ namespace Plang.Compiler.Backend.CSharp
                         context.Write(output, $"))");
                     }
                     break;
+
                 case ContainsExpr containsExpr:
                     var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
                     var isSeq = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Sequence);
-                    var castOp = isMap ? "(PrtMap)" 
+                    var castOp = isMap ? "(PrtMap)"
                         : isSeq ? "(PrtSeq)"
                         : "(PrtSet)";
                     context.Write(output, "((PrtBool)(");
@@ -1390,15 +1396,15 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case StringExpr stringExpr:
                     context.Write(output, $"((PrtString) String.Format(");
-                    context.Write(output,  $"\"{stringExpr.BaseString}\"");
-                    foreach(var arg in stringExpr.Args)
+                    context.Write(output, $"\"{stringExpr.BaseString}\"");
+                    foreach (var arg in stringExpr.Args)
                     {
                         context.Write(output, ",");
                         WriteExpr(context, output, arg);
                     }
                     context.Write(output, "))");
                     break;
-                    
+
                 case ThisRefExpr _:
                     context.Write(output, "currentMachine.self");
                     break;

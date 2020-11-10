@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Plang.PChecker
 {
@@ -14,11 +13,10 @@ namespace Plang.PChecker
         HelpRequested
     }
 
-    class CommandLineOptions
+    internal class CommandLineOptions
     {
         public static CommandLineParseResult ParseArguments(IEnumerable<string> args, out PCheckerJobConfiguration job)
         {
-            
             foreach (string x in args)
             {
                 string arg = x;
@@ -34,7 +32,6 @@ namespace Plang.PChecker
 
                     switch (arg.Substring(1).ToLowerInvariant())
                     {
-                        
                     }
                 }
             }

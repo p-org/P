@@ -66,6 +66,7 @@ namespace Plang.Compiler.TypeChecker
                             case PParser.PTypeDefContext typedefDecl:
                                 typeDef.Type = Visit(typedefDecl.type());
                                 break;
+
                             case InterpreterRuleContext _:
                             case RuleContextWithAltNum _:
                             default:

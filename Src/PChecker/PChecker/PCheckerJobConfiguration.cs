@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace Plang.PChecker
 {
@@ -38,7 +37,7 @@ namespace Plang.PChecker
         /// <summary>
         /// Max steps or depth per execution explored
         /// </summary>
-        public int MaxStepsPerExecution { get;  }
+        public int MaxStepsPerExecution { get; }
 
         /// <summary>
         /// Generate an error after the maximum steps
@@ -58,7 +57,7 @@ namespace Plang.PChecker
         /// <summary>
         /// Error schedule to be replayed
         /// </summary>
-        public string ErrorSchedule { get;}
+        public string ErrorSchedule { get; }
 
         public PCheckerJobConfiguration()
         {
@@ -73,12 +72,11 @@ namespace Plang.PChecker
             IsVerbose = false;
             IsReplay = false;
             ErrorSchedule = "";
-
         }
 
         private string GetNextOutputDirectoryName(string v)
         {
-            string directoryPath = Path.Combine(Directory.GetCurrentDirectory(),v);
+            string directoryPath = Path.Combine(Directory.GetCurrentDirectory(), v);
             string folderName = Directory.Exists(directoryPath) ? Directory.GetDirectories(directoryPath).Count().ToString() : "0";
             return Path.Combine(directoryPath, folderName);
         }

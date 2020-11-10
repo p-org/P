@@ -1,5 +1,5 @@
-﻿using Microsoft.Coyote.Actors;
-using Microsoft.Coyote;
+﻿using Microsoft.Coyote;
+using Microsoft.Coyote.Actors;
 using System;
 
 namespace Plang.CSharpRuntime

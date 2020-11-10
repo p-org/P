@@ -34,207 +34,54 @@ namespace Plang.Compiler
         public static CommandLineParseResult ParseArguments(IEnumerable<string> args, out CompilationJob job)
         {
             job = null;
+            
 
-            CompilerOutput outputLanguage = CompilerOutput.C;
-            DirectoryInfo outputDirectory = null;
-
-            List<string> commandLineFileNames = new List<string>();
-            List<FileInfo> inputFiles = new List<FileInfo>();
-            string targetName = null;
-            bool generateSourceMaps = false;
-
+            var commandlineParser = new ParseCommandlineOptions(CommandlineOutput);
             // enforce the argument prority
+            if (args.Where(a => a.ToLowerInvariant().Contains("-h")).Any())
+            {
+                PrintUsage();
+                return HelpRequested;
+            }
             // proj takes priority over everything else and no other arguments should be allowed
-            if (args.Where(a => a.ToLowerInvariant().Contains("-proj:")).Any() && args.Count() > 1)
+            if (args.Where(a => a.ToLowerInvariant().Contains("-proj:")).Any())
             {
-                CommandlineOutput.WriteMessage("-proj cannot be combined with other commandline options", SeverityKind.Error);
-                return Failure;
-            }
-
-            foreach (string x in args)
-            {
-                string arg = x;
-                string colonArg = null;
-                if (arg[0] == '-')
+                if (args.Count() > 1)
                 {
-                    int colonIndex = arg.IndexOf(':');
-                    if (colonIndex >= 0)
-                    {
-                        arg = x.Substring(0, colonIndex);
-                        colonArg = x.Substring(colonIndex + 1);
-                    }
-
-                    switch (arg.Substring(1).ToLowerInvariant())
-                    {
-                        case "proj":
-                        if (colonArg == null)
-                        {
-                            CommandlineOutput.WriteMessage("Must supply project file for compilation",
-                                SeverityKind.Error);
-                            return Failure;
-                        }
-                        else
-                        {
-                            // Parse the project file and generate the compilation job, ignore all other arguments passed
-                            var projectParser = new ParseCommandlineOptions(CommandlineOutput);
-                            if (projectParser.ParseProjectFile(colonArg, out job))
-                            {
-                                return Success;
-                            }
-                            else
-                            {
-                                return Failure;
-                            }
-                        }
-                        case "t":
-                        case "target":
-                            if (colonArg == null)
-                            {
-                                CommandlineOutput.WriteMessage("Missing target name", SeverityKind.Error);
-                            }
-                            else if (targetName == null)
-                            {
-                                targetName = colonArg;
-                            }
-                            else
-                            {
-                                CommandlineOutput.WriteMessage("Only one target must be specified", SeverityKind.Error);
-                            }
-
-                            break;
-
-                        case "g":
-                        case "generate":
-                            switch (colonArg?.ToLowerInvariant())
-                            {
-                                case null:
-                                    CommandlineOutput.WriteMessage(
-                                        "Missing generation argument, expecting generate:[C,CSharp]", SeverityKind.Error);
-                                    return Failure;
-
-                                case "c":
-                                    outputLanguage = CompilerOutput.C;
-                                    break;
-
-                                case "csharp":
-                                    outputLanguage = CompilerOutput.CSharp;
-                                    break;
-
-                                default:
-                                    CommandlineOutput.WriteMessage(
-                                        $"Unrecognized generate option '{colonArg}', expecting C or CSharp",
-                                        SeverityKind.Error);
-                                    return Failure;
-                            }
-
-                            break;
-
-                        case "o":
-                        case "outputdir":
-                            if (colonArg == null)
-                            {
-                                CommandlineOutput.WriteMessage("Must supply path for output directory",
-                                    SeverityKind.Error);
-                                return Failure;
-                            }
-
-                            outputDirectory = Directory.CreateDirectory(colonArg);
-                            break;
-
-                        
-                        case "s":
-                        case "sourcemaps":
-                            switch (colonArg?.ToLowerInvariant())
-                            {
-                                case null:
-                                case "true":
-                                    generateSourceMaps = true;
-                                    break;
-
-                                case "false":
-                                    generateSourceMaps = false;
-                                    break;
-
-                                default:
-                                    CommandlineOutput.WriteMessage(
-                                        "sourcemaps argument must be either 'true' or 'false'", SeverityKind.Error);
-                                    return Failure;
-                            }
-
-                            break;
-
-                        case "h":
-                        case "help":
-                        case "-help":
-                            return HelpRequested;
-
-                        default:
-                            commandLineFileNames.Add(arg);
-                            CommandlineOutput.WriteMessage($"Unknown Command {arg.Substring(1)}", SeverityKind.Error);
-                            return Failure;
-                    }
+                    CommandlineOutput.WriteMessage("-proj option cannot be combined with other commandline options", SeverityKind.Error);
+                    return Failure;
                 }
                 else
                 {
-                    commandLineFileNames.Add(arg);
+                    var option = args.First().ToLowerInvariant();
+                    var projectPath = option.Substring(option.IndexOf(":") + 1);
+                    // Parse the project file and generate the compilation job
+                    return commandlineParser.ParseProjectFile(projectPath, out job)? Success: Failure;
                 }
             }
-
-            // We are here so no project file supplied lets create a compilation job with other arguments
-
-            // Each command line file name must be a legal P file name
-            foreach (string inputFileName in commandLineFileNames)
+            else
             {
-                if (IsLegalPFile(inputFileName, out FileInfo fullPathName))
-                {
-                    inputFiles.Add(fullPathName);
-                }
-                else
-                {
-                    CommandlineOutput.WriteMessage(
-                        $"Illegal P file name {inputFileName} or file {fullPathName.FullName} not found", SeverityKind.Error);
-                }
+                // parse command line options and generate the compilation job
+                return commandlineParser.ParseCommandLineOptions(args, out job) ? Success : Failure;
             }
 
-            if (inputFiles.Count == 0)
-            {
-                CommandlineOutput.WriteMessage("At least one .p file must be provided", SeverityKind.Error);
-                return Failure;
-            }
-
-            string projectName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
-            if (!IsLegalUnitName(projectName))
-            {
-                CommandlineOutput.WriteMessage($"{projectName} is not a legal project name", SeverityKind.Error);
-                return Failure;
-            }
-
-            if (outputDirectory == null)
-            {
-                outputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
-            }
-
-            job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, generateSourceMaps: generateSourceMaps);
-            return Success;
         }
-
-        
-
 
         public static void PrintUsage()
         {
-            CommandlineOutput.WriteMessage("USAGE: Pc.exe file1.p [file2.p ...] [-t:tfile] [options]", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("USAGE: Pc.exe -proj:<.pproj file>", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -t:[tfileName]             -- name of output file produced for this compilation unit; if not supplied then file1", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -outputDir:[path]          -- where to write the generated files", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -generate:[C,CSharp]       -- select a target language to generate", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("        C   : generate C code", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("        CSharp  : generate C# code ", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -proj:[.pprojfile]         -- the p project to be compiled", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -sourcemaps[:(true|false)] -- enable or disable generating source maps", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("                                  in the compiled C output. may confuse some", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("                                  debuggers.", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -h, -help, --help          -- display this help message", SeverityKind.Info);
+            CommandlineOutput.WriteInfo("------------------------------------------");
+            CommandlineOutput.WriteInfo("Recommended usage:\n");
+            CommandlineOutput.WriteInfo(">> pc -proj:<.pproj file>\n");
+            CommandlineOutput.WriteInfo("------------------------------------------");
+            CommandlineOutput.WriteInfo("Optional usage:\n"); 
+            CommandlineOutput.WriteInfo(">> pc file1.p [file2.p ...] [-t:tfile] [options]");
+            CommandlineOutput.WriteInfo("    -t:[target project name]   -- name of project (as well as the generated file); if not supplied then file1");
+            CommandlineOutput.WriteInfo("    -outputDir:[path]          -- where to write the generated files");
+            CommandlineOutput.WriteInfo("    -generate:[C,CSharp]       -- select a target language to generate");
+            CommandlineOutput.WriteInfo("        C       : generate C code");
+            CommandlineOutput.WriteInfo("        CSharp  : generate C# code ");
+            CommandlineOutput.WriteInfo("    -h, -help, --help          -- display this help message");
+            CommandlineOutput.WriteInfo("------------------------------------------");
         }
     }
 }

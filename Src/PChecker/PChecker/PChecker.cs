@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 using System.IO;
 
 namespace Plang.PChecker
@@ -12,25 +13,20 @@ namespace Plang.PChecker
         static int Main(string[] args)
         {
            
-            var exitStatus = 0;
             switch (CommandLineOptions.ParseArguments(args, out PCheckerJobConfiguration job))
             {
                 case CommandLineParseResult.Failure:
-                    CommandLineOptions.PrintUsage();
-                    return 1;
-
                 case CommandLineParseResult.HelpRequested:
                     CommandLineOptions.PrintUsage();
-                    return 0;
-
-                default:
+                    return 1;
+                case CommandLineParseResult.Success:
                     try
                     {
                         return 0;
                     }
                     catch (Exception e)
                     {
-                        
+
                         return 1;
                     }
             }

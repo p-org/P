@@ -35,6 +35,7 @@ namespace Plang.Compiler
         /// <returns></returns>
         public bool ParseProjectFile(string projectFile, out CompilationJob job)
         {
+            
             job = null;
             try
             {
@@ -84,6 +85,128 @@ namespace Plang.Compiler
                 CommandlineOutput.WriteError($"<Internal Error>:\n {other.Message}\n <Please report to the P team (p-devs@amazon.com) or create a issue on GitHub, Thanks!>");
                 return false;
             }
+        }
+
+        internal bool ParseCommandLineOptions(IEnumerable<string> args, out CompilationJob job)
+        {
+            string targetName = null;
+            CompilerOutput outputLanguage = CompilerOutput.CSharp;
+            DirectoryInfo outputDirectory = null;
+
+            List<string> commandLineFileNames = new List<string>();
+            List<FileInfo> inputFiles = new List<FileInfo>();
+
+            job = null;
+            try
+            {
+                foreach (string x in args)
+                {
+                    string arg = x;
+                    string colonArg = null;
+                    if (arg[0] == '-')
+                    {
+                        int colonIndex = arg.IndexOf(':');
+                        if (colonIndex >= 0)
+                        {
+                            arg = x.Substring(0, colonIndex);
+                            colonArg = x.Substring(colonIndex + 1);
+                        }
+
+                        switch (arg.Substring(1).ToLowerInvariant())
+                        {
+                            case "t":
+                            case "target":
+                                if (colonArg == null)
+                                {
+                                    throw new CommandlineParsingError("Missing target project name (-t:<project name>)");
+                                }
+                                else if (targetName == null)
+                                {
+                                    targetName = colonArg;
+                                }
+                                else
+                                {
+                                    throw new CommandlineParsingError("Only one target must be specified with (-t)");
+                                }
+                                break;
+
+                            case "g":
+                            case "generate":
+                                switch (colonArg?.ToLowerInvariant())
+                                {
+                                    case null:
+                                        throw new CommandlineParsingError("Missing generation argument, expecting generate:[C,CSharp]");
+                                    case "c":
+                                        outputLanguage = CompilerOutput.C;
+                                        break;
+                                    case "csharp":
+                                        outputLanguage = CompilerOutput.CSharp;
+                                        break;
+                                    default:
+                                        throw new CommandlineParsingError($"Unrecognized generate option '{colonArg}', expecting C or CSharp");
+                                }
+                                break;
+
+                            case "o":
+                            case "outputdir":
+                                if (colonArg == null)
+                                {
+                                    throw new CommandlineParsingError("Must supply path for output directory (-o:<output directory>)");
+                                }
+                                outputDirectory = Directory.CreateDirectory(colonArg);
+                                break;
+
+                            default:
+                                CommandLineOptions.PrintUsage();
+                                throw new CommandlineParsingError($"Illegal Command {arg.Substring(1)}");
+                        }
+                    }
+                    else
+                    {
+                        if (IsLegalPFile(arg, out FileInfo fullPathName))
+                        {
+                            inputFiles.Add(fullPathName);
+                        }
+                        else
+                        {
+                            throw new CommandlineParsingError($"Illegal P file name {arg} or file {fullPathName.FullName} not found");
+                        }
+                    }
+                }
+
+                if (inputFiles.Count == 0)
+                {
+                    CommandlineOutput.WriteError("At least one .p file must be provided");
+                    return false;
+                }
+
+                string projectName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
+                if (!IsLegalProjectName(projectName))
+                {
+                    CommandlineOutput.WriteError($"{projectName} is not a legal project name");
+                    return false;
+                }
+
+                if (outputDirectory == null)
+                {
+                    outputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
+                }
+
+                job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName);
+                return true;
+            }
+            catch(CommandlineParsingError ex)
+            {
+                CommandlineOutput.WriteError($"<Error parsing commandline>:\n {ex.Message}");
+                return false;
+            }
+            catch(Exception other)
+            {
+                CommandlineOutput.WriteError($"<Internal Error>:\n {other.Message}\n <Please report to the P team (p-devs@amazon.com) or create an issue on GitHub, Thanks!>");
+                return false;
+            }
+
+            
         }
 
         /// <summary>

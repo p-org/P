@@ -114,6 +114,21 @@ namespace UnitTests.Runners
                 stdout.WriteLine(hdash);
                 stdout.WriteLine();
             }
+
+            void ICompilerOutput.WriteError(string msg)
+            {
+                stderr.WriteLine(msg);
+            }
+
+            void ICompilerOutput.WriteInfo(string msg)
+            {
+                stdout.WriteLine(msg);
+            }
+
+            void ICompilerOutput.WriteWarning(string msg)
+            {
+                stderr.WriteLine(msg);
+            }
         }
     }
 }

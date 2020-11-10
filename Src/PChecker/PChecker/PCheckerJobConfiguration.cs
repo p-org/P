@@ -48,12 +48,12 @@ namespace Plang.PChecker
         /// <summary>
         /// Is verbose ON
         /// </summary>
-        public bool isVerbose { get; }
+        public bool IsVerbose { get; }
 
         /// <summary>
         /// Is test mode or replay mode
         /// </summary>
-        public bool isReplay { get; }
+        public bool IsReplay { get; }
 
         /// <summary>
         /// Error schedule to be replayed
@@ -70,8 +70,8 @@ namespace Plang.PChecker
             MaxScheduleIterations = 10000;
             MaxStepsPerExecution = 5000;
             ErrorOutAtMaxSteps = 10000;
-            isVerbose = false;
-            isReplay = false;
+            IsVerbose = false;
+            IsReplay = false;
             ErrorSchedule = "";
 
         }

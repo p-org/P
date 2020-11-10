@@ -1518,8 +1518,8 @@ namespace Plang.Compiler.Backend.CSharp
         {
             switch (returnType.Canonicalize())
             {
-                case EnumType _:
-                    return "((PrtInt)0)";
+                case EnumType enumType:
+                    return $"((PrtInt){enumType.EnumDecl.Values.Min(elem => elem.Value)})";
 
                 case MapType mapType:
                     return $"new {GetCSharpType(mapType)}()";

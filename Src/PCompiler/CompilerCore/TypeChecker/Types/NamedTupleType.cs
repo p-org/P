@@ -5,12 +5,13 @@ using System.Linq;
 
 namespace Plang.Compiler.TypeChecker.Types
 {
-    public class NamedTupleType : TupleType
+    public class NamedTupleType : PLanguageType
     {
         private readonly IDictionary<string, NamedTupleEntry> lookupTable;
 
-        public NamedTupleType(IReadOnlyList<NamedTupleEntry> fields) : base(fields.Select(f => f.Type).ToArray())
+        public NamedTupleType(IReadOnlyList<NamedTupleEntry> fields) : base(TypeKind.NamedTuple)
         {
+            Types = new List<PLanguageType>(fields.Select(f => f.Type).ToArray());
             Fields = fields;
             lookupTable = fields.ToDictionary(f => f.Name, f => f);
             OriginalRepresentation =
@@ -24,6 +25,7 @@ namespace Plang.Compiler.TypeChecker.Types
         }
 
         public IEnumerable<string> Names => Fields.Select(f => f.Name);
+        public IReadOnlyList<PLanguageType> Types { get; }
         public IReadOnlyList<NamedTupleEntry> Fields { get; }
 
         public override string OriginalRepresentation { get; }

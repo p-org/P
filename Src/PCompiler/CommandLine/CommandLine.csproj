@@ -22,6 +22,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
-    <None Include="..\..\..\images\icon.png" Pack="true" PackagePath=""/>
+    <None Include="..\..\..\images\icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
 </Project>

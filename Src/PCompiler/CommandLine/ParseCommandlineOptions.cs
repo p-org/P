@@ -46,8 +46,8 @@ namespace Plang.Compiler
                 {
                     throw new CommandlineParsingError($"Illegal P project file name {projectFile} or file {projectFilePath?.FullName} not found");
                 }
-
-                CommandlineOutput.WriteInfo($"==== Parsing project file: {projectFile}");
+                CommandlineOutput.WriteInfo($"----------------------------------------");
+                CommandlineOutput.WriteInfo($"==== Loading project file: {projectFile}");
 
                 CompilerOutput outputLanguage = CompilerOutput.C;
                 List<FileInfo> inputFiles = new List<FileInfo>();
@@ -74,8 +74,9 @@ namespace Plang.Compiler
                 // get target language
                 GetTargetLanguage(projectFilePath, ref outputLanguage, ref generateSourceMaps);
 
-                job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, generateSourceMaps: generateSourceMaps, projectDependencies);
+                job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputDirectory, outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, projectFilePath.Directory, generateSourceMaps: generateSourceMaps, projectDependencies);
 
+                CommandlineOutput.WriteInfo($"----------------------------------------");
                 return true;
             }
             catch (CommandlineParsingError ex)
@@ -203,7 +204,8 @@ namespace Plang.Compiler
                     outputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
                 }
 
-                job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName);
+                job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputDirectory, outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, outputDirectory);
+                CommandlineOutput.WriteInfo($"----------------------------------------");
                 return true;
             }
             catch (CommandlineParsingError ex)
@@ -240,7 +242,7 @@ namespace Plang.Compiler
                     throw new CommandlineParsingError($"Illegal P project file name {projectDepen.Value} or file {fullProjectDepenPathName?.FullName} not found");
                 }
 
-                CommandlineOutput.WriteInfo($"==== Parsing project file: {fullProjectDepenPathName.FullName}");
+                CommandlineOutput.WriteInfo($"==== Loading project file: {fullProjectDepenPathName.FullName}");
 
                 var inputsAndDependencies = GetAllProjectDependencies(fullProjectDepenPathName);
                 projectDependencies.AddRange(inputsAndDependencies.projectDependencies);

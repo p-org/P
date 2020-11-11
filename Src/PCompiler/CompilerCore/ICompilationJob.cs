@@ -8,8 +8,11 @@ namespace Plang.Compiler
     public interface ICompilationJob
     {
         string ProjectName { get; }
+        DirectoryInfo ProjectRootPath { get; }
         bool GenerateSourceMaps { get; }
+        CompilerOutput OutputLanguage { get; }
         ICompilerOutput Output { get; }
+        DirectoryInfo OutputDirectory { get; }
         ICodeGenerator Backend { get; }
         IReadOnlyList<FileInfo> InputFiles { get; }
         IReadOnlyList<string> ProjectDependencies { get; }

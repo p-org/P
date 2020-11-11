@@ -1,6 +1,7 @@
 ﻿using Plang.Compiler;
 using Plang.Compiler.Backend;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using UnitTests.Core;
@@ -44,7 +45,7 @@ namespace UnitTests.Runners
             StringWriter stderrWriter = new StringWriter();
             TestCaseOutputStream outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);
 
-            CompilationJob job = new CompilationJob(outputStream, compilerOutput, inputFiles);
+            CompilationJob job = new CompilationJob(outputStream, scratchDirectory, compilerOutput, inputFiles, Path.GetFileNameWithoutExtension(inputFiles.First().FullName));
 
             try
             {

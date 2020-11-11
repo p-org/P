@@ -10,6 +10,9 @@ namespace Plang.Compiler
 {
     internal class ParseCommandlineOptions
     {
+        /// <summary>
+        /// Check if the underlying file system is case insensitive
+        /// </summary>
         private static readonly Lazy<bool> isFileSystemCaseInsensitive = new Lazy<bool>(() =>
         {
             string file = Path.GetTempPath() + Guid.NewGuid().ToString().ToLower() + "-lower";
@@ -87,6 +90,12 @@ namespace Plang.Compiler
             }
         }
 
+        /// <summary>
+        /// Parse the commandline arguments to construct the compilation job
+        /// </summary>
+        /// <param name="args">Commandline arguments</param>
+        /// <param name="job">Generated Compilation job</param>
+        /// <returns></returns>
         internal bool ParseCommandLineOptions(IEnumerable<string> args, out CompilationJob job)
         {
             string targetName = null;
@@ -245,6 +254,11 @@ namespace Plang.Compiler
             return (inputFiles, projectDependencies);
         }
 
+        /// <summary>
+        /// Parse the Project Name from the pproj file
+        /// </summary>
+        /// <param name="projectFullPath">Path to the pproj file</param>
+        /// <returns>project name</returns>
         private string GetProjectName(FileInfo projectFullPath)
         {
             string projectName = null;
@@ -265,6 +279,11 @@ namespace Plang.Compiler
             return projectName;
         }
 
+        /// <summary>
+        /// Parse the output directory information from the pproj file
+        /// </summary>
+        /// <param name="fullPathName"></param>
+        /// <returns>If present returns the passed directory path, else the current directory</returns>
         private DirectoryInfo GetOutputDirectory(FileInfo fullPathName)
         {
             XElement projectXML = XElement.Load(fullPathName.FullName);
@@ -305,6 +324,11 @@ namespace Plang.Compiler
             }
         }
 
+        /// <summary>
+        /// Read all the input P files included in the pproj 
+        /// </summary>
+        /// <param name="fullPathName">Path to the pproj file</param>
+        /// <returns>List of the all the P files included in the project</returns>
         private List<FileInfo> ReadAllInputFiles(FileInfo fullPathName)
         {
             List<FileInfo> inputFiles = new List<FileInfo>();

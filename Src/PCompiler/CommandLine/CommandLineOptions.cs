@@ -64,6 +64,9 @@ namespace Plang.Compiler
             }
         }
 
+        /// <summary>
+        /// Print the P compiler commandline usage information
+        /// </summary>
         public static void PrintUsage()
         {
             CommandlineOutput.WriteInfo("------------------------------------------");

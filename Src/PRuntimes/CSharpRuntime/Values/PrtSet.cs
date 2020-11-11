@@ -1,12 +1,13 @@
+using Plang.CSharpRuntime.Exceptions;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
-using Plang.CSharpRuntime.Exceptions;
 using System.Linq;
+using System.Text;
 
 namespace Plang.CSharpRuntime.Values
 {
-    public sealed class PrtSet : IPrtMutableValue, ISet<IPrtValue> {
+    public sealed class PrtSet : IPrtMutableValue, ISet<IPrtValue>
+    {
         private readonly ISet<IPrtValue> set = new HashSet<IPrtValue>();
 
         private int hashCode;
@@ -18,7 +19,8 @@ namespace Plang.CSharpRuntime.Values
             hashCode = ComputeHashCode();
         }
 
-        public PrtSet(ISet<IPrtValue> set) {
+        public PrtSet(ISet<IPrtValue> set)
+        {
             this.set = set;
             hashCode = ComputeHashCode();
         }
@@ -62,7 +64,8 @@ namespace Plang.CSharpRuntime.Values
             return set.Contains(item);
         }
 
-        public bool Remove(IPrtValue item) {
+        public bool Remove(IPrtValue item)
+        {
             var removed = set.Remove(item);
             IsDirty = true;
             return removed;

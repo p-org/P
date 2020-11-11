@@ -1,4 +1,5 @@
-﻿using static Plang.Compiler.CommandLineParseResult;
+﻿using System;
+using static Plang.Compiler.CommandLineParseResult;
 
 namespace Plang.Compiler
 {
@@ -26,6 +27,11 @@ namespace Plang.Compiler
                     catch (TranslationException e)
                     {
                         job.Output.WriteMessage(e.Message, SeverityKind.Error);
+                        return 1;
+                    }
+                    catch (Exception ex)
+                    {
+                        job.Output.WriteError(ex.Message);
                         return 1;
                     }
             }

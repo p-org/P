@@ -6,7 +6,6 @@ namespace Plang.CSharpRuntime.Values
     [Serializable]
     public readonly struct PrtString : IPrtValue
     {
-
         public bool Equals(PrtString other)
         {
             return string.Equals(value, other.value);
@@ -47,7 +46,6 @@ namespace Plang.CSharpRuntime.Values
         {
             this.value = value;
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtString operator +(in PrtString prtString1, in PrtString prtString2)
@@ -94,7 +92,7 @@ namespace Plang.CSharpRuntime.Values
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator <(in PrtString prtString1, in PrtString prtString2)
         {
-            return string.Compare(prtString1.value, prtString2.value)==-1;
+            return string.Compare(prtString1.value, prtString2.value) == -1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

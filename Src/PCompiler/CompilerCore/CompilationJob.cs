@@ -24,7 +24,7 @@ namespace Plang.Compiler
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
             Backend = TargetLanguage.GetCodeGenerator(outputLanguage);
             GenerateSourceMaps = generateSourceMaps;
-            ProjectDependencies = projectDependencies?? new List<string>();
+            ProjectDependencies = projectDependencies ?? new List<string>();
         }
 
         public bool GenerateSourceMaps { get; }

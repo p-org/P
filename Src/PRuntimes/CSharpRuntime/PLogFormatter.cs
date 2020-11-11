@@ -1,6 +1,5 @@
 ﻿using Microsoft.Coyote;
 using Microsoft.Coyote.Actors;
-using Microsoft.Coyote.Runtime;
 using Plang.CSharpRuntime.Exceptions;
 using System;
 using System.Linq;
@@ -20,12 +19,13 @@ namespace Plang.CSharpRuntime
         {
             return stateName.Split('.').Last();
         }
+
         private string GetEventNameWithPayload(Event e)
         {
             if (e.GetType().Name.Contains("GotoStateEvent"))
             {
                 return e.GetType().Name;
-            }    
+            }
             else
             {
                 var withPayload = ((PEvent)e).Payload == null ? "" : $" with payload ({((PEvent)e).Payload})";
@@ -39,7 +39,7 @@ namespace Plang.CSharpRuntime
             {
                 return;
             }
-            
+
             base.OnStateTransition(id, this.GetShortName(stateName), isEntry);
         }
 
@@ -78,7 +78,6 @@ namespace Plang.CSharpRuntime
         {
             base.OnWaitEvent(id, this.GetShortName(stateName), eventType);
         }
-
 
         public override void OnMonitorStateTransition(string monitorType, string stateName, bool isEntry, bool? isInHotState)
         {
@@ -146,11 +145,9 @@ namespace Plang.CSharpRuntime
 
         public override void OnEnqueueEvent(ActorId id, Event e)
         {
-            
             string eventName = this.GetEventNameWithPayload(e);
             string text = $"<EnqueueLog> '{id}' enqueued event '{eventName}'.";
             this.Logger.WriteLine(text);
-            
         }
 
         public override void OnReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)

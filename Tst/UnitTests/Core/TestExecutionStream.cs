@@ -34,5 +34,20 @@ namespace UnitTests.Core
             File.WriteAllText(fileName, file.Contents);
             outputFiles.Add(new FileInfo(fileName));
         }
+
+        void ICompilerOutput.WriteError(string msg)
+        {
+            Console.WriteLine(msg);
+        }
+
+        void ICompilerOutput.WriteInfo(string msg)
+        {
+            Console.WriteLine(msg);
+        }
+
+        void ICompilerOutput.WriteWarning(string msg)
+        {
+            Console.WriteLine(msg);
+        }
     }
 }

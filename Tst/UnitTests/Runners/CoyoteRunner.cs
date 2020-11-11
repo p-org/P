@@ -1,6 +1,5 @@
 ﻿using Microsoft.Coyote.SystematicTesting;
 using Plang.Compiler;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -39,7 +38,7 @@ namespace UnitTests.Runners
                 {
                     File.Copy(src, target, overwrite);
                     return;
-                } 
+                }
                 catch (System.IO.IOException)
                 {
                     if (retries == 1)
@@ -73,7 +72,6 @@ namespace UnitTests.Runners
                     Path.Combine(scratchDirectory.FullName, "./netcoreapp3.1/Test.dll"), out string testStdout, out string testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
-
             }
 
             return exitCode;

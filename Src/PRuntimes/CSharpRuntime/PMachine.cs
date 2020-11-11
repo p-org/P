@@ -59,7 +59,6 @@ namespace Plang.CSharpRuntime
             return (ex as UnhandledEventException).UnhandledEvent is PHalt
                 ? OnExceptionOutcome.Halt
                 : base.OnException(ex, methodName, e);
-
         }
 
         public PMachineValue CreateInterface<T>(PMachine creator, IPrtValue payload = null)
@@ -137,10 +136,11 @@ namespace Plang.CSharpRuntime
 
         public IPrtValue TryRandom(IPrtValue param)
         {
-            switch(param)
+            switch (param)
             {
                 case PrtInt maxValue:
                     return (PrtInt)TryRandomInt(maxValue);
+
                 case PrtSeq seq:
                     {
                         TryAssert(seq.Count() > 0, "Trying to choose from an empty sequence!");
@@ -155,6 +155,7 @@ namespace Plang.CSharpRuntime
                     throw new PInternalException("This is an unexpected (internal) P exception. Please report to the P Developers");
             }
         }
+
         public void LogLine(string message)
         {
             Logger.WriteLine($"<PrintLog> {message}");

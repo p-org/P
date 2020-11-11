@@ -12,7 +12,6 @@ using System.Linq;
 
 namespace Plang.Compiler
 {
-
     public class DefaultTranslationErrorHandler : ITranslationErrorHandler
     {
         private readonly ILocationResolver locationResolver;
@@ -146,6 +145,7 @@ namespace Plang.Compiler
         {
             return IssueError(sourceLocation, $"functions at entry or exit and do or goto transitions cannot take more than 1 parameter, provided function expects {count} parameters");
         }
+
         public Exception ParseFailure(FileInfo file, string message)
         {
             return new TranslationException($"[{file.Name}] parse error: {message}");
@@ -349,6 +349,7 @@ namespace Plang.Compiler
         {
             return IssueError(sourceLocation, $"Exit functions cannot have input parameters, the provided function expects {count} parameters");
         }
+
         private Exception IssueError(ParserRuleContext location, string message)
         {
             return IssueError(location, location.Start, message);

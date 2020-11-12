@@ -87,7 +87,7 @@ namespace -projectName-
             }
 
             // compile the csproj file
-            string[] args = new[] { "build", csprojName };
+            string[] args = new[] { "build -c Release", csprojName };
 
             int exitCode = RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "dotnet", args);
             if(exitCode != 0)

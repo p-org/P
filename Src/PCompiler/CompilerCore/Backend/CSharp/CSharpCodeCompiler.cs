@@ -13,7 +13,7 @@ namespace Plang.Compiler.Backend.CSharp
     <OutputType>Exe</OutputType>
     <StartupObject />
     <LangVersion>latest</LangVersion>
-    <OutputPath>.</OutputPath>
+    <OutputPath>-directory-</OutputPath>
   </PropertyGroup >
   <ItemGroup>
     <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
@@ -74,6 +74,8 @@ namespace -projectName-
             // if the file does not exist then create the file
             if (!File.Exists(csprojPath))
             {
+                csprojTemplate = csprojTemplate.Replace("-directory-", 
+                    Path.GetRelativePath(job.ProjectRootPath.FullName,job.OutputDirectory.FullName));
                 File.WriteAllText(csprojPath, csprojTemplate);
             }
 
@@ -85,10 +87,10 @@ namespace -projectName-
             }
 
             // compile the csproj file
-            string[] args = new[] { $"build -c Release", csprojName };
+            string[] args = new[] { "build -c Release", csprojName };
 
             int exitCode = RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "dotnet", args);
-            if (exitCode != 0)
+            if(exitCode != 0)
             {
                 throw new TranslationException($"Compiling generated C# code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
             }

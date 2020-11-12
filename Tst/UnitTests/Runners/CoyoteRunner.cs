@@ -53,7 +53,10 @@ namespace UnitTests.Runners
         {
             stdout = "";
             stderr = "";
+            // Do not want to use the auto-generated Test.cs file
             CreateFileWithMainFunction(scratchDirectory);
+            // Clear out the csproj file
+            DeleteCSProjFile(scratchDirectory);
 
             int exitCode = DoCompile(scratchDirectory);
 
@@ -71,6 +74,11 @@ namespace UnitTests.Runners
             }
 
             return exitCode;
+        }
+
+        private void DeleteCSProjFile(DirectoryInfo scratchDirectory)
+        {
+            File.Delete(Path.Combine(scratchDirectory.FullName, "Main.csproj"));
         }
 
         private void CreateFileWithMainFunction(DirectoryInfo dir)

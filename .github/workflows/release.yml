@@ -1,0 +1,42 @@
+name: P release
+
+# A new release is triggered by a new tag of the form p-VERSION
+on:
+  push:
+    tags:
+      - ptest-*
+
+jobs:
+  Release:
+    name: P release
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout the repository
+        uses: actions/checkout@v1
+
+      - name: Setup .NET Core @ Latest
+        uses: actions/setup-dotnet@v1
+        with:
+          source-url: https://nuget.pkg.github.com/p-org/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}} 
+
+      - name: Set the package version
+        run: |
+          # The environment variable GITHUB_REF is refs/tags/ptest-*
+          echo "TAG=${GITHUB_REF:10}" >> $GITHUB_ENV
+          echo "VERSION=${GITHUB_REF:16}" >> $GITHUB_ENV
+          printenv | sort
+          cat ${GITHUB_EVENT_PATH}
+
+      - name: Create the package
+        run: |
+          # Grab version number from the tag via the environment variable
+          cd Src/PCompiler/CommandLine
+          dotnet pack -p:PackageVersion=${VERSION}
+
+      - name: Push generated package to GitHub registry
+        run: |
+          dotnet nuget push ../../../Bld/Drops/Binaries/P*.nupkg --skip-duplicate --no-symbols true

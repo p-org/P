@@ -26,12 +26,12 @@ namespace Plang.Compiler
                     }
                     catch (TranslationException e)
                     {
-                        job.Output.WriteMessage(e.Message, SeverityKind.Error);
+                        job.Output.WriteError("Error:\n" + e.Message);
                         return 1;
                     }
                     catch (Exception ex)
                     {
-                        job.Output.WriteError(ex.Message);
+                        job.Output.WriteError($"<Internal Error>:\n {ex.Message}\n<Please report to the P team (p-devs@amazon.com) or create an issue on GitHub, Thanks!>");
                         return 1;
                     }
             }

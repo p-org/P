@@ -1,8 +1,7 @@
 ﻿using Microsoft.Coyote.SystematicTesting;
 using Plang.Compiler;
-using System.Collections.Generic;
+using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using UnitTests.Core;
 
@@ -52,24 +51,21 @@ namespace UnitTests.Runners
 
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
-            FileInfo[] compiledFiles = DoCompile(scratchDirectory).ToArray();
+            stdout = "";
+            stderr = "";
             CreateFileWithMainFunction(scratchDirectory);
-            CreateProjectFile(scratchDirectory);
+
+            int exitCode = DoCompile(scratchDirectory);
 
             foreach (FileInfo nativeFile in nativeSources)
             {
                 FileCopy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
             }
 
-            string[] args = new[] { "publish", "Test.csproj" };
-
-            int exitCode =
-                ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, "dotnet", args);
-
             if (exitCode == 0)
             {
                 exitCode = RunCoyoteTester(scratchDirectory.FullName,
-                    Path.Combine(scratchDirectory.FullName, "./netcoreapp3.1/Test.dll"), out string testStdout, out string testStderr);
+                    Path.Combine(scratchDirectory.FullName, "./netcoreapp3.1/Main.dll"), out string testStdout, out string testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
             }
@@ -126,41 +122,31 @@ namespace Main
             }
         }
 
-        private void CreateProjectFile(DirectoryInfo dir)
-        {
-            string projectFileContents = @"
-<Project Sdk=""Microsoft.NET.Sdk"">
-  <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <ApplicationIcon />
-    <OutputType>Exe</OutputType>
-    <StartupObject />
-    <LangVersion >latest</LangVersion>
-    <OutputPath>.</OutputPath>
-  </PropertyGroup >
-  <ItemGroup>
-    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
-    <PackageReference Include=""PCSharpRuntime"" Version=""1.0.0""/>
-  </ItemGroup>
-</Project>";
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.csproj"), false))
-            {
-                outputFile.WriteLine(projectFileContents);
-            }
-        }
-
         private int RunCoyoteTester(string directory, string dllPath, out string stdout, out string stderr)
         {
             return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, "dotnet", dllPath);
         }
 
-        private IEnumerable<FileInfo> DoCompile(DirectoryInfo scratchDirectory)
+        private int DoCompile(DirectoryInfo scratchDirectory)
         {
             Compiler compiler = new Compiler();
             TestExecutionStream outputStream = new TestExecutionStream(scratchDirectory);
-            CompilationJob compilationJob = new CompilationJob(outputStream, CompilerOutput.CSharp, sources, "Main");
-            compiler.Compile(compilationJob);
-            return outputStream.OutputFiles;
+            CompilationJob compilationJob = new CompilationJob(outputStream, scratchDirectory, CompilerOutput.CSharp, sources, "Main", scratchDirectory);
+            try
+            {
+                compiler.Compile(compilationJob);
+                return 0;
+            }
+            catch (TranslationException e)
+            {
+                compilationJob.Output.WriteError("Error:\n" + e.Message);
+                return 1;
+            }
+            catch (Exception ex)
+            {
+                compilationJob.Output.WriteError($"<Internal Error>:\n {ex.Message}\n<Please report to the P team (p-devs@amazon.com) or create an issue on GitHub, Thanks!>");
+                return 1;
+            }
         }
     }
 }

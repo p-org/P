@@ -74,7 +74,8 @@ namespace -projectName-
             // if the file does not exist then create the file
             if (!File.Exists(csprojPath))
             {
-                csprojTemplate = csprojTemplate.Replace("-directory-", job.OutputDirectory.FullName);
+                csprojTemplate = csprojTemplate.Replace("-directory-", 
+                    Path.GetRelativePath(job.ProjectRootPath.FullName,job.OutputDirectory.FullName));
                 File.WriteAllText(csprojPath, csprojTemplate);
             }
 
@@ -86,7 +87,7 @@ namespace -projectName-
             }
 
             // compile the csproj file
-            string[] args = new[] { "build", csprojName };
+            string[] args = new[] { "build -c Release", csprojName };
 
             int exitCode = RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "dotnet", args);
             if(exitCode != 0)

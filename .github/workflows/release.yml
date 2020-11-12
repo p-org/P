@@ -39,4 +39,4 @@ jobs:
 
       - name: Push generated package to GitHub registry
         run: |
-          dotnet nuget push ../../../Bld/Drops/Binaries/P*.nupkg --skip-duplicate --no-symbols true
+          dotnet nuget push ../../../Bld/Drops/Binaries/P.${VERSION}.nupkg --skip-duplicate --no-symbols true

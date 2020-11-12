@@ -57,13 +57,13 @@ namespace UnitTests.Runners
             CreateFileWithMainFunction(scratchDirectory);
             // Clear out the csproj file
             DeleteCSProjFile(scratchDirectory);
-
-            int exitCode = DoCompile(scratchDirectory);
-
+            // copy the foreign code to the folder
             foreach (FileInfo nativeFile in nativeSources)
             {
                 FileCopy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
             }
+
+            int exitCode = DoCompile(scratchDirectory);
 
             if (exitCode == 0)
             {

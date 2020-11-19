@@ -144,14 +144,7 @@ namespace Plang.CoyoteRuntime
             this.Logger.WriteLine(text);
         }
 
-        public override void OnEnqueueEvent(ActorId id, Event e)
-        {
-            
-            string eventName = this.GetEventNameWithPayload(e);
-            string text = $"<EnqueueLog> '{id}' enqueued event '{eventName}'.";
-            this.Logger.WriteLine(text);
-            
-        }
+        public override void OnEnqueueEvent(ActorId id, Event e) {   }
 
         public override void OnReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)
         {

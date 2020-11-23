@@ -1,3 +1,6 @@
 [submodule "Ext/libhandler"]
 	path = Ext/libhandler
 	url = https://github.com/koka-lang/libhandler.git
+[submodule "Tst/RegressionTests/Rvm/ext/rv-monitor"]
+	path = Tst/RegressionTests/Rvm/ext/rv-monitor
+	url = https://github.com/runtimeverification/rv-monitor.git

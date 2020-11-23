@@ -99,4 +99,39 @@ namespace UnitTests
             TestAssertions.AssertTestCase(testCaseCoyote);
         }
     }
+
+    [TestFixture]
+    [Parallelizable(ParallelScope.Children)]
+    public class RvmRuntimeRegressionUnitTests
+    {
+        private static IEnumerable<TestCaseData> RegressionTestSuite =>
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] { "Test" });
+
+        [TestCaseSource(nameof(RegressionTestSuite))]
+        public void TestRegressions(DirectoryInfo testDir)
+        {
+            DirectoryInfo scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
+            TestCaseFactory factory = new TestCaseFactory(scratchDir);
+            CompilerTestCase testCaseRvm = factory.CreateTestCase(testDir, CompilerOutput.Rvm);
+            TestAssertions.AssertTestCase(testCaseRvm);
+        }
+    }
+
+    [TestFixture]
+    [Parallelizable(ParallelScope.Children)]
+    public class RvmRuntimeRegressionExampleTests
+    {
+        private static IEnumerable<TestCaseData> RegressionTestSuite =>
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] { "Example" });
+
+        [TestCaseSource(nameof(RegressionTestSuite))]
+        public void TestRegressions(DirectoryInfo testDir)
+        {
+            DirectoryInfo scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
+            TestCaseFactory factory = new TestCaseFactory(scratchDir);
+            DirectoryInfo actualTestDir = new DirectoryInfo(Path.Combine(testDir.FullName, "monitor"));
+            CompilerTestCase testCaseRvm = factory.CreateTestCase(actualTestDir, CompilerOutput.Rvm);
+            TestAssertions.AssertTestCase(testCaseRvm);
+        }
+    }
 }

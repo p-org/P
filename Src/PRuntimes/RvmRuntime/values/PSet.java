@@ -1,17 +1,17 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */ 
-package mop;
+package p.runtime.values;
 
 import java.util.Set;
 import java.util.HashSet;
 
-public class PrtSet implements IValue<PrtSet> {
+public class PSet implements IValue<PSet> {
     private Set<IValue<?>> internalSet;
 
-    public PrtSet() {
+    public PSet() {
         internalSet = new HashSet<IValue<?>>();
     }
 
-    private PrtSet(Set<IValue<?>> setValue) {
+    private PSet(Set<IValue<?>> setValue) {
         this.internalSet = setValue;
     }
 
@@ -41,21 +41,21 @@ public class PrtSet implements IValue<PrtSet> {
         if (obj == this)
             return true;
 
-        if (!(obj instanceof PrtSet)) {
+        if (!(obj instanceof PSet)) {
             return false;
         }
 
-        PrtSet other = (PrtSet) obj;
+        PSet other = (PSet) obj;
         return internalSet.equals(other.internalSet);
     }
 
     @Override
-    public PrtSet genericClone() {
+    public PSet genericClone() {
         Set<IValue<?>> clonedSet = new HashSet<IValue<?>>();
         for (IValue<?> item : internalSet) {
             clonedSet.add(IValue.safeClone(item));
         }
-        return new PrtSet(clonedSet);
+        return new PSet(clonedSet);
     }
 
     @Override

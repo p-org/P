@@ -1,17 +1,19 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */ 
-package mop;
+package p.runtime.values;
 
 import java.util.Map;
 import java.util.HashMap;
 
-public class PrtMap implements IValue<PrtMap> {
+import p.runtime.exceptions.MapInsertError;
+
+public class PMap implements IValue<PMap> {
     private Map<IValue<?>, IValue<?>> internalMap;
 
-    public PrtMap() {
+    public PMap() {
         internalMap = new HashMap<IValue<?>, IValue<?>>();
     }
 
-    private PrtMap(Map<IValue<?>, IValue<?>> map) {
+    private PMap(Map<IValue<?>, IValue<?>> map) {
         this.internalMap = map;
     }
 
@@ -42,12 +44,12 @@ public class PrtMap implements IValue<PrtMap> {
         return internalMap.containsKey(key);
     }
 
-    public PrtSeq cloneKeys() {
-        return new PrtSeq(internalMap.keySet());
+    public PSeq cloneKeys() {
+        return new PSeq(internalMap.keySet());
     }
 
-    public PrtSeq cloneValues() {
-        return new PrtSeq(internalMap.values());
+    public PSeq cloneValues() {
+        return new PSeq(internalMap.values());
     }
 
     @Override
@@ -60,21 +62,21 @@ public class PrtMap implements IValue<PrtMap> {
         if (obj == this)
             return true;
 
-        if (!(obj instanceof PrtMap)) {
+        if (!(obj instanceof PMap)) {
             return false;
         }
 
-        PrtMap other = (PrtMap) obj;
+        PMap other = (PMap) obj;
         return internalMap.equals(other.internalMap);
     }
 
     @Override
-    public PrtMap genericClone() {
+    public PMap genericClone() {
         Map<IValue<?>, IValue<?>> clonedMap = new HashMap<IValue<?>, IValue<?>>();
         for (Map.Entry<IValue<?>, IValue<?>> entry : internalMap.entrySet()) {
             clonedMap.put(IValue.safeClone(entry.getKey()), IValue.safeClone(entry.getValue()));
         }
-        return new PrtMap(clonedMap);
+        return new PMap(clonedMap);
     }
 
     @Override

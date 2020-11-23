@@ -1,18 +1,18 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */ 
-package mop;
+package p.runtime.values;
 
 import java.lang.Iterable;
 import java.util.List;
 import java.util.ArrayList;
 
-public class PrtSeq implements IValue<PrtSeq> {
+public class PSeq implements IValue<PSeq> {
     private List<IValue<?>> internalList;
 
-    public PrtSeq() {
+    public PSeq() {
         internalList = new ArrayList<IValue<?>>();
     }
 
-    public PrtSeq(Iterable<IValue<?>> seq) {
+    public PSeq(Iterable<IValue<?>> seq) {
         internalList = new ArrayList<IValue<?>>();
         for (IValue<?> item : seq) {
             internalList.add(IValue.safeClone(item));
@@ -53,17 +53,17 @@ public class PrtSeq implements IValue<PrtSeq> {
         if (obj == this)
             return true;
 
-        if (!(obj instanceof PrtSeq)) {
+        if (!(obj instanceof PSeq)) {
             return false;
         }
 
-        PrtSeq other = (PrtSeq) obj;
+        PSeq other = (PSeq) obj;
         return internalList.equals(other.internalList);
     }
 
     @Override
-    public PrtSeq genericClone() {
-        return new PrtSeq(this.internalList);
+    public PSeq genericClone() {
+        return new PSeq(this.internalList);
     }
 
     @Override

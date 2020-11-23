@@ -1,5 +1,5 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
-package mop;
+package p.runtime.values;
 
 public class EnumValue<T> implements IValue<EnumValue<T>> {
     private T value;

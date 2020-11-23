@@ -1,20 +1,20 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
-package mop;
+package p.runtime.values;
 
-public class FloatValue implements IValue<FloatValue> {
-    private double value;
+public class BoolValue implements IValue<BoolValue> {
+    private boolean value;
 
-    public FloatValue(double value) {
+    public BoolValue(boolean value) {
         this.value = value;
     }
 
-    public double get() {
+    public boolean get() {
         return value;
     }
 
     @Override
     public int hashCode() {
-        return (new Double(value)).hashCode();
+        return (new Boolean(value)).hashCode();
     }
 
     @Override
@@ -22,21 +22,21 @@ public class FloatValue implements IValue<FloatValue> {
         if (obj == this)
             return true;
 
-        if (!(obj instanceof FloatValue)) {
+        if (!(obj instanceof BoolValue)) {
             return false;
         }
 
-        FloatValue other = (FloatValue) obj;
+        BoolValue other = (BoolValue) obj;
         return this.value == other.get();
     }
 
     @Override
-    public FloatValue genericClone() {
-        return new FloatValue(value);
+    public BoolValue genericClone() {
+        return new BoolValue(value);
     }
 
     @Override
     public String toString() {
-        return Double.toString(value);
+        return Boolean.toString(value);
     }
 }

@@ -1,5 +1,5 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */ 
-package mop;
+package p.runtime.values;
 
 // Interface for values.
 public interface IValue<T extends IValue<T>> {

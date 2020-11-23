@@ -18,7 +18,8 @@ namespace UnitTests.Core
             Path.Combine("RegressionTests", "Feature3Exprs"),
             Path.Combine("RegressionTests", "Feature4DataTypes"),
             //Path.Combine("RegressionTests","Feature5ModuleSystem"),
-            Path.Combine("RegressionTests", "Integration")
+            Path.Combine("RegressionTests", "Integration"),
+            Path.Combine("RegressionTests", "Rvm")
         };
 
         public static IEnumerable<TestCaseData> FindTestCasesInDirectory(string directoryName, string[] testDirNames)

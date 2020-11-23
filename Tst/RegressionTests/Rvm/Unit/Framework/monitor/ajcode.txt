@@ -1,0 +1,37 @@
+    // Implement your code here.
+
+    pointcut unittest_getState() : (execution(* Instrumented.getState())) && MOP_CommonPointCut();
+    before () : unittest_getState() {
+        unittestRuntimeMonitor.unittest_getStateEvent();
+    }
+
+    pointcut unittest_event1() : (execution(* Instrumented.event1())) && MOP_CommonPointCut();
+    before () : unittest_event1() {
+        unittestRuntimeMonitor.unittest_event1Event();
+    }
+
+    pointcut unittest_event2() : (execution(* Instrumented.event2())) && MOP_CommonPointCut();
+    before () : unittest_event2() {
+        unittestRuntimeMonitor.unittest_event2Event();
+    }
+
+    pointcut unittest_event3() : (execution(* Instrumented.event3())) && MOP_CommonPointCut();
+    before () : unittest_event3() {
+        unittestRuntimeMonitor.unittest_event3Event();
+    }
+
+    pointcut unittest_event1Int(int a) : (execution(* Instrumented.event1Int(int))) && args(a) && MOP_CommonPointCut();
+    before (int a) : unittest_event1Int(a) {
+        unittestRuntimeMonitor.unittest_event1IntEvent(new IntValue(a));
+    }
+
+    pointcut unittest_event2Int(int a) : (execution(* Instrumented.event2Int(int))) && args(a) && MOP_CommonPointCut();
+    before (int a) : unittest_event2Int(a) {
+        unittestRuntimeMonitor.unittest_event2IntEvent(new IntValue(a));
+    }
+
+    pointcut unittest_event3Int(int a) : (execution(* Instrumented.event3Int(int))) && args(a) && MOP_CommonPointCut();
+    before (int a) : unittest_event3Int(a) {
+        unittestRuntimeMonitor.unittest_event3IntEvent(new IntValue(a));
+    }
+

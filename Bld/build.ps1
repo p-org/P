@@ -8,7 +8,7 @@ git submodule update --init --recursive
 dotnet build -c Release
 
 pushd Src/PRuntimes/RvmRuntime
-mvn package
+mvn install
 popd
 
 Copy-Item -Path "Src/PRuntimes/RvmRuntime/target/*.jar" -Destination "Bld/Drops"

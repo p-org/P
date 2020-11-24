@@ -16,7 +16,7 @@ echo -e "${ORANGE} ---- Building the PCompiler ----${NOCOLOR}"
 dotnet build -c Release
 
 pushd Src/PRuntimes/RvmRuntime
-mvn package
+mvn install
 popd
 
 cp Src/PRuntimes/RvmRuntime/target/*.jar Bld/Drops

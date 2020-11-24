@@ -53,20 +53,10 @@ def runMonitor(rvmonitor_bin, gen_monitor_dir, java_dir):
     for f in glob.glob(os.path.join(gen_monitor_dir, "*.java")):
         shutil.copy(f, java_dir)
 
-def copyRuntime(runtime_dir, java_dir):
-    tools.progress("Copy Runtime")
-    for f in glob.glob(os.path.join(runtime_dir, "*.java")):
-        shutil.copy(f, java_dir)
-    for f in glob.glob(os.path.join(runtime_dir, "exceptions", "*.java")):
-        shutil.copy(f, java_dir)
-    for f in glob.glob(os.path.join(runtime_dir, "values", "*.java")):
-        shutil.copy(f, java_dir)
-
-def build(pcompiler_dir, gen_monitor_dir, rvmonitor_bin, p_spec_dir, runtime_dir, aspectj_dir, java_dir):
+def build(pcompiler_dir, gen_monitor_dir, rvmonitor_bin, p_spec_dir, aspectj_dir, java_dir):
     translate(pcompiler_dir, p_spec_dir, gen_monitor_dir)
     fillAspect(aspectj_dir, gen_monitor_dir)
     runMonitor(rvmonitor_bin, gen_monitor_dir, java_dir)
-    copyRuntime(runtime_dir, java_dir)
 
 def removeAll(pattern):
     for f in glob.glob(pattern):
@@ -75,7 +65,6 @@ def removeAll(pattern):
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     pcompiler_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))))
-    runtime_dir = os.path.join(pcompiler_dir, "Src", "PRuntimes", "RvmRuntime")
     rvmonitor_bin = os.path.join(os.path.dirname(os.path.dirname(script_dir)), "ext", "rv-monitor", "target", "release", "rv-monitor", "bin")
     gen_src_dir = os.path.join(script_dir, "target", "generated-sources")
     p_spec_dir = os.path.join(script_dir, "monitor")
@@ -95,7 +84,7 @@ def main():
     try:
         tools.runInDirectory(
             p_spec_dir,
-            lambda: build(pcompiler_dir, gen_monitor_dir, rvmonitor_bin, p_spec_dir, runtime_dir, aspectj_dir, java_dir))
+            lambda: build(pcompiler_dir, gen_monitor_dir, rvmonitor_bin, p_spec_dir, aspectj_dir, java_dir))
     except BaseException as e:
         removeAll(os.path.join(aspectj_dir, "*.aj"))
         removeAll(os.path.join(java_dir, "*.java"))

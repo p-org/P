@@ -82,12 +82,7 @@ def setupTests(test_dir, script_dir, framework_dir, setup_dir, test_name):
     for f in glob.glob(os.path.join(framework_dir, "monitor", "*.txt")):
         shutil.copy(f, monitor_setup_dir)
 
-    p_runtime_setup_dir = os.path.join(src_setup_dir, "main", "java", "p", "runtime")
-    if os.path.exists(p_runtime_setup_dir):
-        shutil.rmtree(p_runtime_setup_dir)
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
-    runtime_dir = os.path.join(root_dir, "Src", "PRuntimes", "RvmRuntime")
-    shutil.copytree(runtime_dir, p_runtime_setup_dir)
 
     gen_monitor_setup_dir = os.path.join(monitor_setup_dir, "generated")
     if not os.path.exists(gen_monitor_setup_dir):

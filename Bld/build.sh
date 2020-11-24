@@ -14,6 +14,13 @@ echo -e "${ORANGE} ---- Building the PCompiler ----${NOCOLOR}"
 # Run the build!
 
 dotnet build -c Release
+
+pushd Src/PRuntimes/RvmRuntime
+mvn package
+popd
+
+cp Src/PRuntimes/RvmRuntime/target/*.jar Bld/Drops
+
 echo -e "${GREEN} ----------------------------------${NOCOLOR}"
 echo -e "${GREEN} P Compiler located in ${PWD}/Bld/Drops/Release/Binaries/Pc.dll${NOCOLOR}"
 echo -e "${GREEN} ----------------------------------${NOCOLOR}"

@@ -19,7 +19,8 @@ pushd Src/PRuntimes/RvmRuntime
 mvn install
 popd
 
-cp Src/PRuntimes/RvmRuntime/target/*.jar Bld/Drops
+mkdir -p Bld/Drops/RVM
+cp Src/PRuntimes/RvmRuntime/target/*.jar Bld/Drops/RVM
 
 echo -e "${GREEN} ----------------------------------${NOCOLOR}"
 echo -e "${GREEN} P Compiler located in ${PWD}/Bld/Drops/Release/Binaries/Pc.dll${NOCOLOR}"

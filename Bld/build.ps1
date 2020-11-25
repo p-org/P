@@ -7,11 +7,12 @@ git submodule update --init --recursive
 # Run the build! :D
 dotnet build -c Release
 
-pushd Src/PRuntimes/RvmRuntime
+pushd Src\PRuntimes\RvmRuntime
 mvn install
 popd
 
-Copy-Item -Path "Src/PRuntimes/RvmRuntime/target/*.jar" -Destination "Bld/Drops"
+New-Item -ItemType Directory -Force -Path "Bld\Drops\RVM"
+Copy-Item -Path "Src\PRuntimes\RvmRuntime\target\*.jar" -Destination "Bld\Drops\RVM"
 
 $x = Get-Location
 Write-Host "----------------------------------------------"  -ForegroundColor DarkRed -BackgroundColor White

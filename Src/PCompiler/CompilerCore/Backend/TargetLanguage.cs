@@ -1,5 +1,6 @@
 ﻿using Plang.Compiler.Backend.Prt;
 using Plang.Compiler.Backend.Coyote;
+using Plang.Compiler.Backend.Rvm;
 using System.Collections.Generic;
 
 namespace Plang.Compiler.Backend
@@ -13,6 +14,7 @@ namespace Plang.Compiler.Backend
         {
             RegisterCodeGenerator(CompilerOutput.Coyote, new CoyoteCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.C, new PrtCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.Rvm, new RvmCodeGenerator());
         }
 
         private static void RegisterCodeGenerator(CompilerOutput name, ICodeGenerator generator)

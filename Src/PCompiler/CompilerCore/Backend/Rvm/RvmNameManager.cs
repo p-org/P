@@ -1,3 +1,4 @@
+/* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;

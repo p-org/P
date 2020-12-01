@@ -30,9 +30,8 @@ def fillAspect(aspectj_dir, gen_monitor_dir):
     aspectContent = tools.readFile(aspect_file_path)
     aspectContent = aspectContent.replace("// add your own imports.", tools.readFile("import.txt"))
     aspectContent = aspectContent.replace("// Implement your code here.", tools.readFile("ajcode.txt"))
-    tools.writeFile(aspect_file_path, aspectContent)
-    for f in glob.glob(os.path.join(gen_monitor_dir, "*.aj")):
-        shutil.copy(f, aspectj_dir)
+    aspect_file_name = os.path.basename(aspect_file_path)
+    tools.writeFile(os.path.join(aspectj_dir, aspect_file_name), aspectContent)
 
 def runMonitor(rvmonitor_bin, gen_monitor_dir, java_dir):
     tools.progress("Run RVMonitor")

@@ -48,7 +48,7 @@ def createRvm(rvmonitor_bin, gen_monitor_setup_dir, java_dir):
     addRvmExceptions(rvm_file)
     tools.runNoError([monitor_binary, "-merge", "-d", java_dir, rvm_file])
 
-def setupTests(test_dir, script_dir, framework_dir, setup_dir, test_name):
+def setupTests(test_dir, root_dir, rvmonitor_bin_dir, framework_dir, setup_dir, test_name):
     tools.progress("Setup for test %s..." % test_name)
     if not os.path.exists(setup_dir):
         os.makedirs(setup_dir)
@@ -74,8 +74,6 @@ def setupTests(test_dir, script_dir, framework_dir, setup_dir, test_name):
     for f in glob.glob(os.path.join(framework_dir, "monitor", "*.txt")):
         shutil.copy(f, monitor_setup_dir)
 
-    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
-
     gen_monitor_setup_dir = os.path.join(monitor_setup_dir, "generated")
     if not os.path.exists(gen_monitor_setup_dir):
         os.makedirs(gen_monitor_setup_dir)
@@ -87,8 +85,7 @@ def setupTests(test_dir, script_dir, framework_dir, setup_dir, test_name):
         os.makedirs(aspectj_setup_dir)
     fillAspect(aspectj_setup_dir, monitor_setup_dir, gen_monitor_setup_dir)
 
-    rvmonitor_bin = os.path.join(script_dir, "ext", "rv-monitor", "target", "release", "rv-monitor", "bin")
-    createRvm(rvmonitor_bin, gen_monitor_setup_dir, mop_setup_dir)
+    createRvm(rvmonitor_bin_dir, gen_monitor_setup_dir, mop_setup_dir)
 
     for f in glob.glob(os.path.join(gen_monitor_setup_dir, "*.java")):
         shutil.copy(f, mop_setup_dir)
@@ -113,6 +110,8 @@ def main(argv):
     unittest_dir = os.path.join(script_dir, "Unit")
     framework_dir = os.path.join(unittest_dir, "Framework")
     test_dir = os.path.join(unittest_dir, "Test", test_name)
+    rvmonitor_bin_dir = os.path.join(script_dir, "ext", "rv-monitor", "target", "release", "rv-monitor", "bin")
+    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 
     if len(argv) == 1:
         setup_dir = tempfile.mkdtemp(suffix=".test", prefix=".tmp.", dir=test_dir)
@@ -126,7 +125,7 @@ def main(argv):
     # Not using the fancier temporary file tools because we want the
     # directory to be available if the test fails.
 
-    setupTests(test_dir, script_dir, framework_dir, setup_dir, test_name)
+    setupTests(test_dir, root_dir, rvmonitor_bin_dir, framework_dir, setup_dir, test_name)
     tools.runInDirectory(setup_dir, lambda: runTests(test_name))
 
     cleanup()

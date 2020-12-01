@@ -2,7 +2,6 @@
 
 import os
 import os.path
-import subprocess
 import sys
 
 if __name__ == "__main__":

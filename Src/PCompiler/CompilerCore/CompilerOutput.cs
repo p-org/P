@@ -3,6 +3,7 @@ namespace Plang.Compiler
     public enum CompilerOutput
     {
         C,
-        CSharp
+        CSharp,
+        Rvm
     }
 }

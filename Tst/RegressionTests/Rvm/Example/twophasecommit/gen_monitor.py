@@ -10,14 +10,6 @@ if __name__ == "__main__":
 
 import tools
 
-def readFile(name):
-    with open(name, "rt") as f:
-        return ''.join(f)
-
-def writeFile(name, contents):
-    with open(name, "wt") as f:
-        f.write(contents)
-
 def runPc(pcompiler_dir, arguments):
     tools.runNoError(["dotnet", os.path.join(pcompiler_dir, "Bld", "Drops", "Release", "Binaries", "Pc.dll")] + arguments)
 
@@ -35,10 +27,10 @@ def fillAspect(aspectj_dir, gen_monitor_dir):
     if len(aspect_file_paths) != 1:
         raise Exception("Expected a single aspectJ template")
     aspect_file_path = aspect_file_paths[0]
-    aspectContent = readFile(aspect_file_path)
-    aspectContent = aspectContent.replace("// add your own imports.", readFile("import.txt"))
-    aspectContent = aspectContent.replace("// Implement your code here.", readFile("ajcode.txt"))
-    writeFile(aspect_file_path, aspectContent)
+    aspectContent = tools.readFile(aspect_file_path)
+    aspectContent = aspectContent.replace("// add your own imports.", tools.readFile("import.txt"))
+    aspectContent = aspectContent.replace("// Implement your code here.", tools.readFile("ajcode.txt"))
+    tools.writeFile(aspect_file_path, aspectContent)
     for f in glob.glob(os.path.join(gen_monitor_dir, "*.aj")):
         shutil.copy(f, aspectj_dir)
 

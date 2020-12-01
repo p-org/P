@@ -20,3 +20,27 @@ def runInDirectory(directory, func):
 
 def progress(message):
     print("====== %s" % message)
+
+def readFile(name):
+    """
+    Reads a text file.
+
+    Args:
+        name (str): The name of the file
+
+    Returns:
+        str: The content of the file.
+    """
+    with open(name, "rt") as f:
+        return ''.join(f)
+
+def writeFile(name, content):
+    """
+    Writes a text file.
+
+    Args:
+        name (str): The name of the file
+        content (str): The content of the file.
+    """
+    with open(name, "wt") as f:
+        f.write(content)

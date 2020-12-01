@@ -9,14 +9,6 @@ import sys
 import tempfile
 import tools
 
-def readFile(name):
-    with open(name, "rt") as f:
-        return ''.join(f)
-
-def writeFile(name, contents):
-    with open(name, "wt") as f:
-        f.write(contents)
-
 def runPc(root_dir, arguments):
     tools.runNoError(
         ["dotnet", os.path.join(root_dir, "Bld", "Drops", "Release", "Binaries", "Pc.dll")]
@@ -31,23 +23,23 @@ def fillAspect(aspectj_setup_dir, monitor_setup_dir, gen_monitor_setup_dir):
     tools.progress("Fill in AspectJ template")
     aspect_file_name = "unittestMonitorAspect.aj"
     aspect_file_path = os.path.join(gen_monitor_setup_dir, aspect_file_name)
-    aspectContent = readFile(aspect_file_path)
+    aspectContent = tools.readFile(aspect_file_path)
     aspectContent = aspectContent.replace(
         "// add your own imports.",
-        readFile(os.path.join(monitor_setup_dir, "import.txt")))
+        tools.readFile(os.path.join(monitor_setup_dir, "import.txt")))
     aspectContent = aspectContent.replace(
         "// Implement your code here.",
-        readFile(os.path.join(monitor_setup_dir, "ajcode.txt")))
-    writeFile(os.path.join(aspectj_setup_dir, aspect_file_name), aspectContent)
+        tools.readFile(os.path.join(monitor_setup_dir, "ajcode.txt")))
+    tools.writeFile(os.path.join(aspectj_setup_dir, aspect_file_name), aspectContent)
 
 def addRvmExceptions(rvm_file_path):
     rvm = re.sub(
         r"([ ]*)private void ([a-zA-Z_0-9]+)_getState\(\) throws GotoStmtException, RaiseStmtException \{",
         r"""\1private void \2_getState() throws GotoStmtException, RaiseStmtException, StateNameException {
 \1    throw new StateNameException(state.getName());""",
-        readFile(rvm_file_path)
+        tools.readFile(rvm_file_path)
     )
-    writeFile(rvm_file_path, rvm)
+    tools.writeFile(rvm_file_path, rvm)
 
 def createRvm(rvmonitor_bin, gen_monitor_setup_dir, java_dir):
     tools.progress("Run RVMonitor")

@@ -15,7 +15,7 @@
     <PackageTags>P programming language;safe asynchrony;state machines;model checkers</PackageTags>
     <PackAsTool>true</PackAsTool>
     <Title>P</Title>
-    <Authors>The P team </Authors>
+    <Authors>The P team</Authors>
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/p-org/P</RepositoryUrl>
   </PropertyGroup>

@@ -6,11 +6,32 @@ class SubprocessError(RuntimeError):
         super(SubprocessError, self).__init__("Error while running %s." % command)
 
 def runNoError(command):
+    """
+    Runs a shell command, raising an exception for failures.
+
+    Args:
+        command (list of str): The command to run, in the same format as
+            for subprocess.call.
+
+    Raises:
+        SubprocessError if the command returned an error code.
+    """
     retv = subprocess.call(command)
     if retv != 0:
         raise SubprocessError(command)
 
 def runInDirectory(directory, func):
+    """
+    Runs a function using the given directory as the current one.
+
+    runInDirectory changes the current directory, runs the function,
+    then reverts to the old current directory.
+
+    Args:
+        directory (str): The current directory for the duration
+            of the function.
+        func (function): The function to run.
+    """
     current_dir = os.getcwd()
     os.chdir(directory)
     try:
@@ -19,6 +40,12 @@ def runInDirectory(directory, func):
         os.chdir(current_dir)
 
 def progress(message):
+    """
+    Prints a progress message.
+
+    Args:
+        message (str): The message to print
+    """
     print("====== %s" % message)
 
 def readFile(name):

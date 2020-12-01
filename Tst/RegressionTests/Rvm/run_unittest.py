@@ -10,16 +10,61 @@ import tempfile
 import tools
 
 def runPc(root_dir, arguments):
+    """
+    Compiles p files.
+
+    Args:
+        root_dir (str): The root directory for the P compiler
+            repository.
+
+        arguments (str): The arguments for the P compiler arguments.
+
+    Raises:
+        SubprocessError if the P compiler returned an error code.
+    """
     tools.runNoError(
         ["dotnet", os.path.join(root_dir, "Bld", "Drops", "Release", "Binaries", "Pc.dll")]
         + arguments
     )
 
 def translate(script_dir, root_dir, gen_monitor_setup_dir):
+    """
+    Translates a `spec.p` file to RVM code.
+
+    Args:
+        script_dir (str): Input directory containing the `spec.p` file.
+
+        root_dir (str): The root directory for the P compiler
+            repository.
+
+        gen_monitor_setup_dir (str): Output directory that will contain
+            the generated files.
+
+    Raises:
+        SubprocessError if the P compiler returned an error code.
+    """
     tools.progress("Run the PCompiler...")
     runPc(root_dir, [os.path.join(script_dir, "spec.p"), "-g:RVM", "-o:%s" % gen_monitor_setup_dir])
 
 def fillAspect(aspectj_setup_dir, monitor_setup_dir, gen_monitor_setup_dir):
+    """
+    Fills the user-defined parts of a generated .aj file.
+
+    The file should be called unittestMonitorAspect.aj file.
+
+    Args:
+        aspectj_setup_dir (str): The destination directory for the
+            filled .aj file.
+
+        monitor_setup_dir (str): Input directory that contains two files:
+            * import.txt: should contain the code that replaces the
+              "// add your own imports." comment in the .aj file.
+            * ajcode.txt: should contain the code that replaces the
+              "// Implement your code here." comment in the .aj file.
+
+        gen_monitor_dir (str): The input directory, which must a
+            a single unittestMonitorAspect.aj file.
+    """
     tools.progress("Fill in AspectJ template")
     aspect_file_name = "unittestMonitorAspect.aj"
     aspect_file_path = os.path.join(gen_monitor_setup_dir, aspect_file_name)
@@ -33,6 +78,24 @@ def fillAspect(aspectj_setup_dir, monitor_setup_dir, gen_monitor_setup_dir):
     tools.writeFile(os.path.join(aspectj_setup_dir, aspect_file_name), aspectContent)
 
 def addRvmExceptions(rvm_file_path):
+    """
+    Changes the getState functions to throw an exception with the state name.
+
+    The input file will be changed in-place.
+
+    The getState function should have the following format:
+    private void somename_getState() throws GotoStmtException, RaiseStmtException {
+    }
+
+    The resulting getState function will look like this:
+    private void somename_getState() throws GotoStmtException, RaiseStmtException {
+        throw new StateNameException(state.getName());
+    }
+
+
+    Args:
+        rvm_file_path (str): The path to the rvm file.
+    """
     rvm = re.sub(
         r"([ ]*)private void ([a-zA-Z_0-9]+)_getState\(\) throws GotoStmtException, RaiseStmtException \{",
         r"""\1private void \2_getState() throws GotoStmtException, RaiseStmtException, StateNameException {
@@ -42,6 +105,21 @@ def addRvmExceptions(rvm_file_path):
     tools.writeFile(rvm_file_path, rvm)
 
 def createRvm(rvmonitor_bin, gen_monitor_setup_dir, java_dir):
+    """
+    Compiles a rvm file to java.
+
+    Args:
+        rvmonitor_bin (str): Directory containing the rv-monitor binary.
+        
+        gen_monitor_setup_dir (str): Input directory containing a file
+            called "unittest.rvm". The file will be changed during the
+            call.
+        
+        java_dir: Destination directory for the generated Java files
+
+    Raises:
+        SubprocessError if the rv-monitor tool returned an error code.
+    """
     tools.progress("Run RVMonitor")
     monitor_binary = os.path.join(rvmonitor_bin, "rv-monitor")
     rvm_file = os.path.join(gen_monitor_setup_dir, "unittest.rvm")
@@ -49,6 +127,32 @@ def createRvm(rvmonitor_bin, gen_monitor_setup_dir, java_dir):
     tools.runNoError([monitor_binary, "-merge", "-d", java_dir, rvm_file])
 
 def setupTests(test_dir, root_dir, rvmonitor_bin_dir, framework_dir, setup_dir, test_name):
+    """
+    Full setup for a RVM unit-test.
+
+    Args:
+        test_dir (str): Input directory containing the test.
+            It should contain a P spec and one or more Java test
+            files using that spec.
+
+        root_dir (str): The root directory for the P compiler
+            repository.
+
+        rvmonitor_bin_dir (str): Directory containing the rv-monitor
+            binary.
+
+        framework_dir (str): Directory containing the test framework files.
+
+        setup_dir (str): Output directory that will contain the test
+            setup, ready for testing with Maven.
+
+        test_name (str): The name of the test, used for user-friendly
+            messages.
+
+    Raises:
+        SubprocessError if one of the tools used (the P compiler and
+            rv-monitor) returns an error code.
+    """
     tools.progress("Setup for test %s..." % test_name)
     if not os.path.exists(setup_dir):
         os.makedirs(setup_dir)
@@ -91,6 +195,16 @@ def setupTests(test_dir, root_dir, rvmonitor_bin_dir, framework_dir, setup_dir, 
         shutil.copy(f, mop_setup_dir)
 
 def runTests(test_name):
+    """
+    Uses Maven to run a Rvm unit-test.
+
+    Args:
+        test_name (str): The name of the test, used for user-friendly
+            messages.
+
+    Raises:
+        SubprocessError if mvn returns an error code.
+    """
     tools.progress("Running the %s test(s)..." % test_name)
     tools.runNoError(["mvn", "-B", "clean", "test"])
     tools.runNoError(["mvn", "-B", "clean"])
@@ -103,6 +217,12 @@ def usageError():
     )
 
 def main(argv):
+    """
+    Runs a Rvm unit-test.
+
+    Args:
+        argv (list of str): see the "usageError" function.
+    """
     if len(argv) == 0:
         usageError()
     test_name = argv[0]

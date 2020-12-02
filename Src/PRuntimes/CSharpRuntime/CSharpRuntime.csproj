@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
+    <RootNamespace>Plang.CSharpRuntime</RootNamespace>
+    <AssemblyName>PCSharpRuntime</AssemblyName>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Description>The P Programming Language C# Runtime</Description>
+    <PackageProjectUrl>https://github.com/p-org/P</PackageProjectUrl>
+    <Copyright>The P team</Copyright>
+    <PackageTags>P programming language;safe asynchrony;state machines;model checkers</PackageTags>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Title>P C# Runtime</Title>
+    <Authors>The P team</Authors>
+    <PackageIcon>icon.png</PackageIcon>
+    <RepositoryUrl>https://github.com/p-org/P</RepositoryUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Coyote" Version="1.0.5" />
+    <None Include="..\..\..\images\icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+</Project>

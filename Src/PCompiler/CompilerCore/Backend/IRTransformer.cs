@@ -101,12 +101,13 @@ namespace Plang.Compiler.Backend
                     (IExprTerm dataTypeItem, List<IPStmt> dataTypeItemDeps) = SimplifyExpression(expr);
                     (IExprTerm cloneddataTypeItem, IPStmt cloneddataTypeItemDeps) = SaveInTemporary(new CloneExpr(dataTypeItem));
                     return (cloneddataTypeItem, dataTypeItemDeps.Append(cloneddataTypeItemDeps).ToList());
+
                 default:
                     return SimplifyExpression(expr);
-
             }
 #pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
+
         private (IExprTerm, List<IPStmt>) SimplifyExpression(IPExpr expr)
         {
             Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
@@ -300,12 +301,14 @@ namespace Plang.Compiler.Backend
                     deps.AddRange(valuesDeps);
                     deps.Add(valuesStore);
                     return (valuesTemp, deps);
+
                 case StringExpr stringExpr:
-                    (IPExpr[] stringArgs, List< IPStmt > stringArgsDeps) = SimplifyFunArgs(stringExpr.Args);
+                    (IPExpr[] stringArgs, List<IPStmt> stringArgsDeps) = SimplifyFunArgs(stringExpr.Args);
                     (VariableAccessExpr stringTemp, IPStmt stringStore) = SaveInTemporary(new StringExpr(location, stringExpr.BaseString, stringArgs.ToList()));
                     deps.AddRange(stringArgsDeps);
                     deps.Add(stringStore);
                     return (stringTemp, deps);
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }

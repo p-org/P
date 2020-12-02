@@ -1,6 +1,7 @@
 ﻿using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Plang.Compiler.Backend;
+using Plang.Compiler.Backend.CSharp;
 using Plang.Compiler.TypeChecker;
 using System;
 using System.IO;
@@ -12,6 +13,9 @@ namespace Plang.Compiler
     {
         public void Compile(ICompilationJob job)
         {
+
+            job.Output.WriteInfo($"----------------------------------------");
+            job.Output.WriteInfo($"Parsing ..");
             // Run parser on every input file
             PParser.ProgramContext[] trees = job.InputFiles.Select(file =>
             {
@@ -20,6 +24,7 @@ namespace Plang.Compiler
                 return tree;
             }).ToArray();
 
+            job.Output.WriteInfo($"Type checking ...");
             // Run typechecker and produce AST
             Scope scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
 
@@ -28,13 +33,24 @@ namespace Plang.Compiler
             {
                 IRTransformer.SimplifyMethod(fun);
             }
-
+            job.Output.WriteInfo($"Code generation ....");
             // Run the selected backend on the project and write the files.
             System.Collections.Generic.IEnumerable<CompiledFile> compiledFiles = job.Backend.GenerateCode(job, scope);
             foreach (CompiledFile file in compiledFiles)
             {
-                job.Output.WriteMessage($"Generated {file.FileName}...", SeverityKind.Info);
+                job.Output.WriteInfo($"Generated {file.FileName}");
                 job.Output.WriteFile(file);
+            }
+            job.Output.WriteInfo($"----------------------------------------");
+
+            // Compiling the generated C# code
+            // TODO: This is a special case right now but needs to be factored in after the Java code path is available
+            if(job.OutputLanguage == CompilerOutput.CSharp)
+            {
+                job.Output.WriteInfo($"Compiling {job.ProjectName}.csproj ..\n");
+                CSharpCodeCompiler.Compile(job);
+                job.Output.WriteInfo($"----------------------------------------");
+
             }
         }
 

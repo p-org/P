@@ -5,6 +5,7 @@
     <Antlr4JavaExecutable Condition=" '$(OS)' != 'Windows_NT' ">/usr/bin/java</Antlr4JavaExecutable>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
     <LangVersion>latest</LangVersion>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Antlr4" Version="4.6.5-beta001" />

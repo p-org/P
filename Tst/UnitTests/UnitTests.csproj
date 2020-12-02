@@ -6,6 +6,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
     <LangVersion>latest</LangVersion>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Coyote" Version="1.0.5" />
@@ -15,6 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Src\PCompiler\CompilerCore\CompilerCore.csproj" />
-    <ProjectReference Include="..\..\Src\PRuntimes\CoyoteRuntime\CoyoteRuntime.csproj" />
+    <ProjectReference Include="..\..\Src\PRuntimes\CSharpRuntime\CSharpRuntime.csproj" />
   </ItemGroup>
 </Project>

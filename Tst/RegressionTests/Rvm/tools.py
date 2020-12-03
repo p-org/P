@@ -71,3 +71,20 @@ def writeFile(name, content):
     """
     with open(name, "wt") as f:
         f.write(content)
+
+def findAvailableCpus():
+    """
+    Attempts to estimate the number of CPUs available for the current process.
+    """
+    try:
+        return len(os.sched_getaffinity(0))
+    except:
+        pass
+    try:
+        import multiprocessing
+        # This will actually return the number of CPUs available on the system,
+        # not the number of CPUs available to the current process.
+        return multiprocessing.cpu_count()
+    except:
+        pass
+    return 1

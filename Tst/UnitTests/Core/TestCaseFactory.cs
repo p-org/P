@@ -48,10 +48,6 @@ namespace UnitTests.Core
             {
                 expectedExitCode = 0;
             }
-            else if (testName.Contains("/Rvm/"))
-            {
-                expectedExitCode = 0;
-            }
             else
             {
                 throw new CompilerTestException(TestCaseError.UnrecognizedTestCaseType);
@@ -66,21 +62,6 @@ namespace UnitTests.Core
             {
                 FileInfo[] nativeFiles = testDir.GetFiles("*.cs");
                 runner = new CoyoteRunner(inputFiles, nativeFiles);
-            }
-            else if (output.Equals(CompilerOutput.Rvm))
-            {
-                if (testName.Contains("/Unit/"))
-                {
-                    runner = new RvmUnitRunner(inputFiles);
-                }
-                else if (testName.Contains("/Example/"))
-                {
-                    runner = new RvmExampleRunner(inputFiles);
-                }
-                else
-                {
-                    throw new CompilerTestException(TestCaseError.UnrecognizedTestCaseType);
-                }
             }
             else
             {

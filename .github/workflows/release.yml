@@ -26,11 +26,10 @@ jobs:
           # The environment variable GITHUB_REF is refs/tags/p-*
           echo "TAG=${GITHUB_REF:10}" >> $GITHUB_ENV
           echo "VERSION=${GITHUB_REF:12}" >> $GITHUB_ENV
+          TAG=${GITHUB_REF:10}
+          VERSION=${GITHUB_REF:12}
           # Validate tag and version
-          [[ $TAG =~ '^p\-([0-9]+)\.([0-9]+)\.([0-9]+)$' ]]
-          [[ $VERSION =~ '^([0-9]+)\.([0-9]+)\.([0-9]+)$' ]]
-          printenv | sort
-          cat ${GITHUB_EVENT_PATH}
+          python3 .github/workflows/regex_check.py ${TAG} ${VERSION}
 
       - name: Create the package
         run: |
@@ -38,6 +37,6 @@ jobs:
           cd Src/PCompiler/CommandLine
           dotnet pack -p:PackageVersion=${VERSION}
 
-      - name: Push generated package to GitHub registry
+      - name: Push generated package to Nuget
         run: |
           dotnet nuget push ./Bld/Drops/Binaries/P.${VERSION}.nupkg -k ${{ secrets.NUGET_TOKEN }} -s https://api.nuget.org/v3/index.json --no-symbols true

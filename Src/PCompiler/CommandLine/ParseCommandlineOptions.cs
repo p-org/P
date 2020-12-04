@@ -145,13 +145,17 @@ namespace Plang.Compiler
                                 switch (colonArg?.ToLowerInvariant())
                                 {
                                     case null:
-                                        throw new CommandlineParsingError("Missing generation argument, expecting generate:[C,CSharp]");
+                                        throw new CommandlineParsingError("Missing generation argument, expecting generate:[C,CSharp,RVM]");
                                     case "c":
                                         outputLanguage = CompilerOutput.C;
                                         break;
 
                                     case "csharp":
                                         outputLanguage = CompilerOutput.CSharp;
+                                        break;
+                                    
+                                    case "rvm":
+                                        outputLanguage = CompilerOutput.Rvm;
                                         break;
 
                                     default:
@@ -318,6 +322,10 @@ namespace Plang.Compiler
 
                     case "csharp":
                         outputLanguage = CompilerOutput.CSharp;
+                        break;
+
+                    case "rvm":
+                        outputLanguage = CompilerOutput.Rvm;
                         break;
 
                     default:

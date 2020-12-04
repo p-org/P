@@ -11,7 +11,20 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.100
+    - name: Set up JDK
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - name: Build P runtime for Java
+      run: |
+        pushd Src/PRuntimes/RvmRuntime
+        mvn install
+        popd
     - name: Build
       run: dotnet build --configuration Release
     - name: Test
       run: dotnet test --configuration Release
+    - name: Test-RVM
+      run: |
+        python Tst/RegressionTests/Rvm/run_all_unittests.py
+        python Tst/RegressionTests/Rvm/run_all_examples.py

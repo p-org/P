@@ -1,0 +1,33 @@
+    // Implement your code here.
+    pointcut twoPhaseCommit_startTx() : (execution(* Coordinator.commit(..))) && MOP_CommonPointCut();
+    before () : twoPhaseCommit_startTx() {
+        twoPhaseCommitRuntimeMonitor.twoPhaseCommit_startTxEvent();
+    }
+
+    pointcut twoPhaseCommit_addParticipant(Participant p) : (execution(* Coordinator.addParticipant(Participant)) && args(p)) && MOP_CommonPointCut();
+    after (Participant p) : twoPhaseCommit_addParticipant(p) {
+        twoPhaseCommitRuntimeMonitor.twoPhaseCommit_addParticipantEvent(new IntValue(p.machineId));
+    }
+
+    pointcut twoPhaseCommit_prepare(Participant p) : (execution(* Participant.prepare(..)) && target(p)) && MOP_CommonPointCut();
+    after (Participant p) returning (boolean result) : twoPhaseCommit_prepare(p) {
+        if (result) {
+            twoPhaseCommitRuntimeMonitor.twoPhaseCommit_prepareSuccessEvent(new IntValue(p.machineId));
+        } else {
+            twoPhaseCommitRuntimeMonitor.twoPhaseCommit_prepareFailureEvent(new IntValue(p.machineId));
+        }
+    }
+
+    pointcut twoPhaseCommit_rollbackSuccess(Participant p) : (execution(* Participant.rollback(..)) && target(p)) && MOP_CommonPointCut();
+    after (Participant p) : twoPhaseCommit_rollbackSuccess(p) {
+        twoPhaseCommitRuntimeMonitor.twoPhaseCommit_rollbackSuccessEvent(new IntValue(p.machineId));
+    }
+
+    pointcut twoPhaseCommit_commitSuccess(Participant p) : (execution(* Participant.commit(..)) && target(p)) && MOP_CommonPointCut();
+    after (Participant p) : twoPhaseCommit_commitSuccess(p) {
+        twoPhaseCommitRuntimeMonitor.twoPhaseCommit_commitSuccessEvent(new IntValue(p.machineId));
+    }
+
+    after () : twoPhaseCommit_startTx() {
+        twoPhaseCommitRuntimeMonitor.twoPhaseCommit_endTxEvent();
+    }

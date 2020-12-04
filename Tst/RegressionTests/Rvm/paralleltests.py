@@ -20,7 +20,8 @@ class Test:
     self.__process = subprocess.Popen(
         command_creator(temporary_directory, name),
         stdout = subprocess.PIPE,
-        stderr = subprocess.PIPE)
+        stderr = subprocess.PIPE,
+        universal_newlines = True)
 
     self.__stdout = []
     self.__stdout_thread = threading.Thread(
@@ -60,7 +61,7 @@ class Test:
   def closeAndPrintFailure(self):
     assert not self.isRunning()
     self.close()
-    tools.progress("Test %s failed!")
+    tools.progress("Test %s failed!" % self.__name)
     print('')
     tools.progress("Stdout:")
     print(''.join(self.__stdout))
@@ -98,7 +99,6 @@ def runTests(parallelism, test_names, temporary_directory, command_creator):
       if test.isRunning():
         new_running.append(test)
       elif test.failed():
-        print("%s failed" % test.name())
         test.closeAndPrintFailure()
         failed.append(test)
       else:

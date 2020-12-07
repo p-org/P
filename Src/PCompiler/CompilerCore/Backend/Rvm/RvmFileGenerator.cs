@@ -49,17 +49,11 @@ namespace Plang.Compiler.Backend.Rvm
                 }
             }
 
-            int specCount = 0;
             foreach (Machine machine in globalScope.Machines)
             {
                 if (machine.IsSpec)
                 {
-                    if (specCount > 0)
-                    {
-                         throw new NotImplementedException("More than one spec is not supported.");
-                    }
                     sources.Add(WriteMonitor(machine));
-                    specCount++;
                 }
             }
 

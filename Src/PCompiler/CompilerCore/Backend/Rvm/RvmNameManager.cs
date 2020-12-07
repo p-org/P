@@ -52,9 +52,9 @@ namespace Plang.Compiler.Backend.Rvm
             return $"{GetNameForDecl(m)}RuntimeMonitor";
         }
 
-        public string GetAspectClassName(Machine m)
+        public string GetAspectClassName()
         {
-            return $"{GetNameForDecl(m)}MonitorAspect";
+            return $"PSpecMonitorAspect";
         }
 
         public string GetSpecConstructorName(Machine m)

@@ -66,7 +66,7 @@ def fillAspect(aspectj_setup_dir, monitor_setup_dir, gen_monitor_setup_dir):
             a single unittestMonitorAspect.aj file.
     """
     tools.progress("Fill in AspectJ template")
-    aspect_file_name = "unittestMonitorAspect.aj"
+    aspect_file_name = "PSpecMonitorAspect.aj"
     aspect_file_path = os.path.join(gen_monitor_setup_dir, aspect_file_name)
     aspectContent = tools.readFile(aspect_file_path)
     aspectContent = aspectContent.replace(

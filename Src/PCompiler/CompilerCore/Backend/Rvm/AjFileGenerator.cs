@@ -21,31 +21,28 @@ namespace Plang.Compiler.Backend.Rvm
         public IEnumerable<CompiledFile> GenerateSources(Scope globalScope)
         {
             List<CompiledFile> sources = new List<CompiledFile>();
+            List<Machine> specMachines = new List<Machine>();
 
-            int specCount = 0;
             foreach (Machine machine in globalScope.Machines)
             {
                 if (machine.IsSpec)
                 {
-                    if (specCount > 0)
-                    {
-                         throw new NotImplementedException("More than one spec is not supported.");
-                    }
-                    sources.Add(WriteMonitor(machine));
-                    specCount++;
+                    specMachines.Add(machine);
                 }
 
             }
 
+            sources.Add(WriteMonitors(specMachines));
+
             return sources;
         }
 
-        private CompiledFile WriteMonitor(Machine machine) {
-            CompiledFile source = new CompiledFile(Context.GetAjFileName(machine));
+        private CompiledFile WriteMonitors(IEnumerable<Machine> specMachines) {
+            CompiledFile source = new CompiledFile(Context.GetAjFileName());
 
             WriteSourcePrologue(source.Stream);
-            WriteEventHandlerSignature(source.Stream, machine);
-            WriteSpec(source.Stream, machine);
+            WriteEventHandlerSignature(source.Stream, specMachines);
+            WriteSpec(source.Stream);
 
             return source;
         }
@@ -77,9 +74,9 @@ namespace Plang.Compiler.Backend.Rvm
             Context.WriteLine(output);
         }
 
-        private void WriteSpec(StringWriter output, Machine machine)
+        private void WriteSpec(StringWriter output)
         {
-            string declName = Context.Names.GetAspectClassName(machine);
+            string declName = Context.Names.GetAspectClassName();
             Context.WriteLine(output, $"public aspect { declName } implements com.runtimeverification.rvmonitor.java.rt.RVMObject {{");
             Context.WriteLine(output, $"{declName}() {{ }}");
 
@@ -93,19 +90,23 @@ namespace Plang.Compiler.Backend.Rvm
             Context.WriteLine(output, "}");
         }
 
-        private void WriteEventHandlerSignature(StringWriter output, Machine machine)
+        private void WriteEventHandlerSignature(StringWriter output, IEnumerable<Machine> specMachines)
         {
             Context.WriteLine(output, "// Signatures of all the events that need dispatching.");
 
-            // We iterate the events that the spec observes instead of all the declared events
-            // because monitors only interact with the external systems through the events that they observe.
-            foreach (PEvent e in machine.Observes.Events)
+            foreach (Machine machine in specMachines)
             {
-                string monitorClassName = Context.Names.GetJavaRuntimeMonitorName(machine);
-                string handlerName = Context.Names.GetJavaEventHandlerName(machine, e);
-                string payloadType = Context.Names.GetJavaTypeName(e.PayloadType, true);
-                string handlerSignature = $"{ monitorClassName }.{ handlerName }({payloadType})";
-                Context.WriteLine(output, $"// {handlerSignature}");
+
+                // We iterate the events that the spec observes instead of all the declared events
+                // because monitors only interact with the external systems through the events that they observe.
+                foreach (PEvent e in machine.Observes.Events)
+                {
+                    string monitorClassName = Context.Names.GetJavaRuntimeMonitorName(machine);
+                    string handlerName = Context.Names.GetJavaEventHandlerName(machine, e);
+                    string payloadType = Context.Names.GetJavaTypeName(e.PayloadType, true);
+                    string handlerSignature = $"{ monitorClassName }.{ handlerName }({payloadType})";
+                    Context.WriteLine(output, $"// {handlerSignature}");
+                }
             }
 
             Context.WriteLine(output);

@@ -51,7 +51,7 @@ namespace Plang.Compiler
                 }
                 else
                 {
-                    var option = args.First().ToLowerInvariant();
+                    var option = args.First();
                     var projectPath = option.Substring(option.IndexOf(":") + 1);
                     // Parse the project file and generate the compilation job
                     return commandlineParser.ParseProjectFile(projectPath, out job) ? Success : Failure;

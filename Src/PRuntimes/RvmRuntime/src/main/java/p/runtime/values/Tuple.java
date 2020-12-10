@@ -26,6 +26,10 @@ public class Tuple implements IValue<Tuple> {
         fieldValues[index] = value;
     }
 
+    public IValue<?>[] getFieldValues() {
+        return fieldValues;
+    }
+
     @Override
     public int hashCode() {
         return Arrays.hashCode(fieldValues);
@@ -73,4 +77,12 @@ public class Tuple implements IValue<Tuple> {
         sb.append(")");
         return sb.toString();
     }
+
+    // Constructor and setter only used for JSON deserialization
+    public Tuple() {}
+
+    public void setFieldValues(IValue<?>[] fieldValues) {
+        this.fieldValues = fieldValues;
+    }
+
 }

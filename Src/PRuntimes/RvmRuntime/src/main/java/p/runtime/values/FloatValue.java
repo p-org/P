@@ -8,7 +8,7 @@ public class FloatValue implements IValue<FloatValue> {
         this.value = value;
     }
 
-    public double get() {
+    public double getValue() {
         return value;
     }
 
@@ -27,7 +27,7 @@ public class FloatValue implements IValue<FloatValue> {
         }
 
         FloatValue other = (FloatValue) obj;
-        return this.value == other.get();
+        return this.value == other.getValue();
     }
 
     @Override
@@ -39,4 +39,12 @@ public class FloatValue implements IValue<FloatValue> {
     public String toString() {
         return Double.toString(value);
     }
+
+    // Constructor and setter only used for JSON deserialization
+    public FloatValue() {}
+
+    public void setValue(double value) {
+        this.value = value;
+    }
+
 }

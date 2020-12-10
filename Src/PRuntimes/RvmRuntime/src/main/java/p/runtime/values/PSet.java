@@ -73,4 +73,14 @@ public class PSet implements IValue<PSet> {
         sb.append(")");
         return sb.toString();
     }
+
+    // getter and setter only used for JSON deserialization
+    public Set<IValue<?>> getInternalSet() {
+        return this.internalSet;
+    }
+
+    public void setInternalSet(Set<IValue<?>> set) {
+        this.internalSet = set;
+    }
+
 }

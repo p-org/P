@@ -8,7 +8,7 @@ public class EnumValue<T> implements IValue<EnumValue<T>> {
         this.value = value;
     }
 
-    public T get() {
+    public T getValue() {
         return value;
     }
 
@@ -38,5 +38,11 @@ public class EnumValue<T> implements IValue<EnumValue<T>> {
     @Override
     public String toString() {
         return value.toString();
+    }
+
+    public EnumValue() {}
+
+    public void setValue(T value) {
+        this.value = value;
     }
 }

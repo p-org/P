@@ -96,4 +96,14 @@ public class PMap implements IValue<PMap> {
         sb.append(")");
         return sb.toString();
     }
+
+    // getter and setter only used for JSON deserialization
+    public Map<IValue<?>, IValue<?>> getInternalMap() {
+        return this.internalMap;
+    }
+
+    public void setInternalMap(Map<IValue<?>, IValue<?>> m) {
+        this.internalMap = m;
+    }
+
 }

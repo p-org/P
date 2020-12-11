@@ -8,7 +8,7 @@ public class IntValue implements IValue<IntValue> {
         this.value = value;
     }
 
-    public long get() {
+    public long getValue() {
         return value;
     }
 
@@ -27,7 +27,7 @@ public class IntValue implements IValue<IntValue> {
         }
 
         IntValue other = (IntValue) obj;
-        return this.value == other.get();
+        return this.value == other.getValue();
     }
 
     @Override
@@ -39,4 +39,12 @@ public class IntValue implements IValue<IntValue> {
     public String toString() {
         return Long.toString(value);
     }
+
+    // Constructor and setter only used for JSON deserialization
+    public IntValue() {}
+
+    public void setValue(long value) {
+        this.value = value;
+    }
+
 }

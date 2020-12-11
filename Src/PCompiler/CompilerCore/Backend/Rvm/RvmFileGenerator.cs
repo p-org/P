@@ -758,7 +758,7 @@ namespace Plang.Compiler.Backend.Rvm
                     string resultType = Context.Names.GetJavaTypeName(mapAccessExpr.Type);
                     Context.Write(output, $"(({resultType})");
                     WriteExpr(output, mapAccessExpr.MapExpr);
-                    string getFunc = Context.Names.GetGetFunc();
+                    string getFunc = Context.Names.GetCollectionGetFunc();
                     Context.Write(output, $".{getFunc}(");
                     WriteBoxedExpression(output, mapAccessExpr.IndexExpr);
                     Context.Write(output, "))"); 
@@ -782,7 +782,7 @@ namespace Plang.Compiler.Backend.Rvm
                     string resultType = Context.Names.GetJavaTypeName(seqAccessExpr.Type);
                     Context.Write(output, $"(({resultType})");
                     WriteExpr(output, seqAccessExpr.SeqExpr);
-                    string getFunc = Context.Names.GetGetFunc();
+                    string getFunc = Context.Names.GetCollectionGetFunc();
                     Context.Write(output, $".{getFunc}((int)");
                     UnboxIfNeeded(output, (output) => WriteExpr(output, seqAccessExpr.IndexExpr));
                     Context.Write(output, "))");
@@ -1504,7 +1504,8 @@ namespace Plang.Compiler.Backend.Rvm
             switch (state)
             {
                 case BoxingState.BOXED:
-                    Context.Write(output, ".get()");
+                    string getValueFunc = Context.Names.GetGetValueFunc();
+                    Context.Write(output, $".{getValueFunc}()");
                     return BoxingState.UNBOXED;
                 default:
                     return state;

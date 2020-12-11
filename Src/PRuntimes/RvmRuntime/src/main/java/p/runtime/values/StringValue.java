@@ -11,7 +11,7 @@ public class StringValue implements IValue<StringValue> {
         this.value = value;
     }
 
-    public String get() {
+    public String getValue() {
         return value;
     }
 
@@ -31,7 +31,7 @@ public class StringValue implements IValue<StringValue> {
 
         StringValue other = (StringValue) obj;
 
-        return this.value.equals(other.get());
+        return this.value.equals(other.getValue());
     }
 
     @Override
@@ -43,4 +43,12 @@ public class StringValue implements IValue<StringValue> {
     public String toString() {
         return value;
     }
+
+    // Constructor and setter only used for JSON deserialization
+    public StringValue() {}
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
 }

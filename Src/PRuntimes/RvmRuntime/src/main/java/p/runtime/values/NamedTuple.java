@@ -100,4 +100,16 @@ public class NamedTuple implements IValue<NamedTuple> {
         sb.append(")");
         return sb.toString();
     }
+
+    // Constructor and setter only used for JSON deserialization
+    public NamedTuple() {}
+
+    public void setFieldNames(String[] fieldNames) {
+        this.fieldNames = fieldNames;
+    }
+
+    public void setFieldValues(IValue<?>[] fieldValues) {
+        this.fieldValues = fieldValues;
+    }
+
 }

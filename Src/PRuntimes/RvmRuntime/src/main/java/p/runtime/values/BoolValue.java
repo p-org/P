@@ -8,7 +8,7 @@ public class BoolValue implements IValue<BoolValue> {
         this.value = value;
     }
 
-    public boolean get() {
+    public boolean getValue() {
         return value;
     }
 
@@ -27,7 +27,7 @@ public class BoolValue implements IValue<BoolValue> {
         }
 
         BoolValue other = (BoolValue) obj;
-        return this.value == other.get();
+        return this.value == other.getValue();
     }
 
     @Override
@@ -39,4 +39,12 @@ public class BoolValue implements IValue<BoolValue> {
     public String toString() {
         return Boolean.toString(value);
     }
+
+    // Constructor and setter only used for JSON deserialization
+    public BoolValue() {}
+
+    public void setValue(boolean value) {
+        this.value = value;
+    }
+
 }

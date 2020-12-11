@@ -162,7 +162,6 @@ namespace Plang.Compiler.Backend.Rvm
             return "exception";
         }
 
-
         public string GetDefaultPayloadTypeName()
         {
             return "Object";
@@ -293,7 +292,7 @@ namespace Plang.Compiler.Backend.Rvm
             return "cloneValues";
         }
 
-        public string GetGetFunc()
+        public string GetCollectionGetFunc()
         {
             return "get";
         }
@@ -351,6 +350,11 @@ namespace Plang.Compiler.Backend.Rvm
         }
 
         public string GetEnumValueGetterName()
+        {
+            return "getValue";
+        }
+
+        public string GetGetValueFunc()
         {
             return "getValue";
         }

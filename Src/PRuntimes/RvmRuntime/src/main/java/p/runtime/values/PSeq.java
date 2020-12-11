@@ -79,4 +79,14 @@ public class PSeq implements IValue<PSeq> {
         sb.append(")");
         return sb.toString();
     }
+
+    // getter and setter only used for JSON deserialization
+    public List<IValue<?>> getInternalList() {
+        return this.internalList;
+    }
+
+    public void setInternalList(List<IValue<?>> list) {
+        this.internalList = list;
+    }
+
 }

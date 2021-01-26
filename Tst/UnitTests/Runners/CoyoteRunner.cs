@@ -89,7 +89,7 @@ using Microsoft.Coyote.SystematicTesting;
 using System;
 using System.Linq;
 
-namespace Main
+namespace PImplementation
 {
     public class _TestRegression {
         public static void Main(string[] args)

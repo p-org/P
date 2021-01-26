@@ -1,46 +1,83 @@
-/* 
-A client machine pumping in one random transaction 
-and then asserting that if the transaction succeeded then the read should also succeed.
-*/
+// User defined types
+type tRecord = (key: string, val: int);
+type tWriteTransReq = (client: Client, rec: tRecord);
+type tWriteTransResp = (transId: int, status: tTransStatus);
+type tReadTransReq = (client: Client, key: string);
+type tReadTransResp = (rec: tRecord, status: tTransStatus);
 
+enum tTransStatus {
+    SUCCESS,
+    ERROR,
+    TIMEOUT
+}
+
+// Events used by client machine to communicate with the two phase commit coordinator
+event eWriteTransReq : tWriteTransReq;
+event eWriteTransResp : tWriteTransResp;
+event eReadTransReq : tReadTransReq;
+event eReadTransResp: tReadTransResp;
+
+/*****************************************************************************************
+The client machine below implements the client of the two-phase-commit transaction service.
+Each client issues N non-deterministic write-transaction of (key, value),
+if the transaction succeeds then it performs a read-transaction on the same key and asserts the value.
+******************************************************************************************/
 machine Client {
-    var coordinator: machine;
+    // the coordinator machine
+    var coordinator: Coordinator;
+    // current transaction issued by the client
+    var currTransaction : tRecord;
+    // number of transactions issued
+    var N: int;
     start state Init {
-	    entry (payload : machine) {
-	        coordinator = payload;
-			goto StartPumpingTransactions;
+	    entry (payload : (coor: Coordinator, n : int)) {
+	        coordinator = payload.coor;
+	        N = payload.n;
+			goto SendWriteTransaction;
 		}
 	}
 
-	var randomTransaction : tWriteTransaction;
-	state StartPumpingTransactions {
+	state SendWriteTransaction {
 	    entry {
-	    	randomTransaction = ChooseTransaction();
-			send coordinator, eWriteTransaction, randomTransaction;
+	    	currTransaction = ChooseTransaction();
+			send coordinator, eWriteTransReq, (client = this, rec = currTransaction);
 		}
-		on eWriteTransFailed goto End;
-		on eWriteTransSuccess goto ConfirmTransaction;
+		on eWriteTransResp goto ConfirmTransaction;
 	}
 
 	state ConfirmTransaction {
-	    entry {
-			send coordinator, eReadTransaction, (client=this, key = randomTransaction.key);
-		}
-		on eReadTransFailed do { assert false, "Read Failed after Write!!"; }
-		on eReadTransSuccess goto End with (payload: int ){ assert payload == randomTransaction.val, "Incorrect value returned !!"; }
-	}
+	    entry (writeResp: tWriteTransResp) {
+	        // if the write was a time out lets not confirm it
+	        if(writeResp.status == TIMEOUT)
+	            return;
 
-	state End {
-		entry {
-			raise halt;
+			send coordinator, eReadTransReq, (client= this, key = currTransaction.key);
+			// await response from the coordinator
+			receive {
+			    case eReadTransResp: (readResp: tReadTransResp) {
+			        // assert that if write transaction failed then read must fail as well and vice-versa
+			        assert readResp.status == writeResp.status, format ("Inconsistency!");
+			        if(readResp.status == SUCCESS)
+			        {
+			            assert readResp.rec == currTransaction,
+			            format ("Record read is not same as what was written by the client:: read - {0}, written - {1}",
+			            readResp.rec, currTransaction);
+			        }
+			    }
+			}
+			if(N > 0)
+			{
+			    N = N -1;
+			    goto SendWriteTransaction;
+			}
 		}
 	}
 }
 
 
 /* 
-This is an external functions (implemented in C# or C) to randomly choose transaction values
-In P funtion declarations without body are considered as foreign functions.
+This is an external function (implemented in C#) to randomly choose transaction values
+In P, function declarations without body are considered as foreign functions.
 */
-fun ChooseTransaction(): tWriteTransaction;
+fun ChooseTransaction(): tRecord;
 

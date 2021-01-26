@@ -1,5 +1,5 @@
 <Project>
-<ProjectName>ClientServer</ProjectName>
+<ProjectName>FailureDetector</ProjectName>
 <InputFiles>
 	<PFile>./PSrc/</PFile>
 	<PFile>./PSpec/</PFile>

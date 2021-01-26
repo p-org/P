@@ -100,14 +100,9 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "using Plang.CSharpRuntime.Exceptions;");
             context.WriteLine(output, "using System.Threading;");
             context.WriteLine(output, "using System.Threading.Tasks;");
-            context.WriteLine(output, "using PGlobalFunctions;");
-            foreach (var depen in context.ProjectDependencies)
-            {
-                context.WriteLine(output, $"using {depen};");
-            }
             context.WriteLine(output);
             context.WriteLine(output, "#pragma warning disable 162, 219, 414, 1998");
-            context.WriteLine(output, $"namespace PGlobalFunctions");
+            context.WriteLine(output, $"namespace PImplementation");
             context.WriteLine(output, "{");
             context.WriteLine(output, "}");
         }
@@ -119,7 +114,7 @@ namespace Plang.Compiler.Backend.CSharp
 
         private void WriteNameSpacePrologue(CompilationContext context, StringWriter output)
         {
-            context.WriteLine(output, $"namespace {context.ProjectName}");
+            context.WriteLine(output, $"namespace PImplementation");
             context.WriteLine(output, "{");
         }
 
@@ -136,7 +131,7 @@ namespace Plang.Compiler.Backend.CSharp
                 case Function function:
                     if (!function.IsForeign)
                     {
-                        context.WriteLine(output, $"namespace PGlobalFunctions");
+                        context.WriteLine(output, $"namespace PImplementation");
                         context.WriteLine(output, "{");
                         context.WriteLine(output, $"public static partial class {context.GlobalFunctionClassName}");
                         context.WriteLine(output, "{");

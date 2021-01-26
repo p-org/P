@@ -9,7 +9,7 @@ using Plang.CSharpRuntime.Values;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Main {
+namespace PImplementation {
     internal partial class Main : PMachine
     {
         

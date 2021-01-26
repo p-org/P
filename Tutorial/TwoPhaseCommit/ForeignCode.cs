@@ -10,12 +10,12 @@ using System.Threading;
 using System.Threading.Tasks;
 
 #pragma warning disable 162, 219, 414
-namespace PGlobalFunctions
+namespace PImplementation
 {
     public static partial class GlobalFunctions {
 		public static PrtNamedTuple ChooseTransaction(PMachine pMachine)
         {
-            return (new PrtNamedTuple(new string[] { "client", "key", "val" }, pMachine.self, ((PrtInt)10), ((PrtInt)1)));
+            return (new PrtNamedTuple(new string[] { "key", "val" }, (PrtString) pMachine.TryRandomInt(100).ToString(), (PrtInt)pMachine.TryRandomInt(100)));
         }
 	}
 }

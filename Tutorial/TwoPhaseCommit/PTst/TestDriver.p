@@ -1,5 +1,3 @@
-/* This file implements various test-drivers and also provides the various test-cases that are model-checked by the P Checker*/
-
 
 /*
 This machine creates the 2 participants, 1 coordinator, and 2 clients 
@@ -7,16 +5,16 @@ This machine creates the 2 participants, 1 coordinator, and 2 clients
 machine TestDriver0 {
 	start state Init {
 		entry {
-			var coord : machine;
-			var participants: seq[machine];
+			var coord : Coordinator;
+			var participants: seq[Participant];
 			var i : int;
 			while (i < 2) {
 				participants += (i, new Participant());
 				i = i + 1;
 			}
 			coord = new Coordinator(participants);
-			new Client(coord);
-			new Client(coord);
+			new Client((coor = coord, n = 2));
+			new Client((coor = coord, n = 2));
 		}
 	}
 }
@@ -27,8 +25,8 @@ This machine creates the 2 participants, 1 coordinator, 1 Failure injector, and 
 machine TestDriver1 {
 	start state Init {
 		entry {
-			var coord : machine;
-			var participants: seq[machine];
+			var coord : Coordinator;
+			var participants: seq[Participant];
 			var i: int;
 			while (i < 2) {
 				participants += (i, new Participant());
@@ -36,8 +34,8 @@ machine TestDriver1 {
 			}
 			coord = new Coordinator(participants);
 			new FailureInjector(participants);
-			new Client(coord);
-			new Client(coord);
+			new Client((coor = coord, n = 2));
+			new Client((coor = coord, n = 2));
 		}
 	}
 }
@@ -51,16 +49,7 @@ Note that as the model-checker explores all possible interleavings. The failure 
 machine FailureInjector {
 	start state Init {
 		entry (participants: seq[machine]){
-			var i : int;
-			i = 0;
-			while(i< sizeof(participants))
-			{
-				if($)
-				{
-					send participants[i], halt;
-				}
-				i = i + 1;
-			}		
+		    send choose(participants), halt;
 		}
 	}
 }

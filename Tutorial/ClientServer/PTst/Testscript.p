@@ -1,13 +1,23 @@
-module ClientModule = { ClientMachine ->  ClientInterface};
+/* This file contains four different model checking scenarios */
 
-module ServerModule = { ServerMachine -> ServerClientInterface, HelperMachine -> HelperInterface };
+// assert the safety properties for single client, single server scenario
+test singleClientServer [main=TestDriver0]:
+    assert ReqIdsAreMonotonicallyIncreasing, RespIdsAreMonotonicallyIncreasing in
+    (union Client, Server, { TestDriver0 });
 
-module AbstractServerModule = { AbstractServerMachine -> ServerClientInterface };
+// assert the safety properties for the two client, single server scenario
+test multipleClientsServer [main=TestDriver1]:
+    assert ReqIdsAreMonotonicallyIncreasing, RespIdsAreMonotonicallyIncreasing in
+    (union Client, Server, { TestDriver1 });
 
-//Check that the composition of ClientModule and AbstractServerModule is safe.
-test testcase0 [main=TestDriver0]: (union { TestDriver0 }, 
-    (assert ReqIdsAreMonotonicallyIncreasing, RespIdsAreMonotonicallyIncreasing in (union ClientModule, AbstractServerModule)));
+// assert the safety properties along with the progress property for single client, single server scenario
+test singleClientServerWithLiveness [main=TestDriver0]:
+    assert ReqIdsAreMonotonicallyIncreasing, RespIdsAreMonotonicallyIncreasing, GuaranteedProgress in
+    (union Client, Server, { TestDriver0 });
 
+// assert the safety properties for the single client, single server scenario but with abstract server
+/* test singleClientAbstractServer [main=TestDriver0]:
+    assert ReqIdsAreMonotonicallyIncreasing, RespIdsAreMonotonicallyIncreasing in
+    (union Client, AbstractServer, { TestDriver0 });
+*/
 
-test testcase1 [main=TestDriver0]: (union { TestDriver0 },
-    (assert ReqIdsAreMonotonicallyIncreasing, RespIdsAreMonotonicallyIncreasing in (union ClientModule, ServerModule)));

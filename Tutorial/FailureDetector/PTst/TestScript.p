@@ -1,0 +1,1 @@
+test Test0 [main=Client]: { Client, FailureDetector, Node, Timer };

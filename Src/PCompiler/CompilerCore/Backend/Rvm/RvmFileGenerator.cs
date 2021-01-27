@@ -273,7 +273,8 @@ namespace Plang.Compiler.Backend.Rvm
                     break;
                 }
                 case EventIgnore _:
-                    throw new NotImplementedException("Event ignoring is not implemented.");
+                    // Event is ignored. There is no need to generate a function for it.
+                    break;
 
                 case EventPushState eventPushState:
                     throw new NotImplementedException("State pushing is not implemented.");
@@ -379,8 +380,14 @@ namespace Plang.Compiler.Backend.Rvm
 
                     break;
                 }
+
                 case EventIgnore _:
-                    throw new NotImplementedException("Event ignoring is not implemented.");
+                {
+                    string eventName = Context.Names.GetNameForDecl(pEvent);
+                    string stateName = Context.Names.GetNameForDecl(currentState);
+                    Context.WriteLine(output, $"// Event {eventName} is ignored in the state {stateName} ");
+                    break;
+                }
 
                 case EventPushState eventPushState:
                     throw new NotImplementedException("State pushing is not implemented.");

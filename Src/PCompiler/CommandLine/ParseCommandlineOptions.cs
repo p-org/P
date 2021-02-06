@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
@@ -13,22 +12,20 @@ namespace Plang.Compiler
         /// <summary>
         /// Check if the underlying file system is case insensitive
         /// </summary>
-        private static readonly Lazy<bool> isFileSystemCaseInsensitive = new Lazy<bool>(() =>
+        private static Lazy<bool> IsFileSystemCaseInsensitive => new(() =>
         {
-            string file = Path.GetTempPath() + Guid.NewGuid().ToString().ToLower() + "-lower";
+            var file = Directory.GetCurrentDirectory() + Guid.NewGuid().ToString().ToLower() + "-lower";
             File.CreateText(file).Close();
-            bool isCaseInsensitive = File.Exists(file.ToUpper());
+            var isCaseInsensitive = File.Exists(file.ToUpper());
             File.Delete(file);
             return isCaseInsensitive;
         });
 
-        private static bool IsFileSystemCaseInsensitive => isFileSystemCaseInsensitive.Value;
-
-        private readonly DefaultCompilerOutput CommandlineOutput;
+        private readonly DefaultCompilerOutput commandlineOutput;
 
         public ParseCommandlineOptions(DefaultCompilerOutput output)
         {
-            CommandlineOutput = output;
+            commandlineOutput = output;
         }
 
         /// <summary>
@@ -46,19 +43,19 @@ namespace Plang.Compiler
                 {
                     throw new CommandlineParsingError($"Illegal P project file name {projectFile} or file {projectFilePath?.FullName} not found");
                 }
-                CommandlineOutput.WriteInfo($"----------------------------------------");
-                CommandlineOutput.WriteInfo($"==== Loading project file: {projectFile}");
+                commandlineOutput.WriteInfo($"----------------------------------------");
+                commandlineOutput.WriteInfo($"==== Loading project file: {projectFile}");
 
-                CompilerOutput outputLanguage = CompilerOutput.C;
+                var outputLanguage = CompilerOutput.C;
                 List<FileInfo> inputFiles = new List<FileInfo>();
                 bool generateSourceMaps = false;
                 List<string> projectDependencies = new List<string>();
 
                 // get all project dependencies and the input files
-                var dependencies = GetAllProjectDependencies(projectFilePath);
+                var (fileInfos, list) = GetAllProjectDependencies(projectFilePath);
 
-                inputFiles.AddRange(dependencies.inputFiles);
-                projectDependencies.AddRange(dependencies.projectDependencies);
+                inputFiles.AddRange(fileInfos);
+                projectDependencies.AddRange(list);
 
                 if (inputFiles.Count == 0)
                 {
@@ -66,27 +63,27 @@ namespace Plang.Compiler
                 }
 
                 // get project name
-                string projectName = GetProjectName(projectFilePath);
+                var projectName = GetProjectName(projectFilePath);
 
                 // get output directory
-                DirectoryInfo outputDirectory = GetOutputDirectory(projectFilePath);
+                var outputDirectory = GetOutputDirectory(projectFilePath);
 
                 // get target language
                 GetTargetLanguage(projectFilePath, ref outputLanguage, ref generateSourceMaps);
 
                 job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputDirectory, outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, projectFilePath.Directory, generateSourceMaps: generateSourceMaps, projectDependencies);
 
-                CommandlineOutput.WriteInfo($"----------------------------------------");
+                commandlineOutput.WriteInfo($"----------------------------------------");
                 return true;
             }
             catch (CommandlineParsingError ex)
             {
-                CommandlineOutput.WriteError($"<Error parsing project file>:\n {ex.Message}");
+                commandlineOutput.WriteError($"<Error parsing project file>:\n {ex.Message}");
                 return false;
             }
             catch (Exception other)
             {
-                CommandlineOutput.WriteError($"<Internal Error>:\n {other.Message}\n <Please report to the P team (p-devs@amazon.com) or create a issue on GitHub, Thanks!>");
+                commandlineOutput.WriteError($"<Internal Error>:\n {other.Message}\n <Please report to the P team (p-devs@amazon.com) or create a issue on GitHub, Thanks!>");
                 return false;
             }
         }
@@ -102,8 +99,7 @@ namespace Plang.Compiler
             string targetName = null;
             CompilerOutput outputLanguage = CompilerOutput.CSharp;
             DirectoryInfo outputDirectory = null;
-
-            List<string> commandLineFileNames = new List<string>();
+            
             List<FileInfo> inputFiles = new List<FileInfo>();
 
             job = null;
@@ -192,14 +188,14 @@ namespace Plang.Compiler
 
                 if (inputFiles.Count == 0)
                 {
-                    CommandlineOutput.WriteError("At least one .p file must be provided");
+                    commandlineOutput.WriteError("At least one .p file must be provided");
                     return false;
                 }
 
                 string projectName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
                 if (!IsLegalProjectName(projectName))
                 {
-                    CommandlineOutput.WriteError($"{projectName} is not a legal project name");
+                    commandlineOutput.WriteError($"{projectName} is not a legal project name");
                     return false;
                 }
 
@@ -209,17 +205,17 @@ namespace Plang.Compiler
                 }
 
                 job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputDirectory, outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, outputDirectory);
-                CommandlineOutput.WriteInfo($"----------------------------------------");
+                commandlineOutput.WriteInfo($"----------------------------------------");
                 return true;
             }
             catch (CommandlineParsingError ex)
             {
-                CommandlineOutput.WriteError($"<Error parsing commandline>:\n {ex.Message}");
+                commandlineOutput.WriteError($"<Error parsing commandline>:\n {ex.Message}");
                 return false;
             }
             catch (Exception other)
             {
-                CommandlineOutput.WriteError($"<Internal Error>:\n {other.Message}\n <Please report to the P team (p-devs@amazon.com) or create an issue on GitHub, Thanks!>");
+                commandlineOutput.WriteError($"<Internal Error>:\n {other.Message}\n <Please report to the P team (p-devs@amazon.com) or create an issue on GitHub, Thanks!>");
                 return false;
             }
         }
@@ -233,20 +229,20 @@ namespace Plang.Compiler
         {
             var projectDependencies = new List<string>();
             var inputFiles = new List<FileInfo>();
-            XElement projectXML = XElement.Load(projectFilePath.FullName);
+            XElement projectXml = XElement.Load(projectFilePath.FullName);
             projectDependencies.Add(GetProjectName(projectFilePath));
             // add all input files from the current project
             inputFiles.AddRange(ReadAllInputFiles(projectFilePath));
 
             // get recursive project dependencies
-            foreach (XElement projectDepen in projectXML.Elements("IncludeProject"))
+            foreach (XElement projectDepen in projectXml.Elements("IncludeProject"))
             {
                 if (!IsLegalPProjFile(projectDepen.Value, out FileInfo fullProjectDepenPathName))
                 {
                     throw new CommandlineParsingError($"Illegal P project file name {projectDepen.Value} or file {fullProjectDepenPathName?.FullName} not found");
                 }
 
-                CommandlineOutput.WriteInfo($"==== Loading project file: {fullProjectDepenPathName.FullName}");
+                commandlineOutput.WriteInfo($"==== Loading project file: {fullProjectDepenPathName.FullName}");
 
                 var inputsAndDependencies = GetAllProjectDependencies(fullProjectDepenPathName);
                 projectDependencies.AddRange(inputsAndDependencies.projectDependencies);
@@ -267,11 +263,11 @@ namespace Plang.Compiler
         /// <returns>project name</returns>
         private string GetProjectName(FileInfo projectFullPath)
         {
-            string projectName = null;
-            XElement projectXML = XElement.Load(projectFullPath.FullName);
-            if (projectXML.Elements("ProjectName").Any())
+            string projectName;
+            XElement projectXml = XElement.Load(projectFullPath.FullName);
+            if (projectXml.Elements("ProjectName").Any())
             {
-                projectName = projectXML.Element("ProjectName").Value;
+                projectName = projectXml.Element("ProjectName")?.Value;
                 if (!IsLegalProjectName(projectName))
                 {
                     throw new CommandlineParsingError($"{projectName} is not a legal project name");
@@ -292,45 +288,43 @@ namespace Plang.Compiler
         /// <returns>If present returns the passed directory path, else the current directory</returns>
         private DirectoryInfo GetOutputDirectory(FileInfo fullPathName)
         {
-            XElement projectXML = XElement.Load(fullPathName.FullName);
-            DirectoryInfo outputDirectory = projectXML.Elements("OutputDir").Any() ? Directory.CreateDirectory(projectXML.Element("OutputDir").Value) : new DirectoryInfo(Directory.GetCurrentDirectory());
+            XElement projectXml = XElement.Load(fullPathName.FullName);
+            DirectoryInfo outputDirectory = projectXml.Elements("OutputDir").Any() ? Directory.CreateDirectory(projectXml.Element("OutputDir")?.Value) : new DirectoryInfo(Directory.GetCurrentDirectory());
             return outputDirectory;
         }
 
         private void GetTargetLanguage(FileInfo fullPathName, ref CompilerOutput outputLanguage, ref bool generateSourceMaps)
         {
-            XElement projectXML = XElement.Load(fullPathName.FullName);
-            if (projectXML.Elements("Target").Any())
+            XElement projectXml = XElement.Load(fullPathName.FullName);
+            if (!projectXml.Elements("Target").Any()) return;
+            switch (projectXml.Element("Target")?.Value.ToLowerInvariant())
             {
-                switch (projectXML.Element("Target").Value.ToLowerInvariant())
-                {
-                    case "c":
-                        outputLanguage = CompilerOutput.C;
-                        // check for generate source maps attribute
-                        try
+                case "c":
+                    outputLanguage = CompilerOutput.C;
+                    // check for generate source maps attribute
+                    try
+                    {
+                        if (projectXml.Element("Target")?.Attributes("sourcemaps").Any() != null)
                         {
-                            if (projectXML.Element("Target").Attributes("sourcemaps").Any())
-                            {
-                                generateSourceMaps = bool.Parse(projectXML.Element("Target").Attribute("sourcemaps").Value);
-                            }
+                            generateSourceMaps = bool.Parse(projectXml.Element("Target")?.Attribute("sourcemaps")?.Value ?? string.Empty);
                         }
-                        catch (Exception)
-                        {
-                            throw new CommandlineParsingError($"Expected true or false, received {projectXML.Element("Target").Attribute("sourcemaps").Value}");
-                        }
-                        break;
+                    }
+                    catch (Exception)
+                    {
+                        throw new CommandlineParsingError($"Expected true or false, received {projectXml.Element("Target")?.Attribute("sourcemaps")?.Value}");
+                    }
+                    break;
 
-                    case "csharp":
-                        outputLanguage = CompilerOutput.CSharp;
-                        break;
+                case "csharp":
+                    outputLanguage = CompilerOutput.CSharp;
+                    break;
 
-                    case "rvm":
-                        outputLanguage = CompilerOutput.Rvm;
-                        break;
+                case "rvm":
+                    outputLanguage = CompilerOutput.Rvm;
+                    break;
 
-                    default:
-                        throw new CommandlineParsingError($"Expected C or CSharp as target, received {projectXML.Element("Target").Value}");
-                }
+                default:
+                    throw new CommandlineParsingError($"Expected C or CSharp as target, received {projectXml.Element("Target")?.Value}");
             }
         }
 
@@ -342,15 +336,15 @@ namespace Plang.Compiler
         private List<FileInfo> ReadAllInputFiles(FileInfo fullPathName)
         {
             List<FileInfo> inputFiles = new List<FileInfo>();
-            XElement projectXML = XElement.Load(fullPathName.FullName);
+            XElement projectXml = XElement.Load(fullPathName.FullName);
 
             // get all files to be compiled
-            foreach (XElement inputs in projectXML.Elements("InputFiles"))
+            foreach (XElement inputs in projectXml.Elements("InputFiles"))
             {
                 foreach (XElement inputFileName in inputs.Elements("PFile"))
                 {
                     var pFiles = new List<string>();
-                    var inputFileNameFull = Path.Combine(Path.GetDirectoryName(fullPathName.FullName), inputFileName.Value);
+                    var inputFileNameFull = Path.Combine(Path.GetDirectoryName(fullPathName.FullName) ?? throw new InvalidOperationException(), inputFileName.Value);
 
                     if (Directory.Exists(inputFileNameFull))
                     {
@@ -368,7 +362,7 @@ namespace Plang.Compiler
                     {
                         if (IsLegalPFile(pFile, out FileInfo pFilePathName))
                         {
-                            CommandlineOutput.WriteInfo($"....... includes p file: {pFilePathName.FullName}");
+                            commandlineOutput.WriteInfo($"....... includes p file: {pFilePathName.FullName}");
                             inputFiles.Add(pFilePathName);
                         }
                         else
@@ -397,12 +391,7 @@ namespace Plang.Compiler
                 return false;
             }
 
-            string path = Path.GetFullPath(fileName);
-            if (IsFileSystemCaseInsensitive)
-            {
-                path = path.ToLowerInvariant();
-            }
-
+            var path = Path.GetFullPath(fileName);
             file = new FileInfo(path);
 
             return true;
@@ -416,12 +405,7 @@ namespace Plang.Compiler
                 return false;
             }
 
-            string path = Path.GetFullPath(fileName);
-            if (IsFileSystemCaseInsensitive)
-            {
-                path = path.ToLowerInvariant();
-            }
-
+            var path = Path.GetFullPath(fileName);
             file = new FileInfo(path);
 
             return true;
@@ -434,19 +418,7 @@ namespace Plang.Compiler
         /// </summary>
         private class CommandlineParsingError : Exception
         {
-            public CommandlineParsingError()
-            {
-            }
-
             public CommandlineParsingError(string message) : base(message)
-            {
-            }
-
-            public CommandlineParsingError(string message, Exception innerException) : base(message, innerException)
-            {
-            }
-
-            protected CommandlineParsingError(SerializationInfo info, StreamingContext context) : base(info, context)
             {
             }
         }

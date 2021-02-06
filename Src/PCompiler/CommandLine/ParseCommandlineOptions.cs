@@ -12,14 +12,6 @@ namespace Plang.Compiler
         /// <summary>
         /// Check if the underlying file system is case insensitive
         /// </summary>
-        private static Lazy<bool> IsFileSystemCaseInsensitive => new(() =>
-        {
-            var file = Directory.GetCurrentDirectory() + Guid.NewGuid().ToString().ToLower() + "-lower";
-            File.CreateText(file).Close();
-            var isCaseInsensitive = File.Exists(file.ToUpper());
-            File.Delete(file);
-            return isCaseInsensitive;
-        });
 
         private readonly DefaultCompilerOutput commandlineOutput;
 

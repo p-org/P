@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -35,24 +36,25 @@ namespace Plang.Compiler
             job = null;
 
             var commandlineParser = new ParseCommandlineOptions(CommandlineOutput);
-            // enforce the argument prority
-            if (args.Where(a => a.ToLowerInvariant().Contains("-h")).Any())
+            // enforce the argument priority
+            var commandlineArgs = args.ToList();
+            if (commandlineArgs.Any(a => a.ToLowerInvariant().Contains("-h")))
             {
                 PrintUsage();
                 return HelpRequested;
             }
             // proj takes priority over everything else and no other arguments should be allowed
-            if (args.Where(a => a.ToLowerInvariant().Contains("-proj:")).Any())
+            if (commandlineArgs.Any(a => a.ToLowerInvariant().Contains("-proj:")))
             {
-                if (args.Count() > 1)
+                if (commandlineArgs.Count() > 1)
                 {
                     CommandlineOutput.WriteMessage("-proj option cannot be combined with other commandline options", SeverityKind.Error);
                     return Failure;
                 }
                 else
                 {
-                    var option = args.First();
-                    var projectPath = option.Substring(option.IndexOf(":") + 1);
+                    var option = commandlineArgs.First();
+                    var projectPath = option.Substring(option.IndexOf(":", StringComparison.Ordinal) + 1);
                     // Parse the project file and generate the compilation job
                     return commandlineParser.ParseProjectFile(projectPath, out job) ? Success : Failure;
                 }
@@ -60,7 +62,7 @@ namespace Plang.Compiler
             else
             {
                 // parse command line options and generate the compilation job
-                return commandlineParser.ParseCommandLineOptions(args, out job) ? Success : Failure;
+                return commandlineParser.ParseCommandLineOptions(commandlineArgs, out job) ? Success : Failure;
             }
         }
 

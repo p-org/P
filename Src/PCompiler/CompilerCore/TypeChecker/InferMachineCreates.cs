@@ -11,11 +11,14 @@ namespace Plang.Compiler.TypeChecker
 {
     public static class InferMachineCreates
     {
+        // hash table used to store the functions inferred, to handle recursive, cyclic functions
+        private static HashSet<Function> visitedFunctions;
         public static void Populate(Machine machine, ITranslationErrorHandler handler)
         {
             InterfaceSet interfaces = new InterfaceSet();
             foreach (Function function in machine.Methods)
             {
+                visitedFunctions = new HashSet<Function>();
                 interfaces.AddInterfaces(InferCreates(function, handler));
             }
 
@@ -32,7 +35,11 @@ namespace Plang.Compiler.TypeChecker
                     {
                         return function.CreatesInterfaces;
                     }
-
+                    if(visitedFunctions.Contains(function))
+                        return Enumerable.Empty<Interface>();
+                    else 
+                        visitedFunctions.Add(function);
+                    
                     return InferCreates(function.Body, handler);
 
                 case AddStmt addStmt:
@@ -101,10 +108,10 @@ namespace Plang.Compiler.TypeChecker
                 case ReturnStmt returnStmt:
                     return InferCreatesForExpr(returnStmt.ReturnValue, handler);
 
-                case BreakStmt breakStmt:
+                case BreakStmt _:
                     return Enumerable.Empty<Interface>();
 
-                case ContinueStmt continueStmt:
+                case ContinueStmt _:
                     return Enumerable.Empty<Interface>();
 
                 case SendStmt sendStmt:

@@ -52,9 +52,44 @@ namespace Plang.Compiler.Backend.Rvm
             return $"{GetNameForDecl(m)}RuntimeMonitor";
         }
 
+        public string GetParentClassName(Machine m)
+        {
+            string specName = GetRvmSpecName(m);
+            return $"{specName}__Base";
+        }
+
+        public string GetEventAlias(Machine m, PEvent e)
+        {
+            string eventName = GetRvmEventName(e);
+            return $"event_{ eventName }";
+        }
+
+        public string GetPointCutNameForMonitorOn(Machine m)
+        {
+            string specName = GetRvmSpecName(m);
+            return $"MonitorOn_{specName}";
+        }
+
+        public string GetPointCutNameForMonitorsOn(Machine m)
+        {
+            string specName = GetRvmSpecName(m);
+            return $"MonitorsOn_{specName}";
+        }
+
+        public string GetPointCutNameForEnabledTestcases(Machine m)
+        {
+            string specName = GetRvmSpecName(m);
+            return $"{specName}Test";
+        }
+
         public string GetAspectClassName()
         {
-            return $"PSpecMonitorAspect";
+            return $"BaseAspect";
+        }
+
+        public string GetAspectInputTemplateClassName(Machine m)
+        {
+            return $"{GetNameForDecl(m)}Aspect";
         }
 
         public string GetSpecConstructorName(Machine m)

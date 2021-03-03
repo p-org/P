@@ -59,11 +59,14 @@ namespace Plang.Compiler
 
                 // get output directory
                 var outputDirectory = GetOutputDirectory(projectFilePath);
+                var aspectjOutputDirectory = GetAspectjOutputDirectory(projectFilePath, outputDirectory);
 
                 // get target language
                 GetTargetLanguage(projectFilePath, ref outputLanguage, ref generateSourceMaps);
 
-                job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputDirectory, outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, projectFilePath.Directory, generateSourceMaps: generateSourceMaps, projectDependencies);
+                job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory, aspectjOutputDirectory), outputDirectory,
+                    outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, projectFilePath.Directory,
+                    generateSourceMaps: generateSourceMaps, projectDependencies: projectDependencies, aspectjOutputDir: aspectjOutputDirectory);
 
                 commandlineOutput.WriteInfo($"----------------------------------------");
                 return true;
@@ -91,7 +94,7 @@ namespace Plang.Compiler
             string targetName = null;
             CompilerOutput outputLanguage = CompilerOutput.CSharp;
             DirectoryInfo outputDirectory = null;
-            
+            DirectoryInfo aspectjOutputDirectory = null;
             List<FileInfo> inputFiles = new List<FileInfo>();
 
             job = null;
@@ -160,6 +163,15 @@ namespace Plang.Compiler
                                 outputDirectory = Directory.CreateDirectory(colonArg);
                                 break;
 
+                            case "a":
+                            case "aspectOutputDir":
+                                if (colonArg == null)
+                                {
+                                    throw new CommandlineParsingError("Must supply path for aspectj output directory (-a:<aspectj output directory>)");
+                                }
+                                aspectjOutputDirectory = Directory.CreateDirectory(colonArg);
+                                break;
+
                             default:
                                 CommandLineOptions.PrintUsage();
                                 throw new CommandlineParsingError($"Illegal Command {arg.Substring(1)}");
@@ -196,7 +208,14 @@ namespace Plang.Compiler
                     outputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
                 }
 
-                job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputDirectory, outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, outputDirectory);
+                if (aspectjOutputDirectory == null)
+                {
+                    aspectjOutputDirectory = outputDirectory;
+                }
+
+                job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory, aspectjOutputDirectory), outputDirectory,
+                    outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, projectRoot: outputDirectory,
+                    aspectjOutputDir: aspectjOutputDirectory);
                 commandlineOutput.WriteInfo($"----------------------------------------");
                 return true;
             }
@@ -281,8 +300,19 @@ namespace Plang.Compiler
         private DirectoryInfo GetOutputDirectory(FileInfo fullPathName)
         {
             XElement projectXml = XElement.Load(fullPathName.FullName);
-            DirectoryInfo outputDirectory = projectXml.Elements("OutputDir").Any() ? Directory.CreateDirectory(projectXml.Element("OutputDir")?.Value) : new DirectoryInfo(Directory.GetCurrentDirectory());
-            return outputDirectory;
+            if (projectXml.Elements("OutputDir").Any())
+                return Directory.CreateDirectory(projectXml.Element("OutputDir")?.Value);
+            else
+                return new DirectoryInfo(Directory.GetCurrentDirectory());
+        }
+
+        private DirectoryInfo GetAspectjOutputDirectory(FileInfo fullPathName, DirectoryInfo outputDir)
+        {
+            XElement projectXML = XElement.Load(fullPathName.FullName);
+            if (projectXML.Elements("AspectjOutputDir").Any())
+                return Directory.CreateDirectory(projectXML.Element("AspectjOutputDir").Value);
+            else
+                return outputDir;
         }
 
         private void GetTargetLanguage(FileInfo fullPathName, ref CompilerOutput outputLanguage, ref bool generateSourceMaps)

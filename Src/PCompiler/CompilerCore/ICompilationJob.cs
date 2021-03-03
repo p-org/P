@@ -13,6 +13,7 @@ namespace Plang.Compiler
         CompilerOutput OutputLanguage { get; }
         ICompilerOutput Output { get; }
         DirectoryInfo OutputDirectory { get; }
+        DirectoryInfo AspectjOutputDirectory { get; }
         ICodeGenerator Backend { get; }
         IReadOnlyList<FileInfo> InputFiles { get; }
         IReadOnlyList<string> ProjectDependencies { get; }

@@ -77,9 +77,12 @@ namespace Plang.Compiler
             CommandlineOutput.WriteInfo("------------------------------------------");
             CommandlineOutput.WriteInfo("Optional usage:\n");
             CommandlineOutput.WriteInfo(">> pc file1.p [file2.p ...] [-t:tfile] [options]");
-            CommandlineOutput.WriteInfo("    -t:[target project name]   -- name of project (as well as the generated file); if not supplied then file1");
+            CommandlineOutput.WriteInfo("    -t:[target project name]   -- project name (as well as the generated file)");
+            CommandlineOutput.WriteInfo("                                  if not supplied, use file1");
             CommandlineOutput.WriteInfo("    -outputDir:[path]          -- where to write the generated files");
-            CommandlineOutput.WriteInfo("    -generate:[C,CSharp,RVM]       -- select a target language to generate");
+            CommandlineOutput.WriteInfo("    -aspectOutputDir:[path]    -- where to write the generated aspectj files");
+            CommandlineOutput.WriteInfo("                                  if not supplied, use outputDir");
+            CommandlineOutput.WriteInfo("    -generate:[C,CSharp,RVM]   -- select a target language to generate");
             CommandlineOutput.WriteInfo("        C       : generate C code");
             CommandlineOutput.WriteInfo("        CSharp  : generate C# code ");
             CommandlineOutput.WriteInfo("        RVM     : generate Monitor code");

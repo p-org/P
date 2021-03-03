@@ -1,7 +1,7 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
 package p.runtime.values;
 
-public class EnumValue<T> implements IValue<EnumValue<T>> {
+public class EnumValue<T extends java.lang.Enum> implements IValue<EnumValue<T>> {
     private T value;
 
     public EnumValue(T value) {
@@ -27,6 +27,12 @@ public class EnumValue<T> implements IValue<EnumValue<T>> {
         }
 
         EnumValue<?> other = (EnumValue) obj;
+        if (!value.getClass().equals(other.value.getClass())){
+            if (!value.getClass().getSimpleName().equals(other.value.getClass().getSimpleName())) {
+                return false;
+            }
+            return this.value.ordinal() == other.value.ordinal();
+        }
         return this.value.equals(other.value);
     }
 

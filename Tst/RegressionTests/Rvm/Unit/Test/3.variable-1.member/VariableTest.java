@@ -2,10 +2,12 @@
 package unittest;
 
 import org.junit.jupiter.api.Test;
+import com.runtimeverification.rvmonitor.java.rt.annotation.MonitorOn;
 
 public class VariableTest {
 
     @Test
+    @MonitorOn("unittest")
     void test() {
         Instrumented i = new Instrumented();
         Assert.stateNameIs(i, "Start");

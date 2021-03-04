@@ -4,10 +4,12 @@ package unittest;
 import org.junit.jupiter.api.Test;
 
 import p.runtime.exceptions.MapInsertError;
+import com.runtimeverification.rvmonitor.java.rt.annotation.MonitorOn;
 
 public class MapTest {
 
     @Test
+    @MonitorOn("unittest")
     void testMap() {
         Instrumented i = new Instrumented();
         Assert.stateNameIs(i, "Init");

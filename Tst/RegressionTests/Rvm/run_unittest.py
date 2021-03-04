@@ -124,7 +124,7 @@ def createRvm(rvmonitor_bin, gen_monitor_setup_dir, java_dir):
     monitor_binary = os.path.join(rvmonitor_bin, "rv-monitor")
     rvm_file = os.path.join(gen_monitor_setup_dir, "unittest.rvm")
     addRvmExceptions(rvm_file)
-    tools.runNoError([monitor_binary, "-merge", "-d", java_dir, rvm_file])
+    tools.runNoError([monitor_binary, "-merge", "--controlAPI", "-d", java_dir, rvm_file])
 
 def setupTests(test_dir, root_dir, rvmonitor_bin_dir, framework_dir, setup_dir, test_name):
     """

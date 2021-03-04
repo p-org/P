@@ -34,7 +34,7 @@ def buildCommand(test_root, temporary_directory, test_name):
 
 def main(argv):
   if len(argv) == 0:
-    parallelism = 3 * tools.findAvailableCpus() / 2
+    parallelism = tools.findAvailableCpus() / 2
   elif len(argv) == 1:
     parallelism = int(argv[0])
   else:

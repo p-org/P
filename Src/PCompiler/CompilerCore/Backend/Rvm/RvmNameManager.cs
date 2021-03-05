@@ -369,6 +369,12 @@ namespace Plang.Compiler.Backend.Rvm
             return "safeEquals";
         }
 
+        public string GetEnumFileName(PEnum e)
+        {
+            string enumName = GetEnumTypeName(e);
+            return $"{enumName}.java";
+        }
+
         public string GetEnumTypeName(PEnum pEnum)
         {
             return pEnum.Name;

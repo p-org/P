@@ -50,7 +50,7 @@ def fillAspect(aspectj_setup_dir, monitor_setup_dir, gen_monitor_setup_dir):
     """
     Fills the user-defined parts of a generated .aj file.
 
-    The file should be called unittestMonitorAspect.aj file.
+    The file should be called unittestAspect.aj file.
 
     Args:
         aspectj_setup_dir (str): The destination directory for the
@@ -63,10 +63,10 @@ def fillAspect(aspectj_setup_dir, monitor_setup_dir, gen_monitor_setup_dir):
               "// Implement your code here." comment in the .aj file.
 
         gen_monitor_dir (str): The input directory, which must a
-            a single unittestMonitorAspect.aj file.
+            a single unittestAspect.aj file.
     """
     tools.progress("Fill in AspectJ template")
-    aspect_file_name = "PSpecMonitorAspect.aj"
+    aspect_file_name = "unittestAspect.aj"
     aspect_file_path = os.path.join(gen_monitor_setup_dir, aspect_file_name)
     aspectContent = tools.readFile(aspect_file_path)
     aspectContent = aspectContent.replace(
@@ -124,7 +124,7 @@ def createRvm(rvmonitor_bin, gen_monitor_setup_dir, java_dir):
     monitor_binary = os.path.join(rvmonitor_bin, "rv-monitor")
     rvm_file = os.path.join(gen_monitor_setup_dir, "unittest.rvm")
     addRvmExceptions(rvm_file)
-    tools.runNoError([monitor_binary, "-merge", "-d", java_dir, rvm_file])
+    tools.runNoError([monitor_binary, "-merge", "--controlAPI", "-d", java_dir, rvm_file])
 
 def setupTests(test_dir, root_dir, rvmonitor_bin_dir, framework_dir, setup_dir, test_name):
     """
@@ -175,8 +175,6 @@ def setupTests(test_dir, root_dir, rvmonitor_bin_dir, framework_dir, setup_dir, 
     monitor_setup_dir = os.path.join(setup_dir, "monitor")
     if not os.path.exists(monitor_setup_dir):
         os.makedirs(monitor_setup_dir)
-    for f in glob.glob(os.path.join(framework_dir, "monitor", "*.txt")):
-        shutil.copy(f, monitor_setup_dir)
 
     gen_monitor_setup_dir = os.path.join(monitor_setup_dir, "generated")
     if not os.path.exists(gen_monitor_setup_dir):
@@ -187,12 +185,15 @@ def setupTests(test_dir, root_dir, rvmonitor_bin_dir, framework_dir, setup_dir, 
     aspectj_setup_dir = os.path.join(mop_setup_dir, "aspectJ")
     if not os.path.exists(aspectj_setup_dir):
         os.makedirs(aspectj_setup_dir)
-    fillAspect(aspectj_setup_dir, monitor_setup_dir, gen_monitor_setup_dir)
+    for f in glob.glob(os.path.join(framework_dir, "monitor", "*.aj")):
+        shutil.copy(f, aspectj_setup_dir)
 
     createRvm(rvmonitor_bin_dir, gen_monitor_setup_dir, mop_setup_dir)
 
     for f in glob.glob(os.path.join(gen_monitor_setup_dir, "*.java")):
         shutil.copy(f, mop_setup_dir)
+    for f in glob.glob(os.path.join(gen_monitor_setup_dir, "*.aj")):
+        shutil.copy(f, aspectj_setup_dir)
 
 def runTests(test_name):
     """

@@ -1,3 +1,4 @@
+import sys
 import os.path
 import subprocess
 
@@ -47,6 +48,7 @@ def progress(message):
         message (str): The message to print
     """
     print("====== %s" % message)
+    sys.stdout.flush()
 
 def readFile(name):
     """

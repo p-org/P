@@ -4,10 +4,12 @@ package unittest;
 import org.junit.jupiter.api.Test;
 
 import p.runtime.exceptions.AssertStmtError;
+import com.runtimeverification.rvmonitor.java.rt.annotation.MonitorOn;
 
 public class AssertTest {
 
     @Test
+    @MonitorOn("unittest")
     void test() {
         try {
             Instrumented i = new Instrumented();

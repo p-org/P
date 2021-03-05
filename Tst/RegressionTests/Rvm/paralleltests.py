@@ -17,30 +17,27 @@ class Test:
     if not os.path.exists(temporary_directory):
       os.makedirs(temporary_directory)
 
+    self.__outfilename = os.path.join(temporary_directory, "result.out")
+    self.__errfilename = os.path.join(temporary_directory, "result.err")
+    self.__outfile = open(self.__outfilename, "w")
+    self.__errfile = open(self.__errfilename, "w")
+
     self.__process = subprocess.Popen(
         command_creator(temporary_directory, name),
-        stdout = subprocess.PIPE,
-        stderr = subprocess.PIPE,
-        universal_newlines = True)
-
-    self.__stdout = []
-    self.__stdout_thread = threading.Thread(
-        target=Test.__readStream,
-        args=(self.__process.stdout, self.__stdout))
-    self.__stdout_thread.daemon=True
-    self.__stdout_thread.start()
-
-    self.__stderr = []
-    self.__stderr_thread = threading.Thread(
-        target=Test.__readStream,
-        args=(self.__process.stderr, self.__stderr))
-    self.__stderr_thread.daemon=True
-    self.__stderr_thread.start()
+        bufsize = 0,
+        universal_newlines = True,
+        stdout = self.__outfile,
+        stderr = self.__errfile
+    )
 
   @staticmethod
   def __readStream(stream, output):
-    for line in stream:
-      output.append(line)
+    while True:
+        line = stream.readline()
+        if not line:
+            break
+        output.append(line)
+    stream.close()
 
   def __returnCode(self):
     self.__process.poll()
@@ -54,8 +51,8 @@ class Test:
     return self.__returnCode() is None
 
   def close(self):
-    self.__stdout_thread.join(1)  # 1 sec
-    self.__stderr_thread.join(1)  # 1 sec
+    self.__outfile.close()
+    self.__errfile.close()
     pass
 
   def closeAndPrintFailure(self):
@@ -64,10 +61,10 @@ class Test:
     tools.progress("Test %s failed!" % self.__name)
     print('')
     tools.progress("Stdout:")
-    print(''.join(self.__stdout))
+    print(tools.readFile(self.__outfilename))
     print('')
     tools.progress("Stderr:")
-    print(''.join(self.__stderr))
+    print(tools.readFile(self.__errfilename))
     print('')
     print('')
 
@@ -92,7 +89,7 @@ def runTests(parallelism, test_names, temporary_directory, command_creator):
   failed = []
   test_count = len(test_names)
   while running or test_names:
-    time.sleep(0.1)  # 0.1 sec
+    time.sleep(0.2)  # 0.2 sec
 
     new_running = []
     for test in running:

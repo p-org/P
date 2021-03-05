@@ -25,7 +25,7 @@ def runPc(pcompiler_dir, arguments):
     """
     tools.runNoError(["dotnet", os.path.join(pcompiler_dir, "Bld", "Drops", "Release", "Binaries", "netcoreapp3.1", "P.dll")] + arguments)
 
-def translate(pcompiler_dir, p_spec_dir, gen_monitor_dir):
+def translate(pcompiler_dir, p_spec_dir, gen_monitor_dir, aspectj_dir):
     """
     Translates a P spec to RVM code.
 
@@ -50,42 +50,9 @@ def translate(pcompiler_dir, p_spec_dir, gen_monitor_dir):
     if len(p_spec_paths) != 1:
         raise Exception("Expected a single p spec")
     p_spec_path = p_spec_paths[0]
-    runPc(pcompiler_dir, [p_spec_path, "-g:RVM", "-o:%s" % gen_monitor_dir])
-
-def fillAspect(aspectj_dir, gen_monitor_dir):
-    """
-    Fills the user-defined parts of a generated .aj file.
-
-    The current directory should contain two files:
-        * import.txt: should contain the code that replaces the
-          "// add your own imports." comment in the .aj file.
-        * ajcode.txt: should contain the code that replaces the
-          "// Implement your code here." comment in the .aj file.
-    
-    The fillAspect function replaces the comments mentioned above in
-    the .aj file, and copies the result to the destination directory.
-
-    Args:
-        aspectj_dir (str): The destination directory for the
-            filled .aj file.
-
-        gen_monitor_dir (str): The input directory, which must contain
-            a single .aj file
-
-    Raises:
-        Exception if the input directory does not contain exactly
-            one .aj file.
-    """
-    tools.progress("Fill in AspectJ template")
-    aspect_file_paths = glob.glob(os.path.join(gen_monitor_dir, "*.aj"))
-    if len(aspect_file_paths) != 1:
-        raise Exception("Expected a single aspectJ template")
-    aspect_file_path = aspect_file_paths[0]
-    aspectContent = tools.readFile(aspect_file_path)
-    aspectContent = aspectContent.replace("// add your own imports.", tools.readFile("import.txt"))
-    aspectContent = aspectContent.replace("// Implement your code here.", tools.readFile("ajcode.txt"))
-    aspect_file_name = os.path.basename(aspect_file_path)
-    tools.writeFile(os.path.join(aspectj_dir, aspect_file_name), aspectContent)
+    runPc(pcompiler_dir, [p_spec_path, "-g:RVM", "-o:%s" % gen_monitor_dir, "-a:%s" % aspectj_dir])
+    for f in glob.glob(os.path.join(p_spec_dir, "*.aj")):
+        shutil.copy(f, aspectj_dir)
 
 def runMonitor(rvmonitor_bin, gen_monitor_dir, java_dir):
     """
@@ -117,7 +84,7 @@ def runMonitor(rvmonitor_bin, gen_monitor_dir, java_dir):
     if len(rvm_file_paths) != 1:
         raise Exception("Expected a single rvm spec")
     rvm_file_path = rvm_file_paths[0]
-    tools.runNoError([monitor_binary, "-merge", rvm_file_path])
+    tools.runNoError([monitor_binary, "--controlAPI", "-merge", rvm_file_path])
     for f in glob.glob(os.path.join(gen_monitor_dir, "*.java")):
         shutil.copy(f, java_dir)
 
@@ -153,8 +120,7 @@ def build(pcompiler_dir, gen_monitor_dir, rvmonitor_bin, p_spec_dir, aspectj_dir
             * if the p_spec_dir contained no .p file or more
               than one .p file
     """
-    translate(pcompiler_dir, p_spec_dir, gen_monitor_dir)
-    fillAspect(aspectj_dir, gen_monitor_dir)
+    translate(pcompiler_dir, p_spec_dir, gen_monitor_dir, aspectj_dir)
     runMonitor(rvmonitor_bin, gen_monitor_dir, java_dir)
 
 def removeAll(pattern):

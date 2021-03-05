@@ -1,5 +1,11 @@
+package mop;
+
+import p.runtime.values.*;
+import db.*;
+
+public aspect getConsistencyAspect {
     // Implement your code here.
-    pointcut getConsistency_getReq(String key, int rId) : (execution(* Database.getReq(String, int)) && args(key, rId)) && MOP_CommonPointCut();
+    pointcut getConsistency_getReq(String key, int rId) : (execution(* Database.getReq(String, int)) && args(key, rId));
     after (String key, int rId) : getConsistency_getReq(key, rId) {
         getConsistencyRuntimeMonitor.getConsistency_eGetReqEvent(
             new NamedTuple(
@@ -9,7 +15,7 @@
         );
     }
 
-    pointcut getConsistency_getRes(boolean res, Record r, int rId) : (execution(* Database.getRes(boolean, Record, int)) && args(res, r, rId)) && MOP_CommonPointCut();
+    pointcut getConsistency_getRes(boolean res, Record r, int rId) : (execution(* Database.getRes(boolean, Record, int)) && args(res, r, rId));
     after (boolean res, Record r, int rId) : getConsistency_getRes(res, r, rId) {
         getConsistencyRuntimeMonitor.getConsistency_eGetRespEvent(
             new NamedTuple(
@@ -26,7 +32,7 @@
         );
     }
 
-    pointcut getConsistency_putReq(Record r, int rId) : (execution(* Database.putReq(Record, int)) && args(r, rId)) && MOP_CommonPointCut();
+    pointcut getConsistency_putReq(Record r, int rId) : (execution(* Database.putReq(Record, int)) && args(r, rId));
     after (Record r, int rId) : getConsistency_putReq(r, rId) {
         getConsistencyRuntimeMonitor.getConsistency_ePutReqEvent(
             new NamedTuple(
@@ -42,7 +48,7 @@
         );
     }
 
-    pointcut getConsistency_putRes(boolean res, Record r, int rId) : (execution(* Database.putRes(boolean, Record, int)) && args(res, r, rId)) && MOP_CommonPointCut();
+    pointcut getConsistency_putRes(boolean res, Record r, int rId) : (execution(* Database.putRes(boolean, Record, int)) && args(res, r, rId));
     after (boolean res, Record r, int rId) : getConsistency_putRes(res, r, rId) {
         getConsistencyRuntimeMonitor.getConsistency_ePutRespEvent(
             new NamedTuple(
@@ -58,3 +64,5 @@
             )
         );
     }
+}
+

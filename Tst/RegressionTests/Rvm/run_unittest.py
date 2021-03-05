@@ -46,37 +46,6 @@ def translate(script_dir, root_dir, gen_monitor_setup_dir):
     tools.progress("Run the PCompiler...")
     runPc(root_dir, [os.path.join(script_dir, "spec.p"), "-g:RVM", "-o:%s" % gen_monitor_setup_dir])
 
-def fillAspect(aspectj_setup_dir, monitor_setup_dir, gen_monitor_setup_dir):
-    """
-    Fills the user-defined parts of a generated .aj file.
-
-    The file should be called unittestAspect.aj file.
-
-    Args:
-        aspectj_setup_dir (str): The destination directory for the
-            filled .aj file.
-
-        monitor_setup_dir (str): Input directory that contains two files:
-            * import.txt: should contain the code that replaces the
-              "// add your own imports." comment in the .aj file.
-            * ajcode.txt: should contain the code that replaces the
-              "// Implement your code here." comment in the .aj file.
-
-        gen_monitor_dir (str): The input directory, which must a
-            a single unittestAspect.aj file.
-    """
-    tools.progress("Fill in AspectJ template")
-    aspect_file_name = "unittestAspect.aj"
-    aspect_file_path = os.path.join(gen_monitor_setup_dir, aspect_file_name)
-    aspectContent = tools.readFile(aspect_file_path)
-    aspectContent = aspectContent.replace(
-        "// add your own imports.",
-        tools.readFile(os.path.join(monitor_setup_dir, "import.txt")))
-    aspectContent = aspectContent.replace(
-        "// Implement your code here.",
-        tools.readFile(os.path.join(monitor_setup_dir, "ajcode.txt")))
-    tools.writeFile(os.path.join(aspectj_setup_dir, aspect_file_name), aspectContent)
-
 def addRvmExceptions(rvm_file_path):
     """
     Changes the getState functions to throw an exception with the state name.

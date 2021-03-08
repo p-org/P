@@ -120,7 +120,7 @@ def build(pcompiler_dir, gen_monitor_dir, rvmonitor_bin, p_spec_dir, aspectj_dir
             * if the p_spec_dir contained no .p file or more
               than one .p file
     """
-    translate(pcompiler_dir, p_spec_dir, gen_monitor_dir)
+    translate(pcompiler_dir, p_spec_dir, gen_monitor_dir, aspectj_dir)
     runMonitor(rvmonitor_bin, gen_monitor_dir, java_dir)
 
 def removeAll(pattern):

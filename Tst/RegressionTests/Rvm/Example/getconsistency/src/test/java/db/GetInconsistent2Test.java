@@ -4,10 +4,12 @@ package db;
 import org.junit.jupiter.api.Test;
 
 import p.runtime.exceptions.AssertStmtError;
+import com.runtimeverification.rvmonitor.java.rt.annotation.MonitorOn;
 
 public class GetInconsistent2Test {
 
     @Test
+    @MonitorOn("getConsistency")
     void testDatabase() {
         try {
             Database db = new Database();

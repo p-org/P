@@ -49,6 +49,11 @@ namespace Plang.Compiler.Backend.Rvm
                 }
             }
 
+            foreach (PEnum e in EnumDecls.Values)
+            {
+                sources.Add(WriteEnumClass(e));
+            }
+
             foreach (Machine machine in globalScope.Machines)
             {
                 if (machine.IsSpec)
@@ -58,6 +63,48 @@ namespace Plang.Compiler.Backend.Rvm
             }
 
             return sources;
+        }
+
+        private CompiledFile WriteEnumClass(PEnum e)
+        {
+            CompiledFile source = new CompiledFile(Context.Names.GetEnumFileName(e));
+            StringWriter output = source.Stream;
+
+            Context.WriteLine(output, "package mop;");
+            Context.WriteLine(output);
+
+            WriteEnum(source.Stream, e);
+
+            return source;
+        }
+
+        private void WriteEnum(StringWriter output, PEnum data)
+        {
+            string enumName = Context.Names.GetEnumTypeName(data);
+            Context.WriteLine(output, $"public enum {enumName} {{");
+
+            BeforeSeparator separator = new BeforeSeparator(() => Context.WriteLine(output, ","));
+            foreach (EnumElem elem in data.Values)
+            {
+                string elementName = Context.Names.GetEnumElementName(elem);
+                separator.beforeElement();
+                Context.Write(output, $"{elementName}({elem.Value})");
+            }
+            Context.WriteLine(output, ";");
+
+            string enumValue = Context.Names.GetEnumValueName();
+            string enumValueGetter = Context.Names.GetEnumValueGetterName();
+            Context.WriteLine(output);
+            Context.WriteLine(output, $"private int {enumValue};");
+            Context.WriteLine(output);
+            Context.WriteLine(output, $"private {enumName}(int {enumValue}) {{");
+            Context.WriteLine(output, $"this.{enumValue} = {enumValue};");
+            Context.WriteLine(output, "}");
+            Context.WriteLine(output);
+            Context.WriteLine(output, $"public int {enumValueGetter}() {{");
+            Context.WriteLine(output, $"return {enumValue};");
+            Context.WriteLine(output, "}");
+            Context.WriteLine(output, "}");
         }
 
         private CompiledFile WriteMonitor(Machine machine) {
@@ -91,12 +138,6 @@ namespace Plang.Compiler.Backend.Rvm
             
             BeforeSeparator separator = new BeforeSeparator(() => Context.WriteLine(output));
             
-            foreach (PEnum e in EnumDecls.Values)
-            {
-                separator.beforeElement();
-                WriteEnum(output, e);
-            }
-
             foreach (State s in machine.States)
             {
                 separator.beforeElement();
@@ -133,35 +174,6 @@ namespace Plang.Compiler.Backend.Rvm
                 WriteSpecEvent(output, machine, e);
             }
 
-            Context.WriteLine(output, "}");
-        }
-
-        private void WriteEnum(StringWriter output, PEnum data)
-        {
-            string enumName = Context.Names.GetEnumTypeName(data);
-            Context.WriteLine(output, $"enum {enumName} {{");
-
-            BeforeSeparator separator = new BeforeSeparator(() => Context.WriteLine(output, ","));
-            foreach (EnumElem elem in data.Values)
-            {
-                string elementName = Context.Names.GetEnumElementName(elem);
-                separator.beforeElement();
-                Context.Write(output, $"{elementName}({elem.Value})");
-            }
-            Context.WriteLine(output, ";");
-
-            string enumValue = Context.Names.GetEnumValueName();
-            string enumValueGetter = Context.Names.GetEnumValueGetterName();
-            Context.WriteLine(output);
-            Context.WriteLine(output, $"private int {enumValue};");
-            Context.WriteLine(output);
-            Context.WriteLine(output, $"private {enumName}(int {enumValue}) {{");
-            Context.WriteLine(output, $"this.{enumValue} = {enumValue};");
-            Context.WriteLine(output, "}");
-            Context.WriteLine(output);
-            Context.WriteLine(output, $"public int {enumValueGetter}() {{");
-            Context.WriteLine(output, $"return {enumValue};");
-            Context.WriteLine(output, "}");
             Context.WriteLine(output, "}");
         }
 

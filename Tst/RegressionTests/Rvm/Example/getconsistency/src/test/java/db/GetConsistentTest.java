@@ -2,10 +2,12 @@
 package db;
 
 import org.junit.jupiter.api.Test;
+import com.runtimeverification.rvmonitor.java.rt.annotation.MonitorOn;
 
 public class GetConsistentTest {
 
     @Test
+    @MonitorOn("getConsistency")
     void testDatabase() {
         Database db = new Database();
         db.putReq(new Record("a", 5, 0), 0);

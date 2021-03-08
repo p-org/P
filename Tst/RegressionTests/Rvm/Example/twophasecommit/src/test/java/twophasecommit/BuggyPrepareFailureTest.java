@@ -4,10 +4,12 @@ package twophasecommit;
 import org.junit.jupiter.api.Test;
 
 import p.runtime.exceptions.AssertStmtError;
+import com.runtimeverification.rvmonitor.java.rt.annotation.MonitorOn;
 
 public class BuggyPrepareFailureTest {
 
     @Test
+    @MonitorOn("twoPhaseCommit")
     void testPrepareFailure() {
         try {
             Coordinator co = new Coordinator();

@@ -51,7 +51,7 @@ namespace Plang.Compiler.Backend.Rvm
         }
 
         private void WriteSourcePrologue(StringWriter output) {
-            Context.WriteLine(output, "package mop;");
+            Context.WriteLine(output, "package pcon;");
             Context.WriteLine(output);
             Context.WriteLine(output, "import java.lang.ref.*;");
             Context.WriteLine(output, "import org.aspectj.lang.*;");
@@ -138,19 +138,29 @@ namespace Plang.Compiler.Backend.Rvm
             foreach (Machine machine in specMachines)
             {
                 string monitorName = Context.Names.GetJavaRuntimeMonitorName(machine);
+                string specName = Context.Names.GetRvmSpecName(machine);
+
+                Context.WriteLine(output, $"if (monitorOn.value().equalsIgnoreCase(\"{ specName }\")) {{");
                 Context.WriteLine(output, $"{ monitorName }.resetMonitor();");
                 Context.WriteLine(output, $"{ monitorName }.enable();");
+                Context.WriteLine(output, "}");
             }
             Context.WriteLine(output, "}");
             Context.WriteLine(output, "before(MonitorsOn monitorsOn) : @annotation(monitorsOn) {");
             Context.WriteLine(output, "String monitors = String.join(\",\", Arrays.stream(monitorsOn.value()).map(t -> (String)t.value()).toArray(String[]::new));");
             Context.WriteLine(output, "System.out.println(\"[Start] monitoring \" + thisJoinPoint.getSignature().getName() + \" against \" + monitors);");
+            Context.WriteLine(output, "for (MonitorOn monitorOn : monitorsOn.value()) {");
             foreach (Machine machine in specMachines)
             {
                 string monitorName = Context.Names.GetJavaRuntimeMonitorName(machine);
+                string specName = Context.Names.GetRvmSpecName(machine);
+
+                Context.WriteLine(output, $"if (monitorOn.value().equalsIgnoreCase(\"{ specName }\")) {{");
                 Context.WriteLine(output, $"{ monitorName }.resetMonitor();");
                 Context.WriteLine(output, $"{ monitorName }.enable();");
+                Context.WriteLine(output, "}");
             }
+            Context.WriteLine(output, "}");
             Context.WriteLine(output, "}");
             Context.WriteLine(output);
 
@@ -159,17 +169,27 @@ namespace Plang.Compiler.Backend.Rvm
             foreach (Machine machine in specMachines)
             {
                 string monitorName = Context.Names.GetJavaRuntimeMonitorName(machine);
+                string specName = Context.Names.GetRvmSpecName(machine);
+
+                Context.WriteLine(output, $"if (monitorOn.value().equalsIgnoreCase(\"{ specName }\")) {{");
                 Context.WriteLine(output, $"{ monitorName }.disable();");
+                Context.WriteLine(output, "}");
             }
             Context.WriteLine(output, "}");
             Context.WriteLine(output, "after(MonitorsOn monitorsOn) : @annotation(monitorsOn) {");
             Context.WriteLine(output, "String monitors = String.join(\",\", Arrays.stream(monitorsOn.value()).map(t -> (String)t.value()).toArray(String[]::new));");
             Context.WriteLine(output, "System.out.println(\"[End] monitoring \" + thisJoinPoint.getSignature().getName() + \" against \" + monitors);");
+            Context.WriteLine(output, "for (MonitorOn monitorOn : monitorsOn.value()) {");
             foreach (Machine machine in specMachines)
             {
                 string monitorName = Context.Names.GetJavaRuntimeMonitorName(machine);
+                string specName = Context.Names.GetRvmSpecName(machine);
+
+                Context.WriteLine(output, $"if (monitorOn.value().equalsIgnoreCase(\"{ specName }\")) {{");
                 Context.WriteLine(output, $"{ monitorName }.disable();");
+                Context.WriteLine(output, "}");
             }
+            Context.WriteLine(output, "}");
             Context.WriteLine(output, "}");
 
             Context.WriteLine(output, "}");

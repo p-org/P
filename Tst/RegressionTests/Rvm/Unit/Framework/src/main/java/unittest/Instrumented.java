@@ -1,7 +1,7 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
 package unittest;
 
-import mop.StateNameException;
+import pcon.StateNameException;
 
 public class Instrumented {
 

@@ -70,7 +70,7 @@ namespace Plang.Compiler.Backend.Rvm
             CompiledFile source = new CompiledFile(Context.Names.GetEnumFileName(e));
             StringWriter output = source.Stream;
 
-            Context.WriteLine(output, "package mop;");
+            Context.WriteLine(output, "package pcon;");
             Context.WriteLine(output);
 
             WriteEnum(source.Stream, e);
@@ -118,7 +118,7 @@ namespace Plang.Compiler.Backend.Rvm
         }
 
         private void WriteSourcePrologue(StringWriter output) {
-            Context.WriteLine(output, "package mop;");
+            Context.WriteLine(output, "package pcon;");
             Context.WriteLine(output);
             Context.WriteLine(output, "import java.io.*;");
             Context.WriteLine(output, "import java.util.*;");

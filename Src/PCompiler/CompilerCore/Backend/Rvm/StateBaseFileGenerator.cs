@@ -46,7 +46,7 @@ namespace Plang.Compiler.Backend.Rvm
         }
 
         private void WriteSourcePrologue(StringWriter output) {
-            Context.WriteLine(output, "package mop;");
+            Context.WriteLine(output, "package pcon;");
             Context.WriteLine(output);
             Context.WriteLine(output, "import java.util.Optional;");
             Context.WriteLine(output);

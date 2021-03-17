@@ -1,4 +1,4 @@
-package mop;
+package pcon;
 
 import p.runtime.values.*;
 import db.*;

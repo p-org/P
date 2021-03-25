@@ -258,10 +258,6 @@ namespace Plang.Compiler
                 var inputsAndDependencies = GetAllProjectDependencies(fullProjectDepenPathName);
                 projectDependencies.AddRange(inputsAndDependencies.projectDependencies);
                 inputFiles.AddRange(inputsAndDependencies.inputFiles);
-                if (projectDependencies.Count != projectDependencies.Distinct().Count())
-                {
-                    throw new CommandlineParsingError($"Cyclic project dependencies: {projectDependencies}");
-                }
             }
 
             return (inputFiles, projectDependencies);

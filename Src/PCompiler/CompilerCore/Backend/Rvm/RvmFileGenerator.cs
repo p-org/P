@@ -440,11 +440,6 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteFunction(StringWriter output, Function function)
         {
-            if (function.IsForeign)
-            {
-                throw new NotImplementedException("Foreign function is not implemented.");
-            }
-
             bool isStatic = function.Owner == null;
 
             if (isStatic) {
@@ -458,7 +453,16 @@ namespace Plang.Compiler.Backend.Rvm
             Context.Write(output, $"public {returnType} {functionName}(");
             WriteFunctionArguments(output, function);
             Context.WriteLine(output, $") {throwsClause} {{");
-            WriteFunctionBody(output, function);
+            if (!function.IsForeign)
+            {
+                WriteFunctionBody(output, function);
+            }
+            else
+            {
+                Context.Write(output, $"return pcon.PImplementation.{functionName}(");
+                WriteFunctionArgumentNames(output, function);
+                Context.WriteLine(output, ");");
+            }
             Context.WriteLine(output, "}");
         }
 
@@ -1376,6 +1380,17 @@ namespace Plang.Compiler.Backend.Rvm
                 string argumentType = Context.Names.GetJavaTypeName(argument.Type);
                 string argumentName = Context.Names.GetLocalVarName(argument);
                 Context.Write(output, $"{argumentType} {argumentName}");
+            }
+        }
+
+        private void WriteFunctionArgumentNames(StringWriter output, Function function)
+        {
+            BeforeSeparator separator = new BeforeSeparator(() => Context.Write(output, ", "));
+            foreach (Variable argument in function.Signature.Parameters)
+            {
+                separator.beforeElement();
+                string argumentName = Context.Names.GetLocalVarName(argument);
+                Context.Write(output, $"{argumentName}");
             }
         }
 

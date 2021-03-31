@@ -558,7 +558,9 @@ namespace Plang.Compiler.Backend.Debugging
                 case MapAccessExpr mapAccessExpr:
                     WriteParts("(", mapAccessExpr.MapExpr, ")[", mapAccessExpr.IndexExpr, "]");
                     break;
-
+                case SetAccessExpr setAccessExpr:
+                    WriteParts("(", setAccessExpr.SetExpr, ")[", setAccessExpr.IndexExpr, "]");
+                    break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     WriteParts("(", namedTupleAccessExpr.SubExpr, ").", namedTupleAccessExpr.FieldName);
                     break;

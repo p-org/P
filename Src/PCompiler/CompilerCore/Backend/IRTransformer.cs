@@ -62,7 +62,13 @@ namespace Plang.Compiler.Backend
                     (IExprTerm mapIndex, List<IPStmt> mapIndexDeps) = SimplifyExpression(mapAccessExpr.IndexExpr);
                     return (new MapAccessExpr(location, mapExpr, mapIndex, type),
                         mapExprDeps.Concat(mapIndexDeps).ToList());
-
+                
+                case SetAccessExpr setAccessExpr:
+                    (IPExpr setExpr, List<IPStmt> setExprDeps) = SimplifyLvalue(setAccessExpr.SetExpr);
+                    (IExprTerm setIndex, List<IPStmt> setIndexDeps) = SimplifyExpression(setAccessExpr.IndexExpr);
+                    return (new SetAccessExpr(location, setExpr, setIndex, type),
+                        setExprDeps.Concat(setIndexDeps).ToList());
+                
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     (IPExpr ntExpr, List<IPStmt> ntExprDeps) = SimplifyLvalue(namedTupleAccessExpr.SubExpr);
                     return (new NamedTupleAccessExpr(location, ntExpr, namedTupleAccessExpr.Entry), ntExprDeps);
@@ -96,6 +102,7 @@ namespace Plang.Compiler.Backend
             {
                 case NamedTupleAccessExpr _:
                 case SeqAccessExpr _:
+                case SetAccessExpr _:
                 case TupleAccessExpr _:
                 case MapAccessExpr _:
                     (IExprTerm dataTypeItem, List<IPStmt> dataTypeItemDeps) = SimplifyExpression(expr);
@@ -230,6 +237,15 @@ namespace Plang.Compiler.Backend
                     deps.AddRange(mapDeps.Concat(mapIdxDeps));
                     deps.Add(mapItemStore);
                     return (mapItemTemp, deps);
+                
+                case SetAccessExpr setAccessExpr:
+                    (IExprTerm setExpr, List<IPStmt> setDeps) = SimplifyExpression(setAccessExpr.SetExpr);
+                    (IExprTerm setIdxExpr, List<IPStmt> setIdxDeps) = SimplifyExpression(setAccessExpr.IndexExpr);
+                    (VariableAccessExpr setItemTemp, IPStmt setItemStore) =
+                        SaveInTemporary(new SetAccessExpr(location, setExpr, setIdxExpr, setAccessExpr.Type));
+                    deps.AddRange(setDeps.Concat(setIdxDeps));
+                    deps.Add(setItemStore);
+                    return (setItemTemp, deps);
 
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     (IExprTerm ntSubExpr, List<IPStmt> ntSubDeps) = SimplifyExpression(namedTupleAccessExpr.SubExpr);

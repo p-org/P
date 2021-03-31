@@ -10,7 +10,7 @@ machine Main {
 	var b: bool;
 	var e: event;
 	var a: any;
-        var st: set [int];
+    var st: set [int];
 	var st1: set [bool];
 	var st2: set [set [int]];
 	var tmp: int;
@@ -21,12 +21,12 @@ machine Main {
        entry
        {
 		st += (4);
-                st += (5);
-                st -= (4);
-                st1 += (false);	   
+        st += (5);
+        st -= (4);
+        st1 += (false);	   
 		st1 += (true);    
 		tmp = sizeof(st);
-		b = st1[1]; // set does not support indexing
+		b = st1[1];
 		raise halt; 
        }    
     } 

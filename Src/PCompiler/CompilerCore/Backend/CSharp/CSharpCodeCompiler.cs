@@ -17,7 +17,7 @@ namespace Plang.Compiler.Backend.CSharp
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
-    <PackageReference Include=""PCSharpRuntime"" Version=""1.0.0""/>
+    <PackageReference Include=""PCSharpRuntime"" />
   </ItemGroup>
 </Project>";
 

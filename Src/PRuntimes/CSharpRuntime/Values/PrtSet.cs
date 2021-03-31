@@ -1,3 +1,4 @@
+using System;
 using Plang.CSharpRuntime.Exceptions;
 using System.Collections;
 using System.Collections.Generic;
@@ -115,7 +116,12 @@ namespace Plang.CSharpRuntime.Values
             sb.Append(")");
             return sb.ToString();
         }
-
+        
+        public IPrtValue this[int index]
+        {
+            get => set.ElementAt(index);
+            set => throw new Exception("Setting set elements using indexing is not allowed!");
+        }
         public void UnionWith(IEnumerable<IPrtValue> other)
         {
             set.UnionWith(other.Select(i => i.Clone()));

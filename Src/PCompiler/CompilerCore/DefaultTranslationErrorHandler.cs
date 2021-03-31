@@ -153,7 +153,7 @@ namespace Plang.Compiler
 
         public Exception IllegalChooseSubExprType(PParser.ChooseExprContext context, PLanguageType subExprType)
         {
-            return IssueError(context, $"choose expects a parameter of type int (max value) or a seq or a set, got a parameter of type {subExprType}");
+            return IssueError(context, $"choose expects a parameter of type int (max value) or a collection type (seq, set, or map) got a parameter of type {subExprType}");
         }
 
         public Exception EmittedNullEvent(IPExpr evtExpr)

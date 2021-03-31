@@ -2,6 +2,7 @@
 <!-- See: https://docs.microsoft.com/en-us/visualstudio/msbuild/customize-your-build -->
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <PSdkFolder>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\</PSdkFolder>
+    <PSdkFolder>$(MSBuildThisFileDirectory)Bld/Drops/$(Configuration)/</PSdkFolder>
+    <PFolder>$(MSBuildThisFileDirectory)</PFolder>
   </PropertyGroup>
 </Project>

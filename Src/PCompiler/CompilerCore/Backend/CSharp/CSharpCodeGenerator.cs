@@ -1085,7 +1085,15 @@ namespace Plang.Compiler.Backend.CSharp
                     WriteExpr(context, output, mapAccessExpr.IndexExpr);
                     context.Write(output, "]");
                     break;
-
+                
+                case SetAccessExpr setAccessExpr:
+                    context.Write(output, "((PrtSet)");
+                    WriteLValue(context, output, setAccessExpr.SetExpr);
+                    context.Write(output, ")[");
+                    WriteExpr(context, output, setAccessExpr.IndexExpr);
+                    context.Write(output, "]");
+                    break;
+                
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     context.Write(output, "((PrtNamedTuple)");
                     WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
@@ -1430,6 +1438,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case MapAccessExpr _:
+                case SetAccessExpr _:
                 case NamedTupleAccessExpr _:
                 case SeqAccessExpr _:
                 case TupleAccessExpr _:

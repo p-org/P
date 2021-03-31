@@ -177,7 +177,11 @@ namespace Plang.Compiler.TypeChecker
                 case SeqAccessExpr seqAccessExpr:
                     return InferCreatesForExpr(seqAccessExpr.SeqExpr, handler)
                         .Union(InferCreatesForExpr(seqAccessExpr.IndexExpr, handler));
-
+                
+                case SetAccessExpr setAccessExpr:
+                    return InferCreatesForExpr(setAccessExpr.SetExpr, handler)
+                        .Union(InferCreatesForExpr(setAccessExpr.IndexExpr, handler));
+                
                 case SizeofExpr sizeofExpr:
                     return InferCreatesForExpr(sizeofExpr.Expr, handler);
 

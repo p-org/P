@@ -55,8 +55,8 @@ namespace UnitTests.Runners
             stderr = "";
             // Do not want to use the auto-generated Test.cs file
             CreateFileWithMainFunction(scratchDirectory);
-            // Clear out the csproj file
-            DeleteCSProjFile(scratchDirectory);
+            // Do not want to use the auto-generated csproj file
+            CreateCSProjFile(scratchDirectory);
             // copy the foreign code to the folder
             foreach (FileInfo nativeFile in nativeSources)
             {
@@ -76,9 +76,25 @@ namespace UnitTests.Runners
             return exitCode;
         }
 
-        private void DeleteCSProjFile(DirectoryInfo scratchDirectory)
+        private void CreateCSProjFile(DirectoryInfo scratchDirectory)
         {
-            File.Delete(Path.Combine(scratchDirectory.FullName, "Main.csproj"));
+            const string csprojTemplate = @"
+<Project Sdk=""Microsoft.NET.Sdk"">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <ApplicationIcon />
+    <OutputType>Exe</OutputType>
+    <StartupObject />
+    <LangVersion>latest</LangVersion>
+    <OutputPath>.</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
+    <ProjectReference Include=""$(PFolder)/Src/PRuntimes/CSharpRuntime/CSharpRuntime.csproj"" />
+  </ItemGroup>
+</Project>";
+            using var outputFile = new StreamWriter(Path.Combine(scratchDirectory.FullName, "Main.csproj"), false);
+            outputFile.WriteLine(csprojTemplate);
         }
 
         private void CreateFileWithMainFunction(DirectoryInfo dir)

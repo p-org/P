@@ -143,14 +143,19 @@ namespace Plang.CSharpRuntime
 
                 case PrtSeq seq:
                     {
-                        TryAssert(seq.Count() > 0, "Trying to choose from an empty sequence!");
+                        TryAssert(seq.Any(), "Trying to choose from an empty sequence!");
                         return seq[TryRandomInt(seq.Count)];
                     }
                 case PrtSet set:
                     {
-                        TryAssert(set.Count() > 0, "Trying to choose from an empty set!");
+                        TryAssert(set.Any(), "Trying to choose from an empty set!");
                         return set.ElementAt(TryRandomInt(set.Count));
                     }
+                case PrtMap map:
+                {
+                    TryAssert(map.Any(), "Trying to choose from an empty map!");
+                    return map.Keys.ElementAt(TryRandomInt(map.Keys.Count));
+                }
                 default:
                     throw new PInternalException("This is an unexpected (internal) P exception. Please report to the P Developers");
             }

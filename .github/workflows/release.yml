@@ -34,10 +34,9 @@ jobs:
       - name: Create the package
         run: |
           # Grab version number from the tag via the environment variable
-          cd Src/PCompiler/CommandLine
-          dotnet pack -p:PackageVersion=${VERSION}
+          dotnet pack -p:PackageVersion=${VERSION} -c Release
 
       - name: Push generated package to Nuget
         run: |
-          dotnet nuget push ./Bld/Drops/Binaries/P.${VERSION}.nupkg -k ${{ secrets.NUGET_SECRET }} -s https://api.nuget.org/v3/index.json --no-symbols true
-          dotnet nuget push ./Bld/Drops/Binaries/PCSharpRuntime.${VERSION}.nupkg -k ${{ secrets.NUGET_SECRET }} -s https://api.nuget.org/v3/index.json --no-symbols true
+          dotnet nuget push ./Bld/Drops/Release/Binaries/P.${VERSION}.nupkg -k ${{ secrets.NUGET_SECRET }} -s https://api.nuget.org/v3/index.json --no-symbols true
+          dotnet nuget push ./Bld/Drops/Release/Binaries/PCSharpRuntime.${VERSION}.nupkg -k ${{ secrets.NUGET_SECRET }} -s https://api.nuget.org/v3/index.json --no-symbols true

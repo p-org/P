@@ -164,7 +164,7 @@ namespace Plang.Compiler
                                 break;
 
                             case "a":
-                            case "aspectOutputDir":
+                            case "aspectoutputdir":
                                 if (colonArg == null)
                                 {
                                     throw new CommandlineParsingError("Must supply path for aspectj output directory (-a:<aspectj output directory>)");

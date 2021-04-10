@@ -1193,7 +1193,7 @@ namespace Plang.Compiler.Backend.Rvm
                         return writeSimpleClone(output, cloneExprTerm);
 
                     case ForeignType _:
-                        throw new NotImplementedException("Cloning ForeignType is not implemented.");
+                        return writeSimpleClone(output, cloneExprTerm);
 
                     case MapType _:
                     case NamedTupleType _:
@@ -1435,6 +1435,8 @@ namespace Plang.Compiler.Backend.Rvm
                 case SequenceType seqType:
                 case SetType setType:
                     return GetUnboxedDefaultValue(type);
+                case ForeignType foreignType:
+                    return $"new {Context.Names.GetForeignTypeName(foreignType)}()";
 
                 default:
                     throw new ArgumentOutOfRangeException(type.OriginalRepresentation);
@@ -1581,7 +1583,7 @@ namespace Plang.Compiler.Backend.Rvm
                     return true;
 
                 case ForeignType _:
-                    throw new NotImplementedException("isBoxable is not implemented for ForeignType.");
+                    return true;
 
                 case MapType _:
                     return false;

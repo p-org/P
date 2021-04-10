@@ -79,6 +79,7 @@ namespace Plang.Compiler
             catch (Exception other)
             {
                 commandlineOutput.WriteError($"<Internal Error>:\n {other.Message}\n <Please report to the P team (p-devs@amazon.com) or create a issue on GitHub, Thanks!>");
+                commandlineOutput.WriteError($"{other.StackTrace}\n");
                 return false;
             }
         }
@@ -227,6 +228,7 @@ namespace Plang.Compiler
             catch (Exception other)
             {
                 commandlineOutput.WriteError($"<Internal Error>:\n {other.Message}\n <Please report to the P team (p-devs@amazon.com) or create an issue on GitHub, Thanks!>");
+                commandlineOutput.WriteError($"{other.StackTrace}\n");
                 return false;
             }
         }

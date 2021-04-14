@@ -32,6 +32,7 @@ namespace Plang.Compiler
                     catch (Exception ex)
                     {
                         job.Output.WriteError($"<Internal Error>:\n {ex.Message}\n<Please report to the P team (p-devs@amazon.com) or create an issue on GitHub, Thanks!>");
+                        job.Output.WriteError($"{ex.StackTrace}\n");
                         return 1;
                     }
             }

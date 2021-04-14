@@ -400,6 +400,11 @@ namespace Plang.Compiler.Backend.Rvm
             return "getValue";
         }
 
+        public string GetForeignTypeName(ForeignType foreignType)
+        {
+            return char.ToUpper(foreignType.OriginalRepresentation[0]) + foreignType.OriginalRepresentation.Substring(1);
+        }
+
         public string GetJavaTypeName(PLanguageType type, bool isVar = false)
         {
             switch (type.Canonicalize())
@@ -410,8 +415,8 @@ namespace Plang.Compiler.Backend.Rvm
                 case EnumType enumType:
                     return $"EnumValue<{GetEnumTypeName(enumType.EnumDecl)}>";
 
-                case ForeignType _:
-                    throw new NotImplementedException("ForeignType is not implemented.");
+                case ForeignType foreignType:
+                    return GetForeignTypeName(foreignType);
 
                 case MapType _:
                     return GetMapTypeName();

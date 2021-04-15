@@ -48,10 +48,6 @@ namespace Plang.Compiler.Backend.Symbolic
                         }
                         return $"anonfunc_{anonFuncIds[func]}";
                     }
-                    else if (func.IsForeign)
-                    {
-                        return $"PForeignFunction.{func.Name}";
-                    }
                     else
                     {
                         return $"func_{func.Name}";

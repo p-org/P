@@ -1,9 +1,9 @@
-using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker.AST.States;
-using Plang.Compiler.TypeChecker.Types;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Antlr4.Runtime;
+using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
@@ -44,12 +44,12 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public IStateContainer GetGroup(string groupName)
         {
-            return groups.TryGetValue(groupName, out StateGroup group) ? group : null;
+            return groups.TryGetValue(groupName, out var group) ? group : null;
         }
 
         public State GetState(string stateName)
         {
-            return states.TryGetValue(stateName, out State state) ? state : null;
+            return states.TryGetValue(stateName, out var state) ? state : null;
         }
 
         public void AddState(State state)
@@ -70,28 +70,17 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public IEnumerable<State> AllStates()
         {
-            if (StartState != null)
-            {
-                yield return StartState;
-            }
+            if (StartState != null) yield return StartState;
 
-            Stack<IStateContainer> containers = new Stack<IStateContainer>();
+            var containers = new Stack<IStateContainer>();
             containers.Push(this);
             while (containers.Any())
             {
-                IStateContainer container = containers.Pop();
-                foreach (State state in container.States)
-                {
+                var container = containers.Pop();
+                foreach (var state in container.States)
                     if (!state.IsStart)
-                    {
                         yield return state;
-                    }
-                }
-
-                foreach (StateGroup group in container.Groups)
-                {
-                    containers.Push(group);
-                }
+                foreach (var group in container.Groups) containers.Push(group);
             }
         }
 

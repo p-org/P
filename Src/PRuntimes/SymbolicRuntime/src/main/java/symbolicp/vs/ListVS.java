@@ -364,7 +364,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
 
         // Setting everything after removal index to be the next element
         while (BoolUtils.isEverTrue(IntUtils.lessThan(IntUtils.add(current, 1), size))) {
-            ScheduleLogger.log("removeAt while " + current);
+            //ScheduleLogger.log("removeAt while " + current);
             Bdd thisCond = BoolUtils.trueCond(IntUtils.lessThan(IntUtils.add(current, 1), size));
             current = current.guard(thisCond);
             T next = this.get(IntUtils.add(current, 1));

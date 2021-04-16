@@ -24,8 +24,6 @@ public interface ValueSummary<T extends ValueSummary> {
          Bdd typeGuard = src.getType().getGuard(type);
          Bdd pcNotDefined = pc.and(typeGuard.not());
          if (!pcNotDefined.isConstFalse()) {
-             System.out.println("UnionVS: " + src);
-             System.out.println("type guard: " + typeGuard);
              throw new ClassCastException(String.format("Symbolic casting to %s under path constraint %s is not defined",
                      type,
                      pcNotDefined));

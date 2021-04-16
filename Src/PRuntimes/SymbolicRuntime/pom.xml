@@ -4,13 +4,12 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>symbolicp.prototypes</groupId>
-  <artifactId>value-summary-prototypes</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <groupId>psymbolic</groupId>
+  <artifactId>psymbolic</artifactId>
+  <version>1.0</version>
 
-  <name>value-summary-prototypes</name>
-  <!-- FIXME change it to the project's website -->
-  <url>http://www.example.com</url>
+  <name>psymbolic</name>
+  <url>https://github.com/p-org/P</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -50,14 +49,9 @@
     <dependency>
       <groupId>org.sosy_lab.pjbdd</groupId>
       <artifactId>pjbdd</artifactId>
-      <version>1.0.2-9-g284be91</version>
+      <version>1.0.10-4</version>
       <scope>system</scope>
-      <systemPath>${basedir}/lib/pjbdd-1.0.2-9-g284be91.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>org.sosy-lab</groupId>
-      <artifactId>java-smt</artifactId>
-      <version>3.2.0</version>
+      <systemPath>${basedir}/lib/pjbdd-v1.0.10-4.jar</systemPath>
     </dependency>
   </dependencies>
 

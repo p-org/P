@@ -1,73 +1,73 @@
 package symbolicp.bdd;
 
-import org.sosy_lab.pjbdd.Builders;
-import org.sosy_lab.pjbdd.creator.bdd.Creator;
-import org.sosy_lab.pjbdd.node.BDD;
+import org.sosy_lab.pjbdd.api.Builders;
+import org.sosy_lab.pjbdd.api.Creator;
+import org.sosy_lab.pjbdd.api.DD;
 import org.sosy_lab.pjbdd.util.parser.*;
 
-public class PjbddImpl implements BddLib<BDD> {
+public class PjbddImpl implements BddLib<DD> {
     final private Creator c;
-    final private Exporter e;
-    final private Importer i;
+    final private Exporter<DD> e;
+    final private Importer<DD> i;
 
     public PjbddImpl() {
-        c = Builders.newBDDBuilder().setVarCount(0).build();
+        c = Builders.bddBuilder().setVarCount(0).build();
         e = new DotExporter();
         i = new BDDStringImporter(c);
     }
 
     @Override
-    public BDD constFalse() {
+    public DD constFalse() {
         return c.makeFalse();
     }
 
     @Override
-    public BDD constTrue() {
+    public DD constTrue() {
         return c.makeTrue();
     }
 
     @Override
-    public boolean isConstFalse(BDD bdd) {
+    public boolean isConstFalse(DD bdd) {
         return bdd.isFalse();
     }
 
     @Override
-    public boolean isConstTrue(BDD bdd) {
+    public boolean isConstTrue(DD bdd) {
         return bdd.isTrue();
     }
 
     @Override
-    public BDD and(BDD left, BDD right) {
+    public DD and(DD left, DD right) {
         return c.makeAnd(left, right);
     }
 
     @Override
-    public BDD or(BDD left, BDD right) {
+    public DD or(DD left, DD right) {
         return c.makeOr(left, right);
     }
 
     @Override
-    public BDD not(BDD bdd) {
+    public DD not(DD bdd) {
         return c.makeNot(bdd);
     }
 
     @Override
-    public BDD implies(BDD left, BDD right) {
+    public DD implies(DD left, DD right) {
         return c.makeImply(left, right);
     }
 
     @Override
-    public BDD ifThenElse(BDD cond, BDD thenClause, BDD elseClause) {
+    public DD ifThenElse(DD cond, DD thenClause, DD elseClause) {
         return c.makeIte(cond, thenClause, elseClause);
     }
 
     @Override
-    public BDD newVar() {
+    public DD newVar() {
         return c.makeVariable();
     }
 
     @Override
-    public String toString(BDD bdd) {
+    public String toString(DD bdd) {
         if (bdd == null) return "null";
         if (bdd.isFalse()) return "false";
         if (bdd.isTrue()) return "true";
@@ -75,7 +75,7 @@ public class PjbddImpl implements BddLib<BDD> {
     }
 
     @Override
-    public BDD fromString(String s) {
+    public DD fromString(String s) {
         if (s.equals("false")) {
             return c.makeFalse();
         }

@@ -302,3 +302,6 @@ Src/Samples/ForeignTypes/CMakeFiles/
 Src/Samples/ForeignTypes/Makefile
 Src/Samples/ForeignTypes/cmake_install.cmake
 
+/Src/PRuntimes/RvmRuntime/target/*
+/Src/PRuntimes/SymbolicRuntime/target/*
+.idea/*

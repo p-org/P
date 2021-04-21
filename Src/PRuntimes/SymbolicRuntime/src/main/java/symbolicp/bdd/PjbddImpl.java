@@ -2,6 +2,7 @@ package symbolicp.bdd;
 
 import org.sosy_lab.pjbdd.api.Builders;
 import org.sosy_lab.pjbdd.api.Creator;
+import org.sosy_lab.pjbdd.api.CreatorBuilder;
 import org.sosy_lab.pjbdd.api.DD;
 import org.sosy_lab.pjbdd.util.parser.*;
 
@@ -10,8 +11,12 @@ public class PjbddImpl implements BddLib<DD> {
     final private Exporter<DD> e;
     final private Importer<DD> i;
 
-    public PjbddImpl() {
-        c = Builders.bddBuilder().setVarCount(0).build();
+    public PjbddImpl(boolean cbdd) {
+        CreatorBuilder creatorBuilder = Builders.cbddBuilder();
+        if (!cbdd) {
+            creatorBuilder = Builders.bddBuilder();
+        }
+        c = creatorBuilder.setVarCount(0).build();
         e = new DotExporter();
         i = new BDDStringImporter(c);
     }

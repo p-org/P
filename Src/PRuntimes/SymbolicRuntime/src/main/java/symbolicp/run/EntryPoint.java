@@ -21,7 +21,7 @@ public class EntryPoint {
 
     public static void run(Program p, String name, int depth, int maxInternalSteps) {
         Bdd.reset();
-        BoundedScheduler scheduler = new TransDPORScheduler(name, 1, 1000, 1000);
+        BoundedScheduler scheduler = new BoundedScheduler(name, 25, 1000, 1000);
         p.setScheduler(scheduler);
         scheduler.setErrorDepth(depth);
         scheduler.setMaxInternalSteps(maxInternalSteps);

@@ -1,11 +1,5 @@
 package symbolicp.bdd;
 
-import symbolicp.runtime.ScheduleLogger;
-
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 
 /**
@@ -16,11 +10,13 @@ import java.util.List;
  */
 public class Bdd {
 
-    private static BddLib globalBddLib = new PjbddImpl();
+    private static BddLib newBddImpl() { return new PjbddImpl(false); }
+
+    private static BddLib globalBddLib = newBddImpl();
 
     /** Reset the BDD library by making a new one */
     public static void reset() {
-        globalBddLib = new PjbddImpl();
+        globalBddLib = newBddImpl();
     }
 
     private final Object wrappedBdd;

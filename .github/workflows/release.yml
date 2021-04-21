@@ -1,0 +1,42 @@
+name: P release
+
+# A new release is triggered by a new tag of the form p-VERSION
+on:
+  push:
+    tags:
+      - p-*
+
+jobs:
+  Release:
+    name: P release
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout the repository
+        uses: actions/checkout@v1
+
+      - name: Setup .NET Core @ Latest
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.100
+
+      - name: Set the package version
+        run: |
+          # The environment variable GITHUB_REF is refs/tags/p-*
+          echo "TAG=${GITHUB_REF:10}" >> $GITHUB_ENV
+          echo "VERSION=${GITHUB_REF:12}" >> $GITHUB_ENV
+          TAG=${GITHUB_REF:10}
+          VERSION=${GITHUB_REF:12}
+          # Validate tag and version
+          python3 .github/workflows/regex_check.py ${TAG} ${VERSION}
+
+      - name: Create the package
+        run: |
+          # Grab version number from the tag via the environment variable
+          dotnet pack -p:PackageVersion=${VERSION} -c Release
+
+      - name: Push generated package to Nuget
+        run: |
+          dotnet nuget push ./Bld/Drops/Release/Binaries/P.${VERSION}.nupkg -k ${{ secrets.NUGET_SECRET }} -s https://api.nuget.org/v3/index.json --no-symbols true
+          dotnet nuget push ./Bld/Drops/Release/Binaries/PCSharpRuntime.${VERSION}.nupkg -k ${{ secrets.NUGET_SECRET }} -s https://api.nuget.org/v3/index.json --no-symbols true

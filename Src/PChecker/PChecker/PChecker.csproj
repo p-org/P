@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>Plang.PChecker</RootNamespace>
+    <AssemblyName>pmc</AssemblyName>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
+    <LangVersion>latest</LangVersion>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Description>The P Programming Language Compiler</Description>
+    <PackageProjectUrl>https://github.com/p-org/P</PackageProjectUrl>
+    <Copyright>The P team</Copyright>
+    <RepositoryUrl>https://github.com/p-org/P</RepositoryUrl>
+    <PackageTags>P programming language, safe asynchrony, state machines, model checkers</PackageTags>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Coyote" Version="1.0.5" />
+    <PackageReference Include="System.Threading" Version="4.0.11" />
+  </ItemGroup>
+
+</Project>

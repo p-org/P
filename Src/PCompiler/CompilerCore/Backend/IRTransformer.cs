@@ -62,7 +62,13 @@ namespace Plang.Compiler.Backend
                     (IExprTerm mapIndex, List<IPStmt> mapIndexDeps) = SimplifyExpression(mapAccessExpr.IndexExpr);
                     return (new MapAccessExpr(location, mapExpr, mapIndex, type),
                         mapExprDeps.Concat(mapIndexDeps).ToList());
-
+                
+                case SetAccessExpr setAccessExpr:
+                    (IPExpr setExpr, List<IPStmt> setExprDeps) = SimplifyLvalue(setAccessExpr.SetExpr);
+                    (IExprTerm setIndex, List<IPStmt> setIndexDeps) = SimplifyExpression(setAccessExpr.IndexExpr);
+                    return (new SetAccessExpr(location, setExpr, setIndex, type),
+                        setExprDeps.Concat(setIndexDeps).ToList());
+                
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     (IPExpr ntExpr, List<IPStmt> ntExprDeps) = SimplifyLvalue(namedTupleAccessExpr.SubExpr);
                     return (new NamedTupleAccessExpr(location, ntExpr, namedTupleAccessExpr.Entry), ntExprDeps);
@@ -96,17 +102,19 @@ namespace Plang.Compiler.Backend
             {
                 case NamedTupleAccessExpr _:
                 case SeqAccessExpr _:
+                case SetAccessExpr _:
                 case TupleAccessExpr _:
                 case MapAccessExpr _:
                     (IExprTerm dataTypeItem, List<IPStmt> dataTypeItemDeps) = SimplifyExpression(expr);
                     (IExprTerm cloneddataTypeItem, IPStmt cloneddataTypeItemDeps) = SaveInTemporary(new CloneExpr(dataTypeItem));
                     return (cloneddataTypeItem, dataTypeItemDeps.Append(cloneddataTypeItemDeps).ToList());
+
                 default:
                     return SimplifyExpression(expr);
-
             }
 #pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
+
         private (IExprTerm, List<IPStmt>) SimplifyExpression(IPExpr expr)
         {
             Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
@@ -152,7 +160,7 @@ namespace Plang.Compiler.Backend
 
                 case CastExpr castExpr:
                     (IExprTerm castSubExpr, List<IPStmt> castDeps) = SimplifyExpression(castExpr.SubExpr);
-                    (VariableAccessExpr castTemp, IPStmt castStore) = SaveInTemporary(new CastExpr(location, castSubExpr, castExpr.Type));
+                    (VariableAccessExpr castTemp, IPStmt castStore) = SaveInTemporary(new CastExpr(location, new CloneExpr(castSubExpr), castExpr.Type));
                     deps.AddRange(castDeps);
                     deps.Add(castStore);
                     return (castTemp, deps);
@@ -229,6 +237,15 @@ namespace Plang.Compiler.Backend
                     deps.AddRange(mapDeps.Concat(mapIdxDeps));
                     deps.Add(mapItemStore);
                     return (mapItemTemp, deps);
+                
+                case SetAccessExpr setAccessExpr:
+                    (IExprTerm setExpr, List<IPStmt> setDeps) = SimplifyExpression(setAccessExpr.SetExpr);
+                    (IExprTerm setIdxExpr, List<IPStmt> setIdxDeps) = SimplifyExpression(setAccessExpr.IndexExpr);
+                    (VariableAccessExpr setItemTemp, IPStmt setItemStore) =
+                        SaveInTemporary(new SetAccessExpr(location, setExpr, setIdxExpr, setAccessExpr.Type));
+                    deps.AddRange(setDeps.Concat(setIdxDeps));
+                    deps.Add(setItemStore);
+                    return (setItemTemp, deps);
 
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     (IExprTerm ntSubExpr, List<IPStmt> ntSubDeps) = SimplifyExpression(namedTupleAccessExpr.SubExpr);
@@ -300,12 +317,14 @@ namespace Plang.Compiler.Backend
                     deps.AddRange(valuesDeps);
                     deps.Add(valuesStore);
                     return (valuesTemp, deps);
+
                 case StringExpr stringExpr:
-                    (IPExpr[] stringArgs, List< IPStmt > stringArgsDeps) = SimplifyFunArgs(stringExpr.Args);
+                    (IPExpr[] stringArgs, List<IPStmt> stringArgsDeps) = SimplifyFunArgs(stringExpr.Args);
                     (VariableAccessExpr stringTemp, IPStmt stringStore) = SaveInTemporary(new StringExpr(location, stringExpr.BaseString, stringArgs.ToList()));
                     deps.AddRange(stringArgsDeps);
                     deps.Add(stringStore);
                     return (stringTemp, deps);
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }

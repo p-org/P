@@ -1,5 +1,6 @@
-using Plang.Compiler.Backend.Prt;
-using Plang.Compiler.Backend.Coyote;
+using Plang.Compiler.Backend.C;
+using Plang.Compiler.Backend.CSharp;
+using Plang.Compiler.Backend.Rvm;
 using System.Collections.Generic;
 using Plang.Compiler.Backend.Symbolic;
 
@@ -12,9 +13,9 @@ namespace Plang.Compiler.Backend
 
         static TargetLanguage()
         {
-            RegisterCodeGenerator(CompilerOutput.Coyote, new CoyoteCodeGenerator());
-            RegisterCodeGenerator(CompilerOutput.C, new PrtCodeGenerator());
-            RegisterCodeGenerator(CompilerOutput.Symbolic, new SymbolicCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.CSharp, new CSharpCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.C, new CCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.Rvm, new RvmCodeGenerator());
         }
 
         private static void RegisterCodeGenerator(CompilerOutput name, ICodeGenerator generator)

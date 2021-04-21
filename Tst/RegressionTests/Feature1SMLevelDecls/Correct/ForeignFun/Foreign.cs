@@ -4,12 +4,12 @@ using System.Runtime;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using Plang.CoyoteRuntime;
-using Plang.CoyoteRuntime.Values;
+using Plang.CSharpRuntime;
+using Plang.CSharpRuntime.Values;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Main {
+namespace PImplementation {
     internal partial class Main : PMachine
     {
         

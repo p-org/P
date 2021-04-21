@@ -1,0 +1,42 @@
+name: CI on Ubuntu
+
+on: [push]
+
+jobs:
+  Build-And-Test-Ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.100
+    - name: Set up JDK
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - name: Cache Maven packages
+      uses: actions/cache@v2
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+    - name: Build RV-Monitor
+      run: |
+        git submodule update --init --recursive
+        pushd Tst/RegressionTests/Rvm/ext/rv-monitor
+        mvn install -DskipTests
+        popd
+    - name: Build P runtime for Java
+      run: |
+        pushd Src/PRuntimes/RvmRuntime
+        mvn install
+        popd
+    - name: Build
+      run: dotnet build --configuration Release
+    - name: Test
+      run: dotnet test --configuration Release
+    - name: Test-RVM
+      run: |
+        python Tst/RegressionTests/Rvm/run_all_unittests.py
+        python Tst/RegressionTests/Rvm/run_all_examples.py

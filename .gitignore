@@ -157,6 +157,7 @@ ClientBin/
 *.[Pp]ublish.xml
 *.pfx
 *.publishsettings
+*.pyc
 
 
 # RIA/Silverlight projects
@@ -302,6 +303,11 @@ Src/Samples/ForeignTypes/CMakeFiles/
 Src/Samples/ForeignTypes/Makefile
 Src/Samples/ForeignTypes/cmake_install.cmake
 
+# IntelliJ
+.idea/*
+
+# Maven
+target/
+*.class
 /Src/PRuntimes/RvmRuntime/target/*
 /Src/PRuntimes/SymbolicRuntime/target/*
-.idea/*

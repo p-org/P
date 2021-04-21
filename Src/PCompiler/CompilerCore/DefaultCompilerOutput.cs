@@ -7,10 +7,12 @@ namespace Plang.Compiler
     public class DefaultCompilerOutput : ICompilerOutput
     {
         private readonly DirectoryInfo outputDirectory;
+        private readonly DirectoryInfo aspectjOutputDirectory;
 
-        public DefaultCompilerOutput(DirectoryInfo outputDirectory)
+        public DefaultCompilerOutput(DirectoryInfo outputDirectory, DirectoryInfo aspectjOutputDirectory = null)
         {
             this.outputDirectory = outputDirectory;
+            this.aspectjOutputDirectory = aspectjOutputDirectory;
         }
 
         public void WriteMessage(string msg, SeverityKind severity)
@@ -41,8 +43,37 @@ namespace Plang.Compiler
 
         public void WriteFile(CompiledFile file)
         {
-            string outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
-            File.WriteAllText(outputPath, file.Contents);
+            if (Path.GetExtension(file.FileName) == ".aj"){
+                string outputPath = Path.Combine(aspectjOutputDirectory.FullName, file.FileName);
+                File.WriteAllText(outputPath, file.Contents);
+            } else {
+                string outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
+                File.WriteAllText(outputPath, file.Contents);
+            }
+        }
+
+        public void WriteError(string msg)
+        {
+            ConsoleColor defaultColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(msg);
+            Console.ForegroundColor = defaultColor;
+        }
+
+        public void WriteInfo(string msg)
+        {
+            ConsoleColor defaultColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(msg);
+            Console.ForegroundColor = defaultColor;
+        }
+
+        public void WriteWarning(string msg)
+        {
+            ConsoleColor defaultColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine(msg);
+            Console.ForegroundColor = defaultColor;
         }
     }
 }

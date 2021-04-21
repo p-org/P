@@ -127,8 +127,11 @@ namespace Plang.Compiler
         Exception TupleSizeMoreThanEight(ParserRuleContext context);
 
         Exception BareLoopControlFlow(string stmtName, ParserRuleContext context);
+
         Exception ExitFunctionCannotTakeParameters(ParserRuleContext sourceLocation, int count);
+
         Exception MoreThanOneParameterForHandlers(ParserRuleContext sourceLocation, int count);
+
         Exception IllegalChooseSubExprType(PParser.ChooseExprContext context, PLanguageType subExprType);
     }
 }

@@ -1,114 +1,116 @@
-event local_event;
+/*****************************************************************************************
+The coordinator machine coordinates between all the participants and
+based on responses received from each participant decided to commit or abort the transaction.
+It receives write and read transactions from the clients and services these transactions sequentially one by one.
+******************************************************************************************/
 
-/* 
-The coordinator machine that communicates with the participants and 
-guarantees atomicity accross participants for write transactions
-*/
+// Events used by coordinator to communicate with the participants
+event ePrepareReq: tPrepareReq;
+event ePrepareResp: tPrepareResp;
+event eCommitTrans: int;
+event eAbortTrans: int;
+
+type tPrepareReq = (coordinator: Coordinator, transId: int, rec: tRecord);
+type tPrepareResp = (participant: Participant, transId: int, status: tTransStatus);
 
 machine Coordinator
 {
 	var participants: seq[machine];
-	var pendingWrTrans: tWriteTransaction;
+	var pendingWrTrans: tWriteTransReq;
 	var currTransId:int;
-	var timer: machine;
+	var timer: Timer;
 
 	start state Init {
 		entry (payload: seq[machine]){
 			var i : int; 
 			//initialize variables
 			participants = payload;
-			i = 0; currTransId = 0;
-			timer = CreateTimer(this);
+			i = 0; currTransId = 0; timer = CreateTimer(this);
 
-			announce eMonitor_AtomicityInitialize, sizeof(payload);
-			//wait for requests
+			announce eMonitor_AtomicityInitialize, sizeof(participants);
 			goto WaitForTransactions;
 		}
 	}
 
 	state WaitForTransactions {
-		on eWriteTransaction do (wTrans : tWriteTransaction) {
+		on eWriteTransReq do (wTrans : tWriteTransReq) {
 			pendingWrTrans = wTrans;
 			currTransId = currTransId + 1;
-			SendToAllParticipants(ePrepare, (coordinator = this, transId = currTransId, key = pendingWrTrans.key, val = pendingWrTrans.val));
+			BroadcastToAllParticipants(ePrepareReq, (coordinator = this, transId = currTransId, rec = wTrans.rec));
 
 			//start timer while waiting for responses from all participants
 			StartTimer(timer, 100);
 
-			raise local_event;
+			goto WaitForPrepareResponses;
 		}
 
-		on eReadTransaction do (rTrans : tReadTransaction) {
+		on eReadTransReq do (rTrans : tReadTransReq) {
 			// non-deterministically pick a participant to read from.
-			if($)
-			{
-				send participants[0], eReadTransaction, rTrans;
-			}
-			else
-			{
-				send participants[sizeof(participants) - 1], eReadTransaction, rTrans;
-			}
+			send choose(participants), eReadTransReq, rTrans;
 		}
 
-		on local_event push WaitForPrepareResponses;
-
-		// when in this state it is fine to drop these messages
-		ignore ePrepareSuccess, ePrepareFailed;
+		// when in this state it is fine to drop these messages as they are from the previous transaction
+		ignore ePrepareResp, eTimeOut;
 	}
 
 	var countPrepareResponses: int;
 
 	state WaitForPrepareResponses {
 		// we are going to process transactions sequentially
-		defer eWriteTransaction;
+		defer eWriteTransReq;
 
-		entry {
+		on ePrepareResp do (resp : tPrepareResp) {
+		    // check if the response is for the current transaction else ignore it
+			if (currTransId == resp.transId) {
+			    if(resp.status == SUCCESS)
+			    {
+			        countPrepareResponses = countPrepareResponses + 1;
+                    // check if we have received all responses
+                    if(countPrepareResponses == sizeof(participants))
+                    {
+                        // lets commit the transaction
+                        DoGlobalCommit();
+                        // safe to go back and service the next transaction
+                        goto WaitForTransactions;
+                    }
+			    }
+			    else
+			    {
+			        DoGlobalAbort(ERROR);
+                    // safe to go back and service the next transaction
+                    goto WaitForTransactions;
+			    }
+
+			}
+		}
+
+		on eTimeOut goto WaitForTransactions with { DoGlobalAbort(TIMEOUT); }
+
+        on eReadTransReq do (rTrans : tReadTransReq) {
+            // non-deterministically pick a participant to read from.
+            send choose(participants), eReadTransReq, rTrans;
+        }
+		exit {
 			countPrepareResponses = 0;
 		}
-
-		on ePrepareSuccess do (transId : int) {
-			if (currTransId == transId) {
-				countPrepareResponses = countPrepareResponses + 1;
-
-				// check if we have received all responses
-				if(countPrepareResponses == sizeof(participants))
-				{
-					//lets commit the transaction
-					SendToAllParticipants(eGlobalCommit, currTransId);
-					send pendingWrTrans.client, eWriteTransSuccess;
-					CancelTimer(timer);
-					//it is now safe to pop back to the parent state
-					pop;
-				}
-			}
-		}
-
-		on ePrepareFailed do (transId : int) {
-			if (currTransId == transId) {
-				DoGlobalAbort();
-				CancelTimer(timer);
-				pop;
-			}
-		}
-
-		on eTimeOut do { 
-			DoGlobalAbort(); 
-			pop;
-		}
-
-		exit {
-			print "Going back to WaitForTransactions";
-		}
 	}
 
-	fun DoGlobalAbort() {
+	fun DoGlobalAbort(respStatus: tTransStatus) {
 		// ask all participants to abort and fail the transaction
-		SendToAllParticipants(eGlobalAbort, currTransId);
-		send pendingWrTrans.client, eWriteTransFailed;
+		BroadcastToAllParticipants(eAbortTrans, currTransId);
+		send pendingWrTrans.client, eWriteTransResp, (transId = currTransId, status = respStatus);
+		CancelTimer(timer);
 	}
+
+	fun DoGlobalCommit() {
+        // ask all participants to commit and respond to client
+        BroadcastToAllParticipants(eCommitTrans, currTransId);
+        send pendingWrTrans.client, eWriteTransResp, (transId = currTransId, status = SUCCESS);
+        CancelTimer(timer);
+    }
 
 	//helper function to send messages to all replicas
-	fun SendToAllParticipants(message: event, payload: any)
+	fun BroadcastToAllParticipants(message: event, payload: any)
 	{
 		var i: int; i = 0;
 		while (i < sizeof(participants)) {

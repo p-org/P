@@ -1,5 +1,4 @@
 using Antlr4.Runtime;
-using Antlr4.Runtime.Misc;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -74,12 +73,12 @@ namespace Plang.Compiler.TypeChecker
             else
             {
                 message = exprVisitor.Visit(context.message);
-                if(!message.Type.IsSameTypeAs(PrimitiveType.String))
+                if (!message.Type.IsSameTypeAs(PrimitiveType.String))
                 {
                     throw handler.TypeMismatch(context.message, message.Type, PrimitiveType.String);
                 }
             }
-                
+
             return new AssertStmt(context, assertion, message);
         }
 
@@ -92,8 +91,6 @@ namespace Plang.Compiler.TypeChecker
             }
             return new PrintStmt(context, message);
         }
-
-        
 
         public override IPStmt VisitReturnStmt(PParser.ReturnStmtContext context)
         {
@@ -183,6 +180,7 @@ namespace Plang.Compiler.TypeChecker
                 case SetType setType:
                     expectedValueType = setType.ElementType;
                     break;
+
                 default:
                     throw handler.TypeMismatch(variable, TypeKind.Set);
             }

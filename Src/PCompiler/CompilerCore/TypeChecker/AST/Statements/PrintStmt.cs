@@ -1,5 +1,4 @@
 using Antlr4.Runtime;
-using System.Collections.Generic;
 
 namespace Plang.Compiler.TypeChecker.AST.Statements
 {

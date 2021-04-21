@@ -3,19 +3,19 @@ using System.Runtime;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using Plang.CoyoteRuntime;
-using Plang.CoyoteRuntime.Values;
-using Plang.CoyoteRuntime.Exceptions;
+using Plang.CSharpRuntime;
+using Plang.CSharpRuntime.Values;
+using Plang.CSharpRuntime.Exceptions;
 using System.Threading;
 using System.Threading.Tasks;
 
 #pragma warning disable 162, 219, 414
-namespace TwoPhaseCommit
+namespace PImplementation
 {
     public static partial class GlobalFunctions {
 		public static PrtNamedTuple ChooseTransaction(PMachine pMachine)
         {
-            return (new PrtNamedTuple(new string[] { "client", "key", "val" }, pMachine.self, ((PrtInt)10), ((PrtInt)1)));
+            return (new PrtNamedTuple(new string[] { "key", "val" }, (PrtString) pMachine.TryRandomInt(100).ToString(), (PrtInt)pMachine.TryRandomInt(100)));
         }
 	}
 }

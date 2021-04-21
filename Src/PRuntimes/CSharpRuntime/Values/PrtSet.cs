@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Plang.CSharpRuntime.Values
 {
-    public sealed class PrtSet : IPrtMutableValue, ISet<IPrtValue>
+    public sealed class PrtSet : IPrtMutableValue, IReadOnlyList<IPrtValue>, ICollection<IPrtValue>
     {
         private readonly ISet<IPrtValue> set = new HashSet<IPrtValue>();
 

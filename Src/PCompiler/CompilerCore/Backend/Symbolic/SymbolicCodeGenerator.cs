@@ -383,7 +383,8 @@ namespace Plang.Compiler.Backend.Symbolic
             int i = 0;
             foreach (var param in function.Signature.Parameters)
             {
-                context.WriteLine(output, ",");
+                if (i > 0)
+                    context.WriteLine(output, ",");
                 context.Write(output, $"({GetSymbolicType(param.Type, true)}) args.get({i})");
                 i++;
             }

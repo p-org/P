@@ -144,7 +144,6 @@ public class TestCaseExecutor {
         optionList.add(System.getProperty("java.class.path") + ":" + outputDirectory); // source directory
         optionList.add("-d");
         optionList.add(outputDirectory); // output directory
-        System.out.println(optionList.toString());
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 

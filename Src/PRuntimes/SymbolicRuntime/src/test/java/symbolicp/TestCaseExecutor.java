@@ -6,8 +6,7 @@ import symbolicp.runtime.RuntimeLogger;
 import symbolicp.run.EntryPoint;
 import symbolicp.run.Program;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+import javax.tools.*;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -79,7 +78,9 @@ public class TestCaseExecutor {
         String testCaseRelDir = sanitizeRelDir(Paths.get(testCaseRelPaths.get(0)).getParent().toString());
         String outputDirectory = "src/test/java/symbolicp/testCase/" + testCaseRelDir;
 
-        String testCasePathsString = String.join(" ", testCasePaths);
+        // TODO: make separating out the .p and .java files more robust
+        List<String> pTestCasePaths = testCasePaths.stream().filter(p -> p.contains(".p")).collect(Collectors.toList());
+        String testCasePathsString = String.join(" ", pTestCasePaths);
         Process process;
         try {
             System.out.println(String.format("dotnet %s %s -generate:Symbolic -outputDir:%s\n"
@@ -133,12 +134,39 @@ public class TestCaseExecutor {
         // Program to run
         Program p = null;
 
-        // Try to compile the file
+        // Try to compile the files
+        List<String> javaTestCasePaths = testCasePaths.stream().filter(x -> x.contains(".java")).collect(Collectors.toList());
+        List<File> sourceFiles = javaTestCasePaths.stream().map(x -> new File(x)).collect(Collectors.toList());
+        sourceFiles.add(new File(outputPath));
+
+        List<String> optionList = new ArrayList<>();
+        optionList.add("-classpath");
+        optionList.add(System.getProperty("java.class.path") + ":" + outputDirectory); // source directory
+        optionList.add("-d");
+        optionList.add(outputDirectory); // output directory
+        System.out.println(optionList.toString());
+
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        compiler.run(null, null, null, outputPath);
+
+        StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+        Iterable<? extends JavaFileObject> compilationUnits =
+                fileManager.getJavaFileObjectsFromFiles(sourceFiles);
+
+        boolean compiled = compiler.getTask(
+                null,
+                fileManager,
+                null,
+                optionList,
+                null,
+                compilationUnits).call();
 
         // Load and instantiate compiled class and external classes
         try {
+            // external classes
+            for (String fileName : javaTestCasePaths) {
+                System.out.println("loading " + fileName);
+                URLClassLoader classLoader = URLClassLoader.newInstance(new URL[]{new File(fileName).toURI().toURL()});
+            }
             URLClassLoader classLoader = URLClassLoader.newInstance(new URL[]{new File(outputDirectory).toURI().toURL()});
             Class<?> cls = Class.forName(class_name, true, classLoader);
             Object instance = cls.getDeclaredConstructor().newInstance();
@@ -154,8 +182,6 @@ public class TestCaseExecutor {
         } catch (Exception | AssertionError e) {
             e.printStackTrace();
             return 2;
-        } finally {
-            new File(outputDirectory + File.separator + class_name + ".class").delete();
         }
 
         return 0;

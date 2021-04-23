@@ -18,7 +18,8 @@ namespace Plang.Compiler.Backend.Symbolic
     {
         public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
         {
-            Console.WriteLine("generated code");
+            Console.WriteLine("generated code1");
+            Console.WriteLine("generated code2");
             var context = new CompilationContext(job);
             var javaSource = GenerateSource(context, globalScope);
             Console.WriteLine("generated source");
@@ -68,12 +69,9 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 case Function function:
                     if (function.IsForeign)
-                    {
                         WriteForeignFunction(context, output, function);
-                        // throw new NotImplementedException("Foreign functions are not yet supported");
-                    }
-
-                    WriteFunction(context, output, function);
+                    else
+                        WriteFunction(context, output, function);
                     break;
                 case Machine machine:
                     if (machine.IsSpec)
@@ -364,10 +362,12 @@ namespace Plang.Compiler.Backend.Symbolic
             var rootPCScope = context.FreshPathConstraintScope();
 
             string returnType = null;
+            string returnStatement = "";
             switch (GetReturnConvention(function))
             {
                 case FunctionReturnConvention.RETURN_VALUE:
                     returnType = "Object";
+                    returnStatement = "return ";
                     break;
                 case FunctionReturnConvention.RETURN_VOID:
                     returnType = "void";
@@ -376,9 +376,19 @@ namespace Plang.Compiler.Backend.Symbolic
 
             var functionName = $"wrapper__{context.GetNameForDecl(function)}";
 
-            context.WriteLine(output, $"{staticKeyword}{returnType} ");
+            context.Write(output, $"{staticKeyword}{returnType} ");
             context.Write(output, functionName);
-            context.WriteLine(output, $"(List<Object> args);");
+            context.WriteLine(output, " (List<Object> args) { ");
+            context.Write(output, $"    {returnStatement}GlobalFunctions.{context.GetNameForDecl(function)}(");
+            int i = 0;
+            foreach (var param in function.Signature.Parameters)
+            {
+                context.WriteLine(output, ",");
+                context.Write(output, $"({GetSymbolicType(param.Type, true)}) args.get({i})");
+                i++;
+            }
+            context.WriteLine(output, ");");
+            context.WriteLine(output, " }");
         }
 
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)
@@ -1016,15 +1026,40 @@ namespace Plang.Compiler.Backend.Symbolic
                     throw new NotImplementedException("Cannot handle foreign function calls that can exit or return BDDs");
             }
 
-            context.Write(output, $"ForeignFunctionInvoker.invoke({flowContext.pcScope.PathConstraintVar}, {GetSymbolicType(function.Signature.ReturnType)}.class, x -> wrapper__{context.GetNameForDecl(function)}(x), ");
+/*
+            string lambdaArgs = "";
+            for (int i = 0; i < args.Count(); i++)
+            {
+                if (i > 0)
+                {
+                    lambdaArgs = lambdaArgs + ",";
+                }
+                lambdaArgs = lambdaArgs + $"x{i}";
+            }
+*/
 
+            context.Write(output, $"ForeignFunctionInvoker.invoke({flowContext.pcScope.PathConstraintVar}, ");
+            switch (returnConvention)
+            {
+                case FunctionReturnConvention.RETURN_VALUE:
+                    context.Write(output, $"{GetGenericSymbolicType(function.Signature.ReturnType)}.class, x -> ");
+                    context.Write(output, "{ return ");
+                    context.Write(output, $"wrapper__{context.GetNameForDecl(function)}(x);");
+                    context.Write(output, " }");
+                    break;
+                case FunctionReturnConvention.RETURN_VOID:
+                    context.Write(output, $"x -> wrapper__{context.GetNameForDecl(function)}(x)");
+                    break;
+                default:
+                    throw new NotImplementedException("Cannot handle foreign function calls that can exit or return BDDs");
+            }
+            // context.Write(output, $"({lambdaArgs}) -> wrapper__{context.GetNameForDecl(function)}({lambdaArgs})");
             for (int i = 0; i < args.Count(); i++)
             {
                 var param = args.ElementAt(i);
                 context.Write(output, ", ");
                 WriteExpr(context, output, flowContext.pcScope, param);
             }
-
             context.WriteLine(output, ");");
 
             switch (returnConvention)
@@ -1043,6 +1078,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteFunCallStmt(CompilationContext context, StringWriter output, ControlFlowContext flowContext, Function function, IReadOnlyList<IPExpr> args, IPExpr dest=null)
         {
+            Console.WriteLine("fun call stmt");
             var isAsync = function.CanReceive == true;
             if (isAsync)
             {
@@ -1051,6 +1087,7 @@ namespace Plang.Compiler.Backend.Symbolic
             if (function.IsForeign)
             {
                 WriteForeignFunCallStmt(context, output, flowContext, function, args, dest);
+                return;
             }
 
             var returnConvention = GetReturnConvention(function);
@@ -1622,6 +1659,33 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        private string GetGenericSymbolicType(PLanguageType type) {
+            switch (type.Canonicalize())
+            {
+                case PrimitiveType _:
+                    return "PrimVS";
+                case PermissionType _:
+                    return "PrimVS";
+                case TypeDefType _:
+                    return "PrimVS";
+                case ForeignType _:
+                    return "PrimVS";
+                case SequenceType _:
+                    return "ListVS";
+                case MapType _:
+                    return "MapVS";
+                case NamedTupleType _:
+                    return "NamedTupleVS";
+                case TupleType _:
+                    return "TupleVS";
+                case EnumType _:
+                    return "PrimVS /* enum {enumType.OriginalRepresentation} */";
+                default:
+                    throw new NotImplementedException($"Symbolic type '{type.OriginalRepresentation}' not supported");
+            }
+        }
+
+
         private string GetSymbolicType(PLanguageType type, bool isVar = false)
         {
             switch (type.Canonicalize())
@@ -1780,6 +1844,8 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import symbolicp.vs.*;");
             context.WriteLine(output, "import symbolicp.runtime.*;");
             context.WriteLine(output, "import symbolicp.run.*;");
+            context.WriteLine(output, "import symbolicp.util.*;");
+            context.WriteLine(output, "import java.util.List;");
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.MainClassName} implements Program {{");
             context.WriteLine(output);

@@ -42,7 +42,7 @@ public class ForeignFunctionInvoker {
         return null;
     }
 
-    public static void invoke(Bdd pc, Class<? extends ValueSummary> c, Consumer<List<Object>> fn, ValueSummary ... args) {
+    public static void invoke(Bdd pc, Consumer<List<Object>> fn, ValueSummary ... args) {
         Bdd iterPc = Bdd.constFalse();
         boolean skip = false;
         boolean done = false;

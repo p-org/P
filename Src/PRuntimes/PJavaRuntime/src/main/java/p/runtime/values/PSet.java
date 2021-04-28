@@ -2,25 +2,32 @@ package p.runtime.values;
 
 import lombok.NonNull;
 import lombok.SneakyThrows;
+import p.runtime.PRuntimeException;
 import p.runtime.values.exceptions.ComparingPValuesException;
 import p.runtime.values.exceptions.InvalidIndexException;
 import p.runtime.values.exceptions.KeyNotFoundException;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.IntStream;
 
 public class PSet extends PCollection {
     // stores the map
     private final List<PValue<?>> set;
 
-    public PSet(Set<PValue<?>> input_set)
+    private static class SortPValue implements Comparator<PValue<?>>
+    {
+        @Override
+        public int compare(PValue<?> o1, PValue<?> o2) {
+            return o1.hashCode() - o2.hashCode();
+        }
+    }
+    public PSet(List<PValue<?>> input_set)
     {
         set = new ArrayList<>();
         for (var entry : input_set) {
             set.add(PValue.clone(entry));
         }
+        set.sort(new SortPValue());
     }
 
     public PSet(@NonNull PSet other)
@@ -29,6 +36,7 @@ public class PSet extends PCollection {
         for (var entry : other.set) {
             set.add(PValue.clone(entry));
         }
+        set.sort(new SortPValue());
     }
 
     public PValue<?> getValue(int index) throws InvalidIndexException {
@@ -37,10 +45,8 @@ public class PSet extends PCollection {
         return set.get(index);
     }
 
-    public void setValue(int index, PValue<?> val) throws InvalidIndexException {
-        if(index >= set.size() || index < 0)
-            throw new InvalidIndexException(index, this);
-        set.set(index, val);
+    public void setValue(int index, PValue<?> val) throws PRuntimeException {
+        throw new PRuntimeException("Set value of a set is not allowed!");
     }
 
     public void insertValue(int index, PValue<?> val) throws InvalidIndexException {
@@ -51,12 +57,12 @@ public class PSet extends PCollection {
 
     @Override
     public PSet clone() {
-        return new PSet(seq);
+        return new PSet(set);
     }
 
     @Override
     public int hashCode() {
-        return ComputeHash.getHashCode(seq);
+        return ComputeHash.getHashCode(set);
     }
 
     @SneakyThrows
@@ -72,12 +78,11 @@ public class PSet extends PCollection {
         if (set.size() != other.set.size()) {
             return false;
         }
-        for (int i = 0; i<set.size(); i++) {
-            if (!PValue.equals(other.set.get(i), this.set.get(i))) {
-                return false;
-            }
-        }
-        return true;
+
+        set.sort(new SortPValue());
+        other.set.sort(new SortPValue());
+
+        return IntStream.range(0, set.size()).allMatch(i -> PValue.equals(other.set.get(i), this.set.get(i)));
     }
 
     @Override
@@ -85,7 +90,7 @@ public class PSet extends PCollection {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         String sep = "";
-        for (PValue<?> item : seq) {
+        for (PValue<?> item : set) {
             sb.append(sep);
             sb.append(item);
             sep = ", ";

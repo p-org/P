@@ -1,44 +1,45 @@
 package p.runtime.values;
+
 import lombok.Getter;
 import lombok.NonNull;
 
-public class PInt extends PValue<PInt> {
+public class PBool extends PValue<PBool>{
     // stores the int value
     @Getter
-    private final long value;
+    private final boolean value;
 
-    public PInt(long val)
+    public PBool(boolean val)
     {
         value = val;
     }
 
-    public PInt(@NonNull PInt val)
+    public PBool(@NonNull PBool val)
     {
         value = val.value;
     }
 
     @Override
-    public PInt clone() {
-        return new PInt(value);
+    public PBool clone() {
+        return new PBool(value);
     }
 
     @Override
     public int hashCode() {
-        return (new Long(value)).hashCode();
+        return new Boolean(value).hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
-        else if (!(obj instanceof PInt)) {
+        else if (!(obj instanceof PBool)) {
             return false;
         }
-        return this.value == ((PInt)obj).value;
+        return this.value == ((PBool)obj).value;
     }
 
     @Override
     public String toString() {
-        return Long.toString(value);
+        return Boolean.toString(value);
     }
 }

@@ -67,54 +67,7 @@ ClientServer P project and generate the `ClientServer.cs` file in the
 > pc -proj:ClientServer.pproj
 ```
 
-Expected output:
-
-### [Step 3] Compiling the Generated Code C# Code
-
-The generated C# code must be compiled into either a `dll` or `exe`
-before passing it to the model-checker.
-
-```console
-> cd P\BrickManager
-> dotnet build BrickManager.csproj 
-```
-
-The above command generates the `BrickManager.dll`.
-
-```console
-$ pc -proj:ClientServer.pproj 
-----------------------------------------
-==== Loading project file: ClientServer.pproj
-....... includes p file: clientserver/psrc/clientserver.p
-....... includes p file: clientserver/psrc/abstractserver.p
-....... includes p file: clientserver/pspec/monotonic.p
-....... includes p file: clientserver/ptst/modules.p
-....... includes p file: clientserver/ptst/testdriver.p
-....... includes p file: clientserver/ptst/testscript.p
-----------------------------------------
-----------------------------------------
-Parsing ..
-Type checking ...
-Code generation ....
-Generated ClientServer.cs
-----------------------------------------
-Compiling ClientServer.csproj ..
-
-Microsoft (R) Build Engine version 16.8.0+126527ff1 for .NET
-Copyright (C) Microsoft Corporation. All rights reserved.
-
-  Determining projects to restore...
-  Restored ClientServer/ClientServer.csproj (in 129 ms).
-  ClientServer -> ClientServer/netcoreapp3.1/ClientServer.dll
-
-Build succeeded.
-    0 Warning(s)
-    0 Error(s)
-
-Time Elapsed 00:00:02.32
-```
-
-### [Step 4] Running the P Checker
+### [Step 3] Running the P Checker
 
 We now run the P model-checker (coyote) on the Client Server example.
 `pmc` provides a lot of options but for now we will only use a fix set

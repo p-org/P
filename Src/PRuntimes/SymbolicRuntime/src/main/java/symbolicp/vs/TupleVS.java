@@ -27,9 +27,15 @@ public class TupleVS implements ValueSummary<TupleVS> {
                 .collect(Collectors.toList()).toArray(new Class[items.length]);
     }
 
+    /** Get the arity of the TupleVS
+     * @return The arity of the TupleVS */
+    public int getArity() {
+        return fields.length;
+    }
+
     /** Get the i-th value in the TupleVS
      * @param i The index to get from the TupleVS
-     * @result The value at index i */
+     * @return The value at index i */
     public ValueSummary getField(int i) {
         return fields[i];
     }
@@ -37,7 +43,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
     /** Set the i-th value in the tuTupleVSple to the provided value
      * @param i The index to set in the TupleVS
      * @param val The value to set in the TupleVS
-     * @result The result after updating the TupleVS */
+     * @return The result after updating the TupleVS */
     public TupleVS setField(int i, ValueSummary val) {
         final ValueSummary[] newItems = new ValueSummary[fields.length];
         System.arraycopy(fields, 0, newItems, 0, fields.length);

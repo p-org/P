@@ -2,8 +2,6 @@ package symbolicp.vs;
 
 import symbolicp.bdd.Bdd;
 
-import java.lang.reflect.InvocationTargetException;
-
 public interface ValueSummary<T extends ValueSummary> {
 
     /**
@@ -18,17 +16,20 @@ public interface ValueSummary<T extends ValueSummary> {
      * @return A ValueSummary that can be casted into the provided type
      */
      static ValueSummary fromAny(Bdd pc, Class<? extends ValueSummary> type, UnionVS src) {
+         ValueSummary result;
          if (type.equals(UnionVS.class)) {
-             return src;
+             result = src;
+         } else {
+             Bdd typeGuard = src.getType().getGuard(type);
+             Bdd pcNotDefined = pc.and(typeGuard.not());
+             if (!pcNotDefined.isConstFalse()) {
+                 throw new ClassCastException(String.format("Symbolic casting to %s under path constraint %s is not defined",
+                         type,
+                         pcNotDefined));
+             }
+             result = src.getPayload(type).guard(pc);
          }
-         Bdd typeGuard = src.getType().getGuard(type);
-         Bdd pcNotDefined = pc.and(typeGuard.not());
-         if (!pcNotDefined.isConstFalse()) {
-             throw new ClassCastException(String.format("Symbolic casting to %s under path constraint %s is not defined",
-                     type,
-                     pcNotDefined));
-         }
-         return src.getPayload(type).guard(pc);
+         return result;
      }
 
     /** Check whether a value summary has any values under any path condition

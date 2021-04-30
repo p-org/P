@@ -1,7 +1,7 @@
 package psymbolic.runtime;
 
+import psymbolic.valuesummary.UnionVS;
 import psymbolic.valuesummary.bdd.Bdd;
-import psymbolic.valuesummary.*;
 
 public class IgnoreEventHandler extends EventHandler {
 

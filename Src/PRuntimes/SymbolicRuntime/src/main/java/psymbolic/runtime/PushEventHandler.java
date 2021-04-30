@@ -1,7 +1,7 @@
 package psymbolic.runtime;
 
+import psymbolic.valuesummary.UnionVS;
 import psymbolic.valuesummary.bdd.Bdd;
-import psymbolic.valuesummary.*;
 
 public class PushEventHandler extends EventHandler {
     public final State dest;

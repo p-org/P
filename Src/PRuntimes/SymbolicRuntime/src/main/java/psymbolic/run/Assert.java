@@ -1,8 +1,8 @@
 package psymbolic.run;
 
-import psymbolic.valuesummary.bdd.Bdd;
 import psymbolic.runtime.RuntimeLogger;
 import psymbolic.runtime.Scheduler;
+import psymbolic.valuesummary.bdd.Bdd;
 public class Assert {
 
     public static void prop(boolean p, Scheduler scheduler, Bdd pc) {

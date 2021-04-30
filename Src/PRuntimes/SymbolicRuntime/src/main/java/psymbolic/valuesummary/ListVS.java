@@ -1,7 +1,7 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.Bdd;
 import psymbolic.runtime.ScheduleLogger;
+import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.ArrayList;
 import java.util.Collections;

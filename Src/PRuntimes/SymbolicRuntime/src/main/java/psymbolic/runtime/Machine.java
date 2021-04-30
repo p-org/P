@@ -1,8 +1,8 @@
 package psymbolic.runtime;
 
-import psymbolic.valuesummary.bdd.Bdd;
 import psymbolic.run.Assert;
 import psymbolic.valuesummary.*;
+import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.HashSet;
 import java.util.Map;

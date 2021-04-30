@@ -1,7 +1,7 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.Bdd;
 import psymbolic.util.Checks;
+import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.*;
 

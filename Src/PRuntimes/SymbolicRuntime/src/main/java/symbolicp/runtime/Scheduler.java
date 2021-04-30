@@ -1,6 +1,5 @@
 package symbolicp.runtime;
 
-import org.checkerframework.checker.units.qual.A;
 import symbolicp.bdd.Bdd;
 import symbolicp.run.Assert;
 import symbolicp.vs.*;

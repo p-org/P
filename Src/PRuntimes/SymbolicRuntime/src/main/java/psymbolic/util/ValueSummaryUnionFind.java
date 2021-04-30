@@ -1,7 +1,7 @@
 package psymbolic.util;
 
-import psymbolic.valuesummary.bdd.Bdd;
 import psymbolic.valuesummary.PrimVS;
+import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.*;
 

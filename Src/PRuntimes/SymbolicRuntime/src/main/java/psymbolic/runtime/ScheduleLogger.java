@@ -1,7 +1,7 @@
 package psymbolic.runtime;
 
+import psymbolic.valuesummary.PrimVS;
 import psymbolic.valuesummary.bdd.Bdd;
-import psymbolic.valuesummary.*;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

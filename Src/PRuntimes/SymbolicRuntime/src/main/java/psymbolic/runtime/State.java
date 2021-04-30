@@ -1,9 +1,9 @@
 package psymbolic.runtime;
 
-import psymbolic.valuesummary.bdd.Bdd;
 import psymbolic.run.BugFoundException;
 import psymbolic.util.Checks;
 import psymbolic.valuesummary.*;
+import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.HashMap;
 import java.util.Map;

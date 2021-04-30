@@ -1,10 +1,10 @@
 package psymbolic.run;
 
-import psymbolic.valuesummary.bdd.Bdd;
 import psymbolic.runtime.BoundedScheduler;
 import psymbolic.runtime.CompilerLogger;
 import psymbolic.runtime.ReplayScheduler;
 import psymbolic.runtime.ScheduleLogger;
+import psymbolic.valuesummary.bdd.Bdd;
 
 import java.time.Duration;
 import java.time.Instant;

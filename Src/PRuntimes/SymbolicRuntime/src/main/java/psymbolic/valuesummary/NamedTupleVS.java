@@ -1,7 +1,5 @@
 package psymbolic.valuesummary;
 
-package symbolicp.vs;
-
 import p.runtime.values.PString;
 import psymbolic.valuesummary.bdd.Bdd;
 

@@ -1,7 +1,7 @@
 package psymbolic.runtime;
 
-import psymbolic.valuesummary.bdd.Bdd;
 import psymbolic.valuesummary.*;
+import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.ArrayList;
 import java.util.List;

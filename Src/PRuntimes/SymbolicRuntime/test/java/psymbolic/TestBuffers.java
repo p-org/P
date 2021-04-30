@@ -1,10 +1,10 @@
 package psymbolic;
 
 import org.junit.jupiter.api.Test;
-import psymbolic.valuesummary.bdd.Bdd;
 import psymbolic.runtime.*;
-import psymbolic.valuesummary.*;
-import psymbolic.valuesummary.*;
+import psymbolic.valuesummary.PrimVS;
+import psymbolic.valuesummary.VectorClockVS;
+import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.Random;
 

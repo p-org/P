@@ -1,7 +1,8 @@
 package psymbolic.runtime;
 
+import psymbolic.valuesummary.PrimVS;
+import psymbolic.valuesummary.UnionVS;
 import psymbolic.valuesummary.bdd.Bdd;
-import psymbolic.valuesummary.*;
 
 import java.util.function.Function;
 

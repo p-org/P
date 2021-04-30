@@ -59,7 +59,8 @@ build/
 *.pidb
 *.svclog
 *.scc
-
+*.xml
+*.iml
 
 # Visual C++ cache files
 ipch/
@@ -311,3 +312,4 @@ target/
 *.class
 /Src/PRuntimes/RvmRuntime/target/*
 /Src/PRuntimes/SymbolicRuntime/target/*
+/Src/PRuntimes/PJavaRuntime/PJavaRuntime.iml

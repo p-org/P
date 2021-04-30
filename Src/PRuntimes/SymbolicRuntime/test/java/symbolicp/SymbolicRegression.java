@@ -1,4 +1,4 @@
-package symbolicp;
+package psymbolic;
 
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;

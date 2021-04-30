@@ -1,12 +1,13 @@
-package symbolicp;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Timeout;
-import symbolicp.runtime.CompilerLogger;
-import symbolicp.runtime.RuntimeLogger;
-import symbolicp.run.EntryPoint;
-import symbolicp.run.Program;
+package psymbolic;
 
-import javax.tools.*;
+import psymbolic.run.EntryPoint;
+import psymbolic.run.Program;
+import psymbolic.runtime.CompilerLogger;
+
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -14,15 +15,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -39,7 +36,7 @@ public class TestCaseExecutor {
         assert !relDir.contains("//");
         assert !relDir.startsWith("/");
         assert !relDir.endsWith("/");
-        return "symbolicp.testCase." + relDir.replace('/', '.');
+        return "psymbolic.testCase." + relDir.replace('/', '.');
     }
 
     // We prepend the package directly to the file on disk, rather than to the file contents we read into memory, to
@@ -76,7 +73,7 @@ public class TestCaseExecutor {
                                         .collect(Collectors.toList());
         testCasePaths.stream().map(p -> p.substring(p.indexOf(prefix) + prefix.length())).forEach(System.out::println);
         String testCaseRelDir = sanitizeRelDir(Paths.get(testCaseRelPaths.get(0)).getParent().toString());
-        String outputDirectory = "src/test/java/symbolicp/testCase/" + testCaseRelDir;
+        String outputDirectory = "src/test/java/psymbolic/testCase/" + testCaseRelDir;
 
         // TODO: make separating out the .p and .java files more robust
         List<String> pTestCasePaths = testCasePaths.stream().filter(p -> p.contains(".p")).collect(Collectors.toList());

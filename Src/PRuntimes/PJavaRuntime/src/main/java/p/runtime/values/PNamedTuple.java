@@ -27,6 +27,10 @@ public class PNamedTuple extends PValue<PNamedTuple> {
         }
     }
 
+    public String[] getFields() {
+        return fields.keySet().toArray(new String[fields.size()]);
+    }
+
     public PValue<?> getField(String name) throws NamedTupleFieldNameException {
         if(!fields.containsKey(name))
             throw new NamedTupleFieldNameException(this, name);

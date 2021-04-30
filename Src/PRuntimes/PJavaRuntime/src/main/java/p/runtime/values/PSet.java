@@ -49,10 +49,8 @@ public class PSet extends PCollection {
         throw new PRuntimeException("Set value of a set is not allowed!");
     }
 
-    public void insertValue(int index, PValue<?> val) throws InvalidIndexException {
-        if(index > set.size() || index < 0)
-            throw new InvalidIndexException(index, this);
-        set.add(index, val);
+    public void insertValue(PValue<?> val) {
+        set.add(val);
     }
 
     @Override

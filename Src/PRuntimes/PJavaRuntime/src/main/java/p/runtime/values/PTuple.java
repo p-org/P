@@ -8,20 +8,22 @@ public class PTuple extends PValue<PTuple> {
     // stores the fields values
     private final PValue<?>[] fields;
 
-    public PTuple(PValue<?>[] input_fields)
-    {
+    public PTuple(PValue<?>[] input_fields) {
         this.fields = new PValue<?>[input_fields.length];
         for (int i = 0; i < input_fields.length; i++) {
             this.fields[i] = PValue.clone(input_fields[i]);
         }
     }
 
-    public PTuple(@NonNull PTuple other)
-    {
+    public PTuple(@NonNull PTuple other) {
         this.fields = new PValue<?>[other.fields.length];
         for (int i = 0; i < other.fields.length; i++) {
             this.fields[i] = PValue.clone(other.fields[i]);
         }
+    }
+
+    public int getArity() {
+        return fields.length;
     }
 
     public PValue<?> getField(int index) throws TupleInvalidIndexException {

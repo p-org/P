@@ -64,15 +64,20 @@
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
+      <artifactId>junit-jupiter-engine</artifactId>
       <version>5.7.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
+      <artifactId>junit-jupiter-api</artifactId>
       <version>5.7.1</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>p.runtimes</groupId>
+      <artifactId>PJavaRuntime</artifactId>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -94,6 +99,12 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>28.2-jre</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>RELEASE</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 </project>

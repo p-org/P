@@ -2,8 +2,8 @@ package psymbolic.runtime;
 
 import psymbolic.util.ValueSummaryUnionFind;
 import psymbolic.valuesummary.GuardedValue;
-import psymbolic.valuesummary.PrimVS;
-import psymbolic.valuesummary.bdd.Bdd;
+import psymbolic.valuesummary.PrimitiveVS
+import psymbolic.valuesummary.bdd.PjbddImpl;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,11 +32,11 @@ public class NondetUtil {
         return res;
     }
 
-    public static PrimVS getNondetChoiceAlt(List<PrimVS> choices) {
-        if (choices.size() == 0) return new PrimVS<>();
+    public static PrimitiveVS getNondetChoiceAlt(List<PrimitiveVS> choices) {
+        if (choices.size() == 0) return new PrimitiveVS<>();
         if (choices.size() == 1) return choices.get(0);
-        List<PrimVS> results = new ArrayList<>();
-        PrimVS empty = choices.get(0).guard(Bdd.constFalse());
+        List<PrimitiveVS> results = new ArrayList<>();
+        PrimitiveVS empty = choices.get(0).guard(Bdd.constFalse());
         List<Bdd> choiceVars = new ArrayList<>();
 
         int numVars = 1;
@@ -52,7 +52,7 @@ public class NondetUtil {
 
         Bdd accountedPc = Bdd.constFalse();
         for (int i = 0; i < choices.size(); i++) {
-            PrimVS choice = choices.get(i).guard(choiceConds.get(i));
+            PrimitiveVS choice = choices.get(i).guard(choiceConds.get(i));
             results.add(choice);
             accountedPc = accountedPc.or(choice.getUniverse());
         }
@@ -60,30 +60,30 @@ public class NondetUtil {
         Bdd residualPc = accountedPc.not();
 
         int i = 0;
-        for (PrimVS choice : choices) {
+        for (PrimitiveVS choice : choices) {
             if (residualPc.isConstFalse()) break;
             Bdd enabledCond = choice.getUniverse();
-            PrimVS guarded = choice.guard(residualPc);
+            PrimitiveVS guarded = choice.guard(residualPc);
             results.add(guarded);
             residualPc = residualPc.and(enabledCond.not());
         }
         return empty.merge(results);
     }
 
-    public static PrimVS getNondetChoice(List<PrimVS> choices) {
-        if (choices.size() == 0) return new PrimVS<>();
+    public static PrimitiveVS getNondetChoice(List<PrimitiveVS> choices) {
+        if (choices.size() == 0) return new PrimitiveVS<>();
         if (choices.size() == 1) return choices.get(0);
-        List<PrimVS> results = new ArrayList<>();
-        PrimVS empty = choices.get(0).guard(Bdd.constFalse());
+        List<PrimitiveVS> results = new ArrayList<>();
+        PrimitiveVS empty = choices.get(0).guard(Bdd.constFalse());
         List<Bdd> choiceVars = new ArrayList<>();
 
         ValueSummaryUnionFind uf = new ValueSummaryUnionFind(choices);
-        Collection<Set<PrimVS>> disjoint = uf.getDisjointSets();
+        Collection<Set<PrimitiveVS>> disjoint = uf.getDisjointSets();
         // only need to distinguish between things within disjoint sets
-        Map<Set<PrimVS>, Bdd> universeMap = uf.getLastUniverseMap();
+        Map<Set<PrimitiveVS>, Bdd> universeMap = uf.getLastUniverseMap();
 
         int maxSize = 0;
-        for (Set<PrimVS> set : disjoint) {
+        for (Set<PrimitiveVS> set : disjoint) {
             int size = set.size();
             if (size > maxSize) {
                 maxSize = size;
@@ -101,35 +101,35 @@ public class NondetUtil {
 
         List<Bdd> choiceConds = generateAllCombos(choiceVars);
 
-        for (Set<PrimVS> set : disjoint) {
+        for (Set<PrimitiveVS> set : disjoint) {
             results.addAll(getIntersectingNondetChoice(new ArrayList<>(set), choiceConds, universeMap.get(set)));
         }
 
         return empty.merge(results);
     }
 
-    public static List<PrimVS> getIntersectingNondetChoice(List<PrimVS> choices, List<Bdd> choiceConds, Bdd universe) {
-        List<PrimVS> results = new ArrayList<>();
+    public static List<PrimitiveVS> getIntersectingNondetChoice(List<PrimitiveVS> choices, List<Bdd> choiceConds, Bdd universe) {
+        List<PrimitiveVS> results = new ArrayList<>();
         Bdd accountedPc = Bdd.constFalse();
         for (int i = 0; i < choices.size(); i++) {
-            PrimVS choice = choices.get(i).guard(choiceConds.get(i));
+            PrimitiveVS choice = choices.get(i).guard(choiceConds.get(i));
             results.add(choice);
             accountedPc = accountedPc.or(choice.getUniverse());
         }
 
         Bdd residualPc = accountedPc.not().and(universe);
 
-        for (PrimVS choice : choices) {
+        for (PrimitiveVS choice : choices) {
             if (residualPc.isConstFalse()) break;
             Bdd enabledCond = choice.getUniverse();
-            PrimVS guarded = choice.guard(residualPc);
+            PrimitiveVS guarded = choice.guard(residualPc);
             results.add(guarded);
             residualPc = residualPc.and(enabledCond.not());
         }
         return results;
     }
 
-    public static Bdd chooseGuard(int n, PrimVS choice) {
+    public static Bdd chooseGuard(int n, PrimitiveVS choice) {
         Bdd guard = Bdd.constFalse();
         if (choice.getGuardedValues().size() <= n) return Bdd.constTrue();
         for (GuardedValue guardedValue : (List<GuardedValue>) choice.getGuardedValues()) {
@@ -140,11 +140,11 @@ public class NondetUtil {
         return guard;
     }
 
-    public static PrimVS excludeChoice(Bdd guard, PrimVS choice) {
-        PrimVS newChoice = choice.guard(guard.not());
+    public static PrimitiveVS excludeChoice(Bdd guard, PrimitiveVS choice) {
+        PrimitiveVS newChoice = choice.guard(guard.not());
         List<GuardedValue> guardedValues = newChoice.getGuardedValues();
         if (guardedValues.size() > 0) {
-            newChoice.merge(new PrimVS(guardedValues.iterator().next().value).guard(guard));
+            newChoice.merge(new PrimitiveVS(guardedValues.iterator().next().value).guard(guard));
         }
         return newChoice;
     }

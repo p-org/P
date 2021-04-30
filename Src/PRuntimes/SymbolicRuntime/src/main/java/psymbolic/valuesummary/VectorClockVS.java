@@ -7,7 +7,7 @@ import java.util.List;
 
 public class VectorClockVS implements ValueSummary<VectorClockVS> {
 
-    private final ListVS<PrimVS<Integer>> clock;
+    private final ListVS<PrimitiveVS<Integer>> clock;
 
     public VectorClockVS(Bdd universe) {
         this.clock = new ListVS<>(universe);
@@ -17,45 +17,45 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
         this.clock = new ListVS<>(vc.clock);
     }
 
-    private VectorClockVS(ListVS<PrimVS<Integer>> clock) {
+    private VectorClockVS(ListVS<PrimitiveVS<Integer>> clock) {
         this.clock = clock;
     }
 
-    public PrimVS<Integer> size() {
+    public PrimitiveVS<Integer> size() {
         return clock.size();
     }
 
-    public VectorClockVS extend (PrimVS<Integer> size) {
-        PrimVS<Integer> currentSize = this.size();
-        ListVS<PrimVS<Integer>> extended = clock;
-        PrimVS<Boolean> lessThan = IntUtils.lessThan(currentSize, size);
+    public VectorClockVS extend (PrimitiveVS<Integer> size) {
+        PrimitiveVS<Integer> currentSize = this.size();
+        ListVS<PrimitiveVS<Integer>> extended = clock;
+        PrimitiveVS<Boolean> lessThan = IntUtils.lessThan(currentSize, size);
         while (lessThan.hasValue(true)) {
             Bdd lessThanCond = lessThan.getGuard(true);
-            extended = extended.add(new PrimVS<>(0).guard(lessThanCond));
+            extended = extended.add(new PrimitiveVS<>(0).guard(lessThanCond));
             currentSize = extended.size();
             lessThan = IntUtils.lessThan(currentSize, size);
         }
         return new VectorClockVS(extended);
     }
 
-    public VectorClockVS increment(PrimVS<Integer> idx, PrimVS<Integer> amt) {
-        ListVS<PrimVS<Integer>> updatedClock = extend(IntUtils.add(idx, 1)).clock;
-        PrimVS<Boolean> inRange = updatedClock.inRange(idx);
+    public VectorClockVS increment(PrimitiveVS<Integer> idx, PrimitiveVS<Integer> amt) {
+        ListVS<PrimitiveVS<Integer>> updatedClock = extend(IntUtils.add(idx, 1)).clock;
+        PrimitiveVS<Boolean> inRange = updatedClock.inRange(idx);
         Bdd inRangeCond = inRange.getGuard(true);
-        PrimVS<Integer> updateValue = IntUtils.add(updatedClock.get(idx.guard(inRangeCond)), amt.guard(inRangeCond));
+        PrimitiveVS<Integer> updateValue = IntUtils.add(updatedClock.get(idx.guard(inRangeCond)), amt.guard(inRangeCond));
         updatedClock = updatedClock.set(idx.guard(inRangeCond), updateValue);
         return new VectorClockVS(updatedClock);
     }
 
-    public VectorClockVS increment(PrimVS<Integer> idx) {
-        return increment(idx, new PrimVS<>(1));
+    public VectorClockVS increment(PrimitiveVS<Integer> idx) {
+        return increment(idx, new PrimitiveVS<>(1));
     }
 
-    public VectorClockVS takeMax(PrimVS<Integer> idx, PrimVS<Integer> amt) {
-        ListVS<PrimVS<Integer>> updatedClock = extend(IntUtils.add(idx, 1)).clock;
-        PrimVS<Boolean> inRange = updatedClock.inRange(idx);
+    public VectorClockVS takeMax(PrimitiveVS<Integer> idx, PrimitiveVS<Integer> amt) {
+        ListVS<PrimitiveVS<Integer>> updatedClock = extend(IntUtils.add(idx, 1)).clock;
+        PrimitiveVS<Boolean> inRange = updatedClock.inRange(idx);
         Bdd inRangeCond = inRange.getGuard(true);
-        PrimVS<Integer> cmpResult = IntUtils.compare(updatedClock.get(idx.guard(inRangeCond)), amt.guard(inRangeCond));
+        PrimitiveVS<Integer> cmpResult = IntUtils.compare(updatedClock.get(idx.guard(inRangeCond)), amt.guard(inRangeCond));
         Bdd updateCond = IntUtils.lessThan(cmpResult, 0).getGuard(true);
         updatedClock = updatedClock.set(idx.guard(inRangeCond).guard(updateCond), amt);
         return new VectorClockVS(updatedClock);
@@ -64,10 +64,10 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
     public VectorClockVS add(VectorClockVS vc) {
         int idx = 0;
         VectorClockVS sum = new VectorClockVS(this);
-        PrimVS<Integer> size = vc.size();
-        PrimVS<Boolean> lessThan = IntUtils.lessThan(idx, size);
+        PrimitiveVS<Integer> size = vc.size();
+        PrimitiveVS<Boolean> lessThan = IntUtils.lessThan(idx, size);
         while (lessThan.hasValue(true)) {
-            PrimVS<Integer> idxVS = new PrimVS<>(idx).guard(lessThan.getGuard(true));
+            PrimitiveVS<Integer> idxVS = new PrimitiveVS<>(idx).guard(lessThan.getGuard(true));
             sum = sum.increment(idxVS, vc.clock.get(idxVS));
             idx++;
             lessThan = IntUtils.lessThan(idx, size);
@@ -78,10 +78,10 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
     public VectorClockVS update(VectorClockVS vc) {
         int idx = 0;
         VectorClockVS sum = new VectorClockVS(this);
-        PrimVS<Integer> size = vc.size();
-        PrimVS<Boolean> lessThan = IntUtils.lessThan(idx, size);
+        PrimitiveVS<Integer> size = vc.size();
+        PrimitiveVS<Boolean> lessThan = IntUtils.lessThan(idx, size);
         while (lessThan.hasValue(true)) {
-            PrimVS<Integer> idxVS = new PrimVS<>(idx).guard(lessThan.getGuard(true));
+            PrimitiveVS<Integer> idxVS = new PrimitiveVS<>(idx).guard(lessThan.getGuard(true));
             sum = sum.takeMax(idxVS, vc.clock.get(idxVS));
             idx++;
             lessThan = IntUtils.lessThan(idx, size);
@@ -90,19 +90,19 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
     }
 
     // 1 for greater than, 0 for equal, -1 for less than, 2 for incomparable
-    public PrimVS<Integer> cmp(VectorClockVS vc) {
+    public PrimitiveVS<Integer> cmp(VectorClockVS vc) {
         int idx = 0;
         VectorClockVS extended = this.extend(vc.size());
         VectorClockVS extendedVc = vc.extend(this.size());
-        PrimVS<Integer> result = new PrimVS<>(0);
-        PrimVS<Boolean> inRange = extended.clock.inRange(idx);
+        PrimitiveVS<Integer> result = new PrimitiveVS<>(0);
+        PrimitiveVS<Boolean> inRange = extended.clock.inRange(idx);
         // compare clocks of the same size
         while (inRange.hasValue(true)) {
             Bdd cond = inRange.getGuard(true);
-            PrimVS<Integer> current = new PrimVS<>(idx).guard(cond);
-            PrimVS<Integer> thisVal = extended.clock.guard(cond).get(current);
-            PrimVS<Integer> otherVal = extendedVc.clock.guard(cond).get(current);
-            PrimVS<Integer> cmp = IntUtils.compare(thisVal, otherVal);
+            PrimitiveVS<Integer> current = new PrimitiveVS<>(idx).guard(cond);
+            PrimitiveVS<Integer> thisVal = extended.clock.guard(cond).get(current);
+            PrimitiveVS<Integer> otherVal = extendedVc.clock.guard(cond).get(current);
+            PrimitiveVS<Integer> cmp = IntUtils.compare(thisVal, otherVal);
             result = cmp.apply2(result, (a, b) -> {
                         if (a <= 0 && b <= 0) {
                             return Integer.min(a, b);
@@ -128,7 +128,7 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
 
     @Override
     public VectorClockVS merge(Iterable<VectorClockVS> summaries) {
-        List<ListVS<PrimVS<Integer>>> summs = new ArrayList<>();
+        List<ListVS<PrimitiveVS<Integer>>> summs = new ArrayList<>();
         summaries.forEach(x -> summs.add(x.clock));
         return new VectorClockVS(clock.merge(summs));
     }
@@ -144,7 +144,7 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
     }
 
     @Override
-    public PrimVS<Boolean> symbolicEquals(VectorClockVS cmp, Bdd pc) {
+    public PrimitiveVS<Boolean> symbolicEquals(VectorClockVS cmp, Bdd pc) {
         return clock.symbolicEquals(cmp.clock, pc);
     }
 

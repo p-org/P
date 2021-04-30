@@ -1,7 +1,7 @@
 package psymbolic.runtime;
 
 import psymbolic.valuesummary.IntUtils;
-import psymbolic.valuesummary.PrimVS;
+import psymbolic.valuesummary.PrimitiveVS
 import psymbolic.valuesummary.VectorClockVS;
 import psymbolic.valuesummary.bdd.Bdd;
 

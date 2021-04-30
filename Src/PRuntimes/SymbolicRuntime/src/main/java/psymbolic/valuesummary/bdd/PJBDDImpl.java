@@ -9,72 +9,73 @@ import org.sosy_lab.pjbdd.util.parser.DotExporter;
 import org.sosy_lab.pjbdd.util.parser.Exporter;
 import org.sosy_lab.pjbdd.util.parser.Importer;
 
-public class PjbddImpl implements BddLib<DD> {
+/**
+ * Represents the BDD implementation using PJBDD
+ */
+public class PJBDDImpl {
     final private Creator c;
     final private Exporter<DD> e;
     final private Importer<DD> i;
 
-    public PjbddImpl(boolean cbdd) {
+    // configurable parameters for PJBDD
+    // TODO: Explore different options for these parameters
+    int numThreads = Runtime.getRuntime().availableProcessors();
+    int cacheSize = 100000;
+
+    public PJBDDImpl(boolean cbdd) {
         CreatorBuilder creatorBuilder = Builders.cbddBuilder();
         if (!cbdd) {
             creatorBuilder = Builders.bddBuilder();
         }
-        c = creatorBuilder.setVarCount(0).build();
+        c = creatorBuilder
+                .setVarCount(0)
+                .setThreads(numThreads)
+                .setCacheSize(cacheSize)
+                .build();
         e = new DotExporter();
         i = new BDDStringImporter(c);
     }
 
-    @Override
     public DD constFalse() {
         return c.makeFalse();
     }
 
-    @Override
     public DD constTrue() {
         return c.makeTrue();
     }
 
-    @Override
-    public boolean isConstFalse(DD bdd) {
+    public boolean isFalse(DD bdd) {
         return bdd.isFalse();
     }
 
-    @Override
-    public boolean isConstTrue(DD bdd) {
+    public boolean isTrue(DD bdd) {
         return bdd.isTrue();
     }
 
-    @Override
     public DD and(DD left, DD right) {
         return c.makeAnd(left, right);
     }
 
-    @Override
     public DD or(DD left, DD right) {
         return c.makeOr(left, right);
     }
 
-    @Override
     public DD not(DD bdd) {
         return c.makeNot(bdd);
     }
 
-    @Override
     public DD implies(DD left, DD right) {
         return c.makeImply(left, right);
     }
 
-    @Override
     public DD ifThenElse(DD cond, DD thenClause, DD elseClause) {
         return c.makeIte(cond, thenClause, elseClause);
     }
 
-    @Override
     public DD newVar() {
         return c.makeVariable();
     }
 
-    @Override
     public String toString(DD bdd) {
         if (bdd == null) return "null";
         if (bdd.isFalse()) return "false";
@@ -82,7 +83,6 @@ public class PjbddImpl implements BddLib<DD> {
         return e.bddToString(bdd);
     }
 
-    @Override
     public DD fromString(String s) {
         if (s.equals("false")) {
             return c.makeFalse();

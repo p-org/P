@@ -1,7 +1,5 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.Bdd;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,41 +7,41 @@ import java.util.Map;
 public final class BoolUtils {
     private BoolUtils() {}
 
-    /** Make a Boolean value summary that is true under the conditions that the provided guard is true
+    /** Create a BooleanVS that is true under when the guard is true
      *
-     * @param guard A Bdd that is true when the Boolean value summary should be true
-     * @return Boolean value summary
+     * @param guard the guard under which the BooleanVS should be true
+     * @return BooleanVS
      */
-    public static PrimVS<Boolean> fromTrueGuard(Bdd guard) {
-        if (guard.isConstFalse()) {
-            return new PrimVS<>(false);
+    public static PrimitiveVS<Boolean> fromTrueGuard(Guard guard) {
+        if (guard.isFalse()) {
+            return new PrimitiveVS<>(false);
         }
 
-        if (guard.isConstTrue()) {
-            return new PrimVS<>(true);
+        if (guard.isTrue()) {
+            return new PrimitiveVS<>(true);
         }
 
-        final Map<Boolean, Bdd> entries = new HashMap<>();
+        final Map<Boolean, Guard> entries = new HashMap<>();
         entries.put(true, guard);
         entries.put(false, guard.not());
-        return new PrimVS<>(entries);
+        return new PrimitiveVS<>(entries);
     }
 
     /** Get the condition under which a Boolean value summary is true
      *
      * @param primVS A Boolean value summary
-     * @return Bdd that is true when the value summary is true
+     * @return Guard that is true when the value summary is true
      */
-    public static Bdd trueCond(PrimVS<Boolean> primVS) {
+    public static Guard trueCond(PrimitiveVS<Boolean> primVS) {
         return primVS.getGuard(true);
     }
 
     /** Get the condition under which a Boolean value summary is false
      *
      * @param primVS A Boolean value summary
-     * @return Bdd that is true when the value summary is false
+     * @return Guard that is true when the value summary is false
      */
-    public static Bdd falseCond(PrimVS<Boolean> primVS) {
+    public static Guard falseCond(PrimitiveVS<Boolean> primVS) {
         return primVS.getGuard(false);
     }
 
@@ -53,7 +51,7 @@ public final class BoolUtils {
      * @param b The second conjunct's Boolean value summary
      * @return Boolean value summary for the arguments' conjunction
      */
-    public static PrimVS<Boolean> and(PrimVS<Boolean> a, PrimVS<Boolean> b) {
+    public static PrimitiveVS<Boolean> and(PrimitiveVS<Boolean> a, PrimitiveVS<Boolean> b) {
         return a.apply2(b, (x, y) -> x && y);
     }
 
@@ -63,7 +61,7 @@ public final class BoolUtils {
      * @param b The second boolean's value
      * @return Boolean value summary for the arguments' conjunction
      */
-    public static PrimVS<Boolean> and(PrimVS<Boolean> a, boolean b) {
+    public static PrimitiveVS<Boolean> and(PrimitiveVS<Boolean> a, boolean b) {
         return a.apply(x -> x && b);
     }
 
@@ -73,7 +71,7 @@ public final class BoolUtils {
      * @param b The second conjunct's Boolean value summary
      * @return Boolean value summary for the arguments' conjunction
      */
-    public static PrimVS<Boolean> and(boolean a, PrimVS<Boolean> b) {
+    public static PrimitiveVS<Boolean> and(boolean a, PrimitiveVS<Boolean> b) {
         return and(b, a);
     }
 
@@ -83,7 +81,7 @@ public final class BoolUtils {
      * @param b The second disjunct's Boolean value summary
      * @return Boolean value summary for the arguments' disjunction
      */
-    public static PrimVS<Boolean> or(PrimVS<Boolean> a, PrimVS<Boolean> b) {
+    public static PrimitiveVS<Boolean> or(PrimitiveVS<Boolean> a, PrimitiveVS<Boolean> b) {
         return a.apply2(b, (x, y) -> x || y);
     }
 
@@ -92,7 +90,7 @@ public final class BoolUtils {
      * @param b The Boolean value summary
      * @return Whether or not the provided value summary is always false
      */
-    public static boolean isFalse(PrimVS<Boolean> b) {
+    public static boolean isFalse(PrimitiveVS<Boolean> b) {
         return falseCond(b).isConstTrue();
     }
 
@@ -101,7 +99,7 @@ public final class BoolUtils {
      * @param b The Boolean value summary
      * @return Whether or not the provided value summary can be true
      */
-    public static boolean isEverTrue(PrimVS<Boolean> b) {
+    public static boolean isEverTrue(PrimitiveVS<Boolean> b) {
         return !trueCond(b).isConstFalse();
     }
 
@@ -110,6 +108,6 @@ public final class BoolUtils {
      * @param b The Boolean value summary
      * @return Whether or not the provided value summary can be false
      */
-    public static boolean isEverFalse(PrimVS<Boolean> b) { return !falseCond(b).isConstFalse(); }
+    public static boolean isEverFalse(PrimitiveVS<Boolean> b) { return !falseCond(b).isConstFalse(); }
 
 }

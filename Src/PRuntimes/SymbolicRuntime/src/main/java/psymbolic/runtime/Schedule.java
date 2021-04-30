@@ -2,7 +2,7 @@ package psymbolic.runtime;
 
 import psymbolic.valuesummary.GuardedValue;
 import psymbolic.valuesummary.ListVS;
-import psymbolic.valuesummary.PrimVS;
+import psymbolic.valuesummary.PrimitiveVS
 import psymbolic.valuesummary.ValueSummary;
 import psymbolic.valuesummary.bdd.Bdd;
 

@@ -1,12 +1,18 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.Bdd;
+import lombok.Getter;
 
+/**
+ * Represents the guarded value in a value summary where the value is of Type T
+ * @param <T> Type of the value in the guarded value
+ */
 public class GuardedValue<T> {
-    public final T value;
-    public final Bdd guard;
+    @Getter
+    private final Guard guard;
+    @Getter
+    private final T value;
 
-    public GuardedValue(T value, Bdd guard) {
+    public GuardedValue(T value, Guard guard) {
         this.value = value;
         this.guard = guard;
     }

@@ -1,6 +1,6 @@
 package psymbolic.runtime;
 
-import psymbolic.valuesummary.PrimVS;
+import psymbolic.valuesummary.PrimitiveVS
 import psymbolic.valuesummary.UnionVS;
 import psymbolic.valuesummary.VectorClockVS;
 import psymbolic.valuesummary.bdd.Bdd;

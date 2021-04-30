@@ -1,6 +1,6 @@
 package psymbolic.runtime;
 
-import psymbolic.valuesummary.PrimVS;
+import psymbolic.valuesummary.PrimitiveVS
 
 public class TransDPORScheduler extends BoundedScheduler {
 

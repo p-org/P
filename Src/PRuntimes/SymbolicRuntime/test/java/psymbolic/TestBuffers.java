@@ -2,7 +2,7 @@ package psymbolic;
 
 import org.junit.jupiter.api.Test;
 import psymbolic.runtime.*;
-import psymbolic.valuesummary.PrimVS;
+import psymbolic.valuesummary.PrimitiveVS
 import psymbolic.valuesummary.VectorClockVS;
 import psymbolic.valuesummary.bdd.Bdd;
 

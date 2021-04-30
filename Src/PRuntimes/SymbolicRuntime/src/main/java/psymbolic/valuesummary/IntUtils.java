@@ -8,7 +8,7 @@ public class IntUtils {
      * @param b Second summand value summary
      * @return The value summary representing the arguments' sum
      */
-    public static PrimVS<Integer> add(PrimVS<Integer> a, PrimVS<Integer> b) {
+    public static PrimitiveVS<Integer> add(PrimitiveVS<Integer> a, PrimitiveVS<Integer> b) {
         return a.apply2(b, (x, y) -> x + y);
     }
 
@@ -18,7 +18,7 @@ public class IntUtils {
      * @param i Second summand
      * @return The value summary representing the arguments' sum
      */
-    public static PrimVS<Integer> add(PrimVS<Integer> a, int i) {
+    public static PrimitiveVS<Integer> add(PrimitiveVS<Integer> a, int i) {
         return a.apply(x -> x + i);
     }
 
@@ -28,7 +28,7 @@ public class IntUtils {
      * @param b Value summary of Integer to be subtracted
      * @return The value summary representing the arguments' difference
      */
-    public static PrimVS<Integer> subtract(PrimVS<Integer> a, PrimVS<Integer> b) {
+    public static PrimitiveVS<Integer> subtract(PrimitiveVS<Integer> a, PrimitiveVS<Integer> b) {
         return a.apply2(b, (x, y) -> x - y);
     }
 
@@ -38,7 +38,7 @@ public class IntUtils {
      * @param i Value of int to be subtracted
      * @return The value summary representing the arguments' difference
      */
-    public static PrimVS<Integer> subtract(PrimVS<Integer> a, int i) {
+    public static PrimitiveVS<Integer> subtract(PrimitiveVS<Integer> a, int i) {
         return a.apply(x -> x - i);
     }
 
@@ -48,7 +48,7 @@ public class IntUtils {
      * @param b Value summary of second Integer
      * @return The value summary representing whether the first argument is less than the second
      */
-    public static PrimVS<Boolean> lessThan(PrimVS<Integer> a, PrimVS<Integer> b) {
+    public static PrimitiveVS<Boolean> lessThan(PrimitiveVS<Integer> a, PrimitiveVS<Integer> b) {
         return a.apply2(b, (x, y) -> x < y);
     }
 
@@ -58,7 +58,7 @@ public class IntUtils {
      * @param b Value summary of second Integer
      * @return The value summary representing whether the first argument is less than the second
      */
-    public static PrimVS<Boolean> lessThan(int a, PrimVS<Integer> b) {
+    public static PrimitiveVS<Boolean> lessThan(int a, PrimitiveVS<Integer> b) {
         return b.apply(x -> a < x);
     }
 
@@ -68,7 +68,7 @@ public class IntUtils {
      * @param b Value of the int
      * @return The value summary representing whether the first argument is less than the second
      */
-    public static PrimVS<Boolean> lessThan(PrimVS<Integer> a, int b) {
+    public static PrimitiveVS<Boolean> lessThan(PrimitiveVS<Integer> a, int b) {
         return a.apply(x -> x < b);
     }
 
@@ -79,7 +79,7 @@ public class IntUtils {
      * @return The value summary representing the comparison result, with negative indicating a < b,
      *         positive indicating b < a, and 0 indicating a = b.
      */
-    public static PrimVS<Integer> compare(PrimVS<Integer> a, PrimVS<Integer> b) {
+    public static PrimitiveVS<Integer> compare(PrimitiveVS<Integer> a, PrimitiveVS<Integer> b) {
         return a.apply2(b, (x, y) -> x.compareTo(y));
     }
 
@@ -87,7 +87,7 @@ public class IntUtils {
      *
      * @return The maximum possible value
      */
-    public static Integer maxValue(PrimVS<Integer> a) {
+    public static Integer maxValue(PrimitiveVS<Integer> a) {
         Integer max = null;
         for (int val : a.getValues()) {
             if (max == null) max = val;
@@ -100,7 +100,7 @@ public class IntUtils {
      *
      * @return The minimum possible value
      */
-    public static Integer minValue(PrimVS<Integer> a) {
+    public static Integer minValue(PrimitiveVS<Integer> a) {
         Integer min = null;
         for (int val : a.getValues()) {
             if (min == null) min = val;
@@ -115,7 +115,7 @@ public class IntUtils {
      * @param b Value summary of second Integer
      * @return The value summary representing whether the first argument is equal to the second
      */
-    public static PrimVS<Boolean> equalTo(PrimVS<Integer> a, PrimVS<Integer> b) {
+    public static PrimitiveVS<Boolean> equalTo(PrimitiveVS<Integer> a, PrimitiveVS<Integer> b) {
         return a.apply2(b, Integer::equals);
     }
 }

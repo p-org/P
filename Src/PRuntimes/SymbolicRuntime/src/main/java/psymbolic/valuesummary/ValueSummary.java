@@ -15,7 +15,7 @@ public interface ValueSummary<T extends ValueSummary> {
      * @param src The UnionVS to cast from
      * @return A ValueSummary that can be casted into the provided type
      */
-     static ValueSummary fromAny(Bdd pc, Class<? extends ValueSummary> type, UnionVS src) {
+     static ValueSummary fromAny(Guard guard, Class<? extends ValueSummary> type, UnionVS src) {
          ValueSummary result;
          if (type.equals(UnionVS.class)) {
              result = src;
@@ -43,7 +43,7 @@ public interface ValueSummary<T extends ValueSummary> {
      * @param guard The guard to conjoin to the current value summary's universe
      * @return The result of restricting the value summary's universe
      */
-    public T guard(Bdd guard);
+    public T guard(Guard guard);
 
     /** Merge the value summary with other provided value summaries
      *
@@ -52,32 +52,33 @@ public interface ValueSummary<T extends ValueSummary> {
      */
     public T merge(Iterable<T> summaries);
 
-    /** Merge the value summary with another provided value summary
+    /** Merge the value summary with another value summary
      *
      * @param summary The summary to merge the value summary with
      * @return The result of the merging
      */
     public T merge(T summary);
 
-    /** Update the value summary under the condition that the guard is true
+    /** Create a new value summary that is equal to the `update` value when the `guard` is true
+     * and same as the old value when the `guard` is not true
      *
      * @param guard The condition under which the value summary should be updated
      * @param update The value to update the value summary to
-     * @return Thee result of the update
+     * @return The result of the update
      */
-    public T update(Bdd guard, T update);
+    public T update(Guard guard, T update);
 
     /** Check whether the value summary is equal to another value summary
      *
      * @param cmp The summary to compare the value summary with
-     * @param pc The path condition for the universe of the result
+     * @param guard The guard for the universe of the result
      * @return Whether or not the value summaries are equal
      */
-    PrimVS<Boolean> symbolicEquals(T cmp, Bdd pc);
+    PrimitiveVS<Boolean> symbolicEquals(T cmp, Guard guard);
 
-    /** Get the universe of the value summary
+    /** Get the Guard that represents the universe of the value summary
      *
      * @return The value summary's universe
      */
-    Bdd getUniverse();
+    Guard getUniverse();
 }

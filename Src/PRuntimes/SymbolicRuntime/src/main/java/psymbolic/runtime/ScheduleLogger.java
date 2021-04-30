@@ -1,6 +1,6 @@
 package psymbolic.runtime;
 
-import psymbolic.valuesummary.PrimVS;
+import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.logging.Level;
@@ -20,7 +20,7 @@ public class ScheduleLogger {
         log.fine(msg);
     }
 
-    public static void onProcessStateTransition(Bdd pc, Machine machine, PrimVS<State> newState) {
+    public static void onProcessStateTransition(Bdd pc, Machine machine, PrimitiveVS<State> newState) {
         String msg = String.format("Machine %s transitioning to state %s", machine.toString(), newState);
         if (isVerbose) msg = String.format("under path %s ", pc) + msg;
         log.info(msg);
@@ -74,7 +74,7 @@ public class ScheduleLogger {
         log.info(msg);
     }
 
-    public static void push(PrimVS<State> state) {
+    public static void push(PrimitiveVS<State> state) {
         log.info("Pushing state " + state + " onto stack");
     }
 

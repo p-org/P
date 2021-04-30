@@ -1,11 +1,8 @@
 package symbolicp;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.function.Executable;
-import symbolicp.runtime.CompilerLogger;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +11,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 

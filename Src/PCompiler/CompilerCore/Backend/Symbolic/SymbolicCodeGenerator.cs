@@ -1524,18 +1524,18 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case NondetExpr _:
                 case FairNondetExpr _:
-                    context.Write(output, $"{CompilationContext.SchedulerVar}.getNextBoolean({pcScope.PathConstraintVar})");
+                    context.Write(output, $"new PBool({CompilationContext.SchedulerVar}.getNextBoolean({pcScope.PathConstraintVar}))");
                     break;
                 case ChooseExpr chooseExpr:
                     switch (chooseExpr.SubExpr.Type)
                     {
                         case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                            context.Write(output, $"{CompilationContext.SchedulerVar}.getNextInteger(");
+                            context.Write(output, $"new PInt({CompilationContext.SchedulerVar}.getNextInteger(");
                             WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
-                            context.Write(output, $", {pcScope.PathConstraintVar})");
+                            context.Write(output, $", {pcScope.PathConstraintVar}))");
                             break;
                         case SequenceType sequenceType:
-                            context.Write(output, $"({GetSymbolicType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getNextSeq(");
+                            context.Write(output, $"({GetSymbolicType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
                             WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
                             context.Write(output, $", {pcScope.PathConstraintVar})");
                             break;
@@ -1650,11 +1650,11 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (type)
             {
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
-                    return "Boolean";
+                    return "PBool";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                    return "Integer";
+                    return "PInt";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
-                    return "Float";
+                    return "PFloat";
                 default:
                     throw new NotImplementedException($"Concrete type '{type.OriginalRepresentation}' is not supported");
             }
@@ -1692,11 +1692,11 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (type.Canonicalize())
             {
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
-                    return "PrimVS<Boolean>";
+                    return "PrimVS<PBool>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                    return "PrimVS<Integer>";
+                    return "PrimVS<PInt>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
-                    return "PrimVS<Float>";
+                    return "PrimVS<PFloat>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     if (isVar)
                         throw new NotImplementedException("Variables of type 'null' not yet supported");
@@ -1726,7 +1726,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case TupleType _:
                     return "TupleVS";
                 case EnumType enumType:
-                    return $"PrimVS<Integer> /* enum {enumType.OriginalRepresentation} */";
+                    return $"PrimVS<PEnum> /* enum {enumType.OriginalRepresentation} */";
                 default:
                     throw new NotImplementedException($"Symbolic type '{type.OriginalRepresentation}' not supported");
             }

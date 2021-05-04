@@ -1,9 +1,6 @@
 package psymbolic.runtime;
 
-import psymbolic.valuesummary.GuardedValue;
-import psymbolic.valuesummary.IntUtils;
-import psymbolic.valuesummary.PrimVS;
-import psymbolic.valuesummary.ValueSummary;
+import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.List;
@@ -158,7 +155,7 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public ValueSummary getNextElement(Set<ValueSummary> candidates, Bdd pc) {
+    public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Bdd pc) {
         int depth = choiceDepth;
         PrimVS<ValueSummary> res = getNext(depth, senderBound, schedule::getRepeatElement, schedule::getBacktrackElement,
                 schedule::clearBacktrack, schedule::addRepeatElement, schedule::addBacktrackElement,

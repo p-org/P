@@ -1,5 +1,6 @@
 package psymbolic.runtime;
 
+import psymbolic.valuesummary.ListVS;
 import psymbolic.valuesummary.PrimVS;
 import psymbolic.valuesummary.ValueSummary;
 import psymbolic.valuesummary.bdd.Bdd;
@@ -44,5 +45,6 @@ public interface SymbolicSearch {
      * @param s set to choose from
      * @return a integer
      */
-    ValueSummary getNextElement(Set<ValueSummary> s, Bdd pc);
+    ValueSummary getNextElement(ListVS<? extends ValueSummary> s, Bdd pc);
+
 }

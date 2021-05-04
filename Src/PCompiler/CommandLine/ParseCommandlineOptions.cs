@@ -149,9 +149,11 @@ namespace Plang.Compiler
                                     case "rvm":
                                         outputLanguage = CompilerOutput.Rvm;
                                         break;
-
+                                    case "symbolic":
+                                        outputLanguage = CompilerOutput.Symbolic;
+                                        break;
                                     default:
-                                        throw new CommandlineParsingError($"Unrecognized generate option '{colonArg}', expecting C or CSharp");
+                                        throw new CommandlineParsingError($"Unrecognized generate option '{colonArg}', expecting C or CSharp or Symbolic");
                                 }
                                 break;
 
@@ -342,9 +344,12 @@ namespace Plang.Compiler
                 case "rvm":
                     outputLanguage = CompilerOutput.Rvm;
                     break;
+                case "symbolic":
+                    outputLanguage = CompilerOutput.Symbolic;
+                    break;
 
                 default:
-                    throw new CommandlineParsingError($"Expected C or CSharp as target, received {projectXml.Element("Target")?.Value}");
+                    throw new CommandlineParsingError($"Expected C, CSharp or Symbolic as target, received {projectXml.Element("Target")?.Value}");
             }
         }
 

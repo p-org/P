@@ -1840,12 +1840,13 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
-            context.WriteLine(output, "import symbolicp.*;");
-            context.WriteLine(output, "import symbolicp.bdd.*;");
-            context.WriteLine(output, "import symbolicp.vs.*;");
-            context.WriteLine(output, "import symbolicp.runtime.*;");
-            context.WriteLine(output, "import symbolicp.run.*;");
-            context.WriteLine(output, "import symbolicp.util.*;");
+            context.WriteLine(output, "import psymbolic.*;");
+            context.WriteLine(output, "import psymbolic.bdd.*;");
+            context.WriteLine(output, "import psymbolic.vs.*;");
+            context.WriteLine(output, "import psymbolic.runtime.*;");
+            context.WriteLine(output, "import psymbolic.runtime.values.*;");
+            context.WriteLine(output, "import psymbolic.run.*;");
+            context.WriteLine(output, "import psymbolic.util.*;");
             context.WriteLine(output, "import java.util.List;");
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.MainClassName} implements Program {{");

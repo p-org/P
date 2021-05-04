@@ -6,7 +6,7 @@ import java.util.*;
 
 /** Class for union value summaries */
 public class UnionVS implements ValueSummary<UnionVS> {
-    private PrimVS<Class<? extends ValueSummary>> type;
+    private PrimitiveVS<Class<? extends ValueSummary>> type;
     private Map<Class<? extends ValueSummary>, ValueSummary> payloads;
 
     public UnionVS(PrimVS<Class<? extends ValueSummary>> type, Map<Class<? extends ValueSummary>, ValueSummary> payloads) {

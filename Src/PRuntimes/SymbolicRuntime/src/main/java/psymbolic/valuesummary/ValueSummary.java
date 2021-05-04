@@ -1,6 +1,5 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.Bdd;
 
 public interface ValueSummary<T extends ValueSummary> {
 
@@ -10,24 +9,24 @@ public interface ValueSummary<T extends ValueSummary> {
      * corresponding to the specified type, the function throws a ClassCastException.
      * If the ValueSummary type is also a UnionVS, returns the provided UnionVS.
      *
-     * @param pc The path constraint to cast under
+     * @param pc The path constraint guard to cast under
      * @param type The ValueSummary type to cast to
      * @param src The UnionVS to cast from
      * @return A ValueSummary that can be casted into the provided type
      */
-     static ValueSummary fromAny(Guard guard, Class<? extends ValueSummary> type, UnionVS src) {
+     static ValueSummary fromAny(Guard cast_pc_guard, Class<? extends ValueSummary> type, UnionVS anyVal) {
          ValueSummary result;
          if (type.equals(UnionVS.class)) {
-             result = src;
+             result = anyVal;
          } else {
-             Bdd typeGuard = src.getType().getGuard(type);
-             Bdd pcNotDefined = pc.and(typeGuard.not());
-             if (!pcNotDefined.isConstFalse()) {
-                 throw new ClassCastException(String.format("Symbolic casting to %s under path constraint %s is not defined",
+             Guard typeGuard = ((PrimitiveVS<?>)anyVal.getType()).getGuard(type);
+             Guard pcNotDefined = cast_pc_guard.and(typeGuard.not());
+             if (!pcNotDefined.isFalse()) {
+                 throw new ClassCastException(String.format("Casting to %s under path constraint %s is not defined",
                          type,
                          pcNotDefined));
              }
-             result = src.getPayload(type).guard(pc);
+             result = anyVal.getPayload(type).guard(cast_pc_guard);
          }
          return result;
      }

@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>psymbolic</groupId>
-  <artifactId>psymbolic</artifactId>
+  <artifactId>SymbolicRuntime</artifactId>
   <version>1.0</version>
   <build>
     <plugins>
@@ -72,7 +72,6 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>5.7.1</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jooq</groupId>

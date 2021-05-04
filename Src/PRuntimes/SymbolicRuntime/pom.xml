@@ -75,17 +75,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>p.runtimes</groupId>
-      <artifactId>PJavaRuntime</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>RELEASE</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.jooq</groupId>
       <artifactId>joor</artifactId>
       <version>0.9.12</version>
@@ -104,6 +93,11 @@
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>RELEASE</version>
+    </dependency>
+    <dependency>
+      <groupId>p.runtime</groupId>
+      <artifactId>PJavaRuntime</artifactId>
+      <version>1.0.0</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

@@ -385,7 +385,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 if (i > 0)
                     context.WriteLine(output, ",");
-                context.Write(output, $"({GetSymbolicType(param.Type, true)}) args.get({i})");
+                context.Write(output, $"({GetConcreteForeignBoxedType(param.Type)}) args.get({i})");
                 i++;
             }
             context.WriteLine(output, ");");
@@ -1524,15 +1524,15 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case NondetExpr _:
                 case FairNondetExpr _:
-                    context.Write(output, $"new PBool({CompilationContext.SchedulerVar}.getNextBoolean({pcScope.PathConstraintVar}))");
+                    context.Write(output, $"{CompilationContext.SchedulerVar}.getNextBoolean({pcScope.PathConstraintVar})");
                     break;
                 case ChooseExpr chooseExpr:
                     switch (chooseExpr.SubExpr.Type)
                     {
                         case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                            context.Write(output, $"new PInt({CompilationContext.SchedulerVar}.getNextInteger(");
+                            context.Write(output, $"({CompilationContext.SchedulerVar}.getNextInteger(");
                             WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
-                            context.Write(output, $", {pcScope.PathConstraintVar}))");
+                            context.Write(output, $", {pcScope.PathConstraintVar})");
                             break;
                         case SequenceType sequenceType:
                             context.Write(output, $"({GetSymbolicType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
@@ -1650,11 +1650,40 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (type)
             {
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
+                    return "Boolean";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
+                    return "Integer";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
+                    return "Float";
+                default:
+                    throw new NotImplementedException($"Concrete type '{type.OriginalRepresentation}' is not supported");
+            }
+        }
+
+        private string GetConcreteForeignBoxedType(PLanguageType type)
+        {
+            switch (type.Canonicalize())
+            {
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
                     return "PBool";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
                     return "PInt";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return "PFloat";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
+                    return "PString";
+                case ForeignType foreignType:
+                    return foreignType.CanonicalRepresentation;
+                case SequenceType _:
+                    return "PSeq";
+                case MapType _: 
+                    return "PMap";
+                case NamedTupleType _: 
+                    return "PNamedTuple";
+                case TupleType _: 
+                    return "PTuple";
+                case EnumType _: 
+                    return "PEnum";
                 default:
                     throw new NotImplementedException($"Concrete type '{type.OriginalRepresentation}' is not supported");
             }
@@ -1692,11 +1721,11 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (type.Canonicalize())
             {
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
-                    return "PrimVS<PBool>";
+                    return "PrimVS<Boolean>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                    return "PrimVS<PInt>";
+                    return "PrimVS<Integer>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
-                    return "PrimVS<PFloat>";
+                    return "PrimVS<Float>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     if (isVar)
                         throw new NotImplementedException("Variables of type 'null' not yet supported");
@@ -1726,7 +1755,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case TupleType _:
                     return "TupleVS";
                 case EnumType enumType:
-                    return $"PrimVS<PEnum> /* enum {enumType.OriginalRepresentation} */";
+                    return $"PrimVS<Integer> /* enum {enumType.OriginalRepresentation} */";
                 default:
                     throw new NotImplementedException($"Symbolic type '{type.OriginalRepresentation}' not supported");
             }
@@ -1841,15 +1870,15 @@ namespace Plang.Compiler.Backend.Symbolic
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
             context.WriteLine(output, "import psymbolic.*;");
-            context.WriteLine(output, "import psymbolic.bdd.*;");
-            context.WriteLine(output, "import psymbolic.vs.*;");
+            context.WriteLine(output, "import psymbolic.valuesummary.bdd.*;");
+            context.WriteLine(output, "import psymbolic.valuesummary.*;");
             context.WriteLine(output, "import psymbolic.runtime.*;");
-            context.WriteLine(output, "import psymbolic.runtime.values.*;");
+            context.WriteLine(output, "import p.runtime.values.*;");
             context.WriteLine(output, "import psymbolic.run.*;");
             context.WriteLine(output, "import psymbolic.util.*;");
             context.WriteLine(output, "import java.util.List;");
             context.WriteLine(output);
-            context.WriteLine(output, $"public class {context.MainClassName} implements Program {{");
+            context.WriteLine(output, $"public class {context.MainClassName.ToLower()} implements Program {{");
             context.WriteLine(output);
             context.WriteLine(output, $"public static Scheduler {CompilationContext.SchedulerVar};");
             context.WriteLine(output);

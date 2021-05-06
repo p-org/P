@@ -135,9 +135,9 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public PrimVS<PBool> getNextBoolean(Bdd pc) {
+    public PrimVS<Boolean> getNextBoolean(Bdd pc) {
         int depth = choiceDepth;
-        PrimVS<PBool> res = getNext(depth, boolBound, schedule::getRepeatBool, schedule::getBacktrackBool,
+        PrimVS<Boolean> res = getNext(depth, boolBound, schedule::getRepeatBool, schedule::getBacktrackBool,
                 schedule::clearBacktrack, schedule::addRepeatBool, schedule::addBacktrackBool,
                 () -> super.getNextBooleanChoices(pc), super::getNextBoolean);
         //ScheduleLogger.log("choice: " + schedule.getBoolChoice(depth));
@@ -146,9 +146,9 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public PrimVS<PInt> getNextInteger(PrimVS<PInt> bound, Bdd pc) {
+    public PrimVS<Integer> getNextInteger(PrimVS<Integer> bound, Bdd pc) {
         int depth = choiceDepth;
-        PrimVS<PInt> res = getNext(depth, intBound, schedule::getRepeatInt, schedule::getBacktrackInt,
+        PrimVS<Integer> res = getNext(depth, intBound, schedule::getRepeatInt, schedule::getBacktrackInt,
                 schedule::clearBacktrack, schedule::addRepeatInt, schedule::addBacktrackInt,
                 () -> super.getNextIntegerChoices(bound, pc), super::getNextInteger);
         choiceDepth = depth + 1;

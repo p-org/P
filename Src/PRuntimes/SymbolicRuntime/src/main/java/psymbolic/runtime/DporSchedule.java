@@ -48,7 +48,7 @@ public class DporSchedule extends Schedule {
     }
 
     @Override
-    public void addBacktrackBool(PrimVS<PBool> choice, int depth) {
+    public void addBacktrackBool(PrimVS<Boolean> choice, int depth) {
         super.addBacktrackBool(choice, depth);
         if (depth >= dporBacktrackChoice.size()) {
             dporBacktrackChoice.add(new DporChoice());
@@ -57,7 +57,7 @@ public class DporSchedule extends Schedule {
     }
 
     @Override
-    public void addBacktrackInt(PrimVS<PInt> choice, int depth) {
+    public void addBacktrackInt(PrimVS<Integer> choice, int depth) {
         super.addBacktrackInt(choice, depth);
         if (depth >= dporBacktrackChoice.size()) {
             dporBacktrackChoice.add(new DporChoice());

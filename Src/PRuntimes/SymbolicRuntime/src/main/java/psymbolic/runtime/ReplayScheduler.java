@@ -1,9 +1,6 @@
 package psymbolic.runtime;
 
-import p.runtime.values.PBool;
-import p.runtime.values.PInt;
 import psymbolic.valuesummary.IntUtils;
-import psymbolic.valuesummary.PIntUtils;
 import psymbolic.valuesummary.PrimVS;
 import psymbolic.valuesummary.VectorClockVS;
 import psymbolic.valuesummary.bdd.Bdd;
@@ -66,16 +63,16 @@ public class ReplayScheduler extends Scheduler {
     }
 
     @Override
-    public PrimVS<PBool> getNextBoolean(Bdd pc) {
-        PrimVS<PBool> res = schedule.getRepeatBool(choiceDepth);
+    public PrimVS<Boolean> getNextBoolean(Bdd pc) {
+        PrimVS<Boolean> res = schedule.getRepeatBool(choiceDepth);
         choiceDepth++;
         return res;
     }
 
     @Override
-    public PrimVS<PInt> getNextInteger(PrimVS<PInt> bound, Bdd pc) {
-        PrimVS<PInt> res = schedule.getRepeatInt(choiceDepth);
-        assert(PIntUtils.lessThan(res, bound).getGuard(false).isConstFalse());
+    public PrimVS<Integer> getNextInteger(PrimVS<Integer> bound, Bdd pc) {
+        PrimVS<Integer> res = schedule.getRepeatInt(choiceDepth);
+        assert(IntUtils.lessThan(res, bound).getGuard(false).isConstFalse());
         choiceDepth++;
         return res;
     }

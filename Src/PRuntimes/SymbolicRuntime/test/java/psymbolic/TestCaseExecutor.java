@@ -65,7 +65,7 @@ public class TestCaseExecutor {
         // Invoke the P compiler to compile the test Case
         boolean isWindows = System.getProperty("os.name")
                 .toLowerCase().startsWith("windows");
-        String compilerDirectory = "../../../Bld/Drops/Release/Binaries/Pc.dll";
+        String compilerDirectory = "../../../Bld/Drops/Release/Binaries/netcoreapp3.1/P.dll";
 
         String prefix = "SymbolicRegressionTests/";
         assert testCasePaths.stream().allMatch(p -> p.contains(prefix));

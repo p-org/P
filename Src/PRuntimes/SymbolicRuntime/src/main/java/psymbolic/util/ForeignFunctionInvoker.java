@@ -1,5 +1,6 @@
 package psymbolic.util;
 
+import p.runtime.PRuntimeException;
 import p.runtime.values.*;
 import p.runtime.values.exceptions.InvalidIndexException;
 import p.runtime.values.exceptions.KeyNotFoundException;
@@ -14,11 +15,18 @@ public class ForeignFunctionInvoker {
 
     public static int times = 1;
 
-    public static GuardedValue<PValue<?>> concretize (Object valueSummary) {
+    public static GuardedValue concretize (Object valueSummary) {
         if (valueSummary instanceof PrimVS<?>) {
             List<? extends GuardedValue<?>> list = ((PrimVS<?>) valueSummary).getGuardedValues();
             if (list.size() > 0) {
                 GuardedValue<?> item = list.get(0);
+                if (item.value instanceof Integer) {
+                    return new GuardedValue(new PInt((Integer) item.value), item.guard);
+                } else if (item.value instanceof Boolean) {
+                    return new GuardedValue(new PBool((Boolean) item.value), item.guard);
+                } else if (item.value instanceof Float) {
+                    return new GuardedValue(new PFloat((Float) item.value), item.guard);
+                }
                 return new GuardedValue(item.value, item.guard);
             }
         } else if (valueSummary instanceof ListVS<?>) {
@@ -132,16 +140,16 @@ public class ForeignFunctionInvoker {
         }
     }
 
-    public static ValueSummary invoke(Bdd pc, Class<? extends ValueSummary> c, Function<List<PValue<?>>, PValue<?>> fn, ValueSummary ... args) {
+    public static ValueSummary invoke(Bdd pc, Class<? extends ValueSummary> c, Function<List<Object>, Object> fn, ValueSummary ... args) {
         Bdd iterPc = Bdd.constFalse();
         boolean skip = false;
         UnionVS ret = new UnionVS();
         boolean done = false;
         for (int i = 0; i < times; i++) {
             iterPc = pc.and(iterPc.not());
-            List<PValue<?>> concreteArgs = new ArrayList<>();
+            List<Object> concreteArgs = new ArrayList<>();
             for (int j = 0; j < args.length && !done; j++) {
-                GuardedValue<PValue<?>> guardedValue = concretize(args[j].guard(iterPc));
+                GuardedValue<Object> guardedValue = concretize(args[j].guard(iterPc));
                 if (guardedValue == null) {
                     if (j == 0) done = true;
                     skip = true;
@@ -167,7 +175,8 @@ public class ForeignFunctionInvoker {
         }
     }
 
-    public static ValueSummary<?> convertConcrete(Bdd pc, PValue<?> o) {
+    public static ValueSummary<?> convertConcrete(Bdd pc, Object o) {
+        System.out.println("convertConcrete");
         if (o instanceof PSeq) {
             PSeq list = (PSeq) o;
             ListVS listVS = new ListVS(pc);
@@ -210,8 +219,20 @@ public class ForeignFunctionInvoker {
                 namesAndFields[i + 1] = namedTuple.getField(fields[i]);
             }
             return new NamedTupleVS(namesAndFields);
-        } { // must be PBool, PEnum, PFloat, PInt, PFloat
-           return new PrimVS(o).guard(pc);
+        } else if (o instanceof PBool){
+           return new PrimVS<>(((PBool) o).getValue()).guard(pc);
+        } else if (o instanceof PInt){
+            System.out.println("int");
+            return new PrimVS<>(((PInt) o).getValue()).guard(pc);
+        } else if (o instanceof PFloat){
+            return new PrimVS<>(((PFloat) o).getValue()).guard(pc);
+        } else if (o instanceof PString){
+            return new PrimVS<>(((PString) o).getValue()).guard(pc);
+        } else if (o instanceof PEnum){
+            return new PrimVS<>(((PEnum) o).getValue()).guard(pc);
+        } else {
+            System.out.println("else");
+            return new PrimVS(o);
         }
     }
 

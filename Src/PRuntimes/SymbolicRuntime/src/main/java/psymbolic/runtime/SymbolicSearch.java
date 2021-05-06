@@ -34,13 +34,13 @@ public interface SymbolicSearch {
      * @param bound upper bound (exclusive) on the integer.
      * @return a integer
      */
-    PrimVS<PInt> getNextInteger(PrimVS<PInt> bound, Bdd pc);
+    PrimVS<Integer> getNextInteger(PrimVS<Integer> bound, Bdd pc);
 
     /** Return the next boolean based on the search and strategy.
      *
      * @return a boolean choice.
      */
-    PrimVS<PBool> getNextBoolean(Bdd pc);
+    PrimVS<Boolean> getNextBoolean(Bdd pc);
 
     /** Return the next element of a finite set based on the search and strategy.
      *

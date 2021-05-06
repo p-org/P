@@ -1,5 +1,7 @@
 package psymbolic.runtime;
 
+import p.runtime.values.PBool;
+import p.runtime.values.PInt;
 import psymbolic.valuesummary.GuardedValue;
 import psymbolic.valuesummary.ListVS;
 import psymbolic.valuesummary.PrimVS;
@@ -31,15 +33,15 @@ public class Schedule {
 
     public class Choice {
         PrimVS<Machine> senderChoice = new PrimVS<>();
-        PrimVS<Boolean> boolChoice = new PrimVS<>();
-        PrimVS<Integer> intChoice = new PrimVS<>();
+        PrimVS<PBool> boolChoice = new PrimVS<>();
+        PrimVS<PInt> intChoice = new PrimVS<>();
         PrimVS<ValueSummary> elementChoice = new PrimVS<>();
         Event eventChosen = new Event();
 
         public Choice() {
         }
 
-        public Choice(PrimVS<Machine> senderChoice, PrimVS<Boolean> boolChoice, PrimVS<Integer> intChoice,
+        public Choice(PrimVS<Machine> senderChoice, PrimVS<PBool> boolChoice, PrimVS<PInt> intChoice,
                       Event eventChosen) {
             this.senderChoice = senderChoice;
             this.boolChoice = boolChoice;
@@ -75,11 +77,11 @@ public class Schedule {
             eventChosen = eventChosen.merge(toMerge);
         }
 
-        public void addBoolChoice(PrimVS<Boolean> choice) {
+        public void addBoolChoice(PrimVS<PBool> choice) {
             boolChoice = choice;
         }
 
-        public void addIntChoice(PrimVS<Integer> choice) {
+        public void addIntChoice(PrimVS<PInt> choice) {
             intChoice = choice;
         }
 
@@ -142,14 +144,14 @@ public class Schedule {
         fullChoice.get(depth).addSenderChoice(choice);
     }
 
-    public void addBoolChoice(PrimVS<Boolean> choice, int depth) {
+    public void addBoolChoice(PrimVS<PBool> choice, int depth) {
         if (depth >= fullChoice.size()) {
             fullChoice.add(new Choice());
         }
         fullChoice.get(depth).addBoolChoice(choice);
     }
 
-    public void addIntChoice(PrimVS<Integer> choice, int depth) {
+    public void addIntChoice(PrimVS<PInt> choice, int depth) {
         if (depth >= fullChoice.size()) {
             fullChoice.add(new Choice());
         }
@@ -171,14 +173,14 @@ public class Schedule {
         repeatChoice.get(depth).addSenderChoice(choice.guard(filter));
     }
 
-    public void addRepeatBool(PrimVS<Boolean> choice, int depth) {
+    public void addRepeatBool(PrimVS<PBool> choice, int depth) {
         if (depth >= repeatChoice.size()) {
             repeatChoice.add(new Choice().guard(filter));
         }
         repeatChoice.get(depth).addBoolChoice(choice.guard(filter));
     }
 
-    public void addRepeatInt(PrimVS<Integer> choice, int depth) {
+    public void addRepeatInt(PrimVS<PInt> choice, int depth) {
         if (depth >= repeatChoice.size()) {
             repeatChoice.add(new Choice());
         }
@@ -200,14 +202,14 @@ public class Schedule {
         backtrackChoice.get(depth).addSenderChoice(choice);
     }
 
-    public void addBacktrackBool(PrimVS<Boolean> choice, int depth) {
+    public void addBacktrackBool(PrimVS<PBool> choice, int depth) {
         if (depth >= backtrackChoice.size()) {
             backtrackChoice.add(new Choice());
         }
         backtrackChoice.get(depth).addBoolChoice(choice);
     }
 
-    public void addBacktrackInt(PrimVS<Integer> choice, int depth) {
+    public void addBacktrackInt(PrimVS<PInt> choice, int depth) {
         if (depth >= backtrackChoice.size()) {
             backtrackChoice.add(new Choice());
         }
@@ -227,11 +229,11 @@ public class Schedule {
         return getFullChoice(depth).senderChoice;
     }
 
-    public PrimVS<Boolean> getBoolChoice(int depth) {
+    public PrimVS<PBool> getBoolChoice(int depth) {
         return getFullChoice(depth).boolChoice;
     }
 
-    public PrimVS<Integer> getIntChoice(int depth) {
+    public PrimVS<PInt> getIntChoice(int depth) {
         return getFullChoice(depth).intChoice;
     }
 
@@ -245,11 +247,11 @@ public class Schedule {
         return getRepeatChoice(depth).senderChoice;
     }
 
-    public PrimVS<Boolean> getRepeatBool(int depth) {
+    public PrimVS<PBool> getRepeatBool(int depth) {
         return getRepeatChoice(depth).boolChoice;
     }
 
-    public PrimVS<Integer> getRepeatInt(int depth) { return getRepeatChoice(depth).intChoice; }
+    public PrimVS<PInt> getRepeatInt(int depth) { return getRepeatChoice(depth).intChoice; }
 
     public PrimVS<ValueSummary> getRepeatElement(int depth) { return repeatChoice.get(depth).elementChoice; }
 
@@ -259,11 +261,11 @@ public class Schedule {
         return getBacktrackChoice(depth).senderChoice;
     }
 
-    public PrimVS<Boolean> getBacktrackBool(int depth) {
+    public PrimVS<PBool> getBacktrackBool(int depth) {
         return getBacktrackChoice(depth).boolChoice;
     }
 
-    public PrimVS<Integer> getBacktrackInt(int depth) {
+    public PrimVS<PInt> getBacktrackInt(int depth) {
         return getBacktrackChoice(depth).intChoice;
     }
 
@@ -382,11 +384,11 @@ public class Schedule {
             if (sender.getGuardedValues().size() > 0) {
                 pc = pc.and(sender.getGuardedValues().get(0).guard);
             } else {
-                PrimVS<Boolean> boolChoice = guarded.boolChoice;
+                PrimVS<PBool> boolChoice = guarded.boolChoice;
                 if (boolChoice.getGuardedValues().size() > 0) {
                     pc = pc.and(boolChoice.getGuardedValues().get(0).guard);
                 } else {
-                    PrimVS<Integer> intChoice = guarded.intChoice;
+                    PrimVS<PInt> intChoice = guarded.intChoice;
                     if (intChoice.getGuardedValues().size() > 0) {
                         pc = pc.and(intChoice.getGuardedValues().get(0).guard);
                     }

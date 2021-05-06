@@ -1,5 +1,7 @@
 package psymbolic.runtime;
 
+import p.runtime.values.PBool;
+import p.runtime.values.PInt;
 import psymbolic.valuesummary.ListVS;
 import psymbolic.valuesummary.PrimVS;
 import psymbolic.valuesummary.ValueSummary;
@@ -32,13 +34,13 @@ public interface SymbolicSearch {
      * @param bound upper bound (exclusive) on the integer.
      * @return a integer
      */
-    PrimVS<Integer> getNextInteger(PrimVS<Integer> bound, Bdd pc);
+    PrimVS<PInt> getNextInteger(PrimVS<PInt> bound, Bdd pc);
 
     /** Return the next boolean based on the search and strategy.
      *
      * @return a boolean choice.
      */
-    PrimVS<Boolean> getNextBoolean(Bdd pc);
+    PrimVS<PBool> getNextBoolean(Bdd pc);
 
     /** Return the next element of a finite set based on the search and strategy.
      *

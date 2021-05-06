@@ -1,5 +1,7 @@
 package psymbolic.runtime;
 
+import p.runtime.values.PBool;
+import p.runtime.values.PInt;
 import psymbolic.run.Assert;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.bdd.Bdd;
@@ -112,24 +114,24 @@ public class Scheduler implements SymbolicSearch {
         this.maxDepth = maxDepth;
     }
 
-    public List<PrimVS> getNextIntegerChoices(PrimVS<Integer> bound, Bdd pc) {
+    public List<PrimVS> getNextIntegerChoices(PrimVS<PInt> bound, Bdd pc) {
         List<PrimVS> choices = new ArrayList<>();
-        for (int i = 0; i < IntUtils.maxValue(bound); i++) {
-            Bdd cond = IntUtils.lessThan(i, bound).getGuard(true);
+        for (int i = 0; i < PIntUtils.maxValue(bound).getValue(); i++) {
+            Bdd cond = PIntUtils.lessThan(i, bound).getGuard(true);
             choices.add(new PrimVS<>(i).guard(cond));
         }
         return choices;
     }
 
-    public PrimVS<Integer> getNextInteger(List<PrimVS> candidateIntegers) {
-        PrimVS<Integer> choices = (PrimVS<Integer>) NondetUtil.getNondetChoice(candidateIntegers);
+    public PrimVS<PInt> getNextInteger(List<PrimVS> candidateIntegers) {
+        PrimVS<PInt> choices = (PrimVS<PInt>) NondetUtil.getNondetChoice(candidateIntegers);
         schedule.addRepeatInt(choices, choiceDepth);
         schedule.addIntChoice(choices, choiceDepth);
         return choices;
     }
 
     @Override
-    public PrimVS<Integer> getNextInteger(PrimVS<Integer> bound, Bdd pc) {
+    public PrimVS<PInt> getNextInteger(PrimVS<PInt> bound, Bdd pc) {
         return getNextInteger(getNextIntegerChoices(bound, pc));
     }
 
@@ -140,21 +142,35 @@ public class Scheduler implements SymbolicSearch {
         return choices;
     }
 
-    public PrimVS<Boolean> getNextBoolean(List<PrimVS> candidateBooleans) {
-        PrimVS<Boolean> choices = (PrimVS<Boolean>) NondetUtil.getNondetChoice(candidateBooleans);
+    public PrimVS<PBool> getNextBoolean(List<PrimVS> candidateBooleans) {
+        PrimVS<PBool> choices = (PrimVS<PBool>) NondetUtil.getNondetChoice(candidateBooleans);
         schedule.addRepeatBool(choices, choiceDepth);
         schedule.addBoolChoice(choices, choiceDepth);
         return choices;
     }
 
     @Override
-    public PrimVS<Boolean> getNextBoolean(Bdd pc) {
+    public PrimVS<PBool> getNextBoolean(Bdd pc) {
         return getNextBoolean(getNextBooleanChoices(pc));
     }
 
+    public List<ValueSummary> getNextElementChoices(ListVS candidates, Bdd pc) {
+        PrimVS<Integer> size = candidates.size();
+        PrimVS<Integer> index = new PrimVS<>(0).guard(size.getUniverse());
+        List<ValueSummary> list = new ArrayList<>();
+        while (BoolUtils.isEverTrue(IntUtils.lessThan(index, size))) {
+            Bdd cond = BoolUtils.trueCond(IntUtils.lessThan(index, size));
+            list.add(candidates.get(index).guard(pc));
+            index = IntUtils.add(index, 1);
+        }
+        return list;
+    }
+
+    /*
     public List<ValueSummary> getNextElementChoices(Set<ValueSummary> candidates, Bdd pc) {
         return candidates.stream().map(x -> x.guard(pc)).collect(Collectors.toList());
     }
+     */
 
     public PrimVS<ValueSummary> getNextElementHelper(List<ValueSummary> candidates) {
         PrimVS<ValueSummary> choices = NondetUtil.getNondetChoice(candidates.stream().map(x -> new PrimVS(x).guard(x.getUniverse())).collect(Collectors.toList()));
@@ -181,7 +197,7 @@ public class Scheduler implements SymbolicSearch {
     }
 
     @Override
-    public ValueSummary getNextElement(Set<ValueSummary> candidates, Bdd pc) {
+    public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Bdd pc) {
         return getNextElementFlattener(getNextElementHelper(getNextElementChoices(candidates, pc)));
     }
 

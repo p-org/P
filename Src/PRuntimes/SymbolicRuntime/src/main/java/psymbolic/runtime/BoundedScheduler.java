@@ -1,10 +1,11 @@
 package psymbolic.runtime;
 
+import p.runtime.values.PBool;
+import p.runtime.values.PInt;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.List;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -134,9 +135,9 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public PrimVS<Boolean> getNextBoolean(Bdd pc) {
+    public PrimVS<PBool> getNextBoolean(Bdd pc) {
         int depth = choiceDepth;
-        PrimVS<Boolean> res = getNext(depth, boolBound, schedule::getRepeatBool, schedule::getBacktrackBool,
+        PrimVS<PBool> res = getNext(depth, boolBound, schedule::getRepeatBool, schedule::getBacktrackBool,
                 schedule::clearBacktrack, schedule::addRepeatBool, schedule::addBacktrackBool,
                 () -> super.getNextBooleanChoices(pc), super::getNextBoolean);
         //ScheduleLogger.log("choice: " + schedule.getBoolChoice(depth));
@@ -145,9 +146,9 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public PrimVS<Integer> getNextInteger(PrimVS<Integer> bound, Bdd pc) {
+    public PrimVS<PInt> getNextInteger(PrimVS<PInt> bound, Bdd pc) {
         int depth = choiceDepth;
-        PrimVS<Integer> res = getNext(depth, intBound, schedule::getRepeatInt, schedule::getBacktrackInt,
+        PrimVS<PInt> res = getNext(depth, intBound, schedule::getRepeatInt, schedule::getBacktrackInt,
                 schedule::clearBacktrack, schedule::addRepeatInt, schedule::addBacktrackInt,
                 () -> super.getNextIntegerChoices(bound, pc), super::getNextInteger);
         choiceDepth = depth + 1;

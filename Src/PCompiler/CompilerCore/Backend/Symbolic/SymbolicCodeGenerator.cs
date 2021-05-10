@@ -684,12 +684,13 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case AssertStmt assertStmt:
-                    context.Write(output, "Assert.prop(!(");
+                    context.Write(output, "Assert.progProp(!(");
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
                     context.Write(output, ").getValues().contains(Boolean.FALSE), ");
-                    context.Write(output, $"\"{assertStmt.Message}\"");
-                    context.Write(output, ", scheduler");
-                    context.Write(output, $", {flowContext.pcScope.PathConstraintVar});");
+                    WriteExpr(context, output, flowContext.pcScope, assertStmt.Message);
+                    context.Write(output, ", scheduler, ");
+                    WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
+                    context.Write(output, ".getGuard(Boolean.FALSE));");
                     break;
 
                 case ReturnStmt returnStmt:
@@ -1783,6 +1784,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
                     unguarded = $"new {GetSymbolicType(type)}(\"\")";
+                    break;
+                case ForeignType foreignType:
+                    unguarded = $"new {GetSymbolicType(type)}()";
                     break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:

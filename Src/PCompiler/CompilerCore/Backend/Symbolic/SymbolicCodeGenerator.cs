@@ -1557,6 +1557,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, "))");
                     context.Write(output, $".guard({pcScope.PathConstraintVar})");
                     break;
+                case NullLiteralExpr nullLiteralExpr:
+                    context.Write(output, "null");
+                    break;
                 default:
                     context.Write(output, $"/* Skipping expr '{expr.GetType().Name}' */");
                     break;

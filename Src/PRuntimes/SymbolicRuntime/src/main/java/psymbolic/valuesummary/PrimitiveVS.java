@@ -1,25 +1,19 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.Bdd;
-
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Represents primitive value summary
+ * Represents a primitive value summary (Boolean, Integer, Float, String)
  * @param <T> Type of value stored in the primitive value summary
  */
 public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
-    private final List<GuardedValue<T>> guardedValuesList;
-    /** Cached set of values */
-    private Set<T> values;
-    /** Cached universe */
-    private Guard universe;
-
-    /** The guards on these values *must* be mutually exclusive.
+    /**
+     * A primitive value is a collection of guarded values
      *
+     * The guards on these values *must* be mutually exclusive.
      * In other words, for any two 'value1', 'value2' of type T, the following must be identically false:
      *
      *      and(guardedValues.get(value1), guardedValues.get(value2))
@@ -28,17 +22,47 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
      */
     private final Map<T, Guard> guardedValues;
 
-    /** Make a new PrimVS with the largest possible universe containing only the specified value
-     *
-     * @param value The value that the PrimVS contains
-     */
-    public PrimitiveVS(T value) {
-        this.guardedValues = Collections.singletonMap(value, Bdd.constTrue());
+    /** Cached list of guarded values */
+    private List<GuardedValue<T>> guardedValuesList;
+    /** Cached set of values */
+    private Set<T> values = null;
+
+    /** Cached universe */
+    private Guard universe = null;
+
+    /** Get all the different possible guarded values */
+    public List<GuardedValue<T>> getGuardedValues() {
+        if (guardedValuesList == null)
+            guardedValuesList = guardedValues.entrySet().stream()
+                    .map(x -> new GuardedValue<T>(x.getKey(), x.getValue())).collect(Collectors.toList());
+        return guardedValuesList;
     }
 
-    /** Caution: The caller must take care to ensure that the guards on the provided values are mutually exclusive.
+    @Override
+    public Guard getUniverse() {
+        if(universe == null)
+            universe = Guard.orMany(new ArrayList<>(guardedValues.values()));
+        return universe;
+    }
+
+    public Set<T> getValues() {
+        if(values == null)
+            values = guardedValues.keySet();
+        return values;
+    }
+
+    /**
+     * Create a PrimitiveVS with the largest possible universe (restrict = true) containing only the specified value
      *
-     * Additionally, the provided map should not be mutated after the object is constructed.
+     * @param value A primitive value summary containing the passed value under the `true` restrict
+     */
+    public PrimitiveVS(T value) {
+        this.guardedValues = Collections.singletonMap(value, Guard.constTrue());
+    }
+
+    /**
+     * Create a value summary with the given guarded values
+     * Caution: The caller must take care to ensure that the guards on the provided values are mutually exclusive.
      */
     public PrimitiveVS(Map<T, Guard> guardedValues) {
         this.guardedValues = new HashMap<>();
@@ -49,40 +73,20 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
         }
     }
 
-    /** Copy constructor for PrimVS
+    /** Copy constructor for PrimitiveVS
      *
      * @param old The PrimVS to copy
      */
-    public PrimitiveVS(PrimitiveVS old) {
-        this.guardedValues = new HashMap<>(old.guardedValues);
+    public PrimitiveVS(PrimitiveVS<T> old) {
+        this(old.guardedValues);
     }
 
     /** Make an empty PrimVS */
     public PrimitiveVS() { this(new HashMap<>()); }
 
-    /** Get all the different possible guarded values */
-    public List<GuardedValue<T>> getGuardedValues() {
-        if (guardedValuesList == null)
-            guardedValuesList = guardedValues.entrySet().stream()
-                    .map(x -> new GuardedValue<T>(x.getKey(), x.getValue())).collect(Collectors.toList());
-        return guardedValuesList;
-    }
 
-    /** Get all the different possible values */
-    public Set<T> getValues() {
-        if (values == null)
-            values = guardedValues.keySet();
-        return values;
-    }
 
-    @Override
-    public Guard getUniverse() {
-        if (universe == null)
-            universe = Guard.orMany(new ArrayList<>(guardedValues.values()));
-        return universe;
-    }
-
-    /** Get whether or not the provided value is a possibility
+    /** Check if the provided value is a possibility
      *
      * @param value The provided value
      * @return Whether or not the provided value is a possibility
@@ -91,52 +95,61 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
         return guardedValues.containsKey(value);
     }
 
-    /** Get the guard for a given value
+    /**
+     * Get the restrict for a given value
      *
-     * @param value The value for which the guard should be gotten
-     * @return The guard for the provided value
+     * @param value The value for which the restrict should be gotten
+     * @return The restrict for the provided value (false if the value does not exist in the VS)
      */
-    public Guard getGuard(T value) {
+    public Guard getGuardFor(T value) {
         return guardedValues.getOrDefault(value, Guard.constFalse());
     }
 
-    public <U> PrimitiveVS<U> apply(Function<T, U> function) {
+    /**
+     * Apply the function `func` to each guarded value of type T in the Value Summary and return a primitive value summary with values of type U
+     * @param func Function to be applied
+     * @param <U> Type of the values in the resultant primitive value summary
+     * @return A primitive value summary with values of type U
+     */
+    public <U> PrimitiveVS<U> apply(Function<T, U> func) {
         final Map<U, Guard> results = new HashMap<>();
 
         for (GuardedValue<T> guardedValue : getGuardedValues()) {
-            final U mapped = function.apply(guardedValue.getValue());
+            final U mapped = func.apply(guardedValue.getValue());
             results.merge(mapped, guardedValue.getGuard(), Guard::or);
         }
 
-        return new PrimitiveVS<T>(results);
+        return new PrimitiveVS<U>(results);
     }
 
-    /** Remove the provided PrimVS values from the set of values
+    /**
+     * Remove the provided Primitive VS values from the set of values
      *
-     * @param rm The PrimVS to remove
-     * @return The PrimVS after removal
+     * @param rm The PrimitiveVS values to remove from the current value summary
+     * @return The PrimitiveVS after removal of values
      */
+    @Deprecated
     public PrimitiveVS<T> remove(PrimitiveVS<T> rm) {
-        Bdd guardToRemove = Bdd.constFalse();
+        Guard guardToRemove = Guard.constFalse();
         for (GuardedValue<T> guardedValue : rm.getGuardedValues()) {
-            guardToRemove = guardToRemove.or(this.guard(guardedValue.guard).getGuard(guardedValue.value));
+            guardToRemove = guardToRemove.or(this.restrict(guardedValue.getGuard()).getGuardFor(guardedValue.getValue()));
         }
-        return this.guard(guardToRemove.not());
+        return this.restrict(guardToRemove.not());
     }
 
     public <U, V> PrimitiveVS<V>
-    apply2(PrimitiveVS<U> summary2, BiFunction<T, U, V> function) {
-        final Map<V, Bdd> results = new HashMap<>();
+    apply(PrimitiveVS<U> summary2, BiFunction<T, U, V> function) {
+        final Map<V, Guard> results = new HashMap<>();
 
         for (GuardedValue<T> val1 : this.getGuardedValues()) {
             for (GuardedValue<U> val2: summary2.getGuardedValues()) {
-                final Bdd combinedGuard = val1.guard.and(val2.guard);
-                if (combinedGuard.isConstFalse()) {
+                final Guard combinedGuard = val1.getGuard().and(val2.getGuard());
+                if (combinedGuard.isFalse()) {
                     continue;
                 }
 
-                final V mapped = function.apply(val1.value, val2.value);
-                results.merge(mapped, combinedGuard, Bdd::or);
+                final V mapped = function.apply(val1.getValue(), val2.getValue());
+                results.merge(mapped, combinedGuard, Guard::or);
             }
         }
 
@@ -153,7 +166,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
         for (GuardedValue<T> guardedValue : getGuardedValues()) {
             final Target mapped = function.apply(guardedValue.getValue());
-            toMerge.add(mapped.guard(guardedValue.getGuard()));
+            toMerge.add(mapped.restrict(guardedValue.getGuard()));
         }
 
         return mergeWith.merge(toMerge);
@@ -165,12 +178,12 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     }
 
     @Override
-    public PrimitiveVS<T> guard(Bdd guard) {
-        final Map<T, Bdd> result = new HashMap<>();
+    public PrimitiveVS<T> restrict(Guard guard) {
+        final Map<T, Guard> result = new HashMap<>();
 
-        for (Map.Entry<T, Bdd> entry : guardedValues.entrySet()) {
-            final Bdd newEntryGuard = entry.getValue().and(guard);
-            if (!newEntryGuard.isConstFalse()) {
+        for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
+            final Guard newEntryGuard = entry.getValue().and(guard);
+            if (!newEntryGuard.isFalse()) {
                 result.put(entry.getKey(), newEntryGuard);
             }
         }
@@ -179,23 +192,22 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     }
 
     @Override
-    public PrimitiveVS<T> update(Bdd guard, PrimitiveVS<T> update) {
-        return this.guard(guard.not()).merge(Collections.singletonList(update.guard(guard)));
+    public PrimitiveVS<T> updateUnderGuard(Guard guard, PrimitiveVS<T> updateVal) {
+        return this.restrict(guard.not()).merge(Collections.singletonList(updateVal.restrict(guard)));
     }
 
 
     @Override
     public PrimitiveVS<T> merge(Iterable<PrimitiveVS<T>> summaries) {
-        final Map<T, Bdd> result = new HashMap<>(guardedValues);
+        final Map<T, Guard> result = new HashMap<>(guardedValues);
 
         for (PrimitiveVS<T> summary : summaries) {
-            for (Map.Entry<T, Bdd> entry : summary.guardedValues.entrySet()) {
-                result.merge(entry.getKey(), entry.getValue(), Bdd::or);
+            for (Map.Entry<T, Guard> entry : summary.guardedValues.entrySet()) {
+                result.merge(entry.getKey(), entry.getValue(), Guard::or);
             }
         }
 
-        PrimitiveVS<T> res = new PrimitiveVS<>(result);
-        return res;
+        return new PrimitiveVS<>(result);
     }
 
     @Override
@@ -204,15 +216,15 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     }
 
     @Override
-    public PrimitiveVS<Boolean> symbolicEquals(PrimitiveVS<T> cmp, Bdd pc) {
-        Bdd equalCond = Bdd.constFalse();
-        for (Map.Entry<T, Bdd> entry : this.guardedValues.entrySet()) {
+    public PrimitiveVS<Boolean> symbolicEquals(PrimitiveVS<T> cmp, Guard pc) {
+        Guard equalCond = Guard.constFalse();
+        for (Map.Entry<T, Guard> entry : this.guardedValues.entrySet()) {
             if (cmp.guardedValues.containsKey(entry.getKey())) {
                 equalCond = equalCond.or(entry.getValue().and(cmp.guardedValues.get(entry.getKey())));
             }
         }
         equalCond = equalCond.or(getUniverse().and(cmp.getUniverse()).not());
-        return BoolUtils.fromTrueGuard(pc.and(equalCond));
+        return BooleanVS.trueUnderGuard(pc.and(equalCond));
     }
 
     @Override

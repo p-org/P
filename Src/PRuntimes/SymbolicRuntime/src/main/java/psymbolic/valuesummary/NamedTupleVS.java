@@ -1,7 +1,6 @@
 package psymbolic.valuesummary;
 
 import p.runtime.values.PString;
-import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.*;
 
@@ -33,10 +32,10 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
      */
     public NamedTupleVS(Object... namesAndFields) {
         names = new HashMap<>();
-        ValueSummary[] vs = new ValueSummary[namesAndFields.length/ 2];
+        ValueSummary<?>[] vs = new ValueSummary[namesAndFields.length/ 2];
         for (int i = 0; i < namesAndFields.length; i += 2) {
             String name = (String)namesAndFields[i];
-            vs[i / 2] = (ValueSummary)namesAndFields[i + 1];
+            vs[i / 2] = (ValueSummary<?>)namesAndFields[i + 1];
             names.put(name, i / 2);
         }
         tuple = new TupleVS(vs);
@@ -46,7 +45,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
      * @param name The name of the field
      * @return The value
      */
-    public ValueSummary getField(String name) {
+    public ValueSummary<?> getField(String name) {
         return tuple.getField(names.get(name));
     }
 
@@ -54,7 +53,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
      * @param name The name of the field
      * @return The value
      */
-    public ValueSummary getField(PString name) {
+    public ValueSummary<?> getField(PString name) {
         return tuple.getField(names.get(name.getValue()));
     }
 
@@ -63,7 +62,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
      * @param val The value to set the specified field to
      * @return The result of updating the field
      */
-    public NamedTupleVS setField(String name, ValueSummary val) {
+    public NamedTupleVS setField(String name, ValueSummary<?> val) {
         return new NamedTupleVS(names, tuple.setField(names.get(name), val));
     }
 
@@ -72,7 +71,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
      * @param val The value to set the specified field to
      * @return The result of updating the field
      */
-    public NamedTupleVS setField(PString name, ValueSummary val) {
+    public NamedTupleVS setField(PString name, ValueSummary<?> val) {
         return new NamedTupleVS(names, tuple.setField(names.get(name.getValue()), val));
     }
 
@@ -82,8 +81,8 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     }
 
     @Override
-    public NamedTupleVS guard(Bdd guard) {
-        return new NamedTupleVS(names, tuple.guard(guard));
+    public NamedTupleVS restrict(Guard guard) {
+        return new NamedTupleVS(names, tuple.restrict(guard));
     }
 
     @Override
@@ -103,20 +102,20 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     }
 
     @Override
-    public NamedTupleVS update(Bdd guard, NamedTupleVS update) {
-        return this.guard(guard.not()).merge(Collections.singletonList(update.guard(guard)));
+    public NamedTupleVS updateUnderGuard(Guard guard, NamedTupleVS update) {
+        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));
     }
 
     @Override
-    public PrimVS<Boolean> symbolicEquals(NamedTupleVS cmp, Bdd pc) {
+    public PrimitiveVS<Boolean> symbolicEquals(NamedTupleVS cmp, Guard pc) {
         if (names.equals(cmp.names)) {
-            return new PrimVS<>(false).guard(pc);
+            return new PrimitiveVS<>(false).restrict(pc);
         }
         return tuple.symbolicEquals(cmp.tuple, pc);
     }
 
     @Override
-    public Bdd getUniverse() {
+    public Guard getUniverse() {
         return tuple.getUniverse();
     }
 }

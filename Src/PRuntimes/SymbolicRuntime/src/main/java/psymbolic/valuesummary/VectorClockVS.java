@@ -1,7 +1,5 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.Bdd;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,8 +7,8 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
 
     private final ListVS<PrimitiveVS<Integer>> clock;
 
-    public VectorClockVS(Bdd universe) {
-        this.clock = new ListVS<>(universe);
+    public VectorClockVS(Guard universe) {
+        this.clock = new ListVS<PrimitiveVS<Integer>>(universe);
     }
 
     public VectorClockVS(VectorClockVS vc) {
@@ -30,8 +28,8 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
         ListVS<PrimitiveVS<Integer>> extended = clock;
         PrimitiveVS<Boolean> lessThan = IntUtils.lessThan(currentSize, size);
         while (lessThan.hasValue(true)) {
-            Bdd lessThanCond = lessThan.getGuard(true);
-            extended = extended.add(new PrimitiveVS<>(0).guard(lessThanCond));
+            Guard lessThanCond = lessThan.getGuardFor(true);
+            extended = extended.add(new PrimitiveVS<>(0).restrict(lessThanCond));
             currentSize = extended.size();
             lessThan = IntUtils.lessThan(currentSize, size);
         }
@@ -41,7 +39,7 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
     public VectorClockVS increment(PrimitiveVS<Integer> idx, PrimitiveVS<Integer> amt) {
         ListVS<PrimitiveVS<Integer>> updatedClock = extend(IntUtils.add(idx, 1)).clock;
         PrimitiveVS<Boolean> inRange = updatedClock.inRange(idx);
-        Bdd inRangeCond = inRange.getGuard(true);
+        Guard inRangeCond = inRange.getGuard(true);
         PrimitiveVS<Integer> updateValue = IntUtils.add(updatedClock.get(idx.guard(inRangeCond)), amt.guard(inRangeCond));
         updatedClock = updatedClock.set(idx.guard(inRangeCond), updateValue);
         return new VectorClockVS(updatedClock);
@@ -54,9 +52,9 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
     public VectorClockVS takeMax(PrimitiveVS<Integer> idx, PrimitiveVS<Integer> amt) {
         ListVS<PrimitiveVS<Integer>> updatedClock = extend(IntUtils.add(idx, 1)).clock;
         PrimitiveVS<Boolean> inRange = updatedClock.inRange(idx);
-        Bdd inRangeCond = inRange.getGuard(true);
+        Guard inRangeCond = inRange.getGuard(true);
         PrimitiveVS<Integer> cmpResult = IntUtils.compare(updatedClock.get(idx.guard(inRangeCond)), amt.guard(inRangeCond));
-        Bdd updateCond = IntUtils.lessThan(cmpResult, 0).getGuard(true);
+        Guard updateCond = IntUtils.lessThan(cmpResult, 0).getGuard(true);
         updatedClock = updatedClock.set(idx.guard(inRangeCond).guard(updateCond), amt);
         return new VectorClockVS(updatedClock);
     }
@@ -98,7 +96,7 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
         PrimitiveVS<Boolean> inRange = extended.clock.inRange(idx);
         // compare clocks of the same size
         while (inRange.hasValue(true)) {
-            Bdd cond = inRange.getGuard(true);
+            Guard cond = inRange.getGuard(true);
             PrimitiveVS<Integer> current = new PrimitiveVS<>(idx).guard(cond);
             PrimitiveVS<Integer> thisVal = extended.clock.guard(cond).get(current);
             PrimitiveVS<Integer> otherVal = extendedVc.clock.guard(cond).get(current);
@@ -122,7 +120,7 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
     }
 
     @Override
-    public VectorClockVS guard(Bdd guard) {
+    public VectorClockVS restrict(Guard guard) {
         return new VectorClockVS(clock.guard(guard));
     }
 
@@ -139,17 +137,17 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
     }
 
     @Override
-    public VectorClockVS update(Bdd guard, VectorClockVS update) {
-        return new VectorClockVS(clock.update(guard, update.clock));
+    public VectorClockVS updateUnderGuard(Guard guard, VectorClockVS updateVal) {
+        return new VectorClockVS(clock.update(guard, updateVal.clock));
     }
 
     @Override
-    public PrimitiveVS<Boolean> symbolicEquals(VectorClockVS cmp, Bdd pc) {
+    public PrimitiveVS<Boolean> symbolicEquals(VectorClockVS cmp, Guard pc) {
         return clock.symbolicEquals(cmp.clock, pc);
     }
 
     @Override
-    public Bdd getUniverse() {
+    public Guard getUniverse() {
         return clock.getUniverse();
     }
 

@@ -3,15 +3,14 @@ package psymbolic.valuesummary;
 import psymbolic.valuesummary.bdd.BddGuard;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
- * Represents the Schedule, Control, Input (SCI) guard in the guarded value of a value summary
+ * Represents the Schedule, Control, Input (SCI) restrict in the guarded value of a value summary
  * Currently, the guards are implemented using BDDs.
  */
 public class Guard {
     /**
-     * Represents the boolean formula for the guard
+     * Represents the boolean formula for the restrict
      */
     private final BddGuard guard;
 
@@ -20,7 +19,7 @@ public class Guard {
     }
 
     /**
-     * Create a constant false guard
+     * Create a constant false restrict
      * @return Guard representing constant false
      */
     public static Guard constFalse() {
@@ -28,24 +27,24 @@ public class Guard {
     }
 
     /**
-     * Create a constant true guard
+     * Create a constant true restrict
      * @return Guard representing constant true
      */
     public static Guard constTrue() {
         return new Guard(BddGuard.constTrue());
     }
 
-    /** Checks whether the logical guard evaluates to true
+    /** Checks whether the logical restrict evaluates to true
      *
-     * @return True iff the guard evaluates to true
+     * @return True iff the restrict evaluates to true
      */
     public boolean isTrue() {
         return guard.isTrue();
     }
 
-    /** Checks whether the logical guard evaluates to false
+    /** Checks whether the logical restrict evaluates to false
      *
-     * @return True iff the guard evaluates to false
+     * @return True iff the restrict evaluates to false
      */
     public boolean isFalse() {
         return guard.isFalse();
@@ -53,8 +52,8 @@ public class Guard {
 
     /**
      * Performs logical `and` of two guards
-     * @param other the other guard
-     * @return guard that is the `and` of two guards
+     * @param other the other restrict
+     * @return restrict that is the `and` of two guards
      */
     public Guard and(Guard other) {
         return new Guard(guard.and(other.guard));
@@ -62,8 +61,8 @@ public class Guard {
 
     /**
      * Performs logical `or` of two guards
-     * @param other the other guard
-     * @return guard that is the `or` of two guards
+     * @param other the other restrict
+     * @return restrict that is the `or` of two guards
      */
     public Guard or(Guard other) {
         return new Guard(guard.or(other.guard));
@@ -71,7 +70,7 @@ public class Guard {
 
     /**
      * Performs the logical `implies` this -> other
-     * @param other the other guard
+     * @param other the other restrict
      * @return
      */
     public Guard implies(Guard other) {
@@ -79,8 +78,8 @@ public class Guard {
     }
 
     /**
-     * Perform logical `negation` of the guard
-     * @return negated guard `not`
+     * Perform logical `negation` of the restrict
+     * @return negated restrict `not`
      */
     public Guard not() {
         return new Guard(guard.not());
@@ -124,11 +123,11 @@ public class Guard {
         if (this == o) return true;
         if (!(o instanceof Guard)) return false;
         Guard guard1 = (Guard) o;
-        return Objects.equals(guard, guard1.guard);
+        return guard.equals(guard1.guard);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(guard);
+        return guard.hashCode();
     }
 }

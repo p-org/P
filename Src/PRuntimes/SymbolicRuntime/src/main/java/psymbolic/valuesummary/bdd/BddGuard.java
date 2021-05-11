@@ -4,7 +4,6 @@ import lombok.Getter;
 import org.sosy_lab.pjbdd.api.DD;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
     Represents the BDD based implementation of Guard
@@ -67,7 +66,7 @@ public class BddGuard {
 
     @Override
     public String toString() {
-        return bddEngine.toString();
+        return bdd.toString();
     }
 
     @Override
@@ -75,11 +74,11 @@ public class BddGuard {
         if (this == o) return true;
         if (!(o instanceof BddGuard)) return false;
         BddGuard bddGuard = (BddGuard) o;
-        return Objects.equals(bdd, bddGuard.bdd);
+        return bdd.equals(bddGuard.bdd);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(bdd);
+        return bdd.hashCode();
     }
 }

@@ -1,7 +1,5 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.Bdd;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -11,7 +9,7 @@ import java.util.stream.IntStream;
 /** Class for tuple value summaries */
 public class TupleVS implements ValueSummary<TupleVS> {
     /** The fields of the tuple */
-    private final ValueSummary[] fields;
+    private final ValueSummary<?>[] fields;
     /** The classes of the fields of the tuple */
     private final Class[] classes;
 
@@ -21,9 +19,9 @@ public class TupleVS implements ValueSummary<TupleVS> {
     }
 
     /** Make a new TupleVS from the provided items */
-    public TupleVS(ValueSummary... items) {
+    public TupleVS(ValueSummary<?>... items) {
         this.fields = items;
-        this.classes = Arrays.asList(items).stream().map(x -> x.getClass())
+        this.classes = Arrays.stream(items).map(x -> x.getClass())
                 .collect(Collectors.toList()).toArray(new Class[items.length]);
     }
 
@@ -60,7 +58,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
     }
 
     @Override
-    public TupleVS guard(Bdd guard) {
+    public TupleVS guard(Guard guard) {
         ValueSummary[] resultFields = new ValueSummary[fields.length];
         for (int i = 0; i < fields.length; i++) {
             resultFields[i] = fields[i].guard(guard);
@@ -89,24 +87,24 @@ public class TupleVS implements ValueSummary<TupleVS> {
     }
 
     @Override
-    public TupleVS update(Bdd guard, TupleVS update) {
+    public TupleVS update(Guard guard, TupleVS update) {
         return this.guard(guard.not()).merge(Collections.singletonList(update.guard(guard)));
     }
 
     @Override
-    public PrimVS<Boolean> symbolicEquals(TupleVS cmp, Bdd pc) {
+    public PrimVS<Boolean> symbolicEquals(TupleVS cmp, Guard pc) {
         if (fields.length != cmp.fields.length) {
             return new PrimVS<>(false);
         }
-        Bdd tupleEqual = IntStream.range(0, fields.length)
+        Guard tupleEqual = IntStream.range(0, fields.length)
                 .mapToObj((i) -> fields[i].symbolicEquals(cmp.fields[i], pc).getGuard(Boolean.TRUE))
-                .reduce(Bdd::and)
-                .orElse(Bdd.constTrue());
+                .reduce(Guard::and)
+                .orElse(Guard.constTrue());
         return BoolUtils.fromTrueGuard(pc.and(tupleEqual));
     }
 
     @Override
-    public Bdd getUniverse() {
+    public Guard getUniverse() {
         // Optimization: Tuples should always be nonempty,
         // and all fields should exist under the same conditions
         return fields[0].getUniverse();

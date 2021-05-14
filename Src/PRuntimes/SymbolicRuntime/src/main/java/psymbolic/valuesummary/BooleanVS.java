@@ -100,4 +100,19 @@ public final class BooleanVS {
         return getFalseGuard(b).isTrue();
     }
 
+    /** Get whether a Boolean value summary is ever true
+     *
+     * @param b The Boolean value summary
+     * @return Whether the provided value summary can be true
+     */
+    public static boolean isEverTrue(PrimitiveVS<Boolean> b) {
+        return !getTrueGuard(b).isFalse();
+    }
+
+    /** Get whether a Boolean value summary is ever false
+     *
+     * @param b The Boolean value summary
+     * @return Whether or not the provided value summary can be false
+     */
+    public static boolean isEverFalse(PrimitiveVS<Boolean> b) { return !getFalseGuard(b).isFalse(); }
 }

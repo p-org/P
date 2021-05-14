@@ -1,5 +1,8 @@
 package psymbolic.valuesummary.bdd;
 
+/**
+ * Represents the backend engine that implements the interface to BDD Library
+ */
 public class BDDEngine {
     private static BDDEngine instance = new BDDEngine();
 

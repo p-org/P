@@ -34,7 +34,7 @@ public class Guard {
         return new Guard(BddGuard.constTrue());
     }
 
-    /** Checks whether the logical restrict evaluates to true
+    /** ValueSummaryChecks whether the logical restrict evaluates to true
      *
      * @return True iff the restrict evaluates to true
      */
@@ -42,7 +42,7 @@ public class Guard {
         return guard.isTrue();
     }
 
-    /** Checks whether the logical restrict evaluates to false
+    /** ValueSummaryChecks whether the logical restrict evaluates to false
      *
      * @return True iff the restrict evaluates to false
      */
@@ -104,11 +104,6 @@ public class Guard {
         return new Guard(guard.ifThenElse(thenCase.guard, elseCase.guard));
     }
 
-    /**
-     * This function should not be invoked from outside,
-     * TODO: Need to fix this part.
-     * @return
-     */
     public static Guard newVar() {
         return new Guard(BddGuard.newVar());
     }

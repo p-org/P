@@ -1,7 +1,5 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.Bdd;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,11 +19,11 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
         this.elements = elements;
     }
 
-    public SetVS(Bdd universe) {
+    public SetVS(Guard universe) {
         this.elements = new ListVS<>(universe);
     }
 
-    public PrimVS<Integer> size() {
+    public PrimitiveVS<Integer> size() {
         return elements.size();
     }
 
@@ -39,8 +37,11 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     }
 
     @Override
-    public SetVS<T> guard(Bdd guard) {
-        return new SetVS<>(new ListVS<>(elements.guard(guard)));
+    public SetVS<T> restrict(Guard guard) {
+        if(guard.equals(getUniverse()))
+            return new SetVS<T>(new ListVS<>(elements));
+
+        return new SetVS<>(new ListVS<>(elements.restrict(guard)));
     }
 
     @Override
@@ -60,17 +61,17 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     }
 
     @Override
-    public SetVS<T> update(Bdd guard, SetVS<T> update) {
-        return this.guard(guard.not()).merge(Collections.singletonList(update.guard(guard)));
+    public SetVS<T> updateUnderGuard(Guard guard, SetVS<T> update) {
+        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));
     }
 
     @Override
-    public PrimVS<Boolean> symbolicEquals(SetVS<T> cmp, Bdd pc) {
+    public PrimitiveVS<Boolean> symbolicEquals(SetVS<T> cmp, Guard pc) {
         return this.elements.symbolicEquals(cmp.elements, pc);
     }
 
     @Override
-    public Bdd getUniverse() {
+    public Guard getUniverse() {
         return elements.getUniverse();
     }
 
@@ -79,31 +80,29 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
      * @param itemSummary The element to check for. Should be possible under a subset of the SetVS's conditions.
      * @return Whether or not the SetVS contains an element
      */
-    public PrimVS<Boolean> contains(T itemSummary) {
+    public PrimitiveVS<Boolean> contains(T itemSummary) {
         return elements.contains(itemSummary);
     }
 
     /** Get the universe under which the data structure is nonempty
      *
      * @return The universe under which the data structure is nonempty */
-    public Bdd getNonEmptyUniverse() { return elements.getNonEmptyUniverse(); }
+    public Guard getNonEmptyUniverse() { return elements.getNonEmptyUniverse(); }
 
-    /** Add an item to the SetVS.
+    /**
+     * Add an item to the SetVS.
      *
      * @param itemSummary The element to add.
      * @return The SetVS with the element added
      */
     public SetVS<T> add(T itemSummary) {
-        // Not already included?
-        Bdd absent = contains(itemSummary.guard(getUniverse())).getGuard(false);
-
-        ListVS<T> newElements = elements.update(absent, elements.add(itemSummary));
-
+        Guard absent = contains(itemSummary.restrict(getUniverse())).getGuardFor(false);
+        ListVS<T> newElements = elements.updateUnderGuard(absent, elements.add(itemSummary));
         return new SetVS<>(newElements);
     }
 
-    /** Remove an item from the SetVS.
-     *
+    /**
+     * Remove an item from the SetVS
      * @param itemSummary The element to remove. Should be possible under a subset of the SetVS's conditions.
      * @return The SetVS with the element removed.
      */

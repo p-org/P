@@ -179,6 +179,9 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
     @Override
     public PrimitiveVS<T> restrict(Guard guard) {
+        if(guard.equals(getUniverse()))
+            return new PrimitiveVS<>(this);
+
         final Map<T, Guard> result = new HashMap<>();
 
         for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
@@ -187,7 +190,6 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
                 result.put(entry.getKey(), newEntryGuard);
             }
         }
-
         return new PrimitiveVS<>(result);
     }
 

@@ -1,4 +1,4 @@
-package psymbolic.util;
+package psymbolic.valuesummary.util;
 
 import java.util.*;
 

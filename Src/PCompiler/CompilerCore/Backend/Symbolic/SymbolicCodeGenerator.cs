@@ -339,15 +339,16 @@ namespace Plang.Compiler.Backend.Symbolic
         {
             bool mayExit = MayExitWithOutcome(function);
             bool voidReturn = function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null);
-            if (!voidReturn && !mayExit)
-                return FunctionReturnConvention.RETURN_VALUE;
-            if (voidReturn && !mayExit)
-                return FunctionReturnConvention.RETURN_VOID;
-            if (!voidReturn && mayExit)
-                return FunctionReturnConvention.RETURN_VALUE_OR_EXIT;
-            if (voidReturn && mayExit)
-                return FunctionReturnConvention.RETURN_BDD;
-            throw new InvalidOperationException();
+            switch (voidReturn)
+            {
+                case false when !mayExit:
+                    return FunctionReturnConvention.RETURN_VALUE;
+                case true when !mayExit:
+                    return FunctionReturnConvention.RETURN_VOID;
+                default:
+                    return !voidReturn ? FunctionReturnConvention.RETURN_VALUE_OR_EXIT : FunctionReturnConvention.RETURN_BDD;
+                    throw new InvalidOperationException();
+            }
         }
 
         private void WriteForeignFunction(CompilationContext context, StringWriter output, Function function)

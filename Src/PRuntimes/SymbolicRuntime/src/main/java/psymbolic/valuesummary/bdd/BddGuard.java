@@ -11,7 +11,7 @@ import java.util.List;
 public class BddGuard {
 
     @Getter
-    private DD bdd;
+    private final DD bdd;
 
     private static final BDDEngine bddEngine = BDDEngine.getInstance();
 

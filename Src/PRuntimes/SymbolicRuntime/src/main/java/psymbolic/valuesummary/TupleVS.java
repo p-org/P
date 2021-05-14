@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/** Class for tuple value summaries */
+/**
+ * Represents a tuple value summaries
+ * */
+@SuppressWarnings("unchecked")
 public class TupleVS implements ValueSummary<TupleVS> {
     /** The fields of the tuple */
-    private final ValueSummary<?>[] fields;
-    /** The classes of the fields of the tuple */
+    private final ValueSummary[] fields;
+    /** The types of the fields of the tuple */
     private final Class[] classes;
 
     public TupleVS(TupleVS tuple) {
@@ -34,16 +37,17 @@ public class TupleVS implements ValueSummary<TupleVS> {
     /** Get the i-th value in the TupleVS
      * @param i The index to get from the TupleVS
      * @return The value at index i */
-    public ValueSummary getField(int i) {
+    public ValueSummary<?> getField(int i) {
         return fields[i];
     }
 
-    /** Set the i-th value in the tuTupleVSple to the provided value
+    /** Set the i-th value in the TupleVS to the provided value
      * @param i The index to set in the TupleVS
      * @param val The value to set in the TupleVS
      * @return The result after updating the TupleVS */
-    public TupleVS setField(int i, ValueSummary val) {
-        final ValueSummary[] newItems = new ValueSummary[fields.length];
+    public TupleVS setField(int i, ValueSummary<?> val) {
+        // TODO: why are we not restricting the values of the tuple VS ??
+        final ValueSummary<?>[] newItems = new ValueSummary[fields.length];
         System.arraycopy(fields, 0, newItems, 0, fields.length);
         if (!(val.getClass().equals(classes[i]))) throw new ClassCastException();
         newItems[i] = val;
@@ -58,10 +62,13 @@ public class TupleVS implements ValueSummary<TupleVS> {
     }
 
     @Override
-    public TupleVS guard(Guard guard) {
-        ValueSummary[] resultFields = new ValueSummary[fields.length];
+    public TupleVS restrict(Guard guard) {
+        if(guard.equals(getUniverse()))
+            return new TupleVS(this);
+
+        ValueSummary<?>[] resultFields = new ValueSummary[fields.length];
         for (int i = 0; i < fields.length; i++) {
-            resultFields[i] = fields[i].guard(guard);
+            resultFields[i] = fields[i].restrict(guard);
         }
         return new TupleVS(resultFields);
     }
@@ -78,7 +85,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
                 }
             }
         }
-        return new TupleVS(resultList.toArray(new ValueSummary[resultList.size()]));
+        return new TupleVS(resultList.toArray(new ValueSummary[0]));
     }
 
     @Override
@@ -87,36 +94,37 @@ public class TupleVS implements ValueSummary<TupleVS> {
     }
 
     @Override
-    public TupleVS update(Guard guard, TupleVS update) {
-        return this.guard(guard.not()).merge(Collections.singletonList(update.guard(guard)));
+    public TupleVS updateUnderGuard(Guard guard, TupleVS update) {
+        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));
     }
 
     @Override
-    public PrimVS<Boolean> symbolicEquals(TupleVS cmp, Guard pc) {
+    public PrimitiveVS<Boolean> symbolicEquals(TupleVS cmp, Guard pc) {
         if (fields.length != cmp.fields.length) {
-            return new PrimVS<>(false);
+            return new PrimitiveVS<>(false);
         }
         Guard tupleEqual = IntStream.range(0, fields.length)
-                .mapToObj((i) -> fields[i].symbolicEquals(cmp.fields[i], pc).getGuard(Boolean.TRUE))
+                .mapToObj((i) -> fields[i].symbolicEquals(cmp.fields[i], pc).getGuardFor(true))
                 .reduce(Guard::and)
                 .orElse(Guard.constTrue());
-        return BoolUtils.fromTrueGuard(pc.and(tupleEqual));
+        return BooleanVS.trueUnderGuard(pc.and(tupleEqual));
     }
 
     @Override
     public Guard getUniverse() {
         // Optimization: Tuples should always be nonempty,
         // and all fields should exist under the same conditions
+        // TODO: This is not true as we are not restricting the universe on a set field?
         return fields[0].getUniverse();
     }
 
     @Override
     public String toString() {
-        String str = "( ";
+        StringBuilder str = new StringBuilder("( ");
         for (int i = 0; i < classes.length; i++) {
-            str += (classes[i]).cast(fields[i]).toString() + " ";
+            str.append((classes[i]).cast(fields[i]).toString()).append(", ");
         }
-        str += ")";
-        return str;
+        str.append(")");
+        return str.toString();
     }
 }

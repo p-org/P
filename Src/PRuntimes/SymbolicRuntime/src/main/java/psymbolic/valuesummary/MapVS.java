@@ -1,7 +1,6 @@
 package psymbolic.valuesummary;
 
 import psymbolic.util.Checks;
-import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.*;
 
@@ -9,7 +8,7 @@ import java.util.*;
 public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K,V>> {
     /** The set of keys */
     public final SetVS<PrimitiveVS<K>> keys;
-    /** The mapping from all possible keys to value summaries */
+    /** The mapping from all possible keys to values */
     public final Map<K, V> entries;
 
     /** Make a new MapVS with the specified set of keys and the specified mapping
@@ -26,7 +25,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      *
      * @param universe The universe for the new MapVS
      */
-    public MapVS(Bdd universe) {
+    public MapVS(Guard universe) {
         this.keys = new SetVS<>(universe);
         this.entries = new HashMap<>();
     }
@@ -45,12 +44,12 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     }
 
     @Override
-    public MapVS<K, V> guard(Bdd guard) {
-        final SetVS<PrimitiveVS<K>> newKeys = keys.guard(guard);
+    public MapVS<K, V> restrict(Guard guard) {
+        final SetVS<PrimitiveVS<K>> newKeys = keys.restrict(guard);
         final Map<K, V> newEntries = new HashMap<>();
 
         for (Map.Entry<K, V> entry : entries.entrySet()) {
-            final V newValue = entry.getValue().guard(guard);
+            final V newValue = entry.getValue().restrict(guard);
             if (!newValue.isEmptyVS()) {
                 newEntries.put(entry.getKey(), newValue);
             }
@@ -99,55 +98,55 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     }
 
     @Override
-    public MapVS<K, V> update(Bdd guard, MapVS<K, V> update) {
-        return this.guard(guard.not()).merge(Collections.singletonList(update.guard(guard)));
+    public MapVS<K, V> updateUnderGuard(Guard guard, MapVS<K, V> update) {
+        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));
     }
 
     @Override
-    public PrimitiveVS<Boolean> symbolicEquals(MapVS<K, V> cmp, Bdd pc) {
-        Bdd equalCond = Bdd.constFalse();
-        Bdd guard = BoolUtils.trueCond(this.keys.symbolicEquals(cmp.keys, Bdd.constTrue()));
-        ListVS<PrimitiveVS<K>> thisSet = this.guard(guard).keys.getElements();
-        ListVS<PrimitiveVS<K>> cmpSet = cmp.guard(guard).keys.getElements();
+    public PrimitiveVS<Boolean> symbolicEquals(MapVS<K, V> cmp, Guard pc) {
+        Guard equalCond = Guard.constFalse();
+        Guard guard = BooleanVS.getTrueGuard(this.keys.symbolicEquals(cmp.keys, Guard.constTrue()));
+        ListVS<PrimitiveVS<K>> thisSet = this.restrict(guard).keys.getElements();
+        ListVS<PrimitiveVS<K>> cmpSet = cmp.restrict(guard).keys.getElements();
 
-        if (thisSet.isEmpty() && cmpSet.isEmpty()) return BoolUtils.fromTrueGuard(pc.and(guard));
+        if (thisSet.isEmpty() && cmpSet.isEmpty()) return BooleanVS.trueUnderGuard(pc.and(guard));
 
         while (!thisSet.isEmpty()) {
-            PrimitiveVS<K> thisVal = thisSet.get(new PrimitiveVS<>(0).guard(guard));
-            PrimitiveVS<K> cmpVal = cmpSet.get(new PrimitiveVS<>(0).guard(guard));
+            PrimitiveVS<K> thisVal = thisSet.get(new PrimitiveVS<>(0).restrict(guard));
+            PrimitiveVS<K> cmpVal = cmpSet.get(new PrimitiveVS<>(0).restrict(guard));
             assert(Checks.equalUnder(thisVal, cmpVal, guard));
             for (GuardedValue<K> key : thisVal.getGuardedValues()) {
-                PrimitiveVS<Boolean> compareVals = entries.get(key.value).guard(key.guard)
-                        .symbolicEquals(cmp.entries.get(key.value).guard(key.guard), guard);
-                equalCond = equalCond.or(BoolUtils.trueCond(compareVals));
+                PrimitiveVS<Boolean> compareVals = entries.get(key.getValue()).restrict(key.getGuard())
+                        .symbolicEquals(cmp.entries.get(key.getValue()).restrict(key.getGuard()), guard);
+                equalCond = equalCond.or(BooleanVS.getTrueGuard(compareVals));
             }
-            thisSet = thisSet.removeAt(new PrimitiveVS<>(0).guard(thisVal.getUniverse()));
-            cmpSet = cmpSet.removeAt(new PrimitiveVS<>(0).guard(thisVal.getUniverse()));
+            thisSet = thisSet.removeAt(new PrimitiveVS<>(0).restrict(thisVal.getUniverse()));
+            cmpSet = cmpSet.removeAt(new PrimitiveVS<>(0).restrict(thisVal.getUniverse()));
         }
 
-        return BoolUtils.fromTrueGuard(pc.and(equalCond));
+        return BooleanVS.trueUnderGuard(pc.and(equalCond));
     }
 
     @Override
-    public Bdd getUniverse() {
+    public Guard getUniverse() {
         return keys.getUniverse();
     }
 
     /** Put a key-value pair into the MapVS
      *
-     * @param keySummary The key value summary
-     * @param valSummary The value value summary
+     * @param keySummary The key VS
+     * @param valSummary The value VS
      * @return The updated MapVS
      */
     public MapVS<K, V> put(PrimitiveVS<K> keySummary, V valSummary) {
         final SetVS<PrimitiveVS<K>> newKeys = keys.add(keySummary);
         final Map<K, V> newEntries = new HashMap<>(entries);
         for (GuardedValue<K> guardedKey : keySummary.getGuardedValues()) {
-            V oldVal = entries.get(guardedKey.value);
+            V oldVal = entries.get(guardedKey.getValue());
             if (oldVal == null) {
-                newEntries.put(guardedKey.value, valSummary);
+                newEntries.put(guardedKey.getValue(), valSummary);
             } else {
-                newEntries.put(guardedKey.value, oldVal.update(guardedKey.guard, valSummary));
+                newEntries.put(guardedKey.getValue(), oldVal.updateUnderGuard(guardedKey.getGuard(), valSummary));
             }
         }
 
@@ -160,10 +159,8 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      * @param valSummary The value value summary
      * @return The updated MapVS
      */
-    // TODO: Some parts of the non-symbolic P compiler and runtime seem to make a distinction
-    //  between 'add' and 'put'.  Should we?
     public MapVS<K, V> add(PrimitiveVS<K> keySummary, V valSummary) {
-        assert(Checks.sameUniverse(keySummary.getUniverse(), valSummary.getUniverse()));
+        assert(Checks.hasSameUniverse(keySummary.getUniverse(), valSummary.getUniverse()));
         return put(keySummary, valSummary);
     }
 
@@ -177,16 +174,16 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
 
         final Map<K, V> newEntries = new HashMap<>(entries);
         for (GuardedValue<K> guardedKey : keySummary.getGuardedValues()) {
-            V oldVal = entries.get(guardedKey.value);
+            V oldVal = entries.get(guardedKey.getValue());
             if (oldVal == null) {
                 continue;
             }
 
-            final V remainingVal = oldVal.guard(guardedKey.guard.not());
+            final V remainingVal = oldVal.restrict(guardedKey.getGuard().not());
             if (remainingVal.isEmptyVS()) {
-                newEntries.remove(guardedKey.value);
+                newEntries.remove(guardedKey.getValue());
             } else {
-                newEntries.put(guardedKey.value, remainingVal);
+                newEntries.put(guardedKey.getValue(), remainingVal);
             }
         }
 
@@ -199,7 +196,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      * @return The option containing value corresponding to the key or an empty option if no such value
      */
     public V get(PrimitiveVS<K> keySummary) {
-        if (!containsKey(keySummary).guard(keySummary.getUniverse()).getGuard(false).isConstFalse()) {
+        if (!containsKey(keySummary).restrict(keySummary.getUniverse()).getGuardFor(false).isFalse()) {
             // there is a possibility that the key is not present
             throw new NoSuchElementException();
         }
@@ -212,10 +209,11 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
             toMerge.add(entries.get(key));
         }
 
+        assert merger != null;
         return merger.merge(toMerge);
     }
 
-    /** Get whether or not the MapVS contains a
+    /** Get whether the MapVS contains a
      *
      * @param keySummary The key ValueSummary
      * @return Whether or not the MapVS contains a key

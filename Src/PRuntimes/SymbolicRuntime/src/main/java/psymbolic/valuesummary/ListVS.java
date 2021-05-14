@@ -10,12 +10,12 @@ import java.util.stream.IntStream;
 
 /**
  * Represents the list value summaries.
- * TODO: Add comments about how the list value summary has been implemented
- * */
+ */
 public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>> {
     /** The size of the list under all guards*/
     private final PrimitiveVS<Integer> size;
-    /** The contents of the list, list of value summaries*/
+    /** The contents of the list, where T is a value summary itself,
+     * value summary at index i represents the possible content at that index */
     private final List<T> items;
 
     private ListVS(PrimitiveVS<Integer> size, List<T> items) {
@@ -66,6 +66,11 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      */
     @Override
     public ListVS<T> restrict(Guard guard) {
+
+        // if the guard used for restriction is same as the universe then we can ignore this restrict operation as a no-op
+        if(guard.equals(getUniverse()))
+            return new ListVS<>(this);
+
         final PrimitiveVS<Integer> newSize = size.restrict(guard);
         final List<T> newItems = new ArrayList<>();
 
@@ -73,7 +78,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
         if (max != null) {
             for (int i = 0; i < max; i++) {
                 T newItem = this.items.get(i).restrict(guard);
-                //assert (newItem.getUniverse().implies(newSize.getUniverse()).isConstTrue());
+                assert (newItem.getUniverse().implies(newSize.getUniverse()).isTrue());
                 newItems.add(newItem);
             }
         }
@@ -86,7 +91,6 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     }
 
     @Override
-    // TODO: cleanup later
     public ListVS<T> merge(Iterable<ListVS<T>> summaries) {
         final List<PrimitiveVS<Integer>> sizesToMerge = new ArrayList<>();
         final List<List<T>> itemsToMergeByIndex = new ArrayList<>();
@@ -103,7 +107,6 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
                 if (i < itemsToMergeByIndex.size()) {
                     itemsToMergeByIndex.get(i).add(summary.items.get(i));
                 } else {
-                    //assert i == itemsToMergeByIndex.size();
                     itemsToMergeByIndex.add(new ArrayList<>(Collections.singletonList(summary.items.get(i))));
                 }
             }
@@ -137,6 +140,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
             }
         }
 
+        // check if each item in the list is symbolically equal
         Guard equalCond = Guard.constFalse();
         for (GuardedValue<Integer> size : this.size.getGuardedValues()) {
             if (cmp.size.hasValue(size.getValue())) {
@@ -224,21 +228,22 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
                 toMerge.add(item);
         }
 
+        // TODO: fix this
         return merger != null ? merger.merge(toMerge) : null;
     }
 
     /** Set an item in the ListVS
-     * @param indexSummary The index to set in the ListVS. Should be possible under a subset of the ListVS's conditions.
+     * @param indexSummary The index in the list to set in the ListVS. Should be possible under a subset of the ListVS's conditions.
      * @param itemToSet The item to put in the ListVS. Should be possible under a subset of the ListVS's conditions.
-     * @return The result of setting the ListVS
+     * @return The resultant ListVS
      */
     public ListVS<T> set(PrimitiveVS<Integer> indexSummary, T itemToSet) {
         // if (Checks.sameUniverse(indexSummary.getUniverse(), getUniverse()))
         //    setHelper(indexSummary, itemToSet);
         //assert (Checks.includedIn(indexSummary.getUniverse(), getUniverse()));
-        ListVS<T> guarded = this.restrict(indexSummary.getUniverse());
-        if (guarded.getUniverse().isFalse()) return this;
-        return updateUnderGuard(indexSummary.getUniverse(), guarded.setHelper(indexSummary, itemToSet));
+        ListVS<T> restrictedList = this.restrict(indexSummary.getUniverse());
+        if (restrictedList.getUniverse().isFalse()) return this;
+        return updateUnderGuard(indexSummary.getUniverse(), restrictedList.setHelper(indexSummary, itemToSet));
     }
 
     /** Set an item in the ListVS
@@ -254,7 +259,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
 
         final PrimitiveVS<Boolean> inRange = inRange(indexSummary);
         // make sure it is always in range
-        if (!inRange.getGuard(false).isConstFalse()) {
+        if (!inRange.getGuardFor(false).isFalse()) {
             // there is a possibility that the index is out-of-bounds
             throw new IndexOutOfBoundsException();
         }
@@ -265,15 +270,16 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
         for (GuardedValue<Integer> index : indexSummary.getGuardedValues()) {
             final List<T> newItems = new ArrayList<>(items);
             // the original item is updated when this is the index (i.e., index.guard holds)
-            final T newEntry = newItems.get(index.value).update(index.guard, itemToSet);
-            newItems.set(index.value, newEntry);
-            ListVS<T> newList = new ListVS<>(size, newItems).guard(index.guard);
+            final T newEntry = newItems.get(index.getValue()).updateUnderGuard(index.getGuard(), itemToSet);
+            newItems.set(index.getValue(), newEntry);
+            ListVS<T> newList = new ListVS<>(size, newItems).restrict(index.getGuard());
             if (merger == null)
                 merger = newList;
             else
                 toMerge.add(newList);
         }
 
+        assert merger != null;
         return merger.merge(toMerge);
     }
 
@@ -282,7 +288,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      * @return Whether or not the ListVS contains an element
      */
     public PrimitiveVS<Boolean> contains(T element) {
-        return BoolUtils.fromTrueGuard(indexOf(element).getUniverse()).guard(this.getUniverse());
+        return BooleanVS.trueUnderGuard(indexOf(element).getUniverse()).restrict(this.getUniverse());
     }
 
     /** Insert an item in the ListVS.
@@ -297,38 +303,38 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
         assert(Checks.sameUniverse(itemToInsert.getUniverse(), indexSummary.getUniverse()));
          */
 
-        if (indexSummary.getUniverse().isConstFalse()) return this;
+        if (indexSummary.getUniverse().isFalse()) return this;
 
-        Guard addUniverse = IntUtils.equalTo(indexSummary, size()).getGuard(true);
-        if (!addUniverse.isConstFalse()) {
-            return this.add(itemToInsert.guard(addUniverse))
-                    .insert(indexSummary.guard(addUniverse.not()), itemToInsert.guard(addUniverse.not()));
+        Guard addUniverse = IntegerVS.equalTo(indexSummary, size()).getGuardFor(true);
+        if (!addUniverse.isFalse()) {
+            return this.add(itemToInsert.restrict(addUniverse))
+                    .insert(indexSummary.restrict(addUniverse.not()), itemToInsert.restrict(addUniverse.not()));
         }
 
         final PrimitiveVS<Boolean> inRange = inRange(indexSummary);
         // make sure it is always in range
-        if (!inRange.getGuard(false).isConstFalse()) {
+        if (!inRange.getGuardFor(false).isFalse()) {
             // there is a possibility that the index is out-of-bounds
             throw new IndexOutOfBoundsException();
         }
 
         // 1. add a new entry (we'll re-add the last entry)
         ListVS<T> newList = new ListVS<>(this);
-        newList = newList.add(newList.get(IntUtils.subtract(size, 1)).guard(indexSummary.getUniverse()));
+        newList = newList.add(newList.get(IntegerVS.subtract(size, 1)).restrict(indexSummary.getUniverse()));
 
         // 2. setting at the insertion index
         PrimitiveVS<Integer> current = indexSummary;
         T prev = newList.get(current);
         newList = newList.set(indexSummary, itemToInsert);
-        current = IntUtils.add(current, 1);
+        current = IntegerVS.add(current, 1);
 
         // 3. setting everything after insertion index to be the previous element
-        while (BoolUtils.isEverTrue(IntUtils.lessThan(current, size))) {
-            Guard guard = BoolUtils.trueCond(IntUtils.lessThan(current, size));
-            T old = this.guard(guard).get(current.guard(guard));
-            newList = newList.set(current.guard(guard), prev.guard(guard));
+        while (BooleanVS.isEverTrue(IntegerVS.lessThan(current, size))) {
+            Guard guard = BooleanVS.getTrueGuard(IntegerVS.lessThan(current, size));
+            T old = this.restrict(guard).get(current.restrict(guard));
+            newList = newList.set(current.restrict(guard), prev.restrict(guard));
             prev = old;
-            current = IntUtils.add(current, 1);
+            current = IntegerVS.add(current, 1);
         }
 
         return newList;
@@ -340,9 +346,9 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      */
     public ListVS<T> removeAt(PrimitiveVS<Integer> indexSummary) {
         //assert (Checks.includedIn(indexSummary.getUniverse(), getUniverse()));
-        ListVS<T> guarded = this.guard(indexSummary.getUniverse());
+        ListVS<T> guarded = this.restrict(indexSummary.getUniverse());
         ListVS<T> removed = guarded.removeAtHelper(indexSummary);
-        return update(indexSummary.getUniverse(), removed);
+        return updateUnderGuard(indexSummary.getUniverse(), removed);
     }
 
     /** Remove an item from the ListVS.
@@ -353,15 +359,15 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
         //assert (Checks.sameUniverse(indexSummary.getUniverse(), getUniverse()));
         final PrimitiveVS<Boolean> inRange = inRange(indexSummary);
         // make sure it is always in range
-        if (!inRange.getGuard(false).isConstFalse()) {
+        if (!inRange.getGuardFor(false).isFalse()) {
             // there is a possibility that the index is out-of-bounds
             throw new IndexOutOfBoundsException();
         }
 
         // new size
-        PrimitiveVS<Integer> newSize = IntUtils.subtract(size, 1);
+        PrimitiveVS<Integer> newSize = IntegerVS.subtract(size, 1);
 
-        /** Optimize case where the index can only take on one value */
+        /* Optimize case where the index can only take on one value */
         if (indexSummary.getValues().size() == 1) {
             int idx = indexSummary.getValues().iterator().next();
             List<T> newItems = new ArrayList<T>(items);
@@ -373,75 +379,69 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
         PrimitiveVS<Integer> current = indexSummary;
 
         // Setting everything after removal index to be the next element
-        while (BoolUtils.isEverTrue(IntUtils.lessThan(IntUtils.add(current, 1), size))) {
+        while (BooleanVS.isEverTrue(IntegerVS.lessThan(IntegerVS.add(current, 1), size))) {
             //ScheduleLogger.log("removeAt while " + current);
-            Guard thisCond = BoolUtils.trueCond(IntUtils.lessThan(IntUtils.add(current, 1), size));
-            current = current.guard(thisCond);
-            T next = this.get(IntUtils.add(current, 1));
+            Guard thisCond = BooleanVS.getTrueGuard(IntegerVS.lessThan(IntegerVS.add(current, 1), size));
+            current = current.restrict(thisCond);
+            T next = this.get(IntegerVS.add(current, 1));
             newList = newList.set(current, next);
-            current = IntUtils.add(current, 1);
+            current = IntegerVS.add(current, 1);
         }
-
         return newList;
     }
 
     /** Get the index of an element in the ListVS
-     * @param element The element to check for. Should be possible under a subset of the ListVS's conditions.
-     * @return The index of the element under the universe in which it is present
+     * @param element The element to find the index for.
+     * @return The Integer VS representing index of the element
      */
     public PrimitiveVS<Integer> indexOf(T element) {
         //assert(Checks.includedIn(element.getUniverse(), getUniverse()));
-        if (element.getUniverse().isConstFalse()) {
+        if (element.getUniverse().isFalse()) {
             return new PrimitiveVS<>();
         }
         //System.out.println(this.guard(element.getUniverse()));
-        PrimitiveVS<Integer> i = new PrimitiveVS<>(0).guard(element.getUniverse());
+        PrimitiveVS<Integer> i = new PrimitiveVS<>(0).restrict(element.getUniverse());
 
         PrimitiveVS<Integer> index = new PrimitiveVS<>();
-        ListVS<T> guarded = this.guard(element.getUniverse());
+        ListVS<T> restrictedList = this.restrict(element.getUniverse());
 
-        while (BoolUtils.isEverTrue(IntUtils.lessThan(i, guarded.size)))  {
-            Guard cond = BoolUtils.trueCond(IntUtils.lessThan(i, guarded.size));
-            Guard contains = BoolUtils.trueCond(element.guard(cond).symbolicEquals(guarded.get(i.guard(cond)), cond));
-            index = index.merge(i.guard(contains));
-            i = IntUtils.add(i, 1);
+        while (BooleanVS.isEverTrue(IntegerVS.lessThan(i, restrictedList.size)))  {
+            Guard cond = BooleanVS.getTrueGuard(IntegerVS.lessThan(i, restrictedList.size));
+            Guard contains = BooleanVS.getTrueGuard(element.restrict(cond).symbolicEquals(restrictedList.get(i.restrict(cond)), cond));
+            index = index.merge(i.restrict(contains));
+            i = IntegerVS.add(i, 1);
         }
-
         return index;
     }
 
-    /** Get the universe under which the data structure is nonempty
+    /**
+     * Get the universe under which the data structure is nonempty
      * @return The universe under which the data structure is nonempty */
     public Guard getNonEmptyUniverse() {
         if (size.getGuardedValues().size() > 1) {
-            /*
-            ScheduleLogger.log("universe: " + getUniverse());
-            for (GuardedValue<Integer> s : size.getGuardedValues()) {
-                ScheduleLogger.log(s.value + " with guard: " + s.guard);
-            }
-
-             */
-            if(getUniverse().and(size.getGuard(0).not()).isConstFalse()) {
+            if(getUniverse().and(size.getGuardFor(0).not()).isFalse()) {
                 ScheduleLogger.log("ERROR!");
                 throw new RuntimeException();
             }
         }
-        return getUniverse().and(size.getGuard(0).not());
+        return getUniverse().and(size.getGuardFor(0).not());
     }
 
     @Override
     public String toString() {
-        String out = "";
-        for (GuardedValue<Integer> guardedValue : size.getGuardedValues()) {
-            out += "{";
-            for (int i = 0; i < guardedValue.value; i++) {
-                out += this.items.get(i).guard(guardedValue.guard);
-                if (i < guardedValue.value - 1) {
-                    out += "  ,   ";
+        StringBuilder out = new StringBuilder();
+        out.append("List[");
+        for (GuardedValue<Integer> guardedSize : size.getGuardedValues()) {
+            out.append("VS { _ : {");
+            for (int i = 0; i < guardedSize.getValue(); i++) {
+                out.append(this.items.get(i).restrict(guardedSize.getGuard()));
+                if (i < guardedSize.getValue() - 1) {
+                    out.append("  ,   ");
                 }
             }
-            out += "}" + System.lineSeparator();
+            out.append("}}, ").append(System.lineSeparator());
         }
-        return out;
+        out.append("]");
+        return out.toString();
     }
 }

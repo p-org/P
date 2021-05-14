@@ -37,7 +37,7 @@ public interface ValueSummary<T extends ValueSummary<T>> {
      *
      * @return Whether the path condition is empty
      */
-    public boolean isEmptyVS();
+    boolean isEmptyVS();
 
     /**
      * Restrict the value summary's universe with a provided guard
@@ -45,7 +45,7 @@ public interface ValueSummary<T extends ValueSummary<T>> {
      * @param guard The guard to conjoin to the current value summary's universe
      * @return The result of restricting the value summary's universe
      */
-    public T restrict(Guard guard);
+    T restrict(Guard guard);
 
     /**
      * Merge the value summary with other provided value summaries
@@ -53,7 +53,7 @@ public interface ValueSummary<T extends ValueSummary<T>> {
      * @param summaries The summaries to merge the value summary with
      * @return The result of the merging
      */
-    public T merge(Iterable<T> summaries);
+    T merge(Iterable<T> summaries);
 
     /**
      * Merge the value summary with another value summary
@@ -61,7 +61,7 @@ public interface ValueSummary<T extends ValueSummary<T>> {
      * @param summary The summary to merge the value summary with
      * @return The result of the merging
      */
-    public T merge(T summary);
+    T merge(T summary);
 
     /**
      * Create a new value summary that is equal to the `update` value under the given `guard`
@@ -71,7 +71,7 @@ public interface ValueSummary<T extends ValueSummary<T>> {
      * @param updateVal The value to update the value summary to
      * @return The result of the update
      */
-    public T updateUnderGuard(Guard guard, T updateVal);
+    T updateUnderGuard(Guard guard, T updateVal);
 
     /**
      * Check whether the value summary is equal to another value summary

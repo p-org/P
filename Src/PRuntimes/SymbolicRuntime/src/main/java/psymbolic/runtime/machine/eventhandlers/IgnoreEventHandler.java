@@ -1,5 +1,8 @@
-package psymbolic.runtime;
+package psymbolic.runtime.eventhandlers;
 
+import psymbolic.runtime.EventName;
+import psymbolic.runtime.Machine;
+import psymbolic.runtime.Outcome;
 import psymbolic.valuesummary.UnionVS;
 import psymbolic.valuesummary.bdd.Bdd;
 

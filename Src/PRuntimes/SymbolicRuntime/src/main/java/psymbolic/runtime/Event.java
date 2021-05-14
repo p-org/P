@@ -12,7 +12,6 @@ public class Event implements ValueSummary<Event> {
     private final PrimVS<EventName> name;
     private final Map<EventName, UnionVS> map;
     private final PrimVS<Machine> machine;
-    private final VectorClockVS clock;
 
     public PrimVS<Boolean> canRun() {
         Bdd cond = Bdd.constFalse();

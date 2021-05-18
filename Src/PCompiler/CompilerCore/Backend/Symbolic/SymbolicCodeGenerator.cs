@@ -45,11 +45,60 @@ namespace Plang.Compiler.Backend.Symbolic
             foreach (var decl in globalScope.AllDecls)
                 WriteDecl(context, source.Stream, decl);
 
+            context.WriteLine(source.Stream, "Map<EventName, List<Monitor>> listeners = new HashMap<>();");
+            context.WriteLine(source.Stream, "List<Monitor> monitors = new ArrayList<>();");
+            context.WriteLine(source.Stream, "private boolean listenersInitialized = false;");
+
+            WriteMonitorMap(context, source.Stream, globalScope.AllDecls);
+            WriteMonitorList(context, source.Stream, globalScope.AllDecls);
+
             WriteMainDriver(context, source.Stream, globalScope);
 
             WriteSourceEpilogue(context, source.Stream);
 
             return source;
+        }
+
+        private void WriteMonitorList(CompilationContext context, StringWriter output, IEnumerable<IPDecl> decls)
+        {
+            context.WriteLine(output);
+            context.WriteLine(output, "public List<Monitor> getMonitorList() {");
+            context.WriteLine(output, "    if (!listenersInitialized) getMonitorMap();");
+            context.WriteLine(output, "    return monitors;");
+            context.WriteLine(output, "}");
+        }
+
+        private void WriteMonitorMap(CompilationContext context, StringWriter output, IEnumerable<IPDecl> decls)
+        {
+            context.WriteLine(output);
+            context.WriteLine(output, "public Map<EventName, List<Monitor>> getMonitorMap() {");
+            context.WriteLine(output, "    if (listenersInitialized) return listeners;");
+            context.WriteLine(output, "    listenersInitialized = true;");
+            foreach (var decl in decls)
+            {
+                switch(decl)
+                {
+                    case Machine machine:
+                        if (machine.IsSpec)
+                        {
+                            var declName = context.GetNameForDecl(machine);
+                            context.WriteLine(output, $"    Monitor instance_{declName} = new {declName}(0);");
+                            context.WriteLine(output, $"    monitors.add(instance_{declName});");
+                            foreach (var pEvent in machine.Observes.Events)
+                            {
+                                context.WriteLine(output, $"    if(!listeners.containsKey(Events.event_{pEvent.Name}))");
+                                context.WriteLine(output, $"        listeners.put(Events.event_{pEvent.Name}, new ArrayList<>());");
+                                context.WriteLine(output, $"    listeners.get(Events.event_{pEvent.Name}).add(instance_{declName});");
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            context.WriteLine(output, "    return listeners;");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
         }
 
         private void WriteEventDefs(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
@@ -75,7 +124,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case Machine machine:
                     if (machine.IsSpec)
-                        context.WriteLine(output, $"// Skipping monitor {machine.Name}");
+                        WriteMonitor(context, output, machine);
                     else
                         WriteMachine(context, output, machine);
                     break;
@@ -86,6 +135,47 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"// Skipping {decl.GetType().Name} '{decl.Name}'\n");
                     break;
             }
+        }
+
+        private void WriteMonitor(CompilationContext context, StringWriter output, Machine machine)
+        {
+            var declName = context.GetNameForDecl(machine);
+            context.WriteLine(output, $"public static class {declName} extends Monitor {{");
+
+            context.WriteLine(output);
+
+            for (int i = 0; i < machine.States.Count(); i++)
+            {
+                var state = machine.States.ElementAt(i);
+                context.Write(output, $"static State {context.GetNameForDecl(state)} = ");
+                WriteState(context, output, state, i);
+                context.WriteLine(output, ";");
+            }
+
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"private {GetSymbolicType(field.Type)} {CompilationContext.GetVar(field.Name)} = {GetDefaultValueNoGuard(context, field.Type)};");
+
+            context.WriteLine(output);
+
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, "public void reset() {");
+            context.WriteLine(output, "    super.reset();");
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = {GetDefaultValueNoGuard(context, field.Type)};");
+            context.WriteLine(output, "}");
+
+            context.WriteLine(output);
+
+
+            WriteMachineConstructor(context, output, machine);
+
+            context.WriteLine(output);
+
+            foreach (var method in machine.Methods)
+                WriteFunction(context, output, method);
+
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
         }
 
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
@@ -1884,6 +1974,9 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import psymbolic.run.*;");
             context.WriteLine(output, "import psymbolic.util.*;");
             context.WriteLine(output, "import java.util.List;");
+            context.WriteLine(output, "import java.util.ArrayList;");
+            context.WriteLine(output, "import java.util.Map;");
+            context.WriteLine(output, "import java.util.HashMap;");
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.MainClassName.ToLower()} implements Program {{");
             context.WriteLine(output);

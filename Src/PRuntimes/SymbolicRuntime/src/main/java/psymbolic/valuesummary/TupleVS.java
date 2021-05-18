@@ -48,7 +48,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
         final ValueSummary[] newItems = new ValueSummary[fields.length];
         System.arraycopy(fields, 0, newItems, 0, fields.length);
         if (!(val.getClass().equals(classes[i]))) throw new ClassCastException();
-        newItems[i] = val;
+        newItems[i] = newItems[i].update(val.getUniverse(), val);
         return new TupleVS(newItems);
     }
 

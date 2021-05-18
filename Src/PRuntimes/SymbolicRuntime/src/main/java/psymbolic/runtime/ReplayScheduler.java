@@ -1,8 +1,6 @@
 package psymbolic.runtime;
 
-import psymbolic.valuesummary.IntUtils;
-import psymbolic.valuesummary.PrimVS;
-import psymbolic.valuesummary.VectorClockVS;
+import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.function.Function;
@@ -73,6 +71,13 @@ public class ReplayScheduler extends Scheduler {
     public PrimVS<Integer> getNextInteger(PrimVS<Integer> bound, Bdd pc) {
         PrimVS<Integer> res = schedule.getRepeatInt(choiceDepth);
         assert(IntUtils.lessThan(res, bound).getGuard(false).isConstFalse());
+        choiceDepth++;
+        return res;
+    }
+
+    @Override
+    public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Bdd pc) {
+        ValueSummary res = schedule.getRepeatElement(choiceDepth);
         choiceDepth++;
         return res;
     }

@@ -69,7 +69,7 @@ public abstract class State extends HasId {
                         current = stack.get(IntUtils.subtract(stack.size(), 1));
                         stack = stack.removeAt(IntUtils.subtract(stack.size(), 1));
                     } else {
-                        throw new BugFoundException("State " + this.name + " missing handler for event: " + name, eventPc);
+                        throw new BugFoundException("State " + this.name + " from machine " + machine + " missing handler for event: " + name, eventPc);
                     }
                 }
             }

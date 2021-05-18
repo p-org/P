@@ -2,6 +2,7 @@ package psymbolic.runtime;
 
 import p.runtime.values.PBool;
 import p.runtime.values.PInt;
+import psymbolic.run.Program;
 import psymbolic.valuesummary.ListVS;
 import psymbolic.valuesummary.PrimVS;
 import psymbolic.valuesummary.ValueSummary;
@@ -25,9 +26,9 @@ public interface SymbolicSearch {
 
     /** Perform the Search
      *
-     * @param target The target machine of the program
+     * @param p The program to run the search on
      */
-    void doSearch (Machine target);
+    void doSearch (Program p);
 
     /** Return the next integer (within a bound) based on the search and strategy.
      *

@@ -22,7 +22,7 @@ public class EntryPoint {
         scheduler.setMaxInternalSteps(maxInternalSteps);
         start = Instant.now();
         try {
-            scheduler.doSearch(p.getStart());
+            scheduler.doSearch(p);
             ScheduleLogger.enable();
             ScheduleLogger.finished(scheduler.getDepth());
         } catch (BugFoundException e) {
@@ -30,9 +30,9 @@ public class EntryPoint {
             ReplayScheduler replay = new ReplayScheduler(name, scheduler.getSchedule(), pc);
             p.setScheduler(replay);
             replay.setMaxInternalSteps(maxInternalSteps);
-            replay.doSearch(scheduler.getStartMachine());
+            replay.doSearch(p);
             e.printStackTrace();
-            throw new BugFoundException("Found bug", pc);
+            throw new BugFoundException("Found bug: " + e.getLocalizedMessage(), pc);
         } finally {
             Instant end = Instant.now();
             ScheduleLogger.enable();

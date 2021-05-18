@@ -344,6 +344,9 @@ namespace Plang.Compiler.TypeChecker
             // SPEC name=Iden 
             var specMachine = (Machine) nodesToDeclarations.Get(context);
 
+            // bufferSemantics - "queue" as default since there is no sending nor receiving of events
+            specMachine.Semantics = "queue";
+
             // spec machines neither send nor receive events.
             specMachine.Receives = new EventSet();
             specMachine.Sends = new EventSet();

@@ -1,6 +1,7 @@
 package psymbolic.runtime;
 
 import psymbolic.run.Assert;
+import psymbolic.run.Program;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.bdd.Bdd;
 
@@ -24,6 +25,12 @@ public class Scheduler implements SymbolicSearch {
 
     /** The machine to start with */
     private Machine start;
+
+    /** The map from events to listening monitors */
+    private Map<EventName, List<Monitor>> listeners;
+
+    /** List of monitors instances */
+    private List<Monitor> monitors;
 
     /** Current depth of exploration */
     private int depth = 0;
@@ -181,7 +188,7 @@ public class Scheduler implements SymbolicSearch {
         List<ValueSummary> toMerge = new ArrayList<>();
         for (GuardedValue<ValueSummary> guardedValue : choices.getGuardedValues()) {
             if (flattened == null) {
-                guardedValue.value.guard(guardedValue.guard);
+                flattened = guardedValue.value.guard(guardedValue.guard);
             } else {
                 toMerge.add(guardedValue.value.guard(guardedValue.guard));
             }
@@ -215,7 +222,6 @@ public class Scheduler implements SymbolicSearch {
         }
 
         machines.add(machine);
-        start = machine;
         ScheduleLogger.onCreateMachine(Bdd.constTrue(), machine);
         machine.setScheduler(this);
         schedule.makeMachine(machine, Bdd.constTrue());
@@ -255,8 +261,15 @@ public class Scheduler implements SymbolicSearch {
     }
 
     @Override
-    public void doSearch(Machine target) {
+    public void doSearch(Program p) {
+        listeners = p.getMonitorMap();
+        monitors = new ArrayList<>(p.getMonitorList());
+        for (Machine m : p.getMonitorList()) {
+            startWith(m);
+        }
+        Machine target = p.getStart();
         startWith(target);
+        start = target;
         while (!isDone()) {
             // ScheduleLogger.log("step " + depth + ", true queries " + Bdd.trueQueries + ", false queries " + Bdd.falseQueries);
             Assert.prop(errorDepth < 0 || depth < errorDepth, "Maximum allowed depth " + errorDepth + " exceeded", this, schedule.getLengthCond(schedule.size()));
@@ -373,7 +386,29 @@ public class Scheduler implements SymbolicSearch {
         return new PrimVS<>(newMachine).guard(pc);
     }
 
+    void runMonitors(Event event) {
+        Map<Monitor, Bdd> monitorConstraints = new HashMap<>();
+        for (Monitor m : monitors) {
+            monitorConstraints.put(m, Bdd.constFalse());
+        }
+        for (GuardedValue<EventName> e : event.getName().getGuardedValues()) {
+            List<Monitor> listenersForEvent = listeners.get(e.value);
+            if (listenersForEvent != null) {
+                for (Monitor listener : listenersForEvent) {
+                    monitorConstraints.computeIfPresent(listener, (k, v) -> v.or(e.guard));
+                }
+            }
+        }
+        for (Monitor m: monitors) {
+            Bdd constraint = monitorConstraints.get(m);
+            if (!constraint.isConstFalse()) {
+                m.processEventToCompletion(constraint, event.guard(constraint));
+            }
+        }
+    }
+
     void performEffect(Event event) {
+        runMonitors(event);
         for (GuardedValue<Machine> target : event.getMachine().getGuardedValues()) {
             target.value.processEventToCompletion(target.guard, event.guard(target.guard));
         }

@@ -3,6 +3,7 @@ package psymbolic.valuesummary;
 import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /** Class for union value summaries */
 public class UnionVS implements ValueSummary<UnionVS> {
@@ -149,7 +150,8 @@ public class UnionVS implements ValueSummary<UnionVS> {
 
     @Override
     public String toString() {
-        return type.toString();
+        return payloads.values().stream().map(x -> x.toString()).collect(Collectors.toList()).toString();
+        //return type.toString();
     }
 
 }

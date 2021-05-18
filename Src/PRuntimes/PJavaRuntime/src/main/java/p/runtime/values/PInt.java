@@ -5,9 +5,9 @@ import lombok.NonNull;
 public class PInt extends PValue<PInt> {
     // stores the int value
     @Getter
-    private final long value;
+    private final int value;
 
-    public PInt(long val)
+    public PInt(int val)
     {
         value = val;
     }
@@ -24,7 +24,7 @@ public class PInt extends PValue<PInt> {
 
     @Override
     public int hashCode() {
-        return (new Long(value)).hashCode();
+        return ((Integer) value).hashCode();
     }
 
     @Override

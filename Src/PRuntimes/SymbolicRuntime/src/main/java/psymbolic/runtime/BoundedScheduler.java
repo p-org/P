@@ -2,6 +2,7 @@ package psymbolic.runtime;
 
 import p.runtime.values.PBool;
 import p.runtime.values.PInt;
+import psymbolic.run.Program;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.bdd.Bdd;
 
@@ -27,10 +28,10 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public void doSearch(Machine target) {
+    public void doSearch(Program p) {
         while (!isDoneIterating) {
             ScheduleLogger.log("Iteration " + iter);
-            super.doSearch(target);
+            super.doSearch(p);
             postIterationCleanup();
             iter++;
         }

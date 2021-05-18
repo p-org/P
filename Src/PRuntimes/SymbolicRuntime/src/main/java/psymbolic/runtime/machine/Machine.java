@@ -46,8 +46,8 @@ public abstract class Machine {
         state = new PrimitiveVS<>(startState);
         stack = new ListVS(Guard.constTrue());
         while (!sendEffects.isEmpty()) {
-            Guard cond = sendEffects.enabledCond(x -> new PrimitiveVS<>(true)).getGuardFor(true);
-            sendEffects.remove(sendEffects.enabledCond(x -> new PrimitiveVS<>(true)).getGuardFor(true));
+            Guard cond = sendEffects.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true);
+            sendEffects.remove(sendEffects.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
         }
         while (!deferredQueue.isEmpty()) {
             deferredQueue.dequeueEntry(deferredQueue.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
@@ -122,7 +122,7 @@ public abstract class Machine {
                 }
                 // raise
                 if (!eventHandlerReturnReason.getRaiseCond().isFalse()) {
-                    processEvent(eventHandlerReturnReason.getRaiseCond(), nextEventHandlerReturnReason, eventHandlerReturnReason.getEventSummary());
+                    processEvent(eventHandlerReturnReason.getRaiseCond(), nextEventHandlerReturnReason, eventHandlerReturnReason.getMessageSummary());
                 }
 
                 eventHandlerReturnReason = nextEventHandlerReturnReason;
@@ -152,7 +152,7 @@ public abstract class Machine {
         } else {
             PrimitiveVS<State> guardedState = this.state.restrict(pc);
             for (GuardedValue<State> entry : guardedState.getGuardedValues()) {
-                entry.getValue().exit(entry.guard, this);
+                entry.getValue().exit(entry.getGuard(), this);
             }
 
             this.state = newState.merge(this.state.restrict(pc.not()));
@@ -173,7 +173,7 @@ public abstract class Machine {
     ) {
         // assert(event.getMachine().guard(pc).getValues().size() <= 1);
         ScheduleLogger.onProcessEvent(pc, this, message);
-        PrimitiveVS<State> guardedState = this.state.guard(pc);
+        PrimitiveVS<State> guardedState = this.state.restrict(pc);
         for (GuardedValue<State> entry : guardedState.getGuardedValues()) {
             Guard state_pc = entry.getGuard();
             if (state_pc.and(pc).isFalse()) continue;
@@ -181,7 +181,7 @@ public abstract class Machine {
         }
     }
 
-    void processEventToCompletion(Guard pc, Message message) {
+    public void processEventToCompletion(Guard pc, Message message) {
         final EventHandlerReturnReason eventRaiseEventHandlerReturnReason = new EventHandlerReturnReason();
         eventRaiseEventHandlerReturnReason.raiseGuardedMessage(message);
         runOutcomesToCompletion(pc, eventRaiseEventHandlerReturnReason);

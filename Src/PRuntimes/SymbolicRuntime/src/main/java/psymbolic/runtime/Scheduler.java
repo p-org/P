@@ -1,11 +1,10 @@
 package psymbolic.runtime;
 
-import psymbolic.run.Assert;
+import psymbolic.commandline.Assert;
 import psymbolic.runtime.logger.ScheduleLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Message;
 import psymbolic.valuesummary.*;
-import psymbolic.valuesummary.Guard;
 
 import java.util.*;
 import java.util.function.Function;
@@ -170,7 +169,7 @@ public class Scheduler implements SymbolicSearch {
         List<ValueSummary> toMerge = new ArrayList<>();
         for (GuardedValue<ValueSummary> guardedValue : choices.getGuardedValues()) {
             if (flattened == null) {
-                guardedValue.getValue().restrict(guardedValue.getGuard());
+                flattened = guardedValue.getValue().restrict(guardedValue.getGuard());
             } else {
                 toMerge.add(guardedValue.getValue().restrict(guardedValue.getGuard()));
             }
@@ -198,7 +197,7 @@ public class Scheduler implements SymbolicSearch {
     public void startWith(Machine machine) {
         if (this.machineCounters.containsKey(machine.getClass())) {
             this.machineCounters.put(machine.getClass(),
-                    IntUtils.add(this.machineCounters.get(machine.getClass()), 1));
+                    IntegerVS.add(this.machineCounters.get(machine.getClass()), 1));
         } else {
             this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
         }
@@ -210,9 +209,8 @@ public class Scheduler implements SymbolicSearch {
         schedule.makeMachine(machine, Guard.constTrue());
 
         performEffect(
-                new Event(
-                        EventName.Init.instance,
-                        new VectorClockVS(Guard.constTrue()),
+                new Message(
+                        Event.Init,
                         new PrimitiveVS<>(machine),
                         null
                 )
@@ -224,7 +222,7 @@ public class Scheduler implements SymbolicSearch {
         if (this.machineCounters.containsKey(machine.getClass())) {
             machineVS = schedule.getMachine(machine.getClass(), this.machineCounters.get(machine.getClass()));
             this.machineCounters.put(machine.getClass(),
-                    IntUtils.add(this.machineCounters.get(machine.getClass()), 1));
+                    IntegerVS.add(this.machineCounters.get(machine.getClass()), 1));
         } else {
             machineVS = schedule.getMachine(machine.getClass(), new PrimitiveVS<>(0));
             this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
@@ -234,9 +232,8 @@ public class Scheduler implements SymbolicSearch {
         machine.setScheduler(this);
 
         performEffect(
-                new Event(
-                        EventName.Init.instance,
-                        new VectorClockVS(machineVS.getUniverse()),
+                new Message(
+                        Event.Init,
                         machineVS,
                         null
                 )
@@ -258,15 +255,15 @@ public class Scheduler implements SymbolicSearch {
 
         for (Machine machine : machines) {
             if (!machine.sendEffects.isEmpty()) {
-                Guard initCond = machine.sendEffects.enabledCondInit().getGuard(true);
-                if (!initCond.isConstFalse()) {
-                    PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).guard(initCond);
+                Guard initCond = machine.sendEffects.isInitUnderGuard().getGuardFor(true);
+                if (!initCond.isFalse()) {
+                    PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(initCond);
                     candidateSenders.add(ret);
                     return candidateSenders;
                 }
-                Guard canRun = machine.sendEffects.enabledCond(Event::canRun).getGuard(true);
-                if (!canRun.isConstFalse()) {
-                    candidateSenders.add(new PrimitiveVS<>(machine).guard(canRun));
+                Guard canRun = machine.sendEffects.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true);
+                if (!canRun.isFalse()) {
+                    candidateSenders.add(new PrimitiveVS<>(machine).restrict(canRun));
                 }
             }
         }
@@ -276,8 +273,6 @@ public class Scheduler implements SymbolicSearch {
 
     public PrimitiveVS<Machine> getNextSender(List<PrimitiveVS> candidateSenders) {
         PrimitiveVS<Machine> choices = (PrimitiveVS<Machine>) NondetUtil.getNondetChoice(candidateSenders);
-        List<PrimitiveVS<Machine>> choiceList = new ArrayList<>();
-        choices.getGuardedValues().forEach(x -> choiceList.add(new PrimitiveVS<>(x.value).guard(x.guard)));
         schedule.addSenderChoice(choices, choiceDepth);
         schedule.addRepeatSender(choices, choiceDepth);
         choiceDepth++;
@@ -321,17 +316,18 @@ public class Scheduler implements SymbolicSearch {
         }
         */
 
-        Event effect = null;
-        List<Event> effects = new ArrayList<>();
+        Message effect = null;
+        List<Message> effects = new ArrayList<>();
         for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
-            Machine machine = sender.value;
-            Guard guard = sender.guard;
+            Machine machine = sender.getValue();
+            Guard guard = sender.getGuard();
             if (effect == null) {
                 effect = machine.sendEffects.remove(guard);
             } else {
                 effects.add(machine.sendEffects.remove(guard));
             }
         }
+        assert effect != null;
         effect = effect.merge(effects);
         ScheduleLogger.schedule(depth, effect);
         performEffect(effect);
@@ -343,10 +339,10 @@ public class Scheduler implements SymbolicSearch {
         if (!machineCounters.containsKey(machineType)) {
             machineCounters.put(machineType, new PrimitiveVS<>(0));
         }
-        PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).guard(pc);
+        PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).restrict(pc);
 
         Machine newMachine;
-        newMachine = constructor.apply(IntUtils.maxValue(guardedCount));
+        newMachine = constructor.apply(IntegerVS.maxValue(guardedCount));
 
         if (!machines.contains(newMachine)) {
             machines.add(newMachine);
@@ -362,9 +358,9 @@ public class Scheduler implements SymbolicSearch {
         return new PrimitiveVS<>(newMachine).restrict(pc);
     }
 
-    void performEffect(Message event) {
-        for (GuardedValue<Machine> target : event.getMachine().getGuardedValues()) {
-            target.getValue().processEventToCompletion(target.getGuard(), event.guard(target.getGuard()));
+    void performEffect(Message mess) {
+        for (GuardedValue<Machine> target : mess.getTarget().getGuardedValues()) {
+            target.getValue().processEventToCompletion(target.getGuard(), mess.restrict(target.getGuard()));
         }
     }
 

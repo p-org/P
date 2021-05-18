@@ -26,17 +26,17 @@ public interface EventBuffer {
 
     public PrimitiveVS<Integer> size();
 
-    public boolean isEmpty();
+    boolean isEmpty();
 
-    public void add(Event e);
+    public void add(Message e);
+
+    public PrimitiveVS<Boolean> satisfiesPredUnderGuard(Function<Message, PrimitiveVS<Boolean>> pred);
+
+    public PrimitiveVS<Boolean> isInitUnderGuard();
 
     public Message remove(Guard pc);
 
     public Message peek(Guard pc);
-
-    public PrimitiveVS<Boolean> enabledCond(Function<Event, PrimitiveVS<Boolean>> pred);
-
-    public PrimitiveVS<Boolean> enabledCondInit();
 
     default public PrimitiveVS<Machine> create(Guard pc, Scheduler scheduler, Class<? extends Machine> machineType,
                                   Function<Integer, ? extends Machine> constructor) {

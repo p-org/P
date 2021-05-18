@@ -10,8 +10,8 @@ import psymbolic.valuesummary.Guard;
 public class GotoEventHandler extends EventHandler {
     public final State gotoState;
 
-    public GotoEventHandler(EventName eventName, State dest) {
-        super(eventName);
+    public GotoEventHandler(Event event, State dest) {
+        super(event);
         this.gotoState = dest;
     }
 

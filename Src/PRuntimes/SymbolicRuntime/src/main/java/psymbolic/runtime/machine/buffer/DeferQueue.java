@@ -2,6 +2,9 @@ package psymbolic.runtime.machine.buffer;
 
 import psymbolic.runtime.machine.Message;
 import psymbolic.valuesummary.Guard;
+import psymbolic.valuesummary.PrimitiveVS;
+
+import java.util.function.Function;
 
 /**
  * Implements the Defer Queue used to keep track of the deferred events
@@ -18,4 +21,11 @@ public class DeferQueue extends SymbolicQueue<Message> {
      * @param event Event to be deferred
      */
     public void defer(Guard pc, Message event) { enqueue(event.restrict(pc)); }
+
+    public PrimitiveVS<Boolean> satisfiesPredUnderGuard(Function<Message, PrimitiveVS<Boolean>> pred) {
+        Guard cond = isEnabledUnderGuard();
+        assert(!cond.isFalse());
+        Message top = peek(cond);
+        return pred.apply(top).restrict(top.getUniverse());
+    }
 }

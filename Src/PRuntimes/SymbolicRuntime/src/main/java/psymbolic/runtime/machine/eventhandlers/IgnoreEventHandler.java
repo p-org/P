@@ -1,13 +1,13 @@
 package psymbolic.runtime.machine.eventhandlers;
 
-import psymbolic.runtime.EventName;
+import psymbolic.runtime.Event;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.valuesummary.UnionVS;
 import psymbolic.valuesummary.Guard;
+import psymbolic.valuesummary.UnionVS;
 
 public class IgnoreEventHandler extends EventHandler {
 
-    public IgnoreEventHandler(EventName event) {
+    public IgnoreEventHandler(Event event) {
         super(event);
     }
 

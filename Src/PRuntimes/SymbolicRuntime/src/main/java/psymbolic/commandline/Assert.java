@@ -1,7 +1,7 @@
 package psymbolic.commandline;
 
-import psymbolic.runtime.RuntimeLogger;
 import psymbolic.runtime.Scheduler;
+import psymbolic.runtime.logger.PLogger;
 import psymbolic.valuesummary.Guard;
 
 public class Assert {
@@ -12,7 +12,7 @@ public class Assert {
 
     public static void prop(boolean p, String msg, Scheduler scheduler, Guard pc) {
         if (!p) {
-            RuntimeLogger.enable();
+            PLogger.enable();
             throw new BugFoundException("Property violated: " + msg, pc);
         }
     }

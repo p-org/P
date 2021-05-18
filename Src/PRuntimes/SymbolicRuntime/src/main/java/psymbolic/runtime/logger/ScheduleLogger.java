@@ -1,20 +1,19 @@
 package psymbolic.runtime.logger;
 
-import psymbolic.runtime.Event;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Message;
 import psymbolic.runtime.machine.State;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
 
-public class ScheduleLogger extends PLogger{
+public class ScheduleLogger extends PLogger {
 
     /* If turned on, logs the path constraints and goto/raise outcomes */
     private static boolean isVerbose = false;
 
-    public static void onProcessEvent(Guard pc, Machine machine, Event event)
+    public static void onProcessEvent(Guard pc, Machine machine, Message message)
     {
-        String msg = String.format("Machine %s is processing event %s in state %s", machine, event, machine.getState().restrict(pc));
+        String msg = String.format("Machine %s is processing event %s in state %s", machine, message, machine.getState().restrict(pc));
         if (isVerbose) msg = String.format("under path %s ", pc) + msg;
         log.info(msg);
     }
@@ -53,17 +52,17 @@ public class ScheduleLogger extends PLogger{
         log.info(String.format("Execution finished in %d steps", steps));
     }
 
-    public static void handle(Machine m, State st, Event event) {
+    public static void handle(Machine m, State st, Message event) {
         log.info("Machine " + m + " handling event " + event + " in state " + st);
     }
 
     public static void send(Message effect) {
-        String msg = "Send effect " + effect + " to " + effect.getMachine();
+        String msg = "Send effect " + effect + " to " + effect.getTarget();
         log.info(msg);
     }
 
     public static void schedule(int step, Message effect) {
-        String msg = "Step " + step + ": scheduled " + effect + " sent to " + effect.getMachine();
+        String msg = "Step " + step + ": scheduled " + effect + " sent to " + effect.getTarget();
         log.info(msg);
     }
 

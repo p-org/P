@@ -1,5 +1,6 @@
 package psymbolic.runtime.machine.buffer;
 
+import lombok.Getter;
 import psymbolic.runtime.NondetUtil;
 import psymbolic.valuesummary.*;
 
@@ -14,6 +15,7 @@ import java.util.function.Function;
 public class SymbolicBag<T extends ValueSummary<T>> {
 
     // items in the bad
+    @Getter
     private ListVS<T> elements;
 
     public SymbolicBag() {
@@ -57,20 +59,7 @@ public class SymbolicBag<T extends ValueSummary<T>> {
      * @param pred The filtering predicate
      * @return The condition under which there is an element in the bag that satisfies the pred
      */
-    public PrimitiveVS<Boolean> satisfiesPredUnderGuard(Function<T, PrimitiveVS<Boolean>> pred) {
-        Guard cond = elements.getNonEmptyUniverse();
-        ListVS<T> elts = elements.restrict(cond);
-        PrimitiveVS<Integer> idx = new PrimitiveVS<>(0).restrict(cond);
-        while (BooleanVS.isEverTrue(IntegerVS.lessThan(idx, elts.size()))) {
-            Guard iterCond = IntegerVS.lessThan(idx, elts.size()).getGuardFor(true);
-            PrimitiveVS<Boolean> res = pred.apply(elts.get(idx.restrict(iterCond)));
-            if (!res.getGuardFor(true).isFalse()) {
-                return res;
-            }
-            idx = IntegerVS.add(idx, 1);
-        }
-        return new PrimitiveVS<>(false);
-    }
+
 
     public T peek(Guard pc) {
         assert (elements.getUniverse().isTrue());

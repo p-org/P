@@ -1,6 +1,6 @@
 package psymbolic;
 
-import psymbolic.runtime.Machine;
+import psymbolic.runtime.machine.Machine;
 
 import java.lang.reflect.Field;
 import java.nio.file.Path;

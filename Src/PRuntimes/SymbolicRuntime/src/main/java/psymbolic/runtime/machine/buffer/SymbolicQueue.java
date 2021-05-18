@@ -1,11 +1,9 @@
 package psymbolic.runtime.machine.buffer;
 
+import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.ListVS;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.ValueSummary;
-import psymbolic.valuesummary.Guard;
-
-import java.util.function.Function;
 
 /**
  * Represents a event-queue implementation using value summaries
@@ -38,16 +36,6 @@ public class SymbolicQueue<T extends ValueSummary<T>> {
         return elements.getNonEmptyUniverse();
     }
 
-    /** Get the condition under which the first queue entry satisfies the provided predicate
-     * @param pred The filtering predicate
-     * @return The condition under which the first queue entry obeys pred
-     */
-    public PrimitiveVS<Boolean> satisfiesPredUnderGuard(Function<T, PrimitiveVS<Boolean>> pred) {
-        Guard cond = isEnabledUnderGuard();
-        assert(!cond.isFalse());
-        T top = peek(cond);
-        return pred.apply(top).restrict(top.getUniverse());
-    }
 
     public T dequeueEntry(Guard pc) {
         return peekOrDequeueHelper(pc, true);

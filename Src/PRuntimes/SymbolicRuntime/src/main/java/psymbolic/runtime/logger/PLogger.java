@@ -1,10 +1,6 @@
 package psymbolic.runtime.logger;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.PatternLayout;
-import org.apache.log4j.RollingFileAppender;
+import org.apache.log4j.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -14,6 +10,7 @@ public class PLogger {
     static Logger log = Logger.getLogger(PLogger.class.getName());
     public PLogger()
     {
+        BasicConfigurator.configure();
         // setting up the logger
         //This is the root logger provided by log4j
         Logger rootLogger = Logger.getRootLogger();
@@ -36,6 +33,10 @@ public class PLogger {
         {
             System.out.println("Failed to add appender !!");
         }
+    }
+
+    public static void log(String s) {
+        log.info(s);
     }
 
     public void logMessage(Object ... message) {

@@ -1,27 +1,21 @@
 package psymbolic.runtime.machine.buffer;
 
 import psymbolic.runtime.Event;
-import psymbolic.runtime.EventName;
 import psymbolic.runtime.Scheduler;
-import psymbolic.runtime.machine.Message;
-import psymbolic.valuesummary.UnionVS;
-import psymbolic.valuesummary.Guard;
-import psymbolic.valuesummary.PrimitiveVS;
+import psymbolic.runtime.logger.ScheduleLogger;
 import psymbolic.runtime.machine.Machine;
+import psymbolic.runtime.machine.Message;
+import psymbolic.valuesummary.*;
 
 import java.util.function.Function;
 
 /**
  * Represents an Event-Bag that is used to store the outgoing events at each state machine.
  */
-public class EventBag extends SymbolicBag<Event> implements EventBuffer {
-
-    // the source or sender state machine that is sending the events
-    private final Machine sender;
+public class EventBag extends SymbolicBag<Message> implements EventBuffer {
 
     public EventBag(Machine sender) {
         super();
-        this.sender = sender;
     }
 
     @Override
@@ -33,14 +27,33 @@ public class EventBag extends SymbolicBag<Event> implements EventBuffer {
     @Override
     public PrimitiveVS<Machine> create(Guard pc, Scheduler scheduler, Class<? extends Machine> machineType, UnionVS payload, Function<Integer, ? extends Machine> constructor) {
         PrimitiveVS<Machine> machine = scheduler.allocateMachine(pc, machineType, constructor);
-        if (payload != null) payload = payload.guard(pc);
-        add(new Event(EventName.Init.instance, src.getClock(), machine, payload).guard(pc));
+        if (payload != null) payload = payload.restrict(pc);
+        add(new Message(Event.Init, machine, payload).restrict(pc));
         return machine;
+    }
+    @Override
+    public PrimitiveVS<Boolean> satisfiesPredUnderGuard(Function<Message, PrimitiveVS<Boolean>> pred) {
+        Guard cond = this.getElements().getNonEmptyUniverse();
+        ListVS<Message> elts = getElements().restrict(cond);
+        PrimitiveVS<Integer> idx = new PrimitiveVS<>(0).restrict(cond);
+        while (BooleanVS.isEverTrue(IntegerVS.lessThan(idx, elts.size()))) {
+            Guard iterCond = IntegerVS.lessThan(idx, elts.size()).getGuardFor(true);
+            PrimitiveVS<Boolean> res = pred.apply(elts.get(idx.restrict(iterCond)));
+            if (!res.getGuardFor(true).isFalse()) {
+                return res;
+            }
+            idx = IntegerVS.add(idx, 1);
+        }
+        return new PrimitiveVS<>(false);
     }
 
     @Override
-    public PrimitiveVS<Boolean> enabledCondInit() {
-        return satisfiesPredUnderGuard(Event::isInit);
+    public PrimitiveVS<Machine> create(Guard pc, Scheduler scheduler, Class<? extends Machine> machineType, Function<Integer, ? extends Machine> constructor) {
+        return EventBuffer.super.create(pc, scheduler, machineType, constructor);
     }
 
+    @Override
+    public PrimitiveVS<Boolean> isInitUnderGuard() {
+        return satisfiesPredUnderGuard(Message::isInit);
+    }
 }

@@ -1,8 +1,8 @@
 package psymbolic;
 
-import psymbolic.run.EntryPoint;
-import psymbolic.run.Program;
-import psymbolic.runtime.CompilerLogger;
+import psymbolic.commandline.EntryPoint;
+import psymbolic.commandline.Program;
+import psymbolic.runtime.logger.PLogger;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -99,12 +99,12 @@ public class TestCaseExecutor {
             int exitCode = process.waitFor();
 
             if (exitCode != 0) {
-                CompilerLogger.log("Compilation failure.");
+                PLogger.log("Compilation failure.");
                 return 1;
             }
         }
         catch (IOException | InterruptedException e) {
-            CompilerLogger.log("Compilation failure.");
+            PLogger.log("Compilation failure.");
             e.printStackTrace();
         }
 
@@ -123,7 +123,7 @@ public class TestCaseExecutor {
                 toLoad.add(copyPath);
             }
         } catch (IOException e) {
-            CompilerLogger.log("Compilation failure.");
+            PLogger.log("Compilation failure.");
             e.printStackTrace();
             return 1;
         }
@@ -169,7 +169,7 @@ public class TestCaseExecutor {
             p = (Program) instance;
         } catch (InstantiationException | MalformedURLException | IllegalAccessException | ClassNotFoundException |
                 NoSuchMethodException | InvocationTargetException e) {
-            CompilerLogger.log("Compilation failure.");
+            PLogger.log("Compilation failure.");
             e.printStackTrace();
             return 1;
         }

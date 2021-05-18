@@ -27,7 +27,7 @@ public interface ValueSummary<T extends ValueSummary<T>> {
                          type,
                          pcNotDefined));
              }
-             result = anyVal.getPayload(type).restrict(pc);
+             result = anyVal.getValue(type).restrict(pc);
          }
          return result;
      }

@@ -1,6 +1,6 @@
-package psymbolic.run;
+package psymbolic.commandline;
 
-import psymbolic.runtime.Machine;
+import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Scheduler;
 
 public interface Program {

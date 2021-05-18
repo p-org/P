@@ -14,7 +14,7 @@ public class EntryPoint {
     public static int prog = 0;
     public static Instant start = Instant.now();
 
-    public static void run(Program p, String name, int depth, int maxInternalSteps) {
+    public static void run(psymbolic.commandline.Program p, String name, int depth, int maxInternalSteps) {
         BDDEngine.reset();
         BoundedScheduler scheduler = new BoundedScheduler(name, 25, 1000, 1000);
         p.setScheduler(scheduler);
@@ -36,7 +36,7 @@ public class EntryPoint {
         } finally {
             Instant end = Instant.now();
             ScheduleLogger.enable();
-            CompilerLogger.log("Took " + Duration.between(start, end).getSeconds() + " seconds");
+            ScheduleLogger.log("Took " + Duration.between(start, end).getSeconds() + " seconds");
             prog++;
         }
     }

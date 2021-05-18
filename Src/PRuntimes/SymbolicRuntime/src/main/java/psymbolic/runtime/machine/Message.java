@@ -22,41 +22,41 @@ public class Message implements ValueSummary<Message> {
 
     public PrimitiveVS<Boolean> canRun() {
         Guard cond = Guard.constFalse();
-        for (GuardedValue<Machine> machine : getMachine().getGuardedValues()) {
-            cond = cond.or(machine.getValue().hasStarted().getGuard(true).and(machine.getGuard()));
+        for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
+            cond = cond.or(machine.getValue().hasStarted().getGuardFor(true).and(machine.getGuard()));
 
-            if (BoolUtils.isEverFalse(machine.value.hasStarted())) {
-                Guard unstarted = machine.value.hasStarted().getGuard(false).and(machine.guard);
-                PrimitiveVS<EventName> names = this.guard(unstarted).getName();
-                for (GuardedValue<EventName> name : names.getGuardedValues()) {
-                    if (name.value.equals(EventName.Init.instance)) {
-                        cond = cond.or(name.guard);
+            if (BooleanVS.isEverFalse(machine.getValue().hasStarted())) {
+                Guard unstarted = machine.getValue().hasStarted().getGuardFor(false).and(machine.getGuard());
+                PrimitiveVS<Event> names = this.restrict(unstarted).getEvent();
+                for (GuardedValue<Event> name : names.getGuardedValues()) {
+                    if (name.getValue().equals(Event.Init)) {
+                        cond = cond.or(name.getGuard());
                     }
                 }
             }
         }
-        return BoolUtils.fromTrueGuard(cond);
+        return BooleanVS.trueUnderGuard(cond);
     }
 
     public PrimitiveVS<Boolean> isInit() {
         Guard cond = Guard.constFalse();
-        for (GuardedValue<Machine> machine : getMachine().getGuardedValues()) {
-            if (BoolUtils.isEverFalse(machine.value.hasStarted())) {
-                Guard unstarted = machine.value.hasStarted().getGuard(false).and(machine.guard);
-                PrimitiveVS<EventName> names = this.guard(unstarted).getName();
-                for (GuardedValue<EventName> name : names.getGuardedValues()) {
-                    if (name.value.equals(EventName.Init.instance)) {
-                        cond = cond.or(name.guard);
+        for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
+            if (BooleanVS.isEverFalse(machine.getValue().hasStarted())) {
+                Guard unstarted = machine.getValue().hasStarted().getGuardFor(false).and(machine.getGuard());
+                PrimitiveVS<Event> events = this.restrict(unstarted).getEvent();
+                for (GuardedValue<Event> event : events.getGuardedValues()) {
+                    if (event.getValue().equals(Event.Init)) {
+                        cond = cond.or(event.getGuard());
                     }
                 }
             }
         }
-        return BoolUtils.fromTrueGuard(cond);
+        return BooleanVS.trueUnderGuard(cond);
     }
 
     public Message getForMachine(Machine machine) {
-        Guard cond = this.machine.getGuard(machine);
-        return this.guard(cond);
+        Guard cond = this.target.getGuardFor(machine);
+        return this.restrict(cond);
     }
 
     private Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, Map<Event, UnionVS> map) {
@@ -81,140 +81,133 @@ public class Message implements ValueSummary<Message> {
         this(new PrimitiveVS<>(name), machine, payload);
     }
 
-    public Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, UnionVS payload) {
-        this.name = names;
-        this.machine = machine;
-        this.map = new HashMap<>();
-        this.clock = clock;
-        for (GuardedValue<EventName> name : names.getGuardedValues()) {
-            assert(!this.map.containsKey(name));
+    public Message(PrimitiveVS<Event> events, PrimitiveVS<Machine> machine, UnionVS payload) {
+        this.event = events;
+        this.target = machine;
+        this.payload = new HashMap<>();
+        for (GuardedValue<Event> event : events.getGuardedValues()) {
+            assert(!this.payload.containsKey(event.getValue()));
             if (payload != null) {
-                this.map.put(name.value, payload.guard(name.guard));
+                this.payload.put(event.getValue(), payload.restrict(event.getGuard()));
             }
         }
     }
 
-    public PrimitiveVS<EventName> getName() {
-        return this.name;
+    public PrimitiveVS<Event> getEvent() {
+        return this.event;
     }
 
-    public PrimitiveVS<Machine> getMachine() {
-        return this.machine;
+    public PrimitiveVS<Machine> getTarget() {
+        return this.target;
     }
 
     public UnionVS getPayload() {
-        List<GuardedValue<EventName>> names = this.name.getGuardedValues();
+        List<GuardedValue<Event>> names = this.event.getGuardedValues();
         assert(names.size() <= 1);
         if (names.size() == 0) {
             return null;
         } else {
-            return map.getOrDefault(names.get(0).value, null);
+            return payload.getOrDefault(names.get(0).getValue(), null);
         }
-    }
-
-    public VectorClockVS getVectorClock() {
-        return this.clock;
     }
 
     @Override
     public boolean isEmptyVS() {
-        return name.isEmptyVS();
+        return event.isEmptyVS();
     }
 
     @Override
-    public Message guard(Guard guard) {
-        Map<EventName, UnionVS> newMap = new HashMap<>();
-        PrimitiveVS<EventName> newName = name.guard(guard);
-        for (Map.Entry<EventName, UnionVS> entry : map.entrySet()) {
-            if (!newName.getGuard(entry.getKey()).isConstFalse()) {
-                newMap.put(entry.getKey(), entry.getValue().guard(guard));
+    public Message restrict(Guard guard) {
+        Map<Event, UnionVS> newPayload = new HashMap<>();
+        PrimitiveVS<Event> newEvent = event.restrict(guard);
+        for (Map.Entry<Event, UnionVS> entry : payload.entrySet()) {
+            if (!newEvent.getGuardFor(entry.getKey()).isFalse()) {
+                newPayload.put(entry.getKey(), entry.getValue().restrict(guard));
             }
         }
-        return new Message(name.guard(guard), clock.guard(guard), machine.guard(guard), newMap);
+        return new Message(newEvent, target.restrict(guard), newPayload);
     }
 
     @Override
     public Message merge(Iterable<Message> summaries) {
-        List<PrimitiveVS<EventName>> namesToMerge = new ArrayList<>();
-        List<VectorClockVS> clocksToMerge = new ArrayList<>();
-        List<PrimitiveVS<Machine>> machinesToMerge = new ArrayList<>();
-        Map<EventName, UnionVS> newMap = new HashMap<>();
+        List<PrimitiveVS<Event>> eventsToMerge = new ArrayList<>();
+        List<PrimitiveVS<Machine>> targetsToMerge = new ArrayList<>();
+        Map<Event, UnionVS> newPayload = new HashMap<>();
 
-        for (Map.Entry<EventName, UnionVS> entry : this.map.entrySet()) {
-            if (!name.getGuard(entry.getKey()).isConstFalse() && entry.getValue() != null) {
-                newMap.put(entry.getKey(), entry.getValue());
+        for (Map.Entry<Event, UnionVS> entry : this.payload.entrySet()) {
+            if (!event.getGuardFor(entry.getKey()).isFalse() && entry.getValue() != null) {
+                newPayload.put(entry.getKey(), entry.getValue());
             }
         }
 
         for (Message summary : summaries) {
-            namesToMerge.add(summary.name);
-            clocksToMerge.add(summary.clock);
-            machinesToMerge.add(summary.machine);
-            for (Map.Entry<EventName, UnionVS> entry : summary.map.entrySet()) {
-                newMap.computeIfPresent(entry.getKey(), (key, value) -> value.merge(summary.map.get(key)));
+            eventsToMerge.add(summary.event);
+            targetsToMerge.add(summary.target);
+            for (Map.Entry<Event, UnionVS> entry : summary.payload.entrySet()) {
+                newPayload.computeIfPresent(entry.getKey(), (key, value) -> value.merge(summary.payload.get(key)));
                 if (entry.getValue() != null)
-                    newMap.putIfAbsent(entry.getKey(), entry.getValue());
-                if (newMap.containsKey(entry.getKey()) && newMap.get(entry.getKey()) == null) {
+                    newPayload.putIfAbsent(entry.getKey(), entry.getValue());
+                if (newPayload.containsKey(entry.getKey()) && newPayload.get(entry.getKey()) == null) {
                     assert(false);
                 }
             }
         }
 
-        return new Message(name.merge(namesToMerge), clock.merge(clocksToMerge), machine.merge(machinesToMerge), newMap);
+        return new Message(event.merge(eventsToMerge), target.merge(targetsToMerge), newPayload);
     }
 
     @Override
     public Message merge(Message summary) {
-        assert (this.getUniverse().and(summary.getUniverse()).isConstFalse());
+        assert (this.getUniverse().and(summary.getUniverse()).isFalse());
         return merge(Collections.singletonList(summary));
     }
 
     @Override
-    public Message update(Guard guard, Message update) {
+    public Message updateUnderGuard(Guard guard, Message update) {
         /*
         if (guard.isConstTrue()) {
             assert (this.guard(guard.not()).merge(update.guard(guard)).symbolicEquals(update, guard).getGuard(true).isConstTrue());
         }*/
-        return this.guard(guard.not()).merge(update.guard(guard));
+        return this.restrict(guard.not()).merge(update.restrict(guard));
     }
 
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(Message cmp, Guard pc) {
-        Guard nameAndTarget = this.name.symbolicEquals(cmp.name, Guard.constTrue()).getGuard(true).and(
-                                this.machine.symbolicEquals(cmp.machine, Guard.constTrue()).getGuard(true));
+        Guard nameAndTarget = this.event.symbolicEquals(cmp.event, Guard.constTrue()).getGuardFor(true).and(
+                                this.target.symbolicEquals(cmp.target, Guard.constTrue()).getGuardFor(true));
         Guard mapping = Guard.constFalse();
-        for (GuardedValue<EventName> event : name.getGuardedValues()) {
-            if (this.map.containsKey(event.value)) {
-                if (cmp.map.containsKey(event.value)) {
-                    mapping = mapping.or(this.map.get(event.value)
-                                                  .symbolicEquals(cmp.map.get(event.value), Guard.constTrue())
-                                                  .getGuard(true));
+        for (GuardedValue<Event> event : event.getGuardedValues()) {
+            if (this.payload.containsKey(event.getValue())) {
+                if (cmp.payload.containsKey(event.getValue())) {
+                    mapping = mapping.or(this.payload.get(event.getValue())
+                                                  .symbolicEquals(cmp.payload.get(event.getValue()), Guard.constTrue())
+                                                  .getGuardFor(true));
                 }
-            } else if (!cmp.map.containsKey(event.value)) {
-                mapping = mapping.or(event.guard);
+            } else if (!cmp.payload.containsKey(event.getValue())) {
+                mapping = mapping.or(event.getGuard());
             }
         }
-        return BoolUtils.fromTrueGuard(pc.and(nameAndTarget).and(mapping));
+        return BooleanVS.trueUnderGuard(pc.and(nameAndTarget).and(mapping));
     }
 
     @Override
     public Guard getUniverse() {
-        return name.getUniverse();
+        return event.getUniverse();
     }
 
     @Override
     public String toString() {
         String str = "{";
         int i = 0;
-        for (GuardedValue<EventName> name : getName().getGuardedValues()) {
+        for (GuardedValue<Event> event : getEvent().getGuardedValues()) {
             //ScheduleLogger.log("name: " + name.value + " mach: " + this.guard(name.guard).getMachine());
             //if (getMachine().guard(name.guard).getGuardedValues().size() > 1) assert(false);
-            str += name.value;
+            str += event.getGuard();
             //str += " -> " + getMachine().guard(name.guard);
-            if (map.size() > 0 && map.containsKey(name.value)) {
-                str += ": " + map.get(name.value);
+            if (payload.size() > 0 && payload.containsKey(event.getValue())) {
+                str += ": " + payload.get(event.getValue());
             }
-            if (i < getName().getGuardedValues().size() - 1)
+            if (i < getEvent().getGuardedValues().size() - 1)
                 str += System.lineSeparator();
         }
         str += "}";

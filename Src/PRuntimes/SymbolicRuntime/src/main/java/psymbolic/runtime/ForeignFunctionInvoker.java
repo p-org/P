@@ -1,7 +1,7 @@
 package psymbolic.runtime;
 
 import psymbolic.valuesummary.*;
-import psymbolic.valuesummary.bdd.Guard;
+import psymbolic.valuesummary.Guard;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +32,7 @@ public class ForeignFunctionInvoker {
                 listVS = listVS.restrict(pc);
                 for (int i = 0; i < guardedValue.getValue(); i++) {
                     GuardedValue elt = concretize(listVS.get(new PrimitiveVS<>(i).restrict(pc)));
+                    assert elt != null;
                     pc = pc.and(elt.getGuard());
                     listVS.restrict(pc);
                     list.add(elt.getValue());
@@ -56,8 +57,8 @@ public class ForeignFunctionInvoker {
                     skip = true;
                     break;
                 } else {
-                    iterPc = iterPc.and(guardedValue.guard);
-                    concreteArgs.add(guardedValue.value);
+                    iterPc = iterPc.and(guardedValue.getGuard());
+                    concreteArgs.add(guardedValue.getValue());
                 }
             }
             if (done) {
@@ -71,7 +72,7 @@ public class ForeignFunctionInvoker {
         }
     }
 
-    public static ValueSummary invoke(Guard pc, Class<? extends ValueSummary> c, Function<List<Object>, Object> fn, ValueSummary ... args) {
+    public static ValueSummary invoke(Guard pc, Class<? extends ValueSummary<?>> c, Function<List<Object>, Object> fn, ValueSummary ... args) {
         Guard iterPc = Guard.constFalse();
         boolean skip = false;
         UnionVS ret = new UnionVS();
@@ -86,8 +87,8 @@ public class ForeignFunctionInvoker {
                     skip = true;
                     break;
                 } else {
-                    iterPc = iterPc.and(guardedValue.guard);
-                    concreteArgs.add(guardedValue.value);
+                    iterPc = iterPc.and(guardedValue.getGuard());
+                    concreteArgs.add(guardedValue.getValue());
                 }
             }
             if (done) {
@@ -102,7 +103,7 @@ public class ForeignFunctionInvoker {
         if (c.equals(UnionVS.class)) {
             return ret;
         } else {
-            return ValueSummary.fromAny(ret.getUniverse(), c, ret);
+            return ValueSummary.castFromAny(ret.getUniverse(), c, ret);
         }
     }
 

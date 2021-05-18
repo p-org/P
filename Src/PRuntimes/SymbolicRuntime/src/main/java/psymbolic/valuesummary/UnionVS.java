@@ -168,6 +168,8 @@ public class UnionVS implements ValueSummary<UnionVS> {
         return type.getUniverse();
     }
 
+    public Guard getUniverse(Class<? extends ValueSummary> type) { return this.type.getGuardFor(type); }
+
     @Override
     public String toString() {
         StringBuilder out = new StringBuilder();

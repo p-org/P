@@ -1,12 +1,14 @@
 package p.runtime.values;
 
-import lombok.Getter;
 import lombok.NonNull;
 
 public class PBool extends PValue<PBool>{
     // stores the int value
-    @Getter
     private final boolean value;
+
+    public boolean getValue() {
+        return value;
+    }
 
     public PBool(boolean val)
     {

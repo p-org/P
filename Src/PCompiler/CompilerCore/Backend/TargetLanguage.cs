@@ -16,6 +16,7 @@ namespace Plang.Compiler.Backend
             RegisterCodeGenerator(CompilerOutput.CSharp, new CSharpCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.C, new CCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.Rvm, new RvmCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.Symbolic, new SymbolicCodeGenerator());
         }
 
         private static void RegisterCodeGenerator(CompilerOutput name, ICodeGenerator generator)

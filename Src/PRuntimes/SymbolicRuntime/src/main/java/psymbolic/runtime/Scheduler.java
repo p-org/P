@@ -1,6 +1,7 @@
 package psymbolic.runtime;
 
 import psymbolic.commandline.Assert;
+import psymbolic.commandline.Program;
 import psymbolic.runtime.logger.ScheduleLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Message;
@@ -26,6 +27,12 @@ public class Scheduler implements SymbolicSearch {
 
     /** The machine to start with */
     private Machine start;
+
+    /** The map from events to listening monitors */
+    private Map<Event, List<Monitor>> listeners;
+
+    /** List of monitors instances */
+    private List<Monitor> monitors;
 
     /** Current depth of exploration */
     private int depth = 0;
@@ -154,9 +161,23 @@ public class Scheduler implements SymbolicSearch {
         return getNextBoolean(getNextBooleanChoices(pc));
     }
 
-    public List<ValueSummary> getNextElementChoices(Set<ValueSummary> candidates, Guard pc) {
-        return candidates.stream().map(x -> x.restrict(pc)).collect(Collectors.toList());
+    public List<ValueSummary> getNextElementChoices(ListVS candidates, Guard pc) {
+        PrimitiveVS<Integer> size = candidates.size();
+        PrimitiveVS<Integer> index = new PrimitiveVS<>(0).restrict(size.getUniverse());
+        List<ValueSummary> list = new ArrayList<>();
+        while (BooleanVS.isEverTrue(IntegerVS.lessThan(index, size))) {
+            Guard cond = BooleanVS.getTrueGuard(IntegerVS.lessThan(index, size));
+            list.add(candidates.get(index).restrict(pc));
+            index = IntegerVS.add(index, 1);
+        }
+        return list;
     }
+
+    /*
+    public List<ValueSummary> getNextElementChoices(Set<ValueSummary> candidates, Bdd pc) {
+        return candidates.stream().map(x -> x.guard(pc)).collect(Collectors.toList());
+    }
+     */
 
     public PrimitiveVS<ValueSummary> getNextElementHelper(List<ValueSummary> candidates) {
         PrimitiveVS<ValueSummary> choices = NondetUtil.getNondetChoice(candidates.stream().map(x -> new PrimitiveVS(x).restrict(x.getUniverse())).collect(Collectors.toList()));
@@ -183,8 +204,8 @@ public class Scheduler implements SymbolicSearch {
     }
 
     @Override
-    public ValueSummary getNextElement(Set<ValueSummary> candidates, Guard pc) {
-        return getNextElementFlattener(getNextElementHelper(getNextElementChoices(candidates, pc)));
+    public ValueSummary getNextElement(ListVS<? extends ValueSummary> s, Guard pc) {
+        return getNextElementFlattener(getNextElementHelper(getNextElementChoices(s, pc)));
     }
 
     @Override
@@ -241,8 +262,15 @@ public class Scheduler implements SymbolicSearch {
     }
 
     @Override
-    public void doSearch(Machine target) {
+    public void doSearch(Program p) {
+        listeners = p.getMonitorMap();
+        monitors = new ArrayList<>(p.getMonitorList());
+        for (Machine m : p.getMonitorList()) {
+            startWith(m);
+        }
+        Machine target = p.getStart();
         startWith(target);
+        start = target;
         while (!isDone()) {
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
             Assert.prop(errorDepth < 0 || depth < errorDepth, "Maximum allowed depth " + errorDepth + " exceeded", this, schedule.getLengthCond(schedule.size()));
@@ -358,9 +386,31 @@ public class Scheduler implements SymbolicSearch {
         return new PrimitiveVS<>(newMachine).restrict(pc);
     }
 
-    void performEffect(Message mess) {
-        for (GuardedValue<Machine> target : mess.getTarget().getGuardedValues()) {
-            target.getValue().processEventToCompletion(target.getGuard(), mess.restrict(target.getGuard()));
+    void runMonitors(Message event) {
+        Map<Monitor, Guard> monitorConstraints = new HashMap<>();
+        for (Monitor m : monitors) {
+            monitorConstraints.put(m, Guard.constFalse());
+        }
+        for (GuardedValue<Event> e : event.getEvent().getGuardedValues()) {
+            List<Monitor> listenersForEvent = listeners.get(e.getValue());
+            if (listenersForEvent != null) {
+                for (Monitor listener : listenersForEvent) {
+                    monitorConstraints.computeIfPresent(listener, (k, v) -> v.or(e.getGuard()));
+                }
+            }
+        }
+        for (Monitor m: monitors) {
+            Guard constraint = monitorConstraints.get(m);
+            if (!constraint.isFalse()) {
+                m.processEventToCompletion(constraint, event.restrict(constraint));
+            }
+        }
+    }
+
+    void performEffect(Message event) {
+        runMonitors(event);
+        for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
+            target.getValue().processEventToCompletion(target.getGuard(), event.restrict(target.getGuard()));
         }
     }
 

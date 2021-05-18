@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>psymbolic</groupId>
-  <artifactId>psymbolic</artifactId>
+  <artifactId>SymbolicRuntime</artifactId>
   <version>1.0</version>
   <build>
     <plugins>
@@ -72,18 +72,6 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>5.7.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>p.runtimes</groupId>
-      <artifactId>PJavaRuntime</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>RELEASE</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jooq</groupId>
@@ -104,6 +92,11 @@
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>RELEASE</version>
+    </dependency>
+    <dependency>
+      <groupId>p.runtime</groupId>
+      <artifactId>PJavaRuntime</artifactId>
+      <version>1.0.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

@@ -1,12 +1,12 @@
 package psymbolic.runtime;
 
+import psymbolic.commandline.Program;
 import psymbolic.runtime.logger.ScheduleLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Message;
 import psymbolic.valuesummary.*;
 
 import java.util.List;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -28,10 +28,10 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public void doSearch(Machine target) {
+    public void doSearch(Program p) {
         while (!isDoneIterating) {
             ScheduleLogger.log("Iteration " + iter);
-            super.doSearch(target);
+            super.doSearch(p);
             postIterationCleanup();
             iter++;
         }
@@ -155,7 +155,7 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public ValueSummary getNextElement(Set<ValueSummary> candidates, Guard pc) {
+    public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
         int depth = choiceDepth;
         PrimitiveVS<ValueSummary> res = getNext(depth, senderBound, schedule::getRepeatElement, schedule::getBacktrackElement,
                 schedule::clearBacktrack, schedule::addRepeatElement, schedule::addBacktrackElement,

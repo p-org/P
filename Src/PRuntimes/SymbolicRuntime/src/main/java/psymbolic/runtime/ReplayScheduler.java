@@ -3,9 +3,7 @@ package psymbolic.runtime;
 import psymbolic.runtime.logger.ScheduleLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Message;
-import psymbolic.valuesummary.IntegerVS;
-import psymbolic.valuesummary.PrimitiveVS;
-import psymbolic.valuesummary.Guard;
+import psymbolic.valuesummary.*;
 
 import java.util.function.Function;
 
@@ -74,6 +72,13 @@ public class ReplayScheduler extends Scheduler {
     public PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc) {
         PrimitiveVS<Integer> res = schedule.getRepeatInt(choiceDepth);
         assert(IntegerVS.lessThan(res, bound).getGuardFor(false).isFalse());
+        choiceDepth++;
+        return res;
+    }
+
+    @Override
+    public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
+        ValueSummary res = schedule.getRepeatElement(choiceDepth);
         choiceDepth++;
         return res;
     }

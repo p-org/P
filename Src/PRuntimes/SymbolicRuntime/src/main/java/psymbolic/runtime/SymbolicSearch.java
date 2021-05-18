@@ -1,11 +1,10 @@
 package psymbolic.runtime;
 
-import psymbolic.runtime.machine.Machine;
+import psymbolic.commandline.Program;
+import psymbolic.valuesummary.Guard;
+import psymbolic.valuesummary.ListVS;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.ValueSummary;
-import psymbolic.valuesummary.Guard;
-
-import java.util.Set;
 
 /** Search interface for exploring different schedules */
 public interface SymbolicSearch {
@@ -23,9 +22,9 @@ public interface SymbolicSearch {
 
     /** Perform the Search
      *
-     * @param target The target machine of the program
+     * @param p The program to run the search on
      */
-    void doSearch (Machine target);
+    void doSearch (Program p);
 
     /** Return the next integer (within a bound) based on the search and strategy.
      *
@@ -45,5 +44,6 @@ public interface SymbolicSearch {
      * @param s set to choose from
      * @return a integer
      */
-    ValueSummary getNextElement(Set<ValueSummary> s, Guard pc);
+    ValueSummary getNextElement(ListVS<? extends ValueSummary> s, Guard pc);
+
 }

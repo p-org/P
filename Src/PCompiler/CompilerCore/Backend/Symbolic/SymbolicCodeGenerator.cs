@@ -42,11 +42,60 @@ namespace Plang.Compiler.Backend.Symbolic
             foreach (var decl in globalScope.AllDecls)
                 WriteDecl(context, source.Stream, decl);
 
+            context.WriteLine(source.Stream, "Map<EventName, List<Monitor>> listeners = new HashMap<>();");
+            context.WriteLine(source.Stream, "List<Monitor> monitors = new ArrayList<>();");
+            context.WriteLine(source.Stream, "private boolean listenersInitialized = false;");
+
+            WriteMonitorMap(context, source.Stream, globalScope.AllDecls);
+            WriteMonitorList(context, source.Stream, globalScope.AllDecls);
+
             WriteMainDriver(context, source.Stream, globalScope);
 
             WriteSourceEpilogue(context, source.Stream);
 
             return source;
+        }
+
+        private void WriteMonitorList(CompilationContext context, StringWriter output, IEnumerable<IPDecl> decls)
+        {
+            context.WriteLine(output);
+            context.WriteLine(output, "public List<Monitor> getMonitorList() {");
+            context.WriteLine(output, "    if (!listenersInitialized) getMonitorMap();");
+            context.WriteLine(output, "    return monitors;");
+            context.WriteLine(output, "}");
+        }
+
+        private void WriteMonitorMap(CompilationContext context, StringWriter output, IEnumerable<IPDecl> decls)
+        {
+            context.WriteLine(output);
+            context.WriteLine(output, "public Map<EventName, List<Monitor>> getMonitorMap() {");
+            context.WriteLine(output, "    if (listenersInitialized) return listeners;");
+            context.WriteLine(output, "    listenersInitialized = true;");
+            foreach (var decl in decls)
+            {
+                switch(decl)
+                {
+                    case Machine machine:
+                        if (machine.IsSpec)
+                        {
+                            var declName = context.GetNameForDecl(machine);
+                            context.WriteLine(output, $"    Monitor instance_{declName} = new {declName}(0);");
+                            context.WriteLine(output, $"    monitors.add(instance_{declName});");
+                            foreach (var pEvent in machine.Observes.Events)
+                            {
+                                context.WriteLine(output, $"    if(!listeners.containsKey(Events.event_{pEvent.Name}))");
+                                context.WriteLine(output, $"        listeners.put(Events.event_{pEvent.Name}, new ArrayList<>());");
+                                context.WriteLine(output, $"    listeners.get(Events.event_{pEvent.Name}).add(instance_{declName});");
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            context.WriteLine(output, "    return listeners;");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
         }
 
         private void WriteEventDefs(CompilationContext context, StringWriter output, IEnumerable<PEvent> events)
@@ -69,7 +118,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case Machine machine:
                     if (machine.IsSpec)
-                        context.WriteLine(output, $"// Skipping monitor {machine.Name}");
+                        WriteMonitor(context, output, machine);
                     else
                         WriteMachine(context, output, machine);
                     break;
@@ -80,6 +129,47 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"// Skipping {decl.GetType().Name} '{decl.Name}'\n");
                     break;
             }
+        }
+
+        private void WriteMonitor(CompilationContext context, StringWriter output, Machine machine)
+        {
+            var declName = context.GetNameForDecl(machine);
+            context.WriteLine(output, $"public static class {declName} extends Monitor {{");
+
+            context.WriteLine(output);
+
+            for (int i = 0; i < machine.States.Count(); i++)
+            {
+                var state = machine.States.ElementAt(i);
+                context.Write(output, $"static State {context.GetNameForDecl(state)} = ");
+                WriteState(context, output, state, i);
+                context.WriteLine(output, ";");
+            }
+
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"private {GetSymbolicType(field.Type)} {CompilationContext.GetVar(field.Name)} = {GetDefaultValueNoGuard(context, field.Type)};");
+
+            context.WriteLine(output);
+
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, "public void reset() {");
+            context.WriteLine(output, "    super.reset();");
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = {GetDefaultValueNoGuard(context, field.Type)};");
+            context.WriteLine(output, "}");
+
+            context.WriteLine(output);
+
+
+            WriteMachineConstructor(context, output, machine);
+
+            context.WriteLine(output);
+
+            foreach (var method in machine.Methods)
+                WriteFunction(context, output, method);
+
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
         }
 
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
@@ -333,16 +423,15 @@ namespace Plang.Compiler.Backend.Symbolic
         {
             bool mayExit = MayExitWithOutcome(function);
             bool voidReturn = function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null);
-            switch (voidReturn)
-            {
-                case false when !mayExit:
-                    return FunctionReturnConvention.RETURN_VALUE;
-                case true when !mayExit:
-                    return FunctionReturnConvention.RETURN_VOID;
-                default:
-                    return !voidReturn ? FunctionReturnConvention.RETURN_VALUE_OR_EXIT : FunctionReturnConvention.RETURN_Guard;
-                    throw new InvalidOperationException();
-            }
+            if (!voidReturn && !mayExit)
+                return FunctionReturnConvention.RETURN_VALUE;
+            if (voidReturn && !mayExit)
+                return FunctionReturnConvention.RETURN_VOID;
+            if (!voidReturn && mayExit)
+                return FunctionReturnConvention.RETURN_VALUE_OR_EXIT;
+            if (voidReturn && mayExit)
+                return FunctionReturnConvention.RETURN_BDD;
+            throw new InvalidOperationException();
         }
 
         private void WriteForeignFunction(CompilationContext context, StringWriter output, Function function)
@@ -380,7 +469,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 if (i > 0)
                     context.WriteLine(output, ",");
-                context.Write(output, $"({GetSymbolicType(param.Type, true)}) args.get({i})");
+                context.Write(output, $"({GetConcreteForeignBoxedType(param.Type)}) args.get({i})");
                 i++;
             }
             context.WriteLine(output, ");");
@@ -679,12 +768,13 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case AssertStmt assertStmt:
-                    context.Write(output, "Assert.prop(!(");
+                    context.Write(output, "Assert.progProp(!(");
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
                     context.Write(output, ").getValues().contains(Boolean.FALSE), ");
-                    context.Write(output, $"\"{assertStmt.Message}\"");
-                    context.Write(output, ", scheduler");
-                    context.Write(output, $", {flowContext.pcScope.PathConstraintVar});");
+                    WriteExpr(context, output, flowContext.pcScope, assertStmt.Message);
+                    context.Write(output, ", scheduler, ");
+                    WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
+                    context.Write(output, ".getGuard(Boolean.FALSE));");
                     break;
 
                 case ReturnStmt returnStmt:
@@ -1525,12 +1615,12 @@ namespace Plang.Compiler.Backend.Symbolic
                     switch (chooseExpr.SubExpr.Type)
                     {
                         case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                            context.Write(output, $"{CompilationContext.SchedulerVar}.getNextInteger(");
+                            context.Write(output, $"({CompilationContext.SchedulerVar}.getNextInteger(");
                             WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
                             context.Write(output, $", {pcScope.PathConstraintVar})");
                             break;
                         case SequenceType sequenceType:
-                            context.Write(output, $"({GetSymbolicType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getNextSeq(");
+                            context.Write(output, $"({GetSymbolicType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
                             WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
                             context.Write(output, $", {pcScope.PathConstraintVar})");
                             break;
@@ -1550,6 +1640,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     }
                     context.Write(output, "))");
                     context.Write(output, $".guard({pcScope.PathConstraintVar})");
+                    break;
+                case NullLiteralExpr nullLiteralExpr:
+                    context.Write(output, "null");
                     break;
                 default:
                     context.Write(output, $"/* Skipping expr '{expr.GetType().Name}' */");
@@ -1655,6 +1748,35 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        private string GetConcreteForeignBoxedType(PLanguageType type)
+        {
+            switch (type.Canonicalize())
+            {
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
+                    return "PBool";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
+                    return "PInt";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
+                    return "PFloat";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
+                    return "PString";
+                case ForeignType foreignType:
+                    return foreignType.CanonicalRepresentation;
+                case SequenceType _:
+                    return "PSeq";
+                case MapType _: 
+                    return "PMap";
+                case NamedTupleType _: 
+                    return "PNamedTuple";
+                case TupleType _: 
+                    return "PTuple";
+                case EnumType _: 
+                    return "PEnum";
+                default:
+                    throw new NotImplementedException($"Concrete type '{type.OriginalRepresentation}' is not supported");
+            }
+        }
+
         private string GetGenericSymbolicType(PLanguageType type) {
             switch (type.Canonicalize())
             {
@@ -1750,6 +1872,9 @@ namespace Plang.Compiler.Backend.Symbolic
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
                     unguarded = $"new {GetSymbolicType(type)}(\"\")";
                     break;
+                case ForeignType foreignType:
+                    unguarded = $"new {GetSymbolicType(type)}()";
+                    break;
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
                     unguarded = $"new {GetSymbolicType(type)}()";
@@ -1835,15 +1960,19 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
-            context.WriteLine(output, "import symbolicp.*;");
-            context.WriteLine(output, "import symbolicp.Guard.*;");
-            context.WriteLine(output, "import symbolicp.vs.*;");
-            context.WriteLine(output, "import symbolicp.runtime.*;");
-            context.WriteLine(output, "import symbolicp.run.*;");
-            context.WriteLine(output, "import symbolicp.util.*;");
+            context.WriteLine(output, "import psymbolic.*;");
+            context.WriteLine(output, "import psymbolic.valuesummary.bdd.*;");
+            context.WriteLine(output, "import psymbolic.valuesummary.*;");
+            context.WriteLine(output, "import psymbolic.runtime.*;");
+            context.WriteLine(output, "import p.runtime.values.*;");
+            context.WriteLine(output, "import psymbolic.run.*;");
+            context.WriteLine(output, "import psymbolic.util.*;");
             context.WriteLine(output, "import java.util.List;");
+            context.WriteLine(output, "import java.util.ArrayList;");
+            context.WriteLine(output, "import java.util.Map;");
+            context.WriteLine(output, "import java.util.HashMap;");
             context.WriteLine(output);
-            context.WriteLine(output, $"public class {context.MainClassName} implements Program {{");
+            context.WriteLine(output, $"public class {context.MainClassName.ToLower()} implements Program {{");
             context.WriteLine(output);
             context.WriteLine(output, $"public static Scheduler {CompilationContext.SchedulerVar};");
             context.WriteLine(output);

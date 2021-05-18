@@ -1,20 +1,21 @@
-package psymbolic.runtime.eventhandlers;
+package psymbolic.runtime.machine.eventhandlers;
 
-import psymbolic.runtime.EventHandler;
 import psymbolic.runtime.EventName;
-import psymbolic.runtime.Machine;
-import psymbolic.runtime.Outcome;
+import psymbolic.runtime.machine.Machine;
+import psymbolic.runtime.machine.Message;
+import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.UnionVS;
-import psymbolic.valuesummary.bdd.Bdd;
+import psymbolic.valuesummary.Guard;
 
 public class DeferEventHandler extends EventHandler {
 
-    public DeferEventHandler(EventName eventName) {
-        super(eventName);
+    public DeferEventHandler(EventName event) {
+        super(event);
     }
 
     @Override
-    public void handleEvent(Bdd pc, UnionVS payload, Machine machine, Outcome outcome) {
-        machine.deferredQueue.defer(pc, makeEvent(payload, machine.getClock()).guard(pc));
+    public void handleEvent(Guard pc, Machine target, UnionVS payload, EventHandlerReturnReason outcome) {
+        Message deferredMessage =  new Message(event, new PrimitiveVS<>(), payload);
+        target.deferredQueue.defer(pc,deferredMessage.guard(pc));
     }
 }

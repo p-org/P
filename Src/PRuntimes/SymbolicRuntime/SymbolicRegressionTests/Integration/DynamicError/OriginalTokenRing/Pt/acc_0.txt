@@ -7,6 +7,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: ERROR: < Exception > Attempting to enqueue event Sending more than max instance of 1\n
+OUT: ERROR: < Exception > Attempting to enqueue message Sending more than max instance of 1\n
 OUT: 
 EXIT: -1

@@ -1,8 +1,9 @@
 package psymbolic.runtime;
 
+import psymbolic.runtime.machine.Machine;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.ValueSummary;
-import psymbolic.valuesummary.bdd.Bdd;
+import psymbolic.valuesummary.Guard;
 
 import java.util.Set;
 
@@ -31,18 +32,18 @@ public interface SymbolicSearch {
      * @param bound upper bound (exclusive) on the integer.
      * @return a integer
      */
-    PrimVS<Integer> getNextInteger(PrimVS<Integer> bound, Bdd pc);
+    PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc);
 
     /** Return the next boolean based on the search and strategy.
      *
      * @return a boolean choice.
      */
-    PrimVS<Boolean> getNextBoolean(Bdd pc);
+    PrimitiveVS<Boolean> getNextBoolean(Guard pc);
 
     /** Return the next element of a finite set based on the search and strategy.
      *
      * @param s set to choose from
      * @return a integer
      */
-    ValueSummary getNextElement(Set<ValueSummary> s, Bdd pc);
+    ValueSummary getNextElement(Set<ValueSummary> s, Guard pc);
 }

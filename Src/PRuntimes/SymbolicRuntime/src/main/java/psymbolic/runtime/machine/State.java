@@ -1,18 +1,23 @@
-package psymbolic.runtime;
+package psymbolic.runtime.machine;
 
 import psymbolic.run.BugFoundException;
+import psymbolic.runtime.machine.eventhandlers.EventHandler;
+import psymbolic.runtime.EventName;
+import psymbolic.runtime.HasId;
+import psymbolic.runtime.Outcome;
+import psymbolic.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psymbolic.util.Checks;
 import psymbolic.valuesummary.*;
-import psymbolic.valuesummary.bdd.Bdd;
+import psymbolic.valuesummary.Guard;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class State extends HasId {
+public abstract class State {
     private final Map<EventName, EventHandler> eventHandlers;
 
-    public void entry(Bdd pc, Machine machine, Outcome outcome, UnionVS payload) {}
-    public void exit(Bdd pc, Machine machine) {}
+    public void entry(Guard pc, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {}
+    public void exit(Guard pc, Machine machine) {}
 
     public State(String name, int id, EventHandler... eventHandlers) {
         super(name, id);
@@ -27,7 +32,7 @@ public abstract class State extends HasId {
     }
 
     public PrimVS<Boolean> hasHandler(Event event) {
-        Bdd has = Bdd.constFalse();
+        Guard has = Guard.constFalse();
         for (GuardedValue<EventName> entry : event.getName().getGuardedValues()) {
             if (eventHandlers.containsKey(entry.value)) {
                 has = has.or(entry.guard);
@@ -39,12 +44,12 @@ public abstract class State extends HasId {
     public void handleEvent(Event event, Machine machine, Outcome outcome) {
         for (GuardedValue<EventName> entry : event.getName().getGuardedValues()) {
             EventName name = entry.value;
-            Bdd eventPc = entry.guard;
+            Guard eventPc = entry.guard;
             assert(event.guard(eventPc).getName().getGuardedValues().size() == 1);
             PrimVS<State> current = new PrimVS<>(this).guard(eventPc);
             ListVS<PrimVS<State>> stack = machine.getStack().guard(eventPc);
             ScheduleLogger.handle(machine,this, event.guard(entry.guard));
-            Bdd handledPc = Bdd.constFalse();
+            Guard handledPc = Guard.constFalse();
             while (true) {
                 for (GuardedValue<State> guardedValue : current.getGuardedValues()) {
                     if (guardedValue.value.eventHandlers.containsKey(name)) {

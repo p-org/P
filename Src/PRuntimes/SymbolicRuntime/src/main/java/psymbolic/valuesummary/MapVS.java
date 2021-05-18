@@ -1,7 +1,6 @@
 package psymbolic.valuesummary;
 
-import psymbolic.util.Checks;
-
+import psymbolic.valuesummary.util.ValueSummaryChecks;
 import java.util.*;
 
 /** Class for map value summaries */
@@ -11,7 +10,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     /** The mapping from all possible keys to values */
     public final Map<K, V> entries;
 
-    /** Make a new MapVS with the specified set of keys and the specified mapping
+    /** Make a new MapVS with the specified set of keys and mapping
      *
      * @param keys The set of keys
      * @param entries The mapping from all possible keys to value summaries
@@ -114,7 +113,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
         while (!thisSet.isEmpty()) {
             PrimitiveVS<K> thisVal = thisSet.get(new PrimitiveVS<>(0).restrict(guard));
             PrimitiveVS<K> cmpVal = cmpSet.get(new PrimitiveVS<>(0).restrict(guard));
-            assert(Checks.equalUnder(thisVal, cmpVal, guard));
+            assert(ValueSummaryChecks.equalUnder(thisVal, cmpVal, guard));
             for (GuardedValue<K> key : thisVal.getGuardedValues()) {
                 PrimitiveVS<Boolean> compareVals = entries.get(key.getValue()).restrict(key.getGuard())
                         .symbolicEquals(cmp.entries.get(key.getValue()).restrict(key.getGuard()), guard);
@@ -160,7 +159,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      * @return The updated MapVS
      */
     public MapVS<K, V> add(PrimitiveVS<K> keySummary, V valSummary) {
-        assert(Checks.hasSameUniverse(keySummary.getUniverse(), valSummary.getUniverse()));
+        assert(ValueSummaryChecks.hasSameUniverse(keySummary.getUniverse(), valSummary.getUniverse()));
         return put(keySummary, valSummary);
     }
 

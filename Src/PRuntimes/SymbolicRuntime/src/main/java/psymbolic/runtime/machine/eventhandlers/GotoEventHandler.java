@@ -1,22 +1,25 @@
-package psymbolic.runtime.eventhandlers;
+package psymbolic.runtime.machine.eventhandlers;
 
 import psymbolic.runtime.*;
+import psymbolic.runtime.machine.Machine;
+import psymbolic.runtime.machine.State;
 import psymbolic.valuesummary.UnionVS;
-import psymbolic.valuesummary.bdd.Bdd;
+import psymbolic.valuesummary.Guard;
+
 
 public class GotoEventHandler extends EventHandler {
-    public final State dest;
+    public final State gotoState;
 
     public GotoEventHandler(EventName eventName, State dest) {
         super(eventName);
-        this.dest = dest;
+        this.gotoState = dest;
     }
 
-    public void transitionAction(Bdd pc, Machine machine, UnionVS payload) {}
+    public void transitionFunction(Guard pc, Machine machine, UnionVS payload) {}
 
     @Override
-    public void handleEvent(Bdd pc, UnionVS payload, Machine machine, Outcome outcome) {
-        transitionAction(pc, machine, payload);
-        outcome.addGuardedGoto(pc, dest, payload);
+    public void handleEvent(Guard pc, Machine target, UnionVS payload, EventHandlerReturnReason outcome) {
+        transitionFunction(pc, target, payload);
+        outcome.addGuardedGoto(pc, gotoState, payload);
     }
 }

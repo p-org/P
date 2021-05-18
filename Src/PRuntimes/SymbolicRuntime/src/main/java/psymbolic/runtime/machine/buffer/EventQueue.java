@@ -1,16 +1,20 @@
-package psymbolic.runtime;
+package psymbolic.runtime.machine.buffer;
 
+import psymbolic.runtime.Event;
+import psymbolic.runtime.machine.Machine;
+import psymbolic.runtime.Scheduler;
+import psymbolic.runtime.SymbolicQueue;
 import psymbolic.valuesummary.PrimitiveVS
 import psymbolic.valuesummary.UnionVS;
 import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.function.Function;
 
-public class EffectQueue extends SymbolicQueue<Event> implements EffectCollection {
+public class EventQueue extends SymbolicQueue<Event> implements EventBuffer {
 
     private Machine src;
 
-    public EffectQueue(Machine src) {
+    public EventQueue(Machine src) {
         super();
         this.src = src;
     }

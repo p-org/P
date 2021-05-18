@@ -1,29 +1,16 @@
-package psymbolic.runtime.eventhandlers;
+package psymbolic.runtime.machine.eventhandlers;
 
 import psymbolic.runtime.Event;
-import psymbolic.runtime.EventName;
-import psymbolic.runtime.Machine;
-import psymbolic.runtime.Outcome;
-import psymbolic.valuesummary.PrimitiveVS
+import psymbolic.runtime.machine.Machine;
+import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.UnionVS;
-import psymbolic.valuesummary.VectorClockVS;
-import psymbolic.valuesummary.bdd.Bdd;
 
 public abstract class EventHandler {
-    public final EventName eventName;
+    public final Event event;
 
-    protected EventHandler(EventName eventName) {
-        this.eventName = eventName;
+    protected EventHandler(Event eventName) {
+        this.event = eventName;
     }
 
-    public Event makeEvent(UnionVS payload, VectorClockVS clock) {
-        return new Event(eventName, clock, new PrimVS<>(), payload);
-    }
-
-    public abstract void handleEvent(
-        Bdd pc,
-        UnionVS payload,
-        Machine machine,
-        Outcome outcome
-    );
+    public abstract void handleEvent(Guard pc, Machine target, UnionVS payload, EventHandlerReturnReason outcome);
 }

@@ -1,7 +1,6 @@
 package psymbolic.valuesummary;
 
 import com.google.common.collect.ImmutableList;
-import psymbolic.runtime.ScheduleLogger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -420,7 +419,6 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     public Guard getNonEmptyUniverse() {
         if (size.getGuardedValues().size() > 1) {
             if(getUniverse().and(size.getGuardFor(0).not()).isFalse()) {
-                ScheduleLogger.log("ERROR!");
                 throw new RuntimeException();
             }
         }

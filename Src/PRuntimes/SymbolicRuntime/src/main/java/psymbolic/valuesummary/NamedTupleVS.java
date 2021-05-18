@@ -6,37 +6,36 @@ import java.util.*;
 
 /** Class for named tuple value summaries */
 public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
-    /** Mapping from names of the fields to their index in the underlying representation */
-    private final Map<String, Integer> names;
+    /** List of names of the fields in the declared order*/
+    private final List<String> names;
     /** Underlying representation as a TupleVS */
     private final TupleVS tuple;
 
-    private NamedTupleVS(Map<String, Integer> names, TupleVS tuple) {
+    private NamedTupleVS(List<String> names, TupleVS tuple) {
         this.names = names;
         this.tuple = tuple;
     }
 
     public NamedTupleVS (NamedTupleVS namedTuple) {
-        this.names = new HashMap<>(namedTuple.names);
+        this.names = new ArrayList<>(namedTuple.names);
         this.tuple = new TupleVS(namedTuple.tuple);
     }
 
     /** Get the names of the NamedTupleVS fields
      * @return Array containing the names of the NamedTupleVS fields */
     public String[] getNames() {
-        return (String[]) names.keySet().toArray();
+        return (String[]) names.toArray();
     }
 
     /** Make a new NamedTupleVS with the provided names and fields
      * @param namesAndFields Alternating String and ValueSummary values where the Strings give the field names
      */
     public NamedTupleVS(Object... namesAndFields) {
-        names = new HashMap<>();
+        names = new ArrayList<>();
         ValueSummary<?>[] vs = new ValueSummary[namesAndFields.length/ 2];
         for (int i = 0; i < namesAndFields.length; i += 2) {
-            String name = (String)namesAndFields[i];
             vs[i / 2] = (ValueSummary<?>)namesAndFields[i + 1];
-            names.put(name, i / 2);
+            names.add((String)namesAndFields[i]);
         }
         tuple = new TupleVS(vs);
     }
@@ -46,7 +45,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
      * @return The value
      */
     public ValueSummary<?> getField(String name) {
-        return tuple.getField(names.get(name));
+        return tuple.getField(names.indexOf(name));
     }
 
     /** Get the value for a particular field
@@ -54,7 +53,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
      * @return The value
      */
     public ValueSummary<?> getField(PString name) {
-        return tuple.getField(names.get(name.getValue()));
+        return tuple.getField(names.indexOf(name.getValue()));
     }
 
     /** Set the value for a particular field
@@ -63,7 +62,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
      * @return The result of updating the field
      */
     public NamedTupleVS setField(String name, ValueSummary<?> val) {
-        return new NamedTupleVS(names, tuple.setField(names.get(name), val));
+        return new NamedTupleVS(names, tuple.setField(names.indexOf(name), val));
     }
 
     /** Set the value for a particular field
@@ -72,7 +71,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
      * @return The result of updating the field
      */
     public NamedTupleVS setField(PString name, ValueSummary<?> val) {
-        return new NamedTupleVS(names, tuple.setField(names.get(name.getValue()), val));
+        return new NamedTupleVS(names, tuple.setField(names.indexOf(name.toString()), val));
     }
 
     @Override
@@ -108,7 +107,8 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
 
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(NamedTupleVS cmp, Guard pc) {
-        if (names.equals(cmp.names)) {
+        if (Arrays.deepEquals(names.toArray(), cmp.names.toArray())) {
+            // TODO: raise an exception checking equality of two incompatible types
             return new PrimitiveVS<>(false).restrict(pc);
         }
         return tuple.symbolicEquals(cmp.tuple, pc);

@@ -1,44 +1,43 @@
-package psymbolic.runtime;
+package psymbolic.runtime.logger;
 
+import psymbolic.runtime.Event;
+import psymbolic.runtime.machine.Machine;
+import psymbolic.runtime.machine.Message;
+import psymbolic.runtime.machine.State;
+import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
-import psymbolic.valuesummary.bdd.Bdd;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-public class ScheduleLogger {
-
-    private final static Logger log = LoggingUtils.getLog("SCHEDULE");
+public class ScheduleLogger extends PLogger{
 
     /* If turned on, logs the path constraints and goto/raise outcomes */
     private static boolean isVerbose = false;
 
-    public static void onProcessEvent(Bdd pc, Machine machine, Event event)
+    public static void onProcessEvent(Guard pc, Machine machine, Event event)
     {
-        String msg = String.format("Machine %s is processing event %s in state %s", machine, event, machine.getState().guard(pc));
+        String msg = String.format("Machine %s is processing event %s in state %s", machine, event, machine.getState().restrict(pc));
         if (isVerbose) msg = String.format("under path %s ", pc) + msg;
-        log.fine(msg);
+        log.info(msg);
     }
 
-    public static void onProcessStateTransition(Bdd pc, Machine machine, PrimitiveVS<State> newState) {
+    public static void onProcessStateTransition(Guard pc, Machine machine, PrimitiveVS<State> newState) {
         String msg = String.format("Machine %s transitioning to state %s", machine.toString(), newState);
         if (isVerbose) msg = String.format("under path %s ", pc) + msg;
         log.info(msg);
     }
 
-    public static void onCreateMachine(Bdd pc, Machine machine) {
+    public static void onCreateMachine(Guard pc, Machine machine) {
         String msg = "Machine " + machine + " was created";
         log.info(msg);
     }
 
-    public static void onMachineStart(Bdd pc, Machine machine) {
+    public static void onMachineStart(Guard pc, Machine machine) {
         String msg = String.format("Machine %s starting", machine.toString());
         if (isVerbose) msg = String.format("under path %s ", pc) + msg;
         log.info(msg);
     }
 
-    public static void machineState(Bdd pc, Machine machine) {
-        String msg = String.format("Machine %s in state %s", machine, machine.getState().guard(pc));
+    public static void machineState(Guard pc, Machine machine) {
+        String msg = String.format("Machine %s in state %s", machine, machine.getState().restrict(pc));
         log.info(msg);
     }
     /*
@@ -58,18 +57,12 @@ public class ScheduleLogger {
         log.info("Machine " + m + " handling event " + event + " in state " + st);
     }
 
-    public static void disable() {
-        log.setLevel(Level.OFF);
-    }
-
-    public static void enable() { log.setLevel(Level.ALL); }
-
-    public static void send(Event effect) {
+    public static void send(Message effect) {
         String msg = "Send effect " + effect + " to " + effect.getMachine();
         log.info(msg);
     }
 
-    public static void schedule(int step, Event effect) {
+    public static void schedule(int step, Message effect) {
         String msg = "Step " + step + ": scheduled " + effect + " sent to " + effect.getMachine();
         log.info(msg);
     }

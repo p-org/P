@@ -1,8 +1,11 @@
 package psymbolic.runtime;
 
 import psymbolic.run.Assert;
+import psymbolic.runtime.logger.ScheduleLogger;
+import psymbolic.runtime.machine.Machine;
+import psymbolic.runtime.machine.Message;
 import psymbolic.valuesummary.*;
-import psymbolic.valuesummary.bdd.Bdd;
+import psymbolic.valuesummary.Guard;
 
 import java.util.*;
 import java.util.function.Function;
@@ -20,7 +23,7 @@ public class Scheduler implements SymbolicSearch {
     final List<Machine> machines;
 
     /** How many instances of each Machine there are */
-    final Map<Class<? extends Machine>, PrimVS<Integer>> machineCounters;
+    final Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
 
     /** The machine to start with */
     private Machine start;
@@ -93,13 +96,13 @@ public class Scheduler implements SymbolicSearch {
             this.machines.add(machine);
             if (this.machineCounters.containsKey(machine.getClass())) {
                 this.machineCounters.put(machine.getClass(),
-                        IntUtils.add(this.machineCounters.get(machine.getClass()), 1));
+                        IntegerVS.add(this.machineCounters.get(machine.getClass()), 1));
             } else {
-                this.machineCounters.put(machine.getClass(), new PrimVS<>(1));
+                this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
             }
-            ScheduleLogger.onCreateMachine(Bdd.constTrue(), machine);
+            ScheduleLogger.onCreateMachine(Guard.constTrue(), machine);
             machine.setScheduler(this);
-            schedule.makeMachine(machine, Bdd.constTrue());
+            schedule.makeMachine(machine, Guard.constTrue());
         }
     }
 
@@ -112,68 +115,68 @@ public class Scheduler implements SymbolicSearch {
         this.maxDepth = maxDepth;
     }
 
-    public List<PrimVS> getNextIntegerChoices(PrimVS<Integer> bound, Bdd pc) {
-        List<PrimVS> choices = new ArrayList<>();
-        for (int i = 0; i < IntUtils.maxValue(bound); i++) {
-            Bdd cond = IntUtils.lessThan(i, bound).getGuard(true);
-            choices.add(new PrimVS<>(i).guard(cond));
+    public List<PrimitiveVS> getNextIntegerChoices(PrimitiveVS<Integer> bound, Guard pc) {
+        List<PrimitiveVS> choices = new ArrayList<>();
+        for (int i = 0; i < IntegerVS.maxValue(bound); i++) {
+            Guard cond = IntegerVS.lessThan(i, bound).getGuardFor(true);
+            choices.add(new PrimitiveVS<>(i).restrict(cond));
         }
         return choices;
     }
 
-    public PrimVS<Integer> getNextInteger(List<PrimVS> candidateIntegers) {
-        PrimVS<Integer> choices = (PrimVS<Integer>) NondetUtil.getNondetChoice(candidateIntegers);
+    public PrimitiveVS<Integer> getNextInteger(List<PrimitiveVS> candidateIntegers) {
+        PrimitiveVS<Integer> choices = (PrimitiveVS<Integer>) NondetUtil.getNondetChoice(candidateIntegers);
         schedule.addRepeatInt(choices, choiceDepth);
         schedule.addIntChoice(choices, choiceDepth);
         return choices;
     }
 
     @Override
-    public PrimVS<Integer> getNextInteger(PrimVS<Integer> bound, Bdd pc) {
+    public PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc) {
         return getNextInteger(getNextIntegerChoices(bound, pc));
     }
 
-    public List<PrimVS> getNextBooleanChoices(Bdd pc) {
-        List<PrimVS> choices = new ArrayList<>();
-        choices.add(new PrimVS<>(true).guard(pc));
-        choices.add(new PrimVS<>(false).guard(pc));
+    public List<PrimitiveVS> getNextBooleanChoices(Guard pc) {
+        List<PrimitiveVS> choices = new ArrayList<>();
+        choices.add(new PrimitiveVS<>(true).restrict(pc));
+        choices.add(new PrimitiveVS<>(false).restrict(pc));
         return choices;
     }
 
-    public PrimVS<Boolean> getNextBoolean(List<PrimVS> candidateBooleans) {
-        PrimVS<Boolean> choices = (PrimVS<Boolean>) NondetUtil.getNondetChoice(candidateBooleans);
+    public PrimitiveVS<Boolean> getNextBoolean(List<PrimitiveVS> candidateBooleans) {
+        PrimitiveVS<Boolean> choices = (PrimitiveVS<Boolean>) NondetUtil.getNondetChoice(candidateBooleans);
         schedule.addRepeatBool(choices, choiceDepth);
         schedule.addBoolChoice(choices, choiceDepth);
         return choices;
     }
 
     @Override
-    public PrimVS<Boolean> getNextBoolean(Bdd pc) {
+    public PrimitiveVS<Boolean> getNextBoolean(Guard pc) {
         return getNextBoolean(getNextBooleanChoices(pc));
     }
 
-    public List<ValueSummary> getNextElementChoices(Set<ValueSummary> candidates, Bdd pc) {
-        return candidates.stream().map(x -> x.guard(pc)).collect(Collectors.toList());
+    public List<ValueSummary> getNextElementChoices(Set<ValueSummary> candidates, Guard pc) {
+        return candidates.stream().map(x -> x.restrict(pc)).collect(Collectors.toList());
     }
 
-    public PrimVS<ValueSummary> getNextElementHelper(List<ValueSummary> candidates) {
-        PrimVS<ValueSummary> choices = NondetUtil.getNondetChoice(candidates.stream().map(x -> new PrimVS(x).guard(x.getUniverse())).collect(Collectors.toList()));
+    public PrimitiveVS<ValueSummary> getNextElementHelper(List<ValueSummary> candidates) {
+        PrimitiveVS<ValueSummary> choices = NondetUtil.getNondetChoice(candidates.stream().map(x -> new PrimitiveVS(x).restrict(x.getUniverse())).collect(Collectors.toList()));
         schedule.addRepeatElement(choices, choiceDepth);
         schedule.addElementChoice(choices, choiceDepth);
         return choices;
     }
-    public ValueSummary getNextElementFlattener(PrimVS<ValueSummary> choices) {
+    public ValueSummary getNextElementFlattener(PrimitiveVS<ValueSummary> choices) {
         ValueSummary flattened = null;
         List<ValueSummary> toMerge = new ArrayList<>();
         for (GuardedValue<ValueSummary> guardedValue : choices.getGuardedValues()) {
             if (flattened == null) {
-                guardedValue.value.guard(guardedValue.guard);
+                guardedValue.getValue().restrict(guardedValue.getGuard());
             } else {
-                toMerge.add(guardedValue.value.guard(guardedValue.guard));
+                toMerge.add(guardedValue.getValue().restrict(guardedValue.getGuard()));
             }
         }
         if (flattened == null) {
-            flattened = new PrimVS<>();
+            flattened = new PrimitiveVS<>();
         } else {
             flattened = flattened.merge(toMerge);
         }
@@ -181,7 +184,7 @@ public class Scheduler implements SymbolicSearch {
     }
 
     @Override
-    public ValueSummary getNextElement(Set<ValueSummary> candidates, Bdd pc) {
+    public ValueSummary getNextElement(Set<ValueSummary> candidates, Guard pc) {
         return getNextElementFlattener(getNextElementHelper(getNextElementChoices(candidates, pc)));
     }
 
@@ -197,34 +200,34 @@ public class Scheduler implements SymbolicSearch {
             this.machineCounters.put(machine.getClass(),
                     IntUtils.add(this.machineCounters.get(machine.getClass()), 1));
         } else {
-            this.machineCounters.put(machine.getClass(), new PrimVS<>(1));
+            this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
         }
 
         machines.add(machine);
         start = machine;
-        ScheduleLogger.onCreateMachine(Bdd.constTrue(), machine);
+        ScheduleLogger.onCreateMachine(Guard.constTrue(), machine);
         machine.setScheduler(this);
-        schedule.makeMachine(machine, Bdd.constTrue());
+        schedule.makeMachine(machine, Guard.constTrue());
 
         performEffect(
                 new Event(
                         EventName.Init.instance,
-                        new VectorClockVS(Bdd.constTrue()),
-                        new PrimVS<>(machine),
+                        new VectorClockVS(Guard.constTrue()),
+                        new PrimitiveVS<>(machine),
                         null
                 )
         );
     }
 
     public void replayStartWith(Machine machine) {
-        PrimVS<Machine> machineVS;
+        PrimitiveVS<Machine> machineVS;
         if (this.machineCounters.containsKey(machine.getClass())) {
             machineVS = schedule.getMachine(machine.getClass(), this.machineCounters.get(machine.getClass()));
             this.machineCounters.put(machine.getClass(),
                     IntUtils.add(this.machineCounters.get(machine.getClass()), 1));
         } else {
-            machineVS = schedule.getMachine(machine.getClass(), new PrimVS<>(0));
-            this.machineCounters.put(machine.getClass(), new PrimVS<>(1));
+            machineVS = schedule.getMachine(machine.getClass(), new PrimitiveVS<>(0));
+            this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
         }
 
         ScheduleLogger.onCreateMachine(machineVS.getUniverse(), machine);
@@ -244,26 +247,26 @@ public class Scheduler implements SymbolicSearch {
     public void doSearch(Machine target) {
         startWith(target);
         while (!isDone()) {
-            // ScheduleLogger.log("step " + depth + ", true queries " + Bdd.trueQueries + ", false queries " + Bdd.falseQueries);
+            // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
             Assert.prop(errorDepth < 0 || depth < errorDepth, "Maximum allowed depth " + errorDepth + " exceeded", this, schedule.getLengthCond(schedule.size()));
             step();
         }
     }
 
-    public List<PrimVS> getNextSenderChoices() {
-        List<PrimVS> candidateSenders = new ArrayList<>();
+    public List<PrimitiveVS> getNextSenderChoices() {
+        List<PrimitiveVS> candidateSenders = new ArrayList<>();
 
         for (Machine machine : machines) {
             if (!machine.sendEffects.isEmpty()) {
-                Bdd initCond = machine.sendEffects.enabledCondInit().getGuard(true);
+                Guard initCond = machine.sendEffects.enabledCondInit().getGuard(true);
                 if (!initCond.isConstFalse()) {
-                    PrimVS<Machine> ret = new PrimVS<>(machine).guard(initCond);
+                    PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).guard(initCond);
                     candidateSenders.add(ret);
                     return candidateSenders;
                 }
-                Bdd canRun = machine.sendEffects.enabledCond(Event::canRun).getGuard(true);
+                Guard canRun = machine.sendEffects.enabledCond(Event::canRun).getGuard(true);
                 if (!canRun.isConstFalse()) {
-                    candidateSenders.add(new PrimVS<>(machine).guard(canRun));
+                    candidateSenders.add(new PrimitiveVS<>(machine).guard(canRun));
                 }
             }
         }
@@ -271,22 +274,22 @@ public class Scheduler implements SymbolicSearch {
         return candidateSenders;
     }
 
-    public PrimVS<Machine> getNextSender(List<PrimVS> candidateSenders) {
-        PrimVS<Machine> choices = (PrimVS<Machine>) NondetUtil.getNondetChoice(candidateSenders);
-        List<PrimVS<Machine>> choiceList = new ArrayList<>();
-        choices.getGuardedValues().forEach(x -> choiceList.add(new PrimVS<>(x.value).guard(x.guard)));
+    public PrimitiveVS<Machine> getNextSender(List<PrimitiveVS> candidateSenders) {
+        PrimitiveVS<Machine> choices = (PrimitiveVS<Machine>) NondetUtil.getNondetChoice(candidateSenders);
+        List<PrimitiveVS<Machine>> choiceList = new ArrayList<>();
+        choices.getGuardedValues().forEach(x -> choiceList.add(new PrimitiveVS<>(x.value).guard(x.guard)));
         schedule.addSenderChoice(choices, choiceDepth);
         schedule.addRepeatSender(choices, choiceDepth);
         choiceDepth++;
         return choices;
     }
 
-    public PrimVS<Machine> getNextSender() {
+    public PrimitiveVS<Machine> getNextSender() {
         return getNextSender(getNextSenderChoices());
     }
 
     public void step() {
-        PrimVS<Machine> choices = getNextSender();
+        PrimitiveVS<Machine> choices = getNextSender();
 
         if (choices.isEmptyVS()) {
             ScheduleLogger.finished(depth);
@@ -303,7 +306,7 @@ public class Scheduler implements SymbolicSearch {
         List<Event> effects = new ArrayList<>();
         for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
             Machine machine = sender.value;
-            Bdd guard = sender.guard;
+            Guard guard = sender.guard;
             if (i < limit) {
                 if (effect == null) {
                     effect = machine.sendEffects.remove(guard);
@@ -322,7 +325,7 @@ public class Scheduler implements SymbolicSearch {
         List<Event> effects = new ArrayList<>();
         for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
             Machine machine = sender.value;
-            Bdd guard = sender.guard;
+            Guard guard = sender.guard;
             if (effect == null) {
                 effect = machine.sendEffects.remove(guard);
             } else {
@@ -335,12 +338,12 @@ public class Scheduler implements SymbolicSearch {
         depth++;
     }
 
-    public PrimVS<Machine> allocateMachine(Bdd pc, Class<? extends Machine> machineType,
+    public PrimitiveVS<Machine> allocateMachine(Guard pc, Class<? extends Machine> machineType,
                                            Function<Integer, ? extends Machine> constructor) {
         if (!machineCounters.containsKey(machineType)) {
-            machineCounters.put(machineType, new PrimVS<>(0));
+            machineCounters.put(machineType, new PrimitiveVS<>(0));
         }
-        PrimVS<Integer> guardedCount = machineCounters.get(machineType).guard(pc);
+        PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).guard(pc);
 
         Machine newMachine;
         newMachine = constructor.apply(IntUtils.maxValue(guardedCount));
@@ -353,15 +356,15 @@ public class Scheduler implements SymbolicSearch {
         newMachine.setScheduler(this);
         schedule.makeMachine(newMachine, pc);
 
-        guardedCount = IntUtils.add(guardedCount, 1);
-        PrimVS<Integer> mergedCount = machineCounters.get(machineType).update(pc, guardedCount);
+        guardedCount = IntegerVS.add(guardedCount, 1);
+        PrimitiveVS<Integer> mergedCount = machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);
         machineCounters.put(machineType, mergedCount);
-        return new PrimVS<>(newMachine).guard(pc);
+        return new PrimitiveVS<>(newMachine).restrict(pc);
     }
 
-    void performEffect(Event event) {
+    void performEffect(Message event) {
         for (GuardedValue<Machine> target : event.getMachine().getGuardedValues()) {
-            target.value.processEventToCompletion(target.guard, event.guard(target.guard));
+            target.getValue().processEventToCompletion(target.getGuard(), event.guard(target.getGuard()));
         }
     }
 

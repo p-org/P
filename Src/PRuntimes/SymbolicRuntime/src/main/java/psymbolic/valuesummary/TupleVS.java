@@ -37,7 +37,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
     /** Get the i-th value in the TupleVS
      * @param i The index to get from the TupleVS
      * @return The value at index i */
-    public ValueSummary<?> getField(int i) {
+    public ValueSummary getField(int i) {
         return fields[i];
     }
 
@@ -45,12 +45,11 @@ public class TupleVS implements ValueSummary<TupleVS> {
      * @param i The index to set in the TupleVS
      * @param val The value to set in the TupleVS
      * @return The result after updating the TupleVS */
-    public TupleVS setField(int i, ValueSummary<?> val) {
-        // TODO: why are we not restricting the values of the tuple VS ??
-        final ValueSummary<?>[] newItems = new ValueSummary[fields.length];
+    public TupleVS setField(int i, ValueSummary val) {
+        final ValueSummary[] newItems = new ValueSummary[fields.length];
         System.arraycopy(fields, 0, newItems, 0, fields.length);
         if (!(val.getClass().equals(classes[i]))) throw new ClassCastException();
-        newItems[i] = val;
+        newItems[i] = newItems[i].updateUnderGuard(val.getUniverse(), val);
         return new TupleVS(newItems);
     }
 
@@ -114,7 +113,6 @@ public class TupleVS implements ValueSummary<TupleVS> {
     public Guard getUniverse() {
         // Optimization: Tuples should always be nonempty,
         // and all fields should exist under the same conditions
-        // TODO: This is not true as we are not restricting the universe on a set field?
         return fields[0].getUniverse();
     }
 

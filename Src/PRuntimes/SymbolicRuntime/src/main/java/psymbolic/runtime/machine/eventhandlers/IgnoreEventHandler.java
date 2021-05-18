@@ -1,19 +1,18 @@
-package psymbolic.runtime.eventhandlers;
+package psymbolic.runtime.machine.eventhandlers;
 
 import psymbolic.runtime.EventName;
-import psymbolic.runtime.Machine;
-import psymbolic.runtime.Outcome;
+import psymbolic.runtime.machine.Machine;
 import psymbolic.valuesummary.UnionVS;
-import psymbolic.valuesummary.bdd.Bdd;
+import psymbolic.valuesummary.Guard;
 
 public class IgnoreEventHandler extends EventHandler {
 
-    public IgnoreEventHandler(EventName eventName) {
-        super(eventName);
+    public IgnoreEventHandler(EventName event) {
+        super(event);
     }
 
     @Override
-    public void handleEvent(Bdd pc, UnionVS payload, Machine machine, Outcome outcome) {
+    public void handleEvent(Guard pc, Machine target, UnionVS payload, EventHandlerReturnReason outcome) {
         // Ignore
     }
 }

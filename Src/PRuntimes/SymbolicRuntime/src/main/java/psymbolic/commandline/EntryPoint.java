@@ -1,9 +1,8 @@
 package psymbolic.commandline;
 
 import psymbolic.runtime.BoundedScheduler;
-import psymbolic.runtime.CompilerLogger;
 import psymbolic.runtime.ReplayScheduler;
-import psymbolic.runtime.ScheduleLogger;
+import psymbolic.runtime.logger.ScheduleLogger;
 import psymbolic.valuesummary.bdd.BDDEngine;
 import psymbolic.valuesummary.Guard;
 

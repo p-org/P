@@ -386,6 +386,11 @@ public class Scheduler implements SymbolicSearch {
         return new PrimVS<>(newMachine).guard(pc);
     }
 
+    public void announce(PrimVS<EventName> names, UnionVS payload) {
+        Event event = new Event(names, new VectorClockVS(names.getUniverse()), new PrimVS<>(), payload);
+        runMonitors(event);
+    }
+
     void runMonitors(Event event) {
         Map<Monitor, Bdd> monitorConstraints = new HashMap<>();
         for (Monitor m : monitors) {

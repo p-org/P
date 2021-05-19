@@ -1,12 +1,15 @@
 package psymbolic.util;
 
 import psymbolic.valuesummary.BoolUtils;
+import psymbolic.valuesummary.GuardedValue;
+import psymbolic.valuesummary.PrimVS;
 import psymbolic.valuesummary.ValueSummary;
 import psymbolic.valuesummary.bdd.Bdd;
 
+import java.util.ArrayList;
 import java.util.List;
 
-/** This class implements different checks for invariants on Bdds and ValueSummaries */
+/** This class implements different checks for invariants on Bdds and Value Summaries */
 public class Checks {
 
     private static class CheckViolatedException extends RuntimeException {
@@ -26,6 +29,17 @@ public class Checks {
             acc = acc.or(bdd);
         }
         return true;
+    }
+
+    /** Is the provided PrimVS such that its guarded values have disjoint guards?
+     * @param vs The PrimVS
+     */
+    public static boolean disjointGuards(PrimVS<?> vs) {
+        List<Bdd> guards = new ArrayList<>();
+        for (GuardedValue<?> gv : vs.getGuardedValues()) {
+            guards.add(gv.guard);
+        }
+        return disjointUnion(guards);
     }
 
     /** Do the provided lists of Bdds have the same universe?

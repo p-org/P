@@ -89,7 +89,7 @@ public class SymbolicRegression {
     @TestFactory
     //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     Collection<DynamicTest>  loadSymbolicRegressions() {
-        return loadTests("./SymbolicRegressionTests/Integration", null);
+        return loadTests("./SymbolicRegressionTests/Monitors", null);
     }
 
 }

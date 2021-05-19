@@ -14,8 +14,8 @@ public interface ValueSummary<T extends ValueSummary<T>> {
      * @param anyVal The UnionVS to cast from
      * @return A ValueSummary that can be casted into the provided type
      */
-     static ValueSummary<?> castFromAny(Guard pc, Class<? extends ValueSummary<?>> type, UnionVS anyVal) {
-         ValueSummary<?> result;
+     static ValueSummary castFromAny(Guard pc, Class<? extends ValueSummary> type, UnionVS anyVal) {
+         ValueSummary result;
          if (type.equals(UnionVS.class)) {
              result = anyVal;
          }

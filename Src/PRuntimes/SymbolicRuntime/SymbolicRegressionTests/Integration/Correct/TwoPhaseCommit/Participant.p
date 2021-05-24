@@ -1,49 +1,61 @@
+/*****************************************************************************************
+The participant machine below maintains a key value store which is updated based on the
+transactions accepted by the coordinator. On receiving a prepare-for-transaction request
+from the coordinator, the participant non-deterministically chooses to allow or disallow the
+transaction.
+******************************************************************************************/
+
 machine Participant {
-	var coordinator: machine;
-        var kvStore: map[int,int];
-	var pendingWrTrans: tPrepareForTrans;
-	var lastTransId: int;
+    // local key value store
+    var kvStore: map[int,int];
+    // pending write transactions that have not been committed yet.
+	var pendingWriteTrans: map[int, tRecord];
 
     start state Init {
-	    entry (payload : machine){
-		  	coordinator = payload; lastTransId = 0;
+	    entry {
 			goto WaitForRequests;
 		}
 	}
 
 	state WaitForRequests {
-		on eGlobalAbort do (transId: int) {
-			assert (pendingWrTrans.transId == transId);
-			if (pendingWrTrans.transId == transId) {
-				lastTransId = transId;
-			}
+		on eAbortTrans do (transId: int) {
+			// remove the transaction from the pending set
+			assert transId in pendingWriteTrans,
+			format ("Abort request for a non-pending transaction, transId: {0}, pendingTrans: {1}", transId, pendingWriteTrans);
+			pendingWriteTrans -= transId;
 		}
-		on eGlobalCommit do (transId:int) {
-			assert (pendingWrTrans.transId == transId);
-			if (pendingWrTrans.transId == transId) {
-				kvStore[pendingWrTrans.key] = pendingWrTrans.val;
-				announce eMonitor_LocalCommit, (participant = this, transId = transId);
-				lastTransId = transId;
-			}
-		}
-		
-		on ePrepare do (prepareReq :tPrepareForTrans) { 
-			pendingWrTrans = prepareReq;
-			assert (pendingWrTrans.transId > lastTransId);
+		on eCommitTrans do (transId:int) {
+            var transaction: tRecord;
+            assert transId in pendingWriteTrans,
+            format ("Commit request for a non-pending transaction, transId: {0}, pendingTrans: {1}", transId, pendingWriteTrans);
+            transaction = pendingWriteTrans[transId];
+            kvStore[transaction.key] = transaction.val;
+        }
+
+		on ePrepareReq do (prepareReq :tPrepareReq) {
+			// add the transaction to the pending set
+			assert !(prepareReq.transId in pendingWriteTrans),
+			format ("Duplicate transaction ids not allowed!, received transId: {0}, pending transactions: {1}", prepareReq.transId, pendingWriteTrans);
+			pendingWriteTrans[prepareReq.transId] = prepareReq.rec;
+
+			// non-deterministically
 			if ($) {
-				send coordinator, ePrepareSuccess, pendingWrTrans.transId;
+				send prepareReq.coordinator, ePrepareResp, (participant = this, transId = prepareReq.transId, status = SUCCESS);
 			} else {
-				send coordinator, ePrepareFailed, pendingWrTrans.transId;
+				send prepareReq.coordinator, ePrepareResp, (participant = this, transId = prepareReq.transId, status = ERROR);
 			}
 		}
 
-                on eRead do (key:int) {
-                    if (key in kvStore) {
-                        send coordinator, eReadSuccess, kvStore[key];
-                    } else {
-                        send coordinator, eReadFailed;
-                    }
-                }
+		on eReadTransReq do (req: tReadTransReq) {
+			if(req.key in kvStore)
+			{
+				send req.client, eReadTransResp, (rec = (key = req.key, val = kvStore[req.key]), status = SUCCESS);
+			}
+			else
+			{
+				send req.client, eReadTransResp, (rec = default(tRecord), status = ERROR);
+			}
+		}
 	}
 }
 

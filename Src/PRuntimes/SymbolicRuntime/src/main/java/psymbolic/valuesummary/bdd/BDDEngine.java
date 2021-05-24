@@ -31,7 +31,7 @@ public class BDDEngine {
     }
 
     public BddGuard constFalse() {
-        return new BddGuard(bddImpl.constTrue());
+        return new BddGuard(bddImpl.constFalse());
     }
 
     public BddGuard constTrue() {

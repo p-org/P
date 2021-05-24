@@ -8,7 +8,7 @@ import java.util.Arrays;
 public class PLogger {
     /* Get actual class name to be printed on */
     static Logger log = Logger.getLogger(PLogger.class.getName());
-    public PLogger()
+    public static void Init()
     {
         BasicConfigurator.configure();
         // setting up the logger

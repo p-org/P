@@ -1825,7 +1825,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"PrimitiveVS<{foreignType.CanonicalRepresentation}>";
                 case SequenceType sequenceType:
                     return $"ListVS<{GetSymbolicType(sequenceType.ElementType, true)}>";
-                case MapType mapType:
+                case MapType mapType: 
                     return $"MapVS<" +
                         $"{GetConcreteBoxedType(mapType.KeyType)}, " +
                         $"{GetSymbolicType(mapType.ValueType, true)}>";
@@ -1875,6 +1875,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case MapType _:
                     unguarded = $"new {GetSymbolicType(type)}(Guard.constTrue())";
+                    break;
+                case EnumType _:
+                    unguarded = $"new {GetSymbolicType(type)}(0)";
                     break;
                 case NamedTupleType namedTupleType:
                     {

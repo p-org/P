@@ -2,6 +2,7 @@ package psymbolic.commandline;
 
 import psymbolic.runtime.BoundedScheduler;
 import psymbolic.runtime.ReplayScheduler;
+import psymbolic.runtime.logger.PLogger;
 import psymbolic.runtime.logger.ScheduleLogger;
 import psymbolic.valuesummary.bdd.BDDEngine;
 import psymbolic.valuesummary.Guard;
@@ -16,6 +17,7 @@ public class EntryPoint {
 
     public static void run(psymbolic.commandline.Program p, String name, int depth, int maxInternalSteps) {
         BDDEngine.reset();
+        PLogger.Init();
         BoundedScheduler scheduler = new BoundedScheduler(name, 25, 1000, 1000);
         p.setScheduler(scheduler);
         scheduler.setErrorDepth(depth);

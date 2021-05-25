@@ -2,7 +2,6 @@ package psymbolic.runtime.logger;
 
 import org.apache.log4j.*;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 public class PLogger {
@@ -17,11 +16,11 @@ public class PLogger {
         rootLogger.setLevel(Level.DEBUG);
 
         //Define log pattern layout
-        PatternLayout layout = new PatternLayout("[%t] %-5p %c %x - %m%n");
+        PatternLayout layout = new PatternLayout("%m%n");
 
         //Add console appender to root logger
-        rootLogger.addAppender(new ConsoleAppender(layout));
-        try
+        //rootLogger.addAppender(new ConsoleAppender(layout));
+        /*try
         {
             //Define file appender with layout and output log file name
             RollingFileAppender fileAppender = new RollingFileAppender(layout, "demoApplication.log");
@@ -32,7 +31,7 @@ public class PLogger {
         catch (IOException e)
         {
             System.out.println("Failed to add appender !!");
-        }
+        }*/
     }
 
     public static void log(String s) {

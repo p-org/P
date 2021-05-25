@@ -61,13 +61,13 @@ public class TestCaseExecutor {
      * @param testCasePaths paths to test case; only accepts list of p files
      * @return 0 = successful, 1 = compile error, 2 = dynamic error
      */
-    static int runTestCase(List<String> testCasePaths) {
+    static int runTestCase(List<String> testCasePaths, String testCasePathPrefix) {
         // Invoke the P compiler to compile the test Case
         boolean isWindows = System.getProperty("os.name")
                 .toLowerCase().startsWith("windows");
         String compilerDirectory = "../../../Bld/Drops/Release/Binaries/netcoreapp3.1/P.dll";
 
-        String prefix = "../../../Tst/RegressionTests/";
+        String prefix = testCasePathPrefix;
         assert testCasePaths.stream().allMatch(p -> p.contains(prefix));
         List<String> testCaseRelPaths = testCasePaths.stream().map(p -> p.substring(p.indexOf(prefix) + prefix.length()))
                                         .collect(Collectors.toList());

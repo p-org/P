@@ -13,7 +13,7 @@ public class ScheduleLogger extends PLogger {
 
     public static void onProcessEvent(Guard pc, Machine machine, Message message)
     {
-        String msg = String.format("Machine %s is processing event %s in state %s", machine, message, machine.getState().restrict(pc));
+        String msg = String.format("Machine %s is processing event %s in state %s", machine, message.getEvent(), machine.getState().restrict(pc));
         if (isVerbose) msg = String.format("under path %s ", pc) + msg;
         log.info(msg);
     }
@@ -53,16 +53,16 @@ public class ScheduleLogger extends PLogger {
     }
 
     public static void handle(Machine m, State st, Message event) {
-        log.info("Machine " + m + " handling event " + event + " in state " + st);
+        log.info("Machine " + m + " handling event " + event.getEvent() + " in state " + st);
     }
 
     public static void send(Message effect) {
-        String msg = "Send effect " + effect + " to " + effect.getTarget();
+        String msg = "Send effect " + effect.getEvent() + " to " + effect.getTarget();
         log.info(msg);
     }
 
     public static void schedule(int step, Message effect) {
-        String msg = "Step " + step + ": scheduled " + effect + " sent to " + effect.getTarget();
+        String msg = "Step " + step + ": scheduled " + effect.toString() + " sent to " + effect.getTarget();
         log.info(msg);
     }
 

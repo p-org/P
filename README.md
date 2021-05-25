@@ -6,29 +6,25 @@
 P is a state machine based programming language for modeling and specifying complex distributed systems. P allows the programmer to specify the system as a collection of interacting state machines, which communicate with each other using events. P unifies modeling, programming, and testing into one activity for the programmer. Not only can a P program be compiled into executable code, but it can also be systematically tested using Model Checking. 
 P is currently being used extensively inside Amazon (AWS) for model checking complex distributed systems.
 P has been used to implement and validate the USB device driver stack that ships with Microsoft Windows 8 and Windows Phone.
-We have also used P for programming safe robotics systems. More details about the framework and simulation videos are available here:
-**[https://drona-org.github.io/Drona/](https://drona-org.github.io/Drona/)**
+We have also used P for programming safe robotics systems.
 
-Publications
+Selected Publications
 ==========================================================
-- **[Compositional Programming and Testing of Dynamic Distributed Systems](http://people.eecs.berkeley.edu/~ankush/assets/papers/modp.pdf)**.
+- **[Compositional Programming and Testing of Dynamic Distributed Systems](https://ankushdesai.github.io/assets/papers/modp.pdf)**.
 Ankush Desai, Amar Phanishayee, Shaz Qadeer, and Sanjit Seshia.
 International Conference on Object-Oriented Programming, Systems, Languages, and Applications (OOPSLA), 2018.
 
-- **[DRONA: A Framework for Safe Distributed Mobile Robotics](http://people.eecs.berkeley.edu/~ankush/assets/papers/drona.pdf)**.
+- **[DRONA: A Framework for Safe Distributed Mobile Robotics](https://ankushdesai.github.io/assets/papers/drona.pdf)**.
 Ankush Desai, Indranil Saha, Jianqiao Yang, Shaz Qadeer, and Sanjit A. Seshia.
 In Proceedings of the 8th ACM/IEEE International Conference on Cyber-Physical Systems (ICCPS), 2017.
 
-- **[Systematic Testing of Asynchronous Reactive Systems](http://people.eecs.berkeley.edu/~ankush/assets/papers/fse-desai.pdf)**.
+- **[Systematic Testing of Asynchronous Reactive Systems](https://ankushdesai.github.io/assets/papers/fse-desai.pdf)**.
 Ankush Desai, Shaz Qadeer, and Sanjit A. Seshia.
 In Proceedings of the 2015 10th Joint Meeting on Foundations of Software Engineering (ESEC/FSE 2015). 
 
-- **[P: Safe asynchronous event-driven programming](http://people.eecs.berkeley.edu/~ankush/assets/papers/p.pdf)**.
+- **[P: Safe asynchronous event-driven programming](https://ankushdesai.github.io/assets/papers/p.pdf)**.
 Ankush Desai, Vivek Gupta, Ethan Jackson, Shaz Qadeer, Sriram Rajamani, and Damien Zufferey.
 In Proceedings of ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI), 2013.
-
-
-
 
 Manual
 =========
@@ -37,16 +33,24 @@ Check the [P Wiki](https://github.com/p-org/P/wiki/Introduction-to-P-language).
 
 Information for building P framework is available [here](https://github.com/p-org/P/wiki).
 
-Demos
-==========================================================
-See [fun demo video](https://www.youtube.com/watch?v=R8ztpfMPs5c) using P to control a quadrocopter and make sense of the MavLink stream, all visualized in a live DGML diagram.
-
-Application to Robotics
+Programming Safe Robotics Systems using P
 =========================================================
 We built DRONA, a software framework for distributed mobile robotics systems. DRONA uses P language for implementing and model-checking the distributed robotics software stack (**[wiki](https://github.com/Drona-Org/Drona/wiki/Drona-Software-Stack)**). The C code generated from P compiler can be easily deployed on  Robot Operating System (ROS).
 More details about the DRONA framework and simulation videos are available here:
 **[https://drona-org.github.io/Drona/](https://drona-org.github.io/Drona/)**
 
+See [fun demo video](https://www.youtube.com/watch?v=R8ztpfMPs5c) using P to control a quadrocopter and make sense of the MavLink stream, all visualized in a live DGML diagram.
+
+Programming Secure Distributed Systems using P
+========================================================
+Programming secure distributed systems that have a formal guarantee of no information leakage is challenging.
+We extended P to the PSec language to enable programming secure distributed systems.
+We leverage Intel SGX enclaves to ensure that the security guarantees provided by the P language are enforced
+at runtime. By combining information flow control with hardware enclaves, we prevent P programmers
+from inadvertently leaking sensitive information while sending data securely across machines. We
+formally proved the security properties of the extended P language and used it to program several real-world
+examples, including a One Time Passcode application and a Secure Electronic Voting System.
+Details about the PSec framework can be found [here](https://github.com/ShivKushwah/PSec).
 
 Blogs
 ============================================================

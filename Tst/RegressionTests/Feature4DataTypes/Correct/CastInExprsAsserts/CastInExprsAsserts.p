@@ -175,60 +175,30 @@ machine XYZ {
 		    //ss = payload as seq[int];
 			//assert(ss[0] == 3);            //holds
 		}
-		on EI1 push XYZEI1;
-		on EI6 push XYZEI6;
-		on ET1 push XYZET1;
-		on ET2 push XYZET2;
-		on ESEQ1 push XYZESEQ1;
-		on ESEQ2 push XYZESEQ2;
-		on EMAP1 push XYZEMAP1;
-		on EMAP11 push XYZEMAP11;
-		on EMAP2 push XYZEMAP2;
-		on EMAP3 push XYZEMAP3;
-	}
-	// int is sent
-	state XYZEI1 {
-		entry (payload: any) {
+		on EI1 do (payload: any) {
 			ta = payload;
-			assert(ta == 1);           //holds
-			//yt = payload as int;       //dynamic error: "value must have a concrete type" (TODO: add Sent\XYZ.p) (no error in runtime!)
-			//assert(yt == 1);           //holds?
-			pop;
+			assert(ta == 1);
+
 		}
-	}
-	// "any as int" is sent
-	state XYZEI6 {
-		entry (payload: int) {
+		on EI6 do (payload: int) {
 			yt = payload as int;        //OK
 			assert(yt == 1);           //holds
 			yt = payload;               //OK
 			assert(yt == 1);           //holds
 			ta = payload as any;       //OK
 			assert(yt == 1);           //holds
-			pop;
 		}
-	}
-	// tuple is sent via a var
-	state XYZET1 {
-		entry (payload: (a: int, b: bool)) {
+		on ET1 do (payload: (a: int, b: bool)) {
 			tts1 = payload;    //OK
 			assert (tts1.a == 1 && tts1.b == true);   //holds
 			tts1 = payload;                          //OK
 			assert (tts1.a == 1 && tts1.b == true);   //holds
-			pop;
 		}
-	}
-	// tuple is sent via literal
-	state XYZET2 {
-		entry (payload: (a: int, b: bool)) {
+		on ET2 do (payload: (a: int, b: bool)) {
 			tts1 = payload;    //OK
 			assert (tts1.a == 2 && tts1.b == false);   //holds
-			pop;
 		}
-	}
-	// seq[int] sent
-	state XYZESEQ1 {
-		entry (payload: seq[int]) {	
+		on ESEQ1 do (payload: seq[int]) {	
 			s = payload;    //OK
 			assert (s[0] == 1);          //holds
 			s = payload;                //OK
@@ -241,12 +211,9 @@ machine XYZ {
 			
 			s1 = payload as seq[any];    //OK
 			assert (s1[0] == 1);          //holds
-			pop;
+			
 		}
-	}
-	// "seq[any] as seq[int]" is sent
-	state XYZESEQ2 {
-		entry (payload: seq[int]) {	
+		on ESEQ2 do (payload: seq[int]) {	
 			s = payload;    //OK
 			assert (s[0] == 1);          //holds
 			s = payload;                //OK
@@ -259,12 +226,9 @@ machine XYZ {
 			
 			s1 = payload as seq[any];    //OK
 			assert (s1[0] == 1);          //holds
-			pop;
 		}
-	}
-	// default(map[int,int]) is sent
-	state XYZEMAP1 {
-		entry (payload: map[int,int]) {
+
+		on EMAP1 do (payload: map[int,int]) {
 			mi = payload;     
 			//assert (mi[0] == 0);  //dynamic error: "key not found" (TODO)
 			mi[0] = 0;
@@ -284,12 +248,8 @@ machine XYZ {
 			
 			ma = payload as map[int,any];
 			//assert (ma[0] == 0);  //dynamic error: "key not found" (TODO)	
-			pop;
 		}
-	}
-	// map[int,int] is sent (0,1) (3,3)
-	state XYZEMAP11 {
-		entry (payload: map[int,int]) {
+		on EMAP11 do (payload: map[int,int]) {
 			mi = default(map[int,int]);
 			mi = payload;     
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
@@ -307,12 +267,8 @@ machine XYZ {
 			
 			ma = payload as map[int,any];
 			assert (ma[0] == 1 && ma[3] == 3);  //holds
-			pop;
 		}
-	}
-	// default(map[int,any]) is sent as map[int,int]
-	state XYZEMAP2 {
-		entry (payload: map[int,int]) {
+		on EMAP2 do (payload: map[int,int]) {
 			mi = payload;             //OK
 			//assert (mi[0] == 1 && mi[3] == 3);  //dynamic error: "key not found" (TODO)
 			
@@ -330,13 +286,9 @@ machine XYZ {
 		
 			ma = payload as map[int,any];     //OK
 			//assert (ma[0] == 1 && ma[3] == 3);  //dynamic error: "key not found" (TODO)
-            			
-			pop;			
+			
 		}
-	}
-	// map[int,any] assigned a value of  map[int,int] type is sent as map[int,int]
-	state XYZEMAP3 {
-		entry (payload: map[int,int]) {
+		on EMAP3 do (payload: map[int,int]) {
 			mi = payload;             //OK
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
 			mi = default(map[int,int]);
@@ -352,7 +304,6 @@ machine XYZ {
 			
 			ma = payload as map[int,any];     //OK
 			assert (ma[0] == 1 && ma[3] == 3);  //holds
-			pop;
 		}
 	}
 }

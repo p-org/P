@@ -19,17 +19,16 @@ machine Main {
     state Ping_ping1 {
         entry {
 	    send pongId, Ping, this;
-	    raise Success;
+	    	goto Ping_ding1;
 		}
-        on Success push Ping_ding1;
-		on Dong goto Ping_ping2;
+		
     }
 
      state Ping_ding1 {
 		entry {
 			send pongId, Ding;
 		}
-        
+        on Dong goto Ping_ping2;
     }
 	
 	state Ping_ping2 {
@@ -50,8 +49,8 @@ machine PONG {
 
     state Pong_start {
         entry { }
-        on Ping push Pong_dong1;
-		on Success goto Pong_pong1;
+        on Ping goto Pong_dong1;
+		
     }
 
     state Pong_dong1 {
@@ -63,6 +62,7 @@ machine PONG {
 			send pingid, Dong;
 			raise Success;
 		}
+		on Success goto Pong_pong1;
 	}
 	
 	state Pong_pong1 {

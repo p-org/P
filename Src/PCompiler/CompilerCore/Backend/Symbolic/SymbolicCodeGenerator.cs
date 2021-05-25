@@ -603,7 +603,6 @@ namespace Plang.Compiler.Backend.Symbolic
                     return MayExitWithOutcome(callStmt.Function);
 
                 case GotoStmt _:
-                case PopStmt _:
                 case RaiseStmt _:
                 case ReturnStmt _:
                     return true;
@@ -625,7 +624,6 @@ namespace Plang.Compiler.Backend.Symbolic
                     return MustEarlyReturn(whileStmt.Body);
 
                 case GotoStmt _:
-                case PopStmt _:
                 case RaiseStmt _:
                 case ReturnStmt _:
                     return true;
@@ -655,7 +653,6 @@ namespace Plang.Compiler.Backend.Symbolic
                     return MayExitWithOutcome(callStmt.Function);
 
                 case GotoStmt _:
-                case PopStmt _:
                 case RaiseStmt _:
                 case ReturnStmt _:
                 case BreakStmt _:
@@ -681,7 +678,6 @@ namespace Plang.Compiler.Backend.Symbolic
                     return MustEarlyReturn(whileStmt.Body);
 
                 case GotoStmt _:
-                case PopStmt _:
                 case RaiseStmt _:
                 case ReturnStmt _:
                 case BreakStmt _:

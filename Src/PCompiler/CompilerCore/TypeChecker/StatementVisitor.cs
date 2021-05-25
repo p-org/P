@@ -38,28 +38,7 @@ namespace Plang.Compiler.TypeChecker
             List<IPStmt> statements = context.statement().Select(Visit).ToList();
             return new CompoundStmt(context, statements);
         }
-
-        public override IPStmt VisitPopStmt(PParser.PopStmtContext context)
-        {
-            if (machine?.IsSpec == true)
-            {
-                throw handler.IllegalMonitorOperation(context, context.POP().Symbol, machine);
-            }
-
-            if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
-            {
-                throw handler.ChangeStateInNonVoidFunction(context);
-            }
-
-            method.CanChangeState = true;
-            if (method.Role.HasFlag(FunctionRole.TransitionFunction))
-            {
-                throw handler.ChangedStateMidTransition(context, method);
-            }
-
-            return new PopStmt(context);
-        }
-
+        
         public override IPStmt VisitAssertStmt(PParser.AssertStmtContext context)
         {
             IPExpr assertion = exprVisitor.Visit(context.assertion);

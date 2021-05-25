@@ -17,16 +17,16 @@ machine Main {
 machine B {
 	start state Init {
 		entry {
-			raise Unit;
+			goto X;
 		}
-		on Unit push X;
+
 		on F do { assert false; }
 	}
 	
 	state X {
 		entry {
 			receive {
-				case F: { pop; }
+				case F: {  }
 			}
 		}
 		on F do { assert false; }

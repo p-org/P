@@ -565,12 +565,6 @@ namespace Plang.Compiler.Backend.CSharp
                     case EventIgnore _:
                         ignoredEvents.Add($"typeof({context.Names.GetNameForDecl(pEvent)})");
                         break;
-
-                    case EventPushState eventPushState:
-                        context.WriteLine(
-                            output,
-                            $"[OnEventPushState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventPushState.Target)}))]");
-                        break;
                 }
             }
 
@@ -905,12 +899,6 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case NoStmt _:
-                    break;
-
-                case PopStmt _:
-                    //last statement
-                    context.WriteLine(output, "currentMachine.TryPopState();");
-                    context.WriteLine(output, "return;");
                     break;
 
                 case PrintStmt printStmt:

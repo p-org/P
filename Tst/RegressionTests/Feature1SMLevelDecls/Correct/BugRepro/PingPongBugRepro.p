@@ -1,4 +1,4 @@
-// This XYZ found a bug in treatment of function parameters
+// This test found a bug in treatment of function parameters
 // in the case when there is a scheduling point inside the function (such as a send), 
 // and the mutation performed before the scheduling point is used after it
 
@@ -53,18 +53,19 @@ machine FailureDetector {
   	        nodes = payload;
 			InitializeAliveSet(0);
 			timer = new Timer(this);
-	        raise UNIT;   	   
+	        goto SendPing;   	   
         }
 		on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; }
 		on UNREGISTER_CLIENT do  (payload: machine) { if (payload in clients) clients -= payload; }
-        on UNIT push SendPing;
     }
     state SendPing {
         entry {
 		    SendPingsToAliveSet(0);
 			send timer, START, 100;
 	    }
-    on PONG do (payload: machine) { 
+	    on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; }
+		on UNREGISTER_CLIENT do  (payload: machine) { if (payload in clients) clients -= payload; }
+    	on PONG do (payload: machine) { 
 		    if (payload in alive) {
 				 responses[payload] = true; 
 				 if (sizeof(responses) == sizeof(alive)) {
@@ -83,12 +84,13 @@ machine FailureDetector {
 		}
 		on ROUND_DONE goto Reset;
 		on UNIT goto SendPing;
-		on TIMER_CANCELED push WaitForCancelResponse;
+		on TIMER_CANCELED goto WaitForCancelResponse;
      }
 	 state WaitForCancelResponse {
 	     defer TIMEOUT, PONG;
-	     on CANCEL_SUCCESS do (payload: machine) { raise ROUND_DONE; }
-		 on CANCEL_FAILURE do (payload: machine) { pop; }
+	     on CANCEL_SUCCESS, CANCEL_FAILURE do (payload: machine) { goto Reset; }
+	     on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; }
+		on UNREGISTER_CLIENT do  (payload: machine) { if (payload in clients) clients -= payload; }
 	 }
 	 state Reset {
          entry {
@@ -97,6 +99,8 @@ machine FailureDetector {
 			 send timer, START, 1000;
 		 }
 		 on TIMEOUT goto SendPing;
+		 on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; }
+		on UNREGISTER_CLIENT do  (payload: machine) { if (payload in clients) clients -= payload; }
 		 ignore PONG;
 	 }
 

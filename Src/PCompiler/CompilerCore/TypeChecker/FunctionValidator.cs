@@ -40,9 +40,6 @@ namespace Plang.Compiler.TypeChecker
                     when (assertStmt.Assertion as BoolLiteralExpr)?.Value == false:
                     return true;
 
-                case PopStmt _:
-                    return true;
-
                 case GotoStmt _:
                     return true;
 

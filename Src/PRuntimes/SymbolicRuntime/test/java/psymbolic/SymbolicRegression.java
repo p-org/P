@@ -103,4 +103,10 @@ public class SymbolicRegression {
     Collection<DynamicTest>  loadExpressionTests() {
         return loadTests("../../../Tst/RegressionTests/Feature3Exprs", null);
     }
+
+    @TestFactory
+        //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+    Collection<DynamicTest>  loadStmtsTests() {
+        return loadTests("../../../Tst/RegressionTests/Feature2Stmts", null);
+    }
 }

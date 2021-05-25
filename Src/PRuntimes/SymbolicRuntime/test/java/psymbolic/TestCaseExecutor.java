@@ -67,7 +67,7 @@ public class TestCaseExecutor {
                 .toLowerCase().startsWith("windows");
         String compilerDirectory = "../../../Bld/Drops/Release/Binaries/netcoreapp3.1/P.dll";
 
-        String prefix = "SymbolicRegressionTests/";
+        String prefix = "../../../Tst/RegressionTests/";
         assert testCasePaths.stream().allMatch(p -> p.contains(prefix));
         List<String> testCaseRelPaths = testCasePaths.stream().map(p -> p.substring(p.indexOf(prefix) + prefix.length()))
                                         .collect(Collectors.toList());

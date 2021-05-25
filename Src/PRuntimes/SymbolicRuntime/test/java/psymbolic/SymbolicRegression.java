@@ -88,8 +88,19 @@ public class SymbolicRegression {
 
     @TestFactory
     //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadSymbolicRegressions() {
-        return loadTests("./SymbolicRegressionTests/Integration", null);
+    Collection<DynamicTest>  loadIntegrationTests() {
+        return loadTests("../../../Tst/RegressionTests/Integration", null);
     }
 
+    @TestFactory
+        //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+    Collection<DynamicTest>  loadDataTypeTests() {
+        return loadTests("../../../Tst/RegressionTests/Feature4DataTypes", null);
+    }
+
+    @TestFactory
+        //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+    Collection<DynamicTest>  loadExpressionTests() {
+        return loadTests("../../../Tst/RegressionTests/Feature3Exprs", null);
+    }
 }

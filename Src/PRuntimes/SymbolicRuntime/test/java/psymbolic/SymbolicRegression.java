@@ -115,4 +115,9 @@ public class SymbolicRegression {
     Collection<DynamicTest>  loadSymbolicRegressionsTests() {
         return loadTests("./SymbolicRegressionTests/Integration", null);
     }
+
+    @TestFactory
+    Collection<DynamicTest>  loadSMLevelDeclsTests() {
+        return loadTests("../../../Tst/RegressionTests/Feature1SMLevelDecls", null);
+    }
 }

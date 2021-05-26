@@ -73,7 +73,7 @@ public class TestCaseExecutor {
                                         .collect(Collectors.toList());
         testCasePaths.stream().map(p -> p.substring(p.indexOf(prefix) + prefix.length())).forEach(System.out::println);
         String testCaseRelDir = sanitizeRelDir(Paths.get(testCaseRelPaths.get(0)).getParent().toString());
-        String outputDirectory = "src/test/java/psymbolic/testCase/" + testCaseRelDir;
+        String outputDirectory = "test/java/psymbolic/testCase/" + testCaseRelDir;
 
         // TODO: make separating out the .p and .java files more robust
         List<String> pTestCasePaths = testCasePaths.stream().filter(p -> p.contains(".p")).collect(Collectors.toList());

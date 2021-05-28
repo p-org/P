@@ -38,8 +38,16 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.22.2</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-surefire-provider</artifactId>
+            <version>1.2.0</version>
+          </dependency>
+        </dependencies>
       </plugin>
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -99,7 +107,7 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.16.2</version>
+      <version>1.18.20</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -127,11 +135,6 @@
         <groupId>backport-util-concurrent</groupId>
         <artifactId>backport-util-concurrent</artifactId>
         <version>3.1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-compiler-plugin</artifactId>
-      <version>3.8.1</version>
     </dependency>
   </dependencies>
 </project>

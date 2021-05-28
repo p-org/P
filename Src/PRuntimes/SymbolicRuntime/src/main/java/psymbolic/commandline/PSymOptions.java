@@ -59,7 +59,7 @@ public class PSymOptions {
                 .desc("Print the help message")
                 .argName("Help")
                 .build();
-        options.addOption(maxSchedBound);
+        options.addOption(help);
     }
 
     public static PSymConfiguration ParseCommandlineArgs(String[] args) {
@@ -86,16 +86,16 @@ public class PSymOptions {
                     if (file.exists()) {
                         config.setInputFile(option.getValue());
                     } else {
-                        formatter.printHelp("t", String.format("File %s not found", option.getValue()), options, "\"Try \\\"--help\\\" option for details.\"");
+                        formatter.printHelp("t", String.format("File %s not found", option.getValue()), options, "Try \"--help\" option for details.");
                         formatter.printUsage(writer, 80, "t", options);
                     }
                     break;
-                case "cb":
+                case "sb":
                 case "sched-choice-bound":
                     try {
                         config.setInputChoiceBound(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("sb", String.format("Expected an integer value, got %s", option.getValue()), options, "\"Try \\\"--help\\\" option for details.\"");
+                        formatter.printHelp("sb", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
                         formatter.printUsage(writer, 80, "sb", options);
                     }
                     break;
@@ -104,17 +104,16 @@ public class PSymOptions {
                     try {
                         config.setDepthBound(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("db", String.format("Expected an integer value, got %s", option.getValue()), options, "\"Try \\\"--help\\\" option for details.\"");
+                        formatter.printHelp("db", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
                         formatter.printUsage(writer, 80, "db", options);
                     }
                     break;
-                case "sb":
+                case "cb":
                 case "choice-bound":
                     try {
                         config.setInputChoiceBound(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("cb", String.format("Expected an integer value, got %s", option.getValue()), options, "\"Try \\\"--help\\\" option for details.\"");
-                        formatter.printUsage(writer, 80, "cb", options);
+                        formatter.printHelp("cb", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
                     }
                     break;
                 case "h":

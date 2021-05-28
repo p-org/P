@@ -141,7 +141,7 @@ public class ForeignFunctionInvoker {
         }
     }
 
-    public static ValueSummary invoke(Guard pc, Class<? extends ValueSummary<?>> c, Function<List<Object>, Object> fn, ValueSummary ... args) {
+    public static ValueSummary invoke(Guard pc, ValueSummary<?> def, Function<List<Object>, Object> fn, ValueSummary ... args) {
         Guard iterPc = Guard.constFalse();
         boolean skip = false;
         UnionVS ret = new UnionVS();
@@ -169,10 +169,10 @@ public class ForeignFunctionInvoker {
             }
             ret = ret.merge(new UnionVS(convertConcrete(iterPc, fn.apply(concreteArgs))));
         }
-        if (c.equals(UnionVS.class)) {
+        if (def instanceof UnionVS) {
             return ret;
         } else {
-            return ValueSummary.castFromAny(ret.getUniverse(), c, ret);
+            return ValueSummary.castFromAny(ret.getUniverse(), def, ret);
         }
     }
 

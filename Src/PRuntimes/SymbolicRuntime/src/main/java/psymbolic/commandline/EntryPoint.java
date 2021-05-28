@@ -18,7 +18,7 @@ public class EntryPoint {
     public static void run(psymbolic.commandline.Program p, String name, int depth, int maxInternalSteps) {
         BDDEngine.reset();
         PLogger.Init();
-        BoundedScheduler scheduler = new BoundedScheduler(name, 25, 1000, 1000);
+        BoundedScheduler scheduler = new BoundedScheduler(name, 25, 1000, 1000, 1000);
         p.setScheduler(scheduler);
         scheduler.setErrorDepth(depth);
         scheduler.setMaxInternalSteps(maxInternalSteps);

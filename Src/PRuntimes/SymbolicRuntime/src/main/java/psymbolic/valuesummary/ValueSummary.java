@@ -1,5 +1,7 @@
 package psymbolic.valuesummary;
 
+import java.util.ArrayList;
+import java.util.List;
 
 public interface ValueSummary<T extends ValueSummary<T>> {
 
@@ -10,24 +12,63 @@ public interface ValueSummary<T extends ValueSummary<T>> {
      * If the ValueSummary type is also a UnionVS, returns the provided UnionVS.
      *
      * @param pc The path constraint guard to cast under
-     * @param type The ValueSummary type to cast to
+     * @param def The default value of the ValueSummary type to cast to
      * @param anyVal The UnionVS to cast from
      * @return A ValueSummary that can be casted into the provided type
      */
-     static ValueSummary castFromAny(Guard pc, Class<? extends ValueSummary> type, UnionVS anyVal) {
-         ValueSummary result;
-         if (type.equals(UnionVS.class)) {
-             result = anyVal;
+     static ValueSummary<?> castFromAny(Guard pc, ValueSummary<?> def, UnionVS anyVal) {
+         System.out.println("cast from any");
+         ValueSummary<?> result;
+         if (def instanceof UnionVS) {
+             return anyVal;
          }
-         else {
-             Guard typeGuard = anyVal.getGuardFor(type);
-             Guard pcNotDefined = pc.and(typeGuard.not());
-             if (!pcNotDefined.isFalse()) {
-                 throw new ClassCastException(String.format("Casting to %s under path constraint %s is not defined",
-                         type,
-                         pcNotDefined));
+         Class<? extends ValueSummary> type = def.getClass();
+         Guard typeGuard = anyVal.getGuardFor(type);
+         Guard pcNotDefined = pc.and(typeGuard.not());
+         if (!pcNotDefined.isFalse()) {
+             if (type.equals(PrimitiveVS.class)) {
+                 return new PrimitiveVS<>(pc);
              }
-             result = anyVal.getValue(type).restrict(pc);
+             throw new ClassCastException(String.format("Casting to %s under path constraint %s is not defined",
+                     type,
+                     pcNotDefined));
+         }
+         result = anyVal.getValue(type).restrict(pc);
+         if (type.equals(NamedTupleVS.class)) {
+             System.out.println("cast to named");
+             NamedTupleVS namedTupleDefault = (NamedTupleVS) def.restrict(pc);
+             NamedTupleVS namedTupleResult = (NamedTupleVS) result;
+             namedTupleResult.getNames();
+             String[] defaultNames = namedTupleDefault.getNames();
+             String[] resultNames = namedTupleResult.getNames();
+             for (int i = 0; i < defaultNames.length; i++) {
+                 String name = defaultNames[i];
+                 if (!resultNames[i].equals(defaultNames[i])) {
+                     throw new ClassCastException(
+                             String.format("Casting to %s under path constraint %s is not defined." +
+                                             "Named tuple field names do not match.",
+                             type,
+                             pcNotDefined));
+                 }
+                 ValueSummary<?> defaultField = namedTupleResult.getField(name);
+                 ValueSummary<?> resultField = namedTupleResult.getField(name);
+                 Class<?> defaultFieldType = defaultField.getClass();
+                 System.out.println("Field " + name + " has default type " + defaultFieldType.getCanonicalName());
+                 if (!resultField.getClass().equals(defaultFieldType)) {
+                     if (resultField instanceof UnionVS) {
+                         System.out.println("need to cast nested");
+                         namedTupleResult = namedTupleResult.setField(name,
+                                 castFromAny(pc, defaultField, (UnionVS) resultField));
+                     } else {
+                         throw new ClassCastException(
+                                 String.format("Casting to %s under path constraint %s is not defined." +
+                                                 " Named tuple field types do not match.",
+                                         type,
+                                         pcNotDefined));
+                     }
+                 }
+             }
+             result = namedTupleResult;
          }
          return result;
      }

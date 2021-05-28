@@ -24,7 +24,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     /** Get the names of the NamedTupleVS fields
      * @return Array containing the names of the NamedTupleVS fields */
     public String[] getNames() {
-        return (String[]) names.toArray();
+        return names.toArray(new String[names.size()]);
     }
 
     /** Make a new NamedTupleVS with the provided names and fields

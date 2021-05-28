@@ -1,10 +1,7 @@
 package psymbolic.runtime;
 
 import psymbolic.commandline.Program;
-import psymbolic.valuesummary.Guard;
-import psymbolic.valuesummary.ListVS;
-import psymbolic.valuesummary.PrimitiveVS;
-import psymbolic.valuesummary.ValueSummary;
+import psymbolic.valuesummary.*;
 
 /** Search interface for exploring different schedules */
 public interface SymbolicSearch {
@@ -41,9 +38,16 @@ public interface SymbolicSearch {
 
     /** Return the next element of a finite set based on the search and strategy.
      *
-     * @param s set to choose from
+     * @param s list to choose from
      * @return a integer
      */
     ValueSummary getNextElement(ListVS<? extends ValueSummary> s, Guard pc);
+
+    /** Return the next element of a finite set based on the search and strategy.
+     *
+     * @param s set to choose from
+     * @return a integer
+     */
+    ValueSummary getNextElement(SetVS<? extends ValueSummary> s, Guard pc);
 
 }

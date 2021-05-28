@@ -17,14 +17,16 @@ public class BoundedScheduler extends Scheduler {
     int senderBound;
     int boolBound;
     int intBound;
+    int elementBound;
 
     private boolean isDoneIterating = false;
 
-    public BoundedScheduler(String name, int senderBound, int boolBound, int intBound) {
+    public BoundedScheduler(String name, int senderBound, int boolBound, int intBound, int elementBound) {
         super("bounded_" + name);
         this.senderBound = senderBound;
         this.boolBound = boolBound;
         this.intBound = intBound;
+        this.elementBound = elementBound;
     }
 
     @Override
@@ -75,6 +77,7 @@ public class BoundedScheduler extends Scheduler {
                            BiConsumer<PrimitiveVS, Integer> addBacktrack, Supplier<List> getChoices,
                            Function<List, PrimitiveVS> generateNext) {
         PrimitiveVS choices = new PrimitiveVS();
+
         if (depth < schedule.size()) {
             // ScheduleLogger.log("repeat or backtrack");
             PrimitiveVS repeat = getRepeat.apply(depth);
@@ -157,7 +160,7 @@ public class BoundedScheduler extends Scheduler {
     @Override
     public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
         int depth = choiceDepth;
-        PrimitiveVS<ValueSummary> res = getNext(depth, senderBound, schedule::getRepeatElement, schedule::getBacktrackElement,
+        PrimitiveVS<ValueSummary> res = getNext(depth, elementBound, schedule::getRepeatElement, schedule::getBacktrackElement,
                 schedule::clearBacktrack, schedule::addRepeatElement, schedule::addBacktrackElement,
                 () -> super.getNextElementChoices(candidates, pc), super::getNextElementHelper);
         choiceDepth = depth + 1;

@@ -2,6 +2,7 @@ package p.runtime.values;
 
 import lombok.NonNull;
 import lombok.SneakyThrows;
+import lombok.var;
 import p.runtime.values.exceptions.*;
 
 import java.util.Map;
@@ -68,10 +69,11 @@ public class PNamedTuple extends PValue<PNamedTuple> {
         if (obj == this)
             return true;
 
-        if (!(obj instanceof PNamedTuple other)) {
+        if (!(obj instanceof PNamedTuple)) {
             return false;
         }
 
+        PNamedTuple other = (PNamedTuple) obj;
         if (fields.size() != other.fields.size()) {
             return false;
         }

@@ -2,9 +2,8 @@ package p.runtime.values;
 
 import lombok.NonNull;
 import lombok.SneakyThrows;
-import p.runtime.values.exceptions.ComparingPValuesException;
+import lombok.var;
 import p.runtime.values.exceptions.InvalidIndexException;
-import p.runtime.values.exceptions.KeyNotFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,10 +62,11 @@ public class PSeq extends PCollection {
         if (obj == this)
             return true;
 
-        if (!(obj instanceof PSeq other)) {
+        if (!(obj instanceof PSeq)) {
             return false;
         }
 
+        PSeq other = (PSeq) obj;
         if (seq.size() != other.seq.size()) {
             return false;
         }

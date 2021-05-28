@@ -1,8 +1,9 @@
 package p.runtime.values;
 
-import java.util.Arrays;
 import lombok.NonNull;
 import p.runtime.values.exceptions.TupleInvalidIndexException;
+
+import java.util.Arrays;
 
 public class PTuple extends PValue<PTuple> {
     // stores the fields values
@@ -55,10 +56,11 @@ public class PTuple extends PValue<PTuple> {
         if (obj == this)
             return true;
 
-        if (!(obj instanceof PTuple other)) {
+        if (!(obj instanceof PTuple)) {
             return false;
         }
 
+        PTuple other = (PTuple) obj;
         if (fields.length != other.fields.length) {
             return false;
         }

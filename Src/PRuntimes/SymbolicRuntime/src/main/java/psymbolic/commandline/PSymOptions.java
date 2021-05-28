@@ -4,16 +4,15 @@ import org.apache.commons.cli.*;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.nio.file.Files;
 
 /**
  * Represents the commandline options for the tool
  */
 public class PSymOptions {
 
-    private final Options options;
+    private static final Options options;
 
-    public PSymOptions() {
+    static {
         options = new Options();
 
         // input file to be tested
@@ -63,8 +62,7 @@ public class PSymOptions {
         options.addOption(maxSchedBound);
     }
 
-    public PSymConfiguration ParseCommandlineArgs(String[] args)
-    {
+    public static PSymConfiguration ParseCommandlineArgs(String[] args) {
         // Parse the commandline arguments
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -80,26 +78,54 @@ public class PSymOptions {
 
         // Populate the configuration based on the commandline arguments
         PSymConfiguration config = new PSymConfiguration();
-        for(Option option : cmd.getOptions()) {
-            switch (option.getOpt())
-            {
-                case "h":
-                case "help":
-                    formatter.printUsage(writer,80,"PSymbolic", options);
-                    writer.flush();
-                    System.exit(0);
+        for (Option option : cmd.getOptions()) {
+            switch (option.getOpt()) {
                 case "t":
                 case "test":
                     File file = new File(option.getValue());
-                    if(file.exists())
-                    {
+                    if (file.exists()) {
                         config.setInputFile(option.getValue());
+                    } else {
+                        formatter.printHelp("t", String.format("File %s not found", option.getValue()), options, "\"Try \\\"--help\\\" option for details.\"");
+                        formatter.printUsage(writer, 80, "t", options);
                     }
-                    else
-                    {
-                        formatter.printHelp();
+                    break;
+                case "cb":
+                case "sched-choice-bound":
+                    try {
+                        config.setInputChoiceBound(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        formatter.printHelp("sb", String.format("Expected an integer value, got %s", option.getValue()), options, "\"Try \\\"--help\\\" option for details.\"");
+                        formatter.printUsage(writer, 80, "sb", options);
                     }
+                    break;
+                case "db":
+                case "depth-bound":
+                    try {
+                        config.setDepthBound(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        formatter.printHelp("db", String.format("Expected an integer value, got %s", option.getValue()), options, "\"Try \\\"--help\\\" option for details.\"");
+                        formatter.printUsage(writer, 80, "db", options);
+                    }
+                    break;
+                case "sb":
+                case "choice-bound":
+                    try {
+                        config.setInputChoiceBound(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        formatter.printHelp("cb", String.format("Expected an integer value, got %s", option.getValue()), options, "\"Try \\\"--help\\\" option for details.\"");
+                        formatter.printUsage(writer, 80, "cb", options);
+                    }
+                    break;
+                case "h":
+                case "help":
+                default:
+                    formatter.printUsage(writer, 80, "PSymbolic", options);
+                    writer.flush();
+                    System.exit(0);
             }
         }
+
+        return config;
     }
 }

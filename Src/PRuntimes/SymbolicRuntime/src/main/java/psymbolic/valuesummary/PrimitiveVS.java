@@ -139,8 +139,6 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
     public <U, V> PrimitiveVS<V>
     apply(PrimitiveVS<U> summary2, BiFunction<T, U, V> function) {
-        System.out.println("apply of");
-        System.out.println(this + " and " + summary2);
         final Map<V, Guard> results = new HashMap<>();
 
         for (GuardedValue<T> val1 : this.getGuardedValues()) {

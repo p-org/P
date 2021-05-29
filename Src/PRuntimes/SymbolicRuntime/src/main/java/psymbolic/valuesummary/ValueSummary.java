@@ -17,7 +17,6 @@ public interface ValueSummary<T extends ValueSummary<T>> {
      * @return A ValueSummary that can be casted into the provided type
      */
      static ValueSummary<?> castFromAny(Guard pc, ValueSummary<?> def, UnionVS anyVal) {
-         System.out.println("cast from any");
          ValueSummary<?> result;
          if (def instanceof UnionVS) {
              return anyVal;
@@ -34,8 +33,8 @@ public interface ValueSummary<T extends ValueSummary<T>> {
                      pcNotDefined));
          }
          result = anyVal.getValue(type).restrict(pc);
+         /*
          if (type.equals(NamedTupleVS.class)) {
-             System.out.println("cast to named");
              NamedTupleVS namedTupleDefault = (NamedTupleVS) def.restrict(pc);
              NamedTupleVS namedTupleResult = (NamedTupleVS) result;
              namedTupleResult.getNames();
@@ -70,6 +69,7 @@ public interface ValueSummary<T extends ValueSummary<T>> {
              }
              result = namedTupleResult;
          }
+          */
          return result;
      }
 

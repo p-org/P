@@ -2,9 +2,10 @@ package p.runtime.values;
 
 import lombok.NonNull;
 import lombok.SneakyThrows;
-import p.runtime.values.exceptions.ComparingPValuesException;
+import lombok.var;
 import p.runtime.values.exceptions.KeyNotFoundException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,7 +40,7 @@ public class PMap extends PCollection {
     }
 
     public PSeq getKeys() {
-        return new PSeq(map.keySet().stream().toList());
+        return new PSeq(new ArrayList<>(map.keySet()));
     }
 
     @Override
@@ -59,10 +60,9 @@ public class PMap extends PCollection {
         if (obj == this)
             return true;
 
-        if (!(obj instanceof PMap other)) {
-            return false;
-        }
+        if (!(obj instanceof PMap)) return false;
 
+        PMap other = (PMap)obj;
         if (map.size() != other.map.size()) {
             return false;
         }

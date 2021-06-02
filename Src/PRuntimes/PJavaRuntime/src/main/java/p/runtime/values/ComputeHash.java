@@ -1,7 +1,8 @@
 package p.runtime.values;
 
+import lombok.var;
+
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 public class ComputeHash {

@@ -202,10 +202,10 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
 
         V merger = null;
         List<V> toMerge = new ArrayList<>();
-        for (K key : keySummary.getValues()) {
+        for (GuardedValue<K> key : keySummary.getGuardedValues()) {
             if (merger == null)
-                merger = entries.get(key);
-            toMerge.add(entries.get(key));
+                merger = entries.get(key.value).guard(key.guard);
+            toMerge.add(entries.get(key.value).guard(key.guard));
         }
 
         assert merger != null;

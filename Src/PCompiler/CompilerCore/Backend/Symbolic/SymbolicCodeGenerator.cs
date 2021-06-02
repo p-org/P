@@ -1076,7 +1076,19 @@ namespace Plang.Compiler.Backend.Symbolic
                         );
                         break;
                     }
-
+                case AnnounceStmt announceStmt:
+                    context.Write(output, $"scheduler.announce(");
+                    WriteExpr(context, output, flowContext.pcScope, announceStmt.PEvent);
+                    context.Write(output, ", ");
+                    if (announceStmt.Payload == null)
+                        context.Write(output, "null");
+                    else {
+                        context.Write(output, "new UnionVS(");
+                        WriteExpr(context, output, flowContext.pcScope, announceStmt.Payload);
+                        context.Write(output, ")");
+                    }
+                    context.WriteLine(output, ");");
+                    break;
                 default:
                     context.WriteLine(output, $"/* Skipping statement '{stmt.GetType().Name}' */");
                     // throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported");

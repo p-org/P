@@ -1,9 +1,8 @@
 package psymbolic.valuesummary.util;
 
-import psymbolic.valuesummary.BooleanVS;
-import psymbolic.valuesummary.ValueSummary;
-import psymbolic.valuesummary.Guard;
+import psymbolic.valuesummary.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /** This class implements different checks for invariants on Guards and ValueSummaries */
@@ -46,6 +45,16 @@ public class ValueSummaryChecks {
         return !BooleanVS.isEverFalse(a.restrict(guard).symbolicEquals(b.restrict(guard), guard).restrict(guard));
     }
 
+    /** Is the provided PrimVS such that its guarded values have disjoint guards?
+     * @param vs The PrimVS
+     */
+    public static boolean disjointGuards(PrimitiveVS<?> vs) {
+        List<Guard> guards = new ArrayList<>();
+        for (GuardedValue<?> gv : vs.getGuardedValues()) {
+            guards.add(gv.getGuard());
+        }
+        return disjointUnion(guards);
+    }
     /** Is the provided Guard inside another?
      * @param a The Guard
      * @param b The enclosing Guard

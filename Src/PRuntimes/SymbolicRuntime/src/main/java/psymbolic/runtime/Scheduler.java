@@ -413,6 +413,10 @@ public class Scheduler implements SymbolicSearch {
         }
     }
 
+    public void announce(PrimitiveVS<Event> names, UnionVS payload) {
+        Message event = new Message(names, new PrimitiveVS<>(), payload);
+        runMonitors(event);
+    }
     public void disableLogging() {
         ScheduleLogger.disable();
     }

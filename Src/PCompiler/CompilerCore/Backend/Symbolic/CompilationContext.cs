@@ -4,6 +4,7 @@ using System.IO;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Symbolic
 {
@@ -13,6 +14,8 @@ namespace Plang.Compiler.Backend.Symbolic
         int nextLoopId;
         int nextBranchId;
         int nextTempVarId;
+
+        internal PLanguageType ReturnType { get; set; }
 
         internal Dictionary<Function, int> anonFuncIds;
 

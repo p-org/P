@@ -102,12 +102,15 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     }
 
     /**
-     * Remove an item from the SetVS
+     * Remove an item from the SetVS if present (otherwise no op)
      * @param itemSummary The element to remove. Should be possible under a subset of the SetVS's conditions.
      * @return The SetVS with the element removed.
      */
     public SetVS<T> remove(T itemSummary) {
-        ListVS<T> newElements = elements.removeAt(elements.indexOf(itemSummary));
+        PrimitiveVS<Integer> idx = elements.indexOf(itemSummary);
+        idx = idx.restrict(elements.inRange(idx).getGuardFor(true));
+        if (idx.isEmptyVS()) return this;
+        ListVS<T> newElements = elements.removeAt(idx);
         return new SetVS<>(newElements);
     }
 }

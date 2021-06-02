@@ -173,12 +173,6 @@ public class Scheduler implements SymbolicSearch {
         return list;
     }
 
-    /*
-    public List<ValueSummary> getNextElementChoices(Set<ValueSummary> candidates, Bdd pc) {
-        return candidates.stream().map(x -> x.guard(pc)).collect(Collectors.toList());
-    }
-     */
-
     public PrimitiveVS<ValueSummary> getNextElementHelper(List<ValueSummary> candidates) {
         PrimitiveVS<ValueSummary> choices = NondetUtil.getNondetChoice(candidates.stream().map(x -> new PrimitiveVS(x).restrict(x.getUniverse())).collect(Collectors.toList()));
         schedule.addRepeatElement(choices, choiceDepth);
@@ -206,6 +200,11 @@ public class Scheduler implements SymbolicSearch {
     @Override
     public ValueSummary getNextElement(ListVS<? extends ValueSummary> s, Guard pc) {
         return getNextElementFlattener(getNextElementHelper(getNextElementChoices(s, pc)));
+    }
+
+    @Override
+    public ValueSummary getNextElement(SetVS<? extends ValueSummary> s, Guard pc) {
+        return getNextElement(s.getElements(), pc);
     }
 
     @Override

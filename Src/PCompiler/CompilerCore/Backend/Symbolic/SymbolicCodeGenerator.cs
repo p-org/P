@@ -286,7 +286,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     var payloadType = entryFunc.Signature.Parameters[0].Type;
                     var payloadTypeSymbolic = GetSymbolicType(payloadType);
                     var defaultPayload = GetDefaultValue(context, entryPcScope, payloadType);
-                    context.Write(output, $", payload != null ? ({payloadTypeSymbolic}) ValueSummary.castFromAny({entryPcScope.PathConstraintVar}, {defaultPayload}.getClass(), payload) : {defaultPayload}");
+                    context.Write(output, $", payload != null ? ({payloadTypeSymbolic}) ValueSummary.castFromAny({entryPcScope.PathConstraintVar}, {defaultPayload}, payload) : {defaultPayload}");
                 }
                 context.WriteLine(output, ");");
 
@@ -330,7 +330,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
                         var payloadVSType = GetSymbolicType(handler.Key.PayloadType);
                         var defaultPayload = GetDefaultValueNoGuard(context, handler.Key.PayloadType);
-                        context.Write(output, $", ({payloadVSType}) ValueSummary.castFromAny(pc, {defaultPayload}.getClass(), payload)");
+                        context.Write(output, $", ({payloadVSType}) ValueSummary.castFromAny(pc, {defaultPayload}, payload)");
                     }
                     context.WriteLine(output, ");");
                     context.WriteLine(output, "}");
@@ -356,7 +356,7 @@ namespace Plang.Compiler.Backend.Symbolic
                             Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
                             var payloadVSType = GetSymbolicType(handler.Key.PayloadType);
                             var defaultPayload = GetDefaultValueNoGuard(context, handler.Key.PayloadType);
-                            context.Write(output, $", ({payloadVSType}) ValueSummary.castFromAny(pc, {defaultPayload}.getClass(), payload)");
+                            context.Write(output, $", ({payloadVSType}) ValueSummary.castFromAny(pc, {defaultPayload}, payload)");
                         }
                         context.WriteLine(output, ");");
                         context.WriteLine(output, "}");
@@ -501,6 +501,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
             }
 
+            context.ReturnType = function.Signature.ReturnType;
             var functionName = context.GetNameForDecl(function);
 
             context.WriteLine(output, $"{staticKeyword}{returnType} ");
@@ -532,6 +533,7 @@ namespace Plang.Compiler.Backend.Symbolic
             WriteFunctionBody(context, output, rootPCScope, function);
             context.WriteLine(output, "}");
             context.WriteLine(output);
+            context.ReturnType = null;
         }
 
         private void WriteFunctionBody(CompilationContext context, StringWriter output, PathConstraintScope rootPCScope, Function function)
@@ -702,6 +704,17 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        private IPExpr UnnestCloneExpr(IPExpr expr)
+        {
+            switch (expr)
+            {
+                case CloneExpr cloneExpr:
+                    return UnnestCloneExpr(cloneExpr.Term);
+                default:
+                    return expr;
+            }
+        }
+
         private void WriteStmt(Function function, CompilationContext context, StringWriter output, ControlFlowContext flowContext, IPStmt stmt)
         {
             if (TryGetCallInAssignment(stmt) is FunCallExpr callExpr)
@@ -723,14 +736,15 @@ namespace Plang.Compiler.Backend.Symbolic
                         false,
                         locationTemp =>
                         {
-                            if (assignStmt.Value is NullLiteralExpr)
+                            IPExpr expr = UnnestCloneExpr(assignStmt.Value);
+                            if (expr is NullLiteralExpr)
                             {
                                 context.Write(output, $"{locationTemp} = {GetDefaultValueNoGuard(context, assignStmt.Location.Type)}.restrict(Guard.constFalse());");
                             } else
                             {
                                 string inlineCastPrefix = GetInlineCastPrefix(assignStmt.Value.Type, assignStmt.Location.Type, context, flowContext.pcScope);
                                 context.Write(output, $"{locationTemp} = {inlineCastPrefix}");
-                                WriteExpr(context, output, flowContext.pcScope, assignStmt.Value);
+                                WriteExpr(context, output, flowContext.pcScope, expr);
                                 if (inlineCastPrefix != "") context.Write(output, ")");
                                 context.WriteLine(output, ";");
                             }
@@ -774,8 +788,10 @@ namespace Plang.Compiler.Backend.Symbolic
                     if (!(returnStmt.ReturnValue is null))
                     {
                         context.Write(output, $"{CompilationContext.ReturnValue} = {CompilationContext.ReturnValue}.updateUnderGuard(");
-                        context.Write(output, $"{flowContext.pcScope.PathConstraintVar}, ");
+                        string inlineCastPrefix = GetInlineCastPrefix(returnStmt.ReturnValue.Type, context.ReturnType, context, flowContext.pcScope);
+                        context.Write(output, $"{flowContext.pcScope.PathConstraintVar}, {inlineCastPrefix}");
                         WriteExpr(context, output, flowContext.pcScope, returnStmt.ReturnValue);
+                        if (inlineCastPrefix != "") context.Write(output, ")");
                         context.WriteLine(output, $");");
                     }
 
@@ -1012,9 +1028,31 @@ namespace Plang.Compiler.Backend.Symbolic
                         break;
                     }
 
+                case AddStmt addStmt:
+                    {
+                        WriteWithLValueMutationContext(
+                            context,
+                            output,
+                            flowContext.pcScope,
+                            addStmt.Variable,
+                            true,
+                            (structureTemp) =>
+                            {
+                                context.Write(output, $"{structureTemp} = ");
+                                WriteExpr(context, output, flowContext.pcScope, addStmt.Variable);
+                                context.Write(output, $".add(");
+                                WriteExpr(context, output, flowContext.pcScope, addStmt.Value);
+                                context.WriteLine(output, ");");
+                            }
+                        );
+
+                        break;
+                    }
+
                 case RemoveStmt removeStmt:
                     {
                         var isMap = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map);
+                        var isSet = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Set);
 
                         WriteWithLValueMutationContext(
                             context,
@@ -1027,7 +1065,7 @@ namespace Plang.Compiler.Backend.Symbolic
                                 context.Write(output, $"{structureTemp} = ");
                                 WriteExpr(context, output, flowContext.pcScope, removeStmt.Variable);
 
-                                if (isMap)
+                                if (isMap || isSet)
                                     context.Write(output, $".remove(");
                                 else
                                     context.Write(output, $".removeAt(");
@@ -1036,8 +1074,9 @@ namespace Plang.Compiler.Backend.Symbolic
                                 context.WriteLine(output, ");");
                             }
                         );
+                        break;
                     }
-                    break;
+
                 default:
                     context.WriteLine(output, $"/* Skipping statement '{stmt.GetType().Name}' */");
                     // throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported");
@@ -1073,10 +1112,10 @@ namespace Plang.Compiler.Backend.Symbolic
             if (valueType.IsSameTypeAs(locationType)) return "";
 
             if (locationType.IsSameTypeAs(PrimitiveType.Any)) {
-                return $"new UnionVS ({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationType)}.getClass(), ";
+                return $"new UnionVS ({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, valueType)}.getClass(), ";
             } else if (valueType.IsSameTypeAs(PrimitiveType.Any))
             {
-                return $"({GetSymbolicType(locationType)}) ValueSummary.fromAny({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationType)}.getClass(), ";
+                return $"({GetSymbolicType(locationType)}) ValueSummary.castFromAny({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationType)}, ";
             }
             throw new NotImplementedException(
                     $"Cannot yet handle casting to variable of type {locationType.CanonicalRepresentation} " +
@@ -1151,7 +1190,6 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteFunCallStmt(CompilationContext context, StringWriter output, ControlFlowContext flowContext, Function function, IReadOnlyList<IPExpr> args, IPExpr dest=null)
         {
-            Console.WriteLine("fun call stmt");
             var isAsync = function.CanReceive == true;
             if (isAsync)
             {
@@ -1387,6 +1425,8 @@ namespace Plang.Compiler.Backend.Symbolic
                         }
                     );
                     break;
+                case SetAccessExpr setAccessExpr:
+                    break;
                 case VariableAccessExpr variableAccessExpr:
                     var name = variableAccessExpr.Variable.Name;
                     var type = variableAccessExpr.Variable.Type;
@@ -1483,6 +1523,24 @@ namespace Plang.Compiler.Backend.Symbolic
                         if (prefix != "") context.Write(output, ")");
                     }
                     break;
+                 case CoerceExpr coerceExpr:
+                    switch (coerceExpr.Type.Canonicalize())
+                    {
+                        case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
+                            context.Write(output, "(");
+                            WriteExpr(context, output, pcScope, coerceExpr.SubExpr);
+                            context.Write(output, $").apply({GetDefaultValue(context, pcScope, PrimitiveType.Float)}, x -> x.floatValue())");
+                            break;
+                        case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Int):
+                            context.Write(output, "(");
+                            WriteExpr(context, output, pcScope, coerceExpr.SubExpr);
+                            context.Write(output, $").apply({GetDefaultValue(context, pcScope, PrimitiveType.Int)}, x -> x.intValue())");
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(
+                                @"unexpected coercion operation to:" + coerceExpr.Type.CanonicalRepresentation);
+                     }
+                     break;
                 case DefaultExpr defaultExpr:
                     context.Write(output, GetDefaultValue(context, pcScope, defaultExpr.Type));
                     break;
@@ -1599,15 +1657,25 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, $"{CompilationContext.SchedulerVar}.getNextBoolean({pcScope.PathConstraintVar})");
                     break;
                 case ChooseExpr chooseExpr:
+                    if (chooseExpr.SubExpr == null)
+                    {
+                        context.Write(output, $"({CompilationContext.SchedulerVar}.getNextBoolean({pcScope.PathConstraintVar}))");
+                        return;
+                    }
                     switch (chooseExpr.SubExpr.Type)
                     {
                         case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                            context.Write(output, $"({CompilationContext.SchedulerVar}.getNextInteger(");
+                            context.Write(output, $"{CompilationContext.SchedulerVar}.getNextInteger(");
                             WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
                             context.Write(output, $", {pcScope.PathConstraintVar})");
                             break;
                         case SequenceType sequenceType:
                             context.Write(output, $"({GetSymbolicType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
+                            WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
+                            context.Write(output, $", {pcScope.PathConstraintVar})");
+                            break;
+                        case SetType setType:
+                            context.Write(output, $"({GetSymbolicType(setType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
                             WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
                             context.Write(output, $", {pcScope.PathConstraintVar})");
                             break;
@@ -1623,7 +1691,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, $"new { GetSymbolicType(PrimitiveType.String) }(String.format(\"{stringExpr.BaseString}\"");
                     foreach(var arg in stringExpr.Args)
                     {
-                        throw new NotImplementedException("Cannot yet handle formatted strings.");
+                        context.Write(output, ", ");
+                        WriteExpr(context, output, pcScope, arg);
                     }
                     context.Write(output, "))");
                     context.Write(output, $".restrict({pcScope.PathConstraintVar})");
@@ -1785,6 +1854,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "TupleVS";
                 case EnumType _:
                     return "PrimitiveVS /* enum {enumType.OriginalRepresentation} */";
+                case SetType _:
+                    return "SetVS";
                 default:
                     throw new NotImplementedException($"Symbolic type '{type.OriginalRepresentation}' not supported");
             }
@@ -1829,6 +1900,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "NamedTupleVS";
                 case TupleType _:
                     return "TupleVS";
+                case SetType setType:
+                    return $"SetVS<{GetSymbolicType(setType.ElementType, true)}>";
                 case EnumType enumType:
                     return $"PrimitiveVS<Integer> /* enum {enumType.OriginalRepresentation} */";
                 default:
@@ -1895,6 +1968,9 @@ namespace Plang.Compiler.Backend.Symbolic
                         }
                         return $"new {GetSymbolicType(type)}({string.Join(", ", allFieldDefaults)})";
                     }
+                case SetType _:
+                    unguarded = $"new {GetSymbolicType(type)}(Guard.constTrue())";
+                    break;
                 default:
                     throw new NotImplementedException($"Default value for symbolic type '{type.OriginalRepresentation}' not supported");
             }
@@ -1943,6 +2019,8 @@ namespace Plang.Compiler.Backend.Symbolic
                         }
                         return $"new {GetSymbolicType(type)}({string.Join(", ", allFieldDefaults)})";
                     }
+                case SetType _:
+                    return $"new {GetSymbolicType(type)}(Guard.constTrue())";
                 default:
                     throw new NotImplementedException($"Default value for symbolic type '{type.OriginalRepresentation}' not supported");
             }

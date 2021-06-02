@@ -1923,71 +1923,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private string GetDefaultValue(CompilationContext context, PathConstraintScope pcScope, PLanguageType type)
         {
-            string unguarded;
-            switch (type.Canonicalize())
-            {
-                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
-                    unguarded = $"new {GetSymbolicType(type)}(false)";
-                    break;
-                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                    unguarded = $"new {GetSymbolicType(type)}(0)";
-                    break;
-                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
-                    unguarded = $"new {GetSymbolicType(type)}(0.0f)";
-                    break;
-                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
-                    unguarded = $"new {GetSymbolicType(type)}({CompilationContext.NullEventName})";
-                    break;
-                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
-                    unguarded = $"new {GetSymbolicType(type)}()";
-                    break;
-                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
-                    unguarded = $"new {GetSymbolicType(type)}(\"\")";
-                    break;
-                case ForeignType foreignType:
-                    unguarded = $"new {GetSymbolicType(type)}()";
-                    break;
-                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
-                case PermissionType _:
-                    unguarded = $"new {GetSymbolicType(type)}()";
-                    break;
-                case SequenceType _:
-                    unguarded = $"new {GetSymbolicType(type)}(Guard.constTrue())";
-                    break;
-                case MapType _:
-                    unguarded = $"new {GetSymbolicType(type)}(Guard.constTrue())";
-                    break;
-                case EnumType _:
-                    unguarded = $"new {GetSymbolicType(type)}(0)";
-                    break;
-                case NamedTupleType namedTupleType:
-                    {
-                        var allFieldDefaults = new List<string>();
-                        foreach (var field in namedTupleType.Fields)
-                        {
-                            var fieldDefault = GetDefaultValue(context, pcScope, field.Type);
-                            allFieldDefaults.Add($"\"{field.Name}\", {fieldDefault}");
-                        }
-                        return $"new {GetSymbolicType(type)}({string.Join(", ", allFieldDefaults)})";
-                    }
-                case TupleType tupleType:
-                    {
-                        var allFieldDefaults = new List<string>();
-                        foreach (var field in tupleType.Types)
-                        {
-                            var fieldDefault = GetDefaultValue(context, pcScope, field);
-                            allFieldDefaults.Add(fieldDefault);
-                        }
-                        return $"new {GetSymbolicType(type)}({string.Join(", ", allFieldDefaults)})";
-                    }
-                case SetType _:
-                    unguarded = $"new {GetSymbolicType(type)}(Guard.constTrue())";
-                    break;
-                default:
-                    throw new NotImplementedException($"Default value for symbolic type '{type.OriginalRepresentation}' not supported");
-            }
+            string unguarded = GetDefaultValueNoGuard(context, type);
             var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
-
             return guarded;
         }
 
@@ -2004,13 +1941,19 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"new {GetSymbolicType(type)}({CompilationContext.NullEventName})";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return $"new {GetSymbolicType(type)}()";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
+                    return $"new {GetSymbolicType(type)}(\"\")";
+                case ForeignType foreignType:
+                    return $"new {GetSymbolicType(type)}()";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
-                    return $"new PrimitiveVS<Machine>()";
+                    return $"new {GetSymbolicType(type)}()";
                 case SequenceType _:
                     return $"new {GetSymbolicType(type)}(Guard.constTrue())";
                 case MapType _:
                     return $"new {GetSymbolicType(type)}(Guard.constTrue())";
+                case EnumType _:
+                    return $"new {GetSymbolicType(type)}(0)";
                 case NamedTupleType namedTupleType:
                     {
                         var allFieldDefaults = new List<string>();

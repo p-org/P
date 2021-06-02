@@ -465,9 +465,6 @@ namespace Plang.Compiler.Backend
                 case NoStmt _:
                     return new List<IPStmt>();
 
-                case PopStmt popStmt:
-                    return new List<IPStmt> { popStmt };
-
                 case PrintStmt printStmt:
                     List<IPStmt> deps = new List<IPStmt>();
                     (IExprTerm newMessage, List<IPStmt> printDeps) = SimplifyExpression(printStmt.Message);

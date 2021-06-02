@@ -1,10 +1,10 @@
 package psymbolic.runtime;
 
-import p.runtime.values.PBool;
-import p.runtime.values.PInt;
-import psymbolic.run.Program;
+import psymbolic.commandline.Program;
+import psymbolic.runtime.logger.ScheduleLogger;
+import psymbolic.runtime.machine.Machine;
+import psymbolic.runtime.machine.Message;
 import psymbolic.valuesummary.*;
-import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -17,14 +17,16 @@ public class BoundedScheduler extends Scheduler {
     int senderBound;
     int boolBound;
     int intBound;
+    int elementBound;
 
     private boolean isDoneIterating = false;
 
-    public BoundedScheduler(String name, int senderBound, int boolBound, int intBound) {
+    public BoundedScheduler(String name, int senderBound, int boolBound, int intBound, int elementBound) {
         super("bounded_" + name);
         this.senderBound = senderBound;
         this.boolBound = boolBound;
         this.intBound = intBound;
+        this.elementBound = elementBound;
     }
 
     @Override
@@ -47,7 +49,7 @@ public class BoundedScheduler extends Scheduler {
                 }
                 ScheduleLogger.log("backtrack to " + d);
                 ScheduleLogger.log("pending backtracks: " + schedule.getNumBacktracks());
-                schedule.setFilter(Bdd.constTrue()); //backtrack.getUniverse();
+                schedule.setFilter(Guard.constTrue()); //backtrack.getUniverse();
                 schedule.resetTransitionCount();
                 reset();
                 return;
@@ -70,15 +72,16 @@ public class BoundedScheduler extends Scheduler {
          */
     }
 
-    private PrimVS getNext(int depth, int bound, Function<Integer, PrimVS> getRepeat, Function<Integer, PrimVS> getBacktrack,
-                           Consumer<Integer> clearBacktrack, BiConsumer<PrimVS, Integer> addRepeat,
-                           BiConsumer<PrimVS, Integer> addBacktrack, Supplier<List> getChoices,
-                           Function<List, PrimVS> generateNext) {
-        PrimVS choices = new PrimVS();
+    private PrimitiveVS getNext(int depth, int bound, Function<Integer, PrimitiveVS> getRepeat, Function<Integer, PrimitiveVS> getBacktrack,
+                           Consumer<Integer> clearBacktrack, BiConsumer<PrimitiveVS, Integer> addRepeat,
+                           BiConsumer<PrimitiveVS, Integer> addBacktrack, Supplier<List> getChoices,
+                           Function<List, PrimitiveVS> generateNext) {
+        PrimitiveVS choices = new PrimitiveVS();
+
         if (depth < schedule.size()) {
             // ScheduleLogger.log("repeat or backtrack");
-            PrimVS repeat = getRepeat.apply(depth);
-            if (!repeat.getUniverse().isConstFalse()) {
+            PrimitiveVS repeat = getRepeat.apply(depth);
+            if (!repeat.getUniverse().isFalse()) {
                 return repeat;
             }
             // ScheduleLogger.log("CHOSE FROM backtrack: " + getBacktrack.apply(depth));
@@ -95,9 +98,9 @@ public class BoundedScheduler extends Scheduler {
         }
 
         // ScheduleLogger.log("choose from " + choices);
-        Bdd guard = NondetUtil.chooseGuard(bound, choices);
-        PrimVS chosenVS = choices.guard(guard).guard(schedule.getFilter());
-        PrimVS backtrackVS = choices.guard(guard.not());
+        Guard guard = NondetUtil.chooseGuard(bound, choices);
+        PrimitiveVS chosenVS = choices.restrict(guard).restrict(schedule.getFilter());
+        PrimitiveVS backtrackVS = choices.restrict(guard.not());
         //("add repeat " + chosenVS);
         addRepeat.accept(chosenVS, depth);
         // ScheduleLogger.log("add backtrack " + backtrackVS);
@@ -109,9 +112,9 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public PrimVS<Machine> getNextSender() {
+    public PrimitiveVS<Machine> getNextSender() {
         int depth = choiceDepth;
-        PrimVS<Machine> res = getNext(depth, senderBound, schedule::getRepeatSender, schedule::getBacktrackSender,
+        PrimitiveVS<Machine> res = getNext(depth, senderBound, schedule::getRepeatSender, schedule::getBacktrackSender,
                 schedule::clearBacktrack, schedule::addRepeatSender, schedule::addBacktrackSender, super::getNextSenderChoices,
                 super::getNextSender);
         schedule.setFilter(schedule.getFilter().and(res.getUniverse()));
@@ -122,11 +125,9 @@ public class BoundedScheduler extends Scheduler {
         ScheduleLogger.log("full choice: " + schedule.getSenderChoice(depth));
          */
         for (GuardedValue<Machine> sender : schedule.getRepeatSender(depth).getGuardedValues()) {
-            Machine machine = sender.value;
-            // ScheduleLogger.log("choice " + machine + " guard: " + sender.guard);
-            //cheduleLogger.log("enabled guard: " + machine.sendEffects.enabledCond(Event::canRun));
-            Bdd guard = machine.sendEffects.enabledCond(Event::canRun).getGuard(true).and(schedule.getRepeatSender(depth).getUniverse().not());
-            if (!guard.isConstFalse()) {
+            Machine machine = sender.getValue();
+            Guard guard = machine.sendEffects.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true).and(schedule.getRepeatSender(depth).getUniverse().not());
+            if (!guard.isFalse()) {
                 machine.sendEffects.remove(guard);
                 // ScheduleLogger.log("remove guard from sender " + machine + ": " + guard);
             }
@@ -136,9 +137,9 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public PrimVS<Boolean> getNextBoolean(Bdd pc) {
+    public PrimitiveVS<Boolean> getNextBoolean(Guard pc) {
         int depth = choiceDepth;
-        PrimVS<Boolean> res = getNext(depth, boolBound, schedule::getRepeatBool, schedule::getBacktrackBool,
+        PrimitiveVS<Boolean> res = getNext(depth, boolBound, schedule::getRepeatBool, schedule::getBacktrackBool,
                 schedule::clearBacktrack, schedule::addRepeatBool, schedule::addBacktrackBool,
                 () -> super.getNextBooleanChoices(pc), super::getNextBoolean);
         //ScheduleLogger.log("choice: " + schedule.getBoolChoice(depth));
@@ -147,9 +148,9 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public PrimVS<Integer> getNextInteger(PrimVS<Integer> bound, Bdd pc) {
+    public PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc) {
         int depth = choiceDepth;
-        PrimVS<Integer> res = getNext(depth, intBound, schedule::getRepeatInt, schedule::getBacktrackInt,
+        PrimitiveVS<Integer> res = getNext(depth, intBound, schedule::getRepeatInt, schedule::getBacktrackInt,
                 schedule::clearBacktrack, schedule::addRepeatInt, schedule::addBacktrackInt,
                 () -> super.getNextIntegerChoices(bound, pc), super::getNextInteger);
         choiceDepth = depth + 1;
@@ -157,9 +158,9 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Bdd pc) {
+    public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
         int depth = choiceDepth;
-        PrimVS<ValueSummary> res = getNext(depth, senderBound, schedule::getRepeatElement, schedule::getBacktrackElement,
+        PrimitiveVS<ValueSummary> res = getNext(depth, elementBound, schedule::getRepeatElement, schedule::getBacktrackElement,
                 schedule::clearBacktrack, schedule::addRepeatElement, schedule::addBacktrackElement,
                 () -> super.getNextElementChoices(candidates, pc), super::getNextElementHelper);
         choiceDepth = depth + 1;
@@ -167,17 +168,17 @@ public class BoundedScheduler extends Scheduler {
     }
 
     @Override
-    public PrimVS<Machine> allocateMachine(Bdd pc, Class<? extends Machine> machineType,
+    public PrimitiveVS<Machine> allocateMachine(Guard pc, Class<? extends Machine> machineType,
                                            Function<Integer, ? extends Machine> constructor) {
         if (!machineCounters.containsKey(machineType)) {
-            machineCounters.put(machineType, new PrimVS<>(0));
+            machineCounters.put(machineType, new PrimitiveVS<>(0));
         }
-        PrimVS<Integer> guardedCount = machineCounters.get(machineType).guard(pc);
+        PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).restrict(pc);
 
-        PrimVS<Machine> allocated;
+        PrimitiveVS<Machine> allocated;
         if (schedule.hasMachine(machineType, guardedCount, pc)) {
             assert (iter != 0);
-            allocated = schedule.getMachine(machineType, guardedCount).guard(pc);
+            allocated = schedule.getMachine(machineType, guardedCount).restrict(pc);
             assert(allocated.getValues().size() == 1);
             ScheduleLogger.onCreateMachine(pc, allocated.getValues().iterator().next());
             allocated.getValues().iterator().next().setScheduler(this);
@@ -186,7 +187,7 @@ public class BoundedScheduler extends Scheduler {
         else {
             ScheduleLogger.log("NEW MACHINE");
             Machine newMachine;
-            newMachine = constructor.apply(IntUtils.maxValue(guardedCount));
+            newMachine = constructor.apply(IntegerVS.maxValue(guardedCount));
 
             if (!machines.contains(newMachine)) {
                 machines.add(newMachine);
@@ -195,12 +196,12 @@ public class BoundedScheduler extends Scheduler {
             ScheduleLogger.onCreateMachine(pc, newMachine);
             newMachine.setScheduler(this);
             schedule.makeMachine(newMachine, pc);
-            allocated = new PrimVS<>(newMachine).guard(pc);
+            allocated = new PrimitiveVS<>(newMachine).restrict(pc);
         }
 
-        guardedCount = IntUtils.add(guardedCount, 1);
+        guardedCount = IntegerVS.add(guardedCount, 1);
 
-        PrimVS<Integer> mergedCount = machineCounters.get(machineType).update(pc, guardedCount);
+        PrimitiveVS<Integer> mergedCount = machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);
         machineCounters.put(machineType, mergedCount);
         return allocated;
     }

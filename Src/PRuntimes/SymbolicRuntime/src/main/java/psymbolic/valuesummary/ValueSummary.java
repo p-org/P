@@ -1,83 +1,132 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.Bdd;
+import java.util.ArrayList;
+import java.util.List;
 
-public interface ValueSummary<T extends ValueSummary> {
+public interface ValueSummary<T extends ValueSummary<T>> {
 
     /**
-     * Casts an AnyVS (UnionVS<TypeTag>) to a ValueSummary type. If there is some non
+     * Casts an AnyVS to a ValueSummary type. If there is some non
      * constantly false path constraint under which the current pc is defined but not the guard
      * corresponding to the specified type, the function throws a ClassCastException.
      * If the ValueSummary type is also a UnionVS, returns the provided UnionVS.
      *
-     * @param pc The path constraint to cast under
-     * @param type The ValueSummary type to cast to
-     * @param src The UnionVS to cast from
+     * @param pc The path constraint guard to cast under
+     * @param def The default value of the ValueSummary type to cast to
+     * @param anyVal The UnionVS to cast from
      * @return A ValueSummary that can be casted into the provided type
      */
-     static ValueSummary fromAny(Bdd pc, Class<? extends ValueSummary> type, UnionVS src) {
-         ValueSummary result;
-         if (type.equals(UnionVS.class)) {
-             result = src;
-         } else {
-             Bdd typeGuard = src.getType().getGuard(type);
-             Bdd pcNotDefined = pc.and(typeGuard.not());
-             if (!pcNotDefined.isConstFalse()) {
-                 throw new ClassCastException(String.format("Symbolic casting to %s under path constraint %s is not defined",
-                         type,
-                         pcNotDefined));
-             }
-             result = src.getPayload(type).guard(pc);
+     static ValueSummary<?> castFromAny(Guard pc, ValueSummary<?> def, UnionVS anyVal) {
+         ValueSummary<?> result;
+         if (def instanceof UnionVS) {
+             return anyVal;
          }
+         Class<? extends ValueSummary> type = def.getClass();
+         Guard typeGuard = anyVal.getGuardFor(type);
+         Guard pcNotDefined = pc.and(typeGuard.not());
+         if (!pcNotDefined.isFalse()) {
+             if (type.equals(PrimitiveVS.class)) {
+                 return new PrimitiveVS<>(pc);
+             }
+             throw new ClassCastException(String.format("Casting to %s under path constraint %s is not defined",
+                     type,
+                     pcNotDefined));
+         }
+         result = anyVal.getValue(type).restrict(pc);
+         /*
+         if (type.equals(NamedTupleVS.class)) {
+             NamedTupleVS namedTupleDefault = (NamedTupleVS) def.restrict(pc);
+             NamedTupleVS namedTupleResult = (NamedTupleVS) result;
+             namedTupleResult.getNames();
+             String[] defaultNames = namedTupleDefault.getNames();
+             String[] resultNames = namedTupleResult.getNames();
+             for (int i = 0; i < defaultNames.length; i++) {
+                 String name = defaultNames[i];
+                 if (!resultNames[i].equals(defaultNames[i])) {
+                     throw new ClassCastException(
+                             String.format("Casting to %s under path constraint %s is not defined." +
+                                             "Named tuple field names do not match.",
+                             type,
+                             pcNotDefined));
+                 }
+                 ValueSummary<?> defaultField = namedTupleResult.getField(name);
+                 ValueSummary<?> resultField = namedTupleResult.getField(name);
+                 Class<?> defaultFieldType = defaultField.getClass();
+                 System.out.println("Field " + name + " has default type " + defaultFieldType.getCanonicalName());
+                 if (!resultField.getClass().equals(defaultFieldType)) {
+                     if (resultField instanceof UnionVS) {
+                         System.out.println("need to cast nested");
+                         namedTupleResult = namedTupleResult.setField(name,
+                                 castFromAny(pc, defaultField, (UnionVS) resultField));
+                     } else {
+                         throw new ClassCastException(
+                                 String.format("Casting to %s under path constraint %s is not defined." +
+                                                 " Named tuple field types do not match.",
+                                         type,
+                                         pcNotDefined));
+                     }
+                 }
+             }
+             result = namedTupleResult;
+         }
+          */
          return result;
      }
 
-    /** Check whether a value summary has any values under any path condition
+    /**
+     * Check whether a value summary has any values under any path condition
      *
      * @return Whether the path condition is empty
      */
-    public boolean isEmptyVS();
+    boolean isEmptyVS();
 
-    /** Restrict the value summary's universe with a provided guard
+    /**
+     * Restrict the value summary's universe with a provided guard
      *
      * @param guard The guard to conjoin to the current value summary's universe
      * @return The result of restricting the value summary's universe
      */
-    public T guard(Bdd guard);
+    T restrict(Guard guard);
 
-    /** Merge the value summary with other provided value summaries
+    /**
+     * Merge the value summary with other provided value summaries
      *
      * @param summaries The summaries to merge the value summary with
      * @return The result of the merging
      */
-    public T merge(Iterable<T> summaries);
+    T merge(Iterable<T> summaries);
 
-    /** Merge the value summary with another provided value summary
+    /**
+     * Merge the value summary with another value summary
      *
      * @param summary The summary to merge the value summary with
      * @return The result of the merging
      */
-    public T merge(T summary);
+    T merge(T summary);
 
-    /** Update the value summary under the condition that the guard is true
+    /**
+     * Create a new value summary that is equal to the `update` value under the given `guard`
+     * and same as the old value otherwise `!guard`
      *
      * @param guard The condition under which the value summary should be updated
-     * @param update The value to update the value summary to
-     * @return Thee result of the update
+     * @param updateVal The value to update the value summary to
+     * @return The result of the update
      */
-    public T update(Bdd guard, T update);
+    T updateUnderGuard(Guard guard, T updateVal);
 
-    /** Check whether the value summary is equal to another value summary
+    /**
+     * Check whether the value summary is equal to another value summary
      *
-     * @param cmp The summary to compare the value summary with
-     * @param pc The path condition for the universe of the result
-     * @return Whether or not the value summaries are equal
+     * @param cmp The other value summary
+     * @param guard The guard for the universe of the equality result
+     * @return Boolean VS representing the guard under which the two value summaries are equal
      */
-    PrimVS<Boolean> symbolicEquals(T cmp, Bdd pc);
+    PrimitiveVS<Boolean> symbolicEquals(T cmp, Guard guard);
 
-    /** Get the universe of the value summary
-     *
-     * @return The value summary's universe
+    /**
+     * Get the Guard that represents the universe of the value summary
+     * Disjunction of the guards of all the guarded values
+     * @return The universe of the value summary
      */
-    Bdd getUniverse();
+    Guard getUniverse();
 }

@@ -335,9 +335,8 @@ machine OSRDriver {
 		defer eD0Exit, eSwitchStatusChange;
 		
 		entry {
-			raise(eUnit);
+			goto sStoppingTimerDriver;
 		}
-		on eUnit push sStoppingTimerDriver;
 		on eTimerStopped goto sStoringSwitchAndCheckingIfStateChangedDriver;
 	}
 	
@@ -346,11 +345,10 @@ machine OSRDriver {
 		ignore eD0Entry;
 		
 		entry {
-			raise(eUnit);
+			goto sStoppingTimerDriver;
 		}
 		
 		on eTimerStopped goto sCompletingD0ExitDriver;
-		on eUnit push sStoppingTimerDriver;
 		
 	}
 	

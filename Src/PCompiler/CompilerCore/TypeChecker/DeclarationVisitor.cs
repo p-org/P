@@ -614,24 +614,7 @@ namespace Plang.Compiler.TypeChecker
 
             return actions.ToArray();
         }
-
-        public override object VisitOnEventPushState(PParser.OnEventPushStateContext context)
-        {
-            // PUSH stateName 
-            var targetState = FindState(context.stateName());
-
-            // ON eventList
-            var actions = new List<IStateAction>();
-            foreach (var token in context.eventList().eventId())
-            {
-                if (!CurrentScope.Lookup(token.GetText(), out PEvent evt))
-                    throw Handler.MissingDeclaration(token, "event", token.GetText());
-
-                actions.Add(new EventPushState(token, evt, targetState));
-            }
-
-            return actions.ToArray();
-        }
+        
 
         public override object VisitOnEventGotoState(PParser.OnEventGotoStateContext context)
         {

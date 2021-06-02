@@ -1,7 +1,9 @@
 package psymbolic.runtime;
 
+import psymbolic.runtime.logger.ScheduleLogger;
+import psymbolic.runtime.machine.Machine;
+import psymbolic.runtime.machine.Message;
 import psymbolic.valuesummary.*;
-import psymbolic.valuesummary.bdd.Bdd;
 
 import java.util.function.Function;
 
@@ -11,10 +13,10 @@ public class ReplayScheduler extends Scheduler {
     private final Schedule schedule;
 
     public ReplayScheduler (String name, Schedule schedule) {
-        this(name, schedule, Bdd.constTrue());
+        this(name, schedule, Guard.constTrue());
     }
 
-    public ReplayScheduler (String name, Schedule schedule, Bdd pc) {
+    public ReplayScheduler (String name, Schedule schedule, Guard pc) {
         super(name);
         ScheduleLogger.enable();
         this.schedule = schedule.guard(pc).getSingleSchedule();
@@ -30,23 +32,22 @@ public class ReplayScheduler extends Scheduler {
 
     @Override
     public void startWith(Machine machine) {
-        PrimVS<Machine> machineVS;
+        PrimitiveVS<Machine> machineVS;
         if (this.machineCounters.containsKey(machine.getClass())) {
             machineVS = schedule.getMachine(machine.getClass(), this.machineCounters.get(machine.getClass()));
             this.machineCounters.put(machine.getClass(),
-                    IntUtils.add(this.machineCounters.get(machine.getClass()), 1));
+                    IntegerVS.add(this.machineCounters.get(machine.getClass()), 1));
         } else {
-            machineVS = schedule.getMachine(machine.getClass(), new PrimVS<>(0));
-            this.machineCounters.put(machine.getClass(), new PrimVS<>(1));
+            machineVS = schedule.getMachine(machine.getClass(), new PrimitiveVS<>(0));
+            this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
         }
 
         ScheduleLogger.onCreateMachine(machineVS.getUniverse(), machine);
         machine.setScheduler(this);
 
         performEffect(
-                new Event(
-                        EventName.Init.instance,
-                        new VectorClockVS(Bdd.constTrue()),
+                new Message(
+                        Event.Init,
                         machineVS,
                         null
                 )
@@ -54,49 +55,49 @@ public class ReplayScheduler extends Scheduler {
     }
 
     @Override
-    public PrimVS<Machine> getNextSender() {
-        PrimVS<Machine> res = schedule.getRepeatSender(choiceDepth);
+    public PrimitiveVS<Machine> getNextSender() {
+        PrimitiveVS<Machine> res = schedule.getRepeatSender(choiceDepth);
         choiceDepth++;
         return res;
     }
 
     @Override
-    public PrimVS<Boolean> getNextBoolean(Bdd pc) {
-        PrimVS<Boolean> res = schedule.getRepeatBool(choiceDepth);
+    public PrimitiveVS<Boolean> getNextBoolean(Guard pc) {
+        PrimitiveVS<Boolean> res = schedule.getRepeatBool(choiceDepth);
         choiceDepth++;
         return res;
     }
 
     @Override
-    public PrimVS<Integer> getNextInteger(PrimVS<Integer> bound, Bdd pc) {
-        PrimVS<Integer> res = schedule.getRepeatInt(choiceDepth);
-        assert(IntUtils.lessThan(res, bound).getGuard(false).isConstFalse());
+    public PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc) {
+        PrimitiveVS<Integer> res = schedule.getRepeatInt(choiceDepth);
+        assert(IntegerVS.lessThan(res, bound).getGuardFor(false).isFalse());
         choiceDepth++;
         return res;
     }
 
     @Override
-    public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Bdd pc) {
+    public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
         ValueSummary res = schedule.getRepeatElement(choiceDepth);
         choiceDepth++;
         return res;
     }
 
     @Override
-    public PrimVS<Machine> allocateMachine(Bdd pc, Class<? extends Machine> machineType,
+    public PrimitiveVS<Machine> allocateMachine(Guard pc, Class<? extends Machine> machineType,
                                            Function<Integer, ? extends Machine> constructor) {
         if (!machineCounters.containsKey(machineType)) {
-            machineCounters.put(machineType, new PrimVS<>(0));
+            machineCounters.put(machineType, new PrimitiveVS<>(0));
         }
-        PrimVS<Integer> guardedCount = machineCounters.get(machineType).guard(pc);
+        PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).restrict(pc);
 
-        PrimVS<Machine> allocated = schedule.getMachine(machineType, guardedCount);
+        PrimitiveVS<Machine> allocated = schedule.getMachine(machineType, guardedCount);
         ScheduleLogger.onCreateMachine(pc, allocated.getValues().iterator().next());
         allocated.getValues().iterator().next().setScheduler(this);
 
-        guardedCount = IntUtils.add(guardedCount, 1);
+        guardedCount = IntegerVS.add(guardedCount, 1);
 
-        PrimVS<Integer> mergedCount = machineCounters.get(machineType).update(pc, guardedCount);
+        PrimitiveVS<Integer> mergedCount = machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);
         machineCounters.put(machineType, mergedCount);
         return allocated;
     }

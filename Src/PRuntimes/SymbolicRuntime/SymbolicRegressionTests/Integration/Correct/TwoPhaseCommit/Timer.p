@@ -1,46 +1,49 @@
-/* 
-This file implements the model machine for a asynchronous timer
-*/
-
-machine Timer 
+/*****************************************************************************************
+The timer state machine models the non-deterministic behavior of an OS timer
+******************************************************************************************/
+machine Timer
 {
-	var target: machine;
+	var client: machine;
 	start state Init {
-		entry (payload : machine){
-			target = payload;
-			goto WaitForStartTimer;
+		entry (_client : machine){
+			client = _client;
+			goto WaitForTimerRequests;
 		}
 	}
 
-	state WaitForStartTimer {
-		on eStartTimer goto TimerStarted;
-		on eCancelTimer do { send target, eCancelTimerFailed; }
-	}
+	state WaitForTimerRequests {
+		on eStartTimer do { if($) send client, eTimeOut; }
+		on eCancelTimer do {
 
-	state TimerStarted {
-		entry (payload: int) {
-			if ($) {
-				send target, eTimeOut;
-				goto WaitForStartTimer;
-			}
-		}
-		on eCancelTimer goto WaitForStartTimer with {
-			if ($) {
-				send target, eCancelTimerFailed;
-				//send target, eTimeOut;
-			} else {
-				send target, eCancelTimerSuccess;
-			}		
 		}
 	}
 }
 
-fun CreateTimer(client: machine) : machine
+/************************************************
+Events used to interact with the timer machine
+************************************************/
+event eStartTimer: int;
+event eCancelTimer;
+event eCancelTimerFailed;
+event eCancelTimerSuccess;
+event eTimeOut;
+/************************************************
+Functions or API's to interact with the OS Timer
+*************************************************/
+// create timer
+fun CreateTimer(client: machine) : Timer
 {
 	return new Timer(client);
 }
 
-fun StartTimer(timer: machine, value: int)
+// start timer
+fun StartTimer(timer: Timer, timeout: int)
 {
-	send timer, eStartTimer, value;
+	send timer, eStartTimer, timeout;
+}
+
+// cancel timer
+fun CancelTimer(timer: Timer)
+{
+	send timer, eCancelTimer;
 }

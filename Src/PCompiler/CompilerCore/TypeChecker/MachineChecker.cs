@@ -53,8 +53,6 @@ namespace Plang.Compiler.TypeChecker
                                     eventGotoState.TransitionFunction.Signature.ParameterTypes.Count());
                             }
                             break;
-
-                        case EventPushState _:
                         case EventDefer _:
                         case EventIgnore _:
                             {
@@ -108,7 +106,6 @@ namespace Plang.Compiler.TypeChecker
 
                         case EventDefer _:
                         case EventIgnore _:
-                        case EventPushState _:
                             break;
 
                         default:
@@ -153,15 +150,6 @@ namespace Plang.Compiler.TypeChecker
                             {
                                 ValidateEventPayloadToTransitionTarget(handler: handler, sourceLocation: eventGotoState.SourceLocation,
                                     eventPayloadType: handledEvent.PayloadType, targetFunction: eventGotoState.TransitionFunction);
-                            }
-
-                            break;
-
-                        case EventPushState eventPushState:
-                            if (eventPushState.Target.Entry != null)
-                            {
-                                ValidateEventPayloadToTransitionTarget(handler: handler, sourceLocation: eventPushState.SourceLocation,
-                                    eventPayloadType: handledEvent.PayloadType, targetFunction: eventPushState.Target.Entry);
                             }
 
                             break;

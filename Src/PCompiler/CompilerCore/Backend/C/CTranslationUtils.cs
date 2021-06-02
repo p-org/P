@@ -56,11 +56,6 @@ namespace Plang.Compiler.Backend.C
                         dosSet.AddEvent(pEvent);
                         dos.Add((pEvent, null));
                         break;
-
-                    case EventPushState eventPushState:
-                        transSet.AddEvent(pEvent);
-                        trans.Add((pEvent, context.GetDeclNumber(eventPushState.Target), "NULL"));
-                        break;
                 }
             }
 

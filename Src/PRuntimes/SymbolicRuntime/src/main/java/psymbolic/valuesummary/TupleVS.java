@@ -1,18 +1,19 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.Bdd;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/** Class for tuple value summaries */
+/**
+ * Represents a tuple value summaries
+ * */
+@SuppressWarnings("unchecked")
 public class TupleVS implements ValueSummary<TupleVS> {
     /** The fields of the tuple */
     private final ValueSummary[] fields;
-    /** The classes of the fields of the tuple */
+    /** The types of the fields of the tuple */
     private final Class[] classes;
 
     public TupleVS(TupleVS tuple) {
@@ -21,9 +22,9 @@ public class TupleVS implements ValueSummary<TupleVS> {
     }
 
     /** Make a new TupleVS from the provided items */
-    public TupleVS(ValueSummary... items) {
+    public TupleVS(ValueSummary<?>... items) {
         this.fields = items;
-        this.classes = Arrays.asList(items).stream().map(x -> x.getClass())
+        this.classes = Arrays.stream(items).map(x -> x.getClass())
                 .collect(Collectors.toList()).toArray(new Class[items.length]);
     }
 
@@ -40,7 +41,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
         return fields[i];
     }
 
-    /** Set the i-th value in the tuTupleVSple to the provided value
+    /** Set the i-th value in the TupleVS to the provided value
      * @param i The index to set in the TupleVS
      * @param val The value to set in the TupleVS
      * @return The result after updating the TupleVS */
@@ -48,7 +49,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
         final ValueSummary[] newItems = new ValueSummary[fields.length];
         System.arraycopy(fields, 0, newItems, 0, fields.length);
         if (!(val.getClass().equals(classes[i]))) throw new ClassCastException();
-        newItems[i] = newItems[i].update(val.getUniverse(), val);
+        newItems[i] = newItems[i].updateUnderGuard(val.getUniverse(), val);
         return new TupleVS(newItems);
     }
 
@@ -60,10 +61,13 @@ public class TupleVS implements ValueSummary<TupleVS> {
     }
 
     @Override
-    public TupleVS guard(Bdd guard) {
-        ValueSummary[] resultFields = new ValueSummary[fields.length];
+    public TupleVS restrict(Guard guard) {
+        if(guard.equals(getUniverse()))
+            return new TupleVS(this);
+
+        ValueSummary<?>[] resultFields = new ValueSummary[fields.length];
         for (int i = 0; i < fields.length; i++) {
-            resultFields[i] = fields[i].guard(guard);
+            resultFields[i] = fields[i].restrict(guard);
         }
         return new TupleVS(resultFields);
     }
@@ -80,7 +84,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
                 }
             }
         }
-        return new TupleVS(resultList.toArray(new ValueSummary[resultList.size()]));
+        return new TupleVS(resultList.toArray(new ValueSummary[0]));
     }
 
     @Override
@@ -89,24 +93,24 @@ public class TupleVS implements ValueSummary<TupleVS> {
     }
 
     @Override
-    public TupleVS update(Bdd guard, TupleVS update) {
-        return this.guard(guard.not()).merge(Collections.singletonList(update.guard(guard)));
+    public TupleVS updateUnderGuard(Guard guard, TupleVS update) {
+        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));
     }
 
     @Override
-    public PrimVS<Boolean> symbolicEquals(TupleVS cmp, Bdd pc) {
+    public PrimitiveVS<Boolean> symbolicEquals(TupleVS cmp, Guard pc) {
         if (fields.length != cmp.fields.length) {
-            return new PrimVS<>(false);
+            return new PrimitiveVS<>(false);
         }
-        Bdd tupleEqual = IntStream.range(0, fields.length)
-                .mapToObj((i) -> fields[i].symbolicEquals(cmp.fields[i], pc).getGuard(Boolean.TRUE))
-                .reduce(Bdd::and)
-                .orElse(Bdd.constTrue());
-        return BoolUtils.fromTrueGuard(pc.and(tupleEqual));
+        Guard tupleEqual = IntStream.range(0, fields.length)
+                .mapToObj((i) -> fields[i].symbolicEquals(cmp.fields[i], pc).getGuardFor(true))
+                .reduce(Guard::and)
+                .orElse(Guard.constTrue());
+        return BooleanVS.trueUnderGuard(pc.and(tupleEqual));
     }
 
     @Override
-    public Bdd getUniverse() {
+    public Guard getUniverse() {
         // Optimization: Tuples should always be nonempty,
         // and all fields should exist under the same conditions
         return fields[0].getUniverse();
@@ -114,11 +118,11 @@ public class TupleVS implements ValueSummary<TupleVS> {
 
     @Override
     public String toString() {
-        String str = "( ";
+        StringBuilder str = new StringBuilder("( ");
         for (int i = 0; i < classes.length; i++) {
-            str += (classes[i]).cast(fields[i]).toString() + " ";
+            str.append((classes[i]).cast(fields[i]).toString()).append(", ");
         }
-        str += ")";
-        return str;
+        str.append(")");
+        return str.toString();
     }
 }

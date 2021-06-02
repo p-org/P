@@ -288,9 +288,6 @@ namespace Plang.Compiler.Backend.Rvm
                     // Event is ignored. There is no need to generate a function for it.
                     break;
 
-                case EventPushState eventPushState:
-                    throw new NotImplementedException("State pushing is not implemented.");
-
                 default:
                     throw new ArgumentOutOfRangeException(stateAction.GetType().FullName);
             }
@@ -400,9 +397,6 @@ namespace Plang.Compiler.Backend.Rvm
                     Context.WriteLine(output, $"// Event {eventName} is ignored in the state {stateName} ");
                     break;
                 }
-
-                case EventPushState eventPushState:
-                    throw new NotImplementedException("State pushing is not implemented.");
 
                 default:
                     throw new ArgumentOutOfRangeException(stateAction.GetType().FullName);
@@ -612,10 +606,6 @@ namespace Plang.Compiler.Backend.Rvm
 
                 case NoStmt _:
                     break;
-
-                case PopStmt _:
-                    //last statement
-                    throw new NotImplementedException("PopStmt is not implemented.");
 
                 case PrintStmt printStmt:
                     Context.Write(output, "System.out.println(");

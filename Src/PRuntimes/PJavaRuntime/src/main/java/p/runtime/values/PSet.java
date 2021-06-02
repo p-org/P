@@ -2,12 +2,13 @@ package p.runtime.values;
 
 import lombok.NonNull;
 import lombok.SneakyThrows;
+import lombok.var;
 import p.runtime.PRuntimeException;
-import p.runtime.values.exceptions.ComparingPValuesException;
 import p.runtime.values.exceptions.InvalidIndexException;
-import p.runtime.values.exceptions.KeyNotFoundException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.IntStream;
 
 public class PSet extends PCollection {
@@ -69,10 +70,11 @@ public class PSet extends PCollection {
         if (obj == this)
             return true;
 
-        if (!(obj instanceof PSet other)) {
+        if (!(obj instanceof PSet)) {
             return false;
         }
 
+        PSet other = (PSet) obj;
         if (set.size() != other.set.size()) {
             return false;
         }

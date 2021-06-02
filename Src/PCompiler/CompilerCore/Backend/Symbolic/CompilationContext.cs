@@ -4,6 +4,7 @@ using System.IO;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Symbolic
 {
@@ -13,6 +14,8 @@ namespace Plang.Compiler.Backend.Symbolic
         int nextLoopId;
         int nextBranchId;
         int nextTempVarId;
+
+        internal PLanguageType ReturnType { get; set; }
 
         internal Dictionary<Function, int> anonFuncIds;
 
@@ -60,7 +63,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case State state:
                     return $"state_{state.Name}";
                 case PEvent pEvent:
-                    return $"Events.event_{pEvent.Name}";
+                    return $"{pEvent.Name}";
                 default:
                     throw new NotImplementedException($"decl type {decl.GetType().Name} not supported");
             }
@@ -76,7 +79,7 @@ namespace Plang.Compiler.Backend.Symbolic
             return machine.Semantics;
         }
 
-        internal static string NullEventName => "Events.event_null";
+        internal static string NullEventName => "_null";
 
         internal static string SchedulerVar => "scheduler";
 

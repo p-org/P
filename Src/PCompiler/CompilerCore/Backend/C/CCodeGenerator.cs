@@ -1049,11 +1049,7 @@ namespace Plang.Compiler.Backend.C
 
                 case NoStmt _:
                     return;
-
-                case PopStmt _:
-                    context.WriteLine(output, "PrtPop(p_this);");
-                    context.WriteLine(output, $"goto {context.Names.GetReturnLabel(function)};");
-                    break;
+                
 
                 case PrintStmt printStmt:
                     context.Write(output, $"PrtPrintf(");

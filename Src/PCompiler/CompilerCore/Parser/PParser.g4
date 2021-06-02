@@ -127,7 +127,6 @@ stateBodyItem : ENTRY anonEventHandler       # StateEntry
               | IGNORE nonDefaultEventList SEMI   # StateIgnore
               | ON eventList DO funName=iden SEMI # OnEventDoAction
               | ON eventList DO anonEventHandler  # OnEventDoAction
-              | ON eventList PUSH stateName SEMI  # OnEventPushState
               | ON eventList GOTO stateName SEMI  # OnEventGotoState
               | ON eventList GOTO stateName WITH anonEventHandler  # OnEventGotoState
               | ON eventList GOTO stateName WITH funName=iden SEMI # OnEventGotoState
@@ -143,7 +142,6 @@ stateName : (groups+=iden DOT)* state=iden ; // First few Idens are groups
 
 functionBody : LBRACE varDecl* statement* RBRACE ;
 statement : LBRACE statement* RBRACE							# CompoundStmt
-          | POP SEMI											# PopStmt
           | ASSERT assertion=expr (COMMA message=expr)? SEMI	# AssertStmt
           | PRINT message=expr SEMI								# PrintStmt
           | RETURN expr? SEMI									# ReturnStmt

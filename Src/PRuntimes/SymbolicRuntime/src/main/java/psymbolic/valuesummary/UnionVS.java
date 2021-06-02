@@ -1,60 +1,81 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.Bdd;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-/** Class for union value summaries */
+/**
+ * Represents a value of "any" type
+ * It stores a pair (type T, value of type T)
+ * */
+@SuppressWarnings("ALL")
 public class UnionVS implements ValueSummary<UnionVS> {
-    private PrimVS<Class<? extends ValueSummary>> type;
-    private Map<Class<? extends ValueSummary>, ValueSummary> payloads;
+    /* Type of value stored in the any type variable */
+    private final PrimitiveVS<Class<? extends ValueSummary>> type;
+    /* Map from the type of variable to the value summary representing the value of that type */
+    private Map<Class<? extends ValueSummary>, ValueSummary> value;
 
-    public UnionVS(PrimVS<Class<? extends ValueSummary>> type, Map<Class<? extends ValueSummary>, ValueSummary> payloads) {
+    public UnionVS(@NotNull PrimitiveVS<Class<? extends ValueSummary>> type, @NotNull Map<Class<? extends ValueSummary>, ValueSummary> values) {
         this.type = type;
-        this.payloads = payloads;
-        assert(this.type != null);
+        this.value = values;
     }
 
-    public UnionVS(Bdd pc, Class<? extends ValueSummary> type, ValueSummary payloads) {
-        this.type = new PrimVS<Class<? extends ValueSummary>>(type).guard(pc);
-        this.payloads = new HashMap<>();
-        this.payloads.put(type, payloads);
+    public UnionVS(Guard pc, Class<? extends ValueSummary> type, ValueSummary values) {
+        this.type = new PrimitiveVS<Class<? extends ValueSummary>>(type).restrict(pc);
+        this.value = new HashMap<>();
+        // TODO: why are we not restricting the values?
+        this.value.put(type, values);
         assert(this.type != null);
     }
 
     public UnionVS() {
-        this.type = new PrimVS<>();
-        this.payloads = new HashMap<>();
-        assert(this.type != null);
+        this.type = new PrimitiveVS<>();
+        this.value = new HashMap<>();
     }
 
     public UnionVS(UnionVS vs) {
-        this.type = vs.type;
-        this.payloads = new HashMap<>(vs.payloads);
+        this.type = new PrimitiveVS<>(vs.type);
+        this.value = new HashMap<>(vs.value);
     }
 
     public UnionVS(ValueSummary vs) {
         this(vs.getUniverse(), vs.getClass(), vs);
     }
 
+    /**
+     * Does the any type variable store a value of a particular type
+     * @param queryType type to be checked
+     * @return true if the variable stores a value of "queryType" under some path constrain
+     */
     public boolean hasType(Class<? extends ValueSummary> queryType) {
-        return !type.getGuard(queryType).isConstFalse();
+        return !type.getGuardFor(queryType).isFalse();
     }
 
-    public PrimVS<Class<? extends ValueSummary>> getType() {
+    /**
+     * Get the types of value stored in the "any" type variable
+     * @return type of the variable
+     */
+    public PrimitiveVS<Class<? extends ValueSummary>> getType() {
         return type;
     }
 
-    public ValueSummary getPayload(Class<? extends ValueSummary> type) {
-        return payloads.get(type);
+    /**
+     * Get the value in the of a particular type
+     * @param type type of value
+     * @return value
+     */
+    public ValueSummary getValue(Class<? extends ValueSummary> type) {
+        // TODO: Add a check that the type exists!
+        return value.get(type);
+    }
+
+    public Guard getGuardFor(Class<? extends ValueSummary> type) {
+        return this.type.getGuardFor(type);
     }
 
     public void check() {
-        for (Class<? extends ValueSummary> typeOpt : type.getValues()) {
-            if (!getUniverse(typeOpt).isConstFalse()) {
-                assert(getPayload(typeOpt) != null);
-            }
+        for (Class<? extends ValueSummary> type : this.type.getValues()) {
+            assert getGuardFor(type).isFalse() || (getValue(type) != null);
         }
     }
 
@@ -64,28 +85,31 @@ public class UnionVS implements ValueSummary<UnionVS> {
     }
 
     @Override
-    public UnionVS guard(Bdd guard) {
-        assert(type != null);
-        final PrimVS<Class<? extends ValueSummary>> newTag = type.guard(guard);
-        final Map<Class<? extends ValueSummary>, ValueSummary> newPayloads = new HashMap<>();
-        for (Map.Entry<Class<? extends ValueSummary>, ValueSummary> entry : payloads.entrySet()) {
-            final Class<? extends ValueSummary> tag = entry.getKey();
+    public UnionVS restrict(Guard guard) {
+
+        if(guard.equals(getUniverse()))
+            return new UnionVS(this);
+
+        final PrimitiveVS<Class<? extends ValueSummary>> restrictedType = type.restrict(guard);
+        final Map<Class<? extends ValueSummary>, ValueSummary> restrictedValues = new HashMap<>();
+        for (Map.Entry<Class<? extends ValueSummary>, ValueSummary> entry : value.entrySet()) {
+            final Class<? extends ValueSummary> type = entry.getKey();
             final ValueSummary value = entry.getValue();
-            if (!newTag.getGuard(tag).isConstFalse()) {
-                newPayloads.put(tag, value.guard(guard));
+            if (!restrictedType.getGuardFor(type).isFalse()) {
+                restrictedValues.put(type, value.restrict(guard));
             }
         }
-        return new UnionVS(newTag, newPayloads);
+        return new UnionVS(restrictedType, restrictedValues);
     }
 
     @Override
     public UnionVS merge(Iterable<UnionVS> summaries) {
         assert(type != null);
-        final List<PrimVS<Class<? extends ValueSummary>>> tagsToMerge = new ArrayList<>();
+        final List<PrimitiveVS<Class<? extends ValueSummary>>> typesToMerge = new ArrayList<>();
         final Map<Class<? extends ValueSummary>, List<ValueSummary>> valuesToMerge = new HashMap<>();
         for (UnionVS union : summaries) {
-            tagsToMerge.add(union.type);
-            for (Map.Entry<Class<? extends ValueSummary>, ValueSummary> entry : union.payloads.entrySet()) {
+            typesToMerge.add(union.type);
+            for (Map.Entry<Class<? extends ValueSummary>, ValueSummary> entry : union.value.entrySet()) {
                 valuesToMerge
                         .computeIfAbsent(entry.getKey(), (key) -> new ArrayList<>())
                         .add(entry.getValue());
@@ -94,26 +118,24 @@ public class UnionVS implements ValueSummary<UnionVS> {
 
         if (valuesToMerge.size() == 0) return new UnionVS();
 
-        final PrimVS<Class<? extends ValueSummary>> newTag = type.merge(tagsToMerge);
-        final Map<Class<? extends ValueSummary>, ValueSummary> newPayloads = new HashMap<>(this.payloads);
+        final PrimitiveVS<Class<? extends ValueSummary>> mergedType = type.merge(typesToMerge);
+        final Map<Class<? extends ValueSummary>, ValueSummary> mergedValue = new HashMap<>(this.value);
 
         for (Map.Entry<Class<? extends ValueSummary>, List<ValueSummary>> entry : valuesToMerge.entrySet()) {
-            Class<? extends ValueSummary> tag = entry.getKey();
-            List<ValueSummary> entryPayload = entry.getValue();
-            if (entryPayload.size() > 0) {
-                ValueSummary oldPayload = this.payloads.get(tag);
-                ValueSummary newPayload;
-                if (oldPayload == null) {
-                    newPayload = entryPayload.get(0).merge(entryPayload.subList(1, entry.getValue().size()));
+            Class<? extends ValueSummary> type = entry.getKey();
+            List<ValueSummary> value = entry.getValue();
+            if (value.size() > 0) {
+                ValueSummary oldValue = this.value.get(type);
+                ValueSummary newValue;
+                if (oldValue == null) {
+                    newValue = value.get(0).merge(value.subList(1, entry.getValue().size()));
                 } else {
-                    newPayload = oldPayload.merge(entryPayload);
+                    newValue = oldValue.merge(value);
                 }
-                newPayloads.put(tag, newPayload);
+                mergedValue.put(type, newValue);
             }
         }
-
-        UnionVS res = new UnionVS(newTag, newPayloads);
-        return res;
+        return new UnionVS(mergedType, mergedValue);
     }
 
     @Override
@@ -122,36 +144,42 @@ public class UnionVS implements ValueSummary<UnionVS> {
     }
 
     @Override
-    public UnionVS update(Bdd guard, UnionVS update) {
-        return this.guard(guard.not()).merge(update.guard(guard));
+    public UnionVS updateUnderGuard(Guard guard, UnionVS updateVal) {
+        return this.restrict(guard.not()).merge(updateVal.restrict(guard));
     }
 
     @Override
-    public PrimVS<Boolean> symbolicEquals(UnionVS cmp, Bdd pc) {
+    public PrimitiveVS<Boolean> symbolicEquals(UnionVS cmp, Guard pc) {
         assert(type != null);
-        PrimVS<Boolean> res = type.symbolicEquals(cmp.type, pc);
-        for (Map.Entry<Class<? extends ValueSummary>, ValueSummary> payload : cmp.payloads.entrySet()) {
-            if (!payloads.containsKey(payload.getKey())) {
-                PrimVS<Boolean> bothLackKey = BoolUtils.fromTrueGuard(pc.and(type.getGuard(payload.getKey()).not()));
-                res = BoolUtils.and(res, bothLackKey);
+        PrimitiveVS res = type.symbolicEquals(cmp.type, pc);
+        for (Map.Entry<Class<? extends ValueSummary>, ValueSummary> payload : cmp.value.entrySet()) {
+            if (!value.containsKey(payload.getKey())) {
+                PrimitiveVS<Boolean> bothLackKey = BooleanVS.trueUnderGuard(pc.and(type.getGuardFor(payload.getKey()).not()));
+                res = BooleanVS.and(res, bothLackKey);
             } else {
-                res = BoolUtils.and(res, payload.getValue().symbolicEquals(payloads.get(payload.getKey()), pc));
+                res = BooleanVS.and(res, payload.getValue().symbolicEquals(value.get(payload.getKey()), pc));
             }
         }
         return res;
     }
 
     @Override
-    public Bdd getUniverse() {
+    public Guard getUniverse() {
         return type.getUniverse();
     }
 
-    public Bdd getUniverse(Class<? extends ValueSummary> type) { return this.type.getGuard(type); }
+    public Guard getUniverse(Class<? extends ValueSummary> type) { return this.type.getGuardFor(type); }
 
     @Override
     public String toString() {
-        return payloads.values().stream().map(x -> x.toString()).collect(Collectors.toList()).toString();
-        //return type.toString();
+        StringBuilder out = new StringBuilder();
+        out.append("[");
+        for (Class<? extends ValueSummary>type : type.getValues()) {
+            out.append(value.get(type).toString());
+            out.append(", ");
+        }
+        out.append("]");
+        return out.toString();
     }
 
 }

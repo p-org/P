@@ -5,6 +5,7 @@ machine Main {
 	start state Init {
 		entry {
 			send this, E1, (x = 1, y = this);
+
 		}
 		on E1 do Foo;
 		on E2 goto Init with Bar;
@@ -17,6 +18,11 @@ machine Main {
 
 	fun Bar(x: int) {
 		assert x == 1;
+		goto done;
+	}
+
+	state done {
+		
 	}
 }
 

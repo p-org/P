@@ -354,13 +354,14 @@ machine OSRDriver {
 	
 	state sStoppingTimerDriver {
 		ignore eD0Entry;
+		defer eSwitchStatusChange;
 		entry {
 			send TimerV, eStopTimer;
 		}
 		
-		on eStoppingSuccess goto sReturningTimerStoppedDriver;
+		on eStoppingSuccess goto sCompletingD0ExitDriver;
 		on eStoppingFailure goto sWaitingForTimerToFlushDriver;
-		on eTimerFired goto sReturningTimerStoppedDriver;
+		on eTimerFired goto sCompletingD0ExitDriver;
 	}
 	
 	state sWaitingForTimerToFlushDriver {
@@ -369,16 +370,8 @@ machine OSRDriver {
 		
 		entry {}
 		
-		on eTimerFired goto sReturningTimerStoppedDriver;
+		on eTimerFired goto sCompletingD0ExitDriver;
 		
-	}
-	
-	
-	state sReturningTimerStoppedDriver {
-		ignore eD0Entry;
-		entry {
-			raise(eTimerStopped);
-		}
 	}
 }
 

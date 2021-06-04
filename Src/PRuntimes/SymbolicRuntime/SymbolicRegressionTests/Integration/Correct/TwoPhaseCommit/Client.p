@@ -29,6 +29,9 @@ machine Client {
     var currTransaction : tRecord;
     // number of transactions issued
     var N: int;
+    // current write transaction response
+    var currWriteResponse: tWriteTransResp;
+
     start state Init {
 	    entry (payload : (coor: Coordinator, n : int)) {
 	        coordinator = payload.coor;
@@ -50,27 +53,26 @@ machine Client {
 	        // if the write was a time out lets not confirm it
 	        if(writeResp.status == TIMEOUT)
 	            return;
-
+	        currWriteResponse = writeResp;
 			send coordinator, eReadTransReq, (client= this, key = currTransaction.key);
-			// await response from the coordinator
-			receive {
-			    case eReadTransResp: (readResp: tReadTransResp) {
-			        // assert that if write transaction failed then read must fail as well and vice-versa
-			        assert readResp.status == writeResp.status, format ("Inconsistency!");
-			        if(readResp.status == SUCCESS)
-			        {
-			            assert readResp.rec == currTransaction,
-			            format ("Record read is not same as what was written by the client:: read - {0}, written - {1}",
-			            readResp.rec, currTransaction);
-			        }
-			    }
-			}
-			if(N > 0)
+		}
+
+		on eReadTransResp do (readResp: tReadTransResp) {
+	        // assert that if write transaction failed then read must fail as well and vice-versa
+	        assert readResp.status == currWriteResponse.status, format ("Inconsistency!");
+	        if(readResp.status == SUCCESS)
+	        {
+	            assert readResp.rec == currTransaction,
+	            format ("Record read is not same as what was written by the client:: read - {0}, written - {1}",
+	            readResp.rec, currTransaction);
+	        }
+
+	        if(N > 0)
 			{
 			    N = N -1;
 			    goto SendWriteTransaction;
 			}
-		}
+	    }
 	}
 }
 

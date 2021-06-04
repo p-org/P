@@ -344,7 +344,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     if (gotoState.TransitionFunction != null)
                     {
                         context.WriteLine(output, " {");
-                        context.WriteLine(output, "@Override public void transitionAction(Guard pc, Machine machine, UnionVS payload) {");
+                        context.WriteLine(output, "@Override public void transitionFunction(Guard pc, Machine machine, UnionVS payload) {");
 
                         var transitionFunc = gotoState.TransitionFunction;
                         Debug.Assert(!(transitionFunc.CanChangeState ?? false));

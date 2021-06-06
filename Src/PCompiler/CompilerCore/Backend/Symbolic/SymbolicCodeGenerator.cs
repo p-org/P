@@ -1496,25 +1496,42 @@ namespace Plang.Compiler.Backend.Symbolic
                         throw new NotImplementedException("Binary operations are currently only supported between primitive types and enums | " + str);
                     }
 
-                    var lhsLambdaTemp = context.FreshTempVar();
-                    var rhsLambdaTemp = context.FreshTempVar();
+                    if (isEquality)
+                    {
+                        if (binOpExpr.Operation == BinOpType.Neq)
+                        {
+                          context.Write(output, "(");
+                        }
+                        WriteExpr(context, output, pcScope, binOpExpr.Lhs);
+                        context.Write(output, ".symbolicEquals(");
+                        WriteExpr(context, output, pcScope, binOpExpr.Rhs);
+                        context.Write(output, $", {pcScope.PathConstraintVar})");
+                        if (binOpExpr.Operation == BinOpType.Neq)
+                        {
+                          context.Write(output, ").apply(x -> !x)");
+                        }
+                    }
+                    else
+                    {
+                        var lhsLambdaTemp = context.FreshTempVar();
+                        var rhsLambdaTemp = context.FreshTempVar();
 
-                    context.Write(output, "(");
-                    WriteExpr(context, output, pcScope, binOpExpr.Lhs);
-                    context.Write(output, ").apply(");
-                    if (binOpExpr.Rhs is NullLiteralExpr)
-                        context.Write(output, $"{GetDefaultValueNoGuard(context, binOpExpr.Lhs.Type)}.restrict(Guard.constFalse())");
-                    else WriteExpr(context, output, pcScope, binOpExpr.Rhs);
-                    string lambda;
-                    if (binOpExpr.Operation == BinOpType.Eq) lambda = $"{lhsLambdaTemp}.equals({rhsLambdaTemp}))";
-                    else if (binOpExpr.Operation == BinOpType.Neq) lambda = $"!{lhsLambdaTemp}.equals({rhsLambdaTemp}))";
-                    else lambda = $"{lhsLambdaTemp} {BinOpToStr(binOpExpr.Operation)} {rhsLambdaTemp})";
-                    context.Write(
-                        output,
-                        $", ({lhsLambdaTemp}, {rhsLambdaTemp}) -> " +
-                        lambda
-                    );
-
+                        context.Write(output, "(");
+                        WriteExpr(context, output, pcScope, binOpExpr.Lhs);
+                        context.Write(output, ").apply(");
+                        if (binOpExpr.Rhs is NullLiteralExpr)
+                            context.Write(output, $"{GetDefaultValueNoGuard(context, binOpExpr.Lhs.Type)}.restrict(Guard.constFalse())");
+                        else WriteExpr(context, output, pcScope, binOpExpr.Rhs);
+                        string lambda;
+                        if (binOpExpr.Operation == BinOpType.Eq) lambda = $"{lhsLambdaTemp}.equals({rhsLambdaTemp}))";
+                        else if (binOpExpr.Operation == BinOpType.Neq) lambda = $"!{lhsLambdaTemp}.equals({rhsLambdaTemp}))";
+                        else lambda = $"{lhsLambdaTemp} {BinOpToStr(binOpExpr.Operation)} {rhsLambdaTemp})";
+                        context.Write(
+                            output,
+                            $", ({lhsLambdaTemp}, {rhsLambdaTemp}) -> " +
+                            lambda
+                        );
+                    }
                     break;
                 case BoolLiteralExpr boolLiteralExpr:
                     {

@@ -311,6 +311,7 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public void step() {
+        System.gc();
         PrimitiveVS<Machine> choices = getNextSender();
 
         if (choices.isEmptyVS()) {

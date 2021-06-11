@@ -6,6 +6,7 @@ using Plang.Compiler.TypeChecker;
 using System;
 using System.IO;
 using System.Linq;
+using Plang.Compiler.Backend.Symbolic;
 
 namespace Plang.Compiler
 {
@@ -51,6 +52,12 @@ namespace Plang.Compiler
                 CSharpCodeCompiler.Compile(job);
                 job.Output.WriteInfo($"----------------------------------------");
 
+            }
+            else if (job.OutputLanguage == CompilerOutput.Symbolic)
+            {
+                job.Output.WriteInfo($"Compiling {job.ProjectName} module ..\n");
+                SymbolicCodeCompiler.Compile(job);
+                job.Output.WriteInfo($"----------------------------------------");
             }
         }
 

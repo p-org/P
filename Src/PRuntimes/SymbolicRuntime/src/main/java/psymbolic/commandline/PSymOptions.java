@@ -1,9 +1,10 @@
 package psymbolic.commandline;
 
 import org.apache.commons.cli.*;
+import org.reflections.Reflections;
 
-import java.io.File;
 import java.io.PrintWriter;
+import java.util.Set;
 
 /**
  * Represents the commandline options for the tool
@@ -16,13 +17,13 @@ public class PSymOptions {
         options = new Options();
 
         // input file to be tested
-        Option inputFile = Option.builder("t")
-                .longOpt("test")
-                .desc("Input jar file to be tested using the symbolic execution engine")
+        Option inputFile = Option.builder("m")
+                .longOpt("main")
+                .desc("Name of the main machine from where the symbolic engine should start exploration")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Test Input Jar file")
-                .required().build();
+                .argName("Name of Main Machine (string)")
+                .build();
         options.addOption(inputFile);
 
         // max depth bound for the search
@@ -31,17 +32,17 @@ public class PSymOptions {
                 .desc("Max Depth bound for the search")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Max Depth Bound")
+                .argName("Max Depth Bound (integer)")
                 .build();
         options.addOption(depthBound);
 
         // max depth bound for the search
         Option inputChoiceBound = Option.builder("cb")
                 .longOpt("choice-bound")
-                .desc("Max choice bound at each depth during the search")
+                .desc("Max choice bound at each depth during the search (integer)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Max Choice Bound")
+                .argName("Max Choice Bound (integer)")
                 .build();
         options.addOption(inputChoiceBound);
 
@@ -51,13 +52,13 @@ public class PSymOptions {
                 .desc("Max scheduling choice bound at each depth during the search")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Max Schedule Choice Bound")
+                .argName("Max Schedule Choice Bound (integer)")
                 .build();
+        options.addOption(maxSchedBound);
 
         Option help = Option.builder("h")
                 .longOpt("help")
                 .desc("Print the help message")
-                .argName("Help")
                 .build();
         options.addOption(help);
     }
@@ -72,7 +73,8 @@ public class PSymOptions {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            System.out.println("Try \"--help\" option for details.");
+            formatter.printUsage(writer, 80, "PSymbolic", options);
+            writer.flush();
             System.exit(1);
         }
 
@@ -80,14 +82,20 @@ public class PSymOptions {
         PSymConfiguration config = new PSymConfiguration();
         for (Option option : cmd.getOptions()) {
             switch (option.getOpt()) {
-                case "t":
-                case "test":
-                    File file = new File(option.getValue());
-                    if (file.exists()) {
-                        config.setInputFile(option.getValue());
-                    } else {
-                        formatter.printHelp("t", String.format("File %s not found", option.getValue()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "t", options);
+                case "m":
+                case "main":
+                    config.setMainMachine(option.getValue());
+                    Reflections reflections = new Reflections("psymbolic");
+
+                    Set<Class<? extends Program>> subTypes = reflections.getSubTypesOf(Program.class);
+                    for(Class<? extends Program> clazz :subTypes)
+                    {
+                        System.out.println("Found Program implementations:" +  clazz.toString());
+                    }
+                    if(subTypes.stream().count() == 0)
+                    {
+                        formatter.printHelp("m", String.format("Main machine %s not found", option.getValue()), options, "Try \"--help\" option for details.");
+                        formatter.printUsage(writer, 80, "m", options);
                     }
                     break;
                 case "sb":
@@ -119,8 +127,7 @@ public class PSymOptions {
                 case "h":
                 case "help":
                 default:
-                    formatter.printUsage(writer, 80, "PSymbolic", options);
-                    writer.flush();
+                    formatter.printHelp(100, "-h or --help", "Commandline options for psymbolic", options, "");
                     System.exit(0);
             }
         }

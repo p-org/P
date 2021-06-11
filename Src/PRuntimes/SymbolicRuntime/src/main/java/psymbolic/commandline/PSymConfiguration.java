@@ -8,9 +8,10 @@ import lombok.Setter;
  */
 public class PSymConfiguration {
 
-    // path of the input test file
+    // name of the main machine
     @Getter @Setter
-    private String inputFile = "";
+    private String mainMachine = "Main";
+
     // max depth bound after which the search will stop automatically
     private final int maxDepthBound = 1000;
 

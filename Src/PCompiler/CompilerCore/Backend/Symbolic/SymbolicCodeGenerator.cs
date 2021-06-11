@@ -2000,6 +2000,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
+            context.WriteLine(output, "package psymbolic;");
             context.WriteLine(output, "import psymbolic.commandline.*;");
             context.WriteLine(output, "import psymbolic.valuesummary.*;");
             context.WriteLine(output, "import psymbolic.runtime.*;");
@@ -2012,7 +2013,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import java.util.Map;");
             context.WriteLine(output, "import java.util.HashMap;");
             context.WriteLine(output);
-            context.WriteLine(output, $"public class {context.MainClassName.ToLower()} implements Program {{");
+            context.WriteLine(output, $"public class {context.ProjectName.ToLower()} implements Program {{");
             context.WriteLine(output);
             context.WriteLine(output, $"public static Scheduler {CompilationContext.SchedulerVar};");
             context.WriteLine(output);

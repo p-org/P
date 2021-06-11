@@ -1,5 +1,6 @@
 package psymbolic;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.function.Executable;
@@ -14,7 +15,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 /**
@@ -48,7 +48,7 @@ public class SymbolicRegression {
     }
 
     void runDynamicTest(int expected, List<String> testCasePaths, String testCasePath, Collection<DynamicTest> dynamicTests) {
-        Executable exec = () -> assertEquals(expected, TestCaseExecutor.runTestCase(testCasePaths, testCasePath));
+        Executable exec = () -> Assertions.assertEquals(expected, TestCaseExecutor.runTestCase(testCasePaths, testCasePath));
         DynamicTest dynamicTest = DynamicTest.dynamicTest(testCasePath, () -> assertTimeoutPreemptively(Duration.ofMinutes(60), exec));
         dynamicTests.add(dynamicTest);
     }

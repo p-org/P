@@ -28,7 +28,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     "When generating code for the 'Symbolic' target, the project name should " +
                     "begin with an alphabetic character and contain only alphanumeric characters");
 
-            MainClassName = ProjectName;
+            MainClassName = ProjectName.ToLower();
             anonFuncIds = new Dictionary<Function, int>();
         }
 
@@ -56,12 +56,12 @@ namespace Plang.Compiler.Backend.Symbolic
                         return $"func_{func.Name}";
                     }
                 case Machine machine:
-                    return $"machine_{machine.Name}";
+                    return $"{machine.Name}";
                 case Interface @interface:
                     // TODO: Is it safe to take an interface's name and treat it as if it were a machine's name?
-                    return $"machine_{@interface.Name}";
+                    return $"{@interface.Name}";
                 case State state:
-                    return $"state_{state.Name}";
+                    return $"{state.Name}";
                 case PEvent pEvent:
                     return $"{pEvent.Name}";
                 default:
@@ -71,7 +71,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         internal object GetMachineName(Machine machine)
         {
-            return $"machine_{machine.Name}";
+            return $"{machine.Name}";
         }
 
         internal string GetBufferSemantics(Machine machine)

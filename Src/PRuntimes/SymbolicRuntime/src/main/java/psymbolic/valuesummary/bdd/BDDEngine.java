@@ -12,7 +12,7 @@ public class BDDEngine {
     // Make this constructor static so that the class cannot be instantiated
     private BDDEngine() {
         // use the pjbdd implementation without cbdd
-        bddImpl = new PJBDDImpl(false);
+        bddImpl = new PJBDDImpl(true);
     }
 
     /**

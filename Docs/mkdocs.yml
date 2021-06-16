@@ -1,0 +1,26 @@
+site_name: 'P'
+site_description: 'P: Modular and Safe Programming of Distributed Systems'
+site_author: 'Ankush Desai'
+
+repo_url: https://p-org.github.io/P/
+
+theme: windmill-dark
+
+# This should be renamed to nav for mkdocs 1.0+
+nav:
+- Overview: index.md
+- Getting Started:
+  - Installation: sample-a.md
+  - Build from Source:
+    - Sample Subpage A1: a/sample-a1.md
+    - Sample Subpage A2: a/sample-a2.md
+- Tutorials: sample-b.md
+- Language Manual: sample-b.md
+
+markdown_extensions:
+  - toc:
+      permalink: '#'
+
+extra:
+  history_buttons: false
+  version: v1.0.0

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+BASE_PATH="$(dirname "$0")/.."
+
+java -cp "$BASE_PATH/lib/*:." -javaagent:"$BASE_PATH/examples/agent/rv-monitor-all.jar" "$@"

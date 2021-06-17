@@ -143,7 +143,7 @@ def main():
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     pcompiler_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))))
-    rvmonitor_bin = os.path.join(os.path.dirname(os.path.dirname(script_dir)), "ext", "rv-monitor", "target", "release", "rv-monitor", "bin")
+    rvmonitor_bin = os.path.join(os.path.dirname(os.path.dirname(script_dir)), "rv-monitor")
     gen_src_dir = os.path.join(script_dir, "target", "generated-sources")
     p_spec_dir = os.path.join(script_dir, "monitor")
 

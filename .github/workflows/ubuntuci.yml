@@ -21,12 +21,6 @@ jobs:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
-    - name: Build RV-Monitor
-      run: |
-        git submodule update --init --recursive
-        pushd Tst/RegressionTests/Rvm/ext/rv-monitor
-        mvn install -DskipTests
-        popd
     - name: Build P runtime for Java
       run: |
         pushd Src/PRuntimes/RvmRuntime

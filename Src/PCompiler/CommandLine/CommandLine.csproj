@@ -18,6 +18,7 @@
     <Authors>The P team</Authors>
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/p-org/P</RepositoryUrl>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />

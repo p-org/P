@@ -1,8 +1,8 @@
 package psymbolic.runtime.machine.buffer;
 
 import psymbolic.runtime.Event;
-import psymbolic.runtime.Scheduler;
-import psymbolic.runtime.logger.ScheduleLogger;
+import psymbolic.runtime.scheduler.Scheduler;
+import psymbolic.runtime.logger.TraceSymLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Message;
 import psymbolic.valuesummary.*;
@@ -20,7 +20,7 @@ public class EventBag extends SymbolicBag<Message> implements EventBuffer {
 
     @Override
     public void send(Guard pc, PrimitiveVS<Machine> dest, PrimitiveVS<Event> event, UnionVS payload) {
-        ScheduleLogger.send(new Message(event, dest, payload).restrict(pc));
+        TraceSymLogger.send(new Message(event, dest, payload).restrict(pc));
         this.add(new Message(event, dest, payload).restrict(pc));
     }
 

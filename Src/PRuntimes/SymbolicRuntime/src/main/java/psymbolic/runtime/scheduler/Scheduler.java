@@ -1,10 +1,14 @@
-package psymbolic.runtime;
+package psymbolic.runtime.scheduler;
 
 import psymbolic.commandline.Assert;
+import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
-import psymbolic.runtime.logger.ScheduleLogger;
+import psymbolic.runtime.*;
+import psymbolic.runtime.logger.SearchLogger;
+import psymbolic.runtime.logger.TraceSymLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Message;
+import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.*;
 
 import java.util.*;
@@ -13,11 +17,12 @@ import java.util.stream.Collectors;
 
 public class Scheduler implements SymbolicSearch {
 
+    protected SearchStats searchStats = new SearchStats();
+
     /** The scheduling choices made */
     public final Schedule schedule;
 
-    /** Program name */
-    public final String name;
+    PSymConfiguration configuration;
 
     /** List of all machines along any path constraints */
     final List<Machine> machines;
@@ -41,13 +46,6 @@ public class Scheduler implements SymbolicSearch {
 
     int choiceDepth = 0;
 
-    /** Maximum number of internal steps allowed */
-    private int maxInternalSteps = -1;
-    /** Maximum depth to explore */
-    private int maxDepth = -1;
-    /** Maximum depth to explore before considering it an error */
-    private int errorDepth = -1;
-
     /** Reset scheduler state
      */
     public void reset() {
@@ -62,14 +60,7 @@ public class Scheduler implements SymbolicSearch {
      * @return Whether or not there are more steps to run
      */
     public boolean isDone() {
-        return done || depth == maxDepth;
-    }
-
-    /** Get the machine that execution started with
-     * @return The starting machine
-     */
-    public Machine getStartMachine() {
-        return start;
+        return done || depth == configuration.getDepthBound();
     }
 
     /** Get current depth
@@ -91,12 +82,13 @@ public class Scheduler implements SymbolicSearch {
     /** Make a new Scheduler
      * @param machines The machines initially in the Scheduler
      */
-    public Scheduler(String name, Machine... machines) {
-        //ScheduleLogger.disable();
-        schedule = getNewSchedule();
+    public Scheduler(PSymConfiguration config, Machine... machines) {
+
+        this.configuration = config;
+        this.schedule = getNewSchedule();
         this.machines = new ArrayList<>();
         this.machineCounters = new HashMap<>();
-        this.name = name;
+
 
         for (Machine machine : machines) {
             this.machines.add(machine);
@@ -106,19 +98,10 @@ public class Scheduler implements SymbolicSearch {
             } else {
                 this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
             }
-            ScheduleLogger.onCreateMachine(Guard.constTrue(), machine);
+            TraceSymLogger.onCreateMachine(Guard.constTrue(), machine);
             machine.setScheduler(this);
             schedule.makeMachine(machine, Guard.constTrue());
         }
-    }
-
-    public void setMaxInternalSteps(int maxSteps) { this.maxInternalSteps = maxSteps; }
-
-    public int getMaxInternalSteps() { return maxInternalSteps; }
-
-    @Override
-    public void setMaxDepth(int maxDepth) {
-        this.maxDepth = maxDepth;
     }
 
     public List<PrimitiveVS> getNextIntegerChoices(PrimitiveVS<Integer> bound, Guard pc) {
@@ -207,11 +190,6 @@ public class Scheduler implements SymbolicSearch {
         return getNextElement(s.getElements(), pc);
     }
 
-    @Override
-    public void setErrorDepth(int errorDepth) {
-        this.errorDepth = errorDepth;
-    }
-
     /** Start execution with the specified machine
      * @param machine Machine to start execution with */
     public void startWith(Machine machine) {
@@ -224,7 +202,7 @@ public class Scheduler implements SymbolicSearch {
 
         machines.add(machine);
         start = machine;
-        ScheduleLogger.onCreateMachine(Guard.constTrue(), machine);
+        TraceSymLogger.onCreateMachine(Guard.constTrue(), machine);
         machine.setScheduler(this);
         schedule.makeMachine(machine, Guard.constTrue());
 
@@ -248,7 +226,7 @@ public class Scheduler implements SymbolicSearch {
             this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
         }
 
-        ScheduleLogger.onCreateMachine(machineVS.getUniverse(), machine);
+        TraceSymLogger.onCreateMachine(machineVS.getUniverse(), machine);
         machine.setScheduler(this);
 
         performEffect(
@@ -272,7 +250,7 @@ public class Scheduler implements SymbolicSearch {
         start = target;
         while (!isDone()) {
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
-            Assert.prop(errorDepth < 0 || depth < errorDepth, "Maximum allowed depth " + errorDepth + " exceeded", this, schedule.getLengthCond(schedule.size()));
+            Assert.prop(depth < configuration.getMaxDepthBound(), "Maximum allowed depth " + configuration.getMaxDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             step();
         }
     }
@@ -313,9 +291,10 @@ public class Scheduler implements SymbolicSearch {
     public void step() {
         System.gc();
         PrimitiveVS<Machine> choices = getNextSender();
+        SearchLogger.log("Starting exploration at Depth: " + depth);
 
         if (choices.isEmptyVS()) {
-            ScheduleLogger.finished(depth);
+            TraceSymLogger.finished(depth);
             done = true;
             return;
         }
@@ -357,8 +336,13 @@ public class Scheduler implements SymbolicSearch {
         }
         assert effect != null;
         effect = effect.merge(effects);
-        ScheduleLogger.schedule(depth, effect);
+        TraceSymLogger.schedule(depth, effect);
         performEffect(effect);
+
+        // add depth statistics
+        SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, effects.size() + 1, -1);
+        searchStats.addDepthStatistics(depth, depthStats);
+        SearchLogger.logDepthStats(depthStats);
         depth++;
     }
 
@@ -376,7 +360,7 @@ public class Scheduler implements SymbolicSearch {
             machines.add(newMachine);
         }
 
-        ScheduleLogger.onCreateMachine(pc, newMachine);
+        TraceSymLogger.onCreateMachine(pc, newMachine);
         newMachine.setScheduler(this);
         schedule.makeMachine(newMachine, pc);
 
@@ -418,11 +402,8 @@ public class Scheduler implements SymbolicSearch {
         Message event = new Message(names, new PrimitiveVS<>(), payload);
         runMonitors(event);
     }
-    public void disableLogging() {
-        ScheduleLogger.disable();
-    }
 
-    public void enableLogging() {
-        ScheduleLogger.enable();
+    public int getMaxInternalSteps() {
+        return configuration.getMaxInternalSteps();
     }
 }

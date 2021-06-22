@@ -2004,6 +2004,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import psymbolic.commandline.*;");
             context.WriteLine(output, "import psymbolic.valuesummary.*;");
             context.WriteLine(output, "import psymbolic.runtime.*;");
+            context.WriteLine(output, "import psymbolic.runtime.scheduler.*;");
             context.WriteLine(output, "import psymbolic.runtime.machine.*;");
             context.WriteLine(output, "import psymbolic.runtime.logger.*;");
             context.WriteLine(output, "import psymbolic.runtime.machine.buffer.*;");

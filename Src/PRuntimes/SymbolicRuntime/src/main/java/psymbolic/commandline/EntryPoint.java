@@ -1,9 +1,9 @@
 package psymbolic.commandline;
 
-import psymbolic.runtime.BoundedScheduler;
-import psymbolic.runtime.ReplayScheduler;
-import psymbolic.runtime.logger.PLogger;
-import psymbolic.runtime.logger.ScheduleLogger;
+import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
+import psymbolic.runtime.scheduler.ReplayScheduler;
+import psymbolic.runtime.logger.PSymLogger;
+import psymbolic.runtime.logger.TraceSymLogger;
 import psymbolic.valuesummary.bdd.BDDEngine;
 import psymbolic.valuesummary.Guard;
 
@@ -12,34 +12,30 @@ import java.time.Instant;
 
 public class EntryPoint {
 
-    public static int prog = 0;
     public static Instant start = Instant.now();
 
-    public static void run(psymbolic.commandline.Program p, String name, int depth, int maxInternalSteps) {
+    public static void run(Program p, PSymConfiguration config) {
         BDDEngine.reset();
-        PLogger.Init();
-        BoundedScheduler scheduler = new BoundedScheduler(name, 25, 1000, 1000, 1000);
+        PSymLogger.ResetAllConfigurations();
+        IterativeBoundedScheduler scheduler = new IterativeBoundedScheduler(config);
         p.setScheduler(scheduler);
-        scheduler.setErrorDepth(depth);
-        scheduler.setMaxInternalSteps(maxInternalSteps);
         start = Instant.now();
         try {
+            PSymLogger.SearchMode();
             scheduler.doSearch(p);
-            ScheduleLogger.enable();
-            ScheduleLogger.finished(scheduler.getDepth());
         } catch (BugFoundException e) {
+            PSymLogger.ErrorReproMode();
             Guard pc = e.pathConstraint;
-            ReplayScheduler replay = new ReplayScheduler(name, scheduler.getSchedule(), pc);
+            ReplayScheduler replay = new ReplayScheduler(config, scheduler.getSchedule(), pc);
             p.setScheduler(replay);
-            replay.setMaxInternalSteps(maxInternalSteps);
             replay.doSearch(p);
             e.printStackTrace();
             throw new BugFoundException("Found bug: " + e.getLocalizedMessage(), pc);
         } finally {
             Instant end = Instant.now();
-            ScheduleLogger.enable();
-            ScheduleLogger.log("Took " + Duration.between(start, end).getSeconds() + " seconds");
-            prog++;
+            TraceSymLogger.enable();
+            TraceSymLogger.finished(scheduler.getDepth());
+            TraceSymLogger.logMessage("Took " + Duration.between(start, end).getSeconds() + " seconds");
         }
     }
 

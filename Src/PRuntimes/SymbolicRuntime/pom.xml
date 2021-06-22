@@ -30,9 +30,9 @@
             <configuration>
               <groupId>org.sosy_lab.pjbdd</groupId>
               <artifactId>pjbdd</artifactId>
-              <version>1.0.10-4</version>
+              <version>1.0.10-6</version>
               <packaging>jar</packaging>
-              <file>lib/pjbdd-v1.0.10-4.jar</file>
+              <file>lib/pjbdd-v1.0.10-6.jar</file>
             </configuration>
           </execution>
         </executions>

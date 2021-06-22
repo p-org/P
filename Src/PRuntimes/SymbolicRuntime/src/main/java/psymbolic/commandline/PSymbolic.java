@@ -1,6 +1,7 @@
 package psymbolic.commandline;
 
 import org.reflections.Reflections;
+import psymbolic.runtime.logger.PSymLogger;
 
 import java.io.FileInputStream;
 import java.util.ArrayList;
@@ -31,14 +32,23 @@ public class PSymbolic {
             Set<Class<? extends Program>> subTypes = reflections.getSubTypesOf(Program.class);
             Optional<Class<? extends Program>> program = subTypes.stream().findFirst();
             Object instance = program.get().getDeclaredConstructor().newInstance();
-            EntryPoint.run((Program) instance, "psymbolic", config.getDepthBound(), config.getInputChoiceBound());
-        } catch (Exception | AssertionError e) {
-            System.out.println("No Program Class found!");
+            EntryPoint.run((Program) instance, config);
+        } catch (BugFoundException e) {
             e.printStackTrace();
             System.exit(2);
         }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+            System.exit(10);
+        }
     }
 
+    /**
+     * Loads all the classes in the specified Jar
+     * @param pathToJar concrete path to the Jar
+     * @return all the classes in the specified Jar
+     */
     public static List<Class> LoadAllClassesInJar(String pathToJar) {
         List<Class> classes = new ArrayList<>();
         try {
@@ -47,7 +57,7 @@ public class PSymbolic {
                     new FileInputStream(pathToJar));
             JarEntry jarEntry;
 
-            System.out.println("Loading:: " + pathToJar);
+            PSymLogger.info("Loading:: " + pathToJar);
             while (true) {
                 jarEntry = jarFile.getNextJarEntry();
                 if (jarEntry == null) {
@@ -63,7 +73,7 @@ public class PSymbolic {
                     try {
                         classes.add(Class.forName(className));
                     } catch (final ClassNotFoundException x) {
-                        System.err.println("Cannot load class " + className + " " + x);
+                        PSymLogger.error("Cannot load class " + className + " " + x);
                     }
                 }
             }

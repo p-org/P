@@ -49,11 +49,11 @@ namespace Plang.Compiler.Backend.Symbolic
                             int newId = anonFuncIds.Count;
                             anonFuncIds.Add(func, newId);
                         }
-                        return $"anonfunc_{anonFuncIds[func]}";
+                        return $"anonfun_{anonFuncIds[func]}";
                     }
                     else
                     {
-                        return $"func_{func.Name}";
+                        return $"{func.Name}";
                     }
                 case Machine machine:
                     return $"{machine.Name}";

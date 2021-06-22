@@ -1,6 +1,9 @@
-package psymbolic.runtime;
+package psymbolic.runtime.scheduler;
 
-import psymbolic.runtime.logger.ScheduleLogger;
+import psymbolic.commandline.PSymConfiguration;
+import psymbolic.runtime.Event;
+import psymbolic.runtime.Schedule;
+import psymbolic.runtime.logger.TraceSymLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Message;
 import psymbolic.valuesummary.*;
@@ -12,13 +15,13 @@ public class ReplayScheduler extends Scheduler {
     /** Schedule to replay */
     private final Schedule schedule;
 
-    public ReplayScheduler (String name, Schedule schedule) {
-        this(name, schedule, Guard.constTrue());
+    public ReplayScheduler (PSymConfiguration config, Schedule schedule) {
+        this(config, schedule, Guard.constTrue());
     }
 
-    public ReplayScheduler (String name, Schedule schedule, Guard pc) {
-        super(name);
-        ScheduleLogger.enable();
+    public ReplayScheduler (PSymConfiguration config, Schedule schedule, Guard pc) {
+        super(config);
+        TraceSymLogger.enable();
         this.schedule = schedule.guard(pc).getSingleSchedule();
         for (Machine machine : schedule.getMachines()) {
             machine.reset();
@@ -42,7 +45,7 @@ public class ReplayScheduler extends Scheduler {
             this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
         }
 
-        ScheduleLogger.onCreateMachine(machineVS.getUniverse(), machine);
+        TraceSymLogger.onCreateMachine(machineVS.getUniverse(), machine);
         machine.setScheduler(this);
 
         performEffect(
@@ -92,7 +95,7 @@ public class ReplayScheduler extends Scheduler {
         PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).restrict(pc);
 
         PrimitiveVS<Machine> allocated = schedule.getMachine(machineType, guardedCount);
-        ScheduleLogger.onCreateMachine(pc, allocated.getValues().iterator().next());
+        TraceSymLogger.onCreateMachine(pc, allocated.getValues().iterator().next());
         allocated.getValues().iterator().next().setScheduler(this);
 
         guardedCount = IntegerVS.add(guardedCount, 1);

@@ -37,15 +37,18 @@ namespace Plang.Compiler.Backend.Symbolic
 
             //context.WriteLine(source.Stream);
 
-            foreach (var decl in globalScope.AllDecls)
+            IEnumerable<IPDecl> decls = TransformASTPass.GetTransformedDecls(globalScope);
+            //IEnumerable<IPDecl> decls = globalScope.AllDecls;
+
+            foreach (var decl in decls)
                 WriteDecl(context, source.Stream, decl);
 
             context.WriteLine(source.Stream, "Map<Event, List<Monitor>> listeners = new HashMap<>();");
             context.WriteLine(source.Stream, "List<Monitor> monitors = new ArrayList<>();");
             context.WriteLine(source.Stream, "private boolean listenersInitialized = false;");
 
-            WriteMonitorMap(context, source.Stream, globalScope.AllDecls);
-            WriteMonitorList(context, source.Stream, globalScope.AllDecls);
+            WriteMonitorMap(context, source.Stream, decls);
+            WriteMonitorList(context, source.Stream, decls);
 
             WriteMainDriver(context, source.Stream, globalScope);
 
@@ -475,6 +478,12 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)
         {
+            if (function is Continuation)
+            {
+                WriteContinuation(context, output, (Continuation) function);
+                return;
+            }
+
             var isStatic = function.Owner == null;
 
             if (function.CanReceive == true)
@@ -494,7 +503,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     returnType = "void";
                     break;
                 case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
-                    returnType = $"MaybeExited<{GetSymbolicType(function.Signature.ReturnType)}>";
+                    returnType = GetSymbolicType(function.Signature.ReturnType);//$"MaybeExited<{GetSymbolicType(function.Signature.ReturnType)}>";
                     break;
                 case FunctionReturnConvention.RETURN_GUARD:
                     returnType = "Guard";
@@ -567,7 +576,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case FunctionReturnConvention.RETURN_VOID:
                     break;
                 case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
-                    context.WriteLine(output, $"return new MaybeExited({CompilationContext.ReturnValue}, {rootPCScope.PathConstraintVar});");
+                    context.WriteLine(output, $"return {CompilationContext.ReturnValue}.restrict({rootPCScope.PathConstraintVar});");
                     break;
                 case FunctionReturnConvention.RETURN_GUARD:
                     context.WriteLine(output, $"return {rootPCScope.PathConstraintVar};");
@@ -1089,11 +1098,125 @@ namespace Plang.Compiler.Backend.Symbolic
                     }
                     context.WriteLine(output, ");");
                     break;
+                case ReceiveSplitStmt splitStmt:
+                    FunctionSignature signature = splitStmt.Cont.Signature;
+                    context.Write(output, $"{CompilationContext.EffectCollectionVar}.receive(");
+/*
+                    context.Write(output, "new ");
+                    Console.WriteLine($"before returntype {signature.ReturnType}");
+                    if (signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+                    {
+                        context.Write(output, "Consumer");
+                    }
+                    else
+                    {
+                        context.Write(output, "Function");
+                    }
+*/
+                    context.Write(output, $"((msg) -> {context.GetContinuationName(splitStmt.Cont)}({flowContext.pcScope.PathConstraintVar},");
+                    context.Write(output, $"{CompilationContext.EffectCollectionVar}");
+                    if (function.CanChangeState ?? false)
+                        context.Write(output, ", outcome");
+                    else if (function.CanRaiseEvent ?? false)
+                        context.Write(output, ", outcome");
+                    List<Variable> args = splitStmt.Cont.Signature.Parameters;
+                    for (int i = 0; i < args.Count(); i++)
+                    {
+                       context.Write(output, ", ");
+                       var param = new VariableAccessExpr(splitStmt.SourceLocation, args.ElementAt(i));
+                       WriteExpr(context, output, flowContext.pcScope, param);
+                    }
+                    context.WriteLine(output, ", msg)));");
+                    break;
                 default:
                     context.WriteLine(output, $"/* Skipping statement '{stmt.GetType().Name}' */");
                     // throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported");
                     break;
             }
+        }
+
+        private void WriteContinuation(CompilationContext context, StringWriter output, Continuation continuation)
+        {
+            var rootPCScope = context.FreshPathConstraintScope();
+
+            string returnType = null;
+            if (continuation.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            {
+                returnType = "void";
+            }
+            else
+            {
+                returnType = GetSymbolicType(continuation.Signature.ReturnType);
+            }
+
+            context.ReturnType = continuation.Signature.ReturnType;
+            var continuationName = context.GetContinuationName(continuation);
+
+            context.WriteLine(output, $"{returnType} ");
+            context.Write(output, continuationName);
+
+            context.WriteLine(output, $"(");
+            context.WriteLine(output, $"Guard {rootPCScope.PathConstraintVar},");
+            context.Write(output, $"EventBuffer {CompilationContext.EffectCollectionVar}");
+            if (continuation.CanChangeState ?? false)
+            {
+                Debug.Assert(continuation.Owner != null);
+                context.WriteLine(output, ",");
+                context.Write(output, "EventHandlerReturnReason outcome");
+            }
+            else if (continuation.CanRaiseEvent ?? false)
+            {
+                context.WriteLine(output, ",");
+                context.Write(output, "EventHandlerReturnReason outcome");
+            }
+            foreach (var param in continuation.Signature.Parameters)
+            {
+                context.WriteLine(output, ",");
+                context.Write(output, $"{GetSymbolicType(param.Type, true)} {CompilationContext.GetVar(param.Name)}");
+            }
+            context.WriteLine(output, ",");
+            string messageName = CompilationContext.GetVar("msg");
+            context.WriteLine(output, $"Message {messageName}");
+            context.WriteLine(output);
+            context.Write(output, ") ");
+
+            context.WriteLine(output, "{");
+            var funcContext = ControlFlowContext.FreshFuncContext(context, rootPCScope);
+            int idx = 0;
+            context.WriteLine(output, "Guard deferGuard = Guard.constTrue();");
+            foreach (PEvent e in continuation.Cases.Keys)
+            {
+                Console.WriteLine($"writing continuation event {e.Name}");
+                List<IPExpr> args = new List<IPExpr>();
+                context.WriteLine(output, $"Guard cond_{idx} = {messageName}.getEvent().getGuardFor({e.Name});");
+                context.WriteLine(output, $"Message {messageName}_{idx} = {messageName}.restrict(cond_{idx});");
+                context.WriteLine(output, $"if (!{messageName}_{idx}.isEmptyVS())");
+                context.WriteLine(output, "{");
+                context.WriteLine(output, $"deferGuard = deferGuard.and(cond_{idx}.not());");
+                var caseScope = context.FreshPathConstraintScope();
+                context.WriteLine(output, $"Guard {caseScope.PathConstraintVar} = {rootPCScope.PathConstraintVar}.and(cond_{idx});");
+                var caseContext = ControlFlowContext.FreshFuncContext(context, caseScope);
+                var arg = continuation.Cases[e].Signature.Parameters[0];
+                Variable argValue = new Variable("payload", continuation.SourceLocation, VariableRole.Param);
+                argValue.Type = PrimitiveType.Any;
+                context.WriteLine(output, $"UnionVS var_payload = {messageName}_{idx}.restrict({caseScope.PathConstraintVar}).getPayload();");
+                AssignStmt assignMsg = new AssignStmt(continuation.SourceLocation, new VariableAccessExpr(continuation.SourceLocation, arg), new VariableAccessExpr(continuation.SourceLocation, argValue));
+                context.WriteLine(output, $"{GetSymbolicType(arg.Type)} {CompilationContext.GetVar(arg.Name)};");
+                WriteStmt(continuation, context, output, caseContext, assignMsg);
+                WriteFunctionBody(context, output, caseScope, continuation.Cases[e]);
+/*
+                args.Add(new VariableAccessExpr(continuation.SourceLocation, new Variable($"msg_{idx}", continuation.SourceLocation, VariableRole.Param)));
+                
+                FunCallStmt funCall = new FunCallStmt(continuation.SourceLocation, continuation.Cases[e], args);
+                WriteStmt(continuation, context, output, funcContext, funCall);
+*/
+                context.WriteLine(output, "}");
+                idx++;
+            }
+            WriteStmt(continuation, context, output, funcContext, continuation.After);
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+            context.ReturnType = null;
         }
 
         private void CheckIsSupportedAssignment(PLanguageType valueType, PLanguageType locationType)
@@ -1104,7 +1227,7 @@ namespace Plang.Compiler.Backend.Symbolic
             if (valueIsMachineRef && locationIsMachineRef)
                 return;
 
-            if (locationType.IsSameTypeAs(PrimitiveType.Any))
+            if (locationType.IsSameTypeAs(PrimitiveType.Any) || valueType.IsSameTypeAs(PrimitiveType.Any))
                 return;
 
             if (!valueType.IsSameTypeAs(locationType))
@@ -2012,6 +2135,8 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import java.util.ArrayList;");
             context.WriteLine(output, "import java.util.Map;");
             context.WriteLine(output, "import java.util.HashMap;");
+            context.WriteLine(output, "import java.util.function.Consumer;");
+            context.WriteLine(output, "import java.util.function.Function;");
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.ProjectName.ToLower()} implements Program {{");
             context.WriteLine(output);

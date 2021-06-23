@@ -14,6 +14,16 @@ namespace Plang.Compiler.Backend.Symbolic
         int nextLoopId;
         int nextBranchId;
         int nextTempVarId;
+        IDictionary<Continuation, int> continuationNames;
+
+        internal string GetContinuationName(Continuation c)
+        {
+            if (!continuationNames.ContainsKey(c))
+                continuationNames.Add(c, continuationNames.Count);
+            return "continuation_" + continuationNames[c];
+        }
+
+        internal IEnumerable<Continuation> Continuations => continuationNames.Keys;
 
         internal PLanguageType ReturnType { get; set; }
 
@@ -30,6 +40,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             MainClassName = ProjectName.ToLower();
             anonFuncIds = new Dictionary<Function, int>();
+            continuationNames = new Dictionary<Continuation, int>();
         }
 
         internal string MainClassName { get; }

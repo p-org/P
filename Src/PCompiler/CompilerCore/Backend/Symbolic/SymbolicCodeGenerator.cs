@@ -275,7 +275,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, $"@Override public void entry(Guard {entryPcScope.PathConstraintVar}, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {{");
 
                 var entryFunc = state.Entry;
-                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}({entryPcScope.PathConstraintVar}, machine.sendEffects");
+                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}({entryPcScope.PathConstraintVar}, machine.sendBuffer");
                 if (entryFunc.CanChangeState ?? false)
                     context.Write(output, ", outcome");
                 else if (entryFunc.CanRaiseEvent ?? false)
@@ -301,7 +301,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 Debug.Assert(!(exitFunc.CanRaiseEvent ?? false));
                 if (exitFunc.Signature.Parameters.Count() != 0)
                     throw new NotImplementedException("Exit functions with payloads are not yet supported");
-                context.WriteLine(output, $"(({context.GetNameForDecl(exitFunc.Owner)})machine).{context.GetNameForDecl(exitFunc)}(pc, machine.sendEffects);");
+                context.WriteLine(output, $"(({context.GetNameForDecl(exitFunc.Owner)})machine).{context.GetNameForDecl(exitFunc)}(pc, machine.sendBuffer);");
 
                 context.WriteLine(output, "}");
             }
@@ -320,7 +320,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"new EventHandler({eventTag}) {{");
                     context.WriteLine(output, "@Override public void handleEvent(Guard pc, Machine machine, UnionVS payload, EventHandlerReturnReason outcome) {");
                     var actionFunc = action.Target;
-                    context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc, machine.sendEffects");
+                    context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc, machine.sendBuffer");
                     if (actionFunc.CanChangeState ?? false)
                         context.Write(output, ", outcome");
                     else if (actionFunc.CanRaiseEvent ?? false)
@@ -350,7 +350,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         Debug.Assert(!(transitionFunc.CanChangeState ?? false));
                         Debug.Assert(!(transitionFunc.CanRaiseEvent ?? false));
 
-                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(pc, machine.sendEffects");
+                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(pc, machine.sendBuffer");
                         if (transitionFunc.Signature.Parameters.Count() == 1)
                         {
                             Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));

@@ -2,7 +2,7 @@ package psymbolic;
 
 import org.junit.jupiter.api.Test;
 import psymbolic.runtime.*;
-import psymbolic.runtime.machine.Message;
+import psymbolic.runtime.Message;
 import psymbolic.runtime.machine.buffer.EventBag;
 import psymbolic.runtime.machine.buffer.EventBuffer;
 import psymbolic.runtime.machine.buffer.EventQueue;
@@ -28,7 +28,7 @@ public class TestBuffers {
             case 1: return Event1;
             case 2: return Event2;
             case 3: return Event3;
-            default: return Event.Init;
+            default: return Event.createMachine;
         }
     }
 

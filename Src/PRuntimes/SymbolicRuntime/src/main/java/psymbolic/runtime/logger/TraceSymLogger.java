@@ -2,7 +2,7 @@ package psymbolic.runtime.logger;
 
 import org.apache.log4j.*;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.machine.Message;
+import psymbolic.runtime.Message;
 import psymbolic.runtime.machine.State;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
@@ -51,7 +51,7 @@ public class TraceSymLogger extends PSymLogger {
 
     public static void onProcessEvent(Guard pc, Machine machine, Message message)
     {
-        String msg = String.format("Machine %s is processing event %s in state %s", machine, message.getEvent(), machine.getState().restrict(pc));
+        String msg = String.format("Machine %s is processing event %s in state %s", machine, message.getEvent(), machine.getCurrentState().restrict(pc));
         log.info(msg);
     }
 
@@ -71,7 +71,7 @@ public class TraceSymLogger extends PSymLogger {
     }
 
     public static void machineState(Guard pc, Machine machine) {
-        String msg = String.format("Machine %s in state %s", machine, machine.getState().restrict(pc));
+        String msg = String.format("Machine %s in state %s", machine, machine.getCurrentState().restrict(pc));
         log.info(msg);
     }
 
@@ -89,7 +89,7 @@ public class TraceSymLogger extends PSymLogger {
     }
 
     public static void schedule(int step, Message effect) {
-        String msg = "Step " + step + ": scheduled " + effect.toString() + " sent to " + effect.getTarget();
+        String msg = "Step " + step + ": scheduled event" + effect.getEvent().toString() + " sent to " + effect.getTarget();
         log.info(msg);
     }
 

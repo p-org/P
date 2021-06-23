@@ -1,8 +1,10 @@
-package psymbolic.runtime;
+package psymbolic.runtime.scheduler;
 
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.machine.Message;
-import psymbolic.valuesummary.*;
+import psymbolic.valuesummary.Guard;
+import psymbolic.valuesummary.ListVS;
+import psymbolic.valuesummary.PrimitiveVS;
+import psymbolic.valuesummary.ValueSummary;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,32 +12,13 @@ import java.util.*;
 
 public class Schedule {
 
-    private Guard filter = Guard.constTrue();
-
-    public Guard getFilter() {
-        return filter;
-    }
-
-    public void setFilter(Guard set) {
-        filter = set;
-    }
-
     public class Choice {
         PrimitiveVS<Machine> senderChoice = new PrimitiveVS<>();
         PrimitiveVS<Boolean> boolChoice = new PrimitiveVS<>();
         PrimitiveVS<Integer> intChoice = new PrimitiveVS<>();
         PrimitiveVS<ValueSummary> elementChoice = new PrimitiveVS<>();
-        Message eventChosen = new Message();
 
         public Choice() {
-        }
-
-        public Choice(PrimitiveVS<Machine> senderChoice, PrimitiveVS<Boolean> boolChoice, PrimitiveVS<Integer> intChoice,
-                      Message eventChosen) {
-            this.senderChoice = senderChoice;
-            this.boolChoice = boolChoice;
-            this.intChoice = intChoice;
-            this.eventChosen = eventChosen;
         }
 
         public Guard getUniverse() {
@@ -52,18 +35,11 @@ public class Schedule {
             c.boolChoice = boolChoice.restrict(pc);
             c.intChoice = intChoice.restrict(pc);
             c.elementChoice = elementChoice.restrict(pc);
-            c.eventChosen = eventChosen.restrict(pc);
             return c;
         }
 
         public void addSenderChoice(PrimitiveVS<Machine> choice) {
             senderChoice = choice;
-            List<Message> toMerge = new ArrayList<>();
-            for (GuardedValue<Machine> guardedValue : choice.getGuardedValues()) {
-                toMerge.add(guardedValue.getValue().sendEffects.peek(guardedValue.getGuard()));
-            }
-            eventChosen = new Message();
-            eventChosen = eventChosen.merge(toMerge);
         }
 
         public void addBoolChoice(PrimitiveVS<Boolean> choice) {
@@ -83,7 +59,6 @@ public class Schedule {
             boolChoice = new PrimitiveVS<>();
             intChoice = new PrimitiveVS<>();
             elementChoice = new PrimitiveVS<>();
-            eventChosen = new Message();
         }
     }
 
@@ -159,29 +134,28 @@ public class Schedule {
         if (depth >= repeatChoice.size()) {
             repeatChoice.add(new Choice());
         }
-        repeatChoice.get(depth).addSenderChoice(choice.restrict(filter));
+        repeatChoice.get(depth).addSenderChoice(choice);
     }
 
     public void addRepeatBool(PrimitiveVS<Boolean> choice, int depth) {
         if (depth >= repeatChoice.size()) {
-            repeatChoice.add(new Choice().restrict(filter));
+            repeatChoice.add(new Choice());
         }
-        repeatChoice.get(depth).addBoolChoice(choice.restrict(filter));
+        repeatChoice.get(depth).addBoolChoice(choice);
     }
 
     public void addRepeatInt(PrimitiveVS<Integer> choice, int depth) {
         if (depth >= repeatChoice.size()) {
             repeatChoice.add(new Choice());
         }
-        repeatChoice.get(depth).addIntChoice(choice.restrict(filter));
+        repeatChoice.get(depth).addIntChoice(choice);
     }
 
     public void addRepeatElement(PrimitiveVS<ValueSummary> choice, int depth) {
-        filter = filter.and(choice.getUniverse());
         if (depth >= repeatChoice.size()) {
             repeatChoice.add(new Choice());
         }
-        repeatChoice.get(depth).addElementChoice(choice.restrict(filter));
+        repeatChoice.get(depth).addElementChoice(choice);
     }
 
     public void addBacktrackSender(PrimitiveVS<Machine> choice, int depth) {

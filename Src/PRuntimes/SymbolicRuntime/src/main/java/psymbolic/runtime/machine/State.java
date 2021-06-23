@@ -2,6 +2,7 @@ package psymbolic.runtime.machine;
 
 import psymbolic.commandline.BugFoundException;
 import psymbolic.runtime.Event;
+import psymbolic.runtime.Message;
 import psymbolic.runtime.logger.TraceSymLogger;
 import psymbolic.runtime.machine.eventhandlers.EventHandler;
 import psymbolic.runtime.machine.eventhandlers.EventHandlerReturnReason;
@@ -45,7 +46,6 @@ public abstract class State {
             Guard eventPc = entry.getGuard();
             assert(message.restrict(eventPc).getEvent().getGuardedValues().size() == 1);
             PrimitiveVS<State> current = new PrimitiveVS<>(this).restrict(eventPc);
-            ListVS<PrimitiveVS<State>> stack = machine.getStack().restrict(eventPc);
             TraceSymLogger.handle(machine,this, message.restrict(entry.getGuard()));
             Guard handledPc = Guard.constFalse();
             while (true) {
@@ -67,13 +67,7 @@ public abstract class State {
                 if (ValueSummaryChecks.hasSameUniverse(handledPc, eventPc)) {
                     break; // handled the event along all paths
                 } else {
-                    stack = stack.restrict(handledPc.not());
-                    if (IntegerVS.minValue(stack.size()) > 0) {
-                        current = stack.get(IntegerVS.subtract(stack.size(), 1));
-                        stack = stack.removeAt(IntegerVS.subtract(stack.size(), 1));
-                    } else {
-                        throw new BugFoundException("State " + this.name + " missing handler for event: " + event, eventPc);
-                    }
+                    throw new BugFoundException("State " + this.name + " missing handler for event: " + event, eventPc);
                 }
             }
         }

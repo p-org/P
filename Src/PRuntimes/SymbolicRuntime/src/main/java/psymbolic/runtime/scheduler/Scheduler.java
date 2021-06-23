@@ -7,13 +7,14 @@ import psymbolic.runtime.*;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.logger.TraceSymLogger;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.machine.Message;
+import psymbolic.runtime.Message;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.*;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 
 public class Scheduler implements SymbolicSearch {
 
@@ -162,6 +163,7 @@ public class Scheduler implements SymbolicSearch {
         schedule.addElementChoice(choices, choiceDepth);
         return choices;
     }
+
     public ValueSummary getNextElementFlattener(PrimitiveVS<ValueSummary> choices) {
         ValueSummary flattened = null;
         List<ValueSummary> toMerge = new ArrayList<>();
@@ -208,7 +210,7 @@ public class Scheduler implements SymbolicSearch {
 
         performEffect(
                 new Message(
-                        Event.Init,
+                        Event.createMachine,
                         new PrimitiveVS<>(machine),
                         null
                 )
@@ -231,7 +233,7 @@ public class Scheduler implements SymbolicSearch {
 
         performEffect(
                 new Message(
-                        Event.Init,
+                        Event.createMachine,
                         machineVS,
                         null
                 )
@@ -259,14 +261,14 @@ public class Scheduler implements SymbolicSearch {
         List<PrimitiveVS> candidateSenders = new ArrayList<>();
 
         for (Machine machine : machines) {
-            if (!machine.sendEffects.isEmpty()) {
-                Guard initCond = machine.sendEffects.isInitUnderGuard().getGuardFor(true);
+            if (!machine.sendBuffer.isEmpty()) {
+                Guard initCond = machine.sendBuffer.isInitUnderGuard().getGuardFor(true);
                 if (!initCond.isFalse()) {
                     PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(initCond);
                     candidateSenders.add(ret);
                     return candidateSenders;
                 }
-                Guard canRun = machine.sendEffects.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true);
+                Guard canRun = machine.sendBuffer.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true);
                 if (!canRun.isFalse()) {
                     candidateSenders.add(new PrimitiveVS<>(machine).restrict(canRun));
                 }
@@ -291,8 +293,6 @@ public class Scheduler implements SymbolicSearch {
     public void step() {
         System.gc();
         PrimitiveVS<Machine> choices = getNextSender();
-        SearchLogger.log("Starting exploration at Depth: " + depth);
-
         if (choices.isEmptyVS()) {
             TraceSymLogger.finished(depth);
             done = true;
@@ -311,13 +311,13 @@ public class Scheduler implements SymbolicSearch {
             Guard guard = sender.guard;
             if (i < limit) {
                 if (effect == null) {
-                    effect = machine.sendEffects.remove(guard);
+                    effect = machine.sendBuffer.remove(guard);
                 } else {
-                    effects.add(machine.sendEffects.remove(guard));
+                    effects.add(machine.sendBuffer.remove(guard));
                 }
             } else {
                 ScheduleLogger.log("omitting " + i);
-                machine.sendEffects.remove(guard);
+                machine.sendBuffer.remove(guard);
             }
             i++;
         }
@@ -329,9 +329,9 @@ public class Scheduler implements SymbolicSearch {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
             if (effect == null) {
-                effect = machine.sendEffects.remove(guard);
+                effect = machine.sendBuffer.remove(guard);
             } else {
-                effects.add(machine.sendEffects.remove(guard));
+                effects.add(machine.sendBuffer.remove(guard));
             }
         }
         assert effect != null;
@@ -341,7 +341,7 @@ public class Scheduler implements SymbolicSearch {
 
         // add depth statistics
         SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, effects.size() + 1, -1);
-        searchStats.addDepthStatistics(depth, depthStats);
+        //searchStats.addDepthStatistics(depth, depthStats);
         SearchLogger.logDepthStats(depthStats);
         depth++;
     }

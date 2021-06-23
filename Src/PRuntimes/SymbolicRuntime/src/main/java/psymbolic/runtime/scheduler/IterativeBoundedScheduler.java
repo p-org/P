@@ -3,11 +3,10 @@ package psymbolic.runtime.scheduler;
 import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.NondetUtil;
-import psymbolic.runtime.Schedule;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.logger.TraceSymLogger;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.machine.Message;
+import psymbolic.runtime.Message;
 import psymbolic.valuesummary.*;
 
 import java.util.List;
@@ -17,13 +16,11 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- *
+ * Represents the iterative bounded scheduler
  */
 public class IterativeBoundedScheduler extends Scheduler {
 
     int iter = 0;
-
-
 
     private boolean isDoneIterating = false;
 
@@ -54,7 +51,6 @@ public class IterativeBoundedScheduler extends Scheduler {
                 }
                 TraceSymLogger.logMessage("backtrack to " + d);
                 TraceSymLogger.logMessage("pending backtracks: " + schedule.getNumBacktracks());
-                schedule.setFilter(Guard.constTrue()); //backtrack.getUniverse();
                 schedule.resetTransitionCount();
                 reset();
                 return;
@@ -104,7 +100,7 @@ public class IterativeBoundedScheduler extends Scheduler {
 
         // ScheduleLogger.log("choose from " + choices);
         Guard guard = NondetUtil.chooseGuard(bound, choices);
-        PrimitiveVS chosenVS = choices.restrict(guard).restrict(schedule.getFilter());
+        PrimitiveVS chosenVS = choices.restrict(guard);
         PrimitiveVS backtrackVS = choices.restrict(guard.not());
         //("add repeat " + chosenVS);
         addRepeat.accept(chosenVS, depth);
@@ -122,7 +118,6 @@ public class IterativeBoundedScheduler extends Scheduler {
         PrimitiveVS<Machine> res = getNext(depth, configuration.getSchedChoiceBound(), schedule::getRepeatSender, schedule::getBacktrackSender,
                 schedule::clearBacktrack, schedule::addRepeatSender, schedule::addBacktrackSender, super::getNextSenderChoices,
                 super::getNextSender);
-        schedule.setFilter(schedule.getFilter().and(res.getUniverse()));
 
         /*
         ScheduleLogger.log("choice: " + schedule.getRepeatSender(depth));
@@ -131,9 +126,9 @@ public class IterativeBoundedScheduler extends Scheduler {
          */
         for (GuardedValue<Machine> sender : schedule.getRepeatSender(depth).getGuardedValues()) {
             Machine machine = sender.getValue();
-            Guard guard = machine.sendEffects.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true).and(schedule.getRepeatSender(depth).getUniverse().not());
+            Guard guard = machine.sendBuffer.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true).and(schedule.getRepeatSender(depth).getUniverse().not());
             if (!guard.isFalse()) {
-                machine.sendEffects.remove(guard);
+                machine.sendBuffer.remove(guard);
                 // ScheduleLogger.log("remove guard from sender " + machine + ": " + guard);
             }
         }

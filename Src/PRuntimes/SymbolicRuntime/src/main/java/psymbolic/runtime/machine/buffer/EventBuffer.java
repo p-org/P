@@ -3,7 +3,7 @@ package psymbolic.runtime.machine.buffer;
 import psymbolic.runtime.Event;
 import psymbolic.runtime.scheduler.Scheduler;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.machine.Message;
+import psymbolic.runtime.Message;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.UnionVS;

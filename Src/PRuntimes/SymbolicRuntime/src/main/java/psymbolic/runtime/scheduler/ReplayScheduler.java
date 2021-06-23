@@ -2,10 +2,9 @@ package psymbolic.runtime.scheduler;
 
 import psymbolic.commandline.PSymConfiguration;
 import psymbolic.runtime.Event;
-import psymbolic.runtime.Schedule;
 import psymbolic.runtime.logger.TraceSymLogger;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.machine.Message;
+import psymbolic.runtime.Message;
 import psymbolic.valuesummary.*;
 
 import java.util.function.Function;
@@ -47,10 +46,9 @@ public class ReplayScheduler extends Scheduler {
 
         TraceSymLogger.onCreateMachine(machineVS.getUniverse(), machine);
         machine.setScheduler(this);
-
         performEffect(
                 new Message(
-                        Event.Init,
+                        Event.createMachine,
                         machineVS,
                         null
                 )

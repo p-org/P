@@ -92,7 +92,7 @@
     <dependency>
       <groupId>org.sosy_lab.pjbdd</groupId>
       <artifactId>pjbdd</artifactId>
-      <version>1.0.10-4</version>
+      <version>1.0.10-6</version>
     </dependency>
     <dependency>
       <groupId>commons-cli</groupId>

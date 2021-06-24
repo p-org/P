@@ -2,10 +2,11 @@ package psymbolic.runtime.machine;
 
 import psymbolic.commandline.Assert;
 import psymbolic.runtime.*;
-import psymbolic.runtime.logger.ScheduleLogger;
+import psymbolic.runtime.logger.TraceSymLogger;
 import psymbolic.runtime.machine.buffer.*;
 import psymbolic.runtime.machine.eventhandlers.EventHandler;
 import psymbolic.runtime.machine.eventhandlers.EventHandlerReturnReason;
+import psymbolic.runtime.scheduler.Scheduler;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.Guard;
 
@@ -21,10 +22,8 @@ public abstract class Machine {
     private final State startState;
     private final Set<State> states;
     private PrimitiveVS<Boolean> started = new PrimitiveVS<>(false);
-    int update = 0;
-    private PrimitiveVS<State> state;
-    private ListVS stack;
-    public final EventBuffer sendEffects;
+    private PrimitiveVS<State> currentState;
+    public final EventBuffer sendBuffer;
     public final DeferQueue deferredQueue;
 
     public void setScheduler(Scheduler scheduler) { this.scheduler = scheduler; }
@@ -35,19 +34,16 @@ public abstract class Machine {
         return started;
     }
 
-    public PrimitiveVS<State> getState() {
-        return state;
+    public PrimitiveVS<State> getCurrentState() {
+        return currentState;
     }
-
-    public ListVS<PrimitiveVS<State>> getStack() { return stack; }
 
     public void reset() {
         started = new PrimitiveVS<>(false);
-        state = new PrimitiveVS<>(startState);
-        stack = new ListVS(Guard.constTrue());
-        while (!sendEffects.isEmpty()) {
-            Guard cond = sendEffects.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true);
-            sendEffects.remove(sendEffects.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
+        currentState = new PrimitiveVS<>(startState);
+        while (!sendBuffer.isEmpty()) {
+            Guard cond = sendBuffer.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true);
+            sendBuffer.remove(sendBuffer.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
         }
         while (!deferredQueue.isEmpty()) {
             deferredQueue.dequeueEntry(deferredQueue.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
@@ -66,13 +62,12 @@ public abstract class Machine {
         }
 
         this.startState = startState;
-        this.sendEffects = buffer;
+        this.sendBuffer = buffer;
         this.deferredQueue = new DeferQueue();
-        this.state = new PrimitiveVS<>(startState);
-        stack = new ListVS(Guard.constTrue());
+        this.currentState = new PrimitiveVS<>(startState);
 
         startState.addHandlers(
-                new EventHandler(Event.Init) {
+                new EventHandler(Event.createMachine) {
                     @Override
                     public void handleEvent(Guard pc, Machine target, UnionVS payload, EventHandlerReturnReason eventHandlerReturnReason) {
                         assert(!BooleanVS.isEverTrue(hasStarted().restrict(pc)));
@@ -86,9 +81,8 @@ public abstract class Machine {
     }
 
     public void start(Guard pc, UnionVS payload) {
-        ScheduleLogger.onMachineStart(pc, this);
-        update++;
-        this.state = this.state.restrict(pc.not()).merge(new PrimitiveVS<>(startState).restrict(pc));
+        TraceSymLogger.onMachineStart(pc, this);
+        this.currentState = this.currentState.restrict(pc.not()).merge(new PrimitiveVS<>(startState).restrict(pc));
         this.started = this.started.updateUnderGuard(pc, new PrimitiveVS<>(true));
 
         EventHandlerReturnReason initEventHandlerReturnReason = new EventHandlerReturnReason();
@@ -145,17 +139,17 @@ public abstract class Machine {
             PrimitiveVS<State> newState,
             Map<State, UnionVS> payloads
     ) {
-        ScheduleLogger.onProcessStateTransition(pc, this, newState);
+        TraceSymLogger.onProcessStateTransition(pc, this, newState);
 
-        if (this.state == null) {
-            this.state = newState;
+        if (this.currentState == null) {
+            this.currentState = newState;
         } else {
-            PrimitiveVS<State> guardedState = this.state.restrict(pc);
+            PrimitiveVS<State> guardedState = this.currentState.restrict(pc);
             for (GuardedValue<State> entry : guardedState.getGuardedValues()) {
                 entry.getValue().exit(entry.getGuard(), this);
             }
 
-            this.state = newState.merge(this.state.restrict(pc.not()));
+            this.currentState = newState.merge(this.currentState.restrict(pc.not()));
         }
 
         for (GuardedValue<State> entry : newState.getGuardedValues()) {
@@ -172,8 +166,8 @@ public abstract class Machine {
             Message message
     ) {
         // assert(event.getMachine().guard(pc).getValues().size() <= 1);
-        ScheduleLogger.onProcessEvent(pc, this, message);
-        PrimitiveVS<State> guardedState = this.state.restrict(pc);
+        TraceSymLogger.onProcessEvent(pc, this, message);
+        PrimitiveVS<State> guardedState = this.currentState.restrict(pc);
         for (GuardedValue<State> entry : guardedState.getGuardedValues()) {
             Guard state_pc = entry.getGuard();
             if (state_pc.and(pc).isFalse()) continue;

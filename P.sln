@@ -15,8 +15,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommandLine", "Src\PCompile
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompilerCore", "Src\PCompiler\CompilerCore\CompilerCore.csproj", "{41F39ADD-B75F-473F-AC41-D1A9CDA9A9CD}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Checker", "Checker", "{60A41E5A-7060-474B-B5A2-E482E984B03C}"
-EndProject
 Project("{9344BDBB-3E7F-41FC-A0DD-8665D75EE146}") = "CSharpRuntime", "Src\PRuntimes\CSharpRuntime\CSharpRuntime.csproj", "{27E011B3-3995-454A-B200-57800CC941DA}"
 EndProject
 Global

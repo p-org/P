@@ -227,7 +227,6 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
                 toMerge.add(item);
         }
 
-        // TODO: fix this
         return merger != null ? merger.merge(toMerge) : null;
     }
 

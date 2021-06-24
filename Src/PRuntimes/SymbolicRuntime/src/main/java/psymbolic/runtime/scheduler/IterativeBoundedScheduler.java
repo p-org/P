@@ -1,9 +1,12 @@
-package psymbolic.runtime;
+package psymbolic.runtime.scheduler;
 
+import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
-import psymbolic.runtime.logger.ScheduleLogger;
+import psymbolic.runtime.NondetUtil;
+import psymbolic.runtime.logger.SearchLogger;
+import psymbolic.runtime.logger.TraceSymLogger;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.machine.Message;
+import psymbolic.runtime.Message;
 import psymbolic.valuesummary.*;
 
 import java.util.List;
@@ -12,29 +15,28 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class BoundedScheduler extends Scheduler {
+/**
+ * Represents the iterative bounded scheduler
+ */
+public class IterativeBoundedScheduler extends Scheduler {
+
     int iter = 0;
-    int senderBound;
-    int boolBound;
-    int intBound;
-    int elementBound;
 
     private boolean isDoneIterating = false;
 
-    public BoundedScheduler(String name, int senderBound, int boolBound, int intBound, int elementBound) {
-        super("bounded_" + name);
-        this.senderBound = senderBound;
-        this.boolBound = boolBound;
-        this.intBound = intBound;
-        this.elementBound = elementBound;
+    public IterativeBoundedScheduler(PSymConfiguration config) {
+        super(config);
+        this.configuration = config;
     }
 
     @Override
     public void doSearch(Program p) {
         while (!isDoneIterating) {
-            ScheduleLogger.log("Iteration " + iter);
+            SearchLogger.log("Starting Iteration: " + iter);
+            searchStats.startNewIteration(iter);
             super.doSearch(p);
             postIterationCleanup();
+            SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
             iter++;
         }
     }
@@ -47,9 +49,8 @@ public class BoundedScheduler extends Scheduler {
                 for (Machine machine : schedule.getMachines()) {
                     machine.reset();
                 }
-                ScheduleLogger.log("backtrack to " + d);
-                ScheduleLogger.log("pending backtracks: " + schedule.getNumBacktracks());
-                schedule.setFilter(Guard.constTrue()); //backtrack.getUniverse();
+                TraceSymLogger.logMessage("backtrack to " + d);
+                TraceSymLogger.logMessage("pending backtracks: " + schedule.getNumBacktracks());
                 schedule.resetTransitionCount();
                 reset();
                 return;
@@ -93,13 +94,13 @@ public class BoundedScheduler extends Scheduler {
         if (choices.isEmptyVS()) {
             // no choice to backtrack to, so generate new choices
             if (iter > 0)
-                ScheduleLogger.log("new choice at depth " + depth);
+                TraceSymLogger.logMessage("new choice at depth " + depth);
             choices = generateNext.apply(getChoices.get());
         }
 
         // ScheduleLogger.log("choose from " + choices);
         Guard guard = NondetUtil.chooseGuard(bound, choices);
-        PrimitiveVS chosenVS = choices.restrict(guard).restrict(schedule.getFilter());
+        PrimitiveVS chosenVS = choices.restrict(guard);
         PrimitiveVS backtrackVS = choices.restrict(guard.not());
         //("add repeat " + chosenVS);
         addRepeat.accept(chosenVS, depth);
@@ -114,10 +115,9 @@ public class BoundedScheduler extends Scheduler {
     @Override
     public PrimitiveVS<Machine> getNextSender() {
         int depth = choiceDepth;
-        PrimitiveVS<Machine> res = getNext(depth, senderBound, schedule::getRepeatSender, schedule::getBacktrackSender,
+        PrimitiveVS<Machine> res = getNext(depth, configuration.getSchedChoiceBound(), schedule::getRepeatSender, schedule::getBacktrackSender,
                 schedule::clearBacktrack, schedule::addRepeatSender, schedule::addBacktrackSender, super::getNextSenderChoices,
                 super::getNextSender);
-        schedule.setFilter(schedule.getFilter().and(res.getUniverse()));
 
         /*
         ScheduleLogger.log("choice: " + schedule.getRepeatSender(depth));
@@ -126,9 +126,9 @@ public class BoundedScheduler extends Scheduler {
          */
         for (GuardedValue<Machine> sender : schedule.getRepeatSender(depth).getGuardedValues()) {
             Machine machine = sender.getValue();
-            Guard guard = machine.sendEffects.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true).and(schedule.getRepeatSender(depth).getUniverse().not());
+            Guard guard = machine.sendBuffer.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true).and(schedule.getRepeatSender(depth).getUniverse().not());
             if (!guard.isFalse()) {
-                machine.sendEffects.remove(guard);
+                machine.sendBuffer.remove(guard);
                 // ScheduleLogger.log("remove guard from sender " + machine + ": " + guard);
             }
         }
@@ -139,7 +139,7 @@ public class BoundedScheduler extends Scheduler {
     @Override
     public PrimitiveVS<Boolean> getNextBoolean(Guard pc) {
         int depth = choiceDepth;
-        PrimitiveVS<Boolean> res = getNext(depth, boolBound, schedule::getRepeatBool, schedule::getBacktrackBool,
+        PrimitiveVS<Boolean> res = getNext(depth, configuration.getInputChoiceBound(), schedule::getRepeatBool, schedule::getBacktrackBool,
                 schedule::clearBacktrack, schedule::addRepeatBool, schedule::addBacktrackBool,
                 () -> super.getNextBooleanChoices(pc), super::getNextBoolean);
         //ScheduleLogger.log("choice: " + schedule.getBoolChoice(depth));
@@ -150,7 +150,7 @@ public class BoundedScheduler extends Scheduler {
     @Override
     public PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc) {
         int depth = choiceDepth;
-        PrimitiveVS<Integer> res = getNext(depth, intBound, schedule::getRepeatInt, schedule::getBacktrackInt,
+        PrimitiveVS<Integer> res = getNext(depth, configuration.getInputChoiceBound(), schedule::getRepeatInt, schedule::getBacktrackInt,
                 schedule::clearBacktrack, schedule::addRepeatInt, schedule::addBacktrackInt,
                 () -> super.getNextIntegerChoices(bound, pc), super::getNextInteger);
         choiceDepth = depth + 1;
@@ -160,7 +160,7 @@ public class BoundedScheduler extends Scheduler {
     @Override
     public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
         int depth = choiceDepth;
-        PrimitiveVS<ValueSummary> res = getNext(depth, elementBound, schedule::getRepeatElement, schedule::getBacktrackElement,
+        PrimitiveVS<ValueSummary> res = getNext(depth, configuration.getInputChoiceBound(), schedule::getRepeatElement, schedule::getBacktrackElement,
                 schedule::clearBacktrack, schedule::addRepeatElement, schedule::addBacktrackElement,
                 () -> super.getNextElementChoices(candidates, pc), super::getNextElementHelper);
         choiceDepth = depth + 1;
@@ -180,12 +180,11 @@ public class BoundedScheduler extends Scheduler {
             assert (iter != 0);
             allocated = schedule.getMachine(machineType, guardedCount).restrict(pc);
             assert(allocated.getValues().size() == 1);
-            ScheduleLogger.onCreateMachine(pc, allocated.getValues().iterator().next());
+            TraceSymLogger.onCreateMachine(pc, allocated.getValues().iterator().next());
             allocated.getValues().iterator().next().setScheduler(this);
             machines.add(allocated.getValues().iterator().next());
         }
         else {
-            ScheduleLogger.log("NEW MACHINE");
             Machine newMachine;
             newMachine = constructor.apply(IntegerVS.maxValue(guardedCount));
 
@@ -193,7 +192,7 @@ public class BoundedScheduler extends Scheduler {
                 machines.add(newMachine);
             }
 
-            ScheduleLogger.onCreateMachine(pc, newMachine);
+            TraceSymLogger.onCreateMachine(pc, newMachine);
             newMachine.setScheduler(this);
             schedule.makeMachine(newMachine, pc);
             allocated = new PrimitiveVS<>(newMachine).restrict(pc);

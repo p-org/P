@@ -29,6 +29,7 @@ public class PJBDDImpl {
         }
         c = creatorBuilder
                 .setVarCount(0)
+                .disableThreadSafety()
                 .setParallelizationType(Builders.ParallelizationType.NONE)
                 .setIncreaseFactor(5)
                 .setTableSize(1000000)

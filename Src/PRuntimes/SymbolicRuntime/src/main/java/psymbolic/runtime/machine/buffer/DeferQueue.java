@@ -1,6 +1,6 @@
 package psymbolic.runtime.machine.buffer;
 
-import psymbolic.runtime.machine.Message;
+import psymbolic.runtime.Message;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
 

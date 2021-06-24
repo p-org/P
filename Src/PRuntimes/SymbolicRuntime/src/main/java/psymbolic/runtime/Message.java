@@ -1,7 +1,7 @@
-package psymbolic.runtime.machine;
+package psymbolic.runtime;
 
 
-import psymbolic.runtime.Event;
+import psymbolic.runtime.machine.Machine;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.Guard;
 
@@ -29,7 +29,7 @@ public class Message implements ValueSummary<Message> {
                 Guard unstarted = machine.getValue().hasStarted().getGuardFor(false).and(machine.getGuard());
                 PrimitiveVS<Event> names = this.restrict(unstarted).getEvent();
                 for (GuardedValue<Event> name : names.getGuardedValues()) {
-                    if (name.getValue().equals(Event.Init)) {
+                    if (name.getValue().equals(Event.createMachine)) {
                         cond = cond.or(name.getGuard());
                     }
                 }
@@ -38,14 +38,14 @@ public class Message implements ValueSummary<Message> {
         return BooleanVS.trueUnderGuard(cond);
     }
 
-    public PrimitiveVS<Boolean> isInit() {
+    public PrimitiveVS<Boolean> isCreateMachine() {
         Guard cond = Guard.constFalse();
         for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
             if (BooleanVS.isEverFalse(machine.getValue().hasStarted())) {
-                Guard unstarted = machine.getValue().hasStarted().getGuardFor(false).and(machine.getGuard());
-                PrimitiveVS<Event> events = this.restrict(unstarted).getEvent();
+                Guard notStarted = machine.getValue().hasStarted().getGuardFor(false).and(machine.getGuard());
+                PrimitiveVS<Event> events = this.restrict(notStarted).getEvent();
                 for (GuardedValue<Event> event : events.getGuardedValues()) {
-                    if (event.getValue().equals(Event.Init)) {
+                    if (event.getValue().equals(Event.createMachine)) {
                         cond = cond.or(event.getGuard());
                     }
                 }
@@ -200,8 +200,6 @@ public class Message implements ValueSummary<Message> {
         String str = "{";
         int i = 0;
         for (GuardedValue<Event> event : getEvent().getGuardedValues()) {
-            //ScheduleLogger.log("name: " + name.value + " mach: " + this.guard(name.guard).getMachine());
-            //if (getMachine().guard(name.guard).getGuardedValues().size() > 1) assert(false);
             str += event.getGuard();
             //str += " -> " + getMachine().guard(name.guard);
             if (payload.size() > 0 && payload.containsKey(event.getValue())) {

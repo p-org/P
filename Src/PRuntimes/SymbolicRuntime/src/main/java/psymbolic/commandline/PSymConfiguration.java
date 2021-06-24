@@ -12,6 +12,7 @@ public class PSymConfiguration {
     @Getter @Setter
     private String mainMachine = "Main";
 
+    @Getter
     // max depth bound after which the search will stop automatically
     private final int maxDepthBound = 1000;
 
@@ -32,4 +33,8 @@ public class PSymConfiguration {
     @Getter @Setter
     // max input choice bound provided by the user
     private int schedChoiceBound = maxSchedChoiceBound;
+
+    @Getter
+    // max internal steps before throwing an exception
+    private int maxInternalSteps = 1000;
 }

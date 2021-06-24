@@ -107,7 +107,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
 
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(NamedTupleVS cmp, Guard pc) {
-        if (Arrays.deepEquals(names.toArray(), cmp.names.toArray())) {
+        if (!Arrays.deepEquals(names.toArray(), cmp.names.toArray())) {
             // TODO: raise an exception checking equality of two incompatible types
             return new PrimitiveVS<>(false).restrict(pc);
         }

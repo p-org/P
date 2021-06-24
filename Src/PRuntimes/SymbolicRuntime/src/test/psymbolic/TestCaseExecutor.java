@@ -1,6 +1,6 @@
 package psymbolic;
 
-import psymbolic.runtime.logger.PLogger;
+import psymbolic.runtime.logger.TraceSymLogger;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -73,12 +73,12 @@ public class TestCaseExecutor {
             int exitCode = process.waitFor();
 
             if (exitCode != 0) {
-                PLogger.log("Compilation failure.");
+                TraceSymLogger.logMessage("Compilation failure.");
                 return 1;
             }
         }
         catch (IOException | InterruptedException e) {
-            PLogger.log("Compilation failure.");
+            TraceSymLogger.logMessage("Compilation failure.");
             e.printStackTrace();
         }
 
@@ -99,7 +99,7 @@ public class TestCaseExecutor {
             int exitCode = process.waitFor();
 
             if (exitCode != 0) {
-                PLogger.log("Running the Jar Failed!");
+                TraceSymLogger.logMessage("Running the Jar Failed!");
                 return 1;
             }
         } catch (Exception | AssertionError e) {

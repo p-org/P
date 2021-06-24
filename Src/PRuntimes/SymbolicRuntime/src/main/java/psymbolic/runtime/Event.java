@@ -1,14 +1,18 @@
 package psymbolic.runtime;
 
+import lombok.AllArgsConstructor;
+
 import java.util.Objects;
 
+/**
+ * Represents a P event (Event Name)
+ */
+@AllArgsConstructor
 public class Event {
-
-    public static Event Init = new Event("Init");
+    // Special event send to a machine on creation
+    public static Event createMachine = new Event("createMachine");
+    // Name of the Event
     final String name;
-    public Event(String name) {
-        this.name = name;
-    }
 
     @Override
     public boolean equals(Object obj) {

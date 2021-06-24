@@ -1,7 +1,8 @@
 package psymbolic.runtime.machine.eventhandlers;
 
+import lombok.Getter;
 import psymbolic.runtime.Event;
-import psymbolic.runtime.machine.Message;
+import psymbolic.runtime.Message;
 import psymbolic.runtime.machine.State;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.UnionVS;
@@ -17,8 +18,11 @@ import java.util.Map;
 public class EventHandlerReturnReason {
 
     private UnionVS outcome = new UnionVS();
+    @Getter
     private Map<State, UnionVS> payloads = new HashMap<>();
+    @Getter
     private Guard gotoCond = Guard.constFalse();
+    @Getter
     private Guard raiseCond = Guard.constFalse();
 
     /**
@@ -29,11 +33,6 @@ public class EventHandlerReturnReason {
         return gotoCond.or(raiseCond).isFalse();
     }
 
-    /**
-     * Condition under which the event handler did raise
-     * @return condition for raise
-     */
-    public Guard getRaiseCond() { return raiseCond; }
 
     /**
      * Condition under which the event handler did a goto
@@ -62,13 +61,7 @@ public class EventHandlerReturnReason {
         raiseGuardedEvent(pc, eventName, null);
     }
 
-    public Guard getGotoCond() { return gotoCond; }
-
     public PrimitiveVS<State> getGotoStateSummary() { return (PrimitiveVS<State>) outcome.getValue(PrimitiveVS.class).restrict(getGotoCond()); }
-
-    public Map<State, UnionVS> getPayloads() {
-        return payloads;
-    }
 
     public void addGuardedGoto(Guard pc, State newDest, UnionVS newPayload) {
         outcome = outcome.merge(new UnionVS(new PrimitiveVS<>(newDest).restrict(pc)));

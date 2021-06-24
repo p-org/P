@@ -1,10 +1,10 @@
 package psymbolic.runtime.machine.buffer;
 
 import psymbolic.runtime.Event;
-import psymbolic.runtime.Scheduler;
-import psymbolic.runtime.logger.ScheduleLogger;
+import psymbolic.runtime.scheduler.Scheduler;
+import psymbolic.runtime.logger.TraceSymLogger;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.machine.Message;
+import psymbolic.runtime.Message;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.UnionVS;
@@ -21,7 +21,7 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer {
         if (eventName.getGuardedValues().size() > 1) {
             throw new RuntimeException("Not Implemented");
         }
-        ScheduleLogger.send(new Message(eventName, dest, payload).restrict(pc));
+        TraceSymLogger.send(new Message(eventName, dest, payload).restrict(pc));
         enqueue(new Message(eventName, dest, payload).restrict(pc));
     }
 
@@ -34,7 +34,7 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer {
     ) {
         PrimitiveVS<Machine> machine = scheduler.allocateMachine(pc, machineType, constructor);
         if (payload != null) payload = payload.restrict(pc);
-        enqueue(new Message(Event.Init, machine, payload).restrict(pc));
+        enqueue(new Message(Event.createMachine, machine, payload).restrict(pc));
         return machine;
     }
 
@@ -63,6 +63,6 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer {
 
     @Override
     public PrimitiveVS<Boolean> isInitUnderGuard() {
-        return satisfiesPredUnderGuard(Message::isInit);
+        return satisfiesPredUnderGuard(Message::isCreateMachine);
     }
 }

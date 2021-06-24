@@ -2,7 +2,7 @@ package psymbolic.runtime.machine.buffer;
 
 import psymbolic.runtime.Event;
 import psymbolic.runtime.scheduler.Scheduler;
-import psymbolic.runtime.logger.TraceSymLogger;
+import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
 import psymbolic.valuesummary.Guard;
@@ -21,7 +21,7 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer {
         if (eventName.getGuardedValues().size() > 1) {
             throw new RuntimeException("Not Implemented");
         }
-        TraceSymLogger.send(new Message(eventName, dest, payload).restrict(pc));
+        TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
         enqueue(new Message(eventName, dest, payload).restrict(pc));
     }
 

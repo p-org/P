@@ -1,9 +1,10 @@
 package psymbolic.commandline;
 
+import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
 import psymbolic.runtime.scheduler.ReplayScheduler;
 import psymbolic.runtime.logger.PSymLogger;
-import psymbolic.runtime.logger.TraceSymLogger;
+import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.valuesummary.bdd.BDDEngine;
 import psymbolic.valuesummary.Guard;
 
@@ -16,15 +17,15 @@ public class EntryPoint {
 
     public static void run(Program p, PSymConfiguration config) {
         BDDEngine.reset();
-        PSymLogger.ResetAllConfigurations();
+        PSymLogger.ResetAllConfigurations(config.getVerbosity());
         IterativeBoundedScheduler scheduler = new IterativeBoundedScheduler(config);
         p.setScheduler(scheduler);
         start = Instant.now();
         try {
-            PSymLogger.SearchMode();
             scheduler.doSearch(p);
         } catch (BugFoundException e) {
-            PSymLogger.ErrorReproMode();
+            TraceLogger.setVerbosity(2);
+            SearchLogger.disable();
             Guard pc = e.pathConstraint;
             ReplayScheduler replay = new ReplayScheduler(config, scheduler.getSchedule(), pc);
             p.setScheduler(replay);
@@ -33,9 +34,8 @@ public class EntryPoint {
             throw new BugFoundException("Found bug: " + e.getLocalizedMessage(), pc);
         } finally {
             Instant end = Instant.now();
-            TraceSymLogger.enable();
-            TraceSymLogger.finished(scheduler.getDepth());
-            TraceSymLogger.logMessage("Took " + Duration.between(start, end).getSeconds() + " seconds");
+            TraceLogger.finished(scheduler.getDepth());
+            TraceLogger.logMessage("Took " + Duration.between(start, end).getSeconds() + " seconds");
         }
     }
 

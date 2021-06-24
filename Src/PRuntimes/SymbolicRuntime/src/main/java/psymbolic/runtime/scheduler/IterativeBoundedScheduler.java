@@ -4,7 +4,7 @@ import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.NondetUtil;
 import psymbolic.runtime.logger.SearchLogger;
-import psymbolic.runtime.logger.TraceSymLogger;
+import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
 import psymbolic.valuesummary.*;
@@ -49,8 +49,8 @@ public class IterativeBoundedScheduler extends Scheduler {
                 for (Machine machine : schedule.getMachines()) {
                     machine.reset();
                 }
-                TraceSymLogger.logMessage("backtrack to " + d);
-                TraceSymLogger.logMessage("pending backtracks: " + schedule.getNumBacktracks());
+                TraceLogger.logMessage("backtrack to " + d);
+                TraceLogger.logMessage("pending backtracks: " + schedule.getNumBacktracks());
                 schedule.resetTransitionCount();
                 reset();
                 return;
@@ -94,7 +94,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         if (choices.isEmptyVS()) {
             // no choice to backtrack to, so generate new choices
             if (iter > 0)
-                TraceSymLogger.logMessage("new choice at depth " + depth);
+                TraceLogger.logMessage("new choice at depth " + depth);
             choices = generateNext.apply(getChoices.get());
         }
 
@@ -180,7 +180,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             assert (iter != 0);
             allocated = schedule.getMachine(machineType, guardedCount).restrict(pc);
             assert(allocated.getValues().size() == 1);
-            TraceSymLogger.onCreateMachine(pc, allocated.getValues().iterator().next());
+            TraceLogger.onCreateMachine(pc, allocated.getValues().iterator().next());
             allocated.getValues().iterator().next().setScheduler(this);
             machines.add(allocated.getValues().iterator().next());
         }
@@ -192,7 +192,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                 machines.add(newMachine);
             }
 
-            TraceSymLogger.onCreateMachine(pc, newMachine);
+            TraceLogger.onCreateMachine(pc, newMachine);
             newMachine.setScheduler(this);
             schedule.makeMachine(newMachine, pc);
             allocated = new PrimitiveVS<>(newMachine).restrict(pc);

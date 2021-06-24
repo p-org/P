@@ -5,7 +5,7 @@ import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.*;
 import psymbolic.runtime.logger.SearchLogger;
-import psymbolic.runtime.logger.TraceSymLogger;
+import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
 import psymbolic.runtime.statistics.SearchStats;
@@ -99,7 +99,7 @@ public class Scheduler implements SymbolicSearch {
             } else {
                 this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
             }
-            TraceSymLogger.onCreateMachine(Guard.constTrue(), machine);
+            TraceLogger.onCreateMachine(Guard.constTrue(), machine);
             machine.setScheduler(this);
             schedule.makeMachine(machine, Guard.constTrue());
         }
@@ -210,7 +210,7 @@ public class Scheduler implements SymbolicSearch {
 
         machines.add(machine);
         start = machine;
-        TraceSymLogger.onCreateMachine(Guard.constTrue(), machine);
+        TraceLogger.onCreateMachine(Guard.constTrue(), machine);
         machine.setScheduler(this);
         schedule.makeMachine(machine, Guard.constTrue());
 
@@ -234,7 +234,7 @@ public class Scheduler implements SymbolicSearch {
             this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
         }
 
-        TraceSymLogger.onCreateMachine(machineVS.getUniverse(), machine);
+        TraceLogger.onCreateMachine(machineVS.getUniverse(), machine);
         machine.setScheduler(this);
 
         performEffect(
@@ -301,7 +301,7 @@ public class Scheduler implements SymbolicSearch {
         System.gc();
         PrimitiveVS<Machine> choices = getNextSender();
         if (choices.isEmptyVS()) {
-            TraceSymLogger.finished(depth);
+            TraceLogger.finished(depth);
             done = true;
             return;
         }
@@ -343,7 +343,7 @@ public class Scheduler implements SymbolicSearch {
         }
         assert effect != null;
         effect = effect.merge(effects);
-        TraceSymLogger.schedule(depth, effect);
+        TraceLogger.schedule(depth, effect);
         performEffect(effect);
 
         // add depth statistics
@@ -367,7 +367,7 @@ public class Scheduler implements SymbolicSearch {
             machines.add(newMachine);
         }
 
-        TraceSymLogger.onCreateMachine(pc, newMachine);
+        TraceLogger.onCreateMachine(pc, newMachine);
         newMachine.setScheduler(this);
         schedule.makeMachine(newMachine, pc);
 

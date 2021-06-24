@@ -37,4 +37,8 @@ public class PSymConfiguration {
     @Getter
     // max internal steps before throwing an exception
     private int maxInternalSteps = 1000;
+
+    @Getter @Setter
+    // level of verbosity for the logging
+    private int verbosity = 1;
 }

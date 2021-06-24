@@ -2,7 +2,7 @@ package psymbolic.runtime.scheduler;
 
 import psymbolic.commandline.PSymConfiguration;
 import psymbolic.runtime.Event;
-import psymbolic.runtime.logger.TraceSymLogger;
+import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
 import psymbolic.valuesummary.*;
@@ -20,7 +20,7 @@ public class ReplayScheduler extends Scheduler {
 
     public ReplayScheduler (PSymConfiguration config, Schedule schedule, Guard pc) {
         super(config);
-        TraceSymLogger.enable();
+        TraceLogger.enable();
         this.schedule = schedule.guard(pc).getSingleSchedule();
         for (Machine machine : schedule.getMachines()) {
             machine.reset();
@@ -44,7 +44,7 @@ public class ReplayScheduler extends Scheduler {
             this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
         }
 
-        TraceSymLogger.onCreateMachine(machineVS.getUniverse(), machine);
+        TraceLogger.onCreateMachine(machineVS.getUniverse(), machine);
         machine.setScheduler(this);
         performEffect(
                 new Message(
@@ -93,7 +93,7 @@ public class ReplayScheduler extends Scheduler {
         PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).restrict(pc);
 
         PrimitiveVS<Machine> allocated = schedule.getMachine(machineType, guardedCount);
-        TraceSymLogger.onCreateMachine(pc, allocated.getValues().iterator().next());
+        TraceLogger.onCreateMachine(pc, allocated.getValues().iterator().next());
         allocated.getValues().iterator().next().setScheduler(this);
 
         guardedCount = IntegerVS.add(guardedCount, 1);

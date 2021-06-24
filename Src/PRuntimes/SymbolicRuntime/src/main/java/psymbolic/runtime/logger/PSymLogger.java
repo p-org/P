@@ -16,7 +16,7 @@ public class PSymLogger {
         log.removeAllAppenders();
         // setting up the logger
         //This is the root logger provided by log4j
-        log.setLevel(Level.DEBUG);
+        log.setLevel(Level.ALL);
 
         //Define log pattern layout
         PatternLayout layout = new PatternLayout("%m%n");
@@ -37,23 +37,23 @@ public class PSymLogger {
         log.error(message);
     }
 
-    public static void ResetAllConfigurations()
+    public static void ResetAllConfigurations(int verbosity)
     {
         BasicConfigurator.resetConfiguration();
         Initialize();
         SearchLogger.Initialize();
-        TraceSymLogger.Initialize();
+        TraceLogger.Initialize(verbosity);
     }
 
     public static void ErrorReproMode()
     {
         SearchLogger.disable();
-        TraceSymLogger.enable();
+        TraceLogger.enable();
     }
 
     public static void SearchMode()
     {
         SearchLogger.enable();
-        TraceSymLogger.disable();
+        TraceLogger.disable();
     }
 }

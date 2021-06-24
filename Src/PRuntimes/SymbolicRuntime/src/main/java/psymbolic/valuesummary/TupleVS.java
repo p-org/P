@@ -23,7 +23,13 @@ public class TupleVS implements ValueSummary<TupleVS> {
 
     /** Make a new TupleVS from the provided items */
     public TupleVS(ValueSummary<?>... items) {
-        this.fields = items;
+        Guard commonGuard = Guard.constTrue();
+        for (ValueSummary<?> vs : items) {
+            commonGuard = commonGuard.and(vs.getUniverse());
+        }
+        final Guard guard = commonGuard;
+        this.fields = Arrays.stream(items).map(x ->
+                x.restrict(guard)).collect(Collectors.toList()).toArray(new ValueSummary[items.length]);
         this.classes = Arrays.stream(items).map(x -> x.getClass())
                 .collect(Collectors.toList()).toArray(new Class[items.length]);
     }

@@ -354,6 +354,12 @@ public class Schedule {
                     if (intChoice.getGuardedValues().size() > 0) {
                         pc = pc.and(intChoice.getGuardedValues().get(0).getGuard());
                     }
+                    else {
+                        PrimitiveVS<ValueSummary> elementChoice = guarded.elementChoice;
+                        if (elementChoice.getGuardedValues().size() > 0) {
+                            pc = pc.and(elementChoice.getGuardedValues().get(0).getGuard());
+                        }
+                    }
                 }
             }
         }

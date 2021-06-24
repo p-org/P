@@ -17,7 +17,7 @@ public class SearchLogger {
         log.removeAllAppenders();
         // setting up the logger
         //This is the root logger provided by log4j
-        log.setLevel(Level.DEBUG);
+        log.setLevel(Level.ALL);
 
         //Define log pattern layout
         PatternLayout layout = new PatternLayout("%m%n");
@@ -30,7 +30,7 @@ public class SearchLogger {
             // get new file name
             SimpleDateFormat formatter = new SimpleDateFormat("dd:MM:yyyy HH:mm:ss");
             Date date = new Date();
-            String fileName = "searchStats-"+date.toString() + ".log";
+            String fileName = "output/searchStats-"+date.toString() + ".log";
             //Define file appender with layout and output log file name
             RollingFileAppender fileAppender = new RollingFileAppender(layout, fileName);
             //Add the appender to root logger

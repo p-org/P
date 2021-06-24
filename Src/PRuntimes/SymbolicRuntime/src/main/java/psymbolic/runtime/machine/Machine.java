@@ -2,7 +2,7 @@ package psymbolic.runtime.machine;
 
 import psymbolic.commandline.Assert;
 import psymbolic.runtime.*;
-import psymbolic.runtime.logger.TraceSymLogger;
+import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.buffer.*;
 import psymbolic.runtime.machine.eventhandlers.EventHandler;
 import psymbolic.runtime.machine.eventhandlers.EventHandlerReturnReason;
@@ -81,7 +81,7 @@ public abstract class Machine {
     }
 
     public void start(Guard pc, UnionVS payload) {
-        TraceSymLogger.onMachineStart(pc, this);
+        TraceLogger.onMachineStart(pc, this);
         this.currentState = this.currentState.restrict(pc.not()).merge(new PrimitiveVS<>(startState).restrict(pc));
         this.started = this.started.updateUnderGuard(pc, new PrimitiveVS<>(true));
 
@@ -139,7 +139,7 @@ public abstract class Machine {
             PrimitiveVS<State> newState,
             Map<State, UnionVS> payloads
     ) {
-        TraceSymLogger.onProcessStateTransition(pc, this, newState);
+        TraceLogger.onProcessStateTransition(pc, this, newState);
 
         if (this.currentState == null) {
             this.currentState = newState;
@@ -166,7 +166,7 @@ public abstract class Machine {
             Message message
     ) {
         // assert(event.getMachine().guard(pc).getValues().size() <= 1);
-        TraceSymLogger.onProcessEvent(pc, this, message);
+        TraceLogger.onProcessEvent(pc, this, message);
         PrimitiveVS<State> guardedState = this.currentState.restrict(pc);
         for (GuardedValue<State> entry : guardedState.getGuardedValues()) {
             Guard state_pc = entry.getGuard();

@@ -56,6 +56,16 @@ public class PSymOptions {
                 .build();
         options.addOption(maxSchedBound);
 
+        // set the level of verbosity
+        Option verbosity = Option.builder("v")
+                .longOpt("verbose")
+                .desc("Level of verbosity for the logging")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Log Verbosity")
+                .build();
+        options.addOption(verbosity);
+
         Option help = Option.builder("h")
                 .longOpt("help")
                 .desc("Print the help message")
@@ -124,6 +134,15 @@ public class PSymOptions {
                         formatter.printHelp("cb", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
                     }
                     break;
+                case "v":
+                case "verbose":
+                    try {
+                        config.setVerbosity(Integer.parseInt(option.getValue()));
+                    }
+                    catch (NumberFormatException ex) {
+                        formatter.printHelp("v", String.format("Expected an integer value (0, 1 or 2), got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                    }
+                    break;
                 case "h":
                 case "help":
                 default:
@@ -131,7 +150,6 @@ public class PSymOptions {
                     System.exit(0);
             }
         }
-
         return config;
     }
 }

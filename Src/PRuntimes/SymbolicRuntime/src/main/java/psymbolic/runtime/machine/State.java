@@ -3,7 +3,7 @@ package psymbolic.runtime.machine;
 import psymbolic.commandline.BugFoundException;
 import psymbolic.runtime.Event;
 import psymbolic.runtime.Message;
-import psymbolic.runtime.logger.TraceSymLogger;
+import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.eventhandlers.EventHandler;
 import psymbolic.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psymbolic.valuesummary.*;
@@ -46,7 +46,7 @@ public abstract class State {
             Guard eventPc = entry.getGuard();
             assert(message.restrict(eventPc).getEvent().getGuardedValues().size() == 1);
             PrimitiveVS<State> current = new PrimitiveVS<>(this).restrict(eventPc);
-            TraceSymLogger.handle(machine,this, message.restrict(entry.getGuard()));
+            TraceLogger.handle(machine,this, message.restrict(entry.getGuard()));
             Guard handledPc = Guard.constFalse();
             while (true) {
                 for (GuardedValue<State> guardedValue : current.getGuardedValues()) {

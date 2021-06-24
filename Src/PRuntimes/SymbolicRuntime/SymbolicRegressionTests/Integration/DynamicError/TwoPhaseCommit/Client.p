@@ -59,9 +59,9 @@ machine Client {
 
 		on eReadTransResp do (readResp: tReadTransResp) {
 	        // assert that if write transaction failed then read must fail as well and vice-versa
-	        assert readResp.status == currWriteResponse.status, format ("Inconsistency!");
-	        if(readResp.status == SUCCESS)
+	        if(currWriteResponse.status == SUCCESS)
 	        {
+	            assert readResp.status == currWriteResponse.status, format ("Inconsistency!");
 	            assert readResp.rec == currTransaction,
 	            format ("Record read is not same as what was written by the client:: read - {0}, written - {1}",
 	            readResp.rec, currTransaction);

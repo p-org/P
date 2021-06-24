@@ -22,7 +22,7 @@ See our [webpage](http://p-org.github.io/P/) for more information about the P fr
 case studies, tutorials and related research publications.
 
 
- > P is being built and maintained since 2013 as a collaborative project between industry and academia. The P project welcomes contributions and suggestions. See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+ > P is being built and maintained since 2013 as a collaborative project between industry and academia. The P project welcomes contributions and suggestions. See [CONTRIBUTING](CONTRIBUTING.md) for more information.
 
 
 

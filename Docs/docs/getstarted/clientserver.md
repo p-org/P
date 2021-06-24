@@ -2,7 +2,7 @@ A P program is a collection of event and machine declarations.
 Here is a basic P program containing a Client machine and a Server machine
 communicating with each other via Ping and Pong events.
 
-```
+```linenums="1"
 // PingPong.p
 event PING assert 1: machine;
 event PONG assert 1;
@@ -46,6 +46,7 @@ machine Server {
     }
 }
 ```
+
 We now take a closer look at the event and machine declarations in this program.
 The declaration of event `PING` indicates that it is accompanied with
 a data value of `machine` type.

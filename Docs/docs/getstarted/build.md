@@ -1,5 +1,3 @@
-## Build from source
-
 If you plan to contribute a Pull Request to P then you need to be able to build the source code
 and run the tests.
 

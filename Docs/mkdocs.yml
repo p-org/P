@@ -1,23 +1,41 @@
 site_name: 'P'
+site_url: http://p-org.github.io/P/
 site_description: 'P: Modular and Safe Programming of Distributed Systems'
 site_author: 'Ankush Desai'
 
+repo_url: https://github.com/p-org/P
+repo_name: P on Github
+edit_uri: ""
+
 theme:
-  name: windmill
-  logo: icon.png
+  name: material
+  homepage: http://p-org.github.io/P/
+  palette:
+    scheme: default
+    primary: black
+    accent: deep orange
+  logo: ./icon.png
+  favicon: ./icon.png
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.expand
+    - navigation.top
+    - toc.integrate
+
+
+
 # This should be renamed to nav for mkdocs 1.0+
 nav:
-- P: index.md
+- Home: index.md
 - How does P work: howdoesitwork.md
 - Getting Started:
   - Installing P: getstarted/install.md
   - Building from Source: getstarted/build.md
   - Syntax Highlighting for P: getstarted/syntaxhighlight.md
   - Simple client server application using P: getstarted/clientserver.md
-- Publications: publications.md
-- Case Studies: casestudies.md
-- Blogs and Articles: articles.md
-- Videos: videos.md
 - Tutorials:
     - Outline: tutsoutline.md
     - Client Server: tutorial/clientserver.md
@@ -29,6 +47,10 @@ nav:
     - Model based testing of implementation: howtoguides/modelbasedtesting.md
     - Importance of Liveness Specifications: howtoguides/importanceliveness.md
 - FAQ: faq.md
+- Publications: publications.md
+- Case Studies: casestudies.md
+- Blogs and Articles: articles.md
+- Videos: videos.md
 - Language Manual:
     - P Events: manual/events.md
     - P State Machines: manual/statemachines.md
@@ -42,6 +64,34 @@ nav:
 
 
 markdown_extensions:
-  - pymdownx.highlight:
-      linenums: true
-  - footnotes:
+  - admonition
+  - pymdownx.tabbed
+  - pymdownx.details
+  - pymdownx.highlight
+  - attr_list
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid-experimental
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - footnotes
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - toc:
+      toc_depth: 1
+
+plugins:
+  - search:
+      prebuild_index: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/squidfunk
+      name: P on Twitter
+    - icon: fontawesome/solid/paper-plane
+      link: mailto:ankushdesai@gmail.com
+      name: Contact P Team
+
+copyright: Copyright &copy; 2021 P Developers

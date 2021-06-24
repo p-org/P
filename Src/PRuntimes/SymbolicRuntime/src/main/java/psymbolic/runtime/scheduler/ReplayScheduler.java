@@ -79,14 +79,14 @@ public class ReplayScheduler extends Scheduler {
 
     @Override
     public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
-        ValueSummary res = schedule.getRepeatElement(choiceDepth);
+        ValueSummary res = getNextElementFlattener(schedule.getRepeatElement(choiceDepth));
         choiceDepth++;
         return res;
     }
 
     @Override
     public PrimitiveVS<Machine> allocateMachine(Guard pc, Class<? extends Machine> machineType,
-                                           Function<Integer, ? extends Machine> constructor) {
+                                                Function<Integer, ? extends Machine> constructor) {
         if (!machineCounters.containsKey(machineType)) {
             machineCounters.put(machineType, new PrimitiveVS<>(0));
         }

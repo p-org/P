@@ -22,7 +22,7 @@ public class Schedule {
         }
 
         public Guard getUniverse() {
-            return senderChoice.getUniverse().or(boolChoice.getUniverse().or(intChoice.getUniverse()));
+            return senderChoice.getUniverse().or(boolChoice.getUniverse().or(intChoice.getUniverse().or(elementChoice.getUniverse())));
         }
 
         public boolean isEmpty() {

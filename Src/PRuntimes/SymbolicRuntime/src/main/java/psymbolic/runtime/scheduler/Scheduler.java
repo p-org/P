@@ -271,6 +271,7 @@ public class Scheduler implements SymbolicSearch {
                 Guard initCond = machine.sendBuffer.isInitUnderGuard().getGuardFor(true);
                 if (!initCond.isFalse()) {
                     PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(initCond);
+                    candidateSenders = new ArrayList<>();
                     candidateSenders.add(ret);
                     return candidateSenders;
                 }

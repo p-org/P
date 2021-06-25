@@ -3,6 +3,7 @@
   <h2>Modular and Safe Programming for Distributed Systems</h2>
 </div>
 
+[![NuGet](https://img.shields.io/nuget/v/p.svg)](https://www.nuget.org/packages/P/)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/p-org/P/master/LICENSE.txt)
 ![GitHub Action (CI on Windows)](https://github.com/p-org/P/workflows/CI%20on%20Windows/badge.svg)
 ![GitHub Action (CI on Ubuntu)](https://github.com/p-org/P/workflows/CI%20on%20Ubuntu/badge.svg)
@@ -13,7 +14,7 @@ P is currently being used extensively inside Amazon (AWS) for model checking com
 P has been used to implement and validate the USB device driver stack that ships with Microsoft Windows 8 and Windows Phone.
 We have also used P for programming safe robotics systems.
 
-> **Programming distributed systems is challenging but a pinch of programming languages design combined with a dash of automated reasoning can go a long way in bringing the joy back.** :cowboy_hat_face:
+> **_Programming distributed systems is challenging but a pinch of programming languages design combined with a dash of automated reasoning can go a long way in bringing the joy back._** :cowboy_hat_face:
 
 
 ## Let the fun begin!

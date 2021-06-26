@@ -111,7 +111,7 @@ public class PSymOptions {
                 case "sb":
                 case "sched-choice-bound":
                     try {
-                        config.setInputChoiceBound(Integer.parseInt(option.getValue()));
+                        config.setSchedChoiceBound(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
                         formatter.printHelp("sb", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
                         formatter.printUsage(writer, 80, "sb", options);

@@ -12,6 +12,12 @@ import java.util.*;
 
 public class Schedule {
 
+    private Guard filter = Guard.constTrue();
+
+    public void restrictFilter(Guard c) { filter = filter.and(c); }
+    public Guard getFilter() { return filter; }
+    public void resetFilter() { filter = Guard.constTrue(); }
+
     public class Choice {
         PrimitiveVS<Machine> senderChoice = new PrimitiveVS<>();
         PrimitiveVS<Boolean> boolChoice = new PrimitiveVS<>();

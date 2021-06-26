@@ -42,6 +42,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     public void postIterationCleanup() {
+        schedule.resetFilter();
         for (int d = schedule.size() - 1; d >= 0; d--) {
             Schedule.Choice backtrack = schedule.getBacktrackChoice(d);
             schedule.clearRepeat(d);
@@ -80,12 +81,10 @@ public class IterativeBoundedScheduler extends Scheduler {
         PrimitiveVS choices = new PrimitiveVS();
 
         if (depth < schedule.size()) {
-            // ScheduleLogger.log("repeat or backtrack");
             PrimitiveVS repeat = getRepeat.apply(depth);
             if (!repeat.getUniverse().isFalse()) {
                 return repeat;
             }
-            // ScheduleLogger.log("CHOSE FROM backtrack: " + getBacktrack.apply(depth));
             // nothing to repeat, so look at backtrack set
             choices = getBacktrack.apply(depth);
             clearBacktrack.accept(depth);
@@ -98,17 +97,12 @@ public class IterativeBoundedScheduler extends Scheduler {
             choices = generateNext.apply(getChoices.get());
         }
 
-        // ScheduleLogger.log("choose from " + choices);
         Guard guard = NondetUtil.chooseGuard(bound, choices);
-        PrimitiveVS chosenVS = choices.restrict(guard);
+        PrimitiveVS chosenVS = choices.restrict(guard).restrict(schedule.getFilter());
         PrimitiveVS backtrackVS = choices.restrict(guard.not());
-        //("add repeat " + chosenVS);
         addRepeat.accept(chosenVS, depth);
-        // ScheduleLogger.log("add backtrack " + backtrackVS);
-        if (!backtrackVS.isEmptyVS()) {
-            // ScheduleLogger.log("NEED TO BACKTRACK TO " + depth + ", remaining: " + backtrackVS);
-        }
         addBacktrack.accept(backtrackVS, depth);
+        schedule.restrictFilter(backtrackVS.getUniverse().not());
         return chosenVS;
     }
 
@@ -132,6 +126,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                 // ScheduleLogger.log("remove guard from sender " + machine + ": " + guard);
             }
         }
+        ((Supplier<PrimitiveVS<Boolean>>)(() -> getNextBoolean(res.getUniverse()))).get();
         choiceDepth = depth + 1;
         return res;
     }

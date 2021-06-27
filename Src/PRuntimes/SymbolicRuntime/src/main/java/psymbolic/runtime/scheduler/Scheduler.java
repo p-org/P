@@ -117,8 +117,6 @@ public class Scheduler implements SymbolicSearch {
     public PrimitiveVS<Integer> getNextInteger(List<PrimitiveVS> candidateIntegers) {
         PrimitiveVS<Integer> choices = (PrimitiveVS<Integer>) NondetUtil.getNondetChoice(candidateIntegers);
         schedule.addRepeatInt(choices, choiceDepth);
-        schedule.addIntChoice(choices, choiceDepth);
-        schedule.addBacktrackInt(new PrimitiveVS<>(), choiceDepth);
         choiceDepth++;
         return choices;
     }
@@ -138,8 +136,6 @@ public class Scheduler implements SymbolicSearch {
     public PrimitiveVS<Boolean> getNextBoolean(List<PrimitiveVS> candidateBooleans) {
         PrimitiveVS<Boolean> choices = (PrimitiveVS<Boolean>) NondetUtil.getNondetChoice(candidateBooleans);
         schedule.addRepeatBool(choices, choiceDepth);
-        schedule.addBoolChoice(choices, choiceDepth);
-        schedule.addBacktrackBool(new PrimitiveVS<>(), choiceDepth);
         choiceDepth++;
         return choices;
     }
@@ -164,8 +160,6 @@ public class Scheduler implements SymbolicSearch {
     public PrimitiveVS<ValueSummary> getNextElementHelper(List<ValueSummary> candidates) {
         PrimitiveVS<ValueSummary> choices = NondetUtil.getNondetChoice(candidates.stream().map(x -> new PrimitiveVS(x).restrict(x.getUniverse())).collect(Collectors.toList()));
         schedule.addRepeatElement(choices, choiceDepth);
-        schedule.addElementChoice(choices, choiceDepth);
-        schedule.addBacktrackElement(new PrimitiveVS<>(), choiceDepth);
         choiceDepth++;
         return choices;
     }
@@ -287,9 +281,7 @@ public class Scheduler implements SymbolicSearch {
 
     public PrimitiveVS<Machine> getNextSender(List<PrimitiveVS> candidateSenders) {
         PrimitiveVS<Machine> choices = (PrimitiveVS<Machine>) NondetUtil.getNondetChoice(candidateSenders);
-        schedule.addSenderChoice(choices, choiceDepth);
         schedule.addRepeatSender(choices, choiceDepth);
-        schedule.addBacktrackSender(new PrimitiveVS<>(), choiceDepth);
         choiceDepth++;
         return choices;
     }

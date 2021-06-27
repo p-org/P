@@ -9,6 +9,7 @@ import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
 import psymbolic.valuesummary.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -44,15 +45,14 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void postIterationCleanup() {
         schedule.resetFilter();
         for (int d = schedule.size() - 1; d >= 0; d--) {
-            Schedule.Choice backtrack = schedule.getBacktrackChoice(d);
+            Schedule.Choice choice = schedule.getChoice(d);
             schedule.clearRepeat(d);
-            if (!backtrack.isEmpty()) {
+            if (!choice.isBacktrackEmpty()) {
                 for (Machine machine : schedule.getMachines()) {
                     machine.reset();
                 }
                 TraceLogger.logMessage("backtrack to " + d);
                 TraceLogger.logMessage("pending backtracks: " + schedule.getNumBacktracks());
-                schedule.resetTransitionCount();
                 reset();
                 return;
             } else {
@@ -74,11 +74,11 @@ public class IterativeBoundedScheduler extends Scheduler {
          */
     }
 
-    private PrimitiveVS getNext(int depth, int bound, Function<Integer, PrimitiveVS> getRepeat, Function<Integer, PrimitiveVS> getBacktrack,
+    private PrimitiveVS getNext(int depth, int bound, Function<Integer, PrimitiveVS> getRepeat, Function<Integer, List> getBacktrack,
                            Consumer<Integer> clearBacktrack, BiConsumer<PrimitiveVS, Integer> addRepeat,
-                           BiConsumer<PrimitiveVS, Integer> addBacktrack, Supplier<List> getChoices,
+                           BiConsumer<List, Integer> addBacktrack, Supplier<List> getChoices,
                            Function<List, PrimitiveVS> generateNext) {
-        PrimitiveVS choices = new PrimitiveVS();
+        List<PrimitiveVS> choices = new ArrayList();
 
         if (depth < schedule.size()) {
             PrimitiveVS repeat = getRepeat.apply(depth);
@@ -90,19 +90,22 @@ public class IterativeBoundedScheduler extends Scheduler {
             clearBacktrack.accept(depth);
         }
 
-        if (choices.isEmptyVS()) {
+        if (choices.isEmpty()) {
             // no choice to backtrack to, so generate new choices
             if (iter > 0)
                 TraceLogger.logMessage("new choice at depth " + depth);
-            choices = generateNext.apply(getChoices.get());
+            choices = getChoices.get();
         }
 
-        Guard guard = NondetUtil.chooseGuard(bound, choices);
-        PrimitiveVS chosenVS = choices.restrict(guard).restrict(schedule.getFilter());
-        PrimitiveVS backtrackVS = choices.restrict(guard.not());
+        List<PrimitiveVS> chosen = new ArrayList();
+        List<PrimitiveVS> backtrack = new ArrayList();
+        for (int i = 0; i < choices.size(); i++) {
+            if (i < bound) chosen.add(choices.get(i));
+            else backtrack.add(choices.get(i));
+        }
+        PrimitiveVS chosenVS = generateNext.apply(chosen);
         addRepeat.accept(chosenVS, depth);
-        addBacktrack.accept(backtrackVS, depth);
-        schedule.restrictFilter(backtrackVS.getUniverse().not());
+        addBacktrack.accept(backtrack, depth);
         return chosenVS;
     }
 
@@ -112,21 +115,6 @@ public class IterativeBoundedScheduler extends Scheduler {
         PrimitiveVS<Machine> res = getNext(depth, configuration.getSchedChoiceBound(), schedule::getRepeatSender, schedule::getBacktrackSender,
                 schedule::clearBacktrack, schedule::addRepeatSender, schedule::addBacktrackSender, super::getNextSenderChoices,
                 super::getNextSender);
-
-        /*
-        ScheduleLogger.log("choice: " + schedule.getRepeatSender(depth));
-        ScheduleLogger.log("backtrack: " + schedule.getBacktrackSender(depth));
-        ScheduleLogger.log("full choice: " + schedule.getSenderChoice(depth));
-         */
-        for (GuardedValue<Machine> sender : schedule.getRepeatSender(depth).getGuardedValues()) {
-            Machine machine = sender.getValue();
-            Guard guard = machine.sendBuffer.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true).and(schedule.getRepeatSender(depth).getUniverse().not());
-            if (!guard.isFalse()) {
-                machine.sendBuffer.remove(guard);
-                // ScheduleLogger.log("remove guard from sender " + machine + ": " + guard);
-            }
-        }
-        ((Supplier<PrimitiveVS<Boolean>>)(() -> getNextBoolean(res.getUniverse()))).get();
         choiceDepth = depth + 1;
         return res;
     }
@@ -137,7 +125,6 @@ public class IterativeBoundedScheduler extends Scheduler {
         PrimitiveVS<Boolean> res = getNext(depth, configuration.getInputChoiceBound(), schedule::getRepeatBool, schedule::getBacktrackBool,
                 schedule::clearBacktrack, schedule::addRepeatBool, schedule::addBacktrackBool,
                 () -> super.getNextBooleanChoices(pc), super::getNextBoolean);
-        //ScheduleLogger.log("choice: " + schedule.getBoolChoice(depth));
         choiceDepth = depth + 1;
         return res;
     }

@@ -54,7 +54,6 @@ public abstract class State {
                         //System.out.println("payload: " + event.guard(guardedValue.guard).getPayload());
                         //if (event.guard(guardedValue.guard).getPayload() != null)
                             //System.out.println("payload class: " + event.guard(guardedValue.guard).getPayload().getClass());
-                        machine.getScheduler().getSchedule().addTransition(machine.getScheduler().getDepth());
                         guardedValue.getValue().eventHandlers.get(event).handleEvent(
                                 eventPc.and(guardedValue.getGuard()),
                                 machine,

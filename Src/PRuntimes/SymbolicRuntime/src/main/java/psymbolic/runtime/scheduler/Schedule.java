@@ -7,8 +7,6 @@ import psymbolic.valuesummary.ListVS;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.ValueSummary;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,12 +35,31 @@ public class Schedule {
         List<PrimitiveVS<Integer>> backtrackInt = new ArrayList<>();
         @Getter
         List<PrimitiveVS<ValueSummary>> backtrackElement = new ArrayList<>();
+        @Getter
+        Guard handledUniverse = Guard.constFalse();
 
         public Choice() {
         }
 
         public Guard getRepeatUniverse() {
             return repeatSender.getUniverse().or(repeatBool.getUniverse().or(repeatInt.getUniverse().or(repeatElement.getUniverse())));
+        }
+
+        public Guard getBacktrackUniverse() {
+            Guard senderUniverse = Guard.constFalse();
+            for (PrimitiveVS<Machine> machine : backtrackSender) {
+                senderUniverse = senderUniverse.or(machine.getUniverse());
+            }
+            for (PrimitiveVS<Boolean> bool : backtrackBool) {
+                senderUniverse = senderUniverse.or(bool.getUniverse());
+            }
+            for (PrimitiveVS<Integer> integer : backtrackInt) {
+                senderUniverse = senderUniverse.or(integer.getUniverse());
+            }
+            for (PrimitiveVS<ValueSummary> element : backtrackElement) {
+                senderUniverse = senderUniverse.or(element.getUniverse());
+            }
+            return senderUniverse;
         }
 
         public boolean isRepeatEmpty() {
@@ -59,11 +76,16 @@ public class Schedule {
             c.repeatBool = repeatBool.restrict(pc);
             c.repeatInt = repeatInt.restrict(pc);
             c.repeatElement = repeatElement.restrict(pc);
-            c.backtrackSender = backtrackSender.stream().map(x -> x.restrict(pc)).collect(Collectors.toList());
-            c.backtrackBool = backtrackBool.stream().map(x -> x.restrict(pc)).collect(Collectors.toList());
-            c.backtrackInt = backtrackInt.stream().map(x -> x.restrict(pc)).collect(Collectors.toList());
-            c.backtrackElement = backtrackElement.stream().map(x -> x.restrict(pc)).collect(Collectors.toList());
+            c.backtrackSender = backtrackSender.stream().map(x -> x.restrict(pc)).filter(x -> !x.isEmptyVS()).collect(Collectors.toList());
+            c.backtrackBool = backtrackBool.stream().map(x -> x.restrict(pc)).filter(x -> !x.isEmptyVS()).collect(Collectors.toList());
+            c.backtrackInt = backtrackInt.stream().map(x -> x.restrict(pc)).filter(x -> !x.isEmptyVS()).collect(Collectors.toList());
+            c.backtrackElement = backtrackElement.stream().map(x -> x.restrict(pc)).filter(x -> !x.isEmptyVS()).collect(Collectors.toList());
             return c;
+        }
+
+        public void updateHandledUniverse(Guard update) {
+            handledUniverse = handledUniverse.or(update);
+
         }
 
         public void addRepeatSender(PrimitiveVS<Machine> choice) {
@@ -89,13 +111,13 @@ public class Schedule {
             repeatElement = new PrimitiveVS<>();
         }
 
-        public void addBacktrackSender(PrimitiveVS<Machine> choice) { backtrackSender.add(choice); }
+        public void addBacktrackSender(PrimitiveVS<Machine> choice) { if (!choice.isEmptyVS()) backtrackSender.add(choice); }
 
-        public void addBacktrackBool(PrimitiveVS<Boolean> choice) { backtrackBool.add(choice); }
+        public void addBacktrackBool(PrimitiveVS<Boolean> choice) { if (!choice.isEmptyVS())  backtrackBool.add(choice); }
 
-        public void addBacktrackInt(PrimitiveVS<Integer> choice) { backtrackInt.add(choice); }
+        public void addBacktrackInt(PrimitiveVS<Integer> choice) { if (!choice.isEmptyVS()) backtrackInt.add(choice); }
 
-        public void addBacktrackElement(PrimitiveVS<ValueSummary> choice) { backtrackElement.add(choice); }
+        public void addBacktrackElement(PrimitiveVS<ValueSummary> choice) { if (!choice.isEmptyVS()) backtrackElement.add(choice); }
 
         public void clearBacktrack() {
             backtrackSender = new ArrayList<>();
@@ -103,6 +125,13 @@ public class Schedule {
             backtrackInt = new ArrayList<>();
             backtrackElement = new ArrayList<>();
         }
+
+        public void clear() {
+            clearRepeat();
+            clearBacktrack();
+            handledUniverse = Guard.constFalse();
+        }
+
     }
 
     private List<Choice> choices = new ArrayList<>();
@@ -112,10 +141,8 @@ public class Schedule {
     }
 
     public void clearChoice(int d) {
-        choices.get(d).clearRepeat();
-        choices.get(d).clearBacktrack();
+        choices.get(d).clear();
     }
-
 
     public int getNumBacktracks() {
         int count = 0;
@@ -227,6 +254,13 @@ public class Schedule {
 
     public void clearBacktrack(int depth) {
         choices.get(depth).clearBacktrack();
+    }
+
+    public void restrictFilterForDepth(int depth) {
+        Choice choice = choices.get(depth);
+        Guard repeat = choice.getRepeatUniverse();
+        Guard backtrackOrHandled = choice.getBacktrackUniverse().or(choice.getHandledUniverse());
+        restrictFilter(backtrackOrHandled.not().or(repeat.and(backtrackOrHandled)));
     }
 
     public int size() {

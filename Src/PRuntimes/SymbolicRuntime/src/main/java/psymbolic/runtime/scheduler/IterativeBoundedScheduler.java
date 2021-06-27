@@ -15,6 +15,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Represents the iterative bounded scheduler
@@ -46,6 +47,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         schedule.resetFilter();
         for (int d = schedule.size() - 1; d >= 0; d--) {
             Schedule.Choice choice = schedule.getChoice(d);
+            choice.updateHandledUniverse(choice.getRepeatUniverse());
             schedule.clearRepeat(d);
             if (!choice.isBacktrackEmpty()) {
                 for (Machine machine : schedule.getMachines()) {
@@ -83,6 +85,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         if (depth < schedule.size()) {
             PrimitiveVS repeat = getRepeat.apply(depth);
             if (!repeat.getUniverse().isFalse()) {
+                schedule.restrictFilterForDepth(depth);
                 return repeat;
             }
             // nothing to repeat, so look at backtrack set
@@ -95,6 +98,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             if (iter > 0)
                 TraceLogger.logMessage("new choice at depth " + depth);
             choices = getChoices.get();
+            choices = choices.stream().map(x -> x.restrict(schedule.getFilter())).filter(x -> !(x.getUniverse().isFalse())).collect(Collectors.toList());
         }
 
         List<PrimitiveVS> chosen = new ArrayList();
@@ -106,6 +110,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         PrimitiveVS chosenVS = generateNext.apply(chosen);
         addRepeat.accept(chosenVS, depth);
         addBacktrack.accept(backtrack, depth);
+        schedule.restrictFilterForDepth(depth);
         return chosenVS;
     }
 

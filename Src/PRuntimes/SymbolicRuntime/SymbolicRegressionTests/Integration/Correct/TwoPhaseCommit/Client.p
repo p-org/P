@@ -13,9 +13,9 @@ enum tTransStatus {
 
 // Events used by client machine to communicate with the two phase commit coordinator
 event eWriteTransReq : tWriteTransReq;
-event eWriteTransResp : tWriteTransResp;
+event sync_eWriteTransResp : tWriteTransResp;
 event eReadTransReq : tReadTransReq;
-event eReadTransResp: tReadTransResp;
+event sync_eReadTransResp: tReadTransResp;
 
 /*****************************************************************************************
 The client machine below implements the client of the two-phase-commit transaction service.
@@ -45,7 +45,7 @@ machine Client {
 	    	currTransaction = ChooseTransaction();
 			send coordinator, eWriteTransReq, (client = this, rec = currTransaction);
 		}
-		on eWriteTransResp goto ConfirmTransaction;
+		on sync_eWriteTransResp goto ConfirmTransaction;
 	}
 
 	state ConfirmTransaction {
@@ -57,7 +57,7 @@ machine Client {
 			send coordinator, eReadTransReq, (client= this, key = currTransaction.key);
 		}
 
-		on eReadTransResp do (readResp: tReadTransResp) {
+		on sync_eReadTransResp do (readResp: tReadTransResp) {
 	        // assert that if write transaction failed then read must fail as well and vice-versa
 	        if(currWriteResponse.status == SUCCESS)
 	        {
@@ -83,6 +83,7 @@ In P, function declarations without body are considered as foreign functions.
 */
 fun ChooseTransaction(): tRecord
 {
-    return (key = choose(10), val = choose(10));
+    return default(tRecord);
+    //return (key = choose(10), val = choose(10));
 }
 

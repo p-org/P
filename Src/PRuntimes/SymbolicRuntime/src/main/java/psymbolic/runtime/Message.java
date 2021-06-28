@@ -3,7 +3,6 @@ package psymbolic.runtime;
 
 import psymbolic.runtime.machine.Machine;
 import psymbolic.valuesummary.*;
-import psymbolic.valuesummary.Guard;
 
 import java.util.*;
 
@@ -19,20 +18,13 @@ public class Message implements ValueSummary<Message> {
     // the payload associated with the event
     private final Map<Event, UnionVS> payload;
 
-
     public PrimitiveVS<Boolean> canRun() {
         Guard cond = Guard.constFalse();
         for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
             cond = cond.or(machine.getValue().hasStarted().getGuardFor(true).and(machine.getGuard()));
 
             if (BooleanVS.isEverFalse(machine.getValue().hasStarted())) {
-                Guard unstarted = machine.getValue().hasStarted().getGuardFor(false).and(machine.getGuard());
-                PrimitiveVS<Event> names = this.restrict(unstarted).getEvent();
-                for (GuardedValue<Event> name : names.getGuardedValues()) {
-                    if (name.getValue().equals(Event.createMachine)) {
-                        cond = cond.or(name.getGuard());
-                    }
-                }
+                throw new RuntimeException("Internal Error: All Machines must be runnable at this point!!");
             }
         }
         return BooleanVS.trueUnderGuard(cond);
@@ -48,6 +40,19 @@ public class Message implements ValueSummary<Message> {
                     if (event.getValue().equals(Event.createMachine)) {
                         cond = cond.or(event.getGuard());
                     }
+                }
+            }
+        }
+        return BooleanVS.trueUnderGuard(cond);
+    }
+
+    public PrimitiveVS<Boolean> isSyncEvent() {
+        Guard cond = Guard.constFalse();
+        for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
+            PrimitiveVS<Event> events = this.getEvent();
+            for (GuardedValue<Event> event : events.getGuardedValues()) {
+                if (event.getValue().name.contains("sync")) {
+                    cond = cond.or(event.getGuard());
                 }
             }
         }
@@ -211,5 +216,6 @@ public class Message implements ValueSummary<Message> {
         str += "}";
         return str;
     }
+
 
 }

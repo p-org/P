@@ -53,7 +53,12 @@ public class EventBag extends SymbolicBag<Message> implements EventBuffer {
     }
 
     @Override
-    public PrimitiveVS<Boolean> isInitUnderGuard() {
+    public PrimitiveVS<Boolean> hasCreateMachineUnderGuard() {
         return satisfiesPredUnderGuard(Message::isCreateMachine);
+    }
+
+    @Override
+    public PrimitiveVS<Boolean> hasSyncEventUnderGuard() {
+        return satisfiesPredUnderGuard(Message::isSyncEvent);
     }
 }

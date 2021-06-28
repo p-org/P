@@ -258,17 +258,34 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public List<PrimitiveVS> getNextSenderChoices() {
+
+        // prioritize the create actions
+        for (Machine machine : machines) {
+            if (!machine.sendBuffer.isEmpty()) {
+                Guard initCond = machine.sendBuffer.hasCreateMachineUnderGuard().getGuardFor(true);
+                if (!initCond.isFalse()) {
+                    PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(initCond);
+                    return new ArrayList<>(Arrays.asList(ret));
+                }
+            }
+        }
+
+        // prioritize the sync actions i.e. events that are marked as synchronous
+        for (Machine machine : machines) {
+            if (!machine.sendBuffer.isEmpty()) {
+                Guard syncCond = machine.sendBuffer.hasSyncEventUnderGuard().getGuardFor(true);
+                if (!syncCond.isFalse()) {
+                    PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(syncCond);
+                    return new ArrayList<>(Arrays.asList(ret));
+                }
+            }
+        }
+
+        // now there are no create machine and sync event actions remaining
         List<PrimitiveVS> candidateSenders = new ArrayList<>();
 
         for (Machine machine : machines) {
             if (!machine.sendBuffer.isEmpty()) {
-                Guard initCond = machine.sendBuffer.isInitUnderGuard().getGuardFor(true);
-                if (!initCond.isFalse()) {
-                    PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(initCond);
-                    candidateSenders = new ArrayList<>();
-                    candidateSenders.add(ret);
-                    return candidateSenders;
-                }
                 Guard canRun = machine.hasHalted().getGuardFor(true).not();
                 canRun = canRun.and(machine.sendBuffer.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true));
                 if (!canRun.isFalse()) {

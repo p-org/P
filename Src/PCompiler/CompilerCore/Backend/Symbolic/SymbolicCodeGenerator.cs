@@ -101,14 +101,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteEvent(CompilationContext context, StringWriter output, PEvent ev)
         {
-            if (!ev.IsBuiltIn)
-            {
-                context.WriteLine(output, $"public static Event {ev.Name} = new Event(\"{ev.Name}\");");
-            }
-            else
-            {
-                context.WriteLine(output, $"public static Event _{ev.Name} = new Event(\"_{ev.Name}\");");
-            }
+            context.WriteLine(output, $"public static Event {context.GetNameForDecl(ev)} = new Event(\"{context.GetNameForDecl(ev)}\");");
         }
 
         private void WriteDecl(CompilationContext context, StringWriter output, IPDecl decl)
@@ -1123,9 +1116,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, $"this.receive(\"{context.GetContinuationName(splitStmt.Cont)}\", {flowContext.pcScope.PathConstraintVar});");
                     break;
                 default:
-                    context.WriteLine(output, $"/* Skipping statement '{stmt.GetType().Name}' */");
-                    // throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported");
-                    break;
+                    // context.WriteLine(output, $"/* Skipping statement '{stmt.GetType().Name}' */");
+                    throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported");
             }
         }
 

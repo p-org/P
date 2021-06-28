@@ -269,7 +269,8 @@ public class Scheduler implements SymbolicSearch {
                     candidateSenders.add(ret);
                     return candidateSenders;
                 }
-                Guard canRun = machine.sendBuffer.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true);
+                Guard canRun = machine.hasHalted().getGuardFor(true).not();
+                canRun = canRun.and(machine.sendBuffer.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true));
                 if (!canRun.isFalse()) {
                     candidateSenders.add(new PrimitiveVS<>(machine).restrict(canRun));
                 }

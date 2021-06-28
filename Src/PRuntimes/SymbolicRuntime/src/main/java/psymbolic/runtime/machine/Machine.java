@@ -21,6 +21,7 @@ public abstract class Machine {
     private final State startState;
     private final Set<State> states;
     private PrimitiveVS<Boolean> started = new PrimitiveVS<>(false);
+    private PrimitiveVS<Boolean> halted = new PrimitiveVS<>(false);
     private PrimitiveVS<State> currentState;
     public final EventBuffer sendBuffer;
     public final DeferQueue deferredQueue;
@@ -40,6 +41,10 @@ public abstract class Machine {
 
     public PrimitiveVS<Boolean> hasStarted() {
         return started;
+    }
+
+    public PrimitiveVS<Boolean> hasHalted() {
+        return halted;
     }
 
     public Guard getBlockedOnReceiveGuard() { return receives.getUniverse(); }
@@ -101,6 +106,10 @@ public abstract class Machine {
         startState.entry(pc, this, initEventHandlerReturnReason, payload);
 
         runOutcomesToCompletion(pc, initEventHandlerReturnReason);
+    }
+
+    public void halt(Guard pc) {
+        this.halted = this.halted.updateUnderGuard(pc, new PrimitiveVS<>(true));
     }
 
     void runOutcomesToCompletion(Guard pc, EventHandlerReturnReason eventHandlerReturnReason) {

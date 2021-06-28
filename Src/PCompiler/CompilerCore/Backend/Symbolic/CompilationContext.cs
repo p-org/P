@@ -79,7 +79,9 @@ namespace Plang.Compiler.Backend.Symbolic
                 case State state:
                     return $"{state.Name}";
                 case PEvent pEvent:
-                    return $"{pEvent.Name}";
+                    if (!pEvent.IsBuiltIn)
+                        return $"{pEvent.Name}";
+                    else return $"_{pEvent.Name}";
                 default:
                     throw new NotImplementedException($"decl type {decl.GetType().Name} not supported");
             }

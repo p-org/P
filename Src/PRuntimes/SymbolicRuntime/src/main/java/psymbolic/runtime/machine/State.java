@@ -44,30 +44,29 @@ public abstract class State {
         for (GuardedValue<Event> entry : message.getEvent().getGuardedValues()) {
             Event event = entry.getValue();
             Guard eventPc = entry.getGuard();
-            assert(message.restrict(eventPc).getEvent().getGuardedValues().size() == 1);
+            assert (message.restrict(eventPc).getEvent().getGuardedValues().size() == 1);
             PrimitiveVS<State> current = new PrimitiveVS<>(this).restrict(eventPc);
-            TraceLogger.handle(machine,this, message.restrict(entry.getGuard()));
+            TraceLogger.handle(machine, this, message.restrict(entry.getGuard()));
             Guard handledPc = Guard.constFalse();
-            while (true) {
-                for (GuardedValue<State> guardedValue : current.getGuardedValues()) {
-                    if (guardedValue.getValue().eventHandlers.containsKey(event)) {
-                        //System.out.println("payload: " + event.guard(guardedValue.guard).getPayload());
-                        //if (event.guard(guardedValue.guard).getPayload() != null)
-                            //System.out.println("payload class: " + event.guard(guardedValue.guard).getPayload().getClass());
-                        guardedValue.getValue().eventHandlers.get(event).handleEvent(
-                                eventPc.and(guardedValue.getGuard()),
-                                machine,
-                                message.restrict(guardedValue.getGuard()).getPayload(),
-                                outcome
-                        );
-                        handledPc = handledPc.or(guardedValue.getGuard());
-                    }
+            for (GuardedValue<State> guardedValue : current.getGuardedValues()) {
+                if (guardedValue.getValue().eventHandlers.containsKey(event)) {
+                    //System.out.println("payload: " + event.guard(guardedValue.guard).getPayload());
+                    //if (event.guard(guardedValue.guard).getPayload() != null)
+                    //System.out.println("payload class: " + event.guard(guardedValue.guard).getPayload().getClass());
+                    guardedValue.getValue().eventHandlers.get(event).handleEvent(
+                            eventPc.and(guardedValue.getGuard()),
+                            machine,
+                            message.restrict(guardedValue.getGuard()).getPayload(),
+                            outcome
+                    );
+                    handledPc = handledPc.or(guardedValue.getGuard());
                 }
-                if (ValueSummaryChecks.hasSameUniverse(handledPc, eventPc)) {
-                    break; // handled the event along all paths
-                } else {
-                    throw new BugFoundException("State " + this.name + " missing handler for event: " + event, eventPc);
-                }
+            }
+            if (event.equals(Event.haltMachine)) {
+                machine.halt(eventPc.and(handledPc.not()));
+            }
+            else if (!ValueSummaryChecks.hasSameUniverse(handledPc, eventPc)) {
+                new BugFoundException("State " + this.name + " missing handler for event: " + event, eventPc);
             }
         }
     }

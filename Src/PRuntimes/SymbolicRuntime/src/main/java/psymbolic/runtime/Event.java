@@ -11,6 +11,8 @@ import java.util.Objects;
 public class Event {
     // Special event send to a machine on creation
     public static Event createMachine = new Event("createMachine");
+    // Special halt event
+    public static Event haltMachine = new Event("_halt");
     // Name of the Event
     final String name;
 

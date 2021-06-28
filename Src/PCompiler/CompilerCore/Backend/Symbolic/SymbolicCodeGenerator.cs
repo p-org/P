@@ -1099,8 +1099,21 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, ");");
                     break;
                 case ReceiveSplitStmt splitStmt:
+                    List<Variable> args = splitStmt.Cont.Signature.Parameters;
+                    List<Variable> finalArgs = new List<Variable>();
+                    for (int i = 0; i < args.Count(); i++)
+                    {
+                       string finalName = $"{args.ElementAt(i).Name}_final";
+                       context.Write(output, $"final {GetSymbolicType(args.ElementAt(i).Type)} {CompilationContext.GetVar(finalName)} = ");
+                       var param = new VariableAccessExpr(splitStmt.SourceLocation, args.ElementAt(i));
+                       WriteExpr(context, output, flowContext.pcScope, param);
+                       context.WriteLine(output, ";");
+                       Variable newVar = new Variable(finalName, splitStmt.SourceLocation, args.ElementAt(i).Role);
+                       newVar.Type = args.ElementAt(i).Type;
+                       finalArgs.Add(newVar);
+                    }
                     FunctionSignature signature = splitStmt.Cont.Signature;
-                    context.Write(output, $"{CompilationContext.EffectCollectionVar}.receive(");
+                    context.Write(output, $"this.receive(");
 /*
                     context.Write(output, "new ");
                     Console.WriteLine($"before returntype {signature.ReturnType}");
@@ -1113,20 +1126,17 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output, "Function");
                     }
 */
-                    context.Write(output, $"((msg) -> {context.GetContinuationName(splitStmt.Cont)}({flowContext.pcScope.PathConstraintVar},");
+                    
+                    context.Write(output, $"(pc) -> ((continuation_outcome, msg) -> {context.GetContinuationName(splitStmt.Cont)}(pc,");
                     context.Write(output, $"{CompilationContext.EffectCollectionVar}");
-                    if (function.CanChangeState ?? false)
-                        context.Write(output, ", outcome");
-                    else if (function.CanRaiseEvent ?? false)
-                        context.Write(output, ", outcome");
-                    List<Variable> args = splitStmt.Cont.Signature.Parameters;
-                    for (int i = 0; i < args.Count(); i++)
+                    context.Write(output, ", continuation_outcome");
+                    for (int i = 0; i < finalArgs.Count(); i++)
                     {
-                       context.Write(output, ", ");
-                       var param = new VariableAccessExpr(splitStmt.SourceLocation, args.ElementAt(i));
-                       WriteExpr(context, output, flowContext.pcScope, param);
+                       context.Write(output, $", {CompilationContext.GetVar(finalArgs.ElementAt(i).Name)}");
+                       //var param = new VariableAccessExpr(splitStmt.SourceLocation, finalArgs.ElementAt(i));
+                       //WriteExpr(context, output, flowContext.pcScope, param);
                     }
-                    context.WriteLine(output, ", msg)));");
+                    context.WriteLine(output, $", msg)), {flowContext.pcScope.PathConstraintVar});");
                     break;
                 default:
                     context.WriteLine(output, $"/* Skipping statement '{stmt.GetType().Name}' */");
@@ -1183,7 +1193,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "{");
             var funcContext = ControlFlowContext.FreshFuncContext(context, rootPCScope);
             int idx = 0;
-            context.WriteLine(output, "Guard deferGuard = Guard.constTrue();");
+            context.WriteLine(output, $"Guard deferGuard = {rootPCScope.PathConstraintVar};");
             foreach (PEvent e in continuation.Cases.Keys)
             {
                 Console.WriteLine($"writing continuation event {e.Name}");
@@ -1201,7 +1211,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 argValue.Type = PrimitiveType.Any;
                 context.WriteLine(output, $"UnionVS var_payload = {messageName}_{idx}.restrict({caseScope.PathConstraintVar}).getPayload();");
                 AssignStmt assignMsg = new AssignStmt(continuation.SourceLocation, new VariableAccessExpr(continuation.SourceLocation, arg), new VariableAccessExpr(continuation.SourceLocation, argValue));
-                context.WriteLine(output, $"{GetSymbolicType(arg.Type)} {CompilationContext.GetVar(arg.Name)};");
+                context.WriteLine(output, $"{GetSymbolicType(arg.Type)} {CompilationContext.GetVar(arg.Name)} = {GetDefaultValue(context, caseScope, arg.Type)};");
                 WriteStmt(continuation, context, output, caseContext, assignMsg);
                 WriteFunctionBody(context, output, caseScope, continuation.Cases[e]);
 /*
@@ -1213,6 +1223,13 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, "}");
                 idx++;
             }
+            context.WriteLine(output, $"if (!deferGuard.isFalse())");
+            context.WriteLine(output, "{");
+            context.Write(output, $"for (GuardedValue<Event> e : {messageName}.getEvent().getGuardedValues())");
+            context.WriteLine(output, "{");
+            context.WriteLine(output, $"new DeferEventHandler(e.getValue()).handleEvent(e.getGuard(), this, {messageName}.getPayload().restrict(e.getGuard()), outcome);");
+            context.WriteLine(output, "}");
+            context.WriteLine(output, "}");
             WriteStmt(continuation, context, output, funcContext, continuation.After);
             context.WriteLine(output, "}");
             context.WriteLine(output);

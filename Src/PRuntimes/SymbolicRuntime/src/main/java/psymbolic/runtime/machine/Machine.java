@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public abstract class Machine {
     private String name;
@@ -25,6 +27,13 @@ public abstract class Machine {
     private PrimitiveVS<State> currentState;
     public final EventBuffer sendBuffer;
     public final DeferQueue deferredQueue;
+    // note: will not work for receives in functions outside the machine
+    private PrimitiveVS<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> receives = new PrimitiveVS<>();
+
+    public void receive(Function<Guard, BiConsumer<EventHandlerReturnReason, Message>> f, Guard pc) {
+        PrimitiveVS<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> handler = new PrimitiveVS<>(f).restrict(pc);
+        receives = receives.merge(handler);
+    }
 
     public void setScheduler(Scheduler scheduler) { this.scheduler = scheduler; }
 
@@ -33,6 +42,8 @@ public abstract class Machine {
     public PrimitiveVS<Boolean> hasStarted() {
         return started;
     }
+
+    public Guard getBlockedOnReceiveGuard() { return receives.getUniverse(); }
 
     public PrimitiveVS<State> getCurrentState() {
         return currentState;
@@ -48,6 +59,7 @@ public abstract class Machine {
         while (!deferredQueue.isEmpty()) {
             deferredQueue.dequeueEntry(deferredQueue.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
         }
+        receives = new PrimitiveVS<>();
     }
 
     public Machine(String name, int id, EventBufferSemantics semantics, State startState, State... states) {
@@ -97,6 +109,20 @@ public abstract class Machine {
         while (!eventHandlerReturnReason.isNormalReturn()) {
             // TODO: Determine if this can be safely optimized into a concrete boolean
             Guard performedTransition = Guard.constFalse();
+
+            Guard receiveGuard = getBlockedOnReceiveGuard().and(pc);
+            if (!receiveGuard.isFalse()) {
+                PrimitiveVS<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> runNow = receives.restrict(receiveGuard);
+                receives = receives.restrict(receiveGuard.not());
+                Message m = eventHandlerReturnReason.getMessageSummary();
+                EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
+                nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not()));
+                for (GuardedValue<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> receiver : runNow.getGuardedValues()) {
+                    System.out.println("unblocking receive for event " + m.getEvent());
+                    receiver.getValue().apply(receiver.getGuard()).accept(nextEventHandlerReturnReason, m.restrict(receiver.getGuard()));
+                }
+                eventHandlerReturnReason = nextEventHandlerReturnReason;
+            }
 
             // Inner loop: process sequences of 'goto's and 'raise's.
             while (!eventHandlerReturnReason.isNormalReturn()) {

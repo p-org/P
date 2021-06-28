@@ -237,6 +237,19 @@ namespace Plang.Compiler.Backend.Symbolic
               WriteHandlerUpdate(context, output, state);
             }
 
+            foreach (var method in machine.Methods)
+            {
+                if (method is Continuation)
+                {
+                    Continuation cont = (Continuation) method;
+                    context.Write(output, $"continuations.put(\"{context.GetContinuationName(cont)}\", ");
+                    context.Write(output, $"(pc) -> ((continuation_outcome, msg) -> {context.GetContinuationName(cont)}(pc,");
+                    context.Write(output, $"sendBuffer");
+                    context.Write(output, ", continuation_outcome");
+                    context.WriteLine(output, $", msg)));");
+                }
+            }
+
             context.WriteLine(output, "}");
         }
 
@@ -485,9 +498,6 @@ namespace Plang.Compiler.Backend.Symbolic
             }
 
             var isStatic = function.Owner == null;
-
-            if (function.CanReceive == true)
-                throw new NotImplementedException($"Async functions {context.GetNameForDecl(function)} are not supported");
 
             var staticKeyword = isStatic ? "static " : "";
 
@@ -1100,43 +1110,15 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case ReceiveSplitStmt splitStmt:
                     List<Variable> args = splitStmt.Cont.Signature.Parameters;
-                    List<Variable> finalArgs = new List<Variable>();
                     for (int i = 0; i < args.Count(); i++)
                     {
-                       string finalName = $"{args.ElementAt(i).Name}_final";
-                       context.Write(output, $"final {GetSymbolicType(args.ElementAt(i).Type)} {CompilationContext.GetVar(finalName)} = ");
+                       context.Write(output, $"{context.GetContinuationVar(splitStmt.Cont, args.ElementAt(i).Name)} = ");
                        var param = new VariableAccessExpr(splitStmt.SourceLocation, args.ElementAt(i));
                        WriteExpr(context, output, flowContext.pcScope, param);
                        context.WriteLine(output, ";");
-                       Variable newVar = new Variable(finalName, splitStmt.SourceLocation, args.ElementAt(i).Role);
-                       newVar.Type = args.ElementAt(i).Type;
-                       finalArgs.Add(newVar);
                     }
                     FunctionSignature signature = splitStmt.Cont.Signature;
-                    context.Write(output, $"this.receive(");
-/*
-                    context.Write(output, "new ");
-                    Console.WriteLine($"before returntype {signature.ReturnType}");
-                    if (signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
-                    {
-                        context.Write(output, "Consumer");
-                    }
-                    else
-                    {
-                        context.Write(output, "Function");
-                    }
-*/
-                    
-                    context.Write(output, $"(pc) -> ((continuation_outcome, msg) -> {context.GetContinuationName(splitStmt.Cont)}(pc,");
-                    context.Write(output, $"{CompilationContext.EffectCollectionVar}");
-                    context.Write(output, ", continuation_outcome");
-                    for (int i = 0; i < finalArgs.Count(); i++)
-                    {
-                       context.Write(output, $", {CompilationContext.GetVar(finalArgs.ElementAt(i).Name)}");
-                       //var param = new VariableAccessExpr(splitStmt.SourceLocation, finalArgs.ElementAt(i));
-                       //WriteExpr(context, output, flowContext.pcScope, param);
-                    }
-                    context.WriteLine(output, $", msg)), {flowContext.pcScope.PathConstraintVar});");
+                    context.Write(output, $"this.receive(\"{context.GetContinuationName(splitStmt.Cont)}\", {flowContext.pcScope.PathConstraintVar});");
                     break;
                 default:
                     context.WriteLine(output, $"/* Skipping statement '{stmt.GetType().Name}' */");
@@ -1147,6 +1129,11 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteContinuation(CompilationContext context, StringWriter output, Continuation continuation)
         {
+            foreach (var param in continuation.Signature.Parameters)
+            {
+                context.WriteLine(output, $"{GetSymbolicType(param.Type, true)} {context.GetContinuationVar(continuation, param.Name)} = {GetDefaultValueNoGuard(context, param.Type)};");
+            }
+
             var rootPCScope = context.FreshPathConstraintScope();
 
             string returnType = null;
@@ -1179,11 +1166,6 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, ",");
                 context.Write(output, "EventHandlerReturnReason outcome");
             }
-            foreach (var param in continuation.Signature.Parameters)
-            {
-                context.WriteLine(output, ",");
-                context.Write(output, $"{GetSymbolicType(param.Type, true)} {CompilationContext.GetVar(param.Name)}");
-            }
             context.WriteLine(output, ",");
             string messageName = CompilationContext.GetVar("msg");
             context.WriteLine(output, $"Message {messageName}");
@@ -1192,6 +1174,11 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output, "{");
             var funcContext = ControlFlowContext.FreshFuncContext(context, rootPCScope);
+            foreach (var param in continuation.Signature.Parameters)
+            {
+                context.Write(output, $"{GetSymbolicType(param.Type, true)} {CompilationContext.GetVar(param.Name)}");
+                context.WriteLine(output, $"= {context.GetContinuationVar(continuation, param.Name)}.restrict({rootPCScope.PathConstraintVar});");
+            }
             int idx = 0;
             context.WriteLine(output, $"Guard deferGuard = {rootPCScope.PathConstraintVar};");
             foreach (PEvent e in continuation.Cases.Keys)

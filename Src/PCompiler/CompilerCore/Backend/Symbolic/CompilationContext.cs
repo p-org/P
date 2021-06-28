@@ -25,6 +25,11 @@ namespace Plang.Compiler.Backend.Symbolic
 
         internal IEnumerable<Continuation> Continuations => continuationNames.Keys;
 
+        internal string GetContinuationVar(Continuation c, string rawName)
+        {
+            return $"{GetContinuationName(c)}_{GetVar(rawName)}";
+        }
+
         internal PLanguageType ReturnType { get; set; }
 
         internal Dictionary<Function, int> anonFuncIds;

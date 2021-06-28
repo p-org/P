@@ -10,10 +10,7 @@ import psymbolic.runtime.scheduler.Scheduler;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.Guard;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -29,9 +26,10 @@ public abstract class Machine {
     public final DeferQueue deferredQueue;
     // note: will not work for receives in functions outside the machine
     private PrimitiveVS<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> receives = new PrimitiveVS<>();
+    public final Map<String, Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> continuations = new HashMap<>();
 
-    public void receive(Function<Guard, BiConsumer<EventHandlerReturnReason, Message>> f, Guard pc) {
-        PrimitiveVS<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> handler = new PrimitiveVS<>(f).restrict(pc);
+    public void receive(String continuationName, Guard pc) {
+        PrimitiveVS<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> handler = new PrimitiveVS<>(continuations.get(continuationName)).restrict(pc);
         receives = receives.merge(handler);
     }
 

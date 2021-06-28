@@ -123,6 +123,8 @@ namespace Plang.Compiler.Backend.Symbolic
              if (function.CanReceive != true) {
                  return function;
              }
+             if (machine == null)
+                throw new NotImplementedException($"Async functions {function.Name} are not supported");
              Function transformedFunction = new Function(function.Name, function.SourceLocation);
              transformedFunction.Owner = function.Owner;
              transformedFunction.ParentFunction = function.ParentFunction;
@@ -133,7 +135,7 @@ namespace Plang.Compiler.Backend.Symbolic
              transformedFunction.Scope = function.Scope;
              transformedFunction.CanChangeState = function.CanChangeState;
              transformedFunction.CanRaiseEvent = function.CanRaiseEvent;
-             transformedFunction.CanReceive = false;//function.CanReceive;
+             transformedFunction.CanReceive = function.CanReceive;
              transformedFunction.IsNondeterministic = function.IsNondeterministic;
              foreach (var param in function.Signature.Parameters) transformedFunction.Signature.Parameters.Add(param);
              transformedFunction.Signature.ReturnType = function.Signature.ReturnType;

@@ -247,6 +247,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, $"sendBuffer");
                     context.Write(output, ", continuation_outcome");
                     context.WriteLine(output, $", msg)));");
+                    context.Write(output, $"clearContinuationVars.add(() -> clear_{context.GetContinuationName(cont)}());");
                 }
             }
 
@@ -1112,10 +1113,11 @@ namespace Plang.Compiler.Backend.Symbolic
                     List<Variable> args = splitStmt.Cont.Signature.Parameters;
                     for (int i = 0; i < args.Count(); i++)
                     {
-                       context.Write(output, $"{context.GetContinuationVar(splitStmt.Cont, args.ElementAt(i).Name)} = ");
+                       context.Write(output, $"{context.GetContinuationVar(splitStmt.Cont, args.ElementAt(i).Name)} = {context.GetContinuationVar(splitStmt.Cont, args.ElementAt(i).Name)}.updateUnderGuard(");
+                       context.Write(output, $"{flowContext.pcScope.PathConstraintVar}, ");
                        var param = new VariableAccessExpr(splitStmt.SourceLocation, args.ElementAt(i));
                        WriteExpr(context, output, flowContext.pcScope, param);
-                       context.WriteLine(output, ";");
+                       context.WriteLine(output, ");");
                     }
                     FunctionSignature signature = splitStmt.Cont.Signature;
                     context.Write(output, $"this.receive(\"{context.GetContinuationName(splitStmt.Cont)}\", {flowContext.pcScope.PathConstraintVar});");
@@ -1134,6 +1136,13 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, $"{GetSymbolicType(param.Type, true)} {context.GetContinuationVar(continuation, param.Name)} = {GetDefaultValueNoGuard(context, param.Type)};");
             }
 
+            context.Write(output, $"void clear_{context.GetContinuationName(continuation)}() ");
+            context.WriteLine(output, "{");
+            foreach (var param in continuation.Signature.Parameters)
+            {
+                context.WriteLine(output, $"{GetSymbolicType(param.Type, true)} {context.GetContinuationVar(continuation, param.Name)} = {GetDefaultValueNoGuard(context, param.Type)};");
+            }
+            context.WriteLine(output, "}");
             var rootPCScope = context.FreshPathConstraintScope();
 
             string returnType = null;

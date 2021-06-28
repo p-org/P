@@ -27,6 +27,7 @@ public abstract class Machine {
     // note: will not work for receives in functions outside the machine
     private PrimitiveVS<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> receives = new PrimitiveVS<>();
     public final Map<String, Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> continuations = new HashMap<>();
+    public final Set<Runnable> clearContinuationVars = new HashSet<>();
 
     public void receive(String continuationName, Guard pc) {
         PrimitiveVS<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> handler = new PrimitiveVS<>(continuations.get(continuationName)).restrict(pc);
@@ -58,6 +59,7 @@ public abstract class Machine {
             deferredQueue.dequeueEntry(deferredQueue.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
         }
         receives = new PrimitiveVS<>();
+        for (Runnable r : clearContinuationVars) { r.run(); }
     }
 
     public Machine(String name, int id, EventBufferSemantics semantics, State startState, State... states) {

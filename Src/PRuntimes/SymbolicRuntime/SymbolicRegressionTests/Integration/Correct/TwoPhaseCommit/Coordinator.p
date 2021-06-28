@@ -5,10 +5,10 @@ It receives write and read transactions from the clients and services these tran
 ******************************************************************************************/
 
 // Events used by coordinator to communicate with the participants
-event ePrepareReq: tPrepareReq;
+event sync_ePrepareReq: tPrepareReq;
 event ePrepareResp: tPrepareResp;
-event eCommitTrans: int;
-event eAbortTrans: int;
+event sync_eCommitTrans: int;
+event sync_eAbortTrans: int;
 
 type tPrepareReq = (coordinator: Coordinator, transId: int, rec: tRecord);
 type tPrepareResp = (participant: Participant, transId: int, status: tTransStatus);
@@ -37,7 +37,7 @@ machine Coordinator
 		on eWriteTransReq do (wTrans : tWriteTransReq) {
 			pendingWrTrans = wTrans;
 			currTransId = currTransId + 1;
-			BroadcastToAllParticipants(ePrepareReq, (coordinator = this, transId = currTransId, rec = wTrans.rec));
+			BroadcastToAllParticipants(sync_ePrepareReq, (coordinator = this, transId = currTransId, rec = wTrans.rec));
 
 			//start timer while waiting for responses from all participants
 			StartTimer(timer, 100);
@@ -97,14 +97,14 @@ machine Coordinator
 
 	fun DoGlobalAbort(respStatus: tTransStatus) {
 		// ask all participants to abort and fail the transaction
-		BroadcastToAllParticipants(eAbortTrans, currTransId);
-		send pendingWrTrans.client, eWriteTransResp, (transId = currTransId, status = respStatus);
+		BroadcastToAllParticipants(sync_eAbortTrans, currTransId);
+		send pendingWrTrans.client, sync_eWriteTransResp, (transId = currTransId, status = respStatus);
 		CancelTimer(timer);
 	}
 	fun DoGlobalCommit() {
         // ask all participants to commit and respond to client
-        BroadcastToAllParticipants(eCommitTrans, currTransId);
-        send pendingWrTrans.client, eWriteTransResp, (transId = currTransId, status = SUCCESS);
+        BroadcastToAllParticipants(sync_eCommitTrans, currTransId);
+        send pendingWrTrans.client, sync_eWriteTransResp, (transId = currTransId, status = SUCCESS);
         CancelTimer(timer);
     }
 	fun BroadcastToAllParticipants(message: event, payload: any) {

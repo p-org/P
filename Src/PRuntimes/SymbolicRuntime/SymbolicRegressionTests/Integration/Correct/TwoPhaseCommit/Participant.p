@@ -18,13 +18,13 @@ machine Participant {
 	}
 
 	state WaitForRequests {
-		on eAbortTrans do (transId: int) {
+		on sync_eAbortTrans do (transId: int) {
 			// remove the transaction from the pending set
 			assert transId in pendingWriteTrans,
 			format ("Abort request for a non-pending transaction, transId: {0}, pendingTrans: {1}", transId, pendingWriteTrans);
 			pendingWriteTrans -= transId;
 		}
-		on eCommitTrans do (transId:int) {
+		on sync_eCommitTrans do (transId:int) {
             var transaction: tRecord;
             assert transId in pendingWriteTrans,
             format ("Commit request for a non-pending transaction, transId: {0}, pendingTrans: {1}", transId, pendingWriteTrans);
@@ -32,7 +32,7 @@ machine Participant {
             kvStore[transaction.key] = transaction.val;
         }
 
-		on ePrepareReq do (prepareReq :tPrepareReq) {
+		on sync_ePrepareReq do (prepareReq :tPrepareReq) {
 			// add the transaction to the pending set
 			assert !(prepareReq.transId in pendingWriteTrans),
 			format ("Duplicate transaction ids not allowed!, received transId: {0}, pending transactions: {1}", prepareReq.transId, pendingWriteTrans);
@@ -49,11 +49,11 @@ machine Participant {
 		on eReadTransReq do (req: tReadTransReq) {
 			if(req.key in kvStore)
 			{
-				send req.client, eReadTransResp, (rec = (key = req.key, val = kvStore[req.key]), status = SUCCESS);
+				send req.client, sync_eReadTransResp, (rec = (key = req.key, val = kvStore[req.key]), status = SUCCESS);
 			}
 			else
 			{
-				send req.client, eReadTransResp, (rec = default(tRecord), status = ERROR);
+				send req.client, sync_eReadTransResp, (rec = default(tRecord), status = ERROR);
 			}
 		}
 	}

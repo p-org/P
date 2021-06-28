@@ -32,7 +32,7 @@ public interface EventBuffer {
 
     public PrimitiveVS<Boolean> satisfiesPredUnderGuard(Function<Message, PrimitiveVS<Boolean>> pred);
 
-    public PrimitiveVS<Boolean> isInitUnderGuard();
+    public PrimitiveVS<Boolean> hasCreateMachineUnderGuard();
 
     public Message remove(Guard pc);
 
@@ -42,4 +42,6 @@ public interface EventBuffer {
                                   Function<Integer, ? extends Machine> constructor) {
         return create(pc, scheduler, machineType, null, constructor);
     }
+
+    PrimitiveVS<Boolean> hasSyncEventUnderGuard();
 }

@@ -70,7 +70,7 @@ public class BDDEngine {
         return new BddGuard(bddImpl.newVar());
     }
 
-    public String toString(BddGuard bdd) {
+    public static String toString(BddGuard bdd) {
         if (bdd == null) return "null";
         if (bdd.isFalse()) return "false";
         if (bdd.isTrue()) return "true";

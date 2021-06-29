@@ -8,6 +8,7 @@ import org.sosy_lab.pjbdd.util.parser.BDDStringImporter;
 import org.sosy_lab.pjbdd.util.parser.DotExporter;
 import org.sosy_lab.pjbdd.util.parser.Exporter;
 import org.sosy_lab.pjbdd.util.parser.Importer;
+import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.statistics.BDDStats;
 
 /**
@@ -86,6 +87,7 @@ public class PJBDDImpl {
         if (bdd == null) return "null";
         if (bdd.isFalse()) return "false";
         if (bdd.isTrue()) return "true";
+        e.export(bdd, "./dot/");
         return e.bddToString(bdd);
     }
 

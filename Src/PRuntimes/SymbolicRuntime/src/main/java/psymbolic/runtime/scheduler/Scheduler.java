@@ -311,6 +311,7 @@ public class Scheduler implements SymbolicSearch {
         //SearchLogger.log("Before call to getNextSender::");
         //SearchLogger.log(BDDStats.prettyPrint());
         PrimitiveVS<Machine> choices = getNextSender();
+
         //SearchLogger.log("After call to getNextSender::");
         //SearchLogger.log(BDDStats.prettyPrint());
         if (choices.isEmptyVS()) {
@@ -342,6 +343,8 @@ public class Scheduler implements SymbolicSearch {
             i++;
         }
         */
+
+        // choices.getGuardedValues().get(0).getGuard().toString();
 
         Message effect = null;
         List<Message> effects = new ArrayList<>();

@@ -66,7 +66,7 @@ public class BddGuard {
 
     @Override
     public String toString() {
-        return bdd.toString();
+        return BDDEngine.toString(this);
     }
 
     @Override

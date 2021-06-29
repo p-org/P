@@ -6,6 +6,6 @@ public class BDDStats {
     public static int notOperations = 0;
 
     public static String prettyPrint() {
-        return String.format("totalAnd = %d, totalOr = %d, totalNot = %d", andOperations, orOperations, notOperations);
+        return String.format("totalAndOperations = %d, totalOrOperations = %d, totalNotOperations = %d", andOperations, orOperations, notOperations);
     }
 }

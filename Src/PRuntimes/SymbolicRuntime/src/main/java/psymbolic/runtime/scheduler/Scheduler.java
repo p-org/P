@@ -7,7 +7,6 @@ import psymbolic.runtime.*;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.Message;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.*;
 
@@ -309,8 +308,11 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public void step() {
-        System.gc();
+        //SearchLogger.log("Before call to getNextSender::");
+        //SearchLogger.log(BDDStats.prettyPrint());
         PrimitiveVS<Machine> choices = getNextSender();
+        //SearchLogger.log("After call to getNextSender::");
+        //SearchLogger.log(BDDStats.prettyPrint());
         if (choices.isEmptyVS()) {
             TraceLogger.finished(depth);
             done = true;
@@ -355,11 +357,14 @@ public class Scheduler implements SymbolicSearch {
         assert effect != null;
         effect = effect.merge(effects);
         TraceLogger.schedule(depth, effect);
+
+        //SearchLogger.log("Before call to performEffect::");
+        //SearchLogger.log(BDDStats.prettyPrint());
         performEffect(effect);
 
         // add depth statistics
         SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, effects.size() + 1, -1);
-        //searchStats.addDepthStatistics(depth, depthStats);
+        searchStats.addDepthStatistics(depth, depthStats);
         SearchLogger.logDepthStats(depthStats);
         depth++;
     }

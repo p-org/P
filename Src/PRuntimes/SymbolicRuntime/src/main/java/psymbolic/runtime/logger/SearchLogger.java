@@ -60,7 +60,7 @@ public class SearchLogger {
     public static void logDepthStats(SearchStats.DepthStats depthStats)
     {
         log.info(String.format("Depth: %d: TotalTransitions = %d, ReducedTransitionsExplored = %d", depthStats.getDepth(), depthStats.getNumOfTransitions(), depthStats.getNumOfTransitionsExplored()));
-        log.info("BDD Variable Count:" + BDDEngine.getInstance().getStats());
+        log.info("BDD States:\n" + BDDEngine.getInstance().getStats());
         log.info(BDDStats.prettyPrint());
     }
 

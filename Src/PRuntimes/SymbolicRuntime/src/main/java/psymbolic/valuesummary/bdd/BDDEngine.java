@@ -77,7 +77,7 @@ public class BDDEngine {
         return bddImpl.toString(bdd.getBdd());
     }
 
-    public int getStats() {
-        return bddImpl.getVarCount();
+    public String getStats() {
+        return bddImpl.getBDDStats() + "\n" + "Node Count:" + bddImpl.getNodeCount();
     }
 }

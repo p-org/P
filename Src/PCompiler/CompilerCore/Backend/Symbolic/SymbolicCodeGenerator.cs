@@ -1142,17 +1142,8 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, $"(");
             context.WriteLine(output, $"Guard {rootPCScope.PathConstraintVar},");
             context.Write(output, $"EventBuffer {CompilationContext.EffectCollectionVar}");
-            if (continuation.CanChangeState ?? false)
-            {
-                Debug.Assert(continuation.Owner != null);
-                context.WriteLine(output, ",");
-                context.Write(output, "EventHandlerReturnReason outcome");
-            }
-            else if (continuation.CanRaiseEvent ?? false)
-            {
-                context.WriteLine(output, ",");
-                context.Write(output, "EventHandlerReturnReason outcome");
-            }
+            context.WriteLine(output, ",");
+            context.Write(output, "EventHandlerReturnReason outcome");
             context.WriteLine(output, ",");
             string messageName = CompilationContext.GetVar("msg");
             context.WriteLine(output, $"Message {messageName}");
@@ -1204,7 +1195,8 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, $"new DeferEventHandler(e.getValue()).handleEvent(e.getGuard(), this, {messageName}.getPayload().restrict(e.getGuard()), outcome);");
             context.WriteLine(output, "}");
             context.WriteLine(output, "}");
-            WriteStmt(continuation, context, output, funcContext, continuation.After);
+            if (continuation.After != null)
+                WriteStmt(continuation, context, output, funcContext, continuation.After);
             context.WriteLine(output, "}");
             context.WriteLine(output);
             context.ReturnType = null;

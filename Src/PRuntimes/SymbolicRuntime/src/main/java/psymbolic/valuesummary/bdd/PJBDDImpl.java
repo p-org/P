@@ -19,8 +19,8 @@ public class PJBDDImpl {
 
     // configurable parameters for PJBDD
     // TODO: Explore different options for these parameters
-    int numThreads = Runtime.getRuntime().availableProcessors();
-    int cacheSize = 10000000;
+    private int numThreads = Runtime.getRuntime().availableProcessors();
+    private int cacheSize = 10000000;
 
     public PJBDDImpl(boolean cbdd) {
         CreatorBuilder creatorBuilder = Builders.cbddBuilder();
@@ -93,5 +93,17 @@ public class PJBDDImpl {
             return c.makeTrue();
         }
         return i.bddFromString(s);
+    }
+
+    public int getVarCount() {
+        return c.getVariableCount();
+    }
+
+    public int getNodeCount() {
+        return c.getCreatorStats().getNodeCount();
+    }
+
+    public String getBDDStats() {
+        return c.getCreatorStats().prettyPrint();
     }
 }

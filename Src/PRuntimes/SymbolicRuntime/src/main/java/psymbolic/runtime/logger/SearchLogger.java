@@ -2,6 +2,7 @@ package psymbolic.runtime.logger;
 
 import org.apache.log4j.*;
 import psymbolic.runtime.statistics.SearchStats;
+import psymbolic.valuesummary.bdd.BDDEngine;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -58,6 +59,7 @@ public class SearchLogger {
     public static void logDepthStats(SearchStats.DepthStats depthStats)
     {
         log.info(String.format("Depth: %d: TotalTransitions = %d, ReducedTransitionsExplored = %d", depthStats.getDepth(), depthStats.getNumOfTransitions(), depthStats.getNumOfTransitionsExplored()));
+        log.info("Variable Count:" + BDDEngine.getInstance().getStats());
     }
 
     public static void logIterationStats(SearchStats.IterationStats iterStats)

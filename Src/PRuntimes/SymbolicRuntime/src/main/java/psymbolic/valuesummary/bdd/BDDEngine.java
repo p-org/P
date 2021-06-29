@@ -76,4 +76,8 @@ public class BDDEngine {
         if (bdd.isTrue()) return "true";
         return bddImpl.toString(bdd.getBdd());
     }
+
+    public int getStats() {
+        return bddImpl.getVarCount();
+    }
 }

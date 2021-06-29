@@ -1,6 +1,7 @@
 package psymbolic.runtime.logger;
 
 import org.apache.log4j.*;
+import psymbolic.runtime.statistics.BDDStats;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.bdd.BDDEngine;
 
@@ -59,7 +60,8 @@ public class SearchLogger {
     public static void logDepthStats(SearchStats.DepthStats depthStats)
     {
         log.info(String.format("Depth: %d: TotalTransitions = %d, ReducedTransitionsExplored = %d", depthStats.getDepth(), depthStats.getNumOfTransitions(), depthStats.getNumOfTransitionsExplored()));
-        log.info("Variable Count:" + BDDEngine.getInstance().getStats());
+        log.info("BDD Variable Count:" + BDDEngine.getInstance().getStats());
+        log.info(BDDStats.prettyPrint());
     }
 
     public static void logIterationStats(SearchStats.IterationStats iterStats)

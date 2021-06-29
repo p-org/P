@@ -8,6 +8,7 @@ import org.sosy_lab.pjbdd.util.parser.BDDStringImporter;
 import org.sosy_lab.pjbdd.util.parser.DotExporter;
 import org.sosy_lab.pjbdd.util.parser.Exporter;
 import org.sosy_lab.pjbdd.util.parser.Importer;
+import psymbolic.runtime.statistics.BDDStats;
 
 /**
  * Represents the BDD implementation using PJBDD
@@ -55,14 +56,17 @@ public class PJBDDImpl {
     }
 
     public DD and(DD left, DD right) {
+        BDDStats.andOperations++;
         return c.makeAnd(left, right);
     }
 
     public DD or(DD left, DD right) {
+        BDDStats.orOperations++;
         return c.makeOr(left, right);
     }
 
     public DD not(DD bdd) {
+        BDDStats.notOperations++;
         return c.makeNot(bdd);
     }
 

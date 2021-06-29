@@ -17,13 +17,18 @@ namespace Plang.Compiler.Backend.Symbolic
 {
     class TransformASTPass 
     {
+
+         static private int continuationNumber = 0;
+
          static public List<IPDecl> GetTransformedDecls(Scope globalScope)
          {
+            continuationNumber = 0;
             List<IPDecl> decls = new List<IPDecl>();
 
             foreach (var decl in globalScope.AllDecls)
                 decls.Add(TransformDecl(decl));
 
+            continuationNumber = 0;
             return decls;
         }
 
@@ -146,6 +151,9 @@ namespace Plang.Compiler.Backend.Symbolic
          {
              switch (statement)
              {
+                 case IfStmt cond:
+                     // don't worry about halting execution after branch because then and else branches are later handled as two if-then branches (no else)
+                     return new IfStmt(cond.SourceLocation, cond.Condition, HandleReceives(cond.ThenBranch, function, machine), HandleReceives(cond.ElseBranch, function, machine));
                  case CompoundStmt compound:
                      IEnumerator<IPStmt> enumerator = compound.Statements.GetEnumerator();
                      if (enumerator.MoveNext())
@@ -173,9 +181,51 @@ namespace Plang.Compiler.Backend.Symbolic
                                  }
                                  Continuation continuation = GetContinuation(function, cases, after, recv.SourceLocation);
                                  if (machine != null) machine.AddMethod(continuation);
+                                 foreach (Variable v in continuation.StoreParameters)
+                                 {
+                                     machine.AddField(v);
+                                 }
+                                 foreach (AssignStmt store in continuation.StoreStmts)
+                                 {
+                                     result.Add(store);
+                                 }
                                  ReceiveSplitStmt split = new ReceiveSplitStmt(compound.SourceLocation, continuation);
                                  result.Add(split);
                                  break;
+/*
+                             case WhileStmt loop:
+                                 // turn the while statement into a recursive function
+                                 WhileFunction rec = new WhileFunction(null, loop.SourceLocation);
+                                 rec.Owner = function.Owner;
+                                 transformedFunction.ParentFunction = function;
+                                 foreach (var param in function.Signature.Parameters) rec.AddParameter(param);
+                                 foreach (var v in function.LocalVariables)
+                                 {
+                                     Variable local = new Variable(v.Name, v.SourceLocation, v.Role);
+                                     local.Type = v.Type;
+                                     continuation.AddParameter(v);
+                                 }
+                                 foreach (var i in function.CreatesInterfaces) rec.AddCreatesInterface(i);
+                                 rec.Role = function.Role;
+                                 rec.Scope = loop.Scope;
+                                 rec.CanChangeState = function.CanChangeState;
+                                 rec.CanRaiseEvent = function.CanRaiseEvent;
+                                 rec.CanReceive = function.CanReceive;
+                                 rec.IsNondeterministic = function.IsNondeterministic;
+                                 rec.Body = (CompoundStmt) HandleReceives(function.Body, function, machine);
+                                 List<IPStmt> loopBody = new List<IPStmt>();
+                                 IEnumerator<IPStmt> bodyEnumerator = compound.Statements.GetEnumerator();
+                                 IPStmt first = bodyEnumerator.Current;
+                                 while (bodyEnumerator.MoveNext())
+                                 {   
+                                     loopBody.Add(bodyEnumerator.Current);
+                                 }
+                                 // call the function
+                                 List<Variable> recArgs = new List<Variable>();
+                                 FunCallStmt recCall = new FunCallStmt(loop.SourceLocation, rec, recArgs);
+                                 rec.Signature.ReturnType = function.Signature.ReturnType;
+                                 break;
+*/
                              default:
                                  if (after == null) return compound;
                                  result.Add(first);
@@ -205,12 +255,22 @@ namespace Plang.Compiler.Backend.Symbolic
              continuation.ParentFunction = function;
              function.AddCallee(continuation);
              function.Role = FunctionRole.Method;
-             foreach (var param in function.Signature.Parameters) continuation.AddParameter(param);
+             foreach (var v in function.Signature.Parameters) {
+                 Variable local = new Variable(v.Name, v.SourceLocation, v.Role);
+                 Variable store = new Variable($"continuation_{continuationNumber}_{v.Name}", v.SourceLocation, v.Role);
+                 local.Type = v.Type;
+                 store.Type = v.Type;
+                 continuation.AddParameter(local, store);
+                 continuationNumber++;
+             }
              foreach (var v in function.LocalVariables)
              {
                  Variable local = new Variable(v.Name, v.SourceLocation, v.Role);
+                 Variable store = new Variable($"continuation_{continuationNumber}_{v.Name}", v.SourceLocation, v.Role);
                  local.Type = v.Type;
-                 continuation.AddParameter(v);
+                 store.Type = v.Type;
+                 continuation.AddParameter(local, store);
+                 continuationNumber++;
              }
              continuation.CanChangeState = function.CanChangeState;
              continuation.CanRaiseEvent = function.CanRaiseEvent;

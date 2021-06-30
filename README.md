@@ -22,7 +22,7 @@ We have also used P for programming safe robotics systems.
 ## Let the fun begin!
 
 See our [webpage](http://p-org.github.io/P/) for more information about the P framework, getting started, 
-case studies, tutorials and related research publications.
+case studies, tutorials and related research publications. If you have any further questions, please feel free to create an [issue](https://github.com/p-org/P/issues), ask on [discussions](https://github.com/p-org/P/discussions), or [email us](mailto:ankushdesai@gmail.com)
 
 
  > P is being built and maintained since 2013 as a collaborative project between industry and academia. The P project welcomes contributions and suggestions. See [CONTRIBUTING](CONTRIBUTING.md) for more information.

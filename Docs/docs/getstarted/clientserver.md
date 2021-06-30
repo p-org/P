@@ -1,141 +1,61 @@
-A P program is a collection of event and machine declarations.
-Here is a basic P program containing a Client machine and a Server machine
-communicating with each other via Ping and Pong events.
+We introduce the P language syntax and semantics in details in the [Tutorials](../tutsoutline.md) and [Language Manual](../manualoutline.md).
+In this section, We provide an overview of the steps involved in compiling and testing a P program using the [client server](../tutorial/clientserver.md) example.
 
-```linenums="1"
-// PingPong.p
-event PING assert 1: machine;
-event PONG assert 1;
-event SUCCESS;
+??? tip "Clone the P repo and navigate to the tutorials folder"
+    We will use the ClientServer example from Tutorials to describe the process of compiling and testing P program. 
+    Please clone the P repo and navigate to the ClientServer example in Tutorials.
+    
+    ```shell
+    cd <P cloned folder>/Tutorial/ClientServer
+    ```
+### Structure of a P Program
 
-main machine Client {
-    var server: machine;
+A P program is typically divided into following four folders (or parts):
 
-    start state Init {
-        entry {
-  	        server = new Server();
-	        raise SUCCESS;   	   
-        }
-        on SUCCESS goto SendPing;
-    }
+- `PSrc`: The `PSrc` folder contains all the state machines that together represent the implementation (model) of the system or protocol to be verified or tested.
+- `PSpec`: The `PSpec` folder contains all the specifications that together represent the _correctness_ properties that the implementation must satisfy.
+- `PTst`: The `PTst` folder contains all the _environment_ state machines or _test harness_ state machines that model the non-deterministic 
+  scenarios under which we want to check that the implementation in `PSrc` satisfies the specifications in `PSpec`. 
+  P allows writing different model checking scenarios as test-cases.
+  
+- `PForeign`: P also supports interfacing with foreign languages like `Java`, `C#`, and `C/C++`. 
+  P allows programmers to implement a part of its protocol logic in these foreign languages and use them in a P program using the Foreign types and functions interface ([Foreign](../manual/foriegntypesfunctions.md))
+  The `PForeign` folder contains all the foreign code used in the P program.
+  
+!!! Note "Recommendation"
+    The folder structure described above is a recommendation. The P compiler does not require any particular folder structure for a P project.
+    The examples in the [Tutorials](../tutsoutline.md) use the same folder structure.
 
-    state SendPing {
-        entry {
-	          send server, PING, this;
-	          raise SUCCESS;
-	}
-        on SUCCESS goto WaitPong;
-    }
+### Compiling a P program
 
-    state WaitPong {
-        on PONG goto SendPing;
-    }
-}
+We assume that you have successfully installed the [P Compiler and checker](install.md#installing-the-p-compiler).
+The P compiler provides the following commandline options:
 
-machine Server {
-    start state WaitPing {
-        on PING goto SendPong;
-    }
+??? help "P Compiler commandline options:"
+    ```shell
+    ------------------------------------------
+    Recommended usage:
+    >> pc -proj:<.pproj file>
+    ------------------------------------------
+    Optional usage:
+    >> pc file1.p [file2.p ...] [-t:tfile] [options]
+    -t:[target project name]   -- project name (as well as the generated file)
+    if not supplied, use file1
+    -outputDir:[path]          -- where to write the generated files
+    -aspectOutputDir:[path]    -- where to write the generated aspectj files
+    if not supplied, use outputDir
+    -generate:[C,CSharp,RVM]   -- select a target language to generate
+    C       : generate C code
+    CSharp  : generate C# code
+    RVM     : generate Monitor code
+    -h, -help, --help          -- display this help message
+    ------------------------------------------
+    ```
 
-    state SendPong {
-	      entry (payload: machine) {
-	          send payload, PONG;
-	          raise SUCCESS;		 	  
-	      }
-        on SUCCESS goto WaitPing;
-    }
-}
-```
+There are two ways of compiling a P program: 
+(1) passing all the P files (`*.p`) to be compiled as commandline arguments along with the other parameters like `-generate` to provide the code to be generated or 
+(2) using the P project file (`*.pproj`) that provides all the inputs to the compiler.
 
-We now take a closer look at the event and machine declarations in this program.
-The declaration of event `PING` indicates that it is accompanied with
-a data value of `machine` type.
-The `machine` type contains the addresses of all dynamically-created
-P machines.
-This declaration also indicates that at most one instance of the `PING`
-event may be present in the input queue of any machine.
+!!! note "Recommendation"
+    We recommend using the P project files to compile a P program.
 
-A machine declaration contains a collection of variable and state
-declarations.
-For example, the machine `Client` has a variable `server` and three
-states, `Init`, `SendPing`, and `WaitPong`, declared inside it.
-The storage for the `server` variable is local to a particular instance
-of the `Client` machine.
-State `Init` is declared to be the start state to indicate that
-an instance of `Client` begins executing by entering the `Init` state.
-
-There can be many different declarations inside a state.
-A code block indicated by entry { ... } is executed when
-the state is entered.
-Similarly, a code block indicated by exit { ... }
-(not used in our example) is executed when the state is exited.
-Other than these two declarations, all other declarations inside a
-state are related to event handling.
-The declaration `on SUCCESS goto SendPing` in state `Init` is an
-example of such a declaration indicating that the `SUCCESS` event
-must be handled by moving to state `SendPing`.
-Different states can choose to handle a particular event
-differently.
-For example, state `Init` handles `SUCCESS` by moving to state `SendPing`
-but state `SendPing` handled `SUCCESS` by moving to state `WaitPong`.
-
-Next, we look at the contents of the entry code block in state `Init`
-of machine `Client`.
-This code block has two statements.
-The first statement creates an
-instance of the Server machine and stores the address of this
-instance in variable `server`.
-The second statement raises an event `SUCCESS`
-which causes control to exit `Init` and enter `SendPing`.
-In P, when a machine sends an event to another machine (or itself),
-the event is enqueued in the target machine's input queue.
-However, a raised event does not go through the queue;
-rather it terminates execution of the enclosing code block and is
-handled immediately.
-
-The entry code block in state `SendPing` shows an example of the "send"
-statement for sending a `PING` event to the machine whose address
-is stored in the variable server.
-The keyword `this` evaluates to the address of the machine
-executing the current statement.
-
-Finally, the entry code block in state `SendPong` of machine `Server`
-shows that the data value associated with a received event can be
-retrieved through a parameter of the apppriate type to the event handler.
-In this code block, the `payload` parameter evaluates to the data attached to the
-`PING` event whose handling caused control to enter `SendPong`.
-This data value is the address of the instance of the `Client` machine
-that sent the `PING` event.
-Similarly, a parameter can be used to retrieve the argument
-to the constructor of a freshly-created machine when it starts execution
-in the entry block of its `start` state.
-
-The attentive reader might be wondering how the PingPong program
-begins execution.
-The machine `Client` is annotated with `main` to indicate that program
-execution begins with a single instance of `Client` entering state `Init`.
-Let us call this `Client` instance X.
-X creates an instance of `Server` and raises `SUCCESS` to enter state
-`SendPing`.
-Let us call this `Server` instance Y; it begins execution in state `WaitPing`
-of `Server`.
-From this point on, X and Y exchange `PING` and `PONG` messages, where X
-cycles between `SendPing` and `WaitPong` and Y cycles between `WaitPing` and
-`SendPong`.
-
-The most important safety specification of a P program is that every event
-dequeued by a machine is handled; otherwise, the P runtime throws an "UnhandledEvent" exception.
-The PingPong program satisfies this specification, since the `Server`
-machine handles the `PING` event, and the `Client` machine handles
-the `PONG` event in every state where an event dequeue is possible.
-
-In order to terminate a state machine cleanly, there is a special `halt` event.
-Termination of a machine due to an unhandled `halt` event is a valid behavior
-and does not throw the UnhandledEvent exception.
-Therefore, a machine can be halted by queuing a `halt` event to it.
-From the point of view of formal operational semantics,
-a halted machine is fully receptive and consumes any event that is sent to it.
-The P runtime implements this semantics efficiently by cleaning up resources
-allocated with the halting machine and recording that the machine has halted.
-An event sent to a halted machine is simply dropped.
-A halted machine cannot be restarted; it remains halted forever. 

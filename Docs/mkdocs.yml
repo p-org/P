@@ -9,7 +9,6 @@ edit_uri: ""
 
 theme:
   name: material
-  homepage: http://p-org.github.io/P/
   palette:
     scheme: default
     primary: black
@@ -18,6 +17,19 @@ theme:
   favicon: ./icon.png
   icon:
     repo: fontawesome/brands/github
+    admonition:
+      note: octicons/tag-16
+      abstract: octicons/checklist-16
+      info: octicons/info-16
+      tip: octicons/squirrel-16
+      success: octicons/check-16
+      question: octicons/question-16
+      warning: octicons/alert-16
+      failure: octicons/x-circle-16
+      danger: octicons/zap-16
+      bug: octicons/bug-16
+      example: octicons/beaker-16
+      quote: octicons/quote-16
   features:
     - navigation.instant
     - navigation.tabs
@@ -35,7 +47,7 @@ nav:
   - Installing P: getstarted/install.md
   - Building from Source: getstarted/build.md
   - Syntax Highlighting for P: getstarted/syntaxhighlight.md
-  - Simple client server application using P: getstarted/clientserver.md
+  - Using P Compiler and Checker: getstarted/clientserver.md
 - Tutorials:
     - Outline: tutsoutline.md
     - Client Server: tutorial/clientserver.md
@@ -46,12 +58,12 @@ nav:
     - Modeling Shared Memory Concurrency: howtoguides/sharedmemory.md
     - Model based testing of implementation: howtoguides/modelbasedtesting.md
     - Importance of Liveness Specifications: howtoguides/importanceliveness.md
-- FAQ: faq.md
 - Publications: publications.md
 - Case Studies: casestudies.md
 - Blogs and Articles: articles.md
 - Videos: videos.md
 - Language Manual:
+    - Outline: manualoutline.md
     - P Events: manual/events.md
     - P State Machines: manual/statemachines.md
     - P Monitors: manual/monitors.md
@@ -79,7 +91,7 @@ markdown_extensions:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
   - toc:
-      toc_depth: 1
+      toc_depth: 4
 
 plugins:
   - search:
@@ -88,10 +100,13 @@ plugins:
 extra:
   social:
     - icon: fontawesome/brands/twitter
-      link: https://twitter.com/squidfunk
+      link: https://twitter.com/_planguage
       name: P on Twitter
     - icon: fontawesome/solid/paper-plane
       link: mailto:ankushdesai@gmail.com
       name: Contact P Team
+  analytics:
+    provider: google
+    property: G-0WWG87T6BN
 
 copyright: Copyright &copy; 2021 P Developers

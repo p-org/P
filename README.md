@@ -9,9 +9,11 @@
 ![GitHub Action (CI on Ubuntu)](https://github.com/p-org/P/workflows/CI%20on%20Ubuntu/badge.svg)
 ![GitHub Action (CI on MacOS)](https://github.com/p-org/P/workflows/CI%20on%20MacOS/badge.svg)
 
-P is a state machine based programming language for modeling and specifying complex distributed systems. P allows the programmer to specify the system as a collection of interacting state machines, which communicate with each other using events. P unifies modeling, programming, and testing into one activity for the programmer. Not only can a P program be compiled into executable code, but it can also be systematically tested using Model Checking. 
-P is currently being used extensively inside Amazon (AWS) for model checking complex distributed systems.
-P has been used to implement and validate the USB device driver stack that ships with Microsoft Windows 8 and Windows Phone.
+P is a state machine based programming language for modeling and specifying complex distributed systems. P allows the programmer to specify the system as a collection of interacting state machines, which communicate with each other using events. P unifies modeling, specifying, implementing, and testing into one activity for the programmer. Not only can a P program (or model) be compiled into executable code, but it can also be systematically tested using Model Checking. 
+
+
+P is currently being used extensively inside Amazon (AWS) for performing analysis of complex distributed systems.
+P was used to implement and validate the USB device driver stack that ships with Microsoft Windows 8 and Windows Phone.
 We have also used P for programming safe robotics systems.
 
 > **_Programming distributed systems is challenging but a pinch of programming languages design combined with a dash of automated reasoning can go a long way in bringing the joy back._** :cowboy_hat_face:

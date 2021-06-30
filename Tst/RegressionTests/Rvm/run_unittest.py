@@ -200,7 +200,7 @@ def main(argv):
     unittest_dir = os.path.join(script_dir, "Unit")
     framework_dir = os.path.join(unittest_dir, "Framework")
     test_dir = os.path.join(unittest_dir, "Test", test_name)
-    rvmonitor_bin_dir = os.path.join(script_dir, "ext", "rv-monitor", "target", "release", "rv-monitor", "bin")
+    rvmonitor_bin_dir = os.path.join(script_dir, "rv-monitor")
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 
     if len(argv) == 1:

@@ -1,3 +1,10 @@
+<style>
+  .md-typeset h1,
+  .md-content__button {
+    display: none;
+  }
+</style>
+
 <div align="center">
   <img src="icon.png" width="20%">
   <h2>Modular and Safe Programming for Distributed Systems</h2>

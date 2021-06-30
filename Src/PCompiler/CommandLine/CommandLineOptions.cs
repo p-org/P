@@ -40,7 +40,6 @@ namespace Plang.Compiler
             var commandlineArgs = args.ToList();
             if (commandlineArgs.Any(a => a.ToLowerInvariant().Contains("-h")))
             {
-                PrintUsage();
                 return HelpRequested;
             }
             // proj takes priority over everything else and no other arguments should be allowed
@@ -85,7 +84,7 @@ namespace Plang.Compiler
             CommandlineOutput.WriteInfo("    -generate:[C,CSharp,RVM]   -- select a target language to generate");
             CommandlineOutput.WriteInfo("        C       : generate C code");
             CommandlineOutput.WriteInfo("        CSharp  : generate C# code ");
-            CommandlineOutput.WriteInfo("        RVM     : generate Monitor code");
+            CommandlineOutput.WriteInfo("        RVM     : generate RVM code");
             CommandlineOutput.WriteInfo("    -h, -help, --help          -- display this help message");
             CommandlineOutput.WriteInfo("------------------------------------------");
         }

@@ -21,10 +21,18 @@ A P program is typically divided into following four folders (or parts):
 - `PForeign`: P also supports interfacing with foreign languages like `Java`, `C#`, and `C/C++`. 
   P allows programmers to implement a part of its protocol logic in these foreign languages and use them in a P program using the Foreign types and functions interface ([Foreign](../manual/foriegntypesfunctions.md))
   The `PForeign` folder contains all the foreign code used in the P program.
-  
+
+??? Tip "Primer: Models, Specifications, Model Checking Scenario"
+    Here's a quick primer on what a model is, versus a specification, and model checking scenarios:
+    (1) A specification says what the system should do (correctness properties).
+    (2) A model captures the details of how the system does it.
+    (3) A model checking scenario provides the non-deterministc test-harness or environment under which the model checker should check
+    that the system model satisfies its specifications.
+
 !!! Note "Recommendation"
     The folder structure described above is a recommendation. The P compiler does not require any particular folder structure for a P project.
     The examples in the [Tutorials](../tutsoutline.md) use the same folder structure.
+
 
 ### Compiling a P program
 

@@ -152,7 +152,6 @@ namespace Plang.Compiler.Backend.Symbolic
              switch (statement)
              {
                  case IfStmt cond:
-                     // don't worry about halting execution after branch because then and else branches are later handled as two if-then branches (no else)
                      return new IfStmt(cond.SourceLocation, cond.Condition, HandleReceives(cond.ThenBranch, function, machine), HandleReceives(cond.ElseBranch, function, machine));
                  case CompoundStmt compound:
                      IEnumerator<IPStmt> enumerator = compound.Statements.GetEnumerator();
@@ -192,44 +191,55 @@ namespace Plang.Compiler.Backend.Symbolic
                                  ReceiveSplitStmt split = new ReceiveSplitStmt(compound.SourceLocation, continuation);
                                  result.Add(split);
                                  break;
-/*
                              case WhileStmt loop:
                                  // turn the while statement into a recursive function
-                                 WhileFunction rec = new WhileFunction(null, loop.SourceLocation);
+                                 WhileFunction rec = new WhileFunction(loop.SourceLocation);
                                  rec.Owner = function.Owner;
-                                 transformedFunction.ParentFunction = function;
+                                 rec.ParentFunction = function;
                                  foreach (var param in function.Signature.Parameters) rec.AddParameter(param);
-                                 foreach (var v in function.LocalVariables)
+                                 foreach (var local in function.LocalVariables)
                                  {
-                                     Variable local = new Variable(v.Name, v.SourceLocation, v.Role);
-                                     local.Type = v.Type;
-                                     continuation.AddParameter(v);
+                                     rec.AddParameter(local);
                                  }
                                  foreach (var i in function.CreatesInterfaces) rec.AddCreatesInterface(i);
-                                 rec.Role = function.Role;
-                                 rec.Scope = loop.Scope;
                                  rec.CanChangeState = function.CanChangeState;
                                  rec.CanRaiseEvent = function.CanRaiseEvent;
                                  rec.CanReceive = function.CanReceive;
                                  rec.IsNondeterministic = function.IsNondeterministic;
-                                 rec.Body = (CompoundStmt) HandleReceives(function.Body, function, machine);
+                                 // make while loop body
                                  List<IPStmt> loopBody = new List<IPStmt>();
-                                 IEnumerator<IPStmt> bodyEnumerator = compound.Statements.GetEnumerator();
-                                 IPStmt first = bodyEnumerator.Current;
+                                 IEnumerator<IPStmt> bodyEnumerator = loop.Body.Statements.GetEnumerator();
                                  while (bodyEnumerator.MoveNext())
                                  {   
-                                     loopBody.Add(bodyEnumerator.Current);
+                                     IPStmt stmt = bodyEnumerator.Current;
+                                     switch (stmt)
+                                     {
+                                         case BreakStmt _:
+                                             loopBody.Add(new ReturnStmt(rec.SourceLocation, null));
+                                             break;
+                                         default:
+                                             loopBody.Add(stmt);
+                                             break;
+                                     }
+                                 }
+                                 List<VariableAccessExpr> recArgs = new List<VariableAccessExpr>();
+                                 foreach (var param in rec.Signature.Parameters)
+                                 {
+                                     recArgs.Add(new VariableAccessExpr(rec.SourceLocation, param));
                                  }
                                  // call the function
-                                 List<Variable> recArgs = new List<Variable>();
                                  FunCallStmt recCall = new FunCallStmt(loop.SourceLocation, rec, recArgs);
-                                 rec.Signature.ReturnType = function.Signature.ReturnType;
-                                 break;
-*/
+                                 loopBody.Add(recCall);
+                                 loopBody = new List<IPStmt>(((CompoundStmt) HandleReceives(new CompoundStmt(rec.SourceLocation, loopBody), rec, machine)).Statements);
+                                 IfStmt ifStmt = new IfStmt(rec.SourceLocation, loop.Condition, new CompoundStmt(rec.SourceLocation, loopBody), new CompoundStmt(rec.SourceLocation, afterStmts));
+                                 rec.Body = CompoundStmt.FromStatement(ifStmt);
+                                 if (machine != null) machine.AddMethod(rec);
+                                 // replace the while statement with a function call
+                                 return CompoundStmt.FromStatement(recCall);
                              default:
                                  if (after == null) return compound;
                                  result.Add(first);
-                                 foreach (IPStmt stmt in after.Statements) result.Add(stmt);
+                                 foreach (IPStmt stmt in after.Statements) result.Add(HandleReceives(stmt, function, machine));
                                  break;
                          }
                          return new CompoundStmt(compound.SourceLocation, result);
@@ -249,9 +259,7 @@ namespace Plang.Compiler.Backend.Symbolic
  
          static private Continuation GetContinuation(Function function, IDictionary<PEvent, Function> cases, IPStmt after, ParserRuleContext location)
          {
-             FunctionSignature signature = new FunctionSignature();
-             signature.ReturnType = function.Signature.ReturnType;
-             Continuation continuation = new Continuation(signature, new Dictionary<PEvent, Function>(cases), after, location);
+             Continuation continuation = new Continuation(new Dictionary<PEvent, Function>(cases), after, location);
              continuation.ParentFunction = function;
              function.AddCallee(continuation);
              function.Role = FunctionRole.Method;

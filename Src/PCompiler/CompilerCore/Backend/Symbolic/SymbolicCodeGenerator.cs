@@ -543,7 +543,9 @@ namespace Plang.Compiler.Backend.Symbolic
             context.Write(output, ") ");
 
             context.WriteLine(output, "{");
+
             WriteFunctionBody(context, output, rootPCScope, function);
+
             context.WriteLine(output, "}");
             context.WriteLine(output);
             context.ReturnType = null;
@@ -570,7 +572,25 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
             }
 
-            WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context, rootPCScope), function.Body);
+            if (function is WhileFunction)
+            { 
+                ControlFlowContext loopContext = ControlFlowContext.FreshLoopContext(context);
+                /* Prologue */
+                context.WriteLine(output, $"java.util.List<Guard> {loopContext.loopScope.Value.LoopExitsList} = new java.util.ArrayList<>();");
+                context.WriteLine(output, $"boolean {loopContext.loopScope.Value.LoopEarlyReturnFlag} = false;");
+                context.WriteLine(output, $"Guard {loopContext.pcScope.PathConstraintVar} = {rootPCScope.PathConstraintVar};");
+
+                /* Loop body */
+                WriteStmt(function, context, output, loopContext, function.Body);
+
+                /* Epilogue */
+                context.WriteLine(output, $"if ({loopContext.loopScope.Value.LoopEarlyReturnFlag}) {{");
+                context.WriteLine(output, $"{rootPCScope.PathConstraintVar} = Guard.orMany({loopContext.loopScope.Value.LoopExitsList});");
+                context.WriteLine(output, "}");
+            } else
+            {
+                WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context, rootPCScope), function.Body);
+            }
 
             switch (returnConvention)
             {
@@ -1309,7 +1329,7 @@ namespace Plang.Compiler.Backend.Symbolic
         private void WriteFunCallStmt(CompilationContext context, StringWriter output, ControlFlowContext flowContext, Function function, IReadOnlyList<IPExpr> args, IPExpr dest=null)
         {
             var isAsync = function.CanReceive == true;
-            if (isAsync)
+            if (isAsync && !(function is WhileFunction))
             {
                 throw new NotImplementedException("Calls to async methods not yet supported");
             }

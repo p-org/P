@@ -32,6 +32,7 @@ theme:
       quote: octicons/quote-16
   features:
     - navigation.instant
+    - navigation.indexes
     - navigation.tabs
     - navigation.expand
     - navigation.top
@@ -58,21 +59,23 @@ nav:
     - Modeling Shared Memory Concurrency: howtoguides/sharedmemory.md
     - Model based testing of implementation: howtoguides/modelbasedtesting.md
     - Importance of Liveness Specifications: howtoguides/importanceliveness.md
-- Publications: publications.md
-- Case Studies: casestudies.md
-- Blogs and Articles: articles.md
-- Videos: videos.md
 - Language Manual:
     - Outline: manualoutline.md
     - P Events: manual/events.md
     - P State Machines: manual/statemachines.md
     - P Monitors: manual/monitors.md
     - P Functions: manual/functions.md
-    - P Statements: manual/functions.md
+    - P Expressions: manual/expressions.md
+    - P Statements: manual/statements.md
     - P DataTypes and Operations: manual/functions.md
     - P Module System: manual/functions.md
     - P Test cases: manual/functions.md
     - P Foreign Interface: manual/functions.md
+- Case Studies: casestudies.md
+- Blogs and Articles: articles.md
+- Videos: videos.md
+- Publications: publications.md
+
 
 
 markdown_extensions:

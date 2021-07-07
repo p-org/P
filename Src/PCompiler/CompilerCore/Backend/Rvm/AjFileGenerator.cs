@@ -70,13 +70,19 @@ namespace Plang.Compiler.Backend.Rvm
         {
             string declName = Context.Names.GetAspectClassName();
             string parentClass = Context.Names.GetParentClassName(specMachine);
+            string monitorClassName = Context.Names.GetJavaRuntimeMonitorName(specMachine);
 
             Context.WriteLine(output, $"class { parentClass } implements RVMObject {{");
             Context.WriteLine(output, $"public { parentClass }() {{ }}");
             Context.WriteLine(output);
+
+            Context.WriteLine(output, $"void config_suppressException() {{");
+            Context.WriteLine(output, $"{ monitorClassName }.suppress();");
+            Context.WriteLine(output, $"}}");
+            Context.WriteLine(output);
+
             foreach (PEvent e in specMachine.Observes.Events)
             {
-                string monitorClassName = Context.Names.GetJavaRuntimeMonitorName(specMachine);
                 string handlerName = Context.Names.GetJavaEventHandlerName(specMachine, e);
                 string payloadType = Context.Names.GetJavaTypeName(e.PayloadType, true);
                 string eventAlias = Context.Names.GetEventAlias(specMachine, e);

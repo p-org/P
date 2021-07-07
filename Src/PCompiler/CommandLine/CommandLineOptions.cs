@@ -40,7 +40,6 @@ namespace Plang.Compiler
             var commandlineArgs = args.ToList();
             if (commandlineArgs.Any(a => a.ToLowerInvariant().Contains("-h")))
             {
-                PrintUsage();
                 return HelpRequested;
             }
             // proj takes priority over everything else and no other arguments should be allowed

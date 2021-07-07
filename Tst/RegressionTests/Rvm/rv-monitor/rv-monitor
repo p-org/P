@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# The below incantation sets SRC_ROOT to be the canonicalized directory of this script
+SRC_ROOT=$(
+cd -P -- "$(dirname -- "$0")" &&
+printf '%s\n' "$(pwd -P)/$(basename -- "$0")"
+) || exit 1
+SRC_ROOT=`dirname "$SRC_ROOT"`
+
+# Move up into the actual source root directory
+SRC_ROOT="$SRC_ROOT/../"
+
+MAINCLASS=com.runtimeverification.rvmonitor.java.rvj.Main
+
+RELEASE="$SRC_ROOT/lib"
+
+PLUGINS_CLASSPATH="$RELEASE/plugins/*"
+
+LOGICPLUGINPATH="$RELEASE/plugins/" java -cp "$RELEASE/*":$PLUGINS_CLASSPATH $MAINCLASS $@
+
+

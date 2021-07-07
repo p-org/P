@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# The below incantation sets SRC_ROOT to be the canonicalized directory of this script
+SRC_ROOT=$(
+cd -P -- "$(dirname -- "$0")" &&
+printf '%s\n' "$(pwd -P)/$(basename -- "$0")"
+) || exit 1
+SRC_ROOT=`dirname "$SRC_ROOT"`
+
+# Move up into the actual source root directory
+SRC_ROOT="$SRC_ROOT/../"
+
+java -cp "$SRC_ROOT/lib/scala-library.jar":"$SRC_ROOT/lib/logicrepository.jar":"$SRC_ROOT/lib/plugins/ERE.jar":"$SRC_ROOT/lib/plugins/LTL.jar":"$SRC_ROOT/lib/plugins/PTLTL.jar":"$SRC_ROOT/lib/plugins/FSM.jar":"$SRC_ROOT/lib/plugins/FSM.jar":"$SRC_ROOT/lib/plugins/SRS.jar":"$SRC_ROOT/lib/external/mysql-connector-java-3.0.9-stable-bin.jar" logicrepository.Main $@
+

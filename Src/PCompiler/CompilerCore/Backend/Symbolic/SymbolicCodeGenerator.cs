@@ -871,7 +871,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case PrintStmt printStmt:
-                    context.Write(output, $"PLogger.log(");
+                    context.Write(output, $"PSymLogger.info(");
                     //TODO: use WriteExpr(context, output, flowContext.pcScope, printStmt.Message);
                     switch (printStmt.Message) {
                         case StringExpr stringExpr:
@@ -881,7 +881,7 @@ namespace Plang.Compiler.Backend.Symbolic
                                 context.Write(output, ", ");
                                 WriteExpr(context, output, flowContext.pcScope, arg);
                             }
-                            context.Write(output, "));");
+                            context.Write(output, ");");
                             break;
                         default:
                             context.Write(output, "(");
@@ -1124,7 +1124,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case ReceiveSplitStmt splitStmt:
                     FunctionSignature signature = splitStmt.Cont.Signature;
-                    context.Write(output, $"this.receive(\"{context.GetContinuationName(splitStmt.Cont)}\", {flowContext.pcScope.PathConstraintVar});");
+                    context.WriteLine(output, $"this.receive(\"{context.GetContinuationName(splitStmt.Cont)}\", {flowContext.pcScope.PathConstraintVar});");
                     break;
                 default:
                     // context.WriteLine(output, $"/* Skipping statement '{stmt.GetType().Name}' */");
@@ -1181,7 +1181,6 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, $"Guard deferGuard = {rootPCScope.PathConstraintVar};");
             foreach (PEvent e in continuation.Cases.Keys)
             {
-                Console.WriteLine($"writing continuation event {e.Name}");
                 List<IPExpr> args = new List<IPExpr>();
                 context.WriteLine(output, $"Guard cond_{idx} = {messageName}.getEvent().getGuardFor({e.Name});");
                 context.WriteLine(output, $"Message {messageName}_{idx} = {messageName}.restrict(cond_{idx});");

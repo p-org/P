@@ -151,8 +151,6 @@ namespace Plang.Compiler.Backend.Symbolic
          {
              switch (statement)
              {
-                 case IfStmt cond:
-                     return new IfStmt(cond.SourceLocation, cond.Condition, HandleReceives(cond.ThenBranch, function, machine), HandleReceives(cond.ElseBranch, function, machine));
                  case CompoundStmt compound:
                      IEnumerator<IPStmt> enumerator = compound.Statements.GetEnumerator();
                      if (enumerator.MoveNext())
@@ -172,6 +170,18 @@ namespace Plang.Compiler.Backend.Symbolic
                          List<IPStmt> result = new List<IPStmt>();
                          switch (first)
                          {
+                              case IfStmt cond:
+                                  List<IPStmt> thenStmts = new List<IPStmt>(cond.ThenBranch.Statements);
+                                  List<IPStmt> elseStmts = new List<IPStmt>(cond.ElseBranch.Statements);
+                                  foreach (var stmt in afterStmts)
+                                  {
+                                      thenStmts.Add(stmt);
+                                      elseStmts.Add(stmt);
+                                  }
+                                  CompoundStmt thenBody = new CompoundStmt(cond.SourceLocation, thenStmts);
+                                  CompoundStmt elseBody = new CompoundStmt(cond.SourceLocation, elseStmts);
+                                  result.Add(new IfStmt(cond.SourceLocation, cond.Condition, HandleReceives(thenBody, function, machine), HandleReceives(elseBody, function, machine)));
+                                  break;
                              case ReceiveStmt recv:
                                  IDictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
                                  foreach (KeyValuePair<PEvent, Function> c in recv.Cases)
@@ -231,11 +241,15 @@ namespace Plang.Compiler.Backend.Symbolic
                                  FunCallStmt recCall = new FunCallStmt(loop.SourceLocation, rec, recArgs);
                                  loopBody.Add(recCall);
                                  loopBody = new List<IPStmt>(((CompoundStmt) HandleReceives(new CompoundStmt(rec.SourceLocation, loopBody), rec, machine)).Statements);
-                                 IfStmt ifStmt = new IfStmt(rec.SourceLocation, loop.Condition, new CompoundStmt(rec.SourceLocation, loopBody), new CompoundStmt(rec.SourceLocation, afterStmts));
-                                 rec.Body = CompoundStmt.FromStatement(ifStmt);
+                                 rec.Body = new CompoundStmt(rec.SourceLocation, loopBody);
                                  if (machine != null) machine.AddMethod(rec);
                                  // replace the while statement with a function call
-                                 return CompoundStmt.FromStatement(recCall);
+                                 result.Add(recCall);
+                                 foreach (var stmt in afterStmts)
+                                 {
+                                     result.Add(stmt);
+                                 }
+                                 break;
                              default:
                                  if (after == null) return compound;
                                  result.Add(first);

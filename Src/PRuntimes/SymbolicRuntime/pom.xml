@@ -32,9 +32,9 @@
             <configuration>
               <groupId>org.sosy_lab.pjbdd</groupId>
               <artifactId>pjbdd</artifactId>
-              <version>1.0.10-7</version>
+              <version>1.0.10-8</version>
               <packaging>jar</packaging>
-              <file>lib/pjbdd-v1.0.10-7.jar</file>
+              <file>lib/pjbdd-v1.0.10-8.jar</file>
             </configuration>
           </execution>
         </executions>
@@ -43,7 +43,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M5</version>
-        <configuration><include>psymbolic.TestSymbolicRegression</include></configuration>
       </plugin>
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -88,7 +87,7 @@
     <dependency>
       <groupId>org.sosy_lab.pjbdd</groupId>
       <artifactId>pjbdd</artifactId>
-      <version>1.0.10-7</version>
+      <version>1.0.10-8</version>
     </dependency>
     <dependency>
       <groupId>commons-cli</groupId>

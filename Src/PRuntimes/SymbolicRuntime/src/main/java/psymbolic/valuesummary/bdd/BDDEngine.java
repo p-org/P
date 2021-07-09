@@ -30,6 +30,14 @@ public class BDDEngine {
         instance = new BDDEngine();
     }
 
+    public static void UnusedNodesCleanUp() {
+        bddImpl.UnusedNodeCleanUp();
+    }
+
+    public static int NodeCount() {
+        return bddImpl.getNodeCount();
+    }
+
     public BddGuard constFalse() {
         return new BddGuard(bddImpl.constFalse());
     }

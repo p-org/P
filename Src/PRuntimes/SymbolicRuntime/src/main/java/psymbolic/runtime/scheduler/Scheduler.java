@@ -9,6 +9,7 @@ import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.*;
+import psymbolic.valuesummary.bdd.BDDEngine;
 
 import java.util.*;
 import java.util.function.Function;
@@ -308,43 +309,13 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public void step() {
-        //SearchLogger.log("Before call to getNextSender::");
-        //SearchLogger.log(BDDStats.prettyPrint());
         PrimitiveVS<Machine> choices = getNextSender();
 
-        //SearchLogger.log("After call to getNextSender::");
-        //SearchLogger.log(BDDStats.prettyPrint());
         if (choices.isEmptyVS()) {
             TraceLogger.finished(depth);
             done = true;
             return;
         }
-
-        /*
-        int n = choices.getGuardedValues().size();
-        int limit = 5; // n / 2 + 1;
-        int i = 0;
-
-        Event effect = null;
-        List<Event> effects = new ArrayList<>();
-        for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
-            Machine machine = sender.value;
-            Guard guard = sender.guard;
-            if (i < limit) {
-                if (effect == null) {
-                    effect = machine.sendBuffer.remove(guard);
-                } else {
-                    effects.add(machine.sendBuffer.remove(guard));
-                }
-            } else {
-                ScheduleLogger.log("omitting " + i);
-                machine.sendBuffer.remove(guard);
-            }
-            i++;
-        }
-        */
-
-        // choices.getGuardedValues().get(0).getGuard().toString();
 
         Message effect = null;
         List<Message> effects = new ArrayList<>();
@@ -361,9 +332,13 @@ public class Scheduler implements SymbolicSearch {
         effect = effect.merge(effects);
         TraceLogger.schedule(depth, effect);
 
-        //SearchLogger.log("Before call to performEffect::");
-        //SearchLogger.log(BDDStats.prettyPrint());
         performEffect(effect);
+
+
+        if(depth % 10 == 0) {
+            BDDEngine.UnusedNodesCleanUp();
+            System.gc();
+        }
 
         // add depth statistics
         SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, effects.size() + 1, -1);

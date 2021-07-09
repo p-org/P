@@ -8,7 +8,6 @@ import org.sosy_lab.pjbdd.util.parser.BDDStringImporter;
 import org.sosy_lab.pjbdd.util.parser.DotExporter;
 import org.sosy_lab.pjbdd.util.parser.Exporter;
 import org.sosy_lab.pjbdd.util.parser.Importer;
-import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.statistics.BDDStats;
 
 /**
@@ -32,6 +31,7 @@ public class PJBDDImpl {
         c = creatorBuilder
                 .setVarCount(0)
                 .disableThreadSafety()
+                .setParallelism(numThreads)
                 .setParallelizationType(Builders.ParallelizationType.NONE)
                 .setTableSize(1000000)
                 .setCacheSize(cacheSize)
@@ -111,5 +111,9 @@ public class PJBDDImpl {
 
     public String getBDDStats() {
         return c.getCreatorStats().prettyPrint();
+    }
+
+    public void UnusedNodeCleanUp() {
+        c.cleanUnusedNodes();
     }
 }

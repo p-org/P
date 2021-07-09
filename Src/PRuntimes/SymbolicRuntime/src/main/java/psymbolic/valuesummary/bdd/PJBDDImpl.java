@@ -21,7 +21,7 @@ public class PJBDDImpl {
     // configurable parameters for PJBDD
     // TODO: Explore different options for these parameters
     private int numThreads = Runtime.getRuntime().availableProcessors();
-    private int cacheSize = 10000000;
+    private int cacheSize = 100000;
 
     public PJBDDImpl(boolean cbdd) {
         CreatorBuilder creatorBuilder = Builders.cbddBuilder();
@@ -33,7 +33,7 @@ public class PJBDDImpl {
                 .disableThreadSafety()
                 .setParallelism(numThreads)
                 .setParallelizationType(Builders.ParallelizationType.NONE)
-                .setTableSize(1000000)
+                .setTableSize(10000)
                 .setCacheSize(cacheSize)
                 .build();
         e = new DotExporter();

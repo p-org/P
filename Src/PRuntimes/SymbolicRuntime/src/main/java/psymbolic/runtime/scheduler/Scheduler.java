@@ -9,7 +9,6 @@ import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.*;
-import psymbolic.valuesummary.bdd.BDDEngine;
 
 import java.util.*;
 import java.util.function.Function;
@@ -335,9 +334,17 @@ public class Scheduler implements SymbolicSearch {
         performEffect(effect);
 
 
-        if(depth % 10 == 0) {
-            BDDEngine.UnusedNodesCleanUp();
+        if(depth % 3 == 0) {
+            System.out.println("--------------------");
+            System.out.println("Memory Stats::");
+            Runtime runtime = Runtime.getRuntime();
+            long memoryMax = runtime.maxMemory();
+            long memoryUsed = runtime.totalMemory() - runtime.freeMemory();
+            double memoryUsedPercent = (memoryUsed * 100.0) / memoryMax;
+            System.out.println("memoryUsed::" + memoryUsed + ", memoryUsedPercent: " + memoryUsedPercent);
+            /// BDDEngine.UnusedNodesCleanUp();
             System.gc();
+            System.out.println("--------------------");
         }
 
         // add depth statistics

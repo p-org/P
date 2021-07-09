@@ -2,6 +2,7 @@ package psymbolic;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.function.Executable;
 
@@ -24,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  *  Build the symbolic compiler to ../Bld/Drops/Release/Binaries/Pc.dll
  *  Place test cases as source P files at ../Tst/SymbolicRegressionTests/
  */
-public class SymbolicRegression {
+public class TestSymbolicRegression {
 
     Map<String, List<String>> getFiles(String testDirPath, String[] excluded) {
         Map<String, List<String>> result = new HashMap<>();
@@ -86,9 +87,12 @@ public class SymbolicRegression {
         return dynamicTests;
     }
 
+    @Test
+    void Dummy() {}
+
     @TestFactory
     //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadIntegrationTests() {
+    public Collection<DynamicTest>  loadIntegrationTests() {
         return loadTests("../../../Tst/RegressionTests/Integration", null);
     }
 

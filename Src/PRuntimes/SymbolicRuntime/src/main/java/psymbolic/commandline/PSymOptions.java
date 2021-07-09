@@ -85,7 +85,7 @@ public class PSymOptions {
             System.out.println(e.getMessage());
             formatter.printUsage(writer, 80, "PSymbolic", options);
             writer.flush();
-            System.exit(1);
+            System.exit(10);
         }
 
         // Populate the configuration based on the commandline arguments

@@ -21,6 +21,7 @@ macOS.
 [Install P Compiler](https://www.nuget.org/packages/P/){ .md-button }
 [Install Coyote Version 1.0.5](https://www.nuget.org/packages/Microsoft.Coyote/1.0.5){ .md-button }
 
+
 ###Installing the P compiler
 
 Install the `dotnet tool` named `P` using the following command:
@@ -44,7 +45,9 @@ You can remove the global `P` tool by running the following command:
 dotnet tool uninstall --global P
 ```
 
+
 ###Installing the P Checker
+
 The current P concurrency checker depends on [Coyote](https://microsoft.github.io/coyote/) (previously [P#](https://github.com/p-org/PSharp))
 
 Install the `Coyote` version `1.0.5` using the following command:

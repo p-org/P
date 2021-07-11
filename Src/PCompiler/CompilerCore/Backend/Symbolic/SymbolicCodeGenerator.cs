@@ -240,7 +240,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, $"sendBuffer");
                     context.Write(output, ", continuation_outcome");
                     context.WriteLine(output, $", msg)));");
-                    context.Write(output, $"clearContinuationVars.add(() -> clear_{context.GetContinuationName(cont)}());");
+                    context.WriteLine(output, $"clearContinuationVars.add(() -> clear_{context.GetContinuationName(cont)}());");
                 }
             }
 

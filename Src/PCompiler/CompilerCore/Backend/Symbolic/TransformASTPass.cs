@@ -19,16 +19,23 @@ namespace Plang.Compiler.Backend.Symbolic
     {
 
          static private int continuationNumber = 0;
+         static private int callNum = 0;
 
          static public List<IPDecl> GetTransformedDecls(Scope globalScope)
          {
             continuationNumber = 0;
+            callNum = 0;
             List<IPDecl> decls = new List<IPDecl>();
 
             foreach (var decl in globalScope.AllDecls)
-                decls.Add(TransformDecl(decl));
+            {
+                IPDecl result = TransformDecl(decl);
+                if (result != null)
+                    decls.Add(result);
+            }
 
             continuationNumber = 0;
+            callNum = 0;
             return decls;
         }
 
@@ -40,7 +47,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     if (function.IsForeign)
                         return function;
                     else
-                        return TransformFunction(function, null);
+                        return null;
                 case Machine machine:
                     if (machine.Receives.Events.GetEnumerator().MoveNext())
                         return TransformMachine(machine);
@@ -60,6 +67,10 @@ namespace Plang.Compiler.Backend.Symbolic
             transformedMachine.Creates = machine.Creates;
             foreach (var field in machine.Fields) transformedMachine.AddField(field);
             Dictionary<Function, Function> functionMap = new Dictionary<Function, Function>();
+            foreach (var method in machine.Methods)
+            {
+                InlineInFunction(method);
+            }
             foreach (var method in machine.Methods)
             {
                 Function transformedFunction = TransformFunction(method, transformedMachine);
@@ -120,6 +131,266 @@ namespace Plang.Compiler.Backend.Symbolic
                      return new EventGotoState(gotoState.SourceLocation, gotoState.Trigger, gotoState.Target, transition);
                  default:
                      return action;
+             }
+         }
+
+         static private void GenerateInline(Function caller, Function callee, IReadOnlyList<IPExpr> argsList, List<IPStmt> body, ParserRuleContext sourceLocation)
+         {
+             Dictionary<Variable,Variable> newVarMap = new Dictionary<Variable,Variable>();
+             for (int i = 0; i < callee.Signature.Parameters.Count; i++)
+             {
+                 IPExpr expr = argsList[i];
+                 Variable newVar = new Variable($"inline_{callNum}_{callee.Signature.Parameters[i].Name}", sourceLocation, VariableRole.Temp);
+                 newVar.Type = expr.Type;
+                 body.Add(new AssignStmt(sourceLocation, new VariableAccessExpr(sourceLocation, newVar), expr));
+                 newVarMap.Add(callee.Signature.Parameters[i], newVar);
+                 caller.AddLocalVariable(newVar);
+             }
+             foreach(var local in callee.LocalVariables)
+             {
+                 Variable newVar = new Variable($"local_{callNum}_{local.Name}", sourceLocation, VariableRole.Temp);
+                 newVar.Type = local.Type;
+                 newVarMap.Add(local, newVar);
+                 caller.AddLocalVariable(newVar);
+             }
+             foreach(var funStmt in callee.Body.Statements)
+                 body.Add(ReplaceVars(funStmt, newVarMap));
+             callNum++;
+         }
+
+         static private List<IPStmt> ReplaceReturn(IReadOnlyList<IPStmt> body, IPExpr location)
+         {
+             List<IPStmt> newBody = new List<IPStmt>();
+             foreach (IPStmt stmt in body)
+             {
+                 switch (stmt)
+                 {
+                     case ReturnStmt returnStmt:
+                         newBody.Add(new AssignStmt(returnStmt.SourceLocation, location, returnStmt.ReturnValue)); 
+                         break;
+                     case CompoundStmt compoundStmt:
+                         List<IPStmt> replace = ReplaceReturn(compoundStmt.Statements, location); 
+                         foreach (var statement in replace) newBody.Add(statement);
+                         break;
+                     case IfStmt ifStmt:
+                         List<IPStmt> replaceThen = ReplaceReturn(ifStmt.ThenBranch.Statements, location); 
+                         List<IPStmt> replaceElse = ReplaceReturn(ifStmt.ElseBranch.Statements, location); 
+                         newBody.Add(new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, new CompoundStmt(ifStmt.ThenBranch.SourceLocation, replaceThen), new CompoundStmt(ifStmt.ElseBranch.SourceLocation, replaceElse)));
+                         break;
+                     case WhileStmt whileStmt:
+                         List<IPStmt> bodyList = new List<IPStmt>();
+                         bodyList.Add(whileStmt.Body);
+                         List<IPStmt> replaceWhile = ReplaceReturn(bodyList, location); 
+                         newBody.Add(new WhileStmt(whileStmt.SourceLocation, whileStmt.Condition, new CompoundStmt(whileStmt.Body.SourceLocation, replaceWhile)));
+                         break;
+                     default: 
+                         newBody.Add(stmt);
+                         break;
+                 }
+             }
+             return newBody;
+         }
+ 
+         static private void InlineStmt(Function function, IPStmt stmt, List<IPStmt> body)
+         {
+             switch (stmt)
+             {
+                 case AssignStmt assign:
+                     if (assign.Value is FunCallExpr)
+                     {
+                         InlineInFunction(((FunCallExpr) assign.Value).Function);
+                         List<IPStmt> appendToBody = new List<IPStmt>();
+                         GenerateInline(function, ((FunCallExpr) assign.Value).Function, ((FunCallExpr) assign.Value).Arguments, appendToBody, assign.SourceLocation);
+                         appendToBody = ReplaceReturn(appendToBody, assign.Location);
+                         foreach (var statement in appendToBody) body.Add(statement);
+                     }
+                     else
+                     {
+                         body.Add(assign);
+                     }
+                     break;
+                 case CompoundStmt compound:
+                     foreach (var statement in compound.Statements) InlineStmt(function, statement, body);
+                     break;
+                 case FunCallStmt call:
+                     if (call.Function.CanReceive ?? true)
+                     {
+                         InlineInFunction(call.Function);
+                         GenerateInline(function, call.Function, call.ArgsList, body, call.SourceLocation);
+                     }
+                     else
+                     {
+                         body.Add(call);
+                     }
+                     break;
+                 case IfStmt ifStmt:
+                     List<IPStmt> thenBranch = new List<IPStmt>();
+                     InlineStmt(function, ifStmt.ThenBranch, thenBranch);
+                     List<IPStmt> elseBranch = new List<IPStmt>();
+                     InlineStmt(function, ifStmt.ElseBranch, elseBranch);
+                     body.Add(new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, new CompoundStmt(ifStmt.ThenBranch.SourceLocation, thenBranch), new CompoundStmt(ifStmt.ElseBranch.SourceLocation, elseBranch)));
+                     break;
+                 case WhileStmt whileStmt:
+                     List<IPStmt> bodyList = new List<IPStmt>();
+                     InlineStmt(function, whileStmt.Body, bodyList);
+                     body.Add(new WhileStmt(whileStmt.SourceLocation, whileStmt.Condition, new CompoundStmt(whileStmt.Body.SourceLocation, bodyList)));
+                     break;
+                 default:
+                     body.Add(stmt);
+                     break;
+             }
+         }
+
+         static private void InlineInFunction(Function function)
+         {
+             List<IPStmt> body = new List<IPStmt>();
+             foreach (var stmt in function.Body.Statements)
+             {
+                 InlineStmt(function, stmt, body);
+             }
+             function.Body = new CompoundStmt(function.Body.SourceLocation, body);
+             return;
+         }
+
+         static private IPStmt ReplaceVars(IPStmt stmt, Dictionary<Variable,Variable> varMap)
+         {
+             switch(stmt)
+             {
+                 case AddStmt addStmt:
+                     return new AddStmt(addStmt.SourceLocation, ReplaceVars(addStmt.Variable, varMap), ReplaceVars(addStmt.Value, varMap));
+                 case AnnounceStmt announceStmt:
+                     return new AnnounceStmt(announceStmt.SourceLocation, ReplaceVars(announceStmt.PEvent, varMap), ReplaceVars(announceStmt.Payload, varMap));
+                 case AssertStmt assertStmt:
+                     return new AssertStmt(assertStmt.SourceLocation, ReplaceVars(assertStmt.Assertion, varMap), ReplaceVars(assertStmt.Message, varMap));
+                 case AssignStmt assignStmt:
+                     return new AssignStmt(assignStmt.SourceLocation, ReplaceVars(assignStmt.Location, varMap), ReplaceVars(assignStmt.Value, varMap));
+                 case CompoundStmt compoundStmt:
+                     List<IPStmt> statements = new List<IPStmt>();
+                     foreach (var inner in compoundStmt.Statements) statements.Add(ReplaceVars(inner, varMap));
+                     return new CompoundStmt(compoundStmt.SourceLocation, statements);
+                 case CtorStmt ctorStmt:
+                     List<IPExpr> arguments = new List<IPExpr>();
+                     foreach (var arg in ctorStmt.Arguments) arguments.Add(ReplaceVars(arg, varMap));
+                     return new CtorStmt(ctorStmt.SourceLocation, ctorStmt.Interface, arguments);
+                 case FunCallStmt funCallStmt:
+                     List<IPExpr> newArgs = new List<IPExpr>();
+                     foreach (var arg in funCallStmt.ArgsList) newArgs.Add(ReplaceVars(arg, varMap));
+                     return new FunCallStmt(funCallStmt.SourceLocation, funCallStmt.Function, new List<IPExpr>(newArgs));
+                 case GotoStmt gotoStmt:
+                     return new GotoStmt(gotoStmt.SourceLocation, gotoStmt.State, ReplaceVars(gotoStmt.Payload, varMap));
+                 case IfStmt ifStmt:
+                     return new IfStmt(ifStmt.SourceLocation, ReplaceVars(ifStmt.Condition, varMap), ReplaceVars(ifStmt.ThenBranch, varMap), ReplaceVars(ifStmt.ElseBranch, varMap));
+                 case InsertStmt insertStmt:
+                     return new InsertStmt(insertStmt.SourceLocation, ReplaceVars(insertStmt.Variable, varMap), ReplaceVars(insertStmt.Index, varMap), ReplaceVars(insertStmt.Value, varMap));
+                 case MoveAssignStmt moveAssignStmt:
+                     Variable fromVar = moveAssignStmt.FromVariable;
+                     if (varMap.ContainsKey(moveAssignStmt.FromVariable)) fromVar = varMap[moveAssignStmt.FromVariable];
+                     return new MoveAssignStmt(moveAssignStmt.SourceLocation, ReplaceVars(moveAssignStmt.ToLocation, varMap), fromVar);
+                 case PrintStmt printStmt:
+                     return new PrintStmt(printStmt.SourceLocation, ReplaceVars(printStmt.Message, varMap));
+                 case RaiseStmt raiseStmt:
+                     List<IPExpr> payload = new List<IPExpr>();
+                     foreach(var p in raiseStmt.Payload) payload.Add(ReplaceVars(p, varMap));
+                     return new RaiseStmt(raiseStmt.SourceLocation, raiseStmt.PEvent, payload);
+                 case ReceiveStmt receiveStmt:
+                     Dictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
+                     foreach(KeyValuePair<PEvent, Function> entry in receiveStmt.Cases)
+                     {
+                         Function replacement = new Function(entry.Value.Name, entry.Value.SourceLocation);
+                         replacement.Owner = entry.Value.Owner;
+                         replacement.ParentFunction = entry.Value.ParentFunction;
+                         foreach (var local in entry.Value.LocalVariables) replacement.AddLocalVariable(local);
+                         foreach (var i in entry.Value.CreatesInterfaces) replacement.AddCreatesInterface(i);
+                         foreach (var param in entry.Value.Signature.Parameters) replacement.Signature.Parameters.Add(param);
+                         replacement.Signature.ReturnType = entry.Value.Signature.ReturnType;
+                         foreach (var callee in entry.Value.Callees) replacement.AddCallee(callee);
+                         replacement.Body = (CompoundStmt) ReplaceVars(entry.Value.Body, varMap);
+                         cases.Add(entry.Key, replacement);
+                     }
+                     return new ReceiveStmt(receiveStmt.SourceLocation, cases);
+                 case RemoveStmt removeStmt:
+                     return new RemoveStmt(removeStmt.SourceLocation, ReplaceVars(removeStmt.Variable, varMap), ReplaceVars(removeStmt.Value, varMap));
+                 case ReturnStmt returnStmt:
+                     return new ReturnStmt(returnStmt.SourceLocation, ReplaceVars(returnStmt.ReturnValue, varMap));
+                 case SendStmt sendStmt:
+                     List<IPExpr> sendArgs = new List<IPExpr>();
+                     foreach (var arg in sendStmt.Arguments) sendArgs.Add(ReplaceVars(arg, varMap));
+                     return new SendStmt(sendStmt.SourceLocation, ReplaceVars(sendStmt.MachineExpr, varMap), ReplaceVars(sendStmt.Evt, varMap), sendArgs);
+                 case SwapAssignStmt swapAssignStmt:
+                     Variable oldLocation = swapAssignStmt.OldLocation;
+                     if (varMap.ContainsKey(swapAssignStmt.OldLocation)) oldLocation = varMap[swapAssignStmt.OldLocation];
+                     return new SwapAssignStmt(swapAssignStmt.SourceLocation, ReplaceVars(swapAssignStmt.NewLocation, varMap), oldLocation);
+                 case WhileStmt whileStmt:
+                     return new WhileStmt(whileStmt.SourceLocation, ReplaceVars(whileStmt.Condition, varMap), ReplaceVars(whileStmt.Body, varMap));
+                 default:
+                     return stmt;
+             }
+         }
+
+         static private IPExpr ReplaceVars(IPExpr expr, Dictionary<Variable,Variable> varMap)
+         {
+             switch(expr)
+             {
+                 case BinOpExpr binOpExpr:
+                     return new BinOpExpr(binOpExpr.SourceLocation, binOpExpr.Operation, ReplaceVars(binOpExpr.Lhs, varMap), ReplaceVars(binOpExpr.Rhs, varMap));
+                 case CastExpr castExpr:
+                     return new CastExpr(castExpr.SourceLocation, ReplaceVars(castExpr.SubExpr, varMap), castExpr.Type);
+                 case ChooseExpr chooseExpr:
+                     return new ChooseExpr(chooseExpr.SourceLocation, ReplaceVars(chooseExpr.SubExpr, varMap), chooseExpr.Type);
+                 case CloneExpr cloneExpr:
+                     return ReplaceVars(cloneExpr.Term, varMap);
+                 case CoerceExpr coerceExpr:
+                     return new CoerceExpr(coerceExpr.SourceLocation, ReplaceVars(coerceExpr.SubExpr, varMap), coerceExpr.NewType);
+                 case ContainsExpr containsExpr:
+                     return new ContainsExpr(containsExpr.SourceLocation, ReplaceVars(containsExpr.Item, varMap), ReplaceVars(containsExpr.Collection, varMap));
+                 case CtorExpr ctorExpr:
+                     List<IPExpr> newArguments = new List<IPExpr>();
+                     foreach (var arg in ctorExpr.Arguments) newArguments.Add(ReplaceVars(arg, varMap));
+                     return new CtorExpr(ctorExpr.SourceLocation, ctorExpr.Interface, new List<IPExpr>(newArguments));
+                 case FunCallExpr funCallExpr:
+                     List<IPExpr> newArgs = new List<IPExpr>();
+                     foreach (var arg in funCallExpr.Arguments) newArgs.Add(ReplaceVars(arg, varMap));
+                     return new FunCallExpr(funCallExpr.SourceLocation, funCallExpr.Function, new List<IPExpr>(newArgs));
+                 case KeysExpr keysExpr:
+                     return new KeysExpr(keysExpr.SourceLocation, ReplaceVars(keysExpr.Expr, varMap), keysExpr.Type);
+                 case LinearAccessRefExpr linearAccessRefExpr:
+                     if (varMap.ContainsKey(linearAccessRefExpr.Variable))
+                         return new LinearAccessRefExpr(linearAccessRefExpr.SourceLocation, varMap[linearAccessRefExpr.Variable], linearAccessRefExpr.LinearType);
+                     else return linearAccessRefExpr;
+                 case MapAccessExpr mapAccessExpr:
+                     return new MapAccessExpr(mapAccessExpr.SourceLocation, ReplaceVars(mapAccessExpr.MapExpr, varMap), ReplaceVars(mapAccessExpr.IndexExpr, varMap), mapAccessExpr.Type);
+                 case NamedTupleAccessExpr namedTupleAccessExpr:
+                     return new NamedTupleAccessExpr(namedTupleAccessExpr.SourceLocation, ReplaceVars(namedTupleAccessExpr.SubExpr, varMap), namedTupleAccessExpr.Entry);
+                 case NamedTupleExpr namedTupleExpr:
+                     List<IPExpr> newFields = new List<IPExpr>();
+                     foreach (var field in namedTupleExpr.TupleFields) newFields.Add(ReplaceVars(field, varMap));
+                     return new NamedTupleExpr(namedTupleExpr.SourceLocation, new List<IPExpr>(newFields), namedTupleExpr.Type);
+                 case SeqAccessExpr seqAccessExpr:
+                     return new SeqAccessExpr(seqAccessExpr.SourceLocation, ReplaceVars(seqAccessExpr.SeqExpr, varMap), ReplaceVars(seqAccessExpr.IndexExpr, varMap), seqAccessExpr.Type);
+                 case SetAccessExpr setAccessExpr:
+                     return new SetAccessExpr(setAccessExpr.SourceLocation, ReplaceVars(setAccessExpr.SetExpr, varMap), ReplaceVars(setAccessExpr.IndexExpr, varMap), setAccessExpr.Type);
+                 case SizeofExpr sizeofExpr:
+                     return new SizeofExpr(sizeofExpr.SourceLocation, ReplaceVars(sizeofExpr.Expr, varMap));
+                 case StringExpr stringExpr:
+                     List<IPExpr> newListArgs = new List<IPExpr>();
+                     foreach (var arg in stringExpr.Args) newListArgs.Add(ReplaceVars(arg, varMap));
+                     return new StringExpr(stringExpr.SourceLocation, stringExpr.BaseString, newListArgs);
+                 case TupleAccessExpr tupleAccessExpr:
+                     return new TupleAccessExpr(tupleAccessExpr.SourceLocation, ReplaceVars(tupleAccessExpr.SubExpr, varMap), tupleAccessExpr.FieldNo, tupleAccessExpr.Type);
+                 case UnaryOpExpr unaryOpExpr:
+                     return new UnaryOpExpr(unaryOpExpr.SourceLocation, unaryOpExpr.Operation, ReplaceVars(unaryOpExpr.SubExpr, varMap));
+                 case UnnamedTupleExpr unnamedTupleExpr:
+                     List<IPExpr> newUnnamedFields = new List<IPExpr>();
+                     foreach (var field in unnamedTupleExpr.TupleFields) newUnnamedFields.Add(ReplaceVars(field, varMap));
+                     return new UnnamedTupleExpr(unnamedTupleExpr.SourceLocation, new List<IPExpr>(newUnnamedFields));
+                 case ValuesExpr valuesExpr:
+                     return new ValuesExpr(valuesExpr.SourceLocation, ReplaceVars(valuesExpr.Expr, varMap), valuesExpr.Type);
+                 case VariableAccessExpr variableAccessExpr:
+                     if (varMap.ContainsKey(variableAccessExpr.Variable))
+                         return new VariableAccessExpr(variableAccessExpr.SourceLocation, varMap[variableAccessExpr.Variable]);
+                     else return variableAccessExpr;
+                 default:
+                     return expr;
              }
          }
 
@@ -283,7 +554,6 @@ namespace Plang.Compiler.Backend.Symbolic
                  local.Type = v.Type;
                  store.Type = v.Type;
                  continuation.AddParameter(local, store);
-                 continuationNumber++;
              }
              foreach (var v in function.LocalVariables)
              {
@@ -292,10 +562,10 @@ namespace Plang.Compiler.Backend.Symbolic
                  local.Type = v.Type;
                  store.Type = v.Type;
                  continuation.AddParameter(local, store);
-                 continuationNumber++;
              }
              continuation.CanChangeState = function.CanChangeState;
              continuation.CanRaiseEvent = function.CanRaiseEvent;
+             continuationNumber++;
              return continuation;
          }
     }

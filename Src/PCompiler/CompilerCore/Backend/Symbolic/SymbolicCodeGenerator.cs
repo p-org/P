@@ -1127,7 +1127,6 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"this.receive(\"{context.GetContinuationName(splitStmt.Cont)}\", {flowContext.pcScope.PathConstraintVar});");
                     break;
                 default:
-                    // context.WriteLine(output, $"/* Skipping statement '{stmt.GetType().Name}' */");
                     throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported");
             }
         }
@@ -1171,6 +1170,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.Write(output, ") ");
 
             context.WriteLine(output, "{");
+
             var funcContext = ControlFlowContext.FreshFuncContext(context, rootPCScope);
             foreach (var local in continuation.LocalParameters)
             {
@@ -1190,13 +1190,20 @@ namespace Plang.Compiler.Backend.Symbolic
                 var caseScope = context.FreshPathConstraintScope();
                 context.WriteLine(output, $"Guard {caseScope.PathConstraintVar} = {rootPCScope.PathConstraintVar}.and(cond_{idx});");
                 var caseContext = ControlFlowContext.FreshFuncContext(context, caseScope);
-                var arg = continuation.Cases[e].Signature.Parameters[0];
-                Variable argValue = new Variable("payload", continuation.SourceLocation, VariableRole.Param);
-                argValue.Type = PrimitiveType.Any;
-                context.WriteLine(output, $"UnionVS var_payload = {messageName}_{idx}.restrict({caseScope.PathConstraintVar}).getPayload();");
-                AssignStmt assignMsg = new AssignStmt(continuation.SourceLocation, new VariableAccessExpr(continuation.SourceLocation, arg), new VariableAccessExpr(continuation.SourceLocation, argValue));
-                context.WriteLine(output, $"{GetSymbolicType(arg.Type)} {CompilationContext.GetVar(arg.Name)} = {GetDefaultValue(context, caseScope, arg.Type)};");
-                WriteStmt(continuation, context, output, caseContext, assignMsg);
+                if (continuation.Cases[e].Signature.Parameters.Count > 0)
+                {
+                    if (continuation.Cases[e].Signature.Parameters.Count > 1)
+                    {
+                        throw new NotImplementedException($"Too many parameters ({continuation.Cases[e].Signature.Parameters.Count}) in receive case");
+                    }
+                    var arg = continuation.Cases[e].Signature.Parameters[0];
+                    Variable argValue = new Variable("payload", continuation.SourceLocation, VariableRole.Param);
+                    argValue.Type = PrimitiveType.Any;
+                    context.WriteLine(output, $"UnionVS var_payload = {messageName}_{idx}.restrict({caseScope.PathConstraintVar}).getPayload();");
+                    AssignStmt assignMsg = new AssignStmt(continuation.SourceLocation, new VariableAccessExpr(continuation.SourceLocation, arg), new VariableAccessExpr(continuation.SourceLocation, argValue));
+                    context.WriteLine(output, $"{GetSymbolicType(arg.Type)} {CompilationContext.GetVar(arg.Name)} = {GetDefaultValue(context, caseScope, arg.Type)};");
+                    WriteStmt(continuation, context, output, caseContext, assignMsg);
+                }
                 WriteFunctionBody(context, output, caseScope, continuation.Cases[e]);
 /*
                 args.Add(new VariableAccessExpr(continuation.SourceLocation, new Variable($"msg_{idx}", continuation.SourceLocation, VariableRole.Param)));
@@ -1232,6 +1239,48 @@ namespace Plang.Compiler.Backend.Symbolic
             if (locationType.IsSameTypeAs(PrimitiveType.Any) || valueType.IsSameTypeAs(PrimitiveType.Any))
                 return;
 
+            valueType = valueType.Canonicalize();
+            locationType = locationType.Canonicalize();
+            if ((valueType is NamedTupleType) && locationType is NamedTupleType)
+            {
+                NamedTupleType valueTupleType = (NamedTupleType) valueType;
+                NamedTupleType locationTupleType = (NamedTupleType) locationType;
+                
+                if (valueTupleType.Fields.Count != locationTupleType.Fields.Count)
+                        throw new NotImplementedException(
+                            $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
+                            $"from value of type {valueType.CanonicalRepresentation}");
+
+                for(int i = 0; i < valueTupleType.Fields.Count; i++)
+                {
+                    if (!valueTupleType.Fields[i].Name.Equals(locationTupleType.Fields[i].Name))
+                    {
+                        throw new NotImplementedException(
+                            $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
+                            $"from value of type {valueType.CanonicalRepresentation}");
+                    }
+                    CheckIsSupportedAssignment(valueTupleType.Types[i], locationTupleType.Types[i]);
+                }
+                return;
+            }
+
+            if ((valueType is TupleType) && locationType is TupleType)
+            {
+                TupleType valueTupleType = (TupleType) valueType;
+                TupleType locationTupleType = (TupleType) locationType;
+                
+                if (valueTupleType.Types.Count != locationTupleType.Types.Count)
+                        throw new NotImplementedException(
+                            $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
+                            $"from value of type {valueType.CanonicalRepresentation}");
+
+                for(int i = 0; i < valueTupleType.Types.Count; i++)
+                {
+                    CheckIsSupportedAssignment(valueTupleType.Types[i], locationTupleType.Types[i]);
+                }
+                return;
+            }
+
             if (!valueType.IsSameTypeAs(locationType))
             {
                 throw new NotImplementedException(
@@ -1254,6 +1303,19 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 return $"({GetSymbolicType(locationType)}) ValueSummary.castFromAny({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationType)}, ";
             }
+
+            valueType = valueType.Canonicalize();
+            locationType = locationType.Canonicalize();
+            if ((valueType is NamedTupleType) && locationType is NamedTupleType)
+            {
+                return "";
+            }
+
+            if ((valueType is TupleType) && locationType is TupleType)
+            {
+                return "";
+            }
+
             throw new NotImplementedException(
                     $"Cannot yet handle casting to variable of type {locationType.CanonicalRepresentation} " +
                     $"from value of type {valueType.CanonicalRepresentation}");

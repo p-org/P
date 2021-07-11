@@ -173,9 +173,19 @@ namespace Plang.Compiler.Backend.Symbolic
                          foreach (var statement in replace) newBody.Add(statement);
                          break;
                      case IfStmt ifStmt:
-                         List<IPStmt> replaceThen = ReplaceReturn(ifStmt.ThenBranch.Statements, location); 
-                         List<IPStmt> replaceElse = ReplaceReturn(ifStmt.ElseBranch.Statements, location); 
-                         newBody.Add(new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, new CompoundStmt(ifStmt.ThenBranch.SourceLocation, replaceThen), new CompoundStmt(ifStmt.ElseBranch.SourceLocation, replaceElse)));
+                         IPStmt thenStmt = null;
+                         if (ifStmt.ThenBranch != null)
+                         {
+                             List<IPStmt> replaceThen = ReplaceReturn(ifStmt.ThenBranch.Statements, location);
+                             thenStmt =  new CompoundStmt(ifStmt.ThenBranch.SourceLocation, replaceThen);
+                         }
+                         IPStmt elseStmt = null;
+                         if (ifStmt.ElseBranch != null)
+                         {
+                             List<IPStmt> replaceElse = ReplaceReturn(ifStmt.ElseBranch.Statements, location); 
+                             elseStmt =  new CompoundStmt(ifStmt.ElseBranch.SourceLocation, replaceElse);
+                         }
+                         newBody.Add(new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, thenStmt, elseStmt));
                          break;
                      case WhileStmt whileStmt:
                          List<IPStmt> bodyList = new List<IPStmt>();
@@ -224,11 +234,21 @@ namespace Plang.Compiler.Backend.Symbolic
                      }
                      break;
                  case IfStmt ifStmt:
-                     List<IPStmt> thenBranch = new List<IPStmt>();
-                     InlineStmt(function, ifStmt.ThenBranch, thenBranch);
-                     List<IPStmt> elseBranch = new List<IPStmt>();
-                     InlineStmt(function, ifStmt.ElseBranch, elseBranch);
-                     body.Add(new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, new CompoundStmt(ifStmt.ThenBranch.SourceLocation, thenBranch), new CompoundStmt(ifStmt.ElseBranch.SourceLocation, elseBranch)));
+                     IPStmt thenStmt = null;
+                     if (ifStmt.ThenBranch != null)
+                     {
+                       List<IPStmt> thenBranch = new List<IPStmt>();
+                       InlineStmt(function, ifStmt.ThenBranch, thenBranch);
+                       thenStmt = new CompoundStmt(ifStmt.ThenBranch.SourceLocation, thenBranch);
+                     }
+                     IPStmt elseStmt = null;
+                     if (ifStmt.ElseBranch != null)
+                     {
+                       List<IPStmt> elseBranch = new List<IPStmt>();
+                       InlineStmt(function, ifStmt.ElseBranch, elseBranch);
+                       elseStmt = new CompoundStmt(ifStmt.ElseBranch.SourceLocation, elseBranch);
+                     }
+                     body.Add(new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, thenStmt, elseStmt));
                      break;
                  case WhileStmt whileStmt:
                      List<IPStmt> bodyList = new List<IPStmt>();
@@ -254,6 +274,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
          static private IPStmt ReplaceVars(IPStmt stmt, Dictionary<Variable,Variable> varMap)
          {
+             if (stmt == null) return null;
              switch(stmt)
              {
                  case AddStmt addStmt:
@@ -299,6 +320,9 @@ namespace Plang.Compiler.Backend.Symbolic
                          Function replacement = new Function(entry.Value.Name, entry.Value.SourceLocation);
                          replacement.Owner = entry.Value.Owner;
                          replacement.ParentFunction = entry.Value.ParentFunction;
+                         replacement.CanReceive = entry.Value.CanReceive;
+                         replacement.Role = entry.Value.Role;
+                         replacement.Scope = entry.Value.Scope;
                          foreach (var local in entry.Value.LocalVariables) replacement.AddLocalVariable(local);
                          foreach (var i in entry.Value.CreatesInterfaces) replacement.AddCreatesInterface(i);
                          foreach (var param in entry.Value.Signature.Parameters) replacement.Signature.Parameters.Add(param);
@@ -441,9 +465,21 @@ namespace Plang.Compiler.Backend.Symbolic
                          List<IPStmt> result = new List<IPStmt>();
                          switch (first)
                          {
+                              case CompoundStmt nestedCompound:
+                                  List<IPStmt> compoundStmts = new List<IPStmt>(nestedCompound.Statements);
+                                  foreach (var stmt in afterStmts)
+                                  {
+                                      compoundStmts.Add(stmt);
+                                  }
+                                  result.Add(HandleReceives(new CompoundStmt(nestedCompound.SourceLocation, compoundStmts), function, machine));
+                                  break;
                               case IfStmt cond:
-                                  List<IPStmt> thenStmts = new List<IPStmt>(cond.ThenBranch.Statements);
-                                  List<IPStmt> elseStmts = new List<IPStmt>(cond.ElseBranch.Statements);
+                                  List<IPStmt> thenStmts = new List<IPStmt>();
+                                  List<IPStmt> elseStmts = new List<IPStmt>();
+                                  if (cond.ThenBranch != null)
+                                      thenStmts = new List<IPStmt>(cond.ThenBranch.Statements);
+                                  if (cond.ElseBranch != null)
+                                      elseStmts = new List<IPStmt>(cond.ElseBranch.Statements);
                                   foreach (var stmt in afterStmts)
                                   {
                                       thenStmts.Add(stmt);
@@ -451,6 +487,7 @@ namespace Plang.Compiler.Backend.Symbolic
                                   }
                                   CompoundStmt thenBody = new CompoundStmt(cond.SourceLocation, thenStmts);
                                   CompoundStmt elseBody = new CompoundStmt(cond.SourceLocation, elseStmts);
+                        
                                   result.Add(new IfStmt(cond.SourceLocation, cond.Condition, HandleReceives(thenBody, function, machine), HandleReceives(elseBody, function, machine)));
                                   break;
                              case ReceiveStmt recv:
@@ -516,7 +553,7 @@ namespace Plang.Compiler.Backend.Symbolic
                                  if (machine != null) machine.AddMethod(rec);
                                  // replace the while statement with a function call
                                  result.Add(recCall);
-                                 foreach (var stmt in afterStmts)
+                                 foreach (var stmt in after.Statements)
                                  {
                                      result.Add(stmt);
                                  }

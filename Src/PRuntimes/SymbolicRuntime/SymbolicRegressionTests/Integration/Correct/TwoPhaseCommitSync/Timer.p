@@ -12,8 +12,8 @@ machine Timer
 	}
 
 	state WaitForTimerRequests {
-		on eStartTimer do { if($) send client, eTimeOut; }
-		on eCancelTimer do {
+		on sync_eStartTimer do { if($) send client, eTimeOut; }
+		on sync_eCancelTimer do {
 
 		}
 	}
@@ -22,10 +22,10 @@ machine Timer
 /************************************************
 Events used to interact with the timer machine
 ************************************************/
-event eStartTimer: int;
-event eCancelTimer;
-event eCancelTimerFailed;
-event eCancelTimerSuccess;
+event sync_eStartTimer: int;
+event sync_eCancelTimer;
+event sync_eCancelTimerFailed;
+event sync_eCancelTimerSuccess;
 event eTimeOut;
 /************************************************
 Functions or API's to interact with the OS Timer
@@ -39,11 +39,11 @@ fun CreateTimer(client: machine) : Timer
 // start timer
 fun StartTimer(timer: Timer, timeout: int)
 {
-	send timer, eStartTimer, timeout;
+	send timer, sync_eStartTimer, timeout;
 }
 
 // cancel timer
 fun CancelTimer(timer: Timer)
 {
-	send timer, eCancelTimer;
+	send timer, sync_eCancelTimer;
 }

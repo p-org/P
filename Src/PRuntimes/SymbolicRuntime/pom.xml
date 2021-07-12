@@ -32,9 +32,9 @@
             <configuration>
               <groupId>org.sosy_lab.pjbdd</groupId>
               <artifactId>pjbdd</artifactId>
-              <version>1.0.10-8</version>
+              <version>1.0.10-9</version>
               <packaging>jar</packaging>
-              <file>lib/pjbdd-v1.0.10-8.jar</file>
+              <file>lib/pjbdd-v1.0.10-9.jar</file>
             </configuration>
           </execution>
         </executions>
@@ -87,7 +87,7 @@
     <dependency>
       <groupId>org.sosy_lab.pjbdd</groupId>
       <artifactId>pjbdd</artifactId>
-      <version>1.0.10-8</version>
+      <version>1.0.10-9</version>
     </dependency>
     <dependency>
       <groupId>commons-cli</groupId>

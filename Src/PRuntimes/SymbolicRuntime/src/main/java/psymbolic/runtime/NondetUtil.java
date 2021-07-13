@@ -32,6 +32,7 @@ public class NondetUtil {
         return res;
     }
 
+    /*
     public static PrimitiveVS getNondetChoiceAlt(List<PrimitiveVS> choices) {
         if (choices.size() == 0) return new PrimitiveVS<>();
         if (choices.size() == 1) return choices.get(0);
@@ -69,8 +70,8 @@ public class NondetUtil {
         }
         return empty.merge(results);
     }
-
-    public static PrimitiveVS getNondetChoice(List<PrimitiveVS> choices) {
+    */
+    public static PrimitiveVS getNondetChoice(List<PrimitiveVS> choices, boolean isScheduleChoice) {
         if (choices.size() == 0) return new PrimitiveVS<>();
         if (choices.size() == 1) return choices.get(0);
         List<PrimitiveVS> results = new ArrayList<>();
@@ -96,7 +97,7 @@ public class NondetUtil {
         }
 
         for (int i = 0; i < numVars; i++) {
-            choiceVars.add(Guard.newVar());
+            choiceVars.add(Guard.newVar(isScheduleChoice));
         }
 
         List<Guard> choiceConds = generateAllCombos(choiceVars);

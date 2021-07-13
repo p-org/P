@@ -115,7 +115,7 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public PrimitiveVS<Integer> getNextInteger(List<PrimitiveVS> candidateIntegers) {
-        PrimitiveVS<Integer> choices = (PrimitiveVS<Integer>) NondetUtil.getNondetChoice(candidateIntegers);
+        PrimitiveVS<Integer> choices = (PrimitiveVS<Integer>) NondetUtil.getNondetChoice(candidateIntegers, false);
         schedule.addRepeatInt(choices, choiceDepth);
         choiceDepth++;
         return choices;
@@ -134,7 +134,7 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public PrimitiveVS<Boolean> getNextBoolean(List<PrimitiveVS> candidateBooleans) {
-        PrimitiveVS<Boolean> choices = (PrimitiveVS<Boolean>) NondetUtil.getNondetChoice(candidateBooleans);
+        PrimitiveVS<Boolean> choices = (PrimitiveVS<Boolean>) NondetUtil.getNondetChoice(candidateBooleans, false);
         schedule.addRepeatBool(choices, choiceDepth);
         choiceDepth++;
         return choices;
@@ -158,7 +158,7 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public PrimitiveVS<ValueSummary> getNextElementHelper(List<ValueSummary> candidates) {
-        PrimitiveVS<ValueSummary> choices = NondetUtil.getNondetChoice(candidates.stream().map(x -> new PrimitiveVS(x).restrict(x.getUniverse())).collect(Collectors.toList()));
+        PrimitiveVS<ValueSummary> choices = NondetUtil.getNondetChoice(candidates.stream().map(x -> new PrimitiveVS(x).restrict(x.getUniverse())).collect(Collectors.toList()), false);
         schedule.addRepeatElement(choices, choiceDepth);
         choiceDepth++;
         return choices;
@@ -298,7 +298,7 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public PrimitiveVS<Machine> getNextSender(List<PrimitiveVS> candidateSenders) {
-        PrimitiveVS<Machine> choices = (PrimitiveVS<Machine>) NondetUtil.getNondetChoice(candidateSenders);
+        PrimitiveVS<Machine> choices = (PrimitiveVS<Machine>) NondetUtil.getNondetChoice(candidateSenders, true);
         schedule.addRepeatSender(choices, choiceDepth);
         choiceDepth++;
         return choices;

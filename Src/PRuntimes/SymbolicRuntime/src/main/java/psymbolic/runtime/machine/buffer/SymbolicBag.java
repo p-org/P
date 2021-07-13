@@ -72,7 +72,7 @@ public class SymbolicBag<T extends ValueSummary<T>> {
             choices.add(idx.restrict(cond));
             idx = IntegerVS.add(idx, 1);
         }
-        PrimitiveVS<Integer> index = (PrimitiveVS<Integer>) NondetUtil.getNondetChoice(choices);
+        PrimitiveVS<Integer> index = (PrimitiveVS<Integer>) NondetUtil.getNondetChoice(choices, true);
         return filtered.restrict(index.getUniverse()).get(index);
     }
 
@@ -87,7 +87,7 @@ public class SymbolicBag<T extends ValueSummary<T>> {
             choices.add(idx.restrict(cond));
             idx = IntegerVS.add(idx, 1);
         }
-        PrimitiveVS<Integer> index = (PrimitiveVS<Integer>) NondetUtil.getNondetChoice(choices);
+        PrimitiveVS<Integer> index = (PrimitiveVS<Integer>) NondetUtil.getNondetChoice(choices, true);
         T element = filtered.restrict(index.getUniverse()).get(index);
         elements = elements.removeAt(index);
         return element;

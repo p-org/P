@@ -20,8 +20,11 @@ public class PJBDDImpl {
 
     // configurable parameters for PJBDD
     // TODO: Explore different options for these parameters
-    private int numThreads = Runtime.getRuntime().availableProcessors();
+    private int numThreads = Runtime.getRuntime().availableProcessors()/2 + 1;
     private int cacheSize = 100000;
+
+    // keep track of the first BDD variable representing data-nondeterminism
+    private DD firstDataVar = null;
 
     public PJBDDImpl(boolean cbdd) {
         CreatorBuilder creatorBuilder = Builders.cbddBuilder();
@@ -79,8 +82,24 @@ public class PJBDDImpl {
         return c.makeIte(cond, thenClause, elseClause);
     }
 
-    public DD newVar() {
-        return c.makeVariable();
+    public DD newDataVar() {
+        if(firstDataVar == null)
+        {
+            firstDataVar = c.makeVariable();
+            return firstDataVar;
+        }
+        else
+        {
+            return c.makeVariable();
+        }
+
+    }
+
+    public DD newSchedVar() {
+        if(firstDataVar != null)
+            return c.makeVariableBefore(firstDataVar);
+        else
+            return c.makeVariable();
     }
 
     public String toString(DD bdd) {

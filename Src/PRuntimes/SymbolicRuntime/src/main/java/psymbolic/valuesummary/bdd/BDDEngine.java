@@ -74,10 +74,13 @@ public class BDDEngine {
         return new BddGuard(bddImpl.ifThenElse(cond.getBdd(), thenClause.getBdd(), elseClause.getBdd()));
     }
 
-    public BddGuard newVar() {
-        return new BddGuard(bddImpl.newVar());
+    public BddGuard newDataVar() {
+        return new BddGuard(bddImpl.newDataVar());
     }
 
+    public BddGuard newSchedVar() {
+        return new BddGuard(bddImpl.newSchedVar());
+    }
     public static String toString(BddGuard bdd) {
         if (bdd == null) return "null";
         if (bdd.isFalse()) return "false";

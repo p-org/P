@@ -104,8 +104,8 @@ public class Guard {
         return new Guard(guard.ifThenElse(thenCase.guard, elseCase.guard));
     }
 
-    public static Guard newVar() {
-        return new Guard(BddGuard.newVar());
+    public static Guard newVar(boolean isSchedChoice) {
+        return new Guard(BddGuard.newVar(isSchedChoice));
     }
 
     @Override

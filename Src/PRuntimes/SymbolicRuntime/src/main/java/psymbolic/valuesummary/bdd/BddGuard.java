@@ -60,8 +60,11 @@ public class BddGuard {
         return bddEngine.ifThenElse(this, thenCase, elseCase);
     }
 
-    public static BddGuard newVar() {
-        return bddEngine.newVar();
+    public static BddGuard newVar(boolean isSchedChoice) {
+        if(isSchedChoice)
+            return bddEngine.newSchedVar();
+        else
+            return bddEngine.newDataVar();
     }
 
     @Override

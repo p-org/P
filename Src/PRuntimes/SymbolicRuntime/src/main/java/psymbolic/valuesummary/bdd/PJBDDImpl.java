@@ -31,8 +31,8 @@ public class PJBDDImpl {
         c = creatorBuilder
                 .setVarCount(0)
                 .disableThreadSafety()
-                .setParallelism(numThreads)
-                //.setParallelizationType(Builders.ParallelizationType.NONE)
+                //.setParallelism(numThreads)
+                .setParallelizationType(Builders.ParallelizationType.NONE)
                 .setTableSize(10000)
                 .setCacheSize(cacheSize)
                 .build();

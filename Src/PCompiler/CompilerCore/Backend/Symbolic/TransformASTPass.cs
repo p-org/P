@@ -187,6 +187,13 @@ namespace Plang.Compiler.Backend.Symbolic
                          }
                          newBody.Add(new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, thenStmt, elseStmt));
                          break;
+                     case ReceiveStmt receiveStmt:
+                         foreach(KeyValuePair<PEvent, Function> entry in receiveStmt.Cases)
+                         {
+                             entry.Value.Body = new CompoundStmt(entry.Value.Body.SourceLocation, ReplaceReturn(entry.Value.Body.Statements, location));
+                             entry.Value.Signature.ReturnType = null;
+                         }
+                         break;
                      case WhileStmt whileStmt:
                          List<IPStmt> bodyList = new List<IPStmt>();
                          bodyList.Add(whileStmt.Body);
@@ -602,6 +609,7 @@ namespace Plang.Compiler.Backend.Symbolic
              }
              continuation.CanChangeState = function.CanChangeState;
              continuation.CanRaiseEvent = function.CanRaiseEvent;
+             continuation.Signature.ReturnType = function.Signature.ReturnType;
              continuationNumber++;
              return continuation;
          }

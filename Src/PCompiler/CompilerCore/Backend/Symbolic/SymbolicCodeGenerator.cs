@@ -1143,16 +1143,23 @@ namespace Plang.Compiler.Backend.Symbolic
             var rootPCScope = context.FreshPathConstraintScope();
 
             string returnType = null;
-            if (continuation.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            var returnConvention = GetReturnConvention(continuation);
+            switch (returnConvention)
             {
-                returnType = "void";
-            }
-            else
-            {
-                returnType = GetSymbolicType(continuation.Signature.ReturnType);
+                case FunctionReturnConvention.RETURN_VALUE:
+                    returnType = GetSymbolicType(continuation.Signature.ReturnType);
+                    break;
+                case FunctionReturnConvention.RETURN_VOID:
+                    returnType = "void";
+                    break;
+                case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
+                    returnType = GetSymbolicType(continuation.Signature.ReturnType);
+                    break;
+                case FunctionReturnConvention.RETURN_GUARD:
+                    returnType = "Guard";
+                    break;
             }
 
-            context.ReturnType = continuation.Signature.ReturnType;
             var continuationName = context.GetContinuationName(continuation);
 
             context.WriteLine(output, $"{returnType} ");
@@ -1204,13 +1211,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"{GetSymbolicType(arg.Type)} {CompilationContext.GetVar(arg.Name)} = {GetDefaultValue(context, caseScope, arg.Type)};");
                     WriteStmt(continuation, context, output, caseContext, assignMsg);
                 }
-                WriteFunctionBody(context, output, caseScope, continuation.Cases[e]);
-/*
-                args.Add(new VariableAccessExpr(continuation.SourceLocation, new Variable($"msg_{idx}", continuation.SourceLocation, VariableRole.Param)));
-                
-                FunCallStmt funCall = new FunCallStmt(continuation.SourceLocation, continuation.Cases[e], args);
-                WriteStmt(continuation, context, output, funcContext, funCall);
-*/
+                WriteStmt(continuation, context, output, caseContext, continuation.Cases[e].Body);
                 context.WriteLine(output, "}");
                 idx++;
             }
@@ -1221,8 +1222,23 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, $"new DeferEventHandler(e.getValue()).handleEvent(e.getGuard(), this, {messageName}.getPayload().restrict(e.getGuard()), outcome);");
             context.WriteLine(output, "}");
             context.WriteLine(output, "}");
+            context.ReturnType = continuation.Signature.ReturnType;
             if (continuation.After != null)
                 WriteStmt(continuation, context, output, funcContext, continuation.After);
+            switch (returnConvention)
+            {
+                case FunctionReturnConvention.RETURN_VALUE:
+                    context.WriteLine(output, $"return {CompilationContext.ReturnValue};");
+                    break;
+                case FunctionReturnConvention.RETURN_VOID:
+                    break;
+                case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
+                    context.WriteLine(output, $"return {CompilationContext.ReturnValue}.restrict({rootPCScope.PathConstraintVar});");
+                    break;
+                case FunctionReturnConvention.RETURN_GUARD:
+                    context.WriteLine(output, $"return {rootPCScope.PathConstraintVar};");
+                    break;
+            }
             context.WriteLine(output, "}");
             context.WriteLine(output);
             context.ReturnType = null;

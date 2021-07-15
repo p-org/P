@@ -871,7 +871,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case PrintStmt printStmt:
-                    context.Write(output, $"PSymLogger.info(");
+                    //context.Write(output, $"PSymLogger.info(");
+                    context.Write(output, $"System.out.println(");
                     //TODO: use WriteExpr(context, output, flowContext.pcScope, printStmt.Message);
                     switch (printStmt.Message) {
                         case StringExpr stringExpr:
@@ -1219,6 +1220,9 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "{");
             context.Write(output, $"for (GuardedValue<Event> e : {messageName}.getEvent().getGuardedValues())");
             context.WriteLine(output, "{");
+            context.WriteLine(output, $"if ({messageName}.getPayload() == null)");
+            context.WriteLine(output, $"new DeferEventHandler(e.getValue()).handleEvent(e.getGuard(), this, null, outcome);");
+            context.WriteLine(output, "else");
             context.WriteLine(output, $"new DeferEventHandler(e.getValue()).handleEvent(e.getGuard(), this, {messageName}.getPayload().restrict(e.getGuard()), outcome);");
             context.WriteLine(output, "}");
             context.WriteLine(output, "}");

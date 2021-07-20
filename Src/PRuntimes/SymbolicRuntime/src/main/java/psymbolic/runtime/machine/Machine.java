@@ -127,10 +127,12 @@ public abstract class Machine {
                 EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
                 nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not()));
                 for (GuardedValue<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> receiver : runNow.getGuardedValues()) {
-                    System.out.println("unblocking receive for event " + m.getEvent());
                     receiver.getValue().apply(receiver.getGuard()).accept(nextEventHandlerReturnReason, m.restrict(receiver.getGuard()));
                 }
                 eventHandlerReturnReason = nextEventHandlerReturnReason;
+            } else {
+                // clean up receives
+                for (Runnable r : clearContinuationVars) { r.run(); }
             }
 
             // Inner loop: process sequences of 'goto's and 'raise's.

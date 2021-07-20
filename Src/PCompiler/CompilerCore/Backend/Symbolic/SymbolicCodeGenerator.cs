@@ -1794,6 +1794,10 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output, guarded);
                         break;
                     }
+                case KeysExpr keyExpr:
+                    WriteExpr(context, output, pcScope, keyExpr.Expr);
+                    context.Write(output, $".getKeys().restrict({pcScope.PathConstraintVar})");
+                    break;
                 case MapAccessExpr mapAccessExpr:
                     WriteExpr(context, output, pcScope, mapAccessExpr.MapExpr);
                     context.Write(output, ".get(");

@@ -37,6 +37,14 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
         return keys.size();
     }
 
+    /** Get the keys in the MapVS as a ListVS
+     *
+     * @return The keys of the MapVS in a ListVS
+     */
+    public ListVS<PrimitiveVS<K>> getKeys() {
+        return this.keys.getElements();
+    }
+
     @Override
     public boolean isEmptyVS() {
         return keys.isEmptyVS();

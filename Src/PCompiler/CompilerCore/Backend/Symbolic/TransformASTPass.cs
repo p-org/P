@@ -501,6 +501,8 @@ namespace Plang.Compiler.Backend.Symbolic
                                  IDictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
                                  foreach (KeyValuePair<PEvent, Function> c in recv.Cases)
                                  {
+                                     c.Value.AddLocalVariables(function.Signature.Parameters);
+                                     c.Value.AddLocalVariables(function.LocalVariables);
                                      cases.Add(c.Key, TransformFunction(c.Value, machine));
                                  }
                                  Continuation continuation = GetContinuation(function, cases, after, recv.SourceLocation);

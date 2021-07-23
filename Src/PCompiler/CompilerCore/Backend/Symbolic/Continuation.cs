@@ -7,6 +7,7 @@ using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 using System.IO;
 using System;
+using System.Linq;
 
 namespace Plang.Compiler.Backend.Symbolic
 {
@@ -20,8 +21,10 @@ namespace Plang.Compiler.Backend.Symbolic
 
         public void AddParameter(Variable local, Variable store)
         {
-            storeParameters.Add(store);
-            localParameters.Add(local);
+            if (!storeParameters.Select(param => param.Name).Contains(store.Name))
+                storeParameters.Add(store);
+            if (!localParameters.Select(param => param.Name).Contains(local.Name))
+                localParameters.Add(local);
             VariableAccessExpr localAccess = new VariableAccessExpr(SourceLocation, local);
             VariableAccessExpr storeAccess = new VariableAccessExpr(SourceLocation, store);
             AssignStmt storeStmt = new AssignStmt(SourceLocation, storeAccess, localAccess);

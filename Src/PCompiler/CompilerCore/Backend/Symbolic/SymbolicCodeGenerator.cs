@@ -1218,12 +1218,9 @@ namespace Plang.Compiler.Backend.Symbolic
             }
             context.WriteLine(output, $"if (!deferGuard.isFalse())");
             context.WriteLine(output, "{");
-            context.Write(output, $"for (GuardedValue<Event> e : {messageName}.getEvent().getGuardedValues())");
+            context.Write(output, $"for (GuardedValue<Event> e : {messageName}.restrict(deferGuard).getEvent().getGuardedValues())");
             context.WriteLine(output, "{");
-            context.WriteLine(output, $"if ({messageName}.getPayload() == null)");
-            context.WriteLine(output, $"new DeferEventHandler(e.getValue()).handleEvent(e.getGuard(), this, null, outcome);");
-            context.WriteLine(output, "else");
-            context.WriteLine(output, $"new DeferEventHandler(e.getValue()).handleEvent(e.getGuard(), this, {messageName}.getPayload().restrict(e.getGuard()), outcome);");
+            context.WriteLine(output, $"new DeferEventHandler(e.getValue()).handleEvent(e.getGuard(), this, {messageName}.restrict(e.getGuard()).getPayload(), outcome);");
             context.WriteLine(output, "}");
             context.WriteLine(output, "}");
             context.ReturnType = continuation.Signature.ReturnType;

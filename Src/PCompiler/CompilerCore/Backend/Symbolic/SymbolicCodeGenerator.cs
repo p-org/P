@@ -1312,14 +1312,16 @@ namespace Plang.Compiler.Backend.Symbolic
 
             if (valueIsMachineRef && locationIsMachineRef)
                 return "";
-            if (valueType.IsSameTypeAs(locationType)) return "";
 
             if (locationType.IsSameTypeAs(PrimitiveType.Any)) {
-                return $"new UnionVS ({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, valueType)}.getClass(), ";
+                //return $"new UnionVS ({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, valueType)}.getClass(), ";
+                return $"ValueSummary.castToAny({pcScope.PathConstraintVar}, ";
             } else if (valueType.IsSameTypeAs(PrimitiveType.Any))
             {
                 return $"({GetSymbolicType(locationType)}) ValueSummary.castFromAny({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationType)}, ";
             }
+
+            if (valueType.IsSameTypeAs(locationType)) return "";
 
             valueType = valueType.Canonicalize();
             locationType = locationType.Canonicalize();
@@ -1557,7 +1559,12 @@ namespace Plang.Compiler.Backend.Symbolic
                             context.Write(output, $"{fieldType} {fieldTemp}");
                             if (needOrigValue)
                             {
-                                context.WriteLine(output, $" = ({fieldType}){namedTupleTemp}.getField(\"{namedTupleAccessExpr.FieldName}\");");
+                                context.Write(output, $" = ({fieldType})");
+                                string namedPrefix = GetInlineCastPrefix(namedTupleAccessExpr.Entry.Type, namedTupleAccessExpr.Type, context, pcScope);
+                                context.Write(output, namedPrefix);
+                                context.Write(output, $"{namedTupleTemp}.getField(\"{namedTupleAccessExpr.FieldName}\");");
+                                if (namedPrefix != "") context.Write(output, ")");
+                                context.WriteLine(output, ";");
                             }
                             else
                             {
@@ -1589,7 +1596,12 @@ namespace Plang.Compiler.Backend.Symbolic
                             context.Write(output, $"{fieldType} {fieldTemp}");
                             if (needOrigValue)
                             {
-                                context.Write(output, $"({fieldType}){tupleTemp}.getField({tupleAccessExpr.FieldNo});");
+                                context.Write(output, $" = ({fieldType})");
+                                string tuplePrefix = GetInlineCastPrefix((tupleAccessExpr.SubExpr.Type as TupleType).Types[tupleAccessExpr.FieldNo], tupleAccessExpr.Type, context, pcScope);
+                                context.Write(output, tuplePrefix);
+                                context.Write(output, $"{tupleTemp}.getField({tupleAccessExpr.FieldNo})");
+                                if (tuplePrefix != "") context.Write(output, ")");
+                                context.WriteLine(output, ";");
                             }
                             else
                             {
@@ -1750,10 +1762,10 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output,  GetDefaultValue(context, pcScope, castExpr.Type));
                     } else
                     {
-                        string prefix = GetInlineCastPrefix(castExpr.SubExpr.Type, castExpr.Type, context, pcScope);
-                        context.Write(output, prefix);
+                        string castPrefix = GetInlineCastPrefix(castExpr.SubExpr.Type, castExpr.Type, context, pcScope);
+                        context.Write(output, castPrefix);
                         WriteExpr(context, output, pcScope, castExpr.SubExpr);
-                        if (prefix != "") context.Write(output, ")");
+                        if (castPrefix != "") context.Write(output, ")");
                     }
                     break;
                  case CoerceExpr coerceExpr:
@@ -1809,8 +1821,12 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     context.Write(output, $"({GetSymbolicType(namedTupleAccessExpr.Type)})(");
+                    string prefix = GetInlineCastPrefix(namedTupleAccessExpr.Entry.Type, namedTupleAccessExpr.Type, context, pcScope);
+                    context.Write(output, prefix);
+                    context.Write(output, "(");
                     WriteExpr(context, output, pcScope, namedTupleAccessExpr.SubExpr);
-                    context.Write(output, $").getField(\"{namedTupleAccessExpr.FieldName}\")");
+                    context.Write(output, $").getField(\"{namedTupleAccessExpr.FieldName}\"))");
+                    if (prefix != "") context.Write(output, ")");
                     break;
                 case ThisRefExpr thisRefExpr:
                     context.Write(
@@ -1820,18 +1836,24 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, $"({GetSymbolicType(tupleAccessExpr.Type)})(");
+                    string tuplePrefix = GetInlineCastPrefix((tupleAccessExpr.SubExpr.Type as TupleType).Types[tupleAccessExpr.FieldNo], tupleAccessExpr.Type, context, pcScope);
+                    context.Write(output, "(");
+                    context.Write(output, tuplePrefix);
                     WriteExpr(context, output, pcScope, tupleAccessExpr.SubExpr);
-                    context.Write(output, $").getField({tupleAccessExpr.FieldNo})");
+                    context.Write(output, $").getField({tupleAccessExpr.FieldNo}))");
+                    if (tuplePrefix != "") context.Write(output, ")");
                     break;
                 case NamedTupleExpr namedTupleExpr:
                     context.Write(output, "new NamedTupleVS(");
                     var fields = (namedTupleExpr.Type.Canonicalize() as NamedTupleType).Fields;
+                    NamedTupleType nttype = namedTupleExpr.Type as NamedTupleType;
                     for (int i = 0; i < namedTupleExpr.TupleFields.Count; i++)
                     {
                         var fieldName = fields[i].Name;
                         var field = namedTupleExpr.TupleFields[i];
                         context.Write(output, $"\"{fieldName}\", ");
-                        WriteExpr(context, output, pcScope, field);
+                        CastExpr castExpr = new CastExpr(field.SourceLocation, field, nttype.Types[i]);
+                        WriteExpr(context, output, pcScope, castExpr);
                         if (i + 1 != namedTupleExpr.TupleFields.Count)
                             context.Write(output, ", ");
                     }
@@ -1839,9 +1861,11 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case UnnamedTupleExpr unnamedTupleExpr:
                     context.Write(output, "new TupleVS(");
+                    TupleType ttype = (TupleType) unnamedTupleExpr.Type;
                     for (int i = 0; i < unnamedTupleExpr.TupleFields.Count; i++)
                     {
-                        WriteExpr(context, output, pcScope, unnamedTupleExpr.TupleFields[i]);
+                        CastExpr castExpr = new CastExpr(unnamedTupleExpr.SourceLocation, unnamedTupleExpr.TupleFields[i], ttype.Types[i]);
+                        WriteExpr(context, output, pcScope, castExpr);
                         if (i + 1 != unnamedTupleExpr.TupleFields.Count)
                             context.Write(output, ", ");
                     }

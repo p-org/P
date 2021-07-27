@@ -40,6 +40,12 @@ public class Scheduler implements SymbolicSearch {
     /** List of monitors instances */
     private List<Monitor> monitors;
 
+    /** Map of what not to interleave */
+    private Map<Event, Set<Event>> interleaveMap;
+
+    /** Use the interleave map (if false) or not (if true) */
+    private boolean alwaysInterleaveNonAsync = false;
+
     /** Current depth of exploration */
     private int depth = 0;
     /** Whether or not search is done */
@@ -89,7 +95,7 @@ public class Scheduler implements SymbolicSearch {
         this.schedule = getNewSchedule();
         this.machines = new ArrayList<>();
         this.machineCounters = new HashMap<>();
-
+        this.interleaveMap = InterleaveMap.getMap();
 
         for (Machine machine : machines) {
             this.machines.add(machine);
@@ -283,18 +289,48 @@ public class Scheduler implements SymbolicSearch {
 
         // now there are no create machine and sync event actions remaining
         List<PrimitiveVS> candidateSenders = new ArrayList<>();
+        List<Message> candidateFirstMessages = new ArrayList<>();
 
         for (Machine machine : machines) {
             if (!machine.sendBuffer.isEmpty()) {
                 Guard canRun = machine.hasHalted().getGuardFor(true).not();
-                canRun = canRun.and(machine.sendBuffer.satisfiesPredUnderGuard(Message::canRun).getGuardFor(true));
+                canRun = canRun.and(machine.sendBuffer.satisfiesPredUnderGuard(x ->
+                             BooleanVS.and(x.canRun(), shouldInterleave(candidateFirstMessages, x))).getGuardFor(true));
                 if (!canRun.isFalse()) {
                     candidateSenders.add(new PrimitiveVS<>(machine).restrict(canRun));
+                    candidateFirstMessages.add(machine.sendBuffer.peek(canRun));
                 }
             }
         }
 
         return candidateSenders;
+    }
+
+    private PrimitiveVS<Boolean> shouldInterleave(List<Message> candidateMessages, Message m) {
+        if (alwaysInterleaveNonAsync) return new PrimitiveVS<>(true);
+        PrimitiveVS<Event> event = m.getEvent();
+        PrimitiveVS<Set<Event>> doNotInterleave = new PrimitiveVS<>();
+        List<PrimitiveVS<Set<Event>>> toMerge = new ArrayList<>();
+        for (GuardedValue<Event> e : event.getGuardedValues()) {
+            if (interleaveMap.containsKey(e.getValue())) {
+                toMerge.add(new PrimitiveVS<>(interleaveMap.get(e.getValue())));
+            }
+        }
+        doNotInterleave = doNotInterleave.merge(toMerge);
+
+        Guard equal = Guard.constFalse();
+        for (Message other : candidateMessages) {
+            for (GuardedValue<Event> e : other.getEvent().getGuardedValues()) {
+                for (GuardedValue<Set<Event>> notToInterleave : doNotInterleave.getGuardedValues()) {
+                    for (Event replacement : notToInterleave.getValue()) {
+                        if (e.getValue().equals(replacement)) {
+                            equal = equal.or(e.getGuard().and(notToInterleave.getGuard()));
+                        }
+                    }
+                }
+            }
+        }
+        return new PrimitiveVS<>(true).restrict(equal.not());
     }
 
     public PrimitiveVS<Machine> getNextSender(List<PrimitiveVS> candidateSenders) {
@@ -347,8 +383,6 @@ public class Scheduler implements SymbolicSearch {
         // performing node clean-up
         BDDEngine.UnusedNodesCleanUp();
         System.gc();
-
-
 
         // add depth statistics
         SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, effects.size() + 1, -1);

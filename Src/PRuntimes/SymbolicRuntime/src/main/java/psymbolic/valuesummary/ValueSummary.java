@@ -5,6 +5,11 @@ import java.util.List;
 
 public interface ValueSummary<T extends ValueSummary<T>> {
 
+    static UnionVS castToAny(Guard pc, ValueSummary<?> toCast) {
+        if (toCast instanceof UnionVS) { return (UnionVS) toCast.restrict(pc); }
+        return new UnionVS(toCast).restrict(pc);
+    }
+
     /**
      * Casts an AnyVS to a ValueSummary type. If there is some non
      * constantly false path constraint under which the current pc is defined but not the guard

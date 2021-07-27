@@ -18,7 +18,6 @@ public class InterleaveMap {
             Set<Event> prepareSet = new HashSet<>();
             Set<Event> prepareResponseSet = new HashSet<>();
 
-
             Event acquire = new Event("eAcquireLock");
             Event release = new Event("eReleaseLock");
             Event prepare = new Event("ePrepareReq");
@@ -28,6 +27,8 @@ public class InterleaveMap {
             releaseSet.add(acquire);
 
             prepareSet.add(prepareResponse);
+            prepareSet.add(prepare);
+
             prepareResponseSet.add(prepare);
 
             interleaveMap.put(acquire, acquireSet);

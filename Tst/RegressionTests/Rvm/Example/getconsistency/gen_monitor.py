@@ -23,7 +23,7 @@ def runPc(pcompiler_dir, arguments):
     Raises:
         SubprocessError if the P compiler returned an error code.
     """
-    tools.runNoError(["dotnet", os.path.join(pcompiler_dir, "Bld", "Drops", "Release", "Binaries", "netcoreapp3.1", "P.dll")] + arguments)
+    tools.runNoError(["dotnet", os.path.join(pcompiler_dir, "Bld", "Drops", "Release", "Binaries", "netcoreapp5.0", "P.dll")] + arguments)
 
 def translate(pcompiler_dir, p_spec_dir, gen_monitor_dir, aspectj_dir):
     """

@@ -23,7 +23,7 @@ def runPc(root_dir, arguments):
         SubprocessError if the P compiler returned an error code.
     """
     tools.runNoError(
-        ["dotnet", os.path.join(root_dir, "Bld", "Drops", "Release", "Binaries", "netcoreapp3.1", "P.dll")]
+        ["dotnet", os.path.join(root_dir, "Bld", "Drops", "Release", "Binaries", "netcoreapp5.0", "P.dll")]
         + arguments
     )
 

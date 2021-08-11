@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="icon.png" width="20%">
+  <img src="images/icon.png" width="20%">
   <h2>Modular and Safe Programming for Distributed Systems</h2>
 </div>
 
@@ -27,18 +27,15 @@ Microsoft Windows 8 and Windows Phone.
 > :sparkles: **_Programming concurrent, asynchronous distributed systems is challenging, but a pinch of programming language design combined with a dash of automated reasoning can go a long way in bringing the joy back._** :sparkles:
 
 
+
 ## Let the fun begin!
 
 You can find most of the information about the P framework on this webpage:
-[how does P work](./howdoesitwork.md),  
-[getting started](getstarted/install.md), [tutorials](tutsoutline.md),
-[case studies](casestudies.md) and related [research publications](publications.md). If
-you have any further questions, please feel free to create an
-[issue](https://github.com/p-org/P/issues), ask on
-[discussions](https://github.com/p-org/P/discussions), or
-[email us](mailto:ankushdesai@gmail.com)
+[how does P work](./howdoesitwork.md), [getting started](getstarted/install.md), [tutorials](tutsoutline.md), [case studies](casestudies.md) and related [research publications](publications.md). 
+If you have any further questions, please feel free to create an [issue](https://github.com/p-org/P/issues), ask on
+[discussions](https://github.com/p-org/P/discussions), or [email us](mailto:ankushdesai@gmail.com)
 
-> _P has always been a collaborative project between industry and academia (since 2013) :drum:. The P team welcomes contributions and suggestions from all of you!! :punch:. See [CONTRIBUTING](CONTRIBUTING.md) for more information_
+> _P has always been a collaborative project between industry and academia (since 2013) :drum:. The P team welcomes contributions and suggestions from all of you!! :punch:. See [CONTRIBUTING](CONTRIBUTING.md) for more information._
 
 
 

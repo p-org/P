@@ -47,6 +47,7 @@ nav:
   - Installing P: getstarted/install.md
   - Syntax Highlighting for P: getstarted/syntaxhighlight.md
   - Using P Compiler and Checker: getstarted/usingP.md
+
 - Tutorials:
     - Outline: tutsoutline.md
     - Client Server: tutorial/usingP.md
@@ -57,6 +58,9 @@ nav:
     - Modeling Shared Memory Concurrency: howtoguides/sharedmemory.md
     - Model based testing of implementation: howtoguides/modelbasedtesting.md
     - Importance of Liveness Specifications: howtoguides/importanceliveness.md
+- Power Users:
+    - Structure of a P Program: advanced/structureOfPProgram.md
+    - P Project File: advanced/PProject.md
 - Language Manual:
     - Outline: manualoutline.md
     - P Events: manual/events.md
@@ -68,7 +72,7 @@ nav:
     - P DataTypes and Operations: manual/functions.md
     - P Module System: manual/functions.md
     - P Test cases: manual/functions.md
-    - P Foreign Interface: manual/functions.md
+    - P Foreign Interface: manual/foriegntypesfunctions.md
 - Case Studies: casestudies.md
 - Blogs and Articles: articles.md
 - Videos: videos.md

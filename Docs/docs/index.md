@@ -16,25 +16,39 @@
 ![GitHub Action (CI on Ubuntu)](https://github.com/p-org/P/workflows/CI%20on%20Ubuntu/badge.svg)
 ![GitHub Action (CI on MacOS)](https://github.com/p-org/P/workflows/CI%20on%20MacOS/badge.svg)
 
-P is a state machine based programming language for modeling and specifying complex distributed systems. 
-P allows the programmer to specify the system as a collection of interacting state machines, which communicate with each other using events. 
-P unifies modeling, specifying, implementing, and testing into one activity for the programmer. 
-Not only can a P program be compiled into executable code, but it can also be systematically tested using Model Checking.
-P is currently being used extensively inside Amazon (AWS) for performing analysis of complex distributed systems.
-P was used to implement and validate the USB device driver stack that ships with Microsoft Windows 8 and Windows Phone.
-We have also used P for programming safe robotics systems.
+P is a state machine based programming language for modeling and specifying complex
+distributed systems. P allows programmers to model their system as a collection of
+communicating state machines. P supports several backend analysis engines
+(based on automated reasoning techniques like model
+checking and symbolic execution) to check that the distributed system modeled in P
+satisfy the desired correctness specifications. Not only can a P program be systematically
+tested (e.g., model checking), but it can also be compiled into executable code.
+Essentially, P unifies modeling, specifying, implementing, and testing into one activity for the
+programmer.
+
+P is currently being used extensively inside Amazon (AWS) for analysis of
+complex distributed systems. P is also being used for programming safe robotics systems. P
+was first used to implement and validate the USB device driver stack that ships with
+Microsoft Windows 8 and Windows Phone.
 
 !!! quote ""
-    **_Programming distributed systems is challenging but a pinch of programming languages design combined with a dash of automated reasoning can go a long way in bringing the joy back._** :smile:
+    :sparkles: **_Programming concurrent, asynchronous distributed systems is challenging, but a pinch of programming
+    language design combined with a dash of automated reasoning can go a long way in bringing
+    the joy back._** :sparkles:
 
 
 ## Let the fun begin!
 
-You can find most of the information about the P framework on this webpage: [how does P work](./howdoesitwork.md),  
-[getting started](getstarted/install.md), [tutorials](tutsoutline.md), [case studies](casestudies.md) 
-and related [research publications](publications.md).
-If you have any further questions, please feel free to create an [issue](https://github.com/p-org/P/issues), ask on [discussions](https://github.com/p-org/P/discussions), or [email us](mailto:ankushdesai@gmail.com)
+You can find most of the information about the P framework on this webpage:
+[how does P work](./howdoesitwork.md),  
+[getting started](getstarted/install.md), [tutorials](tutsoutline.md),
+[case studies](casestudies.md) and related [research publications](publications.md). If
+you have any further questions, please feel free to create an
+[issue](https://github.com/p-org/P/issues), ask on
+[discussions](https://github.com/p-org/P/discussions), or
+[email us](mailto:ankushdesai@gmail.com)
 
-!!! info "Contributions" 
-    _P is being built and maintained since 2013 as a collaborative project between industry and academia. The P project welcomes contributions and suggestions._
+!!! info "Contributions"  
+    _P has always been a collaborative project between industry and academia (since 2013)
+    :drum:. The P team welcomes contributions and suggestions from all of you!! :punch:._
 

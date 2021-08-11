@@ -4,7 +4,6 @@ import psymbolic.commandline.Assert;
 import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.*;
-import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.statistics.SearchStats;
@@ -385,9 +384,9 @@ public class Scheduler implements SymbolicSearch {
         System.gc();
 
         // add depth statistics
-        SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, effects.size() + 1, -1);
-        searchStats.addDepthStatistics(depth, depthStats);
-        SearchLogger.logDepthStats(depthStats);
+        //SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, effects.size() + 1, -1);
+        //searchStats.addDepthStatistics(depth, depthStats);
+        //SearchLogger.logDepthStats(depthStats);
         depth++;
     }
 

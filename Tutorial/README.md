@@ -80,6 +80,6 @@ of options.
 For example:
 
 ```console
-> pmc ClientServer/netcoreapp5.0/ClientServer.dll -i 1000 -m ClientServer.singleClientServer.Execute
+> pmc ClientServer/netcoreapp3.1/ClientServer.dll -i 1000 -m ClientServer.singleClientServer.Execute
 ```
 

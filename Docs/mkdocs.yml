@@ -42,7 +42,7 @@ theme:
 # This should be renamed to nav for mkdocs 1.0+
 nav:
 - Home: index.md
-- How does P work: howdoesitwork.md
+- What is P?: whatisP.md
 - Getting Started:
   - Installing P: getstarted/install.md
   - Syntax Highlighting for P: getstarted/syntaxhighlight.md
@@ -58,20 +58,22 @@ nav:
     - Modeling Shared Memory Concurrency: howtoguides/sharedmemory.md
     - Model based testing of implementation: howtoguides/modelbasedtesting.md
     - Importance of Liveness Specifications: howtoguides/importanceliveness.md
+    - Debugging Error Traces (counter examples): howtoguides/debuggingerror.md
 - Power Users:
     - Structure of a P Program: advanced/structureOfPProgram.md
     - P Project File: advanced/PProject.md
 - Language Manual:
-    - Outline: manualoutline.md
+    - P Program: manualoutline.md
+    - P DataTypes: manual/datatypes.md
     - P Events: manual/events.md
+    - P Interfaces: manual/interface.md
     - P State Machines: manual/statemachines.md
     - P Monitors: manual/monitors.md
     - P Functions: manual/functions.md
     - P Expressions: manual/expressions.md
     - P Statements: manual/statements.md
-    - P DataTypes and Operations: manual/functions.md
-    - P Module System: manual/functions.md
-    - P Test cases: manual/functions.md
+    - P Module System: manual/modulesystem.md
+    - P Test cases: manual/testcases.md
     - P Foreign Interface: manual/foriegntypesfunctions.md
 - Case Studies: casestudies.md
 - Blogs and Articles: articles.md

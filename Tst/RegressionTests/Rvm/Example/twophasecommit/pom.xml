@@ -14,6 +14,23 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>runtime-verification</id>
+            <name>Runtime Verification Repository</name>
+            <url>https://s3.us-east-2.amazonaws.com/runtimeverificationmaven/internal</url>
+            <snapshots><enabled>false</enabled></snapshots>
+            <releases><enabled>true</enabled></releases>
+        </repository>
+        <repository>
+            <id>runtime-verification.snapshots</id>
+            <name>Runtime Verification Snapshot Repository</name>
+            <url>https://s3.us-east-2.amazonaws.com/runtimeverificationmaven/snapshots</url>
+            <snapshots><enabled>true</enabled></snapshots>
+            <releases><enabled>false</enabled></releases>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>org.codehaus.mojo</groupId>
@@ -45,7 +62,7 @@
         <dependency>
             <groupId>com.runtimeverification.rvmonitor</groupId>
             <artifactId>rv-monitor-rt</artifactId>
-            <version>1.4</version>
+            <version>1.4-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.mojo</groupId>

@@ -167,5 +167,5 @@ We highly recommend that you create the following alias as we use it in the rest
 - For debugging generated Java code, we recommend using [IntelliJ IDEA](https://www.jetbrains.com/idea/)
 
 ## Using P
- Great :smile:! You are all set to compile and test your first P program :mortar_board:. To learn how to use the P tool chain jump [here](usingP.md).
+ Great :smile:! You are all set to compile and test your first P program :mortar_board:!
 

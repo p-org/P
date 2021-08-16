@@ -1,20 +1,5 @@
 If you plan to contribute a Pull Request to P then you need to be able to build the source code
-and run the tests.
-
-### Prerequisites
-- [.NET 3.1 SDK](https://dotnet.microsoft.com/download/dotnet/3.1)
-
-- [Java JRE](http://www.oracle.com/technetwork/java/javase/downloads/index.html) [^1]
-
-[^1]: P compiler uses [ANTLR](https://www.antlr.org/) parser generator that using Java.
-
-**Optional:**
-
-- For developing P programs: [IntelliJ IDEA](https://www.jetbrains.com/idea/), we support basic [P syntax highlighting](syntaxhighlight.md) for IntelliJ.
-
-- For editing C# code (P compiler): [Rider](https://www.jetbrains.com/rider/) or [Visual Studio for Mac](https://visualstudio.microsoft.com/vs/mac/) or [Visual Studio 2019](https://docs.microsoft.com/en-us/visualstudio/install/install-visual-studio).
-
-- For editing Java code (P Java runtime): [IntelliJ IDEA](https://www.jetbrains.com/idea/)
+and run the tests. Please make sure that you have followed the steps in the [installation guide] to install P dependencies.
 
 ### Building the P project
 

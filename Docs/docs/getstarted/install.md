@@ -41,7 +41,7 @@ To install .Net Core 3.1 SDK use:
     ```
 
     ```
-    sudo yum install dotnet-sdk-5.0
+    sudo yum install dotnet-sdk-3.1
     ```
 
 === "Windows"

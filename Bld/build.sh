@@ -22,7 +22,7 @@ echo -e "${GREEN} ----------------------------------${NOCOLOR}"
 
 echo -e "${GREEN} Shortcuts:: (add the following lines (aliases) to your bash_profile) ${NOCOLOR}"
 echo -e "${GREEN} ----------------------------------${NOCOLOR}"
-echo -e "${ORANGE} alias pc='dotnet ${PWD}/Bld/Drops/Release/Binaries/netcoreapp3.1/P.dll'${NOCOLOR}"
+echo -e "${ORANGE} alias pcl='dotnet ${PWD}/Bld/Drops/Release/Binaries/netcoreapp3.1/P.dll'${NOCOLOR}"
 echo -e "${GREEN} ----------------------------------${NOCOLOR}"
 popd
 

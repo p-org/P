@@ -125,7 +125,8 @@ along with other options (e.g., `-generate`) as commandline arguments to the com
     Compiling the ClientServer program by passing all the required inputs as commandline arguments:
 
     ```shell
-    pc PSpec/*.p PSrc/*.p PTst/*.p -generate:csharp -outputDir:PGenerated -target:ClientServer
+    pc PSpec/*.p PSrc/*.p PTst/*.p \ 
+    -generate:csharp -outputDir:PGenerated -target:ClientServer
     ```
     
     ??? info "Expected Output"
@@ -178,7 +179,8 @@ Expected Output:
 ```shell hl_lines="4 5 6"
 pmc <Path>/ClientServer.dll
 
-Provide /method flag to qualify the test method name you wish to use. Possible options are:
+Provide /method flag to qualify the test method name you wish to use. 
+Possible options are::
 PImplementation.singleClientServer.Execute
 PImplementation.multipleClientsServer.Execute
 PImplementation.singleClientServerWithLiveness.Execute
@@ -192,7 +194,9 @@ running the checker on a distributed cluster to explore billions of schedules an
 So you test the `singleClientServer` test case for 100 schedules, we can use the following command:
 
 ```
-pmc <Path>/ClientServer.dll -m PImplementation.singleClientServer.Execute -i 100
+pmc <Path>/ClientServer.dll \
+    -m PImplementation.singleClientServer.Execute \
+    -i 100
 ```
 
 ??? info "Expected Output"
@@ -235,7 +239,9 @@ pmc <Path>/ClientServer.dll -m PImplementation.singleClientServer.Execute -i 100
 There is a known bug in the ClientServer example (explain in the Tutorials) which is caught by
 the `multipleClientsServer` test case. Run command:
 ```
-pmc <Path>/ClientServer.dll -m PImplementation.multipleClientsServer.Execute -i 100
+pmc <Path>/ClientServer.dll \
+    -m PImplementation.multipleClientsServer.Execute \
+    -i 100
 ```
 
 ??? info "Expected Output"

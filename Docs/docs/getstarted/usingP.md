@@ -176,7 +176,7 @@ pmc <Path>/ClientServer.dll
 
 Expected Output:
 
-```shell hl_lines="4 5 6"
+```shell hl_lines="5 6 7"
 pmc <Path>/ClientServer.dll
 
 Provide /method flag to qualify the test method name you wish to use. 

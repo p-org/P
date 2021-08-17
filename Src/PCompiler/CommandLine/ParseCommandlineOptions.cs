@@ -97,7 +97,7 @@ namespace Plang.Compiler
             DirectoryInfo outputDirectory = null;
             DirectoryInfo aspectjOutputDirectory = null;
             List<FileInfo> inputFiles = new List<FileInfo>();
-
+            commandlineOutput.WriteInfo($"----------------------------------------");
             job = null;
             try
             {
@@ -185,6 +185,7 @@ namespace Plang.Compiler
                         if (IsLegalPFile(arg, out FileInfo fullPathName))
                         {
                             inputFiles.Add(fullPathName);
+                            commandlineOutput.WriteInfo($"....... includes p file: {fullPathName.FullName}");
                         }
                         else
                         {

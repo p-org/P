@@ -40,7 +40,7 @@ Microsoft Windows 8 and Windows Phone.
 ## Let the fun begin!
 
 You can find most of the information about the P framework on this webpage:
-[how does P work](./howdoesitwork.md),  
+[what is P?](whatisP.md),  
 [getting started](getstarted/install.md), [tutorials](tutsoutline.md),
 [case studies](casestudies.md) and related [research publications](publications.md). If
 you have any further questions, please feel free to create an

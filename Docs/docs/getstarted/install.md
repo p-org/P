@@ -3,16 +3,17 @@ After each step, please use the troubleshooting check to ensure that each instal
 
 ### [Step 1] Install .Net Core SDK
 The P compiler and checker are implemented in C# and hence the tool chain requires `dotnet`. 
-P currently supports the latest version of [.Net SDK 5.0](https://docs.microsoft.com/en-us/dotnet/core/install/).
-To install .Net Core SDK use:
+P currently uses the specific version of [.Net SDK 3.1](https://dotnet.microsoft.com/download/dotnet/3.1).
+To install .Net Core 3.1 SDK use:
 
 === "MacOS"
 
     Installing .Net SDK on MacOS using Homebrew ([details](https://formulae.brew.sh/cask/dotnet))
     ```
-    brew install --cask dotnet
+    brew tap isen-ng/dotnet-sdk-versions
+    brew install --cask dotnet-sdk3-1-400
     ```
-    Dont have Homebrew? Install directly using the [installer](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-5.0.302-macos-x64-installer). 
+    Dont have Homebrew? Install directly using the [installer](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-macos-x64-installer). 
 
 === "Ubuntu"
 
@@ -28,7 +29,7 @@ To install .Net Core SDK use:
     sudo apt-get update; \
     sudo apt-get install -y apt-transport-https && \
     sudo apt-get update && \
-    sudo apt-get install -y dotnet-sdk-5.0
+    sudo apt-get install -y dotnet-sdk-3.1
     ```
 
 === "Amazon Linux"
@@ -40,18 +41,18 @@ To install .Net Core SDK use:
     ```
 
     ```
-    sudo yum install aspnetcore-runtime-5.0
+    sudo yum install dotnet-sdk-3.1
     ```
 
 === "Windows"
 
-    Installing .Net SDK on Windows using the installer ([details](https://docs.microsoft.com/en-us/dotnet/core/install/windows?tabs=net50))
+    Installing .Net SDK on Windows using the installer ([details](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-windows-x64-installer))
 
 ??? hint "Troubleshoot: Confirm that dotnet is correctly installed on your machine."
     ```shell
-    dotnet --version
+    dotnet --list-sdks
     ```
-    You must have `5.0.*` dotnet version installed. 
+    You must see an SDK with `3.1.*` dotnet version installed.
     If you get `dotnet` command not found error, mostly likely, you need to add the path to dotnet in your `PATH`.
 
 ### [Step 2] Install Java Runtime
@@ -166,5 +167,5 @@ We highly recommend that you create the following alias as we use it in the rest
 - For debugging generated Java code, we recommend using [IntelliJ IDEA](https://www.jetbrains.com/idea/)
 
 ## Using P
- Great :smile:! You are all set to compile and test your first P program :mortar_board:. To learn how to use the P tool chain jump [here](usingP.md).
+ Great :smile:! You are all set to compile and test your first P program :mortar_board:!
 

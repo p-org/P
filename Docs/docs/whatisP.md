@@ -15,9 +15,9 @@ difficult to test asynchronous systems, most control paths remain untested, and 
 bugs lie dormant for months or even years after deployment.
 
 !!! quote ""  
-_The P programming framework takes several steps towards addressing these challenges. P is
-a unified framework for modeling, specifying, implementing, testing, and verifying complex
-distributed systems._
+  _The P programming framework takes several steps towards addressing these challenges. P is
+  a unified framework for modeling, specifying, implementing, testing, and verifying complex
+  distributed systems._
 
 ## P Framework
 

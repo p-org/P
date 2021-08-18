@@ -574,19 +574,11 @@ namespace Plang.Compiler.Backend.Symbolic
 
             if (function is WhileFunction)
             { 
-                ControlFlowContext loopContext = ControlFlowContext.FreshLoopContext(context);
                 /* Prologue */
-                context.WriteLine(output, $"java.util.List<Guard> {loopContext.loopScope.Value.LoopExitsList} = new java.util.ArrayList<>();");
-                context.WriteLine(output, $"boolean {loopContext.loopScope.Value.LoopEarlyReturnFlag} = false;");
-                context.WriteLine(output, $"Guard {loopContext.pcScope.PathConstraintVar} = {rootPCScope.PathConstraintVar};");
-
+                var loopPCScope = context.FreshPathConstraintScope();
+                context.WriteLine(output, $"Guard {loopPCScope.PathConstraintVar} = {rootPCScope.PathConstraintVar};");
                 /* Loop body */
-                WriteStmt(function, context, output, loopContext, function.Body);
-
-                /* Epilogue */
-                context.WriteLine(output, $"if ({loopContext.loopScope.Value.LoopEarlyReturnFlag}) {{");
-                context.WriteLine(output, $"{rootPCScope.PathConstraintVar} = Guard.orMany({loopContext.loopScope.Value.LoopExitsList});");
-                context.WriteLine(output, "}");
+                WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context, loopPCScope), function.Body);
             } else
             {
                 WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context, rootPCScope), function.Body);
@@ -1424,13 +1416,16 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (returnConvention)
             {
                 case FunctionReturnConvention.RETURN_VALUE:
+                case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
                     returnTemp = context.FreshTempVar();
                     context.Write(output, $"{GetSymbolicType(function.Signature.ReturnType)} {returnTemp} = ");
                     break;
+/*
                 case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
                     returnTemp = context.FreshTempVar();
-                    context.Write(output, $"MaybeExited<{GetSymbolicType(function.Signature.ReturnType)}> {returnTemp} = ");
+                    context.Write(output, $"{GetSymbolicType(function.Signature.ReturnType)} {returnTemp} = ");
                     break;
+*/
                 case FunctionReturnConvention.RETURN_GUARD:
                     returnTemp = context.FreshTempVar();
                     context.Write(output, $"Guard {returnTemp} = ");
@@ -1469,12 +1464,14 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (returnConvention)
             {
                 case FunctionReturnConvention.RETURN_VALUE:
+                case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
                     if (dest != null)
                         WriteWithLValueMutationContext(context, output, flowContext.pcScope, dest, false, (lhs) => context.WriteLine(output, $"{lhs} = {returnTemp};"));
                     break;
                 case FunctionReturnConvention.RETURN_VOID:
                     Debug.Assert(dest == null);
                     break;
+/*
                 case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
                     context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = {returnTemp}.getNewPc();");
 
@@ -1486,6 +1483,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     if (dest != null)
                         WriteWithLValueMutationContext(context, output, flowContext.pcScope, dest, false, (lhs) => context.WriteLine(output, $"{lhs} = {returnTemp}.getValue();"));
                     break;
+*/
                 case FunctionReturnConvention.RETURN_GUARD:
                     context.WriteLine(output, $"{flowContext.pcScope.PathConstraintVar} = {returnTemp};");
 

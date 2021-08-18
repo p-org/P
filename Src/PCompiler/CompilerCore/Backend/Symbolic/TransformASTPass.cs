@@ -19,6 +19,7 @@ namespace Plang.Compiler.Backend.Symbolic
     {
 
          static private int continuationNumber = 0;
+         static private int whileNumber = 0;
          static private int callNum = 0;
 
          static public List<IPDecl> GetTransformedDecls(Scope globalScope)
@@ -449,6 +450,46 @@ namespace Plang.Compiler.Backend.Symbolic
              return transformedFunction;
          }
 
+         static private IPStmt ReplaceBreaks(IPStmt stmt)
+         {
+             if (stmt == null) return null;
+             switch(stmt)
+             {
+                 case CompoundStmt compoundStmt:
+                     List<IPStmt> statements = new List<IPStmt>();
+                     foreach (var inner in compoundStmt.Statements)
+                     {
+                         statements.Add(ReplaceBreaks(inner));
+                     }
+                     return new CompoundStmt(compoundStmt.SourceLocation, statements);
+                 case IfStmt ifStmt:
+                     return new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, ReplaceBreaks(ifStmt.ThenBranch), ReplaceBreaks(ifStmt.ElseBranch));
+                 case ReceiveStmt receiveStmt:
+                     Dictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
+                     foreach(KeyValuePair<PEvent, Function> entry in receiveStmt.Cases)
+                     {
+                         Function replacement = new Function(entry.Value.Name, entry.Value.SourceLocation);
+                         replacement.Owner = entry.Value.Owner;
+                         replacement.ParentFunction = entry.Value.ParentFunction;
+                         replacement.CanReceive = entry.Value.CanReceive;
+                         replacement.Role = entry.Value.Role;
+                         replacement.Scope = entry.Value.Scope;
+                         foreach (var local in entry.Value.LocalVariables) replacement.AddLocalVariable(local);
+                         foreach (var i in entry.Value.CreatesInterfaces) replacement.AddCreatesInterface(i);
+                         foreach (var param in entry.Value.Signature.Parameters) replacement.Signature.Parameters.Add(param);
+                         replacement.Signature.ReturnType = entry.Value.Signature.ReturnType;
+                         foreach (var callee in entry.Value.Callees) replacement.AddCallee(callee);
+                         replacement.Body = (CompoundStmt) ReplaceBreaks(entry.Value.Body);
+                         cases.Add(entry.Key, replacement);
+                     }
+                     return new ReceiveStmt(receiveStmt.SourceLocation, cases);
+                 case BreakStmt _:
+                     return new ReturnStmt(stmt.SourceLocation, null);
+                 default:
+                     return stmt;
+             }
+         }
+
          static private IPStmt HandleReceives(IPStmt statement, Function function, Machine machine)
          {
              switch (statement)
@@ -524,9 +565,13 @@ namespace Plang.Compiler.Backend.Symbolic
                                  rec.Owner = function.Owner;
                                  rec.ParentFunction = function;
                                  foreach (var param in function.Signature.Parameters) rec.AddParameter(param);
+                                 Dictionary<Variable,Variable> newVarMap = new Dictionary<Variable,Variable>();
                                  foreach (var local in function.LocalVariables)
                                  {
-                                     rec.AddParameter(local);
+                                     Variable machineVar = new Variable($"while_{whileNumber}_{local.Name}", local.SourceLocation, local.Role);
+                                     machineVar.Type = local.Type;
+                                     machine.AddField(machineVar);
+                                     newVarMap.Add(local, machineVar);
                                  }
                                  foreach (var i in function.CreatesInterfaces) rec.AddCreatesInterface(i);
                                  rec.CanChangeState = function.CanChangeState;
@@ -539,14 +584,9 @@ namespace Plang.Compiler.Backend.Symbolic
                                  while (bodyEnumerator.MoveNext())
                                  {   
                                      IPStmt stmt = bodyEnumerator.Current;
-                                     switch (stmt)
-                                     {
-                                         case BreakStmt _:
-                                             loopBody.Add(new ReturnStmt(rec.SourceLocation, null));
-                                             break;
-                                         default:
-                                             loopBody.Add(stmt);
-                                             break;
+                                     IPStmt replaceBreak = ReplaceBreaks(stmt);
+                                     if (replaceBreak != null) {
+                                         loopBody.Add(ReplaceVars(replaceBreak, newVarMap));
                                      }
                                  }
                                  List<VariableAccessExpr> recArgs = new List<VariableAccessExpr>();
@@ -560,12 +600,18 @@ namespace Plang.Compiler.Backend.Symbolic
                                  loopBody = new List<IPStmt>(((CompoundStmt) HandleReceives(new CompoundStmt(rec.SourceLocation, loopBody), rec, machine)).Statements);
                                  rec.Body = new CompoundStmt(rec.SourceLocation, loopBody);
                                  if (machine != null) machine.AddMethod(rec);
+                                 // assign local variables
+                                 foreach (var local in function.LocalVariables)
+                                 {
+                                     result.Add(new AssignStmt(local.SourceLocation, new VariableAccessExpr(local.SourceLocation, newVarMap[local]), new VariableAccessExpr(local.SourceLocation, local)));
+                                 }
                                  // replace the while statement with a function call
                                  result.Add(recCall);
                                  foreach (var stmt in after.Statements)
                                  {
-                                     result.Add(stmt);
+                                     result.Add(ReplaceVars(stmt, newVarMap));
                                  }
+                                 whileNumber++;
                                  break;
                              default:
                                  if (after == null) return compound;

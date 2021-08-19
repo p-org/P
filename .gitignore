@@ -213,13 +213,14 @@ $RECYCLE.BIN/
 
 
 # Mac
-.DS_Store
+*.DS_Store
 
 /Bld/Drops/Binaries
 /Src/Pc/packages
 /.vs/
 /P.VC.db
 /packages/
+.idea/
 
 # all P compiler generated output files.
 Bld/*
@@ -232,77 +233,8 @@ PGenerated/
 *.zing
 !Src/**/Zing/*.zing
 stubs.c
-
-Src/PrtDist/Binaries/clusterconfiguration.xml
 *.idb
-/Ext
-/Src/Prt/Samples/ForeignTypes/Tester.ipdb
-/Src/Prt/Samples/ForeignTypes/Tester.iobj
-/Src/Prt/Samples/ForeignTypes/Tester.exe
-/Src/Prt/Samples/ForeignTypes/ForeignStringType.dll
-/Src/PrtDist/Samples/PingPongSimple/PRT_CONTAINER_LOG_1.txt
-/Src/PrtDist/Samples/PingPongSimple/test.dll
-/Src/Prt/Samples/ModelFnAndMachines/ServerClient.dll
-/Src/PrtDist/Samples/TechFest2015-Demo/Driver.dll
-/Src/PrtDist/Samples/PingPong/PingPong.dll
-/Tst/tempReset.txt
-/Tst/one.txt
-/Tst/failed-tests-for-reset.txt
-/Src/Tools/VSEditorExtensions/packages
-/Src/PrtDist/Samples/PingPongFast/test.dll
-/Tst/PrtTester/Tester.VC.db
-/Bld/PRT_CONTAINER_LOG_1.txt
-/Src/Pc/LegacyCompiler/Parser/Tokens.report.html
-/Src/Pc/LegacyCompiler/Parser/PParser.report.html
-/Src/Pc/LegacyCompiler/Parser/LParser.report.html
-/Src/Pc/LegacyCompiler/TokensTokens.dat
-/Src/Tools/CompilerProfileToCsv/CompilerProfileToCsv.VC.db
-/Tutorial/Sample0/Sample0.VC.db
-/Tutorial/Sample1/Sample1.VC.db
-/Tutorial/Sample1/main.h
-/Tutorial/Sample1/main.cs
-/Tutorial/Sample1/main.c
-/Tutorial/Sample1/linker.h
-/Tutorial/Sample1/linker.dll
-/Tutorial/Sample1/linker.cs
-/Tutorial/Sample1/linker.c
-/Tutorial/Sample2/linker.h
-/Tutorial/Sample2/linker.dll
-/Tutorial/Sample2/linker.cs
-/Tutorial/Sample2/linker.c
-/Tutorial/Sample2/client.h
-/Tutorial/Sample2/client.cs
-/Tutorial/Sample2/client.c
-/Tutorial/Sample2
-/Tutorial/Sample1/coffeemachine.h
-/Tutorial/Sample1/coffeemachine.cs
-/Tutorial/Sample1/coffeemachine.c
-/Tutorial/Sample1
-/Tutorial/Sample0/pingpong.h
-/Tutorial/Sample0/pingpong.cs
-/Tutorial/Sample0/pingpong.c
-/Tutorial/Sample0/linker.h
-/Tutorial/Sample0/linker.dll
-/Tutorial/Sample0/linker.cs
-/Tutorial/Sample0/linker.c
-/Tutorial/Sample0/main.h
-/Tutorial/Sample0/main.cs
-/Tutorial/Sample0/main.c
-/Tutorial/Sample0/coverage.txt
-/Tutorial/Sample0/coverage.dgml
-/Tutorial/Sample0/PRT_CONTAINER_LOG_1.txt
-/Bld/Drops/Headers
-/Tst/frontend-regression.txt
-/dotMemory
-/tmp
-/**/obj/
-nupkgs/
-/Tst/temp_builds
-*.db
-Src/Samples/ForeignTypes/CMakeCache.txt
-Src/Samples/ForeignTypes/CMakeFiles/
-Src/Samples/ForeignTypes/Makefile
-Src/Samples/ForeignTypes/cmake_install.cmake
+netcoreapp*/
 
 # IntelliJ
 .idea/*
@@ -310,6 +242,6 @@ Src/Samples/ForeignTypes/cmake_install.cmake
 # Maven
 target/
 *.class
-/Src/PRuntimes/RvmRuntime/target/*
-/Src/PRuntimes/SymbolicRuntime/target/*
-/Src/PRuntimes/PJavaRuntime/PJavaRuntime.iml
+
+#Mkdocs 
+site/

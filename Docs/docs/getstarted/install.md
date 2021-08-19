@@ -33,7 +33,6 @@ To install .Net Core 3.1 SDK use:
     ```
 
 === "Amazon Linux"
-    
     Installing .Net SDK on Amazon Linux ([details](https://docs.servicestack.net/deploy-netcore-to-amazon-linux-2-ami))
 
     ```
@@ -49,13 +48,13 @@ To install .Net Core 3.1 SDK use:
     Installing .Net SDK on Windows using the installer ([details](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-windows-x64-installer))
 
 ??? hint "Troubleshoot: Confirm that dotnet is correctly installed on your machine."
-    ```shell
-    dotnet --list-sdks
-    ```
+    `dotnet --list-sdks`
+
     You must see an SDK with `3.1.*` dotnet version installed.
     If you get `dotnet` command not found error, mostly likely, you need to add the path to dotnet in your `PATH`.
 
 ### [Step 2] Install Java Runtime
+
 P compiler uses [ANTLR](https://www.antlr.org/) parser and hence requires `java`. 
 If you already have Java installed please ignore this step. 
 To install Java use:
@@ -89,18 +88,15 @@ To install Java use:
     Installing Java on Windows ([details](https://www.java.com/en/download/help/windows_manual_download.html))
 
 ??? hint "Troubleshoot: Confirm that java is correctly installed on your machine."
-    ```shell
-    java --version
-    ```
-    If you get `java` command not found error, mostly likely, you need to add the path to dotnet in your `PATH`.
+    `java -version`
 
-### [Step 3] Install P compiler
+    If you get `java` command not found error, mostly likely, you need to add the path to `java` in your `PATH`.
+
+### [Step 3] Install P Compiler
 
 Install the P compiler as a `dotnet tool` using the following command:
 
-```shell
-dotnet tool install --global P
-```
+`dotnet tool install --global P`
 
 ??? hint "Troubleshoot: Confirm that `pc` is correctly installed on your machine"
 
@@ -115,17 +111,15 @@ dotnet tool install --global P
 ??? help "Updating P Compiler"
     You can update the version of `P` compiler by running the following command:
 
-    ```shell
-    dotnet tool update --global P
-    ```
+    `dotnet tool update --global P`
+
 ### [Step 4] Install P Checker
+
 The current P checker depends on [Coyote](https://microsoft.github.io/coyote/) (previously [P#](https://github.com/p-org/PSharp))
 
 Install the `Coyote` version `1.0.5` using the following command:
 
-```shell
-dotnet tool install --global Microsoft.Coyote.CLI --version 1.0.5
-```
+`dotnet tool install --global Microsoft.Coyote.CLI --version 1.0.5`
 
 ??? hint "Troubleshoot: Confirm that `coyote` is correctly installed on your machine"
 
@@ -156,8 +150,6 @@ We highly recommend that you create the following alias as we use it in the rest
     function pmc { coyote test $args }
     ```
 
-
-
 ### [Step 5] Recommended IDE (Optional)
 
 - For developing P programs, we recommend using [IntelliJ IDEA](https://www.jetbrains.com/idea/) as we support basic [P syntax highlighting](syntaxhighlight.md) for IntelliJ.
@@ -167,5 +159,5 @@ We highly recommend that you create the following alias as we use it in the rest
 - For debugging generated Java code, we recommend using [IntelliJ IDEA](https://www.jetbrains.com/idea/)
 
 ## Using P
- Great :smile:! You are all set to compile and test your first P program :mortar_board:!
 
+ Great :smile:! You are all set to compile and test your first P program :mortar_board:!

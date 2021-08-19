@@ -1,7 +1,6 @@
 !!! tip ""  
-    **We recommend that you start with the [Tutorials](tutsoutline.md) to get
-    familiar with the P language and its tool chain.**
-
+    **We recommend that you start with the [Tutorials](tutsoutline.md) to get familiar with
+    the P language and its tool chain.**
 
 ??? note "P Top Level Declarations Grammar"
 
@@ -19,21 +18,21 @@
     ;
     ```
 
-A P program consists of a collection of the following high-level declarations:
+A P program consists of a collection of following high-level declarations:
 
-| Top Level Declarations |                                                               Description                                                               |              Details Link               |
-|:----------------------:|:---------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------:|
-|   User Defined Types   |                  P supports users defined types as well as foreign types (types that are defined in external language)                  |    [DataTypes](manual/datatypes.md)     |
-|         Enums          |                          P supports declaring enum values that can be used as int constants (update the link)                           |    [DataTypes](manual/datatypes.md)     |
-|         Events         |                                    Events are used by state machines to communicate with each other                                     |       [Events](manual/events.md)        |
-|       Interfaces       |                    Each machine in P implements an interface specifying the events the machine is willing to receive                    |    [Interfaces](manual/interface.md)    |
-|     State Machines     |                               P state machines are used to model or implement the behavior of the system                                |  [State Machines](manual/machines.md)   |
-| Specification Monitors |        P specification monitors are used to write the safety and liveness specifications the system must satisfy for correctness        |   [Spec Monitors](manual/monitors.md)   |
-|    Global Functions    |                    P supports declaring global functions that can be shared across state machines and spec monitors                     | [Global Functions](manual/functions.md) |
-|     Module System      |         P supports a module system for implementing and testing the system modularly by dividing them into separate components          | [Module System](manual/modulesystem.md) |
-|       Test Cases       | P test cases helps programmers to write different finite scenarios under which they would like to check the correctness of their system |    [Test Cases](manual/testcases.md)    |
+|            Top Level Declarations            |                                                               Description                                                               |
+|:--------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------|
+|  [User Defined Types](manual/datatypes.md)   |                  P supports users defined types as well as foreign types (types that are defined in external language)                  |
+|         [Enums](manual/datatypes.md)         |                          P supports declaring enum values that can be used as int constants (update the link)                           |
+|          [Events](manual/events.md)          |                                    Events are used by state machines to communicate with each other                                     |
+|      [Interfaces](manual/interface.md)       |                    Each machine in P implements an interface specifying the events the machine is willing to receive                    |
+|  [State Machines](manual/statemachines.md)   |                               P state machines are used to model or implement the behavior of the system                                |
+| [Specification Monitors](manual/monitors.md) |        P specification monitors are used to write the safety and liveness specifications the system must satisfy for correctness        |
+|   [Global Functions](manual/functions.md)    |                    P supports declaring global functions that can be shared across state machines and spec monitors                     |
+|   [Module System](manual/modulesystem.md)    |         P supports a module system for implementing and testing the system modularly by dividing them into separate components          |
+|      [Test Cases](manual/testcases.md)       | P test cases helps programmers to write different finite scenarios under which they would like to check the correctness of their system |
 
-!!! Tip "Models, Specifications, Model Checking Scenario"
+!!! Tip "Models, Specifications, Model Checking Scenario"  
     A quick primer on what a model
     is, versus a specification, and model checking scenarios: (1) A specification says what
     the system should do (correctness properties). (2) A model captures the details of how the

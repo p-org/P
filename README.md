@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="images/icon.png" width="20%">
+  <img src="Icon/icon.png" width="20%">
   <h2>Modular and Safe Programming for Distributed Systems</h2>
 </div>
 

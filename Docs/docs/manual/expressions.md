@@ -1,7 +1,10 @@
+A Function in P can be arbitrary piece of imperative code which enables programmers to capture complex protocol logic in their state machines.
+P supports the common expressions language constructs just like other imperative programming languages like Java and C# ([example](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/expressions.html)). 
+
 ???+ note "P Expressions Grammar"
 
     ```
-    expr : primitive                                      # PrimitiveExpr
+    expr : primitive                                  # PrimitiveExpression
      | LPAREN unnamedTupleBody RPAREN                 # UnnamedTupleExpr
      | LPAREN namedTupleBody RPAREN                   # NamedTupleExpr
      | LPAREN expr RPAREN                             # ParenExpr

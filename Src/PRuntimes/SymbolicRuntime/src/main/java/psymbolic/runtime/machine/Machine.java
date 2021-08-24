@@ -11,7 +11,7 @@ import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.Guard;
 
 import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public abstract class Machine {
@@ -26,12 +26,12 @@ public abstract class Machine {
     public final EventBuffer sendBuffer;
     public final DeferQueue deferredQueue;
     // note: will not work for receives in functions outside the machine
-    private PrimitiveVS<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> receives = new PrimitiveVS<>();
-    public final Map<String, Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> continuations = new HashMap<>();
+    private PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> receives = new PrimitiveVS<>();
+    public final Map<String, Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> continuations = new HashMap<>();
     public final Set<Runnable> clearContinuationVars = new HashSet<>();
 
     public void receive(String continuationName, Guard pc) {
-        PrimitiveVS<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> handler = new PrimitiveVS<>(continuations.get(continuationName)).restrict(pc);
+        PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> handler = new PrimitiveVS<>(continuations.get(continuationName)).restrict(pc);
         receives = receives.merge(handler);
     }
 
@@ -121,14 +121,15 @@ public abstract class Machine {
 
             Guard receiveGuard = getBlockedOnReceiveGuard().and(pc);
             if (!receiveGuard.isFalse()) {
-                PrimitiveVS<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> runNow = receives.restrict(receiveGuard);
-                receives = receives.restrict(receiveGuard.not());
+                PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> runNow = receives.restrict(receiveGuard);
                 Message m = eventHandlerReturnReason.getMessageSummary();
                 EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
-                nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not()));
-                for (GuardedValue<Function<Guard, BiConsumer<EventHandlerReturnReason, Message>>> receiver : runNow.getGuardedValues()) {
-                    receiver.getValue().apply(receiver.getGuard()).accept(nextEventHandlerReturnReason, m.restrict(receiver.getGuard()));
+                Guard deferred = Guard.constFalse();
+                for (GuardedValue<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> receiver : runNow.getGuardedValues()) {
+                    deferred = deferred.or(receiver.getValue().apply(receiver.getGuard()).apply(nextEventHandlerReturnReason, m.restrict(receiver.getGuard())));
                 }
+                receives = receives.restrict(receiveGuard.not().or(deferred));
+                nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not().or(deferred)));
                 eventHandlerReturnReason = nextEventHandlerReturnReason;
             } else {
                 // clean up receives

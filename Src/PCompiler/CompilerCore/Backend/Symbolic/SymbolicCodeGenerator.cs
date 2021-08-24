@@ -1135,27 +1135,9 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "}");
             var rootPCScope = context.FreshPathConstraintScope();
 
-            string returnType = null;
-            var returnConvention = GetReturnConvention(continuation);
-            switch (returnConvention)
-            {
-                case FunctionReturnConvention.RETURN_VALUE:
-                    returnType = GetSymbolicType(continuation.Signature.ReturnType);
-                    break;
-                case FunctionReturnConvention.RETURN_VOID:
-                    returnType = "void";
-                    break;
-                case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
-                    returnType = GetSymbolicType(continuation.Signature.ReturnType);
-                    break;
-                case FunctionReturnConvention.RETURN_GUARD:
-                    returnType = "Guard";
-                    break;
-            }
-
             var continuationName = context.GetContinuationName(continuation);
 
-            context.WriteLine(output, $"{returnType} ");
+            context.WriteLine(output, $"Guard "); // return type
             context.Write(output, continuationName);
 
             context.WriteLine(output, $"(");
@@ -1215,23 +1197,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, $"new DeferEventHandler(e.getValue()).handleEvent(e.getGuard(), this, {messageName}.restrict(e.getGuard()).getPayload(), outcome);");
             context.WriteLine(output, "}");
             context.WriteLine(output, "}");
-            context.ReturnType = continuation.Signature.ReturnType;
-            if (continuation.After != null)
-                WriteStmt(continuation, context, output, funcContext, continuation.After);
-            switch (returnConvention)
-            {
-                case FunctionReturnConvention.RETURN_VALUE:
-                    context.WriteLine(output, $"return {CompilationContext.ReturnValue};");
-                    break;
-                case FunctionReturnConvention.RETURN_VOID:
-                    break;
-                case FunctionReturnConvention.RETURN_VALUE_OR_EXIT:
-                    context.WriteLine(output, $"return {CompilationContext.ReturnValue}.restrict({rootPCScope.PathConstraintVar});");
-                    break;
-                case FunctionReturnConvention.RETURN_GUARD:
-                    context.WriteLine(output, $"return {rootPCScope.PathConstraintVar};");
-                    break;
-            }
+            context.WriteLine(output, "return deferGuard;");
             context.WriteLine(output, "}");
             context.WriteLine(output);
             context.ReturnType = null;

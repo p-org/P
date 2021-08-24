@@ -30,10 +30,12 @@ Microsoft Windows 8 and Windows Phone.
 
 ## Let the fun begin!
 
-You can find most of the information about the P framework on this webpage:
-[how does P work](./howdoesitwork.md), [getting started](getstarted/install.md), [tutorials](tutsoutline.md), [case studies](casestudies.md) and related [research publications](publications.md). 
+You can find most of the information about the P framework on: **[http://p-org.github.io/P/](http://p-org.github.io/P/)**.
+
+[What is P?](http://p-org.github.io/P/whatisP/), [Getting Started](http://p-org.github.io/P/getstarted/install/), [Tutorials](http://p-org.github.io/P/tutsoutline/), [Case Studies](http://p-org.github.io/P/casestudies/) and related [Research Publications](http://p-org.github.io/P/publications/).
 If you have any further questions, please feel free to create an [issue](https://github.com/p-org/P/issues), ask on
 [discussions](https://github.com/p-org/P/discussions), or [email us](mailto:ankushdesai@gmail.com)
+
 
 > _P has always been a collaborative project between industry and academia (since 2013) :drum:. The P team welcomes contributions and suggestions from all of you!! :punch:. See [CONTRIBUTING](CONTRIBUTING.md) for more information._
 

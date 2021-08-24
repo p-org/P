@@ -66,7 +66,7 @@ nav:
     - P Program (Outline) : manualoutline.md
     - P DataTypes: manual/datatypes.md
     - P Events: manual/events.md
-    - P Interfaces: manual/interface.md
+    # - P Interfaces: manual/interface.md
     - P State Machines: manual/statemachines.md
     - P Monitors: manual/monitors.md
     - P Functions: manual/functions.md

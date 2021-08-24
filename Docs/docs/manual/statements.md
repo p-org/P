@@ -34,7 +34,8 @@ P supports common imperative programming language statement constructs like whil
     /* A r-value is an expression that can’t have a value assigned to it which 
     means r-value can appear on right but not on left hand side of an assignment operator(=)*/
     rvalue : expr ;
-
+    # rvalueList is a comma separated list of rvalue.
+    
     /* case block inside a receive statement */
     recvCase : case eventList : anonFunction
     ```
@@ -344,10 +345,10 @@ New statement is used to create an instance of a machine in P.
 
 ### Function Call
 
-Function calls in P are similar to any other imperative programming languages. 
+Function calls in P are similar to any other imperative programming languages.
 
 !!! Note ""
-    Note that the parameters passed to the functions and the return values are pass-by-value! 
+    Note that the parameters passed to the functions and the return values are pass-by-value!
 
 **Syntax**: `iden ( rvalue? ) ;`
 

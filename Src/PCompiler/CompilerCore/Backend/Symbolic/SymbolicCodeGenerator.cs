@@ -1197,6 +1197,13 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, $"new DeferEventHandler(e.getValue()).handleEvent(e.getGuard(), this, {messageName}.restrict(e.getGuard()).getPayload(), outcome);");
             context.WriteLine(output, "}");
             context.WriteLine(output, "}");
+            if (continuation.After != null)
+            {
+                var afterCaseScope = context.FreshPathConstraintScope();
+                context.WriteLine(output, $"Guard {afterCaseScope.PathConstraintVar} = {rootPCScope.PathConstraintVar}.and(deferGuard.not());");
+                var afterCaseContext = ControlFlowContext.FreshFuncContext(context, afterCaseScope);
+                WriteStmt(continuation, context, output, afterCaseContext, continuation.After);
+            }
             context.WriteLine(output, "return deferGuard;");
             context.WriteLine(output, "}");
             context.WriteLine(output);

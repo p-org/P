@@ -124,12 +124,12 @@ public abstract class Machine {
                 PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> runNow = receives.restrict(receiveGuard);
                 Message m = eventHandlerReturnReason.getMessageSummary();
                 EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
+                nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not()));
                 Guard deferred = Guard.constFalse();
                 for (GuardedValue<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> receiver : runNow.getGuardedValues()) {
                     deferred = deferred.or(receiver.getValue().apply(receiver.getGuard()).apply(nextEventHandlerReturnReason, m.restrict(receiver.getGuard())));
                 }
                 receives = receives.restrict(receiveGuard.not().or(deferred));
-                nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not().or(deferred)));
                 eventHandlerReturnReason = nextEventHandlerReturnReason;
             } else {
                 // clean up receives

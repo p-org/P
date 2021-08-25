@@ -56,7 +56,7 @@ nav:
     - Paxos Made Simple: tutorial/paxos.md
 - How-to guides:
     - Modeling Shared Memory Concurrency: howtoguides/sharedmemory.md
-    - Model based testing of implementation: howtoguides/modelbasedtesting.md
+    # - Model based testing of implementation: howtoguides/modelbasedtesting.md
     - Importance of Liveness Specifications: howtoguides/importanceliveness.md
     - Debugging Error Traces (counter examples): howtoguides/debuggingerror.md
 - Power Users:
@@ -67,9 +67,9 @@ nav:
     - P DataTypes: manual/datatypes.md
     - P Events: manual/events.md
     # - P Interfaces: manual/interface.md
-    - P State Machines: manual/statemachines.md
+    # - P State Machines: manual/statemachines.md
     - P Monitors: manual/monitors.md
-    - P Functions: manual/functions.md
+    # - P Functions: manual/functions.md
     - P Expressions: manual/expressions.md
     - P Statements: manual/statements.md
     - P Module System: manual/modulesystem.md

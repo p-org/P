@@ -5,6 +5,7 @@ import psymbolic.runtime.Event;
 import psymbolic.runtime.Message;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.eventhandlers.EventHandler;
+import psymbolic.runtime.machine.eventhandlers.IgnoreEventHandler;
 import psymbolic.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.Guard;
@@ -12,22 +13,33 @@ import psymbolic.valuesummary.util.ValueSummaryChecks;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 public abstract class State {
     private final Map<Event, EventHandler> eventHandlers;
     private final String name;
+    private final List<Event> ignored;
     public void entry(Guard pc, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {}
     public void exit(Guard pc, Machine machine) {}
 
     public State(String name, EventHandler... eventHandlers) {
         this.eventHandlers = new HashMap<>();
         this.name = name;
+        this.ignored = new ArrayList<>();
     }
 
     public void addHandlers(EventHandler... eventHandlers) {
         for (EventHandler handler : eventHandlers) {
             this.eventHandlers.put(handler.event, handler);
+            if (handler instanceof IgnoreEventHandler) {
+                ignored.add(handler.event);
+            }
         }
+    }
+
+    public Boolean isIgnored(Event event) {
+        return ignored.contains(event);
     }
 
     public PrimitiveVS<Boolean> hasHandler(Message message) {

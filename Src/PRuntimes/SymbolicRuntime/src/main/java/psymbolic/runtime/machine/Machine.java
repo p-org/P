@@ -119,21 +119,23 @@ public abstract class Machine {
             // TODO: Determine if this can be safely optimized into a concrete boolean
             Guard performedTransition = Guard.constFalse();
 
-            Guard receiveGuard = getBlockedOnReceiveGuard().and(pc);
-            if (!receiveGuard.isFalse()) {
-                PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> runNow = receives.restrict(receiveGuard);
-                Message m = eventHandlerReturnReason.getMessageSummary();
-                EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
-                nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not()));
-                Guard deferred = Guard.constFalse();
-                for (GuardedValue<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> receiver : runNow.getGuardedValues()) {
-                    deferred = deferred.or(receiver.getValue().apply(receiver.getGuard()).apply(nextEventHandlerReturnReason, m.restrict(receiver.getGuard())));
-                }
-                receives = receives.restrict(receiveGuard.not().or(deferred));
-                eventHandlerReturnReason = nextEventHandlerReturnReason;
-            } else {
-                // clean up receives
-                for (Runnable r : clearContinuationVars) { r.run(); }
+            if (!eventHandlerReturnReason.getRaiseCond().isFalse()) {
+              Message m = eventHandlerReturnReason.getMessageSummary();
+              Guard receiveGuard = getBlockedOnReceiveGuard().and(pc).and(this.currentState.apply(m.getEvent(), (x, msg) -> x.isIgnored(msg)).getGuardFor(false));
+              if (!receiveGuard.isFalse()) {
+                  PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> runNow = receives.restrict(receiveGuard);
+                  EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
+                  nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not()));
+                  Guard deferred = Guard.constFalse();
+                  for (GuardedValue<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> receiver : runNow.getGuardedValues()) {
+                      deferred = deferred.or(receiver.getValue().apply(receiver.getGuard()).apply(nextEventHandlerReturnReason, m.restrict(receiver.getGuard())));
+                  }
+                  receives = receives.restrict(receiveGuard.not().or(deferred));
+                  eventHandlerReturnReason = nextEventHandlerReturnReason;
+              } else {
+                  // clean up receives
+                  for (Runnable r : clearContinuationVars) { r.run(); }
+              }
             }
 
             // Inner loop: process sequences of 'goto's and 'raise's.

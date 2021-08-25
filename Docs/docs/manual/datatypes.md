@@ -1,7 +1,7 @@
 P Supports the following data types:
 
 | P Types                                       | Description                                                                                                                |
-|:----------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------|
+| :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
 | [Primitive](#primitive-data-types)            | `int`, `bool`, `float`, `string`, `enum`, `machine`, and `event`.                                                          |
 | [Record](#record-data-types)                  | `tuple` and `named tuple`                                                                                                  |
 | [Collection](#collection-data-types)          | `map`, `seq`, and `set`                                                                                                    |
@@ -201,8 +201,8 @@ P supports assigning names to type i.e., creating `typedef`. Note that these typ
     // defining a type tLookUpRequestX
     type tLookUpRequestX = (client: machine, requestId: int, key: string);
     ```
-    The programmers can use type tLookUpRequest as a short hand for referring to the type (client: machine, requestId: int, key: string);
-    Note that the types tLookUpRequest and tLookUpRequestX are same, the compiler does not distinguish between the two types.
+    The programmers can use type `tLookUpRequest` as a short hand for referring to the type `(client: machine, requestId: int, key: string)`
+    Note that the types `tLookUpRequest` and `tLookUpRequestX` are same, the compiler does not distinguish between the two types.
 
 
 ### Universal Supertypes
@@ -256,7 +256,7 @@ initialized to their default values.
     ```
 
     | P Types                        | Default Value                                                      |
-    |:-------------------------------|:-------------------------------------------------------------------|
+    | :----------------------------- | :----------------------------------------------------------------- |
     | int                            | 0                                                                  |
     | float                          | 0.0                                                                |
     | bool                           | false                                                              |

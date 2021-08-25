@@ -274,6 +274,63 @@ P supports the following comparison binary operations on integers or floats: `<`
 
 ### Cast
 
+P supports two super types `any` and `data` ([more details](datatypes.md#universal-supertypes)). To cast values from these supertypes to the actual types, P supports the `as` cast expression.
+
+**Syntax:** `expr as T`
+
+`expr` expression is cast to type `T` and if the cast is not valid then it leads to dynamic type-cast error.
+
+``` java
+type tRecord = (key: int, val: any);
+...
+var st: set[tRecord];
+var x: any;
+var x_i: string;
+var st_i: set[(key: int, val: string)];
+
+x_i = x as string;
+st += ((key = 1, val = "hello"));
+st_i = st as set[(key: int, val: string)];
+...
+```
+
 ### Coerce
 
+P supports coercing of any value of type `float` to `int` and also any `enum` element to `int`.
+
+**Syntax:** `expr to T`
+
+`expr` expression is coerced to type `T`. We currently support only coercing of type `float` to `int` and also any `enum` element to `int`.
+
+``` java
+enum Status {
+    ERROR = 101,
+    SUCCESS = 102
+}
+...
+var x_f : float;
+var x_i: int;
+
+x_f = 101.0;
+x_i = x_f to int;
+assert x_i == ERROR to int;
+```
+
 ### Choose
+
+P provides the `choose` primitive to model data nondeterminism in P programs. The P checker then explores the behavior of the program for all possible values that can be returned by the `choose` operation.
+
+**Syntax:** `choose()` or `choose(expr)`
+
+`expr` can either be a `int` value or a collection. For `choose(x)`, when `x` is an integer, `choose(x)` returns a random value between `0 to x` (including x), when `x` is a collection then `choose(x)` returns a random element from the collection.
+
+``` java
+choose() // returns true or false, is equivalent to $
+choose(10) // returns an integer x, 0 <= x <= 10
+choose(x) // if x is set or seq then returns a value from that collection
+```
+
+The choose operation can be used to model nondeterministic environment machines that generate random inputs for the system. Another use case could be to model nondeterministic behavior within the system itself where the system can randomly choose to `timeout` or `fail` or `drop messages`.
+
+!!! note ""
+    Performing a `choose` over an empty collection leads to an error. Also, `choose` from a `map` value returns a random key from the map.

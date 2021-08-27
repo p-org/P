@@ -1,7 +1,8 @@
 /*****************************************************************************************
 The coordinator machine coordinates between all the participants and
-based on responses received from each participant decided to commit or abort the transaction.
-It receives write and read transactions from the clients and services these transactions sequentially one by one.
+based on responses received from all the participants decided to commit or abort the transaction.
+The coordinator receives write and read transactions from the clients and handles these
+transactions sequentially one by one.
 ******************************************************************************************/
 
 // Events used by coordinator to communicate with the participants
@@ -15,26 +16,28 @@ type tPrepareResp = (participant: Participant, transId: int, status: tTransStatu
 
 machine Coordinator
 {
-	var participants: seq[machine];
-	var pendingWrTrans: tWriteTransReq;
+	var participants: set[Participant];
+	var currentWriteTransReq: tWriteTransReq;
 	var currTransId:int;
 	var timer: Timer;
 
 	start state Init {
-		entry (payload: seq[machine]){
-			var i : int; 
+		entry (payload: set[Participant]){
 			//initialize variables
 			participants = payload;
-			i = 0; currTransId = 0; timer = CreateTimer(this);
+			currTransId = 0; timer = CreateTimer(this);
 
+            // inform the monitor the number of participants in the system
+            // todo: move this to the test-driver?
 			announce eMonitor_AtomicityInitialize, sizeof(participants);
+
 			goto WaitForTransactions;
 		}
 	}
 
 	state WaitForTransactions {
 		on eWriteTransReq do (wTrans : tWriteTransReq) {
-			pendingWrTrans = wTrans;
+			currentWriteTransReq = wTrans;
 			currTransId = currTransId + 1;
 			BroadcastToAllParticipants(ePrepareReq, (coordinator = this, transId = currTransId, rec = wTrans.rec));
 
@@ -112,7 +115,7 @@ machine Coordinator
 	//helper function to send messages to all replicas
 	fun BroadcastToAllParticipants(message: event, payload: any)
 	{
-		var i: int; i = 0;
+		var i: int;
 		while (i < sizeof(participants)) {
 			send participants[i], message, payload;
 			i = i + 1;

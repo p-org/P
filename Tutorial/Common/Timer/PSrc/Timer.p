@@ -14,11 +14,9 @@ machine Timer
 	state WaitForTimerRequests {
 		on eStartTimer do { if($) send client, eTimeOut; }
 		on eCancelTimer do {
-		    if ($) // or choose()
+		    if ($)
             {
-                // the timeout can happen concurrently when the user calls cancel timer
                 send client, eCancelTimerFailed;
-                send client, eTimeOut;
             } else {
                 send client, eCancelTimerSuccess;
             }
@@ -57,7 +55,7 @@ fun CancelTimer(timer: Timer)
 		case eCancelTimerSuccess: { print "Timer Cancelled Successful"; }
 		case eCancelTimerFailed: {
 			receive {
-				case eTimeOut: { print "Timer Cancelled Successful"; }
+				case eTimeOut: { print "Timer Cancel Failed, handled the Timeout"; }
 			}
 		}
 	}

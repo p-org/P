@@ -57,12 +57,12 @@ nav:
     - Two Phase Commit: tutorial/twophasecommit.md
     - Failure Detector: tutorial/paxos.md
     - Paxos Made Simple: tutorial/paxos.md
-- How-to guides:
+- How-to Guides:
     - Modeling Shared Memory Concurrency: howtoguides/sharedmemory.md
     # - Model based testing of implementation: howtoguides/modelbasedtesting.md
     - Importance of Liveness Specifications: howtoguides/importanceliveness.md
     - Debugging Error Traces (counter examples): howtoguides/debuggingerror.md
-- Power Users:
+- Advanced Users:
     - Structure of a P Program: advanced/structureOfPProgram.md
     - P Project File: advanced/PProject.md
 - Language Manual:

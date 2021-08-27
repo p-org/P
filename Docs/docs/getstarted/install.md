@@ -135,7 +135,7 @@ We highly recommend that you create the following alias as we use it in the rest
 
 === "On MacOS or Linux"
 
-    Add following alias to the bash profile (`~/.bash_profile` or equivalent) 
+    Add following alias to the bash profile (`~/.bash_profile` or the equivalent on your system) 
     so that you can invoke the P checker (`pmc`) directly.
     ```shell
     alias pmc='coyote test'

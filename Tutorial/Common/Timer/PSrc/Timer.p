@@ -3,6 +3,7 @@ The timer state machine models the non-deterministic behavior of an OS timer
 ******************************************************************************************/
 machine Timer
 {
+    // user of the timer
 	var client: machine;
 	start state Init {
 		entry (_client : machine){
@@ -27,7 +28,7 @@ machine Timer
 /************************************************
 Events used to interact with the timer machine
 ************************************************/
-event eStartTimer: int;
+event eStartTimer;
 event eCancelTimer;
 event eCancelTimerFailed;
 event eCancelTimerSuccess;
@@ -42,21 +43,18 @@ fun CreateTimer(client: machine) : Timer
 }
 
 // start timer
-fun StartTimer(timer: Timer, timeout: int)
+fun StartTimer(timer: Timer)
 {
-	send timer, eStartTimer, timeout;
+	send timer, eStartTimer;
 }
 
 // cancel timer
 fun CancelTimer(timer: Timer)
 {
 	send timer, eCancelTimer;
+	// wait for cancel response, nothing different is done if cancel failed or succeeded.
 	receive {
 		case eCancelTimerSuccess: { print "Timer Cancelled Successful"; }
-		case eCancelTimerFailed: {
-			receive {
-				case eTimeOut: { print "Timer Cancel Failed, handled the Timeout"; }
-			}
-		}
+		case eCancelTimerFailed: { print "Timer Cancel Failed!"; }
 	}
 }

@@ -66,13 +66,12 @@ nav:
     - Structure of a P Program: advanced/structureOfPProgram.md
     - P Project File: advanced/PProject.md
 - Language Manual:
-    - P Program (Outline) : manualoutline.md
+    - P Program (Outline): manualoutline.md
     - P DataTypes: manual/datatypes.md
     - P Events: manual/events.md
-    # - P Interfaces: manual/interface.md
-     - P State Machines: manual/statemachines.md
+    - P State Machines: manual/statemachines.md
     - P Monitors: manual/monitors.md
-     - P Functions: manual/functions.md
+    - P Functions: manual/functions.md
     - P Expressions: manual/expressions.md
     - P Statements: manual/statements.md
     - P Module System: manual/modulesystem.md

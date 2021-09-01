@@ -26,7 +26,7 @@ machine SaneUser {
                         // lets make the next coffee
                         cups = cups - 1;
                     }
-                    case eNoBeansError, eNoWaterError: {
+                    case eNoBeansError, eNoWaterError, eWarmerError: {
 
                         // lets fill the beans or water and reset the machine
                         // and go back to making espresso

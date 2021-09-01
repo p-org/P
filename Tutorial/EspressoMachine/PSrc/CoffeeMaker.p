@@ -10,6 +10,7 @@ event eStartSteamerReq;
 event eStopSteamerReq;
 event eNoWaterError;
 event eNoBeansError;
+event eWarmerError;
 event eGrindBeansCompleted;
 event eEspressoCompleted;
 

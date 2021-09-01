@@ -34,8 +34,9 @@ machine CoffeeMakerControlPanel
             StartTimer(timer);
             BeginHeatingCoffeeMaker();
         }
+
         on eTimeOut goto EncounteredError with {
-            print "Failed to heat-up the CoffeeMaker in Time, Please reset the machine!";
+            print "Failed to heat-up the CoffeeMaker in time, Please reset the machine!";
         }
         on eWarmUpCompleted goto CoffeeMakerReady with {
             CancelTimer(timer);
@@ -66,6 +67,7 @@ machine CoffeeMakerControlPanel
             print "No beans to grind! Please refill beans and reset the machine!";
         }
         on eGrindBeansCompleted goto CoffeeMakerRunEspresso;
+
         defer eOpenGroundsDoor, eCloseGroundsDoor;
         // Can't make steam while we are making espresso
         ignore eSteamerButtonOn, eSteamerButtonOff;

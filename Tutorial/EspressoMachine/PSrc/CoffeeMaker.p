@@ -6,8 +6,8 @@ event eWarmUpReq;
 event eWarmUpCompleted;
 event eGrindBeansReq;
 event eStartEspressoReq;
-event eStartSteamer;
-event eStopSteamer;
+event eStartSteamerReq;
+event eStopSteamerReq;
 event eNoWaterError;
 event eNoBeansError;
 event eGrindBeansCompleted;
@@ -42,12 +42,12 @@ machine EspressoCoffeeMaker
 		        send controller, eEspressoCompleted;
 	        }
         }
-        on eStartSteamer do {
+        on eStartSteamerReq do {
             if (!HasWater()) {
 		        send controller, eNoWaterError;
 	        }
         }
-        on eStopSteamer do { /* steamer stopped */ }
+        on eStopSteamerReq do { /* steamer stopped */ }
     }
 
     fun HasBeans() : bool { return $; }

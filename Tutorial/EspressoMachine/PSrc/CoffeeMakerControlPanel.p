@@ -21,9 +21,9 @@ machine CoffeeMakerControlPanel
     var cofferMakerState: tCoffeeMakerState;
 
     start state Init {
-        entry (_coffMkr: EspressoCoffeeMaker) {
+        entry {
             cofferMakerState = NotWarmedUp;
-            coffeeMaker = _coffMkr;
+            coffeeMaker = new EspressoCoffeeMaker(this);
             timer = CreateTimer(this);
             goto WarmUpCoffeeMaker;
         }
@@ -86,7 +86,7 @@ machine CoffeeMakerControlPanel
             StartSteamer();
         }
         on eSteamerButtonOff  goto CoffeeMakerReady with {
-            StopSteamer(coffeeMachine);
+            StopSteamer();
         }
         defer eOpenGroundsDoor, eCloseGroundsDoor;
         // can't make espresso or steam while we are making steam
@@ -94,7 +94,7 @@ machine CoffeeMakerControlPanel
     }
 
     state CoffeeMakerDoorOpened {
-        on eDoorClosed  do {
+        on eCloseGroundsDoor do {
             if(cofferMakerState == NotWarmedUp)
                 goto WarmUpCoffeeMaker;
             else
@@ -108,7 +108,7 @@ machine CoffeeMakerControlPanel
             cofferMakerState = Error;
         }
         on eResetCoffeeMaker goto WarmUpCoffeeMaker;
-        defer eDoorOpened, eDoorClosed; // door opened and closed, will handle these signals later.
+        defer eOpenGroundsDoor, eCloseGroundsDoor; // door opened and closed, will handle these signals later.
         ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff; // error, ignore these requests.
     }
 

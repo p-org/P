@@ -1,3 +1,4 @@
+<!-- P project file for the Two Phase Commit example -->
 <Project>
 <ProjectName>TwoPhaseCommit</ProjectName>
 <InputFiles>
@@ -6,4 +7,6 @@
 	<PFile>./PTst/</PFile>
 </InputFiles>
 <OutputDir>./PGenerated/</OutputDir>
+<!-- Add the dependencies for the Timer machine -->
+<IncludeProject>../Common/Timer/Timer.pproj</IncludeProject>
 </Project>

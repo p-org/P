@@ -1,0 +1,1 @@
+module TwoPhaseCommit = { Coordinator, Participant, Timer };

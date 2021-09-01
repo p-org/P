@@ -1,5 +1,5 @@
 // User defined types
-type tRecord = (key: string, val: int, seqN: int);
+type tRecord = (key: string, val: int);
 type tWriteTransReq = (client: Client, rec: tRecord);
 type tWriteTransResp = (transId: int, status: tTransStatus);
 type tReadTransReq = (client: Client, key: string);
@@ -30,8 +30,8 @@ machine Client {
     // number of transactions issued
     var N: int;
     start state Init {
-	    entry (payload : (coor: Coordinator, n : int)) {
-	        coordinator = payload.coor;
+	    entry (payload : (coordinator: Coordinator, n : int)) {
+	        coordinator = payload.coordinator;
 	        N = payload.n;
 			goto SendWriteTransaction;
 		}

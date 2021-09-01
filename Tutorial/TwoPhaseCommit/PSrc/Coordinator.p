@@ -27,9 +27,7 @@ machine Coordinator
 			participants = payload;
 			currTransId = 0; timer = CreateTimer(this);
 
-            // inform the monitor the number of participants in the system
-            // todo: move this to the test-driver?
-			announce eMonitor_AtomicityInitialize, sizeof(participants);
+
 
 			goto WaitForTransactions;
 		}
@@ -42,7 +40,7 @@ machine Coordinator
 			BroadcastToAllParticipants(ePrepareReq, (coordinator = this, transId = currTransId, rec = wTrans.rec));
 
 			//start timer while waiting for responses from all participants
-			StartTimer(timer, 100);
+			StartTimer(timer);
 
 			goto WaitForPrepareResponses;
 		}
@@ -101,14 +99,14 @@ machine Coordinator
 	fun DoGlobalAbort(respStatus: tTransStatus) {
 		// ask all participants to abort and fail the transaction
 		BroadcastToAllParticipants(eAbortTrans, currTransId);
-		send pendingWrTrans.client, eWriteTransResp, (transId = currTransId, status = respStatus);
+		send currentWriteTransReq.client, eWriteTransResp, (transId = currTransId, status = respStatus);
 		CancelTimer(timer);
 	}
 
 	fun DoGlobalCommit() {
         // ask all participants to commit and respond to client
         BroadcastToAllParticipants(eCommitTrans, currTransId);
-        send pendingWrTrans.client, eWriteTransResp, (transId = currTransId, status = SUCCESS);
+        send currentWriteTransReq.client, eWriteTransResp, (transId = currTransId, status = SUCCESS);
         CancelTimer(timer);
     }
 

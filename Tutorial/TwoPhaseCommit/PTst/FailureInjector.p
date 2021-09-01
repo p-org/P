@@ -6,8 +6,17 @@ Note that as the model-checker explores all possible interleavings. The failure 
 */
 machine FailureInjector {
 	start state Init {
-		entry (participants: seq[machine]){
-		    send choose(participants), halt;
+		entry (config: (participants: set[Participant], nFailures: int)) {
+            var fail: Participant;
+            assert config.nFailures < sizeof(config.participants);
+
+            while(config.nFailures > 0)
+            {
+                fail = choose(config.participants);
+                send fail, halt;
+                config.participants -= (fail);
+                config.nFailures = config.nFailures - 1;
+            }
 		}
 	}
 }

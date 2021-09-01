@@ -2,42 +2,56 @@
 /*
 This machine creates the 2 participants, 1 coordinator, and 2 clients 
 */
-type t2PCSystemConfig = (
+type t2PCConfig = (
     numClients: int,
     numParticipants: int,
-    numTransPerClient: int
-)
-fun SetUpTwoPhaseCommitSystem(config: t2PCSystemConfig)
+    numTransPerClient: int,
+    failParticipants: int
+);
+
+fun SetUpTwoPhaseCommitSystem(config: t2PCConfig)
 {
-    var coord : Coordinator;
-    var participants: seq[Participant];
+    var coordinator : Coordinator;
+    var participants: set[Participant];
     var i : int;
-    while (i < 2) {
-        participants += (i, new Participant());
+
+    i = 0;
+    while (i < config.numParticipants) {
+        participants += (new Participant());
         i = i + 1;
     }
-    coord = new Coordinator(participants);
-    new Client((coor = coord, n = 2));
-    new Client((coor = coord, n = 2));
+
+    coordinator = new Coordinator(participants);
+
+    i = 0;
+    while(i < config.numClients)
+    {
+        new Client((coordinator = coordinator, n = config.numTransPerClient));
+        i = i + 1;
+    }
+
+    if(config.failParticipants > 0)
+    {
+        new FailureInjector((participants = participants, nFailures = config.failParticipants));
+    }
 }
 
-fun InitializeTwoPhaseCommitSpecifications() {
-
+fun InitializeTwoPhaseCommitSpecifications(numParticipants: int) {
+    // inform the monitor the number of participants in the system
+    announce eMonitor_AtomicityInitialize, numParticipants;
 }
 
-machine TestDriver0 {
+machine TestDriverNoFailure {
 	start state Init {
 		entry {
-			var coord : Coordinator;
-			var participants: seq[Participant];
-			var i : int;
-			while (i < 2) {
-				participants += (i, new Participant());
-				i = i + 1;
-			}
-			coord = new Coordinator(participants);
-			new Client((coor = coord, n = 2));
-			new Client((coor = coord, n = 2));
+			var config: t2PCConfig;
+
+			config = (numClients = 2,
+                      numParticipants = 3,
+                      numTransPerClient = 2,
+                      failParticipants = 0);
+
+            SetUpTwoPhaseCommitSystem(config);
 		}
 	}
 }
@@ -45,20 +59,19 @@ machine TestDriver0 {
 /*
 This machine creates the 2 participants, 1 coordinator, 1 Failure injector, and 2 clients 
 */
-machine TestDriver1 {
+machine TestDriverWithFailure {
 	start state Init {
 		entry {
-			var coord : Coordinator;
-			var participants: seq[Participant];
-			var i: int;
-			while (i < 2) {
-				participants += (i, new Participant());
-				i = i + 1;
-			}
-			coord = new Coordinator(participants);
-			new FailureInjector(participants);
-			new Client((coor = coord, n = 2));
-			new Client((coor = coord, n = 2));
+			var config: t2PCConfig;
+
+            config = (numClients = 2,
+                      numParticipants = 3,
+                      numTransPerClient = 2,
+                      failParticipants = 1);
+
+            SetUpTwoPhaseCommitSystem(config);
 		}
 	}
 }
+
+module ClientAndFailureInjector = { Client, FailureInjector };

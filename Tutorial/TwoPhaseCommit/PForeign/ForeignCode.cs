@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace PImplementation
 {
     public static partial class GlobalFunctions {
-		public static PrtNamedTuple ChooseTransaction(PMachine pMachine)
+		public static PrtNamedTuple ChooseRandomTransaction(PMachine pMachine)
         {
             return (new PrtNamedTuple(new string[] { "key", "val" }, (PrtString) pMachine.TryRandomInt(100).ToString(), (PrtInt)pMachine.TryRandomInt(100)));
         }

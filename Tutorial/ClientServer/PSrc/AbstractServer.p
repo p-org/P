@@ -1,19 +1,25 @@
-/*********************************************************************************************
-The AbstractServer machine implements a sound abstraction of the Server machine.
-choose() randomly chooses to pass or fail the request, capturing the behavior of the server
-where it interacts with the Helper machine to determine if the request is successful or failed.
-**********************************************************************************************/
-// Interface exposed by server machine to the client machine
-interface iServer() receives eRequest;
 
-machine AbstractServer
+
+machine AbstractBankServer
 {
-  start state Init {
-    on eRequest do (payload: tRequest){
-        if($)
-            send payload.source, eResponse, (rId = payload.rId, status = SUCCESS);
+  var balance: map[int, int];
+  start state WaitForWithdrawRequests {
+    entry (init_balance: map[int, int])
+    {
+        balance = init_balance;
+    }
+
+    on eWithDrawReq do (wReq: tWithDrawReq) {
+        assert wReq.accountId in balance, "Invalid accountId received in the withdraw request!";
+        if(balance[wReq.accountId] - wReq.amount > 10)
+        {
+            balance[wReq.accountId] = balance[wReq.accountId] - wReq.amount;
+            send wReq.source, eWithDrawResp, (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, balance = balance[wReq.accountId], rId = wReq.rId);
+        }
         else
-            send payload.source, eResponse, (rId = payload.rId, status = ERROR);
+        {
+            send wReq.source, eWithDrawResp, (status = WITHDRAW_ERROR, accountId = wReq.accountId, balance = balance[wReq.accountId], rId = wReq.rId);
+        }
     }
   }
 }

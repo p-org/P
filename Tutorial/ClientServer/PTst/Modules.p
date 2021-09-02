@@ -2,7 +2,7 @@
 module Client = { Client };
 
 // Server module
-module Server = { Server, Helper };
+module Server = { BankServer, Database };
 
 // Abstract Server module
-// module AbstractServer = { AbstractServer -> iServer };
+module AbstractServer = { AbstractBankServer -> BankServer };

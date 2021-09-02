@@ -2,49 +2,8 @@ A P program is a collection of event and machine declarations.
 Here is a basic P program containing a Client machine and a Server machine
 communicating with each other via Ping and Pong events.
 
-```linenums="1"
-// PingPong.p
-event PING assert 1: machine;
-event PONG assert 1;
-event SUCCESS;
-
-main machine Client {
-    var server: machine;
-
-    start state Init {
-        entry {
-  	        server = new Server();
-	        raise SUCCESS;   	   
-        }
-        on SUCCESS goto SendPing;
-    }
-
-    state SendPing {
-        entry {
-	          send server, PING, this;
-	          raise SUCCESS;
-	}
-        on SUCCESS goto WaitPong;
-    }
-
-    state WaitPong {
-        on PONG goto SendPing;
-    }
-}
-
-machine Server {
-    start state WaitPing {
-        on PING goto SendPong;
-    }
-
-    state SendPong {
-	      entry (payload: machine) {
-	          send payload, PONG;
-	          raise SUCCESS;		 	  
-	      }
-        on SUCCESS goto WaitPing;
-    }
-}
+```
+--8<--​  "Client.p" 
 ```
 
 We now take a closer look at the event and machine declarations in this program.

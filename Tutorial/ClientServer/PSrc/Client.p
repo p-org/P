@@ -1,39 +1,34 @@
 /***************************************************
 User defined types
 ***************************************************/
-// request payload type
-type tRequest = (source: Client, rId:int);
-// response payload type
-type tResponse = (rId: int, status: tResponseStatus);
-// response status type
-enum tResponseStatus {
-    SUCCESS,
-    ERROR
+
+type tWithDrawReq = (source: Client, accountId: int, amount: int, rId:int);
+
+type tWithDrawResp = (status: tWithDrawRespStatus, accountId: int, balance: int, rId: int);
+
+enum tWithDrawRespStatus {
+    WITHDRAW_SUCCESS,
+    WITHDRAW_ERROR
 }
 
-// Events exchanged by client and server
-event eRequest : tRequest;
-event eResponse: tResponse;
+event eWithDrawReq : tWithDrawReq;
+event eWithDrawResp: tWithDrawResp;
 
-/**************************************************************************
-Client sends multiple eRequests events asynchronously to the server and waits for responses.
-Server responds with eResponse event for each eRequest event.
-The client asserts that the successful responses must be in the same order
-as the requests being sent (monotonically increasing).
-**************************************************************************/
 machine Client
 {
-  var server : Server;
+  var server : BankServer;
+  var accountId: int;
   var nextReqId : int;
-  var lastSuccessfulRespId: int;
-
+  var numOfWithdrawOps: int;
+  var currentBalance: int;
   start state Init {
 
-    entry (payload : Server)
+    entry (input : (serv : BankServer, accountId: int, balance : int))
     {
-      nextReqId = 1;
-      lastSuccessfulRespId = -1;
-      server = payload;
+      server = input.serv;
+      numOfWithdrawOps = 3;
+      currentBalance =  input.balance;
+      accountId = input.accountId;
       goto StartPumpingRequests;
     }
   }
@@ -41,26 +36,40 @@ machine Client
   state StartPumpingRequests {
     entry {
       var index : int;
-      index = 0;
-      //send 2 requests
-      while(index < 2)
+      while(index < numOfWithdrawOps)
       {
-          send server, eRequest, (source = this, rId = nextReqId);
-          // request ids are monotonically increasing
-          nextReqId = nextReqId + 1 + choose(5);
+          send server, eWithDrawReq, (source = this, accountId = accountId, amount = WithdrawAmount(), rId = nextReqId);
+          // request ids should be monotonically increasing
+          nextReqId = nextReqId + 1;
           index = index + 1;
       }
     }
 
-    on eResponse do (resp: tResponse){
-        // response id's are monotonically increasing
-        if(resp.status == SUCCESS)
+    on eWithDrawResp do (resp: tWithDrawResp){
+        assert resp.balance > 10, "Bank balance must be greater than 10!!";
+
+        if(resp.status == WITHDRAW_SUCCESS)
         {
-            // local assertion
-            assert resp.rId > lastSuccessfulRespId,
-            format ("Response Ids not monotonically increasing, got {0}, previous Id was {1}", resp.rId, lastSuccessfulRespId);
-            lastSuccessfulRespId = resp.rId;
+            print format ("Withdrawal with rId = {0} succeeded, new account balance = {1}", resp.rId, resp.balance);
+            currentBalance = resp.balance;
+        }
+        else
+        {
+            // if withdraw failed then the account balance must remain the same
+            assert currentBalance == resp.balance,
+                format ("Withdraw failed BUT the account balance changed! client thinks: {0}, bank balance: {1}", currentBalance, resp.balance);
+            print format ("Withdrawal with rId = {0} failed, account balance = {1}", resp.rId, resp.balance);
+
+        }
+
+        if(currentBalance > 10)
+        {
+            print format ("Still have account balance = {0}, lets try and withdraw more", currentBalance);
         }
     }
+  }
+
+  fun WithdrawAmount() : int {
+    return choose(currentBalance) + 1;
   }
 }

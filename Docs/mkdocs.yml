@@ -86,6 +86,7 @@ nav:
 
 
 markdown_extensions:
+  - pymdownx.snippets
   - admonition
   - pymdownx.tabbed
   - pymdownx.details

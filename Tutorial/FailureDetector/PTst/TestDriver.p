@@ -3,18 +3,18 @@
 //Main machine:
 machine Client {
     var fd: machine;
-    var nodeseq: seq[machine];
+    var nodes: set[Node];
     
     start state Init {
         entry {
             // create 3 nodes
-            nodeseq += (0, new Node());
-            nodeseq += (0, new Node());
-            nodeseq += (0, new Node());
+            nodes += (new Node());
+            nodes += (new Node());
+            nodes += (new Node());
 
-            fd = new FailureDetector(nodeseq as seq[Node]);
+            fd = new FailureDetector(nodes);
 
-            // non deterministically fail one nodes
+            // todo: re-use the failure injector nodes
             Fail();
         }
 
@@ -26,7 +26,7 @@ machine Client {
     
     fun Fail() {
         var pick: machine;
-        pick = choose(nodeseq);
+        pick = choose(nodes);
         send pick, eKill;
     }
 }

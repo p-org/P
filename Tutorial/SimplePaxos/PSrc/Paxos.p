@@ -1,222 +1,152 @@
-/**************************************
-We implemented the basic paxos protocol as described 
-in the "Paxos Made Simple" paper by Leslie Lamport
-****************************************/
+type tProposal = (proposerId: int, round: int, value: int);
 
-machine Main {
-  start state Init {
+event ePrepare: (proposer: Proposer, proposal: tProposal);
+event eAccept : (proposer: Proposer, proposal: tProposal);
+event eAgree: (acceptor: Acceptor, agreed: tProposal);
+event eReject : tProposal;
+event eAccepted: (acceptor: Acceptor, accepted: tProposal);
+
+fun DefaultProposal() : tProposal {
+    return (proposerId = -1, round = -1, value = -1);
+}
+machine Proposer
+{
+  var acceptors: set[Acceptor];
+  var majority: int;
+  var proposeValue: int;
+  var currRound : int;
+  var proposerId: int;
+  var agreeReceivedFrom : set[Acceptor];
+  var agreedProposal: tProposal;
+
+  start state InitProposer {
     entry {
-      var proposers: seq[machine];
-      var acceptors: seq[machine];
-      var temp: machine;
-      var index: int;
-      index = 0;
-      //create acceptors
-      while(index < GC_NumOfAccptNodes)
-      {
-        temp =  new AcceptorMachine();
-        acceptors += (index, temp);
-        index = index + 1;
-      }
-      //create proposers
-      index = 0;
-      while(index < GC_NumOfProposerNodes)
-      {
-          temp = new ProposerMachine(acceptors, index + 1);
-          proposers += (index, temp);
-          index = index + 1;
-      }
-
-      raise halt;
+      agreedProposal = (proposerId = proposerId, round = nextRoundId, value = proposeValue);
+      majority = sizeof(acceptors)/2 + 1;
+      goto ProposerPhaseOne;
     }
   }
-}
 
-fun ProposalIdEqual(id1: ProposalIdType, id2: ProposalIdType) : bool {
-  if(id1.serverid == id2.serverid && id1.round == id2.round)
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-fun ProposalLessThan(id1: ProposalIdType, id2: ProposalIdType) : bool {
-  if(id1.round < id2.round)
-  {
-    return true;
-  }
-  else if(id1.round == id2.round)
-  {
-    if(id1.serverid < id2.serverid)
+  fun BroadcastToAllAcceptors(ev: event, payload: any) {
+    var i : int;
+    while(i < sizeof(acceptors))
     {
+        send acceptors[i], ev, payload;
+        i = i + 1;
+    }
+  }
+
+  state ProposerPhaseOne {
+    entry {
+      agreeReceivedFrom = default(set[Acceptor]);
+      BroadcastToAllAcceptors(ePrepare, agreedProposal);
+    }
+    ignore eAccepted;
+
+    on eAgree do (proposal: tAgree) {
+      agreeReceivedFrom += (proposal.source);
+
+      // the acceptors have agreed for a value based on a larger proposal
+      if(ProposalLessThan(promisedAgree.pid, payload.pid))
+      {
+        agreedValue = proposal.payload.value;
+      }
+
+      if(sizeof(agreeReceivedFrom) == majority)
+      {
+        goto ProposerPhaseTwo;
+      }
+    }
+    on reject do (payload: reject){
+      if(nextProposalId.round <= payload.round)
+      {
+        nextProposalId.round = payload.round + 1;
+      }
+      goto ProposerPhaseOne;
+    }
+
+    on TIMEOUT goto ProposerPhaseOne;
+  }
+    state ProposerPhaseTwo {
+        ignore eAgree;
+        entry {
+          numOfAcceptRecv = 0;
+          SendToAllAcceptors(eAccept, (proposer = this, proposal = agreedProposal));
+          StartTimer(timer;
+        }
+        on eReject do (proposal : tProposal)
+        {
+          if(nextProposalId.round <= payload.round)
+          {
+            nextProposalId.round = payload.round;
+          }
+          CancelTimer(timer);
+          goto ProposerPhaseOne;
+        }
+        on eAccepted do (req: (acceptor: Acceptor, accepted: tProposal)) {
+          if(IsProposalIdEqual(req.proposal, agreedProposal)){
+            numOfAcceptRecv = numOfAcceptRecv + 1;
+          }
+          if(numOfAcceptRecv == majority)
+          {
+            CancelTimer(timer);
+            // done proposing lets halt
+            raise halt;
+          }
+        }
+        on eTimeOut goto ProposerPhaseOne;
+      }
+}
+
+fun IsProposalIdEqual(id1: tProposal, id2: tProposal) : bool {
+  return id1.proposerId == id2.proposerId && id1.round == id2.round;
+}
+
+fun ProposalIdLessThan(id1 : tProposal, id2: tProposal) : bool {
+  if(id1.round > id2.round) {
+    return false;
+  } else {
+    if(id1.round == id2.round) {
+      return id1.proposerId < id2.proposerId;
+    } else {
       return true;
     }
-    else
-    {
-      return false;
-    }
-  }
-  else
-  {
-    return false;
   }
 }
 
-machine AcceptorMachine {
-  var lastRecvProposal : ProposalType;
-  start state Init {
+machine Acceptor {
+  var lastRecvProposal : tProposal;
+
+  start state InitAcceptor {
     entry {
-      lastRecvProposal = default(ProposalType);
+      lastRecvProposal = DefaultProposal();
       goto WaitForRequests;
     }
   }
 
   state WaitForRequests {
-    on prepare do (payload: (proposer: machine, proposal: ProposalType)) {
-      if(lastRecvProposal.value == GC_Default_Value)
+    on ePrepare do (req: (proposer: Proposer, proposal: tProposal)) {
+      // have not seen any proposal till now
+      if(lastRecvProposal == DefaultProposal() || !ProposalIdLessThan(req.proposal, lastRecvProposal))
       {
-        send payload.proposer, agree, default(ProposalType);
-        lastRecvProposal = payload.proposal;
-      }
-      else if(ProposalLessThan(payload.proposal.pid, lastRecvProposal.pid))
-      {
-        send payload.proposer, reject, lastRecvProposal.pid;
-      }
-      else 
-      {
-        send payload.proposer, agree, lastRecvProposal;
-        lastRecvProposal = payload.proposal;
-      }
-    }
-    on accept do (payload: (proposer: machine, proposal: ProposalType)) {
-      if(!ProposalIdEqual(payload.proposal.pid, lastRecvProposal.pid))
-      {
-        send payload.proposer, reject, lastRecvProposal.pid;
+        lastRecvProposal = proposal;
+        send req.proposer, eAgree, (acceptor = this, agreed = lastRecvProposal);
       }
       else
       {
-        send payload.proposer, accepted, payload.proposal;
+        send req.proposer, eReject, lastRecvProposal;
       }
     }
-  }
-}
 
-machine ProposerMachine {
-  var acceptors: seq[machine];
-  var majority: int;
-  var serverid: int;
-  var timer: machine;
-  var proposeValue: int;
-  var nextProposalId : ProposalIdType;
-
-  start state Init {
-    entry (payload: (seq[machine], int)){
-      acceptors = payload.0;
-      serverid = payload.1;
-      //propose some random value;
-      proposeValue = serverid * 10 + 1;
-      nextProposalId = (serverid = serverid, round = 1);
-      majority = GC_NumOfAccptNodes/2 + 1;
-      timer = CreateTimer(this);
-      goto ProposerPhaseOne;
-    }
-  }
-
-  fun SendToAllAcceptors(e: event, v: any) {
-    var index: int;
-    index = 0;
-    while(index < sizeof(acceptors))
-    {
-      send acceptors[index], e, v;  
-      index = index + 1;
-    }
-  }
-
-  var numOfAgreeRecv: int;
-  var numOfAcceptRecv: int;
-  var promisedAgree: ProposalType;
-
-  state ProposerPhaseOne {
-    ignore accepted;
-    entry {
-      numOfAgreeRecv = 0;
-      SendToAllAcceptors(prepare, (proposer = this, proposal = (pid = nextProposalId, value = proposeValue)));
-      StartTimer(timer, 100);
-    }
-
-    on agree do (payload: ProposalType) {
-      numOfAgreeRecv =numOfAgreeRecv + 1;
-      if(ProposalLessThan(promisedAgree.pid, payload.pid))
+    on eAccept do (req: (proposer: Proposer, proposal: tProposal)) {
+      if(!IsProposalIdEqual(payload.proposal, lastRecvProposal)
       {
-        promisedAgree = payload;
+        send req.proposer, eReject, lastRecvProposal;
       }
-      if(numOfAgreeRecv == majority)
+      else
       {
-        //cancel the timer and goto next phase
-        CancelTimer(timer);
-        goto ProposerPhaseTwo;
+        send req.proposer, eAccepted, (acceptor = this, accepted = req.proposal);
       }
     }
-
-    on reject do (payload: ProposalIdType){
-      if(nextProposalId.round <= payload.round)
-      {
-        nextProposalId.round = payload.round + 1;
-      }
-      CancelTimer(timer);
-      goto ProposerPhaseOne;
-    }
-
-    on TIMEOUT goto ProposerPhaseOne;
-  }
-
-  fun GetValueToBeProposed() : int {
-    if(promisedAgree.value == 0)
-    {
-      return proposeValue;
-    }
-    else
-    {
-      return promisedAgree.value;
-    }
-  }
-
-  state ProposerPhaseTwo {
-    ignore agree;
-    entry {
-      numOfAcceptRecv = 0;
-      proposeValue = GetValueToBeProposed();
-      SendToAllAcceptors(accept, (proposer = this, proposal = (pid = nextProposalId, value = proposeValue)));
-      StartTimer(timer, 100);
-    }
-
-    on reject do (payload : ProposalIdType)
-    {
-      if(nextProposalId.round <= payload.round)
-      {
-        nextProposalId.round = payload.round;
-      }
-      CancelTimer(timer);
-      goto ProposerPhaseOne;
-    }
-    
-    on accepted do (payload: ProposalType) {
-      if(ProposalIdEqual(payload.pid, nextProposalId)){
-        numOfAcceptRecv = numOfAcceptRecv + 1;
-      }
-
-      if(numOfAcceptRecv == majority)
-      {
-        CancelTimer(timer);
-        assert(false);
-        // done proposing lets halt
-        raise halt;
-      }
-    }
-
-    on TIMEOUT goto ProposerPhaseOne;
   }
 }

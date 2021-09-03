@@ -1,5 +1,3 @@
-include "PaxosHeader.p"
-
 /******************************************
 If mulitple proposers are proposing values simultaneously
 then some value eventually gets accepted

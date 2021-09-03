@@ -1,5 +1,0 @@
-include "TimerHeader.p"
-include "PaxosHeader.p"
-include "Paxos.p"
-include "Timer.p"
-include "Specification.p"

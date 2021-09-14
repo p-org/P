@@ -325,7 +325,7 @@ namespace Plang.Compiler
                     // check for generate source maps attribute
                     try
                     {
-                        if (projectXml.Element("Target")?.Attributes("sourcemaps").Any() != null)
+                        if (projectXml.Element("Target").Attributes("sourcemaps").Any())
                         {
                             generateSourceMaps = bool.Parse(projectXml.Element("Target")?.Attribute("sourcemaps")?.Value ?? string.Empty);
                         }

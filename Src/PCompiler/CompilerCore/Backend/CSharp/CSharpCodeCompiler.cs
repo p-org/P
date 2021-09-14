@@ -24,8 +24,10 @@ namespace Plang.Compiler.Backend.CSharp
         private static string mainCode = @"
 using Microsoft.Coyote;
 using Microsoft.Coyote.SystematicTesting;
+using Microsoft.Coyote.Actors;
 using System;
 using System.Linq;
+using System.IO;
 
 namespace -projectName-
 {

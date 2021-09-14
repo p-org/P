@@ -38,7 +38,7 @@ namespace Plang.Compiler
                 commandlineOutput.WriteInfo($"----------------------------------------");
                 commandlineOutput.WriteInfo($"==== Loading project file: {projectFile}");
 
-                var outputLanguage = CompilerOutput.C;
+                var outputLanguage = CompilerOutput.CSharp;
                 List<FileInfo> inputFiles = new List<FileInfo>();
                 bool generateSourceMaps = false;
                 List<string> projectDependencies = new List<string>();

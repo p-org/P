@@ -1,3 +1,4 @@
+<!-- P Project file for the Client Server example -->
 <Project>
 <ProjectName>ClientServer</ProjectName>
 <InputFiles>
@@ -5,6 +6,5 @@
 	<PFile>./PSpec/</PFile>
 	<PFile>./PTst/</PFile>
 </InputFiles>
-<Target>CSharp</Target>
 <OutputDir>./PGenerated/</OutputDir>
 </Project>

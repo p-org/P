@@ -2,19 +2,56 @@
 /*
 This machine creates the 2 participants, 1 coordinator, and 2 clients 
 */
-machine TestDriver0 {
+type t2PCConfig = (
+    numClients: int,
+    numParticipants: int,
+    numTransPerClient: int,
+    failParticipants: int
+);
+
+fun SetUpTwoPhaseCommitSystem(config: t2PCConfig)
+{
+    var coordinator : Coordinator;
+    var participants: set[Participant];
+    var i : int;
+
+    i = 0;
+    while (i < config.numParticipants) {
+        participants += (new Participant());
+        i = i + 1;
+    }
+
+    coordinator = new Coordinator(participants);
+
+    i = 0;
+    while(i < config.numClients)
+    {
+        new Client((coordinator = coordinator, n = config.numTransPerClient));
+        i = i + 1;
+    }
+
+    if(config.failParticipants > 0)
+    {
+        new FailureInjector((participants = participants, nFailures = config.failParticipants));
+    }
+}
+
+fun InitializeTwoPhaseCommitSpecifications(numParticipants: int) {
+    // inform the monitor the number of participants in the system
+    announce eMonitor_AtomicityInitialize, numParticipants;
+}
+
+machine TestDriverNoFailure {
 	start state Init {
 		entry {
-			var coord : Coordinator;
-			var participants: seq[Participant];
-			var i : int;
-			while (i < 2) {
-				participants += (i, new Participant());
-				i = i + 1;
-			}
-			coord = new Coordinator(participants);
-			new Client((coor = coord, n = 2));
-			new Client((coor = coord, n = 2));
+			var config: t2PCConfig;
+
+			config = (numClients = 2,
+                      numParticipants = 3,
+                      numTransPerClient = 2,
+                      failParticipants = 0);
+
+            SetUpTwoPhaseCommitSystem(config);
 		}
 	}
 }
@@ -22,34 +59,19 @@ machine TestDriver0 {
 /*
 This machine creates the 2 participants, 1 coordinator, 1 Failure injector, and 2 clients 
 */
-machine TestDriver1 {
+machine TestDriverWithFailure {
 	start state Init {
 		entry {
-			var coord : Coordinator;
-			var participants: seq[Participant];
-			var i: int;
-			while (i < 2) {
-				participants += (i, new Participant());
-				i = i + 1;
-			}
-			coord = new Coordinator(participants);
-			new FailureInjector(participants);
-			new Client((coor = coord, n = 2));
-			new Client((coor = coord, n = 2));
+			var config: t2PCConfig;
+
+            config = (numClients = 2,
+                      numParticipants = 3,
+                      numTransPerClient = 2,
+                      failParticipants = 1);
+
+            SetUpTwoPhaseCommitSystem(config);
 		}
 	}
 }
 
-/* 
-The failure injector machine randomly selects a participant machine and enqueues a special event "halt"
-On dequeueing a halt event, the P machine destroyes itself safely. 
-This is one way of modeling node failures in P.
-Note that as the model-checker explores all possible interleavings. The failure injecture is exhaustive and can add a failure at all possible interleaving points.
-*/
-machine FailureInjector {
-	start state Init {
-		entry (participants: seq[machine]){
-		    send choose(participants), halt;
-		}
-	}
-}
+module ClientAndFailureInjector = { Client, FailureInjector };

@@ -1,12 +1,12 @@
-<!-- P project file for the Two Phase Commit example -->
+<!-- P Project file for the Espresso Machine example -->
 <Project>
-<ProjectName>TwoPhaseCommit</ProjectName>
+<ProjectName>EspressoMachine</ProjectName>
 <InputFiles>
 	<PFile>./PSrc/</PFile>
 	<PFile>./PSpec/</PFile>
 	<PFile>./PTst/</PFile>
 </InputFiles>
-<OutputDir>./PGenerated/</OutputDir>
 <!-- Add the dependencies for the Timer machine -->
 <IncludeProject>../Common/Timer/Timer.pproj</IncludeProject>
+<OutputDir>./PGenerated/</OutputDir>
 </Project>

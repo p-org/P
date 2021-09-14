@@ -499,26 +499,29 @@ namespace Plang.Compiler.TypeChecker
             Dictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
             foreach (PParser.RecvCaseContext caseContext in context.recvCase())
             {
-                Function recvHandler =
-                    new Function(caseContext.anonEventHandler())
-                    {
-                        Scope = table.MakeChildScope(),
-                        Owner = method.Owner,
-                        ParentFunction = method,
-                        Role = FunctionRole.ReceiveHandler
-                    };
-
-                if (caseContext.anonEventHandler().funParam() is PParser.FunParamContext param)
-                {
-                    Variable paramVar = recvHandler.Scope.Put(param.name.GetText(), param, VariableRole.Param);
-                    paramVar.Type = TypeResolver.ResolveType(param.type(), recvHandler.Scope, handler);
-                    recvHandler.Signature.Parameters.Add(paramVar);
-                }
-
-                FunctionBodyVisitor.PopulateMethod(handler, recvHandler);
+                
 
                 foreach (PParser.EventIdContext eventIdContext in caseContext.eventList().eventId())
                 {
+                    Function recvHandler =
+                        new Function(caseContext.anonEventHandler())
+                        {
+                            Scope = table.MakeChildScope(),
+                            Owner = method.Owner,
+                            ParentFunction = method,
+                            Role = FunctionRole.ReceiveHandler
+                        };
+
+                    var param = caseContext.anonEventHandler().funParam();
+                    if (param != null)
+                    {
+                        Variable paramVar = recvHandler.Scope.Put(param.name.GetText(), param, VariableRole.Param);
+                        paramVar.Type = TypeResolver.ResolveType(param.type(), recvHandler.Scope, handler);
+                        recvHandler.Signature.Parameters.Add(paramVar);
+                    }
+
+                    FunctionBodyVisitor.PopulateMethod(handler, recvHandler);
+                    
                     if (!table.Lookup(eventIdContext.GetText(), out PEvent pEvent))
                     {
                         throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());

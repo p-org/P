@@ -1,14 +1,46 @@
-/* This file defines two P specification monitors */
+/*****************************************************
+This file defines two P specification monitors
 
-event eSpec_BankIsNotAFraud_Init: map[int, int];
+- BankBalanceIsAlwaysCorrect (safety property):
+BankBalanceIsCorrect checks the global invariant that the account balance communicated
+to the client by the bank is always correct and there is no error on the banks side where it lost
+clients money!
 
-spec BankIsNotAFraud observes eWithDrawReq,  eWithDrawResp, eSpec_BankIsNotAFraud_Init {
-  // keep track of the expected bank balance for each client
+- GuaranteedWithDrawProgress (liveness property):
+GuaranteedWithDrawProgress checks the liveness (or progress) property that all withdraw requests
+submitted by the client are eventually responded.
+
+__ Note that BankBalanceIsCorrect also checks that if there is enough money in the account then the withdraw
+request must not error. Hence, the two properties above together ensure that every withdraw request
+if allowed will eventually succeed and the bank cannot block legal withdraws. __
+
+*****************************************************/
+
+// event used to initialize the monitor with initial account balances for all clients
+event eSpec_BankBalanceIsCorrect_Init: map[int, int];
+
+/****************************************************
+BankBalanceIsAlwaysCorrect checks the global invariant that the account balance communicated
+to the client by the bank is always correct and there is no error on the banks side where it lost
+clients money.
+
+For checking this property the spec machine observes the withdraw request and response events.
+- On receiving the eWithDrawReq, it adds the request in the pending withdraws map so that on receiving a
+response for this withdraw we can assert that the amount of money deducted from the account is same as
+what was requested by the client.
+- On receiving the eWithDrawResp, we look up the corresponding withdraw request and check that, the
+new account balance is correct and if the withdraw failed it because the withdraw will make the account
+balance go below 10 dollars which is against bank policies!
+****************************************************/
+spec BankBalanceIsAlwaysCorrect observes eWithDrawReq,  eWithDrawResp, eSpec_BankBalanceIsCorrect_Init {
+    // keep track of the bank balance for each client, map from accountId to bank balance.
     var bankBalance: map[int, int];
+    // keep track of the pending withdraw requests that have not been responded yet.
+    // map from reqId -> withdraw request
     var pendingWithDraws: map[int, tWithDrawReq];
 
     start state Init {
-        on eSpec_BankIsNotAFraud_Init goto WaitForWithDrawReqAndResp with (balance: map[int, int]){
+        on eSpec_BankBalanceIsCorrect_Init goto WaitForWithDrawReqAndResp with (balance: map[int, int]){
             bankBalance = balance;
         }
     }
@@ -26,7 +58,7 @@ spec BankIsNotAFraud observes eWithDrawReq,  eWithDrawResp, eSpec_BankIsNotAFrau
                 format ("Unknown accountId {0} in the with draw response!", resp.accountId);
             assert resp.rId in pendingWithDraws,
                 format ("Unknown rId {0} in the with draw response!", resp.rId);
-            assert resp.balance > 10,
+            assert resp.balance >= 10,
                 "Bank balance in all accounts must always be greater than 10!!";
 
             if(resp.status == WITHDRAW_SUCCESS)
@@ -38,23 +70,25 @@ spec BankIsNotAFraud observes eWithDrawReq,  eWithDrawResp, eSpec_BankIsNotAFrau
             }
             else
             {
-                // bank can only reject a request if it drops the balance below 10
+                // bank can only reject a request if it will drop the balance below 10
                 assert bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount <= 10,
-                    format ("Bank must accept the with draw request for {0}, bank balance is {1}!", pendingWithDraws[resp.rId].amount, bankBalance[resp.accountId]);
+                    format ("Bank must accept the with draw request for {0}, bank balance is {1}!",
+                        pendingWithDraws[resp.rId].amount, bankBalance[resp.accountId]);
                 // if withdraw failed then the account balance must remain the same
                 assert bankBalance[resp.accountId] == resp.balance,
-                    format ("Withdraw failed BUT the account balance changed! actual: {0}, bank said: {1}", bankBalance[resp.accountId], resp.balance);
+                    format ("Withdraw failed BUT the account balance changed! actual: {0}, bank said: {1}",
+                        bankBalance[resp.accountId], resp.balance);
             }
         }
     }
 }
 
 /**************************************************************************
-GuaranteedProgress observes the eRequest and eResponse events, it asserts that
-every request is always responded by a successful response.
+GuaranteedWithDrawProgress checks the liveness (or progress) property that all withdraw requests
+submitted by the client are eventually responded.
 ***************************************************************************/
-spec GuaranteedProgress observes eWithDrawReq, eWithDrawResp {
-    // keep track of the pending requests
+spec GuaranteedWithDrawProgress observes eWithDrawReq, eWithDrawResp {
+    // keep track of the pending withdraw requests
     var pendingWDReqs: set[int];
 
     start state NopendingRequests {
@@ -67,7 +101,7 @@ spec GuaranteedProgress observes eWithDrawReq, eWithDrawResp {
         on eWithDrawResp do (resp: tWithDrawResp) {
             assert resp.rId in pendingWDReqs, format ("unexpected rId: {0} received, expected one of {1}", resp.rId, pendingWDReqs);
             pendingWDReqs -= (resp.rId);
-            if(sizeof(pendingWDReqs) == 0) // requests already responded
+            if(sizeof(pendingWDReqs) == 0) // all requests responded
                 goto NopendingRequests;
         }
 

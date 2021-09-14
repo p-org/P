@@ -1,39 +1,60 @@
-// TestDriver0 creates 1 client and 1 server for checking the client-server system
-machine TestDriver0
+
+// Test driver that checks the system with a single Client.
+machine TestWithSingleClient
 {
   start state Init {
     entry {
-      var server : BankServer;
-      var balance: map[int, int];
-      balance[1] = 100;
-
-      announce eSpec_BankIsNotAFraud_Init, balance;
-      //create server
-      server = new BankServer(balance);
-      //create client
-      new Client((serv = server, accountId = 1, balance = balance[1]));
+      // since client
+      SetupClientServerSystem(1);
     }
   }
 }
 
-// TestDriver0 creates 2 client and 1 server for checking the client-server system
-machine TestDriver1
+// Test driver that checks the system with multiple Clients.
+machine TestWithMultipleClients
 {
     start state Init {
     entry {
-        var server : BankServer;
-        var balance: map[int, int];
-        balance[1] = 100;
-        balance[2] = 1000;
-
-        announce eSpec_BankIsNotAFraud_Init, balance;
-
-        //create server
-        server = new BankServer(balance);
-        // create client 1
-        new Client((serv = server, accountId = 1, balance = balance[1]));
-        // create client 2
-        new Client((serv = server, accountId = 2, balance = balance[2]));
+        // multiple clients (2, 5)
+        SetupClientServerSystem(choose(3) + 2);
     }
   }
+}
+
+// creates a random map from accountId's to account balance of size `numAccounts`
+fun CreateRandomInitialAccounts(numAccounts: int) : map[int, int]
+{
+    var i: int;
+    var bankBalance: map[int, int];
+    while(i < numAccounts) {
+        bankBalance[i] = choose(100) + 10; // min 10 in the account
+        i = i + 1;
+    }
+    return bankBalance;
+}
+
+// setup the client server system with one bank server and `numClients` clients.
+fun SetupClientServerSystem(numClients: int)
+{
+    var i: int;
+    var server: BankServer;
+    var accountIds: seq[int];
+    var initAccBalance: map[int, int];
+
+    // randomly initialize the account balance for all clients
+    initAccBalance = CreateRandomInitialAccounts(numClients);
+    // create bank server with the init account balance
+    server = new BankServer(initAccBalance);
+
+    // before client starts sending any messages make sure we
+    // initialize the monitors or specifications
+    announce eSpec_BankBalanceIsCorrect_Init, initAccBalance;
+
+    accountIds = keys(initAccBalance);
+
+    // create the clients
+    while(i < sizeof(accountIds)) {
+        new Client((serv = server, accountId = accountIds[i], balance = initAccBalance[accountIds[i]]));
+        i = i + 1;
+    }
 }

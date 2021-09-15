@@ -1,6 +1,3 @@
-//include "FailureDetector.p"
-
-//Main machine:
 machine Client {
     var fd: machine;
     var nodes: set[Node];
@@ -21,12 +18,5 @@ machine Client {
         on eNodeDown do (node: Node){
             print format("Node {0} is down!", node);
         }
-    }
-
-    
-    fun Fail() {
-        var pick: machine;
-        pick = choose(nodes);
-        send pick, eKill;
     }
 }

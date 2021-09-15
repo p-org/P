@@ -1,34 +1,81 @@
-/*****************************************************************************************
-The coordinator machine coordinates between all the participants and
-based on responses received from all the participants decided to commit or abort the transaction.
-The coordinator receives write and read transactions from the clients and handles these
-transactions sequentially one by one.
-******************************************************************************************/
+/* User Defined Types */
 
-// Events used by coordinator to communicate with the participants
+// transaction consisting of the key, value, and the unique transaction id.
+type tTrans = (key: string, val: int, transId: int);
+// payload type associated with the `eWriteTransReq` event where `client` is the client sending the
+// transaction, `trans` is the transaction to be committed.
+type tWriteTransReq = (client: Client, trans: tTrans);
+// payload type associated with the `eWriteTransResp` event where `transId` is the transaction Id
+// and `status` is the return status of the transaction request.
+type tWriteTransResp = (transId: int, status: tTransStatus);
+// payload type associated with the `eReadTransReq` event where `client` is the Client machine sending
+// the read request and `key` is the key whose value the client wants to read.
+type tReadTransReq = (client: Client, key: string);
+// payload type associated with the `eReadTransResp` event where `val` is the value corresponding to
+// the `key` in the read request and `status` is the read status (e.g., success or failure)
+type tReadTransResp = (key: string, val: int, status: tTransStatus);
+
+// transaction status
+enum tTransStatus {
+    SUCCESS,
+    ERROR,
+    TIMEOUT
+}
+
+/* Events used by the 2PC clients to communicate with the 2PC coordinator */
+// event: write transaction request (client to coordinator)
+event eWriteTransReq : tWriteTransReq;
+// event: write transaction response (coordinator to client)
+event eWriteTransResp : tWriteTransResp;
+// event: read transaction request (client to coordinator)
+event eReadTransReq : tReadTransReq;
+// event: read transaction response (participant to client)
+event eReadTransResp: tReadTransResp;
+
+/* Events used for communication between the coordinator and the participants */
+// event: prepare request for a transaction (coordinator to participant)
 event ePrepareReq: tPrepareReq;
+// event: prepare response for a transaction (participant to coodinator)
 event ePrepareResp: tPrepareResp;
+// event: commit transaction (coordinator to participant)
 event eCommitTrans: int;
+// event: abort transaction (coordinator to participant)
 event eAbortTrans: int;
 
-type tPrepareReq = (coordinator: Coordinator, transId: int, rec: tRecord);
+/* User Defined Types */
+// payload type associated with the `ePrepareReq` event
+type tPrepareReq = tTrans;
+// payload type assocated with the `ePrepareResp` event where `participant` is the participant machine
+// sending the response, `transId` is the transaction id, and `status` is the status of the prepare
+// request for that transaction.
 type tPrepareResp = (participant: Participant, transId: int, status: tTransStatus);
 
+// event: inform participant about the coordinator
+event eInformCoordinator: Coordinator;
+
+/*****************************************************************************************
+The Coordinator machine receives write and read transactions from the clients. The coordinator machine
+services these transactions one by one in the order in which they were received. On receiving a write
+transaction the coordinator sends prepare request to all the participants and waits for prepare
+responses from all the participants. Based on the responses, the coordinator either commits or aborts
+the transaction. If the coordinator fails to receive agreement from participants in time, then it
+timesout and aborts the transaction. On receiving a read transaction, the coordinator randomly selects
+a participant and  forwards the read request to that participant.
+******************************************************************************************/
 machine Coordinator
 {
+    // set of participants
 	var participants: set[Participant];
+	// current write transaction being handled
 	var currentWriteTransReq: tWriteTransReq;
-	var currTransId:int;
 	var timer: Timer;
 
 	start state Init {
 		entry (payload: set[Participant]){
-			//initialize variables
 			participants = payload;
-			currTransId = 0; timer = CreateTimer(this);
-
-
-
+			timer = CreateTimer(this);
+			// inform all participants that I am the coordinator
+			BroadcastToAllParticipants(eInformCoordinator, this);
 			goto WaitForTransactions;
 		}
 	}
@@ -36,12 +83,9 @@ machine Coordinator
 	state WaitForTransactions {
 		on eWriteTransReq do (wTrans : tWriteTransReq) {
 			currentWriteTransReq = wTrans;
-			currTransId = currTransId + 1;
-			BroadcastToAllParticipants(ePrepareReq, (coordinator = this, transId = currTransId, rec = wTrans.rec));
-
+			BroadcastToAllParticipants(ePrepareReq, wTrans.trans);
 			//start timer while waiting for responses from all participants
 			StartTimer(timer);
-
 			goto WaitForPrepareResponses;
 		}
 
@@ -57,12 +101,12 @@ machine Coordinator
 	var countPrepareResponses: int;
 
 	state WaitForPrepareResponses {
-		// we are going to process transactions sequentially
+		// defer requests, we are going to process transactions sequentially
 		defer eWriteTransReq;
 
 		on ePrepareResp do (resp : tPrepareResp) {
 		    // check if the response is for the current transaction else ignore it
-			if (currTransId == resp.transId) {
+			if (currentWriteTransReq.trans.transId == resp.transId) {
 			    if(resp.status == SUCCESS)
 			    {
 			        countPrepareResponses = countPrepareResponses + 1;
@@ -85,6 +129,7 @@ machine Coordinator
 			}
 		}
 
+        // on timeout abort the transaction
 		on eTimeOut goto WaitForTransactions with { DoGlobalAbort(TIMEOUT); }
 
         on eReadTransReq do (rTrans : tReadTransReq) {
@@ -98,19 +143,20 @@ machine Coordinator
 
 	fun DoGlobalAbort(respStatus: tTransStatus) {
 		// ask all participants to abort and fail the transaction
-		BroadcastToAllParticipants(eAbortTrans, currTransId);
-		send currentWriteTransReq.client, eWriteTransResp, (transId = currTransId, status = respStatus);
+		BroadcastToAllParticipants(eAbortTrans, currentWriteTransReq.trans.transId);
+		send currentWriteTransReq.client, eWriteTransResp, (transId = currentWriteTransReq.trans.transId, status = respStatus);
 		CancelTimer(timer);
 	}
 
 	fun DoGlobalCommit() {
         // ask all participants to commit and respond to client
-        BroadcastToAllParticipants(eCommitTrans, currTransId);
-        send currentWriteTransReq.client, eWriteTransResp, (transId = currTransId, status = SUCCESS);
+        BroadcastToAllParticipants(eCommitTrans, currentWriteTransReq.trans.transId);
+        send currentWriteTransReq.client, eWriteTransResp,
+            (transId = currentWriteTransReq.trans.transId, status = SUCCESS);
         CancelTimer(timer);
     }
 
-	//helper function to send messages to all replicas
+	//function to broadcast messages to all participants
 	fun BroadcastToAllParticipants(message: event, payload: any)
 	{
 		var i: int;

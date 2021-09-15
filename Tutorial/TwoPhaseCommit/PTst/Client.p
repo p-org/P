@@ -1,33 +1,14 @@
-// User defined types
-type tRecord = (key: string, val: int);
-type tWriteTransReq = (client: Client, rec: tRecord);
-type tWriteTransResp = (transId: int, status: tTransStatus);
-type tReadTransReq = (client: Client, key: string);
-type tReadTransResp = (rec: tRecord, status: tTransStatus);
-
-enum tTransStatus {
-    SUCCESS,
-    ERROR,
-    TIMEOUT
-}
-
-// Events used by client machine to communicate with the two phase commit coordinator
-event eWriteTransReq : tWriteTransReq;
-event eWriteTransResp : tWriteTransResp;
-event eReadTransReq : tReadTransReq;
-event eReadTransResp: tReadTransResp;
-
 /*****************************************************************************************
 The client machine below implements the client of the two-phase-commit transaction service.
-Each client issues N non-deterministic write-transaction of (key, value),
+Each client issues N non-deterministic write-transactions,
 if the transaction succeeds then it performs a read-transaction on the same key and asserts the value.
 ******************************************************************************************/
 machine Client {
     // the coordinator machine
     var coordinator: Coordinator;
     // current transaction issued by the client
-    var currTransaction : tRecord;
-    // number of transactions issued
+    var currTransaction : tTrans;
+    // number of transactions to be issued
     var N: int;
     start state Init {
 	    entry (payload : (coordinator: Coordinator, n : int)) {
@@ -40,7 +21,7 @@ machine Client {
 	state SendWriteTransaction {
 	    entry {
 	    	currTransaction = ChooseRandomTransaction();
-			send coordinator, eWriteTransReq, (client = this, rec = currTransaction);
+			send coordinator, eWriteTransReq, (client = this, trans = currTransaction);
 		}
 		on eWriteTransResp goto ConfirmTransaction;
 	}
@@ -58,16 +39,16 @@ machine Client {
 			        // assert that if write transaction was successful then then value read is the value written.
 			        if(readResp.status == SUCCESS)
 			        {
-			            assert readResp.rec == currTransaction,
+			            assert readResp.key == currTransaction.key && readResp.val == currTransaction.val,
 			            format ("Record read is not same as what was written by the client:: read - {0}, written - {1}",
-			            readResp.rec, currTransaction);
+			            readResp.val, currTransaction.val);
 			        }
 			    }
 			}
 			// has more work to do?
 			if(N > 0)
 			{
-			    N = N -1;
+			    N = N - 1;
 			    goto SendWriteTransaction;
 			}
 		}
@@ -79,5 +60,7 @@ machine Client {
 This is an external function (implemented in C#) to randomly choose transaction values
 In P, function declarations without body are considered as foreign functions.
 */
-fun ChooseRandomTransaction(): tRecord;
+fun ChooseRandomTransaction(): tTrans;
 
+// two phase commit client module
+module TwoPCClient = { Client };

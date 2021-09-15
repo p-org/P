@@ -1,6 +1,4 @@
-/***************************************************
-User Defined Types
-***************************************************/
+/* User Defined Types */
 // payload type associated with the eWithDrawReq, where `source` is the client sending the withdraw request,
 // `accountId` is the account to withdraw from, `amount` is the amount to withdraw, and `rId` is the unique
 // request Id associated with each request.

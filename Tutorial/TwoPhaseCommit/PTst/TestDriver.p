@@ -1,7 +1,4 @@
-
-/*
-This machine creates the 2 participants, 1 coordinator, and 2 clients 
-*/
+// type that represents the configuration of the system under test
 type t2PCConfig = (
     numClients: int,
     numParticipants: int,
@@ -9,20 +6,27 @@ type t2PCConfig = (
     failParticipants: int
 );
 
+// function that creates the two phase commit system along with the machines in its
+// environment (test harness)
 fun SetUpTwoPhaseCommitSystem(config: t2PCConfig)
 {
     var coordinator : Coordinator;
     var participants: set[Participant];
     var i : int;
 
-    i = 0;
+    // create participants
     while (i < config.numParticipants) {
         participants += (new Participant());
         i = i + 1;
     }
 
+    // initialize the monitors (specifications)
+    InitializeTwoPhaseCommitSpecifications(config.numParticipants);
+
+    // create the coordinator
     coordinator = new Coordinator(participants);
 
+    // create the clients
     i = 0;
     while(i < config.numClients)
     {
@@ -30,9 +34,10 @@ fun SetUpTwoPhaseCommitSystem(config: t2PCConfig)
         i = i + 1;
     }
 
+    // create the failure injector if we want to inject failures
     if(config.failParticipants > 0)
     {
-        new FailureInjector((participants = participants, nFailures = config.failParticipants));
+        CreateFailureInjector((nodes = participants, nFailures = config.failParticipants));
     }
 }
 
@@ -41,6 +46,9 @@ fun InitializeTwoPhaseCommitSpecifications(numParticipants: int) {
     announce eMonitor_AtomicityInitialize, numParticipants;
 }
 
+/*
+This machine creates the 3 participants, 1 coordinator, and 2 clients
+*/
 machine TestDriverNoFailure {
 	start state Init {
 		entry {
@@ -57,7 +65,7 @@ machine TestDriverNoFailure {
 }
 
 /*
-This machine creates the 2 participants, 1 coordinator, 1 Failure injector, and 2 clients 
+This machine creates the 3 participants, 1 coordinator, 1 Failure injector, and 2 clients
 */
 machine TestDriverWithFailure {
 	start state Init {
@@ -73,5 +81,3 @@ machine TestDriverWithFailure {
 		}
 	}
 }
-
-module ClientAndFailureInjector = { Client, FailureInjector };

@@ -1,12 +1,12 @@
 // checks that all events are handled correctly and also the local assertions in the P machines.
-test Test0[main = TestDriverNoFailure]:
-    union TwoPhaseCommit, TwoPCClient, FailureInjector, { TestDriverNoFailure };
+test SingleClientNoFailure [main = SingleClientNoFailure]:
+    union TwoPhaseCommit, TwoPCClient, FailureInjector, { SingleClientNoFailure };
 
 // asserts the liveness monitor along with the default properties
-test Test1[main = TestDriverNoFailure]:
+test MultipleClientsNoFailure [main = MultipleClientsNoFailure]:
     assert AtomicityInvariant, Progress in
-        (union TwoPhaseCommit, TwoPCClient, FailureInjector, { TestDriverNoFailure });
+        (union TwoPhaseCommit, TwoPCClient, FailureInjector, { MultipleClientsNoFailure });
 
 // asserts the liveness monitor along with the default properties
-test Test2[main = TestDriverWithFailure]:
-    assert Progress in (union TwoPhaseCommit, TwoPCClient, FailureInjector, { TestDriverWithFailure });
+test MultipleClientsWithFailure [main = MultipleClientsWithFailure]:
+    assert Progress in (union TwoPhaseCommit, TwoPCClient, FailureInjector, { MultipleClientsWithFailure });

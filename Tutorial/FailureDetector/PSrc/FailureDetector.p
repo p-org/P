@@ -1,22 +1,35 @@
-// request from failure detector to node
+// event: ping nodes (from failure detector to nodes)
 event ePing: (fd: FailureDetector, trial: int);
-// response from node to failure detector
+// event: pong (response to ping) (from node to failure detector)
 event ePong: (node: Node, trial: int);
-// failure notification to client
-event eNodeDown: Node;
+// failure notification to the client (from failure detector to client)
+event eNotifyNodesDown: set[Node];
 
+/***************************************************
+FailureDetector machine monitors whether a set of nodes in the system are alive (responsive), it
+periodically sends ping message to each node and waits for a pong message from the nodes.
+The nodes that do not send a pong message after multiple attempts are marked as down and notified to
+the client nodes.
+***************************************************/
 machine FailureDetector {
-    var nodes: set[Node];            // nodes to be monitored
-    var clients: set[Client];       // registered clients
-    var attempts: int;              // number of ping attempts made
-    var alive: set[Node];           // set of alive nodes
-    var respInCurrRound: set[machine];  // collected responses in one round
+    // set of nodes to be monitored
+    var nodes: set[Node];
+    // set of registered clients
+    var clients: set[Client];
+    // num of ping attempts made
+    var attempts: int;
+    // set of alive nodes
+    var alive: set[Node];
+    // nodes that have responded in the current round
+    var respInCurrRound: set[machine];
+    // timer to wait
     var timer: Timer;
 
     start state Init {
-        entry (payload: set[Node]) {
-            nodes = payload;
-            alive = nodes;       // initialize alive to the members of nodes
+        entry (config: (nodes: set[Node], clients: set[Client])) {
+            nodes = config.nodes;
+            alive = config.nodes;
+            clients = config.clients;
             timer = CreateTimer(this);
             goto SendPingsToAllNodes;
         }
@@ -25,12 +38,19 @@ machine FailureDetector {
     state SendPingsToAllNodes {
         entry {
             var notRespondedNodes: set[Node];
-            notRespondedNodes = PotentiallyDownNodes();            // send PING events to machines that have not responded
-            BroadCast(notRespondedNodes, ePing, (fd =  this, trial = attempts));
-            StartTimer(timer); // start timer for intra-round duration
+
+            if(sizeof(alive) == 0)
+                raise halt; // stop myself, there are no alive nodes!
+
+            notRespondedNodes = PotentiallyDownNodes();
+            // send ping events to machines that have not responded in the previous attempt
+            UnReliableBroadCast(notRespondedNodes, ePing, (fd =  this, trial = attempts));
+            // start wait timer
+            StartTimer(timer);
         }
+
         on ePong do (pong: (node: Node, trial: int)) {
-            // collect PONG responses from alive machines
+            // collect pong responses from alive machines
             if (pong.node in alive) {
                 respInCurrRound += (pong.node);
                 if (sizeof(respInCurrRound) == sizeof(alive)) {
@@ -42,19 +62,24 @@ machine FailureDetector {
 
         on eTimeOut do {
             var nodesDown: set[Node];
-            // one attempt is done
+            // one more attempt is done
             attempts = attempts + 1;
-            // maximum number of attempts per round == 2
-            if (sizeof(respInCurrRound) < sizeof(alive) && attempts < 2) {
-                // try again by re-entering SendPing
-				goto SendPingsToAllNodes;
-            } else {
-                nodesDown = ComputeFailedNodesAndUpdateAliveSet();
-                // notify
-                if(sizeof(nodesDown) > 0)
-                    BroadCast(clients, eNodeDown, nodesDown);
-                goto ResetAndStartAgain;
+            print format ("RespInCurr: {0} :: alive: {1}", respInCurrRound, alive);
+            if (sizeof(respInCurrRound) < sizeof(alive) ) {
+                // maximum number of attempts == 3
+                if(attempts < 3) {
+                    // try again by re-pinging the machines that have not responded
+                    goto SendPingsToAllNodes;
+				}
+				else
+				{
+				    // inform clients about the nodes down
+                    nodesDown = ComputeNodesDownAndUpdateAliveSet();
+                    ReliableBroadCast(clients, eNotifyNodesDown, nodesDown);
+				}
             }
+
+            goto ResetAndStartAgain;
         }
     }
 
@@ -63,14 +88,15 @@ machine FailureDetector {
             // prepare for the next round
             attempts = 0;
             respInCurrRound = default(set[Node]);
-            StartTimer(timer);  // start timer for inter-round duration
+            // start timer for inter-round waiting
+            StartTimer(timer);
         }
         on eTimeOut goto SendPingsToAllNodes;
         ignore ePong;
     }
 
-
-
+    // compute the potentially down nodes
+    // i.e., nodes that have not responded Pong in this round
     fun PotentiallyDownNodes() : set[Node] {
         var i: int;
         var nodesNotResponded: set[Node];
@@ -83,7 +109,8 @@ machine FailureDetector {
         return nodesNotResponded;
     }
 
-    fun ComputeFailedNodesAndUpdateAliveSet() : set[Node] {
+    // compute the nodes that might be down and also update the alive set accordingly
+    fun ComputeNodesDownAndUpdateAliveSet() : set[Node] {
         var i: int;
         var nodesDown: set[Node];
         while (i < sizeof(nodes)) {

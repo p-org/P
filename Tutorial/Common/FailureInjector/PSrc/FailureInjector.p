@@ -1,20 +1,44 @@
 /*
 The failure injector machine randomly selects a replica machine and enqueues the special event "halt".
 */
+event eDelayNodeFailure;
+// event: event sent by the failure injector to shutdown a node
+event eShutDown: machine;
+
 machine FailureInjector {
+    var nFailures: int;
+    var nodes: set[machine];
 	start state Init {
 		entry (config: (nodes: set[machine], nFailures: int)) {
-            var fail: machine;
-            assert config.nFailures < sizeof(config.nodes);
-
-            while(config.nFailures > 0)
-            {
-                fail = choose(config.nodes);
-                send fail, halt;
-                config.nodes -= (fail);
-                config.nFailures = config.nFailures - 1;
-            }
+            nFailures = config.nFailures;
+            nodes = config.nodes;
+            assert nFailures < sizeof(nodes);
+            goto FailOneNode;
 		}
+	}
+
+	state FailOneNode {
+	    entry {
+	        var fail: machine;
+
+	        if(nFailures == 0)
+	            raise halt; // done with all failures
+	        else
+	        {
+	            if($)
+	            {
+	                fail = choose(nodes);
+                    send fail, eShutDown, fail;
+                    nodes -= (fail);
+                    nFailures = nFailures - 1;
+	            }
+	            else {
+	                send this, eDelayNodeFailure;
+	            }
+	        }
+	    }
+
+	    on eDelayNodeFailure goto FailOneNode;
 	}
 }
 

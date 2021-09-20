@@ -32,13 +32,15 @@ machine Client {
 	        if(writeResp.status == TIMEOUT)
 	            return;
 
-			send coordinator, eReadTransReq, (client= this, key = currTransaction.key);
-			// await response from the participant
-			receive {
-			    case eReadTransResp: (readResp: tReadTransResp) {
-			        // assert that if write transaction was successful then then value read is the value written.
-			        if(readResp.status == SUCCESS)
-			        {
+	        // assert that if write transaction was successful then value read is the value written.
+            if(writeResp.status == SUCCESS)
+            {
+			    send coordinator, eReadTransReq, (client= this, key = currTransaction.key);
+                // await response from the participant
+                receive {
+                    case eReadTransResp: (readResp: tReadTransResp) {
+
+
 			            assert readResp.key == currTransaction.key && readResp.val == currTransaction.val,
 			            format ("Record read is not same as what was written by the client:: read - {0}, written - {1}",
 			            readResp.val, currTransaction.val);

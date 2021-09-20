@@ -67,6 +67,10 @@ machine Participant {
 				send req.client, eReadTransResp, (key = "", val = -1, status = ERROR);
 			}
 		}
+
+		on eShutDown {
+		    raise halt;
+		}
 	}
 }
 

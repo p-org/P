@@ -1,1 +1,3 @@
-test Test0 [main=Client]: { Client, FailureDetector, Node, Timer };
+test TestFailureDetector [main=TestMultipleClients]:
+    assert ReliableFailureDetector in
+    union { TestMultipleClients }, FailureDetector, FailureInjector;

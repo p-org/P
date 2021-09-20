@@ -13,7 +13,7 @@ machine Timer
 	}
 
 	state WaitForTimerRequests {
-		on eStartTimer do { if($) send client, eTimeOut; }
+		on eStartTimer do { send client, eTimeOut; }
 		on eCancelTimer do {
 		    if ($)
             {

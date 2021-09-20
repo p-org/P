@@ -47,9 +47,27 @@ fun InitializeTwoPhaseCommitSpecifications(numParticipants: int) {
 }
 
 /*
-This machine creates the 3 participants, 1 coordinator, and 2 clients
+This machine creates the 3 participants, 1 coordinator, and 1 clients
 */
-machine TestDriverNoFailure {
+machine SingleClientNoFailure {
+	start state Init {
+		entry {
+			var config: t2PCConfig;
+
+			config = (numClients = 1,
+                      numParticipants = 3,
+                      numTransPerClient = 2,
+                      failParticipants = 0);
+
+            SetUpTwoPhaseCommitSystem(config);
+		}
+	}
+}
+
+/*
+This machine creates the 3 participants, 1 coordinator, and 1 clients
+*/
+machine MultipleClientsNoFailure {
 	start state Init {
 		entry {
 			var config: t2PCConfig;
@@ -67,7 +85,7 @@ machine TestDriverNoFailure {
 /*
 This machine creates the 3 participants, 1 coordinator, 1 Failure injector, and 2 clients
 */
-machine TestDriverWithFailure {
+machine MultipleClientsWithFailure {
 	start state Init {
 		entry {
 			var config: t2PCConfig;

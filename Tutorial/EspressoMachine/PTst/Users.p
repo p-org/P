@@ -11,6 +11,7 @@ machine SaneUser {
             send coffeeMakerPanel, eCoffeeMachineUser, this;
             // want to make 2 cups of espresso
             cups = 2;
+
             goto LetsMakeCoffee;
         }
     }
@@ -19,6 +20,9 @@ machine SaneUser {
         entry {
             while (cups > 0)
             {
+                // lets wait for coffee maker to be ready
+                WaitForCoffeeMakerToBeReady();
+
                 // press Espresso button
                 PerformOperationOnCoffeeMaker(coffeeMakerPanel, CM_PressEspressoButton);
 
@@ -39,6 +43,9 @@ machine SaneUser {
 
             // I am a good user so I will clear the coffee grounds before leaving.
             PerformOperationOnCoffeeMaker(coffeeMakerPanel, CM_ClearGrounds);
+
+            // am done, let me exit
+            raise halt;
         }
     }
 }
@@ -68,6 +75,8 @@ machine CrazyUser {
             // inform control panel that I am the user
             send coffeeMakerPanel, eCoffeeMachineUser, this;
 
+
+
             while(numOperations > 0)
             {
                 pickedOps = PickRandomOperationToPerform();
@@ -77,7 +86,7 @@ machine CrazyUser {
         }
 
         // I will ignore all the responses from the coffee maker
-        ignore eCoffeeMakerError, eEspressoCompleted;
+        ignore eCoffeeMakerError, eEspressoCompleted, eCoffeeMakerReady;
     }
 
     // Pick a random enum value (hacky work around)
@@ -120,4 +129,10 @@ fun PerformOperationOnCoffeeMaker(coffeeMakerCP: CoffeeMakerControlPanel, CM_Ops
     }
 }
 
+fun WaitForCoffeeMakerToBeReady() {
+    receive {
+        case eCoffeeMakerReady: {}
+        case eCoffeeMakerError: (status: tCoffeeMakerState){ raise halt; }
+    }
+}
 module Users = { SaneUser, CrazyUser };

@@ -27,19 +27,10 @@ machine Proposer
     }
   }
 
-  fun BroadcastToAllAcceptors(ev: event, payload: any) {
-    var i : int;
-    while(i < sizeof(acceptors))
-    {
-        send acceptors[i], ev, payload;
-        i = i + 1;
-    }
-  }
-
   state ProposerPhaseOne {
     entry {
       agreeReceivedFrom = default(set[Acceptor]);
-      BroadcastToAllAcceptors(ePrepare, agreedProposal);
+      UnReliableBroadCast(acceptors, ePrepare, agreedProposal);
     }
     ignore eAccepted;
 

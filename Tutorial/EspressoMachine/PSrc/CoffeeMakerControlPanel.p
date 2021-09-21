@@ -13,6 +13,8 @@ event eCloseGroundsDoor;
 event eResetCoffeeMaker;
 //event: error message from panel to the user
 event eCoffeeMakerError: tCoffeeMakerState;
+//event: coffee machine is ready
+event eCoffeeMakerReady;
 // event: coffee machine user
 event eCoffeeMachineUser: machine;
 
@@ -66,16 +68,15 @@ machine CoffeeMakerControlPanel
             cofferMakerState = HeaterError;
             print "Failed to heat-up the CoffeeMaker in time, Please reset the machine!";
         }
+
         on eWarmUpCompleted goto CoffeeMakerReady with {
             CancelTimer(timer);
         }
 
         // grounds door is opened or closed will handle it later after the coffee maker has warmed up
         defer eOpenGroundsDoor, eCloseGroundsDoor;
-        // defer these inputs from users until the maker has warmed up.
-        defer eEspressoButtonPressed, eSteamerButtonOff, eSteamerButtonOn;
-        // ignore commands
-        ignore eResetCoffeeMaker;
+        // ignore these inputs from users until the maker has warmed up.
+        ignore eEspressoButtonPressed, eSteamerButtonOff, eSteamerButtonOn, eResetCoffeeMaker;
     }
 
 
@@ -84,15 +85,16 @@ machine CoffeeMakerControlPanel
     state CoffeeMakerReady {
         entry {
             cofferMakerState = Ready;
+            send currentUser, eCoffeeMakerReady;
         }
         on eOpenGroundsDoor goto CoffeeMakerDoorOpened;
         on eEspressoButtonPressed goto CoffeeMakerRunGrind;
         on eSteamerButtonOn goto CoffeeMakerRunSteam;
+        // ignore these out of order commands, these must have happened because of an error
+        // from user or sensor
         ignore eSteamerButtonOff, eCloseGroundsDoor;
-        // ignore commands
-        ignore eWarmUpCompleted, eResetCoffeeMaker;
-        // ignore older errors
-        ignore eNoBeansError, eNoWaterError;
+        // ignore commands and errors as they are from previous state
+        ignore eWarmUpCompleted, eResetCoffeeMaker, eNoBeansError, eNoWaterError;
     }
 
     state CoffeeMakerRunGrind {
@@ -112,7 +114,7 @@ machine CoffeeMakerControlPanel
         defer eOpenGroundsDoor, eCloseGroundsDoor, eEspressoButtonPressed;
         // Can't make steam while we are making espresso
         ignore eSteamerButtonOn, eSteamerButtonOff;
-        // ignore commands
+        // ignore commands that are old or cannot be handled right now
         ignore eWarmUpCompleted, eResetCoffeeMaker;
     }
 
@@ -125,11 +127,11 @@ machine CoffeeMakerControlPanel
             cofferMakerState = NoWaterError;
             print "No Water! Please refill water and reset the machine!";
         }
-
+        // the user commands will be handled next after finishing this espresso
         defer eOpenGroundsDoor, eCloseGroundsDoor, eEspressoButtonPressed;
         // Can't make steam while we are making espresso
         ignore eSteamerButtonOn, eSteamerButtonOff;
-        // ignore commands
+        // ignore old commands and cannot reset when making coffee
         ignore eWarmUpCompleted, eResetCoffeeMaker;
     }
 
@@ -146,7 +148,7 @@ machine CoffeeMakerControlPanel
             cofferMakerState = NoWaterError;
             print "No Water! Please refill water and reset the machine!";
         }
-
+        // user might have cleaned grounds while steaming
         defer eOpenGroundsDoor, eCloseGroundsDoor;
         // can't make espresso while we are making steam
         ignore eEspressoButtonPressed, eSteamerButtonOn;
@@ -159,6 +161,7 @@ machine CoffeeMakerControlPanel
             else
                 goto CoffeeMakerReady;
         }
+
         // grounds door is open cannot handle these requests just ignore them
         ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff;
     }
@@ -169,8 +172,9 @@ machine CoffeeMakerControlPanel
             send currentUser, eCoffeeMakerError, cofferMakerState;
         }
         on eResetCoffeeMaker goto WarmUpCoffeeMaker;
-        // error, ignore these requests.
-        ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff, eOpenGroundsDoor, eCloseGroundsDoor, eWarmUpCompleted, eEspressoCompleted, eGrindBeansCompleted;
+        // error, ignore these requests until reset.
+        ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff,
+            eOpenGroundsDoor, eCloseGroundsDoor, eWarmUpCompleted, eEspressoCompleted, eGrindBeansCompleted;
         // ignore other simultaneous errors
         ignore eNoBeansError, eNoWaterError;
     }

@@ -7,7 +7,7 @@ In its simplest form, a module in P is a collection of state machines. The P mod
 
 [^1]: A closed system is a system where all the machines or interfaces that are created are defined or implemented in the unioned modules.
 
-???+ Note "P Modules Grammar"
+??? Note "P Modules Grammar"
 
     ```
     modExpr :

@@ -53,6 +53,7 @@ nav:
 
 - Tutorials:
     - Outline: tutsoutline.md
+    - P Semantics: tutorial/psemantics.md
     - Client Server: tutorial/clientserver.md
     - Two Phase Commit: tutorial/twophasecommit.md
     - Espresso Maker: tutorial/espressomachine.md

@@ -1,7 +1,7 @@
 A Function in P can be arbitrary piece of imperative code which enables programmers to capture complex protocol logic in their state machines.
 P supports the common imperative programming language expressions (just like in [Java](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/expressions.html)).
 
-???+ note "P Expressions Grammar"
+??? note "P Expressions Grammar"
 
     ```
         expr :

@@ -1,6 +1,9 @@
-To get familiar with the P langauage and the tool chain, we provide a series of examples along with excercise problems. 
+To get familiar with the P langauage and the associated tool chain, we provide a series of examples along with excercise problems.
 
-!!! note ""
+!!! tip "P Language Semantics"
+    Before getting started with the Tutorials, please read through [this](tutorial/psemantics.md) to get a quick overview of the P language semantics.
+
+!!! check "How to use this tutorials"
 
     We recommend to work through the examples in the tutorials one-by-one by solving the accompanying exercise problems before moving to the next example.
 

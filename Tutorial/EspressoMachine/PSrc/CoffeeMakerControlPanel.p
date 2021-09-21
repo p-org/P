@@ -1,34 +1,61 @@
+/* Events used by the user to interact with the Control panel of the Coffee Machine */
+// event: make espresso button pressed
+event eEspressoButtonPressed;
+// event: steamer button turned off
+event eSteamerButtonOff;
+// event: steamer button turned on
+event eSteamerButtonOn;
+// event: door opened to empty grounds
+event eOpenGroundsDoor;
+// event: door closed after emptying grounds
+event eCloseGroundsDoor;
+// event: reset coffee maker button pressed
+event eResetCoffeeMaker;
+//event: error message from panel to the user
+event eCoffeeMakerError: tCoffeeMakerState;
+// event: coffee machine user
+event eCoffeeMachineUser: machine;
+
+// enum to represent the state of the coffee maker
 enum tCoffeeMakerState {
     NotWarmedUp,
     Ready,
-    Error
+    HeaterError,
+    NoBeansError,
+    NoWaterError
 }
 
-event eEspressoButtonPressed;
-event eSteamerButtonOff;
-event eSteamerButtonOn;
-event eOpenGroundsDoor;
-event eCloseGroundsDoor;
-event eResetCoffeeMaker;
-
 /*
-CoffeeMakerControlPanel that acts as the interface between the CoffeeMaker and User
+CoffeeMakerControlPanel machine acts as the interface between the CoffeeMaker and User
+It converts the inputs from the user to inputs to the CoffeeMaker and sends appropriate responses to
+the user.
 */
 machine CoffeeMakerControlPanel
 {
     var timer: Timer;
     var coffeeMaker: EspressoCoffeeMaker;
     var cofferMakerState: tCoffeeMakerState;
+    var currentUser: machine;
 
     start state Init {
         entry {
             cofferMakerState = NotWarmedUp;
             coffeeMaker = new EspressoCoffeeMaker(this);
             timer = CreateTimer(this);
+            WaitForUser();
             goto WarmUpCoffeeMaker;
         }
     }
-    
+
+    // block until we have a user that shows up
+    fun WaitForUser() {
+        receive {
+            case eCoffeeMachineUser: (user: machine) {
+                currentUser = user;
+            }
+        }
+    }
+
     state WarmUpCoffeeMaker {
         entry {
             StartTimer(timer);
@@ -36,14 +63,19 @@ machine CoffeeMakerControlPanel
         }
 
         on eTimeOut goto EncounteredError with {
+            cofferMakerState = HeaterError;
             print "Failed to heat-up the CoffeeMaker in time, Please reset the machine!";
         }
         on eWarmUpCompleted goto CoffeeMakerReady with {
             CancelTimer(timer);
         }
 
-        defer eOpenGroundsDoor, eCloseGroundsDoor; // grounds door is open will handle it later
-        ignore eEspressoButtonPressed, eSteamerButtonOff, eSteamerButtonOn; // ignore these inputs from users until the maker has warmed up.
+        // grounds door is opened or closed will handle it later after the coffee maker has warmed up
+        defer eOpenGroundsDoor, eCloseGroundsDoor;
+        // defer these inputs from users until the maker has warmed up.
+        defer eEspressoButtonPressed, eSteamerButtonOff, eSteamerButtonOn;
+        // ignore commands
+        ignore eResetCoffeeMaker;
     }
 
 
@@ -57,6 +89,10 @@ machine CoffeeMakerControlPanel
         on eEspressoButtonPressed goto CoffeeMakerRunGrind;
         on eSteamerButtonOn goto CoffeeMakerRunSteam;
         ignore eSteamerButtonOff, eCloseGroundsDoor;
+        // ignore commands
+        ignore eWarmUpCompleted, eResetCoffeeMaker;
+        // ignore older errors
+        ignore eNoBeansError, eNoWaterError;
     }
 
     state CoffeeMakerRunGrind {
@@ -64,34 +100,55 @@ machine CoffeeMakerControlPanel
             GrindBeans();
         }
         on eNoBeansError goto EncounteredError with {
+            cofferMakerState = NoBeansError;
             print "No beans to grind! Please refill beans and reset the machine!";
+        }
+        on eNoWaterError goto EncounteredError with {
+            cofferMakerState = NoWaterError;
+            print "No Water! Please refill water and reset the machine!";
         }
         on eGrindBeansCompleted goto CoffeeMakerRunEspresso;
 
-        defer eOpenGroundsDoor, eCloseGroundsDoor;
+        defer eOpenGroundsDoor, eCloseGroundsDoor, eEspressoButtonPressed;
         // Can't make steam while we are making espresso
         ignore eSteamerButtonOn, eSteamerButtonOff;
+        // ignore commands
+        ignore eWarmUpCompleted, eResetCoffeeMaker;
     }
 
     state CoffeeMakerRunEspresso {
         entry {
             StartEspresso();
         }
-        on eEspressoCompleted goto CoffeeMakerReady;
-        defer eOpenGroundsDoor, eCloseGroundsDoor;
+        on eEspressoCompleted goto CoffeeMakerReady with { send currentUser, eEspressoCompleted; }
+        on eNoWaterError goto EncounteredError with {
+            cofferMakerState = NoWaterError;
+            print "No Water! Please refill water and reset the machine!";
+        }
+
+        defer eOpenGroundsDoor, eCloseGroundsDoor, eEspressoButtonPressed;
         // Can't make steam while we are making espresso
         ignore eSteamerButtonOn, eSteamerButtonOff;
+        // ignore commands
+        ignore eWarmUpCompleted, eResetCoffeeMaker;
     }
 
     state CoffeeMakerRunSteam {
         entry {
             StartSteamer();
         }
+
         on eSteamerButtonOff  goto CoffeeMakerReady with {
             StopSteamer();
         }
+
+        on eNoWaterError goto EncounteredError with {
+            cofferMakerState = NoWaterError;
+            print "No Water! Please refill water and reset the machine!";
+        }
+
         defer eOpenGroundsDoor, eCloseGroundsDoor;
-        // can't make espresso or steam while we are making steam
+        // can't make espresso while we are making steam
         ignore eEspressoButtonPressed, eSteamerButtonOn;
     }
 
@@ -102,16 +159,20 @@ machine CoffeeMakerControlPanel
             else
                 goto CoffeeMakerReady;
         }
-        ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff; // grounds door is open cannot handle these requests just ignore them
+        // grounds door is open cannot handle these requests just ignore them
+        ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff;
     }
     
     state EncounteredError {
         entry {
-            cofferMakerState = Error;
+            // send the error message to the client
+            send currentUser, eCoffeeMakerError, cofferMakerState;
         }
         on eResetCoffeeMaker goto WarmUpCoffeeMaker;
-        defer eOpenGroundsDoor, eCloseGroundsDoor; // door opened and closed, will handle these signals later.
-        ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff; // error, ignore these requests.
+        // error, ignore these requests.
+        ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff, eOpenGroundsDoor, eCloseGroundsDoor, eWarmUpCompleted, eEspressoCompleted, eGrindBeansCompleted;
+        // ignore other simultaneous errors
+        ignore eNoBeansError, eNoWaterError;
     }
 
     fun BeginHeatingCoffeeMaker() {

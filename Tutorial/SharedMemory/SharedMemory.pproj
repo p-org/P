@@ -1,0 +1,12 @@
+<Project name = "SharedObjects">
+<InputFiles>
+    <PFile>./PSrc/LBSharedObject.p</PFile>
+    <PFile>./PSrc/RWLBSharedObject.p</PFile>
+    <PFile>./PTst/TestLBSharedObject.p</PFile>
+    <PFile>./PTst/TestRWLBSharedObject.p</PFile>
+    <PFile>../UserDefinedTypes/PSrc/Set.p</PFile>
+</InputFiles>
+<Target>P#</Target>
+<TargetFileName>BrickManager</TargetFileName>
+<OutputDir>./PGenerated/</OutputDir>
+</Project>

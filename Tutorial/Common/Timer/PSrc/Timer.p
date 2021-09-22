@@ -13,15 +13,24 @@ machine Timer
 	}
 
 	state WaitForTimerRequests {
-		on eStartTimer do { if($) send client, eTimeOut; }
-		on eCancelTimer do {
-		    if ($)
-            {
-                send client, eCancelTimerFailed;
-            } else {
-                send client, eCancelTimerSuccess;
-            }
-		}
+		on eStartTimer goto TimerStarted;
+		ignore eCancelTimer, eDelayedTimeOut;
+	}
+
+	state TimerStarted {
+	    entry {
+	        if($)
+	        {
+                send client, eTimeOut;
+                goto WaitForTimerRequests;
+	        }
+	        else
+	        {
+	            send this, eDelayedTimeOut;
+	        }
+	    }
+	    on eDelayedTimeOut goto TimerStarted;
+	    on eCancelTimer goto WaitForTimerRequests with { send client, eTimeOut; }
 	}
 }
 
@@ -30,9 +39,8 @@ Events used to interact with the timer machine
 ************************************************/
 event eStartTimer;
 event eCancelTimer;
-event eCancelTimerFailed;
-event eCancelTimerSuccess;
 event eTimeOut;
+event eDelayedTimeOut;
 /************************************************
 Functions or API's to interact with the OS Timer
 *************************************************/
@@ -51,10 +59,8 @@ fun StartTimer(timer: Timer)
 // cancel timer
 fun CancelTimer(timer: Timer)
 {
-	send timer, eCancelTimer;
-	// wait for cancel response, nothing different is done if cancel failed or succeeded.
-	receive {
-		case eCancelTimerSuccess: { print "Timer Cancelled Successful"; }
-		case eCancelTimerFailed: { print "Timer Cancel Failed!"; }
-	}
+    send timer, eCancelTimer;
+    receive {
+        case eTimeOut: {}
+    }
 }

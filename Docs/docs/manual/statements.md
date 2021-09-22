@@ -1,7 +1,7 @@
 A Function in P can be arbitrary piece of imperative code which enables programmers to capture complex protocol logic in their state machines.
 P supports common imperative programming language statement constructs like while-loops, function calls, and conditionals.
 
-???+ Note "P Statements Grammar"
+??? Note "P Statements Grammar"
     ```
     statement : { statement* }							# CompoundStmt
     | assert expr (, expr)? ;	                        # AssertStmt

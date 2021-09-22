@@ -93,6 +93,7 @@ markdown_extensions:
   - pymdownx.tabbed
   - pymdownx.details
   - pymdownx.highlight
+  - pymdownx.critic
   - attr_list
   - pymdownx.superfences:
       custom_fences:

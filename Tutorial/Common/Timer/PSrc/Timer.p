@@ -18,19 +18,19 @@ machine Timer
 	}
 
 	state TimerStarted {
-	    entry {
-	        if($)
-	        {
-                send client, eTimeOut;
-                goto WaitForTimerRequests;
-	        }
-	        else
-	        {
-	            send this, eDelayedTimeOut;
-	        }
-	    }
-	    on eDelayedTimeOut goto TimerStarted;
-	    on eCancelTimer goto WaitForTimerRequests with { send client, eTimeOut; }
+    entry {
+      if($)
+      {
+        send client, eTimeOut;
+        goto WaitForTimerRequests;
+      }
+      else
+      {
+        send this, eDelayedTimeOut;
+      }
+    }
+    on eDelayedTimeOut goto TimerStarted;
+    on eCancelTimer goto WaitForTimerRequests with { send client, eTimeOut; }
 	}
 }
 
@@ -59,8 +59,8 @@ fun StartTimer(timer: Timer)
 // cancel timer
 fun CancelTimer(timer: Timer)
 {
-    send timer, eCancelTimer;
-    receive {
-        case eTimeOut: {}
-    }
+  send timer, eCancelTimer;
+  receive {
+    case eTimeOut: {}
+  }
 }

@@ -12,10 +12,11 @@ using System.Threading.Tasks;
 #pragma warning disable 162, 219, 414
 namespace PImplementation
 {
-    public static partial class GlobalFunctions {
-		public static PrtNamedTuple ChooseRandomTransaction(PMachine pMachine)
-        {
-            return (new PrtNamedTuple(new string[] { "key", "val", "transId" }, (PrtString) pMachine.TryRandomInt(100).ToString(), (PrtInt)pMachine.TryRandomInt(100), (PrtInt)pMachine.TryRandomInt(100)));
-        }
-	}
+  public static partial class GlobalFunctions
+  {
+public static PrtNamedTuple ChooseRandomTransaction(PMachine pMachine)
+    {
+return (new PrtNamedTuple(new string[] { "key", "val", "transId" }, (PrtString) pMachne.TryRandomInt(100).ToString(), (PrtInt)pMachine.TryRandomInt(100), (PrtInt)pMachine.TryRandomInt(100)));
+    }
+}
 }

@@ -58,35 +58,36 @@ machine Proposer
 
     on TIMEOUT goto ProposerPhaseOne;
   }
-    state ProposerPhaseTwo {
-        ignore eAgree;
-        entry {
-          numOfAcceptRecv = 0;
-          SendToAllAcceptors(eAccept, (proposer = this, proposal = agreedProposal));
-          StartTimer(timer;
-        }
-        on eReject do (proposal : tProposal)
-        {
-          if(nextProposalId.round <= payload.round)
-          {
-            nextProposalId.round = payload.round;
-          }
-          CancelTimer(timer);
-          goto ProposerPhaseOne;
-        }
-        on eAccepted do (req: (acceptor: Acceptor, accepted: tProposal)) {
-          if(IsProposalIdEqual(req.proposal, agreedProposal)){
-            numOfAcceptRecv = numOfAcceptRecv + 1;
-          }
-          if(numOfAcceptRecv == majority)
-          {
-            CancelTimer(timer);
-            // done proposing lets halt
-            raise halt;
-          }
-        }
-        on eTimeOut goto ProposerPhaseOne;
+
+  state ProposerPhaseTwo {
+    ignore eAgree;
+    entry {
+      numOfAcceptRecv = 0;
+      SendToAllAcceptors(eAccept, (proposer = this, proposal = agreedProposal));
+      StartTimer(timer;
+    }
+    on eReject do (proposal : tProposal)
+    {
+      if(nextProposalId.round <= payload.round)
+      {
+        nextProposalId.round = payload.round;
       }
+      CancelTimer(timer);
+      goto ProposerPhaseOne;
+    }
+    on eAccepted do (req: (acceptor: Acceptor, accepted: tProposal)) {
+      if(IsProposalIdEqual(req.proposal, agreedProposal)){
+        numOfAcceptRecv = numOfAcceptRecv + 1;
+      }
+      if(numOfAcceptRecv == majority)
+      {
+        CancelTimer(timer);
+        // done proposing lets halt
+        raise halt;
+      }
+    }
+    on eTimeOut goto ProposerPhaseOne;
+  }
 }
 
 fun IsProposalIdEqual(id1: tProposal, id2: tProposal) : bool {

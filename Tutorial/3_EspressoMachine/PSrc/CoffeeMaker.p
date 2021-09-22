@@ -34,46 +34,46 @@ the controller.
 *****************************************************/
 machine EspressoCoffeeMaker
 {
-    // control panel of the coffee machine that sends inputs to the coffee maker
-    var controller: CoffeeMakerControlPanel;
+  // control panel of the coffee machine that sends inputs to the coffee maker
+  var controller: CoffeeMakerControlPanel;
 
-    start state WaitForRequests {
-        entry (_controller: CoffeeMakerControlPanel) {
-            controller = _controller;
-        }
-
-        on eWarmUpReq do {
-            if(IsHeaterWorking())
-                send controller, eWarmUpCompleted;
-        }
-
-        on eGrindBeansReq do {
-            if (!HasBeans()) {
-		        send controller, eNoBeansError;
-	        } else {
-		        send controller, eGrindBeansCompleted;
-	        }
-        }
-
-        on eStartEspressoReq do {
-           	if (!HasWater()) {
-		        send controller, eNoWaterError;
-	        } else {
-		        send controller, eEspressoCompleted;
-	        }
-        }
-        on eStartSteamerReq do {
-            if (!HasWater()) {
-		        send controller, eNoWaterError;
-	        }
-        }
-        on eStopSteamerReq do { /* do nothing, steamer stopped */ }
+  start state WaitForRequests {
+    entry (_controller: CoffeeMakerControlPanel) {
+      controller = _controller;
     }
 
-    // nondeterministic functions to trigger different behaviors
-    fun HasBeans() : bool { return $; }
-    fun HasWater() : bool { return $; }
-    fun IsHeaterWorking(): bool { return $; }
+    on eWarmUpReq do {
+      if(IsHeaterWorking())
+        send controller, eWarmUpCompleted;
+    }
+
+    on eGrindBeansReq do {
+      if (!HasBeans()) {
+        send controller, eNoBeansError;
+      } else {
+        send controller, eGrindBeansCompleted;
+      }
+    }
+
+    on eStartEspressoReq do {
+      if (!HasWater()) {
+        send controller, eNoWaterError;
+      } else {
+        send controller, eEspressoCompleted;
+      }
+    }
+    on eStartSteamerReq do {
+      if (!HasWater()) {
+        send controller, eNoWaterError;
+      }
+    }
+    on eStopSteamerReq do { /* do nothing, steamer stopped */ }
+  }
+
+  // nondeterministic functions to trigger different behaviors
+  fun HasBeans() : bool { return $; }
+  fun HasWater() : bool { return $; }
+  fun IsHeaterWorking(): bool { return $; }
 }
 
 

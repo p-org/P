@@ -42,25 +42,25 @@ machine RWLBSharedObject {
 			var pickReaderOrWriter: set[bool];
 			var pick: machine;
 			if(sizeof(waitingWriters) > 0)
-			    pickReaderOrWriter += (true);
+        pickReaderOrWriter += (true);
 			if(sizeof(waitingReaders) > 0)
-			    pickReaderOrWriter += (false);
+        pickReaderOrWriter += (false);
 
 			if(sizeof(pickReaderOrWriter) > 0 && choose(pickReaderOrWriter))
 			{
-			    pick = choose(waitingWriters);
-			    waitingWriters -= (pick);
-			    raise eAcqWriteLock, pick;
+        pick = choose(waitingWriters);
+        waitingWriters -= (pick);
+        raise eAcqWriteLock, pick;
 			}
 			else if(sizeof(pickReaderOrWriter) > 0)
 			{
-			    pick = choose(waitingReaders);
-			    waitingReaders -= (pick);
-                raise eAcqReadLock, pick;
+        pick = choose(waitingReaders);
+        waitingReaders -= (pick);
+        raise eAcqReadLock, pick;
 			}
 			else
 			{
-			    assert sizeof(waitingReaders) == 0 && sizeof(waitingWriters) == 0, "Logic for picking readers and writers is incorrect!";
+        assert sizeof(waitingReaders) == 0 && sizeof(waitingWriters) == 0, "Logic for picking readers and writers is incorrect!";
 			}
 		}
 		on eAcqReadLock goto ReadLockAcquired;
@@ -121,8 +121,8 @@ machine RWLBSharedObject {
 
 		on eAcqWriteLock do (writer: machine)
 		{
-            // re-entrancy not supported right now
-            assert(writer != currentWriter), "Trying to re-acquire the lock (reentrancy not supported)";
+      // re-entrancy not supported right now
+      assert(writer != currentWriter), "Trying to re-acquire the lock (reentrancy not supported)";
 			waitingWriters += (writer);
 		}
 	}
@@ -140,7 +140,7 @@ AcquireReadLock function sends the eAcqReadLock event and waits for the lock to 
 It returns a copy of the shared object.
 */
 fun AcquireReadLock(rwlock: RWLBSharedObject, client: machine) : any {
-    var ret: any;
+  var ret: any;
 	send rwlock, eAcqReadLock, client;
 	receive {
 		case eRWLockGranted: (obj: any){
@@ -167,10 +167,10 @@ fun AcquireWriteLock(rwlock: RWLBSharedObject, client: machine) : any {
 	var retObj: any;
     send rwlock, eAcqWriteLock, client;
     receive {
-        case eRWLockGranted: (obj: any) {
-            print format ("Write Lock {0} Acquired by {1}", rwlock, client);
-            retObj = obj;
-        }
+      case eRWLockGranted: (obj: any) {
+        print format ("Write Lock {0} Acquired by {1}", rwlock, client);
+        retObj = obj;
+      }
     }
     return retObj;
 }
@@ -181,7 +181,7 @@ It also updates the value of the shared object to the value passed by the client
 */
 fun ReleaseWriteLock(rwlock: RWLBSharedObject, client: machine, val: any) {
 	send rwlock, eReleaseWriteLock, (writer = client, val = val);
-    print format ("Write Lock {0} Released by {1}", rwlock, client);
+  print format ("Write Lock {0} Released by {1}", rwlock, client);
 }
 
 

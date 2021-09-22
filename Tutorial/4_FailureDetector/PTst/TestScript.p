@@ -1,3 +1,3 @@
 test TestFailureDetector [main=TestMultipleClients]:
-    assert ReliableFailureDetector in
-    union { TestMultipleClients }, FailureDetector, FailureInjector;
+  assert ReliableFailureDetector in
+  union { TestMultipleClients }, FailureDetector, FailureInjector;

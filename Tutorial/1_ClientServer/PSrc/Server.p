@@ -24,23 +24,23 @@ machine BankServer
 
   state WaitForWithdrawRequests {
     on eWithDrawReq do (wReq: tWithDrawReq) {
-      var currentBalance: int;
-      var response: tWithDrawResp;
+			var currentBalance: int;
+			var response: tWithDrawResp;
 
+			// read the current account balance from the database
+			currentBalance = ReadBankBalance(database, wReq.accountId);
+			if(currentBalance - wReq.amount >= 10)
+			{
+				UpdateBankBalance(database, wReq.accountId, currentBalance - wReq.amount);
+				response = (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, balance = currentBalance - wReq.amount, rId = wReq.rId);
+			}
+			else
+			{
+				response = (status = WITHDRAW_ERROR, accountId = wReq.accountId, balance = currentBalance, rId = wReq.rId);
+			}
 
-      // read the current account balance from the database
-      currentBalance = ReadBankBalance(database, wReq.accountId);
-      if(currentBalance - wReq.amount >= 10)
-      {
-        UpdateBankBalance(database, wReq.accountId, currentBalance - wReq.amount);
-        response = (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, balance = currentBalance - wReq.amount, rId = wReq.rId);
-      }
-      else
-      {
-        response = (status = WITHDRAW_ERROR, accountId = wReq.accountId, balance = currentBalance, rId = wReq.rId);
-      }
-      // send response to the client
-      send wReq.source, eWithDrawResp, response;
+			// send response to the client
+			send wReq.source, eWithDrawResp, response;
     }
   }
 }
@@ -60,13 +60,13 @@ machine Database
       balance = input.initialBalance;
     }
     on eUpdateQuery do (query: (accountId: int, balance: int)) {
-        assert query.accountId in balance, "Invalid accountId received in the update query!";
-        balance[query.accountId] = query.balance;
+			assert query.accountId in balance, "Invalid accountId received in the update query!";
+			balance[query.accountId] = query.balance;
     }
     on eReadQuery do (query: (accountId: int))
     {
-        assert query.accountId in balance, "Invalid accountId received in the read query!";
-        send server, eReadQueryResp, (accountId = query.accountId, balance = balance[query.accountId]);
+			assert query.accountId in balance, "Invalid accountId received in the read query!";
+			send server, eReadQueryResp, (accountId = query.accountId, balance = balance[query.accountId]);
     }
   }
 }
@@ -75,14 +75,14 @@ fun ReadBankBalance(database: Database, accountId: int) : int {
     var currentBalance: int;
     send database, eReadQuery, (accountId = accountId,);
     receive {
-        case eReadQueryResp: (resp: (accountId: int, balance: int)) {
-            currentBalance = resp.balance;
-        }
+			case eReadQueryResp: (resp: (accountId: int, balance: int)) {
+				currentBalance = resp.balance;
+			}
     }
     return currentBalance;
 }
 
 fun UpdateBankBalance(database: Database, accId: int, bal: int)
 {
-    send database, eUpdateQuery, (accountId = accId, balance = bal);
+	send database, eUpdateQuery, (accountId = accId, balance = bal);
 }

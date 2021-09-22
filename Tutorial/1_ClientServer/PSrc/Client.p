@@ -10,8 +10,8 @@ type tWithDrawResp = (status: tWithDrawRespStatus, accountId: int, balance: int,
 
 // enum representing the response status for the withdraw request
 enum tWithDrawRespStatus {
-	WITHDRAW_SUCCESS,
-	WITHDRAW_ERROR
+  WITHDRAW_SUCCESS,
+  WITHDRAW_ERROR
 }
 
 // event for withdraw request (from client to bank server)

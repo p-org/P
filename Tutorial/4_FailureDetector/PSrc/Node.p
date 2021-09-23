@@ -1,5 +1,5 @@
 /****************************
-Node machine can sends a pong message on receiving a ping
+Node machine sends a pong message on receiving a ping
 *****************************/
 machine Node {
   start state WaitForPing {

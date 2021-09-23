@@ -48,7 +48,7 @@ fun SetupClientServerSystem(numClients: int)
 
   // before client starts sending any messages make sure we
   // initialize the monitors or specifications
-  announce eSpec_BankBalanceIsCorrect_Init, initAccBalance;
+  announce eSpec_BankBalanceIsAlwaysCorrect_Init, initAccBalance;
 
   accountIds = keys(initAccBalance);
 

@@ -16,7 +16,7 @@ machine TestMultipleClients {
   }
 }
 
-// setup the system
+// setup the system for failure detection
 fun SetupSystemWithFailureInjector(config: tSystemConfig)
 {
   var i : int;

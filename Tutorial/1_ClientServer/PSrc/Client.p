@@ -1,11 +1,13 @@
 /* User Defined Types */
-// payload type associated with the eWithDrawReq, where `source` is the client sending the withdraw request,
-// `accountId` is the account to withdraw from, `amount` is the amount to withdraw, and `rId` is the unique
+
+// payload type associated with the eWithDrawReq, where `source`: client sending the withdraw request,
+// `accountId`: account to withdraw from, `amount`: amount to withdraw, and `rId`: unique
 // request Id associated with each request.
 type tWithDrawReq = (source: Client, accountId: int, amount: int, rId:int);
-// payload type associated with the eWithDrawResp, where `status` is the response status (below),
-// `accountId` is the account withdrawn from, `balance` is the bank balance after withdrawal, and
-// `rId` is the request id for which this is the response.
+
+// payload type associated with the eWithDrawResp, where `status`: response status (below),
+// `accountId`: account withdrawn from, `balance`: bank balance after withdrawal, and
+// `rId`: request id for which this is the response.
 type tWithDrawResp = (status: tWithDrawRespStatus, accountId: int, balance: int, rId: int);
 
 // enum representing the response status for the withdraw request
@@ -14,9 +16,9 @@ enum tWithDrawRespStatus {
   WITHDRAW_ERROR
 }
 
-// event for withdraw request (from client to bank server)
+// event: withdraw request (from client to bank server)
 event eWithDrawReq : tWithDrawReq;
-// event for withdraw response (from bank server to client)
+// event: withdraw response (from bank server to client)
 event eWithDrawResp: tWithDrawResp;
 
 

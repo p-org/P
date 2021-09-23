@@ -1,5 +1,5 @@
 /******************************************
-Client machine that keeps track of the alive nodes
+Client machine that keeps track of the alive nodes in the system
 *******************************************/
 
 machine Client {

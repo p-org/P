@@ -7,7 +7,7 @@ reject the transaction.
 
 machine Participant {
   // local key value store
-  var kvStore: map[string, int];
+  var kvStore: map[string, tTrans];
   // pending write transactions that have not been committed or aborted yet.
   var pendingWriteTrans: map[int, tTrans];
   // coordinator machine
@@ -17,6 +17,7 @@ machine Participant {
     on eInformCoordinator goto WaitForRequests with (coor: Coordinator) {
       coordinator = coor;
     }
+    defer eShutDown;
   }
 
   state WaitForRequests {
@@ -35,7 +36,7 @@ machine Participant {
       format ("Commit request for a non-pending transaction, transId: {0}, pendingTrans set: {1}",
         transId, pendingWriteTrans);
       // commit the transaction locally
-      kvStore[pendingWriteTrans[transId].key] = pendingWriteTrans[transId].val;
+      kvStore[pendingWriteTrans[transId].key] = pendingWriteTrans[transId];
       // remove the transaction from the pending transactions set
       pendingWriteTrans -= (transId);
     }
@@ -48,7 +49,7 @@ machine Participant {
       // add the transaction to the pending transactions set
       pendingWriteTrans[prepareReq.transId] = prepareReq;
       // non-deterministically pick whether to accept or reject the transaction
-      if ($) {
+      if (!(prepareReq.key in kvStore) || (prepareReq.key in kvStore && prepareReq.transId > kvStore[prepareReq.key].transId)) {
         send coordinator, ePrepareResp, (participant = this, transId = prepareReq.transId, status = SUCCESS);
       } else {
         send coordinator, ePrepareResp, (participant = this, transId = prepareReq.transId, status = ERROR);
@@ -59,7 +60,7 @@ machine Participant {
       if(req.key in kvStore)
       {
         // read successful as the key exists
-        send req.client, eReadTransResp, (key = req.key, val = kvStore[req.key], status = SUCCESS);
+        send req.client, eReadTransResp, (key = req.key, val = kvStore[req.key].val, status = SUCCESS);
       }
       else
       {
@@ -68,7 +69,7 @@ machine Participant {
       }
     }
 
-    on eShutDown {
+    on eShutDown do {
       raise halt;
     }
   }

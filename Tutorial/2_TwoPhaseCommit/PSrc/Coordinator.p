@@ -68,6 +68,8 @@ machine Coordinator
   var participants: set[Participant];
   // current write transaction being handled
   var currentWriteTransReq: tWriteTransReq;
+  // previously seen transaction ids
+  var seenTransIds: set[int];
   var timer: Timer;
 
   start state Init {
@@ -82,6 +84,12 @@ machine Coordinator
 
   state WaitForTransactions {
     on eWriteTransReq do (wTrans : tWriteTransReq) {
+      if(wTrans.trans.transId in seenTransIds) // transId have to be unique
+      {
+        send wTrans.client, eWriteTransResp, (transId = wTrans.trans.transId, status = TIMEOUT);
+        return;
+      }
+
       currentWriteTransReq = wTrans;
       BroadcastToAllParticipants(ePrepareReq, wTrans.trans);
       //start timer while waiting for responses from all participants
@@ -145,7 +153,8 @@ machine Coordinator
     // ask all participants to abort and fail the transaction
     BroadcastToAllParticipants(eAbortTrans, currentWriteTransReq.trans.transId);
     send currentWriteTransReq.client, eWriteTransResp, (transId = currentWriteTransReq.trans.transId, status = respStatus);
-    CancelTimer(timer);
+    if(respStatus != TIMEOUT)
+      CancelTimer(timer);
   }
 
   fun DoGlobalCommit() {

@@ -44,10 +44,12 @@ spec AtomicityInvariant observes eWriteTransResp, ePrepareResp, eMonitor_Atomici
       else if(resp.status == ERROR)
       {
         assert participantsResponse[resp.transId][ERROR] > 0,
-          format ("Write transaction was responded as failed before receiving error from atleast one participant. ") +
+          format ("Write transaction {0} was responded as failed before receiving error from atleast one participant.", resp.transId) +
           format ("participants sent success: {0}, participants sent error: {1}", participantsResponse[resp.transId][SUCCESS],
             participantsResponse[resp.transId][ERROR]);
       }
+      // remove the transaction information
+      participantsResponse -= (resp.transId);
     }
   }
 }

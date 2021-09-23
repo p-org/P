@@ -1,9 +1,9 @@
 /* User Defined Types */
 
-// transaction consisting of the key, value, and the unique transaction id.
+// a transaction consisting of the key, value, and the unique transaction id.
 type tTrans = (key: string, val: int, transId: int);
-// payload type associated with the `eWriteTransReq` event where `client` is the client sending the
-// transaction, `trans` is the transaction to be committed.
+// payload type associated with the `eWriteTransReq` event where `client`: client sending the
+// transaction, `trans`: transaction to be committed.
 type tWriteTransReq = (client: Client, trans: tTrans);
 // payload type associated with the `eWriteTransResp` event where `transId` is the transaction Id
 // and `status` is the return status of the transaction request.

@@ -1,9 +1,9 @@
 /** Events used to communicate between the bank server and the backend database **/
-// event used to send update the database, i.e. the `balance` associated with the `accountId`
+// event: send update the database, i.e. the `balance` associated with the `accountId`
 event eUpdateQuery: (accountId: int, balance: int);
-// event used to send a read request for the `accountId`.
+// event: send a read request for the `accountId`.
 event eReadQuery: (accountId: int);
-// event used to send a response (`balance`) corresponding to the read request for an `accountId`
+// event: send a response (`balance`) corresponding to the read request for an `accountId`
 event eReadQueryResp: (accountId: int, balance: int);
 
 /*************************************************************
@@ -29,12 +29,13 @@ machine BankServer
 
       // read the current account balance from the database
       currentBalance = ReadBankBalance(database, wReq.accountId);
+      // if there is enough money in account after withdrawal
       if(currentBalance - wReq.amount >= 10)
       {
         UpdateBankBalance(database, wReq.accountId, currentBalance - wReq.amount);
         response = (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, balance = currentBalance - wReq.amount, rId = wReq.rId);
       }
-      else
+      else // not enough money after withdraw
       {
         response = (status = WITHDRAW_ERROR, accountId = wReq.accountId, balance = currentBalance, rId = wReq.rId);
       }
@@ -71,6 +72,7 @@ machine Database
   }
 }
 
+// Function to read the bank balance corresponding to the accountId
 fun ReadBankBalance(database: Database, accountId: int) : int {
     var currentBalance: int;
     send database, eReadQuery, (accountId = accountId,);
@@ -82,6 +84,7 @@ fun ReadBankBalance(database: Database, accountId: int) : int {
     return currentBalance;
 }
 
+// Function to update the account balance for the account Id
 fun UpdateBankBalance(database: Database, accId: int, bal: int)
 {
   send database, eUpdateQuery, (accountId = accId, balance = bal);

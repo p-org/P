@@ -1,7 +1,10 @@
-// event used to initialize the AtomicityInvariant spec monitor
+// event: initialize the AtomicityInvariant spec monitor
 event eMonitor_AtomicityInitialize: int;
 
-// We would like to assert the atomicity property that if a transaction is committed by the coordinator then it was agreed on by all participants
+/**********************************
+We would like to assert the atomicity property that:
+if a transaction is committed by the coordinator then it was agreed on by all participants
+***********************************/
 spec AtomicityInvariant observes eWriteTransResp, ePrepareResp, eMonitor_AtomicityInitialize
 {
   // a map from transaction id to a map from responses status to number of participants with that response

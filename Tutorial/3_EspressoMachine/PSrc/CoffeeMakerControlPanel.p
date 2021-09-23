@@ -1,4 +1,4 @@
-/* Events used by the user to interact with the Control panel of the Coffee Machine */
+/* Events used by the user to interact with the control panel of the Coffee Machine */
 // event: make espresso button pressed
 event eEspressoButtonPressed;
 // event: steamer button turned off
@@ -28,8 +28,8 @@ enum tCoffeeMakerState {
 }
 
 /*
-CoffeeMakerControlPanel machine acts as the interface between the CoffeeMaker and User
-It converts the inputs from the user to inputs to the CoffeeMaker and sends appropriate responses to
+CoffeeMakerControlPanel acts as the interface between the CoffeeMaker and User
+It converts the inputs from the user to appropriate inputs to the CoffeeMaker and sends responses to
 the user.
 */
 machine CoffeeMakerControlPanel
@@ -49,7 +49,7 @@ machine CoffeeMakerControlPanel
     }
   }
 
-  // block until we have a user that shows up
+  // block until a user shows up
   fun WaitForUser() {
       receive {
           case eCoffeeMachineUser: (user: machine) {

@@ -1,10 +1,11 @@
 
-/* Request from the controller to coffee maker */
-// event: warmup request when the machine starts
+/* Requests or operations from the controller to coffee maker */
+
+// event: warmup request when the coffee maker starts or resets
 event eWarmUpReq;
-// event: grind beans request for a coffee
+// event: grind beans request before making coffee
 event eGrindBeansReq;
-// event: start making cofee
+// event: start brewing coffee
 event eStartEspressoReq;
 // event start steamer
 event eStartSteamerReq;
@@ -14,12 +15,12 @@ event eStopSteamerReq;
 /* Responses from the coffee maker to the controller */
 // event: completed grinding beans
 event eGrindBeansCompleted;
-// event: completed making coffee
+// event: completed brewing and pouring coffee
 event eEspressoCompleted;
 // event: warmed up the machine and read to make coffee
 event eWarmUpCompleted;
 
-/* Error messages from the coffee maker to control panel*/
+/* Error messages from the coffee maker to control panel or controller*/
 // event: no water for coffee, refill water!
 event eNoWaterError;
 // event: no beans for coffee, refill beans!
@@ -28,9 +29,9 @@ event eNoBeansError;
 event eWarmerError;
 
 /*****************************************************
-EspressoCoffeeMaker machine receives requests from the control panel of the coffee machine and
-based on whether it is in the correct state heater working, has beans and water, it responds back to
-the controller.
+EspressoCoffeeMaker receives requests from the control panel of the coffee machine and
+based on its state e.g., whether heater is working, or it has beans and water, the maker responds
+back to the controller if the operation succeeded or errored.
 *****************************************************/
 machine EspressoCoffeeMaker
 {

@@ -1,9 +1,9 @@
 /** Events used to communicate between the bank server and the backend database **/
-// event used to send update the database, i.e. the `balance` associated with the `accountId`
+// event: send update the database, i.e. the `balance` associated with the `accountId`
 event eUpdateQuery: (accountId: int, balance: int);
-// event used to send a read request for the `accountId`.
+// event: send a read request for the `accountId`.
 event eReadQuery: (accountId: int);
-// event used to send a response (`balance`) corresponding to the read request for an `accountId`
+// event: send a response (`balance`) corresponding to the read request for an `accountId`
 event eReadQueryResp: (accountId: int, balance: int);
 
 /*************************************************************
@@ -27,18 +27,19 @@ machine BankServer
       var currentBalance: int;
       var response: tWithDrawResp;
 
-
       // read the current account balance from the database
       currentBalance = ReadBankBalance(database, wReq.accountId);
+      // if there is enough money in account after withdrawal
       if(currentBalance - wReq.amount >= 10)
       {
         UpdateBankBalance(database, wReq.accountId, currentBalance - wReq.amount);
         response = (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, balance = currentBalance - wReq.amount, rId = wReq.rId);
       }
-      else
+      else // not enough money after withdraw
       {
         response = (status = WITHDRAW_ERROR, accountId = wReq.accountId, balance = currentBalance, rId = wReq.rId);
       }
+
       // send response to the client
       send wReq.source, eWithDrawResp, response;
     }
@@ -60,29 +61,31 @@ machine Database
       balance = input.initialBalance;
     }
     on eUpdateQuery do (query: (accountId: int, balance: int)) {
-        assert query.accountId in balance, "Invalid accountId received in the update query!";
-        balance[query.accountId] = query.balance;
+      assert query.accountId in balance, "Invalid accountId received in the update query!";
+      balance[query.accountId] = query.balance;
     }
     on eReadQuery do (query: (accountId: int))
     {
-        assert query.accountId in balance, "Invalid accountId received in the read query!";
-        send server, eReadQueryResp, (accountId = query.accountId, balance = balance[query.accountId]);
+      assert query.accountId in balance, "Invalid accountId received in the read query!";
+      send server, eReadQueryResp, (accountId = query.accountId, balance = balance[query.accountId]);
     }
   }
 }
 
+// Function to read the bank balance corresponding to the accountId
 fun ReadBankBalance(database: Database, accountId: int) : int {
     var currentBalance: int;
     send database, eReadQuery, (accountId = accountId,);
     receive {
-        case eReadQueryResp: (resp: (accountId: int, balance: int)) {
-            currentBalance = resp.balance;
-        }
+      case eReadQueryResp: (resp: (accountId: int, balance: int)) {
+        currentBalance = resp.balance;
+      }
     }
     return currentBalance;
 }
 
+// Function to update the account balance for the account Id
 fun UpdateBankBalance(database: Database, accId: int, bal: int)
 {
-    send database, eUpdateQuery, (accountId = accId, balance = bal);
+  send database, eUpdateQuery, (accountId = accId, balance = bal);
 }

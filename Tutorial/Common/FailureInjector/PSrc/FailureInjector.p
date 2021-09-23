@@ -9,16 +9,16 @@ machine FailureInjector {
   var nFailures: int;
   var nodes: set[machine];
 
-	start state Init {
-		entry (config: (nodes: set[machine], nFailures: int)) {
+  start state Init {
+    entry (config: (nodes: set[machine], nFailures: int)) {
       nFailures = config.nFailures;
       nodes = config.nodes;
       assert nFailures < sizeof(nodes);
       goto FailOneNode;
-		}
-	}
+    }
+  }
 
-	state FailOneNode {
+  state FailOneNode {
     entry {
       var fail: machine;
 
@@ -40,7 +40,7 @@ machine FailureInjector {
     }
 
     on eDelayNodeFailure goto FailOneNode;
-	}
+  }
 }
 
 // function to create the failure injection

@@ -11,9 +11,9 @@ event eReadResp: any;
 
 machine LBSharedObject {
   // machine that currently holds the lock over the obj
-	var currHolder: machine;
-	// contents of the shared obj
-	var sharedObj: any;
+  var currHolder: machine;
+  // contents of the shared obj
+  var sharedObj: any;
 
   start state Init {
     entry(obj : any)
@@ -23,8 +23,8 @@ machine LBSharedObject {
     }
   }
 
-	state WaitForAcquire {
-		on eAcquireLock goto WaitForRelease with (client: machine)
+  state WaitForAcquire {
+    on eAcquireLock goto WaitForRelease with (client: machine)
     {
       var local_obj : any;
       send client, eLockGranted, sharedObj;
@@ -34,18 +34,18 @@ machine LBSharedObject {
     on eRead do (client: machine) {
         send client, eReadResp, sharedObj;
     }
-	}
+  }
 
-	state WaitForRelease {
-		defer eAcquireLock;
-		on eReleaseLock goto WaitForAcquire with (payload: (client:machine, val: any)) {
-			assert(payload.client == currHolder), "Release called by a machine that is not acquiring the lock";
+  state WaitForRelease {
+    defer eAcquireLock;
+    on eReleaseLock goto WaitForAcquire with (payload: (client:machine, val: any)) {
+      assert(payload.client == currHolder), "Release called by a machine that is not acquiring the lock";
         sharedObj = payload.val;
-		}
-		on eRead do (client: machine) {
+    }
+    on eRead do (client: machine) {
       send client, eReadResp, sharedObj;
     }
-	}
+  }
 }
 
 /*
@@ -69,8 +69,8 @@ ReleaseLock function sends the eReleaseLock event along with the updated value o
 */
 fun ReleaseLock(sharedObj: LBSharedObject, client: machine, val: any)
 {
-	send sharedObj, eReleaseLock, (client = client, val = val);
-	print format ("Lock on {0} released by {1}", sharedObj, client);
+  send sharedObj, eReleaseLock, (client = client, val = val);
+  print format ("Lock on {0} released by {1}", sharedObj, client);
 }
 
 /*
@@ -79,12 +79,12 @@ ReleaseLock function sends the eReleaseLock event along with the updated value o
 fun Read(sharedObj: LBSharedObject, client: machine): any
 {
   var retVal: any;
-	send sharedObj, eRead, client;
-	receive {
+  send sharedObj, eRead, client;
+  receive {
     case eReadResp: (val: any) {
       retVal = val;
     }
-	}
-	print format ("{0} Read value of {1}: {2}", client, sharedObj, retVal);
-	return retVal;
+  }
+  print format ("{0} Read value of {1}: {2}", client, sharedObj, retVal);
+  return retVal;
 }

@@ -1,18 +1,21 @@
-The P compiler does not support fancy project management features like separate compilation and dependency analysis (coming soon).
+The P compiler does not support advanced project management features like separate compilation and dependency analysis (coming soon).
 The current project file interface is a simple mechanism to provide all the required inputs to the compiler in XML format.
-The P project file below is taken from the [ClientServer](../tutorial/clientserver.md) from Tutorials.
+The P project file below is taken from the [TwoPhaseCommit]([../tutorial/clientserver.md](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/TwoPhaseCommit.pproj)) example in Tutorials.
 
 ``` xml
+<!-- P project file for the Two Phase Commit example -->
 <Project>
-<IncludeProject>../CommonUtils/Common.pproj</IncludeProject>
+<ProjectName>TwoPhaseCommit</ProjectName>
 <InputFiles>
-    <PFile>./PSrc/</PFile>
-    <PFile>./PSpec/</PFile>
-    <PFile>./PTst/</PFile>
+	<PFile>./PSrc/</PFile>
+	<PFile>./PSpec/</PFile>
+	<PFile>./PTst/</PFile>
 </InputFiles>
-<Target>CSharp</Target>
-<ProjectName>ClientServer</ProjectName>
 <OutputDir>./PGenerated/</OutputDir>
+<!-- Add the dependencies for the Timer machine -->
+<IncludeProject>../Common/Timer/Timer.pproj</IncludeProject>
+<!-- Add the dependencies for the FailureInjector machine -->
+<IncludeProject>../Common/FailureInjector/FailureInjector.pproj</IncludeProject>
 </Project>
 ```
 The `<InputFiles>` block provides all the P files that must be compiled together for this project.

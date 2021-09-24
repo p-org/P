@@ -1,6 +1,6 @@
 
 !!! tip "P Language Semantics"
-    Before we get started with the tutorials, please read [{==this==}](tutorial/psemantics.md) to get an informal overview of the P language semantics.
+    Before we get started with the tutorials, please read [{==this==}](advanced/psemantics.md) to get an informal overview of the P language semantics.
 
 In this tutorial, we use a series of examples along with excercise problems to help you get familiar with the P language and the associated tool chain.
 
@@ -32,7 +32,7 @@ Now that we understand the basic features of the P language, lets spice things u
 
 We use a simplified version of the [classic two phase commit protocol](https://s2.smu.edu/~mhd/8330f11/p133-gray.pdf) to model a transaction commit service. The protocol uses a single coordinator to gain consensus for a transaction spanning across multiple participants. A transaction is simply a `put` operation for a key-value data store where the data store is replicated across participants.
 
-**Assumptions:** Note that our transaction commit system is ridiculously simplified, for example, it is not fault tolerant to node failures, failure of either coordinator or any of the participants will block the progress forever. Also, we rely on [P's send semantics](tutorial/psemantics.md) to model the behavior of the underlying network.
+**Assumptions:** Note that our transaction commit system is ridiculously simplified, for example, it is not fault tolerant to node failures, failure of either coordinator or any of the participants will block the progress forever. Also, we rely on [P's send semantics](advanced/psemantics.md) to model the behavior of the underlying network.
 
 !!! summary "Summary"
     We will use this example to dive deeper into: (1) modeling non-determinism in the systems, in particular, time-outs (2) writing complex safety properties like atomicity of transactions in P, and finally, modeling node failures in P using a failure injector state machine. We also use a very simple example to show how P allows invoking foreign code from the P programs. More details in [P foreign interface](manual/foriegntypesfunctions.md).
@@ -69,7 +69,8 @@ By this point in the tutorial, we have gotten familiar with the P language and m
 
 How can we finish our tutorials on modeling distributed systems without giving tribute to the Paxos protocol :pray: (and our inspiration [Leslie Lamport](http://www.lamport.org/)). Lets end the tutorial with a simplified **[single decree paxos](https://mwhittaker.github.io/blog/single_decree_paxos/)**.
 
-### [Example 5] **Simple Paxos**
+### [Example 5] **[Single Decree Paxos](tutorial/paxos.md)**
+
 In this example, we present a simplified model of the single decree paxos. We say simplified because general paxos is resilient against arbitrary network (lossy, duplicate, re-order, and delay), in our case we only model message loss and delay, and check correctness of paxos in the presence of such a network. This is a fun exercise, we encourage you to play around and create variants of paxos!
 
 !!! summary "Summary"
@@ -77,7 +78,7 @@ In this example, we present a simplified model of the single decree paxos. We sa
 
 -----
 
-### [Common] **Timer, Failure Injector, and Shared Memory**
+### [Common] **[Timer, Failure Injector, and Shared Memory](tutorial/common.md)**
 
 We also describe how to model system's interaction with an OS Timer [Timer](https://github.com/p-org/P/blob/master/Tutorial/Common/Timer/), and how to model injecting node failures in the system [Failure Injector](https://github.com/p-org/P/tree/master/Tutorial/Common/FailureInjector). These models are used in the Two Phase Commit, Espresso Machine, and Failure Detector models. 
 

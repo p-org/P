@@ -1,6 +1,6 @@
 The P compiler does not support advanced project management features like separate compilation and dependency analysis (coming soon).
 The current project file interface is a simple mechanism to provide all the required inputs to the compiler in XML format.
-The P project file below is taken from the [TwoPhaseCommit]([../tutorial/clientserver.md](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/TwoPhaseCommit.pproj)) example in Tutorials.
+The P project file below is taken from the [TwoPhaseCommit](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/TwoPhaseCommit.pproj) example in Tutorials.
 
 ``` xml
 <!-- P project file for the Two Phase Commit example -->
@@ -26,6 +26,3 @@ The `<OutputDir>` block provides the output directory for the generated code.
 Finally, `<IncludeProject>` block provides path to other P projects that must be included as dependencies during compilation.
 The P compiler simply recursively copies all the P files in the dependency projects and compiles them together.
 This feature provides a way to split the P models for a large system into sub projects that can share models.
-
-!!! Note "Coming Soon"
-    Example about how to use `<IncludeProject>` feature will be added soon.

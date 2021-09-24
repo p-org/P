@@ -19,9 +19,10 @@ Clone the [P repo](https://github.com/p-org/P) and run the following `build` scr
     ```
 
 ### Running the tests
+
 You can run the following command to build and run the test regressions for P Compiler. Make sure you are in the root directory of the clone repo that has the `P.sln`.
 
-```plain
+```shell
 dotnet build --configuration Release
 dotnet test --configuration Release
 ```

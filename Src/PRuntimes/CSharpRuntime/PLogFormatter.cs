@@ -78,7 +78,7 @@ namespace Plang.CSharpRuntime
         {
             base.OnWaitEvent(id, this.GetShortName(stateName), eventType);
         }
-
+        
         public override void OnMonitorStateTransition(string monitorType, string stateName, bool isEntry, bool? isInHotState)
         {
             if (stateName.Contains("__InitState__"))

@@ -13,7 +13,7 @@ machine AbstractBankServer
 {
   // account balance: map from account-id to balance
   var balance: map[int, int];
-  start state WaitForWithdrawRequests ∏
+  start state WaitForWithdrawRequests {
     entry (init_balance: map[int, int])
     {
       balance = init_balance;
@@ -21,7 +21,7 @@ machine AbstractBankServer
 
     on eWithDrawReq do (wReq: tWithDrawReq) {
       assert wReq.accountId in balance, "Invalid accountId received in the withdraw request!";
-      if(balance[wReq.accountId] - wReq.amount >= 10)
+      if(balance[wReq.accountId] - wReq.amount > 10) /* hint: bug */
       {
         balance[wReq.accountId] = balance[wReq.accountId] - wReq.amount;
         send wReq.source, eWithDrawResp, 

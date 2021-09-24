@@ -32,7 +32,7 @@ what was requested by the client.
 new account balance is correct and if the withdraw failed it is because the withdraw will make the account
 balance go below 10 dollars which is against the bank policies!
 ****************************************************/
-spec BankBalanceIsAlwaysCorrect observes eWithDrawReq,  eWithDrawResp, eSpec_BankBalanceIsCorrect_Init {
+spec BankBalanceIsAlwaysCorrect observes eWithDrawReq,  eWithDrawResp, eSpec_BankBalanceIsAlwaysCorrect_Init {
   // keep track of the bank balance for each client: map from accountId to bank balance.
   var bankBalance: map[int, int];
   // keep track of the pending withdraw requests that have not been responded yet.

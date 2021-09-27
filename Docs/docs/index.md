@@ -32,9 +32,7 @@ was first used to implement and validate the USB device driver stack that ships 
 Microsoft Windows 8 and Windows Phone.
 
 !!! quote ""
-    :sparkles: **_Programming concurrent, asynchronous distributed systems is challenging, but a pinch of programming
-    language design combined with a dash of automated reasoning can go a long way in bringing
-    the joy back._** :sparkles:
+    :sparkles: **_Programming concurrent, distributed systems is fun but nevertheless challenging, however, a pinch of programming language design with a dash of automated reasoning can go a long way in addressing the challenge and amplify the fun!._** :sparkles:
 
 
 ## Let the fun begin!

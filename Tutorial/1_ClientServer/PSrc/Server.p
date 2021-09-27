@@ -15,6 +15,7 @@ and sends a response back to the client.
 machine BankServer
 {
   var database: Database;
+
   start state Init {
     entry (initialBalance: map[int, int]){
       database = new Database((server = this, initialBalance = initialBalance));

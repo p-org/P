@@ -24,7 +24,7 @@ complex distributed systems. P is also being used for programming safe robotics 
 was first used to implement and validate the USB device driver stack that ships with
 Microsoft Windows 8 and Windows Phone.
 
-> :sparkles: **_Programming concurrent, asynchronous distributed systems is challenging, but a pinch of programming language design combined with a dash of automated reasoning can go a long way in bringing the joy back._** :sparkles:
+> :sparkles: **_Programming concurrent, distributed systems is fun but challenging, however, a pinch of programming language design with a dash of automated reasoning can go a long way in addressing the challenge and amplify the fun!._** :sparkles:
 
 
 

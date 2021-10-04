@@ -74,7 +74,7 @@ spec BankBalanceIsAlwaysCorrect observes eWithDrawReq,  eWithDrawResp, eSpec_Ban
       {
         // bank can only reject a request if it will drop the balance below 10
         assert bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount < 10,
-          format ("Bank must accept the with draw request for {0}, bank balance is {1}!",
+          format ("Bank must accept the withdraw request for {0}, bank balance is {1}!",
             pendingWithDraws[resp.rId].amount, bankBalance[resp.accountId]);
         // if withdraw failed then the account balance must remain the same
         assert bankBalance[resp.accountId] == resp.balance,

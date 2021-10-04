@@ -4,3 +4,6 @@ By this point in the tutorial, we have gotten familiar with the P language and m
 
 !!! summary "Summary"
     In this example, we demonstrate how to use data nondeterminism to model message loss and unreliable sends. We also discuss how to model other types of network nondeterminism. Finally, we give another example of a liveness specification that the failure detector must satisfy.
+
+
+![Placeholder](failuredetector.png){ align=center }

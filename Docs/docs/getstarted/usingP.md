@@ -280,7 +280,7 @@ The P checker on finding a bug generates two artifacts (highlighted in the expec
 sequence of steps from the intial state to the error state.
 (2) a **schedule file** (e.g., `ClientServer_0_0.schedule`) that can be used to replay the error
 trace and single step through the P program with the generated error trace for debugging
-(more details about debugging P error traces: [here](../howtoguides/debuggingerror.md)).
+(more details about debugging P error traces: [here](../advanced/debuggingerror.md)).
 
 
 

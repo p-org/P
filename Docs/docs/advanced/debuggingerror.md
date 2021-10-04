@@ -1,4 +1,4 @@
-As described in the [using P compiler and checker](../getstarted/usingP.md) guide, running the checker on the `tcSingleClientAbstractServer` test case finds an error.
+As described in the [using P compiler and checker](../getstarted/usingP.md) section, running the following command for the ClientServer example finds an error.
 
 ```
 pmc <Path>/ClientServer.dll \

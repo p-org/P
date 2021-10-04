@@ -79,5 +79,5 @@ assert the desired correctness specifications based on these observations.
     ```
     The above specification checks the global liveness property that every event `eRequest` is eventually followed by a corresponding successful `eResponse` event. The key idea is that the system satisfies a liveness specification if at the end of the execution the monitor is not in a **hot** state (line 13). The programmers can use `hot` annotation on states to mark them as intermediate or error states. Hence, properties like `eventually something holds` or `every event X is eventually followed by Y` or `eventually the system enters a convergence state`, all such properties can be specified by marking the intermediate state as `hot` states and the checker ensures that all the executions of the system eventually end in a non-hot state. 
 
-    Details about the importance of liveness specifications and how we check if the system satisfies these properties is described [here](../howtoguides/importanceliveness.md). 
+    Details about the importance of liveness specifications and how we check if the system satisfies these properties is described [here](../advanced/importanceliveness.md). 
 

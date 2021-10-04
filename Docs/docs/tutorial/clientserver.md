@@ -2,3 +2,6 @@ We start with a simple client-server example where clients send requests to with
 
 !!! summary "Summary"
     In this example, you will learn about P state machines, writing simple safety and liveness specifications as P monitors, writing multiple model checking scenarios to check the correctness of the P program, and finally, replacing complex components in P with their abstractions using P's module system.
+
+
+![Placeholder](clientserver.png){ align=center }

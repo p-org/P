@@ -13,6 +13,8 @@ In this tutorial, we use a series of examples along with excercise problems to h
     git clone https://github.com/p-org/P.git
     ```
 
+    The recommended way to work through this example is to open the [P\Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in IntelliJ side-by-side a browser using which you can simulatenously read the description for each example and browser the P program.
+
 -----
 
 ### **[[Example 1] Client Server](tutorial/clientserver.md)**
@@ -36,7 +38,7 @@ The protocol uses a (single) coordinator to achieve consensus for a transaction 
 **Assumptions:** Note that our transaction commit system is ridiculously simplified, for example, it is not fault tolerant to node failures, failure of either coordinator or any of the participants will block the progress forever. Also, we rely on [P's send semantics](advanced/psemantics.md) to model the behavior of the underlying network.
 
 !!! summary "What will we learn through this example?"
-    We will use this example to dive deeper into: (1) modeling non-determinism in distributed systems, in particular, time-outs (2) writing complex safety properties like atomicity of transactions in P and finally, modeling node failures in P using a failure injector state machine. We will also show how P allows invoking foreign code from the P programs. More details in [P foreign interface](manual/foriegntypesfunctions.md).
+    We will use this example to dive deeper into: (1) modeling non-determinism in distributed systems, in particular, time-outs (2) writing complex safety properties like atomicity of transactions in P and finally, (3) modeling node failures in P using a failure injector state machine. We will also show how P allows invoking foreign code from the P programs. More details in [P foreign interface](manual/foriegntypesfunctions.md).
 
 -----
 

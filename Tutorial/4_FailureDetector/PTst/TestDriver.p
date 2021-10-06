@@ -30,7 +30,7 @@ fun SetupSystemWithFailureInjector(config: tSystemConfig)
 
   i = 0;
   // create clients
-  while(i < config.numNodes) {
+  while(i < config.numClients) {
     clients += (new Client(nodes));
     i = i + 1;
   }

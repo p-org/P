@@ -52,7 +52,7 @@ The P Specifications ([PSpec](https://github.com/p-org/P/blob/master/Tutorial/1_
 
 - GuaranteedWithDrawProgress (liveness property): GuaranteedWithDrawProgress checks the liveness (or progress) property that all withdraw requests submitted by the client are eventually responded.
 
-!!! info "Note" 
+!!! info "Note"
     BankBalanceIsCorrect also checks that if there is enough money in the account then the withdraw request must not error. Hence, the two properties above together ensure that every withdraw request if allowed will eventually succeed and the bank cannot block correct withdrawal requests.
 
 ??? tip "[Expand]: Lets walk through BankBalanceCorrect.p"

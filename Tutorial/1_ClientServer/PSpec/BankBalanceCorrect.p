@@ -28,6 +28,7 @@ For checking this property the spec machine observes the withdraw request (eWith
 - On receiving the eWithDrawReq, it adds the request in the pending-withdraws-map so that on receiving a
 response for this withdraw we can assert that the amount of money deducted from the account is same as
 what was requested by the client.
+
 - On receiving the eWithDrawResp, we look up the corresponding withdraw request and check that: the
 new account balance is correct and if the withdraw failed it is because the withdraw will make the account
 balance go below 10 dollars which is against the bank policies!
@@ -73,7 +74,7 @@ spec BankBalanceIsAlwaysCorrect observes eWithDrawReq,  eWithDrawResp, eSpec_Ban
       {
         // bank can only reject a request if it will drop the balance below 10
         assert bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount < 10,
-          format ("Bank must accept the with draw request for {0}, bank balance is {1}!",
+          format ("Bank must accept the withdraw request for {0}, bank balance is {1}!",
             pendingWithDraws[resp.rId].amount, bankBalance[resp.accountId]);
         // if withdraw failed then the account balance must remain the same
         assert bankBalance[resp.accountId] == resp.balance,
@@ -93,7 +94,7 @@ spec GuaranteedWithDrawProgress observes eWithDrawReq, eWithDrawResp {
   var pendingWDReqs: set[int];
 
   start state NopendingRequests {
-    on eWithDrawReq goto PendingReqs with (req: tWithDrawReq){
+    on eWithDrawReq goto PendingReqs with (req: tWithDrawReq) {
       pendingWDReqs += (req.rId);
     }
   }

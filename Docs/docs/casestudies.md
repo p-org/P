@@ -1,12 +1,11 @@
 ### [AWS] Amazon S3 Strong Consistency
 
-In Dec 2020, Amazon S3 launched
-[Strong Consistency](https://aws.amazon.com/s3/consistency/) with guaranteed
+In Dec 2020, Amazon S3 launched [Strong Consistency](https://aws.amazon.com/s3/consistency/) with guaranteed
 [strong read-after-write consistency](https://aws.amazon.com/blogs/aws/amazon-s3-update-strong-read-after-write-consistency/).
-The S3 team used automated reasoning for ensuring the correctness of S3's Strong
+The S3 team leveraged automated reasoning for ensuring the correctness of S3's Strong
 Consistency design. Werner had a detailed blog post about the challenges involved.
 
-!!! abstract "Qoute from Werners blog:[Diving Deep on S3 Consistency](https://www.allthingsdistributed.com/2021/04/s3-strong-consistency.html)"
+!!! quote "Qoute from Werners blog: [Diving Deep on S3 Consistency](https://www.allthingsdistributed.com/2021/04/s3-strong-consistency.html)"
     Common testing techniques like unit testing and integration testing are valuable,
     necessary tools in any production system. But they aren’t enough when you need to build a
     system with such a high bar for correctness. We want a system that’s “provably correct”,
@@ -17,9 +16,9 @@ Consistency design. Werner had a detailed blog post about the challenges involve
     its correctness, and we expanded on our model checking to examine actual runnable code.
 
 P was used for creating formal models of all the core distributed protocols involved in
-S3's strong consistency and model checking that the system satisfies the desired
+S3's strong consistency and checking that the system model satisfies the desired
 correctness guarantees. Details about P and how it is being used by the S3 team can be
-found in the [AWS Pi-Week](https://pages.awscloud.com/pi-week-2021.html) Talk on
+found in the [AWS Pi-Week Talk](https://pages.awscloud.com/pi-week-2021.html):
 [**Use of Automated Reasoning for S3 Strong Consistency Launch**](https://www.twitch.tv/videos/962963706?t=0h26m57s).
 
 ### [AWS] Amazon IoT Devices: OTA Protocol
@@ -36,7 +35,7 @@ failures of devices and communication. The heart of the OTA system is an intrica
 distributed protocol, the OTA protocol, that co-ordinates the execution of the different
 agents involved.
 
-P was used for creating formal models of the OTA protocol and model checking its
+P was used for creating formal models of the OTA protocol and checking its
 correctness. During this process the team found 3 bugs in the model that pointed to
 potential issues in the actual implementation itself.
 

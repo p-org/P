@@ -32,7 +32,7 @@
   Proceedings of the
   2021 ACM Asia Conference on Computer and Communications Security (AsiaCCS) - 2021
 
-2. **[Programming Safe Robotics Systems: Challenges and Advances](https://ankushdesai.github.io/assets/papers/isolapaper.pdf%22)**.<br/>
+2. **[Programming Safe Robotics Systems: Challenges and Advances](https://ankushdesai.github.io/assets/papers/isolapaper.pdf)**.<br/>
   Ankush Desai, Shaz Qadeer and Sanjit Seshia.<br/> International Symposium On Leveraging
   Applications of Formal Methods, Verification and Validation (ISoLA) - 2018
 

@@ -29,6 +29,7 @@ machine Client
   var nextReqId : int;
   var numOfWithdrawOps: int;
   var currentBalance: int;
+
   start state Init {
 
     entry (input : (serv : BankServer, accountId: int, balance : int))

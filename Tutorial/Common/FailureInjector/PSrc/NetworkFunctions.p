@@ -1,6 +1,7 @@
 // unreliable send operation that drops messages on the ether nondeterministically
 fun UnReliableSend(target: machine, message: event, payload: any) {
   // nondeterministically drop messages
+  // $: choose()
   if($) send target, message, payload;
 }
 

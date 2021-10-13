@@ -19,7 +19,7 @@ The P project file below is taken from the [TwoPhaseCommit](https://github.com/p
 </Project>
 ```
 The `<InputFiles>` block provides all the P files that must be compiled together for this project.
-In `<PFile>` can either specify the path to the P file or to a folder and the P compiler includes all the files in the folder during compilation.
+In `<PFile>`, you can either specify the path to the P file or to a folder and the P compiler includes all the files in the folder during compilation.
 The `<Target>` block specifies the target language for code generation (options are: CSharp, C, RVM and we are adding support for Java).
 The `<ProjectName>` block provides the name for the project which is used as the output file name.
 The `<OutputDir>` block provides the output directory for the generated code.

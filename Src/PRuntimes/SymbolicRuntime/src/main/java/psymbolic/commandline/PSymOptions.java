@@ -56,6 +56,14 @@ public class PSymOptions {
                 .build();
         options.addOption(maxSchedBound);
 
+        // whether or not to collect search stats
+        Option collectStats = Option.builder("s")
+                .longOpt("stats")
+                .desc("Enable collection of stats during the search")
+                .numberOfArgs(0)
+                .build();
+        options.addOption(collectStats);
+
         // set the level of verbosity
         Option verbosity = Option.builder("v")
                 .longOpt("verbose")
@@ -142,6 +150,10 @@ public class PSymOptions {
                     catch (NumberFormatException ex) {
                         formatter.printHelp("v", String.format("Expected an integer value (0, 1 or 2), got %s", option.getValue()), options, "Try \"--help\" option for details.");
                     }
+                    break;
+                case "s":
+                case "stats":
+                    config.setCollectStats(true);
                     break;
                 case "h":
                 case "help":

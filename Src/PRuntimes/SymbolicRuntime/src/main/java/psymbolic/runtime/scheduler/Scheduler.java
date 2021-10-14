@@ -354,13 +354,18 @@ public class Scheduler implements SymbolicSearch {
 
         Message effect = null;
         List<Message> effects = new ArrayList<>();
+        int numMessages = 0;
         for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
+            Message removed = machine.sendBuffer.remove(guard);
+            if (configuration.isCollectStats()) {
+                numMessages += Concretizer.getNumConcreteValues(Guard.constTrue(), removed);
+            }
             if (effect == null) {
-                effect = machine.sendBuffer.remove(guard);
+                effect = removed;
             } else {
-                effects.add(machine.sendBuffer.remove(guard));
+                effects.add(removed);
             }
         }
         assert effect != null;
@@ -370,23 +375,32 @@ public class Scheduler implements SymbolicSearch {
         performEffect(effect);
 
 
-        System.out.println("--------------------");
-        System.out.println("Memory Stats::");
-        Runtime runtime = Runtime.getRuntime();
-        long memoryMax = runtime.maxMemory();
-        long memoryUsed = runtime.totalMemory() - runtime.freeMemory();
-        double memoryUsedPercent = (memoryUsed * 100.0) / memoryMax;
-        System.out.println("memoryUsed::" + memoryUsed + ", memoryUsedPercent: " + memoryUsedPercent);
-        System.out.println("--------------------");
+        if (configuration.isCollectStats()) {
+          System.out.println("--------------------");
+          System.out.println("Memory Stats::");
+          Runtime runtime = Runtime.getRuntime();
+          long memoryMax = runtime.maxMemory();
+          long memoryUsed = runtime.totalMemory() - runtime.freeMemory();
+          double memoryUsedPercent = (memoryUsed * 100.0) / memoryMax;
+          System.out.println("memoryUsed::" + memoryUsed + ", memoryUsedPercent: " + memoryUsedPercent);
+          System.out.println("--------------------");
+        }
 
         // performing node clean-up
         BDDEngine.UnusedNodesCleanUp();
         System.gc();
 
         // add depth statistics
-        //SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, effects.size() + 1, -1);
-        //searchStats.addDepthStatistics(depth, depthStats);
-        //SearchLogger.logDepthStats(depthStats);
+        if (configuration.isCollectStats()) {
+          SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, numMessages, Concretizer.getNumConcreteValues(Guard.constTrue(), effect), Concretizer.getNumConcreteValues(Guard.constTrue(), effect.getTarget(), effect.getEvent()));
+          searchStats.addDepthStatistics(depth, depthStats);
+          //SearchLogger.logDepthStats(depthStats);
+          System.out.println("--------------------");
+          System.out.println("Collect Stats::");
+          System.out.println("Total transitions:: " + depthStats.getNumOfTransitions() + ", Total Merged Transitions (merged same target):: " + depthStats.getNumOfMergedTransitions() + ", Total Transitions Explored:: " + depthStats.getNumOfTransitionsExplored());
+          System.out.println("Running Total Transitions:: " + searchStats.getSearchTotal().getNumOfTransitions() + ", Running Total Merged Transitions:: " + searchStats.getSearchTotal().getNumOfMergedTransitions() + ", Running Total Transitions Explored:: " + searchStats.getSearchTotal().getNumOfTransitionsExplored());
+          System.out.println("--------------------");
+        }
         depth++;
     }
 

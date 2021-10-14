@@ -41,4 +41,8 @@ public class PSymConfiguration {
     @Getter @Setter
     // level of verbosity for the logging
     private int verbosity = 1;
+
+    @Getter @Setter
+    // whether to collect stats or not
+    private boolean collectStats = false;
 }

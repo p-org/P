@@ -39,6 +39,7 @@ public class SearchStats {
         {
             int maxDepth = 0;
             int totalTransitions = 0;
+            int totalMergedTransitions = 0;
             int totalTransitionsExplored = 0;
             for(var entry: perDepthStats.entrySet())
             {
@@ -46,11 +47,12 @@ public class SearchStats {
                 {
                     maxDepth = entry.getKey();
                     totalTransitions += entry.getValue().numOfTransitions;
+                    totalMergedTransitions += entry.getValue().numOfMergedTransitions;
                     totalTransitionsExplored += entry.getValue().numOfTransitionsExplored;
                 }
             }
 
-            return new DepthStats(maxDepth, totalTransitions, totalTransitionsExplored);
+            return new DepthStats(maxDepth, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
         }
     }
 
@@ -63,8 +65,11 @@ public class SearchStats {
         // depth
         private int depth;
 
-        // number of transitions or scheduling choices to be explored at this depth
+        // number of transitions that can be taken at this depth
         private int numOfTransitions;
+
+        // number of transitions that can be taken at this depth (after merging messages with the same target)
+        private int numOfMergedTransitions;
 
         /*
         number of transitions explored at this depth, this is the number of event handler invocations and takes into
@@ -91,6 +96,7 @@ public class SearchStats {
     {
         int maxDepth = 0;
         int totalTransitions = 0;
+        int totalMergedTransitions = 0;
         int totalTransitionsExplored = 0;
         for(var entry: iterationStats)
         {
@@ -98,10 +104,12 @@ public class SearchStats {
             {
                 maxDepth = entry.getIterationTotal().getDepth();
                 totalTransitions += entry.getIterationTotal().getNumOfTransitions();
+                totalMergedTransitions += entry.getIterationTotal().getNumOfMergedTransitions();
                 totalTransitionsExplored += entry.getIterationTotal().getNumOfTransitionsExplored();
             }
         }
 
-        return new DepthStats(maxDepth, totalTransitions, totalTransitionsExplored);
+        return new DepthStats(maxDepth, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
     }
+
 }

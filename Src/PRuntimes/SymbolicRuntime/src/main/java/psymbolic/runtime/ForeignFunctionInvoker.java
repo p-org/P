@@ -11,163 +11,46 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class ForeignFunctionInvoker {
 
+    /* Maximum number of times to invoke the foreign function on different values */
     public static int times = 1;
 
-    public static GuardedValue concretize (Object valueSummary) {
-        if (valueSummary instanceof PrimitiveVS<?>) {
-            List<? extends GuardedValue<?>> list = ((PrimitiveVS<?>) valueSummary).getGuardedValues();
-            if (list.size() > 0) {
-                GuardedValue<?> item = list.get(0);
-                if (item.getValue() instanceof Integer) {
-                    return new GuardedValue(new PInt((Integer) item.getValue()), item.getGuard());
-                } else if (item.getValue() instanceof Boolean) {
-                    return new GuardedValue(new PBool((Boolean) item.getValue()), item.getGuard());
-                } else if (item.getValue() instanceof Float) {
-                    return new GuardedValue(new PFloat((Float) item.getValue()), item.getGuard());
-                }
-                return new GuardedValue(item.getValue(), item.getGuard());
-            }
-        } else if (valueSummary instanceof ListVS<?>) {
-            ListVS<?> listVS = (ListVS<?>) valueSummary;
-            Guard pc = listVS.getUniverse();
-            PSeq list = new PSeq(new ArrayList<>());
-            List<GuardedValue<Integer>> guardedValues = listVS.size().getGuardedValues();
-            if (guardedValues.size() > 0) {
-                GuardedValue<Integer> guardedValue = guardedValues.iterator().next();
-                pc = guardedValue.getGuard();
-                for (int i = 0; i < guardedValue.getValue(); i++) {
-                    listVS = listVS.restrict(pc);
-                    GuardedValue<? extends PValue<?>> elt = concretize(listVS.get(new PrimitiveVS<>(i).restrict(pc)));
-                    pc = pc.and(elt.getGuard());
-                    list.insertValue(i, elt.getValue());
-                }
-            }
-            return new GuardedValue<>(list, pc);
-        } else if (valueSummary instanceof MapVS<?, ?>) {
-            MapVS<?, ?> mapVS = (MapVS<?, ?>) valueSummary;
-            Guard pc = mapVS.getUniverse();
-            PMap map = new PMap(new HashMap<>());
-            ListVS<?> keyList = mapVS.keys.getElements();
-            List<GuardedValue<Integer>> guardedValues = keyList.size().getGuardedValues();
-            if (guardedValues.size() > 0) {
-                GuardedValue<Integer> guardedValue = guardedValues.iterator().next();
-                pc = guardedValue.getGuard();
-                for (int i = 0; i < guardedValue.getValue(); i++) {
-                    keyList = keyList.restrict(pc);
-                    GuardedValue<? extends PValue<?>> key = concretize(keyList.get(new PrimitiveVS<>(i).restrict(pc)));
-                    pc = pc.and(key.getGuard());
-                    mapVS = mapVS.restrict(pc);
-                    GuardedValue<? extends PValue<?>> value = concretize(mapVS.entries.get(key));
-                    pc = pc.and(value.getGuard());
-                    map.putValue(key.getValue(), value.getValue());
-                }
-            }
-            return new GuardedValue<>(map, pc);
-        } else if (valueSummary instanceof SetVS<?>) {
-            SetVS<?> setVS = (SetVS<?>) valueSummary;
-            Guard pc = setVS.getUniverse();
-            PSet set = new PSet(new ArrayList<>());
-            ListVS<?> eltList = setVS.getElements();
-            List<GuardedValue<Integer>> guardedValues = eltList.size().getGuardedValues();
-            if (guardedValues.size() > 0) {
-                GuardedValue<Integer> guardedValue = guardedValues.iterator().next();
-                pc = guardedValue.getGuard();
-                for (int i = 0; i < guardedValue.getValue(); i++) {
-                    eltList = eltList.restrict(pc);
-                    GuardedValue<? extends PValue<?>> elt = concretize(eltList.get(new PrimitiveVS<>(i).restrict(pc)));
-                    pc = pc.and(elt.getGuard());
-                    set.insertValue(elt.getValue());
-                }
-            }
-            return new GuardedValue<>(set, pc);
-        } else if (valueSummary instanceof TupleVS) {
-            TupleVS tupleVS = (TupleVS) valueSummary;
-            Guard pc = tupleVS.getUniverse();
-            int length = tupleVS.getArity();
-            PValue<?>[] fieldValues = new PValue[length];
-            for (int i = 0; i < length; i++) {
-                GuardedValue<? extends PValue<?>> entry = concretize(tupleVS.getField(i));
-                fieldValues[i] = entry.getValue();
-                pc = pc.and(entry.getGuard());
-                tupleVS = tupleVS.restrict(pc);
-            }
-            return new GuardedValue<>(new PTuple(fieldValues), pc);
-        } else if (valueSummary instanceof NamedTupleVS) {
-            NamedTupleVS namedTupleVS = (NamedTupleVS) valueSummary;
-            Guard pc = namedTupleVS.getUniverse();
-            String[] names = namedTupleVS.getNames();
-            Map<String, PValue<?>> map = new HashMap<>();
-            for (int i = 0; i < names.length; i++) {
-                String name = names[i];
-                GuardedValue<? extends PValue<?>> entry = concretize(namedTupleVS.getField(name));
-                map.put(name, entry.getValue());
-                pc = pc.and(entry.getGuard());
-                namedTupleVS = namedTupleVS.restrict(pc);
-            }
-            return new GuardedValue<>(new PNamedTuple(map), pc);
-        }
-        return null;
+    public static List<GuardedValue<List<Object>>> getConcreteValues (Guard pc, ValueSummary ... args) {
+       return Concretizer.getConcreteValues(pc, x -> x < times, Concretizer::concretizePType, args);
     }
 
+    /**
+     * Invoke a foreign function with a void return type
+     * @param pc Guard under which to invoke the function on the provided arguments
+     * @param fn function to invoke
+     * @param args arguments
+     */ 
     public static void invoke(Guard pc, Consumer<List<Object>> fn, ValueSummary ... args) {
-        Guard iterPc = Guard.constFalse();
-        boolean skip = false;
-        boolean done = false;
-        while (!done) {
-            iterPc = pc.and(iterPc.not());
-            List<Object> concreteArgs = new ArrayList<>();
-            for (int j = 0; j < args.length && !done; j++) {
-                GuardedValue guardedValue = concretize(args[j].restrict(iterPc));
-                if (guardedValue == null) {
-                    if (j == 0) done = true;
-                    skip = true;
-                    break;
-                } else {
-                    iterPc = iterPc.and(guardedValue.getGuard());
-                    concreteArgs.add(guardedValue.getValue());
-                }
-            }
-            if (done) {
-                break;
-            }
-            if (skip) {
-                continue;
-            }
-            fn.accept(concreteArgs);
-            return;
+        List<GuardedValue<List<Object>>> concreteArgs = getConcreteValues(pc, args);  
+        UnionVS ret = new UnionVS();
+        for (int i = 0; i < concreteArgs.size(); i++) {
+            GuardedValue<List<Object>> guardedArgs = concreteArgs.get(i);
+            fn.accept(guardedArgs.getValue());
         }
     }
 
+    /**
+     * Invoke a foreign function with a non-void return type
+     * @param pc Guard under which to invoke the function on the provided arguments
+     * @param def instance of the return type
+     * @param fn function to invoke
+     * @param args arguments
+     * @return the return value of the function
+     */ 
     public static ValueSummary invoke(Guard pc, ValueSummary<?> def, Function<List<Object>, Object> fn, ValueSummary ... args) {
-        Guard iterPc = Guard.constFalse();
-        boolean skip = false;
+        List<GuardedValue<List<Object>>> concreteArgs = getConcreteValues(pc, args);  
         UnionVS ret = new UnionVS();
-        boolean done = false;
-        for (int i = 0; i < times; i++) {
-            iterPc = pc.and(iterPc.not());
-            List<Object> concreteArgs = new ArrayList<>();
-            for (int j = 0; j < args.length && !done; j++) {
-                GuardedValue<Object> guardedValue = concretize(args[j].restrict(iterPc));
-                if (guardedValue == null) {
-                    if (j == 0) done = true;
-                    skip = true;
-                    break;
-                } else {
-                    iterPc = iterPc.and(guardedValue.getGuard());
-                    concreteArgs.add(guardedValue.getValue());
-                }
-            }
-            if (done) {
-                break;
-            }
-            if (skip) {
-                i--;
-                continue;
-            }
-            ret = ret.merge(new UnionVS(convertConcrete(iterPc, fn.apply(concreteArgs))));
+        for (int i = 0; i < concreteArgs.size(); i++) {
+            GuardedValue<List<Object>> guardedArgs = concreteArgs.get(i);
+            ret = ret.merge(new UnionVS(convertConcrete(guardedArgs.getGuard(), fn.apply(guardedArgs.getValue()))));
         }
         if (def instanceof UnionVS) {
             return ret;
@@ -176,8 +59,13 @@ public class ForeignFunctionInvoker {
         }
     }
 
+    /**
+     * Convert concrete value into a value summary
+     * @param pc Guard under for the value summary
+     * @param o concrete value
+     * @return the value summary for the concrete value
+     */ 
     public static ValueSummary<?> convertConcrete(Guard pc, Object o) {
-        System.out.println("convertConcrete");
         if (o instanceof PSeq) {
             PSeq list = (PSeq) o;
             ListVS listVS = new ListVS(pc);
@@ -232,7 +120,6 @@ public class ForeignFunctionInvoker {
         } else if (o instanceof PEnum){
             return new PrimitiveVS<>(((PEnum) o).getValue()).restrict(pc);
         } else {
-            System.out.println("else");
             return new PrimitiveVS(o);
         }
     }

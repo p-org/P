@@ -6,11 +6,11 @@ assert the desired correctness specifications based on these observations.
 
     Syntactically, machines and spec machines in P **are very similar in terms of the state machine structure**. But, they have some key differences:
 
-    - `spec` machines in P are **observer machines** (imagine runtime monitors), they observe a set of events in the execution of the system and based on these observed events (may keep track on local state) it asserts the desired global safety and liveness specifications.
+    - `spec` machines in P are **observer machines** (imagine runtime monitors), they observe a set of events in the execution of the system and based on these observed events (may keep track on local state) assert the desired global safety and liveness specifications.
     - Since `spec` machines are observer machines, they **cannot have any side effects** on the system behavior and hence, `spec` machines cannot perform `send`, `receive`, `new`, and `annouce`.
     - `spec` machines are **global machines**, in other words, there is only a single instance of each monitor created at the start of the execution of the system. We currently do not support dynamic creation of monitors. Hence, `spec` machines cannot use `this` expression.
-    - `spec` machines are **synchronously composed** with the system that it is monitoring. The way this is acheived is: each time there is a `send` or `announce` of an event during the execution of a system, all the monitors or specifications that are observing that event are executed synchronously at that point. Another way to imagine this is: just before `send` or `annouce` of an event, we deliver this event to all the monitors that are observing the event and **synchronously** execute the monitor at that point.
-    - Finally, `spec` machines can have `hot` and `cold` annotations on its states to model liveness specifiations.
+    - `spec` machines are **synchronously composed** with the system that it is monitored. The way this is achieved is: each time there is a `send` or `announce` of an event during the execution of a system, all the monitors or specifications that are observing that event are executed synchronously at that point. Another way to imagine this is: just before `send` or `annouce` of an event, we deliver this event to all the monitors that are observing the event and **synchronously** execute the monitor at that point.
+    - Finally, `spec` machines can have `hot` and `cold` annotations on their states to model liveness specifications.
 
 ???+ note "P Spec Machine Grammar"
 
@@ -43,7 +43,7 @@ assert the desired correctness specifications based on these observations.
         }
     }
     ```
-    The above specifications checks a very simple global invariant that all `eRequest` events that are being sent by clients in the system have a globally monotonically increasing `rId`s.
+    The above specification checks a very simple global invariant that all `eRequest` events that are being sent by clients in the system have a globally monotonically increasing `rId`.
 
 === "Liveness specification"
 

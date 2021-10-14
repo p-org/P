@@ -6,7 +6,7 @@
 
     ```
     topDecl:                # Top-level P Program Declarations
-    | typeDefDecl           # UserDefinedTypeDeclaration
+    | typeDecl              # UserDefinedTypeDeclaration
     | enumTypeDecl          # EnumTypeDeclaration
     | eventDecl             # EventDeclaration
     | machineDecl           # MachineDeclaration
@@ -27,8 +27,8 @@ A P program consists of a collection of following top-level declarations:
 | [State Machines](manual/statemachines.md)    | P state machines are used to model or implement the behavior of the system                                                              |
 | [Specification Monitors](manual/monitors.md) | P specification monitors are used to write the safety and liveness specifications the system must satisfy for correctness               |
 | [Global Functions](manual/functions.md)      | P supports declaring global functions that can be shared across state machines and spec monitors                                        |
-| [Module System](manual/modulesystem.md)      | P supports a module system for implementing and testing the system modularly by dividing them into separate components                  |
-| [Test Cases](manual/testcases.md)            | P test cases helps programmers to write different finite scenarios under which they would like to check the correctness of their system |
+| [Module System](manual/modulesystem.md)      | P supports a module system for implementing and testing the system modularly by dividing it into separate components                  |
+| [Test Cases](manual/testcases.md)            | P test cases help programmers to write different finite scenarios under which they would like to check the correctness of their system |
 
 !!! Tip "Models, Specifications, Model Checking Scenario"  
     A quick primer on what a model

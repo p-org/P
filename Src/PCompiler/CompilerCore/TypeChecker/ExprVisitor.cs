@@ -586,22 +586,12 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitUnnamedTupleBody(PParser.UnnamedTupleBodyContext context)
         {
-            if (context._fields.Count > 8)
-            {
-                throw handler.TupleSizeMoreThanEight(context);
-            }
-
             IPExpr[] fields = context._fields.Select(Visit).ToArray();
             return new UnnamedTupleExpr(context, fields);
         }
 
         public override IPExpr VisitNamedTupleBody(PParser.NamedTupleBodyContext context)
         {
-            if (context._values.Count > 8)
-            {
-                throw handler.TupleSizeMoreThanEight(context);
-            }
-
             IPExpr[] fields = context._values.Select(Visit).ToArray();
 
             NamedTupleEntry[] entries = new NamedTupleEntry[fields.Length];

@@ -124,8 +124,6 @@ namespace Plang.Compiler
 
         Exception StaticFunctionNotAllowedAsHandler(ParserRuleContext funName, string name);
 
-        Exception TupleSizeMoreThanEight(ParserRuleContext context);
-
         Exception BareLoopControlFlow(string stmtName, ParserRuleContext context);
 
         Exception ExitFunctionCannotTakeParameters(ParserRuleContext sourceLocation, int count);

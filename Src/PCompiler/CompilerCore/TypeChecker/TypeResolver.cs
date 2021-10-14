@@ -100,11 +100,6 @@ namespace Plang.Compiler.TypeChecker
 
             public override PLanguageType VisitTupleType(PParser.TupleTypeContext context)
             {
-                if (context._tupTypes.Count > 8)
-                {
-                    throw handler.TupleSizeMoreThanEight(context);
-                }
-
                 return new TupleType(context._tupTypes.Select(Visit).ToArray());
             }
 
@@ -112,10 +107,6 @@ namespace Plang.Compiler.TypeChecker
             {
                 HashSet<string> names = new HashSet<string>();
                 PParser.IdenTypeContext[] namedTupleFields = context.idenTypeList().idenType();
-                if (context.idenTypeList().idenType().Length > 8)
-                {
-                    throw handler.TupleSizeMoreThanEight(context);
-                }
 
                 NamedTupleEntry[] fields = new NamedTupleEntry[namedTupleFields.Length];
                 for (int i = 0; i < namedTupleFields.Length; i++)

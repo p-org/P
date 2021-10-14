@@ -161,9 +161,9 @@ namedTupleEx.x1 = namedTupleEx.x1 + namedTupleEx.x3;
 
 !!! note "Note"
     Tuple and Named tuple types are disjoint, i.e., a tuple of type `(int,
-    bool, int)` cannot to assigned to a variable of tuple `(x1: int, x2: bool, x3: int)`
+    bool, int)` cannot be assigned to a variable of tuple `(x1: int, x2: bool, x3: int)`
     though the elements of the tuple have same types (and vice versa). And similarly, a named
-    tuple of type `(x1: int, x2: bool, x3: int)` cannot to assigned to a variable of tuple
+    tuple of type `(x1: int, x2: bool, x3: int)` cannot be assigned to a variable of tuple
     `(y1: int, y2: bool, y3: int)` they are two distinct types.
 
 ### Collection
@@ -263,7 +263,7 @@ initialized to their default values.
     | string                         | ""                                                                 |
     | event                          | null                                                               |
     | machine                        | null                                                               |
-    | enum                           | element of the enum with lowest (int) value                        |
+    | enum                           | Element of the enum with lowest (int) value                        |
     | Record (tuple or named tuple)  | Each field in the record type is initialized to its default value. |
     | Collection (set, seq, and map) | Empty collection                                                   |
     | Foreign                        | null                                                               |

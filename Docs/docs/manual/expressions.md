@@ -173,7 +173,7 @@ P supports three collection types: `map`, `seq`, and `set`. We can index into th
 
 **Syntax:** `expr_c[expr_i]` 
 
-If `expr_c` is a value of sequence type then `expr_i` must be an integer expression and `expr_c[expr_i]` represents the element at index `expr_i`. Similarly, If `expr_c` is a value of set type then `expr_i` must be an integer expression and `expr_c[expr_i]` represents the element at index `expr_i` but not that for a set there is no guarantee for the order in which elements are stored in the set.
+If `expr_c` is a value of sequence type then `expr_i` must be an integer expression and `expr_c[expr_i]` represents the element at index `expr_i`. Similarly, If `expr_c` is a value of set type then `expr_i` must be an integer expression and `expr_c[expr_i]` represents the element at index `expr_i` but note that for a set there is no guarantee for the order in which elements are stored in the set.
 Finally, if `expr_c` is a value of map type then `expr_i` represents the key to look up and `expr_c[expr_i]` represents the value for the key `expr_i`.
 
 ### Operations on Collections
@@ -182,7 +182,7 @@ P supports four other operations on collection types:
 
 #### sizeof
 
-**Syntax:**: `sizeof(expr)` where `expr` is a value of type `set`, `seq` or `map` and it returns an integer value representing the size or length of the collection.
+**Syntax:**: `sizeof(expr)`, where `expr` is a value of type `set`, `seq` or `map`, returns an integer value representing the size or length of the collection.
 
 ``` java
 var sq: seq[int];
@@ -232,7 +232,7 @@ New expression is used to create an instance of a machine, `new` returns a machi
 
 **Syntax**: `new iden (rvalue?) ;`
 
-`iden` is the name of the machine to be create and `rvalue` is the optional constructor parameter that becomes the input parameter of the entry function of the start state of the machine.
+`iden` is the name of the machine to be created and `rvalue` is the optional constructor parameter that becomes the input parameter of the entry function of the start state of the machine.
 
 === "Create a machine"
 
@@ -262,7 +262,7 @@ Function calls in P are similar to any other imperative programming languages.
 
 ### Negation and Not
 
-P supports two unary operations: `-` on integers and floats values (i.e., negation) and `!` on boolean values(i.e., logical not).
+P supports two unary operations: `-` on integers and floats values (i.e., negation) and `!` on boolean values (i.e., logical not).
 
 ### Arithmetic
 
@@ -270,7 +270,7 @@ P supports the following arithmetic binary operations on integers or floats: `+`
 
 ### Comparison
 
-P supports the following comparison binary operations on integers or floats: `<` (i.e., less-than), `<=` (i.e., less-than-equal), `>` (i.e., greator-than), and `>=` (i.e., greator-than-equal).
+P supports the following comparison binary operations on integers or floats: `<` (i.e., less-than), `<=` (i.e., less-than-equal), `>` (i.e., greater-than), and `>=` (i.e., greater-than-equal).
 
 ### Cast
 

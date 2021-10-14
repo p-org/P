@@ -236,7 +236,7 @@ Note that because of value semantics assignment in P copies the value of the `rv
     a = b; // copy value
     a += (1, "a");
     print a; // will print ["b", "a"]
-    print b; // will print ["a"]
+    print b; // will print ["b"]
     ```
 
 === "Assignments .."

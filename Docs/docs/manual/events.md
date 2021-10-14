@@ -8,11 +8,11 @@ An event in P has two parts, an event name and a payload value (optional) that c
         | event iden (: type)?;     # P Event Declaration
     ```
 
-    `iden` is the name of the event and `type` is any P data type ([decribed here](datatypes.md)).
+    `iden` is the name of the event and `type` is any P data type ([described here](datatypes.md)).
 
 **Syntax:** `event eName;` or `event eName : payloadType;`
 
-`eName` is the name of the P event and `payloadType` is the type of payload values that can sent along with this event.
+`eName` is the name of the P event and `payloadType` is the type of payload values that can be sent along with this event.
 
 === "Event Declarations"
 

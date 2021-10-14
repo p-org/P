@@ -335,11 +335,6 @@ namespace Plang.Compiler
             return IssueError(location, $"Event {pEvent.Name} appears twice in receive statement argument list");
         }
 
-        public Exception TupleSizeMoreThanEight(ParserRuleContext context)
-        {
-            return IssueError(context, "tuple or named tuple of size greater than 8 is not supported");
-        }
-
         public Exception BareLoopControlFlow(string stmtName, ParserRuleContext context)
         {
             return IssueError(context, $"Loop control flow statement '{stmtName}' cannot appear outside a loop body");

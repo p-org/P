@@ -8,7 +8,7 @@ pmc <Path>/ClientServer.dll \
 
 ??? info "Expected Output"
     ``` hl_lines="9 11 12 15"
-    pmc <Path>/ClientServer.dll -m PImplementation.multipleClientsServer.Execute -i 100
+    pmc <Path>/ClientServer.dll -m PImplementation.tcSingleClientAbstractServer.Execute -i 100
 
     . Testing <Path>/ClientServer.dll
     ... Method PImplementation.tcSingleClientAbstractServer.Execute

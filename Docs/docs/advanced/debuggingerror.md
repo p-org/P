@@ -40,7 +40,7 @@ trace and single step through the P program with the generated error trace for d
 
 ### Error Trace
 
-The `*.txt` file represents an textual error trace representing the sequence of steps (i.e, messages sent, messages received, machines created) from the initial state to the final error state. In the end of the error trace is the final error message, for example, in the case of ClientServer example above, you must see the following in the end of the error trace.
+The `*.txt` file contains a textual error trace representing the sequence of steps (i.e, messages sent, messages received, machines created) from the initial state to the final error state. In the end of the error trace is the final error message, for example, in the case of ClientServer example above, you must see the following in the end of the error trace.
 
 ``` xml
 <ErrorLog> Assertion Failed: Bank must accept the with draw request for 1, 

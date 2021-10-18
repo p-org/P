@@ -73,7 +73,7 @@ pc -proj:PriorityQueue.pproj
         0 Error(s)
     ```
 
-#### Running the PriorityQueue test
+#### Running PriorityQueue test case
 
 Run the following command to run the test case `tcCheckPriorityQueue`:
 

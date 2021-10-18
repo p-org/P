@@ -2,11 +2,11 @@ P Supports the following data types:
 
 | P Types                                       | Description                                                                                                                |
 | :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
-| [Primitive](#primitive-data-types)            | `int`, `bool`, `float`, `string`, `enum`, `machine`, and `event`.                                                          |
-| [Record](#record-data-types)                  | `tuple` and `named tuple`                                                                                                  |
-| [Collection](#collection-data-types)          | `map`, `seq`, and `set`                                                                                                    |
-| [Foreign](#foreign-types)                     | These are types that are not defined in P but in an external language (e.g., C# or Java) and can be used in the P program. |
-| [User Defined](#user-defined-types)           | These are user defined types that are constructed using any of the P types listed above                                    |
+| [Primitive](#primitive)            | `int`, `bool`, `float`, `string`, `enum`, `machine`, and `event`.                                                          |
+| [Record](#record)                  | `tuple` and `named tuple`                                                                                                  |
+| [Collection](#collection)          | `map`, `seq`, and `set`                                                                                                    |
+| [Foreign](#foreign)                     | These are types that are not defined in P but in an external language (e.g., C# or Java) and can be used in the P program. |
+| [User Defined](#user-defined)           | These are user defined types that are constructed using any of the P types listed above                                    |
 | [Universal Supertypes](#universal-supertypes) | `any` and `data`                                                                                                           |
 
 ??? note "P Types Grammar"

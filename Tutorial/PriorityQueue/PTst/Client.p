@@ -1,5 +1,5 @@
 /*
-Client machine uses the Priority Queue
+Client using the Priority Queue
 */
 
 machine Client
@@ -19,11 +19,13 @@ machine Client
 
       // lets choose an element from the queue
       element = ChooseElement(queue) as string;
-      // check if choose is implemented correctly!
+
+      // check if choose element is implemented correctly!
       assert element == "Hello" || element == "World" || element == "!!";
 
       // local foreign function that adds an int value to the queue with priority.
       queue = AddIntToQueue(queue, 123, 4);
+
       // print elements in priority order
       RemoveElementsInPriorityOrder();
     }
@@ -40,6 +42,7 @@ machine Client
     }
     print "--------------";
   }
+  
   // local foreign function that adds elements into the Queue;
   fun AddIntToQueue(queue: tPriorityQueue, elem: int, p: int): tPriorityQueue;
 }

@@ -28,10 +28,6 @@ machine Client {
 
   state ConfirmTransaction {
     entry (writeResp: tWriteTransResp) {
-      // if the write was a time out lets not confirm it
-      if(writeResp.status == TIMEOUT)
-        return;
-
       // assert that if write transaction was successful then value read is the value written.
       if(writeResp.status == SUCCESS)
       {

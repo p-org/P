@@ -322,11 +322,11 @@ P provides the `choose` primitive to model data nondeterminism in P programs. Th
 
 **Syntax:** `choose()` or `choose(expr)`
 
-`expr` can either be a `int` value or a collection. For `choose(x)`, when `x` is an integer, `choose(x)` returns a random value between `0 to x` (including x), when `x` is a collection then `choose(x)` returns a random element from the collection.
+`expr` can either be a `int` value or a collection. For `choose(x)`, when `x` is an integer, `choose(x)` returns a random value between `0 to x` (excluding x), when `x` is a collection then `choose(x)` returns a random element from the collection.
 
 ``` java
 choose() // returns true or false, is equivalent to $
-choose(10) // returns an integer x, 0 <= x <= 10
+choose(10) // returns an integer x, 0 <= x < 10
 choose(x) // if x is set or seq then returns a value from that collection
 ```
 

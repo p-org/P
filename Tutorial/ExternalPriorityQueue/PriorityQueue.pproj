@@ -1,0 +1,9 @@
+<!-- P project file for the Foreign Interface example -->
+<Project>
+<ProjectName>PriorityQueue</ProjectName>
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+	<PFile>./PTst/</PFile>
+</InputFiles>
+<OutputDir>./PGenerated/</OutputDir>
+</Project>

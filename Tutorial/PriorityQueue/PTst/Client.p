@@ -42,7 +42,7 @@ machine Client
     }
     print "--------------";
   }
-  
+
   // local foreign function that adds elements into the Queue;
   fun AddIntToQueue(queue: tPriorityQueue, elem: int, p: int): tPriorityQueue;
 }

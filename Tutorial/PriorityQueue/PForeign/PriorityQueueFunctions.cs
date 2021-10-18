@@ -23,6 +23,7 @@ namespace PImplementation
   {
       public static tPriorityQueue CreatePriorityQueue(PMachine machine)
       {
+          // use these log statements if you want logs in the foreign code to show up in the error trace.
           machine.LogLine("Creating Priority Queue!");
           return new tPriorityQueue();
       }
@@ -50,9 +51,10 @@ namespace PImplementation
        */
       public static IPrtValue ChooseElement(tPriorityQueue queue, PMachine machine)
       {
-          // one can write a nondeterministic foreign function `only` using the machine.*Random functions.
+          // one can write a nondeterministic foreign function using the machine.*Random functions.
+          // all machine.TryRandom*() functions are controlled by the P checker during exploration.
           var index = machine.TryRandomInt(queue.Size());
-          machine.LogLine("Removing element at location: " + index);
+          machine.LogLine("Choosing element at location: " + index);
           return queue.GetElementAt(index);
       }
   }

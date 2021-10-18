@@ -12,11 +12,14 @@ using System.Threading.Tasks;
 
 namespace PImplementation
 {
-    /* tPriorityQueue type implementation in C#
-     * (1) An implementation of a Foreign type must have the same name as the declaration in the P program.
-     * (2) It must be implemnented in the PImplementation namespace and must extend the IPrtValue interface.
-     * (3) Implementing the IPrtValue interface basically requires the programmer to provide two functions in the foreign
-     *  type, Equals and Clone. Apart from that the implementation of the foreign type can be arbitrary sequential C# code.
+    /* tPriorityQueue type implementation:
+     * (1) An implementation of a foreign type must have the same name as the declaration in the P program.
+     * (2) It must be implemnented in the `PImplementation` namespace and must extend the `IPrtValue` interface.
+     * (3) Implementing the `IPrtValue` interface basically requires the programmer to provide two functions in the foreign
+     *  type, `Equals and Clone`.
+     Apart from that the implementation of the foreign type can be arbitrary sequential C# code.
+
+     If you want to pretty print the foreign type value, you can also override the ToString() function in their implementation.
      */
     public class tPriorityQueue : IPrtValue
     {

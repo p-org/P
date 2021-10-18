@@ -26,6 +26,9 @@ The [PriorityQueue.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQu
 !!! danger "P has Value Semantics (no Pass by Reference!!)"
     Note that P does not support pass by references, everything in P is always pass by value. Hence the functions above must return a priority queue after adding the element into the queue (mutated queue).
 
+!!! note "Pretty printing foreign types"
+    If you want to pretty print the foreign type value, you can also override the ToString() function in their implementation.
+
 #### P Test
 
 The [Client.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p) files presents a [`Client`](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p#L5) state machine that uses the priority queue and performs operations on it by calling the foreign function. The `Client` machine also declares a [local foreign function]() to add an element into the queue.
@@ -33,4 +36,73 @@ The [Client.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTs
 #### P Foreign Code
 
 
+#### Compiling PriorityQueue project
+
+Run the following command: 
+
+``` shell
+cd P/Tutorial/PriorityQueue
+pc -proj:PriorityQueue.pproj
+```
+
+??? note "Expected Output"
+    ```
+    ----------------------------------------
+    ==== Loading project file: PriorityQueue.pproj
+    ....... includes p file: P/Tutorial/PriorityQueue/PSrc/PriorityQueue.p
+    ....... includes p file: P/Tutorial/PriorityQueue/PTst/Client.p
+    ....... includes p file: P/Tutorial/PriorityQueue/PTst/TestScripts.p
+    ----------------------------------------
+    ----------------------------------------
+    Parsing ..
+    Type checking ...
+    Code generation ....
+    Generated PriorityQueue.cs
+    ----------------------------------------
+    Compiling PriorityQueue.csproj ..
+
+    Microsoft (R) Build Engine version 16.10.2+857e5a733 for .NET
+    Copyright (C) Microsoft Corporation. All rights reserved.
+
+      Determining projects to restore...
+      Restored P/Tutorial/PriorityQueue/PriorityQueue.csproj (in 757 ms).
+      PriorityQueue -> P/Tutorial/PriorityQueue/POutput/netcoreapp3.1/PriorityQueue.dll
+
+    Build succeeded.
+        0 Warning(s)
+        0 Error(s)
+    ```
+
+#### Running the PriorityQueue test
+
+Run the following command to run the test case `tcCheckPriorityQueue`:
+
+```
+pmc <path>/PriorityQueue.dll -v
+```
+
+??? note "Expected Output"
+    ```
+    . Testing /Users/ankushpd/Workspace/github/P/Tutorial/PriorityQueue/POutput/netcoreapp3.1/PriorityQueue.dll
+    Starting TestingProcessScheduler in process 49983
+    ... Created '1' testing task.
+    ... Task 0 is using 'random' strategy (seed:3421113095).
+    ..... Iteration #1
+    <TestLog> Running test 'PImplementation.tcCheckPriorityQueue.Execute'.
+    <CreateLog> Plang.CSharpRuntime._GodMachine(1) was created by task '2'.
+    <CreateLog> PImplementation.Client(2) was created by Plang.CSharpRuntime._GodMachine(1).
+    <StateLog> PImplementation.Client(2) enters state 'Init'.
+    <PrintLog> Creating Priority Queue!
+    <PrintLog> Adding Element in the Priority Queue!
+    <PrintLog> Adding Element in the Priority Queue!
+    <PrintLog> Adding Element in the Priority Queue!
+    <PrintLog> Choosing element at location: 1
+    <PrintLog> --------------
+    <PrintLog> Hello
+    <PrintLog> World
+    <PrintLog> !!
+    <PrintLog> 123
+    <PrintLog> --------------
+
+    ```
 

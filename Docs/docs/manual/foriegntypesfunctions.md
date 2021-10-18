@@ -9,7 +9,7 @@
 !!! hint "Recommendation: Using Foreign Types and Functions"
     Programmers can consider implementing a particular type as Foreign type in P if its a complicated data structure and implementing them using P types is either not possible or too combursome. For example, P does not support declaring recursive data types, and hence, implementing a linked-list or a tree like data-structure in P is hard. Hence, we recommend programmers to implement such types as foreign types.
 
-    When modeling complex systems, many a times programmers need to implement complicated logic/functions that manupulate or iterate over data-structures. Such functions can be easily implemented in foreign languages like Java and C# as compared to P. For example, iterating over collections and manipulating them is easier in Java and C#, and verbose in P as P only supports `while` loop and not a iterator like `foreach`. Also functions that operate on foreign types are implemented as foreign functions.   
+    When modeling complex systems, many a times programmers need to implement complicated logic/functions that manupulate or iterate over data-structures. Such functions can be easily implemented in foreign languages like Java and C# as compared to P. For example, iterating over collections and manipulating them is easier in Java and C#, and verbose in P as P only supports `while` loop and not a iterator like `foreach`. Also, functions that manipulate foreign types are implemented as foreign functions.   
 
 The [Two Phase Commit](../tutorial/twophasecommit.md) example had introduced the foreign function feature. We will now use a simple PriorityQueue example to go into the details of foreign interface in P.
 
@@ -26,19 +26,25 @@ The [PriorityQueue.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQu
 !!! danger "P has Value Semantics (no Pass by Reference!!)"
     Note that P does not support pass by references, everything in P is always pass by value. Hence the functions above must return a priority queue after adding the element into the queue (mutated queue).
 
-!!! note "Pretty printing foreign types"
-    If you want to pretty print the foreign type value, you can also override the ToString() function in their implementation.
+
 
 #### P Test
 
-The [Client.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p) files presents a [`Client`](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p#L5) state machine that uses the priority queue and performs operations on it by calling the foreign function. The `Client` machine also declares a [local foreign function]() to add an element into the queue.
+The [Client.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p) files presents a [`Client`](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p#L5) state machine that uses the priority queue and performs operations on it by calling the foreign function. The `Client` machine also declares a [local foreign function](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p#L46-L47) to add an element into the queue.
 
 #### P Foreign Code
 
+The implementation of the `tPriorityQueue` is available in [PriorityQueue.cs](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PForeign/PriorityQueue.cs)
+
+!!! note ""
+    If you want to pretty print the foreign type value, you can also override the ToString() function in their implementation.
+
+The implementation of the global functions in PriorityQueue.p is available in [PriorityQueueFunctions.cs](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PForeign/PriorityQueueFunctions.cs).
+Finally, the implementation of the local function in the Client machine is available in [ClientFunctions.cs](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PForeign/ClientFunctions.cs).
 
 #### Compiling PriorityQueue project
 
-Run the following command: 
+Run the following command:
 
 ``` shell
 cd P/Tutorial/PriorityQueue
@@ -75,7 +81,7 @@ pc -proj:PriorityQueue.pproj
 
 #### Running PriorityQueue test case
 
-Run the following command to run the test case `tcCheckPriorityQueue`:
+Run the following command to run the test case [`tcCheckPriorityQueue`](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/TestScripts.p#L2):
 
 ```
 pmc <path>/PriorityQueue.dll -v
@@ -106,3 +112,4 @@ pmc <path>/PriorityQueue.dll -v
 
     ```
 
+Hope you exploit the P Foreign interface to implement and test complex systems. If you have any questions, please feel free to post them in the discussions or issues.

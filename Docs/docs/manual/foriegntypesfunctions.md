@@ -89,7 +89,7 @@ pmc <path>/PriorityQueue.dll -v
 
 ??? note "Expected Output"
     ```
-    . Testing /Users/ankushpd/Workspace/github/P/Tutorial/PriorityQueue/POutput/netcoreapp3.1/PriorityQueue.dll
+    . Testing P/Tutorial/PriorityQueue/POutput/netcoreapp3.1/PriorityQueue.dll
     Starting TestingProcessScheduler in process 49983
     ... Created '1' testing task.
     ... Task 0 is using 'random' strategy (seed:3421113095).

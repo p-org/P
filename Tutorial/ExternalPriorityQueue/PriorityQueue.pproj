@@ -1,14 +1,9 @@
-<!-- P project file for the Two Phase Commit example -->
+<!-- P project file for the Foreign Interface example -->
 <Project>
-<ProjectName>TwoPhaseCommit</ProjectName>
+<ProjectName>PriorityQueue</ProjectName>
 <InputFiles>
 	<PFile>./PSrc/</PFile>
-	<PFile>./PSpec/</PFile>
 	<PFile>./PTst/</PFile>
 </InputFiles>
 <OutputDir>./PGenerated/</OutputDir>
-<!-- Add the dependencies for the Timer machine -->
-<IncludeProject>../Common/Timer/Timer.pproj</IncludeProject>
-<!-- Add the dependencies for the FailureInjector machine -->
-<IncludeProject>../Common/FailureInjector/FailureInjector.pproj</IncludeProject>
 </Project>

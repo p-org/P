@@ -4,8 +4,8 @@ using Plang.CSharpRuntime.Values;
 namespace PImplementation
 {
     /*
-     * Foreign functions declared in a class must be implemented inside the Class corresponding to the P machine
-     * In this case the `Client` machine class
+     * Local foreign functions declared in a machine must be implemented inside the Class corresponding to that P machine.
+     * In this case the `AddIntToQueue` function is a local function of the `Client` machine.
      */
     partial class Client
     {

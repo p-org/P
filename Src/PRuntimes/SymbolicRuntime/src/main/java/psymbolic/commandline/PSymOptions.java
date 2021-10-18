@@ -56,6 +56,14 @@ public class PSymOptions {
                 .build();
         options.addOption(maxSchedBound);
 
+        // whether or not to disable receiver queue restriction
+        Option receiverQueue = Option.builder("nrq")
+                .longOpt("no-receiver-queue")
+                .desc("Disable receiver queue semantics restriction")
+                .numberOfArgs(0)
+                .build();
+        options.addOption(receiverQueue);
+
         // whether or not to collect search stats
         Option collectStats = Option.builder("s")
                 .longOpt("stats")
@@ -150,6 +158,10 @@ public class PSymOptions {
                     catch (NumberFormatException ex) {
                         formatter.printHelp("v", String.format("Expected an integer value (0, 1 or 2), got %s", option.getValue()), options, "Try \"--help\" option for details.");
                     }
+                    break;
+                case "nrq":
+                case "no-receiver-queue":
+                    config.setAddReceiverQueueSemantics(false);
                     break;
                 case "s":
                 case "stats":

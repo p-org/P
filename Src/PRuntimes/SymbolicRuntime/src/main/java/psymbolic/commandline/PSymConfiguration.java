@@ -39,6 +39,10 @@ public class PSymConfiguration {
     private int maxInternalSteps = 1000;
 
     @Getter @Setter
+    // intersect with receiver queue semantics
+    private boolean addReceiverQueueSemantics = true;
+
+    @Getter @Setter
     // level of verbosity for the logging
     private int verbosity = 1;
 

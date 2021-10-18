@@ -45,6 +45,17 @@ public class Scheduler implements SymbolicSearch {
     /** Use the interleave map (if false) or not (if true) */
     private boolean alwaysInterleaveNonAsync = false;
 
+    /** Get whether to intersect with receiver queue semantics
+     * @return whether to intersect with receiver queue semantics
+     */
+    public boolean addReceiverQueueSemantics() { return configuration.isAddReceiverQueueSemantics(); }
+
+    /** Receiver queue semantics tracker */
+    private ReceiverQueue receiverQueue = new ReceiverQueue();
+
+    /** Get receiver queue semantics tracker */
+    public ReceiverQueue getReceiverQueue() { return receiverQueue; }
+
     /** Current depth of exploration */
     private int depth = 0;
     /** Whether or not search is done */
@@ -60,6 +71,7 @@ public class Scheduler implements SymbolicSearch {
         done = false;
         machineCounters.clear();
         machines.clear();
+        receiverQueue = new ReceiverQueue();
     }
 
     /** Find out whether symbolic execution is finished
@@ -294,7 +306,7 @@ public class Scheduler implements SymbolicSearch {
             if (!machine.sendBuffer.isEmpty()) {
                 Guard canRun = machine.hasHalted().getGuardFor(true).not();
                 canRun = canRun.and(machine.sendBuffer.satisfiesPredUnderGuard(x ->
-                             BooleanVS.and(x.canRun(), shouldInterleave(candidateFirstMessages, x))).getGuardFor(true));
+                             BooleanVS.and(BooleanVS.and(x.canRun(), shouldInterleave(candidateFirstMessages, x)), receiverQueueCond(machine, x))).getGuardFor(true));
                 if (!canRun.isFalse()) {
                     candidateSenders.add(new PrimitiveVS<>(machine).restrict(canRun));
                     candidateFirstMessages.add(machine.sendBuffer.peek(canRun));
@@ -303,6 +315,12 @@ public class Scheduler implements SymbolicSearch {
         }
 
         return candidateSenders;
+    }
+
+    private PrimitiveVS<Boolean> receiverQueueCond(Machine src, Message m) {
+        if (!addReceiverQueueSemantics()) return new PrimitiveVS<>(true);
+        PrimitiveVS<Machine> target = m.getTarget();
+        return receiverQueue.guardFor(src, m);
     }
 
     private PrimitiveVS<Boolean> shouldInterleave(List<Message> candidateMessages, Message m) {
@@ -359,6 +377,7 @@ public class Scheduler implements SymbolicSearch {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
             Message removed = machine.sendBuffer.remove(guard);
+            if (addReceiverQueueSemantics()) receiverQueue.remove(guard, machine, removed.getTarget());
             if (configuration.isCollectStats()) {
                 numMessages += Concretizer.getNumConcreteValues(Guard.constTrue(), removed);
             }

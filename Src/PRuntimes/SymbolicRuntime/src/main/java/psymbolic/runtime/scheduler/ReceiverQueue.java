@@ -28,8 +28,11 @@ public class ReceiverQueue {
         for (GuardedValue<Machine> targetGV : tgt.getGuardedValues()) {
             Machine tgtValue = targetGV.getValue(); 
             if (receiveFrom.containsKey(tgtValue)) {
-                Guard dequeueGuard = receiveFrom.get(tgtValue).peek(targetGV.getGuard().and(pc)).symbolicEquals(src, targetGV.getGuard()).getGuardFor(true);
-                receiveFrom.get(tgtValue).dequeueEntry(dequeueGuard);
+                Guard peekGuard = receiveFrom.get(tgtValue).isEnabledUnderGuard().and(targetGV.getGuard().and(pc));
+                if (!peekGuard.isFalse()) {
+                    Guard dequeueGuard = receiveFrom.get(tgtValue).peek(peekGuard).symbolicEquals(src, peekGuard).getGuardFor(true);
+                    receiveFrom.get(tgtValue).dequeueEntry(dequeueGuard);
+                }
             }
         }
     }

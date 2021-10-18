@@ -51,7 +51,7 @@ namespace PImplementation
       public static IPrtValue ChooseElement(tPriorityQueue queue, PMachine machine)
       {
           // one can write a nondeterministic foreign function `only` using the machine.*Random functions.
-          var index = machine.TryRandomInt(queue.Size() - 1);
+          var index = machine.TryRandomInt(queue.Size());
           machine.LogLine("Removing element at location: " + index);
           return queue.GetElementAt(index);
       }

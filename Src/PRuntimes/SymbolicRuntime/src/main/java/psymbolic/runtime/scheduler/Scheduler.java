@@ -39,22 +39,16 @@ public class Scheduler implements SymbolicSearch {
     /** List of monitors instances */
     private List<Monitor> monitors;
 
-    /** Map of what not to interleave */
-    private Map<Event, Set<Event>> interleaveMap;
+    /** Vector clock manager */
+    private VectorClockManager vcManager;
 
     /** Use the interleave map (if false) or not (if true) */
-    private boolean alwaysInterleaveNonAsync = false;
+    private boolean alwaysInterleaveNonAsync = true;
 
     /** Get whether to intersect with receiver queue semantics
      * @return whether to intersect with receiver queue semantics
      */
     public boolean addReceiverQueueSemantics() { return configuration.isAddReceiverQueueSemantics(); }
-
-    /** Receiver queue semantics tracker */
-    private ReceiverQueue receiverQueue = new ReceiverQueue();
-
-    /** Get receiver queue semantics tracker */
-    public ReceiverQueue getReceiverQueue() { return receiverQueue; }
 
     /** Current depth of exploration */
     private int depth = 0;
@@ -71,7 +65,13 @@ public class Scheduler implements SymbolicSearch {
         done = false;
         machineCounters.clear();
         machines.clear();
-        receiverQueue = new ReceiverQueue();
+    }
+
+    /** Return scheduler's VC manager
+        @return the scheduler's current vector clock manager
+     */
+    public VectorClockManager getVcManager() {
+        return vcManager;
     }
 
     /** Find out whether symbolic execution is finished
@@ -106,7 +106,7 @@ public class Scheduler implements SymbolicSearch {
         this.schedule = getNewSchedule();
         this.machines = new ArrayList<>();
         this.machineCounters = new HashMap<>();
-        this.interleaveMap = InterleaveMap.getMap();
+        this.vcManager = new VectorClockManager(addReceiverQueueSemantics() || configuration.isDpor());
 
         for (Machine machine : machines) {
             this.machines.add(machine);
@@ -119,6 +119,7 @@ public class Scheduler implements SymbolicSearch {
             TraceLogger.onCreateMachine(Guard.constTrue(), machine);
             machine.setScheduler(this);
             schedule.makeMachine(machine, Guard.constTrue());
+            vcManager.addMachine(Guard.constTrue(), machine);
         }
     }
 
@@ -224,6 +225,8 @@ public class Scheduler implements SymbolicSearch {
         TraceLogger.onCreateMachine(Guard.constTrue(), machine);
         machine.setScheduler(this);
         schedule.makeMachine(machine, Guard.constTrue());
+        if (vcManager.hasIdx(new PrimitiveVS<>(machine)).isFalse())
+            vcManager.addMachine(Guard.constTrue(), machine);
 
         performEffect(
                 new Message(
@@ -275,7 +278,6 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public List<PrimitiveVS> getNextSenderChoices() {
-
         // prioritize the create actions
         for (Machine machine : machines) {
             if (!machine.sendBuffer.isEmpty()) {
@@ -299,30 +301,64 @@ public class Scheduler implements SymbolicSearch {
         }
 
         // now there are no create machine and sync event actions remaining
-        List<PrimitiveVS> candidateSenders = new ArrayList<>();
-        List<Message> candidateFirstMessages = new ArrayList<>();
+        List<GuardedValue<Machine>> guardedMachines = new ArrayList<>();
 
         for (Machine machine : machines) {
             if (!machine.sendBuffer.isEmpty()) {
                 Guard canRun = machine.hasHalted().getGuardFor(true).not();
-                canRun = canRun.and(machine.sendBuffer.satisfiesPredUnderGuard(x ->
-                             BooleanVS.and(BooleanVS.and(x.canRun(), shouldInterleave(candidateFirstMessages, x)), receiverQueueCond(machine, x))).getGuardFor(true));
+                canRun = canRun.and(machine.sendBuffer.satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true));
                 if (!canRun.isFalse()) {
-                    candidateSenders.add(new PrimitiveVS<>(machine).restrict(canRun));
-                    candidateFirstMessages.add(machine.sendBuffer.peek(canRun));
+                    guardedMachines.add(new GuardedValue(machine, canRun));
+ //                   candidateSenders.add(new PrimitiveVS<>(machine).restrict(canRun));
                 }
             }
         }
+  //      return candidateSenders;
 
+        if (addReceiverQueueSemantics()) {
+            guardedMachines = filter(guardedMachines, ReceiverQueueOrder.getInstance());
+        }
+
+        if (!alwaysInterleaveNonAsync) {
+            guardedMachines = filter(guardedMachines, InterleaveOrder.getInstance());
+        }
+
+        List<PrimitiveVS> candidateSenders = new ArrayList<>();
+        for (GuardedValue<Machine> guardedValue : guardedMachines) {
+            candidateSenders.add(new PrimitiveVS<>(guardedValue.getValue()).restrict(guardedValue.getGuard()));
+        }
         return candidateSenders;
     }
 
-    private PrimitiveVS<Boolean> receiverQueueCond(Machine src, Message m) {
-        if (!addReceiverQueueSemantics()) return new PrimitiveVS<>(true);
-        PrimitiveVS<Machine> target = m.getTarget();
-        return receiverQueue.guardFor(src, m);
+    private List<GuardedValue<Machine>> filter(List<GuardedValue<Machine>> choices, MessageOrder order) {
+        Map<Machine, Guard> filteredMap = new HashMap<>();
+        Map<Machine, Message> firstElement = new HashMap<>();
+        for (GuardedValue<Machine> choice : choices) {
+            Machine currentMachine = choice.getValue();
+            Message current = currentMachine.sendBuffer.peek(choice.getGuard());
+            Guard add = choice.getGuard();
+            List<Message> remove = new ArrayList<>();
+            Map<Machine, Guard> newFilteredMap = new HashMap<>();
+            for (Machine oldMachine : filteredMap.keySet()) {
+                Message old = firstElement.get(oldMachine);
+                add = add.and(order.lessThan(old, current).not());
+                Guard remCond = order.lessThan(current, old);
+                newFilteredMap.put(oldMachine, filteredMap.get(oldMachine).and(remCond.not()));
+                firstElement.put(oldMachine, firstElement.get(oldMachine).restrict(remCond.not()));
+            }
+            newFilteredMap.put(currentMachine, add);
+            firstElement.put(currentMachine, current.restrict(add));
+            filteredMap = newFilteredMap;
+        }
+        List<GuardedValue<Machine>> filtered = new ArrayList<>();
+        for (Map.Entry<Machine,Guard> entry : filteredMap.entrySet()) {
+            if (!entry.getValue().isFalse())
+                filtered.add(new GuardedValue(entry.getKey(), entry.getValue()));
+        }
+        return filtered;
     }
 
+/*
     private PrimitiveVS<Boolean> shouldInterleave(List<Message> candidateMessages, Message m) {
         if (alwaysInterleaveNonAsync) return new PrimitiveVS<>(true);
         PrimitiveVS<Event> event = m.getEvent();
@@ -349,6 +385,7 @@ public class Scheduler implements SymbolicSearch {
         }
         return new PrimitiveVS<>(true).restrict(equal.not());
     }
+*/
 
     public PrimitiveVS<Machine> getNextSender(List<PrimitiveVS> candidateSenders) {
         PrimitiveVS<Machine> choices = (PrimitiveVS<Machine>) NondetUtil.getNondetChoice(candidateSenders);
@@ -377,7 +414,6 @@ public class Scheduler implements SymbolicSearch {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
             Message removed = machine.sendBuffer.remove(guard);
-            if (addReceiverQueueSemantics()) receiverQueue.remove(guard, machine, removed.getTarget());
             if (configuration.isCollectStats()) {
                 numMessages += Concretizer.getNumConcreteValues(Guard.constTrue(), removed);
             }
@@ -435,6 +471,7 @@ public class Scheduler implements SymbolicSearch {
 
         if (!machines.contains(newMachine)) {
             machines.add(newMachine);
+            vcManager.addMachine(pc, newMachine);
         }
 
         TraceLogger.onCreateMachine(pc, newMachine);

@@ -14,9 +14,13 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import lombok.Getter;
+import lombok.Setter;
+
 public abstract class Machine {
     private String name;
     private int instanceId;
+    @Getter @Setter
     private Scheduler scheduler;
     private final State startState;
     private final Set<State> states;
@@ -29,15 +33,14 @@ public abstract class Machine {
     private PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> receives = new PrimitiveVS<>();
     public final Map<String, Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> continuations = new HashMap<>();
     public final Set<Runnable> clearContinuationVars = new HashSet<>();
+    @Getter
+    // the vector clock for the machine
+    private VectorClockVS clock = new VectorClockVS(Guard.constTrue());
 
     public void receive(String continuationName, Guard pc) {
         PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> handler = new PrimitiveVS<>(continuations.get(continuationName)).restrict(pc);
         receives = receives.merge(handler);
     }
-
-    public void setScheduler(Scheduler scheduler) { this.scheduler = scheduler; }
-
-    public Scheduler getScheduler() { return scheduler; }
 
     public PrimitiveVS<Boolean> hasStarted() {
         return started;
@@ -45,6 +48,11 @@ public abstract class Machine {
 
     public PrimitiveVS<Boolean> hasHalted() {
         return halted;
+    }
+
+    public void incrementClock(Guard pc) {
+        if (scheduler.getVcManager().isEnabled())
+            clock = clock.increment(scheduler.getVcManager().getIdx(new PrimitiveVS<>(this).restrict(pc)));
     }
 
     public Guard getBlockedOnReceiveGuard() { return receives.getUniverse(); }
@@ -65,6 +73,7 @@ public abstract class Machine {
         }
         receives = new PrimitiveVS<>();
         for (Runnable r : clearContinuationVars) { r.run(); }
+        clock = new VectorClockVS(Guard.constTrue());
     }
 
     public Machine(String name, int id, EventBufferSemantics semantics, State startState, State... states) {
@@ -218,6 +227,10 @@ public abstract class Machine {
     public void processEventToCompletion(Guard pc, Message message) {
         final EventHandlerReturnReason eventRaiseEventHandlerReturnReason = new EventHandlerReturnReason();
         eventRaiseEventHandlerReturnReason.raiseGuardedMessage(message);
+        if (scheduler.getVcManager().isEnabled()) {
+            this.incrementClock(pc);
+            clock = clock.update(message.getVectorClock());
+        }
         runOutcomesToCompletion(pc, eventRaiseEventHandlerReturnReason);
     }
 

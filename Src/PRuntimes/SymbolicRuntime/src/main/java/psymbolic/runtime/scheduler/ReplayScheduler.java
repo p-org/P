@@ -25,6 +25,8 @@ public class ReplayScheduler extends Scheduler {
         for (Machine machine : schedule.getMachines()) {
             machine.reset();
         }
+        configuration.setAddReceiverQueueSemantics(false);
+        getVcManager().disable();
     }
 
     @Override

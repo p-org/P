@@ -17,6 +17,12 @@ public class Message implements ValueSummary<Message> {
     private final PrimitiveVS<Event> event;
     // the payload associated with the event
     private final Map<Event, UnionVS> payload;
+    // the vector clock for the event
+    private final VectorClockVS clock;
+
+    public VectorClockVS getVectorClock() {
+        return this.clock;
+    }
 
     public PrimitiveVS<Boolean> canRun() {
         Guard cond = Guard.constFalse();
@@ -64,18 +70,23 @@ public class Message implements ValueSummary<Message> {
         return this.restrict(cond);
     }
 
-    private Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, Map<Event, UnionVS> map) {
+    private Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, Map<Event, UnionVS> map, VectorClockVS clock) {
         this.event = names;
         this.target = machine;
         this.payload = new HashMap<>(map);
+        this.clock = clock;
+    }
+
+    private Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, Map<Event, UnionVS> map) {
+        this(names, machine, map, new VectorClockVS(Guard.constFalse()));
     }
 
     public Message(Event name, PrimitiveVS<Machine> machine) {
-        this(new PrimitiveVS<>(name), machine, new HashMap<>());
+        this(new PrimitiveVS<>(name), machine, new HashMap<>(), new VectorClockVS(Guard.constFalse()));
     }
 
-    public Message(PrimitiveVS<Event> name, PrimitiveVS<Machine> machine) {
-        this(name, machine, new HashMap<>());
+    public Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine) {
+        this(names, machine, new HashMap<>(), new VectorClockVS(Guard.constFalse()));
     }
 
     public Message() {
@@ -87,6 +98,10 @@ public class Message implements ValueSummary<Message> {
     }
 
     public Message(PrimitiveVS<Event> events, PrimitiveVS<Machine> machine, UnionVS payload) {
+        this(events, machine, payload, new VectorClockVS(Guard.constFalse()));
+    }
+
+    public Message(PrimitiveVS<Event> events, PrimitiveVS<Machine> machine, UnionVS payload, VectorClockVS clock) {
         this.event = events;
         this.target = machine;
         this.payload = new HashMap<>();
@@ -96,6 +111,7 @@ public class Message implements ValueSummary<Message> {
                 this.payload.put(event.getValue(), payload.restrict(event.getGuard()));
             }
         }
+        this.clock = clock;
     }
 
     public PrimitiveVS<Event> getEvent() {
@@ -130,13 +146,14 @@ public class Message implements ValueSummary<Message> {
                 newPayload.put(entry.getKey(), entry.getValue().restrict(guard));
             }
         }
-        return new Message(newEvent, target.restrict(guard), newPayload);
+        return new Message(newEvent, target.restrict(guard), newPayload, clock.restrict(guard));
     }
 
     @Override
     public Message merge(Iterable<Message> summaries) {
         List<PrimitiveVS<Event>> eventsToMerge = new ArrayList<>();
         List<PrimitiveVS<Machine>> targetsToMerge = new ArrayList<>();
+        List<VectorClockVS> clocksToMerge = new ArrayList<>();
         Map<Event, UnionVS> newPayload = new HashMap<>();
 
         for (Map.Entry<Event, UnionVS> entry : this.payload.entrySet()) {
@@ -148,6 +165,7 @@ public class Message implements ValueSummary<Message> {
         for (Message summary : summaries) {
             eventsToMerge.add(summary.event);
             targetsToMerge.add(summary.target);
+            clocksToMerge.add(summary.clock);
             for (Map.Entry<Event, UnionVS> entry : summary.payload.entrySet()) {
                 newPayload.computeIfPresent(entry.getKey(), (key, value) -> value.merge(summary.payload.get(key)));
                 if (entry.getValue() != null)
@@ -158,7 +176,7 @@ public class Message implements ValueSummary<Message> {
             }
         }
 
-        return new Message(event.merge(eventsToMerge), target.merge(targetsToMerge), newPayload);
+        return new Message(event.merge(eventsToMerge), target.merge(targetsToMerge), newPayload, clock.merge(clocksToMerge));
     }
 
     @Override

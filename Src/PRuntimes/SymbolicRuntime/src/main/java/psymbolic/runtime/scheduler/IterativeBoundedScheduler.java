@@ -182,6 +182,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             TraceLogger.onCreateMachine(pc, newMachine);
             newMachine.setScheduler(this);
             schedule.makeMachine(newMachine, pc);
+            getVcManager().addMachine(pc, newMachine);
             allocated = new PrimitiveVS<>(newMachine).restrict(pc);
         }
 

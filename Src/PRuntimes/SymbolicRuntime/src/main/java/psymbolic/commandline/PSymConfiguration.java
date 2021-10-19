@@ -43,6 +43,10 @@ public class PSymConfiguration {
     private boolean addReceiverQueueSemantics = true;
 
     @Getter @Setter
+    // intersect with receiver queue semantics
+    private boolean dpor = true;
+
+    @Getter @Setter
     // level of verbosity for the logging
     private int verbosity = 1;
 

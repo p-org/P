@@ -1,7 +1,6 @@
 package psymbolic.runtime.machine.buffer;
 
 import psymbolic.runtime.Event;
-import psymbolic.runtime.scheduler.ReceiverQueue;
 import psymbolic.runtime.scheduler.Scheduler;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
@@ -26,9 +25,8 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer {
             throw new RuntimeException("Not Implemented");
         }
         TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
-        if (sender.getScheduler().addReceiverQueueSemantics()) {
-            sender.getScheduler().getReceiverQueue().sendFromTo(pc, sender, dest);
-        }
+        if (sender != null)
+            sender.incrementClock(pc);
         enqueue(new Message(eventName, dest, payload).restrict(pc));
     }
 

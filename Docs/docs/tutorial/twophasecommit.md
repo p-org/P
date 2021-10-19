@@ -10,19 +10,20 @@
 Now that we understand the basic features of the P language, lets look at modeling and analysis of a distributed system :man_juggling:!
 
 
-**System:** We use a simplified version of the [classic two phase commit protocol](https://s2.smu.edu/~mhd/8330f11/p133-gray.pdf) to model a transaction commit service. The two phase commit protocol uses a single coordinator to gain consensus for a transaction spanning across multiple participants. A transaction in our case is simply a `write` operation for a key-value data store where the data store is replicated across participants, in other words, a `write` transaction must be committed only if its accepted by all the participant replicas and aborted if any one of the participant replica rejects the `write` request.
+**System:** We use a simplified version of the [classic two phase commit protocol](https://s2.smu.edu/~mhd/8330f11/p133-gray.pdf) to model a transaction commit service. The two phase commit protocol uses a coordinator to gain consensus for any transaction spanning across multiple participants. A transaction in our case is simply a `write` operation for a key-value data store where the data store is replicated across multiple participants. More concretely, a `write` transaction must be committed by the coordinator only if its accepted by all the participant replicas and must be aborted if any one of the participant replica rejects the `write` request.
 
 ![Placeholder](twophasecommit.png){ align=center }
 
-A two phase commit protocol consists of two phases :laughing: (figure above). On receiving a write transaction, the coordinator starts the first phase in which it sends a `prepare` request to all the participants and waits for a `prepare success` or `prepare failure` response. On receiving prepare response from all the participants, the coordinator moves the second phase where it sends a `commit` or `abort` message to the participants and also responds back to the client if the write transaction was committed or aborted by the service. 
+A two phase commit protocol consists of two phases :laughing: (figure above). On receiving a write transaction, the coordinator starts the first phase in which it sends a `prepare` request to all the participants and waits for a `prepare success` or `prepare failure` response. On receiving prepare responses from all the participants, the coordinator moves to the second phase where it sends a `commit` or `abort` message to the participants and also responds back to the client.
 
-**Assumptions:** Note that our transaction commit system is ridiculously simplified, for example, (1) it does allow multiple concurrent clients to issue transactions in parallel but the coordinator serializes these transaction and services them one-by-one, (2) it is not fault tolerant to node failures, failure of either coordinator or any of the participants will block the progress forever. Also, we rely on [P's reliable send semantics](../advanced/psemantics.md) to model the behavior of the underlying network, hence, our models assume reliable delivery of messages.
+**Assumptions:** Our transaction commit system is ridiculously simplified, just to list a few: (1) our system does allow multiple concurrent clients to issue transactions in parallel but the coordinator serializes these transaction and services them one-by-one, (2) our system is not fault tolerant to node failures, failure of either coordinator or any of the participants will block the progress forever. Also, we rely on [P's reliable send semantics](../advanced/psemantics.md) to model the behavior of the underlying network, hence, our system models assume reliable delivery of messages.
 
 **Correctness Specification:** We would like our transaction commit service to provide atomicity guarantees for each transaction, i.e., if the service responds to the client that a transaction was committed then that transaction must have been committed by each of its participants and if a transaction is aborted then atleast one of the participant must have rejected the transaction. We would also like to check that under the assumptions above (no node failures and reliable network), each transaction request is eventually responded by the transaction commit service.
 
 ### P Project
 
-The [2_TwoPhaseCommit](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseCommit) folder contains the source code for the [TwoPhaseCommit](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/TwoPhaseCommit.pproj) project. Please feel free to read details about the typical [P program structure](../advanced/structureOfPProgram.md) and [P project file](../advanced/PProject.md).
+The [2_TwoPhaseCommit](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseCommit) folder contains the source code for the [TwoPhaseCommit](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/TwoPhaseCommit.pproj) project.
+Please feel free to read details about the recommended [P program structure](../advanced/structureOfPProgram.md) and [P project file](../advanced/PProject.md).
 
 ### Models
 
@@ -38,10 +39,18 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseC
 ??? tip "[Expand]: Lets walk through Participant.p"
     ...
 
-- [TwoPhaseCommitModules.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/TwoPhaseCommitModules.p): Declares the P modules corresponding to each component in the system.
+- [TwoPhaseCommitModules.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/TwoPhaseCommitModules.p): Declares the P modules corresponding to each component in the two phase commit system.
 
 ??? tip "[Expand]: Lets walk through TwoPhaseCommitModules.p"
     ...
+
+### Timer and Failure Injector
+
+Our two phase commit project dependends on two other projects:
+
+- **OS Timer:** The coordinator machine uses a timer to wait for prepare responses from all participants. The `OS timer` is modeled in P using the [`Timer` machine](https://github.com/p-org/P/blob/master/Tutorial/Common/Timer/PSrc/Timer.p) declared in the [`Timer project`](https://github.com/p-org/P/tree/master/Tutorial/Common/Timer). The Timer model demonstrate how when reasoning about the correctness of a system, we need to also model its interaction to any nondeterministic environment or service (in this case, an OS timer).
+
+- **Failure Injector:** P allows programmers to explicitly model different types of failures in the system. The [`FailureInjector`](https://github.com/p-org/P/tree/master/Tutorial/Common/FailureInjector) project demonstrate how to model node failures in P using the `halt` event. The [`FailureInjector` machine](https://github.com/p-org/P/blob/master/Tutorial/Common/FailureInjector/PSrc/FailureInjector.p) nondeterministically picks a node and sends it a `eShutDown` event. On receiving a `eShutDown` event, the corresponding node must do `halt` to destroy itself. To know more about the special `halt` event, please check the manual: [halt event](../manual/expressions.md#primitive).
 
 ### Specifications
 
@@ -74,6 +83,50 @@ The test scenarios folder for TwoPhaseCommit ([PTst](https://github.com/p-org/P/
     ...
 
 ### Compiling TwoPhaseCommit
+
+Run the following command to compile the TwoPhaseCommit project:
+
+```
+pc -proj:TwoPhaseCommit.pproj
+```
+
+??? note "Expected Output"
+    ```
+    ----------------------------------------
+    ==== Loading project file: TwoPhaseCommit.pproj
+    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PSrc/Coordinator.p
+    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PSrc/Participant.p
+    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PSrc/TwoPhaseCommitModules.p
+    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PSpec/Atomicity.p
+    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PTst/TestDriver.p
+    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PTst/Client.p
+    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PTst/TestScripts.p
+    ==== Loading project file:  P/Tutorial/Common/Timer/Timer.pproj
+    ....... includes p file:  P/Tutorial/Common/Timer/PSrc/Timer.p
+    ....... includes p file:  P/Tutorial/Common/Timer/PSrc/TimerModules.p
+    ==== Loading project file:  P/Tutorial/Common/FailureInjector/FailureInjector.pproj
+    ....... includes p file:  P/Tutorial/Common/FailureInjector/PSrc/NetworkFunctions.p
+    ....... includes p file:  P/Tutorial/Common/FailureInjector/PSrc/FailureInjector.p
+    ----------------------------------------
+    ----------------------------------------
+    Parsing ..
+    Type checking ...
+    Code generation ....
+    Generated TwoPhaseCommit.cs
+    ----------------------------------------
+    Compiling TwoPhaseCommit.csproj ..
+
+    Microsoft (R) Build Engine version 16.10.2+857e5a733 for .NET
+    Copyright (C) Microsoft Corporation. All rights reserved.
+
+    Determining projects to restore...
+    All projects are up-to-date for restore.
+    TwoPhaseCommit ->  P/Tutorial/2_TwoPhaseCommit/POutput/netcoreapp3.1/TwoPhaseCommit.dll
+
+    Build succeeded.
+        0 Warning(s)
+        0 Error(s)
+    ```
 
 ### Testing TwoPhaseCommit
 

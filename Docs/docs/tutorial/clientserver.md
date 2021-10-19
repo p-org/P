@@ -94,6 +94,7 @@ The test scenarios folder for ClientServer ([PTst](https://github.com/p-org/P/tr
 
     - To better understand the P test cases, please look at manual: [P test cases](../manual/testcases.md).
     - ([L4 - L16](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p#L4-L16)) &rarr; Declares three test cases each checking a different scenario and system. The system under test is the `union` of the modules representing each component in the system (manual: [P module system](../manual/modulesystem.md#union-module)).
+    - In the test case `tcSingleClientAbstractServer`, instead of composing with the Bank module, [we use the AbstractBank module](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p#L16). Hence, in the composed system, whenever we create `BankServer` machine during the execution of the system it leads to the creation of the `AbstractBankServer` machine.
 
 ### Compiling ClientServer
 

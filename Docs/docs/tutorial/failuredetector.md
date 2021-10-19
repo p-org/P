@@ -18,6 +18,8 @@ By this point in the tutorial, we have gotten familiar with the P language and m
 
 **Correctness Specification:** We would like to check using a liveness specification that if the failure injecter shutsdown a particular node then the failure detector always eventually detects that node has failed and notifies client.
 
+<!---
+
 ### P Project
 
 The [1_ClientServer](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer) folder contains the source code for the [ClientServer](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/ClientServer.pproj) project. Please feel free to read details about the typical [P program structure](../advanced/structureOfPProgram.md) and [P project file](../advanced/PProject.md).
@@ -81,4 +83,4 @@ The test scenarios folder for ClientServer ([PTst](https://github.com/p-org/P/tr
 !!! summary "Summary"
     In this example, we demonstrate how to use data nondeterminism to model message loss and unreliable sends. We also discuss how to model other types of network nondeterminism. Finally, we give another example of a liveness specification that the failure detector must satisfy.
 
-
+--->

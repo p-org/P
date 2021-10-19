@@ -11,7 +11,7 @@ Distributed systems are notoriously hard to get right (i.e., guaranteeing correc
 programmer needs to reason about numerous control paths resulting from the myriad
 interleaving of events (or messages or failures). Unsurprisingly, programmers can easily
 introduce subtle errors when designing these systems. Moreover, it is extremely
-difficult to test distributed systems, most control paths remain untested, and serious
+difficult to test distributed systems, as most control paths remain untested, and serious
 bugs lie dormant for months or even years after deployment.
 
 !!! info ""
@@ -41,9 +41,9 @@ perform _compositional_ testing to scale the analysis to large distributed syste
 
 !!! Tip "Models, Specifications, Model Checking Scenario"  
     A quick primer on what a model
-    is, versus a specification, and model checking scenarios: (1) A specification says what
-    the system should do (correctness properties). (2) A model captures the details of how the
-    system does it. (3) A model checking scenario provides the finite non-deterministc
+    is, versus a specification, and model checking scenarios: (1) a specification says what
+    the system should do (correctness properties); (2) a model captures the details of how the
+    system does it; (3) a model checking scenario provides the finite non-deterministc
     test-harness or environment under which the model checker should check that the system
     model satisfies its specifications.
 
@@ -52,17 +52,17 @@ The underlying model of computation for P programs is communicating state machin
 #### Backend Analysis Engines
 
 P provides a backend analysis engine to systematically explore behaviors of the system model (_resulting from interleaving of messages and failures_) and check that the model satisfies the desired _correctness_ specifications.
-To reason about complex distributed system, the P checker needs to tackle the well-known problem of _state space explosion_. The P checker employs [search prioritization heuristics](https://ankushdesai.github.io/assets/papers/fse-desai.pdf) to drive the exploration along different parts of the state space that are most likely to have concurrency related issues. The P checker is really **efficient at uncovering deep bugs** (i.e., require complex interleaving of events) in the system design that have a really low probability of occurance in real-world. On finding a bug, the checker provides a reproducible error-trace which the programmer can use for debugging.
+To reason about complex distributed systems, the P checker needs to tackle the well-known problem of _state space explosion_. The P checker employs [search prioritization heuristics](https://ankushdesai.github.io/assets/papers/fse-desai.pdf) to drive the exploration along different parts of the state space that are most likely to have concurrency related issues. The P checker is really **efficient at uncovering deep bugs** (i.e., bugs that require complex interleaving of events) in the system design that have a really low probability of occurrence in real-world. On finding a bug, the checker provides a reproducible error-trace which the programmer can use for debugging.
 
-Though, the current P checker is great at finding _deep-hard-to-find_ bugs ("[Heisenbugs](https://en.wikipedia.org/wiki/Heisenbug)"), it **cannot provide a proof** of correctness.
+Although the current P checker is great at finding _deep-hard-to-find_ bugs ("[Heisenbugs](https://en.wikipedia.org/wiki/Heisenbug)"), it **cannot provide a proof** of correctness.
 We are actively working on addressing this challenge and are building two new backends for P. First, a _symbolic execution engine_ that can scale the P checker to models of large
-distributed systems and provide **sound guarantees** of exploring all possible behaviors. Second, a deductive verification engine to perform **mathematical proof** of correctness for P programs. Both these backends will be soon released publicly.
+distributed systems and provide **sound guarantees** of exploring all possible behaviors. Second, a deductive verification engine to perform **mathematical proof** of correctness for P programs. Both these backends will be released publicly soon.
 
 [^1]: They are currently maintained in the dev branch `symbolic-codegen`.
 
 #### Code Generation
 
-P compiler currently generates C# and C code. The generated code when combined with the P Runtime (that executes the P state machines) can be deployed on any target platform.
+The P compiler currently generates C# and C code. The generated code when combined with the P Runtime (that executes the P state machines) can be deployed on any target platform.
 The generated C code has been used to program [device drivers](https://ankushdesai.github.io/assets/papers/p.pdf) and [robotics systems](https://ankushdesai.github.io/assets/papers/drona.pdf). The generated C# code has been used to program [distributed systems](https://ankushdesai.github.io/assets/papers/modp.pdf).
 
 We are currently working on adding support for a Java backend for P. We will also be adding support for generating _runtime monitors_ for specifications that can be then used to check if the implementation conforms to the high-level P specifications.

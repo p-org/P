@@ -110,7 +110,7 @@ dotnet tool install --global P
     /Users/<user>/.dotnet/tools/pc
     ```
     If not, add `$HOME/.dotnet/tools` to `$PATH` in your `.bash_profile` (or equivalent) and try again after restarting the shell.
-    If you are getting an error that `pc` command not found, its most likely that `$HOME/.dotnet/tools` is not in your `PATH`.
+    If you are getting the error that the `pc` command is not found, it is most likely that `$HOME/.dotnet/tools` is not in your `PATH`.
 
 ??? help "Updating P Compiler"
     You can update the version of `P` compiler by running the following command:

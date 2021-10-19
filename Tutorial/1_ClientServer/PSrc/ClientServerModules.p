@@ -1,8 +1,8 @@
 // Client module
 module Client = { Client };
 
-// Bank Server module
-module BankServer = { BankServer, Database };
+// Bank module
+module Bank = { BankServer, Database };
 
 // Abstract Bank Server module
-module AbstractBankServer = { AbstractBankServer -> BankServer };
+module AbstractBank = { AbstractBankServer -> BankServer };

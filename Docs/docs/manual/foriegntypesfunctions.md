@@ -30,7 +30,7 @@ The [PriorityQueue.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQu
 
 #### P Test
 
-The [Client.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p) files presents a [`Client`](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p#L5) state machine that uses the priority queue and performs operations on it by calling the foreign function. The `Client` machine also declares a [local foreign function](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p#L46-L47) to add an element into the queue.
+The [Client.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p) file presents a [`Client`](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p#L5) state machine that uses the priority queue and performs operations on it by calling the foreign function. The `Client` machine also declares a [local foreign function](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/Client.p#L46-L47) to add an element into the queue.
 
 #### P Foreign Code
 

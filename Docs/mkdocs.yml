@@ -55,7 +55,7 @@ nav:
       - Two Phase Commit: tutorial/twophasecommit.md
       - Espresso Maker: tutorial/espressomachine.md
       - Failure Detector: tutorial/failuredetector.md
-      - Paxos Made Simple: tutorial/paxos.md
+      # - Paxos Made Simple: tutorial/paxos.md
       - Timer, Failure, and Shared Memory: tutorial/common.md
   - Advanced User Guide:
       - P Semantics: advanced/psemantics.md

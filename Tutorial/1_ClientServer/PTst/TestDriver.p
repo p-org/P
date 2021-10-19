@@ -15,7 +15,7 @@ machine TestWithMultipleClients
 {
   start state Init {
     entry {
-      // multiple clients between (2, 5)
+      // multiple clients between (2, 4)
       SetupClientServerSystem(choose(3) + 2);
     }
   }

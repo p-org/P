@@ -71,7 +71,7 @@ By this point in the tutorial, we have gotten familiar with the P language and m
     In this example, we demonstrate how to use data nondeterminism to model message loss, unreliable sends, and node failures. We also discuss how to model other types of network nondeterminism. Finally, we give an example of a liveness specification that the failure detector must satisfy.
 
 -----
-
+<!---
 How can we finish our tutorials on modeling distributed systems without giving tribute to the Paxos protocol (and our inspiration :pray: [Leslie Lamport](http://www.lamport.org/) :pray: ). Lets end the tutorial with a simplified **[single decree paxos](https://mwhittaker.github.io/blog/single_decree_paxos/)**.
 
 ### **[[Example 5] Single Decree Paxos](tutorial/paxos.md)**
@@ -82,6 +82,7 @@ We present a simplified model of the [single decree paxos](https://mwhittaker.gi
     In this example, we present a simplified model of the single decree paxos. (Todo: add details about the properties checked)
 
 -----
+--->
 
 ### **[[Common] Timer, Failure Injector, and Shared Memory](tutorial/common.md)**
 

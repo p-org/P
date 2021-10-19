@@ -7,14 +7,16 @@
 
     The recommended way to work through this example is to open the [P\Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in IntelliJ side-by-side a browser using which you can simulatenously read the description for each example and browser the P program. 
 
-**System:** We consider a client-server application where clients interact with the bank to withdraw money from their accounts. The bank consists of two components, a bank server that services withdraw requests from the client and a backend database which is used to store the account balance information for each client.
-Multiple clients can concurrently send withdraw request to the bank server. The bank server on receiving a withdraw request, reads the current bank balance for the client's account and if the withdraw request is possible then performs the withdrawal, updates the account balance and responds back to the client the new account balance. One of the invariant that the bank tries to maintain is that each client account must have atleast 10 dollars as balance. Hence, if a withdraw request can take the account balance below 10 then the withdraw request is failed by the bank.
+**System:** We consider a client-server application where clients interact with the bank to withdraw money from their accounts. 
 
 ![Placeholder](clientserver.png){ align=center }
 
-**Correctness Specification:** We would like to check the correctness property that in the presence of concurrent client withdraw requests the bank always responds with the correct bank balance for a client and a withdraw request must always succeeds if there is enough balance (> 10) in the account. 
+The bank consists of two components: a bank server that services withdraw requests from the client and a backend database which is used to store the account balance information for each client.
+Multiple clients can concurrently send withdraw request to the bank server. The bank server on receiving a withdraw request, reads the current bank balance for the client and if the withdraw request is allowed then performs the withdrawal, updates the account balance and responds back to the client with the new account balance.
 
-We will also use P's capability to write multiple model checking scenarios and also demonstrate how one replace the bank service consisting of two interacting components by its abstraction when testing the client application.
+**Correctness Specification:** One of the invariant that the bank tries to maintain is that each client account must have atleast 10 dollars as its balance. If a withdraw request can take the account balance below 10 then the withdraw request is rejected by the bank. We would like to check the correctness property that in the presence of concurrent client withdraw requests the bank always responds with the correct bank balance for a client and a withdraw request must always succeeds if there is enough balance (> 10) in the account.
+
+
 
 ### P Project
 
@@ -29,12 +31,14 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
 ??? tip "[Expand]: Lets walk through Client.p"
     ...
 
-- [Server.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p): Implements the BankServer state machine.
+- [Server.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p): Implements the BankServer and the Backend Database state machines.
   
 ??? tip "[Expand]: Lets walk through Server.p"
     ...
 
 - [AbstractBankServer.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/AbstractBankServer.p): Implements the AbstractBankServer state machine that provides an simplified abstraction for the BankServer machine.
+
+We will demonstrate how one replace the bank service consisting of two interacting components by its abstraction when testing the client application.
 
 ??? tip "[Expand]: Lets walk through AbstractBankServer.p"
     ...
@@ -48,7 +52,7 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
 
 The P Specifications ([PSpec](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSpec)) for the ClientServer example are implemented in the [BankBalanceCorrect.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSpec/BankBalanceCorrect.p) file. We define two specifications:
 
-- BankBalanceIsAlwaysCorrect (safety property): BankBalanceIsCorrect checks the global invariant that the account-balance communicated to the client by the bank is always correct and the banks never removes more money from the account than that withdrawn by the client! Also, if the bank denies a withdraw request then its only because the withdrawal will reduce the account balance to below 10.
+- BankBalanceIsAlwaysCorrect (safety property): BankBalanceIsCorrect spec checks the global invariant that the account-balance communicated to the client by the bank is always correct and the bank never removes more money from the account than what is withdrawn by the client! Also, if the bank denies a withdraw request then its only because the withdrawal will reduce the account balance to below 10.
 
 - GuaranteedWithDrawProgress (liveness property): GuaranteedWithDrawProgress checks the liveness (or progress) property that all withdraw requests submitted by the client are eventually responded.
 

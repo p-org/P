@@ -7,20 +7,20 @@
 
     The recommended way to work through this example is to open the [P\Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in IntelliJ side-by-side a browser using which you can simulatenously read the description for each example and browser the P program. 
 
-**System:** We consider a client-server application where clients interact with the bank to withdraw money from their accounts. 
+**System:** We consider a client-server application where clients interact with a bank to withdraw money from their accounts. 
 
 ![Placeholder](clientserver.png){ align=center }
 
-The bank consists of two components: a bank server that services withdraw requests from the client and a backend database which is used to store the account balance information for each client.
-Multiple clients can concurrently send withdraw request to the bank server. The bank server on receiving a withdraw request, reads the current bank balance for the client and if the withdraw request is allowed then performs the withdrawal, updates the account balance and responds back to the client with the new account balance.
+The bank consists of two components: (1) a bank server that services withdraw requests from the client; and (2) a backend database which is used to store the account balance information for each client.
+Multiple clients can concurrently send withdraw request to the bank. The bank server on receiving a withdraw request, reads the current bank balance for the client and if the withdraw request is allowed then performs the withdrawal, updates the account balance, and responds back to the client with the new account balance.
 
-**Correctness Specification:** One of the invariant that the bank tries to maintain is that each client account must have atleast 10 dollars as its balance. If a withdraw request can take the account balance below 10 then the withdraw request is rejected by the bank. We would like to check the correctness property that in the presence of concurrent client withdraw requests the bank always responds with the correct bank balance for a client and a withdraw request must always succeeds if there is enough balance (> 10) in the account.
+**Correctness Specification:** The invariant that the bank must maintain is that each account must have atleast 10 dollars as its balance. If a withdraw request takes the account balance below 10 then the withdraw request must be rejected by the bank. The correctness property we would also like to check is that in the presence of concurrent client withdraw requests the bank always responds with the correct bank balance for a client and a withdraw request must always succeeds if there is enough balance (> 10) in the account.
 
 
 
 ### P Project
 
-The [1_ClientServer](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer) folder contains the source code for the [ClientServer](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/ClientServer.pproj) project. Please feel free to read details about the typical [P program structure](../advanced/structureOfPProgram.md) and [P project file](../advanced/PProject.md).
+The [1_ClientServer](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer) folder contains the source code for the [ClientServer](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/ClientServer.pproj) project. Please feel free to read details about the recommended [P program structure](../advanced/structureOfPProgram.md) and [P project file](../advanced/PProject.md).
 
 ### Models
 
@@ -29,64 +29,167 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
 1. [Client.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p): Implements the Client state machine.
   
 ??? tip "[Expand]: Lets walk through Client.p"
-    - ([L19-L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L19-L22)) :: Event `eWithDrawReq` and `eWithDrawResp` are used to communicate between the `Client` and `Server` machine ([Event Declarations](../manual/events.md)).
-    - ([L3-L17](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L3-L17)) :: Declares the payload types for the `eWithDrawReq` and `eWithDrawResp` events ([User Defined Type Declarations](../manual/datatypes.md#user-defined))
-    - ([L25-L95](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L25-L95)) :: Declares the `Client` state machine ([P State Machine Declaration](../manual/statemachines.md)).
+    - ([L19 - L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L19-L22))  &rarr; Event `eWithDrawReq` and `eWithDrawResp` are used to communicate between the `Client` and `Server` machine (manual: [event declaration](../manual/events.md)).
+    - ([L3 - L17](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L3-L17)) &rarr; Declares the payload types for the `eWithDrawReq` and `eWithDrawResp` events (manual: [user defined type](../manual/datatypes.md#user-defined)).
+    - ([L25 - L95](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L25-L95))  &rarr; Declares the `Client` state machine (manual: [P state machine](../manual/statemachines.md)).
+        - The `Client` machine has a set of local variables used to store the local-state of the state machine ([L27 - L31](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L27-L31)). `Init` state is the start state of the machine where the machine starts executions on being created. The entry function of the `Init` state initializes the local variables based on the parameters received on creation and jumps to the `WithdrawMoney` state.
+        - In the `WithdrawMoney` state, the state machine checks if there is enough money in the account. If the balance is greater than 10 then it issues a random withdraw request to the bank by sending the `eWithDrawReq` event ([L55](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L55)) otherwise it jumps to the `NoMoneyToWithDraw` state. After sending a withdraw request, the machine waits for the `eWithDrawResp` event ([L59](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L59)). On receiving the `eWithDrawResp` event, the machine executes the corresponding event handler that confirms if banks response is as expected and also if there is still money in the account then jump bank to the WithdrawMoney state. Note that each time we (re-)enter a state (through a transition or goto statement), its entry function is executed.
 
 
 
 - [Server.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p): Implements the BankServer and the Backend Database state machines.
   
 ??? tip "[Expand]: Lets walk through Server.p"
-    ...
+    - ([L1 - L7](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p#L1-L7)) &rarr; Declares the events used to communicate between the bank server and the backend database.
+    - ([L9 - L48](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p#L9-L48)) &rarr; Declares the `BankServer` machine. The BankServer machine uses a database machine as a service to store the bank balance for all its clients.
+    On receiving an eWithDrawReq (withdraw requests) from a client, it reads the current balance for the account,
+    if there is enough money in the account then it updates the new balance in the database after withdrawal
+    and sends a response back to the client.
+    - ([L50 - L74](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p#L50-L74)) &rarr; Declares the `Database` machine. The Database machine acts as a helper service for the Bank server and stores the bank balance for
+    each account. There are two API's or functions to interact with the Database: ReadBankBalance and UpdateBankBalance. These functions are implemented as global functions in P ([L76 - L92](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p#L76-L92)).
 
-- [AbstractBankServer.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/AbstractBankServer.p): Implements the AbstractBankServer state machine that provides an simplified abstraction for the BankServer machine.
-
-We will demonstrate how one replace the bank service consisting of two interacting components by its abstraction when testing the client application.
+- [AbstractBankServer.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/AbstractBankServer.p): Implements the AbstractBankServer state machine that provides an simplified abstraction for the BankServer machine. We will demonstrate how one replace the bank service consisting of two interacting components by its abstraction when testing the client application.
 
 ??? tip "[Expand]: Lets walk through AbstractBankServer.p"
-    ...
+    - ([L12 - L37](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/AbstractBankServer.p#L12-L37)) &rarr; Declares an abstraction of BankServer machine. The `AbstractBankServer` provides an implementation of the Bank where it abstracts away
+    the interaction between the BankServer and Database. We use the `AbstractBankServer` machine to demonstrate how one can replace a complex component in P with its abstraction that hides a lot of its internal complexity. For the client, it still exposes the same interface or behavior. Hence, when checking the correctness of the client it doesnt matter whether we use BankServer or the AbstractBankServer.
+
+!!! info "Key Takeaway"
+    To mitigate the state space explosion problem, when modeling and checking complex systems consisting of several components, we would like to check the correctness of each component in isolation. When doing this kind of a compositional reasoning, we would like to replace the environment of the component with its abstraction. The abstraction basically exposes the same interface as the environment by removes its internal complexity, simplifying the overall problem of checking the correctness of the component under test. There is a large body of literature on doing compositional reasoning of distributed systems. You can start with [the Modular P paper](https://ankushdesai.github.io/assets/papers/modp.pdf). How to automatically replace a machine with its abstraction is described below.
 
 - [ClientServerModules.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/ClientServerModules.p): Declares the P modules corresponding to each component in the system.
 
 ??? tip "[Expand]: Lets walk through ClientServerModules.p"
-    ...
+    - ([L1 - L5](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/ClientServerModules.p#L1-L5)) &rarr; Declares the `Client` and `Bank` modules. A module in P is a collection of state machines that together implement that module or component. A system model in P is then a composition or union of modules. The `Client` module consist of a single machine `Client` and the `Bank` module is implemented by machines `BankServer` and `Database` together (manual: [P module system](../manual/modulesystem.md)).  The `AbstractBank` module using the `binding` feature in P modules to bind the `BankServer` machine to `AbstractBankServer` machine. Basically, what this implies is that whenever `AbstractBank` module is used creation of the `BankServer` machine will result in creation of `AbstractBankServer`, replacing the implementation with its abstraction (manual: [primitive modules](../manual/modulesystem.md#primitive-module)).
 
 ### Specifications
 
 The P Specifications ([PSpec](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSpec)) for the ClientServer example are implemented in the [BankBalanceCorrect.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSpec/BankBalanceCorrect.p) file. We define two specifications:
 
-- BankBalanceIsAlwaysCorrect (safety property): BankBalanceIsCorrect spec checks the global invariant that the account-balance communicated to the client by the bank is always correct and the bank never removes more money from the account than what is withdrawn by the client! Also, if the bank denies a withdraw request then its only because the withdrawal will reduce the account balance to below 10.
+- **BankBalanceIsAlwaysCorrect** (safety property): BankBalanceIsCorrect spec checks the global invariant that the account-balance communicated to the client by the bank is always correct and the bank never removes more money from the account than what is withdrawn by the client! Also, if the bank denies a withdraw request then its only because the withdrawal will reduce the account balance to below 10.
 
-- GuaranteedWithDrawProgress (liveness property): GuaranteedWithDrawProgress checks the liveness (or progress) property that all withdraw requests submitted by the client are eventually responded.
+- **GuaranteedWithDrawProgress** (liveness property): GuaranteedWithDrawProgress checks the liveness (or progress) property that all withdraw requests submitted by the client are eventually responded.
 
-!!! info "Note"
-    BankBalanceIsCorrect also checks that if there is enough money in the account then the withdraw request must not error. Hence, the two properties above together ensure that every withdraw request if allowed will eventually succeed and the bank cannot block correct withdrawal requests.
+!!! info ""
+    BankBalanceIsAlwaysCorrect also checks that if there is enough money in the account then the withdraw request must not error. Hence, the two properties above together ensure that every withdraw request if allowed will eventually succeed and the bank cannot block correct withdrawal requests.
 
 ??? tip "[Expand]: Lets walk through BankBalanceCorrect.p"
-    ...
+    - ([L20](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSpec/BankBalanceCorrect.p#L20)) &rarr; Event `eSpec_BankBalanceIsAlwaysCorrect_Init` is used to inform the monitors about the initial state of the Bank. The event is announced by the TestDrivers when setting up the system ([here](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L51)).
+    - ([L36 - L86](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSpec/BankBalanceCorrect.p#L36-L86)) &rarr; Declares the `BankBalanceIsAlwaysCorrect` safety spec machine that observes the events `eWithDrawReq`,  `eWithDrawResp`, and `eSpec_BankBalanceIsAlwaysCorrect_Init` to assert the required global invariant.
+    - ([L92 - L115](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSpec/BankBalanceCorrect.p#L92-L115)) &rarr; Declares the `GuaranteedWithDrawProgress` liveness spec machine that observes the events `eWithDrawReq` and `eWithDrawResp` to assert the required liveness property that every request is eventually responded by the Bank.
+    - To understand the semantics of the P spec machines, please read manual: [p monitors](../manual/monitors.md).
 
 ### Test Scenarios
 
-The test scenarios folder in P consists of two parts: (1) TestDrivers: These are collection of state machines that implement the test harnesses or environment state machines for different test scenarios and (2) TestScripts: These are collection of test cases that are automatically discharged by the P checker.
+The test scenarios folder in P has two parts: (1) TestDrivers: These are collection of state machines that implement the test harnesses or environment state machines for different test scenarios and (2) TestScripts: These are collection of test cases that are automatically discharged by the P checker.
 
 The test scenarios folder for ClientServer ([PTst](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer/PTst)) consists of two files [TestDriver.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p) and [TestScript.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p).
 
 ??? tip "[Expand]: Lets walk through TestDriver.p"
-    ...
+    - ([L36 - L60](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L36-L60)) &rarr; Function `SetupClientServerSystem` takes as input the number of clients to be created and setups the ClientServer system by creating the `Client` and `BankServer` machines. The [`CreateRandomInitialAccounts`](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L25-L34) function uses the [`choose`](../manual/expressions.md#choose) primitive to randomly initialize the accounts map.
+    - ([L3 - L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L3-L22)) &rarr; Machines `TestWithSingleClient` and `TestWithMultipleClients` are simple test driver machines that setup the system to be checked by the P checker for different scenarios. In this case, test the ClientServer system by first randomly initializing the accounts map and with one `Client` and with multiple `Client`s (between 2 to 4)).
 
 ??? tip "[Expand]: Lets walk through TestScript.p"
-    ...
+    P allows programmers to write different test cases each of which can be checked separately and each can use a different test driver that triggers different behaviors in the system under test using different system configurations and input generators.
+
+    - To better understand the P test cases, please look at manual: [P test cases](../manual/testcases.md).
+    - ([L4 - L16](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p#L4-L16)) &rarr; Declares three test cases each checking a different scenario and system. The system under test is the `union` of the modules representing each component in the system (manual: [P module system](../manual/modulesystem.md#union-module)).
 
 ### Compiling ClientServer
 
+Run the following command to compile the ClientServer project:
+
+```
+pc -proj:ClientServer.pproj
+```
+
+??? note "Expected Output"
+    ```
+    ----------------------------------------
+    ==== Loading project file: ClientServer.pproj
+    ....... includes p file: P/Tutorial/1_ClientServer/PSrc/Server.p
+    ....... includes p file: P/Tutorial/1_ClientServer/PSrc/Client.p
+    ....... includes p file: P/Tutorial/1_ClientServer/PSrc/AbstractBankServer.p
+    ....... includes p file: P/Tutorial/1_ClientServer/PSrc/ClientServerModules.p
+    ....... includes p file: P/Tutorial/1_ClientServer/PSpec/BankBalanceCorrect.p
+    ....... includes p file: P/Tutorial/1_ClientServer/PTst/TestDriver.p
+    ....... includes p file: P/Tutorial/1_ClientServer/PTst/Testscript.p
+    ----------------------------------------
+    ----------------------------------------
+    Parsing ..
+    Type checking ...
+    Code generation ....
+    Generated ClientServer.cs
+    ----------------------------------------
+    Compiling ClientServer.csproj ..
+
+    Microsoft (R) Build Engine version 16.10.2+857e5a733 for .NET
+    Copyright (C) Microsoft Corporation. All rights reserved.
+
+    Determining projects to restore...
+    All projects are up-to-date for restore.
+    ClientServer -> P/Tutorial/1_ClientServer/POutput/netcoreapp3.1/ClientServer.dll
+
+    Build succeeded.
+        0 Warning(s)
+        0 Error(s)
+    ```
+
 ### Testing ClientServer
+
+You can get the list of test cases defined in the ClientServer program by passing the generated `dll`
+to the P Checker:
+
+```shell
+pmc <Path>/ClientServer.dll
+```
+
+??? note "Expected Output"
+
+    ```shell hl_lines="5 6 7"
+    pmc <Path>/ClientServer.dll
+
+    Provide /method or -m flag to qualify the test method name you wish to use. 
+    Possible options are::
+    PImplementation.tcSingleClient.Execute
+    PImplementation.tcMultipleClients.Execute
+    PImplementation.tcSingleClientAbstractServer.Execute
+    ```
+
+There are three test cases defined in the ClientServer project and you can specify which
+test case to run by using the `-m` parameter along with the `-i` parameter for the number of schedules to explore.
+
+Check the `tcSingleClient` test case for 1000 schedules:
+
+```
+pmc <Path>/ClientServer.dll \
+    -m PImplementation.tcSingleClient.Execute \
+    -i 1000
+```
+
+Check the `tcMultipleClients` test case for 1000 schedules:
+
+```
+pmc <Path>/ClientServer.dll \
+    -m PImplementation.tcMultipleClients.Execute \
+    -i 1000
+```
+
+Check the `tcSingleClientAbstractServer` test case for 1000 schedules:
+
+```
+pmc <Path>/ClientServer.dll \
+    -m PImplementation.tcSingleClientAbstractServer.Execute \
+    -i 1000
+```
+
+!!! danger "Error"
+    `tcSingleClientAbstractServer` triggers an error in the AbstractBankServer state machine. Please use the [guide](../advanced/debuggingerror.md) to explore how to debug an error trace generated by P Checker.
 
 ### Exercise Problem
 
-- [Problem 1] Fix the bug in AbstractBankServer state machine and run the P Checker again on the test cases to ensure that there are no more bugs in the models.
-- [Problem 2] Extend the ClientServer example with support for depositing money into the bank. This would require implementing events `eDepositReq` and `eDepositResp` which are used to interact between the client and server machine. The Client machine should be updated to deposit (one time) some random money when the account balance is low and the BankServer machine implementation would have to be updated to support depositing money into the account. After implementing the deposit feature, run the test-cases again to check if the system still satisfies the desired specifications. 
+- [Problem 1] Fix the bug in AbstractBankServer state machine and run the P Checker again on the test case to ensure that there are no more bugs in the models.
+- [Problem 2] Extend the ClientServer example with support for depositing money into the bank. This would require implementing events `eDepositReq` and `eDepositResp` which are used to interact between the client and server machine. The Client machine should be updated to deposit money into the account when the balance is low and the BankServer machine implementation would have to be updated to support depositing money into the bank account. After implementing the deposit feature, run the test-cases again to check if the system still satisfies the desired specifications.
 
 !!! success "What did we learn through this example?"
-    We will learn about P state machines, writing simple safety and liveness specifications as P monitors, writing multiple model checking scenarios to check the correctness of a P program, and finally, replacing complex components in P with their abstractions using P's module system.
-
+    We explored writing P state machines, safety and liveness specifications as P monitors, writing multiple model checking scenarios to check the correctness of a P program, and finally, replacing complex components in P with their abstractions using P's module system.

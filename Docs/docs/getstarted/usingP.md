@@ -194,8 +194,8 @@ PImplementation.tcSingleClientAbstractServer.Execute
 There are three test cases defined in the ClientServer P project and you can specify which
 test case to run by using the `-m` or `/method` parameter along with the `-i` parameter to
 specify how many different schedules to explore when running this test case (by default the checker explores a single schedule).
-For complex systems, running for 100,000 schedules typically finds most of the easy to find bugs before
-running the checker on a distributed cluster to explore billions of schedules and rule out deep bugs in the system.
+*For complex systems, running for 100,000 schedules typically finds most of the easy to find bugs before
+running the checker on a distributed cluster to explore billions of schedules and rule out deep bugs in the system.*
 
 So to run the `tcSingleClient` test case for 100 schedules, we can use the following command:
 
@@ -206,7 +206,6 @@ pmc <Path>/ClientServer.dll \
 ```
 
 ??? info "Expected Output"
-
     ```
     . Testing <Path>/ClientServer.dll
     ... Method PImplementation.tcSingleClient.Execute

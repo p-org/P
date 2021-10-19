@@ -29,7 +29,11 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
 1. [Client.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p): Implements the Client state machine.
   
 ??? tip "[Expand]: Lets walk through Client.p"
-    ...
+    - ([L19-L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L19-L22)) :: Event `eWithDrawReq` and `eWithDrawResp` are used to communicate between the `Client` and `Server` machine ([Event Declarations](../manual/events.md)).
+    - ([L3-L17](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L3-L17)) :: Declares the payload types for the `eWithDrawReq` and `eWithDrawResp` events ([User Defined Type Declarations](../manual/datatypes.md#user-defined))
+    - ([L25-L95](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L25-L95)) :: Declares the `Client` state machine ([P State Machine Declaration](../manual/statemachines.md)).
+
+
 
 - [Server.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p): Implements the BankServer and the Backend Database state machines.
   

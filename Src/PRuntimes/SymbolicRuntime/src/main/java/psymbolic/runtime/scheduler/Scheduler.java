@@ -43,7 +43,7 @@ public class Scheduler implements SymbolicSearch {
     private VectorClockManager vcManager;
 
     /** Use the interleave map (if false) or not (if true) */
-    private boolean alwaysInterleaveNonAsync = true;
+    private boolean alwaysInterleaveNonAsync = false;
 
     /** Get whether to intersect with receiver queue semantics
      * @return whether to intersect with receiver queue semantics
@@ -342,7 +342,10 @@ public class Scheduler implements SymbolicSearch {
             for (Machine oldMachine : filteredMap.keySet()) {
                 Message old = firstElement.get(oldMachine);
                 add = add.and(order.lessThan(old, current).not());
-                Guard remCond = order.lessThan(current, old);
+            }
+            for (Machine oldMachine : filteredMap.keySet()) {
+                Message old = firstElement.get(oldMachine);
+                Guard remCond = order.lessThan(current, old).and(add);
                 newFilteredMap.put(oldMachine, filteredMap.get(oldMachine).and(remCond.not()));
                 firstElement.put(oldMachine, firstElement.get(oldMachine).restrict(remCond.not()));
             }

@@ -27,7 +27,7 @@ public class InterleaveOrder implements MessageOrder {
         Guard prepareResponseCond0 = e0.symbolicEquals(prepareResponse, e0.getUniverse()).getGuardFor(true);
         Guard prepareResponseCond1 = e1.symbolicEquals(prepareResponse, e1.getUniverse()).getGuardFor(true);
         return acquireCond0.and(releaseCond1).or(acquireCond1.and(releaseCond0)).or(
-               releaseCond0.and(prepareResponseCond1).or(releaseCond1.and(prepareResponseCond0)));
+               prepareCond0.and(prepareResponseCond1).or(prepareCond1.and(prepareResponseCond0)));
     }
 
 /*

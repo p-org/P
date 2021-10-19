@@ -21,8 +21,8 @@ distributed systems. P allows programmers to model their system as a collection 
 communicating state machines. P supports several backend analysis engines
 (based on automated reasoning techniques like model
 checking and symbolic execution) to check that the distributed system modeled in P
-satisfy the desired correctness specifications. Not only can a P program be systematically
-tested (e.g., model checking), but it can also be compiled into executable code.
+satisfies the desired correctness specifications. Not only can a P program be systematically
+tested (e.g., with model checking), but it can also be compiled into executable code.
 Essentially, P unifies modeling, specifying, implementing, and testing into one activity for the
 programmer.
 

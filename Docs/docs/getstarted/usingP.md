@@ -102,8 +102,8 @@ There are two ways of compiling a P program:
         ```
 
     ??? info "P Project File Details"
-        The P compiler does not support advacned project management features like separate compilation and dependency analysis (_coming soon_).
-        The current project file interface is a simple mechanism to provide all the required inputs to the compiler in a XML format ([ClientServer.pproj](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/ClientServer.pproj)).
+        The P compiler does not support advanced project management features like separate compilation and dependency analysis (_coming soon_).
+        The current project file interface is a simple mechanism to provide all the required inputs to the compiler in an XML format ([ClientServer.pproj](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/ClientServer.pproj)).
         ``` xml
         <!-- P Project file for the Client Server example -->
         <Project>
@@ -120,7 +120,7 @@ There are two ways of compiling a P program:
         In `<PFile>` one can either specify the path to a P file or to a folder and the P compiler includes all the `*.p` files in the folder during compilation.
         The `<ProjectName>` block provides the name for the project which is used as the output file name for the generated code.
         The `<OutputDir>` block provides the output directory for the generated code.
-        Finally, `<IncludeProject>` block provides path to other P projects that must be included as dependencies during compilation. 
+        Finally, the `<IncludeProject>` block provides a path to other P projects that must be included as dependencies during compilation. 
         The P compiler simply recursively copies all the P files in the dependency projects (transitively including all P files in dependent projects) and compiles them together. 
         This feature provides a way to split the P models for a large system into sub projects that can share models.
 
@@ -251,7 +251,7 @@ pmc <Path>/ClientServer.dll \
 
 ??? info "Expected Output"
     ``` hl_lines="9 11 12 15"
-    pmc <Path>/ClientServer.dll -m PImplementation.multipleClientsServer.Execute -i 100
+    pmc <Path>/ClientServer.dll -m PImplementation.tcSingleClientAbstractServer.Execute -i 100
 
     . Testing <Path>/ClientServer.dll
     ... Method PImplementation.tcSingleClientAbstractServer.Execute
@@ -277,7 +277,7 @@ pmc <Path>/ClientServer.dll \
 
 The P checker on finding a bug generates two artifacts (highlighted in the expected output above):
 (1) a **textual trace file** (e.g., `ClientServer_0_0.txt`) that has the readable error trace representing the
-sequence of steps from the intial state to the error state.
+sequence of steps from the intial state to the error state;
 (2) a **schedule file** (e.g., `ClientServer_0_0.schedule`) that can be used to replay the error
 trace and single step through the P program with the generated error trace for debugging
 (more details about debugging P error traces: [here](../advanced/debuggingerror.md)).

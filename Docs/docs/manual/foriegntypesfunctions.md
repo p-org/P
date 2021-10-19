@@ -7,9 +7,9 @@
 
 
 !!! hint "Recommendation: Using Foreign Types and Functions"
-    Programmers can consider implementing a particular type as Foreign type in P if its a complicated data structure and implementing them using P types is either not possible or too combursome. For example, P does not support declaring recursive data types, and hence, implementing a linked-list or a tree like data-structure in P is hard. Hence, we recommend programmers to implement such types as foreign types.
+    Programmers can consider implementing a particular type as Foreign type in P if its a complicated data structure and implementing them using P types is either not possible or too cumbersome. For example, P does not support declaring recursive data types, and hence, implementing a linked-list or a tree like data-structure in P is hard. Hence, we recommend programmers to implement such types as foreign types.
 
-    When modeling complex systems, many a times programmers need to implement complicated logic/functions that manupulate or iterate over data-structures. Such functions can be easily implemented in foreign languages like Java and C# as compared to P. For example, iterating over collections and manipulating them is easier in Java and C#, and verbose in P as P only supports `while` loop and not a iterator like `foreach`. Also, functions that manipulate foreign types are implemented as foreign functions.   
+    When modeling complex systems, many times programmers need to implement complicated logic/functions that manipulate or iterate over data-structures. Such functions can be easily implemented in foreign languages like Java and C# as compared to P. For example, iterating over collections and manipulating them is easier in Java and C#, and verbose in P as P only supports `while` loops and does not support iterators like `foreach`. Also, functions that manipulate foreign types are implemented as foreign functions.   
 
 The [Two Phase Commit](../tutorial/twophasecommit.md) example had introduced the foreign function feature. We will now use a simple PriorityQueue example to go into the details of foreign interface in P.
 
@@ -21,7 +21,7 @@ The PriorityQueue [project](https://github.com/p-org/P/blob/master/Tutorial/Prio
 
 #### P Source
 
-The [PriorityQueue.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p) file declares:  (1) a foreign type [`tPriorityQueue`](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p#L3) and (2) [global foreign functions](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p#L7-L22) are used to operate or interact with the priority queue.
+The [PriorityQueue.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p) file declares (1) a foreign type [`tPriorityQueue`](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p#L3) and uses (2) [global foreign functions](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p#L7-L22) to operate or interact with the priority queue.
 
 !!! danger "P has Value Semantics (no Pass by Reference!!)"
     Note that P does not support pass by references, everything in P is always pass by value. Hence the functions above must return a priority queue after adding the element into the queue (mutated queue).

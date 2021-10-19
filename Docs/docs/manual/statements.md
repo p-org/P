@@ -503,12 +503,11 @@ The optional payload accompanying the goto statement becomes the input parameter
 Receive statements in P are used to perform blocking await/receive for a set of events inside a function.
 
 **Syntax**:
-
-    ```
-    receive { recvCase+ }
-    /* case block inside a receive statement */
-    recvCase : case eventList : anonFunction
-    ```
+```
+receive { recvCase+ }
+/* case block inside a receive statement */
+recvCase : case eventList : anonFunction
+```
 
 Each `receive` statement can block or wait on a set of events, all other events are automatically deferred by the state machine. 
 On receiving an event that the `receive` is blocking on (case blocks), the state machine unblocks, executes the corresponding case-handler 

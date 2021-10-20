@@ -18,6 +18,7 @@ machine Timer
   }
 
   state TimerStarted {
+    defer eStartTimer;
     entry {
       if($)
       {
@@ -30,7 +31,7 @@ machine Timer
       }
     }
     on eDelayedTimeOut goto TimerStarted;
-    on eCancelTimer goto WaitForTimerRequests with { send client, eTimeOut; }
+    on eCancelTimer goto WaitForTimerRequests;
   }
 }
 
@@ -60,7 +61,4 @@ fun StartTimer(timer: Timer)
 fun CancelTimer(timer: Timer)
 {
   send timer, eCancelTimer;
-  receive {
-    case eTimeOut: {}
-  }
 }

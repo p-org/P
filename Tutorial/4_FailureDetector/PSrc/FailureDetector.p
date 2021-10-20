@@ -58,6 +58,7 @@ machine FailureDetector {
         if (sizeof(respInCurrRound) == sizeof(alive)) {
           // status of alive nodes has not changed
           CancelTimer(timer);
+          goto ResetAndStartAgain;
         }
       }
     }

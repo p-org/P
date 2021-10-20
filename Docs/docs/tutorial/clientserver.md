@@ -26,7 +26,7 @@ The [1_ClientServer](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
 
 The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer/PSrc)) for the ClientServer example consist of four files: 
 
-1. [Client.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p): Implements the Client state machine.
+- [Client.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p): Implements the Client state machine.
   
 ??? tip "[Expand]: Lets walk through Client.p"
     - ([L19 - L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L19-L22))  &rarr; Events `eWithDrawReq` and `eWithDrawResp` are used to communicate between the `Client` and the `Server` machines (manual: [event declaration](../manual/events.md)).
@@ -37,7 +37,7 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
 
 
 
-2. [Server.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p): Implements the BankServer and the backend Database state machines.
+- [Server.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p): Implements the BankServer and the backend Database state machines.
   
 ??? tip "[Expand]: Lets walk through Server.p"
     - ([L1 - L7](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p#L1-L7)) &rarr; Declares the events used to communicate between the bank server and the backend database.
@@ -48,7 +48,7 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
     - ([L50 - L74](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p#L50-L74)) &rarr; Declares the `Database` machine. The Database machine acts as a helper service for the Bank server and stores the bank balance for
     each account. There are two API's or functions to interact with the Database: ReadBankBalance and UpdateBankBalance. These functions are implemented as global functions in P ([L76 - L92](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p#L76-L92)).
 
-3. [AbstractBankServer.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/AbstractBankServer.p): Implements the AbstractBankServer state machine that provides a simplified abstraction that unifies the BankServer and Database machines. We will demonstrate how one can replace the complex bank service (consisting of two interacting components, the BankServer and the Database) by its abstraction when testing the client application.
+- [AbstractBankServer.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/AbstractBankServer.p): Implements the AbstractBankServer state machine that provides a simplified abstraction that unifies the BankServer and Database machines. We will demonstrate how one can replace the complex bank service (consisting of two interacting components, the BankServer and the Database) by its abstraction when testing the client application.
 
 ??? tip "[Expand]: Lets walk through AbstractBankServer.p"
     - ([L12 - L37](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/AbstractBankServer.p#L12-L37)) &rarr; Declares an abstraction of the BankServer machine. The `AbstractBankServer` provides an implementation of the Bank where
@@ -57,7 +57,7 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
 !!! info "Key Takeaway"
     To mitigate the state space explosion problem, when modeling and checking complex systems consisting of several components, we would like to check the correctness of each component in isolation. When doing this kind of a compositional reasoning, we replace the environment of the component with its abstraction. The abstraction basically exposes the same interface as the environment but removes its internal complexity, simplifying the overall problem of checking the correctness of the component under test. There is a large body of literature on doing compositional reasoning of distributed systems. You can start with [the Modular P paper](https://ankushdesai.github.io/assets/papers/modp.pdf). How to automatically replace a machine with its abstraction is described below.
 
-4. [ClientServerModules.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/ClientServerModules.p): Declares the P modules corresponding to each component in the system.
+- [ClientServerModules.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/ClientServerModules.p): Declares the P modules corresponding to each component in the system.
 
 ??? tip "[Expand]: Lets walk through ClientServerModules.p"
     - ([L1 - L5](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/ClientServerModules.p#L1-L5)) &rarr; Declares the `Client` and `Bank` modules. A module in P is a collection of state machines that together implement that module or component. A system model in P is then a composition or union of modules. The `Client` module consists of a single machine `Client` and the `Bank` module is implemented by machines `BankServer` and `Database` together (manual: [P module system](../manual/modulesystem.md)).  

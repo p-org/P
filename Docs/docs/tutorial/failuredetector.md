@@ -24,33 +24,25 @@ The [4_FailureDetector](https://github.com/p-org/P/tree/master/Tutorial/4_Failur
 
 ### Models
 
-The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDetector/PSrc)) for the FailureDetector example consists of three files:
+The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDetector/PSrc)) for the FailureDetector example consists of four files:
 
-1. [FailureDetector.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p): Implements the FailureDetector state machine.
+- [FailureDetector.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p): Implements the `FailureDetector` state machine.
   
 ??? tip "[Expand]: Lets walk through FailureDetector.p"
 
-    - ([L1 - L4](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L1-L4))  &rarr; Event `ePing` and `ePong` are used to communicate between the `FailureDetector` and `Node` machines (manual: [event declaration](../manual/events.md)).
+    - ([L1 - L4](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L1-L4))  &rarr; Event `ePing` and `ePong` are used to communicate between the `FailureDetector` and the `Node` state machines (manual: [event declaration](../manual/events.md)).
     - ([L6](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L6)) &rarr; Event `eNotifyNodesDown` is used by the FailureDetector to inform the clients about the nodes that are potentially down.
-    - ([L14 - L129](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L14-L129))  &rarr; Declares the `FailureDetector` state machine (manual: [P state machine](../manual/statemachines.md)).
-        - The key things to note in the `FailureDetector` model is the usage of timer, Reliable and UnReliable sends ...
+    - ([L14 - L129](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L14-L129))  &rarr; Declares the `FailureDetector` state machine (manual: [P state machine](../manual/statemachines.md)). The key points to note in the `FailureDetector` machine is the usage of [Timer](https://github.com/p-org/P/tree/master/Tutorial/Common/Timer) machine to model the usage of OS timer, the usage of [ReliableBroadCast](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L81) and [UnReliableBroadCast](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L48) defined in [NetworkFunctions.p](https://github.com/p-org/P/blob/master/Tutorial/Common/FailureInjector/PSrc/NetworkFunctions.p).
 
-- [Server.p](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSrc/Server.p): Implements the BankServer and the Backend Database state machines.
+- [Node.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/Node.p): Implements the `Node` state machine.
   
-??? tip "[Expand]: Lets walk through Server.p"
-    - ([L1 - L7](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSrc/Server.p#L1-L7)) &rarr; Declares the events used to communicate between the bank server and the backend database.
-    - ([L9 - L48](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSrc/Server.p#L9-L48)) &rarr; Declares the `BankServer` machine. The BankServer machine uses a database machine as a service to store the bank balance for all its clients.
-    On receiving an eWithDrawReq (withdraw requests) from a client, it reads the current balance for the account,
-    if there is enough money in the account then it updates the new balance in the database after withdrawal
-    and sends a response back to the client.
-    - ([L50 - L74](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSrc/Server.p#L50-L74)) &rarr; Declares the `Database` machine. The Database machine acts as a helper service for the Bank server and stores the bank balance for
-    each account. There are two API's or functions to interact with the Database: ReadBankBalance and UpdateBankBalance. These functions are implemented as global functions in P ([L76 - L92](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSrc/Server.p#L76-L92)).
+??? tip "[Expand]: Lets walk through Node.p"
+    - ([L4 - L14](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/Node.p#L4-L14)) &rarr; Declares the `Node` state machine. The `Node` machine responds with a `ePong` message on receiving a `ePing` message from the `FailureDetector`. On receiving a `eShutDown` message the `FailureInjector`, the machine halts itself.
 
-- [AbstractBankServer.p](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSrc/AbstractBankServer.p): Implements the AbstractBankServer state machine that provides an simplified abstraction for the BankServer machine. We will demonstrate how one replace the bank service consisting of two interacting components by its abstraction when testing the client application.
+- [FailureDetectorModules.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetectorModules.p): Declares the `FailureDetector` module.
 
-??? tip "[Expand]: Lets walk through AbstractBankServer.p"
-    - ([L12 - L37](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSrc/AbstractBankServer.p#L12-L37)) &rarr; Declares an abstraction of BankServer machine. The `AbstractBankServer` provides an implementation of the Bank where it abstracts away
-    the interaction between the BankServer and Database. We use the `AbstractBankServer` machine to demonstrate how one can replace a complex component in P with its abstraction that hides a lot of its internal complexity. For the client, it still exposes the same interface or behavior. Hence, when checking the correctness of the client it doesnt matter whether we use BankServer or the AbstractBankServer.
+??? tip "[Expand]: Lets walk through FailureDetectorModules.p"
+    Declares the `FailureDetector` module which is the union of module consisting of the `FailureDetector`, `Node`, `Client` machines and the `Timer` module.
 
 !!! info "Key Takeaway"
     To mitigate the state space explosion problem, when modeling and checking complex systems consisting of several components, we would like to check the correctness of each component in isolation. When doing this kind of a compositional reasoning, we would like to replace the environment of the component with its abstraction. The abstraction basically exposes the same interface as the environment by removes its internal complexity, simplifying the overall problem of checking the correctness of the component under test. There is a large body of literature on doing compositional reasoning of distributed systems. You can start with [the Modular P paper](https://ankushdesai.github.io/assets/papers/modp.pdf). How to automatically replace a machine with its abstraction is described below.

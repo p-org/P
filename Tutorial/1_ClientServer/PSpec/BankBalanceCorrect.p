@@ -2,18 +2,18 @@
 This file defines two P specifications
 
 BankBalanceIsAlwaysCorrect (safety property):
-BankBalanceIsCorrect checks the global invariant that the account-balance communicated
-to the client by the bank is always correct and the banks never removes more money from the account
-than that withdrawn by the client! Also, if the bank denies a withdraw request then its only because
-the withdrawal will reduce the account balance to below 10.
+BankBalanceIsAlwaysCorrect checks the global invariant that the account-balance communicated
+to the client by the bank is always correct and the bank never removes more money from the account
+than that withdrawn by the client! Also, if the bank denies a withdraw request then it is only because
+the withdrawal would reduce the account balance to below 10.
 
 GuaranteedWithDrawProgress (liveness property):
 GuaranteedWithDrawProgress checks the liveness (or progress) property that all withdraw requests
 submitted by the client are eventually responded.
 
-Note that BankBalanceIsCorrect also checks that if there is enough money in the account then the withdraw
-request must not error. Hence, the two properties above together ensure that every withdraw request
-if allowed will eventually succeed and the bank cannot block correct withdrawal requests.
+Note: stating that "BankBalanceIsAlwaysCorrect checks that if the bank denies a withdraw request
+then the request would reduce the balance to below 10 (< 10)" is equivalent to state that "if there is enough money in the account - at least 10 (>= 10), then the request must not error".
+Hence, the two properties BankBalanceIsAlwaysCorrect and GuaranteedWithDrawProgress together ensure that every withdraw request if allowed will eventually succeed and the bank cannot block correct withdrawal requests.
 *****************************************************/
 
 // event: initialize the monitor with the initial account balances for all clients when the system starts

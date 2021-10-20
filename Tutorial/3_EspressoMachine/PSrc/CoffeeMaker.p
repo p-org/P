@@ -44,7 +44,6 @@ machine EspressoCoffeeMaker
     }
 
     on eWarmUpReq do {
-      if(IsHeaterWorking())
         send controller, eWarmUpCompleted;
     }
 
@@ -74,7 +73,6 @@ machine EspressoCoffeeMaker
   // nondeterministic functions to trigger different behaviors
   fun HasBeans() : bool { return $; }
   fun HasWater() : bool { return $; }
-  fun IsHeaterWorking(): bool { return $; }
 }
 
 

@@ -1,7 +1,7 @@
 
 Energized with the Coffee :coffee:, lets get back to modeling distributed systems. After the two phase commit protocol, the next protocol that we will jump to is a simple broadcast-based failure detector!
 
-By this point in the tutorial, we have gotten familiar with the P language and most of its features. So, working through this example should be super fast! 
+By this point in the tutorial, we have gotten familiar with the P language and most of its features. So, working through this example should be super fast!
 
 ??? note "How to use this example"
 
@@ -26,7 +26,7 @@ The [4_FailureDetector](https://github.com/p-org/P/tree/master/Tutorial/4_Failur
 
 The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDetector/PSrc)) for the FailureDetector example consists of four files:
 
-- [FailureDetector.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p): Implements the `FailureDetector` state machine.
+- [FailureDetector.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p): Implements the `FailureDetector` machine.
   
 ??? tip "[Expand]: Lets walk through FailureDetector.p"
 
@@ -34,57 +34,43 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDe
     - ([L6](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L6)) &rarr; Event `eNotifyNodesDown` is used by the FailureDetector to inform the clients about the nodes that are potentially down.
     - ([L14 - L129](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L14-L129))  &rarr; Declares the `FailureDetector` state machine (manual: [P state machine](../manual/statemachines.md)). The key points to note in the `FailureDetector` machine is the usage of [Timer](https://github.com/p-org/P/tree/master/Tutorial/Common/Timer) machine to model the usage of OS timer, the usage of [ReliableBroadCast](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L81) and [UnReliableBroadCast](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L48) defined in [NetworkFunctions.p](https://github.com/p-org/P/blob/master/Tutorial/Common/FailureInjector/PSrc/NetworkFunctions.p).
 
-- [Node.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/Node.p): Implements the `Node` state machine.
+- [Node.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/Node.p): Implements the `Node` machine.
   
 ??? tip "[Expand]: Lets walk through Node.p"
     - ([L4 - L14](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/Node.p#L4-L14)) &rarr; Declares the `Node` state machine. The `Node` machine responds with a `ePong` message on receiving a `ePing` message from the `FailureDetector`. On receiving a `eShutDown` message the `FailureInjector`, the machine halts itself.
 
+- [Client.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/Client.p): Declares the `Client` machine.
+
+??? tip "[Expand]: Lets walk through  Client.p"
+    The `Client` machine is a dummy machine that gets a set of alive nodes when the system starts and it maintains the set of currently alive nodes by removing the nodes that are marked as down by the `FailureDetector`.
+  
 - [FailureDetectorModules.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetectorModules.p): Declares the `FailureDetector` module.
 
 ??? tip "[Expand]: Lets walk through FailureDetectorModules.p"
     Declares the `FailureDetector` module which is the union of module consisting of the `FailureDetector`, `Node`, `Client` machines and the `Timer` module.
 
-!!! info "Key Takeaway"
-    To mitigate the state space explosion problem, when modeling and checking complex systems consisting of several components, we would like to check the correctness of each component in isolation. When doing this kind of a compositional reasoning, we would like to replace the environment of the component with its abstraction. The abstraction basically exposes the same interface as the environment by removes its internal complexity, simplifying the overall problem of checking the correctness of the component under test. There is a large body of literature on doing compositional reasoning of distributed systems. You can start with [the Modular P paper](https://ankushdesai.github.io/assets/papers/modp.pdf). How to automatically replace a machine with its abstraction is described below.
 
-- [ FailureDetectorModules.p](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSrc/ FailureDetectorModules.p): Declares the P modules corresponding to each component in the system.
-
-??? tip "[Expand]: Lets walk through  FailureDetectorModules.p"
-    - ([L1 - L5](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSrc/ FailureDetectorModules.p#L1-L5)) &rarr; Declares the `Client` and `Bank` modules. A module in P is a collection of state machines that together implement that module or component. A system model in P is then a composition or union of modules. The `Client` module consist of a single machine `Client` and the `Bank` module is implemented by machines `BankServer` and `Database` together (manual: [P module system](../manual/modulesystem.md)).  The `AbstractBank` module using the `binding` feature in P modules to bind the `BankServer` machine to `AbstractBankServer` machine. Basically, what this implies is that whenever `AbstractBank` module is used creation of the `BankServer` machine will result in creation of `AbstractBankServer`, replacing the implementation with its abstraction (manual: [primitive modules](../manual/modulesystem.md#primitive-module)).
 
 ### Specifications
 
-The P Specifications ([PSpec](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSpec)) for the  FailureDetector example are implemented in the [BankBalanceCorrect.p](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSpec/BankBalanceCorrect.p) file. We define two specifications:
+The P Specification ([PSpec](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDetector/PSpec)) for the FailureDetector is implemented in [ReliableFailureDetector.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSpec/ReliableFailureDetector.p). We define a simple `ReliableFailureDetector` liveness specifications to assert that all nodes that have been shutdown
+by the failure injector will eventually be detected by the failure detector as a failed node.
 
-- **BankBalanceIsAlwaysCorrect** (safety property): BankBalanceIsCorrect spec checks the global invariant that the account-balance communicated to the client by the bank is always correct and the bank never removes more money from the account than what is withdrawn by the client! Also, if the bank denies a withdraw request then its only because the withdrawal will reduce the account balance to below 10.
-
-- **GuaranteedWithDrawProgress** (liveness property): GuaranteedWithDrawProgress checks the liveness (or progress) property that all withdraw requests submitted by the client are eventually responded.
-
-!!! info ""
-    BankBalanceIsAlwaysCorrect also checks that if there is enough money in the account then the withdraw request must not error. Hence, the two properties above together ensure that every withdraw request if allowed will eventually succeed and the bank cannot block correct withdrawal requests.
-
-??? tip "[Expand]: Lets walk through BankBalanceCorrect.p"
-    - ([L20](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSpec/BankBalanceCorrect.p#L20)) &rarr; Event `eSpec_BankBalanceIsAlwaysCorrect_Init` is used to inform the monitors about the initial state of the Bank. The event is announced by the TestDrivers when setting up the system ([here](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PTst/TestDriver.p#L51)).
-    - ([L36 - L86](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSpec/BankBalanceCorrect.p#L36-L86)) &rarr; Declares the `BankBalanceIsAlwaysCorrect` safety spec machine that observes the events `eWithDrawReq`,  `eWithDrawResp`, and `eSpec_BankBalanceIsAlwaysCorrect_Init` to assert the required global invariant.
-    - ([L92 - L115](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PSpec/BankBalanceCorrect.p#L92-L115)) &rarr; Declares the `GuaranteedWithDrawProgress` liveness spec machine that observes the events `eWithDrawReq` and `eWithDrawResp` to assert the required liveness property that every request is eventually responded by the Bank.
-    - To understand the semantics of the P spec machines, please read manual: [p monitors](../manual/monitors.md).
+??? tip "[Expand]: Lets walk through ReliableFailureDetector.p"
+    - ([L6 - L57](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSpec/ReliableFailureDetector.p#L6-L57)) &rarr; Declares the `ReliableFailureDetector` liveness monitor. `ReliableFailureDetector` spec machine basically maintains two sets `nodesDownDetected` (nodes that are detected as down by the detector) and `nodesShutdownAndNotDetected` (nodes that are shutdown by the failure injector but not yet detected). `ReliableFailureDetector` monitor observes the `eNotifyNodesDown` and `eShutDown` events to update these maps and move between the `hot` state (unstable state) and non-hot states. The system is in a hot state if there are nodes that are shutdown but not yet detected by the failure detector. The system violates a liveness specification if any of its execution terminates in a hot state.
+    - To understand the semantics of the P spec machines and the details about liveness monitors, please read manual: [p monitors](../manual/monitors.md).
 
 ### Test Scenarios
 
-The test scenarios folder in P has two parts: (1) TestDrivers: These are collection of state machines that implement the test harnesses or environment state machines for different test scenarios and (2) TestScripts: These are collection of test cases that are automatically discharged by the P checker.
+The test scenarios folder in P has two parts: TestDrivers and TestScripts. TestDrivers are collections of state machines that implement the test harnesses (or environment state machines) for different test scenarios. TestScripts are collections of test cases that are automatically run by the P checker.
 
-The test scenarios folder for  FailureDetector ([PTst](https://github.com/p-org/P/tree/master/Tutorial/1_ FailureDetector/PTst)) consists of two files [TestDriver.p](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PTst/TestDriver.p) and [TestScript.p](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PTst/Testscript.p).
+The test scenarios folder for FailureDetector ([PTst](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDetector/PTst)) consists of two files [TestDriver.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PTst/TestDriver.p) and [TestScript.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PTst/TestScript.p).
 
 ??? tip "[Expand]: Lets walk through TestDriver.p"
-    - ([L36 - L60](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PTst/TestDriver.p#L36-L60)) &rarr; Function `Setup FailureDetectorSystem` takes as input the number of clients to be created and setups the  FailureDetector system by creating the `Client` and `BankServer` machines. The [`CreateRandomInitialAccounts`](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PTst/TestDriver.p#L25-L34) function uses the [`choose`](../manual/expressions.md#choose) primitive to randomly initialize the accounts map.
-    - ([L3 - L22](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PTst/TestDriver.p#L3-L22)) &rarr; Machines `TestWithSingleClient` and `TestWithMultipleClients` are simple test driver machines that setup the system to be checked by the P checker for different scenarios. In this case, test the  FailureDetector system by first randomly initializing the accounts map and with one `Client` and with multiple `Client`s (between 2 to 4)).
+    This file consists of a single test driver machine that sets up the system under test given the number of nodes and clients in the system. The [`SetupSystemWithFailureInjector`](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PTst/TestDriver.p#L20-L42) function creates the clients, nodes, failure injector and the failure detector machines.
 
 ??? tip "[Expand]: Lets walk through TestScript.p"
-    P allows programmers to write different test cases each of which can be checked separately and each can use a different test driver that triggers different behaviors in the system under test using different system configurations and input generators.
-
-    - To better understand the P test cases, please look at manual: [P test cases](../manual/testcases.md).
-    - ([L4 - L16](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PTst/Testscript.p#L4-L16)) &rarr; Declares three test cases each checking a different scenario and system. The system under test is the `union` of the modules representing each component in the system (manual: [P module system](../manual/modulesystem.md#union-module)).
-    - In the test case `tcSingleClientAbstractServer`, instead of composing with the Bank module, [we use the AbstractBank module](https://github.com/p-org/P/blob/master/Tutorial/1_ FailureDetector/PTst/Testscript.p#L16). Hence, in the composed system, whenever we create `BankServer` machine during the execution of the system it leads to the creation of the `AbstractBankServer` machine.
+    There is a single testcase ([TestFailureDetector](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PTst/TestScript.p#L1-L3)) defined for the FailureDetector system. The test case asserts the `ReliableFailureDetector` specification on a system which is a composition of the `FailureDetector`, `FailureInjector`, and the test-driver `TestMultipleClients`. 
 
 ### Compiling FailureDetector
 
@@ -142,6 +128,8 @@ pmc <Path>/FailureDetector.dll -i 10000
 ```
 
 ### Discussion: Modeling Message Reordering
+
+(to be added soon)
 
 ### Exercise Problem
 

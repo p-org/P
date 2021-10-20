@@ -22,7 +22,6 @@ event eCoffeeMachineUser: machine;
 enum tCoffeeMakerState {
   NotWarmedUp,
   Ready,
-  HeaterError,
   NoBeansError,
   NoWaterError
 }
@@ -34,7 +33,6 @@ the user.
 */
 machine CoffeeMakerControlPanel
 {
-  var timer: Timer;
   var coffeeMaker: EspressoCoffeeMaker;
   var cofferMakerState: tCoffeeMakerState;
   var currentUser: machine;
@@ -43,7 +41,6 @@ machine CoffeeMakerControlPanel
     entry {
       cofferMakerState = NotWarmedUp;
       coffeeMaker = new EspressoCoffeeMaker(this);
-      timer = CreateTimer(this);
       WaitForUser();
       goto WarmUpCoffeeMaker;
     }
@@ -60,23 +57,20 @@ machine CoffeeMakerControlPanel
 
   state WarmUpCoffeeMaker {
     entry {
-      StartTimer(timer);
+      // inform the specification about current state of the coffee maker
+      announce eInWarmUpState;
+
       BeginHeatingCoffeeMaker();
     }
 
-    on eTimeOut goto EncounteredError with {
-      cofferMakerState = HeaterError;
-      print "Failed to heat-up the CoffeeMaker in time, Please reset the machine!";
-    }
-
-    on eWarmUpCompleted goto CoffeeMakerReady with {
-      CancelTimer(timer);
-    }
+    on eWarmUpCompleted goto CoffeeMakerReady;
 
     // grounds door is opened or closed will handle it later after the coffee maker has warmed up
     defer eOpenGroundsDoor, eCloseGroundsDoor;
     // ignore these inputs from users until the maker has warmed up.
     ignore eEspressoButtonPressed, eSteamerButtonOff, eSteamerButtonOn, eResetCoffeeMaker;
+    // ignore these errors and responses as they could be from previous state
+    ignore eNoBeansError, eNoWaterError, eGrindBeansCompleted;
   }
 
 
@@ -84,9 +78,13 @@ machine CoffeeMakerControlPanel
 
   state CoffeeMakerReady {
     entry {
+      // inform the specification about current state of the coffee maker
+      announce eInReadyState;
+
       cofferMakerState = Ready;
       send currentUser, eCoffeeMakerReady;
     }
+
     on eOpenGroundsDoor goto CoffeeMakerDoorOpened;
     on eEspressoButtonPressed goto CoffeeMakerRunGrind;
     on eSteamerButtonOn goto CoffeeMakerRunSteam;
@@ -101,6 +99,9 @@ machine CoffeeMakerControlPanel
 
   state CoffeeMakerRunGrind {
     entry {
+      // inform the specification about current state of the coffee maker
+      announce eInBeansGrindingState;
+
       GrindBeans();
     }
     on eNoBeansError goto EncounteredError with {
@@ -126,6 +127,9 @@ machine CoffeeMakerControlPanel
 
   state CoffeeMakerRunEspresso {
     entry {
+      // inform the specification about current state of the coffee maker
+      announce eInCoffeeBrewingState;
+
       StartEspresso();
     }
     on eEspressoCompleted goto CoffeeMakerReady with { send currentUser, eEspressoCompleted; }
@@ -180,11 +184,17 @@ machine CoffeeMakerControlPanel
   
   state EncounteredError {
     entry {
+      // inform the specification about current state of the coffee maker
+      announce eErrorHappened;
+
       // send the error message to the client
       send currentUser, eCoffeeMakerError, cofferMakerState;
     }
 
-    on eResetCoffeeMaker goto WarmUpCoffeeMaker;
+    on eResetCoffeeMaker goto WarmUpCoffeeMaker with {
+      // inform the specification about current state of the coffee maker
+      announce eResetPerformed;
+    }
     
     // error, ignore these requests until reset.
     ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff,

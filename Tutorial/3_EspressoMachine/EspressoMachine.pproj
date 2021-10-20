@@ -6,7 +6,5 @@
 	<PFile>./PSpec/</PFile>
 	<PFile>./PTst/</PFile>
 </InputFiles>
-<!-- Add the dependencies for the Timer machine -->
-<IncludeProject>../Common/Timer/Timer.pproj</IncludeProject>
 <OutputDir>./PGenerated/</OutputDir>
 </Project>

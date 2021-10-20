@@ -16,8 +16,6 @@ Multiple clients can concurrently send withdraw requests to the bank. On receivi
 
 **Correctness Specification:** The bank must maintain the invariant that each account must have at least 10 dollars as its balance. If a withdraw request takes the account balance below 10 then the withdraw request must be rejected by the bank. The correctness property that we would like to check is that in the presence of concurrent client withdraw requests the bank always responds with the correct bank balance for each client and a withdraw request always succeeds if there is enough balance in the account (that is, at least 10).
 
-
-
 ### P Project
 
 The [1_ClientServer](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer) folder contains the source code for the [ClientServer](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/ClientServer.pproj) project. Please feel free to read details about the recommended [P program structure](../advanced/structureOfPProgram.md) and [P project file](../advanced/PProject.md).

@@ -129,6 +129,8 @@ pmc <Path>/FailureDetector.dll -i 10000
 
 ### Discussion: Modeling Message Reordering
 
+(to be added soon)
+
 ### Exercise Problem
 
 !!! success "What did we learn through this example?"

@@ -17,7 +17,7 @@ If an error occurs in any of the states above then the Coffee machine stays in t
 it is reset and after which it returns to the Warmup state.
 
 **********************************************/
-spec CoffeeMakerModesOfOperation
+spec EspressoMachineModesOfOperation
 observes eInWarmUpState, eInReadyState, eInBeansGrindingState, eInCoffeeBrewingState, eErrorHappened, eResetPerformed
 {
   start state StartUp {

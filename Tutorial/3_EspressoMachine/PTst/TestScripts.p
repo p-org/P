@@ -1,5 +1,5 @@
-test saneUserUsingCoffeeMachine [main=TestWithSaneUser]:
-  assert CoffeeMakerModesOfOperation in (union { TestWithSaneUser }, EspressoMachine, Users);
+test tcSaneUserUsingCoffeeMachine [main=TestWithSaneUser]:
+  assert EspressoMachineModesOfOperation in (union { TestWithSaneUser }, EspressoMachine, Users);
 
-test crazyUserUsingCoffeeMachine [main=TestWithCrazyUser]:
-  assert CoffeeMakerModesOfOperation in (union { TestWithCrazyUser }, EspressoMachine, Users);
+test tcCrazyUserUsingCoffeeMachine [main=TestWithCrazyUser]:
+  assert EspressoMachineModesOfOperation in (union { TestWithCrazyUser }, EspressoMachine, Users);

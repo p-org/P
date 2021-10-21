@@ -10,17 +10,21 @@ machine Client {
   var currTransaction : tTrans;
   // number of transactions to be issued
   var N: int;
+  // uniqie client Id
+  var id: int;
+
   start state Init {
-    entry (payload : (coordinator: Coordinator, n : int)) {
+    entry (payload : (coordinator: Coordinator, n : int, id: int)) {
       coordinator = payload.coordinator;
       N = payload.n;
+      id = payload.id;
       goto SendWriteTransaction;
     }
   }
 
   state SendWriteTransaction {
     entry {
-      currTransaction = ChooseRandomTransaction();
+      currTransaction = ChooseRandomTransaction(id * 100 + N /* hack for creating unique transaction id*/);
       send coordinator, eWriteTransReq, (client = this, trans = currTransaction);
     }
     on eWriteTransResp goto ConfirmTransaction;
@@ -53,7 +57,7 @@ machine Client {
 
 /*  This is an external function (implemented in C#) to randomly choose transaction values
 In P, function declarations without body are considered as foreign functions. */
-fun ChooseRandomTransaction(): tTrans;
+fun ChooseRandomTransaction(uniqueId: int): tTrans;
 
 // two phase commit client module
 module TwoPCClient = { Client };

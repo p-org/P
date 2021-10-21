@@ -15,7 +15,7 @@ In this tutorial, we use a series of examples along with excercise problems to h
 
     The recommended way to work through this example is to open the [P/Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in IntelliJ side-by-side a browser using which you can simultaneously read the description for each example and browse the P program.
 
-    To know more about P language primitives used in the examples, please look them up in the [language manual](../manualoutline.md).
+    To know more about P language primitives used in the examples, please look them up in the [language manual](manualoutline.md).
 
 -----
 

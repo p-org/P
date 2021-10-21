@@ -1,2 +1,2 @@
 // the two phase commit module
-module TwoPhaseCommit = { Coordinator, Participant, Timer };
+module TwoPhaseCommit = union { Coordinator, Participant }, Timer;

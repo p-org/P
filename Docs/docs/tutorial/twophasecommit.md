@@ -76,16 +76,21 @@ The P Specifications ([PSpec](https://github.com/p-org/P/blob/master/Tutorial/1_
 
 The test scenarios folder in P has two parts: TestDrivers and TestScripts. TestDrivers are collections of state machines that implement the test harnesses (or environment state machines) for different test scenarios. TestScripts are collections of test cases that are automatically run by the P checker.
 
-The test scenarios folder for ClientServer ([PTst](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer/PTst)) consists of two files [TestDriver.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p) and [TestScript.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p).
+The test scenarios folder for TwoPhaseCommit ([PTst](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseCommit/PTst)) consists of three files [TestDriver.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/TestDriver.p), [TestScript.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/TestScripts.p) and [Client.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/Client.p).
 
 ??? tip "[Expand]: Let's walk through TestDriver.p"
-    - ([L36 - L60](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L36-L60)) &rarr; Function `SetupClientServerSystem` takes as input the number of clients to be created and configures the ClientServer system by creating the `Client` and `BankServer` machines. The [`CreateRandomInitialAccounts`](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L25-L34) function uses the [`choose`](../manual/expressions.md#choose) primitive to randomly initialize the accounts map.
-    - ([L3 - L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L3-L22)) &rarr; Machines `TestWithSingleClient` and `TestWithMultipleClients` are simple test driver machines that configure the system to be checked by the P checker for different scenarios. In this case, test the ClientServer system by first randomly initializing the accounts map and then testing it with either one `Client` or with multiple `Client`s (between 2 and 4)).
+    - ([L9 - L42](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/TestDriver.p#L9-L42)) &rarr; Function `SetUpTwoPhaseCommitSystem` takes as input `t2PCConfig` that specifies the number of clients, participants, etc. to be created and sets up the system by creating the machines. The function also initializes the spec monitors by informing them about the number of participants in the system before the system starts executing [here](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/TestDriver.p#L23-L24).
+    - ([L3 - L22](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/TestDriver.p#L50-L101)) &rarr; Machines `SingleClientNoFailure`, `MultipleClientsNoFailure` and `MultipleClientsWithFailure` are simple test driver machines that configure the system to be checked by the P checker for different scenarios.
 
 ??? tip "[Expand]: Let's walk through TestScript.p"
     P allows programmers to write different test cases. Each test case is checked separately and can use a different test driver. Using different test drivers triggers different behaviors in the system under test, as it implies different system configurations and input generators. To better understand the P test cases, please look at manual: [P test cases](../manual/testcases.md).
-    - ([L4 - L16](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p#L4-L16)) &rarr; Declares three test cases each checking a different scenario and system. The system under test is the `union` of the modules representing each component in the system (manual: [P module system](../manual/modulesystem.md#union-module)).
-    - In the `tcSingleClientAbstractServer` test case, instead of composing with the Bank module, we use the AbstractBank module. Hence, in the composed system, whenever the creation of a BankServer machine is invoked the binding will instead create an AbstractBankServer machine.
+
+    - ([L1 - L12](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/TestScripts.p#L1-L12)) &rarr; Declares three test cases each checking a different scenario in the system. The system under test is the `union` of the modules representing each component in the system (manual: [P module system](../manual/modulesystem.md#union-module)). The `assert` module constructor is used to attach monitors or specifications to be checked on the modules (manual: [assert](../manual/modulesystem.md#assert-monitors-module)).
+  
+??? tip "[Expand]: Let's walk through Client.p"
+    The `Client` machine implements the client of the two-phase-commit transaction service. Each client issues N non-deterministic write-transactions, if the transaction succeeds then it performs a read-transaction on the same key and asserts that the value read is same as what was written by the write transaction.
+
+    - ([L60](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/Client.p#L60)) &rarr; Declares a foreign function in P. Foreign functions are functions that are declared in P but implemented in the external foreign language. Please read the example in [P foreign interface](../manual/foriegntypesfunctions.md) to know more about this functionality. In this example, the `ChooseRandomTransaction` function could have been very easily written in P itself but its implemented as foreign function just to demonstrate that P supports this functionality.
   
 ### Compiling TwoPhaseCommit
 
@@ -210,4 +215,3 @@ pmc <Path>/TwoPhaseCommit.dll \
 
 !!! summary "What did we learn through this example?"
     We dived deeper into: (1) modeling non-determinism in distributed systems, in particular, time-outs (2) writing complex safety properties like atomicity of transactions in P and finally, (3) modeling node failures in P using a failure injector state machine. We will also show how P allows invoking foreign code from the P programs. More details in [P foreign interface](../manual/foriegntypesfunctions.md).
-

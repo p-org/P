@@ -9,7 +9,7 @@
 
     To know more about P language primitives used in the example, please look them up in the [language manual](../manualoutline.md).
 
-**System:** We consider a client-server application where clients interact with a bank to withdraw money from their accounts. 
+**System:** We consider a client-server application where clients interact with a bank to withdraw money from their accounts.
 
 ![Placeholder](clientserver.png){ align=center }
 
@@ -87,11 +87,13 @@ The test scenarios folder for ClientServer ([PTst](https://github.com/p-org/P/tr
 
 ??? tip "[Expand]: Let's walk through TestDriver.p"
     - ([L36 - L60](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L36-L60)) &rarr; Function `SetupClientServerSystem` takes as input the number of clients to be created and configures the ClientServer system by creating the `Client` and `BankServer` machines. The [`CreateRandomInitialAccounts`](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L25-L34) function uses the [`choose`](../manual/expressions.md#choose) primitive to randomly initialize the accounts map.
+    The function also  [`announce` the event](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L49-L51) `eSpec_BankBalanceIsAlwaysCorrect_Init` to initialize the monitors with initial balance for all accounts (manual: [annouce statement](../manual/statements.md#announce)). 
     - ([L3 - L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L3-L22)) &rarr; Machines `TestWithSingleClient` and `TestWithMultipleClients` are simple test driver machines that configure the system to be checked by the P checker for different scenarios. In this case, test the ClientServer system by first randomly initializing the accounts map and then testing it with either one `Client` or with multiple `Client`s (between 2 and 4)).
 
 ??? tip "[Expand]: Let's walk through TestScript.p"
     P allows programmers to write different test cases. Each test case is checked separately and can use a different test driver. Using different test drivers triggers different behaviors in the system under test, as it implies different system configurations and input generators. To better understand the P test cases, please look at manual: [P test cases](../manual/testcases.md).
-    - ([L4 - L16](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p#L4-L16)) &rarr; Declares three test cases each checking a different scenario and system. The system under test is the `union` of the modules representing each component in the system (manual: [P module system](../manual/modulesystem.md#union-module)).
+
+    - ([L4 - L16](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p#L4-L16)) &rarr; Declares three test cases each checking a different scenario and system. The system under test is the `union` of the modules representing each component in the system (manual: [P module system](../manual/modulesystem.md#union-module)). The `assert` module constructor is used to attach monitors or specifications to be checked on the modules (manual: [assert](../manual/modulesystem.md#assert-monitors-module)).
     - In the `tcSingleClientAbstractServer` test case, instead of composing with the Bank module, we use the AbstractBank module. Hence, in the composed system, whenever the creation of a BankServer machine is invoked the binding will instead create an AbstractBankServer machine.
 
 ### Compiling ClientServer

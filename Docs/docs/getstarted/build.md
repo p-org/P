@@ -1,5 +1,5 @@
-If you plan to contribute a Pull Request to P then you need to be able to build the source code
-and run the tests. Please make sure that you have followed the steps in the [installation guide] to install P dependencies.
+If you plan to contribute a Pull Request to P then you need to build the source code
+and run the tests. Please make sure that you have followed the steps in the [installation guide](install.md) to install P dependencies.
 
 ### Building the P project
 

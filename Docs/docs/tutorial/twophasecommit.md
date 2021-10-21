@@ -186,7 +186,7 @@ pmc <Path>/TwoPhaseCommit.dll \
 
 !!! hint "Hint"
 
-    If you dive deeper in the log, you would notice that the error happens when two clients write to the same key and there is a race between the two writes and reads. The fix for this problem is to update the assertion on the client side stating that if the value that is read is not the same as the value that was written then it was overridden by a transaction with id greater than its transaction id. This is true because Participants accept transaction to the same key in the monotonically increasing transaction ids.
+    If you dive deeper in the log, you would notice that the error happens when two clients write to the same key. There is a race between the two clients issueing a write and read transaction on the same key with different values. The fix for this problem is to update the assertion on the client side to: if the value that is read when confirming the transaction is not the same as the value that was written then it must have been overridden by a transaction with id greater than its transaction id. **This is true because Participants accept transaction to the same key in the monotonically increasing transaction ids**.
 
 Check the `tcMultipleClientsWithFailure` test case for 10000 schedules:
 

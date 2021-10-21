@@ -5,7 +5,9 @@
     git clone https://github.com/p-org/P.git
     ```
 
-    The recommended way to work through this example is to open the [P\Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in IntelliJ side-by-side a browser using which you can simulatenously read the description for each example and browser the P program in IntelliJ. 
+    The recommended way to work through this example is to open the [P\Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in IntelliJ side-by-side a browser using which you can simulatenously read the description for each example and browser the P program in IntelliJ.
+
+    To know more about P language primitives used in the example, please look them up in the [language manual](../manualoutline.md).
 
 We have reached the middle of our tutorials :yawning_face:, its time to take a break and have an espresso coffee! :coffee:
 

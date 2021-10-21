@@ -5,7 +5,9 @@
     git clone https://github.com/p-org/P.git
     ```
 
-    The recommended way to work through this example is to open the [P\Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in IntelliJ side-by-side a browser using which you can simulatenously read the description for each example and browser the P program in IntelliJ. 
+    The recommended way to work through this example is to open the [P\Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in IntelliJ side-by-side a browser using which you can simulatenously read the description for each example and browser the P program in IntelliJ.
+
+    To know more about P language primitives used in the example, please look them up in the [language manual](../manualoutline.md).
 
 Now that we understand the basic features of the P language, lets look at modeling and analysis of a distributed system :man_juggling:!
 
@@ -32,17 +34,24 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseC
 1. [Coordinator.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/Coordinator.p): Implements the Coordinator state machine.
   
 ??? tip "[Expand]: Lets walk through Coordinator.p"
-    ...
-
+    - ([L25 - L33](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/Coordinator.p#L25-L33)) &rarr; Declares the `write` and `read` transaction events used to communicate between the coordinator and the client machines (manual: [event declaration](../manual/events.md)).
+    - ([L35 - L43](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/Coordinator.p#L35-L43)) &rarr; Declares the `prepare`, `commit` and `abort` events used to communicate between the coordinator and the participants in the system.
+    - ([L3 - L16](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/Coordinator.p#L3-L16)) &rarr; Declares the payload types associated with these events (manual: [user defined type](../manual/datatypes.md#user-defined)).
+    - ([L65 - L177](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/Coordinator.p#L65-L177)) &rarr; Declares the `Coordinator` state machine. The Coordinator machine receives write and read transactions from the clients. The coordinator machine
+    services these transactions one by one in the order in which they were received. On receiving a write
+    transaction the coordinator sends prepare request to all the participants and waits for prepare
+    responses from all the participants. Based on the responses, the coordinator either commits or aborts
+    the transaction. If the coordinator fails to receive agreement from participants in time, then it
+    timesout and aborts the transaction. On receiving a read transaction, the coordinator randomly selects
+    a participant and  forwards the read request to that participant.
 - [Participant.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/Participant.p): Implements the Participant state machine.
   
 ??? tip "[Expand]: Lets walk through Participant.p"
-    ...
-
+    - Unlike the `Coordinator` state machine that has multiple states, the `Participant` state machine is fairly simple. Each participant waits for requests from the `Coordinator` and sends the response back based on whether the request can be accepted or has to be rejected.
+    - On receiving a `eShutDown` event, the participant does a `raise halt` to destroy itself. To know more about the special `halt` event, please check the manual: [halt event](../manual/expressions.md#primitive).
+    - Each participant maintains a local key-value store which is updated based on the transactions committed by the coordinator. On receiving a prepare request from the coordinator, the participant chooses to either accept or reject the transaction based on the associated transaction id.
+  
 - [TwoPhaseCommitModules.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/TwoPhaseCommitModules.p): Declares the P module corresponding to the two phase commit system.
-
-??? tip "[Expand]: Lets walk through TwoPhaseCommitModules.p"
-    ...
 
 ### Timer and Failure Injector
 
@@ -56,32 +65,28 @@ Our two phase commit project dependends on two other components:
 
 The P Specifications ([PSpec](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSpec)) for the TwoPhaseCommit example are implemented in the [Atomicity.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSpec/Atomicity.p) file. We define two specifications:
 
-- Atomicity (safety property): if a transaction is committed by the coordinator then it was agreed on by all participants.
+- **Atomicity** (safety property): if a transaction is committed by the coordinator then it was agreed on by all participants and if the transaction is aborted then atleast one participant must have rejected the transaction.
 
-- Progress (liveness property): every received transaction from a client must be eventually responded back.
+- **Progress** (liveness property): every received transaction must be eventually responded back (in the absence of node failures).
 
-!!! info "Note"
-    BankBalanceIsCorrect also checks that if there is enough money in the account then the withdraw request must not error. Hence, the two properties above together ensure that every withdraw request if allowed will eventually succeed and the bank cannot block correct withdrawal requests.
-
-??? tip "[Expand]: Lets walk through Atomicity.p"
-    ...
+!!! info "Weaker Property"
+    Note that we are asserted a weaker property than what is required for Atomicity. Ideally, we would like to check that if a transaction is committed by the coordinator then it was committed-locally by all participants and if the transaction is aborted then atleast one participant must have rejected the transaction and all the participants aborted the transaction. But we leave implementing this stronger property as an exercise problem which you can revisit after finishing the other problems in the tutorials.
 
 ### Test Scenarios
 
-The test scenarios folder consists of two parts: (1) TestDrivers: These are collection of state machines that implement the test harnesses or environment state machines for different test scenarios and (2) TestScripts: These are collection of test cases that are automatically discharged by the P checker.
+The test scenarios folder in P has two parts: TestDrivers and TestScripts. TestDrivers are collections of state machines that implement the test harnesses (or environment state machines) for different test scenarios. TestScripts are collections of test cases that are automatically run by the P checker.
 
-The test scenarios folder for TwoPhaseCommit ([PTst](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer/PTst)) consists of three files:
-
-- [TestDriver.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p)
-- 
-- [TestScript.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p).
+The test scenarios folder for ClientServer ([PTst](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer/PTst)) consists of two files [TestDriver.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p) and [TestScript.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p).
 
 ??? tip "[Expand]: Lets walk through TestDriver.p"
-    ...
+    - ([L36 - L60](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L36-L60)) &rarr; Function `SetupClientServerSystem` takes as input the number of clients to be created and configures the ClientServer system by creating the `Client` and `BankServer` machines. The [`CreateRandomInitialAccounts`](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L25-L34) function uses the [`choose`](../manual/expressions.md#choose) primitive to randomly initialize the accounts map.
+    - ([L3 - L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L3-L22)) &rarr; Machines `TestWithSingleClient` and `TestWithMultipleClients` are simple test driver machines that configure the system to be checked by the P checker for different scenarios. In this case, test the ClientServer system by first randomly initializing the accounts map and then testing it with either one `Client` or with multiple `Client`s (between 2 and 4)).
 
 ??? tip "[Expand]: Lets walk through TestScript.p"
-    ...
-
+    P allows programmers to write different test cases. Each test case is checked separately and can use a different test driver. Using different test drivers triggers different behaviors in the system under test, as it implies different system configurations and input generators. To better understand the P test cases, please look at manual: [P test cases](../manual/testcases.md).
+    - ([L4 - L16](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p#L4-L16)) &rarr; Declares three test cases each checking a different scenario and system. The system under test is the `union` of the modules representing each component in the system (manual: [P module system](../manual/modulesystem.md#union-module)).
+    - In the `tcSingleClientAbstractServer` test case, instead of composing with the Bank module, we use the AbstractBank module. Hence, in the composed system, whenever the creation of a BankServer machine is invoked the binding will instead create an AbstractBankServer machine.
+  
 ### Compiling TwoPhaseCommit
 
 Run the following command to compile the TwoPhaseCommit project:

@@ -1,7 +1,7 @@
 /*****************************************************************************************
 Each participant maintains a local key-value store which is updated based on the
 transactions committed by the coordinator. On receiving a prepare request
-from the coordinator, the participant non-deterministically chooses to either accept or
+from the coordinator, the participant chooses to either accept or
 reject the transaction.
 ******************************************************************************************/
 

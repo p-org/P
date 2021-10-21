@@ -30,7 +30,7 @@ fun SetUpTwoPhaseCommitSystem(config: t2PCConfig)
   i = 0;
   while(i < config.numClients)
   {
-    new Client((coordinator = coordinator, n = config.numTransPerClient));
+    new Client((coordinator = coordinator, n = config.numTransPerClient, id = i + 1));
     i = i + 1;
   }
 

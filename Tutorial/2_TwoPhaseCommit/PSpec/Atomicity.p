@@ -31,7 +31,7 @@ spec AtomicityInvariant observes eWriteTransResp, ePrepareResp, eMonitor_Atomici
     }
 
     on eWriteTransResp do (resp: tWriteTransResp) {
-      assert (resp.transId in participantsResponse),
+      assert (resp.transId in participantsResponse || resp.status == TIMEOUT),
       format ("Write transaction was responded to the client without receiving any responses from the participants!");
 
       if(resp.status == SUCCESS)

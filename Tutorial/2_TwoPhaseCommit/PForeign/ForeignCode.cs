@@ -14,9 +14,9 @@ namespace PImplementation
 {
   public static partial class GlobalFunctions
   {
-    public static PrtNamedTuple ChooseRandomTransaction(PMachine pMachine)
+    public static PrtNamedTuple ChooseRandomTransaction(PrtInt uniqueId, PMachine pMachine)
     {
-      return (new PrtNamedTuple(new string[] { "key", "val", "transId" }, (PrtString)pMachine.TryRandomInt(100).ToString(), (PrtInt)pMachine.TryRandomInt(100), (PrtInt)pMachine.TryRandomInt(100)));
+      return (new PrtNamedTuple(new string[] { "key", "val", "transId" }, (PrtString)pMachine.TryRandomInt(10).ToString(), (PrtInt)pMachine.TryRandomInt(10), (PrtInt) uniqueId));
     }
   }
 }

@@ -52,6 +52,7 @@ it is reset and after which it returns to the `Warmup` state.
 
 ??? tip "[Expand]: Lets walk through Safety.p"
     - ([L1 - L7](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSpec/Safety.p#L1-L7)) &rarr; Events used to inform the monitor about the state of the EspressoMachine system. The events are announced as the system moves from one state to another (manual: [announce statement](../manual/statements.md#announce)).
+    - The `EspressoMachineModesOfOperation` spec machine observes these events and ensures that the system moves through the states defined by the monitor. Note that if the system allows (has execution as) a sequence of events that are not accepted by the monitor (i.e., the monitor throws an unhandled event exception) then the system does not satisfy the desired specification. Hence, this monitor can be thought of accepting only those behaviors of the system that follow the sequence of states modelled by the spec machine. For example, if the system moves from Ready to CoffeeMaking state directly without Grinding then the monitor will raise an ALARM!
     - To understand the semantics of the P spec machines, please read manual: [p monitors](../manual/monitors.md).
 
 ### Test Scenarios

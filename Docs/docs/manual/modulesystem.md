@@ -3,7 +3,7 @@ implement and test the system compositionally. More details about the underlying
 for the P module system (assume-guarantee style compositional reasoning) is described in
 the [paper](https://ankushdesai.github.io/assets/papers/modp.pdf)
 
-In its simplest form, a module in P is a collection of state machines. The P module system allows constructing larger modules by composing or unioning modules together. Hence, a distributed system under test which is a composition of multiple components together can be constructed by composing (or unioning) modules corresponding to those components. The [P test cases](testcases.md) takes as input a module that represents the **closed**[^1] system to be validated which is the union or composition of all the component modules.
+In its simplest form, a module in P is a collection of state machines. The P module system allows constructing larger modules by composing or unioning modules together. Hence, a distributed system under test which is a composition of multiple components can be constructed by composing (or unioning) modules corresponding to those components. The [P test cases](testcases.md) takes as input a module that represents the **closed**[^1] system to be validated which in turn is the union or composition of all the component modules.
 
 [^1]: A closed system is a system where all the machines or interfaces that are created are defined or implemented in the unioned modules.
 
@@ -26,8 +26,6 @@ In its simplest form, a module in P is a collection of state machines. The P mod
 
     namedModuleDecl : module iden = modExpr ;   # Named module declaration
     ```
-
-(Add a link to the client server and two phase commit example to describe this further).
 
 ### Named Module
 
@@ -89,7 +87,10 @@ P supports unioning multiple modules together to create larger, more complex mod
 
 ### Assert Monitors Module
 
-P allows attaching monitors (or specifications) to modules. When attaching monitors to a module, the events observed by the monitors must be sent by some machine in the module. The way to think about assert monitors module is that: _testing this module asserts that each execution of the module satisfies the global properties specified by the monitors._
+P allows attaching monitors (or specifications) to modules. When attaching monitors to a module, the events observed by the monitors must be sent by `some` machine in the module. 
+
+!!! info ""
+    The way to think about assert monitors module is that: `attaching these monitors to the module asserts (during P checker exploration) that each execution of the module satisfies the global properties specified by the monitors._
 
 **Syntax:** `assert idenList in modExpr`
 

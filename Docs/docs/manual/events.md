@@ -1,5 +1,5 @@
 A P program is a collection of state machines communicating with each other by exchanging **events**.
-An event in P has two parts, an event name and a payload value (optional) that can be sent along with the event.
+An event in P has two parts: an event name and a payload value (optional) that can be sent along with the event.
 
 ??? note "P Event Declaration Grammar"
 

@@ -70,9 +70,17 @@ P supports the common imperative programming language expressions (just like in 
 P allows the common primitive expressions like literal-constants for integers, floats, strings, booleans, and the null value.
 There are three unique primitive expressions in P:
 
-- `$` represents a nondeterministic boolean choice. It is a short hand for `choose()` which randomly returns a boolean value and the P Checker explores the behavior of the system for both the possibilities i.e., both when `$` evaluates to `true` or `false`.
-- `halt` is a special event in P used for destroying an instance of a P machine. The semantics of an `halt` event is that whenever a P machine throws an `unhandled event` exception because of a `halt` event then the machine is automatically destroyed or halted and all events sent to that machine instance are there after are equivalent to being dropped to ether. There are two ways of using the `halt` event: (1) self-halt by doing `raise halt;` raising a `halt` event which is not handled in the state machine or (2) by sending the `halt` event to the machine that needs to be halted. (Add reference to the Tutorial example).
-- `this` represents the `self` machine reference of the current machine. It can be used to send self reference to other machines in the program so that they can send messages to this machine.
+#### $
+
+`$` represents a nondeterministic boolean choice. It is a short hand for `choose()` which randomly returns a boolean value and the P Checker explores the behavior of the system for both the possibilities i.e., both when `$` evaluates to `true` or `false`.
+
+#### Halt
+
+`halt` is a special event in P used for destroying an instance of a P machine. The semantics of an `halt` event is that whenever a P machine throws an `unhandled event` exception because of a `halt` event then the machine is automatically destroyed or halted and all events sent to that machine instance there after are equivalent to being dropped to ether. There are two ways of using the `halt` event: (1) **self-halt** by doing `raise halt;` raising a `halt` event which is not handled in the state machine will lead to that machine being halted or (2) by sending the `halt` event to a machine, and that machine on dequeueing `halt`, would halt itself. Please checkout the [FailureDetector](../tutorial/failuredetector.md) example in tutorials to know more about halt event
+
+#### This
+
+`this` represents the `self` machine reference of the current machine. It can be used to send self reference to other machines in the program so that they can send messages to this machine.
 
 ### Formatted String
 

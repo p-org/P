@@ -41,4 +41,3 @@ For detailed formal semantics of P state machines, we refer the readers to the [
       | on eventList goto stateName with funName ;      # OnEventGotoStateWithNamedHandler
       ;
     ```
-    

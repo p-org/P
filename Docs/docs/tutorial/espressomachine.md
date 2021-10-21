@@ -32,14 +32,14 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/3_EspressoM
 
 - [CoffeeMakerControlPanel.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSrc/CoffeeMakerControlPanel.p): Implements the CoffeeMakerControlPanel state machine. Basically, the control panel starts in the initial state and kicks off by warming up the coffee maker, after warming is successful, it moves to ready state where it can either make coffee or start the steamer. When asked to make coffee, it first grinds the beans and then brews coffee. In any of these states, if there is an error because of no water or no beans, the control panel informs the user of the error and moves to error state waiting for the user to reset the machine.
   
-??? tip "[Expand]: Lets walk through CoffeeMakerControlPanel.p"
+??? tip "[Expand]: Let's walk through CoffeeMakerControlPanel.p"
     - ([L2 - L19](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSrc/CoffeeMakerControlPanel.p#L2-L19))  &rarr; Declare events that are used to communicate between the `User` and the `ControlPanel` machines (manual: [event declaration](../manual/events.md)). These are events that represent the operations performed by the user, e.g., resetting the machine, pressing the steamer button on and off, etc.
     - ([L34 - L231](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSrc/CoffeeMakerControlPanel.p#L34-L231)) &rarr; Declares the `CoffeeMakerControlPanel` state machine. The interesting points that we would like to highlight are: (1) the state machine transitions from one mode (or state) to another based on the events received from the user and the `CoffeeMaker` machine; (2) in all the states, the state machine appropriately handles different events that can be received, including ignoring or deferring them if they are stale events.
 
 
 - [CoffeeMaker.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSrc/CoffeeMaker.p): Implements the CoffeeMaker state machine.
   
-??? tip "[Expand]: Lets walk through CoffeeMaker.p"
+??? tip "[Expand]: Let's walk through CoffeeMaker.p"
     - ([L4 - L29](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSrc/CoffeeMaker.p#L4-L29)) &rarr; Declares the events used to communicate between the control panel and the backend coffee maker.
     - ([L31 - L78](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSrc/CoffeeMaker.p#L31-L78)) &rarr; Declares the `EspressoCoffeeMaker` machine. EspressoCoffeeMaker receives requests from the control panel of the coffee machine and
     based on its state e.g., whether heater is working, or it has beans and water, the coffee maker responds nondeterministically
@@ -52,7 +52,7 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/3_EspressoM
 The P Specification ([PSpec](https://github.com/p-org/P/tree/master/Tutorial/3_EspressoMachine/PSpec)) for the EspressoMachine example is implemented in [Safety.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSpec/Safety.p). We define a safety specification `EspressoMachineModesOfOperation` that observes the internal state of the EspressoMachine through the events that are announced as the system moves through different states and asserts that it always moves through the desired sequence of states. Steady operation: `WarmUp -> Ready -> GrindBeans -> MakeCoffee -> Ready`. If an error occurs in any of the states above then the EspressoMachine stays in the error state until
 it is reset and after which it returns to the `Warmup` state.
 
-??? tip "[Expand]: Lets walk through Safety.p"
+??? tip "[Expand]: Let's walk through Safety.p"
     - ([L1 - L7](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSpec/Safety.p#L1-L7)) &rarr; Events used to inform the monitor about the state of the EspressoMachine system. The events are announced as the system moves from one state to another (manual: [announce statement](../manual/statements.md#announce)).
     - The `EspressoMachineModesOfOperation` spec machine observes these events and ensures that the system moves through the states defined by the monitor. Note that if the system allows (has execution as) a sequence of events that are not accepted by the monitor (i.e., the monitor throws an unhandled event exception) then the system does not satisfy the desired specification. Hence, this monitor can be thought of accepting only those behaviors of the system that follow the sequence of states modelled by the spec machine. For example, if the system moves from Ready to CoffeeMaking state directly without Grinding then the monitor will raise an ALARM!
     - To understand the semantics of the P spec machines, please read manual: [p monitors](../manual/monitors.md).

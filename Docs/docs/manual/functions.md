@@ -8,12 +8,12 @@ Please look at [P state machine](manual/../statemachines.md) for more details ab
 ??? note "P Functions Grammar"
 
     ```
-      anonEventHandler : (funParam?) functionBody                     # AnonymousFunDecl
+      anonFunction : (funParam?) functionBody                         # AnonymousFunDecl
 
-      namedfunDecl : 
-          | fun name (funParamList?) (: returnType)? ;                # ForeignFunDecl
-          | fun name (funParamList?) (: returnType)? functionBody     # FunDecl
-          ;
+      funDecl : 
+        | fun name (funParamList?) (: returnType)? ;                  # ForeignFunDecl
+        | fun name (funParamList?) (: returnType)? functionBody       # FunDecl
+        ;
 
       functionBody : { varDecl* statement* }                          # FunctionBody
 

@@ -1,7 +1,5 @@
-package psymbolic.runtime;
+package psymbolic.runtime.machine;
 
-import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.machine.State;
 import psymbolic.runtime.machine.buffer.EventBufferSemantics;
 
 public class Monitor extends Machine {

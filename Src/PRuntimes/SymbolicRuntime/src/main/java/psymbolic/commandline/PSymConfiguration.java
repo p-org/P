@@ -40,11 +40,15 @@ public class PSymConfiguration {
 
     @Getter @Setter
     // intersect with receiver queue semantics
-    private boolean addReceiverQueueSemantics = true;
+    private boolean addReceiverQueueSemantics = false;
 
     @Getter @Setter
-    // intersect with receiver queue semantics
-    private boolean dpor = true;
+    // turn all sender queues into bags -- currently not implemented
+    private boolean useBagSemantics = false;
+
+    @Getter @Setter
+    // apply DPOR
+    private boolean dpor = false;
 
     @Getter @Setter
     // level of verbosity for the logging

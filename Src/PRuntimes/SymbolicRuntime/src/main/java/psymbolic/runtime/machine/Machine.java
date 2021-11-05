@@ -18,6 +18,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 public abstract class Machine {
+
+    private static boolean allBag = false;
+
     private String name;
     private int instanceId;
     @Getter @Setter
@@ -81,7 +84,7 @@ public abstract class Machine {
         this.instanceId = id;
 
         EventBuffer buffer;
-        if (semantics == EventBufferSemantics.bag) {
+        if (allBag || semantics == EventBufferSemantics.bag) {
             buffer = new EventBag(this);
         } else {
             buffer = new EventQueue(this);

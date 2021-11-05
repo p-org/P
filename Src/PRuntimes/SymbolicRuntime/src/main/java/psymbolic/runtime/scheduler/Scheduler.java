@@ -6,6 +6,7 @@ import psymbolic.commandline.Program;
 import psymbolic.runtime.*;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
+import psymbolic.runtime.machine.Monitor;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.bdd.BDDEngine;
@@ -101,7 +102,6 @@ public class Scheduler implements SymbolicSearch {
      * @param machines The machines initially in the Scheduler
      */
     public Scheduler(PSymConfiguration config, Machine... machines) {
-
         this.configuration = config;
         this.schedule = getNewSchedule();
         this.machines = new ArrayList<>();

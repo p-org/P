@@ -93,6 +93,10 @@ public class Message implements ValueSummary<Message> {
         this(new PrimitiveVS<>(), new PrimitiveVS<>());
     }
 
+    public Message(Event name, PrimitiveVS<Machine> machine, UnionVS payload, VectorClockVS clock) {
+        this(new PrimitiveVS<>(name), machine, payload, clock);
+    }
+
     public Message(Event name, PrimitiveVS<Machine> machine, UnionVS payload) {
         this(new PrimitiveVS<>(name), machine, payload);
     }

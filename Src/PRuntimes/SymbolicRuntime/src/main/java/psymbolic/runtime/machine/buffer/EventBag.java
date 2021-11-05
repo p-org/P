@@ -22,20 +22,26 @@ public class EventBag extends SymbolicBag<Message> implements EventBuffer {
     }
 
     @Override
-    public void send(Guard pc, PrimitiveVS<Machine> dest, PrimitiveVS<Event> event, UnionVS payload) {
-        TraceLogger.send(new Message(event, dest, payload).restrict(pc));
-        this.add(new Message(event, dest, payload).restrict(pc));
+    public void send(Guard pc, PrimitiveVS<Machine> dest, PrimitiveVS<Event> eventName, UnionVS payload) {
+        if (eventName.getGuardedValues().size() > 1) {
+            throw new RuntimeException("Not Implemented");
+        }
+        TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
         if (sender != null)
             sender.incrementClock(pc);
+        add(new Message(eventName, dest, payload, sender.getClock()).restrict(pc));
     }
 
     @Override
     public PrimitiveVS<Machine> create(Guard pc, Scheduler scheduler, Class<? extends Machine> machineType, UnionVS payload, Function<Integer, ? extends Machine> constructor) {
         PrimitiveVS<Machine> machine = scheduler.allocateMachine(pc, machineType, constructor);
         if (payload != null) payload = payload.restrict(pc);
-        add(new Message(Event.createMachine, machine, payload).restrict(pc));
+        if (sender != null)
+            sender.incrementClock(pc);
+        add(new Message(Event.createMachine, machine, payload, sender.getClock()).restrict(pc));
         return machine;
     }
+
     @Override
     public PrimitiveVS<Boolean> satisfiesPredUnderGuard(Function<Message, PrimitiveVS<Boolean>> pred) {
         Guard cond = this.getElements().getNonEmptyUniverse();

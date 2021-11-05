@@ -56,10 +56,10 @@ public class PSymOptions {
                 .build();
         options.addOption(maxSchedBound);
 
-        // whether or not to disable receiver queue restriction
-        Option receiverQueue = Option.builder("nrq")
-                .longOpt("no-receiver-queue")
-                .desc("Disable receiver queue semantics restriction")
+        // whether or not to disable receiver queue semantics
+        Option receiverQueue = Option.builder("rq")
+                .longOpt("receiver-queue")
+                .desc("Disable sender queue reduction to get receiver queue semantics")
                 .numberOfArgs(0)
                 .build();
         options.addOption(receiverQueue);
@@ -71,6 +71,14 @@ public class PSymOptions {
                 .numberOfArgs(0)
                 .build();
         options.addOption(collectStats);
+
+        // whether or not to use DPOR
+        Option dpor = Option.builder("dpor")
+                .longOpt("use-dpor")
+                .desc("Enable use of DPOR")
+                .numberOfArgs(0)
+                .build();
+        options.addOption(dpor);
 
         // set the level of verbosity
         Option verbosity = Option.builder("v")
@@ -159,13 +167,18 @@ public class PSymOptions {
                         formatter.printHelp("v", String.format("Expected an integer value (0, 1 or 2), got %s", option.getValue()), options, "Try \"--help\" option for details.");
                     }
                     break;
-                case "nrq":
-                case "no-receiver-queue":
-                    config.setAddReceiverQueueSemantics(false);
+                case "rq":
+                case "receiver-queue":
+                    config.setAddReceiverQueueSemantics(true);
+                    config.setUseBagSemantics(true);
                     break;
                 case "s":
                 case "stats":
                     config.setCollectStats(true);
+                    break;
+                case "dpor":
+                case "use-dpor":
+                    config.setDpor(true);
                     break;
                 case "h":
                 case "help":

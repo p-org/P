@@ -95,7 +95,7 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
         VectorClockVS extended = this.extend(vc.size());
         VectorClockVS extendedVc = vc.extend(this.size());
         PrimitiveVS<Integer> result = new PrimitiveVS<>(0);
-        PrimitiveVS<Boolean> inRange = extended.clock.inRange(idx);
+        PrimitiveVS<Boolean> inRange = extended.clock.inRange(idx).restrict(vc.getUniverse());
         // compare clocks of the same size
         while (inRange.hasValue(true)) {
             Guard cond = inRange.getGuardFor(true);
@@ -111,7 +111,7 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
                         } else return 2;
                     });
             idx++;
-            inRange = extended.clock.inRange(idx);
+            inRange = extended.clock.inRange(idx).restrict(vc.getUniverse());
         }
         return result;
     }

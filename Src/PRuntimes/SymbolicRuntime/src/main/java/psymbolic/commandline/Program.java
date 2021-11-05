@@ -1,7 +1,7 @@
 package psymbolic.commandline;
 
 import psymbolic.runtime.Event;
-import psymbolic.runtime.Monitor;
+import psymbolic.runtime.machine.Monitor;
 import psymbolic.runtime.scheduler.Scheduler;
 import psymbolic.runtime.machine.Machine;
 

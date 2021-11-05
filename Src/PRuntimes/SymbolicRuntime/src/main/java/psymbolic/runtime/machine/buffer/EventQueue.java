@@ -27,7 +27,7 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer {
         TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
         if (sender != null)
             sender.incrementClock(pc);
-        enqueue(new Message(eventName, dest, payload).restrict(pc));
+        enqueue(new Message(eventName, dest, payload, sender.getClock()).restrict(pc));
     }
 
     public PrimitiveVS<Machine> create(
@@ -39,7 +39,9 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer {
     ) {
         PrimitiveVS<Machine> machine = scheduler.allocateMachine(pc, machineType, constructor);
         if (payload != null) payload = payload.restrict(pc);
-        enqueue(new Message(Event.createMachine, machine, payload).restrict(pc));
+        if (sender != null)
+            sender.incrementClock(pc);
+        enqueue(new Message(Event.createMachine, machine, payload, sender.getClock()).restrict(pc));
         return machine;
     }
 

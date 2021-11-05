@@ -18,6 +18,10 @@ public class Schedule {
     public Guard getFilter() { return filter; }
     public void resetFilter() { filter = Guard.constTrue(); }
 
+    public Choice newChoice() {
+        return new Choice();
+    }
+
     public class Choice {
         @Getter
         PrimitiveVS<Machine> repeatSender = new PrimitiveVS<>();
@@ -67,11 +71,11 @@ public class Schedule {
         }
 
         public boolean isBacktrackEmpty() {
-            return backtrackSender.isEmpty() && backtrackBool.isEmpty() && backtrackInt.isEmpty() && backtrackElement.isEmpty();
+            return getBacktrackSender().isEmpty() && getBacktrackBool().isEmpty() && getBacktrackInt().isEmpty() && getBacktrackElement().isEmpty();
         }
 
         public Choice restrict(Guard pc) {
-            Choice c = new Choice();
+            Choice c = newChoice();
             c.repeatSender = repeatSender.restrict(pc);
             c.repeatBool = repeatBool.restrict(pc);
             c.repeatInt = repeatInt.restrict(pc);
@@ -85,7 +89,6 @@ public class Schedule {
 
         public void updateHandledUniverse(Guard update) {
             handledUniverse = handledUniverse.or(update);
-
         }
 
         public void addRepeatSender(PrimitiveVS<Machine> choice) {
@@ -136,6 +139,8 @@ public class Schedule {
 
     private List<Choice> choices = new ArrayList<>();
 
+    public List<Choice> getChoices() { return choices; }
+
     public Choice getChoice(int d) {
         return choices.get(d);
     }
@@ -154,35 +159,35 @@ public class Schedule {
 
     public void addRepeatSender(PrimitiveVS<Machine> choice, int depth) {
         if (depth >= choices.size()) {
-            choices.add(new Choice());
+            choices.add(newChoice());
         }
         choices.get(depth).addRepeatSender(choice);
     }
 
     public void addRepeatBool(PrimitiveVS<Boolean> choice, int depth) {
         if (depth >= choices.size()) {
-            choices.add(new Choice());
+            choices.add(newChoice());
         }
         choices.get(depth).addRepeatBool(choice);
     }
 
     public void addRepeatInt(PrimitiveVS<Integer> choice, int depth) {
         if (depth >= choices.size()) {
-            choices.add(new Choice());
+            choices.add(newChoice());
         }
         choices.get(depth).addRepeatInt(choice);
     }
 
     public void addRepeatElement(PrimitiveVS<ValueSummary> choice, int depth) {
         if (depth >= choices.size()) {
-            choices.add(new Choice());
+            choices.add(newChoice());
         }
         choices.get(depth).addRepeatElement(choice);
     }
 
     public void addBacktrackSender(List<PrimitiveVS<Machine>> machines, int depth) {
         if (depth >= choices.size()) {
-            choices.add(new Choice());
+            choices.add(newChoice());
         }
         for (PrimitiveVS<Machine> choice : machines) {
             choices.get(depth).addBacktrackSender(choice);
@@ -191,7 +196,7 @@ public class Schedule {
 
     public void addBacktrackBool(List<PrimitiveVS<Boolean>> bools, int depth) {
         if (depth >= choices.size()) {
-            choices.add(new Choice());
+            choices.add(newChoice());
         }
         for (PrimitiveVS<Boolean> choice : bools) {
             choices.get(depth).addBacktrackBool(choice);
@@ -200,7 +205,7 @@ public class Schedule {
 
     public void addBacktrackInt(List<PrimitiveVS<Integer>> ints, int depth) {
         if (depth >= choices.size()) {
-            choices.add(new Choice());
+            choices.add(newChoice());
         }
         for (PrimitiveVS<Integer> choice : ints) {
             choices.get(depth).addBacktrackInt(choice);
@@ -209,7 +214,7 @@ public class Schedule {
 
     public void addBacktrackElement(List<PrimitiveVS<ValueSummary>> elements, int depth) {
         if (depth >= choices.size()) {
-            choices.add(new Choice());
+            choices.add(newChoice());
         }
         for (PrimitiveVS<ValueSummary> choice : elements) {
             choices.get(depth).addBacktrackElement(choice);

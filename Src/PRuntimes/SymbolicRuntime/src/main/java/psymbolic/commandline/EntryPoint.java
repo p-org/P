@@ -3,6 +3,7 @@ package psymbolic.commandline;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
 import psymbolic.runtime.scheduler.ReplayScheduler;
+import psymbolic.runtime.scheduler.DPORScheduler;
 import psymbolic.runtime.logger.PSymLogger;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.valuesummary.bdd.BDDEngine;
@@ -19,6 +20,7 @@ public class EntryPoint {
         BDDEngine.reset();
         PSymLogger.ResetAllConfigurations(config.getVerbosity());
         IterativeBoundedScheduler scheduler = new IterativeBoundedScheduler(config);
+        if (config.isDpor()) scheduler = new DPORScheduler(config);
         p.setScheduler(scheduler);
         start = Instant.now();
         try {

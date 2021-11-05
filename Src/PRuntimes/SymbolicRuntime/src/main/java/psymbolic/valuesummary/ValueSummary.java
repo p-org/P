@@ -29,15 +29,29 @@ public interface ValueSummary<T extends ValueSummary<T>> {
          Class<? extends ValueSummary> type = def.getClass();
          Guard typeGuard = anyVal.getGuardFor(type);
          Guard pcNotDefined = pc.and(typeGuard.not());
-         if (!pcNotDefined.isFalse()) {
+         Guard pcDefined = pc.and(typeGuard);
+         if (pcDefined.isFalse()) {
              if (type.equals(PrimitiveVS.class)) {
                  return new PrimitiveVS<>(pc);
              }
+             System.out.println(anyVal.restrict(typeGuard));
              throw new ClassCastException(String.format("Casting to %s under path constraint %s is not defined",
                      type,
                      pcNotDefined));
          }
          result = anyVal.getValue(type).restrict(pc);
+/*
+         if (!pcNotDefined.isFalse()) {
+             if (type.equals(PrimitiveVS.class)) {
+                 return new PrimitiveVS<>(pc);
+             }
+             System.out.println(anyVal.restrict(typeGuard));
+             throw new ClassCastException(String.format("Casting to %s under path constraint %s is not defined",
+                     type,
+                     pcNotDefined));
+         }
+         result = anyVal.getValue(type).restrict(pc);
+*/
          /*
          if (type.equals(NamedTupleVS.class)) {
              NamedTupleVS namedTupleDefault = (NamedTupleVS) def.restrict(pc);

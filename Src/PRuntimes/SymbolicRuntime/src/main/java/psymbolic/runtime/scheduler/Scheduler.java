@@ -51,6 +51,11 @@ public class Scheduler implements SymbolicSearch {
      */
     public boolean addReceiverQueueSemantics() { return configuration.isAddReceiverQueueSemantics(); }
 
+    /** Get whether to use sleep setes
+     * @return whether to use sleep sets
+     */
+    public boolean useSleepSets() { return configuration.isUseSleepSets(); }
+
     /** Current depth of exploration */
     private int depth = 0;
     /** Whether or not search is done */
@@ -90,7 +95,7 @@ public class Scheduler implements SymbolicSearch {
     /** Make new schedule
      * @return A new Schedule instance */
     public Schedule getNewSchedule() {
-        return new Schedule();
+        return new Schedule(this.useSleepSets());
     }
 
     /** Get the schedule
@@ -327,6 +332,7 @@ public class Scheduler implements SymbolicSearch {
         for (GuardedValue<Machine> guardedValue : guardedMachines) {
             candidateSenders.add(new PrimitiveVS<>(guardedValue.getValue()).restrict(guardedValue.getGuard()));
         }
+        candidateSenders = getSchedule().filterSleep(candidateSenders);
         return candidateSenders;
     }
 

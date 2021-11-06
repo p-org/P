@@ -43,6 +43,10 @@ public class PSymConfiguration {
     private boolean addReceiverQueueSemantics = false;
 
     @Getter @Setter
+    // use symbolic sleep sets
+    private boolean useSleepSets = false;
+
+    @Getter @Setter
     // turn all sender queues into bags -- currently not implemented
     private boolean useBagSemantics = false;
 

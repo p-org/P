@@ -2,15 +2,14 @@ package psymbolic.runtime.scheduler;
 
 import lombok.Getter;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.valuesummary.Guard;
-import psymbolic.valuesummary.ListVS;
-import psymbolic.valuesummary.PrimitiveVS;
-import psymbolic.valuesummary.ValueSummary;
+import psymbolic.valuesummary.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class Schedule {
+
+    private final boolean useSleepSets;
 
     private Guard filter = Guard.constTrue();
 
@@ -20,6 +19,17 @@ public class Schedule {
 
     public Choice newChoice() {
         return new Choice();
+    }
+
+    Map<Machine, SetVS<PrimitiveVS<Machine>>> sleepTargetToSender = new HashMap<>();
+
+    public List<PrimitiveVS> filterSleep (List<PrimitiveVS> candidates) {
+        if (!useSleepSets) return candidates;
+        List<PrimitiveVS> filtered = candidates;
+        for (Map.Entry<Machine, SetVS<PrimitiveVS<Machine>>> entry : sleepTargetToSender.entrySet()) {
+            filtered = filtered.stream().map(x -> x.restrict(entry.getValue().contains(x).getGuardFor(true).not())).collect(Collectors.toList());
+        }
+        return filtered;
     }
 
     public class Choice {
@@ -93,6 +103,25 @@ public class Schedule {
 
         public void addRepeatSender(PrimitiveVS<Machine> choice) {
             repeatSender = choice;
+            if (!useSleepSets) return;
+            Guard seen = Guard.constFalse();
+            Guard choiceUniverse = choice.getUniverse();
+            for (GuardedValue<Machine> gv : choice.getGuardedValues()) {
+                Guard initCond = gv.getValue().sendBuffer.hasCreateMachineUnderGuard().getGuardFor(true);
+                seen = seen.or(gv.getGuard());
+                PrimitiveVS<Machine> target = gv.getValue().sendBuffer.peek(gv.getGuard().and(initCond.not())).getTarget();
+                for (GuardedValue<Machine> tgt : target.restrict(seen).getGuardedValues()) {
+                    Machine targetMachine = tgt.getValue();
+                    if (!sleepTargetToSender.containsKey(targetMachine)) sleepTargetToSender.put(targetMachine, new SetVS<>(Guard.constTrue()));
+                    // add to sleep set:
+                    SetVS<PrimitiveVS<Machine>> senders = sleepTargetToSender.get(targetMachine);
+                    sleepTargetToSender.put(targetMachine, senders.add(new PrimitiveVS<Machine>(gv.getValue()).restrict(seen.not())));
+                    // remove from sleep set:
+                    senders = sleepTargetToSender.get(targetMachine);
+                    Guard toRemoveGuard = sleepTargetToSender.get(targetMachine).restrict(seen.and(senders.getUniverse())).getUniverse();
+                    sleepTargetToSender.put(targetMachine, senders.updateUnderGuard(toRemoveGuard, new SetVS<>(toRemoveGuard)));
+                }
+            }
         }
 
         public void addRepeatBool(PrimitiveVS<Boolean> choice) {
@@ -105,6 +134,10 @@ public class Schedule {
 
         public void addRepeatElement(PrimitiveVS<ValueSummary> choice) {
             repeatElement = choice;
+        }
+
+        public void clearRepeatSender() {
+            repeatSender = new PrimitiveVS<>();
         }
 
         public void clearRepeat() {
@@ -277,17 +310,22 @@ public class Schedule {
 
     private Guard pc = Guard.constTrue();
 
-    public Schedule() {
+    public Schedule() { this.useSleepSets = false; }
+
+    public Schedule(boolean useSleepSets) {
+        this.useSleepSets = useSleepSets;
     }
 
     private Schedule(List<Choice> choices,
                      Map<Class<? extends Machine>, ListVS<PrimitiveVS<Machine>>> createdMachines,
                      Set<Machine> machines,
-                     Guard pc) {
+                     Guard pc,
+                     boolean useSleepSets) {
         this.choices = new ArrayList<>(choices);
         this.createdMachines = new HashMap<>(createdMachines);
         this.machines = new HashSet<>(machines);
         this.pc = pc;
+        this.useSleepSets = useSleepSets;
     }
 
     public Set<Machine> getMachines() {
@@ -299,7 +337,7 @@ public class Schedule {
         for (Choice c : choices) {
             newChoices.add(c.restrict(pc));
         }
-        return new Schedule(newChoices, createdMachines, machines, pc);
+        return new Schedule(newChoices, createdMachines, machines, pc, useSleepSets);
     }
 
     public Schedule removeEmptyRepeat() {
@@ -309,7 +347,7 @@ public class Schedule {
                 newChoices.add(choices.get(i));
             }
         }
-        return new Schedule(newChoices, createdMachines, machines, pc);
+        return new Schedule(newChoices, createdMachines, machines, pc, useSleepSets);
     }
 
     public void makeMachine(Machine m, Guard pc) {

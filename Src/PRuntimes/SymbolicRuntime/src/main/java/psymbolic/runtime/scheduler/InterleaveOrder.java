@@ -14,10 +14,18 @@ public class InterleaveOrder implements MessageOrder {
     public Guard lessThan (Message m0, Message m1) {
         PrimitiveVS<Event> e0 = m0.getEvent();
         PrimitiveVS<Event> e1 = m1.getEvent();
+        PrimitiveVS<Event> readResp = new PrimitiveVS<>(new Event("eReadResp"));
+        PrimitiveVS<Event> readReq = new PrimitiveVS<>(new Event("eReadIndexReq"));
+        PrimitiveVS<Event> update = new PrimitiveVS<>(new Event("eUpdateIndexReq"));
         PrimitiveVS<Event> acquire = new PrimitiveVS<>(new Event("eAcquireLock"));
         PrimitiveVS<Event> release = new PrimitiveVS<>(new Event("eReleaseLock"));
         PrimitiveVS<Event> prepare = new PrimitiveVS<>(new Event("ePrepareReq"));
         PrimitiveVS<Event> prepareResponse = new PrimitiveVS<>(new Event("ePrepareResp"));
+        Guard readRespCond0 = e0.symbolicEquals(readResp, e0.getUniverse()).getGuardFor(true);
+        Guard readRespCond1 = e1.symbolicEquals(readResp, e1.getUniverse()).getGuardFor(true);
+        Guard readReqCond0 = e0.symbolicEquals(readReq, e0.getUniverse()).getGuardFor(true);
+        Guard readReqCond1 = e1.symbolicEquals(readReq, e1.getUniverse()).getGuardFor(true);
+        Guard updateCond1 = e1.symbolicEquals(update, e1.getUniverse()).getGuardFor(true);
         Guard acquireCond0 = e0.symbolicEquals(acquire, e0.getUniverse()).getGuardFor(true);
         Guard acquireCond1 = e1.symbolicEquals(acquire, e1.getUniverse()).getGuardFor(true);
         Guard releaseCond0 = e0.symbolicEquals(release, e0.getUniverse()).getGuardFor(true);
@@ -27,7 +35,9 @@ public class InterleaveOrder implements MessageOrder {
         Guard prepareResponseCond0 = e0.symbolicEquals(prepareResponse, e0.getUniverse()).getGuardFor(true);
         Guard prepareResponseCond1 = e1.symbolicEquals(prepareResponse, e1.getUniverse()).getGuardFor(true);
         return acquireCond0.and(releaseCond1).or(acquireCond1.and(releaseCond0)).or(
-               prepareCond0.and(prepareResponseCond1).or(prepareCond1.and(prepareResponseCond0)));
+               prepareCond0.and(prepareResponseCond1).or(prepareCond1.and(prepareResponseCond0))).or(
+               readReqCond0.and(readReqCond1)).or(
+               readRespCond0.and(readReqCond1));
     }
 
 /*

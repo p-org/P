@@ -59,7 +59,7 @@ public class PSymOptions {
         // whether or not to disable receiver queue semantics
         Option receiverQueue = Option.builder("rq")
                 .longOpt("receiver-queue")
-                .desc("Disable sender queue reduction to get receiver queue semantics")
+                .desc("Disable sender queue reduction to get receiver queue semantics (not implemented)")
                 .numberOfArgs(0)
                 .build();
         options.addOption(receiverQueue);
@@ -71,6 +71,14 @@ public class PSymOptions {
                 .numberOfArgs(0)
                 .build();
         options.addOption(collectStats);
+
+        // whether or not to use symbolic exploration sleep sets
+        Option sleep = Option.builder("sl")
+                .longOpt("sleep-sets")
+                .desc("Enable frontier sleep sets")
+                .numberOfArgs(0)
+                .build();
+        options.addOption(sleep);
 
         // whether or not to use DPOR
         Option dpor = Option.builder("dpor")
@@ -171,6 +179,10 @@ public class PSymOptions {
                 case "receiver-queue":
                     config.setAddReceiverQueueSemantics(true);
                     config.setUseBagSemantics(true);
+                    break;
+                case "sl":
+                case "sleep-sets":
+                    config.setUseSleepSets(true);
                     break;
                 case "s":
                 case "stats":

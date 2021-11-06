@@ -596,7 +596,6 @@ namespace Plang.Compiler.Backend.Symbolic
                                  }
                                  // call the function
                                  FunCallStmt recCall = new FunCallStmt(loop.SourceLocation, rec, recArgs);
-                                 loopBody.Add(recCall);
                                  loopBody = new List<IPStmt>(((CompoundStmt) HandleReceives(new CompoundStmt(rec.SourceLocation, loopBody), rec, machine)).Statements);
                                  rec.Body = new CompoundStmt(rec.SourceLocation, loopBody);
                                  if (machine != null) machine.AddMethod(rec);
@@ -607,9 +606,12 @@ namespace Plang.Compiler.Backend.Symbolic
                                  }
                                  // replace the while statement with a function call
                                  result.Add(recCall);
-                                 foreach (var stmt in after.Statements)
+                                 if (after != null)
                                  {
-                                     result.Add(ReplaceVars(stmt, newVarMap));
+                                     foreach (var stmt in after.Statements)
+                                     {
+                                         result.Add(ReplaceVars(stmt, newVarMap));
+                                     }
                                  }
                                  whileNumber++;
                                  break;

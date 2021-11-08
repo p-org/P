@@ -10,6 +10,7 @@ import psymbolic.runtime.machine.Monitor;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.bdd.BDDEngine;
+import psymbolic.runtime.machine.buffer.*;
 
 import java.util.*;
 import java.util.function.Function;
@@ -50,6 +51,11 @@ public class Scheduler implements SymbolicSearch {
      * @return whether to intersect with receiver queue semantics
      */
     public boolean addReceiverQueueSemantics() { return configuration.isAddReceiverQueueSemantics(); }
+
+    /** Get whether to use bag semantics
+     * @return whether to use bag semantics
+     */
+    public boolean useBagSemantics() { return configuration.isUseBagSemantics(); }
 
     /** Get whether to use sleep setes
      * @return whether to use sleep sets
@@ -485,6 +491,9 @@ public class Scheduler implements SymbolicSearch {
 
         TraceLogger.onCreateMachine(pc, newMachine);
         newMachine.setScheduler(this);
+        if (useBagSemantics()) {
+            newMachine.setSemantics(EventBufferSemantics.bag);
+        }
         schedule.makeMachine(newMachine, pc);
 
         guardedCount = IntegerVS.add(guardedCount, 1);

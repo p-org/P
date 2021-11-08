@@ -14,59 +14,65 @@ machine SharedArray {
                         }
 		}
 
-	on eReadIndexReq do (payload: (int, machine)) {
-		send payload.1, eReadResp, array[payload.0];
+	on eReadIndexReq do (pld: (int, machine)) {
+		send pld.1, eReadResp, array[pld.0];
 	}
 
-	on eUpdateIndexReq do (payload: (int, int)){
-		array[payload.0] = payload.1;
+	on eUpdateIndexReq do (pld: (int, int)){
+		array[pld.0] = pld.1;
 	}
    }
 }
 
-fun ReadAtIndex(s: machine, i: int, thread: machine) : int{
-	var ret: int;
-	send s, eReadIndexReq, (i, thread);
-	receive {
-		case eReadResp: (val: int) {
-			ret = val;
-		}
-	}
-	return ret;
-}
-
-fun UpdateAtIndex(sharedArray: machine, i: int, val: int) {
-	var ret: int;
-	send sharedArray, eUpdateIndexReq, (i, val);
-}
-
 
 machine ThreadZero {
+        var read:int;
 	start state Init {
-		entry (payload : (m:machine, n:int)) {
+		entry (pld : (m:machine, n:int)) {
                         var i:int;
-                        var read:int;
-                        i = payload.n;
+                        i = pld.n;
                         read = 1; 
                         while (read != 0) {
-                           read = ReadAtIndex(payload.m, i, this);
+                           ZeroReadAtIndex(pld.m, i, this);
                            i = i - 1;
                         }
 		}
 
 	}
+        fun ZeroReadAtIndex(s: machine, i: int, thread: machine) {
+        	send s, eReadIndexReq, (i, thread);
+        	receive {
+        		case eReadResp: (val: int) {
+        			read = val;
+        		}
+        	}
+        }
+
 }
 
 machine ThreadI {
+        var read:int;
 	
 	start state Init {
-		entry(payload : (m:machine, j:int)) {
-                        var read:int;
-                        read = ReadAtIndex(payload.m, payload.j - 1, this);
-                        UpdateAtIndex(payload.m, payload.j, read + 1);
+		entry(pld : (m:machine, j:int)) {
+                        ReadAtIndex(pld.m, pld.j - 1, this);
+                        UpdateAtIndex(pld.m, pld.j, read + 1);
 		}
 
 	}
+
+        fun ReadAtIndex(s: machine, i: int, thread: machine) {
+        	send s, eReadIndexReq, (i, thread);
+        	receive {
+        		case eReadResp: (val: int) {
+        			read = val;
+        		}
+        	}
+        }
+
+        fun UpdateAtIndex(sharedArray: machine, i: int, val: int) {
+        	send sharedArray, eUpdateIndexReq, (i, val);
+        }
 }
 
 machine Main {

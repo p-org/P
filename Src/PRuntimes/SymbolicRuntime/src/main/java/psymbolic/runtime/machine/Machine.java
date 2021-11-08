@@ -19,18 +19,18 @@ import lombok.Setter;
 
 public abstract class Machine {
 
-    private static boolean allBag = false;
-
+    @Setter
+    private EventBufferSemantics semantics;
     private String name;
     private int instanceId;
-    @Getter @Setter
+    @Getter
     private Scheduler scheduler;
     private final State startState;
     private final Set<State> states;
     private PrimitiveVS<Boolean> started = new PrimitiveVS<>(false);
     private PrimitiveVS<Boolean> halted = new PrimitiveVS<>(false);
     private PrimitiveVS<State> currentState;
-    public final EventBuffer sendBuffer;
+    public EventBuffer sendBuffer;
     public final DeferQueue deferredQueue;
     // note: will not work for receives in functions outside the machine
     private PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> receives = new PrimitiveVS<>();
@@ -39,6 +39,10 @@ public abstract class Machine {
     @Getter
     // the vector clock for the machine
     private VectorClockVS clock = new VectorClockVS(Guard.constTrue());
+
+    public void setScheduler(Scheduler scheduler) {
+        this.scheduler = scheduler;
+    }
 
     public void receive(String continuationName, Guard pc) {
         PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> handler = new PrimitiveVS<>(continuations.get(continuationName)).restrict(pc);
@@ -67,9 +71,10 @@ public abstract class Machine {
     public void reset() {
         started = new PrimitiveVS<>(false);
         currentState = new PrimitiveVS<>(startState);
-        while (!sendBuffer.isEmpty()) {
-            Guard cond = sendBuffer.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true);
-            sendBuffer.remove(sendBuffer.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
+        if (semantics == EventBufferSemantics.bag) {
+            this.sendBuffer = new EventBag(this);
+        } else {
+            this.sendBuffer = new EventQueue(this);
         }
         while (!deferredQueue.isEmpty()) {
             deferredQueue.dequeueEntry(deferredQueue.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
@@ -79,12 +84,25 @@ public abstract class Machine {
         clock = new VectorClockVS(Guard.constTrue());
     }
 
+    public void setSemantics(EventBufferSemantics semantics) {
+        if (this.sendBuffer != null && !this.sendBuffer.isEmpty() && this.semantics != semantics) {
+            throw new RuntimeException("Cannot change buffer semantics when buffer not empty");
+        }
+        this.semantics = semantics;
+        if (semantics == EventBufferSemantics.bag) {
+            this.sendBuffer = new EventBag(this);
+        } else {
+            this.sendBuffer = new EventQueue(this);
+        }
+    }
+
     public Machine(String name, int id, EventBufferSemantics semantics, State startState, State... states) {
         this.name = name;
         this.instanceId = id;
 
+        this.semantics = semantics;
         EventBuffer buffer;
-        if (allBag || semantics == EventBufferSemantics.bag) {
+        if (semantics == EventBufferSemantics.bag) {
             buffer = new EventBag(this);
         } else {
             buffer = new EventQueue(this);

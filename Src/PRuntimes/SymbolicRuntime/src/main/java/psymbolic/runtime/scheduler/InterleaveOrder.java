@@ -2,8 +2,8 @@ package psymbolic.runtime.scheduler;
 
 import psymbolic.runtime.Event;
 import psymbolic.runtime.Message;
-import psymbolic.valuesummary.Guard;
-import psymbolic.valuesummary.PrimitiveVS;
+import psymbolic.runtime.machine.*;
+import psymbolic.valuesummary.*;
 
 public class InterleaveOrder implements MessageOrder {
 
@@ -25,6 +25,18 @@ public class InterleaveOrder implements MessageOrder {
         Guard readRespCond1 = e1.symbolicEquals(readResp, e1.getUniverse()).getGuardFor(true);
         Guard readReqCond0 = e0.symbolicEquals(readReq, e0.getUniverse()).getGuardFor(true);
         Guard readReqCond1 = e1.symbolicEquals(readReq, e1.getUniverse()).getGuardFor(true);
+
+        Guard bothReads = readReqCond0.and(readReqCond1);
+        Guard readAtLessElement = Guard.constFalse();
+        for (GuardedValue<Machine> gv0 : m0.getTarget().getGuardedValues()) {
+            for (GuardedValue<Machine> gv1 : m1.getTarget().getGuardedValues()) {
+                if (gv0.getValue().getInstanceId() < gv1.getValue().getInstanceId()) {
+                    readAtLessElement = readAtLessElement.or(gv0.getGuard().and(gv1.getGuard()));
+                }
+            }
+        }
+        readAtLessElement = readAtLessElement.and(bothReads);
+
         Guard updateCond0 = e0.symbolicEquals(update, e0.getUniverse()).getGuardFor(true);
         Guard updateCond1 = e1.symbolicEquals(update, e1.getUniverse()).getGuardFor(true);
         Guard acquireCond0 = e0.symbolicEquals(acquire, e0.getUniverse()).getGuardFor(true);
@@ -37,7 +49,7 @@ public class InterleaveOrder implements MessageOrder {
         Guard prepareResponseCond1 = e1.symbolicEquals(prepareResponse, e1.getUniverse()).getGuardFor(true);
         return acquireCond0.and(releaseCond1).or(acquireCond1.and(releaseCond0)).or(
                prepareCond0.and(prepareResponseCond1).or(prepareCond1.and(prepareResponseCond0))).or(
-               readRespCond0.and(readRespCond1.or(readReqCond1))).or(updateCond0.and(updateCond1));
+               readRespCond0.and(readRespCond1.or(readReqCond1))).or(updateCond0.and(updateCond1)).or(readAtLessElement);
                //readRespCond0.and(readRespCond1.or(updateCond1).or(readReqCond1))).or(updateCond0.and(updateCond1));
     }
 

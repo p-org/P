@@ -22,6 +22,10 @@ public class SearchStats {
         // iteration number
         private int iteration;
 
+        // iteration number
+        @Getter
+        private int startDepth;
+
         // per depth statistics during this iteration
         private HashMap<Integer, DepthStats> perDepthStats;
 
@@ -29,9 +33,10 @@ public class SearchStats {
             perDepthStats.put(depth, stats);
         }
 
-        public IterationStats(int iterationNumber)
+        public IterationStats(int iterationNumber, int startDepth)
         {
             iteration = iterationNumber;
+            this.startDepth = startDepth;
             perDepthStats = new HashMap<>();
         }
 
@@ -43,9 +48,29 @@ public class SearchStats {
             int totalTransitionsExplored = 0;
             for(var entry: perDepthStats.entrySet())
             {
-                if(entry.getKey() > maxDepth)
-                {
+                if (entry.getKey() > maxDepth) {
                     maxDepth = entry.getKey();
+                }
+                totalTransitions += entry.getValue().numOfTransitions;
+                totalMergedTransitions += entry.getValue().numOfMergedTransitions;
+                totalTransitionsExplored += entry.getValue().numOfTransitionsExplored;
+            }
+
+            return new DepthStats(maxDepth, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
+        }
+
+        public DepthStats getIterationNewTotal()
+        {
+            int maxDepth = 0;
+            int totalTransitions = 0;
+            int totalMergedTransitions = 0;
+            int totalTransitionsExplored = 0;
+            for(var entry: perDepthStats.entrySet())
+            {
+                if(entry.getKey() >= startDepth) {
+                    if (entry.getKey() > maxDepth) {
+                        maxDepth = entry.getKey();
+                    }
                     totalTransitions += entry.getValue().numOfTransitions;
                     totalMergedTransitions += entry.getValue().numOfMergedTransitions;
                     totalTransitionsExplored += entry.getValue().numOfTransitionsExplored;
@@ -87,9 +112,9 @@ public class SearchStats {
         iterationStats.get(iterationStats.size()-1).addDepthStatistics(depth, depthStats);
     }
 
-    public void startNewIteration(int iteration)
+    public void startNewIteration(int iteration, int backtrack)
     {
-        iterationStats.add(new IterationStats(iteration));
+        iterationStats.add(new IterationStats(iteration, backtrack));
     }
 
     public DepthStats getSearchTotal()
@@ -100,13 +125,12 @@ public class SearchStats {
         int totalTransitionsExplored = 0;
         for(var entry: iterationStats)
         {
-            if(entry.getIterationTotal().getDepth() > maxDepth)
-            {
-                maxDepth = entry.getIterationTotal().getDepth();
-                totalTransitions += entry.getIterationTotal().getNumOfTransitions();
-                totalMergedTransitions += entry.getIterationTotal().getNumOfMergedTransitions();
-                totalTransitionsExplored += entry.getIterationTotal().getNumOfTransitionsExplored();
+            if (entry.getIterationNewTotal().getDepth() > maxDepth) {
+                maxDepth = entry.getIterationNewTotal().getDepth();
             }
+            totalTransitions += entry.getIterationNewTotal().getNumOfTransitions();
+            totalMergedTransitions += entry.getIterationNewTotal().getNumOfMergedTransitions();
+            totalTransitionsExplored += entry.getIterationNewTotal().getNumOfTransitionsExplored();
         }
 
         return new DepthStats(maxDepth, totalTransitions, totalMergedTransitions, totalTransitionsExplored);

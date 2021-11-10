@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class IterativeBoundedScheduler extends Scheduler {
 
     int iter = 0;
+    private int backtrack = 0;
 
     private boolean isDoneIterating = false;
 
@@ -35,7 +36,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void doSearch(Program p) {
         while (!isDoneIterating) {
             SearchLogger.log("Starting Iteration: " + iter);
-            searchStats.startNewIteration(iter);
+            searchStats.startNewIteration(iter, backtrack);
             super.doSearch(p);
             postIterationCleanup();
             SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
@@ -54,6 +55,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                     machine.reset();
                 }
                 TraceLogger.logMessage("backtrack to " + d);
+                backtrack = d;
                 TraceLogger.logMessage("pending backtracks: " + schedule.getNumBacktracks());
                 reset();
                 return;

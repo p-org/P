@@ -57,7 +57,7 @@ public class Scheduler implements SymbolicSearch {
      */
     public boolean useBagSemantics() { return configuration.isUseBagSemantics(); }
 
-    /** Get whether to use sleep setes
+    /** Get whether to use sleep sets
      * @return whether to use sleep sets
      */
     public boolean useSleepSets() { return configuration.isUseSleepSets(); }
@@ -117,7 +117,7 @@ public class Scheduler implements SymbolicSearch {
         this.schedule = getNewSchedule();
         this.machines = new ArrayList<>();
         this.machineCounters = new HashMap<>();
-        this.vcManager = new VectorClockManager(addReceiverQueueSemantics() || configuration.isDpor());
+        this.vcManager = new VectorClockManager(addReceiverQueueSemantics() || configuration.isDpor() || useSleepSets());
 
         for (Machine machine : machines) {
             this.machines.add(machine);
@@ -413,6 +413,8 @@ public class Scheduler implements SymbolicSearch {
         return getNextSender(getNextSenderChoices());
     }
 
+    private long mem = 0;
+
     public void step() {
         PrimitiveVS<Machine> choices = getNextSender();
 
@@ -451,8 +453,10 @@ public class Scheduler implements SymbolicSearch {
           Runtime runtime = Runtime.getRuntime();
           long memoryMax = runtime.maxMemory();
           long memoryUsed = runtime.totalMemory() - runtime.freeMemory();
+          if (memoryUsed > mem) mem = memoryUsed;
           double memoryUsedPercent = (memoryUsed * 100.0) / memoryMax;
-          System.out.println("memoryUsed::" + memoryUsed + ", memoryUsedPercent: " + memoryUsedPercent);
+          System.out.println("memoryUsed::" + memoryUsed + " bytes , memoryUsedPercent: " + memoryUsedPercent);
+          System.out.println("max memory used so far::" + mem + " bytes");
           System.out.println("--------------------");
         }
 

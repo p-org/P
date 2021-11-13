@@ -22,6 +22,7 @@ public abstract class Machine {
     @Setter
     private EventBufferSemantics semantics;
     private String name;
+    @Getter
     private int instanceId;
     @Getter
     private Scheduler scheduler;

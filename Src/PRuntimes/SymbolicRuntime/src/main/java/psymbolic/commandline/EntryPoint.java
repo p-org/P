@@ -31,7 +31,7 @@ public class EntryPoint {
             Guard pc = e.pathConstraint;
             ReplayScheduler replay = new ReplayScheduler(config, scheduler.getSchedule(), pc);
             p.setScheduler(replay);
-            replay.doSearch(p);
+            //replay.doSearch(p);
             e.printStackTrace();
             throw new BugFoundException("Found bug: " + e.getLocalizedMessage(), pc);
         } finally {

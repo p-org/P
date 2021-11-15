@@ -27,6 +27,9 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer {
         TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
         if (sender != null)
             sender.incrementClock(pc);
+        if (sender.getScheduler().useSleepSets()) {
+            sender.getScheduler().getSchedule().unblock(sender.getClock());
+        }
         enqueue(new Message(eventName, dest, payload, sender.getClock()).restrict(pc));
     }
 
@@ -77,4 +80,5 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer {
     public PrimitiveVS<Boolean> hasSyncEventUnderGuard() {
         return satisfiesPredUnderGuard(Message::isSyncEvent);
     }
+    
 }

@@ -50,7 +50,7 @@ public class Scheduler implements SymbolicSearch {
     /** Get whether to intersect with receiver queue semantics
      * @return whether to intersect with receiver queue semantics
      */
-    public boolean addReceiverQueueSemantics() { return configuration.isAddReceiverQueueSemantics(); }
+    public boolean useReceiverSemantics() { return configuration.isUseReceiverQueueSemantics(); }
 
     /** Get whether to use bag semantics
      * @return whether to use bag semantics
@@ -117,7 +117,7 @@ public class Scheduler implements SymbolicSearch {
         this.schedule = getNewSchedule();
         this.machines = new ArrayList<>();
         this.machineCounters = new HashMap<>();
-        this.vcManager = new VectorClockManager(addReceiverQueueSemantics() || configuration.isDpor() || useSleepSets());
+        this.vcManager = new VectorClockManager(configuration.isDpor() || useSleepSets());
 
         for (Machine machine : machines) {
             this.machines.add(machine);
@@ -326,10 +326,6 @@ public class Scheduler implements SymbolicSearch {
         }
   //      return candidateSenders;
 
-        if (addReceiverQueueSemantics()) {
-            guardedMachines = filter(guardedMachines, ReceiverQueueOrder.getInstance());
-        }
-
         if (!alwaysInterleaveNonAsync) {
             guardedMachines = filter(guardedMachines, InterleaveOrder.getInstance());
         }
@@ -342,12 +338,26 @@ public class Scheduler implements SymbolicSearch {
         return candidateSenders;
     }
 
+    private Message peekBuffer(Machine m, Guard g) {
+        if (useReceiverSemantics() && m.sendBuffer instanceof ReceiveEventQueue) {
+            return ((ReceiveEventQueue) m.sendBuffer).peekRQ(g);
+        }
+        return m.sendBuffer.peek(g);
+    }
+
+    private Message rmBuffer(Machine m, Guard g) {
+        if (useReceiverSemantics() && m.sendBuffer instanceof ReceiveEventQueue) {
+            return ((ReceiveEventQueue) m.sendBuffer).removeRQ(g);
+        }
+        return m.sendBuffer.remove(g);
+    }
+
     private List<GuardedValue<Machine>> filter(List<GuardedValue<Machine>> choices, MessageOrder order) {
         Map<Machine, Guard> filteredMap = new HashMap<>();
         Map<Machine, Message> firstElement = new HashMap<>();
         for (GuardedValue<Machine> choice : choices) {
             Machine currentMachine = choice.getValue();
-            Message current = currentMachine.sendBuffer.peek(choice.getGuard());
+            Message current = peekBuffer(currentMachine, choice.getGuard());
             Guard add = choice.getGuard();
             List<Message> remove = new ArrayList<>();
             Map<Machine, Guard> newFilteredMap = new HashMap<>();
@@ -430,7 +440,7 @@ public class Scheduler implements SymbolicSearch {
         for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
-            Message removed = machine.sendBuffer.remove(guard);
+            Message removed = rmBuffer(machine, guard);
             if (configuration.isCollectStats()) {
                 numMessages += Concretizer.getNumConcreteValues(Guard.constTrue(), removed);
             }
@@ -446,6 +456,9 @@ public class Scheduler implements SymbolicSearch {
 
         performEffect(effect);
 
+        // performing node clean-up
+        BDDEngine.UnusedNodesCleanUp();
+        System.gc();
 
         if (configuration.isCollectStats()) {
           System.out.println("--------------------");
@@ -459,10 +472,6 @@ public class Scheduler implements SymbolicSearch {
           System.out.println("max memory used so far::" + mem + " bytes");
           System.out.println("--------------------");
         }
-
-        // performing node clean-up
-        BDDEngine.UnusedNodesCleanUp();
-        System.gc();
 
         // add depth statistics
         if (configuration.isCollectStats()) {
@@ -497,6 +506,9 @@ public class Scheduler implements SymbolicSearch {
         newMachine.setScheduler(this);
         if (useBagSemantics()) {
             newMachine.setSemantics(EventBufferSemantics.bag);
+        }
+        else if (useReceiverSemantics()) {
+            newMachine.setSemantics(EventBufferSemantics.receiver);
         }
         schedule.makeMachine(newMachine, pc);
 

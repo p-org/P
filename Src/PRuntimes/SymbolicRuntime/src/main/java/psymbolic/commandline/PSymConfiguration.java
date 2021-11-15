@@ -40,7 +40,7 @@ public class PSymConfiguration {
 
     @Getter @Setter
     // intersect with receiver queue semantics
-    private boolean addReceiverQueueSemantics = false;
+    private boolean useReceiverQueueSemantics = false;
 
     @Getter @Setter
     // use symbolic sleep sets

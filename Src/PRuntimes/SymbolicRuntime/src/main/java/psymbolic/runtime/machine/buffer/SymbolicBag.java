@@ -2,10 +2,14 @@ package psymbolic.runtime.machine.buffer;
 
 import lombok.Getter;
 import psymbolic.runtime.NondetUtil;
+import psymbolic.runtime.*;
+import psymbolic.runtime.machine.*;
 import psymbolic.valuesummary.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.function.Function;
 
 /**
@@ -14,8 +18,7 @@ import java.util.function.Function;
  */
 public class SymbolicBag<T extends ValueSummary<T>> {
 
-    // items in the bad
-    @Getter
+    // items in the bag
     private ListVS<T> elements;
 
     public SymbolicBag() {
@@ -55,12 +58,6 @@ public class SymbolicBag<T extends ValueSummary<T>> {
         return enabledCond;
     }
 
-    /** Get one condition under which there is an element in the bag that satisfies the predicate
-     * @param pred The filtering predicate
-     * @return The condition under which there is an element in the bag that satisfies the pred
-     */
-
-
     public T peek(Guard pc) {
         assert (elements.getUniverse().isTrue());
         ListVS<T> filtered = elements.restrict(pc);
@@ -70,6 +67,31 @@ public class SymbolicBag<T extends ValueSummary<T>> {
         while(BooleanVS.isEverTrue(IntegerVS.lessThan(idx, size))) {
             Guard cond = IntegerVS.lessThan(idx, size).getGuardFor(true);
             choices.add(idx.restrict(cond));
+            idx = IntegerVS.add(idx, 1);
+        }
+        PrimitiveVS<Integer> index = (PrimitiveVS<Integer>) NondetUtil.getNondetChoice(choices);
+        return filtered.restrict(index.getUniverse()).get(index);
+    }
+    
+    public T peekRQ(Guard pc) {
+        assert (elements.getUniverse().isTrue());
+        ListVS<T> filtered = elements.restrict(pc);
+        PrimitiveVS<Integer> size = filtered.size();
+        List<PrimitiveVS> choices = new ArrayList<>();
+        Map<Machine, Guard> targetMap = new HashMap<>();
+        PrimitiveVS<Integer> idx = new PrimitiveVS<>(0).restrict(pc);
+        while(BooleanVS.isEverTrue(IntegerVS.lessThan(idx, size))) {
+            Guard cond = IntegerVS.lessThan(idx, size).getGuardFor(true);
+            T item = filtered.restrict(cond).get(idx);
+            Guard add = Guard.constFalse();
+            for (GuardedValue<Machine> machine : ((Message) item).getTarget().getGuardedValues()) {
+                if (!targetMap.containsKey(machine.getValue())) {
+                    targetMap.put(machine.getValue(), Guard.constFalse());
+                }
+                add = add.or(machine.getGuard().and(targetMap.get(machine.getValue()).not()));
+                targetMap.put(machine.getValue(), targetMap.get(machine.getValue()).or(machine.getGuard()));
+            }
+            choices.add(idx.restrict(cond.and(add)));
             idx = IntegerVS.add(idx, 1);
         }
         PrimitiveVS<Integer> index = (PrimitiveVS<Integer>) NondetUtil.getNondetChoice(choices);
@@ -85,6 +107,33 @@ public class SymbolicBag<T extends ValueSummary<T>> {
         while(BooleanVS.isEverTrue(IntegerVS.lessThan(idx, size))) {
             Guard cond = IntegerVS.lessThan(idx, size).getGuardFor(true);
             choices.add(idx.restrict(cond));
+            idx = IntegerVS.add(idx, 1);
+        }
+        PrimitiveVS<Integer> index = (PrimitiveVS<Integer>) NondetUtil.getNondetChoice(choices);
+        T element = filtered.restrict(index.getUniverse()).get(index);
+        elements = elements.removeAt(index);
+        return element;
+    }
+
+    public T removeRQ(Guard pc) {
+        assert (elements.getUniverse().isTrue());
+        ListVS<T> filtered = elements.restrict(pc);
+        PrimitiveVS<Integer> size = filtered.size();
+        List<PrimitiveVS> choices = new ArrayList<>();
+        Map<Machine, Guard> targetMap = new HashMap<>();
+        PrimitiveVS<Integer> idx = new PrimitiveVS<>(0).restrict(pc);
+        while(BooleanVS.isEverTrue(IntegerVS.lessThan(idx, size))) {
+            Guard cond = IntegerVS.lessThan(idx, size).getGuardFor(true);
+            T item = filtered.restrict(cond).get(idx);
+            Guard add = Guard.constFalse();
+            for (GuardedValue<Machine> machine : ((Message) item).getTarget().getGuardedValues()) {
+                if (!targetMap.containsKey(machine.getValue())) {
+                    targetMap.put(machine.getValue(), Guard.constFalse());
+                }
+                add = add.or(machine.getGuard().and(targetMap.get(machine.getValue()).not()));
+                targetMap.put(machine.getValue(), targetMap.get(machine.getValue()).or(machine.getGuard()));
+            }
+            choices.add(idx.restrict(cond.and(add)));
             idx = IntegerVS.add(idx, 1);
         }
         PrimitiveVS<Integer> index = (PrimitiveVS<Integer>) NondetUtil.getNondetChoice(choices);

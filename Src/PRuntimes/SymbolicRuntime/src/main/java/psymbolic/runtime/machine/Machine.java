@@ -92,6 +92,8 @@ public abstract class Machine {
         this.semantics = semantics;
         if (semantics == EventBufferSemantics.bag) {
             this.sendBuffer = new EventBag(this);
+        } else if (semantics == EventBufferSemantics.receiver) {
+            this.sendBuffer = new ReceiveEventQueue(this);
         } else {
             this.sendBuffer = new EventQueue(this);
         }

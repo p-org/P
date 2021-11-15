@@ -59,7 +59,7 @@ public class PSymOptions {
         // whether or not to disable receiver queue semantics
         Option receiverQueue = Option.builder("rq")
                 .longOpt("receiver-queue")
-                .desc("Disable sender queue reduction to get receiver queue semantics (not implemented)")
+                .desc("Disable sender queue reduction to get receiver queue semantics")
                 .numberOfArgs(0)
                 .build();
         options.addOption(receiverQueue);
@@ -177,8 +177,7 @@ public class PSymOptions {
                     break;
                 case "rq":
                 case "receiver-queue":
-                    config.setAddReceiverQueueSemantics(true);
-                    config.setUseBagSemantics(true);
+                    config.setUseReceiverQueueSemantics(true);
                     break;
                 case "sl":
                 case "sleep-sets":

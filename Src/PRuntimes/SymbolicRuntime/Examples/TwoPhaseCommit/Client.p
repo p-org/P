@@ -83,6 +83,6 @@ In P, function declarations without body are considered as foreign functions.
 */
 fun ChooseTransaction(): tRecord
 {
-    return (key = choose(10), val = choose(10));
+    return (key = choose(2), val = choose(2));
 }
 

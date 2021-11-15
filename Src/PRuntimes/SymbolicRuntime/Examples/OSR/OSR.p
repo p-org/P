@@ -39,7 +39,7 @@ machine Main {
 			raise(eUnit);
 		}
 		on eUnit do {
-                    if(count < 1) { count = count + 1; goto S1; }
+                    if(count < 3) { count = count + 1; goto S1; }
                 }
 	}
 	

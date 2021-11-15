@@ -8,6 +8,7 @@ import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
 import psymbolic.valuesummary.*;
+import psymbolic.runtime.machine.buffer.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -183,6 +184,9 @@ public class IterativeBoundedScheduler extends Scheduler {
 
             TraceLogger.onCreateMachine(pc, newMachine);
             newMachine.setScheduler(this);
+            if (useBagSemantics()) {
+                newMachine.setSemantics(EventBufferSemantics.bag);
+            }
             schedule.makeMachine(newMachine, pc);
             getVcManager().addMachine(pc, newMachine);
             allocated = new PrimitiveVS<>(newMachine).restrict(pc);

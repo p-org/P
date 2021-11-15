@@ -74,6 +74,8 @@ public abstract class Machine {
         currentState = new PrimitiveVS<>(startState);
         if (semantics == EventBufferSemantics.bag) {
             this.sendBuffer = new EventBag(this);
+        } else if (semantics == EventBufferSemantics.receiver) {
+            this.sendBuffer = new ReceiveEventQueue(this);
         } else {
             this.sendBuffer = new EventQueue(this);
         }

@@ -339,16 +339,10 @@ public class Scheduler implements SymbolicSearch {
     }
 
     private Message peekBuffer(Machine m, Guard g) {
-        if (useReceiverSemantics() && m.sendBuffer instanceof ReceiveEventQueue) {
-            return ((ReceiveEventQueue) m.sendBuffer).peekRQ(g);
-        }
         return m.sendBuffer.peek(g);
     }
 
     private Message rmBuffer(Machine m, Guard g) {
-        if (useReceiverSemantics() && m.sendBuffer instanceof ReceiveEventQueue) {
-            return ((ReceiveEventQueue) m.sendBuffer).removeRQ(g);
-        }
         return m.sendBuffer.remove(g);
     }
 

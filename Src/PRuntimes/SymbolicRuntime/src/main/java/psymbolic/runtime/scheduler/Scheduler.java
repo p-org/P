@@ -117,7 +117,7 @@ public class Scheduler implements SymbolicSearch {
         this.schedule = getNewSchedule();
         this.machines = new ArrayList<>();
         this.machineCounters = new HashMap<>();
-        this.vcManager = new VectorClockManager(configuration.isDpor() || useSleepSets());
+        this.vcManager = new VectorClockManager(useReceiverSemantics() || configuration.isDpor() || useSleepSets());
 
         for (Machine machine : machines) {
             this.machines.add(machine);
@@ -325,6 +325,10 @@ public class Scheduler implements SymbolicSearch {
             }
         }
   //      return candidateSenders;
+
+        if (useReceiverSemantics()) {
+            guardedMachines = filter(guardedMachines, ReceiverQueueOrder.getInstance());
+        }
 
         if (!alwaysInterleaveNonAsync) {
             guardedMachines = filter(guardedMachines, InterleaveOrder.getInstance());

@@ -35,6 +35,7 @@ public class EntryPoint {
             e.printStackTrace();
             throw new BugFoundException("Found bug: " + e.getLocalizedMessage(), pc);
         } finally {
+            TraceLogger.setVerbosity(2);
             Instant end = Instant.now();
             TraceLogger.finished(scheduler.getDepth());
             TraceLogger.logMessage("Took " + Duration.between(start, end).getSeconds() + " seconds");

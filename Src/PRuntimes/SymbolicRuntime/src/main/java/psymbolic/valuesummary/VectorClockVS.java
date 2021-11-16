@@ -9,6 +9,10 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
 
     private final ListVS<PrimitiveVS<Integer>> clock;
 
+    public ListVS<PrimitiveVS<Integer>> asListVS() {
+        return clock;
+    }
+
     public VectorClockVS(Guard universe) {
         this.clock = new ListVS<>(universe);
     }
@@ -17,7 +21,7 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
         this.clock = new ListVS<>(vc.clock);
     }
 
-    private VectorClockVS(ListVS<PrimitiveVS<Integer>> clock) {
+    public VectorClockVS(ListVS<PrimitiveVS<Integer>> clock) {
         this.clock = clock;
     }
 

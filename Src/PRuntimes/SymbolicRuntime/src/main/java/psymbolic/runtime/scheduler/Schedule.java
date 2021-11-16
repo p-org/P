@@ -3,6 +3,8 @@ package psymbolic.runtime.scheduler;
 import lombok.Getter;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.valuesummary.*;
+import psymbolic.runtime.Concretizer;
+import psymbolic.runtime.Message;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,15 +23,40 @@ public class Schedule {
         return new Choice();
     }
 
-    Map<Machine, SetVS<PrimitiveVS<Machine>>> sleepTargetToSender = new HashMap<>();
+    SetVS<VectorClockVS> sleepSet = new SetVS<>(Guard.constTrue());
+
+    private static List<VectorClockVS> fullUniverseClocks (VectorClockVS vc) {
+        List<GuardedValue<List<Object>>> concreteVals = Concretizer.getConcreteValues(vc.getUniverse(), x -> false, Concretizer::concretize, vc);
+        List<VectorClockVS> res = new ArrayList<>();
+        for (GuardedValue<List<Object>> gv : concreteVals) { 
+            if (gv.getValue().isEmpty()) continue;
+            List<Object> list = gv.getValue();
+            ListVS newList = new ListVS<>(Guard.constTrue());
+            for (Object i : list) {
+                newList = newList.add(new PrimitiveVS<>((Integer) i));
+            }
+            res.add(new VectorClockVS(newList));
+        }
+        return res;
+    }
+
+    private static VectorClockVS getVectorClockSent (PrimitiveVS<Machine> sender) {
+        Message m = new Message().restrict(Guard.constFalse());
+        for (GuardedValue<Machine> gv : sender.getGuardedValues()) {
+            m = m.merge(gv.getValue().sendBuffer.peek(gv.getGuard()));
+        }
+        return m.getVectorClock();
+    }
 
     public List<PrimitiveVS> filterSleep (List<PrimitiveVS> candidates) {
         if (!useSleepSets) return candidates;
-        List<PrimitiveVS> filtered = candidates;
-        for (Map.Entry<Machine, SetVS<PrimitiveVS<Machine>>> entry : sleepTargetToSender.entrySet()) {
-            filtered = filtered.stream().map(x -> x.restrict(entry.getValue().contains(x).getGuardFor(true).not())).collect(Collectors.toList());
-        }
+        List<PrimitiveVS> filtered = candidates.stream().map(x -> x.restrict(sleepSet.contains(getVectorClockSent(x)).getGuardFor(true).not())).collect(Collectors.toList());
         return filtered;
+    }
+
+    public void unblock(VectorClockVS vc) {
+        VectorClockVS toRemove = vc.restrict(sleepSet.getUniverse());
+        sleepSet.remove(toRemove.restrict(sleepSet.contains(toRemove).getGuardFor(true)));
     }
 
     public class Choice {
@@ -108,18 +135,14 @@ public class Schedule {
             Guard choiceUniverse = choice.getUniverse();
             for (GuardedValue<Machine> gv : choice.getGuardedValues()) {
                 Guard initCond = gv.getValue().sendBuffer.hasCreateMachineUnderGuard().getGuardFor(true);
+                List<VectorClockVS> clks = fullUniverseClocks(gv.getValue().sendBuffer.peek(gv.getGuard().and(initCond.not())).getVectorClock());
                 seen = seen.or(gv.getGuard());
-                PrimitiveVS<Machine> target = gv.getValue().sendBuffer.peek(gv.getGuard().and(initCond.not())).getTarget();
-                for (GuardedValue<Machine> tgt : target.restrict(seen).getGuardedValues()) {
-                    Machine targetMachine = tgt.getValue();
-                    if (!sleepTargetToSender.containsKey(targetMachine)) sleepTargetToSender.put(targetMachine, new SetVS<>(Guard.constTrue()));
-                    // add to sleep set:
-                    SetVS<PrimitiveVS<Machine>> senders = sleepTargetToSender.get(targetMachine);
-                    sleepTargetToSender.put(targetMachine, senders.add(new PrimitiveVS<Machine>(gv.getValue()).restrict(seen.not())));
+                for (VectorClockVS clk : clks) {
                     // remove from sleep set:
-                    senders = sleepTargetToSender.get(targetMachine);
-                    Guard toRemoveGuard = sleepTargetToSender.get(targetMachine).restrict(seen.and(senders.getUniverse())).getUniverse();
-                    sleepTargetToSender.put(targetMachine, senders.updateUnderGuard(toRemoveGuard, new SetVS<>(toRemoveGuard)));
+                    Guard toRemoveGuard = sleepSet.contains(clk.restrict(sleepSet.getUniverse())).getGuardFor(true);
+                    sleepSet = sleepSet.remove(clk.restrict(toRemoveGuard));
+                    // add to sleep set:
+                    sleepSet = sleepSet.add(clk.restrict(seen.not().and(choiceUniverse)));
                 }
             }
         }

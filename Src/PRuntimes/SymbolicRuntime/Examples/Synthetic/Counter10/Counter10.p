@@ -32,7 +32,7 @@ machine Main {
                var server:machine;
                server = new Server();
                n = 10;
-               i = 0;
+               i = 1;
                while (i < n) {
                    new Writer((server = server, id = i));
                    i = i + 1;

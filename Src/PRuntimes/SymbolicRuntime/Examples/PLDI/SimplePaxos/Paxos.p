@@ -117,7 +117,6 @@ machine ProposerMachine {
   var acceptors: seq[machine];
   var majority: int;
   var serverid: int;
-  var timer: machine;
   var proposeValue: int;
   var nextProposalId : ProposalIdType;
   var GC_NumOfAccptNodes : int;
@@ -135,7 +134,6 @@ machine ProposerMachine {
       proposeValue = serverid * 10 + 1;
       nextProposalId = (serverid = serverid, round = 1);
       majority = GC_NumOfAccptNodes/2 + 1;
-      timer = CreateTimer(this);
       goto ProposerPhaseOne;
     }
   }
@@ -159,7 +157,6 @@ machine ProposerMachine {
     entry {
       numOfAgreeRecv = 0;
       SendToAllAcceptors(prepare, (proposer = this, proposal = (pid = nextProposalId, value = proposeValue)));
-      StartTimer(timer, 100);
     }
 
     on agree do (payload: ProposalType) {
@@ -170,8 +167,6 @@ machine ProposerMachine {
       }
       if(numOfAgreeRecv == majority)
       {
-        //cancel the timer and goto next phase
-        CancelTimer(timer);
         goto ProposerPhaseTwo;
       }
     }
@@ -181,11 +176,8 @@ machine ProposerMachine {
       {
         nextProposalId.round = payload.round + 1;
       }
-      CancelTimer(timer);
       goto ProposerPhaseOne;
     }
-
-    on TIMEOUT goto ProposerPhaseOne;
   }
 
   fun GetValueToBeProposed() : int {
@@ -205,7 +197,6 @@ machine ProposerMachine {
       numOfAcceptRecv = 0;
       proposeValue = GetValueToBeProposed();
       SendToAllAcceptors(accept, (proposer = this, proposal = (pid = nextProposalId, value = proposeValue)));
-      StartTimer(timer, 100);
     }
 
     on reject do (payload : ProposalIdType)
@@ -214,7 +205,6 @@ machine ProposerMachine {
       {
         nextProposalId.round = payload.round;
       }
-      CancelTimer(timer);
       goto ProposerPhaseOne;
     }
     
@@ -225,13 +215,8 @@ machine ProposerMachine {
 
       if(numOfAcceptRecv == majority)
       {
-        CancelTimer(timer);
-        // assert(false);
-        // done proposing lets halt
-        // raise halt;
+        raise halt;
       }
     }
-
-    on TIMEOUT goto ProposerPhaseOne;
   }
 }

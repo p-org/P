@@ -18,7 +18,6 @@ machine Coordinator
 	var participants: seq[machine];
 	var pendingWrTrans: tWriteTransReq;
 	var currTransId:int;
-	var timer: Timer;
     var countPrepareResponses: int;
 
 	start state Init {
@@ -26,7 +25,7 @@ machine Coordinator
 			var i : int; 
 			//initialize variables
 			participants = payload;
-			i = 0; currTransId = 0; timer = CreateTimer(this);
+			i = 0; currTransId = 0;
 			goto WaitForTransactions;
 		}
 
@@ -39,9 +38,6 @@ machine Coordinator
 			currTransId = currTransId + 1;
 			BroadcastToAllParticipants(ePrepareReq, (coordinator = this, transId = currTransId, rec = wTrans.rec));
 
-			//start timer while waiting for responses from all participants
-			StartTimer(timer, 100);
-
 			goto WaitForPrepareResponses;
 		}
 
@@ -52,10 +48,19 @@ machine Coordinator
 
 		// when in this state it is fine to drop these messages as
 		// they are from the previous transaction
-		ignore ePrepareResp, eTimeOut;
+		ignore ePrepareResp;
 	}
 
 	state WaitForPrepareResponses {
+	  entry {
+	    if($)
+	    {
+	      // non-det time-out
+	      DoGlobalAbort(TIMEOUT);
+	      // safe to go back and service the next transaction
+        goto WaitForTransactions;
+	    }
+	  }
 		// we are going to process transactions sequentially
 		defer eWriteTransReq;
 
@@ -77,14 +82,12 @@ machine Coordinator
 			    else
 			    {
 			        DoGlobalAbort(ERROR);
-                    // safe to go back and service the next transaction
-                    goto WaitForTransactions;
+              // safe to go back and service the next transaction
+              goto WaitForTransactions;
 			    }
 
 			}
 		}
-
-		on eTimeOut goto WaitForTransactions with { DoGlobalAbort(TIMEOUT); }
 
         on eReadTransReq do (rTrans : tReadTransReq) {
             // non-deterministically pick a participant to read from.
@@ -99,13 +102,11 @@ machine Coordinator
 		// ask all participants to abort and fail the transaction
 		BroadcastToAllParticipants(eAbortTrans, currTransId);
 		send pendingWrTrans.client, eWriteTransResp, (transId = currTransId, status = respStatus);
-		CancelTimer(timer);
 	}
 	fun DoGlobalCommit() {
         // ask all participants to commit and respond to client
         BroadcastToAllParticipants(eCommitTrans, currTransId);
         send pendingWrTrans.client, eWriteTransResp, (transId = currTransId, status = SUCCESS);
-        CancelTimer(timer);
     }
 	fun BroadcastToAllParticipants(message: event, payload: any) {
 		var i: int; i = 0;

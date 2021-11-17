@@ -55,6 +55,10 @@ public class PSymConfiguration {
     private boolean dpor = false;
 
     @Getter @Setter
+    // use filters
+    private boolean useFilters = true;
+
+    @Getter @Setter
     // level of verbosity for the logging
     private int verbosity = 1;
 

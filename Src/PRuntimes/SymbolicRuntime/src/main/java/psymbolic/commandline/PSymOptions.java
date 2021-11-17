@@ -64,6 +64,14 @@ public class PSymOptions {
                 .build();
         options.addOption(receiverQueue);
 
+        // whether or not to disable receiver queue semantics
+        Option filters = Option.builder("nf")
+                .longOpt("no-filters")
+                .desc("Disable filter-based reductions")
+                .numberOfArgs(0)
+                .build();
+        options.addOption(filters);
+
         // whether or not to collect search stats
         Option collectStats = Option.builder("s")
                 .longOpt("stats")
@@ -83,7 +91,7 @@ public class PSymOptions {
         // whether or not to use DPOR
         Option dpor = Option.builder("dpor")
                 .longOpt("use-dpor")
-                .desc("Enable use of DPOR")
+                .desc("Enable use of DPOR (not implemented)")
                 .numberOfArgs(0)
                 .build();
         options.addOption(dpor);
@@ -186,6 +194,10 @@ public class PSymOptions {
                 case "s":
                 case "stats":
                     config.setCollectStats(true);
+                    break;
+                case "nf":
+                case "no-filters":
+                    config.setUseFilters(false);
                     break;
                 case "dpor":
                 case "use-dpor":

@@ -45,7 +45,7 @@ public class Scheduler implements SymbolicSearch {
     private VectorClockManager vcManager;
 
     /** Use the interleave map (if false) or not (if true) */
-    private boolean alwaysInterleaveNonAsync = false;
+    private boolean useFilters() { return configuration.isUseFilters(); }
 
     /** Get whether to intersect with receiver queue semantics
      * @return whether to intersect with receiver queue semantics
@@ -330,7 +330,7 @@ public class Scheduler implements SymbolicSearch {
             guardedMachines = filter(guardedMachines, ReceiverQueueOrder.getInstance());
         }
 
-        if (!alwaysInterleaveNonAsync) {
+        if (useFilters()) {
             guardedMachines = filter(guardedMachines, InterleaveOrder.getInstance());
         }
 

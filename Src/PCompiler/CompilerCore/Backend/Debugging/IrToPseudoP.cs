@@ -235,10 +235,6 @@ namespace Plang.Compiler.Backend.Debugging
                     WriteStmt("; // no action");
                     break;
 
-                case PopStmt _:
-                    WriteStmt("pop;");
-                    break;
-
                 case PrintStmt printStmt:
                     WriteStmt("print \"", printStmt.Message, "\", ", printStmt.Message, ";");
                     break;
@@ -319,10 +315,6 @@ namespace Plang.Compiler.Backend.Debugging
 
                 case EventIgnore eventIgnore:
                     WriteStmt("ignore ", eventIgnore.Trigger, ";");
-                    break;
-
-                case EventPushState eventPushState:
-                    WriteStmt("on ", eventPushState.Trigger, " push ", eventPushState.Target, ";");
                     break;
 
                 case State state:

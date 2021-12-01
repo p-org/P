@@ -90,7 +90,7 @@ namespace UnitTests.Runners
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
-    <ProjectReference Include=""$(PFolder)/Src/PRuntimes/CSharpRuntime/CSharpRuntime.csproj"" />
+    <ProjectReference Include=""$(PFolder)/Src/PRuntimes/PCSharpRuntime/CSharpRuntime.csproj"" />
   </ItemGroup>
 </Project>";
             using var outputFile = new StreamWriter(Path.Combine(scratchDirectory.FullName, "Main.csproj"), false);
@@ -168,7 +168,7 @@ namespace PImplementation
             }
             catch (Exception ex)
             {
-                compilationJob.Output.WriteError($"<Internal Error>:\n {ex.Message}\n<Please report to the P team (p-devs@amazon.com) or create an issue on GitHub, Thanks!>");
+                compilationJob.Output.WriteError($"<Internal Error>:\n {ex.Message}\n<Please report to the P team or create an issue on GitHub, Thanks!>");
                 return 1;
             }
         }

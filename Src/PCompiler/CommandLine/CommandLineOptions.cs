@@ -84,7 +84,8 @@ namespace Plang.Compiler
             CommandlineOutput.WriteInfo("    -generate:[C,CSharp,RVM]   -- select a target language to generate");
             CommandlineOutput.WriteInfo("        C       : generate C code");
             CommandlineOutput.WriteInfo("        CSharp  : generate C# code ");
-            CommandlineOutput.WriteInfo("        RVM     : generate RVM code");
+            CommandlineOutput.WriteInfo("        RVM     : generate Monitor code");
+            CommandlineOutput.WriteInfo("        Symbolic : generate code for symbolic execution");
             CommandlineOutput.WriteInfo("    -h, -help, --help          -- display this help message");
             CommandlineOutput.WriteInfo("------------------------------------------");
         }

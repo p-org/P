@@ -1,0 +1,12 @@
+
+$ ( time java -jar -Xms30G target/OSR-1.0-jar-with-dependencies.jar ) &> results/OSR_default_time.txt
+
+$ ( time java -jar -Xms30G target/OSR-1.0-jar-with-dependencies.jar -s ) &> results/OSR_default_transitions.txt
+
+$ ( time java -jar -Xms30G target/OSR-1.0-jar-with-dependencies.jar -rq ) &> results/OSR_rq_time.txt
+
+$ ( time java -jar -Xms30G target/OSR-1.0-jar-with-dependencies.jar -rq -s ) &> results/OSR_rq_transitions.txt
+
+$ ( time java -jar -Xms30G target/OSR-1.0-jar-with-dependencies.jar -sb 1 -cb 1 -s ) &> results/OSR_DFS_transitions.txt
+
+$ ( gtimeout 10 time java -jar -Xms30G target/OSR-1.0-jar-with-dependencies.jar -sb 1 -cb 1 -s ) &> results/OSR_DFS_transitions.txt

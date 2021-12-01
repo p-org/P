@@ -76,7 +76,6 @@ namespace Plang.Compiler.TypeChecker
                 case InsertStmt _:
                 case MoveAssignStmt _:
                 case NoStmt _:
-                case PopStmt _:
                 case PrintStmt _:
                 case RaiseStmt _:
                 case ReceiveStmt _:

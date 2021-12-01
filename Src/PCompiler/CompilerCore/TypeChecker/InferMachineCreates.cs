@@ -88,9 +88,6 @@ namespace Plang.Compiler.TypeChecker
                 case NoStmt _:
                     return Enumerable.Empty<Interface>();
 
-                case PopStmt _:
-                    return Enumerable.Empty<Interface>();
-
                 case PrintStmt printStmt:
                     return InferCreatesForExpr(printStmt.Message, handler);
 

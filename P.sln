@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommandLine", "Src\PCompile
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompilerCore", "Src\PCompiler\CompilerCore\CompilerCore.csproj", "{41F39ADD-B75F-473F-AC41-D1A9CDA9A9CD}"
 EndProject
-Project("{9344BDBB-3E7F-41FC-A0DD-8665D75EE146}") = "CSharpRuntime", "Src\PRuntimes\CSharpRuntime\CSharpRuntime.csproj", "{27E011B3-3995-454A-B200-57800CC941DA}"
+Project("{9344BDBB-3E7F-41FC-A0DD-8665D75EE146}") = "CSharpRuntime", "Src\PRuntimes\PCSharpRuntime\CSharpRuntime.csproj", "{27E011B3-3995-454A-B200-57800CC941DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

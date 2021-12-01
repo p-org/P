@@ -82,7 +82,6 @@ namespace Plang.Compiler.Backend.Symbolic
             transformedMachine.Observes = machine.Observes;
             transformedMachine.PayloadType = machine.PayloadType;
             transformedMachine.Scope = machine.Scope;
-            transformedMachine.Semantics = machine.Semantics;
             foreach (var state in machine.States)
             {
                 transformedMachine.AddState(TransformState(state, functionMap));

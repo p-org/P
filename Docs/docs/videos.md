@@ -1,6 +1,6 @@
 ## Introductory tutorial on P
 
-Youtube channel for P Tutorials: [Youtube Channel](https://www.youtube.com/channel/UCDGATkWwdze_8Mfr1zuE5Hg)
+Channel for P Tutorials: Coming Soon
 
 ## Tech Talks and Presentations
 

@@ -1,4 +1,4 @@
-A P program is typically divided into following four folders (or parts):
+A P program is typically divided into four folders (or parts):
 
 - `PSrc`: contains all the state machines representing the implementation (model) of the
   system or protocol to be verified or tested.
@@ -11,8 +11,8 @@ A P program is typically divided into following four folders (or parts):
 
 - `PForeign`: P also supports interfacing with foreign languages like `Java`, `C#`, and
   `C/C++`. P allows programmers to implement a part of their protocol logic in these
-  foreign languages and use them in a P program using the Foreign types and functions
-  interface ([Foreign](../manual/foriegntypesfunctions.md)) The `PForeign` folder contains
+  foreign languages and use them in a P program using the foreign types and functions interface ([Foreign](../manual/foriegntypesfunctions.md)).
+  The `PForeign` folder contains
   all the foreign code used in the P program.
 
 !!! Note "Recommendation"  
@@ -27,4 +27,3 @@ A P program is typically divided into following four folders (or parts):
     system does it. (3) A model checking scenario provides the finite non-deterministc
     test-harness or environment under which the model checker should check that the system
     model satisfies its specifications.
-

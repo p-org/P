@@ -324,7 +324,6 @@ namespace Plang.Compiler.Backend
                     deps.AddRange(stringArgsDeps);
                     deps.Add(stringStore);
                     return (stringTemp, deps);
-
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }

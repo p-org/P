@@ -13,7 +13,7 @@ namespace Plang.Compiler.Backend.CSharp
     <OutputType>Exe</OutputType>
     <StartupObject />
     <LangVersion>latest</LangVersion>
-    <OutputPath>.</OutputPath>
+    <OutputPath>POutput/</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
@@ -24,8 +24,10 @@ namespace Plang.Compiler.Backend.CSharp
         private static string mainCode = @"
 using Microsoft.Coyote;
 using Microsoft.Coyote.SystematicTesting;
+using Microsoft.Coyote.Actors;
 using System;
 using System.Linq;
+using System.IO;
 
 namespace -projectName-
 {
@@ -33,29 +35,15 @@ namespace -projectName-
         public static void Main(string[] args)
         {
             /*
-            // Optional: increases verbosity level to see the Coyote runtime log.
-            Configuration configuration = Configuration.Create().WithTestingIterations(1000);
-            configuration.WithMaxSchedulingSteps(1000);
-            TestingEngine engine = TestingEngine.Create(configuration, DefaultImpl.Execute);
-            engine.Run();
-            string bug = engine.TestReport.BugReports.FirstOrDefault();
-            if (bug != null)
-            {
-                Console.WriteLine(bug);
-                Environment.Exit(1);
-            }
-            Environment.Exit(0);
-
-            // for debugging:
-             For replaying a bug and single stepping
             Configuration configuration = Configuration.Create();
             configuration.WithVerbosityEnabled(true);
             // update the path to the schedule file.
-            configuration.WithReplayStrategy(""AfterNewUpdate.schedule"");
-            TestingEngine engine = TestingEngine.Create(configuration, DefaultImpl.Execute);
+            string schedule = File.ReadAllText(""absolute path to *.schedule file"");
+            configuration.WithReplayStrategy(schedule);
+            TestingEngine engine = TestingEngine.Create(configuration, (Action<IActorRuntime>)PImplementation.<Name of the test case>.Execute);
             engine.Run();
             string bug = engine.TestReport.BugReports.FirstOrDefault();
-            if (bug != null)
+                if (bug != null)
             {
                 Console.WriteLine(bug);
             }

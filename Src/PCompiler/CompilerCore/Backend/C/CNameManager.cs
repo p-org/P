@@ -215,6 +215,9 @@ namespace Plang.Compiler.Backend.C
 
                 case TupleType tupleType:
                     return $"T{tupleType.Types.Count}{string.Join("", tupleType.Types.Select(SimplifiedRep))}";
+                
+                case NamedTupleType namedTupleType:
+                    return $"NT{namedTupleType.Types.Count}{string.Join("", namedTupleType.Types.Select(SimplifiedRep))}";
 
                 case TypeDefType _:
                     throw new ArgumentException("typedefs should be impossible after canonicalization", nameof(type));

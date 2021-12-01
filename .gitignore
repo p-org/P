@@ -59,8 +59,7 @@ build/
 *.pidb
 *.svclog
 *.scc
-*.xml
-*.iml
+
 
 # Visual C++ cache files
 ipch/
@@ -235,9 +234,6 @@ PGenerated/
 stubs.c
 *.idb
 netcoreapp*/
-
-# IntelliJ
-.idea/*
 
 # Maven
 target/

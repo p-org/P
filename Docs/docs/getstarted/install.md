@@ -1,5 +1,7 @@
-P is cross platform and can be used on MacOS, Linux, and Windows. We provide a step-by-step guide for installing P along with its required dependencies.
-After each step, please use the troubleshooting check to ensure that each installation step succeeded.
+P is built to be cross platform and can be used on MacOS, Linux, and Windows. We provide a step-by-step guide for installing P along with its required dependencies.
+
+!!! info ""
+    After each step, please use the troubleshooting check to ensure that each installation step succeeded.
 
 ### [Step 1] Install .Net Core SDK
 The P compiler and checker are implemented in C# and hence the tool chain requires `dotnet`. 
@@ -13,7 +15,7 @@ To install .Net Core 3.1 SDK use:
     brew tap isen-ng/dotnet-sdk-versions
     brew install --cask dotnet-sdk3-1-400
     ```
-    Dont have Homebrew? Install directly using the [installer](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-macos-x64-installer). 
+    Dont have Homebrew? :upside_down_face: Install directly using the [installer](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-macos-x64-installer). 
 
 === "Ubuntu"
 
@@ -55,8 +57,8 @@ To install .Net Core 3.1 SDK use:
 
 ### [Step 2] Install Java Runtime
 
-P compiler uses [ANTLR](https://www.antlr.org/) parser and hence requires `java`. 
-If you already have Java installed please ignore this step. 
+P compiler uses [ANTLR](https://www.antlr.org/) parser and hence requires `java`.
+If you already have Java installed :innocent:, ignore this step.
 To install Java use:
 
 === "MacOS"
@@ -96,7 +98,9 @@ To install Java use:
 
 Install the P compiler as a `dotnet tool` using the following command:
 
-`dotnet tool install --global P`
+```
+dotnet tool install --global P
+```
 
 ??? hint "Troubleshoot: Confirm that `pc` is correctly installed on your machine"
 
@@ -106,7 +110,7 @@ Install the P compiler as a `dotnet tool` using the following command:
     /Users/<user>/.dotnet/tools/pc
     ```
     If not, add `$HOME/.dotnet/tools` to `$PATH` in your `.bash_profile` (or equivalent) and try again after restarting the shell.
-    If you are getting an error that `pc` command not found, its most likely that `$HOME/.dotnet/tools` is not in your `PATH`.
+    If you are getting the error that the `pc` command is not found, it is most likely that `$HOME/.dotnet/tools` is not in your `PATH`.
 
 ??? help "Updating P Compiler"
     You can update the version of `P` compiler by running the following command:
@@ -119,7 +123,9 @@ The current P checker depends on [Coyote](https://microsoft.github.io/coyote/) (
 
 Install the `Coyote` version `1.0.5` using the following command:
 
-`dotnet tool install --global Microsoft.Coyote.CLI --version 1.0.5`
+```
+dotnet tool install --global Microsoft.Coyote.CLI --version 1.0.5
+```
 
 ??? hint "Troubleshoot: Confirm that `coyote` is correctly installed on your machine"
 
@@ -135,7 +141,7 @@ We highly recommend that you create the following alias as we use it in the rest
 
 === "On MacOS or Linux"
 
-    Add following alias to the bash profile (`~/.bash_profile` or equivalent) 
+    Add following alias to the bash profile (`~/.bash_profile` or the equivalent on your system) 
     so that you can invoke the P checker (`pmc`) directly.
     ```shell
     alias pmc='coyote test'

@@ -21,8 +21,8 @@ distributed systems. P allows programmers to model their system as a collection 
 communicating state machines. P supports several backend analysis engines
 (based on automated reasoning techniques like model
 checking and symbolic execution) to check that the distributed system modeled in P
-satisfy the desired correctness specifications. Not only can a P program be systematically
-tested (e.g., model checking), but it can also be compiled into executable code.
+satisfies the desired correctness specifications. Not only can a P program be systematically
+tested (e.g., with model checking), but it can also be compiled into executable code.
 Essentially, P unifies modeling, specifying, implementing, and testing into one activity for the
 programmer.
 
@@ -32,10 +32,7 @@ was first used to implement and validate the USB device driver stack that ships 
 Microsoft Windows 8 and Windows Phone.
 
 !!! quote ""
-    :sparkles: **_Programming concurrent, asynchronous distributed systems is challenging, but a pinch of programming
-    language design combined with a dash of automated reasoning can go a long way in bringing
-    the joy back._** :sparkles:
-
+    :sparkles: **_Programming concurrent, distributed systems is fun but challenging, however, a pinch of programming language design with a dash of automated reasoning can go a long way in addressing the challenge and amplifying the fun!._** :sparkles:
 
 ## Let the fun begin!
 

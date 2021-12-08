@@ -1,8 +1,5 @@
 package p.runtime.values;
 
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import lombok.var;
 import p.runtime.values.exceptions.KeyNotFoundException;
 
 import java.util.ArrayList;
@@ -16,15 +13,15 @@ public class PMap extends PCollection {
     public PMap(Map<PValue<?>, PValue<?>> input_map)
     {
         map = new HashMap<>();
-        for (var entry : input_map.entrySet()) {
+        for (Map.Entry<PValue<?>, PValue<?>> entry : input_map.entrySet()) {
             map.put(PValue.clone(entry.getKey()), PValue.clone(entry.getValue()));
         }
     }
 
-    public PMap(@NonNull PMap other)
+    public PMap(PMap other)
     {
         map = new HashMap<>();
-        for (var entry : other.map.entrySet()) {
+        for (Map.Entry<PValue<?>, PValue<?>> entry : other.map.entrySet()) {
             map.put(PValue.clone(entry.getKey()), PValue.clone(entry.getValue()));
         }
     }
@@ -54,7 +51,6 @@ public class PMap extends PCollection {
                 ^ ComputeHash.getHashCode(map.keySet());
     }
 
-    @SneakyThrows
     @Override
     public boolean equals(Object obj) {
         if (obj == this)
@@ -67,7 +63,7 @@ public class PMap extends PCollection {
             return false;
         }
 
-        for (var key : map.keySet()) {
+        for (PValue<?> key : map.keySet()) {
             if (!other.map.containsKey(key)) {
                 return false;
             } else if (!PValue.equals(other.map.get(key), this.map.get(key))) {
@@ -82,7 +78,7 @@ public class PMap extends PCollection {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         boolean hadElements = false;
-        for (var key : map.keySet()) {
+        for (PValue<?> key : map.keySet()) {
             if (hadElements) {
                 sb.append(", ");
             }

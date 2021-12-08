@@ -1,6 +1,5 @@
 package p.runtime.values;
 
-import lombok.NonNull;
 import p.runtime.values.exceptions.TupleInvalidIndexException;
 
 import java.util.Arrays;
@@ -16,7 +15,7 @@ public class PTuple extends PValue<PTuple> {
         }
     }
 
-    public PTuple(@NonNull PTuple other) {
+    public PTuple(PTuple other) {
         this.fields = new PValue<?>[other.fields.length];
         for (int i = 0; i < other.fields.length; i++) {
             this.fields[i] = PValue.clone(other.fields[i]);

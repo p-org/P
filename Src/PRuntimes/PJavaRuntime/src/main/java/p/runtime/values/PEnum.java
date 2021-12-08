@@ -1,21 +1,22 @@
 package p.runtime.values;
 
-import lombok.Getter;
-import lombok.NonNull;
-
 public class PEnum extends PValue<PEnum> {
     // stores the int value
-    @Getter
+
     private final String name;
-    @Getter
+
     private final int value;
+
+    public int getValue() { return value; }
+
+    public String getName() { return name; }
 
     public PEnum(String name, int val)
     {
         this.name = name; value = val;
     }
 
-    public PEnum(@NonNull PEnum val)
+    public PEnum(PEnum val)
     {
         name = val.name; value = val.value;
     }

@@ -1,18 +1,17 @@
 package p.runtime.values;
-import lombok.Getter;
-import lombok.NonNull;
 
 public class PInt extends PValue<PInt> {
     // stores the int value
-    @Getter
     private final int value;
+
+    public int getValue() { return value; }
 
     public PInt(int val)
     {
         value = val;
     }
 
-    public PInt(@NonNull PInt val)
+    public PInt(PInt val)
     {
         value = val.value;
     }

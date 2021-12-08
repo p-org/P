@@ -1,12 +1,9 @@
 package p.runtime.values;
-
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import lombok.var;
 import p.runtime.values.exceptions.*;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
 
 public class PNamedTuple extends PValue<PNamedTuple> {
     // stores the mapping from field name to field value
@@ -15,21 +12,21 @@ public class PNamedTuple extends PValue<PNamedTuple> {
     public PNamedTuple(Map<String, PValue<?>> input_fields)
     {
         fields = new HashMap<>();
-        for (var entry : input_fields.entrySet()) {
+        for (Map.Entry<String, PValue<?>> entry : input_fields.entrySet()) {
             fields.put(entry.getKey(), PValue.clone(entry.getValue()));
         }
     }
 
-    public PNamedTuple(@NonNull PNamedTuple other)
+    public PNamedTuple(PNamedTuple other)
     {
         fields = new HashMap<>();
-        for (var entry : other.fields.entrySet()) {
+        for (Map.Entry<String, PValue<?>> entry : other.fields.entrySet()) {
             fields.put(entry.getKey(), PValue.clone(entry.getValue()));
         }
     }
 
     public String[] getFields() {
-        return fields.keySet().toArray(new String[fields.size()]);
+        return fields.keySet().toArray(new String[0]);
     }
 
     public PValue<?> getField(String name) throws NamedTupleFieldNameException {
@@ -63,7 +60,6 @@ public class PNamedTuple extends PValue<PNamedTuple> {
                 ^ ComputeHash.getHashCode(fields.keySet());
     }
 
-    @SneakyThrows
     @Override
     public boolean equals(Object obj) {
         if (obj == this)
@@ -78,7 +74,7 @@ public class PNamedTuple extends PValue<PNamedTuple> {
             return false;
         }
 
-        for (var name : fields.keySet()) {
+        for (String name : fields.keySet()) {
             if (!other.fields.containsKey(name)) {
                 throw new ComparingPValuesException(other, this);
             } else if (!PValue.equals(other.fields.get(name), this.fields.get(name))) {
@@ -93,7 +89,7 @@ public class PNamedTuple extends PValue<PNamedTuple> {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         boolean hadElements = false;
-        for (var name : fields.keySet()) {
+        for (String name : fields.keySet()) {
             if (hadElements) {
                 sb.append(", ");
             }

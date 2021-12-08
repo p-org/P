@@ -1,8 +1,5 @@
 package p.runtime.values;
 
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import lombok.var;
 import p.runtime.values.exceptions.InvalidIndexException;
 
 import java.util.ArrayList;
@@ -15,15 +12,15 @@ public class PSeq extends PCollection {
     public PSeq(List<PValue<?>> input_seq)
     {
         seq = new ArrayList<>();
-        for (var entry : input_seq) {
+        for (PValue<?> entry : input_seq) {
             seq.add(PValue.clone(entry));
         }
     }
 
-    public PSeq(@NonNull PSeq other)
+    public PSeq(PSeq other)
     {
         seq = new ArrayList<>();
-        for (var entry : other.seq) {
+        for (PValue<?> entry : other.seq) {
             seq.add(PValue.clone(entry));
         }
     }
@@ -56,7 +53,6 @@ public class PSeq extends PCollection {
         return ComputeHash.getHashCode(seq);
     }
 
-    @SneakyThrows
     @Override
     public boolean equals(Object obj) {
         if (obj == this)

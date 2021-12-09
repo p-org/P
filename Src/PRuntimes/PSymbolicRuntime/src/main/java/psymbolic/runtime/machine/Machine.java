@@ -19,7 +19,6 @@ import lombok.Setter;
 
 public abstract class Machine {
 
-    @Setter
     private EventBufferSemantics semantics;
     private String name;
     @Getter
@@ -37,9 +36,10 @@ public abstract class Machine {
     private PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> receives = new PrimitiveVS<>();
     public final Map<String, Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> continuations = new HashMap<>();
     public final Set<Runnable> clearContinuationVars = new HashSet<>();
-    @Getter
     // the vector clock for the machine
     private VectorClockVS clock = new VectorClockVS(Guard.constTrue());
+
+    public VectorClockVS getClock() { return clock; }
 
     public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;

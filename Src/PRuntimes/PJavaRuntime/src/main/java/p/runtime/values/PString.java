@@ -1,19 +1,17 @@
 package p.runtime.values;
 
-import lombok.Getter;
-import lombok.NonNull;
-
 public class PString extends PValue<PString> {
     // stores the int value
-    @Getter
     private final String value;
+
+    public String getValue() { return value; }
 
     public PString(String val)
     {
         value = val;
     }
 
-    public PString(@NonNull PString val)
+    public PString(PString val)
     {
         value = val.value;
     }

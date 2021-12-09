@@ -1,19 +1,19 @@
 package p.runtime.values;
 
-import lombok.Getter;
-import lombok.NonNull;
+
 
 public class PFloat extends PValue<PFloat> {
     // stores the int value
-    @Getter
     private final double value;
+
+    public double getValue() { return value; }
 
     public PFloat(double val)
     {
         value = val;
     }
 
-    public PFloat(@NonNull PFloat val)
+    public PFloat(PFloat val)
     {
         value = val.value;
     }

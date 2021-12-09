@@ -1,8 +1,5 @@
 package p.runtime.values;
 
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import lombok.var;
 import p.runtime.PRuntimeException;
 import p.runtime.values.exceptions.InvalidIndexException;
 
@@ -25,16 +22,16 @@ public class PSet extends PCollection {
     public PSet(List<PValue<?>> input_set)
     {
         set = new ArrayList<>();
-        for (var entry : input_set) {
+        for (PValue<?> entry : input_set) {
             set.add(PValue.clone(entry));
         }
         set.sort(new SortPValue());
     }
 
-    public PSet(@NonNull PSet other)
+    public PSet(PSet other)
     {
         set = new ArrayList<>();
-        for (var entry : other.set) {
+        for (PValue<?> entry : other.set) {
             set.add(PValue.clone(entry));
         }
         set.sort(new SortPValue());
@@ -64,7 +61,6 @@ public class PSet extends PCollection {
         return ComputeHash.getHashCode(set);
     }
 
-    @SneakyThrows
     @Override
     public boolean equals(Object obj) {
         if (obj == this)

@@ -69,7 +69,7 @@ public class Schedule {
         @Getter
         PrimitiveVS<ValueSummary> repeatElement = new PrimitiveVS<>();
         @Getter
-        List<PrimitiveVS<Machine>> backtrackSender = new ArrayList<>();
+        List<PrimitiveVS<Machine>>  backtrackSender = new ArrayList<>();
         @Getter
         List<PrimitiveVS<Boolean>> backtrackBool = new ArrayList();
         @Getter

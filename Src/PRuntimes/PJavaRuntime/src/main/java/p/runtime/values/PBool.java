@@ -1,7 +1,5 @@
 package p.runtime.values;
 
-import lombok.NonNull;
-
 public class PBool extends PValue<PBool>{
     // stores the int value
     private final boolean value;
@@ -15,7 +13,7 @@ public class PBool extends PValue<PBool>{
         value = val;
     }
 
-    public PBool(@NonNull PBool val)
+    public PBool(PBool val)
     {
         value = val.value;
     }
@@ -27,7 +25,7 @@ public class PBool extends PValue<PBool>{
 
     @Override
     public int hashCode() {
-        return new Boolean(value).hashCode();
+        return Boolean.valueOf(value).hashCode();
     }
 
     @Override

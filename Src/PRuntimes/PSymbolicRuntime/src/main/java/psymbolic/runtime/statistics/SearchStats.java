@@ -8,6 +8,7 @@ import lombok.var;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents the search statistics during exploration
@@ -46,7 +47,7 @@ public class SearchStats {
             int totalTransitions = 0;
             int totalMergedTransitions = 0;
             int totalTransitionsExplored = 0;
-            for(var entry: perDepthStats.entrySet())
+            for(Map.Entry<Integer, DepthStats> entry: perDepthStats.entrySet())
             {
                 if (entry.getKey() > maxDepth) {
                     maxDepth = entry.getKey();
@@ -65,7 +66,7 @@ public class SearchStats {
             int totalTransitions = 0;
             int totalMergedTransitions = 0;
             int totalTransitionsExplored = 0;
-            for(var entry: perDepthStats.entrySet())
+            for(Map.Entry<Integer, DepthStats> entry: perDepthStats.entrySet())
             {
                 if(entry.getKey() >= startDepth) {
                     if (entry.getKey() > maxDepth) {
@@ -123,7 +124,7 @@ public class SearchStats {
         int totalTransitions = 0;
         int totalMergedTransitions = 0;
         int totalTransitionsExplored = 0;
-        for(var entry: iterationStats)
+        for(IterationStats entry: iterationStats)
         {
             if (entry.getIterationNewTotal().getDepth() > maxDepth) {
                 maxDepth = entry.getIterationNewTotal().getDepth();

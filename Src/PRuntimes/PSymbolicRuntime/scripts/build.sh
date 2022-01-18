@@ -14,7 +14,7 @@ cd PJavaRuntime
 
 mvn install
 
-cd ../SymbolicRuntime
+cd ../PSymbolicRuntime
 
 mvn clean
 

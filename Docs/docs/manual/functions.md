@@ -34,6 +34,8 @@ Named functions in P can be declared within P state machines as local functions 
 
 Check out the grammar of [P state machines](statemachines.md) for local functions declarations and [top-level declarations](../manualoutline.md) grammar for the global function declarations.
 
+Example of a local functions: [here](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L118) and an example of a global function that is shared across all machines: [here](https://github.com/p-org/P/blob/master/Tutorial/Common/FailureInjector/PSrc/NetworkFunctions.p)
+
 **Syntax**: `fun name (funParamList?) (: returnType)? functionBody`
 
 `name` is the name of the named function, `funParamList` is the optional function parameters, and `returnType` is the optional return type of the function.
@@ -45,6 +47,8 @@ P named function declarations without any function body are referred to as forei
 **Syntax**: `fun name (funParamList?) (: returnType)? ;`
 
 `name` is the name of the named function, `funParamList` is the optional function parameters, and `returnType` is the optional return type of the function.
+
+To know more about the foreign interface and functions, please look at the [PriorityQueue example](https://p-org.github.io/P/manual/foriegntypesfunctions/).
 
 ### Function Body
 

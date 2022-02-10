@@ -8,6 +8,7 @@ import psymbolic.runtime.logger.PSymLogger;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.valuesummary.bdd.BDDEngine;
 import psymbolic.valuesummary.Guard;
+import psymbolic.runtime.logger.StatLogger;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -18,7 +19,7 @@ public class EntryPoint {
 
     public static void run(Program p, PSymConfiguration config) {
         BDDEngine.reset();
-        PSymLogger.ResetAllConfigurations(config.getVerbosity());
+        PSymLogger.ResetAllConfigurations(config.getVerbosity(), config.getProjectName());
         IterativeBoundedScheduler scheduler = new IterativeBoundedScheduler(config);
         if (config.isDpor()) scheduler = new DPORScheduler(config);
         p.setScheduler(scheduler);
@@ -39,6 +40,15 @@ public class EntryPoint {
             Instant end = Instant.now();
             TraceLogger.finished(scheduler.getDepth());
             TraceLogger.logMessage("Took " + Duration.between(start, end).getSeconds() + " seconds");
+            
+            if (config.isCollectStats()) {
+	            System.out.println("--------------------");
+	            System.out.println("Stats::");
+	            StatLogger.log(String.format("project-name:\t%s", config.getProjectName()));
+	            StatLogger.log(String.format("time-seconds:\t%.1f", Duration.between(start, end).toMillis()/1000.0));
+	            scheduler.print_stats();
+	            System.out.println("--------------------");
+            }
         }
     }
 

@@ -1,5 +1,7 @@
 package psymbolic.valuesummary.bdd;
 
+import psymbolic.runtime.statistics.BDDStats;
+
 /**
  * Represents the backend engine that implements the interface to BDD Library
  */
@@ -47,22 +49,37 @@ public class BDDEngine {
     }
 
     public boolean isFalse(BddGuard bdd) {
-        return bddImpl.isFalse(bdd.getBdd());
+        BDDStats.isFalseOperations++;
+        if (bddImpl.isFalse(bdd.getBdd())) {
+        	BDDStats.isFalseResult++;
+        	return true;
+        } else {
+        	return false;
+        }
     }
 
     public boolean isTrue(BddGuard bdd) {
-        return bddImpl.isTrue(bdd.getBdd());
+        BDDStats.isTrueOperations++;
+        if (bddImpl.isTrue(bdd.getBdd())) {
+        	BDDStats.isTrueResult++;
+        	return true;
+        } else {
+        	return false;
+        }
     }
 
     public BddGuard and(BddGuard left, BddGuard right) {
+        BDDStats.andOperations++;
         return new BddGuard(bddImpl.and(left.getBdd(), right.getBdd()));
     }
 
     public BddGuard or(BddGuard left, BddGuard right) {
+        BDDStats.orOperations++;
         return new BddGuard(bddImpl.or(left.getBdd(), right.getBdd()));
     }
 
     public BddGuard not(BddGuard bdd) {
+        BDDStats.notOperations++;
         return new BddGuard(bddImpl.not(bdd.getBdd()));
     }
 
@@ -83,6 +100,14 @@ public class BDDEngine {
         if (bdd.isFalse()) return "false";
         if (bdd.isTrue()) return "true";
         return bddImpl.toString(bdd.getBdd());
+    }
+
+    public int getVarCount() {
+        return bddImpl.getVarCount();
+    }
+
+    public int getNodeCount() {
+        return bddImpl.getNodeCount();
     }
 
     public String getStats() {

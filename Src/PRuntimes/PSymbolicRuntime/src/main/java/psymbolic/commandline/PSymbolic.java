@@ -2,8 +2,10 @@ package psymbolic.commandline;
 
 import org.reflections.Reflections;
 import psymbolic.runtime.logger.PSymLogger;
+import psymbolic.runtime.logger.StatLogger;
 
 import java.io.FileInputStream;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;

@@ -5,12 +5,14 @@ import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.*;
 import psymbolic.runtime.logger.TraceLogger;
+import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Monitor;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.bdd.BDDEngine;
 import psymbolic.runtime.machine.buffer.*;
+import psymbolic.runtime.logger.StatLogger;
 
 import java.util.*;
 import java.util.function.Function;
@@ -288,6 +290,23 @@ public class Scheduler implements SymbolicSearch {
         }
     }
 
+    public void print_stats() {
+        // print statistics
+        if (configuration.isCollectStats()) {
+            Runtime runtime = Runtime.getRuntime();
+            long memoryMax = runtime.maxMemory();
+            double memoryUsedPercent = (mem * 100.0) / memoryMax;
+            StatLogger.log(String.format("memory-used-MB:\t%.1f", mem/1000000.0));
+            StatLogger.log(String.format("memory-limit-MB:\t%.1f", memoryMax/1000000.0));
+            
+            StatLogger.log(String.format("#-transitions:\t%d", searchStats.getSearchTotal().getNumOfTransitions()));
+            StatLogger.log(String.format("#-transitions-merged:\t%d", searchStats.getSearchTotal().getNumOfMergedTransitions()));
+            StatLogger.log(String.format("#-transitions-explored:\t%d", searchStats.getSearchTotal().getNumOfTransitionsExplored()));
+            StatLogger.log(String.format("depth:\t%d", getDepth()));
+            StatLogger.logBDDStats();
+        }
+    }
+    
     public List<PrimitiveVS> getNextSenderChoices() {
         // prioritize the create actions
         for (Machine machine : machines) {
@@ -475,7 +494,7 @@ public class Scheduler implements SymbolicSearch {
         if (configuration.isCollectStats()) {
           SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, numMessages, Concretizer.getNumConcreteValues(Guard.constTrue(), effect), Concretizer.getNumConcreteValues(Guard.constTrue(), effect.getTarget(), effect.getEvent()));
           searchStats.addDepthStatistics(depth, depthStats);
-          //SearchLogger.logDepthStats(depthStats);
+          SearchLogger.logDepthStats(depthStats);
           System.out.println("--------------------");
           System.out.println("Collect Stats::");
           System.out.println("Total transitions:: " + depthStats.getNumOfTransitions() + ", Total Merged Transitions (merged same target):: " + depthStats.getNumOfMergedTransitions() + ", Total Transitions Explored:: " + depthStats.getNumOfTransitionsExplored());

@@ -12,6 +12,10 @@ public class PSymConfiguration {
     @Getter @Setter
     private String mainMachine = "Main";
 
+    // name of the target project
+    @Getter @Setter
+    private String projectName = "test";
+
     @Getter
     // max depth bound after which the search will stop automatically
     private final int maxDepthBound = 1000;

@@ -57,17 +57,14 @@ public class PJBDDImpl {
     }
 
     public DD and(DD left, DD right) {
-        BDDStats.andOperations++;
         return c.makeAnd(left, right);
     }
 
     public DD or(DD left, DD right) {
-        BDDStats.orOperations++;
         return c.makeOr(left, right);
     }
 
     public DD not(DD bdd) {
-        BDDStats.notOperations++;
         return c.makeNot(bdd);
     }
 

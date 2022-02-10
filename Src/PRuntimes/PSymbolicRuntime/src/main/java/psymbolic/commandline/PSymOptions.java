@@ -26,6 +26,16 @@ public class PSymOptions {
                 .build();
         options.addOption(inputFile);
 
+        // project name
+        Option projectName = Option.builder("p")
+                .longOpt("project")
+                .desc("Name of the project")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Project name (string)")
+                .build();
+        options.addOption(projectName);
+
         // max depth bound for the search
         Option depthBound = Option.builder("db")
                 .longOpt("depth-bound")
@@ -147,6 +157,10 @@ public class PSymOptions {
                         formatter.printHelp("m", String.format("Main machine %s not found", option.getValue()), options, "Try \"--help\" option for details.");
                         formatter.printUsage(writer, 80, "m", options);
                     }
+                    break;
+                case "p":
+                case "project":
+                    config.setProjectName(option.getValue());
                     break;
                 case "sb":
                 case "sched-choice-bound":

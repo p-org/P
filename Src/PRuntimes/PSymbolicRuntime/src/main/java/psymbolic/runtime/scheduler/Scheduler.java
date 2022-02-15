@@ -10,7 +10,7 @@ import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Monitor;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.*;
-import psymbolic.valuesummary.bdd.BDDEngine;
+import psymbolic.valuesummary.solvers.SolverEngine;
 import psymbolic.runtime.machine.buffer.*;
 import psymbolic.runtime.logger.StatLogger;
 
@@ -474,7 +474,7 @@ public class Scheduler implements SymbolicSearch {
         performEffect(effect);
 
         // performing node clean-up
-        BDDEngine.UnusedNodesCleanUp();
+        SolverEngine.CleanUpEngines();
         System.gc();
 
         if (configuration.isCollectStats()) {

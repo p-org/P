@@ -6,7 +6,7 @@ import psymbolic.runtime.scheduler.ReplayScheduler;
 import psymbolic.runtime.scheduler.DPORScheduler;
 import psymbolic.runtime.logger.PSymLogger;
 import psymbolic.runtime.logger.TraceLogger;
-import psymbolic.valuesummary.bdd.BDDEngine;
+import psymbolic.valuesummary.solvers.SolverEngine;
 import psymbolic.valuesummary.Guard;
 import psymbolic.runtime.logger.StatLogger;
 
@@ -18,7 +18,7 @@ public class EntryPoint {
     public static Instant start = Instant.now();
 
     public static void run(Program p, PSymConfiguration config) {
-        BDDEngine.reset();
+    	SolverEngine.ResetEngines();
         PSymLogger.ResetAllConfigurations(config.getVerbosity(), config.getProjectName());
         IterativeBoundedScheduler scheduler = new IterativeBoundedScheduler(config);
         if (config.isDpor()) scheduler = new DPORScheduler(config);

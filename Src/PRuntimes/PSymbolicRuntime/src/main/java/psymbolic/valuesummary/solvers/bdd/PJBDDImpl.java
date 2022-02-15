@@ -1,4 +1,4 @@
-package psymbolic.valuesummary.bdd;
+package psymbolic.valuesummary.solvers.bdd;
 
 import org.sosy_lab.pjbdd.api.Builders;
 import org.sosy_lab.pjbdd.api.Creator;

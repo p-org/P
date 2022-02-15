@@ -1,4 +1,4 @@
-package psymbolic.valuesummary.bdd;
+package psymbolic.valuesummary.solvers.bdd;
 
 import psymbolic.runtime.statistics.BDDStats;
 

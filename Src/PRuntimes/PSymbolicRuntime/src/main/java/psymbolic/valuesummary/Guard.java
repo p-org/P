@@ -1,6 +1,6 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.bdd.BddGuard;
+import psymbolic.valuesummary.solvers.bdd.BddGuard;
 
 import java.util.List;
 

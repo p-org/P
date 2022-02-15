@@ -3,7 +3,7 @@ package psymbolic.runtime.logger;
 import org.apache.log4j.*;
 import psymbolic.runtime.statistics.BDDStats;
 import psymbolic.runtime.statistics.SearchStats;
-import psymbolic.valuesummary.bdd.BDDEngine;
+import psymbolic.valuesummary.solvers.bdd.BDDEngine;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;

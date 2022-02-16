@@ -3,7 +3,7 @@ package psymbolic.runtime.logger;
 import org.apache.log4j.*;
 import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.runtime.statistics.SearchStats;
-import psymbolic.valuesummary.solvers.SolverGuard;
+import psymbolic.valuesummary.solvers.SolverEngine;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -59,8 +59,8 @@ public class StatLogger {
     }
 
     public static void logBDDStats() {
-        log.info(String.format("bdd-#-vars:\t%d", SolverGuard.getInstance().getVarCount()));
-        log.info(String.format("bdd-#-nodes:\t%d", SolverGuard.getInstance().getNodeCount()));
+        log.info(String.format("bdd-#-vars:\t%d", SolverEngine.getSolver().getVarCount()));
+        log.info(String.format("bdd-#-nodes:\t%d", SolverEngine.getSolver().getNodeCount()));
         log.info(String.format("bdd-#-and-ops:\t%d", SolverStats.andOperations));
         log.info(String.format("bdd-#-or-ops:\t%d", SolverStats.orOperations));
         log.info(String.format("bdd-#-not-ops:\t%d", SolverStats.notOperations));

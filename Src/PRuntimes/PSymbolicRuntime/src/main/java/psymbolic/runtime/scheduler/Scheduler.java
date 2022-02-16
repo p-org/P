@@ -474,7 +474,7 @@ public class Scheduler implements SymbolicSearch {
         performEffect(effect);
 
         // performing node clean-up
-        SolverEngine.CleanUpEngines();
+        SolverEngine.cleanupEngine();
         System.gc();
 
         if (configuration.isCollectStats()) {

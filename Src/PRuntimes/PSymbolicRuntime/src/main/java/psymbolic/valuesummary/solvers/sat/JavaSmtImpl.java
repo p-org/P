@@ -9,6 +9,7 @@ import org.sosy_lab.java_smt.SolverContextFactory;
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers;
 import org.sosy_lab.java_smt.api.*;
 import psymbolic.valuesummary.solvers.SolverLib;
+import psymbolic.valuesummary.solvers.SolverType;
 
 /**
  * Represents the Sat implementation using JavaSMT
@@ -20,36 +21,36 @@ public class JavaSmtImpl implements SolverLib<BooleanFormula> {
     
     private long idx = 0;
 
-    public JavaSmtImpl() {
+    public JavaSmtImpl(SolverType type) {
         try {
             Configuration config = Configuration.defaultConfiguration();
             LogManager logger = BasicLogManager.create(config);
             ShutdownManager shutdown = ShutdownManager.create();
-            
-            Solvers solver = Solvers.PRINCESS;
+            Solvers solver = getSolverType(type);
 
             context = SolverContextFactory.createSolverContext(
                     config, logger, shutdown.getNotifier(), solver);
             formulaManager = context.getFormulaManager();
             booleanFormulaManager = formulaManager.getBooleanFormulaManager();
-            
-//            try (ProverEnvironment prover = context.newProverEnvironment()) {
-//                prover.push();
-//                prover.isUnsat();
-//                prover.pop();
-//                System.out.println(context.getSolverName());
-//                
-//            } catch(InterruptedException | SolverException e) {
-//                e.printStackTrace();
-//                throw new RuntimeException("Issue querying solver");
-//            }
-//            throw new RuntimeException("Tested SMT solver");
-            
         } catch (InvalidConfigurationException e){
             e.printStackTrace();
             throw new RuntimeException("Invalid configuration for SMT");
         }
     }
+    
+    private Solvers getSolverType(SolverType type) {
+        switch (type) {
+        case JAVASMT_BOOLECTOR:		return Solvers.BOOLECTOR;
+        case JAVASMT_CVC4:			return Solvers.CVC4;
+        case JAVASMT_MATHSAT5:		return Solvers.MATHSAT5;
+        case JAVASMT_PRINCESS:		return Solvers.PRINCESS;
+        case JAVASMT_SMTINTERPOL:	return Solvers.SMTINTERPOL;
+        case JAVASMT_YICES2:		return Solvers.YICES2;
+        case JAVASMT_Z3:			return Solvers.Z3;
+        }
+        return Solvers.Z3;
+    }
+    
     
     public BooleanFormula constFalse() {
         return booleanFormulaManager.makeFalse();
@@ -135,7 +136,7 @@ public class JavaSmtImpl implements SolverLib<BooleanFormula> {
         return "";
     }
 
-    public void UnusedNodeCleanUp() {
+    public void cleanup() {
     	// TODO
     }
 }

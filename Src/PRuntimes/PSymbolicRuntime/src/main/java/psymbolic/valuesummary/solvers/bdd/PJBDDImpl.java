@@ -110,7 +110,7 @@ public class PJBDDImpl implements SolverLib<DD> {
         return c.getCreatorStats().prettyPrint();
     }
 
-    public void UnusedNodeCleanUp() {
+    public void cleanup() {
         c.cleanUnusedNodes();
     }
 }

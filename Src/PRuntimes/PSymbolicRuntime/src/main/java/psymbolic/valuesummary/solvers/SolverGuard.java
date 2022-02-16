@@ -1,29 +1,12 @@
 package psymbolic.valuesummary.solvers;
 
 import psymbolic.runtime.statistics.SolverStats;
-import psymbolic.valuesummary.solvers.bdd.PJBDDImpl;
-import psymbolic.valuesummary.solvers.sat.JavaSmtImpl;
 import java.util.List;
 
 /**
     Represents the generic solver based implementation of Guard
  */
 public class SolverGuard {
-
-    private static SolverLib solverImpl = new JavaSmtImpl();
-
-    public static SolverLib getInstance() {
-        return solverImpl;
-    }
-
-    public static void resetSolver() {
-        solverImpl = new JavaSmtImpl();
-    }
-
-    public static void cleanup() {
-        solverImpl.UnusedNodeCleanUp();
-    }
-
     private final Object formula;
 
     public SolverGuard(Object formula) {
@@ -31,16 +14,16 @@ public class SolverGuard {
     }
 
     public static SolverGuard constFalse() {
-        return new SolverGuard(solverImpl.constFalse());
+        return new SolverGuard(SolverEngine.getSolver().constFalse());
     }
 
     public static SolverGuard constTrue() {
-        return new SolverGuard(solverImpl.constTrue());
+        return new SolverGuard(SolverEngine.getSolver().constTrue());
     }
 
     public boolean isFalse() {
     	SolverStats.isFalseOperations++;
-        if (solverImpl.isFalse(formula)) {
+        if (SolverEngine.getSolver().isFalse(formula)) {
         	SolverStats.isFalseResult++;
         	return true;
         } else {
@@ -50,7 +33,7 @@ public class SolverGuard {
 
     public boolean isTrue() {
     	SolverStats.isTrueOperations++;
-        if (solverImpl.isTrue(formula)) {
+        if (SolverEngine.getSolver().isTrue(formula)) {
         	SolverStats.isTrueResult++;
         	return true;
         } else {
@@ -60,38 +43,38 @@ public class SolverGuard {
 
     public SolverGuard and(SolverGuard other) {
     	SolverStats.andOperations++;
-        return new SolverGuard(solverImpl.and(formula, other.formula));
+        return new SolverGuard(SolverEngine.getSolver().and(formula, other.formula));
     }
 
     public SolverGuard or(SolverGuard other) {
     	SolverStats.orOperations++;
-        return new SolverGuard(solverImpl.or(formula, other.formula));
+        return new SolverGuard(SolverEngine.getSolver().or(formula, other.formula));
     }
 
     public SolverGuard implies(SolverGuard other) { 
-    	return new SolverGuard(solverImpl.implies(formula, other.formula)); 
+    	return new SolverGuard(SolverEngine.getSolver().implies(formula, other.formula)); 
     }
 
     public SolverGuard not() {
     	SolverStats.notOperations++;
-        return new SolverGuard(solverImpl.not(formula));
+        return new SolverGuard(SolverEngine.getSolver().not(formula));
     }
 
-    public static SolverGuard orMany(List<SolverGuard> wrappedBdd) {
-        return wrappedBdd.stream().reduce(SolverGuard.constFalse(), SolverGuard::or);
+    public static SolverGuard orMany(List<SolverGuard> others) {
+        return others.stream().reduce(SolverGuard.constFalse(), SolverGuard::or);
     }
 
     public SolverGuard ifThenElse(SolverGuard thenCase, SolverGuard elseCase) {
-        return new SolverGuard(solverImpl.ifThenElse(formula, thenCase.formula, elseCase.formula));
+        return new SolverGuard(SolverEngine.getSolver().ifThenElse(formula, thenCase.formula, elseCase.formula));
     }
 
     public static SolverGuard newVar() {
-        return new SolverGuard(solverImpl.newVar());
+        return new SolverGuard(SolverEngine.getSolver().newVar());
     }
 
     @Override
     public String toString() {
-        return solverImpl.toString(formula);
+        return SolverEngine.getSolver().toString(formula);
     }
     
 }

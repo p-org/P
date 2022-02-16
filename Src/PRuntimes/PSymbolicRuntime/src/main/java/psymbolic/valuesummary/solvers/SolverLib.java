@@ -31,6 +31,6 @@ public interface SolverLib<T> {
 
     String getStats();
 
-    void UnusedNodeCleanUp();
+    void cleanup();
     
 }

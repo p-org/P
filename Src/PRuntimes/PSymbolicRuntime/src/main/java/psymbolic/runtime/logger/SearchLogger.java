@@ -3,7 +3,7 @@ package psymbolic.runtime.logger;
 import org.apache.log4j.*;
 import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.runtime.statistics.SearchStats;
-import psymbolic.valuesummary.solvers.SolverGuard;
+import psymbolic.valuesummary.solvers.SolverEngine;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -60,7 +60,7 @@ public class SearchLogger {
     public static void logDepthStats(SearchStats.DepthStats depthStats)
     {
         log.info(String.format("Depth: %d: TotalTransitions = %d, ReducedTransitionsExplored = %d", depthStats.getDepth(), depthStats.getNumOfTransitions(), depthStats.getNumOfTransitionsExplored()));
-        log.info("BDD States:\n" + SolverGuard.getInstance().getStats());
+        log.info("BDD States:\n" + SolverEngine.getSolver().getStats());
         log.info(SolverStats.prettyPrint());
     }
 

@@ -3,6 +3,9 @@ package psymbolic.commandline;
 import org.apache.commons.cli.*;
 import org.reflections.Reflections;
 
+import psymbolic.valuesummary.solvers.SolverEngine;
+import psymbolic.valuesummary.solvers.SolverType;
+
 import java.io.PrintWriter;
 import java.util.Set;
 
@@ -35,6 +38,16 @@ public class PSymOptions {
                 .argName("Project name (string)")
                 .build();
         options.addOption(projectName);
+
+        // solver type
+        Option solverType = Option.builder("st")
+                .longOpt("solver")
+                .desc("Solver type to use: bdd, boolector, cvc4, princess, smtinterpol, yices2, z3")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Solver type (string)")
+                .build();
+        options.addOption(solverType);
 
         // max depth bound for the search
         Option depthBound = Option.builder("db")
@@ -161,6 +174,29 @@ public class PSymOptions {
                 case "p":
                 case "project":
                     config.setProjectName(option.getValue());
+                    break;
+                case "st":
+                case "solver":
+                	switch (option.getValue()) {
+                	case "bdd":			config.setSolverType(SolverType.BDD);
+                		break;
+                	case "boolector":	config.setSolverType(SolverType.JAVASMT_BOOLECTOR);
+            			break;
+                	case "cvc4":		config.setSolverType(SolverType.JAVASMT_CVC4);
+            			break;
+                	case "princess":	config.setSolverType(SolverType.JAVASMT_PRINCESS);
+            			break;
+                	case "smtinterpol":	config.setSolverType(SolverType.JAVASMT_SMTINTERPOL);
+            			break;
+                	case "yices2":		config.setSolverType(SolverType.JAVASMT_YICES2);
+            			break;
+                	case "z3":			config.setSolverType(SolverType.JAVASMT_Z3);
+            			break;
+        			default:	
+                        formatter.printHelp("st", String.format("Expected a solver type, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                        formatter.printUsage(writer, 80, "st", options);
+                	}
+                	SolverEngine.resetEngine(config.getSolverType());
                     break;
                 case "sb":
                 case "sched-choice-bound":

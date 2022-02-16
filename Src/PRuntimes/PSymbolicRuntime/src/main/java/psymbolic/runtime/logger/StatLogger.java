@@ -1,9 +1,9 @@
 package psymbolic.runtime.logger;
 
 import org.apache.log4j.*;
-import psymbolic.runtime.statistics.BDDStats;
+import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.runtime.statistics.SearchStats;
-import psymbolic.valuesummary.solvers.bdd.BDDEngine;
+import psymbolic.valuesummary.solvers.SolverGuard;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -59,15 +59,15 @@ public class StatLogger {
     }
 
     public static void logBDDStats() {
-        log.info(String.format("bdd-#-vars:\t%d", BDDEngine.getInstance().getVarCount()));
-        log.info(String.format("bdd-#-nodes:\t%d", BDDEngine.getInstance().getNodeCount()));
-        log.info(String.format("bdd-#-and-ops:\t%d", BDDStats.andOperations));
-        log.info(String.format("bdd-#-or-ops:\t%d", BDDStats.orOperations));
-        log.info(String.format("bdd-#-not-ops:\t%d", BDDStats.notOperations));
-        log.info(String.format("bdd-#-istrue-ops:\t%d", BDDStats.isTrueOperations));
-        log.info(String.format("bdd-#-isfalse-ops:\t%d", BDDStats.isFalseOperations));
-        log.info(String.format("bdd-%%-istrue-ops-yes:\t%.1f", BDDStats.isTruePercent()));
-        log.info(String.format("bdd-%%-isfalse-ops-yes:\t%.1f", BDDStats.isFalsePercent()));
+        log.info(String.format("bdd-#-vars:\t%d", SolverGuard.getInstance().getVarCount()));
+        log.info(String.format("bdd-#-nodes:\t%d", SolverGuard.getInstance().getNodeCount()));
+        log.info(String.format("bdd-#-and-ops:\t%d", SolverStats.andOperations));
+        log.info(String.format("bdd-#-or-ops:\t%d", SolverStats.orOperations));
+        log.info(String.format("bdd-#-not-ops:\t%d", SolverStats.notOperations));
+        log.info(String.format("bdd-#-istrue-ops:\t%d", SolverStats.isTrueOperations));
+        log.info(String.format("bdd-#-isfalse-ops:\t%d", SolverStats.isFalseOperations));
+        log.info(String.format("bdd-%%-istrue-ops-yes:\t%.1f", SolverStats.isTruePercent()));
+        log.info(String.format("bdd-%%-isfalse-ops-yes:\t%.1f", SolverStats.isFalsePercent()));
     }
     
 }

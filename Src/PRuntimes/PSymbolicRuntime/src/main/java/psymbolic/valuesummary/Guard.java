@@ -1,6 +1,6 @@
 package psymbolic.valuesummary;
 
-import psymbolic.valuesummary.solvers.bdd.BddGuard;
+import psymbolic.valuesummary.solvers.SolverGuard;
 
 import java.util.List;
 
@@ -12,9 +12,9 @@ public class Guard {
     /**
      * Represents the boolean formula for the restrict
      */
-    private final BddGuard guard;
+    private final SolverGuard guard;
 
-    public Guard(BddGuard guard) {
+    public Guard(SolverGuard guard) {
         this.guard = guard;
     }
 
@@ -23,7 +23,7 @@ public class Guard {
      * @return Guard representing constant false
      */
     public static Guard constFalse() {
-        return new Guard(BddGuard.constFalse());
+        return new Guard(SolverGuard.constFalse());
     }
 
     /**
@@ -31,7 +31,7 @@ public class Guard {
      * @return Guard representing constant true
      */
     public static Guard constTrue() {
-        return new Guard(BddGuard.constTrue());
+        return new Guard(SolverGuard.constTrue());
     }
 
     /** ValueSummaryChecks whether the logical restrict evaluates to true
@@ -105,7 +105,7 @@ public class Guard {
     }
 
     public static Guard newVar() {
-        return new Guard(BddGuard.newVar());
+        return new Guard(SolverGuard.newVar());
     }
 
     @Override

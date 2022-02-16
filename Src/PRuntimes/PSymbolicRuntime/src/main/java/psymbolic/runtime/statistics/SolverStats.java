@@ -1,6 +1,6 @@
 package psymbolic.runtime.statistics;
 
-public class SATStats {
+public class SolverStats {
     public static int andOperations = 0;
     public static int orOperations = 0;
     public static int notOperations = 0;

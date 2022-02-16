@@ -8,12 +8,12 @@ import org.sosy_lab.pjbdd.util.parser.BDDStringImporter;
 import org.sosy_lab.pjbdd.util.parser.DotExporter;
 import org.sosy_lab.pjbdd.util.parser.Exporter;
 import org.sosy_lab.pjbdd.util.parser.Importer;
-import psymbolic.runtime.statistics.BDDStats;
+import psymbolic.valuesummary.solvers.SolverLib;
 
 /**
  * Represents the BDD implementation using PJBDD
  */
-public class PJBDDImpl {
+public class PJBDDImpl implements SolverLib<DD> {
     final private Creator c;
     final private Exporter<DD> e;
     final private Importer<DD> i;
@@ -106,7 +106,7 @@ public class PJBDDImpl {
         return c.getCreatorStats().getNodeCount();
     }
 
-    public String getBDDStats() {
+    public String getStats() {
         return c.getCreatorStats().prettyPrint();
     }
 

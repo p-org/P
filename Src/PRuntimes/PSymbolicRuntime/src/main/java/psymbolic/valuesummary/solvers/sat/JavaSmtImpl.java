@@ -8,26 +8,25 @@ import org.sosy_lab.common.log.LogManager;
 import org.sosy_lab.java_smt.SolverContextFactory;
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers;
 import org.sosy_lab.java_smt.api.*;
-
-import psymbolic.runtime.statistics.SATStats;
+import psymbolic.valuesummary.solvers.SolverLib;
 
 /**
  * Represents the Sat implementation using JavaSMT
  */
-class JaveSmtImpl {
+public class JavaSmtImpl implements SolverLib<BooleanFormula> {
     final private SolverContext context;
     final private FormulaManager formulaManager;
     final private BooleanFormulaManager booleanFormulaManager;
     
     private long idx = 0;
 
-    public JaveSmtImpl() {
+    public JavaSmtImpl() {
         try {
             Configuration config = Configuration.defaultConfiguration();
             LogManager logger = BasicLogManager.create(config);
             ShutdownManager shutdown = ShutdownManager.create();
             
-            Solvers solver = Solvers.SMTINTERPOL;
+            Solvers solver = Solvers.PRINCESS;
 
             context = SolverContextFactory.createSolverContext(
                     config, logger, shutdown.getNotifier(), solver);

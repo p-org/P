@@ -1,9 +1,9 @@
 package psymbolic.runtime.logger;
 
 import org.apache.log4j.*;
-import psymbolic.runtime.statistics.BDDStats;
+import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.runtime.statistics.SearchStats;
-import psymbolic.valuesummary.solvers.bdd.BDDEngine;
+import psymbolic.valuesummary.solvers.SolverGuard;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -60,8 +60,8 @@ public class SearchLogger {
     public static void logDepthStats(SearchStats.DepthStats depthStats)
     {
         log.info(String.format("Depth: %d: TotalTransitions = %d, ReducedTransitionsExplored = %d", depthStats.getDepth(), depthStats.getNumOfTransitions(), depthStats.getNumOfTransitionsExplored()));
-        log.info("BDD States:\n" + BDDEngine.getInstance().getStats());
-        log.info(BDDStats.prettyPrint());
+        log.info("BDD States:\n" + SolverGuard.getInstance().getStats());
+        log.info(SolverStats.prettyPrint());
     }
 
     public static void logIterationStats(SearchStats.IterationStats iterStats)

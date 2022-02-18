@@ -303,7 +303,7 @@ public class Scheduler implements SymbolicSearch {
             StatLogger.log(String.format("#-transitions-merged:\t%d", searchStats.getSearchTotal().getNumOfMergedTransitions()));
             StatLogger.log(String.format("#-transitions-explored:\t%d", searchStats.getSearchTotal().getNumOfTransitionsExplored()));
             StatLogger.log(String.format("depth:\t%d", getDepth()));
-            StatLogger.logBDDStats();
+            StatLogger.logSolverStats();
         }
     }
     

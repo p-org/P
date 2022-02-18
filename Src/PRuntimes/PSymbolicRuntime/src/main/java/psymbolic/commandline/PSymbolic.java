@@ -3,6 +3,7 @@ package psymbolic.commandline;
 import org.reflections.Reflections;
 import psymbolic.runtime.logger.PSymLogger;
 import psymbolic.runtime.logger.StatLogger;
+import psymbolic.valuesummary.solvers.SolverEngine;
 
 import java.io.FileInputStream;
 import java.time.Duration;
@@ -19,6 +20,7 @@ public class PSymbolic {
         // parse the commandline arguments to create the configuration
         PSymConfiguration config = PSymOptions.ParseCommandlineArgs(args);
         Reflections reflections = new Reflections("psymbolic");
+    	SolverEngine.resetEngine(config.getSolverType());
 
         try {
             // load all the files in the passed jar

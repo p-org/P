@@ -1,0 +1,140 @@
+package psymbolic.valuesummary.solvers.sat;
+
+import psymbolic.valuesummary.solvers.SolverLib;
+import psymbolic.valuesummary.solvers.SolverType;
+import com.sri.yices.*;
+import java.lang.Integer;
+
+/**
+ * Represents the Sat implementation using Yices
+ */
+public class YicesImpl implements SolverLib<Integer> {
+    private long config;
+    private long context;
+    private long param;
+    private int boolType;
+    private Integer valTrue;
+    private Integer valFalse;    
+    private long idx = 0;
+    
+    // Yices2 status codes
+    public static final int YICES_STATUS_IDLE = 0;
+    public static final int YICES_STATUS_SEARCHING = 1;
+    public static final int YICES_STATUS_UNKNOWN = 2;
+    public static final int YICES_STATUS_SAT = 3;
+    public static final int YICES_STATUS_UNSAT = 4;
+    public static final int YICES_STATUS_INTERRUPTED = 5;
+    public static final int YICES_STATUS_ERROR = 6;
+
+    public YicesImpl() {
+    	int status;
+    	
+    	System.out.println("Using Yices version " + Yices.version());
+
+    	config = Yices.newConfig();
+        status = Yices.defaultConfigForLogic(config, "QF_UF");
+//    	System.out.println("Creating config for logic QF_UF, status: " + status);
+
+        context = Yices.newContext(config);
+//    	System.out.println("Creating context");
+    	
+    	param = Yices.newParamRecord();
+    	Yices.defaultParamsForContext(context, param);
+//    	System.out.println("Creating default params");
+    	
+    	boolType = Yices.boolType();
+    	valFalse = Yices.mkFalse();
+    	valTrue = Yices.mkTrue();
+//    	System.out.println("Creating true/false constants");
+    }
+    
+    public Integer constFalse() {
+    	return valFalse;
+    }
+
+    public Integer constTrue() {
+    	return valTrue;
+    }
+
+    public boolean isFalse(Integer formula) {
+    	int result = YICES_STATUS_UNKNOWN;
+
+//    	System.out.println("Checking formula: " + toString(formula));
+    	result = Yices.checkFormula(formula, "QF_UF", "NULL", null);
+//    	result = Yices.checkContextWithAssumptions(context, param, new int[]{formula});
+//    	System.out.println("Result: " + result);
+//    	System.out.println("Yices status: " + Yices.errorString());
+//    	throw new RuntimeException("Debug point reached");
+    	
+    	switch(result) {
+    	case YICES_STATUS_SAT:		return false;
+    	case YICES_STATUS_UNSAT:	return true;
+    	default:
+            throw new RuntimeException("Yices returned query result: " + result + " with error: " + Yices.errorString());
+    	}
+    }
+    
+    public boolean isTrue(Integer formula) {
+    	return !isFalse(formula);
+    }
+
+    public Integer and(Integer left, Integer right) {
+        return Yices.and(left, right);
+    }
+
+    public Integer or(Integer left, Integer right) {
+        return Yices.or(left, right);
+    }
+
+    public Integer not(Integer booleanFormula) {
+        return Yices.not(booleanFormula);
+    }
+
+    public Integer implies(Integer left, Integer right) {
+        return Yices.implies(left, right);
+    }
+
+    public Integer ifThenElse(Integer cond, Integer thenClause, Integer elseClause) {
+        return Yices.or(Yices.and(cond, thenClause),
+        		Yices.and(Yices.not(cond), elseClause));
+    }
+
+    public Integer newVar() {
+        int t, status;
+        t = Yices.newUninterpretedTerm(boolType);
+        Yices.setTermName(t, "x" + idx++);
+    	System.out.println("\tnew variable: " + Yices.getTermName(t));
+        return t;
+    }
+
+    public String toString(Integer booleanFormula) {
+        return Yices.termToString(booleanFormula);
+    }
+
+    public Integer fromString(String s) {
+        if (s.equals("false")) {
+            return constFalse();
+        }
+        if (s.equals("true")) {
+            return constTrue();
+        }
+        throw new RuntimeException("Unsupported");
+    }
+
+    public int getVarCount() {
+        return (int)idx + 1;
+    }
+
+    public int getNodeCount() {
+        return Yices.yicesNumTerms();
+    }
+
+    public String getStats() {
+    	// TODO
+        return "";
+    }
+
+    public void cleanup() {
+    	// TODO
+    }
+}

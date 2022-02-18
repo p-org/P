@@ -9,5 +9,6 @@ public enum SolverType {
 	  JAVASMT_PRINCESS,
 	  JAVASMT_SMTINTERPOL,
 	  JAVASMT_YICES2,
-	  JAVASMT_Z3
+	  JAVASMT_Z3,
+	  YICES2
 }

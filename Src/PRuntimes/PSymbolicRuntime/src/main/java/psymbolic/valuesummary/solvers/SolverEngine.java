@@ -2,6 +2,7 @@ package psymbolic.valuesummary.solvers;
 
 import psymbolic.valuesummary.solvers.bdd.PJBDDImpl;
 import psymbolic.valuesummary.solvers.sat.JavaSmtImpl;
+import psymbolic.valuesummary.solvers.sat.YicesImpl;
 
 /**
  * Represents the generic backend engine
@@ -39,11 +40,13 @@ public class SolverEngine {
     public static void setSolver(SolverType type) {
     	solverType = type;
     	switch(type) {
-    	case BDD:	solverImpl = new PJBDDImpl(false);
+    	case BDD:		solverImpl = new PJBDDImpl(false);
     		break;
-    	case CBDD:	solverImpl = new PJBDDImpl(true);
+    	case CBDD:		solverImpl = new PJBDDImpl(true);
     		break;
-		default:	solverImpl = new JavaSmtImpl(type);
+    	case YICES2:	solverImpl = new YicesImpl();
+			break;
+		default:		solverImpl = new JavaSmtImpl(type);
     	}
     }
 

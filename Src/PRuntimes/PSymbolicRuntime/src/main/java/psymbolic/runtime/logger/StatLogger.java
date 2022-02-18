@@ -58,16 +58,16 @@ public class StatLogger {
         log.info(message);
     }
 
-    public static void logBDDStats() {
-        log.info(String.format("bdd-#-vars:\t%d", SolverEngine.getSolver().getVarCount()));
-        log.info(String.format("bdd-#-nodes:\t%d", SolverEngine.getSolver().getNodeCount()));
-        log.info(String.format("bdd-#-and-ops:\t%d", SolverStats.andOperations));
-        log.info(String.format("bdd-#-or-ops:\t%d", SolverStats.orOperations));
-        log.info(String.format("bdd-#-not-ops:\t%d", SolverStats.notOperations));
-        log.info(String.format("bdd-#-istrue-ops:\t%d", SolverStats.isTrueOperations));
-        log.info(String.format("bdd-#-isfalse-ops:\t%d", SolverStats.isFalseOperations));
-        log.info(String.format("bdd-%%-istrue-ops-yes:\t%.1f", SolverStats.isTruePercent()));
-        log.info(String.format("bdd-%%-isfalse-ops-yes:\t%.1f", SolverStats.isFalsePercent()));
+    public static void logSolverStats() {
+        log.info(String.format("solver-#-vars:\t%d", SolverEngine.getSolver().getVarCount()));
+        log.info(String.format("solver-#-nodes:\t%d", SolverEngine.getSolver().getNodeCount()));
+        log.info(String.format("solver-#-and-ops:\t%d", SolverStats.andOperations));
+        log.info(String.format("solver-#-or-ops:\t%d", SolverStats.orOperations));
+        log.info(String.format("solver-#-not-ops:\t%d", SolverStats.notOperations));
+        log.info(String.format("solver-#-istrue-ops:\t%d", SolverStats.isTrueOperations));
+        log.info(String.format("solver-#-isfalse-ops:\t%d", SolverStats.isFalseOperations));
+        log.info(String.format("solver-%%-istrue-ops-yes:\t%.1f", SolverStats.isTruePercent()));
+        log.info(String.format("solver-%%-isfalse-ops-yes:\t%.1f", SolverStats.isFalsePercent()));
     }
     
 }

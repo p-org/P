@@ -25,6 +25,21 @@
         <version>2.5.2</version>
         <executions>
           <execution>
+	    <id>install-yices</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <groupId>com.sri.yices</groupId>
+              <artifactId>yices</artifactId>
+              <version>1.0</version>
+              <packaging>jar</packaging>
+              <file>lib/yices.jar</file>
+            </configuration>
+          </execution>
+          <execution>
+	    <id>install-pjbdd</id>
             <phase>clean</phase>
             <goals>
               <goal>install-file</goal>
@@ -84,6 +99,12 @@
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>com.sri.yices</groupId>
+      <artifactId>yices</artifactId>
+      <version>1.0</version>
+    </dependency>
+
     <dependency>
       <groupId>org.sosy-lab</groupId>
       <artifactId>java-smt</artifactId>

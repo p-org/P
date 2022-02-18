@@ -104,7 +104,7 @@ public class JavaSmtImpl implements SolverLib<BooleanFormula> {
     }
 
     public BooleanFormula newVar() {
-        return booleanFormulaManager.makeVariable("var_" + idx++);
+        return booleanFormulaManager.makeVariable("x" + idx++);
     }
 
     public String toString(BooleanFormula booleanFormula) {

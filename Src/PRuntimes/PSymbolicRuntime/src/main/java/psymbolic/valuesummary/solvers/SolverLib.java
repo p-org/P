@@ -5,9 +5,7 @@ public interface SolverLib<T> {
 
     T constTrue();
 
-    boolean isFalse(T formula);
-
-    boolean isTrue(T formula);
+    boolean isSat(T formula);
 
     T and(T left, T right);
 

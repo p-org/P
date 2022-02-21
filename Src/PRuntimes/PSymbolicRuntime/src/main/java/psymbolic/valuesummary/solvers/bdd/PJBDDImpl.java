@@ -8,6 +8,7 @@ import org.sosy_lab.pjbdd.util.parser.BDDStringImporter;
 import org.sosy_lab.pjbdd.util.parser.DotExporter;
 import org.sosy_lab.pjbdd.util.parser.Exporter;
 import org.sosy_lab.pjbdd.util.parser.Importer;
+import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.solvers.SolverLib;
 
 /**
@@ -49,12 +50,12 @@ public class PJBDDImpl implements SolverLib<DD> {
         return c.makeTrue();
     }
 
-    public boolean isFalse(DD bdd) {
-        return bdd.isFalse();
-    }
-
-    public boolean isTrue(DD bdd) {
-        return bdd.isTrue();
+    public boolean isSat(DD bdd) {
+        SolverStats.isSatOperations++;
+        boolean result = bdd.isTrue();
+        if (result)
+            SolverStats.isSatResult++;
+        return result;
     }
 
     public DD and(DD left, DD right) {

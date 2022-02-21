@@ -13,51 +13,43 @@ public class SolverGuard {
         this.formula = formula;
     }
 
+    private static SolverGuard getSolverGuard(Object formula) {
+        return new SolverGuard(formula);
+    }
+
     public static SolverGuard constFalse() {
-        return new SolverGuard(SolverEngine.getSolver().constFalse());
+        return getSolverGuard(SolverEngine.getSolver().constFalse());
     }
 
     public static SolverGuard constTrue() {
-        return new SolverGuard(SolverEngine.getSolver().constTrue());
-    }
-
-    public boolean isFalse() {
-    	SolverStats.isFalseOperations++;
-        if (SolverEngine.getSolver().isFalse(formula)) {
-        	SolverStats.isFalseResult++;
-        	return true;
-        } else {
-        	return false;
-        }
+        return getSolverGuard(SolverEngine.getSolver().constTrue());
     }
 
     public boolean isTrue() {
-    	SolverStats.isTrueOperations++;
-        if (SolverEngine.getSolver().isTrue(formula)) {
-        	SolverStats.isTrueResult++;
-        	return true;
-        } else {
-        	return false;
-        }
+        return SolverEngine.getSolver().isSat(formula);
+    }
+
+    public boolean isFalse() {
+        return !isTrue();
     }
 
     public SolverGuard and(SolverGuard other) {
     	SolverStats.andOperations++;
-        return new SolverGuard(SolverEngine.getSolver().and(formula, other.formula));
+        return getSolverGuard(SolverEngine.getSolver().and(formula, other.formula));
     }
 
     public SolverGuard or(SolverGuard other) {
     	SolverStats.orOperations++;
-        return new SolverGuard(SolverEngine.getSolver().or(formula, other.formula));
+        return getSolverGuard(SolverEngine.getSolver().or(formula, other.formula));
     }
 
     public SolverGuard implies(SolverGuard other) { 
-    	return new SolverGuard(SolverEngine.getSolver().implies(formula, other.formula)); 
+    	return getSolverGuard(SolverEngine.getSolver().implies(formula, other.formula));
     }
 
     public SolverGuard not() {
     	SolverStats.notOperations++;
-        return new SolverGuard(SolverEngine.getSolver().not(formula));
+        return getSolverGuard(SolverEngine.getSolver().not(formula));
     }
 
     public static SolverGuard orMany(List<SolverGuard> others) {
@@ -65,16 +57,23 @@ public class SolverGuard {
     }
 
     public SolverGuard ifThenElse(SolverGuard thenCase, SolverGuard elseCase) {
-        return new SolverGuard(SolverEngine.getSolver().ifThenElse(formula, thenCase.formula, elseCase.formula));
+        return getSolverGuard(SolverEngine.getSolver().ifThenElse(formula, thenCase.formula, elseCase.formula));
     }
 
     public static SolverGuard newVar() {
-        return new SolverGuard(SolverEngine.getSolver().newVar());
+        return getSolverGuard(SolverEngine.getSolver().newVar());
     }
 
     @Override
     public String toString() {
         return SolverEngine.getSolver().toString(formula);
     }
-    
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SolverGuard)) return false;
+        SolverGuard that = (SolverGuard) o;
+        return formula.equals(that.formula);
+    }
 }

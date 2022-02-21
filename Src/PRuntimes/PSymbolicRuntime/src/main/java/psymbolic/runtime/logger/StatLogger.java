@@ -2,12 +2,9 @@ package psymbolic.runtime.logger;
 
 import org.apache.log4j.*;
 import psymbolic.runtime.statistics.SolverStats;
-import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.solvers.SolverEngine;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class StatLogger {
     /* Get actual class name to be printed on */
@@ -64,10 +61,8 @@ public class StatLogger {
         log.info(String.format("solver-#-and-ops:\t%d", SolverStats.andOperations));
         log.info(String.format("solver-#-or-ops:\t%d", SolverStats.orOperations));
         log.info(String.format("solver-#-not-ops:\t%d", SolverStats.notOperations));
-        log.info(String.format("solver-#-istrue-ops:\t%d", SolverStats.isTrueOperations));
-        log.info(String.format("solver-#-isfalse-ops:\t%d", SolverStats.isFalseOperations));
-        log.info(String.format("solver-%%-istrue-ops-yes:\t%.1f", SolverStats.isTruePercent()));
-        log.info(String.format("solver-%%-isfalse-ops-yes:\t%.1f", SolverStats.isFalsePercent()));
+        log.info(String.format("solver-#-issat-ops:\t%d", SolverStats.isSatOperations));
+        log.info(String.format("solver-%%-issat-ops-sat:\t%.1f", SolverStats.isSatPercent()));
     }
     
 }

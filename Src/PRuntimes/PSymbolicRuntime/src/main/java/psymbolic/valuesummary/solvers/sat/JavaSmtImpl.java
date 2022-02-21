@@ -8,6 +8,7 @@ import org.sosy_lab.common.log.LogManager;
 import org.sosy_lab.java_smt.SolverContextFactory;
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers;
 import org.sosy_lab.java_smt.api.*;
+import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.solvers.SolverLib;
 import psymbolic.valuesummary.solvers.SolverType;
 
@@ -60,22 +61,14 @@ public class JavaSmtImpl implements SolverLib<BooleanFormula> {
         return booleanFormulaManager.makeTrue();
     }
 
-    public boolean isFalse(BooleanFormula formula) {
+    public boolean isSat(BooleanFormula formula) {
+        SolverStats.isSatOperations++;
         try (ProverEnvironment prover = context.newProverEnvironment()) {
             prover.addConstraint(formula);
-            boolean isUnsat = prover.isUnsat();
-            return isUnsat;
-        } catch(InterruptedException | SolverException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Issue querying solver");
-        }
-    }
-    
-    public boolean isTrue(BooleanFormula formula) {
-        try (ProverEnvironment prover = context.newProverEnvironment()) {
-            prover.addConstraint(formula);
-            boolean isSat = !prover.isUnsat();
-            return isSat;
+            boolean result = !prover.isUnsat();
+            if (result)
+                SolverStats.isSatResult++;
+            return result;
         } catch(InterruptedException | SolverException e) {
             e.printStackTrace();
             throw new RuntimeException("Issue querying solver");

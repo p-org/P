@@ -6,7 +6,10 @@ jobs:
   Build-And-Test-MacOS:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v1
+    - name: Checkout with submodules
+      uses: actions/checkout@v1
+      with:
+        submodules: recursive
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:

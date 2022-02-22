@@ -17,7 +17,9 @@
     <RepositoryUrl>https://github.com/p-org/P</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Coyote" Version="1.0.5" />
     <None Include="../../../Icon/icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Ext\p-coyote\Source\Core\Core.csproj" />
   </ItemGroup>
 </Project>

@@ -9,7 +9,6 @@
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Coyote" Version="1.0.5" />
     <PackageReference Include="NUnit" Version="3.10.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.13.0" />
@@ -17,5 +16,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Src\PCompiler\CompilerCore\CompilerCore.csproj" />
     <ProjectReference Include="..\..\Src\PRuntimes\PCSharpRuntime\CSharpRuntime.csproj" />
+    <ProjectReference Include="..\..\Ext\p-coyote\Source\Core\Core.csproj" />
   </ItemGroup>
 </Project>

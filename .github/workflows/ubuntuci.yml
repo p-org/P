@@ -18,22 +18,7 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
-    - name: Cache Maven packages
-      uses: actions/cache@v2
-      with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-m2
-    - name: Build P runtime for Java
-      run: |
-        pushd Src/PRuntimes/RvmRuntime
-        mvn install
-        popd
-    - name: Build
+    - name: Build Compiler
       run: dotnet build --configuration Release
-    - name: Test
+    - name: Test Compiler
       run: dotnet test --configuration Release
-    - name: Test-RVM
-      run: |
-        python Tst/RegressionTests/Rvm/run_all_unittests.py
-        python Tst/RegressionTests/Rvm/run_all_examples.py

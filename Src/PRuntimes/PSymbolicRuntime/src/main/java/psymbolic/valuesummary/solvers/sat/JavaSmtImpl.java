@@ -100,8 +100,18 @@ public class JavaSmtImpl implements SolverLib<BooleanFormula> {
         return booleanFormulaManager.makeVariable("x" + idx++);
     }
 
+    private BooleanFormula simplify(BooleanFormula booleanFormula) {
+        try {
+            return formulaManager.simplify(booleanFormula);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Issue simplifying");
+        }
+    }
+
     public String toString(BooleanFormula booleanFormula) {
-        return booleanFormula.toString();
+//        return booleanFormula.toString();
+        return simplify(booleanFormula).toString();
     }
 
     public BooleanFormula fromString(String s) {

@@ -458,6 +458,9 @@ public class Scheduler implements SymbolicSearch {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
             Message removed = rmBuffer(machine, guard);
+//            System.out.println("\tMachine " + machine.toString());
+//            System.out.println("\t  state   " + machine.getCurrentState().toStringDetailed());
+//            System.out.println("\t  message " + removed.toString());
             if (configuration.isCollectStats()) {
                 numMessages += Concretizer.getNumConcreteValues(Guard.constTrue(), removed);
             }

@@ -26,11 +26,11 @@ public class SolverGuard {
     }
 
     public boolean isTrue() {
-        return SolverEngine.getSolver().isSat(formula);
+        return SolverEngine.getSolver().isSat(SolverEngine.getSolver().not(formula));
     }
 
     public boolean isFalse() {
-        return !isTrue();
+        return !SolverEngine.getSolver().isSat(formula);
     }
 
     public SolverGuard and(SolverGuard other) {

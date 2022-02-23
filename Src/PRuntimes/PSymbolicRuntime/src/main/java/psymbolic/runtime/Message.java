@@ -227,7 +227,8 @@ public class Message implements ValueSummary<Message> {
         String str = "{";
         int i = 0;
         for (GuardedValue<Event> event : getEvent().getGuardedValues()) {
-            str += event.getGuard();
+            str += event.getValue();
+            str += " @ " + event.getGuard();
             //str += " -> " + getMachine().guard(name.guard);
             if (payload.size() > 0 && payload.containsKey(event.getValue())) {
                 str += ": " + payload.get(event.getValue());

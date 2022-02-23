@@ -230,14 +230,15 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     @Override
     public String toString() {
         return getValues().toString();
-//    	String str = "[ ";
-//        for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
-//            if (!entry.getValue().isFalse()) {
-//            	str += "(" + entry.getKey().toString() + ", " + entry.getValue().toString() + "), ";
-//            }
-//        }
-//        str += "]";
-//        return str;
+    }
+
+    public String toStringDetailed() {
+        String str = "[";
+        for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
+            str += entry.getKey().toString() + " @ " + entry.getValue().toString() + ", ";
+        }
+        str += "]";
+        return str;
     }
 
 }

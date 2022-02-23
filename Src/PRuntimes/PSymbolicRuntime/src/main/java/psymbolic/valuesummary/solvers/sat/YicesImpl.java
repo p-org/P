@@ -59,8 +59,29 @@ public class YicesImpl implements SolverLib<Integer> {
     	return valTrue;
     }
 
+    public boolean checkSat(Integer formula) {
+        int result = YICES_STATUS_UNKNOWN;
+//    	System.out.println("Checking formula: " + toString(formula));
+        result = Yices.checkFormula(formula, "QF_UF", "NULL", null);
+//    	result = Yices.checkContextWithAssumptions(context, param, new int[]{formula});
+//    	System.out.println("Result: " + result);
+//    	System.out.println("Yices status: " + Yices.errorString());
+//    	throw new RuntimeException("Debug point reached");
+
+        switch (result) {
+            case YICES_STATUS_SAT:
+                SolverStats.isSatResult++;
+                table.put(formula, SolverStatus.SolverSat);
+                return true;
+            case YICES_STATUS_UNSAT:
+                table.put(formula, SolverStatus.SolverUnsat);
+                return false;
+            default:
+                throw new RuntimeException("Yices returned query result: " + result + " with error: " + Yices.errorString());
+        }
+    }
+
     public boolean isSat(Integer formula) {
-    	int result = YICES_STATUS_UNKNOWN;
         if (table.containsKey(formula)) {
             switch (table.get(formula)) {
                 case SolverSat:
@@ -71,26 +92,8 @@ public class YicesImpl implements SolverLib<Integer> {
                 	throw new RuntimeException("Expected cached query result to be SAT or UNSAT, got unknown for formula: " + toString(formula));
             }
         }
-
         SolverStats.isSatOperations++;
-//    	System.out.println("Checking formula: " + toString(formula));
-        result = Yices.checkFormula(formula, "QF_UF", "NULL", null);
-//    	result = Yices.checkContextWithAssumptions(context, param, new int[]{formula});
-//    	System.out.println("Result: " + result);
-//    	System.out.println("Yices status: " + Yices.errorString());
-//    	throw new RuntimeException("Debug point reached");
-
-        switch (result) {
-            case YICES_STATUS_SAT:
-                table.put(formula, SolverStatus.SolverSat);
-                SolverStats.isSatResult++;
-                return true;
-            case YICES_STATUS_UNSAT:
-                table.put(formula, SolverStatus.SolverUnsat);
-                return false;
-            default:
-                throw new RuntimeException("Yices returned query result: " + result + " with error: " + Yices.errorString());
-        }
+        return checkSat(formula);
     }
 
     public Integer and(Integer left, Integer right) {
@@ -123,7 +126,8 @@ public class YicesImpl implements SolverLib<Integer> {
     }
 
     public String toString(Integer booleanFormula) {
-        return Yices.termToString(booleanFormula);
+//        return Yices.termToString(booleanFormula);
+        return Yices.termToString(booleanFormula, 80, 1);
     }
 
     public Integer fromString(String s) {
@@ -137,7 +141,7 @@ public class YicesImpl implements SolverLib<Integer> {
     }
 
     public int getVarCount() {
-        return (int)idx + 1;
+        return (int)idx;
     }
 
     public int getNodeCount() {

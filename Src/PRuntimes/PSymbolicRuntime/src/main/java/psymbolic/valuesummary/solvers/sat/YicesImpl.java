@@ -35,10 +35,14 @@ public class YicesImpl implements SolverLib<Integer> {
     	System.out.println("Using Yices version " + Yices.version());
 
     	config = Yices.newConfig();
-        status = Yices.defaultConfigForLogic(config, "QF_UF");
-//    	System.out.println("Creating config for logic QF_UF, status: " + status);
+        status = Yices.defaultConfigForLogic(config, "NONE");
+        status = Yices.setConfig(config, "mode", "multi-checks");
+//    	System.out.println("Creating config for logic NONE, status: " + status);
 
         context = Yices.newContext(config);
+        status = Yices.contextEnableOption(context, "var-elim");
+        status = Yices.contextEnableOption(context, "bvarith-elim");
+        status = Yices.contextEnableOption(context, "flatten");
 //    	System.out.println("Creating context");
     	
     	param = Yices.newParamRecord();
@@ -51,19 +55,11 @@ public class YicesImpl implements SolverLib<Integer> {
 //    	System.out.println("Creating true/false constants");
     }
     
-    public Integer constFalse() {
-    	return valFalse;
-    }
-
-    public Integer constTrue() {
-    	return valTrue;
-    }
-
     public boolean checkSat(Integer formula) {
         int result = YICES_STATUS_UNKNOWN;
 //    	System.out.println("Checking formula: " + toString(formula));
-        result = Yices.checkFormula(formula, "QF_UF", "NULL", null);
-//    	result = Yices.checkContextWithAssumptions(context, param, new int[]{formula});
+//        result = Yices.checkFormula(formula, "QF_UF", "NULL", null);
+    	result = Yices.checkContextWithAssumptions(context, param, new int[]{formula});
 //    	System.out.println("Result: " + result);
 //    	System.out.println("Yices status: " + Yices.errorString());
 //    	throw new RuntimeException("Debug point reached");
@@ -96,6 +92,14 @@ public class YicesImpl implements SolverLib<Integer> {
         return checkSat(formula);
     }
 
+    public Integer constFalse() {
+        return valFalse;
+    }
+
+    public Integer constTrue() {
+        return valTrue;
+    }
+
     public Integer and(Integer left, Integer right) {
         return Yices.and(left, right);
     }
@@ -121,7 +125,7 @@ public class YicesImpl implements SolverLib<Integer> {
         int t, status;
         t = Yices.newUninterpretedTerm(boolType);
         Yices.setTermName(t, "x" + idx++);
-    	System.out.println("\tnew variable: " + Yices.getTermName(t));
+//    	System.out.println("\tnew variable: " + Yices.getTermName(t));
         return t;
     }
 

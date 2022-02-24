@@ -3,6 +3,7 @@ package psymbolic.runtime.scheduler;
 import psymbolic.commandline.Assert;
 import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
+import psymbolic.commandline.EntryPoint;
 import psymbolic.runtime.*;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.logger.SearchLogger;
@@ -14,6 +15,8 @@ import psymbolic.valuesummary.solvers.SolverEngine;
 import psymbolic.runtime.machine.buffer.*;
 import psymbolic.runtime.logger.StatLogger;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -482,14 +485,15 @@ public class Scheduler implements SymbolicSearch {
 
         if (configuration.isCollectStats()) {
           System.out.println("--------------------");
-          System.out.println("Memory Stats::");
+          Instant end = Instant.now();
+          System.out.println(String.format("time-seconds:\t%.1f", Duration.between(EntryPoint.start, end).toMillis()/1000.0));
           Runtime runtime = Runtime.getRuntime();
-          long memoryMax = runtime.maxMemory();
           long memoryUsed = runtime.totalMemory() - runtime.freeMemory();
           if (memoryUsed > mem) mem = memoryUsed;
-          double memoryUsedPercent = (memoryUsed * 100.0) / memoryMax;
-          System.out.println("memoryUsed::" + memoryUsed + " bytes , memoryUsedPercent: " + memoryUsedPercent);
-          System.out.println("max memory used so far::" + mem + " bytes");
+          System.out.println(String.format("memory-used-MB:\t%.1f", memoryUsed/1000000.0));
+          System.out.println(String.format("memory-max-MB:\t%.1f", mem/1000000.0));
+          System.out.println(String.format("solver-#-vars:\t%d", SolverEngine.getSolver().getVarCount()));
+          System.out.println(String.format("solver-#-nodes:\t%d", SolverEngine.getSolver().getNodeCount()));
           System.out.println("--------------------");
         }
 

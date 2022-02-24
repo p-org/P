@@ -1,6 +1,8 @@
 package psymbolic.valuesummary.solvers;
 
 import psymbolic.runtime.statistics.SolverStats;
+
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -8,13 +10,60 @@ import java.util.List;
  */
 public class SolverGuard {
     private final Object formula;
+    private SolverTrueStatus statusTrue;
+    private SolverFalseStatus statusFalse;
+    private static HashMap<Object, SolverGuard> table = new HashMap<Object, SolverGuard>();
 
     public SolverGuard(Object formula) {
         this.formula = formula;
+        this.statusTrue = SolverTrueStatus.Unknown;
+        this.statusFalse = SolverFalseStatus.Unknown;
+    }
+
+    public boolean isTrue() {
+        switch (statusTrue) {
+            case True:
+                return true;
+            case NotTrue:
+                return false;
+            default:
+                boolean isSatNeg = SolverEngine.getSolver().isSat(SolverEngine.getSolver().not(formula));
+                if (!isSatNeg) {
+                    statusTrue = SolverTrueStatus.True;
+                    return true;
+                } else {
+                    statusTrue = SolverTrueStatus.NotTrue;
+                    return false;
+                }
+        }
+    }
+
+    public boolean isFalse() {
+        switch (statusFalse) {
+            case False:
+                return true;
+            case NotFalse:
+                return false;
+            default:
+                boolean isSat = SolverEngine.getSolver().isSat(formula);
+                if (!isSat) {
+                    statusFalse = SolverFalseStatus.False;
+                    return true;
+                } else {
+                    statusFalse = SolverFalseStatus.NotFalse;
+                    return false;
+                }
+        }
     }
 
     private static SolverGuard getSolverGuard(Object formula) {
-        return new SolverGuard(formula);
+        if (table.containsKey(formula)) {
+            return table.get(formula);
+        }
+        SolverGuard newGuard = new SolverGuard(formula);
+        table.put(formula, newGuard);
+//        System.out.println("Creating new SolverGuard: " + newGuard.toString());
+        return newGuard;
     }
 
     public static SolverGuard constFalse() {
@@ -23,14 +72,6 @@ public class SolverGuard {
 
     public static SolverGuard constTrue() {
         return getSolverGuard(SolverEngine.getSolver().constTrue());
-    }
-
-    public boolean isTrue() {
-        return SolverEngine.getSolver().isSat(SolverEngine.getSolver().not(formula));
-    }
-
-    public boolean isFalse() {
-        return !SolverEngine.getSolver().isSat(formula);
     }
 
     public SolverGuard and(SolverGuard other) {
@@ -74,6 +115,6 @@ public class SolverGuard {
         if (this == o) return true;
         if (!(o instanceof SolverGuard)) return false;
         SolverGuard that = (SolverGuard) o;
-        return formula.equals(that.formula);
+        return formula.equals(that.formula) && statusTrue.equals(that.statusTrue) && statusFalse.equals(that.statusFalse);
     }
 }

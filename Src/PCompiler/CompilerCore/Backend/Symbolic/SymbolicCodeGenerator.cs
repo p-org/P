@@ -1791,12 +1791,12 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, ")");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    context.Write(output, $"({GetSymbolicType(namedTupleAccessExpr.Type)})(");
+                    context.Write(output, $"(({GetSymbolicType(namedTupleAccessExpr.Type)})(");
                     string prefix = GetInlineCastPrefix(namedTupleAccessExpr.Entry.Type, namedTupleAccessExpr.Type, context, pcScope);
                     context.Write(output, prefix);
                     context.Write(output, "(");
                     WriteExpr(context, output, pcScope, namedTupleAccessExpr.SubExpr);
-                    context.Write(output, $").getField(\"{namedTupleAccessExpr.FieldName}\"))");
+                    context.Write(output, $").getField(\"{namedTupleAccessExpr.FieldName}\")))");
                     if (prefix != "") context.Write(output, ")");
                     break;
                 case ThisRefExpr thisRefExpr:

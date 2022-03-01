@@ -100,6 +100,12 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.microsoft.z3</groupId>
+      <artifactId>z3</artifactId>
+      <version>4.8.14</version>
+    </dependency>
+
+    <dependency>
       <groupId>io.github.cvc5</groupId>
       <artifactId>cvc5</artifactId>
       <version>0.0.7</version>

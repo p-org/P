@@ -3,6 +3,7 @@ package psymbolic.valuesummary.solvers;
 import psymbolic.valuesummary.solvers.bdd.PJBDDImpl;
 import psymbolic.valuesummary.solvers.sat.CVC5Impl;
 import psymbolic.valuesummary.solvers.sat.YicesImpl;
+import psymbolic.valuesummary.solvers.sat.Z3Impl;
 import psymbolic.valuesummary.solvers.sat.JavaSmtImpl;
 
 /**
@@ -49,6 +50,8 @@ public class SolverEngine {
             break;
     	case YICES2:	solverImpl = new YicesImpl();
 			break;
+        case Z3:	    solverImpl = new Z3Impl();
+            break;
 		default:		solverImpl = new JavaSmtImpl(type);
     	}
     }

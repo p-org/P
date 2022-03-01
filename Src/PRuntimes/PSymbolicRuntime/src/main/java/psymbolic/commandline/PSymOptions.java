@@ -34,17 +34,17 @@ public class PSymOptions {
                 .desc("Name of the project")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Project name (string)")
+                .argName("Project Name (string)")
                 .build();
         options.addOption(projectName);
 
         // solver type
         Option solverType = Option.builder("st")
                 .longOpt("solver")
-                .desc("Solver type to use: bdd, cbdd, princess, yices")
+                .desc("Solver type to use: bdd, cbdd, cvc5, yices2, z3, princess")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Solver type (string)")
+                .argName("Solver Type (string)")
                 .build();
         options.addOption(solverType);
 
@@ -185,6 +185,8 @@ public class PSymOptions {
                         break;
                     case "yices2":		config.setSolverType(SolverType.YICES2);
                         break;
+                    case "z3":		    config.setSolverType(SolverType.Z3);
+                        break;
                 	case "boolector":	config.setSolverType(SolverType.JAVASMT_BOOLECTOR);
             			break;
                 	case "mathsat5":	config.setSolverType(SolverType.JAVASMT_MATHSAT5);
@@ -193,9 +195,7 @@ public class PSymOptions {
             			break;
                 	case "smtinterpol":	config.setSolverType(SolverType.JAVASMT_SMTINTERPOL);
             			break;
-                	case "z3":			config.setSolverType(SolverType.JAVASMT_Z3);
-            			break;
-        			default:	
+        			default:
                         formatter.printHelp("st", String.format("Expected a solver type, got %s", option.getValue()), options, "Try \"--help\" option for details.");
                         formatter.printUsage(writer, 80, "st", options);
                 	}

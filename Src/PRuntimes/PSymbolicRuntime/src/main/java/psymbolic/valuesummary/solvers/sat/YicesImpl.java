@@ -71,6 +71,7 @@ public class YicesImpl implements SolverLib<Integer> {
                 return true;
             case YICES_STATUS_UNSAT:
                 table.put(formula, SolverStatus.SolverUnsat);
+//                Yices.assertFormula(context, not(formula));
                 return false;
             default:
                 throw new RuntimeException("Yices returned query result: " + result + " with error: " + Yices.errorString());

@@ -100,6 +100,12 @@
 
   <dependencies>
     <dependency>
+      <groupId>io.github.cvc5</groupId>
+      <artifactId>cvc5</artifactId>
+      <version>0.0.7</version>
+    </dependency>
+
+    <dependency>
       <groupId>com.sri.yices</groupId>
       <artifactId>yices</artifactId>
       <version>1.0</version>

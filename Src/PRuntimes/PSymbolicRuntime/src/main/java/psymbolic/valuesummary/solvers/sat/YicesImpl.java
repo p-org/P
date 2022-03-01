@@ -149,7 +149,8 @@ public class YicesImpl implements SolverLib<Integer> {
     }
 
     public int getNodeCount() {
-        return Yices.yicesNumTerms();
+//        return Yices.yicesNumTerms();
+        return table.size();
     }
 
     public String getStats() {
@@ -160,4 +161,9 @@ public class YicesImpl implements SolverLib<Integer> {
     public void cleanup() {
     	// TODO
     }
+
+    public boolean areEqual(Integer left, Integer right) {
+        return left.equals(right);
+    }
+
 }

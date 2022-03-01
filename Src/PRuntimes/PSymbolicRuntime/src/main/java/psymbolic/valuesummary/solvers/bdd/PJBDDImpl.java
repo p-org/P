@@ -115,4 +115,8 @@ public class PJBDDImpl implements SolverLib<DD> {
     public void cleanup() {
         c.cleanUnusedNodes();
     }
+
+    public boolean areEqual(DD left, DD right) {
+        return left.equals(right);
+    }
 }

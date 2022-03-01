@@ -492,7 +492,7 @@ public class Scheduler implements SymbolicSearch {
           if (memoryUsed > mem) mem = memoryUsed;
           System.out.println(String.format("memory-used-MB:\t%.1f", memoryUsed/1000000.0));
           System.out.println(String.format("memory-max-MB:\t%.1f", mem/1000000.0));
-          System.out.println(String.format("solver-#-vars:\t%d", SolverEngine.getSolver().getVarCount()));
+          System.out.println(String.format("solver-#-vars:\t%d", SolverEngine.getVarCount()));
           System.out.println(String.format("solver-#-nodes:\t%d", SolverEngine.getSolver().getNodeCount()));
           System.out.println("--------------------");
         }

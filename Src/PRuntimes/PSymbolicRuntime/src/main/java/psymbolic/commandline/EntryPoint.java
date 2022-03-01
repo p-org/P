@@ -18,7 +18,6 @@ public class EntryPoint {
     public static Instant start = Instant.now();
 
     public static void run(Program p, PSymConfiguration config) {
-    	SolverEngine.resetEngine(config.getSolverType());
         PSymLogger.ResetAllConfigurations(config.getVerbosity(), config.getProjectName());
         IterativeBoundedScheduler scheduler = new IterativeBoundedScheduler(config);
         if (config.isDpor()) scheduler = new DPORScheduler(config);

@@ -30,5 +30,7 @@ public interface SolverLib<T> {
     String getStats();
 
     void cleanup();
-    
+
+    boolean areEqual(T left, T right);
+
 }

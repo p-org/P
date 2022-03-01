@@ -60,7 +60,7 @@ public class SearchLogger {
     public static void logDepthStats(SearchStats.DepthStats depthStats)
     {
         log.info(String.format("Depth: %d: TotalTransitions = %d, ReducedTransitionsExplored = %d", depthStats.getDepth(), depthStats.getNumOfTransitions(), depthStats.getNumOfTransitionsExplored()));
-        log.info("Solver Stats:\n" + SolverEngine.getSolver().getStats());
+        log.info("Solver Stats:\n" + SolverEngine.getStats());
         log.info(SolverStats.prettyPrint());
     }
 

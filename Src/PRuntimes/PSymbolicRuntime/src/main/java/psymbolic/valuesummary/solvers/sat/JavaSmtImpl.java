@@ -142,4 +142,8 @@ public class JavaSmtImpl implements SolverLib<BooleanFormula> {
     public void cleanup() {
     	// TODO
     }
+
+    public boolean areEqual(BooleanFormula left, BooleanFormula right) {
+        return left.equals(right);
+    }
 }

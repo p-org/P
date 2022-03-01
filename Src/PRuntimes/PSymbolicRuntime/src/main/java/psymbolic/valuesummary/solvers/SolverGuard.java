@@ -66,6 +66,10 @@ public class SolverGuard {
         return newGuard;
     }
 
+    public static int getGuardCount() {
+        return table.size();
+    }
+
     public static SolverGuard constFalse() {
         return getSolverGuard(SolverEngine.getSolver().constFalse());
     }
@@ -115,6 +119,6 @@ public class SolverGuard {
         if (this == o) return true;
         if (!(o instanceof SolverGuard)) return false;
         SolverGuard that = (SolverGuard) o;
-        return formula.equals(that.formula) && statusTrue.equals(that.statusTrue) && statusFalse.equals(that.statusFalse);
+        return SolverEngine.getSolver().areEqual(formula, that.formula) && statusTrue.equals(that.statusTrue) && statusFalse.equals(that.statusFalse);
     }
 }

@@ -299,11 +299,11 @@ public class Concretizer {
      */ 
     public static int getNumConcreteValues(Guard pc, ValueSummary ... args) {
     	int i = 0;
-//    	try {
-//            i = getConcreteValues(pc, x -> false, Concretizer::concretize, args).size();
-//    	} catch (NullPointerException e) {
-//    		// ignore null values and return 0
-//    	}
+    	try {
+            i = getConcreteValues(pc, x -> false, Concretizer::concretize, args).size();
+    	} catch (NullPointerException e) {
+    		// ignore null values and return 0
+    	}
     	return i;
     }
 

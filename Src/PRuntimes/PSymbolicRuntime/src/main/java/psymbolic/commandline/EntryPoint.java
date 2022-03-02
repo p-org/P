@@ -22,7 +22,7 @@ public class EntryPoint {
         IterativeBoundedScheduler scheduler = new IterativeBoundedScheduler(config);
         if (config.isDpor()) scheduler = new DPORScheduler(config);
         p.setScheduler(scheduler);
-        if (config.isCollectStats()) {
+        if (config.getCollectStats() != 0) {
             StatLogger.log(String.format("project-name:\t%s", config.getProjectName()));
             StatLogger.log(String.format("solver:\t%s", config.getSolverType().toString()));
         }
@@ -47,9 +47,11 @@ public class EntryPoint {
             TraceLogger.finished(scheduler.getDepth());
             TraceLogger.logMessage("Took " + Duration.between(start, end).getSeconds() + " seconds");
             
-            if (config.isCollectStats()) {
+            if (config.getCollectStats() != 0) {
 	            System.out.println("--------------------");
 	            System.out.println("Stats::");
+                System.out.println(String.format("project-name:\t%s", config.getProjectName()));
+                System.out.println(String.format("solver:\t%s", config.getSolverType().toString()));
                 StatLogger.log(String.format("status:\t%s", status));
 	            StatLogger.log(String.format("time-seconds:\t%.1f", Duration.between(start, end).toMillis()/1000.0));
 	            scheduler.print_stats();

@@ -1,5 +1,7 @@
 package psymbolic.runtime.statistics;
 
+import psymbolic.valuesummary.solvers.SolverEngine;
+
 public class SolverStats {
     public static int andOperations = 0;
     public static int orOperations = 0;
@@ -12,9 +14,13 @@ public class SolverStats {
     }
     
     public static String prettyPrint() {
-        return 	  String.format(   "  totalAndOperations     = %d", andOperations)
-        		+ String.format( "\n  totalOrOperations      = %d", orOperations)
-        		+ String.format( "\n  totalNotOperations     = %d", notOperations)
-        		+ String.format( "\n  totalIsSatOperations  = %d\t(%.1f %% sat)", isSatOperations, isSatPercent());
+        return    String.format(   "  solver-#-vars:\t%d", SolverEngine.getVarCount())
+                + String.format( "\n  solver-#-guards:\t%d", SolverEngine.getGuardCount())
+                + String.format( "\n  solver-#-nodes:\t%d", SolverEngine.getSolver().getNodeCount())
+                + String.format( "\n  solver-#-and-ops:\t%d", andOperations)
+        		+ String.format( "\n  solver-#-or-ops:\t%d", orOperations)
+        		+ String.format( "\n  solver-#-not-ops:\t%d", notOperations)
+        		+ String.format( "\n  solver-#-sat-ops:\t%d", isSatOperations)
+                + String.format( "\n  solver-%%-sat-ops-sat:\t%.1f", isSatPercent());
     }
 }

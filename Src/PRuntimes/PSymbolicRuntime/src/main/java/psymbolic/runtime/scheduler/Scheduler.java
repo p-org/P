@@ -10,6 +10,7 @@ import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Monitor;
 import psymbolic.runtime.statistics.SearchStats;
+import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.solvers.SolverEngine;
 import psymbolic.runtime.machine.buffer.*;
@@ -295,18 +296,21 @@ public class Scheduler implements SymbolicSearch {
 
     public void print_stats() {
         // print statistics
-        if (configuration.isCollectStats()) {
+        if (configuration.getCollectStats() != 0) {
             Runtime runtime = Runtime.getRuntime();
             long memoryMax = runtime.maxMemory();
             double memoryUsedPercent = (mem * 100.0) / memoryMax;
             StatLogger.log(String.format("memory-used-MB:\t%.1f", mem/1000000.0));
             StatLogger.log(String.format("memory-limit-MB:\t%.1f", memoryMax/1000000.0));
-            
-            StatLogger.log(String.format("#-transitions:\t%d", searchStats.getSearchTotal().getNumOfTransitions()));
-            StatLogger.log(String.format("#-transitions-merged:\t%d", searchStats.getSearchTotal().getNumOfMergedTransitions()));
-            StatLogger.log(String.format("#-transitions-explored:\t%d", searchStats.getSearchTotal().getNumOfTransitionsExplored()));
+
             StatLogger.log(String.format("depth:\t%d", getDepth()));
             StatLogger.logSolverStats();
+
+            if (configuration.getCollectStats() > 2) {
+                StatLogger.log(String.format("#-transitions:\t%d", searchStats.getSearchTotal().getNumOfTransitions()));
+                StatLogger.log(String.format("#-transitions-merged:\t%d", searchStats.getSearchTotal().getNumOfMergedTransitions()));
+                StatLogger.log(String.format("#-transitions-explored:\t%d", searchStats.getSearchTotal().getNumOfTransitionsExplored()));
+            }
         }
     }
     
@@ -449,7 +453,7 @@ public class Scheduler implements SymbolicSearch {
         PrimitiveVS<Machine> choices = getNextSender();
 
         if (choices.isEmptyVS()) {
-            TraceLogger.finished(depth);
+//            TraceLogger.finished(depth);
             done = true;
             return;
         }
@@ -464,7 +468,7 @@ public class Scheduler implements SymbolicSearch {
 //            System.out.println("\tMachine " + machine.toString());
 //            System.out.println("\t  state   " + machine.getCurrentState().toStringDetailed());
 //            System.out.println("\t  message " + removed.toString());
-            if (configuration.isCollectStats()) {
+            if (configuration.getCollectStats() > 2) {
                 numMessages += Concretizer.getNumConcreteValues(Guard.constTrue(), removed);
             }
             if (effect == null) {
@@ -483,7 +487,7 @@ public class Scheduler implements SymbolicSearch {
         SolverEngine.cleanupEngine();
         System.gc();
 
-        if (configuration.isCollectStats()) {
+        if (configuration.getCollectStats() > 1) {
           System.out.println("--------------------");
           Instant end = Instant.now();
           System.out.println(String.format("time-seconds:\t%.1f", Duration.between(EntryPoint.start, end).toMillis()/1000.0));
@@ -492,13 +496,16 @@ public class Scheduler implements SymbolicSearch {
           if (memoryUsed > mem) mem = memoryUsed;
           System.out.println(String.format("memory-used-MB:\t%.1f", memoryUsed/1000000.0));
           System.out.println(String.format("memory-max-MB:\t%.1f", mem/1000000.0));
-          System.out.println(String.format("solver-#-vars:\t%d", SolverEngine.getVarCount()));
-          System.out.println(String.format("solver-#-nodes:\t%d", SolverEngine.getSolver().getNodeCount()));
+          System.out.println("--------------------");
+          System.out.println("Solver Stats::");
+          System.out.println(SolverStats.prettyPrint());
+          System.out.println("--------------------");
+          System.out.println("Detailed Solver Stats::\n" + SolverEngine.getStats());
           System.out.println("--------------------");
         }
 
         // add depth statistics
-        if (configuration.isCollectStats()) {
+        if (configuration.getCollectStats() > 2) {
           SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, numMessages, Concretizer.getNumConcreteValues(Guard.constTrue(), effect), Concretizer.getNumConcreteValues(Guard.constTrue(), effect.getTarget(), effect.getEvent()));
           searchStats.addDepthStatistics(depth, depthStats);
           SearchLogger.logDepthStats(depthStats);

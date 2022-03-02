@@ -97,8 +97,10 @@ public class PSymOptions {
         // whether or not to collect search stats
         Option collectStats = Option.builder("s")
                 .longOpt("stats")
-                .desc("Enable collection of stats during the search")
-                .numberOfArgs(0)
+                .desc("Level of stats collection during the search")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Collection Level")
                 .build();
         options.addOption(collectStats);
 
@@ -245,7 +247,12 @@ public class PSymOptions {
                     break;
                 case "s":
                 case "stats":
-                    config.setCollectStats(true);
+                    try {
+                        config.setCollectStats(Integer.parseInt(option.getValue()));
+                    }
+                    catch (NumberFormatException ex) {
+                        formatter.printHelp("s", String.format("Expected an integer value (0, 1 or 2), got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                    }
                     break;
                 case "nf":
                 case "no-filters":

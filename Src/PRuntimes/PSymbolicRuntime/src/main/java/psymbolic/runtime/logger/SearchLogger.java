@@ -60,14 +60,12 @@ public class SearchLogger {
     public static void logDepthStats(SearchStats.DepthStats depthStats)
     {
         log.info(String.format("Depth: %d: TotalTransitions = %d, ReducedTransitionsExplored = %d", depthStats.getDepth(), depthStats.getNumOfTransitions(), depthStats.getNumOfTransitionsExplored()));
-        log.info("Solver Stats:\n" + SolverEngine.getStats());
-        log.info(SolverStats.prettyPrint());
     }
 
     public static void logIterationStats(SearchStats.IterationStats iterStats)
     {
 
-        log.info(String.format("Finished Iteration: %d: Max Depth: %dTotalTransitions = %d, ReducedTransitionsExplored = %d",
+        log.info(String.format("Finished Iteration: %d: Max Depth: %d, TotalTransitions = %d, ReducedTransitionsExplored = %d",
                 iterStats.getIteration(), iterStats.getIterationTotal().getDepth(), iterStats.getIterationTotal().getNumOfTransitions(), iterStats.getIterationTotal().getNumOfTransitionsExplored()));
     }
     

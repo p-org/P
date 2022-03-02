@@ -40,7 +40,9 @@ public class IterativeBoundedScheduler extends Scheduler {
             searchStats.startNewIteration(iter, backtrack);
             super.doSearch(p);
             postIterationCleanup();
-            SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
+            if (configuration.getCollectStats() > 2) {
+                SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
+            }
             iter++;
         }
     }

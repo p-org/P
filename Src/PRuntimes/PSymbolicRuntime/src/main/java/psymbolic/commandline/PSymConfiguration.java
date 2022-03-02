@@ -68,8 +68,8 @@ public class PSymConfiguration {
     private int verbosity = 1;
 
     @Getter @Setter
-    // whether to collect stats or not
-    private boolean collectStats = false;
+    // level of stats collection
+    private int collectStats = 1;
 
     @Getter @Setter
     // type of solver engine

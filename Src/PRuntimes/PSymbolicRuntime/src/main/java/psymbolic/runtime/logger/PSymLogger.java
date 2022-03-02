@@ -41,7 +41,7 @@ public class PSymLogger {
     {
         BasicConfigurator.resetConfiguration();
         Initialize();
-        SearchLogger.Initialize();
+        SearchLogger.Initialize(verbosity);
         TraceLogger.Initialize(verbosity);
         StatLogger.Initialize(projectName);
     }

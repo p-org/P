@@ -63,6 +63,7 @@ public class StatLogger {
         log.info(String.format("solver-#-or-ops:\t%d", SolverStats.orOperations));
         log.info(String.format("solver-#-not-ops:\t%d", SolverStats.notOperations));
         log.info(String.format("solver-#-sat-ops:\t%d", SolverStats.isSatOperations));
+        log.info(String.format("solver-#-sat-ops-sat:\t%d", SolverStats.isSatResult));
         log.info(String.format("solver-%%-sat-ops-sat:\t%.1f", SolverStats.isSatPercent()));
     }
     

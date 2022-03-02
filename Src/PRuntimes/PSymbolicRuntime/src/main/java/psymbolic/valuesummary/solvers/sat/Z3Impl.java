@@ -1,5 +1,6 @@
 package psymbolic.valuesummary.solvers.sat;
 
+import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.solvers.SolverLib;
 import psymbolic.valuesummary.solvers.SolverStatus;
@@ -19,6 +20,7 @@ public class Z3Impl implements SolverLib<BoolExpr> {
     private BoolExpr valTrue;
     private BoolExpr valFalse;
     private long idx = 0;
+    private int printCount = 0;
     private static HashMap<BoolExpr, SolverStatus> table = new HashMap<BoolExpr, SolverStatus>();
 
     public Z3Impl() {
@@ -36,9 +38,12 @@ public class Z3Impl implements SolverLib<BoolExpr> {
         context = new Context(config);
 
         simplifyParams = context.mkParams();
-        simplifyParams.add("elim_and", true);
-        simplifyParams.add("flat", true);
-        simplifyParams.add("local_ctx", true);
+//        if (SearchLogger.getVerbosity() <= 2)
+        {
+            simplifyParams.add("elim_and", true);
+            simplifyParams.add("flat", true);
+            simplifyParams.add("local_ctx", true);
+        }
 
         boolType = context.mkBoolSort();
         valFalse = newTerm(context.mkFalse());
@@ -57,6 +62,20 @@ public class Z3Impl implements SolverLib<BoolExpr> {
 //        return t;
     }
 
+    private void toSmtLib(String status, BoolExpr formula) {
+        String s, name;
+
+        printCount++;
+        name = "Query " + printCount;
+        BoolExpr assumptions[] = {valTrue};
+        s = context.benchmarkToSMTString(name, "QF_UF", status, "", assumptions, formula);
+
+        SearchLogger.log("");
+        SearchLogger.log(s);
+        SearchLogger.log("");
+//    	throw new RuntimeException("Debug point reached");
+    }
+
     public boolean checkSat(BoolExpr formula) {
         Status result = Status.UNKNOWN;
 //    	System.out.println("Checking formula: " + toString(formula));
@@ -71,6 +90,12 @@ public class Z3Impl implements SolverLib<BoolExpr> {
         } else if (result == Status.UNSATISFIABLE) {
             table.put(formula, SolverStatus.SolverUnsat);
 //            solver.add(not(formula));
+
+            if (SearchLogger.getVerbosity() > 2) {
+                if (formula != valFalse && printCount < 100) {
+                    toSmtLib("unsat", formula);
+                }
+            }
             return false;
         } else {
             throw new RuntimeException("Z3 returned query result: " + result);

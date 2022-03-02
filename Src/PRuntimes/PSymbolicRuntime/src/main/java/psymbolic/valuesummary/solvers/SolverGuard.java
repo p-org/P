@@ -71,11 +71,17 @@ public class SolverGuard {
     }
 
     public static SolverGuard constFalse() {
-        return getSolverGuard(SolverEngine.getSolver().constFalse());
+        SolverGuard g = getSolverGuard(SolverEngine.getSolver().constFalse());
+        g.statusTrue = SolverTrueStatus.NotTrue;
+        g.statusFalse = SolverFalseStatus.False;
+        return g;
     }
 
     public static SolverGuard constTrue() {
-        return getSolverGuard(SolverEngine.getSolver().constTrue());
+        SolverGuard g = getSolverGuard(SolverEngine.getSolver().constTrue());
+        g.statusTrue = SolverTrueStatus.True;
+        g.statusFalse = SolverFalseStatus.NotFalse;
+        return g;
     }
 
     public SolverGuard and(SolverGuard other) {
@@ -119,6 +125,7 @@ public class SolverGuard {
         if (this == o) return true;
         if (!(o instanceof SolverGuard)) return false;
         SolverGuard that = (SolverGuard) o;
-        return SolverEngine.getSolver().areEqual(formula, that.formula) && statusTrue.equals(that.statusTrue) && statusFalse.equals(that.statusFalse);
+        return SolverEngine.getSolver().areEqual(formula, that.formula);
+//        return SolverEngine.getSolver().areEqual(formula, that.formula) && statusTrue.equals(that.statusTrue) && statusFalse.equals(that.statusFalse);
     }
 }

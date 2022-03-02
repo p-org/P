@@ -163,7 +163,21 @@ public class YicesImpl implements SolverLib<Integer> {
     	// TODO
     }
 
+    private Integer notEq(Integer left, Integer right) {
+        if (right < left)
+            return notEq(right, left);
+        return Yices.or(Yices.and(left, Yices.not(right)), Yices.and(Yices.not(left), right));
+    }
+
     public boolean areEqual(Integer left, Integer right) {
+//        if (left.equals(right)) {
+//            return true;
+//        }
+//        Integer neq = notEq(left, right);
+//        if (isSat(neq)) {
+//            return false;
+//        }
+//        return true;
         return left.equals(right);
     }
 

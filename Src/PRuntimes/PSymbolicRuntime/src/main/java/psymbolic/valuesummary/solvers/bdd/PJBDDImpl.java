@@ -53,8 +53,9 @@ public class PJBDDImpl implements SolverLib<DD> {
     public boolean isSat(DD bdd) {
         SolverStats.isSatOperations++;
         boolean result = !bdd.isFalse();
-        if (result)
+        if (result) {
             SolverStats.isSatResult++;
+        }
         return result;
     }
 

@@ -21,6 +21,7 @@ public class SolverStats {
         		+ String.format( "\n  solver-#-or-ops:\t%d", orOperations)
         		+ String.format( "\n  solver-#-not-ops:\t%d", notOperations)
         		+ String.format( "\n  solver-#-sat-ops:\t%d", isSatOperations)
+                + String.format( "\n  solver-#-sat-ops-sat:\t%d", isSatResult)
                 + String.format( "\n  solver-%%-sat-ops-sat:\t%.1f", isSatPercent());
     }
 }

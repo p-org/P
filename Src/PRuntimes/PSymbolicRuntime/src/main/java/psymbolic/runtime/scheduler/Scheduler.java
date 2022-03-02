@@ -487,21 +487,23 @@ public class Scheduler implements SymbolicSearch {
         SolverEngine.cleanupEngine();
         System.gc();
 
-        if (configuration.getCollectStats() > 1) {
-          System.out.println("--------------------");
-          Instant end = Instant.now();
-          System.out.println(String.format("time-seconds:\t%.1f", Duration.between(EntryPoint.start, end).toMillis()/1000.0));
-          Runtime runtime = Runtime.getRuntime();
-          long memoryUsed = runtime.totalMemory() - runtime.freeMemory();
-          if (memoryUsed > mem) mem = memoryUsed;
-          System.out.println(String.format("memory-used-MB:\t%.1f", memoryUsed/1000000.0));
-          System.out.println(String.format("memory-max-MB:\t%.1f", mem/1000000.0));
-          System.out.println("--------------------");
-          System.out.println("Solver Stats::");
-          System.out.println(SolverStats.prettyPrint());
-          System.out.println("--------------------");
-          System.out.println("Detailed Solver Stats::\n" + SolverEngine.getStats());
-          System.out.println("--------------------");
+        if (configuration.getCollectStats() != 0) {
+            Runtime runtime = Runtime.getRuntime();
+            long memoryUsed = runtime.totalMemory() - runtime.freeMemory();
+            if (memoryUsed > mem) mem = memoryUsed;
+            if (configuration.getCollectStats() > 1) {
+                System.out.println("--------------------");
+                Instant end = Instant.now();
+                System.out.println(String.format("time-seconds:\t%.1f", Duration.between(EntryPoint.start, end).toMillis() / 1000.0));
+                System.out.println(String.format("memory-used-MB:\t%.1f", memoryUsed / 1000000.0));
+                System.out.println(String.format("memory-max-MB:\t%.1f", mem / 1000000.0));
+                System.out.println("--------------------");
+                System.out.println("Solver Stats::");
+                System.out.println(SolverStats.prettyPrint());
+                System.out.println("--------------------");
+                System.out.println("Detailed Solver Stats::\n" + SolverEngine.getStats());
+                System.out.println("--------------------");
+            }
         }
 
         // add depth statistics

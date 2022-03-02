@@ -1,5 +1,7 @@
 package psymbolic.runtime.logger;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.log4j.*;
 import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.runtime.statistics.SearchStats;
@@ -12,9 +14,12 @@ import java.util.Date;
 public class SearchLogger {
     /* Get actual class name to be printed on */
     static Logger log = Logger.getLogger(SearchLogger.class.getName());
+    @Getter @Setter
+    static int verbosity;
 
-    public static void Initialize()
+    public static void Initialize(int verb)
     {
+        verbosity = verb;
         // remove all the appenders
         log.removeAllAppenders();
         // setting up the logger

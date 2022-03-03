@@ -1,24 +1,22 @@
 package psymbolic.valuesummary.solvers.sat;
 
 import psymbolic.runtime.statistics.SolverStats;
-import psymbolic.valuesummary.solvers.SolverLib;
-import psymbolic.valuesummary.solvers.SolverStatus;
 import com.sri.yices.*;
 import java.lang.Integer;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Represents the Sat implementation using Yices
  */
-public class YicesImpl implements SolverLib<Integer> {
+public class YicesImpl implements SatLib<Integer> {
     private long config;
     private long context;
     private long param;
     private int boolType;
     private Integer valTrue;
     private Integer valFalse;    
-    private long idx = 0;
-    private static HashMap<Integer, SolverStatus> table = new HashMap<Integer, SolverStatus>();
+    private static HashMap<Integer, SatStatus> table = new HashMap<Integer, SatStatus>();
 
     // Yices2 status codes
     public static final int YICES_STATUS_IDLE = 0;
@@ -67,10 +65,10 @@ public class YicesImpl implements SolverLib<Integer> {
         switch (result) {
             case YICES_STATUS_SAT:
                 SolverStats.isSatResult++;
-                table.put(formula, SolverStatus.SolverSat);
+                table.put(formula, SatStatus.Sat);
                 return true;
             case YICES_STATUS_UNSAT:
-                table.put(formula, SolverStatus.SolverUnsat);
+                table.put(formula, SatStatus.Unsat);
 //                Yices.assertFormula(context, not(formula));
                 return false;
             default:
@@ -81,9 +79,9 @@ public class YicesImpl implements SolverLib<Integer> {
     public boolean isSat(Integer formula) {
         if (table.containsKey(formula)) {
             switch (table.get(formula)) {
-                case SolverSat:
+                case Sat:
                     return true;
-                case SolverUnsat:
+                case Unsat:
                     return false;
                 default:
                 	throw new RuntimeException("Expected cached query result to be SAT or UNSAT, got unknown for formula: " + toString(formula));
@@ -101,31 +99,24 @@ public class YicesImpl implements SolverLib<Integer> {
         return valTrue;
     }
 
-    public Integer and(Integer left, Integer right) {
-        return Yices.and(left, right);
+    public Integer and(List<Integer> children) {
+        int[] c = children.stream().mapToInt(i->i).toArray();
+        return Yices.and(c);
     }
 
-    public Integer or(Integer left, Integer right) {
-        return Yices.or(left, right);
+    public Integer or(List<Integer> children) {
+        int[] c = children.stream().mapToInt(i->i).toArray();
+        return Yices.or(c);
     }
 
     public Integer not(Integer booleanFormula) {
         return Yices.not(booleanFormula);
     }
 
-    public Integer implies(Integer left, Integer right) {
-        return Yices.implies(left, right);
-    }
-
-    public Integer ifThenElse(Integer cond, Integer thenClause, Integer elseClause) {
-        return Yices.or(Yices.and(cond, thenClause),
-        		Yices.and(Yices.not(cond), elseClause));
-    }
-
-    public Integer newVar() {
+    public Integer newVar(String name) {
         int t, status;
         t = Yices.newUninterpretedTerm(boolType);
-        Yices.setTermName(t, "x" + idx++);
+        Yices.setTermName(t, name);
 //    	System.out.println("\tnew variable: " + Yices.getTermName(t));
         return t;
     }
@@ -143,15 +134,6 @@ public class YicesImpl implements SolverLib<Integer> {
             return constTrue();
         }
         throw new RuntimeException("Unsupported");
-    }
-
-    public int getVarCount() {
-        return (int)idx;
-    }
-
-    public int getNodeCount() {
-//        return Yices.yicesNumTerms();
-        return table.size();
     }
 
     public String getStats() {

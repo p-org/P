@@ -3,9 +3,7 @@ package psymbolic.runtime.logger;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.log4j.*;
-import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.runtime.statistics.SearchStats;
-import psymbolic.valuesummary.solvers.SolverEngine;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;

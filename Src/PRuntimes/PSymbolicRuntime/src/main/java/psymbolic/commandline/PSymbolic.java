@@ -2,7 +2,6 @@ package psymbolic.commandline;
 
 import org.reflections.Reflections;
 import psymbolic.runtime.logger.PSymLogger;
-import psymbolic.runtime.logger.StatLogger;
 import psymbolic.valuesummary.solvers.SolverEngine;
 
 import java.io.FileInputStream;

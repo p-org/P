@@ -1,10 +1,7 @@
 package psymbolic.valuesummary.solvers;
 
 import psymbolic.valuesummary.solvers.bdd.PJBDDImpl;
-import psymbolic.valuesummary.solvers.sat.CVC5Impl;
-import psymbolic.valuesummary.solvers.sat.YicesImpl;
-import psymbolic.valuesummary.solvers.sat.Z3Impl;
-import psymbolic.valuesummary.solvers.sat.JavaSmtImpl;
+import psymbolic.valuesummary.solvers.sat.SatGuard;
 
 /**
  * Represents the generic backend engine
@@ -46,13 +43,7 @@ public class SolverEngine {
     		break;
     	case CBDD:		solverImpl = new PJBDDImpl(true);
     		break;
-        case CVC5:	    solverImpl = new CVC5Impl();
-            break;
-    	case YICES2:	solverImpl = new YicesImpl();
-			break;
-        case Z3:	    solverImpl = new Z3Impl();
-            break;
-		default:		solverImpl = new JavaSmtImpl(type);
+        default:        solverImpl = new SatGuard(type);
     	}
     }
 

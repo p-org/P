@@ -9,18 +9,17 @@ import org.sosy_lab.java_smt.SolverContextFactory;
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers;
 import org.sosy_lab.java_smt.api.*;
 import psymbolic.runtime.statistics.SolverStats;
-import psymbolic.valuesummary.solvers.SolverLib;
 import psymbolic.valuesummary.solvers.SolverType;
+
+import java.util.List;
 
 /**
  * Represents the Sat implementation using JavaSMT
  */
-public class JavaSmtImpl implements SolverLib<BooleanFormula> {
+public class JavaSmtImpl implements SatLib<BooleanFormula> {
     final private SolverContext context;
     final private FormulaManager formulaManager;
     final private BooleanFormulaManager booleanFormulaManager;
-    
-    private long idx = 0;
 
     public JavaSmtImpl(SolverType type) {
         try {
@@ -75,12 +74,12 @@ public class JavaSmtImpl implements SolverLib<BooleanFormula> {
         }
     }
 
-    public BooleanFormula and(BooleanFormula left, BooleanFormula right) {
-        return booleanFormulaManager.and(left, right);
+    public BooleanFormula and(List<BooleanFormula> children) {
+        return booleanFormulaManager.and(children);
     }
 
-    public BooleanFormula or(BooleanFormula left, BooleanFormula right) {
-        return booleanFormulaManager.or(left, right);
+    public BooleanFormula or(List<BooleanFormula> children) {
+        return booleanFormulaManager.or(children);
     }
 
     public BooleanFormula not(BooleanFormula booleanFormula) {
@@ -96,8 +95,8 @@ public class JavaSmtImpl implements SolverLib<BooleanFormula> {
                 booleanFormulaManager.and(booleanFormulaManager.not(cond), elseClause));
     }
 
-    public BooleanFormula newVar() {
-        return booleanFormulaManager.makeVariable("x" + idx++);
+    public BooleanFormula newVar(String name) {
+        return booleanFormulaManager.makeVariable(name);
     }
 
     private BooleanFormula simplify(BooleanFormula booleanFormula) {
@@ -122,16 +121,6 @@ public class JavaSmtImpl implements SolverLib<BooleanFormula> {
             return booleanFormulaManager.makeTrue();
         }
         throw new RuntimeException("Unsupported");
-    }
-
-    public int getVarCount() {
-    	// TODO
-        return 0;
-    }
-
-    public int getNodeCount() {
-    	// TODO
-        return 0;
     }
 
     public String getStats() {

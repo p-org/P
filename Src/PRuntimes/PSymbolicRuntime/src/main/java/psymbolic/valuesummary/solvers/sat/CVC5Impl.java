@@ -7,21 +7,19 @@ import io.github.cvc5.api.Solver;
 import io.github.cvc5.api.Sort;
 import io.github.cvc5.api.Term;
 import psymbolic.runtime.statistics.SolverStats;
-import psymbolic.valuesummary.solvers.SolverLib;
-import psymbolic.valuesummary.solvers.SolverStatus;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Represents the Sat implementation using CVC5
  */
-public class CVC5Impl implements SolverLib<Term> {
+public class CVC5Impl implements SatLib<Term> {
     private Solver solver;
     private Sort boolType;
     private Term valTrue;
     private Term valFalse;
-    private long idx = 0;
-    private static HashMap<Long, SolverStatus> table = new HashMap<Long, SolverStatus>();
+    private static HashMap<Long, SatStatus> table = new HashMap<Long, SatStatus>();
 
     public CVC5Impl() {
     	System.out.println("Using CVC5");
@@ -77,10 +75,10 @@ public class CVC5Impl implements SolverLib<Term> {
 
         if (result.isSat()) {
             SolverStats.isSatResult++;
-            table.put(formula.getId(), SolverStatus.SolverSat);
+            table.put(formula.getId(), SatStatus.Sat);
             return true;
         } else if (result.isUnsat()) {
-            table.put(formula.getId(), SolverStatus.SolverUnsat);
+            table.put(formula.getId(), SatStatus.Unsat);
             return false;
         } else {
             throw new RuntimeException("CVC5 returned query result: " + result + " with explanation: " + result.getUnknownExplanation());
@@ -90,9 +88,9 @@ public class CVC5Impl implements SolverLib<Term> {
     public boolean isSat(Term formula) {
         if (table.containsKey(formula.getId())) {
             switch (table.get(formula.getId())) {
-                case SolverSat:
+                case Sat:
                     return true;
-                case SolverUnsat:
+                case Unsat:
                     return false;
                 default:
                     throw new RuntimeException("Expected cached query result to be SAT or UNSAT, got unknown for formula: " + toString(formula));
@@ -110,18 +108,14 @@ public class CVC5Impl implements SolverLib<Term> {
         return valTrue;
     }
 
-    public Term and(Term left, Term right) {
-//        if (left.equals(not(right))) {
-//            return valFalse;
-//        }
-        return newTerm(solver.mkTerm(Kind.AND, left, right));
+    public Term and(List<Term> children) {
+        Term[] c = children.toArray(new Term[children.size()]);
+        return newTerm(solver.mkTerm(Kind.AND, c));
     }
 
-    public Term or(Term left, Term right) {
-//        if (left.equals(not(right))) {
-//            return valTrue;
-//        }
-        return newTerm(solver.mkTerm(Kind.OR, left, right));
+    public Term or(List<Term> children) {
+        Term[] c = children.toArray(new Term[children.size()]);
+        return newTerm(solver.mkTerm(Kind.OR, c));
     }
 
     public Term not(Term booleanFormula) {
@@ -138,8 +132,8 @@ public class CVC5Impl implements SolverLib<Term> {
         return newTerm(solver.mkTerm(Kind.ITE, cond, thenClause, elseClause));
     }
 
-    public Term newVar() {
-        Term t = newTerm(solver.mkConst(boolType, "x" + idx++));
+    public Term newVar(String name) {
+        Term t = newTerm(solver.mkConst(boolType, name));
 //    	System.out.println("\tnew variable: " + t);
         return t;
     }
@@ -156,14 +150,6 @@ public class CVC5Impl implements SolverLib<Term> {
             return constTrue();
         }
         throw new RuntimeException("Unsupported");
-    }
-
-    public int getVarCount() {
-        return (int)idx;
-    }
-
-    public int getNodeCount() {
-        return table.size();
     }
 
     public String getStats() {

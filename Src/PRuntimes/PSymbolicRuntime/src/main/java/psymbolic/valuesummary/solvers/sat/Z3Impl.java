@@ -2,16 +2,15 @@ package psymbolic.valuesummary.solvers.sat;
 
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.statistics.SolverStats;
-import psymbolic.valuesummary.solvers.SolverLib;
-import psymbolic.valuesummary.solvers.SolverStatus;
 import com.microsoft.z3.*;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Represents the Sat implementation using Z3
  */
-public class Z3Impl implements SolverLib<BoolExpr> {
+public class Z3Impl implements SatLib<BoolExpr> {
     private HashMap<String, String> config;
     private Context context;
     private Params simplifyParams;
@@ -19,9 +18,8 @@ public class Z3Impl implements SolverLib<BoolExpr> {
     private Sort boolType;
     private BoolExpr valTrue;
     private BoolExpr valFalse;
-    private long idx = 0;
     private int printCount = 0;
-    private static HashMap<BoolExpr, SolverStatus> table = new HashMap<BoolExpr, SolverStatus>();
+    private static HashMap<BoolExpr, SatStatus> table = new HashMap<BoolExpr, SatStatus>();
 
     public Z3Impl() {
     	System.out.println("Using Z3 version " + Version.getString());
@@ -85,10 +83,10 @@ public class Z3Impl implements SolverLib<BoolExpr> {
 
         if (result == Status.SATISFIABLE) {
             SolverStats.isSatResult++;
-            table.put(formula, SolverStatus.SolverSat);
+            table.put(formula, SatStatus.Sat);
             return true;
         } else if (result == Status.UNSATISFIABLE) {
-            table.put(formula, SolverStatus.SolverUnsat);
+            table.put(formula, SatStatus.Unsat);
 //            solver.add(not(formula));
 
             if (SearchLogger.getVerbosity() > 2) {
@@ -105,9 +103,9 @@ public class Z3Impl implements SolverLib<BoolExpr> {
     public boolean isSat(BoolExpr formula) {
         if (table.containsKey(formula)) {
             switch (table.get(formula)) {
-                case SolverSat:
+                case Sat:
                     return true;
-                case SolverUnsat:
+                case Unsat:
                     return false;
                 default:
                     throw new RuntimeException("Expected cached query result to be SAT or UNSAT, got unknown for formula: " + toString(formula));
@@ -125,30 +123,23 @@ public class Z3Impl implements SolverLib<BoolExpr> {
         return valTrue;
     }
 
-    public BoolExpr and(BoolExpr left, BoolExpr right) {
-        return newTerm(context.mkAnd(left, right));
+    public BoolExpr and(List<BoolExpr> children) {
+        BoolExpr[] c = children.toArray(new BoolExpr[children.size()]);
+        return newTerm(context.mkAnd(c));
     }
 
-    public BoolExpr or(BoolExpr left, BoolExpr right) {
-        return newTerm(context.mkOr(left, right));
+    public BoolExpr or(List<BoolExpr> children) {
+        BoolExpr[] c = children.toArray(new BoolExpr[children.size()]);
+        return newTerm(context.mkOr(c));
     }
 
     public BoolExpr not(BoolExpr booleanFormula) {
         return newTerm(context.mkNot(booleanFormula));
     }
 
-    public BoolExpr implies(BoolExpr left, BoolExpr right) {
-        return newTerm(context.mkImplies(left, right));
-    }
-
-    public BoolExpr ifThenElse(BoolExpr cond, BoolExpr thenClause, BoolExpr elseClause) {
-        return newTerm(context.mkOr(context.mkAnd(cond, thenClause),
-                context.mkAnd(context.mkNot(cond), elseClause)));
-    }
-
-    public BoolExpr newVar() {
+    public BoolExpr newVar(String name) {
         BoolExpr t;
-        t = newTerm(context.mkBoolConst("x" + idx++));
+        t = newTerm(context.mkBoolConst(name));
         return t;
     }
 
@@ -164,14 +155,6 @@ public class Z3Impl implements SolverLib<BoolExpr> {
             return constTrue();
         }
         throw new RuntimeException("Unsupported");
-    }
-
-    public int getVarCount() {
-        return (int)idx;
-    }
-
-    public int getNodeCount() {
-        return table.size();
     }
 
     public String getStats() {

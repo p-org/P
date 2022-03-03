@@ -6,7 +6,6 @@ import psymbolic.runtime.scheduler.ReplayScheduler;
 import psymbolic.runtime.scheduler.DPORScheduler;
 import psymbolic.runtime.logger.PSymLogger;
 import psymbolic.runtime.logger.TraceLogger;
-import psymbolic.valuesummary.solvers.SolverEngine;
 import psymbolic.valuesummary.Guard;
 import psymbolic.runtime.logger.StatLogger;
 

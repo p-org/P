@@ -11,7 +11,7 @@ namespace Plang.Compiler
 
         public override string ToString()
         {
-            return File == null ? throw new ArgumentException() : $"{File.Name}:{Line},{Column}";
+            return File == null ? throw new ArgumentException() : $"{Path.GetRelativePath(Directory.GetCurrentDirectory(),File.FullName)}:{Line}:{Column}";
         }
     }
 }

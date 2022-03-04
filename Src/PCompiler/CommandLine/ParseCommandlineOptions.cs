@@ -189,7 +189,7 @@ namespace Plang.Compiler
                         }
                         else
                         {
-                            throw new CommandlineParsingError($"Illegal P file name {arg} or file {fullPathName.FullName} not found");
+                            throw new CommandlineParsingError($"Illegal P file name {arg} (file name cannot have special characters) or file not found.");
                         }
                     }
                 }

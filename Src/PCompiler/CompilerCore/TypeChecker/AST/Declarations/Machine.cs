@@ -10,7 +10,6 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
     public class Machine : IStateContainer, IHasScope
     {
         private readonly List<Variable> fields = new List<Variable>();
-        private readonly Dictionary<string, StateGroup> groups = new Dictionary<string, StateGroup>();
         private readonly List<Function> methods = new List<Function>();
         private readonly Dictionary<string, State> states = new Dictionary<string, State>();
 
@@ -39,12 +38,6 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public string Name { get; }
         public IStateContainer ParentStateContainer { get; } = null;
         public IEnumerable<State> States => states.Values;
-        public IEnumerable<StateGroup> Groups => groups.Values;
-
-        public IStateContainer GetGroup(string groupName)
-        {
-            return groups.TryGetValue(groupName, out var group) ? group : null;
-        }
 
         public State GetState(string stateName)
         {
@@ -59,14 +52,6 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             states.Add(state.Name, state);
         }
 
-        public void AddGroup(StateGroup group)
-        {
-            Debug.Assert(group.ParentStateContainer == null);
-            group.ParentStateContainer = this;
-            group.OwningMachine = this;
-            groups.Add(group.Name, group);
-        }
-
         public IEnumerable<State> AllStates()
         {
             if (StartState != null) yield return StartState;
@@ -79,7 +64,6 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                 foreach (var state in container.States)
                     if (!state.IsStart)
                         yield return state;
-                foreach (var group in container.Groups) containers.Push(group);
             }
         }
 

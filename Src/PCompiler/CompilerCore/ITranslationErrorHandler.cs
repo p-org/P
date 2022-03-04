@@ -58,10 +58,6 @@ namespace Plang.Compiler
 
         Exception NonDeterministicFunctionInSpecMachine(Function machineFunction);
 
-        Exception RelinquishedWithoutOwnership(ILinearRef linearRef);
-
-        Exception InvalidSwap(ILinearRef linearRef, string message);
-
         Exception UseWithoutOwnership(VariableAccessExpr variable);
 
         Exception MovedField(MoveAssignStmt moveAssignStmt);

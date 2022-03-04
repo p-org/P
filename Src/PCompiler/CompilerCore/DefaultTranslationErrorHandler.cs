@@ -178,18 +178,6 @@ namespace Plang.Compiler
                 $"Method {DeclarationName(machineFunction)} is non-deterministic, but used in spec machine.");
         }
 
-        public Exception RelinquishedWithoutOwnership(ILinearRef linearRef)
-        {
-            return IssueError(linearRef.SourceLocation,
-                $"cannot give up ownership of variable {linearRef.Variable.Name} twice");
-        }
-
-        public Exception InvalidSwap(ILinearRef linearRef, string message)
-        {
-            return IssueError(linearRef.SourceLocation,
-                $"invalid swap of {linearRef.Variable.Name}. Reason: {message}");
-        }
-
         public Exception UseWithoutOwnership(VariableAccessExpr variable)
         {
             return IssueError(variable.SourceLocation,

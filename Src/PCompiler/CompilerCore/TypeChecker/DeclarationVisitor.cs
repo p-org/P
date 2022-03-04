@@ -137,12 +137,6 @@ namespace Plang.Compiler.TypeChecker
         private State FindState(PParser.StateNameContext context)
         {
             var scope = CurrentMachine.Scope;
-            foreach (var groupToken in context._groups)
-            {
-                if (!scope.Get(groupToken.GetText(), out StateGroup group))
-                    throw Handler.MissingDeclaration(groupToken, "group", groupToken.GetText());
-                scope = group.Scope;
-            }
 
             if (!scope.Get(context.state.GetText(), out State state))
                 throw Handler.MissingDeclaration(context.state, "state", context.state.GetText());
@@ -369,9 +363,6 @@ namespace Plang.Compiler.TypeChecker
                     case State state:
                         CurrentMachine.AddState(state);
                         break;
-                    case StateGroup group:
-                        CurrentMachine.AddGroup(group);
-                        break;
                     default:
                         throw Handler.InternalError(machineEntryContext,
                             new ArgumentOutOfRangeException(nameof(context)));
@@ -383,8 +374,7 @@ namespace Plang.Compiler.TypeChecker
         {
             var subExpr = context.varDecl() ??
                           context.funDecl() ??
-                          (IParseTree) context.group() ??
-                          context.stateDecl() ??
+                          (IParseTree) context.stateDecl() ??
                           throw Handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context)));
             return Visit(subExpr);
         }
@@ -406,38 +396,6 @@ namespace Plang.Compiler.TypeChecker
 
             // SEMI
             return variables;
-        }
-
-        public override object VisitGroup(PParser.GroupContext context)
-        {
-            var group = (StateGroup) nodesToDeclarations.Get(context);
-            group.OwningMachine = CurrentMachine;
-            using (currentScope.NewContext(group.Scope))
-            {
-                foreach (var groupItemContext in context.groupItem())
-                    switch (Visit(groupItemContext))
-                    {
-                        case StateGroup subGroup:
-                            group.AddGroup(subGroup);
-                            break;
-                        case State state:
-                            group.AddState(state);
-                            break;
-                        default:
-                            throw Handler.InternalError(groupItemContext,
-                                new ArgumentOutOfRangeException(nameof(context)));
-                    }
-            }
-
-            return group;
-        }
-
-        public override object VisitGroupItem(PParser.GroupItemContext context)
-        {
-            var item = (IParseTree) context.stateDecl() ??
-                       context.group() ??
-                       throw Handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context)));
-            return Visit(item);
         }
 
         public override object VisitStateDecl(PParser.StateDeclContext context)

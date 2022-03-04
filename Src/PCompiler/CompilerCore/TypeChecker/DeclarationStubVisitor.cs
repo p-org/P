@@ -153,14 +153,6 @@ namespace Plang.Compiler.TypeChecker
             return null;
         }
 
-        public override object VisitGroup(PParser.GroupContext context)
-        {
-            string symbolName = context.name.GetText();
-            AST.States.StateGroup group = CurrentScope.Put(symbolName, context);
-            nodesToDeclarations.Put(context, group);
-            return VisitChildrenWithNewScope(group, context);
-        }
-
         public override object VisitStateDecl(PParser.StateDeclContext context)
         {
             string symbolName = context.name.GetText();

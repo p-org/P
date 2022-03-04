@@ -200,21 +200,7 @@ namespace Plang.Compiler.TypeChecker
                 {
                     throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
                 }
-
-                if (argument is ILinearRef linearRef)
-                {
-                    if (linearRef.LinearType == LinearType.Swap && !linearRef.Type.IsSameTypeAs(paramType))
-                    {
-                        throw handler.TypeMismatch(context, linearRef.Type, paramType);
-                    }
-
-                    if (linearVariables.Contains(linearRef.Variable))
-                    {
-                        throw handler.RelinquishedWithoutOwnership(linearRef);
-                    }
-
-                    linearVariables.Add(linearRef.Variable);
-                }
+                
             }
 
             method.AddCallee(function);
@@ -639,13 +625,6 @@ namespace Plang.Compiler.TypeChecker
             }
 
             List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToList();
-            foreach (IPExpr arg in args)
-            {
-                if (arg is LinearAccessRefExpr)
-                {
-                    throw handler.StringAssignStmtLinearArgument(arg.SourceLocation);
-                }
-            }
 
             if (args.Count != numNecessaryArgs)
             {

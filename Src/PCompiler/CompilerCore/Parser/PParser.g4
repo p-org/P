@@ -98,7 +98,6 @@ specMachineDecl : SPEC name=iden OBSERVES eventSetLiteral machineBody ;
 machineBody : LBRACE machineEntry* RBRACE;
 machineEntry : varDecl
              | funDecl
-             | group
              | stateDecl
              ;
 
@@ -107,9 +106,6 @@ varDecl : VAR idenList COLON type SEMI ;
 funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? (CREATES interfaces+=iden)? SEMI # ForeignFunDecl
         | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
         ;
-
-group : GROUP name=iden LBRACE groupItem* RBRACE ;
-groupItem : stateDecl | group ;
 
 stateDecl : START? temperature=(HOT | COLD)? STATE name=iden LBRACE stateBodyItem* RBRACE ;
 
@@ -132,7 +128,7 @@ nonDefaultEvent : HALT | iden ;
 eventList : eventId (COMMA eventId)* ;
 eventId : NullLiteral | HALT | iden ;
 
-stateName : (groups+=iden DOT)* state=iden ; // First few Idens are groups
+stateName : state=iden ;
 
 functionBody : LBRACE varDecl* statement* RBRACE ;
 statement : LBRACE statement* RBRACE							# CompoundStmt
@@ -146,6 +142,8 @@ statement : LBRACE statement* RBRACE							# CompoundStmt
 		  | lvalue INSERT LPAREN rvalue RPAREN SEMI				# AddStmt
           | lvalue REMOVE expr SEMI								# RemoveStmt
           | WHILE LPAREN expr RPAREN statement					# WhileStmt
+          | FOREACH LPAREN item=iden IN collection=expr 
+                                        RPAREN statement		# ForeachStmt
           | IF LPAREN expr RPAREN thenBranch=statement 
                             (ELSE elseBranch=statement)?		# IfStmt
           | NEW iden LPAREN rvalueList? RPAREN SEMI				# CtorStmt
@@ -180,10 +178,11 @@ expr : primitive                                      # PrimitiveExpr
      | fun=VALUES LPAREN expr RPAREN                  # KeywordExpr
      | fun=SIZEOF LPAREN expr RPAREN                  # KeywordExpr
      | fun=DEFAULT LPAREN type RPAREN                 # KeywordExpr
-     | NEW interfaceName=iden LPAREN rvalueList? RPAREN # CtorExpr
+     | NEW interfaceName=iden 
+                            LPAREN rvalueList? RPAREN # CtorExpr
      | fun=iden LPAREN rvalueList? RPAREN             # FunCallExpr
      | op=(SUB | LNOT) expr                           # UnaryExpr
-     | lhs=expr op=(MUL | DIV) rhs=expr               # BinExpr
+     | lhs=expr op=(MUL | DIV | MOD) rhs=expr         # BinExpr
      | lhs=expr op=(ADD | SUB) rhs=expr               # BinExpr
      | expr cast=(AS | TO) type                       # CastExpr
      | lhs=expr op=(LT | GT | GE | LE | IN) rhs=expr  # BinExpr

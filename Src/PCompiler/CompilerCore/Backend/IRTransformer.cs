@@ -216,7 +216,7 @@ namespace Plang.Compiler.Backend
                     return (fndTemp, deps);
 
                 case FunCallExpr funCallExpr:
-                    (ILinearRef[] funArgs, List<IPStmt> funArgsDeps) = SimplifyFunArgs(funCallExpr.Arguments);
+                    (IVariableRef[] funArgs, List<IPStmt> funArgsDeps) = SimplifyFunArgs(funCallExpr.Arguments);
                     deps.AddRange(funArgsDeps);
                     (VariableAccessExpr funTemp, IPStmt funStore) = SaveInTemporary(new FunCallExpr(location, funCallExpr.Function, funArgs));
                     deps.Add(funStore);
@@ -394,7 +394,7 @@ namespace Plang.Compiler.Backend
                         .ToList();
 
                 case FunCallStmt funCallStmt:
-                    (ILinearRef[] funCallArgs, List<IPStmt> funCallArgDeps) = SimplifyFunArgs(funCallStmt.ArgsList);
+                    (IVariableRef[] funCallArgs, List<IPStmt> funCallArgDeps) = SimplifyFunArgs(funCallStmt.ArgsList);
                     return funCallArgDeps.Concat(new[]
                         {
                             new FunCallStmt(location, funCallStmt.Function, funCallArgs)
@@ -576,14 +576,13 @@ namespace Plang.Compiler.Backend
         private (IReadOnlyList<IVariableRef> args, List<IPStmt> deps) SimplifyArgPack(IEnumerable<IPExpr> argsPack)
         {
             List<IPExpr> args = argsPack.ToList();
-            Debug.Assert(!args.Any(arg => arg is LinearAccessRefExpr lin && lin.LinearType.Equals(LinearType.Swap)));
-            (ILinearRef[] refArgs, List<IPStmt> deps) = SimplifyFunArgs(args);
+            (IVariableRef[] refArgs, List<IPStmt> deps) = SimplifyFunArgs(args);
             return (refArgs, deps);
         }
 
-        private (ILinearRef[], List<IPStmt>) SimplifyFunArgs(IReadOnlyList<IPExpr> funCallArgs)
+        private (IVariableRef[], List<IPStmt>) SimplifyFunArgs(IReadOnlyList<IPExpr> funCallArgs)
         {
-            ILinearRef[] funArgs = new ILinearRef[funCallArgs.Count];
+            IVariableRef[] funArgs = new IVariableRef[funCallArgs.Count];
             List<IPStmt> deps = new List<IPStmt>();
             for (int i = 0; i < funCallArgs.Count; i++)
             {
@@ -599,18 +598,14 @@ namespace Plang.Compiler.Backend
                     // Move temporaries...
                     case VariableAccessExpr variableAccessExpr
                         when variableAccessExpr.Variable.Role.HasFlag(VariableRole.Temp):
-                        funArgs[i] = new LinearAccessRefExpr(variableAccessExpr.SourceLocation,
-                            variableAccessExpr.Variable, LinearType.Move);
-                        break;
-                    // ...and leave linear accesses alone...
-                    case LinearAccessRefExpr linearAccessRefExpr:
-                        funArgs[i] = linearAccessRefExpr;
+                        funArgs[i] = new VariableAccessExpr(variableAccessExpr.SourceLocation,
+                            variableAccessExpr.Variable);
                         break;
                     // ...but clone literals and visible variables/fields.
                     default:
                         (VariableAccessExpr temp, IPStmt tempDep) = SaveInTemporary(new CloneExpr(argExpr));
                         deps.Add(tempDep);
-                        funArgs[i] = new LinearAccessRefExpr(temp.SourceLocation, temp.Variable, LinearType.Move);
+                        funArgs[i] = new VariableAccessExpr(temp.SourceLocation, temp.Variable);
                         break;
                 }
             }

@@ -122,11 +122,6 @@ namespace Plang.Compiler.Backend.Debugging
                         WriteTree(machineMethod);
                     }
 
-                    foreach (StateGroup machineGroup in machine.Groups)
-                    {
-                        WriteTree(machineGroup);
-                    }
-
                     foreach (State machineState in machine.States)
                     {
                         WriteTree(machineState);
@@ -387,24 +382,6 @@ namespace Plang.Compiler.Backend.Debugging
                     WriteStmt("}");
                     break;
 
-                case StateGroup stateGroup:
-                    WriteStmt("group ", stateGroup);
-                    WriteStmt("{");
-                    Indent();
-                    foreach (StateGroup subGroup in stateGroup.Groups)
-                    {
-                        WriteTree(subGroup);
-                    }
-
-                    foreach (State state in stateGroup.States)
-                    {
-                        WriteTree(state);
-                    }
-
-                    Dedent();
-                    WriteStmt("}");
-                    break;
-
                 case EnumElem _:
                     break;
 
@@ -540,11 +517,6 @@ namespace Plang.Compiler.Backend.Debugging
 
                 case KeysExpr keysExpr:
                     WriteParts("keys(", keysExpr.Expr, ")");
-                    break;
-
-                case LinearAccessRefExpr linearAccessRefExpr:
-                    WriteParts(linearAccessRefExpr.Variable.Name,
-                        linearAccessRefExpr.LinearType.Equals(LinearType.Move) ? " move" : " swap");
                     break;
 
                 case MapAccessExpr mapAccessExpr:

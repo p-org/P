@@ -922,10 +922,6 @@ namespace Plang.Compiler.Backend.Rvm
                     Context.Write(output, $").{cloneKeysFunc}()");
                     return BoxingState.NOT_APPLICABLE;
 
-                case LinearAccessRefExpr linearAccessRefExpr:
-                    Context.Write(output, $"{Context.Names.GetNameForDecl(linearAccessRefExpr.Variable)}");
-                    return BoxingState.BOXED;
-
                 case NamedTupleExpr namedTupleExpr:
                 {
                     string namedTupleClass = Context.Names.GetNamedTupleTypeName();

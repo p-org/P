@@ -1348,11 +1348,6 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, ").CloneKeys()");
                     break;
 
-                case LinearAccessRefExpr linearAccessRefExpr:
-                    string swapKeyword = linearAccessRefExpr.LinearType.Equals(LinearType.Swap) ? "ref " : "";
-                    context.Write(output, $"{swapKeyword}{context.Names.GetNameForDecl(linearAccessRefExpr.Variable)}");
-                    break;
-
                 case NamedTupleExpr namedTupleExpr:
                     string fieldNamesArray = string.Join(",",
                         ((NamedTupleType)namedTupleExpr.Type).Names.Select(n => $"\"{n}\""));

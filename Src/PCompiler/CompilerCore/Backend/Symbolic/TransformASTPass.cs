@@ -86,7 +86,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 transformedMachine.AddState(TransformState(state, functionMap));
             }
-            foreach (var group in machine.Groups) transformedMachine.AddGroup(group);
+            
             foreach (var method in machine.Methods)
             {
                 foreach (var callee in method.Callees)
@@ -384,10 +384,6 @@ namespace Plang.Compiler.Backend.Symbolic
                      return new FunCallExpr(funCallExpr.SourceLocation, funCallExpr.Function, new List<IPExpr>(newArgs));
                  case KeysExpr keysExpr:
                      return new KeysExpr(keysExpr.SourceLocation, ReplaceVars(keysExpr.Expr, varMap), keysExpr.Type);
-                 case LinearAccessRefExpr linearAccessRefExpr:
-                     if (varMap.ContainsKey(linearAccessRefExpr.Variable))
-                         return new LinearAccessRefExpr(linearAccessRefExpr.SourceLocation, varMap[linearAccessRefExpr.Variable], linearAccessRefExpr.LinearType);
-                     else return linearAccessRefExpr;
                  case MapAccessExpr mapAccessExpr:
                      return new MapAccessExpr(mapAccessExpr.SourceLocation, ReplaceVars(mapAccessExpr.MapExpr, varMap), ReplaceVars(mapAccessExpr.IndexExpr, varMap), mapAccessExpr.Type);
                  case NamedTupleAccessExpr namedTupleAccessExpr:

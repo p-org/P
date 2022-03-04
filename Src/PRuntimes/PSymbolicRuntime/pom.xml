@@ -100,12 +100,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.bpodgursky</groupId>
-      <artifactId>jbool_expressions</artifactId>
-      <version>1.24-SNAPSHOT</version>
-    </dependency>
-
-    <dependency>
       <groupId>com.microsoft.z3</groupId>
       <artifactId>z3</artifactId>
       <version>4.8.14</version>

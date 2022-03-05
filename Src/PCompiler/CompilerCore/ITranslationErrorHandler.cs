@@ -58,12 +58,6 @@ namespace Plang.Compiler
 
         Exception NonDeterministicFunctionInSpecMachine(Function machineFunction);
 
-        Exception UseWithoutOwnership(VariableAccessExpr variable);
-
-        Exception MovedField(MoveAssignStmt moveAssignStmt);
-
-        Exception SwapAssignUnavailable(SwapAssignStmt swapAssignStmt, Variable variable);
-
         Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol);
 
         Exception InvalidStringExprFormat(PParser.FormatedStringContext context, IToken symbol);
@@ -105,10 +99,7 @@ namespace Plang.Compiler
         Exception RaiseEventInNonVoidFunction(ParserRuleContext context);
 
         Exception ChangeStateInNonVoidFunction(ParserRuleContext context);
-
-        Exception PrintStmtLinearArgument(ParserRuleContext argSourceLocation);
-
-        Exception StringAssignStmtLinearArgument(ParserRuleContext argSourceLocation);
+        
 
         Exception DuplicateReceiveCase(ParserRuleContext location, PEvent pEvent);
 

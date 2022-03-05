@@ -1184,28 +1184,6 @@ namespace Plang.Compiler.Backend.C
                     WriteCleanupCheck(output, function);
                     break;
 
-                case SwapAssignStmt swapAssignStmt:
-                    context.WriteLine(output, "{");
-                    string lvName = context.Names.GetTemporaryName("LVALUE");
-                    string tmpName = context.Names.GetTemporaryName("SWAP");
-
-                    // Can only swap local variables, so this is safe. Otherwise would have to call a second WriteLValue
-                    string swappedName = GetVariablePointer(function, swapAssignStmt.OldLocation);
-
-                    // Save l-value
-                    context.Write(output, $"PRT_VALUE** {lvName} = &(");
-                    WriteLValue(output, function, swapAssignStmt.NewLocation);
-                    context.WriteLine(output, ");");
-                    context.WriteLine(output, $"PRT_VALUE* {tmpName} = *{lvName};");
-
-                    // Overwrite l-value with var
-                    context.WriteLine(output, $"*{lvName} = {swappedName};");
-
-                    // Complete the swap
-                    context.WriteLine(output, $"{swappedName} = {tmpName};");
-                    context.WriteLine(output, "}");
-                    break;
-
                 case WhileStmt whileStmt:
                     context.Write(output, "while (PrtPrimGetBool(");
                     WriteExpr(output, function, whileStmt.Condition);

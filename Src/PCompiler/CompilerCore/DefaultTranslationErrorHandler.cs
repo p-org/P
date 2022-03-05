@@ -177,22 +177,7 @@ namespace Plang.Compiler
             return IssueError(machineFunction.SourceLocation,
                 $"Method {DeclarationName(machineFunction)} is non-deterministic, but used in spec machine.");
         }
-
-        public Exception UseWithoutOwnership(VariableAccessExpr variable)
-        {
-            return IssueError(variable.SourceLocation,
-                $"used variable {variable.Variable.Name} after a move or during a swap");
-        }
-
-        public Exception MovedField(MoveAssignStmt moveAssignStmt)
-        {
-            return IssueError(moveAssignStmt.SourceLocation, $"attempted to move field {moveAssignStmt.FromVariable}");
-        }
-
-        public Exception SwapAssignUnavailable(SwapAssignStmt swapAssignStmt, Variable variable)
-        {
-            return IssueError(swapAssignStmt.SourceLocation, $"variable {variable.Name} unavailable during swap");
-        }
+        
 
         public Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol)
         {

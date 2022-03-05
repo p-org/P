@@ -278,13 +278,6 @@ namespace Plang.Compiler.Backend.Debugging
                     WriteStmt("send ", sendStmt.MachineExpr, ", ", sendStmt.Evt, ", ", sendStmt.Arguments, ";");
                     break;
 
-                case SwapAssignStmt swapAssignStmt:
-                    WriteStmt(swapAssignStmt.NewLocation,
-                        " = ",
-                        swapAssignStmt.OldLocation,
-                        " swap; //swap assign");
-                    break;
-
                 case WhileStmt whileStmt:
                     WriteStmt("while (", whileStmt.Condition, ")");
                     WriteStmt("{");

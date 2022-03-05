@@ -248,6 +248,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 {"*", (elhs, erhs) => new BinOpExpr(context, BinOpType.Mul, elhs, erhs)},
                 {"/", (elhs, erhs) => new BinOpExpr(context, BinOpType.Div, elhs, erhs)},
+                {"%", (elhs, erhs) => new BinOpExpr(context, BinOpType.Mod, elhs, erhs)},
                 {"+", (elhs, erhs) => new BinOpExpr(context, BinOpType.Add, elhs, erhs)},
                 {"-", (elhs, erhs) => new BinOpExpr(context, BinOpType.Sub, elhs, erhs)},
                 {"<", (elhs, erhs) => new BinOpExpr(context, BinOpType.Lt, elhs, erhs)},
@@ -298,7 +299,15 @@ namespace Plang.Compiler.TypeChecker
                         return arithCtors[op](lhs, rhs);
                     }
                     throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
-
+                case "%":
+                    if (PrimitiveType.Int.IsAssignableFrom(lhs.Type) &&
+                        PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
+                        PrimitiveType.Float.IsAssignableFrom(lhs.Type) &&
+                        PrimitiveType.Float.IsAssignableFrom(rhs.Type))
+                    {
+                        return arithCtors[op](lhs, rhs);
+                    }
+                    throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type); 
                 case "in":
                     PLanguageType rhsType = rhs.Type.Canonicalize();
                     if (rhsType is MapType rhsMap)

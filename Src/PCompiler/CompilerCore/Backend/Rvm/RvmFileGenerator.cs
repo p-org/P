@@ -684,9 +684,6 @@ namespace Plang.Compiler.Backend.Rvm
                 case SendStmt sendStmt:
                     throw new NotImplementedException("SendStmt is not implemented.");
 
-                case SwapAssignStmt swapStmt:
-                    throw new NotImplementedException("SwapAssignStmt is not implemented.");
-
                 case WhileStmt whileStmt:
                     Context.Write(output, "while (");
                     UnboxIfNeeded(output, (output) => WriteExpr(output, whileStmt.Condition));

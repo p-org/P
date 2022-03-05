@@ -543,15 +543,16 @@ namespace Plang.Compiler.Backend
                         })
                         .ToList();
 
-                case SwapAssignStmt swapAssignStmt:
-                    (IPExpr swapVar, List<IPStmt> swapVarDeps) = SimplifyLvalue(swapAssignStmt.NewLocation);
-                    Variable rhs = swapAssignStmt.OldLocation;
-                    return swapVarDeps.Concat(new[]
-                        {
-                            new SwapAssignStmt(swapAssignStmt.SourceLocation, swapVar, rhs)
-                        })
-                        .ToList();
+                case ForeachStmt foreachStmt:
+                    (IExprTerm collectionExpr, List<IPStmt> collectionDeps) = SimplifyExpression(foreachStmt.IterCollection);
+                    (VariableAccessExpr collTemp, IPStmt collStore) = SaveInTemporary(new CloneExpr(collectionExpr));
 
+                    CompoundStmt body = new CompoundStmt(
+                        foreachStmt.Body.SourceLocation, 
+                        collectionDeps.Append(collStore).Concat(SimplifyStatement(foreachStmt.Body)));
+
+                    return new List<IPStmt> { new ForeachStmt(location, foreachStmt.Item, collTemp, body) };
+                
                 case WhileStmt whileStmt:
                     (IExprTerm condExpr, List<IPStmt> condDeps) = SimplifyExpression(whileStmt.Condition);
                     (VariableAccessExpr condTemp, IPStmt condStore) = SaveInTemporary(new CloneExpr(condExpr));

@@ -64,7 +64,9 @@ namespace Plang.Compiler.TypeChecker
                 // Any break or continue statements inside this while loop are necessarily safe
                 case WhileStmt _:
                     break;
-
+                case ForeachStmt _:
+                    break;
+                
                 // None of the following statement types can contain child statements, so we can safely skip them
                 case AddStmt _:
                 case AnnounceStmt _:
@@ -82,7 +84,6 @@ namespace Plang.Compiler.TypeChecker
                 case RemoveStmt _:
                 case ReturnStmt _:
                 case SendStmt _:
-                case SwapAssignStmt _:
                     break;
 
                 default:

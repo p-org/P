@@ -307,7 +307,7 @@ namespace Plang.Compiler.TypeChecker
                     {
                         return arithCtors[op](lhs, rhs);
                     }
-                    throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type); 
+                    throw handler.IncomparableTypes(context, lhs.Type, rhs.Type); 
                 case "in":
                     PLanguageType rhsType = rhs.Type.Canonicalize();
                     if (rhsType is MapType rhsMap)

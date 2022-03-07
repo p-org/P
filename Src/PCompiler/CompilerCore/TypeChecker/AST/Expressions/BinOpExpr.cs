@@ -34,7 +34,7 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
         private static bool IsArithmetic(BinOpType operation)
         {
             return operation == BinOpType.Add || operation == BinOpType.Sub || operation == BinOpType.Mul ||
-                   operation == BinOpType.Div;
+                   operation == BinOpType.Div || operation == BinOpType.Mod;
         }
     }
 }

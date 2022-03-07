@@ -1591,7 +1591,10 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case BinOpType.Div:
                     return "/";
-
+                
+                case BinOpType.Mod:
+                    return "%";
+                
                 case BinOpType.Lt:
                     return "<";
 

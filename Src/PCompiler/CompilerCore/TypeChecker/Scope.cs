@@ -26,7 +26,6 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, NamedModule> namedModules = new Dictionary<string, NamedModule>();
         private readonly IDictionary<string, RefinementTest> refinementTests = new Dictionary<string, RefinementTest>();
         private readonly IDictionary<string, SafetyTest> safetyTests = new Dictionary<string, SafetyTest>();
-        private readonly IDictionary<string, StateGroup> stateGroups = new Dictionary<string, StateGroup>();
         private readonly IDictionary<string, State> states = new Dictionary<string, State>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
@@ -55,7 +54,6 @@ namespace Plang.Compiler.TypeChecker
                 .Concat(Functions)
                 .Concat(Interfaces)
                 .Concat(Machines)
-                .Concat(StateGroups)
                 .Concat(States)
                 .Concat(Typedefs)
                 .Concat(Variables)
@@ -71,7 +69,6 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<Function> Functions => functions.Values;
         public IEnumerable<Interface> Interfaces => interfaces.Values;
         public IEnumerable<Machine> Machines => machines.Values;
-        public IEnumerable<StateGroup> StateGroups => stateGroups.Values;
         public IEnumerable<State> States => states.Values;
         public IEnumerable<TypeDef> Typedefs => typedefs.Values;
         public IEnumerable<Variable> Variables => variables.Values;
@@ -151,11 +148,6 @@ namespace Plang.Compiler.TypeChecker
         public bool Get(string name, out Machine tree)
         {
             return machines.TryGetValue(name, out tree);
-        }
-
-        public bool Get(string name, out StateGroup tree)
-        {
-            return stateGroups.TryGetValue(name, out tree);
         }
 
         public bool Get(string name, out State tree)
@@ -300,23 +292,6 @@ namespace Plang.Compiler.TypeChecker
         }
 
         public bool Lookup(string name, out Machine tree)
-        {
-            Scope current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
-        }
-
-        public bool Lookup(string name, out StateGroup tree)
         {
             Scope current = this;
             while (current != null)
@@ -550,14 +525,6 @@ namespace Plang.Compiler.TypeChecker
             CheckConflicts(function, Namespace(functions));
             functions.Add(name, function);
             return function;
-        }
-
-        public StateGroup Put(string name, PParser.GroupContext tree)
-        {
-            StateGroup group = new StateGroup(name, tree);
-            CheckConflicts(group, Namespace(stateGroups));
-            stateGroups.Add(name, group);
-            return group;
         }
 
         public EnumElem Put(string name, PParser.EnumElemContext tree)

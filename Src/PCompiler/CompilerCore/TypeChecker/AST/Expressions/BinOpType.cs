@@ -6,6 +6,7 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
         Sub,
         Mul,
         Div,
+        Mod,
         Eq,
         Neq,
         Lt,

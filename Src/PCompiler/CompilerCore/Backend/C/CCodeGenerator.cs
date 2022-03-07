@@ -381,19 +381,7 @@ namespace Plang.Compiler.Backend.C
                     context.WriteLine(output, $"{stateExitFunName}, \\");
                     context.WriteLine(output, "}");
                     break;
-
-                case StateGroup stateGroup:
-                    foreach (State state in stateGroup.States)
-                    {
-                        WriteSourceDecl(output, state);
-                    }
-
-                    foreach (StateGroup subGroup in stateGroup.Groups)
-                    {
-                        WriteSourceDecl(output, subGroup);
-                    }
-
-                    break;
+                
             }
 #pragma warning restore CCN0002 // Non exhaustive patterns in switch block
 
@@ -958,7 +946,7 @@ namespace Plang.Compiler.Backend.C
 
                 case FunCallStmt funCallStmt:
                     string funImplName = context.Names.GetNameForFunctionImpl(funCallStmt.Function);
-                    List<ILinearRef> funArgs = funCallStmt.ArgsList.Cast<ILinearRef>().ToList();
+                    List<IVariableRef> funArgs = funCallStmt.ArgsList.Cast<IVariableRef>().ToList();
 
                     // Put all the arguments in the args array
                     foreach (var arg in funArgs.Select((arg, i) => new { arg, i }))
@@ -969,15 +957,6 @@ namespace Plang.Compiler.Backend.C
 
                     // Call the function and immediately free the value
                     context.WriteLine(output, $"PrtFreeValue({funImplName}(context, {FunCallArgsArrayName}));");
-
-                    // Free and set to null all the moved arguments
-                    IEnumerable<string> toFree = funArgs.Where(arg => arg.LinearType.Equals(LinearType.Move))
-                        .Select(arg => GetVariablePointer(function, arg.Variable));
-                    foreach (string argName in toFree)
-                    {
-                        context.WriteLine(output, $"PrtFreeValue({argName});");
-                        context.WriteLine(output, $"{argName} = NULL;");
-                    }
 
                     WriteCleanupCheck(output, function);
                     break;
@@ -1204,29 +1183,14 @@ namespace Plang.Compiler.Backend.C
                     // TODO: fix the underlying problem and remove this check.
                     WriteCleanupCheck(output, function);
                     break;
-
-                case SwapAssignStmt swapAssignStmt:
-                    context.WriteLine(output, "{");
-                    string lvName = context.Names.GetTemporaryName("LVALUE");
-                    string tmpName = context.Names.GetTemporaryName("SWAP");
-
-                    // Can only swap local variables, so this is safe. Otherwise would have to call a second WriteLValue
-                    string swappedName = GetVariablePointer(function, swapAssignStmt.OldLocation);
-
-                    // Save l-value
-                    context.Write(output, $"PRT_VALUE** {lvName} = &(");
-                    WriteLValue(output, function, swapAssignStmt.NewLocation);
-                    context.WriteLine(output, ");");
-                    context.WriteLine(output, $"PRT_VALUE* {tmpName} = *{lvName};");
-
-                    // Overwrite l-value with var
-                    context.WriteLine(output, $"*{lvName} = {swappedName};");
-
-                    // Complete the swap
-                    context.WriteLine(output, $"{swappedName} = {tmpName};");
-                    context.WriteLine(output, "}");
+                
+                case ForeachStmt foreachStmt:
+                    context.Write(output, $"foreach (var temp_{foreachStmt.Item.Name} in ");
+                    WriteExpr(output, function, foreachStmt.IterCollection);
+                    context.WriteLine(output, ")");
+                    context.Write(output, $"{foreachStmt.Item.Name} = temp_{foreachStmt.Item.Name};");
+                    WriteStmt(output, function, foreachStmt.Body);
                     break;
-
                 case WhileStmt whileStmt:
                     context.Write(output, "while (PrtPrimGetBool(");
                     WriteExpr(output, function, whileStmt.Condition);
@@ -1470,15 +1434,12 @@ namespace Plang.Compiler.Backend.C
 
                 case FunCallExpr funCallExpr:
                     string funImplName = context.Names.GetNameForFunctionImpl(funCallExpr.Function);
-                    List<ILinearRef> funArgs = funCallExpr.Arguments.Cast<ILinearRef>().ToList();
+                    List<IVariableRef> funArgs = funCallExpr.Arguments.Cast<IVariableRef>().ToList();
                     IEnumerable<string> argSetup = funArgs.Select((arg, i) =>
                         $"({FunCallArgsArrayName}[{i}] = {GetVariableReference(function, arg)})");
                     string[] funCall = new[] { $"({FunCallRetValName} = {funImplName}(context, {FunCallArgsArrayName}))" };
-                    IEnumerable<string> argsFree = funArgs.Where(arg => arg.LinearType.Equals(LinearType.Move))
-                        .Select(arg => GetVariablePointer(function, arg.Variable))
-                        .Select(varName => $"(PrtFreeValue({varName}), {varName} = NULL)");
                     string[] resRetrieve = new[] { $"({FunCallRetValName})" };
-                    string fullCall = string.Join(", ", argSetup.Concat(funCall).Concat(argsFree).Concat(resRetrieve));
+                    string fullCall = string.Join(", ", argSetup.Concat(funCall).Concat(resRetrieve));
                     context.Write(output, $"({fullCall})");
                     break;
 
@@ -1491,11 +1452,6 @@ namespace Plang.Compiler.Backend.C
                     context.Write(output, "PrtMapGetKeys(");
                     WriteExpr(output, function, keysExpr.Expr);
                     context.Write(output, ")");
-                    break;
-
-                case LinearAccessRefExpr linearAccessRefExpr:
-                    // TODO: what's special about linear refs here?
-                    WriteVariableAccess(output, function, linearAccessRefExpr.Variable);
                     break;
 
                 case MapAccessExpr mapAccessExpr:
@@ -1833,11 +1789,6 @@ namespace Plang.Compiler.Backend.C
                 case State state:
                     // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(State, {decl.Name}) => {declName}");
-                    break;
-
-                case StateGroup stateGroup:
-                    // TODO: what to do here?
-                    context.WriteLine(output, $"// DECL(StateGroup, {decl.Name}) => {declName}");
                     break;
             }
 #pragma warning restore CCN0002 // Non exhaustive patterns in switch block

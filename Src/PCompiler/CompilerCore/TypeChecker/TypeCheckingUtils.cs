@@ -46,14 +46,6 @@ namespace Plang.Compiler.TypeChecker
             PLanguageType argumentType,
             IPExpr arg)
         {
-            if (arg is ILinearRef linearRef)
-            {
-                if (linearRef.LinearType.Equals(LinearType.Swap) && !arg.Type.IsSameTypeAs(argumentType))
-                {
-                    throw handler.TypeMismatch(context, arg.Type, argumentType);
-                }
-            }
-
             if (!argumentType.IsAssignableFrom(arg.Type))
             {
                 throw handler.TypeMismatch(context, arg.Type, argumentType);

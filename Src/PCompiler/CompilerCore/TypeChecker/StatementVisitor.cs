@@ -98,39 +98,6 @@ namespace Plang.Compiler.TypeChecker
             IPExpr variable = exprVisitor.Visit(context.lvalue());
             IPExpr value = exprVisitor.Visit(context.rvalue());
 
-            // If we're doing a move/swap assignment
-            if (value is ILinearRef linearRef)
-            {
-                Variable refVariable = linearRef.Variable;
-                switch (linearRef.LinearType)
-                {
-                    case LinearType.Move:
-                        // Moved values must be subtypes of their destinations
-                        if (!variable.Type.IsAssignableFrom(refVariable.Type))
-                        {
-                            throw handler.TypeMismatch(context.rvalue(), refVariable.Type, variable.Type);
-                        }
-
-                        return new MoveAssignStmt(context, variable, refVariable);
-
-                    case LinearType.Swap:
-                        // Within a function, swaps must only be subtyped in either direction
-                        // the actual types are checked at runtime. This is to allow swapping
-                        // with the `any` type.
-                        if (!variable.Type.IsAssignableFrom(refVariable.Type) &&
-                            !refVariable.Type.IsAssignableFrom(variable.Type))
-                        {
-                            throw handler.TypeMismatch(context.rvalue(), refVariable.Type, variable.Type);
-                        }
-
-                        return new SwapAssignStmt(context, variable, refVariable);
-
-                    default:
-                        throw handler.InternalError(linearRef.SourceLocation,
-                            new ArgumentOutOfRangeException(nameof(context)));
-                }
-            }
-
             // If this is a value assignment, we just need subtyping
             if (!variable.Type.IsAssignableFrom(value.Type))
             {
@@ -144,10 +111,7 @@ namespace Plang.Compiler.TypeChecker
         {
             var variable = exprVisitor.Visit(context.lvalue());
             var value = exprVisitor.Visit(context.rvalue());
-
-            // Check linear types
-            var valueIsInvariant = false;
-            if (value is ILinearRef linearRef) valueIsInvariant = linearRef.LinearType.Equals(LinearType.Swap);
+            
 
             // Check subtyping
             var valueType = value.Type;
@@ -164,8 +128,7 @@ namespace Plang.Compiler.TypeChecker
                     throw handler.TypeMismatch(variable, TypeKind.Set);
             }
 
-            if (valueIsInvariant && !expectedValueType.IsSameTypeAs(valueType)
-                || !valueIsInvariant && !expectedValueType.IsAssignableFrom(valueType))
+            if (!expectedValueType.IsAssignableFrom(valueType))
                 throw handler.TypeMismatch(context.rvalue(), valueType, expectedValueType);
 
             return new AddStmt(context, variable, value);
@@ -176,13 +139,6 @@ namespace Plang.Compiler.TypeChecker
             IPExpr variable = exprVisitor.Visit(context.lvalue());
             IPExpr index = exprVisitor.Visit(context.expr());
             IPExpr value = exprVisitor.Visit(context.rvalue());
-
-            // Check linear types
-            bool valueIsInvariant = false;
-            if (value is ILinearRef linearRef)
-            {
-                valueIsInvariant = linearRef.LinearType.Equals(LinearType.Swap);
-            }
 
             // Check subtyping
             PLanguageType keyType = index.Type;
@@ -212,8 +168,7 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.TypeMismatch(context.rvalue(), keyType, expectedKeyType);
             }
 
-            if (valueIsInvariant && !expectedValueType.IsSameTypeAs(valueType)
-                || !valueIsInvariant && !expectedValueType.IsAssignableFrom(valueType))
+            if (!expectedValueType.IsAssignableFrom(valueType))
             {
                 throw handler.TypeMismatch(context.rvalue(), valueType, expectedValueType);
             }
@@ -254,7 +209,7 @@ namespace Plang.Compiler.TypeChecker
 
             return new RemoveStmt(context, variable, value);
         }
-
+    
         public override IPStmt VisitWhileStmt(PParser.WhileStmtContext context)
         {
             IPExpr condition = exprVisitor.Visit(context.expr());
@@ -265,6 +220,42 @@ namespace Plang.Compiler.TypeChecker
 
             IPStmt body = Visit(context.statement());
             return new WhileStmt(context, condition, body);
+        }
+
+        public override IPStmt VisitForeachStmt(PParser.ForeachStmtContext context)
+        {
+            string varName = context.item.GetText();
+            if (!table.Lookup(varName, out Variable var))
+            {
+                throw handler.MissingDeclaration(context.item, "foreach iterator variable", varName);
+            }
+            IPExpr collection = exprVisitor.Visit(context.collection);
+            
+            // make sure that foreach is applied to either sequence or set type
+            
+            // Check subtyping
+            var itemType = var.Type;
+
+            PLanguageType expectedItemType;
+            
+            switch (collection.Type.Canonicalize())
+            {
+                case SetType setType:
+                    expectedItemType = setType.ElementType;
+                    break;
+                case SequenceType seqType:
+                    expectedItemType = seqType.ElementType;
+                    break;
+                default:
+                    throw handler.TypeMismatch(collection, TypeKind.Set, TypeKind.Sequence);
+            }
+
+            if (!expectedItemType.IsSameTypeAs(itemType)
+                || !expectedItemType.IsAssignableFrom(itemType))
+                throw handler.TypeMismatch(context.item, expectedItemType);
+
+            IPStmt body = Visit(context.statement());
+            return new ForeachStmt(context, var, collection, body);
         }
 
         public override IPStmt VisitIfStmt(PParser.IfStmtContext context)
@@ -418,14 +409,6 @@ namespace Plang.Compiler.TypeChecker
             PParser.StateNameContext stateNameContext = context.stateName();
             string stateName = stateNameContext.state.GetText();
             IStateContainer current = machine;
-            foreach (PParser.IdenContext token in stateNameContext._groups)
-            {
-                current = current?.GetGroup(token.GetText());
-                if (current == null)
-                {
-                    throw handler.MissingDeclaration(token, "group", token.GetText());
-                }
-            }
 
             AST.States.State state = current?.GetState(stateName);
             if (state == null)
@@ -436,13 +419,6 @@ namespace Plang.Compiler.TypeChecker
             PLanguageType expectedType =
                 state.Entry?.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
             IPExpr[] rvaluesList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
-            foreach (IPExpr arg in rvaluesList)
-            {
-                if (arg is LinearAccessRefExpr linearArg && linearArg.LinearType == LinearType.Swap)
-                {
-                    throw handler.InvalidSwap(linearArg, "swap not allowed on goto");
-                }
-            }
 
             IPExpr payload;
             if (rvaluesList.Length == 0)

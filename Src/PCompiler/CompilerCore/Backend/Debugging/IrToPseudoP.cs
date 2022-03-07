@@ -122,11 +122,6 @@ namespace Plang.Compiler.Backend.Debugging
                         WriteTree(machineMethod);
                     }
 
-                    foreach (StateGroup machineGroup in machine.Groups)
-                    {
-                        WriteTree(machineGroup);
-                    }
-
                     foreach (State machineState in machine.States)
                     {
                         WriteTree(machineState);
@@ -283,13 +278,6 @@ namespace Plang.Compiler.Backend.Debugging
                     WriteStmt("send ", sendStmt.MachineExpr, ", ", sendStmt.Evt, ", ", sendStmt.Arguments, ";");
                     break;
 
-                case SwapAssignStmt swapAssignStmt:
-                    WriteStmt(swapAssignStmt.NewLocation,
-                        " = ",
-                        swapAssignStmt.OldLocation,
-                        " swap; //swap assign");
-                    break;
-
                 case WhileStmt whileStmt:
                     WriteStmt("while (", whileStmt.Condition, ")");
                     WriteStmt("{");
@@ -381,24 +369,6 @@ namespace Plang.Compiler.Backend.Debugging
                     foreach (KeyValuePair<PEvent, IStateAction> handler in state.AllEventHandlers)
                     {
                         WriteTree(handler.Value);
-                    }
-
-                    Dedent();
-                    WriteStmt("}");
-                    break;
-
-                case StateGroup stateGroup:
-                    WriteStmt("group ", stateGroup);
-                    WriteStmt("{");
-                    Indent();
-                    foreach (StateGroup subGroup in stateGroup.Groups)
-                    {
-                        WriteTree(subGroup);
-                    }
-
-                    foreach (State state in stateGroup.States)
-                    {
-                        WriteTree(state);
                     }
 
                     Dedent();
@@ -540,11 +510,6 @@ namespace Plang.Compiler.Backend.Debugging
 
                 case KeysExpr keysExpr:
                     WriteParts("keys(", keysExpr.Expr, ")");
-                    break;
-
-                case LinearAccessRefExpr linearAccessRefExpr:
-                    WriteParts(linearAccessRefExpr.Variable.Name,
-                        linearAccessRefExpr.LinearType.Equals(LinearType.Move) ? " move" : " swap");
                     break;
 
                 case MapAccessExpr mapAccessExpr:

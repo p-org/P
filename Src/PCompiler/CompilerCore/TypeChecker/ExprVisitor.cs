@@ -200,21 +200,7 @@ namespace Plang.Compiler.TypeChecker
                 {
                     throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
                 }
-
-                if (argument is ILinearRef linearRef)
-                {
-                    if (linearRef.LinearType == LinearType.Swap && !linearRef.Type.IsSameTypeAs(paramType))
-                    {
-                        throw handler.TypeMismatch(context, linearRef.Type, paramType);
-                    }
-
-                    if (linearVariables.Contains(linearRef.Variable))
-                    {
-                        throw handler.RelinquishedWithoutOwnership(linearRef);
-                    }
-
-                    linearVariables.Add(linearRef.Variable);
-                }
+                
             }
 
             method.AddCallee(function);
@@ -262,6 +248,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 {"*", (elhs, erhs) => new BinOpExpr(context, BinOpType.Mul, elhs, erhs)},
                 {"/", (elhs, erhs) => new BinOpExpr(context, BinOpType.Div, elhs, erhs)},
+                {"%", (elhs, erhs) => new BinOpExpr(context, BinOpType.Mod, elhs, erhs)},
                 {"+", (elhs, erhs) => new BinOpExpr(context, BinOpType.Add, elhs, erhs)},
                 {"-", (elhs, erhs) => new BinOpExpr(context, BinOpType.Sub, elhs, erhs)},
                 {"<", (elhs, erhs) => new BinOpExpr(context, BinOpType.Lt, elhs, erhs)},
@@ -312,7 +299,15 @@ namespace Plang.Compiler.TypeChecker
                         return arithCtors[op](lhs, rhs);
                     }
                     throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
-
+                case "%":
+                    if (PrimitiveType.Int.IsAssignableFrom(lhs.Type) &&
+                        PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
+                        PrimitiveType.Float.IsAssignableFrom(lhs.Type) &&
+                        PrimitiveType.Float.IsAssignableFrom(rhs.Type))
+                    {
+                        return arithCtors[op](lhs, rhs);
+                    }
+                    throw handler.IncomparableTypes(context, lhs.Type, rhs.Type); 
                 case "in":
                     PLanguageType rhsType = rhs.Type.Canonicalize();
                     if (rhsType is MapType rhsMap)
@@ -639,13 +634,6 @@ namespace Plang.Compiler.TypeChecker
             }
 
             List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToList();
-            foreach (IPExpr arg in args)
-            {
-                if (arg is LinearAccessRefExpr)
-                {
-                    throw handler.StringAssignStmtLinearArgument(arg.SourceLocation);
-                }
-            }
 
             if (args.Count != numNecessaryArgs)
             {

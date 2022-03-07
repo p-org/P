@@ -25,7 +25,6 @@ namespace Plang.Compiler.Backend.C
             {typeof(RefinementTest), "REFINEMENT_TEST"},
             {typeof(SafetyTest), "SAFETY_TEST"},
             {typeof(State), "STATE"},
-            {typeof(StateGroup), "STATEGROUP"},
             {typeof(TypeDef), "TYPEDEF"},
             {typeof(Variable), "VAR"}
         };

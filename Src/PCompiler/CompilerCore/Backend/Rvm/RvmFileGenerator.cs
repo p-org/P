@@ -684,9 +684,6 @@ namespace Plang.Compiler.Backend.Rvm
                 case SendStmt sendStmt:
                     throw new NotImplementedException("SendStmt is not implemented.");
 
-                case SwapAssignStmt swapStmt:
-                    throw new NotImplementedException("SwapAssignStmt is not implemented.");
-
                 case WhileStmt whileStmt:
                     Context.Write(output, "while (");
                     UnboxIfNeeded(output, (output) => WriteExpr(output, whileStmt.Condition));
@@ -921,10 +918,6 @@ namespace Plang.Compiler.Backend.Rvm
                     string cloneKeysFunc = Context.Names.GetMapCloneKeysFunc();
                     Context.Write(output, $").{cloneKeysFunc}()");
                     return BoxingState.NOT_APPLICABLE;
-
-                case LinearAccessRefExpr linearAccessRefExpr:
-                    Context.Write(output, $"{Context.Names.GetNameForDecl(linearAccessRefExpr.Variable)}");
-                    return BoxingState.BOXED;
 
                 case NamedTupleExpr namedTupleExpr:
                 {

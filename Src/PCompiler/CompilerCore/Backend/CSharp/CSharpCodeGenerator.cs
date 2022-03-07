@@ -1045,10 +1045,16 @@ namespace Plang.Compiler.Backend.CSharp
 
                     context.WriteLine(output, ");");
                     break;
-
-                case SwapAssignStmt swapStmt:
-                    throw new NotImplementedException("Swap Assignment Not Implemented");
-
+                
+                case ForeachStmt foreachStmt:
+                    context.Write(output, $"foreach (var __temp_{foreachStmt.Item.Name} in ");
+                    WriteExpr(context, output, foreachStmt.IterCollection);
+                    context.WriteLine(output, ") {");
+                    context.WriteLine(output, $"{foreachStmt.Item.Name} = ({GetCSharpType(foreachStmt.Item.Type)}) __temp_{foreachStmt.Item.Name};");
+                    WriteStmt(context, output, function, foreachStmt.Body);
+                    context.WriteLine(output, "}");
+                    break;
+                
                 case WhileStmt whileStmt:
                     context.Write(output, "while (");
                     WriteExpr(context, output, whileStmt.Condition);
@@ -1348,11 +1354,6 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, ").CloneKeys()");
                     break;
 
-                case LinearAccessRefExpr linearAccessRefExpr:
-                    string swapKeyword = linearAccessRefExpr.LinearType.Equals(LinearType.Swap) ? "ref " : "";
-                    context.Write(output, $"{swapKeyword}{context.Names.GetNameForDecl(linearAccessRefExpr.Variable)}");
-                    break;
-
                 case NamedTupleExpr namedTupleExpr:
                     string fieldNamesArray = string.Join(",",
                         ((NamedTupleType)namedTupleExpr.Type).Names.Select(n => $"\"{n}\""));
@@ -1599,7 +1600,10 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case BinOpType.Div:
                     return "/";
-
+                
+                case BinOpType.Mod:
+                    return "%";
+                
                 case BinOpType.Lt:
                     return "<";
 

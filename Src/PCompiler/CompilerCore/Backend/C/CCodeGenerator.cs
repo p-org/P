@@ -1183,7 +1183,14 @@ namespace Plang.Compiler.Backend.C
                     // TODO: fix the underlying problem and remove this check.
                     WriteCleanupCheck(output, function);
                     break;
-
+                
+                case ForeachStmt foreachStmt:
+                    context.Write(output, $"foreach (var temp_{foreachStmt.Item.Name} in ");
+                    WriteExpr(output, function, foreachStmt.IterCollection);
+                    context.WriteLine(output, ")");
+                    context.Write(output, $"{foreachStmt.Item.Name} = temp_{foreachStmt.Item.Name};");
+                    WriteStmt(output, function, foreachStmt.Body);
+                    break;
                 case WhileStmt whileStmt:
                     context.Write(output, "while (PrtPrimGetBool(");
                     WriteExpr(output, function, whileStmt.Condition);

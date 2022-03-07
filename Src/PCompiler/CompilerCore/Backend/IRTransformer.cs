@@ -547,12 +547,11 @@ namespace Plang.Compiler.Backend
                     (IExprTerm collectionExpr, List<IPStmt> collectionDeps) = SimplifyExpression(foreachStmt.IterCollection);
                     (VariableAccessExpr collTemp, IPStmt collStore) = SaveInTemporary(new CloneExpr(collectionExpr));
 
-                    CompoundStmt body = new CompoundStmt(
-                        foreachStmt.Body.SourceLocation, 
-                        collectionDeps.Append(collStore).Concat(SimplifyStatement(foreachStmt.Body)));
+                    return collectionDeps
+                            .Append(collStore)
+                            .Concat( new[]{ new ForeachStmt(location, foreachStmt.Item, collTemp, foreachStmt.Body) })
+                            .ToList();
 
-                    return new List<IPStmt> { new ForeachStmt(location, foreachStmt.Item, collTemp, body) };
-                
                 case WhileStmt whileStmt:
                     (IExprTerm condExpr, List<IPStmt> condDeps) = SimplifyExpression(whileStmt.Condition);
                     (VariableAccessExpr condTemp, IPStmt condStore) = SaveInTemporary(new CloneExpr(condExpr));

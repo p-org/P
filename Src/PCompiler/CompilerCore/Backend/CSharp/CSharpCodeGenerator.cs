@@ -1045,7 +1045,16 @@ namespace Plang.Compiler.Backend.CSharp
 
                     context.WriteLine(output, ");");
                     break;
-
+                
+                case ForeachStmt foreachStmt:
+                    context.Write(output, $"foreach (var __temp_{foreachStmt.Item.Name} in ");
+                    WriteExpr(context, output, foreachStmt.IterCollection);
+                    context.WriteLine(output, ") {");
+                    context.WriteLine(output, $"{foreachStmt.Item.Name} = ({GetCSharpType(foreachStmt.Item.Type)}) __temp_{foreachStmt.Item.Name};");
+                    WriteStmt(context, output, function, foreachStmt.Body);
+                    context.WriteLine(output, "}");
+                    break;
+                
                 case WhileStmt whileStmt:
                     context.Write(output, "while (");
                     WriteExpr(context, output, whileStmt.Condition);

@@ -152,6 +152,9 @@ namespace Plang.Compiler
                                     case "symbolic":
                                         outputLanguage = CompilerOutput.Symbolic;
                                         break;
+                                    case "containment":
+                                        outputLanguage = CompilerOutput.Containment;
+                                        break;
                                     default:
                                         throw new CommandlineParsingError($"Unrecognized generate option '{colonArg}', expecting C or CSharp or Symbolic");
                                 }
@@ -347,6 +350,9 @@ namespace Plang.Compiler
                     break;
                 case "symbolic":
                     outputLanguage = CompilerOutput.Symbolic;
+                    break;
+                case "containment":
+                    outputLanguage = CompilerOutput.Containment;
                     break;
 
                 default:

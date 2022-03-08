@@ -1,7 +1,7 @@
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using System.Collections.Generic;
-using Plang.Compiler.Backend.Symbolic;
+using Plang.Compiler.Backend;
 
 namespace Plang.Compiler.TypeChecker.AST.Statements
 {

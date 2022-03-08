@@ -86,6 +86,7 @@ namespace Plang.Compiler
             CommandlineOutput.WriteInfo("        CSharp  : generate C# code ");
             CommandlineOutput.WriteInfo("        RVM     : generate Monitor code");
             CommandlineOutput.WriteInfo("        Symbolic : generate code for symbolic execution");
+            CommandlineOutput.WriteInfo("        Containment : generate code for runtime trace containment checking");
             CommandlineOutput.WriteInfo("    -h, -help, --help          -- display this help message");
             CommandlineOutput.WriteInfo("------------------------------------------");
         }

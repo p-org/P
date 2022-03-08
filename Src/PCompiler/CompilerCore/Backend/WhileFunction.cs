@@ -8,7 +8,7 @@ using Plang.Compiler.TypeChecker.AST.Expressions;
 using System.IO;
 using System;
 
-namespace Plang.Compiler.Backend.Symbolic
+namespace Plang.Compiler.Backend
 {
     public class WhileFunction : Function
     {

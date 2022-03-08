@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Plang.Compiler.Backend.Symbolic;
+using Plang.Compiler.Backend.Containment;
 
 namespace Plang.Compiler
 {
@@ -57,6 +58,12 @@ namespace Plang.Compiler
             {
                 job.Output.WriteInfo($"Compiling {job.ProjectName} module ..\n");
                 SymbolicCodeCompiler.Compile(job);
+                job.Output.WriteInfo($"----------------------------------------");
+            }
+            else if (job.OutputLanguage == CompilerOutput.Containment)
+            {
+                job.Output.WriteInfo($"Compiling {job.ProjectName} module ..\n");
+                ContainmentCodeCompiler.Compile(job);
                 job.Output.WriteInfo($"----------------------------------------");
             }
         }

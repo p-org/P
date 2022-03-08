@@ -13,7 +13,7 @@ using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 using Antlr4.Runtime;
 
-namespace Plang.Compiler.Backend.Symbolic
+namespace Plang.Compiler.Backend
 {
     class TransformASTPass 
     {

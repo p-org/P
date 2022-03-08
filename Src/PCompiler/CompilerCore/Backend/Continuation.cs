@@ -9,7 +9,7 @@ using System.IO;
 using System;
 using System.Linq;
 
-namespace Plang.Compiler.Backend.Symbolic
+namespace Plang.Compiler.Backend
 {
     public class Continuation : Function
     {

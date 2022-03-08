@@ -274,7 +274,7 @@ P supports two unary operations: `-` on integers and floats values (i.e., negati
 
 ### Arithmetic
 
-P supports the following arithmetic binary operations on integers or floats: `+` (i.e., addition), `-` (i.e., subtraction), `*` (i.e., multiplication), and `/` (i.e., division).
+P supports the following arithmetic binary operations on integers or floats: `+` (i.e., addition), `-` (i.e., subtraction), `*` (i.e., multiplication), `%` (i.e., modulo), and `/` (i.e., division).
 
 ### Comparison
 

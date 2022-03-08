@@ -6,6 +6,7 @@ P supports common imperative programming language statement constructs like whil
     statement : { statement* }							# CompoundStmt
     | assert expr (, expr)? ;	                        # AssertStmt
     | print expr ;						                # PrintStmt
+    | foreach (iden in expr) statement                  # ForeachStmt
     | while ( expr )  statement			                # WhileStmt
     | if ( expr ) statement (else statement)?           # IfThenElseStmt
     | break ;											# BreakStmt
@@ -132,6 +133,61 @@ While statement in P is just like while loops in other popular programming langu
         i = i + 1;
     }
     ```
+### Foreach
+
+`foreach` statement can be used to iterate over a collection (`sequence` or `set`) in P.
+
+**Syntax**: ```foreach (iden in expr) statement```
+
+`iden` is the name of the variable that store the element from the collection during iterations. `expr` represents the collection over which we want to iterate and must be of type `seq` or `set`. Type of `iden` must be same as the elements type in the collection.
+
+Note that variable `iden` must already be declared, and in each iteration, an element is assigned to this variable at the start of the iteration (no ordering guarantees). Also, one can mutate the collection represented by `expr` when iterating over it as the foreach statement enumerates over a clone of the collection (more details in the example below).
+
+=== "Foreach (set)"
+
+    ``` kotlin
+    var iter, sum: int;
+    var ints: set[int];
+
+
+    // iterate over a set of integers
+    foreach(iter in ints)
+    {
+        sum = sum + iter;
+    } 
+    ```
+
+=== "Foreach (mutating collection)"
+
+    ``` kotlin
+    var iter, sum: int;
+    var ints: set[int];
+
+    // iterate over a set of integers
+    foreach(iter in ints)
+    {
+        ints -= (iter);
+    }
+
+    assert sizeof(ints) == 0;
+    ```
+    One can mutate the collection represented by `expr` when iterating over it as the foreach statement enumerates over a clone of the collection (more details in the example below).
+
+=== "Foreach (Iterating over map)"
+
+    ``` kotlin
+    var key: int;
+    var intsM: map[int, int];
+
+    // iterate over a set of integers
+    foreach(key in keys(intsM))
+    {
+        intsM[key] = intsM[key] + delta; 
+    }
+    ```
+    One can iterate over the map using [`keys` and `values` functions](expressions.md#keys-and-values).
+
+You can find more examples for the foreach statement in the [file](https://github.com/p-org/P/blob/master/Tst/RegressionTests/Feature2Stmts/Correct/foreach/foreach1.p)
 
 ### If Then Else
 

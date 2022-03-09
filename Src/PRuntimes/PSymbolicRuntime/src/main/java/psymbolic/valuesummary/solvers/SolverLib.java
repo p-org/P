@@ -27,6 +27,8 @@ public interface SolverLib<T> {
 
     int getNodeCount();
 
+    int getExprCount();
+
     String getStats();
 
     void cleanup();

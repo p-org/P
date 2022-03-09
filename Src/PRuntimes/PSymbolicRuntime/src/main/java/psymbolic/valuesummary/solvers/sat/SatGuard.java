@@ -93,6 +93,10 @@ public class SatGuard implements SolverLib<SatExpr> {
     }
 
     public int getNodeCount() {
+        return getSolver().getNodeCount();
+    }
+
+    public int getExprCount() {
         return SatExpr.table.size();
     }
 

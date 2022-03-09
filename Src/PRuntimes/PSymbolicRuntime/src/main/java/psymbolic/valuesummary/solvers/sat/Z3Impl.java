@@ -157,6 +157,10 @@ public class Z3Impl implements SatLib<BoolExpr> {
         throw new RuntimeException("Unsupported");
     }
 
+    public int getNodeCount() {
+        return table.size();
+    }
+
     public String getStats() {
         // TODO
         return "";

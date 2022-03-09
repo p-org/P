@@ -152,6 +152,10 @@ public class CVC5Impl implements SatLib<Term> {
         throw new RuntimeException("Unsupported");
     }
 
+    public int getNodeCount() {
+        return table.size();
+    }
+
     public String getStats() {
     	// TODO
         return solver.getStatistics().toString();

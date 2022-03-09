@@ -21,6 +21,8 @@ public interface SatLib<T> {
 
     T fromString(String s);
 
+    int getNodeCount();
+
     String getStats();
 
     void cleanup();

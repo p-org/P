@@ -1,9 +1,7 @@
 package psymbolic.valuesummary.solvers.sat;
 
 import lombok.Getter;
-
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Expr {
     private static Expr exprTrue = new Expr(ExprType.TRUE, "", Collections.emptyList());
@@ -11,6 +9,7 @@ public class Expr {
     private static ExprComparator exprComparator = new ExprComparator();
     public static HashMap<Expr, Expr> table = new HashMap<>();
     private static boolean aigMode = false;
+    private static boolean simplifyMode = true;
 
     @Getter
     private final ExprType type;
@@ -37,6 +36,8 @@ public class Expr {
     }
 
     public static Expr simplify(Expr original) {
+        if (!simplifyMode)
+            return original;
         if (table.containsKey(original)) {
             return table.get(original);
         }

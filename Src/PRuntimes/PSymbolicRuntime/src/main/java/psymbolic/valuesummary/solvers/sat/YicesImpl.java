@@ -136,6 +136,10 @@ public class YicesImpl implements SatLib<Integer> {
         throw new RuntimeException("Unsupported");
     }
 
+    public int getNodeCount() {
+        return Yices.yicesNumTerms();
+    }
+
     public String getStats() {
     	// TODO
         return "";

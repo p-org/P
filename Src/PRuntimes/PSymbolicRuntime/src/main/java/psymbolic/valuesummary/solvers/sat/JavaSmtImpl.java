@@ -123,6 +123,10 @@ public class JavaSmtImpl implements SatLib<BooleanFormula> {
         throw new RuntimeException("Unsupported");
     }
 
+    public int getNodeCount() {
+        return -1;
+    }
+
     public String getStats() {
     	// TODO
         return "";

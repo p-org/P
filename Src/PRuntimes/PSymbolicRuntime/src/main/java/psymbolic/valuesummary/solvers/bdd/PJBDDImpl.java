@@ -109,6 +109,10 @@ public class PJBDDImpl implements SolverLib<DD> {
         return c.getCreatorStats().getNodeCount();
     }
 
+    public int getExprCount() {
+        return getNodeCount();
+    }
+
     public String getStats() {
         return c.getCreatorStats().prettyPrint();
     }

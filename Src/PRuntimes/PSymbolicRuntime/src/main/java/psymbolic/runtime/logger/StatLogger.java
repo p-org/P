@@ -58,6 +58,7 @@ public class StatLogger {
     public static void logSolverStats() {
         log.info(String.format("solver-#-vars:\t%d", SolverEngine.getVarCount()));
         log.info(String.format("solver-#-guards:\t%d", SolverEngine.getGuardCount()));
+        log.info(String.format("solver-#-expr:\t%d", SolverEngine.getSolver().getExprCount()));
         log.info(String.format("solver-#-nodes:\t%d", SolverEngine.getSolver().getNodeCount()));
         log.info(String.format("solver-#-and-ops:\t%d", SolverStats.andOperations));
         log.info(String.format("solver-#-or-ops:\t%d", SolverStats.orOperations));

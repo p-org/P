@@ -252,7 +252,7 @@ namespace Plang.Compiler.TypeChecker
 
             if (!expectedItemType.IsSameTypeAs(itemType)
                 || !expectedItemType.IsAssignableFrom(itemType))
-                throw handler.TypeMismatch(context.item, expectedItemType);
+                throw handler.TypeMismatch(context.item, itemType, expectedItemType);
 
             IPStmt body = Visit(context.statement());
             return new ForeachStmt(context, var, collection, body);

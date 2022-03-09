@@ -2,6 +2,7 @@ package psymbolic.valuesummary.solvers;
 
 import psymbolic.valuesummary.solvers.bdd.PJBDDImpl;
 import psymbolic.valuesummary.solvers.sat.SatGuard;
+import psymbolic.valuesummary.solvers.sat.Aig;
 
 /**
  * Represents the generic backend engine
@@ -44,6 +45,7 @@ public class SolverEngine {
     	case CBDD:		solverImpl = new PJBDDImpl(true);
     		break;
         default:        solverImpl = new SatGuard(type);
+            Aig.resetAig();
     	}
     }
 

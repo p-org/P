@@ -7,26 +7,26 @@ import java.util.Arrays;
 
 public class SatExpr {
     public static int numVars = 0;
-    public static HashMap<Expr, SatObject> table = new HashMap<Expr, SatObject>();
-    private Expr expr;
+    public static HashMap<Long, SatObject> table = new HashMap<Long, SatObject>();
+    private long expr;
 
-    public SatExpr(Expr expr) {
+    public SatExpr(long expr) {
         this.expr = expr;
     }
 
-    private static SatObject createSatFormula(Expr original) {
+    private static SatObject createSatFormula(long original) {
         if (table.containsKey(original)) {
             return table.get(original);
         }
-        Expr expr = original;
-//        Expr expr = Expr.simplify(original);
+        long expr = original;
+//        long expr = Aig.simplify(original);
 //        System.out.println("Creating Sat formula for " + toString(expr));
 
         SatObject satFormula = new SatObject(null, SatStatus.Unknown);
-        ExprType exprType = expr.getType();
+        ExprType exprType = Aig.getType(expr);
 
         List<Object> satChildren = new ArrayList<>();
-        for (Expr child: expr.getChildren()) {
+        for (long child: Aig.getChildren(expr)) {
             SatObject satChild = createSatFormula(child);
             satChildren.add(satChild.formula);
         }
@@ -41,7 +41,7 @@ public class SatExpr {
                 satFormula.status = SatStatus.Unsat;
                 break;
             case VARIABLE:
-                satFormula.formula = SatGuard.getSolver().newVar(expr.toString());
+                satFormula.formula = SatGuard.getSolver().newVar(Aig.toString(expr));
                 break;
             case NOT:
                 assert (satChildren.size() == 1);
@@ -90,37 +90,37 @@ public class SatExpr {
         return checkSat(satFormula);
     }
 
-    private static SatExpr newExpr(Expr original) {
+    private static SatExpr newExpr(long original) {
         return new SatExpr(original);
     }
 
     public static SatExpr ConstTrue() {
-        return newExpr(Expr.getTrue());
+        return newExpr(Aig.getTrue());
     }
 
     public static SatExpr ConstFalse() {
-        return newExpr(Expr.getFalse());
+        return newExpr(Aig.getFalse());
     }
 
     public static SatExpr NewVar() {
-        return newExpr(Expr.newVar("x" + numVars++));
+        return newExpr(Aig.newVar("x" + numVars++));
     }
 
     public static SatExpr Not(SatExpr formula) {
-        return newExpr(Expr.not(formula.expr));
+        return newExpr(Aig.not(formula.expr));
     }
 
     public static SatExpr And(SatExpr left, SatExpr right) {
-        return newExpr(Expr.and(Arrays.asList(left.expr, right.expr)));
+        return newExpr(Aig.and(left.expr, right.expr));
     }
 
     public static SatExpr Or(SatExpr left, SatExpr right) {
-        return newExpr(Expr.or(Arrays.asList(left.expr, right.expr)));
+        return newExpr(Aig.or(left.expr, right.expr));
     }
 
     @Override
     public String toString() {
-        return this.expr.toString();
+        return Aig.toString(this.expr);
     }
 
     @Override
@@ -128,11 +128,11 @@ public class SatExpr {
         if (this == o) return true;
         if (!(o instanceof SatExpr)) return false;
         SatExpr that = (SatExpr) o;
-        return this.expr.equals(that.expr);
+        return Aig.areEqual(this.expr, that.expr);
     }
 
     @Override
     public int hashCode() {
-        return this.expr.hashCode();
+        return Aig.getHashCode(this.expr);
     }
 }

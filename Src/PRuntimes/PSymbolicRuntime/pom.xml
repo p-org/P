@@ -25,6 +25,20 @@
         <version>2.5.2</version>
         <executions>
           <execution>
+            <id>install-abc</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <groupId>com.berkeley.abc</groupId>
+              <artifactId>abc</artifactId>
+              <version>1.0.0</version>
+              <packaging>jar</packaging>
+              <file>lib/abc.jar</file>
+            </configuration>
+          </execution>
+          <execution>
 	    <id>install-yices</id>
             <phase>clean</phase>
             <goals>
@@ -99,6 +113,12 @@
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>com.berkeley.abc</groupId>
+      <artifactId>abc</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+
     <dependency>
       <groupId>com.microsoft.z3</groupId>
       <artifactId>z3</artifactId>

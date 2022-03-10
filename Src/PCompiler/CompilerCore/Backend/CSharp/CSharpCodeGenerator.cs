@@ -1047,10 +1047,11 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
                 
                 case ForeachStmt foreachStmt:
-                    context.Write(output, $"foreach (var __temp_{foreachStmt.Item.Name} in ");
+                    var tempVarName = $"__temp_{context.Names.GetNameForDecl(foreachStmt.Item)}";
+                    context.Write(output, $"foreach (var {tempVarName} in ");
                     WriteExpr(context, output, foreachStmt.IterCollection);
                     context.WriteLine(output, ") {");
-                    context.WriteLine(output, $"{foreachStmt.Item.Name} = ({GetCSharpType(foreachStmt.Item.Type)}) __temp_{foreachStmt.Item.Name};");
+                    context.WriteLine(output, $"{context.Names.GetNameForDecl(foreachStmt.Item)} = ({GetCSharpType(foreachStmt.Item.Type)}) {tempVarName};");
                     WriteStmt(context, output, function, foreachStmt.Body);
                     context.WriteLine(output, "}");
                     break;

@@ -60,7 +60,7 @@ public class Z3Impl implements SatLib<BoolExpr> {
 //        return t;
     }
 
-    private void toSmtLib(String status, BoolExpr formula) {
+    public void toSmtLib(String status, BoolExpr formula) {
         String s, name;
 
         printCount++;

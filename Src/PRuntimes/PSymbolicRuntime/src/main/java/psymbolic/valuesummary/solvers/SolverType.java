@@ -1,6 +1,7 @@
 package psymbolic.valuesummary.solvers;
 
 public enum SolverType {
+	  ABC,
 	  BDD,
 	  CBDD,
 	  CVC5,

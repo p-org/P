@@ -1,10 +1,13 @@
 package psymbolic.valuesummary.solvers.sat;
 
+import lombok.Getter;
 import psymbolic.valuesummary.solvers.SolverLib;
 import psymbolic.valuesummary.solvers.SolverType;
 
 public class SatGuard implements SolverLib<SatExpr> {
     private static SatLib satImpl;
+
+    @Getter
     private static SolverType solverType;
 
     public SatGuard(SolverType st) {
@@ -18,6 +21,8 @@ public class SatGuard implements SolverLib<SatExpr> {
     public static void setSolver(SolverType type) {
         solverType = type;
         switch(type) {
+            case ABC:	                satImpl = new ABCImpl();
+                break;
             case CVC5:	                satImpl = new CVC5Impl();
                 break;
             case YICES2:	            satImpl = new YicesImpl();
@@ -97,11 +102,11 @@ public class SatGuard implements SolverLib<SatExpr> {
     }
 
     public int getExprCount() {
-        return SatExpr.table.size();
+        return Aig.idSet.size();
     }
 
     public String getStats() {
-        return satImpl.getStats();
+        return Aig.getStats() + "\n" + satImpl.getStats();
     }
 
     public void cleanup() {

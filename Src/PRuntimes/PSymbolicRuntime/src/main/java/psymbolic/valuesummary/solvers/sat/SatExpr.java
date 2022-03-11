@@ -1,5 +1,8 @@
 package psymbolic.valuesummary.solvers.sat;
 
+import com.microsoft.z3.BoolExpr;
+import psymbolic.valuesummary.solvers.SolverType;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +11,7 @@ import java.util.Arrays;
 public class SatExpr {
     public static int numVars = 0;
     public static HashMap<Long, SatObject> table = new HashMap<Long, SatObject>();
+    public static HashMap<Long, SatObject> aigTable = new HashMap<Long, SatObject>();
     private long expr;
 
     public SatExpr(long expr) {
@@ -17,10 +21,19 @@ public class SatExpr {
     private static SatObject createSatFormula(long original) {
         if (table.containsKey(original)) {
             return table.get(original);
+        } else if (SatGuard.getSolverType() == SolverType.ABC) {
+            if (aigTable.containsKey(original)) {
+                return aigTable.get(original);
+            }
+            SatObject satFormula = new SatObject(original, SatStatus.Unknown);
+            table.put(original, satFormula);
+            return satFormula;
         }
+
         long expr = original;
 //        long expr = Aig.simplify(original);
 //        System.out.println("Creating Sat formula for " + toString(expr));
+
 
         SatObject satFormula = new SatObject(null, SatStatus.Unknown);
         ExprType exprType = Aig.getType(expr);
@@ -63,14 +76,14 @@ public class SatExpr {
         return satFormula;
     }
 
-    private static boolean checkSat(SatObject satFormula) {
+    private static boolean checkSat(SatExpr formula, SatObject satFormula) {
         switch (satFormula.status) {
             case Sat:
                 return true;
             case Unsat:
                 return false;
             default:
-//            	System.out.println("Checking formula: " + SatGuard.getSolver().toString(satFormula.formula));
+//            	System.out.println("Checking satisfiability of formula: " + Aig.toString(formula.expr));
                 boolean isSat = SatGuard.getSolver().isSat(satFormula.formula);
 //            	System.out.println("Result: " + isSat);
                 if (isSat) {
@@ -85,9 +98,45 @@ public class SatExpr {
         }
     }
 
+    private static SatObject createAigFormula(long original) {
+        if (aigTable.containsKey(original)) {
+            return aigTable.get(original);
+        }
+        SatObject satFormula = new SatObject(original, SatStatus.Unknown);
+        satFormula.status = Aig.isSat(original, Aig.nBTLimit);
+        aigTable.put(original, satFormula);
+        return satFormula;
+    }
+
     public static boolean isSat(SatExpr formula) {
-        SatObject satFormula = createSatFormula(formula.expr);
-        return checkSat(satFormula);
+        SatObject satFormula = createAigFormula(formula.expr);
+        switch (satFormula.status) {
+            case Sat:
+//                satFormula = createSatFormula(formula.expr);
+//                if (!checkSat(formula, satFormula)) {
+//                    if (SatGuard.getSolverType() == SolverType.Z3) {
+//                        ((Z3Impl) SatGuard.getSolver()).toSmtLib("unknown", (BoolExpr) satFormula.formula);
+//                    }
+//                    System.out.println("Aig says SAT while Solver says UNSAT");
+//                    Aig.isSat(formula.expr, SatExpr.nBTLimit);
+//                    throw new RuntimeException("Conflicting SAT result for formula " + formula);
+//                }
+                return true;
+            case Unsat:
+//                satFormula = createSatFormula(formula.expr);
+//                if (checkSat(formula, satFormula)) {
+//                    if (SatGuard.getSolverType() == SolverType.Z3) {
+//                        ((Z3Impl) SatGuard.getSolver()).toSmtLib("unknown", (BoolExpr) satFormula.formula);
+//                    }
+//                    System.out.println("Aig says UNSAT while Solver says SAT");
+//                    Aig.isSat(formula.expr, SatExpr.nBTLimit);
+//                    throw new RuntimeException("Conflicting SAT result for formula " + formula);
+//                }
+                return false;
+            default:
+                satFormula = createSatFormula(formula.expr);
+                return checkSat(formula, satFormula);
+        }
     }
 
     private static SatExpr newExpr(long original) {

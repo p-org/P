@@ -3,6 +3,7 @@ package psymbolic.runtime.logger;
 import org.apache.log4j.*;
 import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.solvers.SolverEngine;
+import psymbolic.valuesummary.solvers.sat.Aig;
 
 import java.io.IOException;
 
@@ -56,16 +57,19 @@ public class StatLogger {
     }
 
     public static void logSolverStats() {
-        log.info(String.format("solver-#-vars:\t%d", SolverEngine.getVarCount()));
-        log.info(String.format("solver-#-guards:\t%d", SolverEngine.getGuardCount()));
-        log.info(String.format("solver-#-expr:\t%d", SolverEngine.getSolver().getExprCount()));
+        log.info(String.format("#-vars:\t%d", SolverEngine.getVarCount()));
+        log.info(String.format("#-guards:\t%d", SolverEngine.getGuardCount()));
+        log.info(String.format("#-expr:\t%d", SolverEngine.getSolver().getExprCount()));
+        log.info(String.format("#-and-ops:\t%d", SolverStats.andOperations));
+        log.info(String.format("#-or-ops:\t%d", SolverStats.orOperations));
+        log.info(String.format("#-not-ops:\t%d", SolverStats.notOperations));
+        log.info(String.format("aig-#-sat-ops:\t%d", Aig.isSatOperations));
+        log.info(String.format("aig-#-sat-ops-sat:\t%d", Aig.isSatResult));
+        log.info(String.format("aig-%%-sat-ops-sat:\t%.1f", SolverStats.isSatPercent(Aig.isSatOperations, Aig.isSatResult)));
         log.info(String.format("solver-#-nodes:\t%d", SolverEngine.getSolver().getNodeCount()));
-        log.info(String.format("solver-#-and-ops:\t%d", SolverStats.andOperations));
-        log.info(String.format("solver-#-or-ops:\t%d", SolverStats.orOperations));
-        log.info(String.format("solver-#-not-ops:\t%d", SolverStats.notOperations));
         log.info(String.format("solver-#-sat-ops:\t%d", SolverStats.isSatOperations));
         log.info(String.format("solver-#-sat-ops-sat:\t%d", SolverStats.isSatResult));
-        log.info(String.format("solver-%%-sat-ops-sat:\t%.1f", SolverStats.isSatPercent()));
+        log.info(String.format("solver-%%-sat-ops-sat:\t%.1f", SolverStats.isSatPercent(SolverStats.isSatOperations, SolverStats.isSatResult)));
     }
     
 }

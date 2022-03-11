@@ -179,6 +179,8 @@ public class PSymOptions {
                 case "st":
                 case "solver":
                 	switch (option.getValue()) {
+                    case "abc":			config.setSolverType(SolverType.ABC);
+                        break;
                 	case "bdd":			config.setSolverType(SolverType.BDD);
                 		break;
                 	case "cbdd":		config.setSolverType(SolverType.CBDD);

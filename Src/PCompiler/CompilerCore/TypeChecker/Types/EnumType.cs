@@ -12,6 +12,7 @@ namespace Plang.Compiler.TypeChecker.Types
         }
 
         public PEnum EnumDecl { get; }
+        public bool IsPred => EnumDecl.IsPred;
 
         public override string OriginalRepresentation => EnumDecl.Name;
         public override string CanonicalRepresentation => EnumDecl.Name;

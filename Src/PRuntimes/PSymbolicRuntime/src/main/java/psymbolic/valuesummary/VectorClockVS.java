@@ -143,6 +143,11 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
     }
 
     @Override
+    public VectorClockVS combineVals(VectorClockVS other) {
+        throw new RuntimeException("Predicates for vector clocks not supported!");
+    }
+
+    @Override
     public VectorClockVS updateUnderGuard(Guard guard, VectorClockVS update) {
         return new VectorClockVS(clock.updateUnderGuard(guard, update.clock));
     }

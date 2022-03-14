@@ -20,7 +20,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
      *
      *  The map 'guardedValues' should never be modified.
      */
-    private final Map<T, Guard> guardedValues;
+    protected final Map<T, Guard> guardedValues;
 
     /** Cached list of guarded values */
     private List<GuardedValue<T>> guardedValuesList;
@@ -189,6 +189,11 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
             }
         }
         return new PrimitiveVS<>(result);
+    }
+
+    @Override
+    public PrimitiveVS<T> combineVals(PrimitiveVS<T> other) {
+        return this;
     }
 
     @Override

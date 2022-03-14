@@ -63,6 +63,9 @@ WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
 
+// denote enum as pred
+PRED      : 'pred' ;
+
 // module-system-specific keywords
 
 // module-test-implementation declarations

@@ -144,6 +144,12 @@ public class UnionVS implements ValueSummary<UnionVS> {
     }
 
     @Override
+    public UnionVS combineVals(UnionVS other) {
+        // TODO: figure out how to support
+        throw new RuntimeException("Predicates for any types not supported!");
+    }
+
+    @Override
     public UnionVS updateUnderGuard(Guard guard, UnionVS updateVal) {
         return this.restrict(guard.not()).merge(updateVal.restrict(guard));
     }

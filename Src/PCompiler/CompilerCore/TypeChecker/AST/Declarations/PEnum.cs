@@ -18,6 +18,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public IEnumerable<EnumElem> Values => elements;
 
+        public bool IsPred { get; set; }
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
 

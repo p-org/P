@@ -190,6 +190,11 @@ public class Message implements ValueSummary<Message> {
     }
 
     @Override
+    public Message combineVals(Message other) {
+        return this;
+    }
+
+    @Override
     public Message updateUnderGuard(Guard guard, Message update) {
         /*
         if (guard.isConstTrue()) {

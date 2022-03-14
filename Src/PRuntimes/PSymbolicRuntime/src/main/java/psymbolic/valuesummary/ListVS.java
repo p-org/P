@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 /**
@@ -85,8 +86,23 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     }
 
     @Override
+    public ListVS<T> combineVals(ListVS<T> other){
+        ListVS<T> result = new ListVS<>(this.size.combineVals(other.size()), this.items);
+        for (int i = 0; i < this.items.size() || i < other.items.size(); i++) {
+            if (i < this.items.size() && i < other.items.size()) {
+                result.items.set(i, this.items.get(i).combineVals(other.items.get(i)));
+            }
+            else if (i < other.items.size()) {
+                Guard addGuard = result.inRange(new PrimitiveVS<>(i)).getGuardFor(true);
+                result.items.add(other.items.get(i).restrict(addGuard));
+            }
+        }
+        return result;
+    }
+
+    @Override
     public ListVS<T> updateUnderGuard(Guard guard, ListVS<T> updatedVal) {
-        return this.restrict(guard.not()).merge(ImmutableList.of(updatedVal.restrict(guard)));
+        return this.restrict(guard.not()).merge(ImmutableList.of(updatedVal.restrict(guard))).combineVals(this);
     }
 
     @Override

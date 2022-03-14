@@ -11,8 +11,10 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
             SourceLocation = sourceLocation;
             Value = value;
             Type = new EnumType(Value.ParentEnum);
+            IsPred = Value.ParentEnum.IsPred;
         }
 
+        public bool IsPred { get; }
         public EnumElem Value { get; }
         public PLanguageType Type { get; }
         public ParserRuleContext SourceLocation { get; }

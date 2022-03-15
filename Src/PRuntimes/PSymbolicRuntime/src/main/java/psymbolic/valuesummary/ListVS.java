@@ -102,7 +102,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
 
     @Override
     public ListVS<T> updateUnderGuard(Guard guard, ListVS<T> updatedVal) {
-        return this.restrict(guard.not()).merge(ImmutableList.of(updatedVal.restrict(guard))).combineVals(this);
+        return this.restrict(guard.not()).merge(ImmutableList.of(updatedVal.restrict(guard)));//.combineVals(this);
     }
 
     @Override

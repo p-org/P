@@ -124,7 +124,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
 
     @Override
     public MapVS<K, V> updateUnderGuard(Guard guard, MapVS<K, V> update) {
-        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard))).combineVals(this);
+        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));//.combineVals(this);
     }
 
     @Override
@@ -159,7 +159,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     }
 
     public MapVS<K, V> put(PredVS<K> keySummary, V valSummary) {
-        MapVS<K, V> res = this;
+        MapVS<K, V> res = this.remove(keySummary);
         for (PrimitiveVS<K> key : keySummary.getValues()) {
             res = res.put(key, valSummary);
         }
@@ -199,8 +199,11 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     }
 
     public MapVS<K, V> remove(PredVS<K> keySummary) {
-        // TODO: better way of handling
-        return this;
+        MapVS<K, V> res = this;
+        for (PrimitiveVS<K> key : keySummary.getValues()) {
+            res = res.remove(key);
+        }
+        return res;
     }
 
     /** Remove a key-value pair from the MapVS

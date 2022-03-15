@@ -28,9 +28,9 @@ machine Participant {
         }
 
 		on ePrepareReq do (prepareReq :tPrepareReq) {
-			// add the transaction to the pending set
-	//		assert !(prepareReq.transId in pendingWriteTrans),
-//			format ("Duplicate transaction ids not allowed!, received transId: {0}, pending transactions: {1}", prepareReq.transId, pendingWriteTrans);
+			// add the transaction to the pending et
+			assert !(prepareReq.transId in pendingWriteTrans),
+			format ("Duplicate transaction ids not allowed!, received transId: {0}, pending transactions: {1}", prepareReq.transId, pendingWriteTrans);
 			pendingWriteTrans[prepareReq.transId] = prepareReq.rec;
 
 			// non-deterministically

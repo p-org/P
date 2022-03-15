@@ -18,30 +18,27 @@ public class PredVS<T> implements ValueSummary<PredVS<T>> {
         primVS = new PrimitiveVS<>(impl);
     }
 
-    public PredVS(SetVS<PrimitiveVS<T>> set, Guard guard) {
+    public PredVS(SetVS<PredVS<T>> set, Guard guard) {
         primVS = new PredVS<>(set).primVS.restrict(guard);
     }
 
-
-    public PredVS(SetVS<PrimitiveVS<T>> set) {
+    public PredVS(SetVS<PredVS<T>> set) {
         this(set.getElements());
     }
 
-    public PredVS(ListVS<PrimitiveVS<T>> list, Guard guard) {
+    public PredVS(ListVS<PredVS<T>> list, Guard guard) {
         primVS = new PredVS<>(list).primVS.restrict(guard);
     }
 
-    public PredVS(ListVS<PrimitiveVS<T>> list) {
+    public PredVS(ListVS<PredVS<T>> list) {
         int idx = 0;
         PredVS<T> tmp = new PredVS<>();
         Guard inRange = list.inRange(idx).getGuardFor(true);
         while (!inRange.isFalse()) {
-            PrimitiveVS<T> elt = list.get(new PrimitiveVS<>(idx).restrict(inRange));
-            Map<Set<T>, Guard> map = new HashMap<>();
-            for (GuardedValue<T> entry : elt.getGuardedValues()) {
-                map.put(Collections.singleton(entry.getValue()), entry.getGuard());
-            }
-            tmp = tmp.updateUnderGuard(inRange, new PredVS<>(map));
+            PredVS<T> elt = list.get(new PrimitiveVS<>(idx).restrict(inRange));
+            tmp = tmp.updateUnderGuard(inRange, elt).combineVals(tmp);
+            idx++;
+            inRange = list.inRange(idx).getGuardFor(true);
         }
         primVS = tmp.primVS;
     }
@@ -91,6 +88,7 @@ public class PredVS<T> implements ValueSummary<PredVS<T>> {
                 newThis.add(thisGV);
             }
             currThis = newThis;
+
         }
 
         Map<Set<T>, Guard> map = new HashMap<>();
@@ -121,7 +119,7 @@ public class PredVS<T> implements ValueSummary<PredVS<T>> {
 
     @Override
     public PredVS<T> updateUnderGuard(Guard guard, PredVS<T> updateVal) {
-        return this.restrict(guard.not()).merge(Collections.singletonList(updateVal.restrict(guard))).combineVals(this);
+        return this.restrict(guard.not()).merge(Collections.singletonList(updateVal.restrict(guard)));
     }
 
     @Override
@@ -132,5 +130,10 @@ public class PredVS<T> implements ValueSummary<PredVS<T>> {
     @Override
     public Guard getUniverse() {
         return primVS.getUniverse();
+    }
+
+    @Override
+    public String toString() {
+        return primVS.toString();
     }
 }

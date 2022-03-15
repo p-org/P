@@ -288,6 +288,30 @@ public class Scheduler implements SymbolicSearch {
             Assert.prop(depth < configuration.getMaxDepthBound(), "Maximum allowed depth " + configuration.getMaxDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             step();
         }
+        List<List<ValueSummary>> finalState = prevStates.get(prevStates.size() - 1);
+        // specific for OOPSLA example
+        /*
+        Guard trueCond = Guard.constFalse();
+        for (List<ValueSummary> machineState : finalState) {
+            for (ValueSummary vs : machineState) {
+                if (vs instanceof PrimitiveVS) {
+                    if (((PrimitiveVS) vs).hasValue(true)) {
+                        trueCond = ((PrimitiveVS) vs).getGuardFor(true);
+                        System.out.println("true cond found");
+                    }
+                }
+            }
+        }
+        for (List<ValueSummary> machineState : finalState) {
+            System.out.println(machineState.get(0).restrict(trueCond));
+            for (ValueSummary vs : machineState) {
+                if (vs instanceof MapVS) {
+                    System.out.println(((MapVS) vs.restrict(trueCond)).entries);
+                }
+            }
+        }
+
+         */
     }
 
     public List<PrimitiveVS> getNextSenderChoices() {
@@ -438,12 +462,6 @@ public class Scheduler implements SymbolicSearch {
         List<Message> effects = new ArrayList<>();
         int numMessages = 0;
 
-        List<List<ValueSummary>> originalStates = new ArrayList<>();
-        for (Machine machine : machines) {
-            originalStates.add(machine.getLocalState());
-        }
-        prevStates.add(originalStates);
-
         for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
@@ -482,6 +500,7 @@ public class Scheduler implements SymbolicSearch {
             }
             done = done.or(eq.getGuardFor(true));
         }
+        prevStates.add(newStates);
 
 
         // performing node clean-up

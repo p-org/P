@@ -67,7 +67,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
 
     @Override
     public SetVS<T> updateUnderGuard(Guard guard, SetVS<T> update) {
-        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard))).combineVals(this);
+        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));//.combineVals(this);
     }
 
     @Override

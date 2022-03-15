@@ -107,7 +107,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
 
     @Override
     public NamedTupleVS updateUnderGuard(Guard guard, NamedTupleVS update) {
-        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard))).combineVals(this);
+        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));//.combineVals(this);
     }
 
     @Override

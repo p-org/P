@@ -109,7 +109,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
 
     @Override
     public TupleVS updateUnderGuard(Guard guard, TupleVS update) {
-        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard))).combineVals(this);
+        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));//.combineVals(this);
     }
 
     @Override

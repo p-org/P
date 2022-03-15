@@ -1,6 +1,7 @@
 package psymbolic.valuesummary.solvers.sat;
 
 import com.microsoft.z3.BoolExpr;
+import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.valuesummary.solvers.SolverType;
 
 import java.util.ArrayList;
@@ -85,6 +86,9 @@ public class SatExpr {
             default:
 //            	System.out.println("Checking satisfiability of formula: " + Aig.toString(formula.expr));
                 boolean isSat = SatGuard.getSolver().isSat(satFormula.formula);
+                if (SearchLogger.getVerbosity() > 4) {
+                	System.out.println("\t\tSAT ? [ " + Aig.toString(formula.expr) + " ] :\t" + isSat);
+                }
 //            	System.out.println("Result: " + isSat);
                 if (isSat) {
                     satFormula.status = SatStatus.Sat;
@@ -109,34 +113,35 @@ public class SatExpr {
     }
 
     public static boolean isSat(SatExpr formula) {
-        SatObject satFormula = createAigFormula(formula.expr);
-        switch (satFormula.status) {
-            case Sat:
-//                satFormula = createSatFormula(formula.expr);
-//                if (!checkSat(formula, satFormula)) {
-//                    if (SatGuard.getSolverType() == SolverType.Z3) {
-//                        ((Z3Impl) SatGuard.getSolver()).toSmtLib("unknown", (BoolExpr) satFormula.formula);
-//                    }
-//                    System.out.println("Aig says SAT while Solver says UNSAT");
-//                    Aig.isSat(formula.expr, SatExpr.nBTLimit);
-//                    throw new RuntimeException("Conflicting SAT result for formula " + formula);
-//                }
-                return true;
-            case Unsat:
-//                satFormula = createSatFormula(formula.expr);
-//                if (checkSat(formula, satFormula)) {
-//                    if (SatGuard.getSolverType() == SolverType.Z3) {
-//                        ((Z3Impl) SatGuard.getSolver()).toSmtLib("unknown", (BoolExpr) satFormula.formula);
-//                    }
-//                    System.out.println("Aig says UNSAT while Solver says SAT");
-//                    Aig.isSat(formula.expr, SatExpr.nBTLimit);
-//                    throw new RuntimeException("Conflicting SAT result for formula " + formula);
-//                }
-                return false;
-            default:
-                satFormula = createSatFormula(formula.expr);
-                return checkSat(formula, satFormula);
-        }
+        SatObject satFormula;
+//        satFormula = createAigFormula(formula.expr);
+//        switch (satFormula.status) {
+//            case Sat:
+////                satFormula = createSatFormula(formula.expr);
+////                if (!checkSat(formula, satFormula)) {
+////                    if (SatGuard.getSolverType() == SolverType.Z3) {
+////                        ((Z3Impl) SatGuard.getSolver()).toSmtLib("unknown", (BoolExpr) satFormula.formula);
+////                    }
+////                    System.out.println("Aig says SAT while Solver says UNSAT");
+////                    Aig.isSat(formula.expr, SatExpr.nBTLimit);
+////                    throw new RuntimeException("Conflicting SAT result for formula " + formula);
+////                }
+//                return true;
+//            case Unsat:
+////                satFormula = createSatFormula(formula.expr);
+////                if (checkSat(formula, satFormula)) {
+////                    if (SatGuard.getSolverType() == SolverType.Z3) {
+////                        ((Z3Impl) SatGuard.getSolver()).toSmtLib("unknown", (BoolExpr) satFormula.formula);
+////                    }
+////                    System.out.println("Aig says UNSAT while Solver says SAT");
+////                    Aig.isSat(formula.expr, SatExpr.nBTLimit);
+////                    throw new RuntimeException("Conflicting SAT result for formula " + formula);
+////                }
+//                return false;
+//            default:
+//        }
+        satFormula = createSatFormula(formula.expr);
+        return checkSat(formula, satFormula);
     }
 
     private static SatExpr newExpr(long original) {

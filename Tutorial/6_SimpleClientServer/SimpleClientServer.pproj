@@ -1,0 +1,10 @@
+<Project>
+<ProjectName>SimpleClientServer</ProjectName>
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+	<PFile>./PSpec/</PFile>
+	<PFile>./PTst/</PFile>
+</InputFiles>
+<Target>CSharp</Target>
+<OutputDir>./PGenerated/</OutputDir>
+</Project>

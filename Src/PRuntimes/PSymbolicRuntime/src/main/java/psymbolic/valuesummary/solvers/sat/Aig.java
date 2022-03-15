@@ -157,9 +157,9 @@ public class Aig {
         Aig.isSatOperations++;
         switch(isAlwaysTrue(Abc.Fraig_Not(formula), nBTLimit)) {
             case True:
-                Aig.isSatResult++;
                 return SatStatus.Unsat;
             case NotTrue:
+                Aig.isSatResult++;
                 return SatStatus.Sat;
             default:
                 return SatStatus.Unknown;

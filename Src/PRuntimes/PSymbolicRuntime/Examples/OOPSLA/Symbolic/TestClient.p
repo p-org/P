@@ -50,11 +50,11 @@ machine TestClient {
 
     state ChoosePre {
         entry {
- //           if ($) {
+            if ($) {
                 goto SendPreWrites;
- //           } else {
-  //              goto SendSelectWrite;
-  //          }
+            } else {
+                goto SendSelectWrite;
+            }
         }
     }
 
@@ -63,7 +63,7 @@ machine TestClient {
             currTransaction = ChooseTransaction();
             send coordinator, eWriteTransReq, (client = this, rec = currTransaction);
         }
-        on eWriteTransResp goto SendSelectWrite;//ChoosePre;
+        on eWriteTransResp goto ChoosePre;
     }
 
     state SendSelectWrite {

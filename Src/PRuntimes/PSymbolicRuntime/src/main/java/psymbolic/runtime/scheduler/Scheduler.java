@@ -69,6 +69,8 @@ public class Scheduler implements SymbolicSearch {
 
     int choiceDepth = 0;
 
+    List<List<List<ValueSummary>>> prevStates = new ArrayList<>();
+
     /** Reset scheduler state
      */
     public void reset() {
@@ -435,6 +437,13 @@ public class Scheduler implements SymbolicSearch {
         Message effect = null;
         List<Message> effects = new ArrayList<>();
         int numMessages = 0;
+
+        List<List<ValueSummary>> originalStates = new ArrayList<>();
+        for (Machine machine : machines) {
+            originalStates.add(machine.getLocalState());
+        }
+        prevStates.add(originalStates);
+
         for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
@@ -453,6 +462,27 @@ public class Scheduler implements SymbolicSearch {
         TraceLogger.schedule(depth, effect);
 
         performEffect(effect);
+
+        done = done.or(effect.getUniverse().not());
+        List<List<ValueSummary>> newStates = new ArrayList<>();
+        for (Machine machine : machines) {
+            newStates.add(machine.getLocalState());
+        }
+        for (List<List<ValueSummary>> preStates : prevStates) {
+            if (preStates.size() != newStates.size()) {
+                continue;
+            }
+            PrimitiveVS<Boolean> eq = new PrimitiveVS<>(true);
+            for (int i = 0; i < preStates.size(); i++) {
+                List<ValueSummary> preState = preStates.get(i);
+                List<ValueSummary> newState = newStates.get(i);
+                for (int j = 0; j < preState.size(); j++) {
+                    eq = BooleanVS.and(eq, preState.get(j).symbolicEquals(newState.get(j), Guard.constTrue()));
+                }
+            }
+            done = done.or(eq.getGuardFor(true));
+        }
+
 
         // performing node clean-up
         BDDEngine.UnusedNodesCleanUp();
@@ -540,20 +570,7 @@ public class Scheduler implements SymbolicSearch {
     void performEffect(Message event) {
         runMonitors(event);
         for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
-            List<ValueSummary> originalState = target.getValue().getLocalState();
             target.getValue().processEventToCompletion(target.getGuard(), event.restrict(target.getGuard()));
-            List<ValueSummary> newState = target.getValue().getLocalState();
-            Guard sameVals = null;
-            Guard diffVals = Guard.constFalse();
-            for (int i = 0; i < originalState.size(); i++) {
-                PrimitiveVS<Boolean> eq = originalState.get(i).symbolicEquals(newState.get(i), target.getGuard());
-                if (sameVals == null) {
-                    sameVals = eq.getGuardFor(true);
-                }
-                sameVals = sameVals.and(eq.getGuardFor(true));
-                diffVals = diffVals.or(eq.getGuardFor(false)).and(target.getGuard());
-            }
-            done = done.or(sameVals).and(diffVals.not());
         }
     }
 

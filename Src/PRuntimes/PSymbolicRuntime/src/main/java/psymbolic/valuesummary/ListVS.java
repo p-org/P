@@ -166,7 +166,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
                 equalCond = equalCond.or(listEqual);
             }
         }
-        return BooleanVS.trueUnderGuard(pc.and(equalCond));
+        return BooleanVS.trueUnderGuard(pc.and(equalCond).and(this.size.symbolicEquals(cmp.size, pc).getGuardFor(true)));
     }
 
     @Override

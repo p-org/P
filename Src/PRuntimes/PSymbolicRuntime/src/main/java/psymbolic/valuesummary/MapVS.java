@@ -137,6 +137,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
         if (thisSet.isEmpty() && cmpSet.isEmpty()) return BooleanVS.trueUnderGuard(pc.and(guard));
 
         while (!thisSet.isEmpty()) {
+            guard = IntegerVS.lessThan(0, thisSet.size()).getGuardFor(true);
             PrimitiveVS<K> thisVal = thisSet.get(new PrimitiveVS<>(0).restrict(guard));
             PrimitiveVS<K> cmpVal = cmpSet.get(new PrimitiveVS<>(0).restrict(guard));
             assert(ValueSummaryChecks.equalUnder(thisVal, cmpVal, guard));

@@ -34,9 +34,9 @@ machine Participant {
 			pendingWriteTrans[prepareReq.transId] = prepareReq.rec;
 
 			// non-deterministically
-			if ($) {
+//			if ($) {
 				send prepareReq.coordinator, ePrepareResp, (participant = this, transId = prepareReq.transId, status = SUCCESS);
-			} //else {
+//			} //else {
 		//		send prepareReq.coordinator, ePrepareResp, (participant = this, transId = prepareReq.transId, status = ERROR);
 //			}
 		}

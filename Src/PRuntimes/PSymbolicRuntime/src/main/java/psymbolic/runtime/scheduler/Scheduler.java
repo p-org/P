@@ -65,7 +65,7 @@ public class Scheduler implements SymbolicSearch {
     /** Current depth of exploration */
     private int depth = 0;
     /** Whether or not search is done */
-    private boolean done = false;
+    private Guard done = Guard.constFalse();
 
     int choiceDepth = 0;
 
@@ -74,7 +74,7 @@ public class Scheduler implements SymbolicSearch {
     public void reset() {
         depth = 0;
         choiceDepth = 0;
-        done = false;
+        done = Guard.constFalse();
         machineCounters.clear();
         machines.clear();
     }
@@ -90,7 +90,7 @@ public class Scheduler implements SymbolicSearch {
      * @return Whether or not there are more steps to run
      */
     public boolean isDone() {
-        return done || depth == configuration.getDepthBound();
+        return done.isTrue() || depth == configuration.getDepthBound();
     }
 
     /** Get current depth
@@ -428,7 +428,7 @@ public class Scheduler implements SymbolicSearch {
 
         if (choices.isEmptyVS()) {
             TraceLogger.finished(depth);
-            done = true;
+            done = Guard.constTrue();
             return;
         }
 
@@ -540,7 +540,20 @@ public class Scheduler implements SymbolicSearch {
     void performEffect(Message event) {
         runMonitors(event);
         for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
+            List<ValueSummary> originalState = target.getValue().getLocalState();
             target.getValue().processEventToCompletion(target.getGuard(), event.restrict(target.getGuard()));
+            List<ValueSummary> newState = target.getValue().getLocalState();
+            Guard sameVals = null;
+            Guard diffVals = Guard.constFalse();
+            for (int i = 0; i < originalState.size(); i++) {
+                PrimitiveVS<Boolean> eq = originalState.get(i).symbolicEquals(newState.get(i), target.getGuard());
+                if (sameVals == null) {
+                    sameVals = eq.getGuardFor(true);
+                }
+                sameVals = sameVals.and(eq.getGuardFor(true));
+                diffVals = diffVals.or(eq.getGuardFor(false)).and(target.getGuard());
+            }
+            done = done.or(sameVals).and(diffVals.not());
         }
     }
 

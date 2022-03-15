@@ -101,6 +101,14 @@ public abstract class Machine {
         }
     }
 
+    public List<ValueSummary> getLocalState() {
+        List<ValueSummary> localState = new ArrayList<>();
+        localState.add(this.currentState);
+        localState.add(this.sendBuffer.getEvents());
+        localState.add(this.clock);
+        return localState;
+    }
+
     public Machine(String name, int id, EventBufferSemantics semantics, State startState, State... states) {
         this.name = name;
         this.instanceId = id;

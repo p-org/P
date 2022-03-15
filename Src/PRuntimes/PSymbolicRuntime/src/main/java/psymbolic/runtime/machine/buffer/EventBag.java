@@ -72,4 +72,7 @@ public class EventBag extends SymbolicBag<Message> implements EventBuffer {
     public PrimitiveVS<Boolean> hasSyncEventUnderGuard() {
         return satisfiesPredUnderGuard(Message::isSyncEvent);
     }
+
+    @Override
+    public ValueSummary getEvents() { return this.elements; }
 }

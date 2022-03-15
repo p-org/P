@@ -40,7 +40,6 @@ machine TestClient {
     start state Init {
          entry (payload : Coordinator) {
              coordinator = payload;
-             chose = false;
              goto ChoosePre;
          }
     }

@@ -34,7 +34,7 @@ public class Fraig implements ExprLib<Long> {
 
     public static void resetAig() {
         if (hasStarted) {
-            System.out.println("Resetting AIG");
+            System.out.println("Resetting FRAIG");
             Abc.Fraig_ManFree(network);
             System.out.println("Stopping ABC");
             Abc.Abc_Stop();
@@ -43,7 +43,7 @@ public class Fraig implements ExprLib<Long> {
         System.out.println("Starting ABC");
         Abc.Abc_Start();
 
-        System.out.println("Setting AIG Parameters");
+        System.out.println("Setting FRAIG Parameters");
         params = Abc.Fraig_ParamsGetDefault();
         Abc.Fraig_ParamsSet_nPatsRand(params, 2048);
         Abc.Fraig_ParamsSet_nPatsDyna(params, 2048);
@@ -61,7 +61,7 @@ public class Fraig implements ExprLib<Long> {
         Abc.Fraig_ParamsSet_nConfLimit(params, 0);
         Abc.Fraig_ParamsSet_nInspLimit(params, 0);
 
-        System.out.println("Creating AIG Network");
+        System.out.println("Creating FRAIG Network");
         network = Abc.Fraig_ManCreate(params);
 //        network = Abc.Fraig_ManCreate(-1);
 

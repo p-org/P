@@ -3,10 +3,7 @@ package psymbolic.valuesummary.solvers.sat;
 import lombok.Getter;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.valuesummary.solvers.SolverType;
-import psymbolic.valuesummary.solvers.sat.expr.Fraig;
-import psymbolic.valuesummary.solvers.sat.expr.ExprLib;
-import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
-import psymbolic.valuesummary.solvers.sat.expr.NativeExpr;
+import psymbolic.valuesummary.solvers.sat.expr.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,6 +27,8 @@ public class SatExpr {
     public static void setExprLib(ExprLibType type) {
         exprType = type;
         switch(type) {
+            case Aig:	            exprImpl = new Aig();
+                break;
             case Fraig:	            exprImpl = new Fraig();
                 break;
             case NativeExpr:	    exprImpl = new NativeExpr();
@@ -110,7 +109,7 @@ public class SatExpr {
             default:
 //            	System.out.println("Checking satisfiability of formula: " + Aig.toString(formula.expr));
                 boolean isSat = SatGuard.getSolver().isSat(satFormula.formula);
-                if (SearchLogger.getVerbosity() > 4) {
+                if (SearchLogger.getVerbosity() > 5) {
                 	System.out.println("\t\tSAT ? [ " + getExprImpl().toString(formula.expr) + " ] :\t" + isSat);
                 }
 //            	System.out.println("Result: " + isSat);

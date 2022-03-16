@@ -52,7 +52,7 @@ public class PSymOptions {
         // expression type
         Option exprLibType = Option.builder("et")
                 .longOpt("expr")
-                .desc("Expression type to use: aig, native, none")
+                .desc("Expression type to use: fraig, aig, native, none")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Expression Type (string)")
@@ -218,7 +218,9 @@ public class PSymOptions {
                 case "et":
                 case "expr":
                     switch (option.getValue()) {
-                        case "aig":		        config.setExprLibType(ExprLibType.Fraig);
+                        case "aig":		        config.setExprLibType(ExprLibType.Aig);
+                            break;
+                        case "fraig":		    config.setExprLibType(ExprLibType.Fraig);
                             break;
                         case "native":			config.setExprLibType(ExprLibType.NativeExpr);
                             break;

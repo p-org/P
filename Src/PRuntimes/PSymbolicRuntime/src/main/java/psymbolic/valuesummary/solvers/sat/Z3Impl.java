@@ -36,12 +36,9 @@ public class Z3Impl implements SatLib<BoolExpr> {
         context = new Context(config);
 
         simplifyParams = context.mkParams();
-//        if (SearchLogger.getVerbosity() <= 2)
-        {
-            simplifyParams.add("elim_and", true);
-            simplifyParams.add("flat", true);
-            simplifyParams.add("local_ctx", true);
-        }
+        simplifyParams.add("elim_and", true);
+        simplifyParams.add("flat", true);
+        simplifyParams.add("local_ctx", true);
 
         boolType = context.mkBoolSort();
         valFalse = newTerm(context.mkFalse());
@@ -53,11 +50,13 @@ public class Z3Impl implements SatLib<BoolExpr> {
     }
 
     private BoolExpr newTerm(BoolExpr t) {
-        BoolExpr tSimple = (BoolExpr) t.simplify(simplifyParams);
+        BoolExpr tSimple = t;
+        if (SearchLogger.getVerbosity() <= 4) {
+            tSimple = (BoolExpr) t.simplify(simplifyParams);
 //        System.out.println("\toriginal term  : " + toString(t));
 //        System.out.println("\tsimplified term: " + toString(tSimple));
+        }
         return tSimple;
-//        return t;
     }
 
     public void toSmtLib(String status, BoolExpr formula) {
@@ -89,8 +88,8 @@ public class Z3Impl implements SatLib<BoolExpr> {
             table.put(formula, SatStatus.Unsat);
 //            solver.add(not(formula));
 
-            if (SearchLogger.getVerbosity() > 2) {
-                if (formula != valFalse && printCount < 100) {
+            if (SearchLogger.getVerbosity() > 4) {
+                if (formula != valFalse && printCount < 10) {
                     toSmtLib("unsat", formula);
                 }
             }

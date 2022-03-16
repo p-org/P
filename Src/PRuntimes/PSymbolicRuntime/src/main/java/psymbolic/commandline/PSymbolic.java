@@ -19,7 +19,7 @@ public class PSymbolic {
         // parse the commandline arguments to create the configuration
         PSymConfiguration config = PSymOptions.ParseCommandlineArgs(args);
         Reflections reflections = new Reflections("psymbolic");
-    	SolverEngine.resetEngine(config.getSolverType());
+    	SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
 
         try {
             // load all the files in the passed jar

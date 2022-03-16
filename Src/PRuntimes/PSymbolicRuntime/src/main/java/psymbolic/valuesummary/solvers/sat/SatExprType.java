@@ -1,6 +1,6 @@
 package psymbolic.valuesummary.solvers.sat;
 
-public enum ExprType {
+public enum SatExprType {
     TRUE,
     FALSE,
     VARIABLE,

@@ -4,6 +4,7 @@ import org.apache.commons.cli.*;
 import org.reflections.Reflections;
 
 import psymbolic.valuesummary.solvers.SolverType;
+import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 
 import java.io.PrintWriter;
 import java.util.Set;
@@ -47,6 +48,16 @@ public class PSymOptions {
                 .argName("Solver Type (string)")
                 .build();
         options.addOption(solverType);
+
+        // expression type
+        Option exprLibType = Option.builder("et")
+                .longOpt("expr")
+                .desc("Expression type to use: aig, native, none")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Expression Type (string)")
+                .build();
+        options.addOption(exprLibType);
 
         // max depth bound for the search
         Option depthBound = Option.builder("db")
@@ -203,6 +214,20 @@ public class PSymOptions {
                         formatter.printHelp("st", String.format("Expected a solver type, got %s", option.getValue()), options, "Try \"--help\" option for details.");
                         formatter.printUsage(writer, 80, "st", options);
                 	}
+                    break;
+                case "et":
+                case "expr":
+                    switch (option.getValue()) {
+                        case "aig":		        config.setExprLibType(ExprLibType.Fraig);
+                            break;
+                        case "native":			config.setExprLibType(ExprLibType.NativeExpr);
+                            break;
+                        case "none":    		config.setExprLibType(ExprLibType.None);
+                            break;
+                        default:
+                            formatter.printHelp("et", String.format("Expected a expression type, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                            formatter.printUsage(writer, 80, "et", options);
+                    }
                     break;
                 case "sb":
                 case "sched-choice-bound":

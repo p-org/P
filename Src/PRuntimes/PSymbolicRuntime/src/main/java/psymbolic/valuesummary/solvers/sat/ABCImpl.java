@@ -1,25 +1,30 @@
 package psymbolic.valuesummary.solvers.sat;
 
-import com.berkeley.abc.Abc;
-import com.sri.yices.Yices;
 import psymbolic.runtime.statistics.SolverStats;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.List;
+import psymbolic.valuesummary.solvers.sat.expr.Fraig;
+import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 
 public class ABCImpl implements SatLib<Long> {
+    private Fraig exprImpl;
+
+    public ABCImpl() {
+        assert(SatExpr.getExprType() == ExprLibType.Fraig);
+        exprImpl = (Fraig) SatExpr.getExprImpl();
+    }
+
     public Long constFalse() {
-        return Aig.getFalse();
+        return exprImpl.getFalse();
     }
 
     public Long constTrue() {
-        return Aig.getTrue();
+        return exprImpl.getTrue();
     }
 
     public boolean isSat(Long formula) {
         SolverStats.isSatOperations++;
-        switch(Aig.isSat(formula, -1)) {
+        switch(exprImpl.isSat(formula, -1)) {
             case Sat:
                 SolverStats.isSatResult++;
                 return true;
@@ -47,7 +52,7 @@ public class ABCImpl implements SatLib<Long> {
     }
 
     public String toString(Long formula) {
-        return Aig.toString(formula);
+        return exprImpl.toString(formula);
     }
 
     public Long fromString(String s) {
@@ -55,11 +60,11 @@ public class ABCImpl implements SatLib<Long> {
     }
 
     public int getNodeCount() {
-        return Aig.idSet.size();
+        return exprImpl.idSet.size();
     }
 
     public String getStats() {
-        return Aig.getStats();
+        return exprImpl.getStats();
     }
 
     public void cleanup() {
@@ -67,7 +72,7 @@ public class ABCImpl implements SatLib<Long> {
     }
 
     public boolean areEqual(Long left, Long right) {
-        return Aig.areEqual(left, right);
+        return exprImpl.areEqual(left, right);
     }
 
 }

@@ -1,25 +1,49 @@
 package psymbolic.valuesummary.solvers.sat;
 
-import com.microsoft.z3.BoolExpr;
+import lombok.Getter;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.valuesummary.solvers.SolverType;
+import psymbolic.valuesummary.solvers.sat.expr.Fraig;
+import psymbolic.valuesummary.solvers.sat.expr.ExprLib;
+import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
+import psymbolic.valuesummary.solvers.sat.expr.NativeExpr;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Arrays;
 
 public class SatExpr {
     public static int numVars = 0;
-    public static HashMap<Long, SatObject> table = new HashMap<Long, SatObject>();
-    public static HashMap<Long, SatObject> aigTable = new HashMap<Long, SatObject>();
-    private long expr;
+    public static HashMap<Object, SatObject> table = new HashMap<Object, SatObject>();
+    public static HashMap<Object, SatObject> aigTable = new HashMap<Object, SatObject>();
+    private Object expr;
 
-    public SatExpr(long expr) {
+    private static ExprLib exprImpl;
+
+    @Getter
+    private static ExprLibType exprType;
+
+    public static ExprLib getExprImpl() {
+        return exprImpl;
+    }
+
+    public static void setExprLib(ExprLibType type) {
+        exprType = type;
+        switch(type) {
+            case Fraig:	            exprImpl = new Fraig();
+                break;
+            case NativeExpr:	    exprImpl = new NativeExpr();
+                break;
+            default:
+                throw new RuntimeException("Unexpected/incompatible expression library type " + type);
+        }
+    }
+
+    public SatExpr(Object expr) {
         this.expr = expr;
     }
 
-    private static SatObject createSatFormula(long original) {
+    private static SatObject createSatFormula(Object original) {
         if (table.containsKey(original)) {
             return table.get(original);
         } else if (SatGuard.getSolverType() == SolverType.ABC) {
@@ -31,21 +55,21 @@ public class SatExpr {
             return satFormula;
         }
 
-        long expr = original;
+        Object expr = original;
 //        long expr = Aig.simplify(original);
 //        System.out.println("Creating Sat formula for " + toString(expr));
 
 
         SatObject satFormula = new SatObject(null, SatStatus.Unknown);
-        ExprType exprType = Aig.getType(expr);
+        SatExprType satExprType = getExprImpl().getType(expr);
 
         List<Object> satChildren = new ArrayList<>();
-        for (long child: Aig.getChildren(expr)) {
+        for (Object child: getExprImpl().getChildren(expr)) {
             SatObject satChild = createSatFormula(child);
             satChildren.add(satChild.formula);
         }
 
-        switch(exprType) {
+        switch(satExprType) {
             case TRUE:
                 satFormula.formula = SatGuard.getSolver().constTrue();
                 satFormula.status = SatStatus.Sat;
@@ -55,7 +79,7 @@ public class SatExpr {
                 satFormula.status = SatStatus.Unsat;
                 break;
             case VARIABLE:
-                satFormula.formula = SatGuard.getSolver().newVar(Aig.toString(expr));
+                satFormula.formula = SatGuard.getSolver().newVar(getExprImpl().toString(expr));
                 break;
             case NOT:
                 assert (satChildren.size() == 1);
@@ -71,7 +95,7 @@ public class SatExpr {
                 satFormula.status = SatStatus.Unknown;
                 break;
             default:
-                throw new RuntimeException("Unexpected expr of type " + exprType + " : " + expr);
+                throw new RuntimeException("Unexpected expr of type " + satExprType + " : " + expr);
         }
         table.put(expr, satFormula);
         return satFormula;
@@ -87,7 +111,7 @@ public class SatExpr {
 //            	System.out.println("Checking satisfiability of formula: " + Aig.toString(formula.expr));
                 boolean isSat = SatGuard.getSolver().isSat(satFormula.formula);
                 if (SearchLogger.getVerbosity() > 4) {
-                	System.out.println("\t\tSAT ? [ " + Aig.toString(formula.expr) + " ] :\t" + isSat);
+                	System.out.println("\t\tSAT ? [ " + getExprImpl().toString(formula.expr) + " ] :\t" + isSat);
                 }
 //            	System.out.println("Result: " + isSat);
                 if (isSat) {
@@ -102,79 +126,63 @@ public class SatExpr {
         }
     }
 
-    private static SatObject createAigFormula(long original) {
+    private static SatObject createAigFormula(Object original) {
         if (aigTable.containsKey(original)) {
             return aigTable.get(original);
         }
         SatObject satFormula = new SatObject(original, SatStatus.Unknown);
-        satFormula.status = Aig.isSat(original, Aig.nBTLimit);
+        satFormula.status = ((Fraig)exprImpl).isSat((Long)original, Fraig.nBTLimit);
         aigTable.put(original, satFormula);
         return satFormula;
     }
 
     public static boolean isSat(SatExpr formula) {
         SatObject satFormula;
-//        satFormula = createAigFormula(formula.expr);
-//        switch (satFormula.status) {
-//            case Sat:
-////                satFormula = createSatFormula(formula.expr);
-////                if (!checkSat(formula, satFormula)) {
-////                    if (SatGuard.getSolverType() == SolverType.Z3) {
-////                        ((Z3Impl) SatGuard.getSolver()).toSmtLib("unknown", (BoolExpr) satFormula.formula);
-////                    }
-////                    System.out.println("Aig says SAT while Solver says UNSAT");
-////                    Aig.isSat(formula.expr, SatExpr.nBTLimit);
-////                    throw new RuntimeException("Conflicting SAT result for formula " + formula);
-////                }
-//                return true;
-//            case Unsat:
-////                satFormula = createSatFormula(formula.expr);
-////                if (checkSat(formula, satFormula)) {
-////                    if (SatGuard.getSolverType() == SolverType.Z3) {
-////                        ((Z3Impl) SatGuard.getSolver()).toSmtLib("unknown", (BoolExpr) satFormula.formula);
-////                    }
-////                    System.out.println("Aig says UNSAT while Solver says SAT");
-////                    Aig.isSat(formula.expr, SatExpr.nBTLimit);
-////                    throw new RuntimeException("Conflicting SAT result for formula " + formula);
-////                }
-//                return false;
-//            default:
+//        if (getExprType() == ExprLibType.Aig) {
+//            satFormula = createAigFormula(formula.expr);
+//            switch (satFormula.status) {
+//                case Sat:
+//                    return true;
+//                case Unsat:
+//                    return false;
+//                default:
+//            }
 //        }
         satFormula = createSatFormula(formula.expr);
         return checkSat(formula, satFormula);
     }
 
-    private static SatExpr newExpr(long original) {
+    private static SatExpr newExpr(Object original) {
         return new SatExpr(original);
     }
 
     public static SatExpr ConstTrue() {
-        return newExpr(Aig.getTrue());
+        return newExpr(getExprImpl().getTrue());
     }
 
     public static SatExpr ConstFalse() {
-        return newExpr(Aig.getFalse());
+        return newExpr(getExprImpl().getFalse());
     }
 
     public static SatExpr NewVar() {
-        return newExpr(Aig.newVar("x" + numVars++));
+        return newExpr(getExprImpl().newVar("x" + numVars++));
     }
 
     public static SatExpr Not(SatExpr formula) {
-        return newExpr(Aig.not(formula.expr));
+        return newExpr(getExprImpl().not(formula.expr));
     }
 
     public static SatExpr And(SatExpr left, SatExpr right) {
-        return newExpr(Aig.and(left.expr, right.expr));
+        return newExpr(getExprImpl().and(left.expr, right.expr));
     }
 
     public static SatExpr Or(SatExpr left, SatExpr right) {
-        return newExpr(Aig.or(left.expr, right.expr));
+        return newExpr(getExprImpl().or(left.expr, right.expr));
     }
 
     @Override
     public String toString() {
-        return Aig.toString(this.expr);
+        return getExprImpl().toString(this.expr);
     }
 
     @Override
@@ -182,11 +190,11 @@ public class SatExpr {
         if (this == o) return true;
         if (!(o instanceof SatExpr)) return false;
         SatExpr that = (SatExpr) o;
-        return Aig.areEqual(this.expr, that.expr);
+        return getExprImpl().areEqual(this.expr, that.expr);
     }
 
     @Override
     public int hashCode() {
-        return Aig.getHashCode(this.expr);
+        return getExprImpl().getHashCode(this.expr);
     }
 }

@@ -1,8 +1,8 @@
 package psymbolic.valuesummary.solvers;
 
 import psymbolic.valuesummary.solvers.bdd.PJBDDImpl;
+import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 import psymbolic.valuesummary.solvers.sat.SatGuard;
-import psymbolic.valuesummary.solvers.sat.Aig;
 
 /**
  * Represents the generic backend engine
@@ -11,10 +11,11 @@ public class SolverEngine {
     private static SolverEngine solverEngine;
     private static SolverLib solverImpl;
     private static SolverType solverType;
-	
+    private static ExprLibType exprLibType;
+
 	// Make this constructor static so that the class cannot be instantiated
     public SolverEngine() {
-    	setSolver(SolverType.BDD);
+    	setSolver(SolverType.BDD, ExprLibType.None);
     }
 
     public static SolverEngine getEngine() {
@@ -26,26 +27,27 @@ public class SolverEngine {
     }
     
     public static void resetEngine() {
-    	resetEngine(solverType);
+    	resetEngine(solverType, exprLibType);
     }
 
-    public static void resetEngine(SolverType type) {
-    	setSolver(type);
+    public static void resetEngine(SolverType type, ExprLibType etype) {
+    	setSolver(type, etype);
     }
 
     public static void cleanupEngine() {
         solverImpl.cleanup();
     }
     
-    public static void setSolver(SolverType type) {
+    public static void setSolver(SolverType type, ExprLibType etype) {
     	solverType = type;
+        exprLibType = etype;
     	switch(type) {
     	case BDD:		solverImpl = new PJBDDImpl(false);
     		break;
     	case CBDD:		solverImpl = new PJBDDImpl(true);
     		break;
-        default:        solverImpl = new SatGuard(type);
-            Aig.resetAig();
+        default:        solverImpl = new SatGuard(type, etype);
+
     	}
     }
 

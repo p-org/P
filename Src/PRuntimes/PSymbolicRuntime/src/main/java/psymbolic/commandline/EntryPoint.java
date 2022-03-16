@@ -24,6 +24,7 @@ public class EntryPoint {
         if (config.getCollectStats() != 0) {
             StatLogger.log(String.format("project-name:\t%s", config.getProjectName()));
             StatLogger.log(String.format("solver:\t%s", config.getSolverType().toString()));
+            StatLogger.log(String.format("expr-type:\t%s", config.getExprLibType().toString()));
         }
         start = Instant.now();
         String status = "error";
@@ -51,6 +52,7 @@ public class EntryPoint {
 	            System.out.println("Stats::");
                 System.out.println(String.format("project-name:\t%s", config.getProjectName()));
                 System.out.println(String.format("solver:\t%s", config.getSolverType().toString()));
+                StatLogger.log(String.format("expr-type:\t%s", config.getExprLibType().toString()));
                 StatLogger.log(String.format("status:\t%s", status));
 	            StatLogger.log(String.format("time-seconds:\t%.1f", Duration.between(start, end).toMillis()/1000.0));
 	            scheduler.print_stats();

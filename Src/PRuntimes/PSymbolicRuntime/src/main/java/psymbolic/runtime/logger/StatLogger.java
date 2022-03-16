@@ -3,7 +3,7 @@ package psymbolic.runtime.logger;
 import org.apache.log4j.*;
 import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.solvers.SolverEngine;
-import psymbolic.valuesummary.solvers.sat.Aig;
+import psymbolic.valuesummary.solvers.sat.expr.Fraig;
 
 import java.io.IOException;
 
@@ -63,9 +63,9 @@ public class StatLogger {
         log.info(String.format("#-and-ops:\t%d", SolverStats.andOperations));
         log.info(String.format("#-or-ops:\t%d", SolverStats.orOperations));
         log.info(String.format("#-not-ops:\t%d", SolverStats.notOperations));
-        log.info(String.format("aig-#-sat-ops:\t%d", Aig.isSatOperations));
-        log.info(String.format("aig-#-sat-ops-sat:\t%d", Aig.isSatResult));
-        log.info(String.format("aig-%%-sat-ops-sat:\t%.1f", SolverStats.isSatPercent(Aig.isSatOperations, Aig.isSatResult)));
+        log.info(String.format("aig-#-sat-ops:\t%d", Fraig.isSatOperations));
+        log.info(String.format("aig-#-sat-ops-sat:\t%d", Fraig.isSatResult));
+        log.info(String.format("aig-%%-sat-ops-sat:\t%.1f", SolverStats.isSatPercent(Fraig.isSatOperations, Fraig.isSatResult)));
         log.info(String.format("solver-#-nodes:\t%d", SolverEngine.getSolver().getNodeCount()));
         log.info(String.format("solver-#-sat-ops:\t%d", SolverStats.isSatOperations));
         log.info(String.format("solver-#-sat-ops-sat:\t%d", SolverStats.isSatResult));

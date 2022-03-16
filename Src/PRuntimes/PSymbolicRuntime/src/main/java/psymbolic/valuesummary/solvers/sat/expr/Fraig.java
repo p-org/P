@@ -1,7 +1,8 @@
-package psymbolic.valuesummary.solvers.sat;
+package psymbolic.valuesummary.solvers.sat.expr;
 import com.berkeley.abc.Abc;
-import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.solvers.SolverTrueStatus;
+import psymbolic.valuesummary.solvers.sat.SatExprType;
+import psymbolic.valuesummary.solvers.sat.SatStatus;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -10,18 +11,67 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-public class Aig {
+public class Fraig implements ExprLib<Long> {
     private static boolean hasStarted = false;
     public static long network;
     private static long params;
-    private static long exprTrue;
-    private static long exprFalse;
+    private static Long exprTrue;
+    private static Long exprFalse;
     private static HashMap<String, Long> namedNodes = new HashMap<String, Long>();
     private static HashMap<Long, String> varNames = new HashMap<Long, String>();
     public static HashSet<Integer> idSet = new HashSet<Integer>();
     public static int isSatOperations = 0;
     public static int isSatResult = 0;
-    public static int nBTLimit = 50;
+    public static int nBTLimit = 100;
+
+    public Fraig() {
+        reset();
+    }
+
+    public void reset() {
+        Fraig.resetAig();
+    }
+
+    public static void resetAig() {
+        if (hasStarted) {
+            System.out.println("Resetting AIG");
+            Abc.Fraig_ManFree(network);
+            System.out.println("Stopping ABC");
+            Abc.Abc_Stop();
+        }
+        hasStarted = true;
+        System.out.println("Starting ABC");
+        Abc.Abc_Start();
+
+        System.out.println("Setting AIG Parameters");
+        params = Abc.Fraig_ParamsGetDefault();
+        Abc.Fraig_ParamsSet_nPatsRand(params, 2048);
+        Abc.Fraig_ParamsSet_nPatsDyna(params, 2048);
+        Abc.Fraig_ParamsSet_nBTLimit(params, 100);
+        Abc.Fraig_ParamsSet_nSeconds(params, 1);
+        Abc.Fraig_ParamsSet_fFuncRed(params, 1);
+        Abc.Fraig_ParamsSet_fFeedBack(params, 1);
+        Abc.Fraig_ParamsSet_fDist1Pats(params, 1);
+        Abc.Fraig_ParamsSet_fDoSparse(params, 1);
+        Abc.Fraig_ParamsSet_fChoicing(params, 0);
+        Abc.Fraig_ParamsSet_fTryProve(params, 0);
+        Abc.Fraig_ParamsSet_fVerbose(params, 0);
+        Abc.Fraig_ParamsSet_fVerboseP(params, 0);
+        Abc.Fraig_ParamsSet_fInternal(params, 0);
+        Abc.Fraig_ParamsSet_nConfLimit(params, 0);
+        Abc.Fraig_ParamsSet_nInspLimit(params, 0);
+
+        System.out.println("Creating AIG Network");
+        network = Abc.Fraig_ManCreate(params);
+//        network = Abc.Fraig_ManCreate(-1);
+
+//        System.out.println("Creating AIG true");
+        exprTrue = Abc.Fraig_ManReadConst1(network);
+//        System.out.println("Creating AIG false");
+        exprFalse = Abc.Fraig_Not(exprTrue);
+        namedNodes.clear();
+//        debug();
+    }
 
     private static void debug() {
         long fAig = network;
@@ -92,56 +142,15 @@ public class Aig {
         throw new RuntimeException("Debug point reached");
     }
 
-    public static void resetAig() {
-        if (hasStarted) {
-            System.out.println("Resetting AIG");
-            Abc.Fraig_ManFree(network);
-            System.out.println("Stopping ABC");
-            Abc.Abc_Stop();
-        }
-        hasStarted = true;
-        System.out.println("Starting ABC");
-        Abc.Abc_Start();
-
-        System.out.println("Setting AIG Parameters");
-        params = Abc.Fraig_ParamsGetDefault();
-        Abc.Fraig_ParamsSet_nPatsRand(params, 1024);
-        Abc.Fraig_ParamsSet_nPatsDyna(params, 1024);
-        Abc.Fraig_ParamsSet_nBTLimit(params, 50);
-        Abc.Fraig_ParamsSet_nSeconds(params, 1);
-        Abc.Fraig_ParamsSet_fFuncRed(params, 1);
-        Abc.Fraig_ParamsSet_fFeedBack(params, 1);
-        Abc.Fraig_ParamsSet_fDist1Pats(params, 1);
-        Abc.Fraig_ParamsSet_fDoSparse(params, 1);
-        Abc.Fraig_ParamsSet_fChoicing(params, 0);
-        Abc.Fraig_ParamsSet_fTryProve(params, 0);
-        Abc.Fraig_ParamsSet_fVerbose(params, 0);
-        Abc.Fraig_ParamsSet_fVerboseP(params, 0);
-        Abc.Fraig_ParamsSet_fInternal(params, 0);
-        Abc.Fraig_ParamsSet_nConfLimit(params, 0);
-        Abc.Fraig_ParamsSet_nInspLimit(params, 0);
-
-        System.out.println("Creating AIG Network");
-        network = Abc.Fraig_ManCreate(params);
-//        network = Abc.Fraig_ManCreate(-1);
-
-//        System.out.println("Creating AIG true");
-        exprTrue = Abc.Fraig_ManReadConst1(network);
-//        System.out.println("Creating AIG false");
-        exprFalse = Abc.Fraig_Not(exprTrue);
-        namedNodes.clear();
-//        debug();
-    }
-
-    private static SolverTrueStatus isAlwaysTrue(long formula, int nBTLimit) {
-        if (formula == Aig.getTrue()) {
+    private SolverTrueStatus isAlwaysTrue(long formula, int nBTLimit) {
+        if (formula == getTrue()) {
             return SolverTrueStatus.True;
-        } else if (formula == Aig.getFalse()) {
+        } else if (formula == getFalse()) {
             return SolverTrueStatus.NotTrue;
 //        } else if (Abc.Fraig_ManCheckClauseUsingSimInfo(Aig.network, formula, Aig.getFalse())) {
 //            return SolverTrueStatus.True;
         } else {
-            int result = Abc.Fraig_ManCheckClauseUsingSat(Aig.network, formula, Aig.getFalse(), nBTLimit);
+            int result = Abc.Fraig_ManCheckClauseUsingSat(Fraig.network, formula, getFalse(), nBTLimit);
             switch (result) {
                 case 0:
                     return SolverTrueStatus.NotTrue;
@@ -153,34 +162,34 @@ public class Aig {
         }
     }
 
-    public static SatStatus isSat(long formula, int nBTLimit) {
-        Aig.isSatOperations++;
+    public SatStatus isSat(Long formula, int nBTLimit) {
+        Fraig.isSatOperations++;
         switch(isAlwaysTrue(Abc.Fraig_Not(formula), nBTLimit)) {
             case True:
                 return SatStatus.Unsat;
             case NotTrue:
-                Aig.isSatResult++;
+                Fraig.isSatResult++;
                 return SatStatus.Sat;
             default:
                 return SatStatus.Unknown;
         }
     }
 
-    public static long getTrue() {
+    public Long getTrue() {
         return exprTrue;
     }
 
-    public static long getFalse() {
+    public Long getFalse() {
         return exprFalse;
     }
 
-    private static long newAig(long original) {
+    private Long newAig(Long original) {
         idSet.add(Abc.Fraig_NodeReadNum(Abc.Fraig_Regular(original)));
 //        System.out.println("# aig ids: " + idSet.size());
         return original;
     }
 
-    public static long newVar(String name) {
+    public Long newVar(String name) {
         if (namedNodes.containsKey(name)) {
             return namedNodes.get(name);
         }
@@ -193,44 +202,44 @@ public class Aig {
         return newAig(result);
     }
 
-    public static long not(long child) {
+    public Long not(Long child) {
 //        System.out.println(child + " Creating NOT of " + toString(child));
         return newAig(Abc.Fraig_Not(child));
     }
 
-    public static long and(long childA, long childB) {
+    public Long and(Long childA, Long childB) {
 //        System.out.println("Creating AND of " + toString(childA) + " and " + toString(childB));
         return newAig(Abc.Fraig_NodeAnd(network, childA, childB));
     }
 
-    public static long or(long childA, long childB) {
+    public Long or(Long childA, Long childB) {
 //        System.out.println("Creating OR of " + toString(childA) + " and " + toString(childB));
         return newAig(Abc.Fraig_NodeOr(network, childA, childB));
     }
 
-    public static ExprType getType(long formula) {
+    public SatExprType getType(Long formula) {
 //        System.out.println("Getting type of " + toString(formula));
         if (Abc.Fraig_NodeIsConst(formula)) {
             if (Abc.Fraig_IsComplement(formula)) {
                 assert (formula == exprFalse);
-                return ExprType.FALSE;
+                return SatExprType.FALSE;
             } else {
                 assert (formula == exprTrue);
-                return ExprType.TRUE;
+                return SatExprType.TRUE;
             }
         } else {
             if (Abc.Fraig_IsComplement(formula)) {
-                return ExprType.NOT;
+                return SatExprType.NOT;
             } else if (Abc.Fraig_NodeIsVar(formula)) {
                 assert (namedNodes.containsKey(toString(formula)));
-                return ExprType.VARIABLE;
+                return SatExprType.VARIABLE;
             } else {
-                return ExprType.AND;
+                return SatExprType.AND;
             }
         }
     }
 
-    public static List<Long> getChildren(long formula) {
+    public List<Long> getChildren(Long formula) {
         List<Long> children = new ArrayList<>();
         if (Abc.Fraig_NodeIsConst(formula)) {
         } else {
@@ -245,7 +254,7 @@ public class Aig {
         return children;
     }
 
-    public static String toString(long formula) {
+    public String toString(Long formula) {
         String result = "";
         if (Abc.Fraig_NodeIsConst(formula)) {
             if (Abc.Fraig_IsComplement(formula)) {
@@ -275,7 +284,7 @@ public class Aig {
         return result;
     }
 
-    public static String getStats() {
+    public String getStats() {
         // Create a stream to hold the output
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(baos);
@@ -284,21 +293,25 @@ public class Aig {
         // Tell Java to use your special stream
         System.setOut(ps);
         // Print some output: goes to your special stream
-        Abc.Fraig_ManPrintStats(Aig.network);
+        Abc.Fraig_ManPrintStats(Fraig.network);
         // Put things back
         System.out.flush();
         System.setOut(old);
         return baos.toString();
     }
 
-    public static boolean areEqual(long left, long right) {
+    public int getExprCount() {
+        return idSet.size();
+    }
+
+    public boolean areEqual(Long left, Long right) {
 //        return left == right;
         return  (Abc.Fraig_IsComplement(left) == Abc.Fraig_IsComplement(right)) &&
                 (Abc.Fraig_NodeReadNum(Abc.Fraig_Regular(left)) == Abc.Fraig_NodeReadNum(Abc.Fraig_Regular(right)));
     }
 
-    public static int getHashCode(long formula) {
-        return (int)formula;
+    public int getHashCode(Long formula) {
+        return Long.hashCode(formula);
 //        return Long.hashCode(Abc.Abc_ObjId(formula));
     }
 

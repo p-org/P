@@ -3,6 +3,7 @@ package psymbolic.commandline;
 import lombok.Getter;
 import lombok.Setter;
 import psymbolic.valuesummary.solvers.SolverType;
+import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 
 /**
  * Represents the configuration of the P Symbolic tool
@@ -74,4 +75,8 @@ public class PSymConfiguration {
     @Getter @Setter
     // type of solver engine
     private SolverType solverType = SolverType.BDD;
+
+    @Getter @Setter
+    // type of solver engine
+    private ExprLibType exprLibType = ExprLibType.Fraig;
 }

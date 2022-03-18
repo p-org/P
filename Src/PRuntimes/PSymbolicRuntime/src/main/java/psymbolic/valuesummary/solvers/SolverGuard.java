@@ -42,7 +42,7 @@ public class SolverGuard {
                 boolean isSatNeg = SolverEngine.getSolver().isSat(SolverEngine.getSolver().not(formula));
                 if (!isSatNeg) {
                     statusTrue = SolverTrueStatus.True;
-                    statusFalse = SolverFalseStatus.False;
+                    statusFalse = SolverFalseStatus.NotFalse;
                     return true;
                 } else {
                     statusTrue = SolverTrueStatus.NotTrue;

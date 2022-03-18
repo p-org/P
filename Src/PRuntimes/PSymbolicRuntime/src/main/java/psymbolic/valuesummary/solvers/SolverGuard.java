@@ -1,7 +1,10 @@
 package psymbolic.valuesummary.solvers;
 
+import com.google.common.collect.ImmutableList;
 import psymbolic.runtime.statistics.SolverStats;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -10,14 +13,23 @@ import java.util.List;
  */
 public class SolverGuard {
     private final Object formula;
+    private final SolverGuardType type;
+    private final ImmutableList<SolverGuard> children;
+
     private SolverTrueStatus statusTrue;
     private SolverFalseStatus statusFalse;
     private static HashMap<Object, SolverGuard> table = new HashMap<Object, SolverGuard>();
 
-    public SolverGuard(Object formula) {
+    public SolverGuard(Object formula, SolverGuardType type, ImmutableList<SolverGuard> children) {
         this.formula = formula;
+        this.type = type;
+        this.children = children;
         this.statusTrue = SolverTrueStatus.Unknown;
         this.statusFalse = SolverFalseStatus.Unknown;
+    }
+
+    public static void switchSolverGuard(SolverLib oldSolver) {
+        // TODO
     }
 
     public boolean isTrue() {
@@ -30,6 +42,7 @@ public class SolverGuard {
                 boolean isSatNeg = SolverEngine.getSolver().isSat(SolverEngine.getSolver().not(formula));
                 if (!isSatNeg) {
                     statusTrue = SolverTrueStatus.True;
+                    statusFalse = SolverFalseStatus.False;
                     return true;
                 } else {
                     statusTrue = SolverTrueStatus.NotTrue;
@@ -47,6 +60,7 @@ public class SolverGuard {
             default:
                 boolean isSat = SolverEngine.getSolver().isSat(formula);
                 if (!isSat) {
+                    statusTrue = SolverTrueStatus.NotTrue;
                     statusFalse = SolverFalseStatus.False;
                     return true;
                 } else {
@@ -56,11 +70,11 @@ public class SolverGuard {
         }
     }
 
-    private static SolverGuard getSolverGuard(Object formula) {
+    private static SolverGuard getSolverGuard(Object formula, SolverGuardType type, ImmutableList<SolverGuard> children) {
         if (table.containsKey(formula)) {
             return table.get(formula);
         }
-        SolverGuard newGuard = new SolverGuard(formula);
+        SolverGuard newGuard = new SolverGuard(formula, type, children);
         table.put(formula, newGuard);
 //        System.out.println("Creating new SolverGuard: " + newGuard.toString());
         return newGuard;
@@ -71,48 +85,63 @@ public class SolverGuard {
     }
 
     public static SolverGuard constFalse() {
-        SolverGuard g = getSolverGuard(SolverEngine.getSolver().constFalse());
+        SolverGuard g = getSolverGuard( SolverEngine.getSolver().constFalse(),
+                                        SolverGuardType.FALSE,
+                                        ImmutableList.of());
         g.statusTrue = SolverTrueStatus.NotTrue;
         g.statusFalse = SolverFalseStatus.False;
         return g;
     }
 
     public static SolverGuard constTrue() {
-        SolverGuard g = getSolverGuard(SolverEngine.getSolver().constTrue());
+        SolverGuard g = getSolverGuard( SolverEngine.getSolver().constTrue(),
+                                        SolverGuardType.TRUE,
+                                        ImmutableList.of());
         g.statusTrue = SolverTrueStatus.True;
+        g.statusFalse = SolverFalseStatus.NotFalse;
+        return g;
+    }
+
+    public static SolverGuard newVar() {
+        SolverGuard g = getSolverGuard( SolverEngine.getSolver().newVar(),
+                                        SolverGuardType.VARIABLE,
+                                        ImmutableList.of());
+        g.statusTrue = SolverTrueStatus.NotTrue;
         g.statusFalse = SolverFalseStatus.NotFalse;
         return g;
     }
 
     public SolverGuard and(SolverGuard other) {
     	SolverStats.andOperations++;
-        return getSolverGuard(SolverEngine.getSolver().and(formula, other.formula));
+        return getSolverGuard(  SolverEngine.getSolver().and(formula, other.formula),
+                                SolverGuardType.AND,
+                                ImmutableList.of(this, other));
     }
 
     public SolverGuard or(SolverGuard other) {
     	SolverStats.orOperations++;
-        return getSolverGuard(SolverEngine.getSolver().or(formula, other.formula));
-    }
-
-    public SolverGuard implies(SolverGuard other) { 
-    	return getSolverGuard(SolverEngine.getSolver().implies(formula, other.formula));
+        return getSolverGuard(SolverEngine.getSolver().or(  formula, other.formula),
+                                                            SolverGuardType.OR,
+                                                            ImmutableList.of(this, other));
     }
 
     public SolverGuard not() {
     	SolverStats.notOperations++;
-        return getSolverGuard(SolverEngine.getSolver().not(formula));
+        return getSolverGuard(  SolverEngine.getSolver().not(formula),
+                                SolverGuardType.NOT,
+                                ImmutableList.of(this));
     }
 
     public static SolverGuard orMany(List<SolverGuard> others) {
         return others.stream().reduce(SolverGuard.constFalse(), SolverGuard::or);
     }
 
-    public SolverGuard ifThenElse(SolverGuard thenCase, SolverGuard elseCase) {
-        return getSolverGuard(SolverEngine.getSolver().ifThenElse(formula, thenCase.formula, elseCase.formula));
+    public SolverGuard implies(SolverGuard other) {
+        return (this.not()).or(other);
     }
 
-    public static SolverGuard newVar() {
-        return getSolverGuard(SolverEngine.getSolver().newVar());
+    public SolverGuard ifThenElse(SolverGuard thenCase, SolverGuard elseCase) {
+        return (this.and(thenCase)).or((this.not()).and(elseCase));
     }
 
     @Override
@@ -128,4 +157,10 @@ public class SolverGuard {
         return SolverEngine.getSolver().areEqual(formula, that.formula);
 //        return SolverEngine.getSolver().areEqual(formula, that.formula) && statusTrue.equals(that.statusTrue) && statusFalse.equals(that.statusFalse);
     }
+
+    @Override
+    public int hashCode() {
+        return SolverEngine.getSolver().hashCode(formula);
+    }
+
 }

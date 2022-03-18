@@ -13,10 +13,6 @@ public interface SolverLib<T> {
 
     T not(T bdd);
 
-    T implies(T left, T right);
-
-    T ifThenElse(T cond, T thenClause, T elseClause);
-
     T newVar();
 
     String toString(T bdd);
@@ -34,5 +30,7 @@ public interface SolverLib<T> {
     void cleanup();
 
     boolean areEqual(T left, T right);
+
+    int hashCode(T formula);
 
 }

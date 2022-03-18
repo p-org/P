@@ -2,6 +2,7 @@ package psymbolic.valuesummary.solvers.sat;
 
 import lombok.Getter;
 import psymbolic.runtime.logger.SearchLogger;
+import psymbolic.valuesummary.solvers.SolverGuardType;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.*;
 
@@ -60,7 +61,7 @@ public class SatExpr {
 
 
         SatObject satFormula = new SatObject(null, SatStatus.Unknown);
-        SatExprType satExprType = getExprImpl().getType(expr);
+        SolverGuardType solverGuardType = getExprImpl().getType(expr);
 
         List<Object> satChildren = new ArrayList<>();
         for (Object child: getExprImpl().getChildren(expr)) {
@@ -68,7 +69,7 @@ public class SatExpr {
             satChildren.add(satChild.formula);
         }
 
-        switch(satExprType) {
+        switch(solverGuardType) {
             case TRUE:
                 satFormula.formula = SatGuard.getSolver().constTrue();
                 satFormula.status = SatStatus.Sat;
@@ -94,7 +95,7 @@ public class SatExpr {
                 satFormula.status = SatStatus.Unknown;
                 break;
             default:
-                throw new RuntimeException("Unexpected expr of type " + satExprType + " : " + expr);
+                throw new RuntimeException("Unexpected expr of type " + solverGuardType + " : " + expr);
         }
         table.put(expr, satFormula);
         return satFormula;

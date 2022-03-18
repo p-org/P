@@ -56,6 +56,10 @@ public class SatGuard implements SolverLib<SatExpr> {
         return SatExpr.ConstTrue();
     }
 
+    public SatExpr newVar() {
+        return SatExpr.NewVar();
+    }
+
     public SatExpr and(SatExpr left, SatExpr right) {
         return SatExpr.And(left, right);
     }
@@ -75,10 +79,6 @@ public class SatGuard implements SolverLib<SatExpr> {
     public SatExpr ifThenElse(SatExpr cond, SatExpr thenClause, SatExpr elseClause) {
         return SatExpr.Or(SatExpr.And(SatExpr.Not(cond), thenClause),
                           SatExpr.And(cond, elseClause));
-    }
-
-    public SatExpr newVar() {
-        return SatExpr.NewVar();
     }
 
     public String toString(SatExpr formula) {
@@ -117,6 +117,10 @@ public class SatGuard implements SolverLib<SatExpr> {
 
     public boolean areEqual(SatExpr left, SatExpr right) {
         return left.equals(right);
+    }
+
+    public int hashCode(SatExpr formula) {
+        return formula.hashCode();
     }
 
 }

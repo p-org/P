@@ -1,21 +1,20 @@
 package psymbolic.valuesummary.solvers.sat.expr;
 
 import lombok.Getter;
-import psymbolic.valuesummary.solvers.sat.SatExprType;
+import psymbolic.valuesummary.solvers.SolverGuardType;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class NativeObject {
-    private static NativeObject exprTrue = new NativeObject(SatExprType.TRUE, "", Collections.emptyList());
-    private static NativeObject exprFalse = new NativeObject(SatExprType.FALSE, "", Collections.emptyList());
+    private static NativeObject exprTrue = new NativeObject(SolverGuardType.TRUE, "", Collections.emptyList());
+    private static NativeObject exprFalse = new NativeObject(SolverGuardType.FALSE, "", Collections.emptyList());
     private static NativeObjectComparator exprComparator = new NativeObjectComparator();
     public static HashMap<NativeObject, NativeObject> simplifyTable = new HashMap<>();
     private static boolean aigMode = false;
     private static int totalExprCount = 0;
 
     @Getter
-    private final SatExprType type;
+    private final SolverGuardType type;
 
     @Getter
     private final String name;
@@ -25,7 +24,7 @@ public class NativeObject {
 
     private final int hashCode;
 
-    NativeObject(SatExprType type, String name, List<NativeObject> children) {
+    NativeObject(SolverGuardType type, String name, List<NativeObject> children) {
         this.type = type;
         this.name = name;
         this.children = children;
@@ -37,7 +36,7 @@ public class NativeObject {
         return simplifyTable.size();
     }
 
-    private static NativeObject createExpr(SatExprType type, List<NativeObject> children) {
+    private static NativeObject createExpr(SolverGuardType type, List<NativeObject> children) {
         Collections.sort(children, exprComparator);
         NativeObject original = new NativeObject(type, "", children);
         return simplify(original);
@@ -49,7 +48,7 @@ public class NativeObject {
         }
 //        System.out.println("Simplifying formula   :" + original);
 
-        SatExprType type = original.getType();
+        SolverGuardType type = original.getType();
         NativeObject simplified;
 
         List<NativeObject> children = new ArrayList<>();
@@ -91,7 +90,7 @@ public class NativeObject {
             case NOT:
                 return child.getChildren().get(0);
             default:
-                return new NativeObject(SatExprType.NOT, "", children);
+                return new NativeObject(SolverGuardType.NOT, "", children);
         }
     }
 
@@ -129,7 +128,7 @@ public class NativeObject {
                 sorted.add(child);
             }
             Collections.sort(sorted, exprComparator);
-            return new NativeObject(SatExprType.AND, "", sorted);
+            return new NativeObject(SolverGuardType.AND, "", sorted);
         }
     }
 
@@ -173,7 +172,7 @@ public class NativeObject {
             if (aigMode) {
                 return not(and(sorted));
             } else {
-                return new NativeObject(SatExprType.OR, "", sorted);
+                return new NativeObject(SolverGuardType.OR, "", sorted);
             }
         }
     }
@@ -187,19 +186,19 @@ public class NativeObject {
     }
 
     public static NativeObject newVar(String name) {
-        return new NativeObject(SatExprType.VARIABLE, name, Collections.emptyList());
+        return new NativeObject(SolverGuardType.VARIABLE, name, Collections.emptyList());
     }
 
     public static NativeObject not(NativeObject child) {
-        return createExpr(SatExprType.NOT, Arrays.asList(child));
+        return createExpr(SolverGuardType.NOT, Arrays.asList(child));
     }
 
     public static NativeObject and(List<NativeObject> children) {
-        return createExpr(SatExprType.AND, children);
+        return createExpr(SolverGuardType.AND, children);
     }
 
     public static NativeObject or(List<NativeObject> children) {
-        return createExpr(SatExprType.OR, children);
+        return createExpr(SolverGuardType.OR, children);
     }
 
     @Override

@@ -298,6 +298,9 @@ public class PSymOptions {
                     System.exit(0);
             }
         }
+        if (config.getSolverType() == SolverType.BDD) {
+            config.setExprLibType(ExprLibType.None);
+        }
         return config;
     }
 }

@@ -124,4 +124,8 @@ public class PJBDDImpl implements SolverLib<DD> {
     public boolean areEqual(DD left, DD right) {
         return left.equals(right);
     }
+
+    public int hashCode(DD formula) {
+        return formula.hashCode();
+    }
 }

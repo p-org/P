@@ -1,10 +1,8 @@
 package psymbolic.valuesummary.solvers.sat.expr;
 
 import com.berkeley.abc.Abc;
-import psymbolic.valuesummary.solvers.sat.SatExprType;
+import psymbolic.valuesummary.solvers.SolverGuardType;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -146,24 +144,24 @@ public class Aig implements ExprLib<Long> {
         return newAig(Abc.Abc_AigOr(network, childA, childB));
     }
 
-    public SatExprType getType(Long formula) {
+    public SolverGuardType getType(Long formula) {
 //        System.out.println("Getting type of " + toString(formula));
         if (Abc.Abc_AigNodeIsConst(formula)) {
             if (Abc.Abc_ObjIsComplement(formula)) {
                 assert (formula == exprFalse);
-                return SatExprType.FALSE;
+                return SolverGuardType.FALSE;
             } else {
                 assert (formula == exprTrue);
-                return SatExprType.TRUE;
+                return SolverGuardType.TRUE;
             }
         } else {
             if (Abc.Abc_ObjIsComplement(formula)) {
-                return SatExprType.NOT;
+                return SolverGuardType.NOT;
             } else if (Abc.Abc_ObjIsCi(formula)) {
                 assert (namedNodes.containsKey(toString(formula)));
-                return SatExprType.VARIABLE;
+                return SolverGuardType.VARIABLE;
             } else {
-                return SatExprType.AND;
+                return SolverGuardType.AND;
             }
         }
     }
@@ -213,19 +211,7 @@ public class Aig implements ExprLib<Long> {
     }
 
     public String getStats() {
-        // Create a stream to hold the output
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream ps = new PrintStream(baos);
-        // IMPORTANT: Save the old System.out!
-        PrintStream old = System.out;
-        // Tell Java to use your special stream
-        System.setOut(ps);
-        // Print some output: goes to your special stream
-        Abc.Fraig_ManPrintStats(Fraig.network);
-        // Put things back
-        System.out.flush();
-        System.setOut(old);
-        return baos.toString();
+        return "";
     }
 
     public int getExprCount() {

@@ -1,6 +1,6 @@
 package psymbolic.valuesummary.solvers.sat.expr;
 
-import psymbolic.valuesummary.solvers.sat.SatExprType;
+import psymbolic.valuesummary.solvers.SolverGuardType;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ public interface ExprLib<T> {
 
     T or(T childA, T childB);
 
-    SatExprType getType(T formula);
+    SolverGuardType getType(T formula);
 
     List<T> getChildren(T formula);
 

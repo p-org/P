@@ -1,7 +1,7 @@
 package psymbolic.valuesummary.solvers.sat.expr;
 import com.berkeley.abc.Abc;
 import psymbolic.valuesummary.solvers.SolverTrueStatus;
-import psymbolic.valuesummary.solvers.sat.SatExprType;
+import psymbolic.valuesummary.solvers.SolverGuardType;
 import psymbolic.valuesummary.solvers.sat.SatStatus;
 
 import java.io.ByteArrayOutputStream;
@@ -217,24 +217,24 @@ public class Fraig implements ExprLib<Long> {
         return newAig(Abc.Fraig_NodeOr(network, childA, childB));
     }
 
-    public SatExprType getType(Long formula) {
+    public SolverGuardType getType(Long formula) {
 //        System.out.println("Getting type of " + toString(formula));
         if (Abc.Fraig_NodeIsConst(formula)) {
             if (Abc.Fraig_IsComplement(formula)) {
                 assert (formula == exprFalse);
-                return SatExprType.FALSE;
+                return SolverGuardType.FALSE;
             } else {
                 assert (formula == exprTrue);
-                return SatExprType.TRUE;
+                return SolverGuardType.TRUE;
             }
         } else {
             if (Abc.Fraig_IsComplement(formula)) {
-                return SatExprType.NOT;
+                return SolverGuardType.NOT;
             } else if (Abc.Fraig_NodeIsVar(formula)) {
                 assert (namedNodes.containsKey(toString(formula)));
-                return SatExprType.VARIABLE;
+                return SolverGuardType.VARIABLE;
             } else {
-                return SatExprType.AND;
+                return SolverGuardType.AND;
             }
         }
     }

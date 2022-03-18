@@ -1,5 +1,7 @@
 package psymbolic.valuesummary.solvers;
 
+import lombok.Getter;
+import lombok.Setter;
 import psymbolic.valuesummary.solvers.bdd.PJBDDImpl;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 import psymbolic.valuesummary.solvers.sat.SatGuard;
@@ -8,26 +10,22 @@ import psymbolic.valuesummary.solvers.sat.SatGuard;
  * Represents the generic backend engine
  */
 public class SolverEngine {
-    private static SolverEngine solverEngine;
-    private static SolverLib solverImpl;
+    @Getter @Setter
+    private static SolverLib solver;
+    @Getter @Setter
     private static SolverType solverType;
+    @Getter @Setter
     private static ExprLibType exprLibType;
 
-	// Make this constructor static so that the class cannot be instantiated
-    public SolverEngine() {
-    	setSolver(SolverType.BDD, ExprLibType.None);
-    }
-
-    public static SolverEngine getEngine() {
-        return solverEngine;
-    }
-    
-    public static SolverLib getSolver() {
-        return solverImpl;
-    }
-    
-    public static void resetEngine() {
-    	resetEngine(solverType, exprLibType);
+    public static void switchEngine(SolverType type, ExprLibType etype) {
+        if (type == getSolverType() && etype == getExprLibType())
+            return;
+        System.out.println("Switching solver engine:\n\t"
+                            + getSolverType().toString() + "\t-> " + type.toString() + "\n\t"
+                            + getExprLibType().toString() + "\t-> " + etype.toString());
+        SolverLib oldSolver = getSolver();
+        setSolver(type, etype);
+        SolverGuard.switchSolverGuard(oldSolver);
     }
 
     public static void resetEngine(SolverType type, ExprLibType etype) {
@@ -35,24 +33,24 @@ public class SolverEngine {
     }
 
     public static void cleanupEngine() {
-        solverImpl.cleanup();
+        solver.cleanup();
     }
     
     public static void setSolver(SolverType type, ExprLibType etype) {
-    	solverType = type;
-        exprLibType = etype;
+    	setSolverType(type);
+        setExprLibType(etype);
     	switch(type) {
-    	case BDD:		solverImpl = new PJBDDImpl(false);
+    	case BDD:		solver = new PJBDDImpl(false);
     		break;
-    	case CBDD:		solverImpl = new PJBDDImpl(true);
+    	case CBDD:		solver = new PJBDDImpl(true);
     		break;
-        default:        solverImpl = new SatGuard(type, etype);
+        default:        solver = new SatGuard(type, etype);
 
     	}
     }
 
     public static int getVarCount() {
-        return solverImpl.getVarCount();
+        return solver.getVarCount();
     }
 
     public static int getGuardCount() {
@@ -61,7 +59,7 @@ public class SolverEngine {
     }
 
     public static String getStats() {
-        return solverImpl.getStats();
+        return solver.getStats();
     }
 
 }

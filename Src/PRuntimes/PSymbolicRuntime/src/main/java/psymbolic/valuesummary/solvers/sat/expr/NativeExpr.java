@@ -1,7 +1,6 @@
 package psymbolic.valuesummary.solvers.sat.expr;
 
-import psymbolic.valuesummary.solvers.SolverTrueStatus;
-import psymbolic.valuesummary.solvers.sat.SatExprType;
+import psymbolic.valuesummary.solvers.SolverGuardType;
 
 import java.util.*;
 
@@ -38,7 +37,7 @@ public class NativeExpr implements ExprLib<NativeObject> {
         return NativeObject.or(Arrays.asList(childA, childB));
     }
 
-    public SatExprType getType(NativeObject formula) {
+    public SolverGuardType getType(NativeObject formula) {
         return formula.getType();
     }
 

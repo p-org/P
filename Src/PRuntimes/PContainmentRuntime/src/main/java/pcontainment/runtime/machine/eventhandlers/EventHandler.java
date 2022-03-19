@@ -1,9 +1,10 @@
 package pcontainment.runtime.machine.eventhandlers;
 
+import com.microsoft.z3.BoolExpr;
+import jdk.internal.net.http.common.Pair;
 import pcontainment.runtime.Event;
+import pcontainment.runtime.Payloads;
 import pcontainment.runtime.machine.Machine;
-import pcontainment.valuesummary.Guard;
-import pcontainment.valuesummary.UnionVS;
 
 import java.util.Map;
 
@@ -14,5 +15,6 @@ public abstract class EventHandler {
         this.event = eventType;
     }
 
-    public abstract void handleEvent(Map<String, Object>);
+    // return Encoding -> ReturnReason
+    public abstract Map<BoolExpr, Pair<Integer, EventHandlerReturnReason>> getEncoding(int sends, Machine target, Payloads payloads);
 }

@@ -2,44 +2,44 @@ package pcontainment.runtime.machine;
 
 import com.microsoft.z3.BoolExpr;
 import pcontainment.Checker;
-import pcontainment.commandline.Assert;
 import pcontainment.runtime.*;
-import pcontainment.runtime.logger.TraceLogger;
 import pcontainment.runtime.machine.eventhandlers.EventHandler;
 import pcontainment.runtime.machine.eventhandlers.EventHandlerReturnReason;
-import pcontainment.valuesummary.*;
-import pcontainment.valuesummary.Guard;
 
 import java.util.*;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import lombok.Getter;
 
 public abstract class Machine {
+    private static int machineCount = 0;
     private String name;
     @Getter
     private Checker checker;
     @Getter
-    private final int instanceId;
+    private final int id;
     @Getter
     private boolean started = false;
     @Getter
     private boolean halted = false;
-    private State currentState;
     @Getter
-    private boolean blockedOnReceive = false;
+    private final State startState;
+    @Getter
+    private final List<State> states;
+    @Getter
+    private BoolExpr blockedOnReceive;
     private final Deque<Observation> trace = new LinkedBlockingDeque<>();
-    private final Map<Event, > states = new HashSet<>();
+    private final Map<Event, Iterable<EventHandler>> eventHandlers;
 
-    public final Queue<Message> deferredQueue = new LinkedBlockingQueue<>();
+    // TODO: handle deferred messages
 
-    public Machine(String name, int instanceId, State startState) {
+    public Machine(String name, int instanceId, State startState, List<State> states,
+                   Map<Event, Iterable<EventHandler>> handlers) {
         this.name = name;
-        this.instanceId = instanceId;
-        currentState = startState;
+        this.id = machineCount++;
+        this.startState = startState;
+        this.states = states;
+        this.eventHandlers = handlers;
     }
 
     private void addReceive(Message r) {
@@ -58,7 +58,7 @@ public abstract class Machine {
     }
 
     public void observeMessage(Message m) {
-        if (m.getTarget() == instanceId) {
+        if (this.equals(m.getTarget())) {
             addReceive(m);
         } else {
             addSend(m);
@@ -68,7 +68,7 @@ public abstract class Machine {
     public void check() {
         Observation o = trace.getFirst();
         if (!o.isStarted())
-            processEvent(o.receive);
+            processEventToCompletion(o.receive);
         int sendLen = o.sends.size();
         while (o.getSendIdx() < sendLen) {
             checker.addConcreteSend(o.sends.get(o.getSendIdx()));
@@ -83,17 +83,18 @@ public abstract class Machine {
         }
     }
 
-    public void processEvent(Message receive) {
-        List<EventHandler> handlers = getHandlersFor(receive.getEvent());
-        for (EventHandler handler : handlers) {
-            checker.addHandlerEncoding(runToCompletion(handler));
-        }
-        checker.runHandlers();
+    public Iterable<EventHandler> getHandlersFor (Event e) {
+        eventHandlers.get(e);
+    }
+
+    public void processEventToCompletion(Message receive) {
+        final EventHandlerReturnReason eventRaiseEventHandlerReturnReason = new EventHandlerReturnReason.Raise(receive);
+        checker.runOutcomesToCompletion(this, eventRaiseEventHandlerReturnReason);
     }
 
     @Override
     public String toString() {
-        return String.format("%s(%d)", name, instanceId);
+        return String.format("%s(%d)", name, id);
     }
 
     @Override
@@ -103,11 +104,11 @@ public abstract class Machine {
         else if (!(obj instanceof Machine)) {
             return false;
         }
-        return this.instanceId == (((Machine) obj).instanceId);
+        return this.id == (((Machine) obj).id);
     }
 
     @Override
     public int hashCode() {
-        return name.hashCode()^instanceId;
+        return ((Integer) id).hashCode();
     }
 }

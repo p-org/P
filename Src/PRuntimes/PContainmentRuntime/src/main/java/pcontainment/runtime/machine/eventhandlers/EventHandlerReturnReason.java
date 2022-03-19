@@ -4,11 +4,6 @@ import lombok.Getter;
 import pcontainment.runtime.Event;
 import pcontainment.runtime.Message;
 import pcontainment.runtime.machine.State;
-import pcontainment.valuesummary.PrimitiveVS;
-import pcontainment.valuesummary.UnionVS;
-import pcontainment.valuesummary.Guard;
-
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -17,62 +12,34 @@ import java.util.Map;
  */
 public class EventHandlerReturnReason {
 
-    private UnionVS outcome = new UnionVS();
-    @Getter
-    private Map<State, UnionVS> payloads = new HashMap<>();
-    @Getter
-    private Guard gotoCond = Guard.constFalse();
-    @Getter
-    private Guard raiseCond = Guard.constFalse();
-
-    /**
-     * Did the event handler terminated on a normal return without raise or goto statement
-     * @return true if it was a normal return, false otherwise
-     */
-    public boolean isNormalReturn() {
-        return gotoCond.or(raiseCond).isFalse();
-    }
-
-
-    /**
-     * Condition under which the event handler did a goto
-     * @return condition for goto
-     */
-    public Message getMessageSummary() { return (Message) outcome.getValue(Message.class).restrict(getRaiseCond()); }
-
-    public void raiseGuardedMessage(Message newMessage) {
-        outcome = outcome.merge(new UnionVS(newMessage));
-        raiseCond = raiseCond.or(newMessage.getUniverse());
-    }
-
-    public void raiseGuardedEvent(Guard pc, PrimitiveVS<Event> event, UnionVS payload) {
-        // TODO: Handle this in a more principled way
-        if (event.getGuardedValues().size() != 1) {
-            throw new RuntimeException("Raise statements with symbolically-determined event tags are not yet supported");
+    public static class Raise extends EventHandlerReturnReason {
+        @Getter
+        private final Message message;
+        public Raise(Message m) {
+            message = m;
         }
-
-        Event nextEvent = event.getValues().iterator().next();
-
-        if (payload != null) payload = payload.restrict(pc);
-        raiseGuardedMessage(new Message(nextEvent, new PrimitiveVS<>(), payload).restrict(pc));
-    }
-
-    public void raiseGuardedEvent(Guard pc, PrimitiveVS<Event> eventName) {
-        raiseGuardedEvent(pc, eventName, null);
-    }
-
-    public PrimitiveVS<State> getGotoStateSummary() { return (PrimitiveVS<State>) outcome.getValue(PrimitiveVS.class).restrict(getGotoCond()); }
-
-    public void addGuardedGoto(Guard pc, State newDest, UnionVS newPayload) {
-        outcome = outcome.merge(new UnionVS(new PrimitiveVS<>(newDest).restrict(pc)));
-        if (newPayload != null) {
-            payloads.merge(newDest, newPayload, UnionVS::merge);
+        public Raise(Event e, Payloads payloads) {
+            message = new Message(e, null, payloads);
         }
-        gotoCond = gotoCond.or(pc);
     }
 
-    public void addGuardedGoto(Guard pc, State newDest) {
-        addGuardedGoto(pc, newDest, null);
+    public static class Goto extends EventHandlerReturnReason {
+        @Getter
+        private final Message message;
+        @Getter
+        private final State goTo;
+        public Goto(State s) {
+            goTo = s;
+            message = null;
+        }
+        public Goto(State s, Message m) {
+            goTo = s;
+            message = m;
+        }
+    }
+
+    public static class NormalReturn extends EventHandlerReturnReason {
+        public NormalReturn() {}
     }
 
 }

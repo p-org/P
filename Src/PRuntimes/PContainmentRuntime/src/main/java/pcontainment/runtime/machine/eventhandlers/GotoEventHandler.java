@@ -1,10 +1,13 @@
 package pcontainment.runtime.machine.eventhandlers;
 
+import com.microsoft.z3.BoolExpr;
+import jdk.internal.net.http.common.Pair;
 import pcontainment.runtime.*;
 import pcontainment.runtime.machine.Machine;
 import pcontainment.runtime.machine.State;
-import pcontainment.valuesummary.UnionVS;
-import pcontainment.valuesummary.Guard;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class GotoEventHandler extends EventHandler {
@@ -15,11 +18,11 @@ public class GotoEventHandler extends EventHandler {
         this.gotoState = dest;
     }
 
-    public void transitionFunction(Guard pc, Machine machine, UnionVS payload) {}
+    // TODO: transition functions
 
     @Override
-    public void handleEvent(Guard pc, Machine target, UnionVS payload, EventHandlerReturnReason outcome) {
-        transitionFunction(pc, target, payload);
-        outcome.addGuardedGoto(pc, gotoState, payload);
+    public Map<BoolExpr, Pair<Integer, EventHandlerReturnReason>> getEncoding(int sends, Machine target, Payloads payloads) {
+        return new HashMap<>();
     }
+
 }

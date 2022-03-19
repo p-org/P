@@ -3,6 +3,7 @@ package pcontainment.runtime;
 
 import jdk.internal.net.http.common.Pair;
 import lombok.Getter;
+import pcontainment.runtime.machine.Machine;
 
 import java.util.*;
 
@@ -13,19 +14,19 @@ public class Message {
 
     // the target machine id to which the message is being sent
     @Getter
-    private final int target;
+    private final Machine target;
     // the event id sent to the target machine
     @Getter
-    private final int event;
+    private final Event event;
     // the flattened payloads associated with the event
     @Getter
-    public final Map<String, Object> payloads;
+    public final Payloads payloads;
 
-    public Message(int target, int event, Map<String, Object> payloads) {
+    public Message(Event event, Machine target, Payloads payloads) {
         this.target = target;
         this.event = event;
         if (payloads == null)
-            this.payloads = new HashMap<>();
+            this.payloads = new Payloads();
         else
           this.payloads = payloads;
     }

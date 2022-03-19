@@ -1,9 +1,13 @@
 package pcontainment.runtime.machine.eventhandlers;
 
+import com.microsoft.z3.BoolExpr;
+import jdk.internal.net.http.common.Pair;
 import pcontainment.runtime.Event;
+import pcontainment.runtime.Payloads;
 import pcontainment.runtime.machine.Machine;
-import pcontainment.valuesummary.Guard;
-import pcontainment.valuesummary.UnionVS;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class IgnoreEventHandler extends EventHandler {
 
@@ -12,7 +16,7 @@ public class IgnoreEventHandler extends EventHandler {
     }
 
     @Override
-    public void handleEvent(Guard pc, Machine target, UnionVS payload, EventHandlerReturnReason outcome) {
-        // Ignore
+    public Map<BoolExpr, Pair<Integer, EventHandlerReturnReason>> getEncoding(int sends, Machine target, Payloads payloads) {
+        return new HashMap<>();
     }
 }

@@ -65,11 +65,12 @@ public class Fraig implements ExprLib<Long> {
         network = Abc.Fraig_ManCreate(params);
 //        network = Abc.Fraig_ManCreate(-1);
 
-//        System.out.println("Creating AIG true");
         exprTrue = Abc.Fraig_ManReadConst1(network);
-//        System.out.println("Creating AIG false");
         exprFalse = Abc.Fraig_Not(exprTrue);
         namedNodes.clear();
+        varNames.clear();
+        idSet.clear();
+
 //        debug();
     }
 

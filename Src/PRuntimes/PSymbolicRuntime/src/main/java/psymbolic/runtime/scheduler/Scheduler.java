@@ -15,6 +15,7 @@ import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.solvers.SolverEngine;
 import psymbolic.runtime.machine.buffer.*;
 import psymbolic.runtime.logger.StatLogger;
+import psymbolic.valuesummary.solvers.SolverType;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -485,10 +486,6 @@ public class Scheduler implements SymbolicSearch {
 
         performEffect(effect);
 
-        // performing node clean-up
-        SolverEngine.cleanupEngine();
-        System.gc();
-
         if (configuration.getCollectStats() != 0) {
             Runtime runtime = Runtime.getRuntime();
             long memoryUsed = runtime.totalMemory() - runtime.freeMemory();
@@ -519,6 +516,12 @@ public class Scheduler implements SymbolicSearch {
           System.out.println("Running Total Transitions:: " + searchStats.getSearchTotal().getNumOfTransitions() + ", Running Total Merged Transitions:: " + searchStats.getSearchTotal().getNumOfMergedTransitions() + ", Running Total Transitions Explored:: " + searchStats.getSearchTotal().getNumOfTransitionsExplored());
           System.out.println("--------------------");
         }
+
+        // performing node clean-up
+        SolverEngine.switchEngineAuto();
+        SolverEngine.cleanupEngine();
+        System.gc();
+
         depth++;
     }
 

@@ -4,5 +4,6 @@ public enum ExprLibType {
     None,
     Aig,
     Fraig,
+    Iaig,
     NativeExpr
 }

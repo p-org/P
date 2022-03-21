@@ -222,6 +222,8 @@ public class PSymOptions {
                             break;
                         case "fraig":		    config.setExprLibType(ExprLibType.Fraig);
                             break;
+                        case "iaig":		    config.setExprLibType(ExprLibType.Iaig);
+                            break;
                         case "native":			config.setExprLibType(ExprLibType.NativeExpr);
                             break;
                         case "none":    		config.setExprLibType(ExprLibType.None);

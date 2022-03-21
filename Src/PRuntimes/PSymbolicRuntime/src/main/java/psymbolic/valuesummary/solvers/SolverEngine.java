@@ -17,15 +17,25 @@ public class SolverEngine {
     @Getter @Setter
     private static ExprLibType exprLibType;
 
+    public static void switchEngineAuto() {
+        switch (getSolverType()) {
+            case BDD:
+            case CBDD:
+                if (SolverEngine.getSolver().getNodeCount() > 20000000) {
+                    switchEngine(SolverType.YICES2, ExprLibType.Fraig);
+                }
+                break;
+        }
+    }
+
     public static void switchEngine(SolverType type, ExprLibType etype) {
         if (type == getSolverType() && etype == getExprLibType())
             return;
         System.out.println("Switching solver engine:\n\t"
                             + getSolverType().toString() + "\t-> " + type.toString() + "\n\t"
                             + getExprLibType().toString() + "\t-> " + etype.toString());
-        SolverLib oldSolver = getSolver();
         setSolver(type, etype);
-        SolverGuard.switchSolverGuard(oldSolver);
+        SolverGuard.switchSolverGuard();
     }
 
     public static void resetEngine(SolverType type, ExprLibType etype) {

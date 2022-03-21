@@ -11,7 +11,6 @@ public class NativeObject {
     private static NativeObjectComparator exprComparator = new NativeObjectComparator();
     public static HashMap<NativeObject, NativeObject> simplifyTable = new HashMap<>();
     private static boolean aigMode = false;
-    private static int totalExprCount = 0;
 
     @Getter
     private final SolverGuardType type;
@@ -29,7 +28,6 @@ public class NativeObject {
         this.name = name;
         this.children = children;
         this.hashCode = Objects.hash(type, name, children);
-        totalExprCount++;
     }
 
     public static int getExprCount() {

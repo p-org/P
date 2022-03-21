@@ -32,6 +32,8 @@ public class SatExpr {
                 break;
             case Fraig:	            exprImpl = new Fraig();
                 break;
+            case Iaig:	            exprImpl = new Iaig();
+                break;
             case NativeExpr:	    exprImpl = new NativeExpr();
                 break;
             default:

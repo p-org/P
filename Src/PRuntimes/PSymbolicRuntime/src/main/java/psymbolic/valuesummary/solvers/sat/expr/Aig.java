@@ -211,6 +211,8 @@ public class Aig implements ExprLib<Long> {
     }
 
     public boolean areEqual(Long left, Long right) {
+        if (left == right)
+            return true;
         return  (Abc.Abc_ObjIsComplement(left) == Abc.Abc_ObjIsComplement(right)) &&
                 (Abc.Abc_ObjId(Abc.Abc_ObjRegular(left)) == Abc.Abc_ObjId(Abc.Abc_ObjRegular(right)));
     }

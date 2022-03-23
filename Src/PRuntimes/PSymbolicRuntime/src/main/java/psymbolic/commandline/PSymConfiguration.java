@@ -78,5 +78,13 @@ public class PSymConfiguration {
 
     @Getter @Setter
     // type of solver engine
-    private ExprLibType exprLibType = ExprLibType.Fraig;
+    private ExprLibType exprLibType = ExprLibType.Auto;
+
+    @Getter @Setter
+    // time limit in seconds (0 means infinite)
+    private double timeLimit = 0;
+
+    @Getter @Setter
+    // memory limit in megabytes (0 means infinite)
+    private double memLimit = (Runtime.getRuntime().maxMemory() / 1000000);
 }

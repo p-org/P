@@ -8,6 +8,7 @@ import psymbolic.runtime.logger.PSymLogger;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.valuesummary.Guard;
 import psymbolic.runtime.logger.StatLogger;
+import psymbolic.valuesummary.solvers.SolverEngine;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -25,12 +26,18 @@ public class EntryPoint {
             StatLogger.log(String.format("project-name:\t%s", config.getProjectName()));
             StatLogger.log(String.format("solver:\t%s", config.getSolverType().toString()));
             StatLogger.log(String.format("expr-type:\t%s", config.getExprLibType().toString()));
+            StatLogger.log(String.format("time-limit-seconds:\t%.1f", config.getTimeLimit()));
+            StatLogger.log(String.format("memory-limit-MB:\t%.1f", config.getMemLimit()));
         }
         start = Instant.now();
         String status = "error";
         try {
             scheduler.doSearch(p);
             status = "success";
+        } catch (TimeoutException e) {
+            status = "timeout";
+        } catch (MemoutException e) {
+            status = "memout";
         } catch (BugFoundException e) {
             status = "cex";
             TraceLogger.setVerbosity(2);
@@ -53,8 +60,9 @@ public class EntryPoint {
                 System.out.println(String.format("project-name:\t%s", config.getProjectName()));
                 System.out.println(String.format("solver:\t%s", config.getSolverType().toString()));
                 StatLogger.log(String.format("expr-type:\t%s", config.getExprLibType().toString()));
+                StatLogger.log(String.format("time-limit-seconds:\t%.1f", config.getTimeLimit()));
+                StatLogger.log(String.format("memory-limit-MB:\t%.1f", config.getMemLimit()));
                 StatLogger.log(String.format("status:\t%s", status));
-	            StatLogger.log(String.format("time-seconds:\t%.1f", Duration.between(start, end).toMillis()/1000.0));
 	            scheduler.print_stats();
 	            System.out.println("--------------------");
             }

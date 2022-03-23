@@ -154,16 +154,16 @@ public class SatExpr {
 
     public static boolean isSat(SatExpr formula) {
         SatObject satFormula;
-        if (getExprType() == ExprLibType.Fraig) {
-            satFormula = createAigFormula(formula.expr);
-            switch (satFormula.status) {
-                case Sat:
-                    return true;
-                case Unsat:
-                    return false;
-                default:
-            }
-        }
+//        if (getExprType() == ExprLibType.Fraig) {
+//            satFormula = createAigFormula(formula.expr);
+//            switch (satFormula.status) {
+//                case Sat:
+//                    return true;
+//                case Unsat:
+//                    return false;
+//                default:
+//            }
+//        }
         satFormula = createSatFormula(formula.expr);
         return checkSat(formula, satFormula);
     }

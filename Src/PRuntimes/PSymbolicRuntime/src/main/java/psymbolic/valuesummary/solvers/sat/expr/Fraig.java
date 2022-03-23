@@ -20,7 +20,7 @@ public class Fraig implements ExprLib<Long> {
     public HashSet<Integer> idSet = new HashSet<Integer>();
     public static int isSatOperations = 0;
     public static int isSatResult = 0;
-    public static int nBTLimit = 200;
+    public static int nBTLimit = 100;
 
     public Fraig() {
         reset();
@@ -302,6 +302,8 @@ public class Fraig implements ExprLib<Long> {
     }
 
     public boolean areEqual(Long left, Long right) {
+        if (left == right)
+            return true;
         return  (Abc.Fraig_IsComplement(left) == Abc.Fraig_IsComplement(right)) &&
                 (Abc.Fraig_NodeReadNum(Abc.Fraig_Regular(left)) == Abc.Fraig_NodeReadNum(Abc.Fraig_Regular(right)));
     }

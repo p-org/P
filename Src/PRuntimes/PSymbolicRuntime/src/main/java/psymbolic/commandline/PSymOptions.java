@@ -39,6 +39,26 @@ public class PSymOptions {
                 .build();
         options.addOption(projectName);
 
+        // time limit
+        Option timeLimit = Option.builder("tl")
+                .longOpt("time-limit")
+                .desc("Time limit in seconds. Use 0 for no limit.")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Time Limit (seconds)")
+                .build();
+        options.addOption(timeLimit);
+
+        // memory limit
+        Option memLimit = Option.builder("ml")
+                .longOpt("memory-limit")
+                .desc("Memory limit in megabytes (MB). Use 0 for no limit.")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Memory Limit (MB)")
+                .build();
+        options.addOption(memLimit);
+
         // solver type
         Option solverType = Option.builder("st")
                 .longOpt("solver")
@@ -52,7 +72,7 @@ public class PSymOptions {
         // expression type
         Option exprLibType = Option.builder("et")
                 .longOpt("expr")
-                .desc("Expression type to use: fraig, aig, native, none")
+                .desc("Expression type to use: fraig, aig, native, bdd, auto")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Expression Type (string)")
@@ -187,6 +207,24 @@ public class PSymOptions {
                 case "project":
                     config.setProjectName(option.getValue());
                     break;
+                case "tl":
+                case "time-limit":
+                    try {
+                        config.setTimeLimit(Double.parseDouble(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        formatter.printHelp("tl", String.format("Expected a double value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                        formatter.printUsage(writer, 80, "tl", options);
+                    }
+                    break;
+                case "ml":
+                case "memory-limit":
+                    try {
+                        config.setMemLimit(Double.parseDouble(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        formatter.printHelp("ml", String.format("Expected a double value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                        formatter.printUsage(writer, 80, "ml", options);
+                    }
+                    break;
                 case "st":
                 case "solver":
                 	switch (option.getValue()) {
@@ -220,13 +258,15 @@ public class PSymOptions {
                     switch (option.getValue()) {
                         case "aig":		        config.setExprLibType(ExprLibType.Aig);
                             break;
+                        case "auto":    		config.setExprLibType(ExprLibType.Auto);
+                            break;
+                        case "bdd":    		    config.setExprLibType(ExprLibType.Bdd);
+                            break;
                         case "fraig":		    config.setExprLibType(ExprLibType.Fraig);
                             break;
                         case "iaig":		    config.setExprLibType(ExprLibType.Iaig);
                             break;
                         case "native":			config.setExprLibType(ExprLibType.NativeExpr);
-                            break;
-                        case "none":    		config.setExprLibType(ExprLibType.None);
                             break;
                         default:
                             formatter.printHelp("et", String.format("Expected a expression type, got %s", option.getValue()), options, "Try \"--help\" option for details.");
@@ -299,9 +339,6 @@ public class PSymOptions {
                     formatter.printHelp(100, "-h or --help", "Commandline options for psymbolic", options, "");
                     System.exit(0);
             }
-        }
-        if (config.getSolverType() == SolverType.BDD) {
-            config.setExprLibType(ExprLibType.None);
         }
         return config;
     }

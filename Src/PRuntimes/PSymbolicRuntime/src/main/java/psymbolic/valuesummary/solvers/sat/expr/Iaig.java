@@ -313,6 +313,8 @@ public class Iaig implements ExprLib<Long> {
     }
 
     public boolean areEqual(Long left, Long right) {
+        if (left == right)
+            return true;
         return  (Abc.Ivy_IsComplement(left) == Abc.Ivy_IsComplement(right)) &&
                 (Abc.Ivy_ObjId(Abc.Ivy_Regular(left)) == Abc.Ivy_ObjId(Abc.Ivy_Regular(right)));
     }

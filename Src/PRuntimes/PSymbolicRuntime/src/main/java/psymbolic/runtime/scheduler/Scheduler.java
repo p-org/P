@@ -298,12 +298,13 @@ public class Scheduler implements SymbolicSearch {
     public void print_stats() {
         // print statistics
         if (configuration.getCollectStats() != 0) {
+            Instant end = Instant.now();
             Runtime runtime = Runtime.getRuntime();
-            long memoryMax = runtime.maxMemory();
-            double memoryUsedPercent = (mem * 100.0) / memoryMax;
-            StatLogger.log(String.format("memory-used-MB:\t%.1f", mem/1000000.0));
-            StatLogger.log(String.format("memory-limit-MB:\t%.1f", memoryMax/1000000.0));
-
+            double timeUsed = (Duration.between(EntryPoint.start, end).toMillis() / 1000.0);
+            double memoryUsed = ((runtime.totalMemory() - runtime.freeMemory()) / 1000000.0);
+            StatLogger.log(String.format("time-seconds:\t%.1f", timeUsed));
+            StatLogger.log(String.format("memory-max-MB:\t%.1f", SolverEngine.getMaxMemSpent()));
+            StatLogger.log(String.format("memory-current-MB:\t%.1f", memoryUsed));
             StatLogger.log(String.format("depth:\t%d", getDepth()));
             StatLogger.logSolverStats();
 
@@ -448,8 +449,6 @@ public class Scheduler implements SymbolicSearch {
         return getNextSender(getNextSenderChoices());
     }
 
-    private long mem = 0;
-
     public void step() {
         PrimitiveVS<Machine> choices = getNextSender();
 
@@ -486,16 +485,24 @@ public class Scheduler implements SymbolicSearch {
 
         performEffect(effect);
 
+        // simplify engine
+//        SolverEngine.simplifyEngineAuto();
+
+        // switch engine
+//        SolverEngine.switchEngineAuto();
+
+        // performing node clean-up
+        SolverEngine.cleanupEngine();
+        System.gc();
+
         if (configuration.getCollectStats() != 0) {
-            Runtime runtime = Runtime.getRuntime();
-            long memoryUsed = runtime.totalMemory() - runtime.freeMemory();
-            if (memoryUsed > mem) mem = memoryUsed;
+            double timeUsed = SolverEngine.checkForTimeout();
+            double memoryUsed = SolverEngine.checkForMemout();
             if (configuration.getCollectStats() > 1) {
                 System.out.println("--------------------");
-                Instant end = Instant.now();
-                System.out.println(String.format("time-seconds:\t%.1f", Duration.between(EntryPoint.start, end).toMillis() / 1000.0));
-                System.out.println(String.format("memory-used-MB:\t%.1f", memoryUsed / 1000000.0));
-                System.out.println(String.format("memory-max-MB:\t%.1f", mem / 1000000.0));
+                System.out.println(String.format("time-seconds:\t%.1f", timeUsed));
+                System.out.println(String.format("memory-max-MB:\t%.1f", SolverEngine.getMaxMemSpent()));
+                System.out.println(String.format("memory-current-MB:\t%.1f", memoryUsed));
                 System.out.println("--------------------");
                 System.out.println("Solver Stats::");
                 System.out.println(SolverStats.prettyPrint());
@@ -516,16 +523,6 @@ public class Scheduler implements SymbolicSearch {
           System.out.println("Running Total Transitions:: " + searchStats.getSearchTotal().getNumOfTransitions() + ", Running Total Merged Transitions:: " + searchStats.getSearchTotal().getNumOfMergedTransitions() + ", Running Total Transitions Explored:: " + searchStats.getSearchTotal().getNumOfTransitionsExplored());
           System.out.println("--------------------");
         }
-
-        // simplify engine
-//        SolverEngine.simplifyEngineAuto();
-
-        // switch engine
-//        SolverEngine.switchEngineAuto();
-
-        // performing node clean-up
-        SolverEngine.cleanupEngine();
-        System.gc();
 
         depth++;
     }

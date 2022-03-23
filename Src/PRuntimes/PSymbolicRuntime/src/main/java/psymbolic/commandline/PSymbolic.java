@@ -2,6 +2,7 @@ package psymbolic.commandline;
 
 import org.reflections.Reflections;
 import psymbolic.runtime.logger.PSymLogger;
+import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.solvers.SolverEngine;
 
 import java.io.FileInputStream;
@@ -20,6 +21,8 @@ public class PSymbolic {
         PSymConfiguration config = PSymOptions.ParseCommandlineArgs(args);
         Reflections reflections = new Reflections("psymbolic");
     	SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
+        SolverEngine.setTimeLimit(config.getTimeLimit());
+        SolverEngine.setMemLimit(config.getMemLimit());
 
         try {
             // load all the files in the passed jar

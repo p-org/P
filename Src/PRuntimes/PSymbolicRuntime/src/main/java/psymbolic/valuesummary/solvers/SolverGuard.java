@@ -171,6 +171,14 @@ public class SolverGuard {
         }
         SolverGuard newGuard = new SolverGuard(formula, type, children);
         table.put(formula, newGuard);
+
+        // switch engine
+        SolverEngine.switchEngineAuto();
+
+        // check if reached time or memory limit
+        SolverEngine.checkForTimeout();
+        SolverEngine.checkForMemout();
+
         return newGuard;
     }
 

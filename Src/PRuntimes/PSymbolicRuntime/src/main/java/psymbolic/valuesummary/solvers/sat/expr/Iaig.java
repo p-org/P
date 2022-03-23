@@ -1,44 +1,39 @@
 package psymbolic.valuesummary.solvers.sat.expr;
 import com.berkeley.abc.Abc;
+import psymbolic.valuesummary.solvers.SolverEngine;
 import psymbolic.valuesummary.solvers.SolverTrueStatus;
 import psymbolic.valuesummary.solvers.SolverGuardType;
 import psymbolic.valuesummary.solvers.sat.SatStatus;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class Iaig implements ExprLib<Long> {
-    private static boolean hasStarted = false;
-    private static long network;
-    private static long params;
-    private static Long exprTrue;
-    private static Long exprFalse;
-    private static HashMap<String, Long> namedNodes = new HashMap<String, Long>();
-    private static HashMap<Long, String> varNames = new HashMap<Long, String>();
-    public static HashSet<Integer> idSet = new HashSet<Integer>();
+    private boolean hasStarted = false;
+    private long network2;
+    private long network;
+    private long params;
+    private HashMap<String, Long> namedNodes = new HashMap<String, Long>();
+    private HashMap<Long, String> varNames = new HashMap<Long, String>();
+    public HashSet<Integer> idSet = new HashSet<Integer>();
+    private HashSet<Long> nodeSet = new HashSet<Long>();
+    private HashSet<Long> tmpSet = new HashSet<Long>();
 
     public Iaig() {
         reset();
     }
 
     public void reset() {
-        Iaig.resetAig();
+        resetAig();
     }
 
-    public static void resetAig() {
+    public void resetAig() {
         if (hasStarted) {
             System.out.println("Resetting IAIG");
             Abc.Ivy_ManStop(network);
-            System.out.println("Stopping ABC");
-            Abc.Abc_Stop();
         }
         hasStarted = true;
-        System.out.println("Starting ABC");
-        Abc.Abc_Start();
 
         System.out.println("Setting IAIG Parameters");
         params = Abc.Ivy_FraigParamsDefault();
@@ -46,16 +41,18 @@ public class Iaig implements ExprLib<Long> {
         System.out.println("Creating IAIG Network");
         network = Abc.Ivy_ManStart();
 
-        exprTrue = Abc.Ivy_ManConst1(network);
-        exprFalse = Abc.Ivy_Not(exprTrue);
         namedNodes.clear();
         varNames.clear();
         idSet.clear();
+        nodeSet.clear();
+        tmpSet.clear();
 
 //        debug();
     }
 
-    private static void debug() {
+    private void debug() {
+        long exprTrue = getTrue();
+        long exprFalse = getFalse();
         long fAig = network;
 
         System.out.println( "Created true with id: " + Abc.Ivy_ObjId(exprTrue));
@@ -82,6 +79,16 @@ public class Iaig implements ExprLib<Long> {
         System.out.println( "Created AB with id: " + Abc.Ivy_ObjId(fObjAnd));
         System.out.println( "Created F with id: " + Abc.Ivy_ObjId(fObjF));
 
+        long fObjC1, fObjC2;
+        fObjC1 = Abc.Ivy_ObjChild0(fObjAnd);
+        fObjC2 = Abc.Ivy_ObjChild1(fObjAnd);
+
+        System.out.println( "Created child1 with id: " + Abc.Ivy_ObjId(fObjC1));
+        System.out.println( "Created child2 with id: " + Abc.Ivy_ObjId(fObjC2));
+
+        System.out.println( "RegularId child1 with id: " + Abc.Ivy_ObjId(Abc.Ivy_Regular(fObjC1)));
+        System.out.println( "RegularId child2 with id: " + Abc.Ivy_ObjId(Abc.Ivy_Regular(fObjC2)));
+
         long fObj1, fObj2;
         fObj1 = Abc.Ivy_Or(fAig, Abc.Ivy_And(fAig, fObjA, fObjB), Abc.Ivy_And(fAig, fObjB, fObjC));
         fObj2 = Abc.Ivy_And(fAig, fObjB, Abc.Ivy_Or(fAig, fObjA, fObjC));
@@ -101,15 +108,25 @@ public class Iaig implements ExprLib<Long> {
         System.out.println( "IsComplement AB+BC with id: " + Abc.Ivy_IsComplement(fObj1));
         System.out.println( "IsComplement B(A+C) with id: " + Abc.Ivy_IsComplement(fObj2));
 
-        long fObjC1, fObjC2;
-        fObjC1 = Abc.Ivy_ObjChild0(fObjAnd);
-        fObjC2 = Abc.Ivy_ObjChild1(fObjAnd);
+        fObj1 = exprTrue;
+        fObj2 = Abc.Ivy_Not(exprTrue);
+        System.out.println( "Pointer fObj1 with id: " + (fObj1));
+        System.out.println( "Pointer fObj2 with id: " + (fObj2));
+        System.out.println( "RegularId fObj1 with id: " + Abc.Ivy_ObjId(Abc.Ivy_Regular(fObj1)));
+        System.out.println( "RegularId fObj2 with id: " + Abc.Ivy_ObjId(Abc.Ivy_Regular(fObj2)));
+        System.out.println( "IsComplement fObj1 with id: " + Abc.Ivy_IsComplement(fObj1));
+        System.out.println( "IsComplement fObj2 with id: " + Abc.Ivy_IsComplement(fObj2));
 
-        System.out.println( "Created child1 with id: " + Abc.Ivy_ObjId(fObjC1));
-        System.out.println( "Created child2 with id: " + Abc.Ivy_ObjId(fObjC2));
+        long fAigNew = Abc.Ivy_FraigPerform(fAig, params);
 
-        System.out.println( "RegularId child1 with id: " + Abc.Ivy_ObjId(Abc.Ivy_Regular(fObjC1)));
-        System.out.println( "RegularId child2 with id: " + Abc.Ivy_ObjId(Abc.Ivy_Regular(fObjC2)));
+        fObj1 = Abc.Ivy_ObjEquiv(fObj1);
+        fObj2 = Abc.Ivy_ObjEquiv(fObj2);
+        System.out.println( "Pointer fObj1 with id: " + (fObj1));
+        System.out.println( "Pointer fObj2 with id: " + (fObj2));
+        System.out.println( "RegularId fObj1 with id: " + Abc.Ivy_ObjId(Abc.Ivy_Regular(fObj1)));
+        System.out.println( "RegularId fObj2 with id: " + Abc.Ivy_ObjId(Abc.Ivy_Regular(fObj2)));
+        System.out.println( "IsComplement fObj1 with id: " + Abc.Ivy_IsComplement(fObj1));
+        System.out.println( "IsComplement fObj2 with id: " + Abc.Ivy_IsComplement(fObj2));
 
         Abc.Ivy_ManPrintStats(fAig);
 
@@ -122,16 +139,16 @@ public class Iaig implements ExprLib<Long> {
     }
 
     public Long getTrue() {
-        return exprTrue;
+        return newAig(Abc.Ivy_ManConst1(network), false);
     }
 
     public Long getFalse() {
-        return exprFalse;
+        return newAig(Abc.Ivy_Not(Abc.Ivy_ManConst1(network)), false);
     }
 
-    private Long newAig(Long original) {
+    private Long newAig(Long original, boolean simplify) {
+        nodeSet.add(original);
         idSet.add(Abc.Ivy_ObjId(Abc.Ivy_Regular(original)));
-//        System.out.println("# aig ids: " + idSet.size());
         return original;
     }
 
@@ -144,32 +161,82 @@ public class Iaig implements ExprLib<Long> {
         namedNodes.put(name, result);
         assert(!varNames.containsKey(result));
         varNames.put(result, name);
-        return newAig(result);
+        return newAig(result, false);
+    }
+
+    private void checkInputs(List<Long> inputs) {
+        for (Long input : inputs) {
+            assert(nodeSet.contains(input));
+        }
     }
 
     public Long not(Long child) {
+        checkInputs(Arrays.asList(child));
+        assert(nodeSet.contains(child));
 //        System.out.println(child + " Creating NOT of " + toString(child));
-        return newAig(Abc.Ivy_Not(child));
+        return newAig(Abc.Ivy_Not(child), false);
     }
 
     public Long and(Long childA, Long childB) {
+        checkInputs(Arrays.asList(childA, childB));
 //        System.out.println("Creating AND of " + toString(childA) + " and " + toString(childB));
-        return newAig(Abc.Ivy_And(network, childA, childB));
+        return newAig(Abc.Ivy_And(network, childA, childB), true);
     }
 
     public Long or(Long childA, Long childB) {
+        checkInputs(Arrays.asList(childA, childB));
 //        System.out.println("Creating OR of " + toString(childA) + " and " + toString(childB));
-        return newAig(Abc.Ivy_Or(network, childA, childB));
+        return newAig(Abc.Ivy_Or(network, childA, childB), true);
+    }
+
+    public Long simplify(Long formula) {
+        checkInputs(Arrays.asList(formula));
+//        System.out.println("\toriginal: ");
+//        System.out.println("\t\t" + formula);
+//        System.out.println("\t\t" + getHashCode(formula));
+//        System.out.println("\t\t" + Abc.Ivy_ObjId(Abc.Ivy_Regular(formula)));
+//        System.out.println("\t\t" + toString(formula));
+
+        long simplifiedFormula = Abc.Ivy_ObjEquiv(formula);
+//        System.out.println("\tsimplified: ");
+//        System.out.println("\t\t: " + simplifiedFormula);
+//        if (simplifiedFormula == 0) {
+//            assert(false);
+//        }
+        assert(simplifiedFormula != 0);
+
+        Long simplified = newAig(simplifiedFormula, false);
+        if (varNames.containsKey(formula)) {
+            String name = varNames.get(formula);
+            namedNodes.remove(name);
+//            varNames.remove(formula);
+            namedNodes.put(name, simplified);
+            varNames.put(simplified, name);
+        }
+//        System.out.println("\t\t" + getHashCode(simplifiedFormula));
+//        System.out.println("\t\t" + Abc.Ivy_ObjId(Abc.Ivy_Regular(simplified)));
+//        System.out.println("\t\t" + toString(simplified));
+        return simplified;
+    }
+
+    public void startSimplify() {
+        idSet.clear();
+        tmpSet.addAll(nodeSet);
+        network2 = Abc.Ivy_FraigPerform(network, params);
+    }
+
+    public void stopSimplify() {
+        nodeSet.removeAll(tmpSet);
+        tmpSet.clear();
+        Abc.Ivy_ManStop(network);
+        network = network2;
     }
 
     public SolverGuardType getType(Long formula) {
-//        System.out.println("Getting type of " + toString(formula));
         if (Abc.Ivy_ObjIsConst1(Abc.Ivy_Regular(formula))) {
             if (Abc.Ivy_IsComplement(formula)) {
-                assert (formula == exprFalse);
                 return SolverGuardType.FALSE;
             } else {
-                assert (formula == exprTrue);
                 return SolverGuardType.TRUE;
             }
         } else {
@@ -250,14 +317,16 @@ public class Iaig implements ExprLib<Long> {
     }
 
     public boolean areEqual(Long left, Long right) {
-//        return left == right;
         return  (Abc.Ivy_IsComplement(left) == Abc.Ivy_IsComplement(right)) &&
                 (Abc.Ivy_ObjId(Abc.Ivy_Regular(left)) == Abc.Ivy_ObjId(Abc.Ivy_Regular(right)));
     }
 
     public int getHashCode(Long formula) {
-        return Long.hashCode(formula);
-//        return Long.hashCode(Abc.Ivy_ObjId(formula));
+        if (!nodeSet.contains(formula)) {
+            System.out.println("Missing formula when hashing: " + formula);
+        }
+//        return Long.hashCode(formula);
+        return Abc.Ivy_IsComplement(formula) ? (-1 - Abc.Ivy_ObjId(Abc.Ivy_Regular(formula))) : Abc.Ivy_ObjId(Abc.Ivy_Regular(formula)) ;
     }
 
 }

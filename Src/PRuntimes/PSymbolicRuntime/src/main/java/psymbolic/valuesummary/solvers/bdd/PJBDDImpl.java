@@ -83,6 +83,10 @@ public class PJBDDImpl implements SolverLib<DD> {
         return c.makeVariable();
     }
 
+    public DD simplify(DD bdd) {
+        return bdd;
+    }
+
     public String toString(DD bdd) {
         if (bdd == null) return "null";
         if (bdd.isFalse()) return "false";

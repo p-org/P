@@ -1,5 +1,6 @@
 package psymbolic.valuesummary.solvers.sat;
 
+import com.berkeley.abc.Abc;
 import lombok.Getter;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.valuesummary.solvers.SolverGuardType;
@@ -11,8 +12,9 @@ import java.util.HashMap;
 import java.util.List;
 
 public class SatExpr {
+    private static boolean abcStarted = false;
     public static int numVars = 0;
-    public static HashMap<Object, SatObject> table = new HashMap<Object, SatObject>();
+    public static HashMap<Object, SatObject> satTable = new HashMap<Object, SatObject>();
     public static HashMap<Object, SatObject> aigTable = new HashMap<Object, SatObject>();
     private Object expr;
 
@@ -21,12 +23,23 @@ public class SatExpr {
     @Getter
     private static ExprLibType exprType;
 
+    public static void resetAbc() {
+        if (abcStarted) {
+            System.out.println("Stopping ABC");
+            Abc.Abc_Stop();
+        }
+        abcStarted = true;
+        System.out.println("Starting ABC");
+        Abc.Abc_Start();
+    }
+
     public static ExprLib getExprImpl() {
         return exprImpl;
     }
 
     public static void setExprLib(ExprLibType type) {
         exprType = type;
+        resetAbc();
         switch(type) {
             case Aig:	            exprImpl = new Aig();
                 break;
@@ -46,20 +59,20 @@ public class SatExpr {
     }
 
     private static SatObject createSatFormula(Object original) {
-        if (table.containsKey(original)) {
-            return table.get(original);
+        if (satTable.containsKey(original)) {
+            return satTable.get(original);
         } else if (SatGuard.getSolverType() == SolverType.ABC) {
             if (aigTable.containsKey(original)) {
                 return aigTable.get(original);
             }
             SatObject satFormula = new SatObject(original, SatStatus.Unknown);
-            table.put(original, satFormula);
+            satTable.put(original, satFormula);
             return satFormula;
         }
 
         Object expr = original;
 //        long expr = Aig.simplify(original);
-//        System.out.println("Creating Sat formula for " + toString(expr));
+//        System.out.println("Creating Sat formula for " + getExprImpl().toString(expr));
 
 
         SatObject satFormula = new SatObject(null, SatStatus.Unknown);
@@ -99,7 +112,8 @@ public class SatExpr {
             default:
                 throw new RuntimeException("Unexpected expr of type " + solverGuardType + " : " + expr);
         }
-        table.put(expr, satFormula);
+//        System.out.println("Returned Sat formula for " + getExprImpl().toString(expr));
+        satTable.put(expr, satFormula);
         return satFormula;
     }
 
@@ -180,6 +194,30 @@ public class SatExpr {
 
     public static SatExpr Or(SatExpr left, SatExpr right) {
         return newExpr(getExprImpl().or(left.expr, right.expr));
+    }
+
+    public static void startSimplify() {
+        if (getExprType() == ExprLibType.Iaig) {
+            satTable.clear();
+            aigTable.clear();
+            ((Iaig)getExprImpl()).startSimplify();
+        }
+    }
+
+    public static void stopSimplify() {
+        if (getExprType() == ExprLibType.Iaig) {
+            ((Iaig)getExprImpl()).stopSimplify();
+        }
+    }
+
+    public static SatExpr Simplify(SatExpr formula) {
+        Object simplified = formula.expr;
+        switch(exprType) {
+            case Iaig:
+                simplified = getExprImpl().simplify(formula.expr);
+        }
+        formula.expr = simplified;
+        return formula;
     }
 
     @Override

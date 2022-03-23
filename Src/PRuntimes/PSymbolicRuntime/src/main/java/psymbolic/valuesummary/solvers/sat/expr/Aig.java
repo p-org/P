@@ -9,45 +9,36 @@ import java.util.HashSet;
 import java.util.List;
 
 public class Aig implements ExprLib<Long> {
-    private static boolean hasStarted = false;
-    public static long network;
-    private static Long exprTrue;
-    private static Long exprFalse;
-    private static HashMap<String, Long> namedNodes = new HashMap<String, Long>();
-    public static HashSet<Long> idSet = new HashSet<Long>();
+    private boolean hasStarted = false;
+    public long network;
+    private HashMap<String, Long> namedNodes = new HashMap<String, Long>();
+    public HashSet<Long> idSet = new HashSet<Long>();
 
     public Aig() {
         reset();
     }
 
     public void reset() {
-        Aig.resetAig();
+        resetAig();
     }
 
-    public static void resetAig() {
+    public void resetAig() {
         if (hasStarted) {
             System.out.println("Resetting AIG");
             Abc.Abc_NtkDelete(network);
-            System.out.println("Stopping ABC");
-            Abc.Abc_Stop();
         }
         hasStarted = true;
-        System.out.println("Starting ABC");
-        Abc.Abc_Start();
         System.out.println("Setting AIG");
         network = Abc.Abc_NtkAlloc();
-//        System.out.println("Creating AIG true");
-        exprTrue = Abc.Abc_AigConst1(network);
-//        System.out.println("Creating AIG false");
-        exprFalse = Abc.Abc_ObjNot(exprTrue);
         namedNodes.clear();
         idSet.clear();
 //        debug();
     }
 
-    private static void debug() {
+    private void debug() {
         long pAig = network;
-
+        long exprTrue = Abc.Abc_AigConst1(network);
+        long exprFalse = Abc.Abc_ObjNot(Abc.Abc_AigConst1(network));
         Abc.Abc_AigPrintNode(exprTrue);
         Abc.Abc_AigPrintNode(exprFalse);
 
@@ -105,11 +96,11 @@ public class Aig implements ExprLib<Long> {
     }
 
     public Long getTrue() {
-        return exprTrue;
+        return Abc.Abc_AigConst1(network);
     }
 
     public Long getFalse() {
-        return exprFalse;
+        return Abc.Abc_ObjNot(Abc.Abc_AigConst1(network));
     }
 
     private Long newAig(Long original) {
@@ -144,14 +135,16 @@ public class Aig implements ExprLib<Long> {
         return newAig(Abc.Abc_AigOr(network, childA, childB));
     }
 
+    public Long simplify(Long formula) {
+        return formula;
+    }
+
     public SolverGuardType getType(Long formula) {
 //        System.out.println("Getting type of " + toString(formula));
         if (Abc.Abc_AigNodeIsConst(formula)) {
             if (Abc.Abc_ObjIsComplement(formula)) {
-                assert (formula == exprFalse);
                 return SolverGuardType.FALSE;
             } else {
-                assert (formula == exprTrue);
                 return SolverGuardType.TRUE;
             }
         } else {

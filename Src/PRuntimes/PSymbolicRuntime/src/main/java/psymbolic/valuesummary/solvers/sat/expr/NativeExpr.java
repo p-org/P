@@ -37,6 +37,10 @@ public class NativeExpr implements ExprLib<NativeObject> {
         return NativeObject.or(Arrays.asList(childA, childB));
     }
 
+    public NativeObject simplify(NativeObject formula) {
+        return formula;
+    }
+
     public SolverGuardType getType(NativeObject formula) {
         return formula.getType();
     }

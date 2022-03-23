@@ -19,6 +19,8 @@ public interface ExprLib<T> {
 
     T or(T childA, T childB);
 
+    T simplify(T child);
+
     SolverGuardType getType(T formula);
 
     List<T> getChildren(T formula);

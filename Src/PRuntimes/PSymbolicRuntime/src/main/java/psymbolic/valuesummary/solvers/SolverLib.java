@@ -15,6 +15,8 @@ public interface SolverLib<T> {
 
     T newVar();
 
+    T simplify(T formula);
+
     String toString(T bdd);
 
     T fromString(String s);

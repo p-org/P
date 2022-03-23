@@ -2,7 +2,10 @@ package psymbolic.valuesummary.solvers;
 
 import lombok.Getter;
 import lombok.Setter;
+import psymbolic.runtime.logger.StatLogger;
+import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.solvers.bdd.PJBDDImpl;
+import psymbolic.valuesummary.solvers.sat.SatExpr;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 import psymbolic.valuesummary.solvers.sat.SatGuard;
 
@@ -13,9 +16,27 @@ public class SolverEngine {
     @Getter @Setter
     private static SolverLib solver;
     @Getter @Setter
-    private static SolverType solverType;
+    private static SolverType solverType = SolverType.BDD;
     @Getter @Setter
-    private static ExprLibType exprLibType;
+    private static ExprLibType exprLibType = ExprLibType.None;
+
+    public static void simplifyEngineAuto() {
+        switch (getExprLibType()) {
+            case Iaig:
+                simplifyEngine();
+                break;
+        }
+    }
+
+    private static void simplifyEngine() {
+//        System.out.println("Simplifying solver engine: "
+//                + getSolverType().toString() + " + "
+//                + getExprLibType().toString());
+        SatExpr.startSimplify();
+        SolverGuard.simplifySolverGuard();
+        SatExpr.stopSimplify();
+//        System.out.println("\tDone");
+    }
 
     public static void switchEngineAuto() {
         switch (getSolverType()) {
@@ -28,7 +49,7 @@ public class SolverEngine {
         }
     }
 
-    public static void switchEngine(SolverType type, ExprLibType etype) {
+    private static void switchEngine(SolverType type, ExprLibType etype) {
         if (type == getSolverType() && etype == getExprLibType())
             return;
         System.out.println("Switching solver engine:\n\t"
@@ -39,7 +60,11 @@ public class SolverEngine {
     }
 
     public static void resetEngine(SolverType type, ExprLibType etype) {
+        System.out.println("Resetting solver engine to "
+                + type.toString() + " + "
+                + etype.toString());
     	setSolver(type, etype);
+        SolverGuard.reset();
     }
 
     public static void cleanupEngine() {

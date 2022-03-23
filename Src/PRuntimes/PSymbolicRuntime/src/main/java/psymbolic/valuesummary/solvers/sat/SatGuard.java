@@ -81,6 +81,10 @@ public class SatGuard implements SolverLib<SatExpr> {
                           SatExpr.And(cond, elseClause));
     }
 
+    public SatExpr simplify(SatExpr formula) {
+        return SatExpr.Simplify(formula);
+    }
+
     public String toString(SatExpr formula) {
         return formula.toString();
     }

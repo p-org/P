@@ -517,8 +517,13 @@ public class Scheduler implements SymbolicSearch {
           System.out.println("--------------------");
         }
 
+        // simplify engine
+//        SolverEngine.simplifyEngineAuto();
+
+        // switch engine
+//        SolverEngine.switchEngineAuto();
+
         // performing node clean-up
-        SolverEngine.switchEngineAuto();
         SolverEngine.cleanupEngine();
         System.gc();
 

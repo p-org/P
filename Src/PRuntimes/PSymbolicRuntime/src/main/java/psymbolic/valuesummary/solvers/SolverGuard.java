@@ -2,8 +2,11 @@ package psymbolic.valuesummary.solvers;
 
 import com.google.common.collect.ImmutableList;
 import psymbolic.runtime.statistics.SolverStats;
+import psymbolic.valuesummary.solvers.sat.SatExpr;
 
 import java.util.*;
+
+import static java.util.Objects.hash;
 
 /**
     Represents the generic solver based implementation of Guard
@@ -15,6 +18,8 @@ public class SolverGuard {
 
     private SolverTrueStatus statusTrue;
     private SolverFalseStatus statusFalse;
+//    private static SolverGuard exprTrue = null;
+//    private static SolverGuard exprFalse = null;
     private static List<SolverGuard> varList = new ArrayList<>();
     private static HashMap<Object, SolverGuard> table = new HashMap<Object, SolverGuard>();
 
@@ -24,6 +29,49 @@ public class SolverGuard {
         this.children = children;
         this.statusTrue = SolverTrueStatus.Unknown;
         this.statusFalse = SolverFalseStatus.Unknown;
+    }
+
+    public static void reset() {
+        table.clear();
+        varList.clear();
+//        exprTrue = createTrue();
+//        exprFalse = createFalse();
+    }
+
+    public static void simplifySolverGuard() {
+        // create a local copy to iterate over old guards
+        HashMap<Object, SolverGuard> oldTable = new HashMap<Object, SolverGuard>(table);
+
+        // reset the old table
+        table.clear();
+
+        // recreate all vars first (in order)
+        for (SolverGuard oldGuard : varList) {
+            simplifySolverGuard(oldGuard);
+        }
+
+        // recreate remaining guards
+        for (SolverGuard oldGuard : oldTable.values()) {
+            simplifySolverGuard(oldGuard);
+        }
+    }
+
+    private static void simplifySolverGuard(SolverGuard original) {
+        // return if already cached in new table
+        if (table.containsKey(original.formula)) {
+            original.formula = table.get(original.formula).formula;
+            return;
+        }
+
+//        // process children first
+//        for (SolverGuard child: original.children) {
+//            simplifySolverGuard(child);
+//        }
+
+        original.formula = SolverEngine.getSolver().simplify(original.formula);
+
+        // cache result
+        table.put(original.formula, original);
     }
 
     public static void switchSolverGuard() {
@@ -96,6 +144,7 @@ public class SolverGuard {
             case NotTrue:
                 return false;
             default:
+                checkInput(Arrays.asList(this));
                 boolean isSatNeg = SolverEngine.getSolver().isSat(SolverEngine.getSolver().not(formula));
                 if (!isSatNeg) {
                     statusTrue = SolverTrueStatus.True;
@@ -115,6 +164,7 @@ public class SolverGuard {
             case NotFalse:
                 return false;
             default:
+                checkInput(Arrays.asList(this));
                 boolean isSat = SolverEngine.getSolver().isSat(formula);
                 if (!isSat) {
                     statusTrue = SolverTrueStatus.NotTrue;
@@ -133,7 +183,6 @@ public class SolverGuard {
         }
         SolverGuard newGuard = new SolverGuard(formula, type, children);
         table.put(formula, newGuard);
-//        System.out.println("Creating new SolverGuard: " + newGuard.toString());
         return newGuard;
     }
 
@@ -141,7 +190,7 @@ public class SolverGuard {
         return table.size();
     }
 
-    public static SolverGuard constTrue() {
+    private static SolverGuard createTrue() {
         SolverGuard g = getSolverGuard( SolverEngine.getSolver().constTrue(),
                                         SolverGuardType.TRUE,
                                         ImmutableList.of());
@@ -150,13 +199,21 @@ public class SolverGuard {
         return g;
     }
 
-    public static SolverGuard constFalse() {
+    private static SolverGuard createFalse() {
         SolverGuard g = getSolverGuard( SolverEngine.getSolver().constFalse(),
                 SolverGuardType.FALSE,
                 ImmutableList.of());
         g.statusTrue = SolverTrueStatus.NotTrue;
         g.statusFalse = SolverFalseStatus.False;
         return g;
+    }
+
+    public static SolverGuard constTrue() {
+        return createTrue();
+    }
+
+    public static SolverGuard constFalse() {
+        return createFalse();
     }
 
     public static SolverGuard newVar() {
@@ -169,7 +226,18 @@ public class SolverGuard {
         return g;
     }
 
+    private static void checkInput(List<SolverGuard> inputs) {
+        for (SolverGuard input : inputs) {
+            if (!table.containsKey(input.formula)) {
+                System.out.println("\tMissing SolverGuard: " + SolverEngine.getSolver().toString(input.formula));
+                System.out.println("\thashcode: " + SolverEngine.getSolver().hashCode(input.formula));
+                assert(false);
+            }
+        }
+    }
+
     public SolverGuard not() {
+        checkInput(Arrays.asList(this));
         SolverStats.notOperations++;
         return getSolverGuard(  SolverEngine.getSolver().not(formula),
                 SolverGuardType.NOT,
@@ -177,6 +245,7 @@ public class SolverGuard {
     }
 
     public SolverGuard and(SolverGuard other) {
+        checkInput(Arrays.asList(this, other));
     	SolverStats.andOperations++;
         return getSolverGuard(  SolverEngine.getSolver().and(formula, other.formula),
                                 SolverGuardType.AND,
@@ -184,21 +253,24 @@ public class SolverGuard {
     }
 
     public SolverGuard or(SolverGuard other) {
+        checkInput(Arrays.asList(this, other));
     	SolverStats.orOperations++;
         return getSolverGuard(SolverEngine.getSolver().or(  formula, other.formula),
                                                             SolverGuardType.OR,
                                                             ImmutableList.of(this, other));
     }
 
-    public static SolverGuard orMany(List<SolverGuard> others) {
+    private static SolverGuard orMany(List<SolverGuard> others) {
         return others.stream().reduce(SolverGuard.constFalse(), SolverGuard::or);
     }
 
     public SolverGuard implies(SolverGuard other) {
+        checkInput(Arrays.asList(this, other));
         return (this.not()).or(other);
     }
 
     public SolverGuard ifThenElse(SolverGuard thenCase, SolverGuard elseCase) {
+        checkInput(Arrays.asList(this, thenCase, elseCase));
         return (this.and(thenCase)).or((this.not()).and(elseCase));
     }
 

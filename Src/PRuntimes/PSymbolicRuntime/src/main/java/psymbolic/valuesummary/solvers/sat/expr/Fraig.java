@@ -12,14 +12,12 @@ import java.util.HashSet;
 import java.util.List;
 
 public class Fraig implements ExprLib<Long> {
-    private static boolean hasStarted = false;
-    public static long network;
-    private static long params;
-    private static Long exprTrue;
-    private static Long exprFalse;
-    private static HashMap<String, Long> namedNodes = new HashMap<String, Long>();
-    private static HashMap<Long, String> varNames = new HashMap<Long, String>();
-    public static HashSet<Integer> idSet = new HashSet<Integer>();
+    private boolean hasStarted = false;
+    public long network;
+    private long params;
+    private HashMap<String, Long> namedNodes = new HashMap<String, Long>();
+    private HashMap<Long, String> varNames = new HashMap<Long, String>();
+    public HashSet<Integer> idSet = new HashSet<Integer>();
     public static int isSatOperations = 0;
     public static int isSatResult = 0;
     public static int nBTLimit = 100;
@@ -29,19 +27,15 @@ public class Fraig implements ExprLib<Long> {
     }
 
     public void reset() {
-        Fraig.resetAig();
+        resetAig();
     }
 
-    public static void resetAig() {
+    public void resetAig() {
         if (hasStarted) {
             System.out.println("Resetting FRAIG");
             Abc.Fraig_ManFree(network);
-            System.out.println("Stopping ABC");
-            Abc.Abc_Stop();
         }
         hasStarted = true;
-        System.out.println("Starting ABC");
-        Abc.Abc_Start();
 
         System.out.println("Setting FRAIG Parameters");
         params = Abc.Fraig_ParamsGetDefault();
@@ -65,8 +59,6 @@ public class Fraig implements ExprLib<Long> {
         network = Abc.Fraig_ManCreate(params);
 //        network = Abc.Fraig_ManCreate(-1);
 
-        exprTrue = Abc.Fraig_ManReadConst1(network);
-        exprFalse = Abc.Fraig_Not(exprTrue);
         namedNodes.clear();
         varNames.clear();
         idSet.clear();
@@ -74,8 +66,10 @@ public class Fraig implements ExprLib<Long> {
 //        debug();
     }
 
-    private static void debug() {
+    private void debug() {
         long fAig = network;
+        long exprTrue = Abc.Fraig_ManReadConst1(network);
+        long exprFalse = Abc.Fraig_Not(Abc.Fraig_ManReadConst1(network));
 
         System.out.println( "Created true with id: " + Abc.Fraig_NodeReadNum(exprTrue));
         System.out.println( "Created false with id: " + Abc.Fraig_NodeReadNum(exprFalse));
@@ -151,7 +145,7 @@ public class Fraig implements ExprLib<Long> {
 //        } else if (Abc.Fraig_ManCheckClauseUsingSimInfo(Aig.network, formula, Aig.getFalse())) {
 //            return SolverTrueStatus.True;
         } else {
-            int result = Abc.Fraig_ManCheckClauseUsingSat(Fraig.network, formula, getFalse(), nBTLimit);
+            int result = Abc.Fraig_ManCheckClauseUsingSat(network, formula, getFalse(), nBTLimit);
             switch (result) {
                 case 0:
                     return SolverTrueStatus.NotTrue;
@@ -177,11 +171,11 @@ public class Fraig implements ExprLib<Long> {
     }
 
     public Long getTrue() {
-        return exprTrue;
+        return Abc.Fraig_ManReadConst1(network);
     }
 
     public Long getFalse() {
-        return exprFalse;
+        return Abc.Fraig_Not(Abc.Fraig_ManReadConst1(network));
     }
 
     private Long newAig(Long original) {
@@ -218,14 +212,16 @@ public class Fraig implements ExprLib<Long> {
         return newAig(Abc.Fraig_NodeOr(network, childA, childB));
     }
 
+    public Long simplify(Long formula) {
+        return formula;
+    }
+
     public SolverGuardType getType(Long formula) {
 //        System.out.println("Getting type of " + toString(formula));
         if (Abc.Fraig_NodeIsConst(formula)) {
             if (Abc.Fraig_IsComplement(formula)) {
-                assert (formula == exprFalse);
                 return SolverGuardType.FALSE;
             } else {
-                assert (formula == exprTrue);
                 return SolverGuardType.TRUE;
             }
         } else {
@@ -294,7 +290,7 @@ public class Fraig implements ExprLib<Long> {
         // Tell Java to use your special stream
         System.setOut(ps);
         // Print some output: goes to your special stream
-        Abc.Fraig_ManPrintStats(Fraig.network);
+        Abc.Fraig_ManPrintStats(network);
         // Put things back
         System.out.flush();
         System.setOut(old);

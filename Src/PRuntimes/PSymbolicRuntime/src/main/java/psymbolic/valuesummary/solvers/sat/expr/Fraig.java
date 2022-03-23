@@ -20,7 +20,7 @@ public class Fraig implements ExprLib<Long> {
     public HashSet<Integer> idSet = new HashSet<Integer>();
     public static int isSatOperations = 0;
     public static int isSatResult = 0;
-    public static int nBTLimit = 100;
+    public static int nBTLimit = 200;
 
     public Fraig() {
         reset();
@@ -302,14 +302,12 @@ public class Fraig implements ExprLib<Long> {
     }
 
     public boolean areEqual(Long left, Long right) {
-//        return left == right;
         return  (Abc.Fraig_IsComplement(left) == Abc.Fraig_IsComplement(right)) &&
                 (Abc.Fraig_NodeReadNum(Abc.Fraig_Regular(left)) == Abc.Fraig_NodeReadNum(Abc.Fraig_Regular(right)));
     }
 
     public int getHashCode(Long formula) {
-        return Long.hashCode(formula);
-//        return Long.hashCode(Abc.Abc_ObjId(formula));
+        return Abc.Fraig_IsComplement(formula) ? (-1 - Abc.Fraig_NodeReadNum(Abc.Fraig_Regular(formula))) : Abc.Fraig_NodeReadNum(Abc.Fraig_Regular(formula));
     }
 
 }

@@ -172,7 +172,6 @@ public class Iaig implements ExprLib<Long> {
 
     public Long not(Long child) {
         checkInputs(Arrays.asList(child));
-        assert(nodeSet.contains(child));
 //        System.out.println(child + " Creating NOT of " + toString(child));
         return newAig(Abc.Ivy_Not(child), false);
     }
@@ -200,9 +199,6 @@ public class Iaig implements ExprLib<Long> {
         long simplifiedFormula = Abc.Ivy_ObjEquiv(formula);
 //        System.out.println("\tsimplified: ");
 //        System.out.println("\t\t: " + simplifiedFormula);
-//        if (simplifiedFormula == 0) {
-//            assert(false);
-//        }
         assert(simplifiedFormula != 0);
 
         Long simplified = newAig(simplifiedFormula, false);
@@ -325,8 +321,8 @@ public class Iaig implements ExprLib<Long> {
         if (!nodeSet.contains(formula)) {
             System.out.println("Missing formula when hashing: " + formula);
         }
-//        return Long.hashCode(formula);
         return Abc.Ivy_IsComplement(formula) ? (-1 - Abc.Ivy_ObjId(Abc.Ivy_Regular(formula))) : Abc.Ivy_ObjId(Abc.Ivy_Regular(formula)) ;
+//        return Long.hashCode(formula);
     }
 
 }

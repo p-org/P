@@ -2,11 +2,8 @@ package psymbolic.valuesummary.solvers;
 
 import com.google.common.collect.ImmutableList;
 import psymbolic.runtime.statistics.SolverStats;
-import psymbolic.valuesummary.solvers.sat.SatExpr;
 
 import java.util.*;
-
-import static java.util.Objects.hash;
 
 /**
     Represents the generic solver based implementation of Guard
@@ -18,8 +15,6 @@ public class SolverGuard {
 
     private SolverTrueStatus statusTrue;
     private SolverFalseStatus statusFalse;
-//    private static SolverGuard exprTrue = null;
-//    private static SolverGuard exprFalse = null;
     private static List<SolverGuard> varList = new ArrayList<>();
     private static HashMap<Object, SolverGuard> table = new HashMap<Object, SolverGuard>();
 
@@ -34,8 +29,6 @@ public class SolverGuard {
     public static void reset() {
         table.clear();
         varList.clear();
-//        exprTrue = createTrue();
-//        exprFalse = createFalse();
     }
 
     public static void simplifySolverGuard() {
@@ -62,11 +55,6 @@ public class SolverGuard {
             original.formula = table.get(original.formula).formula;
             return;
         }
-
-//        // process children first
-//        for (SolverGuard child: original.children) {
-//            simplifySolverGuard(child);
-//        }
 
         original.formula = SolverEngine.getSolver().simplify(original.formula);
 
@@ -144,7 +132,7 @@ public class SolverGuard {
             case NotTrue:
                 return false;
             default:
-                checkInput(Arrays.asList(this));
+//                checkInput(Arrays.asList(this));
                 boolean isSatNeg = SolverEngine.getSolver().isSat(SolverEngine.getSolver().not(formula));
                 if (!isSatNeg) {
                     statusTrue = SolverTrueStatus.True;
@@ -164,7 +152,7 @@ public class SolverGuard {
             case NotFalse:
                 return false;
             default:
-                checkInput(Arrays.asList(this));
+//                checkInput(Arrays.asList(this));
                 boolean isSat = SolverEngine.getSolver().isSat(formula);
                 if (!isSat) {
                     statusTrue = SolverTrueStatus.NotTrue;
@@ -245,7 +233,7 @@ public class SolverGuard {
     }
 
     public SolverGuard and(SolverGuard other) {
-        checkInput(Arrays.asList(this, other));
+//        checkInput(Arrays.asList(this, other));
     	SolverStats.andOperations++;
         return getSolverGuard(  SolverEngine.getSolver().and(formula, other.formula),
                                 SolverGuardType.AND,
@@ -253,7 +241,7 @@ public class SolverGuard {
     }
 
     public SolverGuard or(SolverGuard other) {
-        checkInput(Arrays.asList(this, other));
+//        checkInput(Arrays.asList(this, other));
     	SolverStats.orOperations++;
         return getSolverGuard(SolverEngine.getSolver().or(  formula, other.formula),
                                                             SolverGuardType.OR,
@@ -265,12 +253,12 @@ public class SolverGuard {
     }
 
     public SolverGuard implies(SolverGuard other) {
-        checkInput(Arrays.asList(this, other));
+//        checkInput(Arrays.asList(this, other));
         return (this.not()).or(other);
     }
 
     public SolverGuard ifThenElse(SolverGuard thenCase, SolverGuard elseCase) {
-        checkInput(Arrays.asList(this, thenCase, elseCase));
+//        checkInput(Arrays.asList(this, thenCase, elseCase));
         return (this.and(thenCase)).or((this.not()).and(elseCase));
     }
 

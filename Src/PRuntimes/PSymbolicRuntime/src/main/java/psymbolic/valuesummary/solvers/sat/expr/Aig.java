@@ -105,7 +105,6 @@ public class Aig implements ExprLib<Long> {
 
     private Long newAig(Long original) {
         idSet.add(Abc.Abc_ObjId(Abc.Abc_ObjRegular(original)));
-//        System.out.println("# aig ids: " + idSet.size());
         return original;
     }
 
@@ -212,13 +211,12 @@ public class Aig implements ExprLib<Long> {
     }
 
     public boolean areEqual(Long left, Long right) {
-//        return left == right;
         return  (Abc.Abc_ObjIsComplement(left) == Abc.Abc_ObjIsComplement(right)) &&
                 (Abc.Abc_ObjId(Abc.Abc_ObjRegular(left)) == Abc.Abc_ObjId(Abc.Abc_ObjRegular(right)));
     }
 
     public int getHashCode(Long formula) {
-        return Long.hashCode(formula);
+        return Abc.Abc_ObjIsComplement(formula) ? (-1 - (int)Abc.Abc_ObjId(Abc.Abc_ObjRegular(formula))) : (int)Abc.Abc_ObjId(Abc.Abc_ObjRegular(formula)) ;
     }
 
 }

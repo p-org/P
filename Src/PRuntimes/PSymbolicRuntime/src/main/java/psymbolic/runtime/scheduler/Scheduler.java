@@ -303,8 +303,12 @@ public class Scheduler implements SymbolicSearch {
             double timeUsed = (Duration.between(EntryPoint.start, end).toMillis() / 1000.0);
             double memoryUsed = ((runtime.totalMemory() - runtime.freeMemory()) / 1000000.0);
             StatLogger.log(String.format("time-seconds:\t%.1f", timeUsed));
-            StatLogger.log(String.format("memory-max-MB:\t%.1f", SolverEngine.getMaxMemSpent()));
+            StatLogger.log(String.format("memory-max-MB:\t%.1f", SolverStats.maxMemSpent));
             StatLogger.log(String.format("memory-current-MB:\t%.1f", memoryUsed));
+            StatLogger.log(String.format("time-create-guards-%%:\t%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
+            StatLogger.log(String.format("time-solve-guards-%%:\t%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
+            StatLogger.log(String.format("time-create-guards-max-seconds:\t%.3f", SolverStats.timeMaxCreateGuards/1000.0));
+            StatLogger.log(String.format("time-solve-guards-max-seconds:\t%.3f", SolverStats.timeMaxSolveGuards/1000.0));
             StatLogger.log(String.format("depth:\t%d", getDepth()));
             StatLogger.logSolverStats();
 
@@ -496,15 +500,20 @@ public class Scheduler implements SymbolicSearch {
         System.gc();
 
         if (configuration.getCollectStats() != 0) {
-            double timeUsed = SolverEngine.checkForTimeout();
-            double memoryUsed = SolverEngine.checkForMemout();
+            double timeUsed = SolverStats.getTime();
+            double memoryUsed = SolverStats.getMemory();
             if (configuration.getCollectStats() > 1) {
                 System.out.println("--------------------");
+                System.out.println("Resource Stats::");
                 System.out.println(String.format("time-seconds:\t%.1f", timeUsed));
-                System.out.println(String.format("memory-max-MB:\t%.1f", SolverEngine.getMaxMemSpent()));
+                System.out.println(String.format("memory-max-MB:\t%.1f", SolverStats.maxMemSpent));
                 System.out.println(String.format("memory-current-MB:\t%.1f", memoryUsed));
                 System.out.println("--------------------");
                 System.out.println("Solver Stats::");
+                StatLogger.log(String.format("time-create-guards-%%:\t%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
+                StatLogger.log(String.format("time-solve-guards-%%:\t%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
+                StatLogger.log(String.format("time-create-guards-max-seconds:\t%.3f", SolverStats.timeMaxCreateGuards/1000.0));
+                StatLogger.log(String.format("time-solve-guards-max-seconds:\t%.3f", SolverStats.timeMaxSolveGuards/1000.0));
                 System.out.println(SolverStats.prettyPrint());
                 System.out.println("--------------------");
                 System.out.println("Detailed Solver Stats::\n" + SolverEngine.getStats());

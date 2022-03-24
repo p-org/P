@@ -290,7 +290,47 @@ public class Concretizer {
         }
         return concreteArgsList;
     }
-    
+
+    /**
+     * Get the number of concrete values for the arguments
+     * @param pc Guard under which to concretize values
+     * @param stop specifies when to stop getting more concrete values
+     * @param args arguments
+     * @return number of concrete values for arguments
+     */
+    public static int countConcreteValues(Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary ... args) {
+        Guard iterPc = Guard.constFalse();
+        Guard alreadySeen = Guard.constFalse();
+        boolean skip = false;
+        boolean done = false;
+        int i = 0;
+        int result = 0;
+        while (!stop.test(i)) {
+            iterPc = pc.and(alreadySeen.not());
+            for (int j = 0; j < args.length && !done; j++) {
+                GuardedValue<?> guardedValue = concretizer.apply(args[j].restrict(iterPc));
+                if (guardedValue == null) {
+                    if (j == 0) done = true;
+                    skip = true;
+                    break;
+                } else {
+                    iterPc = iterPc.and(guardedValue.getGuard());
+                }
+            }
+            alreadySeen = alreadySeen.or(iterPc);
+            if (done) {
+                break;
+            }
+            if (skip) {
+                i--;
+                continue;
+            }
+            result++;
+            i++;
+        }
+        return result;
+    }
+
     /**
      * Count the number of concrete values for arguments
      * @param pc Guard under which to concretize values
@@ -300,9 +340,9 @@ public class Concretizer {
     public static int getNumConcreteValues(Guard pc, ValueSummary ... args) {
     	int i = 0;
     	try {
-            i = getConcreteValues(pc, x -> false, Concretizer::concretize, args).size();
+            i = countConcreteValues(pc, x -> false, Concretizer::concretize, args);
     	} catch (NullPointerException e) {
-    		// ignore null values and return 0
+            throw new RuntimeException("Counting concrete values failed.");
     	}
     	return i;
     }

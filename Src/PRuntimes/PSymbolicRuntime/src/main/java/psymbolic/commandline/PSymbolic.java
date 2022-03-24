@@ -21,8 +21,8 @@ public class PSymbolic {
         PSymConfiguration config = PSymOptions.ParseCommandlineArgs(args);
         Reflections reflections = new Reflections("psymbolic");
     	SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
-        SolverEngine.setTimeLimit(config.getTimeLimit());
-        SolverEngine.setMemLimit(config.getMemLimit());
+        SolverStats.setTimeLimit(config.getTimeLimit());
+        SolverStats.setMemLimit(config.getMemLimit());
 
         try {
             // load all the files in the passed jar

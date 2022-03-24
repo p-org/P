@@ -1,8 +1,11 @@
 package psymbolic.valuesummary.solvers;
 
 import com.google.common.collect.ImmutableList;
+import psymbolic.commandline.EntryPoint;
 import psymbolic.runtime.statistics.SolverStats;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -133,7 +136,9 @@ public class SolverGuard {
                 return false;
             default:
 //                checkInput(Arrays.asList(this));
+                Instant start = Instant.now();
                 boolean isSatNeg = SolverEngine.getSolver().isSat(SolverEngine.getSolver().not(formula));
+                SolverStats.updateSolveGuardTime((Duration.between(start, Instant.now()).toMillis()));
                 if (!isSatNeg) {
                     statusTrue = SolverTrueStatus.True;
                     statusFalse = SolverFalseStatus.NotFalse;
@@ -153,7 +158,9 @@ public class SolverGuard {
                 return false;
             default:
 //                checkInput(Arrays.asList(this));
+                Instant start = Instant.now();
                 boolean isSat = SolverEngine.getSolver().isSat(formula);
+                SolverStats.updateSolveGuardTime((Duration.between(start, Instant.now()).toMillis()));
                 if (!isSat) {
                     statusTrue = SolverTrueStatus.NotTrue;
                     statusFalse = SolverFalseStatus.False;
@@ -171,14 +178,6 @@ public class SolverGuard {
         }
         SolverGuard newGuard = new SolverGuard(formula, type, children);
         table.put(formula, newGuard);
-
-        // switch engine
-        SolverEngine.switchEngineAuto();
-
-        // check if reached time or memory limit
-        SolverEngine.checkForTimeout();
-        SolverEngine.checkForMemout();
-
         return newGuard;
     }
 
@@ -233,27 +232,36 @@ public class SolverGuard {
     }
 
     public SolverGuard not() {
-        checkInput(Arrays.asList(this));
+//        checkInput(Arrays.asList(this));
         SolverStats.notOperations++;
-        return getSolverGuard(  SolverEngine.getSolver().not(formula),
-                SolverGuardType.NOT,
-                ImmutableList.of(this));
+        Instant start = Instant.now();
+        SolverGuard result = getSolverGuard(SolverEngine.getSolver().not(formula),
+                                            SolverGuardType.NOT,
+                                            ImmutableList.of(this));
+        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
+        return result;
     }
 
     public SolverGuard and(SolverGuard other) {
 //        checkInput(Arrays.asList(this, other));
     	SolverStats.andOperations++;
-        return getSolverGuard(  SolverEngine.getSolver().and(formula, other.formula),
-                                SolverGuardType.AND,
-                                ImmutableList.of(this, other));
+        Instant start = Instant.now();
+        SolverGuard result = getSolverGuard(SolverEngine.getSolver().and(formula, other.formula),
+                                            SolverGuardType.AND,
+                                            ImmutableList.of(this, other));
+        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
+        return result;
     }
 
     public SolverGuard or(SolverGuard other) {
 //        checkInput(Arrays.asList(this, other));
     	SolverStats.orOperations++;
-        return getSolverGuard(SolverEngine.getSolver().or(  formula, other.formula),
-                                                            SolverGuardType.OR,
-                                                            ImmutableList.of(this, other));
+        Instant start = Instant.now();
+        SolverGuard result = getSolverGuard(SolverEngine.getSolver().or(formula, other.formula),
+                                            SolverGuardType.OR,
+                                            ImmutableList.of(this, other));
+        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
+        return result;
     }
 
     private static SolverGuard orMany(List<SolverGuard> others) {

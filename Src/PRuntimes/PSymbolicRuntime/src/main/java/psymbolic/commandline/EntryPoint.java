@@ -34,10 +34,6 @@ public class EntryPoint {
         try {
             scheduler.doSearch(p);
             status = "success";
-        } catch (TimeoutException e) {
-            status = "timeout";
-        } catch (MemoutException e) {
-            status = "memout";
         } catch (BugFoundException e) {
             status = "cex";
             TraceLogger.setVerbosity(2);
@@ -48,6 +44,12 @@ public class EntryPoint {
             //replay.doSearch(p);
             e.printStackTrace();
             throw new BugFoundException("Found bug: " + e.getLocalizedMessage(), pc);
+        } catch (TimeoutException e) {
+            status = "timeout";
+        } catch (MemoutException e) {
+            status = "memout";
+        } catch (RuntimeException e) {
+            status = "error";
         } finally {
             TraceLogger.setVerbosity(2);
             Instant end = Instant.now();

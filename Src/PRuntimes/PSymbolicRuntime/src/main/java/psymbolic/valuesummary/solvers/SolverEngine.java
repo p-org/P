@@ -5,6 +5,7 @@ import lombok.Setter;
 import psymbolic.commandline.EntryPoint;
 import psymbolic.commandline.MemoutException;
 import psymbolic.commandline.TimeoutException;
+import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.solvers.bdd.PJBDDImpl;
 import psymbolic.valuesummary.solvers.sat.SatExpr;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
@@ -23,40 +24,6 @@ public class SolverEngine {
     private static SolverType solverType = SolverType.BDD;
     @Getter @Setter
     private static ExprLibType exprLibType = ExprLibType.Auto;
-
-    @Getter @Setter
-    // time limit in seconds (0 means infinite)
-    private static double timeLimit = 0;
-    @Getter @Setter
-    // memory limit in megabytes (0 means infinite)
-    private static double memLimit = 0;
-    @Getter @Setter
-    // max memory in megabytes
-    private static double maxMemSpent = 0;
-
-    public static double checkForTimeout() {
-        Instant end = Instant.now();
-        double timeSpent = (Duration.between(EntryPoint.start, end).toMillis() / 1000.0);
-        if (timeLimit > 0) {
-            if (timeSpent > timeLimit) {
-                throw new TimeoutException(String.format("Max time limit reached: %.1f seconds", timeSpent), timeSpent);
-            }
-        }
-        return timeSpent;
-    }
-
-    public static double checkForMemout() {
-        Runtime runtime = Runtime.getRuntime();
-        double memSpent = (runtime.totalMemory() - runtime.freeMemory()) / 1000000.0;
-        if (maxMemSpent < memSpent)
-            maxMemSpent = memSpent;
-        if (memLimit > 0) {
-            if (memSpent > memLimit) {
-                throw new MemoutException(String.format("Max memory limit reached: %.1f MB", memSpent), memSpent);
-            }
-        }
-        return memSpent;
-    }
 
     public static void simplifyEngineAuto() {
         switch (getExprLibType()) {
@@ -82,7 +49,7 @@ public class SolverEngine {
         switch (getSolverType()) {
             case BDD:
             case CBDD:
-                if ((memLimit > 0) && (SolverEngine.checkForMemout() > (0.8*memLimit))) {
+                if ((SolverStats.memLimit > 0) && (SolverStats.getMemory() > (0.8*SolverStats.memLimit))) {
 //                if (SolverEngine.getSolver().getNodeCount() > 20000000) {
                     switchEngine(SolverType.YICES2, ExprLibType.Fraig);
                     SolverEngine.cleanupEngine();

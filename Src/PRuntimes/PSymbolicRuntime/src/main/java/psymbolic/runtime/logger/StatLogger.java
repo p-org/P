@@ -60,16 +60,12 @@ public class StatLogger {
         log.info(String.format("#-vars:\t%d", SolverEngine.getVarCount()));
         log.info(String.format("#-guards:\t%d", SolverEngine.getGuardCount()));
         log.info(String.format("#-expr:\t%d", SolverEngine.getSolver().getExprCount()));
-        log.info(String.format("#-and-ops:\t%d", SolverStats.andOperations));
-        log.info(String.format("#-or-ops:\t%d", SolverStats.orOperations));
-        log.info(String.format("#-not-ops:\t%d", SolverStats.notOperations));
-        log.info(String.format("aig-#-sat-ops:\t%d", Fraig.isSatOperations));
-        log.info(String.format("aig-#-sat-ops-sat:\t%d", Fraig.isSatResult));
-        log.info(String.format("aig-%%-sat-ops-sat:\t%.1f", SolverStats.isSatPercent(Fraig.isSatOperations, Fraig.isSatResult)));
+        log.info(String.format("#-ops:\t%d", SolverStats.andOperations+SolverStats.orOperations+SolverStats.notOperations));
         log.info(String.format("solver-#-nodes:\t%d", SolverEngine.getSolver().getNodeCount()));
         log.info(String.format("solver-#-sat-ops:\t%d", SolverStats.isSatOperations));
-        log.info(String.format("solver-#-sat-ops-sat:\t%d", SolverStats.isSatResult));
         log.info(String.format("solver-%%-sat-ops-sat:\t%.1f", SolverStats.isSatPercent(SolverStats.isSatOperations, SolverStats.isSatResult)));
+//        log.info(String.format("aig-#-sat-ops:\t%d", Fraig.isSatOperations));
+//        log.info(String.format("aig-%%-sat-ops-sat:\t%.1f", SolverStats.isSatPercent(Fraig.isSatOperations, Fraig.isSatResult)));
     }
     
 }

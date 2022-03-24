@@ -41,12 +41,12 @@ public class Fraig implements ExprLib<Long> {
         params = Abc.Fraig_ParamsGetDefault();
         Abc.Fraig_ParamsSet_nPatsRand(params, 2048);
         Abc.Fraig_ParamsSet_nPatsDyna(params, 2048);
-        Abc.Fraig_ParamsSet_nBTLimit(params, 100);
+        Abc.Fraig_ParamsSet_nBTLimit(params, 99);
         Abc.Fraig_ParamsSet_nSeconds(params, 1);
         Abc.Fraig_ParamsSet_fFuncRed(params, 1);
         Abc.Fraig_ParamsSet_fFeedBack(params, 1);
         Abc.Fraig_ParamsSet_fDist1Pats(params, 1);
-        Abc.Fraig_ParamsSet_fDoSparse(params, 1);
+        Abc.Fraig_ParamsSet_fDoSparse(params, 0);
         Abc.Fraig_ParamsSet_fChoicing(params, 0);
         Abc.Fraig_ParamsSet_fTryProve(params, 0);
         Abc.Fraig_ParamsSet_fVerbose(params, 0);

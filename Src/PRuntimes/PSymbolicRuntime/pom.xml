@@ -25,34 +25,6 @@
         <version>2.5.2</version>
         <executions>
           <execution>
-            <id>install-abc</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <groupId>com.berkeley.abc</groupId>
-              <artifactId>abc</artifactId>
-              <version>1.0.0</version>
-              <packaging>jar</packaging>
-              <file>lib/abc.jar</file>
-            </configuration>
-          </execution>
-          <execution>
-	    <id>install-yices</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <groupId>com.sri.yices</groupId>
-              <artifactId>yices</artifactId>
-              <version>1.0</version>
-              <packaging>jar</packaging>
-              <file>lib/yices.jar</file>
-            </configuration>
-          </execution>
-          <execution>
 	    <id>install-pjbdd</id>
             <phase>clean</phase>
             <goals>

@@ -16,10 +16,17 @@ namespace Plang.CSharpRuntime.Values
 
         public PrtTuple(params IPrtValue[] elems)
         {
-            fieldValues = new List<IPrtValue>(elems.Count());
-            foreach (IPrtValue elem in elems)
+            fieldValues = new List<IPrtValue>();
+            if (elems == null || elems.Length == 1)
             {
-                fieldValues.Add(elem?.Clone());
+                fieldValues.Add(elems?.First());
+            }
+            else
+            {
+                foreach (IPrtValue elem in elems)
+                {
+                    fieldValues.Add(elem?.Clone());
+                }
             }
         }
 
@@ -105,10 +112,19 @@ namespace Plang.CSharpRuntime.Values
             fieldValues = new List<IPrtValue>();
         }
 
-        public PrtNamedTuple(string[] fieldNames, params IPrtValue[] fieldValues)
+        public PrtNamedTuple(string[] _fieldNames, params IPrtValue[] _fieldValues)
         {
-            this.fieldNames = fieldNames.ToList();
-            this.fieldValues = fieldValues.ToList();
+            this.fieldNames = _fieldNames.ToList();
+            if (_fieldValues == null || _fieldValues.Length == 1)
+            {
+                fieldValues = new List<IPrtValue>();
+                fieldValues.Add(_fieldValues?.First());
+
+            }
+            else
+            {
+                this.fieldValues = _fieldValues.ToList();
+            }
         }
 
         public IPrtValue this[string name]

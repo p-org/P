@@ -89,8 +89,9 @@ public class TraceLogger extends PSymLogger {
         }
     }
 
-    public static void finished(int steps) {
+    public static void finished(int steps, long timeSpent) {
         log.info(String.format("Execution finished in %d steps", steps));
+        log.info(String.format("Took " + timeSpent + " seconds"));
     }
 
     public static void handle(Machine m, State st, Message event) {

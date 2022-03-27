@@ -2,17 +2,11 @@ package psymbolic.valuesummary.solvers;
 
 import lombok.Getter;
 import lombok.Setter;
-import psymbolic.commandline.EntryPoint;
-import psymbolic.commandline.MemoutException;
-import psymbolic.commandline.TimeoutException;
 import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.solvers.bdd.PJBDDImpl;
 import psymbolic.valuesummary.solvers.sat.SatExpr;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 import psymbolic.valuesummary.solvers.sat.SatGuard;
-
-import java.time.Duration;
-import java.time.Instant;
 
 /**
  * Represents the generic backend engine

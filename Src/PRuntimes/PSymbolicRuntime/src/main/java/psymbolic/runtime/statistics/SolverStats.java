@@ -1,10 +1,8 @@
 package psymbolic.runtime.statistics;
 
-import lombok.Getter;
 import lombok.Setter;
 import psymbolic.commandline.EntryPoint;
 import psymbolic.commandline.MemoutException;
-import psymbolic.commandline.TimeoutException;
 import psymbolic.valuesummary.solvers.SolverEngine;
 import psymbolic.valuesummary.solvers.sat.expr.Fraig;
 
@@ -60,14 +58,6 @@ public class SolverStats {
         return memSpent;
     }
 
-    public static void checkTimeout(double timeSpent) {
-        if (timeLimit > 0) {
-            if (timeSpent > timeLimit) {
-                throw new TimeoutException(String.format("Max time limit reached: %.1f seconds", timeSpent), timeSpent);
-            }
-        }
-    }
-
     public static void checkMemout(double memSpent) {
         if (memLimit > 0) {
             if (memSpent > memLimit) {
@@ -77,7 +67,6 @@ public class SolverStats {
     }
 
     public static void checkResourceLimits() {
-        checkTimeout(getTime());
         checkMemout(getMemory());
     }
 

@@ -3,6 +3,7 @@ package pcontainment.runtime.machine.eventhandlers;
 import lombok.Getter;
 import pcontainment.runtime.Event;
 import pcontainment.runtime.Message;
+import pcontainment.runtime.Payloads;
 import pcontainment.runtime.machine.State;
 import java.util.Map;
 
@@ -11,6 +12,8 @@ import java.util.Map;
  * Either a normal return, or goto, or raise.
  */
 public class EventHandlerReturnReason {
+
+    private EventHandlerReturnReason() {};
 
     public static class Raise extends EventHandlerReturnReason {
         @Getter

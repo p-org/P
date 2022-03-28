@@ -1,7 +1,6 @@
 package pcontainment.runtime;
 
 
-import jdk.internal.net.http.common.Pair;
 import lombok.Getter;
 import pcontainment.runtime.machine.Machine;
 
@@ -29,6 +28,11 @@ public class Message {
             this.payloads = new Payloads();
         else
           this.payloads = payloads;
+    }
+
+    @Override
+    public String toString() {
+        return "Send " + event.toString() + " to " + target.toString();
     }
 
 }

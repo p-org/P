@@ -8,9 +8,9 @@ import java.util.Objects;
 public class Event {
     private static int eventCount = 0;
     // Special event send to a machine on creation
-    public static Event createMachine = new Event("createMachine");
+    public static final Event createMachine = new Event("createMachine");
     // Special halt event
-    public static Event haltMachine = new Event("_halt");
+    public static final Event haltMachine = new Event("_halt");
     // Name of the Event
     final String name;
     final int id;

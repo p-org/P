@@ -1,7 +1,7 @@
 package pcontainment;
 
 import com.microsoft.z3.*;
-import jdk.internal.net.http.common.Pair;
+import lombok.Getter;
 import p.runtime.values.*;
 import pcontainment.runtime.Message;
 import pcontainment.runtime.Payloads;
@@ -23,7 +23,12 @@ public class Checker {
     private final List<Payloads> payloads = new ArrayList<>();
     private final List<Message> concreteSends = new ArrayList<>();
     private IntExpr currentState = ctx.mkIntConst("state_0");
+    @Getter
     private int depth = 0;
+
+    public BoolExpr getCurrentStateEq(State s) { return ctx.mkEq(currentState, getStateEncoding(s)); }
+
+    public IntExpr getStateEncoding(State s) { return ctx.mkInt(s.getId()); }
 
     public IntExpr mkInt(int i) { return ctx.mkInt(i); }
 
@@ -211,10 +216,12 @@ public class Checker {
         BoolExpr outcomes = ctx.mkFalse();
         Message m = raise.getMessage();
         Iterable<EventHandler> eventHandlers = target.getHandlersFor(m.getEvent());
+        int i = 0;
         for (EventHandler handler : eventHandlers) {
             Map<BoolExpr, Pair<Integer, EventHandlerReturnReason>> encoding = handler.getEncoding(sends, target, m.getPayloads());
             BoolExpr outcome = runEncoding(target, encoding);
             outcomes = ctx.mkOr(outcomes, outcome);
+            i++;
         }
         return outcomes;
     }

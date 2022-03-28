@@ -510,10 +510,10 @@ public class Scheduler implements SymbolicSearch {
                 System.out.println(String.format("memory-current-MB:\t%.1f", memoryUsed));
                 System.out.println("--------------------");
                 System.out.println("Solver Stats::");
-                StatLogger.log(String.format("time-create-guards-%%:\t%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
-                StatLogger.log(String.format("time-solve-guards-%%:\t%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
-                StatLogger.log(String.format("time-create-guards-max-seconds:\t%.3f", SolverStats.timeMaxCreateGuards/1000.0));
-                StatLogger.log(String.format("time-solve-guards-max-seconds:\t%.3f", SolverStats.timeMaxSolveGuards/1000.0));
+                System.out.println(String.format("time-create-guards-%%:\t%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
+                System.out.println(String.format("time-solve-guards-%%:\t%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
+                System.out.println(String.format("time-create-guards-max-seconds:\t%.3f", SolverStats.timeMaxCreateGuards/1000.0));
+                System.out.println(String.format("time-solve-guards-max-seconds:\t%.3f", SolverStats.timeMaxSolveGuards/1000.0));
                 System.out.println(SolverStats.prettyPrint());
                 System.out.println("--------------------");
                 System.out.println("Detailed Solver Stats::\n" + SolverEngine.getStats());

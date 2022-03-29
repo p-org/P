@@ -19,7 +19,7 @@ P was used for creating formal models of all the core distributed protocols invo
 S3's strong consistency and checking that the system model satisfies the desired
 correctness guarantees. Details about P and how it is being used by the S3 team can be
 found in the [AWS Pi-Week Talk](https://pages.awscloud.com/pi-week-2021.html):
-[**Use of Automated Reasoning for S3 Strong Consistency Launch**](https://www.twitch.tv/videos/962963706?t=0h26m57s).
+[**Use of Automated Reasoning for S3 Strong Consistency Launch**](https://www.twitch.tv/videos/962963706?t=0h15m15s).
 
 ### [AWS] Amazon IoT Devices: OTA Protocol
 

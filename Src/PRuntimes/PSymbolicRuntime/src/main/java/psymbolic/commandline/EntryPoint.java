@@ -31,6 +31,8 @@ public class EntryPoint {
             } else if (e.getCause() instanceof BugFoundException) {
                 throw (BugFoundException)e.getCause();
             } else {
+                e.getCause().printStackTrace();
+                e.printStackTrace();
                 throw new RuntimeException("RuntimeException");
             }
         } catch (InterruptedException e) {

@@ -251,19 +251,19 @@
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
-      <version>1.2.12</version>
+      <version>1.2.17</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
-      <version>2.13.2</version>
+      <version>[2.17.1,)</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j-impl</artifactId>
-      <version>2.11.0</version>
+      <version>[2.17.1,)</version>
     </dependency>
 
     <dependency>

@@ -21,10 +21,53 @@ public class InterleaveOrder implements MessageOrder {
         PrimitiveVS<Event> release = new PrimitiveVS<>(new Event("eReleaseLock"));
         PrimitiveVS<Event> prepare = new PrimitiveVS<>(new Event("ePrepareReq"));
         PrimitiveVS<Event> prepareResponse = new PrimitiveVS<>(new Event("ePrepareResp"));
+
         Guard readRespCond0 = e0.symbolicEquals(readResp, e0.getUniverse()).getGuardFor(true);
         Guard readRespCond1 = e1.symbolicEquals(readResp, e1.getUniverse()).getGuardFor(true);
         Guard readReqCond0 = e0.symbolicEquals(readReq, e0.getUniverse()).getGuardFor(true);
         Guard readReqCond1 = e1.symbolicEquals(readReq, e1.getUniverse()).getGuardFor(true);
+
+        // paxos
+        PrimitiveVS<Event> writeResp = new PrimitiveVS<>(new Event("writeResp"));
+        PrimitiveVS<Event> write = new PrimitiveVS<>(new Event("write"));
+        PrimitiveVS<Event> accepted = new PrimitiveVS<>(new Event("accepted"));
+        PrimitiveVS<Event> accept = new PrimitiveVS<>(new Event("accept"));
+        PrimitiveVS<Event> read = new PrimitiveVS<>(new Event("read"));
+        PrimitiveVS<Event> paxosReadResp = new PrimitiveVS<>(new Event("readResp"));
+        PrimitiveVS<Event> agree = new PrimitiveVS<>(new Event("agree"));
+        PrimitiveVS<Event> reject = new PrimitiveVS<>(new Event("reject"));
+        PrimitiveVS<Event> prepare = new PrimitiveVS<>(new Event("prepare"));
+        Guard writeRespCond0 = e0.symbolicEquals(writeResp, e0.getUniverse()).getGuardFor(true);
+        Guard writeRespCond1 = e1.symbolicEquals(writeResp, e1.getUniverse()).getGuardFor(true);
+        Guard writeCond0 = e0.symbolicEquals(write, e0.getUniverse()).getGuardFor(true);
+        Guard writeCond1 = e1.symbolicEquals(write, e1.getUniverse()).getGuardFor(true);
+        Guard acceptedCond0 = e0.symbolicEquals(accepted, e0.getUniverse()).getGuardFor(true);
+        Guard acceptedCond1 = e1.symbolicEquals(accepted, e1.getUniverse()).getGuardFor(true);
+        Guard acceptCond0 = e0.symbolicEquals(accept, e0.getUniverse()).getGuardFor(true);
+        Guard acceptCond1 = e1.symbolicEquals(accept, e1.getUniverse()).getGuardFor(true);
+        Guard readCond0 = e0.symbolicEquals(read, e0.getUniverse()).getGuardFor(true);
+        Guard readCond1 = e1.symbolicEquals(read, e1.getUniverse()).getGuardFor(true);
+        Guard pReadRespCond0 = e0.symbolicEquals(paxosReadResp, e0.getUniverse()).getGuardFor(true);
+        Guard pReadRespCond1 = e1.symbolicEquals(paxosReadResp, e1.getUniverse()).getGuardFor(true);
+        Guard agreeCond0 = e0.symbolicEquals(agree, e0.getUniverse()).getGuardFor(true);
+        Guard agreeCond1 = e0.symbolicEquals(agree, e1.getUniverse()).getGuardFor(true);
+        Guard rejectCond0 = e0.symbolicEquals(reject, e0.getUniverse()).getGuardFor(true);
+        Guard rejectCond1 = e0.symbolicEquals(reject, e1.getUniverse()).getGuardFor(true);
+        Guard prepareCond0 = e0.symbolicEquals(prepare, e0.getUniverse()).getGuardFor(true);
+        Guard prepareCond1 = e0.symbolicEquals(prepare, e1.getUniverse()).getGuardFor(true);
+        Guard paxosCond = writeRespCond0.and(writeRespCond1).or
+                          (writeRespCond0.and(writeCond1)).or
+                          (agreeCond0.and(writeCond1)).or(acceptedCond0.and(writeCond1)).or
+                          (rejectCond0.and(writeCond1)).or(acceptCond0.and(writeCond1)).or
+                          (prepareCond0.and(writeCond1)).or
+                          (writeCond0.and(agreeCond1)).or(writeCond0.and(acceptedCond0)).or
+                          (writeCond0.and(rejectCond1)).or(writeCond0.and(acceptCond1)).or
+                          (agreeCond0.and(writeRespCond1)).or(acceptedCond0.and(writeRespCond1)).or
+                          (rejectCond0.and(writeRespCond1)).or(acceptCond0.and(writeRespCond1)).or
+                          (prepareCond0.and(writeRespCond1)).or
+                          (agreeCond0.and(pReadRespCond1)).or(acceptedCond0.and(pReadRespCond1)).or
+                          (rejectCond0.and(pReadRespCond1)).or(acceptCond0.and(pReadRespCond1)).or
+                          (prepareCond0.and(pReadRespCond1));
 
         Guard bothReads = readReqCond0.and(readReqCond1);
         Guard readAtLessElement = Guard.constFalse();
@@ -49,7 +92,7 @@ public class InterleaveOrder implements MessageOrder {
         Guard prepareResponseCond1 = e1.symbolicEquals(prepareResponse, e1.getUniverse()).getGuardFor(true);
         return acquireCond0.and(releaseCond1).or(acquireCond1.and(releaseCond0)).or(
                prepareCond0.and(prepareResponseCond1).or(prepareCond1.and(prepareResponseCond0))).or(
-               readRespCond0.and(readRespCond1.or(readReqCond1))).or(updateCond0.and(updateCond1)).or(readAtLessElement);
+               readRespCond0.and(readRespCond1.or(readReqCond1))).or(updateCond0.and(updateCond1)).or(readAtLessElement).or(paxosCond);
                //readRespCond0.and(readRespCond1.or(updateCond1).or(readReqCond1))).or(updateCond0.and(updateCond1));
     }
 

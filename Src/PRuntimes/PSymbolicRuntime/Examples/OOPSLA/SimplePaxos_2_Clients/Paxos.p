@@ -87,15 +87,24 @@ machine AcceptorMachine {
 
   state WaitForRequests {
     on read do (req: readRequest) {
-      print(format("read {0} %s, {1} %s", req.key, store[req.key]));
       send req.client, readResp, (key = req.key, val = store[req.key]);
     }
 
     on prepare do (payload: (proposer: machine, proposal: ProposalType)) {
+      var readRec : tRecord;
+      var emptyPreds : seq[tPreds];
       if(lastRecvProposal.value == default(tRecord))
       {
         send payload.proposer, agree, default(ProposalType);
-        lastRecvProposal = payload.proposal;
+        if (payload.proposal.ty == WRITE) {
+          lastRecvProposal = payload.proposal;
+        } else {
+            readRec = payload.proposal.value;
+            if (payload.proposal.value.key in store) {
+              readRec = (key = payload.proposal.value.val, val = store[payload.proposal.value.key]);
+            }
+            lastRecvProposal = (ty = READ, pid = payload.proposal.pid, value = readRec);
+         }
       }
       else if(ProposalLessThan(payload.proposal.pid, lastRecvProposal.pid))
       {
@@ -104,7 +113,15 @@ machine AcceptorMachine {
       else 
       {
         send payload.proposer, agree, lastRecvProposal;
-        lastRecvProposal = payload.proposal;
+        if (payload.proposal.ty == WRITE)
+          lastRecvProposal = payload.proposal;
+        else {
+          if (payload.proposal.value.key in store)
+            readRec = (key = payload.proposal.value.val, val = store[payload.proposal.value.key]);
+          else
+            readRec = (key = payload.proposal.value.val, val = choose(emptyPreds));
+          lastRecvProposal = (ty = READ, pid = payload.proposal.pid, value = readRec);
+        }
       }
     }
     on accept do (payload: (proposer: machine, proposal: ProposalType)) {
@@ -114,8 +131,12 @@ machine AcceptorMachine {
       }
       else
       {
-        store[payload.proposal.value.key] = payload.proposal.value.val;
-        send payload.proposer, accepted, payload.proposal;
+        if (payload.proposal.ty == WRITE) {
+          store[payload.proposal.value.key] = payload.proposal.value.val;
+          send payload.proposer, accepted, payload.proposal;
+        } else {
+          send payload.proposer, accepted, payload.proposal;
+        }
       }
       lastRecvProposal = default(ProposalType);
     }
@@ -126,6 +147,7 @@ machine ProposerMachine {
   var acceptors: seq[machine];
   var majority: int;
   var serverid: int;
+  var proposeOp: op;
   var proposeValue: tRecord;
   var nextProposalId : ProposalIdType;
   var GC_NumOfAccptNodes : int;
@@ -148,15 +170,20 @@ machine ProposerMachine {
       on write do (req : writeRequest) {
         client = req.client;
         proposeValue = req.rec;
+        proposeOp = WRITE;
         nextProposalId = (serverid = serverid, round = 1);
         majority = GC_NumOfAccptNodes/2 + 1;
         goto ProposerPhaseOne;
       }
 
       on read do (req: readRequest) {
-        var acceptor: machine;
-        acceptor = choose(acceptors);
-        send acceptor, read, req;
+        var emptyPreds : seq[tPreds];
+        client = req.client;
+        proposeValue = (key = req.key, val = choose(emptyPreds));
+        proposeOp = READ;
+        nextProposalId = (serverid = serverid, round = 1);
+        majority = GC_NumOfAccptNodes/2 + 1;
+        goto ProposerPhaseOne;
       }
   }
 
@@ -171,19 +198,34 @@ machine ProposerMachine {
   }
 
   var numOfAgreeRecv: int;
+  var numOfAgreeRead: map[tPreds, int];
   var numOfAcceptRecv: int;
   var promisedAgree: ProposalType;
 
   state ProposerPhaseOne {
     defer write;
+    defer read;
     ignore accepted;
     entry {
       numOfAgreeRecv = 0;
-      SendToAllAcceptors(prepare, (proposer = this, proposal = (pid = nextProposalId, value = proposeValue)));
+      SendToAllAcceptors(prepare, (proposer = this, proposal = (ty = proposeOp, pid = nextProposalId, value = proposeValue)));
     }
 
     on agree do (payload: ProposalType) {
-      numOfAgreeRecv =numOfAgreeRecv + 1;
+      if (proposeOp == WRITE) {
+        numOfAgreeRecv =numOfAgreeRecv + 1;
+      }
+      else if (proposeOp == READ) {
+        if(promisedAgree.pid == payload.pid) {
+          if (payload.value.val in numOfAgreeRead) {
+            numOfAgreeRead[payload.value.val] = numOfAgreeRead[payload.value.val] + 1;
+            if (numOfAgreeRead[payload.value.val] > numOfAgreeRecv) {
+              numOfAgreeRecv = numOfAgreeRead[payload.value.val];
+              proposeValue = payload.value;
+            }
+          }
+        }
+      }
       if(ProposalLessThan(promisedAgree.pid, payload.pid))
       {
         promisedAgree = payload;
@@ -202,11 +244,6 @@ machine ProposerMachine {
       goto ProposerPhaseOne;
     }
 
-    on read do (req: readRequest) {
-      var acceptor: machine;
-      acceptor = choose(acceptors);
-      send acceptor, read, req;
-    }
   }
 
   fun GetValueToBeProposed() : tRecord {
@@ -223,16 +260,11 @@ machine ProposerMachine {
   state ProposerPhaseTwo {
     ignore agree;
     defer write;
+    defer read;
     entry {
       numOfAcceptRecv = 0;
       proposeValue = GetValueToBeProposed();
-      SendToAllAcceptors(accept, (proposer = this, proposal = (pid = nextProposalId, value = proposeValue)));
-    }
-
-    on read do (req: readRequest) {
-      var acceptor: machine;
-      acceptor = choose(acceptors);
-      send acceptor, read, req;
+      SendToAllAcceptors(accept, (proposer = this, proposal = (ty = proposeOp, pid = nextProposalId, value = proposeValue)));
     }
 
     on reject do (payload : ProposalIdType)
@@ -251,7 +283,10 @@ machine ProposerMachine {
 
       if(numOfAcceptRecv == majority)
       {
-        send client, writeResp;
+        if (payload.ty == WRITE)
+          send client, writeResp;
+        else
+          send client, readResp, payload.value;
         goto WaitForClient; //raise halt;
       }
     }

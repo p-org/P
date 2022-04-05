@@ -86,12 +86,12 @@ public class EntryPoint {
             status = "cex";
             print_stats(status, config, scheduler);
 
-            TraceLogger.setVerbosity(2);
+//            TraceLogger.setVerbosity(2);
             SearchLogger.disable();
             Guard pc = e.pathConstraint;
             ReplayScheduler replay = new ReplayScheduler(config, scheduler.getSchedule(), pc);
             p.setScheduler(replay);
-            //replay.doSearch(p);
+            replay.doSearch(p);
             e.printStackTrace();
             throw new BugFoundException("Found bug: " + e.getLocalizedMessage(), pc);
         } catch (InterruptedException e) {

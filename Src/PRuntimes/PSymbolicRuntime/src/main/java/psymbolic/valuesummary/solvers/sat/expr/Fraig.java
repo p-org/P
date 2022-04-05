@@ -20,7 +20,10 @@ public class Fraig implements ExprLib<Long> {
     public HashSet<Integer> idSet = new HashSet<Integer>();
     public static int isSatOperations = 0;
     public static int isSatResult = 0;
-    public static int nBTLimit = 100;
+    public static int createBTLimit = 500;
+    public static int solveBTLimit = 10;
+    public static boolean useFraigSat = false;
+    private static boolean useFraigFull = false;
 
     public Fraig() {
         reset();
@@ -38,22 +41,30 @@ public class Fraig implements ExprLib<Long> {
         hasStarted = true;
 
         System.out.println("Setting FRAIG Parameters");
-        params = Abc.Fraig_ParamsGetDefault();
-        Abc.Fraig_ParamsSet_nPatsRand(params, 2048);
-        Abc.Fraig_ParamsSet_nPatsDyna(params, 2048);
-        Abc.Fraig_ParamsSet_nBTLimit(params, 99);
-        Abc.Fraig_ParamsSet_nSeconds(params, 1);
-        Abc.Fraig_ParamsSet_fFuncRed(params, 1);
-        Abc.Fraig_ParamsSet_fFeedBack(params, 1);
-        Abc.Fraig_ParamsSet_fDist1Pats(params, 1);
-        Abc.Fraig_ParamsSet_fDoSparse(params, 0);
-        Abc.Fraig_ParamsSet_fChoicing(params, 0);
-        Abc.Fraig_ParamsSet_fTryProve(params, 0);
-        Abc.Fraig_ParamsSet_fVerbose(params, 0);
-        Abc.Fraig_ParamsSet_fVerboseP(params, 0);
-        Abc.Fraig_ParamsSet_fInternal(params, 0);
-        Abc.Fraig_ParamsSet_nConfLimit(params, 0);
-        Abc.Fraig_ParamsSet_nInspLimit(params, 0);
+        params = -1;
+        if (useFraigFull) {
+//            useFraigSat = true;
+//            createBTLimit = -1;
+//            solveBTLimit = -1;
+            params = Abc.Fraig_ParamsGetDefaultFull();
+        } else {
+            params = Abc.Fraig_ParamsGetDefault();
+            Abc.Fraig_ParamsSet_nPatsRand(params, 2048);
+            Abc.Fraig_ParamsSet_nPatsDyna(params, 2048);
+            Abc.Fraig_ParamsSet_nBTLimit(params, createBTLimit);
+            Abc.Fraig_ParamsSet_nSeconds(params, 20);
+            Abc.Fraig_ParamsSet_fFuncRed(params, 1);
+            Abc.Fraig_ParamsSet_fFeedBack(params, 1);
+            Abc.Fraig_ParamsSet_fDist1Pats(params, 1);
+            Abc.Fraig_ParamsSet_fDoSparse(params, 1);
+            Abc.Fraig_ParamsSet_fChoicing(params, 0);
+            Abc.Fraig_ParamsSet_fTryProve(params, 0);
+            Abc.Fraig_ParamsSet_fVerbose(params, 0);
+            Abc.Fraig_ParamsSet_fVerboseP(params, 0);
+            Abc.Fraig_ParamsSet_fInternal(params, 0);
+            Abc.Fraig_ParamsSet_nConfLimit(params, 0);
+            Abc.Fraig_ParamsSet_nInspLimit(params, 0);
+        }
 
         System.out.println("Creating FRAIG Network");
         network = Abc.Fraig_ManCreate(params);
@@ -138,16 +149,19 @@ public class Fraig implements ExprLib<Long> {
     }
 
     private SolverTrueStatus isAlwaysTrue(long formula, int nBTLimit) {
-        if (formula == getTrue()) {
+        if (areEqual(formula, getTrue())) {
             return SolverTrueStatus.True;
-        } else if (formula == getFalse()) {
+        } else if (areEqual(formula, getFalse())) {
             return SolverTrueStatus.NotTrue;
 //        } else if (Abc.Fraig_ManCheckClauseUsingSimInfo(Aig.network, formula, Aig.getFalse())) {
 //            return SolverTrueStatus.True;
         } else {
-            int result = Abc.Fraig_ManCheckClauseUsingSat(network, formula, getFalse(), nBTLimit);
+            int result = 0;
+            result = Abc.Fraig_ManCheckClauseUsingSat(network, formula, getFalse(), nBTLimit);
+            Fraig.isSatOperations++;
             switch (result) {
                 case 0:
+                    Fraig.isSatResult++;
                     return SolverTrueStatus.NotTrue;
                 case 1:
                     return SolverTrueStatus.True;
@@ -158,12 +172,10 @@ public class Fraig implements ExprLib<Long> {
     }
 
     public SatStatus isSat(Long formula, int nBTLimit) {
-        Fraig.isSatOperations++;
         switch(isAlwaysTrue(Abc.Fraig_Not(formula), nBTLimit)) {
             case True:
                 return SatStatus.Unsat;
             case NotTrue:
-                Fraig.isSatResult++;
                 return SatStatus.Sat;
             default:
                 return SatStatus.Unknown;

@@ -38,9 +38,9 @@ public class YicesImpl implements SatLib<Integer> {
 //    	System.out.println("Creating config for logic NONE, status: " + status);
 
         context = Yices.newContext(config);
-        status = Yices.contextEnableOption(context, "var-elim");
-        status = Yices.contextEnableOption(context, "bvarith-elim");
-        status = Yices.contextEnableOption(context, "flatten");
+//        status = Yices.contextEnableOption(context, "var-elim");
+//        status = Yices.contextEnableOption(context, "bvarith-elim");
+//        status = Yices.contextEnableOption(context, "flatten");
 //    	System.out.println("Creating context");
     	
     	param = Yices.newParamRecord();

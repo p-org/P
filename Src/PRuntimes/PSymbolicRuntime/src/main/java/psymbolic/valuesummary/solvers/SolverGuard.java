@@ -15,12 +15,17 @@ public class SolverGuard {
     private Object formula;
     private final SolverGuardType type;
     private final ImmutableList<SolverGuard> children;
-
     private SolverTrueStatus statusTrue;
     private SolverFalseStatus statusFalse;
     private static List<SolverGuard> varList = new ArrayList<>();
     private static HashMap<Object, SolverGuard> table = new HashMap<Object, SolverGuard>();
 
+    /**
+     * Creates a new solver guard
+     * @param formula formula represented in solver backend
+     * @param type type of the solver guard
+     * @param children list of children
+     */
     public SolverGuard(Object formula, SolverGuardType type, ImmutableList<SolverGuard> children) {
         this.formula = formula;
         this.type = type;
@@ -29,11 +34,17 @@ public class SolverGuard {
         this.statusFalse = SolverFalseStatus.Unknown;
     }
 
+    /**
+     * Global reset for the solver guard class
+     */
     public static void reset() {
         table.clear();
         varList.clear();
     }
 
+    /**
+     * (Experimental) Simplify the solver guard
+     */
     public static void simplifySolverGuard() {
         // create a local copy to iterate over old guards
         HashMap<Object, SolverGuard> oldTable = new HashMap<Object, SolverGuard>(table);
@@ -52,6 +63,10 @@ public class SolverGuard {
         }
     }
 
+    /**
+     * (Experimental) Simplify a solver guard by calling simplify in the solver backend
+     * @param original the original solver guard
+     */
     private static void simplifySolverGuard(SolverGuard original) {
         // return if already cached in new table
         if (table.containsKey(original.formula)) {
@@ -65,6 +80,9 @@ public class SolverGuard {
         table.put(original.formula, original);
     }
 
+    /**
+     * Switch solver guard implementation to the new solver backend
+     */
     public static void switchSolverGuard() {
         // create a local copy to iterate over old guards
         HashMap<Object, SolverGuard> oldTable = new HashMap<Object, SolverGuard>(table);
@@ -83,6 +101,10 @@ public class SolverGuard {
         }
     }
 
+    /**
+     * Port a solver guard to the new solver backend
+     * @param original original solver guard
+     */
     private static void recreateSolverGuard(SolverGuard original) {
         // return if already cached in new table
         if (table.containsKey(original.formula)) {
@@ -128,6 +150,10 @@ public class SolverGuard {
         table.put(original.formula, original);
     }
 
+    /**
+     * Check if the solver guard is logical `true`
+     * @return true iff solver guard logically evaluates to `true`
+     */
     public boolean isTrue() {
         switch (statusTrue) {
             case True:
@@ -150,6 +176,10 @@ public class SolverGuard {
         }
     }
 
+    /**
+     * Check if the solver guard is logical `false`
+     * @return true iff solver guard logically evaluates to `false`
+     */
     public boolean isFalse() {
         switch (statusFalse) {
             case False:
@@ -172,6 +202,13 @@ public class SolverGuard {
         }
     }
 
+    /**
+     * Get the solver guard
+     * @param formula formula in solver backend
+     * @param type type of solver guard
+     * @param children solver guard children
+     * @return a cached solver guard or create a new one
+     */
     private static SolverGuard getSolverGuard(Object formula, SolverGuardType type, ImmutableList<SolverGuard> children) {
         if (table.containsKey(formula)) {
             return table.get(formula);
@@ -181,10 +218,18 @@ public class SolverGuard {
         return newGuard;
     }
 
+    /**
+     * Total number of solver guards stored
+     * @return the number of solver guards
+     */
     public static int getGuardCount() {
         return table.size();
     }
 
+    /**
+     * Get solver guard representing logical `true`
+     * @return solver guard representing logical `true`
+     */
     private static SolverGuard createTrue() {
         SolverGuard g = getSolverGuard( SolverEngine.getSolver().constTrue(),
                                         SolverGuardType.TRUE,
@@ -194,6 +239,10 @@ public class SolverGuard {
         return g;
     }
 
+    /**
+     * Get solver guard representing logical `false`
+     * @return solver guard representing logical `false`
+     */
     private static SolverGuard createFalse() {
         SolverGuard g = getSolverGuard( SolverEngine.getSolver().constFalse(),
                 SolverGuardType.FALSE,
@@ -203,14 +252,26 @@ public class SolverGuard {
         return g;
     }
 
+    /**
+     * Get solver guard representing logical `true`
+     * @return solver guard representing logical `true`
+     */
     public static SolverGuard constTrue() {
         return createTrue();
     }
 
+    /**
+     * Get solver guard representing logical `false`
+     * @return solver guard representing logical `false`
+     */
     public static SolverGuard constFalse() {
         return createFalse();
     }
 
+    /**
+     * Get solver guard representing a new Boolean variable
+     * @return solver guard representing a new Boolean variable
+     */
     public static SolverGuard newVar() {
         SolverGuard g = getSolverGuard( SolverEngine.getSolver().newVar(),
                                         SolverGuardType.VARIABLE,
@@ -221,6 +282,9 @@ public class SolverGuard {
         return g;
     }
 
+    /**
+     * Sanity check if the list of input solver guards are already stored
+     */
     private static void checkInput(List<SolverGuard> inputs) {
         for (SolverGuard input : inputs) {
             if (!table.containsKey(input.formula)) {
@@ -231,6 +295,10 @@ public class SolverGuard {
         }
     }
 
+    /**
+     * Get solver guard representing logical `not` on this
+     * @return solver guard representing logical `not` on this
+     */
     public SolverGuard not() {
 //        checkInput(Arrays.asList(this));
         SolverStats.notOperations++;
@@ -242,6 +310,11 @@ public class SolverGuard {
         return result;
     }
 
+    /**
+     * Get solver guard representing logical `and` on this and other
+     * @param other solver guard to `and` this with
+     * @return solver guard representing logical `and` on this and other
+     */
     public SolverGuard and(SolverGuard other) {
 //        checkInput(Arrays.asList(this, other));
     	SolverStats.andOperations++;
@@ -253,6 +326,11 @@ public class SolverGuard {
         return result;
     }
 
+    /**
+     * Get solver guard representing logical `or` on this and other
+     * @param other solver guard to `or` this with
+     * @return solver guard representing logical `or` on this and other
+     */
     public SolverGuard or(SolverGuard other) {
 //        checkInput(Arrays.asList(this, other));
     	SolverStats.orOperations++;
@@ -264,25 +342,50 @@ public class SolverGuard {
         return result;
     }
 
+    /**
+     * Get solver guard representing logical `or` on this and a list of solver guards
+     * @param others list of solver guards to `or` this with
+     * @return solver guard representing logical `or` on this and a list of solver guards
+     */
     private static SolverGuard orMany(List<SolverGuard> others) {
         return others.stream().reduce(SolverGuard.constFalse(), SolverGuard::or);
     }
 
+    /**
+     * Get solver guard representing logical implication
+     * @param other right-hand side of the implication
+     * @return solver guard representing logical implication (this => other)
+     */
     public SolverGuard implies(SolverGuard other) {
 //        checkInput(Arrays.asList(this, other));
         return (this.not()).or(other);
     }
 
+    /**
+     * Get solver guard representing if-then-else
+     * @param thenCase solver guard for then case
+     * @param elseCase solver guard for else case
+     * @return solver guard representing if (this) then thenCase else elseCase
+     */
     public SolverGuard ifThenElse(SolverGuard thenCase, SolverGuard elseCase) {
 //        checkInput(Arrays.asList(this, thenCase, elseCase));
         return (this.and(thenCase)).or((this.not()).and(elseCase));
     }
 
+    /**
+     * Pretty print the solver guard
+     * @return a string
+     */
     @Override
     public String toString() {
         return SolverEngine.getSolver().toString(formula);
     }
 
+    /**
+     * Check if this equals o
+     * @param o right-hand side of the equality
+     * @return true iff this and o are equal
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -292,6 +395,10 @@ public class SolverGuard {
 //        return SolverEngine.getSolver().areEqual(formula, that.formula) && statusTrue.equals(that.statusTrue) && statusFalse.equals(that.statusFalse);
     }
 
+    /**
+     * Hash code of the solver guard
+     * @return integer representing the hash of solver guard
+     */
     @Override
     public int hashCode() {
         return SolverEngine.getSolver().hashCode(formula);

@@ -77,8 +77,8 @@ public class SatGuard implements SolverLib<SatExpr> {
     }
 
     public SatExpr ifThenElse(SatExpr cond, SatExpr thenClause, SatExpr elseClause) {
-        return SatExpr.Or(SatExpr.And(SatExpr.Not(cond), thenClause),
-                          SatExpr.And(cond, elseClause));
+        return SatExpr.Or(SatExpr.And(cond, thenClause),
+                          SatExpr.And(SatExpr.Not(cond), elseClause));
     }
 
     public SatExpr simplify(SatExpr formula) {

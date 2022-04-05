@@ -16,12 +16,11 @@ public class SatExpr {
     public static int numVars = 0;
     public static HashMap<Object, SatObject> satTable = new HashMap<Object, SatObject>();
     public static HashMap<Object, SatObject> aigTable = new HashMap<Object, SatObject>();
-    private Object expr;
-
     private static ExprLib exprImpl;
-
     @Getter
     private static ExprLibType exprType;
+
+    private Object expr;
 
     public static void resetAbc() {
         if (abcStarted) {
@@ -147,23 +146,23 @@ public class SatExpr {
             return aigTable.get(original);
         }
         SatObject satFormula = new SatObject(original, SatStatus.Unknown);
-        satFormula.status = ((Fraig)exprImpl).isSat((Long)original, Fraig.nBTLimit);
+        satFormula.status = ((Fraig)exprImpl).isSat((Long)original, Fraig.solveBTLimit);
         aigTable.put(original, satFormula);
         return satFormula;
     }
 
     public static boolean isSat(SatExpr formula) {
         SatObject satFormula;
-//        if (getExprType() == ExprLibType.Fraig) {
-//            satFormula = createAigFormula(formula.expr);
-//            switch (satFormula.status) {
-//                case Sat:
-//                    return true;
-//                case Unsat:
-//                    return false;
-//                default:
-//            }
-//        }
+        if (getExprType() == ExprLibType.Fraig && Fraig.useFraigSat) {
+            satFormula = createAigFormula(formula.expr);
+            switch (satFormula.status) {
+                case Sat:
+                    return true;
+                case Unsat:
+                    return false;
+                default:
+            }
+        }
         satFormula = createSatFormula(formula.expr);
         return checkSat(formula, satFormula);
     }

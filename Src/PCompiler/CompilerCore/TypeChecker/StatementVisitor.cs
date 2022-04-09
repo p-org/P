@@ -420,6 +420,12 @@ namespace Plang.Compiler.TypeChecker
                 state.Entry?.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
             IPExpr[] rvaluesList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
 
+            int expectedArgs = state.Entry?.Signature.Parameters.Count() ?? 0;
+            if (rvaluesList.Length != expectedArgs)
+            {
+                throw handler.IncorrectArgumentCount(context, rvaluesList.Length, expectedArgs);
+            }
+
             IPExpr payload;
             if (rvaluesList.Length == 0)
             {

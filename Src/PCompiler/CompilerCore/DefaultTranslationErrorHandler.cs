@@ -58,7 +58,7 @@ namespace Plang.Compiler
         public Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount)
         {
             return IssueError(location,
-                $"function or constructor call expected {expectedCount} arguments, got {actualCount}");
+                $"goto, function or constructor call expected {expectedCount} arguments, got {actualCount}");
         }
 
         public Exception MissingDeclaration(ParserRuleContext location, string declarationKind, string missingName)

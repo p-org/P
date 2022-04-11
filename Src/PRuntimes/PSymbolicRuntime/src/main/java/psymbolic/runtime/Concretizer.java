@@ -105,6 +105,7 @@ public class Concretizer {
             for (int i = 0; i < names.length; i++) {
                 String name = names[i];
                 GuardedValue<?> entry = concretize(namedTupleVS.getField(name));
+                if (entry == null) return null;
                 map.put(name, entry.getValue());
                 pc = pc.and(entry.getGuard());
                 namedTupleVS = namedTupleVS.restrict(pc);

@@ -479,9 +479,8 @@ public class Scheduler implements SymbolicSearch {
         effect = effect.merge(effects);
         TraceLogger.schedule(depth, effect);
 
-        performEffect(effect);
+        performEffect(effect.restrict(done.not()));
 
-        done = done.or(effect.getUniverse().not());
         List<List<ValueSummary>> newStates = new ArrayList<>();
         for (Machine machine : machines) {
             newStates.add(machine.getLocalState());

@@ -36,7 +36,7 @@ public class InterleaveOrder implements MessageOrder {
         PrimitiveVS<Event> paxosReadResp = new PrimitiveVS<>(new Event("readResp"));
         PrimitiveVS<Event> agree = new PrimitiveVS<>(new Event("agree"));
         PrimitiveVS<Event> reject = new PrimitiveVS<>(new Event("reject"));
-        PrimitiveVS<Event> prepare = new PrimitiveVS<>(new Event("prepare"));
+        PrimitiveVS<Event> paxosPrepare = new PrimitiveVS<>(new Event("prepare"));
         Guard writeRespCond0 = e0.symbolicEquals(writeResp, e0.getUniverse()).getGuardFor(true);
         Guard writeRespCond1 = e1.symbolicEquals(writeResp, e1.getUniverse()).getGuardFor(true);
         Guard writeCond0 = e0.symbolicEquals(write, e0.getUniverse()).getGuardFor(true);
@@ -53,21 +53,21 @@ public class InterleaveOrder implements MessageOrder {
         Guard agreeCond1 = e0.symbolicEquals(agree, e1.getUniverse()).getGuardFor(true);
         Guard rejectCond0 = e0.symbolicEquals(reject, e0.getUniverse()).getGuardFor(true);
         Guard rejectCond1 = e0.symbolicEquals(reject, e1.getUniverse()).getGuardFor(true);
-        Guard prepareCond0 = e0.symbolicEquals(prepare, e0.getUniverse()).getGuardFor(true);
-        Guard prepareCond1 = e0.symbolicEquals(prepare, e1.getUniverse()).getGuardFor(true);
+        Guard pPrepareCond0 = e0.symbolicEquals(paxosPrepare, e0.getUniverse()).getGuardFor(true);
+        Guard pPrepareCond1 = e0.symbolicEquals(paxosPrepare, e1.getUniverse()).getGuardFor(true);
         Guard paxosCond = writeRespCond0.and(writeRespCond1).or
                           (writeRespCond0.and(writeCond1)).or
                           (agreeCond0.and(writeCond1)).or(acceptedCond0.and(writeCond1)).or
                           (rejectCond0.and(writeCond1)).or(acceptCond0.and(writeCond1)).or
-                          (prepareCond0.and(writeCond1)).or
+                          (pPrepareCond0.and(writeCond1)).or
                           (writeCond0.and(agreeCond1)).or(writeCond0.and(acceptedCond0)).or
                           (writeCond0.and(rejectCond1)).or(writeCond0.and(acceptCond1)).or
                           (agreeCond0.and(writeRespCond1)).or(acceptedCond0.and(writeRespCond1)).or
                           (rejectCond0.and(writeRespCond1)).or(acceptCond0.and(writeRespCond1)).or
-                          (prepareCond0.and(writeRespCond1)).or
+                          (pPrepareCond0.and(writeRespCond1)).or
                           (agreeCond0.and(pReadRespCond1)).or(acceptedCond0.and(pReadRespCond1)).or
                           (rejectCond0.and(pReadRespCond1)).or(acceptCond0.and(pReadRespCond1)).or
-                          (prepareCond0.and(pReadRespCond1));
+                          (pPrepareCond0.and(pReadRespCond1));
 
         Guard bothReads = readReqCond0.and(readReqCond1);
         Guard readAtLessElement = Guard.constFalse();

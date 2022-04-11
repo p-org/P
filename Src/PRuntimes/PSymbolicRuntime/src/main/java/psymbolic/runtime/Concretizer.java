@@ -272,9 +272,16 @@ public class Concretizer {
             for (int j = 0; j < args.length && !done; j++) {
                 GuardedValue<?> guardedValue = concretizer.apply(args[j].restrict(iterPc));
                 if (guardedValue == null) {
-                    if (j == 0) done = true;
-                    skip = true;
-                    break;
+                    if (j == 0) {
+                        done = true;
+                        break;
+                    }
+                    if (print) {
+                        concreteArgs.add(null);
+                    } else {
+                        skip = true;
+                        break;
+                    }
                 } else {
                     iterPc = iterPc.and(guardedValue.getGuard());
                     concreteArgs.add(guardedValue.getValue());
@@ -317,8 +324,8 @@ public class Concretizer {
                 GuardedValue<?> guardedValue = concretizer.apply(args[j].restrict(iterPc));
                 if (guardedValue == null) {
                     if (j == 0) done = true;
-                    skip = true;
-                    break;
+//                    skip = true;
+//                    break;
                 } else {
                     iterPc = iterPc.and(guardedValue.getGuard());
                 }
@@ -348,7 +355,7 @@ public class Concretizer {
     	int i = 0;
     	try {
             if (print) {
-                i = getConcreteValues(print, pc, x -> false, Concretizer::concretize, args).size();
+                i = getConcreteValues(true, pc, x -> false, Concretizer::concretize, args).size();
             } else {
                 i = countConcreteValues(pc, x -> false, Concretizer::concretize, args);
             }

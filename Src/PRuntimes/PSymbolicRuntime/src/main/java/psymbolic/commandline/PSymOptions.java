@@ -89,7 +89,17 @@ public class PSymOptions {
                 .build();
         options.addOption(depthBound);
 
-        // max depth bound for the search
+        // max iteration bound for the search
+        Option maxIterationBound = Option.builder("ib")
+                .longOpt("iteration-bound")
+                .desc("Max iteration bound for the search")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Max Iteration Bound (integer)")
+                .build();
+        options.addOption(maxIterationBound);
+
+        // max choice bound for the search
         Option inputChoiceBound = Option.builder("cb")
                 .longOpt("choice-bound")
                 .desc("Max choice bound at each depth during the search (integer)")
@@ -99,7 +109,7 @@ public class PSymOptions {
                 .build();
         options.addOption(inputChoiceBound);
 
-        // max depth bound for the search
+        // max scheduling choice bound for the search
         Option maxSchedBound = Option.builder("sb")
                 .longOpt("sched-choice-bound")
                 .desc("Max scheduling choice bound at each depth during the search")
@@ -289,6 +299,15 @@ public class PSymOptions {
                     } catch (NumberFormatException ex) {
                         formatter.printHelp("db", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
                         formatter.printUsage(writer, 80, "db", options);
+                    }
+                    break;
+                case "ib":
+                case "iteration-bound":
+                    try {
+                        config.setIterationBound(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        formatter.printHelp("ib", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                        formatter.printUsage(writer, 80, "ib", options);
                     }
                     break;
                 case "cb":

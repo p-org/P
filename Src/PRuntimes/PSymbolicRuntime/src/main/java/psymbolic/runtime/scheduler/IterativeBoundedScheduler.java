@@ -2,11 +2,10 @@ package psymbolic.runtime.scheduler;
 
 import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
-import psymbolic.runtime.NondetUtil;
 import psymbolic.runtime.logger.SearchLogger;
+import psymbolic.runtime.logger.StatLogger;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.Message;
 import psymbolic.valuesummary.*;
 import psymbolic.runtime.machine.buffer.*;
 
@@ -34,6 +33,16 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     @Override
+    public void print_stats() {
+        super.print_stats();
+        // print statistics
+        if (configuration.getCollectStats() != 0) {
+            StatLogger.log(String.format("#-iterations:\t%d", iter));
+            StatLogger.log(String.format("#-backtracks:\t%d", schedule.getNumBacktracks()));
+        }
+    }
+
+    @Override
     public void doSearch(Program p) {
         while (!isDoneIterating) {
             SearchLogger.log("Starting Iteration: " + iter);
@@ -44,6 +53,9 @@ public class IterativeBoundedScheduler extends Scheduler {
                 SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
             }
             iter++;
+            if (configuration.getIterationBound() > 0) {
+                isDoneIterating = (iter >= configuration.getIterationBound());
+            }
         }
     }
 

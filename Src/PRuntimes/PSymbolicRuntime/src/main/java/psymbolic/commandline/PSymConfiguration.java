@@ -26,6 +26,10 @@ public class PSymConfiguration {
     // max depth bound provided by the user
     private int depthBound = maxDepthBound;
 
+    @Getter @Setter
+    // max iterations bound provided by the user
+    private int iterationBound = 1;
+
     // max input choice bound at each depth after which the search will truncate the choices
     private final int maxInputChoiceBound = 100;
 

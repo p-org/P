@@ -26,7 +26,7 @@ public class Schedule {
     SetVS<VectorClockVS> sleepSet = new SetVS<>(Guard.constTrue());
 
     private static List<VectorClockVS> fullUniverseClocks (VectorClockVS vc) {
-        List<GuardedValue<List<Object>>> concreteVals = Concretizer.getConcreteValues(vc.getUniverse(), x -> false, Concretizer::concretize, vc);
+        List<GuardedValue<List<Object>>> concreteVals = Concretizer.getConcreteValues(false, vc.getUniverse(), x -> false, Concretizer::concretize, vc);
         List<VectorClockVS> res = new ArrayList<>();
         for (GuardedValue<List<Object>> gv : concreteVals) { 
             if (gv.getValue().isEmpty()) continue;

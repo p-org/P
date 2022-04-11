@@ -76,6 +76,17 @@ public class Scheduler implements SymbolicSearch {
 
     int choiceDepth = 0;
 
+    List<List<List<ValueSummary>>> prevStates = new ArrayList<>();
+    private List<Integer> totalStates = new ArrayList<>();
+
+    public int getTotalStates() {
+        int result = 0;
+        for (Integer i: totalStates) {
+            result += i;
+        }
+        return result;
+    }
+
     /** Reset scheduler state
      */
     public void reset() {
@@ -84,6 +95,7 @@ public class Scheduler implements SymbolicSearch {
         done = false;
         machineCounters.clear();
         machines.clear();
+        totalStates.clear();
     }
 
     /** Return scheduler's VC manager
@@ -313,9 +325,10 @@ public class Scheduler implements SymbolicSearch {
             StatLogger.logSolverStats();
 
             if (configuration.getCollectStats() > 2) {
-                StatLogger.log(String.format("#-transitions:\t%d", searchStats.getSearchTotal().getNumOfTransitions()));
-                StatLogger.log(String.format("#-transitions-merged:\t%d", searchStats.getSearchTotal().getNumOfMergedTransitions()));
-                StatLogger.log(String.format("#-transitions-explored:\t%d", searchStats.getSearchTotal().getNumOfTransitionsExplored()));
+                StatLogger.log(String.format("#-states:\t%d", getTotalStates()));
+                StatLogger.log(String.format("#-events:\t%d", searchStats.getSearchTotal().getNumOfTransitions()));
+                StatLogger.log(String.format("#-events-merged:\t%d", searchStats.getSearchTotal().getNumOfMergedTransitions()));
+                StatLogger.log(String.format("#-events-explored:\t%d", searchStats.getSearchTotal().getNumOfTransitionsExplored()));
             }
         }
     }
@@ -475,7 +488,7 @@ public class Scheduler implements SymbolicSearch {
                 System.out.println("\t  message " + removed.toString());
             }
             if (configuration.getCollectStats() > 2) {
-                numMessages += Concretizer.getNumConcreteValues(Guard.constTrue(), removed);
+                numMessages += Concretizer.getNumConcreteValues(false, Guard.constTrue(), removed);
             }
             if (effect == null) {
                 effect = removed;
@@ -488,6 +501,29 @@ public class Scheduler implements SymbolicSearch {
         TraceLogger.schedule(depth, effect);
 
         performEffect(effect);
+<<<<<<< HEAD
+=======
+
+        List<List<ValueSummary>> newStates = new ArrayList<>();
+        int numStates = 1;
+        for (Machine machine : machines) {
+            List<ValueSummary> machineLocalState = machine.getLocalState();
+            newStates.add(machineLocalState);
+        }
+        if (configuration.getCollectStats() > 2) {
+            List<ValueSummary> flatState = new ArrayList<>();
+            for (List<ValueSummary> machineState: newStates) {
+                for (ValueSummary vs: machineState) {
+                    flatState.add(vs);
+                }
+            }
+            numStates = Concretizer.getNumConcreteValues(false, Guard.constTrue(), flatState.toArray(new ValueSummary[0]));
+        }
+
+        prevStates.add(newStates);
+        totalStates.add(numStates);
+
+>>>>>>> e2a21d64e (Restore PSym to without fp)
 
         // simplify engine
 //        SolverEngine.simplifyEngineAuto();
@@ -523,11 +559,12 @@ public class Scheduler implements SymbolicSearch {
 
         // add depth statistics
         if (configuration.getCollectStats() > 2) {
-          SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, numMessages, Concretizer.getNumConcreteValues(Guard.constTrue(), effect), Concretizer.getNumConcreteValues(Guard.constTrue(), effect.getTarget(), effect.getEvent()));
+          SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, numMessages, Concretizer.getNumConcreteValues(false, Guard.constTrue(), effect), Concretizer.getNumConcreteValues(false, Guard.constTrue(), effect.getTarget(), effect.getEvent()));
           searchStats.addDepthStatistics(depth, depthStats);
           SearchLogger.logDepthStats(depthStats);
           System.out.println("--------------------");
           System.out.println("Collect Stats::");
+          System.out.println("Total States:: " + numStates + ", Running Total States::" + getTotalStates());
           System.out.println("Total transitions:: " + depthStats.getNumOfTransitions() + ", Total Merged Transitions (merged same target):: " + depthStats.getNumOfMergedTransitions() + ", Total Transitions Explored:: " + depthStats.getNumOfTransitionsExplored());
           System.out.println("Running Total Transitions:: " + searchStats.getSearchTotal().getNumOfTransitions() + ", Running Total Merged Transitions:: " + searchStats.getSearchTotal().getNumOfMergedTransitions() + ", Running Total Transitions Explored:: " + searchStats.getSearchTotal().getNumOfTransitionsExplored());
           System.out.println("--------------------");

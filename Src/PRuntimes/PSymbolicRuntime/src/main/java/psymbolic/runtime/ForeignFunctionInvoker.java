@@ -19,7 +19,7 @@ public class ForeignFunctionInvoker {
     public static int times = 1;
 
     public static List<GuardedValue<List<Object>>> getConcreteValues (Guard pc, ValueSummary ... args) {
-       return Concretizer.getConcreteValues(pc, x -> x < times, Concretizer::concretizePType, args);
+       return Concretizer.getConcreteValues(false, pc, x -> x < times, Concretizer::concretizePType, args);
     }
 
     /**

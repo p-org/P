@@ -55,8 +55,9 @@ public class InterleaveOrder implements MessageOrder {
         Guard rejectCond1 = e0.symbolicEquals(reject, e1.getUniverse()).getGuardFor(true);
         Guard pPrepareCond0 = e0.symbolicEquals(paxosPrepare, e0.getUniverse()).getGuardFor(true);
         Guard pPrepareCond1 = e0.symbolicEquals(paxosPrepare, e1.getUniverse()).getGuardFor(true);
-        Guard paxosCond = writeRespCond0.and(writeRespCond1).or
-                          (writeRespCond0.and(writeCond1)).or
+        Guard sameMachine = m0.getTarget().symbolicEquals(m1.getTarget(), Guard.constTrue()).getGuardFor(true);
+        Guard paxosCond = (pReadRespCond0).or(readCond0).or(pReadRespCond0.not().and(
+                          (pPrepareCond0.and(pPrepareCond1).and(sameMachine.not())).or(
                           (agreeCond0.and(writeCond1)).or(acceptedCond0.and(writeCond1)).or
                           (rejectCond0.and(writeCond1)).or(acceptCond0.and(writeCond1)).or
                           (pPrepareCond0.and(writeCond1)).or
@@ -64,10 +65,7 @@ public class InterleaveOrder implements MessageOrder {
                           (writeCond0.and(rejectCond1)).or(writeCond0.and(acceptCond1)).or
                           (agreeCond0.and(writeRespCond1)).or(acceptedCond0.and(writeRespCond1)).or
                           (rejectCond0.and(writeRespCond1)).or(acceptCond0.and(writeRespCond1)).or
-                          (pPrepareCond0.and(writeRespCond1)).or
-                          (agreeCond0.and(pReadRespCond1)).or(acceptedCond0.and(pReadRespCond1)).or
-                          (rejectCond0.and(pReadRespCond1)).or(acceptCond0.and(pReadRespCond1)).or
-                          (pPrepareCond0.and(pReadRespCond1));
+                          (pPrepareCond0.and(writeRespCond1)))));
 
         Guard bothReads = readReqCond0.and(readReqCond1);
         Guard readAtLessElement = Guard.constFalse();

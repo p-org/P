@@ -39,7 +39,18 @@ machine TestClient {
         entry {
             currTransaction = (key = EQKEY, val = EQVAL);
             send proposer, write, (client = this, rec = currTransaction);
-            goto SendPost;
+            goto SendNondetWrites;
+        }
+    }
+
+    state SendNondetWrites {
+        on writeResp do {
+            var choices : seq[tPreds];
+            choices += (0, EQVAL);
+            choices += (1, NEQVAL);
+            currTransaction = (key = NEQKEY, val = choose(choices));
+            send proposer, write, (client = this, rec = currTransaction);
+            if ($) { goto SendPost; }
         }
     }
 
@@ -48,12 +59,7 @@ machine TestClient {
             send proposer, read, (client = this, key = EQKEY);
         }
         on readResp do (resp : tRecord) {
-            var choices : seq[tPreds];
             assert (resp == (key = EQKEY, val = EQVAL)), format("value not equal {0} %s, {1} %s", resp.key, resp.val);
-            choices += (0, EQVAL);
-            choices += (1, NEQVAL);
-            currTransaction = (key = NEQKEY, val = choose(choices));
-            send proposer, write, (client = this, rec = currTransaction);
         }
     }
 

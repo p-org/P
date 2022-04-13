@@ -14,7 +14,7 @@ machine Main {
       var temp: machine;
       var index: int;
       GC_NumOfAccptNodes = 3;
-      GC_NumOfProposerNodes = 2;
+      GC_NumOfProposerNodes = 1;
       //GC_Default_Value = 0;
       index = 0;
       //create acceptors
@@ -95,16 +95,16 @@ machine AcceptorMachine {
       var emptyPreds : seq[tPreds];
       if(lastRecvProposal.value == default(tRecord))
       {
-        send payload.proposer, agree, default(ProposalType);
         if (payload.proposal.ty == WRITE) {
           lastRecvProposal = payload.proposal;
         } else {
             readRec = payload.proposal.value;
             if (payload.proposal.value.key in store) {
-              readRec = (key = payload.proposal.value.val, val = store[payload.proposal.value.key]);
+              readRec = (key = payload.proposal.value.key, val = store[payload.proposal.value.key]);
             }
             lastRecvProposal = (ty = READ, pid = payload.proposal.pid, value = readRec);
          }
+         send payload.proposer, agree, lastRecvProposal;
       }
       else if(ProposalLessThan(payload.proposal.pid, lastRecvProposal.pid))
       {
@@ -117,9 +117,9 @@ machine AcceptorMachine {
           lastRecvProposal = payload.proposal;
         else {
           if (payload.proposal.value.key in store)
-            readRec = (key = payload.proposal.value.val, val = store[payload.proposal.value.key]);
+            readRec = (key = payload.proposal.value.key, val = store[payload.proposal.value.key]);
           else
-            readRec = (key = payload.proposal.value.val, val = choose(emptyPreds));
+            readRec = (key = payload.proposal.value.key, val = choose(emptyPreds));
           lastRecvProposal = (ty = READ, pid = payload.proposal.pid, value = readRec);
         }
       }
@@ -158,7 +158,7 @@ machine ProposerMachine {
   start state Init {
     entry (payload: (seq[machine], int)){
       GC_NumOfAccptNodes = 3;
-      GC_NumOfProposerNodes = 2;
+      GC_NumOfProposerNodes = 1;
       //GC_Default_Value = 0;
       acceptors = payload.0;
       serverid = payload.1;
@@ -221,8 +221,12 @@ machine ProposerMachine {
             numOfAgreeRead[payload.value.val] = numOfAgreeRead[payload.value.val] + 1;
             if (numOfAgreeRead[payload.value.val] > numOfAgreeRecv) {
               numOfAgreeRecv = numOfAgreeRead[payload.value.val];
+              promisedAgree = payload;
               proposeValue = payload.value;
             }
+          } else {
+               numOfAgreeRead[payload.value.val] = 1;
+               numOfAgreeRecv = 1;
           }
         }
       }
@@ -232,6 +236,7 @@ machine ProposerMachine {
       }
       if(numOfAgreeRecv == majority)
       {
+        numOfAgreeRead = default(map[tPreds, int]);
         goto ProposerPhaseTwo;
       }
     }
@@ -287,6 +292,7 @@ machine ProposerMachine {
           send client, writeResp;
         else
           send client, readResp, payload.value;
+        promisedAgree = default(ProposalType);
         goto WaitForClient; //raise halt;
       }
     }

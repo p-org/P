@@ -66,7 +66,18 @@ machine TestClient {
         entry {
             currTransaction = (key = EQKEY, val = EQVAL);
             send coordinator, eWriteTransReq, (client = this, rec = currTransaction);
-            goto SendPost;
+            goto SendNondetWrites;
+        }
+    }
+
+    state SendNondetWrites {
+        on eWriteTransResp do {
+            var choices : seq[tPreds];
+            choices += (0, EQVAL);
+            choices += (1, NEQVAL);
+            currTransaction = (key = NEQKEY, val = choose(choices));
+            send coordinator, eWriteTransReq, (client = this, rec = currTransaction);
+            if ($) { goto SendPost; }
         }
     }
 
@@ -79,10 +90,6 @@ machine TestClient {
             if (resp.status == SUCCESS) {
                 assert (resp.rec == (key = EQKEY, val = EQVAL)), format("value not equal {0} %s, {1} %s", resp.rec.key, resp.rec.val);
             }
-            choices += (0, EQVAL);
-            choices += (1, NEQVAL);
-            currTransaction = (key = NEQKEY, val = choose(choices));
-            send coordinator, eWriteTransReq, (client = this, rec = currTransaction);
         }
     }
 

@@ -30,7 +30,3 @@ jobs:
       run: dotnet build --configuration Release
     - name: Test
       run: dotnet test --configuration Release
-    - name: Test-RVM
-      run: |
-        python Tst/RegressionTests/Rvm/run_all_unittests.py
-        python Tst/RegressionTests/Rvm/run_all_examples.py

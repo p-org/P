@@ -39,15 +39,15 @@ namespace Plang.Compiler
                 commandlineOutput.WriteInfo($"==== Loading project file: {projectFile}");
 
                 var outputLanguage = CompilerOutput.CSharp;
-                List<FileInfo> inputFiles = new List<FileInfo>();
+                HashSet<FileInfo> inputFiles = new HashSet<FileInfo>();
                 bool generateSourceMaps = false;
-                List<string> projectDependencies = new List<string>();
+                HashSet<string> projectDependencies = new HashSet<string>();
 
                 // get all project dependencies and the input files
-                var (fileInfos, list) = GetAllProjectDependencies(projectFilePath);
+                var (fileInfos, list) = GetAllProjectDependencies(projectFilePath, inputFiles, projectDependencies);
 
-                inputFiles.AddRange(fileInfos);
-                projectDependencies.AddRange(list);
+                inputFiles.UnionWith(fileInfos);
+                projectDependencies.UnionWith(list);
 
                 if (inputFiles.Count == 0)
                 {
@@ -65,8 +65,8 @@ namespace Plang.Compiler
                 GetTargetLanguage(projectFilePath, ref outputLanguage, ref generateSourceMaps);
 
                 job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory, aspectjOutputDirectory), outputDirectory,
-                    outputLanguage: outputLanguage, inputFiles: inputFiles, projectName: projectName, projectFilePath.Directory,
-                    generateSourceMaps: generateSourceMaps, projectDependencies: projectDependencies, aspectjOutputDir: aspectjOutputDirectory);
+                    outputLanguage: outputLanguage, inputFiles: inputFiles.ToList(), projectName: projectName, projectFilePath.Directory,
+                    generateSourceMaps: generateSourceMaps, projectDependencies: projectDependencies.ToList(), aspectjOutputDir: aspectjOutputDirectory);
 
                 commandlineOutput.WriteInfo($"----------------------------------------");
                 return true;
@@ -241,14 +241,14 @@ namespace Plang.Compiler
         /// </summary>
         /// <param name="projectFilePath">Path to the P Project file</param>
         /// <returns></returns>
-        private (List<FileInfo> inputFiles, List<string> projectDependencies) GetAllProjectDependencies(FileInfo projectFilePath)
+        private (HashSet<FileInfo> inputFiles, HashSet<string> projectDependencies) GetAllProjectDependencies(FileInfo projectFilePath, HashSet<FileInfo> pre_inputFiles, HashSet<string> pre_projectDependencies)
         {
-            var projectDependencies = new List<string>();
-            var inputFiles = new List<FileInfo>();
+            var projectDependencies = new HashSet<string>(pre_projectDependencies);
+            var inputFiles = new HashSet<FileInfo>(pre_inputFiles);
             XElement projectXml = XElement.Load(projectFilePath.FullName);
             projectDependencies.Add(GetProjectName(projectFilePath));
             // add all input files from the current project
-            inputFiles.AddRange(ReadAllInputFiles(projectFilePath));
+            inputFiles.UnionWith(ReadAllInputFiles(projectFilePath));
 
             // get recursive project dependencies
             foreach (XElement projectDepen in projectXml.Elements("IncludeProject"))
@@ -260,9 +260,10 @@ namespace Plang.Compiler
 
                 commandlineOutput.WriteInfo($"==== Loading project file: {fullProjectDepenPathName.FullName}");
 
-                var inputsAndDependencies = GetAllProjectDependencies(fullProjectDepenPathName);
-                projectDependencies.AddRange(inputsAndDependencies.projectDependencies);
-                inputFiles.AddRange(inputsAndDependencies.inputFiles);
+                if (projectDependencies.Contains(GetProjectName(fullProjectDepenPathName))) continue;
+                var inputsAndDependencies = GetAllProjectDependencies(fullProjectDepenPathName, inputFiles, projectDependencies);
+                projectDependencies.UnionWith(inputsAndDependencies.projectDependencies);
+                inputFiles.UnionWith(inputsAndDependencies.inputFiles);
             }
 
             return (inputFiles, projectDependencies);
@@ -374,7 +375,9 @@ namespace Plang.Compiler
 
                     if (Directory.Exists(inputFileNameFull))
                     {
-                        foreach (var files in Directory.GetFiles(inputFileNameFull, "*.p"))
+                        var enumerate = new EnumerationOptions();
+                        enumerate.RecurseSubdirectories = true;
+                        foreach (var files in Directory.GetFiles(inputFileNameFull, "*.p", enumerate))
                         {
                             pFiles.Add(files);
                         }

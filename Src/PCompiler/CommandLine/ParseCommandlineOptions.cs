@@ -375,7 +375,9 @@ namespace Plang.Compiler
 
                     if (Directory.Exists(inputFileNameFull))
                     {
-                        foreach (var files in Directory.GetFiles(inputFileNameFull, "*.p"))
+                        var enumerate = new EnumerationOptions();
+                        enumerate.RecurseSubdirectories = true;
+                        foreach (var files in Directory.GetFiles(inputFileNameFull, "*.p", enumerate))
                         {
                             pFiles.Add(files);
                         }

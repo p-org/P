@@ -80,7 +80,12 @@ namespace Plang.Compiler
         {
             return IssueError(location, "expected an interface or int or float type");
         }
-
+        
+        public Exception NoMainOrTestCase(string message)
+        {
+            return new TranslationException(message);
+        }
+        
         public Exception IllegalInterfaceCoerce(ParserRuleContext context, PLanguageType oldType, PLanguageType newType)
         {
             PEvent outlierEvent =

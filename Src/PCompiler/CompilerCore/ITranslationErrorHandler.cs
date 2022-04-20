@@ -104,7 +104,9 @@ namespace Plang.Compiler
         Exception DuplicateReceiveCase(ParserRuleContext location, PEvent pEvent);
 
         Exception NoMain(ParserRuleContext sourceLocation, string v);
-
+        
+        Exception NoMainOrTestCase(string v);
+        
         Exception IllegalTypeInCoerceExpr(ParserRuleContext context);
 
         Exception IllegalInterfaceCoerce(ParserRuleContext context, PLanguageType oldType, PLanguageType newType);

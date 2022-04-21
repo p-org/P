@@ -4,12 +4,13 @@ import psymbolic.runtime.Message;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
 
+import java.io.Serializable;
 import java.util.function.Function;
 
 /**
  * Implements the Defer Queue used to keep track of the deferred events
  */
-public class DeferQueue extends SymbolicQueue<Message> {
+public class DeferQueue extends SymbolicQueue<Message> implements Serializable {
 
     public DeferQueue() {
         super();

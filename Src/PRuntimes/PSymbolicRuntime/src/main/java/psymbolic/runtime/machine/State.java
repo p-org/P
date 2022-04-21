@@ -11,12 +11,13 @@ import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.util.ValueSummaryChecks;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 
-public abstract class State {
+public abstract class State implements Serializable {
     private final Map<Event, EventHandler> eventHandlers;
     private final String name;
     private final List<Event> ignored;

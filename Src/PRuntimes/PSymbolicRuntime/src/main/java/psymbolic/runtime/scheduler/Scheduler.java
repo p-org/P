@@ -1,9 +1,7 @@
 package psymbolic.runtime.scheduler;
 
-import psymbolic.commandline.Assert;
-import psymbolic.commandline.PSymConfiguration;
-import psymbolic.commandline.Program;
-import psymbolic.commandline.EntryPoint;
+import lombok.Setter;
+import psymbolic.commandline.*;
 import psymbolic.runtime.*;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.logger.SearchLogger;
@@ -31,6 +29,10 @@ public class Scheduler implements SymbolicSearch {
     /** The scheduling choices made */
     public final Schedule schedule;
 
+    /** The result of the current run */
+    public String result;
+
+    @Setter
     PSymConfiguration configuration;
 
     /** List of all machines along any path constraints */
@@ -132,7 +134,7 @@ public class Scheduler implements SymbolicSearch {
      * @param machines The machines initially in the Scheduler
      */
     public Scheduler(PSymConfiguration config, Machine... machines) {
-        this.configuration = config;
+        setConfiguration(config);
         this.schedule = getNewSchedule();
         this.machines = new ArrayList<>();
         this.machineCounters = new HashMap<>();
@@ -307,8 +309,18 @@ public class Scheduler implements SymbolicSearch {
         }
     }
 
+    @Override
+    public void resumeSearch(Program p) {
+        while (!isDone()) {
+            // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
+            Assert.prop(depth < configuration.getMaxDepthBound(), "Maximum allowed depth " + configuration.getMaxDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
+            step();
+        }
+    }
+
     public void print_stats() {
         // print statistics
+        StatLogger.log(String.format("result:\t%s", result));
         if (configuration.getCollectStats() != 0) {
             Instant end = Instant.now();
             Runtime runtime = Runtime.getRuntime();
@@ -466,12 +478,30 @@ public class Scheduler implements SymbolicSearch {
         return getNextSender(getNextSenderChoices());
     }
 
+    private void recordResult() {
+        int numBacktracks = schedule.getNumBacktracks();
+        if (numBacktracks > 0) {
+            result = "partially safe with " + numBacktracks + " backtracks remaining";
+        } else {
+            if (done) {
+                result = "safe for any depth";
+            } else {
+                result = "safe until depth " + getDepth();
+            }
+        }
+    }
+
     public void step() {
         PrimitiveVS<Machine> choices = getNextSender();
 
         if (choices.isEmptyVS()) {
 //            TraceLogger.finished(depth);
             done = true;
+        }
+
+        recordResult();
+
+        if (done) {
             return;
         }
 

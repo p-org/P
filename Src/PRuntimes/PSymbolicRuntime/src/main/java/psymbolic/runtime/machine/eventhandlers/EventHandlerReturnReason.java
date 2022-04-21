@@ -15,7 +15,7 @@ import java.util.Map;
  * Represent the outcome of executing an event handler 
  * Either a normal return, or goto, or raise.
  */
-public class EventHandlerReturnReason {
+public class EventHandlerReturnReason  {
 
     private UnionVS outcome = new UnionVS();
     @Getter

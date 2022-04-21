@@ -10,6 +10,7 @@ import psymbolic.runtime.scheduler.Scheduler;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.Guard;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -17,7 +18,7 @@ import java.util.function.Function;
 import lombok.Getter;
 import lombok.Setter;
 
-public abstract class Machine {
+public abstract class Machine implements Serializable {
 
     private EventBufferSemantics semantics;
     private String name;
@@ -277,6 +278,8 @@ public abstract class Machine {
 
     @Override
     public int hashCode() {
+        if (name == null)
+            return instanceId;
         return name.hashCode()^instanceId;
     }
 }

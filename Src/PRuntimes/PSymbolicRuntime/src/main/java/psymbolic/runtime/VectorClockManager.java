@@ -3,10 +3,11 @@ package psymbolic.runtime;
 import psymbolic.valuesummary.*;
 import psymbolic.runtime.machine.Machine;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VectorClockManager {
+public class VectorClockManager implements Serializable {
 
     private boolean enabled;
 

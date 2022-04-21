@@ -3,11 +3,10 @@ package psymbolic.commandline;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
 import psymbolic.runtime.scheduler.ReplayScheduler;
-import psymbolic.runtime.scheduler.DPORScheduler;
-import psymbolic.runtime.logger.PSymLogger;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.valuesummary.Guard;
 import psymbolic.runtime.logger.StatLogger;
+import psymbolic.valuesummary.solvers.SolverEngine;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -15,8 +14,14 @@ import java.util.concurrent.*;
 
 public class EntryPoint {
     public static Instant start = Instant.now();
+    private static ExecutorService executor;
+    private static Future<Integer> future;
+    private static String status;
+    private static PSymConfiguration configuration;
+    private static Program program;
+    private static IterativeBoundedScheduler scheduler;
 
-    private static void runWithTimeout(Future<Integer> future, long timeLimit) throws TimeoutException, MemoutException, BugFoundException, InterruptedException {
+    private static void runWithTimeout(long timeLimit) throws TimeoutException, MemoutException, BugFoundException, InterruptedException {
         try {
             if (timeLimit > 0) {
                 future.get(timeLimit, TimeUnit.SECONDS);
@@ -40,41 +45,37 @@ public class EntryPoint {
         }
     }
 
-    private static void print_stats(String status, PSymConfiguration config, IterativeBoundedScheduler scheduler) {
-        if (config.getCollectStats() != 0) {
+    private static void print_stats() {
+        if (configuration.getCollectStats() != 0) {
             System.out.println("--------------------");
             System.out.println("Stats::");
-            System.out.println(String.format("project-name:\t%s", config.getProjectName()));
-            System.out.println(String.format("solver:\t%s", config.getSolverType().toString()));
-            StatLogger.log(String.format("expr-type:\t%s", config.getExprLibType().toString()));
-            StatLogger.log(String.format("time-limit-seconds:\t%.1f", config.getTimeLimit()));
-            StatLogger.log(String.format("memory-limit-MB:\t%.1f", config.getMemLimit()));
+            System.out.println(String.format("project-name:\t%s", configuration.getProjectName()));
+            System.out.println(String.format("solver:\t%s", configuration.getSolverType().toString()));
+            System.out.println(String.format("expr-type:\t%s", configuration.getExprLibType().toString()));
+            System.out.println(String.format("time-limit-seconds:\t%.1f", configuration.getTimeLimit()));
+            System.out.println(String.format("memory-limit-MB:\t%.1f", configuration.getMemLimit()));
             StatLogger.log(String.format("status:\t%s", status));
             scheduler.print_stats();
             System.out.println("--------------------");
         }
     }
 
-    public static void run(Program p, PSymConfiguration config) throws Exception {
-        PSymLogger.ResetAllConfigurations(config.getVerbosity(), config.getProjectName());
-        IterativeBoundedScheduler scheduler = new IterativeBoundedScheduler(config);
-        if (config.isDpor()) scheduler = new DPORScheduler(config);
-        p.setScheduler(scheduler);
-        if (config.getCollectStats() != 0) {
-            StatLogger.log(String.format("project-name:\t%s", config.getProjectName()));
-            StatLogger.log(String.format("solver:\t%s", config.getSolverType().toString()));
-            StatLogger.log(String.format("expr-type:\t%s", config.getExprLibType().toString()));
-            StatLogger.log(String.format("time-limit-seconds:\t%.1f", config.getTimeLimit()));
-            StatLogger.log(String.format("memory-limit-MB:\t%.1f", config.getMemLimit()));
+    private static void preprocess() {
+        if (configuration.getCollectStats() != 0) {
+            StatLogger.log(String.format("project-name:\t%s", configuration.getProjectName()));
+            StatLogger.log(String.format("solver:\t%s", configuration.getSolverType().toString()));
+            StatLogger.log(String.format("expr-type:\t%s", configuration.getExprLibType().toString()));
+            StatLogger.log(String.format("time-limit-seconds:\t%.1f", configuration.getTimeLimit()));
+            StatLogger.log(String.format("memory-limit-MB:\t%.1f", configuration.getMemLimit()));
         }
         start = Instant.now();
-        String status = "error";
+        executor = Executors.newSingleThreadExecutor();
+        status = "error";
+    }
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        TimedCall timedCall = new TimedCall(scheduler, p);
-        Future<Integer> future = executor.submit(timedCall);
+    private static void process() throws Exception {
         try {
-            runWithTimeout(future, (long)config.getTimeLimit());
+            runWithTimeout((long)configuration.getTimeLimit());
             status = "success";
         } catch (TimeoutException e) {
             status = "timeout";
@@ -84,14 +85,15 @@ public class EntryPoint {
             throw new Exception("MEMOUT");
         } catch (BugFoundException e) {
             status = "cex";
-            print_stats(status, config, scheduler);
+            scheduler.result = "found cex of length " + scheduler.getDepth();
+            print_stats();
 
 //            TraceLogger.setVerbosity(2);
             SearchLogger.disable();
             Guard pc = e.pathConstraint;
-            ReplayScheduler replay = new ReplayScheduler(config, scheduler.getSchedule(), pc);
-            p.setScheduler(replay);
-            replay.doSearch(p);
+            ReplayScheduler replay = new ReplayScheduler(configuration, scheduler.getSchedule(), pc);
+            program.setScheduler(replay);
+            replay.doSearch(program);
             e.printStackTrace();
             throw new BugFoundException("Found bug: " + e.getLocalizedMessage(), pc);
         } catch (InterruptedException e) {
@@ -107,8 +109,36 @@ public class EntryPoint {
 
             Instant end = Instant.now();
             TraceLogger.finished(scheduler.getDepth(), Duration.between(start, end).getSeconds());
-            print_stats(status, config, scheduler);
+            print_stats();
         }
+    }
+
+    public static void run(Program p, IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
+        program = p;
+        scheduler = sch;
+        configuration = config;
+        program.setScheduler(scheduler);
+
+        preprocess();
+        TimedCall timedCall = new TimedCall(scheduler, program, false);
+        future = executor.submit(timedCall);
+        process();
+    }
+
+    public static void resume(Program p, IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
+        program = p;
+        scheduler = sch;
+        configuration = config;
+        program.setScheduler(scheduler);
+
+        scheduler.setConfiguration(configuration);
+        TraceLogger.setVerbosity(config.getVerbosity());
+        SolverEngine.resumeEngine();
+
+        preprocess();
+        TimedCall timedCall = new TimedCall(scheduler, program, true);
+        future = executor.submit(timedCall);
+        process();
     }
 
 }

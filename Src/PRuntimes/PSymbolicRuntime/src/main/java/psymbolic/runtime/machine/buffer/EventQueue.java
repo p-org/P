@@ -9,9 +9,10 @@ import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.UnionVS;
 
+import java.io.Serializable;
 import java.util.function.Function;
 
-public class EventQueue extends SymbolicQueue<Message> implements EventBuffer {
+public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, Serializable {
 
     private final Machine sender;
 

@@ -13,7 +13,7 @@ public interface SolverLib<T> {
 
     T not(T bdd);
 
-    T newVar();
+    T newVar(String name);
 
     T simplify(T formula);
 

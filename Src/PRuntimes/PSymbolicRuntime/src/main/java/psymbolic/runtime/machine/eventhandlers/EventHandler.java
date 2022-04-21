@@ -5,7 +5,9 @@ import psymbolic.runtime.machine.Machine;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.UnionVS;
 
-public abstract class EventHandler {
+import java.io.Serializable;
+
+public abstract class EventHandler implements Serializable {
     public final Event event;
 
     protected EventHandler(Event eventName) {

@@ -63,6 +63,14 @@ public class SolverEngine {
         SolverGuard.switchSolverGuard();
     }
 
+    public static void resumeEngine() {
+        System.out.println("Resuming solver engine:\n\t"
+                + getSolverType().toString() + " + "
+                + getExprLibType().toString());
+        setSolver(getSolverType(), getExprLibType());
+        SolverGuard.resumeSolverGuard();
+    }
+
     public static void resetEngine(SolverType type, ExprLibType etype) {
         System.out.println("Resetting solver engine to "
                 + type.toString() + " + "

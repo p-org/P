@@ -179,8 +179,9 @@ public class SatExpr {
         return newExpr(getExprImpl().getFalse());
     }
 
-    public static SatExpr NewVar() {
-        return newExpr(getExprImpl().newVar("x" + numVars++));
+    public static SatExpr NewVar(String name) {
+        numVars++;
+        return newExpr(getExprImpl().newVar(name));
     }
 
     public static SatExpr Not(SatExpr formula) {

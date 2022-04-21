@@ -79,7 +79,7 @@ public class PJBDDImpl implements SolverLib<DD> {
         return c.makeIte(cond, thenClause, elseClause);
     }
 
-    public DD newVar() {
+    public DD newVar(String name) {
         return c.makeVariable();
     }
 

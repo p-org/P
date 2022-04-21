@@ -5,11 +5,13 @@ import psymbolic.valuesummary.ListVS;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.ValueSummary;
 
+import java.io.Serializable;
+
 /**
  * Represents a event-queue implementation using value summaries
  * @param <T>
  */
-public class SymbolicQueue<T extends ValueSummary<T>> {
+public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
 
     // elements in the queue
     private ListVS<T> elements;

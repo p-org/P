@@ -7,12 +7,13 @@ import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
 import psymbolic.valuesummary.*;
 
+import java.io.Serializable;
 import java.util.function.Function;
 
 /**
  * Represents an Event-Bag that is used to store the outgoing events at each state machine.
  */
-public class EventBag extends SymbolicBag<Message> implements EventBuffer {
+public class EventBag extends SymbolicBag<Message> implements EventBuffer, Serializable {
 
     private final Machine sender;
 

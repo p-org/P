@@ -6,10 +6,11 @@ import psymbolic.valuesummary.*;
 import psymbolic.runtime.Concretizer;
 import psymbolic.runtime.Message;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class Schedule {
+public class Schedule implements Serializable {
 
     private final boolean useSleepSets;
 
@@ -59,7 +60,7 @@ public class Schedule {
         sleepSet.remove(toRemove.restrict(sleepSet.contains(toRemove).getGuardFor(true)));
     }
 
-    public class Choice {
+    public class Choice implements Serializable {
         @Getter
         PrimitiveVS<Machine> repeatSender = new PrimitiveVS<>();
         @Getter

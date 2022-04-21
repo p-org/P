@@ -22,14 +22,13 @@ import java.util.stream.Collectors;
  */
 public class IterativeBoundedScheduler extends Scheduler {
 
-    int iter = 0;
+    int iter = 1;
     private int backtrack = 0;
 
     private boolean isDoneIterating = false;
 
     public IterativeBoundedScheduler(PSymConfiguration config) {
         super(config);
-        this.configuration = config;
     }
 
     @Override
@@ -42,20 +41,38 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
     }
 
+    private void summarizeIteration() {
+        if (configuration.getCollectStats() > 2) {
+            SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
+        }
+        if (configuration.getIterationBound() > 0) {
+            isDoneIterating = (iter >= configuration.getIterationBound());
+        }
+        if (!isDoneIterating) {
+            postIterationCleanup();
+            iter++;
+        }
+    }
+
     @Override
     public void doSearch(Program p) {
+        result = "incomplete";
         while (!isDoneIterating) {
             SearchLogger.log("Starting Iteration: " + iter);
             searchStats.startNewIteration(iter, backtrack);
             super.doSearch(p);
-            postIterationCleanup();
-            if (configuration.getCollectStats() > 2) {
-                SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
-            }
-            iter++;
-            if (configuration.getIterationBound() > 0) {
-                isDoneIterating = (iter >= configuration.getIterationBound());
-            }
+            summarizeIteration();
+        }
+    }
+
+    @Override
+    public void resumeSearch(Program p) {
+        isDoneIterating = false;
+        while (!isDoneIterating) {
+            SearchLogger.log("Resuming Iteration: " + iter + " from Step: " + getDepth());
+            searchStats.startNewIteration(iter, backtrack);
+            super.resumeSearch(p);
+            summarizeIteration();
         }
     }
 

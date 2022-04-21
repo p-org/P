@@ -6,6 +6,8 @@ import org.reflections.Reflections;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Set;
 
@@ -38,6 +40,24 @@ public class PSymOptions {
                 .argName("Project Name (string)")
                 .build();
         options.addOption(projectName);
+
+        // read program state from file
+        Option readFromFile = Option.builder("r")
+                .longOpt("read")
+                .desc("Name of the file with the program state")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("File Name (string)")
+                .build();
+        options.addOption(readFromFile);
+
+        // Enable writing the program state to file
+        Option writeToFile = Option.builder("w")
+                .longOpt("write")
+                .desc("Enable writing program state")
+                .numberOfArgs(0)
+                .build();
+        options.addOption(writeToFile);
 
         // time limit
         Option timeLimit = Option.builder("tl")
@@ -216,6 +236,21 @@ public class PSymOptions {
                 case "p":
                 case "project":
                     config.setProjectName(option.getValue());
+                    break;
+                case "r":
+                case "read":
+                    config.setReadFromFile(option.getValue());
+                    File file = new File(config.getReadFromFile());
+                    try {
+                        System.out.println(file.getCanonicalPath() + " exists? "+ file.exists());
+                    } catch (IOException e) {
+                        formatter.printHelp("r", String.format("File %s does not exist", option.getValue()), options, "Try \"--help\" option for details.");
+                        formatter.printUsage(writer, 80, "r", options);
+                    }
+                    break;
+                case "w":
+                case "write":
+                    config.setWriteToFile(true);
                     break;
                 case "tl":
                 case "time-limit":

@@ -5,10 +5,12 @@ import lombok.Setter;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 
+import java.io.Serializable;
+
 /**
  * Represents the configuration of the P Symbolic tool
  */
-public class PSymConfiguration {
+public class PSymConfiguration implements Serializable {
 
     // name of the main machine
     @Getter @Setter
@@ -91,4 +93,13 @@ public class PSymConfiguration {
     @Getter @Setter
     // memory limit in megabytes (0 means infinite)
     private double memLimit = (Runtime.getRuntime().maxMemory() / 1000000);
+
+    // name of the file to read the program state
+    @Getter @Setter
+    private String readFromFile = "";
+
+    @Getter @Setter
+    // whether or not to write the program state(s) to file
+    private boolean writeToFile = false;
+
 }

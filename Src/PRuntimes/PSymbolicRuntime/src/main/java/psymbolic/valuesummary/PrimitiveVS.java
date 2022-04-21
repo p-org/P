@@ -47,7 +47,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
     public Set<T> getValues() {
         if(values == null)
-            values = guardedValues.keySet();
+            values = new HashSet(guardedValues.keySet());
         return values;
     }
 

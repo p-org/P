@@ -56,8 +56,8 @@ public class SatGuard implements SolverLib<SatExpr> {
         return SatExpr.ConstTrue();
     }
 
-    public SatExpr newVar() {
-        return SatExpr.NewVar();
+    public SatExpr newVar(String name) {
+        return SatExpr.NewVar(name);
     }
 
     public SatExpr and(SatExpr left, SatExpr right) {

@@ -6,6 +6,7 @@ import psymbolic.runtime.*;
 import psymbolic.runtime.machine.*;
 import psymbolic.valuesummary.*;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,7 @@ import java.util.function.Function;
  * Represents a value summary based symbolic implementation of a Bag
  * @param <T> Type of elements allowed in the Bag
  */
-public class SymbolicBag<T extends ValueSummary<T>> {
+public class SymbolicBag<T extends ValueSummary<T>> implements Serializable {
 
     // items in the bag
     @Getter

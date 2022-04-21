@@ -2,13 +2,14 @@ package psymbolic.valuesummary;
 
 import psymbolic.valuesummary.solvers.SolverGuard;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Represents the Schedule, Control, Input (SCI) restrict in the guarded value of a value summary
  * Currently, the guards are implemented using BDDs.
  */
-public class Guard {
+public class Guard implements Serializable {
     /**
      * Represents the boolean formula for the restrict
      */

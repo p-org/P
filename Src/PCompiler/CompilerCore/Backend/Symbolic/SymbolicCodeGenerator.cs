@@ -2224,6 +2224,9 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, $"public static Scheduler {CompilationContext.SchedulerVar};");
             context.WriteLine(output);
             context.WriteLine(output, "@Override");
+            context.WriteLine(output, $"public Scheduler getScheduler () {{ return this.{CompilationContext.SchedulerVar}; }}");
+            context.WriteLine(output);
+            context.WriteLine(output, "@Override");
             context.WriteLine(output, $"public void setScheduler (Scheduler s) {{ this.{CompilationContext.SchedulerVar} = s; }}");
             context.WriteLine(output);
         }

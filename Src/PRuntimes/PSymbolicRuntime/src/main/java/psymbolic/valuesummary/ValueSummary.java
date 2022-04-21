@@ -1,9 +1,10 @@
 package psymbolic.valuesummary;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public interface ValueSummary<T extends ValueSummary<T>> {
+public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
 
     static UnionVS castToAny(Guard pc, ValueSummary<?> toCast) {
         if (toCast instanceof UnionVS) { return (UnionVS) toCast.restrict(pc); }

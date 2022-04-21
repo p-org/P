@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.var;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,12 +14,12 @@ import java.util.Map;
 /**
  * Represents the search statistics during exploration
  */
-public class SearchStats {
+public class SearchStats implements Serializable {
     /**
      * Represents the search statistics for one iteration
      */
     @Getter
-    public class IterationStats {
+    public class IterationStats implements Serializable {
 
         // iteration number
         private int iteration;

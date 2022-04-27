@@ -48,7 +48,7 @@ public class Scheduler implements SymbolicSearch {
     private Map<Event, List<Monitor>> listeners;
 
     /** List of monitors instances */
-    private List<Monitor> monitors;
+    List<Monitor> monitors;
 
     /** Vector clock manager */
     private VectorClockManager vcManager;
@@ -78,7 +78,11 @@ public class Scheduler implements SymbolicSearch {
 
     int choiceDepth = 0;
 
-    List<List<List<ValueSummary>>> prevStates = new ArrayList<>();
+    private List<List<List<ValueSummary>>> prevStates = new ArrayList<>();
+
+
+    List<List<ValueSummary>> srcState = new ArrayList<>();
+
     private List<Integer> totalStates = new ArrayList<>();
 
     public int getTotalStates() {
@@ -98,6 +102,14 @@ public class Scheduler implements SymbolicSearch {
         machineCounters.clear();
         machines.clear();
         totalStates.clear();
+    }
+
+    /** Restore scheduler state
+     */
+    public void restore(int d, int cd) {
+        depth = d;
+        choiceDepth = cd;
+        done = false;
     }
 
     /** Return scheduler's VC manager
@@ -292,8 +304,7 @@ public class Scheduler implements SymbolicSearch {
         );
     }
 
-    @Override
-    public void doSearch(Program p) {
+    public void initializeSearch(Program p) {
         listeners = p.getMonitorMap();
         monitors = new ArrayList<>(p.getMonitorList());
         for (Machine m : p.getMonitorList()) {
@@ -302,6 +313,23 @@ public class Scheduler implements SymbolicSearch {
         Machine target = p.getStart();
         startWith(target);
         start = target;
+    }
+
+    public void restoreState(List<List<ValueSummary>> state) {
+        int idx = 0;
+        for (Machine machine : machines) {
+            List<ValueSummary> machineLocalState = state.get(idx++);
+            machine.setLocalState(machineLocalState);
+        }
+        for (Monitor machine : monitors) {
+            List<ValueSummary> machineLocalState = state.get(idx++);
+            machine.setLocalState(machineLocalState);
+        }
+    }
+
+    @Override
+    public void doSearch(Program p) {
+        initializeSearch(p);
         while (!isDone()) {
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
             Assert.prop(depth < configuration.getMaxDepthBound(), "Maximum allowed depth " + configuration.getMaxDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
@@ -492,6 +520,28 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public void step() {
+        srcState = new ArrayList<>();
+        int numStates = 1;
+        for (Machine machine : machines) {
+            List<ValueSummary> machineLocalState = machine.getLocalState();
+            srcState.add(machineLocalState);
+        }
+        for (Monitor machine : monitors) {
+            List<ValueSummary> machineLocalState = machine.getLocalState();
+            srcState.add(machineLocalState);
+        }
+        if (configuration.getCollectStats() > 2) {
+            List<ValueSummary> flatState = new ArrayList<>();
+            for (List<ValueSummary> machineState: srcState) {
+                for (ValueSummary vs: machineState) {
+                    flatState.add(vs);
+                }
+            }
+            numStates = Concretizer.getNumConcreteValues(false, Guard.constTrue(), flatState.toArray(new ValueSummary[0]));
+        }
+        prevStates.add(srcState);
+        totalStates.add(numStates);
+
         PrimitiveVS<Machine> choices = getNextSender();
 
         if (choices.isEmptyVS()) {
@@ -531,8 +581,6 @@ public class Scheduler implements SymbolicSearch {
         TraceLogger.schedule(depth, effect);
 
         performEffect(effect);
-<<<<<<< HEAD
-=======
 
         List<List<ValueSummary>> newStates = new ArrayList<>();
         int numStates = 1;
@@ -555,6 +603,8 @@ public class Scheduler implements SymbolicSearch {
 
 >>>>>>> e2a21d64e (Restore PSym to without fp)
 
+=======
+>>>>>>> 7627dce6d (Adds setting machine's state)
         // simplify engine
 //        SolverEngine.simplifyEngineAuto();
 

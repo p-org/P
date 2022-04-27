@@ -24,6 +24,7 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     int iter = 1;
     private int backtrack = 0;
+    private Program program;
 
     private boolean isDoneIterating = false;
 
@@ -56,20 +57,23 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     @Override
     public void doSearch(Program p) {
+        program = p;
         result = "incomplete";
+        initializeSearch(program);
         while (!isDoneIterating) {
-            SearchLogger.log("Starting Iteration: " + iter);
+            SearchLogger.log("Starting Iteration: " + iter + " from Step: " + getDepth());
             searchStats.startNewIteration(iter, backtrack);
-            super.doSearch(p);
+            super.resumeSearch(program);
             summarizeIteration();
         }
     }
 
     @Override
     public void resumeSearch(Program p) {
+        program = p;
         isDoneIterating = false;
         while (!isDoneIterating) {
-            SearchLogger.log("Resuming Iteration: " + iter + " from Step: " + getDepth());
+            SearchLogger.log("Starting Iteration: " + iter + " from Step: " + getDepth());
             searchStats.startNewIteration(iter, backtrack);
             super.resumeSearch(p);
             summarizeIteration();
@@ -83,13 +87,25 @@ public class IterativeBoundedScheduler extends Scheduler {
             choice.updateHandledUniverse(choice.getRepeatUniverse());
             schedule.clearRepeat(d);
             if (!choice.isBacktrackEmpty()) {
-                for (Machine machine : schedule.getMachines()) {
-                    machine.reset();
-                }
+//                int newDepth = choice.getSchedulerDepth();
+                int newDepth = 0;
+                newDepth = 0;
+//                if (newDepth == 0) {
+                    for (Machine machine : schedule.getMachines()) {
+                        machine.reset();
+                    }
+//                } else {
+//                    restoreState(choice.getChoiceState());
+//                }
                 TraceLogger.logMessage("backtrack to " + d);
                 backtrack = d;
-                TraceLogger.logMessage("pending backtracks: " + schedule.getNumBacktracks());
-                reset();
+                TraceLogger.log("pending backtracks: " + schedule.getNumBacktracks());
+//                if (newDepth == 0) {
+                    reset();
+                    initializeSearch(program);
+//                } else {
+//                    restore(newDepth, d);
+//                }
                 return;
             } else {
                 schedule.clearChoice(d);
@@ -115,6 +131,8 @@ public class IterativeBoundedScheduler extends Scheduler {
                            BiConsumer<List, Integer> addBacktrack, Supplier<List> getChoices,
                            Function<List, PrimitiveVS> generateNext) {
         List<PrimitiveVS> choices = new ArrayList();
+        schedule.setSchedulerDepth(getDepth());
+        schedule.setSchedulerState(srcState);
 
         if (depth < schedule.size()) {
             PrimitiveVS repeat = getRepeat.apply(depth);
@@ -139,7 +157,9 @@ public class IterativeBoundedScheduler extends Scheduler {
         List<PrimitiveVS> backtrack = new ArrayList();
         for (int i = 0; i < choices.size(); i++) {
             if (i < bound) chosen.add(choices.get(i));
-            else backtrack.add(choices.get(i));
+            else {
+                backtrack.add(choices.get(i));
+            }
         }
         PrimitiveVS chosenVS = generateNext.apply(chosen);
         addRepeat.accept(chosenVS, depth);

@@ -120,6 +120,10 @@ public class TraceLogger extends PSymLogger {
         }
     }
 
+    public static void log(String str) {
+        log.info(str);
+    }
+
     public static void enable() {
         log.setLevel(Level.ALL);
     }

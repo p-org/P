@@ -1,6 +1,7 @@
 package psymbolic.runtime.scheduler;
 
 import lombok.Getter;
+import lombok.Setter;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.valuesummary.*;
 import psymbolic.runtime.Concretizer;
@@ -16,12 +17,17 @@ public class Schedule implements Serializable {
 
     private Guard filter = Guard.constTrue();
 
+    @Setter
+    private int schedulerDepth = 0;
+    @Setter
+    private List<List<ValueSummary>> schedulerState = new ArrayList<>();
+
     public void restrictFilter(Guard c) { filter = filter.and(c); }
     public Guard getFilter() { return filter; }
     public void resetFilter() { filter = Guard.constTrue(); }
 
     public Choice newChoice() {
-        return new Choice();
+        return new Choice(schedulerDepth, schedulerState);
     }
 
     SetVS<VectorClockVS> sleepSet = new SetVS<>(Guard.constTrue());
@@ -79,8 +85,20 @@ public class Schedule implements Serializable {
         List<PrimitiveVS<ValueSummary>> backtrackElement = new ArrayList<>();
         @Getter
         Guard handledUniverse = Guard.constFalse();
+        @Getter
+        int schedulerDepth = 0;
+        @Getter
+        List<List<ValueSummary>> choiceState = null;
 
         public Choice() {
+        }
+
+        public Choice(int depth, List<List<ValueSummary>> state) {
+            schedulerDepth = depth;
+            choiceState = new ArrayList<>();
+            for (List<ValueSummary> s: state) {
+                choiceState.add(new ArrayList<>(s));
+            }
         }
 
         public Guard getRepeatUniverse() {

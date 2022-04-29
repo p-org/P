@@ -923,11 +923,19 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case ReceiveStmt receiveStmt:
                     string eventName = context.Names.GetTemporaryName("recvEvent");
-                    string[] eventTypeNames = receiveStmt.Cases.Keys.Select(evt => context.Names.GetNameForDecl(evt))
-                        .ToArray();
+                    HashSet<string> eventTypeNames = receiveStmt.Cases.Keys.Select(evt => context.Names.GetNameForDecl(evt))
+                        .ToHashSet();
+                    eventTypeNames.Add("PHalt"); // halt as a special case for receive
                     string recvArgs = string.Join(", ", eventTypeNames.Select(name => $"typeof({name})"));
                     context.WriteLine(output, $"var {eventName} = await currentMachine.TryReceiveEvent({recvArgs});");
                     context.WriteLine(output, $"switch ({eventName}) {{");
+                    // add halt as a special case if doesnt exist
+                    if (receiveStmt.Cases.All(kv => kv.Key.Name != "PHalt"))
+                    {
+                        context.WriteLine(output,"case PHalt _hv: { currentMachine.TryRaiseEvent(_hv); break;} ");
+                    
+                    }
+            
                     foreach (KeyValuePair<PEvent, Function> recvCase in receiveStmt.Cases)
                     {
                         string caseName = context.Names.GetTemporaryName("evt");

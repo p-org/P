@@ -23,6 +23,22 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
         this.elements = new ListVS<>(universe);
     }
 
+    /** Copy-constructor for SetVS
+     * @param old The SetVS to copy
+     */
+    public SetVS(SetVS<T> old) {
+        this.elements = new ListVS<>(old.elements);
+    }
+
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    public SetVS<T> getCopy() {
+        return new SetVS(this);
+    }
+
     public PrimitiveVS<Integer> size() {
         return elements.size();
     }

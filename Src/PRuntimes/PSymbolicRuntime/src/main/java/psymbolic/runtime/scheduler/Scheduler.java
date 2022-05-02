@@ -131,6 +131,11 @@ public class Scheduler implements SymbolicSearch {
      */
     public int getDepth() { return depth; }
 
+    /** Get current choice depth
+     * @return current choice depth
+     */
+    public int getChoiceDepth() { return choiceDepth; }
+
     /** Make new schedule
      * @return A new Schedule instance */
     public Schedule getNewSchedule() {
@@ -541,6 +546,10 @@ public class Scheduler implements SymbolicSearch {
         }
         prevStates.add(srcState);
         totalStates.add(numStates);
+
+        schedule.setSchedulerDepth(getDepth());
+        schedule.setSchedulerChoiceDepth(getChoiceDepth());
+        schedule.setSchedulerState(srcState);
 
         PrimitiveVS<Machine> choices = getNextSender();
 

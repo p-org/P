@@ -118,6 +118,22 @@ public class Message implements ValueSummary<Message> {
         this.clock = clock;
     }
 
+    /** Copy-constructor for Message
+     * @param old The Message to copy
+     */
+    public Message (Message old) {
+        this(new PrimitiveVS<>(old.event), new PrimitiveVS<>(old.target), old.payload, new VectorClockVS(old.clock));
+    }
+
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    public Message getCopy() {
+        return new Message(this);
+    }
+
     public PrimitiveVS<Event> getEvent() {
         return this.event;
     }

@@ -149,4 +149,11 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
      * @return The universe of the value summary
      */
     Guard getUniverse();
+
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    T getCopy();
 }

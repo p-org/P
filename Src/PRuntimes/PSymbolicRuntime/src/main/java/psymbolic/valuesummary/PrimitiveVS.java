@@ -75,7 +75,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
     /** Copy constructor for PrimitiveVS
      *
-     * @param old The PrimVS to copy
+     * @param old The PrimitiveVS to copy
      */
     public PrimitiveVS(PrimitiveVS<T> old) {
         this(old.guardedValues);
@@ -84,7 +84,14 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     /** Make an empty PrimVS */
     public PrimitiveVS() { this(new HashMap<>()); }
 
-
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    public PrimitiveVS<T> getCopy() {
+        return new PrimitiveVS(this);
+    }
 
     /** Check if the provided value is a possibility
      *

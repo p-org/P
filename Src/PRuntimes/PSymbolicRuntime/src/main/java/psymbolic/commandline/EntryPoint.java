@@ -20,6 +20,7 @@ public class EntryPoint {
     private static PSymConfiguration configuration;
     private static Program program;
     private static IterativeBoundedScheduler scheduler;
+    private static String mode;
 
     private static void runWithTimeout(long timeLimit) throws TimeoutException, MemoutException, BugFoundException, InterruptedException {
         try {
@@ -48,29 +49,34 @@ public class EntryPoint {
     private static void print_stats() {
         if (configuration.getCollectStats() != 0) {
             System.out.println("--------------------");
-            System.out.println("Stats::");
+            System.out.println("Statistics::");
             System.out.println(String.format("project-name:\t%s", configuration.getProjectName()));
+            System.out.println(String.format("mode:\t%s", mode));
             System.out.println(String.format("solver:\t%s", configuration.getSolverType().toString()));
             System.out.println(String.format("expr-type:\t%s", configuration.getExprLibType().toString()));
             System.out.println(String.format("time-limit-seconds:\t%.1f", configuration.getTimeLimit()));
             System.out.println(String.format("memory-limit-MB:\t%.1f", configuration.getMemLimit()));
             StatLogger.log(String.format("status:\t%s", status));
             scheduler.print_stats();
-            System.out.println("--------------------");
         }
     }
 
     private static void preprocess() {
+        start = Instant.now();
+        executor = Executors.newSingleThreadExecutor();
+        status = "error";
+        mode = "symbolic";
+        if (configuration.getSchedChoiceBound() == 1 && configuration.getInputChoiceBound() == 1) {
+            mode = "concrete";
+        }
         if (configuration.getCollectStats() != 0) {
             StatLogger.log(String.format("project-name:\t%s", configuration.getProjectName()));
+            StatLogger.log(String.format("mode:\t%s", mode));
             StatLogger.log(String.format("solver:\t%s", configuration.getSolverType().toString()));
             StatLogger.log(String.format("expr-type:\t%s", configuration.getExprLibType().toString()));
             StatLogger.log(String.format("time-limit-seconds:\t%.1f", configuration.getTimeLimit()));
             StatLogger.log(String.format("memory-limit-MB:\t%.1f", configuration.getMemLimit()));
         }
-        start = Instant.now();
-        executor = Executors.newSingleThreadExecutor();
-        status = "error";
     }
 
     private static void process() throws Exception {
@@ -108,8 +114,9 @@ public class EntryPoint {
             TraceLogger.setVerbosity(0);
 
             Instant end = Instant.now();
-            TraceLogger.finished(scheduler.getDepth(), Duration.between(start, end).getSeconds());
             print_stats();
+
+            TraceLogger.finished(scheduler.getIter(), Duration.between(start, end).getSeconds(), scheduler.result, mode);
         }
     }
 

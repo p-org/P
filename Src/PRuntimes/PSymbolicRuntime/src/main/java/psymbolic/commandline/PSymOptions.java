@@ -181,6 +181,32 @@ public class PSymOptions {
                 .build();
         options.addOption(dpor);
 
+        // whether or not to disable incremental backtracking
+        Option backtrack = Option.builder("nb")
+                .longOpt("no-backtrack")
+                .desc("Disable incremental backtracking")
+                .numberOfArgs(0)
+                .build();
+        options.addOption(backtrack);
+
+        // whether or not to disable randomization
+        Option random = Option.builder("nr")
+                .longOpt("no-random")
+                .desc("Disable randomization")
+                .numberOfArgs(0)
+                .build();
+        options.addOption(random);
+
+        // random seed for the search
+        Option randomSeed = Option.builder("rs")
+                .longOpt("random-seed")
+                .desc("Random seed for the search")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Random Seed (integer)")
+                .build();
+        options.addOption(randomSeed);
+
         // set the level of verbosity
         Option verbosity = Option.builder("v")
                 .longOpt("verbose")
@@ -386,6 +412,22 @@ public class PSymOptions {
                 case "dpor":
                 case "use-dpor":
                     config.setDpor(true);
+                    break;
+                case "nb":
+                case "no-backtrack":
+                    config.setUseBacktrack(false);
+                    break;
+                case "nr":
+                case "no-random":
+                    config.setUseRandom(false);
+                    break;
+                case "rs":
+                case "random-seed":
+                    try {
+                        config.setRandomSeed(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        formatter.printHelp("rs", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                    }
                     break;
                 case "h":
                 case "help":

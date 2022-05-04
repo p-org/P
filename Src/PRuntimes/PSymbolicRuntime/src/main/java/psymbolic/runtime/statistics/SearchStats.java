@@ -3,7 +3,6 @@ package psymbolic.runtime.statistics;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.var;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -28,6 +27,14 @@ public class SearchStats implements Serializable {
         @Getter
         private int startDepth;
 
+        // number of backtracks remaining
+        @Getter @Setter
+        private int numBacktracks;
+
+        // has the iteration completed for any depth
+        @Getter @Setter
+        private boolean completed;
+
         // per depth statistics during this iteration
         private HashMap<Integer, DepthStats> perDepthStats;
 
@@ -40,11 +47,14 @@ public class SearchStats implements Serializable {
             iteration = iterationNumber;
             this.startDepth = startDepth;
             perDepthStats = new HashMap<>();
+            numBacktracks = 0;
+            completed = false;
         }
 
         public DepthStats getIterationTotal()
         {
             int maxDepth = 0;
+            int totalStates = 0;
             int totalTransitions = 0;
             int totalMergedTransitions = 0;
             int totalTransitionsExplored = 0;
@@ -53,17 +63,19 @@ public class SearchStats implements Serializable {
                 if (entry.getKey() > maxDepth) {
                     maxDepth = entry.getKey();
                 }
+                totalStates += entry.getValue().numOfStates;
                 totalTransitions += entry.getValue().numOfTransitions;
                 totalMergedTransitions += entry.getValue().numOfMergedTransitions;
                 totalTransitionsExplored += entry.getValue().numOfTransitionsExplored;
             }
 
-            return new DepthStats(maxDepth, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
+            return new DepthStats(maxDepth, totalStates, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
         }
 
         public DepthStats getIterationNewTotal()
         {
             int maxDepth = 0;
+            int totalStates = 0;
             int totalTransitions = 0;
             int totalMergedTransitions = 0;
             int totalTransitionsExplored = 0;
@@ -73,13 +85,14 @@ public class SearchStats implements Serializable {
                     if (entry.getKey() > maxDepth) {
                         maxDepth = entry.getKey();
                     }
+                    totalStates += entry.getValue().numOfStates;
                     totalTransitions += entry.getValue().numOfTransitions;
                     totalMergedTransitions += entry.getValue().numOfMergedTransitions;
                     totalTransitionsExplored += entry.getValue().numOfTransitionsExplored;
                 }
             }
 
-            return new DepthStats(maxDepth, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
+            return new DepthStats(maxDepth, totalStates, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
         }
     }
 
@@ -91,6 +104,9 @@ public class SearchStats implements Serializable {
     public static class DepthStats {
         // depth
         private int depth;
+
+        // number of states that are explored at this depth
+        private int numOfStates;
 
         // number of transitions that can be taken at this depth
         private int numOfTransitions;
@@ -114,28 +130,69 @@ public class SearchStats implements Serializable {
         iterationStats.get(iterationStats.size()-1).addDepthStatistics(depth, depthStats);
     }
 
+    public int getIterationBacktracks()
+    {
+        return iterationStats.get(iterationStats.size()-1).getNumBacktracks();
+    }
+
+    public void setIterationBacktracks(int numBacktracks)
+    {
+        iterationStats.get(iterationStats.size()-1).setNumBacktracks(numBacktracks);
+    }
+
+    public void setIterationCompleted()
+    {
+        iterationStats.get(iterationStats.size()-1).setCompleted(true);
+    }
+
     public void startNewIteration(int iteration, int backtrack)
     {
         iterationStats.add(new IterationStats(iteration, backtrack));
     }
 
-    public DepthStats getSearchTotal()
+
+    /**
+     * Represents the overall search statistics
+     */
+    @AllArgsConstructor
+    @Getter
+    public static class TotalStats {
+        // total depth stats
+        private DepthStats depthStats;
+
+        // has the search completed
+        private boolean completed;
+
+        // number of backtracks remaining
+        private int numBacktracks;
+    }
+
+    public TotalStats getSearchTotal()
     {
+        boolean completed = true;
+
         int maxDepth = 0;
+        int totalStates = 0;
         int totalTransitions = 0;
         int totalMergedTransitions = 0;
         int totalTransitionsExplored = 0;
         for(IterationStats entry: iterationStats)
         {
-            if (entry.getIterationNewTotal().getDepth() > maxDepth) {
-                maxDepth = entry.getIterationNewTotal().getDepth();
+            DepthStats d = entry.getIterationNewTotal();
+            if (d.getDepth() > maxDepth) {
+                maxDepth = d.getDepth();
             }
-            totalTransitions += entry.getIterationNewTotal().getNumOfTransitions();
-            totalMergedTransitions += entry.getIterationNewTotal().getNumOfMergedTransitions();
-            totalTransitionsExplored += entry.getIterationNewTotal().getNumOfTransitionsExplored();
-        }
+            totalStates += d.numOfStates;
+            totalTransitions += d.getNumOfTransitions();
+            totalMergedTransitions += d.getNumOfMergedTransitions();
+            totalTransitionsExplored += d.getNumOfTransitionsExplored();
 
-        return new DepthStats(maxDepth, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
+            if (!entry.isCompleted()) {
+                completed = false;
+            }
+        }
+        DepthStats totalDepthStats = new DepthStats(maxDepth, totalStates, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
+        return new TotalStats(totalDepthStats, completed, getIterationBacktracks());
     }
 
 }

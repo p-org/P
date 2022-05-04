@@ -102,4 +102,15 @@ public class PSymConfiguration implements Serializable {
     // whether or not to write the program state(s) to file
     private boolean writeToFile = false;
 
+    @Getter @Setter
+    // use backtracking
+    private boolean useBacktrack = true;
+
+    @Getter @Setter
+    // use randomization
+    private boolean useRandom = true;
+
+    @Getter @Setter
+    // random seed
+    private int randomSeed = 0;
 }

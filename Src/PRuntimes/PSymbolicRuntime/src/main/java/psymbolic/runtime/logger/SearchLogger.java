@@ -60,6 +60,12 @@ public class SearchLogger {
         log.info(message);
     }
 
+    public static void logStartExecution(int iter, int step)
+    {
+        log.info("--------------------");
+        log.info("Starting Iteration: " + iter + " from Step: " + step);
+    }
+
     public static void logDepthStats(SearchStats.DepthStats depthStats)
     {
         log.info(String.format("Depth: %d: TotalTransitions = %d, ReducedTransitionsExplored = %d", depthStats.getDepth(), depthStats.getNumOfTransitions(), depthStats.getNumOfTransitionsExplored()));
@@ -68,8 +74,8 @@ public class SearchLogger {
     public static void logIterationStats(SearchStats.IterationStats iterStats)
     {
 
-        log.info(String.format("Finished Iteration: %d: Max Depth: %d, TotalTransitions = %d, ReducedTransitionsExplored = %d",
-                iterStats.getIteration(), iterStats.getIterationTotal().getDepth(), iterStats.getIterationTotal().getNumOfTransitions(), iterStats.getIterationTotal().getNumOfTransitionsExplored()));
+        log.info(String.format("Finished Iteration: %d: Max Depth: %d, TotalStates = %d, TotalTransitions = %d, ReducedTransitionsExplored = %d",
+                iterStats.getIteration(), iterStats.getIterationTotal().getDepth(), iterStats.getIterationTotal().getNumOfStates(), iterStats.getIterationTotal().getNumOfTransitions(), iterStats.getIterationTotal().getNumOfTransitionsExplored()));
     }
     
 }

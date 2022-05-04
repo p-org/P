@@ -64,8 +64,8 @@ public class StatLogger {
         log.info(String.format("solver-#-nodes:\t%d", SolverEngine.getSolver().getNodeCount()));
         log.info(String.format("solver-#-sat-ops:\t%d", SolverStats.isSatOperations));
         log.info(String.format("solver-%%-sat-ops-sat:\t%.1f", SolverStats.isSatPercent(SolverStats.isSatOperations, SolverStats.isSatResult)));
-        log.info(String.format("aig-#-sat-ops:\t%d", Fraig.isSatOperations));
-        log.info(String.format("aig-%%-sat-ops-sat:\t%.1f", SolverStats.isSatPercent(Fraig.isSatOperations, Fraig.isSatResult)));
+//        log.info(String.format("aig-#-sat-ops:\t%d", Fraig.isSatOperations));
+//        log.info(String.format("aig-%%-sat-ops-sat:\t%.1f", SolverStats.isSatPercent(Fraig.isSatOperations, Fraig.isSatResult)));
     }
     
 }

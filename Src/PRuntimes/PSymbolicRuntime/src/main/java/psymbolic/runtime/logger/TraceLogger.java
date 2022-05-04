@@ -5,6 +5,7 @@ import org.apache.log4j.*;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
 import psymbolic.runtime.machine.State;
+import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
 
@@ -89,9 +90,16 @@ public class TraceLogger extends PSymLogger {
         }
     }
 
-    public static void finished(int steps, long timeSpent) {
+    public static void finishedExecution(int steps) {
         log.info(String.format("Execution finished in %d steps", steps));
-        log.info(String.format("Took " + timeSpent + " seconds"));
+    }
+
+    public static void finished(int iter, long timeSpent, String result, String mode) {
+        log.info(String.format("--------------------"));
+        log.info(String.format("Explored %d %s executions", iter, mode));
+        log.info(String.format("Took %d seconds and %.1f GB", timeSpent, SolverStats.maxMemSpent/1000.0));
+        log.info(String.format("Result: " + result));
+        log.info(String.format("--------------------"));
     }
 
     public static void handle(Machine m, State st, Message event) {

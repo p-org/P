@@ -936,24 +936,24 @@ namespace Plang.Compiler.Backend.CSharp
                     
                     }
             
-                    foreach (KeyValuePair<PEvent, Function> recvCase in receiveStmt.Cases)
+                    foreach (var (key, value) in receiveStmt.Cases)
                     {
-                        string caseName = context.Names.GetTemporaryName("evt");
-                        context.WriteLine(output, $"case {context.Names.GetNameForDecl(recvCase.Key)} {caseName}: {{");
-                        if (recvCase.Value.Signature.Parameters.FirstOrDefault() is Variable caseArg)
+                        var caseName = context.Names.GetTemporaryName("evt");
+                        context.WriteLine(output, $"case {context.Names.GetNameForDecl(key)} {caseName}: {{");
+                        if (value.Signature.Parameters.FirstOrDefault() is { } caseArg)
                         {
                             context.WriteLine(output,
                                 $"{GetCSharpType(caseArg.Type)} {context.Names.GetNameForDecl(caseArg)} = ({GetCSharpType(caseArg.Type)})({caseName}.Payload);");
                         }
 
-                        foreach (Variable local in recvCase.Value.LocalVariables)
+                        foreach (Variable local in value.LocalVariables)
                         {
                             PLanguageType type = local.Type;
                             context.WriteLine(output,
                                 $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(type)};");
                         }
 
-                        foreach (IPStmt caseStmt in recvCase.Value.Body.Statements)
+                        foreach (IPStmt caseStmt in value.Body.Statements)
                         {
                             WriteStmt(context, output, function, caseStmt);
                         }

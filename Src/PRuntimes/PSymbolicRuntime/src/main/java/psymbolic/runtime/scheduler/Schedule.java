@@ -305,9 +305,6 @@ public class Schedule implements Serializable {
         if (machines.isEmpty()) {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, null, filter);
         } else {
-            if (depth == 137) {
-                System.out.println("Debugging point reached");
-            }
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, schedulerStringState, filter);
         }
         for (PrimitiveVS<Machine> choice : machines) {
@@ -319,7 +316,7 @@ public class Schedule implements Serializable {
         if (depth >= choices.size()) {
             choices.add(newChoice());
         }
-        if (machines.isEmpty()) {
+        if (bools.isEmpty()) {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, null, filter);
         } else {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, schedulerStringState, filter);
@@ -333,7 +330,7 @@ public class Schedule implements Serializable {
         if (depth >= choices.size()) {
             choices.add(newChoice());
         }
-        if (machines.isEmpty()) {
+        if (ints.isEmpty()) {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, null, filter);
         } else {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, schedulerStringState, filter);
@@ -347,7 +344,7 @@ public class Schedule implements Serializable {
         if (depth >= choices.size()) {
             choices.add(newChoice());
         }
-        if (machines.isEmpty()) {
+        if (elements.isEmpty()) {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, null, filter);
         } else {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, schedulerStringState, filter);

@@ -539,14 +539,15 @@ public class Scheduler implements SymbolicSearch {
         return getNextSender(getNextSenderChoices());
     }
 
-    void recordResult() {
-        SearchStats.TotalStats totalStats = searchStats.getSearchTotal();
+    void updateIterationBacktracks() {
         int numBacktracks = schedule.getNumBacktracks();
         searchStats.setIterationBacktracks(numBacktracks);
         if (done) {
             searchStats.setIterationCompleted();
         }
-
+    }
+    void recordResult() {
+        SearchStats.TotalStats totalStats = searchStats.getSearchTotal();
         if (totalStats.isCompleted()) {
             if (totalStats.getNumBacktracks() == 0) {
                 result = "safe for any depth";
@@ -615,7 +616,7 @@ public class Scheduler implements SymbolicSearch {
             TraceLogger.finishedExecution(depth);
         }
 
-        recordResult();
+        updateIterationBacktracks();
 
         if (done) {
             return;

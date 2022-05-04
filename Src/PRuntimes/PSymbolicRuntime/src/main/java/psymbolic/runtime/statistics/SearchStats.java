@@ -127,7 +127,9 @@ public class SearchStats implements Serializable {
 
     public void addDepthStatistics(int depth, DepthStats depthStats)
     {
-        iterationStats.get(iterationStats.size()-1).addDepthStatistics(depth, depthStats);
+        if (!iterationStats.isEmpty()) {
+            iterationStats.get(iterationStats.size() - 1).addDepthStatistics(depth, depthStats);
+        }
     }
 
     public int getIterationBacktracks()
@@ -137,7 +139,9 @@ public class SearchStats implements Serializable {
 
     public void setIterationBacktracks(int numBacktracks)
     {
-        iterationStats.get(iterationStats.size()-1).setNumBacktracks(numBacktracks);
+        if (!iterationStats.isEmpty()) {
+            iterationStats.get(iterationStats.size() - 1).setNumBacktracks(numBacktracks);
+        }
     }
 
     public void setIterationCompleted()

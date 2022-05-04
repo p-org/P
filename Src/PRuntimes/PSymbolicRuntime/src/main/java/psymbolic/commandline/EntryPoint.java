@@ -97,7 +97,7 @@ public class EntryPoint {
 //            TraceLogger.setVerbosity(2);
             SearchLogger.disable();
             Guard pc = e.pathConstraint;
-            ReplayScheduler replay = new ReplayScheduler(configuration, scheduler.getSchedule(), pc);
+            ReplayScheduler replay = new ReplayScheduler(configuration, scheduler.getSchedule(), pc, scheduler.getDepth());
             program.setScheduler(replay);
             replay.doSearch(program);
             e.printStackTrace();

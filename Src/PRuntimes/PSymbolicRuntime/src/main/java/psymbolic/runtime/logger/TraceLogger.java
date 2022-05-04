@@ -134,6 +134,12 @@ public class TraceLogger extends PSymLogger {
         log.info(str);
     }
 
+    public static void logStartReplayCex(int length)
+    {
+        log.info("--------------------");
+        log.info("Replaying Counterexample of Length " + length);
+    }
+
     public static void enable() {
         log.setLevel(Level.ALL);
     }

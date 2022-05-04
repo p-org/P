@@ -78,6 +78,9 @@ public class Scheduler implements SymbolicSearch {
 
     int choiceDepth = 0;
 
+    /** Start depth at which create machine events are already explored */
+    int startDepth = Integer.MAX_VALUE;
+
     private List<List<List<ValueSummary>>> prevStates = new ArrayList<>();
 
 
@@ -332,6 +335,26 @@ public class Scheduler implements SymbolicSearch {
         }
     }
 
+    public void restoreStringState(List<List<String>> state) {
+        int idx = 0;
+        for (Machine machine : machines) {
+            List<String> machineStringState = state.get(idx++);
+            List<ValueSummary> machineLocalState = new ArrayList<>();
+            for (String s: machineStringState) {
+                machineLocalState.add((ValueSummary) SerializeObject.objectFromString(s));
+            }
+            machine.setLocalState(machineLocalState);
+        }
+        for (Monitor machine : monitors) {
+            List<String> machineStringState = state.get(idx++);
+            List<ValueSummary> machineLocalState = new ArrayList<>();
+            for (String s: machineStringState) {
+                machineLocalState.add((ValueSummary) SerializeObject.objectFromString(s));
+            }
+            machine.setLocalState(machineLocalState);
+        }
+    }
+
     @Override
     public void doSearch(Program p) {
         initializeSearch(p);
@@ -388,6 +411,11 @@ public class Scheduler implements SymbolicSearch {
                     return new ArrayList<>(Arrays.asList(ret));
                 }
             }
+        }
+
+        if (startDepth > getDepth()) {
+            startDepth = getDepth();
+            TraceLogger.logMessage("Increasing start depth to " + startDepth);
         }
 
         // prioritize the sync actions i.e. events that are marked as synchronous
@@ -550,6 +578,7 @@ public class Scheduler implements SymbolicSearch {
         schedule.setSchedulerDepth(getDepth());
         schedule.setSchedulerChoiceDepth(getChoiceDepth());
         schedule.setSchedulerState(srcState);
+//        schedule.setSchedulerStringState(srcState);
 
         PrimitiveVS<Machine> choices = getNextSender();
 
@@ -575,6 +604,7 @@ public class Scheduler implements SymbolicSearch {
                 System.out.println("\tMachine " + machine.toString());
                 System.out.println("\t  state   " + machine.getCurrentState().toStringDetailed());
                 System.out.println("\t  message " + removed.toString());
+                System.out.println("\t  target " + removed.getTarget().toString());
             }
             if (configuration.getCollectStats() > 2) {
                 numMessages += Concretizer.getNumConcreteValues(false, Guard.constTrue(), removed);
@@ -587,7 +617,7 @@ public class Scheduler implements SymbolicSearch {
         }
         assert effect != null;
         effect = effect.merge(effects);
-        TraceLogger.schedule(depth, effect);
+        TraceLogger.schedule(depth, effect, choices);
 
         performEffect(effect);
 

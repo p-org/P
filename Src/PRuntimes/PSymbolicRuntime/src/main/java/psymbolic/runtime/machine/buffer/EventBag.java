@@ -78,5 +78,7 @@ public class EventBag extends SymbolicBag<Message> implements EventBuffer, Seria
     public ValueSummary getEvents() { return this.elements; }
 
     @Override
-    public void setEvents(ValueSummary events) { this.elements = (ListVS<Message>) events; }
+    public void setEvents(ValueSummary events) {
+        this.elements = (ListVS<Message>) events;
+    }
 }

@@ -22,6 +22,10 @@ public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
         assert(elements.getUniverse().isTrue());
     }
 
+    public void resetPeek() {
+        peek = null;
+    }
+
     public PrimitiveVS<Integer> size() { return elements.size(); }
 
     public PrimitiveVS<Integer> size(Guard pc) { return elements.restrict(pc).size(); }
@@ -60,7 +64,7 @@ public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
         T ret = peek.restrict(pc);
         if (dequeue) {
             elements = elements.removeAt(new PrimitiveVS<>(0).restrict(pc));
-            peek = null;
+            resetPeek();
         }
         assert(!pc.isFalse());
         return ret;

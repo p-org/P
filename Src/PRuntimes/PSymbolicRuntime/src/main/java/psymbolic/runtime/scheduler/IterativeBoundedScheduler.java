@@ -10,6 +10,7 @@ import psymbolic.valuesummary.*;
 import psymbolic.runtime.machine.buffer.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -88,16 +89,21 @@ public class IterativeBoundedScheduler extends Scheduler {
             choice.updateHandledUniverse(choice.getRepeatUniverse());
             schedule.clearRepeat(d);
             if (!choice.isBacktrackEmpty()) {
-//                int newDepth = choice.getSchedulerDepth();
-//                int newChoiceDepth = choice.getSchedulerChoiceDepth();
-                int newDepth = 0;
-                int newChoiceDepth = 0;
+                int newDepth = choice.getSchedulerDepth();
+                int newChoiceDepth = choice.getSchedulerChoiceDepth();
+//                newDepth = 0;
+//                newChoiceDepth = 0;
+                if (newDepth < startDepth) {
+                    newDepth = 0;
+                }
                 if (newDepth == 0) {
                     for (Machine machine : schedule.getMachines()) {
                         machine.reset();
                     }
                 } else {
                     restoreState(choice.getChoiceState());
+                    schedule.setFilter(choice.getFilter());
+//                    restoreStringState(choice.getStringState());
                 }
                 TraceLogger.logMessage("backtrack to " + d);
                 backtrack = d;
@@ -152,6 +158,14 @@ public class IterativeBoundedScheduler extends Scheduler {
             choices = getChoices.get();
             choices = choices.stream().map(x -> x.restrict(schedule.getFilter())).filter(x -> !(x.getUniverse().isFalse())).collect(Collectors.toList());
         }
+
+//        Collections.sort(choices, new SortVS());
+//        if (choices.size() > 1) {
+//            TraceLogger.log("\t#Choices = " + choices.size());
+//            for (PrimitiveVS vs: choices) {
+//                TraceLogger.log("\t\t" + vs);
+//            }
+//        }
 
         List<PrimitiveVS> chosen = new ArrayList();
         List<PrimitiveVS> backtrack = new ArrayList();

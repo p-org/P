@@ -101,7 +101,7 @@ public class SearchStats implements Serializable {
      */
     @AllArgsConstructor
     @Getter @Setter
-    public static class DepthStats {
+    public static class DepthStats implements Serializable {
         // depth
         private int depth;
 

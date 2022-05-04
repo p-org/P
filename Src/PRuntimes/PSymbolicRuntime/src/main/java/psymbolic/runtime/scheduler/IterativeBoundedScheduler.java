@@ -81,10 +81,16 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void resumeSearch(Program p) {
         program = p;
         isDoneIterating = false;
+        boolean initialRun = true;
         while (!isDoneIterating) {
-            iter++;
-            SearchLogger.logStartExecution(iter, getDepth());
-            searchStats.startNewIteration(iter, backtrack);
+            if (initialRun) {
+                SearchLogger.logResumeExecution(iter, getDepth());
+                initialRun = false;
+            } else {
+                iter++;
+                SearchLogger.logStartExecution(iter, getDepth());
+                searchStats.startNewIteration(iter, backtrack);
+            }
             super.resumeSearch(p);
             summarizeIteration();
         }

@@ -60,6 +60,12 @@ public class SearchLogger {
         log.info(message);
     }
 
+    public static void logResumeExecution(int iter, int step)
+    {
+        log.info("--------------------");
+        log.info("Resuming Iteration: " + iter + " from Step: " + step);
+    }
+
     public static void logStartExecution(int iter, int step)
     {
         log.info("--------------------");

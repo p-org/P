@@ -12,11 +12,11 @@ import psymbolic.valuesummary.Guard;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import lombok.Getter;
-import lombok.Setter;
+import psymbolic.valuesummary.util.SerializableBiFunction;
+import psymbolic.valuesummary.util.SerializableFunction;
+import psymbolic.valuesummary.util.SerializableRunnable;
 
 public abstract class Machine implements Serializable {
 
@@ -34,9 +34,9 @@ public abstract class Machine implements Serializable {
     public EventBuffer sendBuffer;
     public final DeferQueue deferredQueue;
     // note: will not work for receives in functions outside the machine
-    private PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> receives = new PrimitiveVS<>();
-    public final Map<String, Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> continuations = new HashMap<>();
-    public final Set<Runnable> clearContinuationVars = new HashSet<>();
+    private PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> receives = new PrimitiveVS<>();
+    public final Map<String, SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> continuations = new HashMap<>();
+    public final Set<SerializableRunnable> clearContinuationVars = new HashSet<>();
     // the vector clock for the machine
     private VectorClockVS clock = new VectorClockVS(Guard.constTrue());
 
@@ -47,7 +47,7 @@ public abstract class Machine implements Serializable {
     }
 
     public void receive(String continuationName, Guard pc) {
-        PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> handler = new PrimitiveVS<>(continuations.get(continuationName)).restrict(pc);
+        PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> handler = new PrimitiveVS<>(continuations.get(continuationName)).restrict(pc);
         receives = receives.merge(handler);
     }
 
@@ -177,11 +177,11 @@ public abstract class Machine implements Serializable {
               Message m = eventHandlerReturnReason.getMessageSummary();
               Guard receiveGuard = getBlockedOnReceiveGuard().and(pc).and(this.currentState.apply(m.getEvent(), (x, msg) -> x.isIgnored(msg)).getGuardFor(false));
               if (!receiveGuard.isFalse()) {
-                  PrimitiveVS<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> runNow = receives.restrict(receiveGuard);
+                  PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> runNow = receives.restrict(receiveGuard);
                   EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
                   nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not()));
                   Guard deferred = Guard.constFalse();
-                  for (GuardedValue<Function<Guard, BiFunction<EventHandlerReturnReason, Message, Guard>>> receiver : runNow.getGuardedValues()) {
+                  for (GuardedValue<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> receiver : runNow.getGuardedValues()) {
                       deferred = deferred.or(receiver.getValue().apply(receiver.getGuard()).apply(nextEventHandlerReturnReason, m.restrict(receiver.getGuard())));
                   }
                   receives = receives.restrict(receiveGuard.not().or(deferred));

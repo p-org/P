@@ -291,6 +291,8 @@ public abstract class Machine implements Serializable {
         else if (!(obj instanceof Machine)) {
             return false;
         }
+        if (this.name == null)
+            return (this.name == ((Machine) obj).name) && this.instanceId == (((Machine) obj).instanceId);
         return this.name.equals(((Machine) obj).name) && this.instanceId == (((Machine) obj).instanceId);
     }
 

@@ -20,8 +20,8 @@ namespace Plang.Compiler
             // Run parser on every input file
             PParser.ProgramContext[] trees = job.InputFiles.Select(file =>
             {
-                PParser.ProgramContext tree = Parse(job, file);
-                job.LocationResolver.RegisterRoot(tree, file);
+                PParser.ProgramContext tree = Parse(job, new FileInfo(file));
+                job.LocationResolver.RegisterRoot(tree, new FileInfo(file));
                 return tree;
             }).ToArray();
 

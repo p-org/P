@@ -15,14 +15,14 @@ namespace UnitTests.Runners
     public class CompileOnlyRunner : ICompilerTestRunner
     {
         private readonly CompilerOutput compilerOutput;
-        private readonly IReadOnlyList<FileInfo> inputFiles;
+        private readonly IReadOnlyList<string> inputFiles;
 
         /// <summary>
         ///     Box a new compile runner
         /// </summary>
         /// <param name="compilerOutput"></param>
         /// <param name="inputFiles">The P source files to compile</param>
-        public CompileOnlyRunner(CompilerOutput compilerOutput, IReadOnlyList<FileInfo> inputFiles)
+        public CompileOnlyRunner(CompilerOutput compilerOutput, IReadOnlyList<string> inputFiles)
         {
             this.inputFiles = inputFiles;
             this.compilerOutput = compilerOutput;
@@ -45,7 +45,7 @@ namespace UnitTests.Runners
             StringWriter stderrWriter = new StringWriter();
             TestCaseOutputStream outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);
 
-            CompilationJob job = new CompilationJob(outputStream, scratchDirectory, compilerOutput, inputFiles, Path.GetFileNameWithoutExtension(inputFiles.First().FullName));
+            CompilationJob job = new CompilationJob(outputStream, scratchDirectory, compilerOutput, inputFiles, Path.GetFileNameWithoutExtension(inputFiles.First()));
 
             try
             {

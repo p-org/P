@@ -1,6 +1,7 @@
 ﻿using Plang.Compiler;
 using System;
 using System.IO;
+using System.Linq;
 using UnitTests.Runners;
 using UnitTests.Validators;
 
@@ -86,7 +87,7 @@ namespace UnitTests.Core
             ITestResultsValidator validator;
 
             CompilerOutput output = CompilerOutput.C;
-            runner = new CompileOnlyRunner(output, inputFiles);
+            runner = new CompileOnlyRunner(output, inputFiles.Select(x => x.FullName).ToList());
 
             // TODO: validate information about the particular kind of compiler error
             bool isStaticError = testName.Contains("/StaticError/");

@@ -78,7 +78,7 @@ namespace UnitTests.Runners
         {
             Compiler compiler = new Compiler();
             TestExecutionStream outputStream = new TestExecutionStream(scratchDirectory);
-            CompilationJob compilationJob = new CompilationJob(outputStream, scratchDirectory, CompilerOutput.C, sources, "main");
+            CompilationJob compilationJob = new CompilationJob(outputStream, scratchDirectory, CompilerOutput.C, sources.Select(x => x.FullName).ToList(), "main");
             compiler.Compile(compilationJob);
         }
 

@@ -9,7 +9,7 @@ namespace Plang.Compiler
 {
     public class CompilationJob : ICompilationJob
     {
-        public CompilationJob(ICompilerOutput output, DirectoryInfo outputDir, CompilerOutput outputLanguage, IReadOnlyList<FileInfo> inputFiles,
+        public CompilationJob(ICompilerOutput output, DirectoryInfo outputDir, CompilerOutput outputLanguage, IReadOnlyList<string> inputFiles,
             string projectName, DirectoryInfo projectRoot = null, bool generateSourceMaps = false, IReadOnlyList<string> projectDependencies = null,
             DirectoryInfo aspectjOutputDir = null)
         {
@@ -22,7 +22,7 @@ namespace Plang.Compiler
             OutputDirectory = outputDir;
             AspectjOutputDirectory = aspectjOutputDir;
             InputFiles = inputFiles;
-            ProjectName = projectName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
+            ProjectName = projectName ?? Path.GetFileNameWithoutExtension(inputFiles[0]);
             ProjectRootPath = projectRoot;
             LocationResolver = new DefaultLocationResolver();
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
@@ -40,7 +40,7 @@ namespace Plang.Compiler
         public string ProjectName { get; }
         public DirectoryInfo ProjectRootPath { get; }
         public ICodeGenerator Backend { get; }
-        public IReadOnlyList<FileInfo> InputFiles { get; }
+        public IReadOnlyList<string> InputFiles { get; }
         public ILocationResolver LocationResolver { get; }
         public ITranslationErrorHandler Handler { get; }
 

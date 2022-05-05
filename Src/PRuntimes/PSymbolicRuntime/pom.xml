@@ -13,12 +13,27 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <java.version>16</java.version>
-    <deps.path>${project.basedir}/../../../Bld/deps</deps.path>
-    <abc.path>${deps.path}/abc_java_bindings/dist/lib</abc.path>
-    <yices.path>${deps.path}/yices2_java_bindings/dist/lib</yices.path>
-    <z3.path>${deps.path}/z3/build</z3.path>
-    <cvc5.jarpath>${deps.path}/cvc5/build/install/share/java</cvc5.jarpath>
-    <cvc5.libpath>${deps.path}/cvc5/build/install/lib</cvc5.libpath>
+
+    <deps.path>${project.basedir}/lib</deps.path>
+    <abc.jarpath>${deps.path}</abc.jarpath>
+    <yices.jarpath>${deps.path}</yices.jarpath>
+    <z3.jarpath>${deps.path}</z3.jarpath>
+    <cvc5.jarpath>${deps.path}</cvc5.jarpath>
+    <abc.libpath>${deps.path}</abc.libpath>
+    <yices.libpath>${deps.path}</yices.libpath>
+    <z3.libpath>${deps.path}</z3.libpath>
+    <cvc5.libpath>${deps.path}</cvc5.libpath>
+
+<!--    <deps.path>${project.basedir}/../../../Bld/deps</deps.path>-->
+<!--    <abc.jarpath>${deps.path}/abc_java_bindings/dist/lib</abc.jarpath>-->
+<!--    <yices.jarpath>${deps.path}/yices2_java_bindings/dist/lib</yices.jarpath>-->
+<!--    <z3.jarpath>${deps.path}/z3/build</z3.jarpath>-->
+<!--    <cvc5.jarpath>${deps.path}/cvc5/build/install/share/java</cvc5.jarpath>-->
+<!--    <abc.libpath>${deps.path}/abc_java_bindings/dist/lib</abc.libpath>-->
+<!--    <yices.libpath>${deps.path}/yices2_java_bindings/dist/lib</yices.libpath>-->
+<!--    <z3.libpath>${deps.path}/z3/build</z3.libpath>-->
+<!--    <cvc5.libpath>${deps.path}/cvc5/build/install/lib</cvc5.libpath>-->
+
   </properties>
 
   <build>
@@ -49,7 +64,7 @@
               <artifactId>abc</artifactId>
               <version>1.0.0</version>
               <packaging>jar</packaging>
-              <file>${abc.path}/abc.jar</file>
+              <file>${abc.jarpath}/abc.jar</file>
             </configuration>
           </execution>
           <execution>
@@ -63,7 +78,7 @@
               <artifactId>yices</artifactId>
               <version>1.0</version>
               <packaging>jar</packaging>
-              <file>${yices.path}/yices.jar</file>
+              <file>${yices.jarpath}/yices.jar</file>
             </configuration>
           </execution>
           <execution>
@@ -77,7 +92,7 @@
               <artifactId>z3</artifactId>
               <version>4.8.14</version>
               <packaging>jar</packaging>
-              <file>${z3.path}/com.microsoft.z3.jar</file>
+              <file>${z3.jarpath}/com.microsoft.z3.jar</file>
             </configuration>
           </execution>
           <execution>
@@ -117,7 +132,7 @@
         <configuration>
           <systemPropertyVariables>
             <propertyName>java.library.path</propertyName>
-            <buildDirectory>${abc.path}:${yices.path}:${z3.path}:${cvc5.libpath}</buildDirectory>
+            <buildDirectory>${abc.libpath}:${yices.libpath}:${z3.libpath}:${cvc5.libpath}</buildDirectory>
           </systemPropertyVariables>
         </configuration>
       </plugin>

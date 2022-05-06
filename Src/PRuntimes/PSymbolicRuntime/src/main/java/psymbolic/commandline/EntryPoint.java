@@ -58,6 +58,7 @@ public class EntryPoint {
             System.out.println(String.format("memory-limit-MB:\t%.1f", configuration.getMemLimit()));
             StatLogger.log(String.format("status:\t%s", status));
             scheduler.print_stats();
+            scheduler.reportSearchSummary();
         }
     }
 

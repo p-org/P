@@ -89,6 +89,10 @@ public class Schedule implements Serializable {
         @Getter
         Guard handledUniverse = Guard.constFalse();
         @Getter
+        int numScheduleChoicesExplored = 0;
+        @Getter
+        int numDataChoicesExplored = 0;
+        @Getter
         int schedulerDepth = 0;
         @Getter
         int schedulerChoiceDepth = 0;
@@ -120,6 +124,16 @@ public class Schedule implements Serializable {
             schedulerChoiceDepth = cdepth;
             choiceState = copyState(state);
             filter = f;
+        }
+
+        public int getNumScheduleChoicesRemaining() {
+            return getBacktrackSender().size();
+        }
+
+        public int getNumDataChoicesRemaining() {
+            return getBacktrackBool().size() +
+                   getBacktrackInt().size() +
+                   getBacktrackElement().size();
         }
 
         public Guard getRepeatUniverse() {
@@ -254,13 +268,34 @@ public class Schedule implements Serializable {
         return count;
     }
 
-    public int getNumChoicesRemaining() {
+    public int getNumScheduleChoicesExplored() {
         int count = 0;
-        for (Choice backtrack : choices) {
-            count +=    backtrack.getBacktrackSender().size() +
-                        backtrack.getBacktrackBool().size() +
-                        backtrack.getBacktrackInt().size() +
-                        backtrack.getBacktrackElement().size();
+        for (Choice choice : choices) {
+            count += choice.getNumScheduleChoicesExplored();
+        }
+        return count;
+    }
+
+    public int getNumDataChoicesExplored() {
+        int count = 0;
+        for (Choice choice : choices) {
+            count += choice.getNumDataChoicesExplored();
+        }
+        return count;
+    }
+
+    public int getNumScheduleChoicesRemaining() {
+        int count = 0;
+        for (Choice choice : choices) {
+            count += choice.getNumScheduleChoicesRemaining();
+        }
+        return count;
+    }
+
+    public int getNumDataChoicesRemaining() {
+        int count = 0;
+        for (Choice choice : choices) {
+            count += choice.getNumDataChoicesRemaining();
         }
         return count;
     }
@@ -270,6 +305,7 @@ public class Schedule implements Serializable {
             choices.add(newChoice());
         }
         choices.get(depth).addRepeatSender(choice);
+        choices.get(depth).numScheduleChoicesExplored += choice.getValues().size();
     }
 
     public void addRepeatBool(PrimitiveVS<Boolean> choice, int depth) {
@@ -277,6 +313,7 @@ public class Schedule implements Serializable {
             choices.add(newChoice());
         }
         choices.get(depth).addRepeatBool(choice);
+        choices.get(depth).numDataChoicesExplored += choice.getValues().size();
     }
 
     public void addRepeatInt(PrimitiveVS<Integer> choice, int depth) {
@@ -284,6 +321,7 @@ public class Schedule implements Serializable {
             choices.add(newChoice());
         }
         choices.get(depth).addRepeatInt(choice);
+        choices.get(depth).numDataChoicesExplored += choice.getValues().size();
     }
 
     public void addRepeatElement(PrimitiveVS<ValueSummary> choice, int depth) {
@@ -291,6 +329,7 @@ public class Schedule implements Serializable {
             choices.add(newChoice());
         }
         choices.get(depth).addRepeatElement(choice);
+        choices.get(depth).numDataChoicesExplored += choice.getValues().size();
     }
 
     public void addBacktrackSender(List<PrimitiveVS<Machine>> machines, int depth) {

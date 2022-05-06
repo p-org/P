@@ -546,6 +546,7 @@ public class Scheduler implements SymbolicSearch {
             searchStats.setIterationCompleted();
         }
     }
+
     void recordResult() {
         SearchStats.TotalStats totalStats = searchStats.getSearchTotal();
         if (totalStats.isCompleted()) {

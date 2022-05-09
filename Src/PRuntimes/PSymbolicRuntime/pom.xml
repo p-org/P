@@ -35,7 +35,7 @@
 
     <cvc5.jar>${deps.path}/Jars/cvc5-0.0.7.jar</cvc5.jar>
     <cvc5.libpath>${deps.path}/Deps</cvc5.libpath>
-<!--    <cvc5.jar>${deps.path}/Deps/cvc5/build/install/share/java</cvc5-0.0.7.jar>-->
+<!--    <cvc5.jar>${deps.path}/Deps/cvc5/build/install/share/java/cvc5-0.0.7.jar</cvc5.jar>-->
 <!--    <cvc5.libpath>${deps.path}/Deps/cvc5/build/install/lib</cvc5.libpath>-->
 
   </properties>

@@ -226,7 +226,7 @@ Bld/*
 !Bld/*.ps1
 !Bld/*.sh
 !Bld/Targets
-!Bld/Deps/Jars/*
+!Bld/Jars/
 PGenerated/
 *.4ml
 !Src/**/Domains/*.4ml

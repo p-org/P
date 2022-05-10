@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
 NPROC=$(nproc)
-DEPSPATH="../../../../Bld/deps"
+DEPSPATH="../../../../Bld/Deps"
 
-# install abc
+mkdir -p $DEPSPATH
+
+## install abc
 pushd .
 cd $DEPSPATH
 git clone https://github.com/berkeley-abc/abc.git

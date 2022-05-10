@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
 
 NPROC=$(nproc)
-DEPSPATH="../../../../Bld/deps"
+DEPSPATH="../../../../Bld/Deps"
 
-# install yices2
+mkdir -p $DEPSPATH
+
+## Following dependencies might be needed
+#sudo yum install readline-devel -y
+#sudo yum install zlib-devel -y
+#sudo yum install libcurl-devel -y
+#sudo yum install gperf -y
+#sudo yum install gmp-devel -y
+#/usr/bin/python3 -m pip install toml
+
+## install yices2
 pushd .
 cd $DEPSPATH
 git clone https://github.com/SRI-CSL/yices2.git

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
 NPROC=$(nproc)
-DEPSPATH="../../../../Bld/deps"
+DEPSPATH="../../../../Bld/Deps"
 
-# install z3
+mkdir -p $DEPSPATH
+
+## install z3
 pushd .
 cd $DEPSPATH
 git clone https://github.com/Z3Prover/z3.git

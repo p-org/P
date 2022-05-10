@@ -17,7 +17,7 @@ public class SolverEngine {
     @Getter @Setter
     private static SolverType solverType = SolverType.BDD;
     @Getter @Setter
-    private static ExprLibType exprLibType = ExprLibType.Auto;
+    private static ExprLibType exprLibType = ExprLibType.Bdd;
 
     public static void simplifyEngineAuto() {
         switch (getExprLibType()) {

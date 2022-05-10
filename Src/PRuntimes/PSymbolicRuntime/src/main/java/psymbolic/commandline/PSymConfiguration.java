@@ -84,7 +84,7 @@ public class PSymConfiguration implements Serializable {
 
     @Getter @Setter
     // type of solver engine
-    private ExprLibType exprLibType = ExprLibType.Auto;
+    private ExprLibType exprLibType = ExprLibType.Bdd;
 
     @Getter @Setter
     // time limit in seconds (0 means infinite)

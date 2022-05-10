@@ -82,7 +82,7 @@ public class PSymOptions {
         // solver type
         Option solverType = Option.builder("st")
                 .longOpt("solver")
-                .desc("Solver type to use: bdd, cbdd, cvc5, yices2, z3, princess")
+                .desc("Solver type to use: bdd, yices2, z3, cvc5")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Solver Type (string)")
@@ -92,7 +92,7 @@ public class PSymOptions {
         // expression type
         Option exprLibType = Option.builder("et")
                 .longOpt("expr")
-                .desc("Expression type to use: fraig, aig, native, bdd, auto")
+                .desc("Expression type to use: bdd, fraig, aig, native")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Expression Type (string)")

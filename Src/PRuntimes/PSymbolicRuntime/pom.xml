@@ -16,27 +16,23 @@
 
     <deps.path>${project.basedir}/../../../Bld</deps.path>
 
-    <pjbdd.jar>${deps.path}/Jars/pjbdd-v1.0.10-9.jar</pjbdd.jar>
+    <pjbdd.jarpath>${deps.path}/Jars/pjbdd-v1.0.10-9.jar</pjbdd.jarpath>
 
-    <abc.jar>${deps.path}/Jars/abc.jar</abc.jar>
-    <abc.libpath>${deps.path}/Deps</abc.libpath>
-<!--    <abc.jar>${deps.path}/Deps/abc_java_bindings/dist/lib/abc.jar</abc.jar>-->
-<!--    <abc.libpath>${deps.path}/Deps/abc_java_bindings/dist/lib</abc.libpath>-->
+    <abc.jarpath>${deps.path}/Jars/abc.jar</abc.jarpath>
+<!--    <abc.jarpath>${deps.path}/Deps/abc_java_bindings/dist/lib/abc.jar</abc.jarpath>-->
+    <abc.libpath>${deps.path}/Deps/abc_java_bindings/dist/lib</abc.libpath>
 
-    <yices.jar>${deps.path}/Jars/yices.jar</yices.jar>
-    <yices.libpath>${deps.path}/Deps</yices.libpath>
-<!--    <yices.jar>${deps.path}/Deps/yices2_java_bindings/dist/lib/yices.jar</yices.jar>-->
-<!--    <yices.libpath>${deps.path}/Deps/yices2_java_bindings/dist/lib</yices.libpath>-->
+    <yices.jarpath>${deps.path}/Jars/yices.jar</yices.jarpath>
+<!--    <yices.jarpath>${deps.path}/Deps/yices2_java_bindings/dist/lib/yices.jar</yices.jarpath>-->
+    <yices.libpath>${deps.path}/Deps/yices2_java_bindings/dist/lib</yices.libpath>
 
-    <z3.jar>${deps.path}/Jars/com.microsoft.z3.jar</z3.jar>
-    <z3.libpath>${deps.path}/Deps</z3.libpath>
-<!--    <z3.jar>${deps.path}/Deps/z3/build/com.microsoft.z3.jar</z3.jar>-->
-<!--    <z3.libpath>${deps.path}/Deps/z3/build</z3.libpath>-->
+    <z3.jarpath>${deps.path}/Jars/com.microsoft.z3.jar</z3.jarpath>
+<!--    <z3.jarpath>${deps.path}/Deps/z3/build/com.microsoft.z3.jar</z3.jarpath>-->
+    <z3.libpath>${deps.path}/Deps/z3/build</z3.libpath>
 
-    <cvc5.jar>${deps.path}/Jars/cvc5-0.0.7.jar</cvc5.jar>
-    <cvc5.libpath>${deps.path}/Deps</cvc5.libpath>
-<!--    <cvc5.jar>${deps.path}/Deps/cvc5/build/install/share/java/cvc5-0.0.7.jar</cvc5.jar>-->
-<!--    <cvc5.libpath>${deps.path}/Deps/cvc5/build/install/lib</cvc5.libpath>-->
+    <cvc5.jarpath>${deps.path}/Jars/cvc5-0.0.7.jar</cvc5.jarpath>
+<!--    <cvc5.jarpath>${deps.path}/Deps/cvc5/build/install/share/java/cvc5-0.0.7.jar</cvc5.jarpath>-->
+    <cvc5.libpath>${deps.path}/Deps/cvc5/build/install/lib</cvc5.libpath>
 
   </properties>
 
@@ -68,7 +64,7 @@
               <artifactId>abc</artifactId>
               <version>1.0.0</version>
               <packaging>jar</packaging>
-              <file>${abc.jar}</file>
+              <file>${abc.jarpath}</file>
             </configuration>
           </execution>
           <execution>
@@ -82,7 +78,7 @@
               <artifactId>yices</artifactId>
               <version>1.0</version>
               <packaging>jar</packaging>
-              <file>${yices.jar}</file>
+              <file>${yices.jarpath}</file>
             </configuration>
           </execution>
           <execution>
@@ -96,7 +92,7 @@
               <artifactId>z3</artifactId>
               <version>4.8.14</version>
               <packaging>jar</packaging>
-              <file>${z3.jar}</file>
+              <file>${z3.jarpath}</file>
             </configuration>
           </execution>
           <execution>
@@ -110,7 +106,7 @@
               <artifactId>cvc5</artifactId>
               <version>0.0.7</version>
               <packaging>jar</packaging>
-              <file>${cvc5.jar}</file>
+              <file>${cvc5.jarpath}</file>
             </configuration>
           </execution>
           <execution>
@@ -124,7 +120,7 @@
               <artifactId>pjbdd</artifactId>
               <version>1.0.10-9</version>
               <packaging>jar</packaging>
-              <file>${pjbdd.jar}</file>
+              <file>${pjbdd.jarpath}</file>
             </configuration>
           </execution>
         </executions>

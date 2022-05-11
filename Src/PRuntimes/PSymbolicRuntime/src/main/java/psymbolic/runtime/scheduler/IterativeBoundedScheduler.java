@@ -1,7 +1,6 @@
 package psymbolic.runtime.scheduler;
 
 import lombok.Getter;
-import lombok.Setter;
 import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.logger.SearchLogger;
@@ -13,6 +12,8 @@ import psymbolic.valuesummary.*;
 import psymbolic.runtime.machine.buffer.*;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -171,13 +172,16 @@ public class IterativeBoundedScheduler extends Scheduler {
         long pid = ProcessHandle.current().pid();
         String writeFileName = prefix + "_pid" + pid + ".out";
         try {
-            System.out.println("Writing program state in file " + writeFileName);
             FileOutputStream fos = new FileOutputStream(writeFileName);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(this);
+            if (configuration.getCollectStats() != 0) {
+                long szBytes = Files.size(Paths.get(writeFileName));
+                TraceLogger.log(String.format("\t%,.1f MB\twritten in %s", (szBytes / 1024.0 / 1024.0), writeFileName));
+            }
         } catch (IOException e) {
             e.printStackTrace();
-            throw new Exception("Failed to write program state in file " + writeFileName);
+            throw new Exception("Failed to write state in file " + writeFileName);
         }
     }
 

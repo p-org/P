@@ -14,7 +14,6 @@ import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.solvers.SolverEngine;
 import psymbolic.runtime.machine.buffer.*;
 import psymbolic.runtime.logger.StatLogger;
-import psymbolic.valuesummary.solvers.SolverType;
 
 import java.time.Duration;
 import java.time.Instant;

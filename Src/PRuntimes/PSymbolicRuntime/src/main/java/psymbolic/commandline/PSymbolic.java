@@ -52,8 +52,7 @@ public class PSymbolic {
             }
 
             if (config.isWriteToFile()) {
-                scheduler.writeToFile("output/main");
-                scheduler.writeBacktracksToFiles("output/backtrack");
+                EntryPoint.writeToFile();
             }
 
         } catch (BugFoundException e) {

@@ -146,4 +146,14 @@ public class EntryPoint {
         process();
     }
 
+    public static void writeToFile() throws Exception {
+        if (configuration.getCollectStats() != 0) {
+            TraceLogger.log(String.format("Writing 1 current and %d backtrack states in output/", scheduler.schedule.getNumBacktracks()));
+        }
+        scheduler.writeToFile("output/current");
+        scheduler.writeBacktracksToFiles("output/backtrack");
+        if (configuration.getCollectStats() != 0) {
+            TraceLogger.log("--------------------");
+        }
+    }
 }

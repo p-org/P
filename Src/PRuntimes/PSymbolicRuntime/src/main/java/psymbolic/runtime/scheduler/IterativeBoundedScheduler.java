@@ -1,15 +1,18 @@
 package psymbolic.runtime.scheduler;
 
 import lombok.Getter;
+import lombok.Setter;
 import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.logger.StatLogger;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
+import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.*;
 import psymbolic.runtime.machine.buffer.*;
 
+import java.io.*;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -24,29 +27,30 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     @Getter
     int iter = 0;
+
+    int start_iter = 0;
+
     private int backtrack = 0;
-    private Program program;
 
     private boolean isDoneIterating = false;
 
-    public IterativeBoundedScheduler(PSymConfiguration config) {
-        super(config);
+    public IterativeBoundedScheduler(PSymConfiguration config, Program p) {
+        super(config, p);
     }
 
     @Override
     public void print_stats() {
         super.print_stats();
+
         // print statistics
         if (configuration.getCollectStats() != 0) {
-            StatLogger.log(String.format("#-choices-covered:\t%d scheduling, %d data",
-                                                schedule.getNumScheduleChoicesExplored(),
-                                                schedule.getNumDataChoicesExplored()));
-            StatLogger.log(String.format("#-choices-remaining:\t%d scheduling, %d data",
-                                                schedule.getNumScheduleChoicesRemaining(),
-                                                schedule.getNumDataChoicesRemaining()));
-            StatLogger.log(String.format("#-backtracks:\t%d", schedule.getNumBacktracks()));
-            StatLogger.log(String.format("#-iterations:\t%d", iter));
+            StatLogger.log(String.format("#-iterations:\t%d", (iter - start_iter)));
         }
+    }
+
+    @Override
+    public void reset_stats() {
+        super.reset_stats();
     }
 
     public void reportSearchSummary() {
@@ -105,13 +109,129 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
     }
 
+    void recordResult() {
+        SearchStats.TotalStats totalStats = searchStats.getSearchTotal();
+        result = "";
+        if (start_iter != 0) {
+            result += "(resumed run) ";
+        }
+        if (totalStats.isCompleted()) {
+            if (totalStats.getNumBacktracks() == 0) {
+                result += "safe for any depth";
+            } else {
+                result += "partially safe with " + totalStats.getNumBacktracks() + " backtracks remaining";
+            }
+        } else {
+            int safeDepth = configuration.getDepthBound();
+            if (totalStats.getDepthStats().getDepth() < safeDepth) {
+                safeDepth = totalStats.getDepthStats().getDepth();
+            }
+            if (totalStats.getNumBacktracks() == 0) {
+                result += "safe up to depth " + safeDepth;
+            } else {
+                result += "partially safe up to depth " + configuration.getDepthBound() + " with " + totalStats.getNumBacktracks() + " backtracks remaining";
+            }
+        }
+    }
+
+    /**
+     * Read scheduler state from a file
+     * @param readFromFile Name of the input file containing the scheduler state
+     * @return A scheduler object
+     * @throws Exception Throw error if reading fails
+     */
+    public static IterativeBoundedScheduler readFromFile(String readFromFile) throws Exception {
+        IterativeBoundedScheduler result = null;
+        try {
+            System.out.println("Reading program state from file " + readFromFile);
+            FileInputStream fis = null;
+            fis = new FileInputStream(readFromFile);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            result = (IterativeBoundedScheduler) ois.readObject();
+            System.out.println("Successfully read.");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            throw new Exception("Failed to read program state from file " + readFromFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new Exception("Failed to read program state from file " + readFromFile);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            throw new Exception("Failed to read program state from file " + readFromFile);
+        }
+        return result;
+    }
+
+    /**
+     * Write scheduler state to a file
+     * @param prefix Output file name prefix
+     * @throws Exception Throw error if writing fails
+     */
+    public void writeToFile(String prefix) throws Exception {
+        long pid = ProcessHandle.current().pid();
+        String writeFileName = prefix + "_pid" + pid + ".out";
+        try {
+            System.out.println("Writing program state in file " + writeFileName);
+            FileOutputStream fos = new FileOutputStream(writeFileName);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(this);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new Exception("Failed to write program state in file " + writeFileName);
+        }
+    }
+
+    /**
+     * Write each backtracking point state individually
+     * @param prefix Output file name prefix
+     * @throws Exception Throw error if writing fails
+     */
+    public void writeBacktracksToFiles(String prefix) throws Exception {
+        for (int i = 0; i < schedule.size(); i++) {
+            Schedule.Choice choice = schedule.getChoice(i);
+            // if choice at this depth is non-empty
+            if (!choice.isBacktrackEmpty()) {
+                writeBacktrackToFile(prefix, i);
+            }
+        }
+    }
+
+    /**
+     * Write backtracking point state individually at a given depth
+     * @param prefix Output file name prefix
+     * @param d Backtracking point choice depth
+     * @throws Exception Throw error if writing fails
+     */
+    public void writeBacktrackToFile(String prefix, int d) throws Exception {
+        // create a copy of original choices
+        List<Schedule.Choice> originalChoices = new ArrayList<>();
+        for (int i = 0; i < schedule.size(); i++) {
+            originalChoices.add(schedule.getChoice(i).getCopy());
+        }
+
+        // clear backtracks at all predecessor depths
+        for (int i = 0; i < d; i++) {
+            schedule.getChoice(i).clearBacktrack();
+        }
+        // clear the complete choice information (including repeats and backtracks) at all successor depths
+        for (int i = d+1; i < schedule.size(); i++) {
+            schedule.clearChoice(i);
+        }
+        // write to file
+        writeToFile(prefix + "_" + d);
+
+        // restore schedule to original choices
+        schedule.setChoices(originalChoices);
+    }
+
+
     private void summarizeIteration() {
         recordResult();
         if (configuration.getCollectStats() > 2) {
             SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
         }
-        if (configuration.getIterationBound() > 0) {
-            isDoneIterating = (iter >= configuration.getIterationBound());
+        if (configuration.getIterationBound() >= 0) {
+            isDoneIterating = ((iter - start_iter) >= configuration.getIterationBound());
         }
         if (!isDoneIterating) {
             postIterationCleanup();
@@ -119,24 +239,23 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     @Override
-    public void doSearch(Program p) {
-        program = p;
+    public void doSearch() {
         result = "incomplete";
-        initializeSearch(program);
+        initializeSearch();
         while (!isDoneIterating) {
             iter++;
             SearchLogger.logStartExecution(iter, getDepth());
             searchStats.startNewIteration(iter, backtrack);
-            super.resumeSearch(program);
+            super.performSearch();
             summarizeIteration();
         }
     }
 
-    @Override
-    public void resumeSearch(Program p) {
-        program = p;
+    public void resumeSearch() {
         isDoneIterating = false;
+        start_iter = iter;
         boolean initialRun = true;
+        reset_stats();
         while (!isDoneIterating) {
             if (initialRun) {
                 SearchLogger.logResumeExecution(iter, getDepth());
@@ -144,9 +263,9 @@ public class IterativeBoundedScheduler extends Scheduler {
             } else {
                 iter++;
                 SearchLogger.logStartExecution(iter, getDepth());
-                searchStats.startNewIteration(iter, backtrack);
             }
-            super.resumeSearch(p);
+            searchStats.startNewIteration(iter, backtrack);
+            super.performSearch();
             summarizeIteration();
         }
     }
@@ -178,7 +297,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                 TraceLogger.logMessage("pending backtracks: " + schedule.getNumBacktracks());
                 if (newDepth == 0) {
                     reset();
-                    initializeSearch(program);
+                    initializeSearch();
                 } else {
                     restore(newDepth, choice.getSchedulerChoiceDepth());
                 }

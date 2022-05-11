@@ -123,35 +123,35 @@ public class SearchStats implements Serializable {
 
     // per iteration statistics map
     @Getter
-    private List<IterationStats> iterationStats = new ArrayList<>();
+    private HashMap<Integer, IterationStats> iterationStats = new HashMap<>();
+    @Setter
+    private int current_iter = 0;
+
 
     public void addDepthStatistics(int depth, DepthStats depthStats)
     {
-        if (!iterationStats.isEmpty()) {
-            iterationStats.get(iterationStats.size() - 1).addDepthStatistics(depth, depthStats);
-        }
+        iterationStats.get(current_iter).addDepthStatistics(depth, depthStats);
     }
 
     public int getIterationBacktracks()
     {
-        return iterationStats.get(iterationStats.size()-1).getNumBacktracks();
+        return iterationStats.get(current_iter).getNumBacktracks();
     }
 
     public void setIterationBacktracks(int numBacktracks)
     {
-        if (!iterationStats.isEmpty()) {
-            iterationStats.get(iterationStats.size() - 1).setNumBacktracks(numBacktracks);
-        }
+        iterationStats.get(current_iter).setNumBacktracks(numBacktracks);
     }
 
     public void setIterationCompleted()
     {
-        iterationStats.get(iterationStats.size()-1).setCompleted(true);
+        iterationStats.get(current_iter).setCompleted(true);
     }
 
     public void startNewIteration(int iteration, int backtrack)
     {
-        iterationStats.add(new IterationStats(iteration, backtrack));
+        iterationStats.put(iteration, new IterationStats(iteration, backtrack));
+        current_iter = iteration;
     }
 
 
@@ -180,9 +180,11 @@ public class SearchStats implements Serializable {
         int totalTransitions = 0;
         int totalMergedTransitions = 0;
         int totalTransitionsExplored = 0;
-        for(IterationStats entry: iterationStats)
+        for(IterationStats entry: iterationStats.values())
         {
             DepthStats d = entry.getIterationNewTotal();
+            if (d.getDepth() == 0)
+                continue;;
             if (d.getDepth() > maxDepth) {
                 maxDepth = d.getDepth();
             }
@@ -197,6 +199,10 @@ public class SearchStats implements Serializable {
         }
         DepthStats totalDepthStats = new DepthStats(maxDepth, totalStates, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
         return new TotalStats(totalDepthStats, completed, getIterationBacktracks());
+    }
+
+    public void reset_stats() {
+        iterationStats.clear();
     }
 
 }

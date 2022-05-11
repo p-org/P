@@ -7,10 +7,7 @@ import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
 import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.solvers.SolverEngine;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,44 +36,31 @@ public class PSymbolic {
                     .getPath();
 
             LoadAllClassesInJar(jarPath);
-            Program p;
             IterativeBoundedScheduler scheduler;
 
             if (config.getReadFromFile() == "") {
                 Set<Class<? extends Program>> subTypes = reflections.getSubTypesOf(Program.class);
                 Optional<Class<? extends Program>> program = subTypes.stream().findFirst();
                 Object instance = program.get().getDeclaredConstructor().newInstance();
-                p = (Program) instance;
-                scheduler = new IterativeBoundedScheduler(config);
-                if (config.isDpor()) scheduler = new DPORScheduler(config);
-                EntryPoint.run(p, scheduler, config);
+                Program p = (Program) instance;
+                scheduler = new IterativeBoundedScheduler(config, p);
+                if (config.isDpor()) scheduler = new DPORScheduler(config, p);
+                EntryPoint.run(scheduler, config);
             } else {
-                String readFromFile = config.getReadFromFile();
-                System.out.println("Reading program state from file " + readFromFile);
-                FileInputStream fis = new FileInputStream(readFromFile);
-                ObjectInputStream ois = new ObjectInputStream(fis);
-                p = (Program) ois.readObject();
-                scheduler = (IterativeBoundedScheduler) ois.readObject();
-                System.out.println("Successfully read.");
-                EntryPoint.resume(p, scheduler, config);
+                scheduler = IterativeBoundedScheduler.readFromFile(config.getReadFromFile());
+                EntryPoint.resume(scheduler, config);
             }
 
             if (config.isWriteToFile()) {
-                String writeFileName = "output/program_state.out";
-                System.out.println("Writing program state in file " + writeFileName);
-                FileOutputStream fos = new FileOutputStream(writeFileName);
-                ObjectOutputStream oos = new ObjectOutputStream(fos);
-                oos.writeObject(p);
-                oos.writeObject(scheduler);
-                System.out.println("Successfully written.");
+                scheduler.writeToFile("output/main");
+                scheduler.writeBacktracksToFiles("output/backtrack");
             }
 
         } catch (BugFoundException e) {
             e.printStackTrace();
             System.exit(2);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             ex.printStackTrace();
             System.exit(10);
         }

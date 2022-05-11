@@ -18,7 +18,6 @@ public class EntryPoint {
     private static Future<Integer> future;
     private static String status;
     private static PSymConfiguration configuration;
-    private static Program program;
     private static IterativeBoundedScheduler scheduler;
     private static String mode;
 
@@ -98,9 +97,9 @@ public class EntryPoint {
 //            TraceLogger.setVerbosity(2);
             SearchLogger.disable();
             Guard pc = e.pathConstraint;
-            ReplayScheduler replay = new ReplayScheduler(configuration, scheduler.getSchedule(), pc, scheduler.getDepth());
-            program.setScheduler(replay);
-            replay.doSearch(program);
+
+            ReplayScheduler replay = new ReplayScheduler(configuration, scheduler.getProgram(), scheduler.getSchedule(), pc, scheduler.getDepth());
+            replay.doSearch();
             e.printStackTrace();
             throw new BugFoundException("Found bug: " + e.getLocalizedMessage(), pc);
         } catch (InterruptedException e) {
@@ -121,30 +120,28 @@ public class EntryPoint {
         }
     }
 
-    public static void run(Program p, IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
-        program = p;
+    public static void run(IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
         scheduler = sch;
         configuration = config;
-        program.setScheduler(scheduler);
+        scheduler.getProgram().setScheduler(scheduler);
 
         preprocess();
-        TimedCall timedCall = new TimedCall(scheduler, program, false);
+        TimedCall timedCall = new TimedCall(scheduler, false);
         future = executor.submit(timedCall);
         process();
     }
 
-    public static void resume(Program p, IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
-        program = p;
+    public static void resume(IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
         scheduler = sch;
         configuration = config;
-        program.setScheduler(scheduler);
+        scheduler.getProgram().setScheduler(scheduler);
 
         scheduler.setConfiguration(configuration);
         TraceLogger.setVerbosity(config.getVerbosity());
         SolverEngine.resumeEngine();
 
         preprocess();
-        TimedCall timedCall = new TimedCall(scheduler, program, true);
+        TimedCall timedCall = new TimedCall(scheduler, true);
         future = executor.submit(timedCall);
         process();
     }

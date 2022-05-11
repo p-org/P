@@ -1,5 +1,6 @@
 package psymbolic.runtime.scheduler;
 
+import psymbolic.commandline.Program;
 import psymbolic.valuesummary.*;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.commandline.PSymConfiguration;
@@ -14,8 +15,8 @@ public class DPORScheduler extends IterativeBoundedScheduler {
         return new DPORSchedule();
     }
 
-    public DPORScheduler(PSymConfiguration config) {
-        super(config);
+    public DPORScheduler(PSymConfiguration config, Program p) {
+        super(config, p);
     }
 
     // don't use the guards because they may not match

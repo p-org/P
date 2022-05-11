@@ -88,9 +88,9 @@ public class Schedule implements Serializable {
         List<PrimitiveVS<ValueSummary>> backtrackElement = new ArrayList<>();
         @Getter
         Guard handledUniverse = Guard.constFalse();
-        @Getter
+        @Getter @Setter
         int numScheduleChoicesExplored = 0;
-        @Getter
+        @Getter @Setter
         int numDataChoicesExplored = 0;
         @Getter
         int schedulerDepth = 0;
@@ -102,6 +102,36 @@ public class Schedule implements Serializable {
         Guard filter = null;
 
         public Choice() {
+        }
+
+        /** Copy-constructor for Choice
+         * @param old The Choice to copy
+         */
+        public Choice(Choice old) {
+            repeatSender = new PrimitiveVS<>(old.repeatSender);
+            repeatBool = new PrimitiveVS<>(old.repeatBool);
+            repeatInt = new PrimitiveVS<>(old.repeatInt);
+            repeatElement = new PrimitiveVS<>(old.repeatElement);
+            backtrackSender = new ArrayList<>(old.backtrackSender);
+            backtrackBool = new ArrayList<>(old.backtrackBool);
+            backtrackInt = new ArrayList<>(old.backtrackInt);
+            backtrackElement = new ArrayList<>(old.backtrackElement);
+            handledUniverse = old.handledUniverse;
+            numScheduleChoicesExplored = old.numScheduleChoicesExplored;
+            numDataChoicesExplored = old.numDataChoicesExplored;
+            schedulerDepth = old.schedulerDepth;
+            schedulerChoiceDepth = old.schedulerChoiceDepth;
+            choiceState = old.choiceState;
+            filter = old.filter;
+        }
+
+        /**
+         * Copy the Choice
+         *
+         * @return A new cloned copy of the Choice
+         */
+        public Choice getCopy() {
+            return new Choice(this);
         }
 
         public List<List<ValueSummary>> copyState(List<List<ValueSummary>> state) {
@@ -252,8 +282,14 @@ public class Schedule implements Serializable {
 
     public List<Choice> getChoices() { return choices; }
 
+    public void setChoices(List<Choice> c) { choices = c; }
+
     public Choice getChoice(int d) {
         return choices.get(d);
+    }
+
+    public void setChoice(int d, Choice choice) {
+        choices.set(d, choice);
     }
 
     public void clearChoice(int d) {
@@ -274,6 +310,13 @@ public class Schedule implements Serializable {
             count += choice.getNumScheduleChoicesExplored();
         }
         return count;
+    }
+
+    public void resetNumChoicesExplored() {
+        for (Choice choice : choices) {
+            choice.setNumScheduleChoicesExplored(0);
+            choice.setNumDataChoicesExplored(0);
+        }
     }
 
     public int getNumDataChoicesExplored() {
@@ -542,4 +585,7 @@ public class Schedule implements Serializable {
         return choices.get(size - 1).getRepeatUniverse();
     }
 
+    public void reset_stats() {
+        resetNumChoicesExplored();
+    }
 }

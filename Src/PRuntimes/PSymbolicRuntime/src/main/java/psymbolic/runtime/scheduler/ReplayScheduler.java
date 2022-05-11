@@ -18,12 +18,12 @@ public class ReplayScheduler extends Scheduler {
     /** Counterexample length */
     private int cexLength = 0;
 
-    public ReplayScheduler (PSymConfiguration config, Schedule schedule, int length) {
-        this(config, schedule, Guard.constTrue(), length);
+    public ReplayScheduler (PSymConfiguration config, Program p, Schedule schedule, int length) {
+        this(config, p, schedule, Guard.constTrue(), length);
     }
 
-    public ReplayScheduler (PSymConfiguration config, Schedule schedule, Guard pc, int length) {
-        super(config);
+    public ReplayScheduler (PSymConfiguration config, Program p, Schedule schedule, Guard pc, int length) {
+        super(config, p);
         TraceLogger.enable();
         this.schedule = schedule.guard(pc).getSingleSchedule();
         for (Machine machine : schedule.getMachines()) {
@@ -36,9 +36,9 @@ public class ReplayScheduler extends Scheduler {
     }
 
     @Override
-    public void doSearch(Program p) {
+    public void doSearch() {
         TraceLogger.logStartReplayCex(cexLength);
-        super.doSearch(p);
+        super.doSearch();
     }
 
     @Override

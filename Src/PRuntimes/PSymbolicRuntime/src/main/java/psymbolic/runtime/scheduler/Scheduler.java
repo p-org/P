@@ -592,7 +592,7 @@ public class Scheduler implements SymbolicSearch {
                     flatState.add(vs);
                 }
             }
-            numStates = Concretizer.getNumConcreteValues(false, Guard.constTrue(), flatState.toArray(new ValueSummary[0]));
+            numStates = Concretizer.getNumConcreteValues((configuration.getVerbosity() > 6), Guard.constTrue(), flatState.toArray(new ValueSummary[0]));
         }
         totalStates.add(numStates);
 
@@ -628,7 +628,7 @@ public class Scheduler implements SymbolicSearch {
                 System.out.println("\t  target " + removed.getTarget().toString());
             }
             if (configuration.getCollectStats() > 2) {
-                numMessages += Concretizer.getNumConcreteValues(false, Guard.constTrue(), removed);
+                numMessages += Concretizer.getNumConcreteValues((configuration.getVerbosity() > 6), Guard.constTrue(), removed);
             }
             if (effect == null) {
                 effect = removed;
@@ -638,8 +638,8 @@ public class Scheduler implements SymbolicSearch {
         }
 
         if (configuration.getCollectStats() > 2) {
-            numMessagesMerged = Concretizer.getNumConcreteValues(false, Guard.constTrue(), effect);
-            numMessagesExplored = Concretizer.getNumConcreteValues(false, Guard.constTrue(), effect.getTarget(), effect.getEvent());
+            numMessagesMerged = Concretizer.getNumConcreteValues((configuration.getVerbosity() > 6), Guard.constTrue(), effect);
+            numMessagesExplored = Concretizer.getNumConcreteValues((configuration.getVerbosity() > 6), Guard.constTrue(), effect.getTarget(), effect.getEvent());
         }
 
         assert effect != null;

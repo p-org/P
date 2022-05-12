@@ -222,7 +222,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             schedule.clearChoice(i);
         }
         // write to file
-        writeToFile(prefix + "_" + d);
+        writeToFile(prefix + "_d" + schedule.getChoice(d).getSchedulerDepth() + "_cd" + d);
 
         // restore schedule to original choices
         schedule.setChoices(originalChoices);

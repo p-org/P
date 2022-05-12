@@ -14,7 +14,7 @@ import java.io.Serializable;
 public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
 
     // elements in the queue
-    private ListVS<T> elements;
+    protected ListVS<T> elements;
     private T peek = null;
 
     public SymbolicQueue() {

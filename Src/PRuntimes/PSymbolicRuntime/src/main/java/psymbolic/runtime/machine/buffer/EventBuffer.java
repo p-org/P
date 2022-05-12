@@ -7,6 +7,7 @@ import psymbolic.runtime.Message;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.UnionVS;
+import psymbolic.valuesummary.ValueSummary;
 
 import java.util.function.Function;
 

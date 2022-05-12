@@ -616,6 +616,7 @@ public class Scheduler implements SymbolicSearch {
 
         Message effect = null;
         List<Message> effects = new ArrayList<>();
+
         for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
@@ -647,29 +648,6 @@ public class Scheduler implements SymbolicSearch {
 
         performEffect(effect);
 
-        List<List<ValueSummary>> newStates = new ArrayList<>();
-        int numStates = 1;
-        for (Machine machine : machines) {
-            List<ValueSummary> machineLocalState = machine.getLocalState();
-            newStates.add(machineLocalState);
-        }
-        if (configuration.getCollectStats() > 2) {
-            List<ValueSummary> flatState = new ArrayList<>();
-            for (List<ValueSummary> machineState: newStates) {
-                for (ValueSummary vs: machineState) {
-                    flatState.add(vs);
-                }
-            }
-            numStates = Concretizer.getNumConcreteValues(false, Guard.constTrue(), flatState.toArray(new ValueSummary[0]));
-        }
-
-        prevStates.add(newStates);
-        totalStates.add(numStates);
-
->>>>>>> e2a21d64e (Restore PSym to without fp)
-
-=======
->>>>>>> 7627dce6d (Adds setting machine's state)
         // simplify engine
 //        SolverEngine.simplifyEngineAuto();
 

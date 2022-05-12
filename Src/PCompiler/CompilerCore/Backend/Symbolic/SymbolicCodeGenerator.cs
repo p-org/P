@@ -216,6 +216,14 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, "public List<ValueSummary> getLocalState() {");
+            context.WriteLine(output, "    List<ValueSummary> res = super.getLocalState();");
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"    res.add({CompilationContext.GetVar(field.Name)});");
+            context.WriteLine(output, "    return res;");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
 
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public int setLocalState(List<ValueSummary> localState) {");

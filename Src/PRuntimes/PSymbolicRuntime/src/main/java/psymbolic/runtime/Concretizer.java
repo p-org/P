@@ -253,7 +253,6 @@ public class Concretizer {
 
     /**
      * Get a list of concrete values for the arguments
-     * @param print Enable printing of concrete value
      * @param pc Guard under which to concretize values
      * @param stop specifies when to stop getting more concrete values
      * @param args arguments
@@ -347,7 +346,6 @@ public class Concretizer {
 
     /**
      * Count the number of concrete values for arguments
-     * @param print Enable printing of concrete value
      * @param pc Guard under which to concretize values
      * @param args arguments
      * @return number of concrete values

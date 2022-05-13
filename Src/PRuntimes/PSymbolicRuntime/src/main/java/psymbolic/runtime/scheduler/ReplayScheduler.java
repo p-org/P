@@ -1,6 +1,7 @@
 package psymbolic.runtime.scheduler;
 
 import psymbolic.commandline.PSymConfiguration;
+import psymbolic.commandline.Program;
 import psymbolic.runtime.Event;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
@@ -14,20 +15,30 @@ public class ReplayScheduler extends Scheduler {
     /** Schedule to replay */
     private final Schedule schedule;
 
-    public ReplayScheduler (PSymConfiguration config, Schedule schedule) {
-        this(config, schedule, Guard.constTrue());
+    /** Counterexample length */
+    private int cexLength = 0;
+
+    public ReplayScheduler (PSymConfiguration config, Program p, Schedule schedule, int length) {
+        this(config, p, schedule, Guard.constTrue(), length);
     }
 
-    public ReplayScheduler (PSymConfiguration config, Schedule schedule, Guard pc) {
-        super(config);
+    public ReplayScheduler (PSymConfiguration config, Program p, Schedule schedule, Guard pc, int length) {
+        super(config, p);
         TraceLogger.enable();
         this.schedule = schedule.guard(pc).getSingleSchedule();
         for (Machine machine : schedule.getMachines()) {
             machine.reset();
         }
         configuration.setUseReceiverQueueSemantics(false);
-        configuration.setCollectStats(false);
+        configuration.setCollectStats(0);
         getVcManager().disable();
+        cexLength = length;
+    }
+
+    @Override
+    public void doSearch() {
+        TraceLogger.logStartReplayCex(cexLength);
+        super.doSearch();
     }
 
     @Override

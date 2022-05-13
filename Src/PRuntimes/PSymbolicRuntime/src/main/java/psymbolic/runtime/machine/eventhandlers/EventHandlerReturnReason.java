@@ -8,6 +8,7 @@ import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.UnionVS;
 import psymbolic.valuesummary.Guard;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,7 +16,7 @@ import java.util.Map;
  * Represent the outcome of executing an event handler 
  * Either a normal return, or goto, or raise.
  */
-public class EventHandlerReturnReason {
+public class EventHandlerReturnReason implements Serializable {
 
     private UnionVS outcome = new UnionVS();
     @Getter

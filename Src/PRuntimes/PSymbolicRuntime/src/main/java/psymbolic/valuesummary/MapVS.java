@@ -29,6 +29,22 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
         this.entries = new HashMap<>();
     }
 
+    /** Copy-constructor for MapVS
+     * @param old The MapVS to copy
+     */
+    public MapVS(MapVS<K, V> old) {
+        this(new SetVS<>(old.keys), new HashMap<>(old.entries));
+    }
+
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    public MapVS<K, V> getCopy() {
+        return new MapVS(this);
+    }
+
     /** Get the number of entries in the MapVS
      *
      * @return The size of the MapVS

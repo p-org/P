@@ -5,6 +5,7 @@ import org.apache.log4j.*;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
 import psymbolic.runtime.machine.State;
+import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
 
@@ -89,8 +90,16 @@ public class TraceLogger extends PSymLogger {
         }
     }
 
-    public static void finished(int steps) {
+    public static void finishedExecution(int steps) {
         log.info(String.format("Execution finished in %d steps", steps));
+    }
+
+    public static void finished(int iter, long timeSpent, String result, String mode) {
+        log.info(String.format("--------------------"));
+        log.info(String.format("Explored %d %s executions", iter, mode));
+        log.info(String.format("Took %d seconds and %.1f GB", timeSpent, SolverStats.maxMemSpent/1000.0));
+        log.info(String.format("Result: " + result));
+        log.info(String.format("--------------------"));
     }
 
     public static void handle(Machine m, State st, Message event) {
@@ -106,9 +115,11 @@ public class TraceLogger extends PSymLogger {
         }
     }
 
-    public static void schedule(int step, Message effect) {
+    public static void schedule(int step, Message effect, PrimitiveVS<Machine> src) {
         if(verbosity > 0) {
-            String msg = "Step " + step + ": scheduled event" + effect.getEvent().toString() + " sent to " + effect.getTarget();
+            String msg = "Step " + step + ": scheduled event"   + effect.getEvent().toString()
+                                        + " from " + src
+                                        + " sent to " + effect.getTarget();
             log.info(msg);
         }
     }
@@ -117,6 +128,16 @@ public class TraceLogger extends PSymLogger {
         if(verbosity > 1) {
             log.info(str);
         }
+    }
+
+    public static void log(String str) {
+        log.info(str);
+    }
+
+    public static void logStartReplayCex(int length)
+    {
+        log.info("--------------------");
+        log.info("Replaying Counterexample of Length " + length);
     }
 
     public static void enable() {

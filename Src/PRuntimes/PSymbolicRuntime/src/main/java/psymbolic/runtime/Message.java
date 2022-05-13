@@ -118,6 +118,22 @@ public class Message implements ValueSummary<Message> {
         this.clock = clock;
     }
 
+    /** Copy-constructor for Message
+     * @param old The Message to copy
+     */
+    public Message (Message old) {
+        this(new PrimitiveVS<>(old.event), new PrimitiveVS<>(old.target), old.payload, new VectorClockVS(old.clock));
+    }
+
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    public Message getCopy() {
+        return new Message(this);
+    }
+
     public PrimitiveVS<Event> getEvent() {
         return this.event;
     }
@@ -227,7 +243,8 @@ public class Message implements ValueSummary<Message> {
         String str = "{";
         int i = 0;
         for (GuardedValue<Event> event : getEvent().getGuardedValues()) {
-            str += event.getGuard();
+            str += event.getValue();
+            str += " @ " + event.getGuard();
             //str += " -> " + getMachine().guard(name.guard);
             if (payload.size() > 0 && payload.containsKey(event.getValue())) {
                 str += ": " + payload.get(event.getValue());

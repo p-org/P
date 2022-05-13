@@ -1,11 +1,12 @@
 package psymbolic.runtime;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * Represents a P event (Event Name)
  */
-public class Event {
+public class Event implements Serializable {
     // Special event send to a machine on creation
     public static Event createMachine = new Event("createMachine");
     // Special halt event

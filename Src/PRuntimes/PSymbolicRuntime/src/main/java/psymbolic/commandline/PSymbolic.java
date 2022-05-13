@@ -2,8 +2,12 @@ package psymbolic.commandline;
 
 import org.reflections.Reflections;
 import psymbolic.runtime.logger.PSymLogger;
+import psymbolic.runtime.scheduler.DPORScheduler;
+import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
+import psymbolic.runtime.statistics.SolverStats;
+import psymbolic.valuesummary.solvers.SolverEngine;
 
-import java.io.FileInputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +21,10 @@ public class PSymbolic {
         // parse the commandline arguments to create the configuration
         PSymConfiguration config = PSymOptions.ParseCommandlineArgs(args);
         Reflections reflections = new Reflections("psymbolic");
+    	SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
+        SolverStats.setTimeLimit(config.getTimeLimit());
+        SolverStats.setMemLimit(config.getMemLimit());
+        PSymLogger.ResetAllConfigurations(config.getVerbosity(), config.getProjectName());
 
         try {
             // load all the files in the passed jar
@@ -28,17 +36,30 @@ public class PSymbolic {
                     .getPath();
 
             LoadAllClassesInJar(jarPath);
+            IterativeBoundedScheduler scheduler;
 
-            Set<Class<? extends Program>> subTypes = reflections.getSubTypesOf(Program.class);
-            Optional<Class<? extends Program>> program = subTypes.stream().findFirst();
-            Object instance = program.get().getDeclaredConstructor().newInstance();
-            EntryPoint.run((Program) instance, config);
+            if (config.getReadFromFile() == "") {
+                Set<Class<? extends Program>> subTypes = reflections.getSubTypesOf(Program.class);
+                Optional<Class<? extends Program>> program = subTypes.stream().findFirst();
+                Object instance = program.get().getDeclaredConstructor().newInstance();
+                Program p = (Program) instance;
+                scheduler = new IterativeBoundedScheduler(config, p);
+                if (config.isDpor()) scheduler = new DPORScheduler(config, p);
+                EntryPoint.run(scheduler, config);
+            } else {
+                scheduler = IterativeBoundedScheduler.readFromFile(config.getReadFromFile());
+                EntryPoint.resume(scheduler, config);
+            }
+
+            if (config.isWriteToFile()) {
+                EntryPoint.writeToFile();
+            }
+
         } catch (BugFoundException e) {
             e.printStackTrace();
             System.exit(2);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             ex.printStackTrace();
             System.exit(10);
         }

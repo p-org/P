@@ -1,9 +1,9 @@
 package psymbolic.runtime.logger;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.log4j.*;
-import psymbolic.runtime.statistics.BDDStats;
 import psymbolic.runtime.statistics.SearchStats;
-import psymbolic.valuesummary.bdd.BDDEngine;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -12,9 +12,12 @@ import java.util.Date;
 public class SearchLogger {
     /* Get actual class name to be printed on */
     static Logger log = Logger.getLogger(SearchLogger.class.getName());
+    @Getter @Setter
+    static int verbosity;
 
-    public static void Initialize()
+    public static void Initialize(int verb)
     {
+        verbosity = verb;
         // remove all the appenders
         log.removeAllAppenders();
         // setting up the logger
@@ -57,18 +60,28 @@ public class SearchLogger {
         log.info(message);
     }
 
+    public static void logResumeExecution(int iter, int step)
+    {
+        log.info("--------------------");
+        log.info("Resuming Iteration: " + iter + " from Step: " + step);
+    }
+
+    public static void logStartExecution(int iter, int step)
+    {
+        log.info("--------------------");
+        log.info("Starting Iteration: " + iter + " from Step: " + step);
+    }
+
     public static void logDepthStats(SearchStats.DepthStats depthStats)
     {
         log.info(String.format("Depth: %d: TotalTransitions = %d, ReducedTransitionsExplored = %d", depthStats.getDepth(), depthStats.getNumOfTransitions(), depthStats.getNumOfTransitionsExplored()));
-        log.info("BDD States:\n" + BDDEngine.getInstance().getStats());
-        log.info(BDDStats.prettyPrint());
     }
 
     public static void logIterationStats(SearchStats.IterationStats iterStats)
     {
 
-        log.info(String.format("Finished Iteration: %d: Max Depth: %dTotalTransitions = %d, ReducedTransitionsExplored = %d",
-                iterStats.getIteration(), iterStats.getIterationTotal().getDepth(), iterStats.getIterationTotal().getNumOfTransitions(), iterStats.getIterationTotal().getNumOfTransitionsExplored()));
+        log.info(String.format("Finished Iteration: %d: Max Depth: %d, TotalStates = %d, TotalTransitions = %d, ReducedTransitionsExplored = %d",
+                iterStats.getIteration(), iterStats.getIterationTotal().getDepth(), iterStats.getIterationTotal().getNumOfStates(), iterStats.getIterationTotal().getNumOfTransitions(), iterStats.getIterationTotal().getNumOfTransitionsExplored()));
     }
     
 }

@@ -16,9 +16,12 @@ public class TupleVS implements ValueSummary<TupleVS> {
     /** The types of the fields of the tuple */
     private final Class[] classes;
 
-    public TupleVS(TupleVS tuple) {
-        this.fields = Arrays.copyOf(tuple.fields, tuple.fields.length);
-        this.classes = Arrays.copyOf(tuple.classes, tuple.classes.length);
+    /** Copy-constructor for TupleVS
+     * @param old The TupleVS to copy
+     */
+    public TupleVS(TupleVS old) {
+        this.fields = Arrays.copyOf(old.fields, old.fields.length);
+        this.classes = Arrays.copyOf(old.classes, old.classes.length);
     }
 
     /** Make a new TupleVS from the provided items */
@@ -32,6 +35,15 @@ public class TupleVS implements ValueSummary<TupleVS> {
                 x.restrict(guard)).collect(Collectors.toList()).toArray(new ValueSummary[items.length]);
         this.classes = Arrays.stream(items).map(x -> x.getClass())
                 .collect(Collectors.toList()).toArray(new Class[items.length]);
+    }
+
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    public TupleVS getCopy() {
+        return new TupleVS(this);
     }
 
     /** Get the arity of the TupleVS

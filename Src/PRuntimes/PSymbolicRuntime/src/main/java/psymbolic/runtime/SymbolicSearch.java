@@ -3,14 +3,14 @@ package psymbolic.runtime;
 import psymbolic.commandline.Program;
 import psymbolic.valuesummary.*;
 
+import java.io.Serializable;
+
 /** Search interface for exploring different schedules */
-public interface SymbolicSearch {
+public interface SymbolicSearch extends Serializable {
 
     /** Perform the Search
-     *
-     * @param p The program to run the search on
      */
-    void doSearch (Program p);
+    void doSearch ();
 
     /** Return the next integer (within a bound) based on the search and strategy.
      *

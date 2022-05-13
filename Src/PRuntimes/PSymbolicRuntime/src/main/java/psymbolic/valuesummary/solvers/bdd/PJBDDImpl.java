@@ -1,4 +1,4 @@
-package psymbolic.valuesummary.bdd;
+package psymbolic.valuesummary.solvers.bdd;
 
 import org.sosy_lab.pjbdd.api.Builders;
 import org.sosy_lab.pjbdd.api.Creator;
@@ -8,12 +8,13 @@ import org.sosy_lab.pjbdd.util.parser.BDDStringImporter;
 import org.sosy_lab.pjbdd.util.parser.DotExporter;
 import org.sosy_lab.pjbdd.util.parser.Exporter;
 import org.sosy_lab.pjbdd.util.parser.Importer;
-import psymbolic.runtime.statistics.BDDStats;
+import psymbolic.runtime.statistics.SolverStats;
+import psymbolic.valuesummary.solvers.SolverLib;
 
 /**
  * Represents the BDD implementation using PJBDD
  */
-public class PJBDDImpl {
+public class PJBDDImpl implements SolverLib<DD> {
     final private Creator c;
     final private Exporter<DD> e;
     final private Importer<DD> i;
@@ -38,6 +39,7 @@ public class PJBDDImpl {
                 .build();
         e = new DotExporter();
         i = new BDDStringImporter(c);
+        System.out.println("Using BDDs");
     }
 
     public DD constFalse() {
@@ -48,26 +50,24 @@ public class PJBDDImpl {
         return c.makeTrue();
     }
 
-    public boolean isFalse(DD bdd) {
-        return bdd.isFalse();
-    }
-
-    public boolean isTrue(DD bdd) {
-        return bdd.isTrue();
+    public boolean isSat(DD bdd) {
+        SolverStats.isSatOperations++;
+        boolean result = !bdd.isFalse();
+        if (result) {
+            SolverStats.isSatResult++;
+        }
+        return result;
     }
 
     public DD and(DD left, DD right) {
-        BDDStats.andOperations++;
         return c.makeAnd(left, right);
     }
 
     public DD or(DD left, DD right) {
-        BDDStats.orOperations++;
         return c.makeOr(left, right);
     }
 
     public DD not(DD bdd) {
-        BDDStats.notOperations++;
         return c.makeNot(bdd);
     }
 
@@ -79,8 +79,12 @@ public class PJBDDImpl {
         return c.makeIte(cond, thenClause, elseClause);
     }
 
-    public DD newVar() {
+    public DD newVar(String name) {
         return c.makeVariable();
+    }
+
+    public DD simplify(DD bdd) {
+        return bdd;
     }
 
     public String toString(DD bdd) {
@@ -109,11 +113,23 @@ public class PJBDDImpl {
         return c.getCreatorStats().getNodeCount();
     }
 
-    public String getBDDStats() {
+    public int getExprCount() {
+        return getNodeCount();
+    }
+
+    public String getStats() {
         return c.getCreatorStats().prettyPrint();
     }
 
-    public void UnusedNodeCleanUp() {
+    public void cleanup() {
         c.cleanUnusedNodes();
+    }
+
+    public boolean areEqual(DD left, DD right) {
+        return left.equals(right);
+    }
+
+    public int hashCode(DD formula) {
+        return formula.hashCode();
     }
 }

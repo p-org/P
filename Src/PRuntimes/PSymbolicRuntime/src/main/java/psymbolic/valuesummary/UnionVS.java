@@ -33,13 +33,25 @@ public class UnionVS implements ValueSummary<UnionVS> {
         this.value = new HashMap<>();
     }
 
-    public UnionVS(UnionVS vs) {
-        this.type = new PrimitiveVS<>(vs.type);
-        this.value = new HashMap<>(vs.value);
+    /** Copy-constructor for UnionVS
+     * @param old The UnionVS to copy
+     */
+    public UnionVS(UnionVS old) {
+        this.type = new PrimitiveVS<>(old.type);
+        this.value = new HashMap<>(old.value);
     }
 
     public UnionVS(ValueSummary vs) {
         this(vs.getUniverse(), vs.getClass(), vs);
+    }
+
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    public UnionVS getCopy() {
+        return new UnionVS(this);
     }
 
     /**

@@ -1,8 +1,9 @@
 package psymbolic.valuesummary.util;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class UnionFind<T> {
+public class UnionFind<T> implements Serializable {
     Map<T, T> parents = new HashMap<>();
     Map<T, Integer> rank = new HashMap<>();
     Collection<Set<T>> lastDisjointSet = null;

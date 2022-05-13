@@ -3,8 +3,8 @@ package psymbolic.runtime.statistics;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.var;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,12 +13,12 @@ import java.util.Map;
 /**
  * Represents the search statistics during exploration
  */
-public class SearchStats {
+public class SearchStats implements Serializable {
     /**
      * Represents the search statistics for one iteration
      */
     @Getter
-    public class IterationStats {
+    public class IterationStats implements Serializable {
 
         // iteration number
         private int iteration;
@@ -26,6 +26,14 @@ public class SearchStats {
         // iteration number
         @Getter
         private int startDepth;
+
+        // number of backtracks remaining
+        @Getter @Setter
+        private int numBacktracks;
+
+        // has the iteration completed for any depth
+        @Getter @Setter
+        private boolean completed;
 
         // per depth statistics during this iteration
         private HashMap<Integer, DepthStats> perDepthStats;
@@ -39,11 +47,14 @@ public class SearchStats {
             iteration = iterationNumber;
             this.startDepth = startDepth;
             perDepthStats = new HashMap<>();
+            numBacktracks = 0;
+            completed = false;
         }
 
         public DepthStats getIterationTotal()
         {
             int maxDepth = 0;
+            int totalStates = 0;
             int totalTransitions = 0;
             int totalMergedTransitions = 0;
             int totalTransitionsExplored = 0;
@@ -52,17 +63,19 @@ public class SearchStats {
                 if (entry.getKey() > maxDepth) {
                     maxDepth = entry.getKey();
                 }
+                totalStates += entry.getValue().numOfStates;
                 totalTransitions += entry.getValue().numOfTransitions;
                 totalMergedTransitions += entry.getValue().numOfMergedTransitions;
                 totalTransitionsExplored += entry.getValue().numOfTransitionsExplored;
             }
 
-            return new DepthStats(maxDepth, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
+            return new DepthStats(maxDepth, totalStates, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
         }
 
         public DepthStats getIterationNewTotal()
         {
             int maxDepth = 0;
+            int totalStates = 0;
             int totalTransitions = 0;
             int totalMergedTransitions = 0;
             int totalTransitionsExplored = 0;
@@ -72,13 +85,14 @@ public class SearchStats {
                     if (entry.getKey() > maxDepth) {
                         maxDepth = entry.getKey();
                     }
+                    totalStates += entry.getValue().numOfStates;
                     totalTransitions += entry.getValue().numOfTransitions;
                     totalMergedTransitions += entry.getValue().numOfMergedTransitions;
                     totalTransitionsExplored += entry.getValue().numOfTransitionsExplored;
                 }
             }
 
-            return new DepthStats(maxDepth, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
+            return new DepthStats(maxDepth, totalStates, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
         }
     }
 
@@ -87,9 +101,12 @@ public class SearchStats {
      */
     @AllArgsConstructor
     @Getter @Setter
-    public static class DepthStats {
+    public static class DepthStats implements Serializable {
         // depth
         private int depth;
+
+        // number of states that are explored at this depth
+        private int numOfStates;
 
         // number of transitions that can be taken at this depth
         private int numOfTransitions;
@@ -106,35 +123,86 @@ public class SearchStats {
 
     // per iteration statistics map
     @Getter
-    private List<IterationStats> iterationStats = new ArrayList<>();
+    private HashMap<Integer, IterationStats> iterationStats = new HashMap<>();
+    @Setter
+    private int current_iter = 0;
+
 
     public void addDepthStatistics(int depth, DepthStats depthStats)
     {
-        iterationStats.get(iterationStats.size()-1).addDepthStatistics(depth, depthStats);
+        iterationStats.get(current_iter).addDepthStatistics(depth, depthStats);
+    }
+
+    public int getIterationBacktracks()
+    {
+        return iterationStats.get(current_iter).getNumBacktracks();
+    }
+
+    public void setIterationBacktracks(int numBacktracks)
+    {
+        iterationStats.get(current_iter).setNumBacktracks(numBacktracks);
+    }
+
+    public void setIterationCompleted()
+    {
+        iterationStats.get(current_iter).setCompleted(true);
     }
 
     public void startNewIteration(int iteration, int backtrack)
     {
-        iterationStats.add(new IterationStats(iteration, backtrack));
+        iterationStats.put(iteration, new IterationStats(iteration, backtrack));
+        current_iter = iteration;
     }
 
-    public DepthStats getSearchTotal()
+
+    /**
+     * Represents the overall search statistics
+     */
+    @AllArgsConstructor
+    @Getter
+    public static class TotalStats {
+        // total depth stats
+        private DepthStats depthStats;
+
+        // has the search completed
+        private boolean completed;
+
+        // number of backtracks remaining
+        private int numBacktracks;
+    }
+
+    public TotalStats getSearchTotal()
     {
+        boolean completed = true;
+
         int maxDepth = 0;
+        int totalStates = 0;
         int totalTransitions = 0;
         int totalMergedTransitions = 0;
         int totalTransitionsExplored = 0;
-        for(IterationStats entry: iterationStats)
+        for(IterationStats entry: iterationStats.values())
         {
-            if (entry.getIterationNewTotal().getDepth() > maxDepth) {
-                maxDepth = entry.getIterationNewTotal().getDepth();
+            DepthStats d = entry.getIterationNewTotal();
+            if (d.getDepth() == 0)
+                continue;;
+            if (d.getDepth() > maxDepth) {
+                maxDepth = d.getDepth();
             }
-            totalTransitions += entry.getIterationNewTotal().getNumOfTransitions();
-            totalMergedTransitions += entry.getIterationNewTotal().getNumOfMergedTransitions();
-            totalTransitionsExplored += entry.getIterationNewTotal().getNumOfTransitionsExplored();
-        }
+            totalStates += d.numOfStates;
+            totalTransitions += d.getNumOfTransitions();
+            totalMergedTransitions += d.getNumOfMergedTransitions();
+            totalTransitionsExplored += d.getNumOfTransitionsExplored();
 
-        return new DepthStats(maxDepth, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
+            if (!entry.isCompleted()) {
+                completed = false;
+            }
+        }
+        DepthStats totalDepthStats = new DepthStats(maxDepth, totalStates, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
+        return new TotalStats(totalDepthStats, completed, getIterationBacktracks());
+    }
+
+    public void reset_stats() {
+        iterationStats.clear();
     }
 
 }

@@ -5,19 +5,25 @@ import psymbolic.valuesummary.ListVS;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.ValueSummary;
 
+import java.io.Serializable;
+
 /**
  * Represents a event-queue implementation using value summaries
  * @param <T>
  */
-public class SymbolicQueue<T extends ValueSummary<T>> {
+public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
 
     // elements in the queue
-    private ListVS<T> elements;
+    protected ListVS<T> elements;
     private T peek = null;
 
     public SymbolicQueue() {
         this.elements = new ListVS<>(Guard.constTrue());
         assert(elements.getUniverse().isTrue());
+    }
+
+    public void resetPeek() {
+        peek = null;
     }
 
     public PrimitiveVS<Integer> size() { return elements.size(); }
@@ -58,7 +64,7 @@ public class SymbolicQueue<T extends ValueSummary<T>> {
         T ret = peek.restrict(pc);
         if (dequeue) {
             elements = elements.removeAt(new PrimitiveVS<>(0).restrict(pc));
-            peek = null;
+            resetPeek();
         }
         assert(!pc.isFalse());
         return ret;

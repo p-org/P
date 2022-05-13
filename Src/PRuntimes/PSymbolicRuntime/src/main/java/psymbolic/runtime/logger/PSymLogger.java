@@ -37,23 +37,26 @@ public class PSymLogger {
         log.error(message);
     }
 
-    public static void ResetAllConfigurations(int verbosity)
+    public static void ResetAllConfigurations(int verbosity, String projectName)
     {
         BasicConfigurator.resetConfiguration();
         Initialize();
-        SearchLogger.Initialize();
+        SearchLogger.Initialize(verbosity);
         TraceLogger.Initialize(verbosity);
+        StatLogger.Initialize(projectName);
     }
 
     public static void ErrorReproMode()
     {
         SearchLogger.disable();
         TraceLogger.enable();
+        StatLogger.enable();
     }
 
     public static void SearchMode()
     {
         SearchLogger.enable();
         TraceLogger.disable();
+        StatLogger.enable();
     }
 }

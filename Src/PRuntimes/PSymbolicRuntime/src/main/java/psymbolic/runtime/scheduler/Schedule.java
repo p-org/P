@@ -1,21 +1,31 @@
 package psymbolic.runtime.scheduler;
 
 import lombok.Getter;
+import lombok.Setter;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.valuesummary.*;
 import psymbolic.runtime.Concretizer;
 import psymbolic.runtime.Message;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class Schedule {
+public class Schedule implements Serializable {
 
     private final boolean useSleepSets;
 
     private Guard filter = Guard.constTrue();
 
+    @Setter
+    private int schedulerDepth = 0;
+    @Setter
+    private int schedulerChoiceDepth = 0;
+    @Setter
+    private List<List<ValueSummary>> schedulerState = new ArrayList<>();
+
     public void restrictFilter(Guard c) { filter = filter.and(c); }
+    public void setFilter(Guard c) { filter = c; }
     public Guard getFilter() { return filter; }
     public void resetFilter() { filter = Guard.constTrue(); }
 
@@ -59,7 +69,7 @@ public class Schedule {
         sleepSet.remove(toRemove.restrict(sleepSet.contains(toRemove).getGuardFor(true)));
     }
 
-    public class Choice {
+    public class Choice implements Serializable {
         @Getter
         PrimitiveVS<Machine> repeatSender = new PrimitiveVS<>();
         @Getter
@@ -78,8 +88,82 @@ public class Schedule {
         List<PrimitiveVS<ValueSummary>> backtrackElement = new ArrayList<>();
         @Getter
         Guard handledUniverse = Guard.constFalse();
+        @Getter @Setter
+        int numScheduleChoicesExplored = 0;
+        @Getter @Setter
+        int numDataChoicesExplored = 0;
+        @Getter
+        int schedulerDepth = 0;
+        @Getter
+        int schedulerChoiceDepth = 0;
+        @Getter
+        List<List<ValueSummary>> choiceState = null;
+        @Getter
+        Guard filter = null;
 
         public Choice() {
+        }
+
+        /** Copy-constructor for Choice
+         * @param old The Choice to copy
+         */
+        public Choice(Choice old) {
+            repeatSender = new PrimitiveVS<>(old.repeatSender);
+            repeatBool = new PrimitiveVS<>(old.repeatBool);
+            repeatInt = new PrimitiveVS<>(old.repeatInt);
+            repeatElement = new PrimitiveVS<>(old.repeatElement);
+            backtrackSender = new ArrayList<>(old.backtrackSender);
+            backtrackBool = new ArrayList<>(old.backtrackBool);
+            backtrackInt = new ArrayList<>(old.backtrackInt);
+            backtrackElement = new ArrayList<>(old.backtrackElement);
+            handledUniverse = old.handledUniverse;
+            numScheduleChoicesExplored = old.numScheduleChoicesExplored;
+            numDataChoicesExplored = old.numDataChoicesExplored;
+            schedulerDepth = old.schedulerDepth;
+            schedulerChoiceDepth = old.schedulerChoiceDepth;
+            choiceState = old.choiceState;
+            filter = old.filter;
+        }
+
+        /**
+         * Copy the Choice
+         *
+         * @return A new cloned copy of the Choice
+         */
+        public Choice getCopy() {
+            return new Choice(this);
+        }
+
+        public List<List<ValueSummary>> copyState(List<List<ValueSummary>> state) {
+            if (state == null)
+                return null;
+            return state;
+//            List<List<ValueSummary>> copiedState = new ArrayList<>();
+//            for (List<ValueSummary> ls: state) {
+//                List<ValueSummary> localState = new ArrayList<>();
+//                for (ValueSummary vs: ls) {
+//                    localState.add(vs.getCopy());
+//                }
+//                copiedState.add(localState);
+//            }
+//            return copiedState;
+        }
+
+        public void storeState(int depth, int cdepth, List<List<ValueSummary>> state, Guard f) {
+            schedulerDepth = depth;
+            schedulerChoiceDepth = cdepth;
+            choiceState = copyState(state);
+            filter = f;
+        }
+
+        public int getNumScheduleChoicesRemaining() {
+            return getBacktrackSender().size();
+        }
+
+        public int getNumDataChoicesRemaining() {
+            return getBacktrackBool().size() +
+                   getBacktrackInt().size() +
+                   getBacktrackElement().size();
         }
 
         public Guard getRepeatUniverse() {
@@ -121,6 +205,7 @@ public class Schedule {
             c.backtrackBool = backtrackBool.stream().map(x -> x.restrict(pc)).filter(x -> !x.isEmptyVS()).collect(Collectors.toList());
             c.backtrackInt = backtrackInt.stream().map(x -> x.restrict(pc)).filter(x -> !x.isEmptyVS()).collect(Collectors.toList());
             c.backtrackElement = backtrackElement.stream().map(x -> x.restrict(pc)).filter(x -> !x.isEmptyVS()).collect(Collectors.toList());
+            c.storeState(this.schedulerDepth, this.schedulerChoiceDepth, this.choiceState, this.filter);
             return c;
         }
 
@@ -197,8 +282,14 @@ public class Schedule {
 
     public List<Choice> getChoices() { return choices; }
 
+    public void setChoices(List<Choice> c) { choices = c; }
+
     public Choice getChoice(int d) {
         return choices.get(d);
+    }
+
+    public void setChoice(int d, Choice choice) {
+        choices.set(d, choice);
     }
 
     public void clearChoice(int d) {
@@ -213,11 +304,51 @@ public class Schedule {
         return count;
     }
 
+    public int getNumScheduleChoicesExplored() {
+        int count = 0;
+        for (Choice choice : choices) {
+            count += choice.getNumScheduleChoicesExplored();
+        }
+        return count;
+    }
+
+    public void resetNumChoicesExplored() {
+        for (Choice choice : choices) {
+            choice.setNumScheduleChoicesExplored(0);
+            choice.setNumDataChoicesExplored(0);
+        }
+    }
+
+    public int getNumDataChoicesExplored() {
+        int count = 0;
+        for (Choice choice : choices) {
+            count += choice.getNumDataChoicesExplored();
+        }
+        return count;
+    }
+
+    public int getNumScheduleChoicesRemaining() {
+        int count = 0;
+        for (Choice choice : choices) {
+            count += choice.getNumScheduleChoicesRemaining();
+        }
+        return count;
+    }
+
+    public int getNumDataChoicesRemaining() {
+        int count = 0;
+        for (Choice choice : choices) {
+            count += choice.getNumDataChoicesRemaining();
+        }
+        return count;
+    }
+
     public void addRepeatSender(PrimitiveVS<Machine> choice, int depth) {
         if (depth >= choices.size()) {
             choices.add(newChoice());
         }
         choices.get(depth).addRepeatSender(choice);
+        choices.get(depth).numScheduleChoicesExplored += choice.getValues().size();
     }
 
     public void addRepeatBool(PrimitiveVS<Boolean> choice, int depth) {
@@ -225,6 +356,7 @@ public class Schedule {
             choices.add(newChoice());
         }
         choices.get(depth).addRepeatBool(choice);
+        choices.get(depth).numDataChoicesExplored += choice.getValues().size();
     }
 
     public void addRepeatInt(PrimitiveVS<Integer> choice, int depth) {
@@ -232,6 +364,7 @@ public class Schedule {
             choices.add(newChoice());
         }
         choices.get(depth).addRepeatInt(choice);
+        choices.get(depth).numDataChoicesExplored += choice.getValues().size();
     }
 
     public void addRepeatElement(PrimitiveVS<ValueSummary> choice, int depth) {
@@ -239,11 +372,17 @@ public class Schedule {
             choices.add(newChoice());
         }
         choices.get(depth).addRepeatElement(choice);
+        choices.get(depth).numDataChoicesExplored += choice.getValues().size();
     }
 
     public void addBacktrackSender(List<PrimitiveVS<Machine>> machines, int depth) {
         if (depth >= choices.size()) {
             choices.add(newChoice());
+        }
+        if (machines.isEmpty()) {
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
+        } else {
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
         }
         for (PrimitiveVS<Machine> choice : machines) {
             choices.get(depth).addBacktrackSender(choice);
@@ -254,6 +393,11 @@ public class Schedule {
         if (depth >= choices.size()) {
             choices.add(newChoice());
         }
+        if (bools.isEmpty()) {
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
+        } else {
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+        }
         for (PrimitiveVS<Boolean> choice : bools) {
             choices.get(depth).addBacktrackBool(choice);
         }
@@ -263,6 +407,11 @@ public class Schedule {
         if (depth >= choices.size()) {
             choices.add(newChoice());
         }
+        if (ints.isEmpty()) {
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
+        } else {
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+        }
         for (PrimitiveVS<Integer> choice : ints) {
             choices.get(depth).addBacktrackInt(choice);
         }
@@ -271,6 +420,11 @@ public class Schedule {
     public void addBacktrackElement(List<PrimitiveVS<ValueSummary>> elements, int depth) {
         if (depth >= choices.size()) {
             choices.add(newChoice());
+        }
+        if (elements.isEmpty()) {
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
+        } else {
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
         }
         for (PrimitiveVS<ValueSummary> choice : elements) {
             choices.get(depth).addBacktrackElement(choice);
@@ -431,4 +585,7 @@ public class Schedule {
         return choices.get(size - 1).getRepeatUniverse();
     }
 
+    public void reset_stats() {
+        resetNumChoicesExplored();
+    }
 }

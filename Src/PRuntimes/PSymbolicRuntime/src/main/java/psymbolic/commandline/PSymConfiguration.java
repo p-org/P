@@ -2,15 +2,23 @@ package psymbolic.commandline;
 
 import lombok.Getter;
 import lombok.Setter;
+import psymbolic.valuesummary.solvers.SolverType;
+import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
+
+import java.io.Serializable;
 
 /**
  * Represents the configuration of the P Symbolic tool
  */
-public class PSymConfiguration {
+public class PSymConfiguration implements Serializable {
 
     // name of the main machine
     @Getter @Setter
     private String mainMachine = "Main";
+
+    // name of the target project
+    @Getter @Setter
+    private String projectName = "test";
 
     @Getter
     // max depth bound after which the search will stop automatically
@@ -19,6 +27,10 @@ public class PSymConfiguration {
     @Getter @Setter
     // max depth bound provided by the user
     private int depthBound = maxDepthBound;
+
+    @Getter @Setter
+    // max iterations bound provided by the user
+    private int iterationBound = 1;
 
     // max input choice bound at each depth after which the search will truncate the choices
     private final int maxInputChoiceBound = 100;
@@ -63,6 +75,42 @@ public class PSymConfiguration {
     private int verbosity = 1;
 
     @Getter @Setter
-    // whether to collect stats or not
-    private boolean collectStats = false;
+    // level of stats collection
+    private int collectStats = 1;
+
+    @Getter @Setter
+    // type of solver engine
+    private SolverType solverType = SolverType.BDD;
+
+    @Getter @Setter
+    // type of solver engine
+    private ExprLibType exprLibType = ExprLibType.Bdd;
+
+    @Getter @Setter
+    // time limit in seconds (0 means infinite)
+    private double timeLimit = 0;
+
+    @Getter @Setter
+    // memory limit in megabytes (0 means infinite)
+    private double memLimit = (Runtime.getRuntime().maxMemory() / 1000000);
+
+    // name of the file to read the program state
+    @Getter @Setter
+    private String readFromFile = "";
+
+    @Getter @Setter
+    // whether or not to write the program state(s) to file
+    private boolean writeToFile = false;
+
+    @Getter @Setter
+    // use backtracking
+    private boolean useBacktrack = true;
+
+    @Getter @Setter
+    // use randomization
+    private boolean useRandom = true;
+
+    @Getter @Setter
+    // random seed
+    private int randomSeed = 0;
 }

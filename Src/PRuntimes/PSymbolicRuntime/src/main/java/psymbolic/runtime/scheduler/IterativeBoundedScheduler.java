@@ -1,17 +1,20 @@
 package psymbolic.runtime.scheduler;
 
+import lombok.Getter;
 import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
-import psymbolic.runtime.NondetUtil;
 import psymbolic.runtime.logger.SearchLogger;
+import psymbolic.runtime.logger.StatLogger;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.Message;
+import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.valuesummary.*;
 import psymbolic.runtime.machine.buffer.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -23,25 +26,251 @@ import java.util.stream.Collectors;
  */
 public class IterativeBoundedScheduler extends Scheduler {
 
+    @Getter
     int iter = 0;
+
+    int start_iter = 0;
+
     private int backtrack = 0;
 
     private boolean isDoneIterating = false;
 
-    public IterativeBoundedScheduler(PSymConfiguration config) {
-        super(config);
-        this.configuration = config;
+    public IterativeBoundedScheduler(PSymConfiguration config, Program p) {
+        super(config, p);
     }
 
     @Override
-    public void doSearch(Program p) {
-        while (!isDoneIterating) {
-            SearchLogger.log("Starting Iteration: " + iter);
-            searchStats.startNewIteration(iter, backtrack);
-            super.doSearch(p);
-            postIterationCleanup();
+    public void print_stats() {
+        super.print_stats();
+
+        // print statistics
+        if (configuration.getCollectStats() != 0) {
+            StatLogger.log(String.format("#-iterations:\t%d", (iter - start_iter)));
+        }
+    }
+
+    @Override
+    public void reset_stats() {
+        super.reset_stats();
+    }
+
+    public void reportSearchSummary() {
+        TraceLogger.log("--------------------");
+        TraceLogger.log("Coverage Report::");
+        TraceLogger.log("--------------------");
+        TraceLogger.log(String.format("  Covered choices:\t%5s scheduling, %5s data",
+                                        schedule.getNumScheduleChoicesExplored(),
+                                        schedule.getNumDataChoicesExplored()));
+        TraceLogger.log(String.format("  Remaining choices:\t%5s scheduling, %5s data",
+                                        schedule.getNumScheduleChoicesRemaining(),
+                                        schedule.getNumDataChoicesRemaining() ));
+
+        Map<Integer, List<Integer>> perDepth = new HashMap<>();
+        for (int d = 0; d < schedule.size(); d++) {
+            Schedule.Choice choice = schedule.getChoice(d);
+            int depth = choice.getSchedulerDepth();
+            int numScheduleExplored = choice.getNumScheduleChoicesExplored();
+            int numDataExplored = choice.getNumDataChoicesExplored();
+            int numScheduleRemaining = choice.getNumScheduleChoicesRemaining();
+            int numDataRemaining = choice.getNumDataChoicesRemaining();
+
+            if ((numScheduleExplored + numDataExplored + numScheduleRemaining + numDataRemaining) == 0) {
+                continue;
+            }
+
+            if (!perDepth.containsKey(depth)) {
+                perDepth.put(depth, Arrays.asList(0, 0, 0, 0));
+            }
+            List<Integer> val = perDepth.get(depth);
+            val.set(0, val.get(0) + numScheduleExplored);
+            val.set(1, val.get(1) + numDataExplored);
+            val.set(2, val.get(2) + numScheduleRemaining);
+            val.set(3, val.get(3) + numDataRemaining);
+        }
+        String s = "";
+        TraceLogger.log("\t-------------------------------------");
+        s += String.format("\t   Step  ");
+        s += String.format("  Covered        Remaining");
+        s += String.format("\n\t%5s  %5s   %5s  ", "", "sch", "data");
+        s += String.format(" %5s   %5s ", "sch", "data");
+        TraceLogger.log(s);
+        TraceLogger.log("\t-------------------------------------");
+        for (Map.Entry entry : perDepth.entrySet()) {
+            int depth = (int) entry.getKey();
+            List<Integer> val = (List<Integer>) entry.getValue();
+            s = "";
+            s += String.format("\t%5s ", depth);
+            s += String.format(" %5s   %5s  ",
+                    (val.get(0)==0?"":val.get(0)),
+                    (val.get(1)==0?"":val.get(1)));
+            s += String.format(" %5s   %5s ",
+                    (val.get(2)==0?"":val.get(2)),
+                    (val.get(3)==0?"":val.get(3)));
+            TraceLogger.log(s);
+        }
+    }
+
+    void recordResult() {
+        SearchStats.TotalStats totalStats = searchStats.getSearchTotal();
+        result = "";
+        if (start_iter != 0) {
+            result += "(resumed run) ";
+        }
+        if (totalStats.isCompleted()) {
+            if (totalStats.getNumBacktracks() == 0) {
+                result += "safe for any depth";
+            } else {
+                result += "partially safe with " + totalStats.getNumBacktracks() + " backtracks remaining";
+            }
+        } else {
+            int safeDepth = configuration.getDepthBound();
+            if (totalStats.getDepthStats().getDepth() < safeDepth) {
+                safeDepth = totalStats.getDepthStats().getDepth();
+            }
+            if (totalStats.getNumBacktracks() == 0) {
+                result += "safe up to depth " + safeDepth;
+            } else {
+                result += "partially safe up to depth " + configuration.getDepthBound() + " with " + totalStats.getNumBacktracks() + " backtracks remaining";
+            }
+        }
+    }
+
+    /**
+     * Read scheduler state from a file
+     * @param readFromFile Name of the input file containing the scheduler state
+     * @return A scheduler object
+     * @throws Exception Throw error if reading fails
+     */
+    public static IterativeBoundedScheduler readFromFile(String readFromFile) throws Exception {
+        IterativeBoundedScheduler result = null;
+        try {
+            System.out.println("Reading program state from file " + readFromFile);
+            FileInputStream fis = null;
+            fis = new FileInputStream(readFromFile);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            result = (IterativeBoundedScheduler) ois.readObject();
+            System.out.println("Successfully read.");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            throw new Exception("Failed to read program state from file " + readFromFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new Exception("Failed to read program state from file " + readFromFile);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            throw new Exception("Failed to read program state from file " + readFromFile);
+        }
+        return result;
+    }
+
+    /**
+     * Write scheduler state to a file
+     * @param prefix Output file name prefix
+     * @throws Exception Throw error if writing fails
+     */
+    public void writeToFile(String prefix) throws Exception {
+        long pid = ProcessHandle.current().pid();
+        String writeFileName = prefix + "_pid" + pid + ".out";
+        try {
+            FileOutputStream fos = new FileOutputStream(writeFileName);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(this);
+            if (configuration.getCollectStats() != 0) {
+                long szBytes = Files.size(Paths.get(writeFileName));
+                TraceLogger.log(String.format("\t%,.1f MB\twritten in %s", (szBytes / 1024.0 / 1024.0), writeFileName));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new Exception("Failed to write state in file " + writeFileName);
+        }
+    }
+
+    /**
+     * Write each backtracking point state individually
+     * @param prefix Output file name prefix
+     * @throws Exception Throw error if writing fails
+     */
+    public void writeBacktracksToFiles(String prefix) throws Exception {
+        for (int i = 0; i < schedule.size(); i++) {
+            Schedule.Choice choice = schedule.getChoice(i);
+            // if choice at this depth is non-empty
+            if (!choice.isBacktrackEmpty()) {
+                writeBacktrackToFile(prefix, i);
+            }
+        }
+    }
+
+    /**
+     * Write backtracking point state individually at a given depth
+     * @param prefix Output file name prefix
+     * @param d Backtracking point choice depth
+     * @throws Exception Throw error if writing fails
+     */
+    public void writeBacktrackToFile(String prefix, int d) throws Exception {
+        // create a copy of original choices
+        List<Schedule.Choice> originalChoices = new ArrayList<>();
+        for (int i = 0; i < schedule.size(); i++) {
+            originalChoices.add(schedule.getChoice(i).getCopy());
+        }
+
+        // clear backtracks at all predecessor depths
+        for (int i = 0; i < d; i++) {
+            schedule.getChoice(i).clearBacktrack();
+        }
+        // clear the complete choice information (including repeats and backtracks) at all successor depths
+        for (int i = d+1; i < schedule.size(); i++) {
+            schedule.clearChoice(i);
+        }
+        // write to file
+        writeToFile(prefix + "_d" + schedule.getChoice(d).getSchedulerDepth() + "_cd" + d);
+
+        // restore schedule to original choices
+        schedule.setChoices(originalChoices);
+    }
+
+
+    private void summarizeIteration() {
+        recordResult();
+        if (configuration.getCollectStats() > 2) {
             SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
+        }
+        if (configuration.getIterationBound() >= 0) {
+            isDoneIterating = ((iter - start_iter) >= configuration.getIterationBound());
+        }
+        if (!isDoneIterating) {
+            postIterationCleanup();
+        }
+    }
+
+    @Override
+    public void doSearch() {
+        result = "incomplete";
+        initializeSearch();
+        while (!isDoneIterating) {
             iter++;
+            SearchLogger.logStartExecution(iter, getDepth());
+            searchStats.startNewIteration(iter, backtrack);
+            super.performSearch();
+            summarizeIteration();
+        }
+    }
+
+    public void resumeSearch() {
+        isDoneIterating = false;
+        start_iter = iter;
+        boolean initialRun = true;
+        reset_stats();
+        while (!isDoneIterating) {
+            if (initialRun) {
+                SearchLogger.logResumeExecution(iter, getDepth());
+                initialRun = false;
+            } else {
+                iter++;
+                SearchLogger.logStartExecution(iter, getDepth());
+            }
+            searchStats.startNewIteration(iter, backtrack);
+            super.performSearch();
+            summarizeIteration();
         }
     }
 
@@ -52,13 +281,30 @@ public class IterativeBoundedScheduler extends Scheduler {
             choice.updateHandledUniverse(choice.getRepeatUniverse());
             schedule.clearRepeat(d);
             if (!choice.isBacktrackEmpty()) {
-                for (Machine machine : schedule.getMachines()) {
-                    machine.reset();
+                int newDepth = 0;
+                if (configuration.isUseBacktrack()) {
+                    newDepth = choice.getSchedulerDepth();
+                }
+                if (newDepth < startDepth) {
+                    newDepth = 0;
+                }
+                if (newDepth == 0) {
+                    for (Machine machine : schedule.getMachines()) {
+                        machine.reset();
+                    }
+                } else {
+                    restoreState(choice.getChoiceState());
+                    schedule.setFilter(choice.getFilter());
                 }
                 TraceLogger.logMessage("backtrack to " + d);
                 backtrack = d;
                 TraceLogger.logMessage("pending backtracks: " + schedule.getNumBacktracks());
-                reset();
+                if (newDepth == 0) {
+                    reset();
+                    initializeSearch();
+                } else {
+                    restore(newDepth, choice.getSchedulerChoiceDepth());
+                }
                 return;
             } else {
                 schedule.clearChoice(d);
@@ -104,14 +350,27 @@ public class IterativeBoundedScheduler extends Scheduler {
             choices = choices.stream().map(x -> x.restrict(schedule.getFilter())).filter(x -> !(x.getUniverse().isFalse())).collect(Collectors.toList());
         }
 
+        if (choices.size() > 1) {
+            if (configuration.isUseRandom()) {
+                Collections.shuffle(choices, new Random(configuration.getRandomSeed()));
+            }
+//            Collections.sort(choices, new SortVS());
+//            TraceLogger.log("\t#Choices = " + choices.size());
+//            for (PrimitiveVS vs: choices) {
+//                TraceLogger.log("\t\t" + vs);
+//            }
+        }
+
         List<PrimitiveVS> chosen = new ArrayList();
         List<PrimitiveVS> backtrack = new ArrayList();
         for (int i = 0; i < choices.size(); i++) {
             if (i < bound) chosen.add(choices.get(i));
-            else backtrack.add(choices.get(i));
+            else {
+                backtrack.add(choices.get(i));
+            }
         }
         PrimitiveVS chosenVS = generateNext.apply(chosen);
-        addRepeat.accept(chosenVS, depth);
+//        addRepeat.accept(chosenVS, depth);
         addBacktrack.accept(backtrack, depth);
         schedule.restrictFilterForDepth(depth);
         return chosenVS;

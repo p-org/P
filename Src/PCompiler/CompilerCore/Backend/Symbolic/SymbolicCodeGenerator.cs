@@ -158,6 +158,23 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, "public List<ValueSummary> getLocalState() {");
+            context.WriteLine(output, "    List<ValueSummary> res = super.getLocalState();");
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"    res.add({CompilationContext.GetVar(field.Name)});");
+            context.WriteLine(output, "    return res;");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, "public int setLocalState(List<ValueSummary> localState) {");
+            context.WriteLine(output, "    int idx = super.setLocalState(localState);");
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetSymbolicType(field.Type)}) localState.get(idx++);");
+            context.WriteLine(output, "    return idx;");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
 
             WriteMachineConstructor(context, output, machine);
 
@@ -199,6 +216,23 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, "public List<ValueSummary> getLocalState() {");
+            context.WriteLine(output, "    List<ValueSummary> res = super.getLocalState();");
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"    res.add({CompilationContext.GetVar(field.Name)});");
+            context.WriteLine(output, "    return res;");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, "public int setLocalState(List<ValueSummary> localState) {");
+            context.WriteLine(output, "    int idx = super.setLocalState(localState);");
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetSymbolicType(field.Type)}) localState.get(idx++);");
+            context.WriteLine(output, "    return idx;");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
 
             WriteMachineConstructor(context, output, machine);
 
@@ -1791,12 +1825,12 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, ")");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    context.Write(output, $"({GetSymbolicType(namedTupleAccessExpr.Type)})(");
+                    context.Write(output, $"(({GetSymbolicType(namedTupleAccessExpr.Type)})(");
                     string prefix = GetInlineCastPrefix(namedTupleAccessExpr.Entry.Type, namedTupleAccessExpr.Type, context, pcScope);
                     context.Write(output, prefix);
                     context.Write(output, "(");
                     WriteExpr(context, output, pcScope, namedTupleAccessExpr.SubExpr);
-                    context.Write(output, $").getField(\"{namedTupleAccessExpr.FieldName}\"))");
+                    context.Write(output, $").getField(\"{namedTupleAccessExpr.FieldName}\")))");
                     if (prefix != "") context.Write(output, ")");
                     break;
                 case ThisRefExpr thisRefExpr:
@@ -2217,6 +2251,9 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, $"public class {context.ProjectName.ToLower()} implements Program {{");
             context.WriteLine(output);
             context.WriteLine(output, $"public static Scheduler {CompilationContext.SchedulerVar};");
+            context.WriteLine(output);
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, $"public Scheduler getScheduler () {{ return this.{CompilationContext.SchedulerVar}; }}");
             context.WriteLine(output);
             context.WriteLine(output, "@Override");
             context.WriteLine(output, $"public void setScheduler (Scheduler s) {{ this.{CompilationContext.SchedulerVar} = s; }}");

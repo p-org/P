@@ -16,7 +16,7 @@
 
     <deps.path>${project.basedir}/../../../Bld</deps.path>
 
-    <pjbdd.jarpath>${deps.path}/Jars/pjbdd-v1.0.10-9.jar</pjbdd.jarpath>
+    <pjbdd.jarpath>${deps.path}/Jars/pjbdd-v.1.0.10-10.jar</pjbdd.jarpath>
 
     <abc.jarpath>${deps.path}/Jars/abc.jar</abc.jarpath>
 <!--    <abc.jarpath>${deps.path}/Deps/abc_java_bindings/dist/lib/abc.jar</abc.jarpath>-->

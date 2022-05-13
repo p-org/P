@@ -14,6 +14,7 @@ import java.util.function.Predicate;
 import java.util.function.Function;
 
 public class Concretizer { 
+    public static boolean print = false;
 
     /**
      * Get a concrete value for a value summary
@@ -258,7 +259,7 @@ public class Concretizer {
      * @param args arguments
      * @return list of concrete values for arguments
      */ 
-    public static List<GuardedValue<List<Object>>> getConcreteValues(boolean print, Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary ... args) {
+    public static List<GuardedValue<List<Object>>> getConcreteValues(Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary ... args) {
         Guard iterPc = Guard.constFalse();
         Guard alreadySeen = Guard.constFalse();
         boolean skip = false;
@@ -351,11 +352,11 @@ public class Concretizer {
      * @param args arguments
      * @return number of concrete values
      */ 
-    public static int getNumConcreteValues(boolean print, Guard pc, ValueSummary ... args) {
+    public static int getNumConcreteValues(Guard pc, ValueSummary ... args) {
     	int i = 0;
     	try {
             if (print) {
-                i = getConcreteValues(true, pc, x -> false, Concretizer::concretize, args).size();
+                i = getConcreteValues(pc, x -> false, Concretizer::concretize, args).size();
             } else {
                 i = countConcreteValues(pc, x -> false, Concretizer::concretize, args);
             }

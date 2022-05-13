@@ -1,5 +1,6 @@
 package psymbolic.commandline;
 
+import psymbolic.runtime.Concretizer;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
 import psymbolic.runtime.scheduler.ReplayScheduler;
@@ -77,6 +78,7 @@ public class EntryPoint {
             StatLogger.log(String.format("time-limit-seconds:\t%.1f", configuration.getTimeLimit()));
             StatLogger.log(String.format("memory-limit-MB:\t%.1f", configuration.getMemLimit()));
         }
+        Concretizer.print = (configuration.getVerbosity() > 6);
     }
 
     private static void process() throws Exception {

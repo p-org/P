@@ -26,7 +26,7 @@ def getTests():
 def buildCommand(script_directory, temporary_directory, test_name):
   """ Builds the command to run a unit test.
   """
-  return [ "python"
+  return [ sys.executable
       , os.path.join(script_directory, "run_unittest.py")
       , test_name
       , temporary_directory

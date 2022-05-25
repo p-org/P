@@ -26,7 +26,7 @@ def getTests():
 def buildCommand(test_root, temporary_directory, test_name):
   """ Builds the command to run an "example" test.
   """
-  return [ "python"
+  return [ sys.executable
       , os.path.join(test_root, test_name, "run_test.py")
       , test_name
       , temporary_directory

@@ -72,9 +72,9 @@ namespace Plang.Compiler.Backend.Java {
             
             // XXX: If e.PayloadType is PrimitiveType.Null, this produces an 
             // extraneous value.
-            string eventArgs = context.Names.JavaTypeFor(e.PayloadType, true);
+            TypeManager.JType argType = context.Types.JavaTypeFor(e.PayloadType, true);
             
-            WriteLine($"record {eventName}({eventArgs} payload) implements Event.Payload {{ }} ");
+            WriteLine($"record {eventName}({argType.TypeName} payload) implements Event.Payload {{ }} ");
         }
 
         private void WriteMachineDecl(Machine m)
@@ -88,10 +88,10 @@ namespace Plang.Compiler.Backend.Java {
 
             foreach (Variable field in m.Fields)
             {
-                string type = context.Names.JavaTypeFor(field.Type);
+                TypeManager.JType type = context.Types.JavaTypeFor(field.Type);
                 string name = context.Names.GetNameForDecl(field);
                 
-                WriteLine($"private {type} {name} = null; //TODO");
+                WriteLine($"private {type.TypeName} {name} = {type.DefaultValue}; //TODO");
             }
             
             

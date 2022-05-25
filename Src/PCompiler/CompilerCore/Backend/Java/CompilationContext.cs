@@ -11,12 +11,14 @@ namespace Plang.Compiler.Backend.Java
             : base(job)
         {
             Names = new NameManager("PGEN_");
+            Types = new TypeManager();
 
             FileName = $"{ProjectName}.java";
             ProjectDependencies = job.ProjectDependencies.Count == 0 ? new List<string>() { ProjectName } : job.ProjectDependencies;
         }
 
         public NameManager Names { get; }
+        public TypeManager Types { get; }
 
         //public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
 

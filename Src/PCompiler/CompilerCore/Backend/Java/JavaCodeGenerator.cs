@@ -27,8 +27,75 @@ namespace Plang.Compiler.Backend.Java {
             context = new CompilationContext(job);
             source = new CompiledFile(context.FileName);
             globalScope = scope;
+
+            WriteImports();
+            WriteLine();
+           
+            WriteLine($"static class {SourceTemplates.TopLevelClassName} {{");
+
+            foreach (var e in globalScope.Events)
+            {
+                WriteEventDecl(e);     
+            }
+            WriteLine();
+            
+            //TODO: Do specs need interfaces?
+
+            foreach (var m in globalScope.Machines)
+            {
+                if (m.IsSpec)
+                {
+                    WriteMonitorDecl(m);
+                }
+                else
+                {
+                    WriteMachineDecl(m);
+                }
+            }
+            
+            WriteLine($"}} // {SourceTemplates.TopLevelClassName} class definition");
             
             return new List<CompiledFile> { source };
+        }
+
+        private void WriteImports()
+        {
+            foreach (var className in SourceTemplates.ImportStatements())
+            {
+                WriteLine("import " + className);
+            }
+        }
+
+        private void WriteEventDecl(PEvent e)
+        {
+            string eventName = context.Names.GetNameForDecl(e);
+            
+            // XXX: If e.PayloadType is PrimitiveType.Null, this produces an 
+            // extraneous value.
+            string eventArgs = context.Names.JavaTypeFor(e.PayloadType, true);
+            
+            WriteLine($"record {eventName}({eventArgs} payload) implements Event.Payload {{ }} ");
+        }
+
+        private void WriteMachineDecl(Machine m)
+        {
+            WriteLine($"// PMachine {m.Name} elided ");
+        }
+        
+        private void WriteMonitorDecl(Machine m)
+        {
+            WriteLine($"static class {m.Name} extends Monitor {{");
+
+            foreach (Variable field in m.Fields)
+            {
+                string type = context.Names.JavaTypeFor(field.Type);
+                string name = context.Names.GetNameForDecl(field);
+                
+                WriteLine($"private {type} {name} = null; //TODO");
+            }
+            
+            
+            WriteLine($"}} // {m.Name} monitor definition");
         }
 
         private void WriteLine(string s = "")

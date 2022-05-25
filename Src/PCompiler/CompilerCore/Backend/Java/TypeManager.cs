@@ -101,14 +101,19 @@ namespace Plang.Compiler.Backend.Java
             // TODO: maybe we can hack it as a Record??  A bummer that we don't have Scala's Tuple[A,B,C,...].
             internal class JNamedTuple : JType
             {
-                internal override string TypeName => $"HashMap<String, Object>";
+                internal override string TypeName => "HashMap<String, Object>";
             }
            
             //TODO: not sure about this one.  Is the base class sufficient?
             //Generate some Java files and see.
             internal class JEvent : JType
             {
-                internal override string TypeName => $"PEvent";
+                internal override string TypeName => "PEvent";
+            }
+
+            internal class JVoid : JType
+            {
+                internal override string TypeName => "Void";
             }
         }
         
@@ -121,7 +126,7 @@ namespace Plang.Compiler.Backend.Java
         /// <returns>The Java type's name.</returns>
         /// <exception cref="ArgumentOutOfRangeException">If we're not implemented yet.</exception>
         /// TODO: Make this private and stick a weak ref cache in front of it.
-        internal JType JavaTypeFor(PLanguageType type, bool isVar = false)
+        internal JType JavaTypeFor(PLanguageType type)
         {
             switch (type.Canonicalize())
             {
@@ -141,7 +146,7 @@ namespace Plang.Compiler.Backend.Java
                     JType v = JavaTypeFor(m.ValueType);
                     return new JType.JMap(k, v);
 
-                case NamedTupleType nt:
+                case NamedTupleType _:
                     return new JType.JNamedTuple();
 
                 case PermissionType _:
@@ -168,11 +173,8 @@ namespace Plang.Compiler.Backend.Java
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                     throw new NotImplementedException($"{type.CanonicalRepresentation} values not implemented");
 
-                //TODO: I'm not wild about this isVar switch that's only used here.  What's the
-                //right abstraction?
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
-                    throw new NotImplementedException("Null not implemented");
-                    //return isVar ? "Object" : "void";
+                    return new JType.JVoid();
 
                 case SequenceType s:
                     return new JType.JList(JavaTypeFor(s.ElementType));

@@ -2,38 +2,40 @@ using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.States;
 
 namespace Plang.Compiler.Backend.Java {
 
     public class JavaCodeGenerator : ICodeGenerator
     {
 
-        private CompilationContext context;
-        private CompiledFile source;
-        private Scope globalScope;
+        private CompilationContext _context;
+        private CompiledFile _source;
+        private Scope _globalScope;
         
         /// <summary>
         /// Generates Java code for a given compilation job.
         ///
         /// Currently, we should be able to use nested classes to put everything we need in a single
-        /// Java file, in a manner similar to how the C# extractor uses namesspaces.
+        /// Java file, in a manner similar to how the C# extractor uses namespaces.
         /// </summary>
         /// <param name="job"></param>
-        /// <param name="globalScope"></param>
+        /// <param name="scope"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
         public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope scope)
         {
-            context = new CompilationContext(job);
-            source = new CompiledFile(context.FileName);
-            globalScope = scope;
+            _context = new CompilationContext(job);
+            _source = new CompiledFile(_context.FileName);
+            _globalScope = scope;
 
             WriteImports();
             WriteLine();
            
             WriteLine($"static class {SourceTemplates.TopLevelClassName} {{");
 
-            foreach (var e in globalScope.Events)
+            foreach (var e in _globalScope.Events)
             {
                 WriteEventDecl(e);     
             }
@@ -41,7 +43,7 @@ namespace Plang.Compiler.Backend.Java {
             
             //TODO: Do specs need interfaces?
 
-            foreach (var m in globalScope.Machines)
+            foreach (var m in _globalScope.Machines)
             {
                 if (m.IsSpec)
                 {
@@ -55,7 +57,7 @@ namespace Plang.Compiler.Backend.Java {
             
             WriteLine($"}} // {SourceTemplates.TopLevelClassName} class definition");
             
-            return new List<CompiledFile> { source };
+            return new List<CompiledFile> { _source };
         }
 
         private void WriteImports()
@@ -68,11 +70,11 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteEventDecl(PEvent e)
         {
-            string eventName = context.Names.GetNameForDecl(e);
+            string eventName = _context.Names.GetNameForDecl(e);
             
             // XXX: If e.PayloadType is PrimitiveType.Null, this produces an 
             // extraneous value.
-            TypeManager.JType argType = context.Types.JavaTypeFor(e.PayloadType, true);
+            TypeManager.JType argType = _context.Types.JavaTypeFor(e.PayloadType);
             
             WriteLine($"record {eventName}({argType.TypeName} payload) implements Event.Payload {{ }} ");
         }
@@ -84,28 +86,87 @@ namespace Plang.Compiler.Backend.Java {
         
         private void WriteMonitorDecl(Machine m)
         {
-            WriteLine($"static class {m.Name} extends Monitor {{");
+            string cname = _context.Names.GetNameForDecl(m);
+            
+            WriteLine($"static class {cname} extends Monitor {{");
 
-            foreach (Variable field in m.Fields)
+            // monitor fields
+            foreach (var field in m.Fields)
             {
-                TypeManager.JType type = context.Types.JavaTypeFor(field.Type);
-                string name = context.Names.GetNameForDecl(field);
+                TypeManager.JType type = _context.Types.JavaTypeFor(field.Type);
+                string name = _context.Names.GetNameForDecl(field);
                 
                 WriteLine($"private {type.TypeName} {name} = {type.DefaultValue}; //TODO");
             }
+            WriteLine();
+
+            // state identifiers
+            foreach (var s in m.States)
+            {
+                //TODO: I think it's fine to use unqualified names here.  But, confirm.
+                WriteLine($"private String {_context.Names.IdentForState(s)} = \"{s.Name}\";");
+            }
+            WriteLine();
             
+            // Event handlers
+            foreach (var s in m.States)
+            {
+                foreach (var (e, a) in s.AllEventHandlers)
+                {
+                    WriteEventHandler(e, a);
+                }
+            }
+            // constructor
+            WriteMonitorCstr(m);
             
-            WriteLine($"}} // {m.Name} monitor definition");
+
+            WriteLine($"}} // {cname} monitor definition");
+        }
+
+        private void WriteEventHandler(PEvent e, IStateAction a)
+        {
+            switch (a)
+            {
+                case EventDefer d:
+                    break;
+                case EventDoAction da:
+                    break;
+                case EventGotoState gs:
+                    break;
+                case EventIgnore i:
+                    break;
+            }
+        }
+        
+        private void WriteMonitorCstr(Machine m)
+        {
+            string cname = _context.Names.GetNameForDecl(m);
+            
+            WriteLine($"public {cname}() {{");
+            WriteLine("super();");
+            
+            foreach (var s in m.States)
+            {   
+                WriteStateBuilderDecl(s);
+            }
+            WriteLine("} // constructor");
+        }
+        
+        private void WriteStateBuilderDecl(State s)
+        {
+            WriteLine($"addState(new State.Builder({_context.Names.IdentForState(s)})");
+            WriteLine($".isInitialState({s.IsStart.ToString()})");
+            WriteLine(".build());");
         }
 
         private void WriteLine(string s = "")
         {
-            context.WriteLine(source.Stream, s);
+            _context.WriteLine(_source.Stream, s);
         }
 
         private void Write(string s)
         {
-            context.Write(source.Stream, s);
+            _context.Write(_source.Stream, s);
         }
     }
 }

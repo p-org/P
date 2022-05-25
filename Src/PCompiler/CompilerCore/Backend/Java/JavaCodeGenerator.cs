@@ -2,6 +2,7 @@ using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.States;
 
@@ -108,14 +109,13 @@ namespace Plang.Compiler.Backend.Java {
             }
             WriteLine();
             
-            // Event handlers
-            foreach (var s in m.States)
+            // functions
+            foreach (var f in m.Methods)
             {
-                foreach (var (e, a) in s.AllEventHandlers)
-                {
-                    WriteEventHandler(e, a);
-                }
+                WriteFunction(f);
             }
+            WriteLine();
+            
             // constructor
             WriteMonitorCstr(m);
             
@@ -123,19 +123,49 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine($"}} // {cname} monitor definition");
         }
 
-        private void WriteEventHandler(PEvent e, IStateAction a)
+
+        private void WriteFunction(Function f)
         {
-            switch (a)
+            if (f.IsForeign)
             {
-                case EventDefer d:
-                    break;
-                case EventDoAction da:
-                    break;
-                case EventGotoState gs:
-                    break;
-                case EventIgnore i:
-                    break;
+                WriteLine($"// Foreign function {f.Name} elided");
             }
+
+            if (f.CanReceive == true)
+            {
+                WriteLine($"// Async function {f.Name} elided");
+            }
+           
+            WriteFunctionSignature(f); WriteLine(" {");
+
+            foreach (var stmt in f.Body.Statements)
+            {
+                WriteLine($"//TODO: {stmt}");
+            }
+            
+            WriteLine("}");
+        }
+
+        private void WriteFunctionSignature(Function f)
+        {
+            string fname = _context.Names.GetNameForDecl(f);
+
+            Write("private ");
+            
+            bool isStatic = f.Owner == null;
+            if (isStatic)
+            {
+                Write("static ");
+            }
+            
+            TypeManager.JType retType = _context.Types.JavaTypeFor(f.Signature.ReturnType);
+
+            string args = string.Join(
+                ",",
+                f.Signature.Parameters.Select(v =>
+                    $"{_context.Types.JavaTypeFor(v.Type).TypeName} {v.Name}"));
+            
+            Write($"{retType.TypeName} {fname}({args})");
         }
         
         private void WriteMonitorCstr(Machine m)
@@ -156,7 +186,36 @@ namespace Plang.Compiler.Backend.Java {
         {
             WriteLine($"addState(new State.Builder({_context.Names.IdentForState(s)})");
             WriteLine($".isInitialState({s.IsStart.ToString()})");
+
+            foreach (var (e, a) in s.AllEventHandlers)
+            {
+                WriteStateBuilderEventHandler(e, a);
+            }
+            
             WriteLine(".build());");
+        }
+        
+        private void WriteStateBuilderEventHandler(PEvent e, IStateAction a)
+        {
+            string ename = _context.Names.GetNameForDecl(e);
+            string aname;
+            
+            switch (a)
+            {
+                case EventDoAction da:
+                    aname = _context.Names.GetNameForDecl(da.Target);
+                    WriteLine($".WithEvent({ename}.class, {aname})");
+                    break;
+                case EventGotoState gs:
+                case EventIgnore i:
+                default:
+                    throw new NotImplementedException($"{a.GetType()} not implemented.");
+            }
+        }
+
+        private void WriteStmt(IPStmt stmt)
+        {
+            
         }
 
         private void WriteLine(string s = "")

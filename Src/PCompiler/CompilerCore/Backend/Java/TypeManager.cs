@@ -113,6 +113,7 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JVoid : JType
             {
+                internal override string DefaultValue => "null";
                 internal override string TypeName => "Void";
             }
         }

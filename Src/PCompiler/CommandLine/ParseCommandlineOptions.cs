@@ -137,15 +137,16 @@ namespace Plang.Compiler
                                 switch (colonArg?.ToLowerInvariant())
                                 {
                                     case null:
-                                        throw new CommandlineParsingError("Missing generation argument, expecting generate:[C,CSharp,RVM]");
+                                        throw new CommandlineParsingError("Missing generation argument, expecting generate:[C,CSharp,Java,RVM,Symbolic]");
                                     case "c":
                                         outputLanguage = CompilerOutput.C;
                                         break;
-
                                     case "csharp":
                                         outputLanguage = CompilerOutput.CSharp;
                                         break;
-                                    
+                                    case "java":
+                                        outputLanguage = CompilerOutput.Java;
+                                        break;
                                     case "rvm":
                                         outputLanguage = CompilerOutput.Rvm;
                                         break;
@@ -153,7 +154,7 @@ namespace Plang.Compiler
                                         outputLanguage = CompilerOutput.Symbolic;
                                         break;
                                     default:
-                                        throw new CommandlineParsingError($"Unrecognized generate option '{colonArg}', expecting C or CSharp or Symbolic");
+                                        throw new CommandlineParsingError($"Unrecognized generate option '{colonArg}', expecting one of C, CSharp, Java, RVM, Symbolic.");
                                 }
                                 break;
 

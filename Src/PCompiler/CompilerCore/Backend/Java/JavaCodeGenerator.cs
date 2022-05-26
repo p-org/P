@@ -4,7 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java {
 
@@ -140,7 +142,7 @@ namespace Plang.Compiler.Backend.Java {
 
             foreach (var stmt in f.Body.Statements)
             {
-                WriteLine($"//TODO: {stmt}");
+                WriteStmt(stmt);
             }
             
             WriteLine("}");
@@ -215,7 +217,35 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteStmt(IPStmt stmt)
         {
-            
+            switch (stmt)
+            {
+                case AnnounceStmt announceStmt:
+                case AssertStmt assertStmt:
+                case AssignStmt assignStmt:
+                case CompoundStmt compoundStmt:
+                case CtorStmt ctorStmt:
+                case FunCallStmt funCallStmt:
+                case GotoStmt gotoStmt:
+                case IfStmt ifStmt:
+                case AddStmt addStmt:
+                case InsertStmt insertStmt:
+                case MoveAssignStmt moveAssignStmt:
+                case NoStmt _:
+                case PrintStmt printStmt:
+                case RaiseStmt raiseStmt:
+                case ReceiveStmt receiveStmt:
+                case RemoveStmt removeStmt:
+                case ReturnStmt returnStmt:
+                case BreakStmt breakStmt:
+                case ContinueStmt continueStmt:
+                case SendStmt sendStmt:
+                case ForeachStmt foreachStmt:
+                case WhileStmt whileStmt:
+                default:
+                    WriteLine($"// TODO: {stmt}");
+                    return;
+                    //throw new NotImplementedException(stmt.GetType().ToString());
+            }
         }
 
         private void WriteLine(string s = "")

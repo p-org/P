@@ -7,9 +7,8 @@ namespace Plang.Compiler.Backend.Java
 {
     /// <summary>
     /// Holds some string constants for the JavaCodeGenerator.
-    /// TODO: should this perhaps live in the NameManager???
     /// </summary>
-    internal static class SourceTemplates
+    internal static class Constants
     {
         private static string JavaRTPackageName = "com.amazon.PObserve.RT.temp.prefix.fixme";
 

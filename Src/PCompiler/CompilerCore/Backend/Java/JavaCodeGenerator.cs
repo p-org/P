@@ -3,7 +3,9 @@ using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
@@ -36,7 +38,7 @@ namespace Plang.Compiler.Backend.Java {
             WriteImports();
             WriteLine();
            
-            WriteLine($"static class {SourceTemplates.TopLevelClassName} {{");
+            WriteLine($"static class {Constants.TopLevelClassName} {{");
 
             foreach (var e in _globalScope.Events)
             {
@@ -58,14 +60,14 @@ namespace Plang.Compiler.Backend.Java {
                 }
             }
             
-            WriteLine($"}} // {SourceTemplates.TopLevelClassName} class definition");
+            WriteLine($"}} // {Constants.TopLevelClassName} class definition");
             
             return new List<CompiledFile> { _source };
         }
 
         private void WriteImports()
         {
-            foreach (var className in SourceTemplates.ImportStatements())
+            foreach (var className in Constants.ImportStatements())
             {
                 WriteLine("import " + className);
             }
@@ -211,7 +213,7 @@ namespace Plang.Compiler.Backend.Java {
                 case EventGotoState gs:
                 case EventIgnore i:
                 default:
-                    throw new NotImplementedException($"{a.GetType()} not implemented.");
+                    throw new NotImplementedException($"TODO: {a.GetType()} not implemented.");
             }
         }
 
@@ -219,8 +221,13 @@ namespace Plang.Compiler.Backend.Java {
         {
             switch (stmt)
             {
-                case AnnounceStmt announceStmt:
                 case AssertStmt assertStmt:
+                    Write("TryAssert(");
+                    WriteExpr(assertStmt.Assertion);
+                    Write(", ");
+                    WriteExpr(assertStmt.Message);
+                    WriteLine(");");
+                    break;
                 case AssignStmt assignStmt:
                 case CompoundStmt compoundStmt:
                 case CtorStmt ctorStmt:
@@ -241,10 +248,101 @@ namespace Plang.Compiler.Backend.Java {
                 case SendStmt sendStmt:
                 case ForeachStmt foreachStmt:
                 case WhileStmt whileStmt:
+                case AnnounceStmt announceStmt:
                 default:
                     WriteLine($"// TODO: {stmt}");
                     return;
                     //throw new NotImplementedException(stmt.GetType().ToString());
+            }
+        }
+
+        private void WriteExpr(IPExpr expr)
+        {
+            switch (expr)
+            {
+                case BinOpExpr boe:
+                    break;
+                case BoolLiteralExpr ble:
+                    break;
+                case CastExpr ce:
+                    break;
+                case ChooseExpr ce:
+                    break; 
+                case CloneExpr ce:
+                    break;
+                case CoerceExpr ce:
+                    break;
+                case ContainsExpr ce:
+                    break;
+                case CtorExpr ce:
+                    break;
+                case DefaultExpr de:
+                    break;
+                case EnumElemRefExpr ee:
+                    break;
+                case EventRefExpr ee:
+                    break;
+                case FairNondetExpr fe:
+                    break;
+                case FloatLiteralExpr fe:
+                    break;
+                case FunCallExpr fe:
+                    break;
+                case IntLiteralExpr ie:
+                    break;
+                case KeysExpr ke:
+                    break;
+                case NamedTupleExpr ne:
+                    break;
+                case NondetExpr ne:
+                    break;
+                case NullLiteralExpr ne:
+                    break;
+                case SizeofExpr se:
+                    break;
+                case StringExpr se:
+                    break;
+                case ThisRefExpr te:
+                    break;
+                case UnaryOpExpr ue:
+                    break;
+                case UnnamedTupleExpr ue:
+                    break;
+                case ValuesExpr ve:
+                    break;
+                
+                case MapAccessExpr _:
+                case NamedTupleAccessExpr _:
+                case SeqAccessExpr _:
+                case TupleAccessExpr _:
+                case VariableAccessExpr _:
+                    WriteStructureAccess(expr);
+                    break;
+                
+                default:
+                    throw new NotImplementedException(expr.GetType().ToString());
+            }
+        }
+        
+        private void WriteStructureAccess(IPExpr e)
+        {
+            switch (e)
+            {
+                case MapAccessExpr mpe:
+                    break;
+                case SetAccessExpr sae:
+                    break;
+                case NamedTupleAccessExpr ntae:
+                    break;
+                case SeqAccessExpr sae:
+                    break;
+                case TupleAccessExpr tae:
+                    break;
+                case VariableAccessExpr vae:
+                    break;
+                
+                default:
+                    throw new NotImplementedException(e.GetType().ToString());
             }
         }
 

@@ -1,6 +1,4 @@
 using System;
-using System.Net.Mail;
-using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java
@@ -32,6 +30,24 @@ namespace Plang.Compiler.Backend.Java
             /// </summary>
             internal virtual string DefaultValue => "";
 
+            /// <summary>
+            /// The name of the method (K) -> V that returns the element V keyed on K.
+            /// Returns null for non-collection types!!
+            /// </summary>
+            internal virtual string? AccessorMethodName => null;
+
+            /// <summary>
+            /// The name of the method (K) -> bool that returns whether K is contained in an
+            /// instance of this type.  Returns null for non-collection types!!
+            /// </summary>
+            internal virtual string? ContainsMethodName => null;
+
+            /// <summary>
+            /// The name of the method (K, V) -> void that inserts V by key K.
+            /// Returns null for non-collection types!
+            /// </summary>
+            internal virtual string? MutatorMethodName => null;
+            
             internal class JBool : JType
             {
                 internal override string TypeName => "boolean";
@@ -61,19 +77,20 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JList : JType
             {
-                private JType _t;
-
+                private readonly JType _t;
                 internal JList(JType t)
                 {
                     _t = t;
                 }
 
-                internal override string TypeName => 
-                    $"ArrayList<{_t.ReferenceTypeName}>";
+                internal override string TypeName => $"ArrayList<{_t.ReferenceTypeName}>";
+                internal override string AccessorMethodName => "get";
+                internal override string ContainsMethodName => "contains";
+                internal override string MutatorMethodName => "set";
             }
             internal class JMap : JType
             {
-                private JType _k, _v;
+                private readonly JType _k, _v;
 
                 internal JMap(JType k, JType v)
                 {
@@ -83,11 +100,14 @@ namespace Plang.Compiler.Backend.Java
 
                 internal override string TypeName => 
                     $"Map<{_k.ReferenceTypeName},{_v.ReferenceTypeName}>";
+                internal override string AccessorMethodName => "get";
+                internal override string ContainsMethodName => "containsKey";
+                internal override string MutatorMethodName => "set";
             }
             
             internal class JSet : JType
             {
-                private JType _t;
+                private readonly JType _t;
 
                 internal JSet(JType t)
                 {
@@ -96,12 +116,29 @@ namespace Plang.Compiler.Backend.Java
 
                 internal override string TypeName => 
                     $"Set<{_t.ReferenceTypeName}>";
+                
+                internal override string AccessorMethodName => "contains";
+                internal override string ContainsMethodName => "contains";
+                internal override string MutatorMethodName => "add";
             }
 
             // TODO: maybe we can hack it as a Record??  A bummer that we don't have Scala's Tuple[A,B,C,...].
             internal class JNamedTuple : JType
             {
                 internal override string TypeName => "HashMap<String, Object>";
+                
+                internal override string AccessorMethodName => "get";
+                internal override string ContainsMethodName => "containsKey";
+                internal override string MutatorMethodName => "set";
+            }
+           
+            internal class JTuple : JType
+            {
+                internal override string TypeName => "ArrayList<Object>";
+                
+                internal override string AccessorMethodName => "get";
+                internal override string ContainsMethodName => "contains";
+                internal override string MutatorMethodName => "set";
             }
            
             //TODO: not sure about this one.  Is the base class sufficient?
@@ -123,7 +160,6 @@ namespace Plang.Compiler.Backend.Java
         /// TODO: Do we want the values boxed??
         /// </summary>
         /// <param name="type">The P type.</param>
-        /// <param name="isVar"></param>
         /// <returns>The Java type's name.</returns>
         /// <exception cref="ArgumentOutOfRangeException">If we're not implemented yet.</exception>
         /// TODO: Make this private and stick a weak ref cache in front of it.
@@ -184,7 +220,8 @@ namespace Plang.Compiler.Backend.Java
                     return new JType.JSet(JavaTypeFor(s.ElementType));
 
                 case TupleType _:
-                    return new JType.JNamedTuple();
+                    //TODO: return new JType.JList(Jtype.Int, JType.Any) ???  Is this cleaner/clearer?
+                    return new JType.JTuple();
 
                 default:
                     throw new NotImplementedException($"{type.CanonicalRepresentation} values not implemented");

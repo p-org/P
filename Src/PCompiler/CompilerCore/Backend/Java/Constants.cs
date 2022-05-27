@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java
 {
@@ -32,7 +31,6 @@ namespace Plang.Compiler.Backend.Java
         /// nested classes.
         /// </summary>
         internal static string TopLevelClassName = "PImplementation";
-        
-       
+
     }
 }

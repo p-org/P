@@ -142,6 +142,13 @@ namespace Plang.Compiler.Backend.Java {
            
             WriteFunctionSignature(f); WriteLine(" {");
 
+            foreach (var decl in f.LocalVariables)
+            {
+                TypeManager.JType t = _context.Types.JavaTypeFor(decl.Type);
+                WriteLine($"{t.TypeName} {_context.Names.GetNameForDecl(decl)} = {t.DefaultValue};");
+            }
+            WriteLine(); 
+            
             foreach (var stmt in f.Body.Statements)
             {
                 WriteStmt(stmt);
@@ -167,7 +174,7 @@ namespace Plang.Compiler.Backend.Java {
             string args = string.Join(
                 ",",
                 f.Signature.Parameters.Select(v =>
-                    $"{_context.Types.JavaTypeFor(v.Type).TypeName} {v.Name}"));
+                    $"{_context.Types.JavaTypeFor(v.Type).TypeName} {_context.Names.GetNameForDecl(v)}"));
             
             Write($"{retType.TypeName} {fname}({args})");
         }
@@ -189,7 +196,7 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteStateBuilderDecl(State s)
         {
             WriteLine($"addState(new State.Builder({_context.Names.IdentForState(s)})");
-            WriteLine($".isInitialState({s.IsStart.ToString()})");
+            WriteLine($".isInitialState({TypeManager.JType.JBool.ToJavaLiteral(s.IsStart)})");
 
             foreach (var (e, a) in s.AllEventHandlers)
             {
@@ -211,7 +218,9 @@ namespace Plang.Compiler.Backend.Java {
                     WriteLine($".WithEvent({ename}.class, {aname})");
                     break;
                 case EventGotoState gs:
+                    goto default; // TODO
                 case EventIgnore i:
+                    goto default; // TODO
                 default:
                     throw new NotImplementedException($"TODO: {a.GetType()} not implemented.");
             }
@@ -219,8 +228,18 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteStmt(IPStmt stmt)
         {
+            TypeManager.JType t;
+            
             switch (stmt)
             {
+                case AddStmt addStmt:
+                    t = _context.Types.JavaTypeFor(addStmt.Variable.Type);
+                    WriteExpr(addStmt.Variable);
+                    Write($".{t.MutatorMethodName}(");
+                    WriteExpr(addStmt.Value);
+                    WriteLine(");");
+                    break;
+                
                 case AssertStmt assertStmt:
                     Write("TryAssert(");
                     WriteExpr(assertStmt.Assertion);
@@ -228,23 +247,80 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(assertStmt.Message);
                     WriteLine(");");
                     break;
+                
                 case AssignStmt assignStmt:
+                    WriteAssignStatement(assignStmt);
+                    break;
+                
+                case BreakStmt _:
+                    WriteLine("break;");
+                    break;
+                
                 case CompoundStmt compoundStmt:
+                    WriteLine("{");
+                    foreach (var s in compoundStmt.Statements)
+                    {
+                        WriteStmt(s);
+                    }
+                    WriteLine("}");
+                    break;
+               
+                case ContinueStmt continueStmt:
+                    WriteLine("continue;");
+                    break;
+                    
                 case CtorStmt ctorStmt:
+                    goto default;
+                    
                 case FunCallStmt funCallStmt:
+                    WriteFunctionCall(funCallStmt.Function, funCallStmt.ArgsList);
+                    break;
+                
                 case GotoStmt gotoStmt:
+                    WriteLine($"TryGotoState({_context.Names.IdentForState(gotoStmt.State)});");
+                    WriteLine("return;");
+                    break;
+                    
                 case IfStmt ifStmt:
-                case AddStmt addStmt:
+                    Write("if (");
+                    WriteExpr(ifStmt.Condition);
+                    Write(") ");
+                    
+                    WriteStmt(ifStmt.ThenBranch);
+                    if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Count > 0)
+                    {
+                        WriteLine(" else ");
+                        WriteStmt(ifStmt.ElseBranch);
+                    }
+                    break;
+                    
+                
                 case InsertStmt insertStmt:
+                    t = _context.Types.JavaTypeFor(insertStmt.Variable.Type);
+                    WriteExpr(insertStmt.Variable);
+                    Write($".{t.MutatorMethodName}(");
+                    WriteExpr(insertStmt.Value);
+                    WriteLine(");");
+                    break;
+                    
                 case MoveAssignStmt moveAssignStmt:
+                    goto default;
+                    
                 case NoStmt _:
+                    break;
+                
                 case PrintStmt printStmt:
+                    Write("System.out.println(");
+                    WriteExpr(printStmt.Message);
+                    WriteLine(");");
+                    break;
+                
                 case RaiseStmt raiseStmt:
+                    goto default; // TODO
                 case ReceiveStmt receiveStmt:
+                    goto default; 
                 case RemoveStmt removeStmt:
                 case ReturnStmt returnStmt:
-                case BreakStmt breakStmt:
-                case ContinueStmt continueStmt:
                 case SendStmt sendStmt:
                 case ForeachStmt foreachStmt:
                 case WhileStmt whileStmt:
@@ -256,59 +332,190 @@ namespace Plang.Compiler.Backend.Java {
             }
         }
 
+        private void WriteAssignStatement(AssignStmt assignStmt)
+        {
+            IPExpr lval = assignStmt.Location;
+            IPExpr rval = assignStmt.Value;
+
+            switch (lval)
+            {
+                case MapAccessExpr mapAccessExpr:
+                {
+                    TypeManager.JType t = _context.Types.JavaTypeFor(mapAccessExpr.Type);
+                    WriteExpr(mapAccessExpr.MapExpr);
+                    Write($".{t.MutatorMethodName}(");
+                    WriteExpr(mapAccessExpr.IndexExpr);
+                    Write(",");
+                    WriteExpr(rval);
+                    WriteLine(");");
+                    break;
+                }
+
+                case NamedTupleAccessExpr namedTupleAccessExpr:
+                {
+                    TypeManager.JType t = _context.Types.JavaTypeFor(namedTupleAccessExpr.Type);
+                    WriteExpr(namedTupleAccessExpr.SubExpr);
+                    Write($".{t.MutatorMethodName}(\"{namedTupleAccessExpr.FieldName}\",");
+                    WriteExpr(rval);
+                    WriteLine(");");
+                    break;
+                }
+
+                case SeqAccessExpr seqAccessExpr:
+                {
+                    // TODO: do we need to think about handling out of bounds exceptions?
+                    TypeManager.JType t = _context.Types.JavaTypeFor(seqAccessExpr.Type);
+                    WriteExpr(seqAccessExpr.SeqExpr);
+                    Write($".{t.MutatorMethodName}(");
+                    WriteExpr(seqAccessExpr.IndexExpr);
+                    Write(",");
+                    WriteExpr(rval);
+                    WriteLine(");");
+                    break;
+                }
+
+                case TupleAccessExpr tupleAccessExpr:
+                {
+                    WriteExpr(tupleAccessExpr.SubExpr);
+                    Write($".put({tupleAccessExpr.FieldNo.ToString()}, ");
+                    WriteExpr(rval);
+                    WriteLine(");");
+                    break;
+                }
+
+                case VariableAccessExpr variableAccessExpr:
+                {
+                    Write(_context.Names.GetNameForDecl(variableAccessExpr.Variable));
+                    Write(" = ");
+                    WriteExpr(rval);
+                    WriteLine(";");
+                    break;
+                }
+            }
+        }
+
+        private void WriteFunctionCall(Function f, IEnumerable<IPExpr> args)
+        {
+            if (f.Owner == null)
+            {
+                throw new NotImplementedException("StaticFunCallExpr is not implemented.");
+            }
+
+            string fname = _context.Names.GetNameForDecl(f);
+            
+            Write($"{fname}(");
+            foreach (var (param, sep)in args.Select((p, i) => (p, i > 0 ? ", " : "")))
+            {
+                Write(sep);
+                WriteExpr(param);
+            }
+            Write($")");
+        }
+
         private void WriteExpr(IPExpr expr)
         {
+            TypeManager.JType t;
+            
             switch (expr)
             {
-                case BinOpExpr boe:
+                case BinOpExpr binOpExpr:
+                    WriteBinOp(binOpExpr.Lhs, binOpExpr.Operation, binOpExpr.Rhs);
                     break;
                 case BoolLiteralExpr ble:
+                    Write($"({TypeManager.JType.JBool.ToJavaLiteral(ble.Value)})");
                     break;
                 case CastExpr ce:
+                    t = _context.Types.JavaTypeFor(ce.Type);
+                    //TODO: I am 99% sure it's fine to never worry about casting to the boxed type.
+                    Write($"(");
+                    Write($"({t.TypeName})");
+                    WriteExpr(ce.SubExpr);
+                    Write($")");
                     break;
                 case ChooseExpr ce:
-                    break; 
+                    goto default; //TODO
                 case CloneExpr ce:
-                    break;
+                    goto default; //TODO
                 case CoerceExpr ce:
-                    break;
+                    goto default; //TODO
                 case ContainsExpr ce:
+                    t = _context.Types.JavaTypeFor(ce.Type);
+                    // TODO: uh oh, do nested containers etc mean we actually need to do
+                    // unchecked casting at every step??
+                    WriteExpr(ce.Collection);
+                    Write($".{t.ContainsMethodName}()");
                     break;
                 case CtorExpr ce:
-                    break;
+                    goto default;
                 case DefaultExpr de:
+                    t = _context.Types.JavaTypeFor(de.Type);
+                    Write(t.DefaultValue);
                     break;
                 case EnumElemRefExpr ee:
+                    string typeName = ee.Value.ParentEnum.Name;
+                    string valueName = ee.Value.Name;
+                    Write($"{typeName}.{valueName}");
                     break;
                 case EventRefExpr ee:
-                    break;
+                    goto default; //TODO
                 case FairNondetExpr fe:
-                    break;
+                    goto default;
                 case FloatLiteralExpr fe:
+                    Write(TypeManager.JType.JFloat.ToJavaLiteral(fe.Value));
                     break;
                 case FunCallExpr fe:
+                    WriteFunctionCall(fe.Function, fe.Arguments);
                     break;
                 case IntLiteralExpr ie:
+                    Write(TypeManager.JType.JInt.ToJavaLiteral(ie.Value));
                     break;
                 case KeysExpr ke:
-                    break;
+                    goto default; // TODO
                 case NamedTupleExpr ne:
+                    goto default; // TODO
                     break;
                 case NondetExpr ne:
+                    goto default; // TODO
                     break;
                 case NullLiteralExpr ne:
+                    Write("null");
                     break;
                 case SizeofExpr se:
+                    goto default; // TODO
                     break;
                 case StringExpr se:
+                    if (se.Args.Count == 0)
+                    {
+                        Write(TypeManager.JType.JString.ToJavaLiteral(se.BaseString));
+                    }
+                    else
+                    {
+                        goto default; //TODO: Figure out exactly what TransformPrintMessage() in Rvmland is doing.
+                    }
                     break;
                 case ThisRefExpr te:
+                    goto default;
                     break;
                 case UnaryOpExpr ue:
+                    switch (ue.Operation)
+                    {
+                        case UnaryOpType.Negate:
+                            Write("-");
+                            break;
+                        case UnaryOpType.Not:
+                            Write("!");
+                            break;
+                                
+                    }
+                    Write("(");
+                    WriteExpr(ue.SubExpr);
+                    Write(")");
                     break;
                 case UnnamedTupleExpr ue:
+                    goto default; // TODO
                     break;
                 case ValuesExpr ve:
+                    goto default; // TODO
                     break;
                 
                 case MapAccessExpr _:
@@ -322,6 +529,68 @@ namespace Plang.Compiler.Backend.Java {
                 default:
                     throw new NotImplementedException(expr.GetType().ToString());
             }
+        }
+
+        private void WriteBinOp(IPExpr left, BinOpType op, IPExpr right)
+        {
+            Write("(");
+            switch (op)
+            {
+                // Arithmetic operators
+                case BinOpType.Add:
+                    WriteExpr(left); Write(" + "); WriteExpr(right);
+                    break;
+                case BinOpType.Sub:
+                    WriteExpr(left); Write(" - "); WriteExpr(right);
+                    break;
+                case BinOpType.Mul:
+                    WriteExpr(left); Write(" * "); WriteExpr(right);
+                    break;
+                case BinOpType.Div:
+                    WriteExpr(left); Write(" / "); WriteExpr(right);
+                    break;
+                case BinOpType.Mod:
+                    WriteExpr(left); Write(" % "); WriteExpr(right);
+                    break;
+                
+                // Comparison operators
+                // TODO: Do we need to worry about comparisons between data structures
+                // (i.e. for lexiographic equality)?  If so we will need to use Objects.compare()
+                // with the correct Comparator object.
+                case BinOpType.Lt:
+                    WriteExpr(left); Write(" < "); WriteExpr(right);
+                    break;
+                case BinOpType.Le:
+                    WriteExpr(left); Write(" <= "); WriteExpr(right);
+                    break;
+                case BinOpType.Ge:
+                    WriteExpr(left); Write(" >= "); WriteExpr(right);
+                    break;
+                case BinOpType.Gt:
+                    WriteExpr(left); Write(" > "); WriteExpr(right);
+                    break;
+
+                // Equality operators (Note: Objects.equals() auto-boxes primitive types for us.)
+                case BinOpType.Neq:
+                    Write("!");
+                    goto case BinOpType.Eq;
+                case BinOpType.Eq:
+                    Write("Objects.equals(");
+                    WriteExpr(left);
+                    Write(", ");
+                    WriteExpr(right);
+                    Write(")");
+                    break;
+                default:
+                    throw new NotImplementedException(op.ToString());
+            }
+            Write(")");
+        }
+
+        private void WriteContainsExpr(ContainsExpr e)
+        {
+            TypeManager.JType t = _context.Types.JavaTypeFor(e.Type);
+            
         }
         
         private void WriteStructureAccess(IPExpr e)
@@ -339,6 +608,7 @@ namespace Plang.Compiler.Backend.Java {
                 case TupleAccessExpr tae:
                     break;
                 case VariableAccessExpr vae:
+                    Write(_context.Names.GetNameForDecl(vae.Variable));
                     break;
                 
                 default:

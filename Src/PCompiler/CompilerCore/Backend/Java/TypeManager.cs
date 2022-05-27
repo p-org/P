@@ -52,27 +52,47 @@ namespace Plang.Compiler.Backend.Java
             {
                 internal override string TypeName => "boolean";
                 internal override string ReferenceTypeName => "Boolean";
-                internal override string DefaultValue => "false";
+                internal override string DefaultValue => ToJavaLiteral(false);
+
+                internal static string ToJavaLiteral(bool b)
+                {
+                    return b ? "true" : "false";
+                }
             }
             
             internal class JInt : JType
             {
                 internal override string TypeName => "long";
                 internal override string ReferenceTypeName => "Long";
-                internal override string DefaultValue => "0L";
+                internal override string DefaultValue => ToJavaLiteral(0);
+                
+                internal static string ToJavaLiteral(int i)
+                {
+                    return i.ToString();
+                }
             }
             
             internal class JFloat : JType
             {
                 internal override string TypeName => "float";
                 internal override string ReferenceTypeName => "Float";
-                internal override string DefaultValue => "0.0d";
+                internal override string DefaultValue => ToJavaLiteral(0.0);
+                
+                internal static string ToJavaLiteral(double d)
+                {
+                    return d + "d";
+                }
             }
             
             internal class JString : JType
             {
                 internal override string TypeName => "String";
-                internal override string DefaultValue => "\"\"";
+                internal override string DefaultValue => ToJavaLiteral("");
+                
+                internal static string ToJavaLiteral(string s)
+                {
+                    return "\"" + s + "\"";
+                }
             }
 
             internal class JList : JType
@@ -152,6 +172,7 @@ namespace Plang.Compiler.Backend.Java
             {
                 internal override string DefaultValue => "null";
                 internal override string TypeName => "Void";
+                
             }
         }
         

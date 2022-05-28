@@ -18,7 +18,14 @@ namespace Plang.Compiler.Backend.Java {
         private CompilationContext _context;
         private CompiledFile _source;
         private Scope _globalScope;
-        
+
+        // In the C# and Rvm compilers, ANONs' function signatures are hard-coded to
+        // be an abstract Event type.  However, our Java runtime takes advantage of the
+        // typechecker to be able to specify exactly _which_ subclass it is going to be
+        // handed.  This isn't something explicitly handed to us in the AST so we
+        // accumulate it ourselves before proceeding with code generation.
+        private Dictionary<Function, PEvent> _argumentForAnon;
+
         /// <summary>
         /// Generates Java code for a given compilation job.
         ///
@@ -34,6 +41,8 @@ namespace Plang.Compiler.Backend.Java {
             _context = new CompilationContext(job);
             _source = new CompiledFile(_context.FileName);
             _globalScope = scope;
+            
+            _argumentForAnon = GenerateAnonArgLookup();
 
             WriteImports();
             WriteLine();
@@ -65,6 +74,39 @@ namespace Plang.Compiler.Backend.Java {
             return new List<CompiledFile> { _source };
         }
 
+        private Dictionary<Function, PEvent> GenerateAnonArgLookup()
+        {
+            Dictionary<Function, PEvent> ret = new Dictionary<Function, PEvent>();
+
+
+            foreach (var m in _globalScope.Machines)
+            {
+                foreach (var s in m.States)
+                {
+                    foreach (var (e, a) in s.AllEventHandlers)
+                    {
+                        TypeManager.JType argType = _context.Types.JavaTypeFor(e.PayloadType);
+
+                        switch (a)
+                        {
+                            case EventDoAction da:
+                                ret.Add(da.Target, e);
+                                break;
+                            case EventGotoState gs:
+                                ret.Add(gs.TransitionFunction, e);
+                                break;
+                            case EventIgnore i:
+                                break;
+                            default:
+                                throw new NotImplementedException($"TODO: {a.GetType()} not implemented.");
+                        }
+                    }
+                }
+            }
+
+            return ret;
+        }
+
         private void WriteImports()
         {
             foreach (var className in Constants.ImportStatements())
@@ -77,11 +119,11 @@ namespace Plang.Compiler.Backend.Java {
         {
             string eventName = _context.Names.GetNameForDecl(e);
             
-            // XXX: If e.PayloadType is PrimitiveType.Null, this produces an 
+            // FIXME: If e.PayloadType is PrimitiveType.Null, this produces an 
             // extraneous value.
             TypeManager.JType argType = _context.Types.JavaTypeFor(e.PayloadType);
             
-            WriteLine($"record {eventName}({argType.TypeName} payload) implements Event.Payload {{ }} ");
+            WriteLine($"record {eventName}({argType.TypeName} payload) implements PObserveEvent.PEvent {{ }} ");
         }
 
         private void WriteMachineDecl(Machine m)
@@ -100,8 +142,8 @@ namespace Plang.Compiler.Backend.Java {
             {
                 TypeManager.JType type = _context.Types.JavaTypeFor(field.Type);
                 string name = _context.Names.GetNameForDecl(field);
-                
-                WriteLine($"private {type.TypeName} {name} = {type.DefaultValue}; //TODO");
+
+                Write($"private {type.TypeName} {name} = {type.DefaultValue};");
             }
             WriteLine();
 
@@ -142,6 +184,15 @@ namespace Plang.Compiler.Backend.Java {
            
             WriteFunctionSignature(f); WriteLine(" {");
 
+            if (f.IsAnon && f.Signature.Parameters.Any())
+            {
+                Variable p = f.Signature.Parameters.First();
+                TypeManager.JType t = _context.Types.JavaTypeFor(p.Type);
+                string name = _context.Names.GetNameForDecl(p);
+
+                WriteLine($"{t.TypeName} {name} = pEvent.payload;");
+            }
+            
             foreach (var decl in f.LocalVariables)
             {
                 TypeManager.JType t = _context.Types.JavaTypeFor(decl.Type);
@@ -171,12 +222,25 @@ namespace Plang.Compiler.Backend.Java {
             
             TypeManager.JType retType = _context.Types.JavaTypeFor(f.Signature.ReturnType);
 
-            string args = string.Join(
-                ",",
-                f.Signature.Parameters.Select(v =>
-                    $"{_context.Types.JavaTypeFor(v.Type).TypeName} {_context.Names.GetNameForDecl(v)}"));
-            
+            string args;
+            if (f.IsAnon)
+            {
+                args = $"{_argumentForAnon[f].Name} pEvent";
+            } 
+            else 
+            {
+                args = string.Join(
+                    ",",
+                    f.Signature.Parameters.Select(v =>
+                        $"{_context.Types.JavaTypeFor(v.Type).TypeName} {_context.Names.GetNameForDecl(v)}"));
+            }
+
             Write($"{retType.TypeName} {fname}({args})");
+
+            if (f.CanChangeState == true)
+            {
+                Write(" throws TransitionException");
+            }
         }
         
         private void WriteMonitorCstr(Machine m)
@@ -209,13 +273,12 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteStateBuilderEventHandler(PEvent e, IStateAction a)
         {
             string ename = _context.Names.GetNameForDecl(e);
-            string aname;
-            
+           
             switch (a)
             {
                 case EventDoAction da:
-                    aname = _context.Names.GetNameForDecl(da.Target);
-                    WriteLine($".WithEvent({ename}.class, {aname})");
+                    string aname = _context.Names.GetNameForDecl(da.Target);
+                    WriteLine($".withEvent({ename}.class, this::{aname})");
                     break;
                 case EventGotoState gs:
                     goto default; // TODO
@@ -277,7 +340,7 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 
                 case GotoStmt gotoStmt:
-                    WriteLine($"TryGotoState({_context.Names.IdentForState(gotoStmt.State)});");
+                    WriteLine($"gotoState({_context.Names.IdentForState(gotoStmt.State)});");
                     WriteLine("return;");
                     break;
                     
@@ -319,6 +382,7 @@ namespace Plang.Compiler.Backend.Java {
                     goto default; // TODO
                 case ReceiveStmt receiveStmt:
                     goto default; 
+                    
                 case RemoveStmt removeStmt:
                 case ReturnStmt returnStmt:
                 case SendStmt sendStmt:
@@ -335,13 +399,13 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteAssignStatement(AssignStmt assignStmt)
         {
             IPExpr lval = assignStmt.Location;
+            TypeManager.JType t = _context.Types.JavaTypeFor(lval.Type);
+            
             IPExpr rval = assignStmt.Value;
-
+            
             switch (lval)
             {
                 case MapAccessExpr mapAccessExpr:
-                {
-                    TypeManager.JType t = _context.Types.JavaTypeFor(mapAccessExpr.Type);
                     WriteExpr(mapAccessExpr.MapExpr);
                     Write($".{t.MutatorMethodName}(");
                     WriteExpr(mapAccessExpr.IndexExpr);
@@ -349,22 +413,16 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(rval);
                     WriteLine(");");
                     break;
-                }
 
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                {
-                    TypeManager.JType t = _context.Types.JavaTypeFor(namedTupleAccessExpr.Type);
                     WriteExpr(namedTupleAccessExpr.SubExpr);
                     Write($".{t.MutatorMethodName}(\"{namedTupleAccessExpr.FieldName}\",");
                     WriteExpr(rval);
                     WriteLine(");");
                     break;
-                }
 
                 case SeqAccessExpr seqAccessExpr:
-                {
                     // TODO: do we need to think about handling out of bounds exceptions?
-                    TypeManager.JType t = _context.Types.JavaTypeFor(seqAccessExpr.Type);
                     WriteExpr(seqAccessExpr.SeqExpr);
                     Write($".{t.MutatorMethodName}(");
                     WriteExpr(seqAccessExpr.IndexExpr);
@@ -372,25 +430,20 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(rval);
                     WriteLine(");");
                     break;
-                }
 
                 case TupleAccessExpr tupleAccessExpr:
-                {
                     WriteExpr(tupleAccessExpr.SubExpr);
                     Write($".put({tupleAccessExpr.FieldNo.ToString()}, ");
                     WriteExpr(rval);
                     WriteLine(");");
                     break;
-                }
 
                 case VariableAccessExpr variableAccessExpr:
-                {
                     Write(_context.Names.GetNameForDecl(variableAccessExpr.Variable));
                     Write(" = ");
                     WriteExpr(rval);
                     WriteLine(";");
                     break;
-                }
             }
         }
 
@@ -587,32 +640,39 @@ namespace Plang.Compiler.Backend.Java {
             Write(")");
         }
 
-        private void WriteContainsExpr(ContainsExpr e)
+        private void WriteStructureAccess(IPExpr e)
         {
             TypeManager.JType t = _context.Types.JavaTypeFor(e.Type);
             
-        }
-        
-        private void WriteStructureAccess(IPExpr e)
-        {
-            switch (e)
-            {
-                case MapAccessExpr mpe:
+            switch (e) {
+                case MapAccessExpr mapAccessExpr:
+                    WriteExpr(mapAccessExpr.MapExpr);
+                    Write($".{t.AccessorMethodName}(");
+                    WriteExpr(mapAccessExpr.IndexExpr);
+                    WriteLine(");");
                     break;
-                case SetAccessExpr sae:
+
+                case NamedTupleAccessExpr namedTupleAccessExpr:
+                    WriteExpr(namedTupleAccessExpr.SubExpr);
+                    WriteLine($".{t.AccessorMethodName}(\"{namedTupleAccessExpr.FieldName}\");");
                     break;
-                case NamedTupleAccessExpr ntae:
+
+                case SeqAccessExpr seqAccessExpr:
+                    // TODO: do we need to think about handling out of bounds exceptions?
+                    WriteExpr(seqAccessExpr.SeqExpr);
+                    Write($".{t.AccessorMethodName}(");
+                    WriteExpr(seqAccessExpr.IndexExpr);
+                    WriteLine(");");
                     break;
-                case SeqAccessExpr sae:
+
+                case TupleAccessExpr tupleAccessExpr:
+                    WriteExpr(tupleAccessExpr.SubExpr);
+                    WriteLine($".{t.AccessorMethodName}(\"{tupleAccessExpr.FieldNo.ToString()}\");");
                     break;
-                case TupleAccessExpr tae:
+
+                case VariableAccessExpr variableAccessExpr:
+                    Write(_context.Names.GetNameForDecl(variableAccessExpr.Variable));
                     break;
-                case VariableAccessExpr vae:
-                    Write(_context.Names.GetNameForDecl(vae.Variable));
-                    break;
-                
-                default:
-                    throw new NotImplementedException(e.GetType().ToString());
             }
         }
 

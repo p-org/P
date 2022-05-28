@@ -28,7 +28,7 @@ namespace Plang.Compiler.Backend.Java
             /// <summary>
             /// A default value for a given type, used for initializing fields and local variables.
             /// </summary>
-            internal virtual string DefaultValue => "";
+            internal virtual string DefaultValue => $"new {ReferenceTypeName}()";
 
             /// <summary>
             /// The name of the method (K) -> V that returns the element V keyed on K.
@@ -62,8 +62,8 @@ namespace Plang.Compiler.Backend.Java
             
             internal class JInt : JType
             {
-                internal override string TypeName => "long";
-                internal override string ReferenceTypeName => "Long";
+                internal override string TypeName => "int";
+                internal override string ReferenceTypeName => "Integer";
                 internal override string DefaultValue => ToJavaLiteral(0);
                 
                 internal static string ToJavaLiteral(int i)

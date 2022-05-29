@@ -3,6 +3,7 @@ package pcontainment.runtime;
 
 import lombok.Getter;
 import pcontainment.runtime.machine.Machine;
+import pcontainment.runtime.machine.MachineIdentifier;
 
 import java.util.*;
 
@@ -13,7 +14,7 @@ public class Message {
 
     // the target machine id to which the message is being sent
     @Getter
-    private final Machine target;
+    private final MachineIdentifier targetId;
     // the event id sent to the target machine
     @Getter
     private final Event event;
@@ -21,8 +22,8 @@ public class Message {
     @Getter
     public final Payloads payloads;
 
-    public Message(Event event, Machine target, Payloads payloads) {
-        this.target = target;
+    public Message(Event event, MachineIdentifier targetId, Payloads payloads) {
+        this.targetId = targetId;
         this.event = event;
         if (payloads == null)
             this.payloads = new Payloads();
@@ -32,7 +33,7 @@ public class Message {
 
     @Override
     public String toString() {
-        return "Send " + event.toString() + " to " + target.toString();
+        return "Send " + event.toString() + " to " + targetId;
     }
 
 }

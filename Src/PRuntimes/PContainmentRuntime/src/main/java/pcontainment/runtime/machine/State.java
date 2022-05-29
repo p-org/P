@@ -4,6 +4,8 @@ import com.microsoft.z3.BoolExpr;
 import lombok.Getter;
 import pcontainment.Checker;
 import pcontainment.Pair;
+import pcontainment.Triple;
+import pcontainment.runtime.Payloads;
 import pcontainment.runtime.machine.eventhandlers.EventHandlerReturnReason;
 
 import java.util.HashMap;
@@ -14,14 +16,18 @@ public abstract class State {
     @Getter
     private final int id;
     private final String name;
-    public Map<BoolExpr, Pair<Integer, EventHandlerReturnReason>> getEntryEncoding(int sends, Checker c, Machine machine ) {
-        Map<BoolExpr, Pair<Integer, EventHandlerReturnReason>> ret = new HashMap<>();
-        ret.put(c.mkBool(true), new Pair<>(sends, new EventHandlerReturnReason.NormalReturn()));
+    public Map<BoolExpr, Triple<Integer, Locals, EventHandlerReturnReason>> getEntryEncoding(int sends, Checker c,
+                                                                                             Locals locals,
+                                                                                             Machine machine,
+                                                                                             Payloads payloads )
+    {
+        Map<BoolExpr, Triple<Integer, Locals, EventHandlerReturnReason>> ret = new HashMap<>();
+        ret.put(c.mkBool(true), new Triple<>(sends, locals, new EventHandlerReturnReason.NormalReturn()));
         return ret;
     }
-    public Map<BoolExpr, Integer> getExitEncoding (int sends, Checker c, Machine machine) {
-        Map<BoolExpr, Integer> ret = new HashMap<>();
-        ret.put(c.mkBool(true), sends);
+    public Map<BoolExpr, Pair<Integer, Locals>> getExitEncoding (int sends, Locals locals, Checker c, Machine machine) {
+        Map<BoolExpr, Pair<Integer, Locals>> ret = new HashMap<>();
+        ret.put(c.mkBool(true), new Pair<>(sends, locals));
         return ret;
     }
 

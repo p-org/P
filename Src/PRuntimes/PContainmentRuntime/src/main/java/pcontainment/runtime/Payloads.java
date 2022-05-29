@@ -19,7 +19,7 @@ public class Payloads {
 
     public Payloads(Object ... payloads) {
         this.payloads = new HashMap<>();
-        for (int i = 0; i < payloads.length / 2; i += 2) {
+        for (int i = 0; i < payloads.length; i += 2) {
             this.payloads.put((String) payloads[i], payloads[i + 1]);
         }
     }

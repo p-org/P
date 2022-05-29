@@ -28,16 +28,16 @@ public class EventHandlerReturnReason {
 
     public static class Goto extends EventHandlerReturnReason {
         @Getter
-        private final Message message;
+        private final Payloads payloads;
         @Getter
         private final State goTo;
         public Goto(State s) {
             goTo = s;
-            message = null;
+            payloads = new Payloads();
         }
         public Goto(State s, Message m) {
             goTo = s;
-            message = m;
+            payloads = m.getPayloads();
         }
     }
 

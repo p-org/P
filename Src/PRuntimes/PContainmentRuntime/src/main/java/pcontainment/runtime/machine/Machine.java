@@ -1,6 +1,7 @@
 package pcontainment.runtime.machine;
 
 import com.microsoft.z3.BoolExpr;
+import com.microsoft.z3.Expr;
 import lombok.Setter;
 import pcontainment.Checker;
 import pcontainment.runtime.*;
@@ -18,7 +19,7 @@ public abstract class Machine {
     @Getter
     private Checker checker;
     @Getter
-    private final int id;
+    private final ConcreteMachineIdentifier id;
     @Getter @Setter
     private boolean started = false;
     @Getter
@@ -37,7 +38,7 @@ public abstract class Machine {
     public Machine(String name, int instanceId, State startState, List<State> states,
                    Map<Event, List<EventHandler>> handlers) {
         this.name = name;
-        this.id = machineCount++;
+        this.id = new ConcreteMachineIdentifier(machineCount++);
         this.startState = startState;
         this.states = states;
         this.eventHandlers = handlers;
@@ -68,9 +69,11 @@ public abstract class Machine {
     }
 
     public void observeMessage(Message m) {
-        if (this.equals(m.getTarget())) {
+        if (this.id.equals(m.getTargetId())) {
+            System.out.println("receive message " + m.getEvent().toString());
             addReceive(m);
         } else {
+            System.out.println("send message " + m.getEvent().toString());
             addSend(m);
         }
     }
@@ -104,7 +107,14 @@ public abstract class Machine {
     }
 
     public void processEventToCompletion(Message receive) {
-        final EventHandlerReturnReason eventRaiseEventHandlerReturnReason = new EventHandlerReturnReason.Raise(receive);
+        System.out.println("process event " + receive.getEvent().toString() + " to completion");
+        for (Map.Entry<String, Object> pld : receive.payloads.entrySet()) {
+            System.out.println("pld " + pld.getKey() + ": " + pld.getValue());
+        }
+        Message encoded = new Message(receive.getEvent(), receive.getTargetId(),
+                checker.encodeConcretePayload(receive.payloads));
+        final EventHandlerReturnReason eventRaiseEventHandlerReturnReason =
+                new EventHandlerReturnReason.Raise(encoded);
         checker.runOutcomesToCompletion(this, eventRaiseEventHandlerReturnReason);
     }
 
@@ -125,6 +135,6 @@ public abstract class Machine {
 
     @Override
     public int hashCode() {
-        return ((Integer) id).hashCode();
+        return ((Integer) id.id).hashCode();
     }
 }

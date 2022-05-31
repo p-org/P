@@ -32,21 +32,31 @@ namespace Plang.Compiler.Backend.Java
 
             /// <summary>
             /// The name of the method (K) -> V that returns the element V keyed on K.
-            /// Returns null for non-collection types!!
+            /// Throws for non-collection types!!
             /// </summary>
-            internal virtual string? AccessorMethodName => null;
+            internal virtual string AccessorMethodName =>
+                throw new Exception($"AccessorMethodName not implemented for {this.TypeName}");
 
             /// <summary>
             /// The name of the method (K) -> bool that returns whether K is contained in an
-            /// instance of this type.  Returns null for non-collection types!!
+            /// instance of this type.  Throws for non-collection types!!
             /// </summary>
-            internal virtual string? ContainsMethodName => null;
+            internal virtual string ContainsMethodName =>
+                throw new Exception($"ContainsMethodName not implemented for {this.TypeName}");
 
             /// <summary>
             /// The name of the method (K, V) -> void that inserts V by key K.
-            /// Returns null for non-collection types!
+            /// Throws for non-collection types!
             /// </summary>
-            internal virtual string? MutatorMethodName => null;
+            internal virtual string MutatorMethodName =>
+                throw new Exception($"MutatorMethodName not implemented for {this.TypeName}");
+            
+            /// <summary>
+            /// The name of the method K -> void that removes key K from the collection.  Throws for
+            /// non-collection types!
+            /// </summary>
+            internal virtual string RemoveMethodName =>
+                throw new Exception($"RemoveMethodName not implemented for {this.TypeName}");
             
             internal class JBool : JType
             {
@@ -107,6 +117,7 @@ namespace Plang.Compiler.Backend.Java
                 internal override string AccessorMethodName => "get";
                 internal override string ContainsMethodName => "contains";
                 internal override string MutatorMethodName => "set";
+                internal override string RemoveMethodName => "remove";
             }
             internal class JMap : JType
             {
@@ -123,6 +134,7 @@ namespace Plang.Compiler.Backend.Java
                 internal override string AccessorMethodName => "get";
                 internal override string ContainsMethodName => "containsKey";
                 internal override string MutatorMethodName => "set";
+                internal override string RemoveMethodName => "remove";
             }
             
             internal class JSet : JType
@@ -140,6 +152,7 @@ namespace Plang.Compiler.Backend.Java
                 internal override string AccessorMethodName => "contains";
                 internal override string ContainsMethodName => "contains";
                 internal override string MutatorMethodName => "add";
+                internal override string RemoveMethodName => "remove";
             }
 
             // TODO: maybe we can hack it as a Record??  A bummer that we don't have Scala's Tuple[A,B,C,...].
@@ -150,6 +163,7 @@ namespace Plang.Compiler.Backend.Java
                 internal override string AccessorMethodName => "get";
                 internal override string ContainsMethodName => "containsKey";
                 internal override string MutatorMethodName => "set";
+                internal override string RemoveMethodName => "remove";
             }
            
             internal class JTuple : JType
@@ -159,6 +173,7 @@ namespace Plang.Compiler.Backend.Java
                 internal override string AccessorMethodName => "get";
                 internal override string ContainsMethodName => "contains";
                 internal override string MutatorMethodName => "set";
+                internal override string RemoveMethodName => "remove";
             }
            
             //TODO: not sure about this one.  Is the base class sufficient?
@@ -241,7 +256,7 @@ namespace Plang.Compiler.Backend.Java
                     return new JType.JSet(JavaTypeFor(s.ElementType));
 
                 case TupleType _:
-                    //TODO: return new JType.JList(Jtype.Int, JType.Any) ???  Is this cleaner/clearer?
+                    //TODO: return new JType.JList(JType.Any) ???  Is this cleaner/clearer?
                     return new JType.JTuple();
 
                 default:

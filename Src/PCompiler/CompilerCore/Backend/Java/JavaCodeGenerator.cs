@@ -380,15 +380,51 @@ namespace Plang.Compiler.Backend.Java {
                 
                 case RaiseStmt raiseStmt:
                     goto default; // TODO
+                    
                 case ReceiveStmt receiveStmt:
                     goto default; 
                     
                 case RemoveStmt removeStmt:
+                    t = _context.Types.JavaTypeFor(removeStmt.Variable.Type);
+                    WriteExpr(removeStmt.Variable);
+                    Write($".{t.RemoveMethodName}(");
+                    WriteExpr(removeStmt.Value);
+                    WriteLine(");");
+                    break;
+                
                 case ReturnStmt returnStmt:
+                    Write("return ");
+                    if (returnStmt.ReturnValue != null)
+                    {
+                        WriteExpr(returnStmt.ReturnValue);
+                    }
+                    WriteLine(";");
+                    break;
+                    
                 case SendStmt sendStmt:
+                    goto default;
+
                 case ForeachStmt foreachStmt:
+                {
+                    string varname = _context.Names.GetNameForDecl(foreachStmt.Item);
+                    t = _context.Types.JavaTypeFor(foreachStmt.Item.Type);
+                    
+                    Write($"for ({t.TypeName} {varname} : ");
+                    WriteExpr(foreachStmt.IterCollection);
+                    Write(") ");
+                    WriteStmt(foreachStmt.Body);
+                    break;
+                }
                 case WhileStmt whileStmt:
+                    Write("while (");
+                    WriteExpr(whileStmt.Condition);
+                    Write(") ");
+                    WriteStmt(whileStmt.Body);
+                    break;
+                
                 case AnnounceStmt announceStmt:
+                    goto default;
+                    
                 default:
                     WriteLine($"// TODO: {stmt}");
                     return;

@@ -9,12 +9,17 @@ namespace Plang.Compiler.Backend.Java
     /// </summary>
     internal static class Constants
     {
-        private static string JavaRTPackageName = "com.amazon.PObserve.RT.temp.prefix.fixme";
+        private static string[] defaultImports = {
+            "com.amazon.pobserve.todo.Event",
+            "com.amazon.pobserve.todo.Monitor",
+            "com.amazon.pobserve.todo.State",
+        };
 
-        private static string[] defaultImport = {
-            "Event",
-            "Monitor",
-            "State",
+        private static string[] jreDefaultImports =
+        {
+            "java.text.MessageFormat",
+            "java.util.*",
+            "java.util.stream.Stream"
         };
 
         /// <summary>
@@ -23,7 +28,9 @@ namespace Plang.Compiler.Backend.Java
         /// <returns></returns>
         internal static IEnumerable<string> ImportStatements()
         {
-            return defaultImport.Select(cname => $"{JavaRTPackageName}.{cname}");
+            return defaultImports
+                .Concat(jreDefaultImports)
+                .Select(pkg => $"import {pkg};");
         }
 
         /// <summary>

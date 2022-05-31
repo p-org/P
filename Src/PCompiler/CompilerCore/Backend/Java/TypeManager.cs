@@ -1,4 +1,6 @@
 using System;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java
@@ -105,6 +107,19 @@ namespace Plang.Compiler.Backend.Java
                 }
             }
 
+            internal class JMachine : JType
+            {
+                // Source/Core/Actors/ActorId.cs stores ActorID values as ulongs
+                
+                internal override string TypeName => "long";
+                internal override string ReferenceTypeName => "Long";
+                internal override string DefaultValue => ToJavaLiteral(0L);
+                internal static string ToJavaLiteral(long l)
+                {
+                    return l + "L";
+                }
+            }
+
             internal class JList : JType
             {
                 private readonly JType _t;
@@ -130,11 +145,26 @@ namespace Plang.Compiler.Backend.Java
                 }
 
                 internal override string TypeName => 
-                    $"Map<{_k.ReferenceTypeName},{_v.ReferenceTypeName}>";
+                    $"HashMap<{_k.ReferenceTypeName},{_v.ReferenceTypeName}>";
                 internal override string AccessorMethodName => "get";
                 internal override string ContainsMethodName => "containsKey";
                 internal override string MutatorMethodName => "set";
                 internal override string RemoveMethodName => "remove";
+
+                /// <summary>
+                /// The name of the () -> Set method that produces the keys in the map.
+                /// </summary>
+                internal string KeysMethodName => "keySet";
+
+                /// <summary>
+                /// The type of a collection containing the keys of this Map.
+                /// </summary>
+                internal string KeyCollectionType => $"List<{_k}>";
+                
+                /// <summary>
+                /// The type of a collection containing the keys of this Map.
+                /// </summary>
+                internal string ValueCollectionType => $"List<{_v}>";
             }
             
             internal class JSet : JType
@@ -147,7 +177,7 @@ namespace Plang.Compiler.Backend.Java
                 }
 
                 internal override string TypeName => 
-                    $"Set<{_t.ReferenceTypeName}>";
+                    $"HashSet<{_t.ReferenceTypeName}>";
                 
                 internal override string AccessorMethodName => "contains";
                 internal override string ContainsMethodName => "contains";
@@ -186,13 +216,55 @@ namespace Plang.Compiler.Backend.Java
             internal class JVoid : JType
             {
                 internal override string DefaultValue => "null";
-                internal override string TypeName => "Void";
+                // XXX: This is slightly hacky in that `void` can be a return type but 
+                // not a variable type, and `Void` can be a variable type and a return
+                // type but a valueless-return statement doesn't "autobox" into a Void.
+                internal override string TypeName => "void";
+                internal override string ReferenceTypeName => "Void";
+            }
+        }
+
+        /// <summary>
+        /// Produces the Java type that corresponds to the location (variable or data structure)
+        /// represented by `e`.  Note that this isn't the same thing as the type that accessing
+        /// that structure would produce (as that can be pulled out from the expr's fields).
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        internal JType JavaTypeForVarLocation(IPExpr e)
+        {
+            switch (e)
+            {
+
+                case MapAccessExpr mapAccessExpr:
+                {
+                    JType k = JavaTypeFor(mapAccessExpr.IndexExpr.Type);
+                    JType v = JavaTypeFor(mapAccessExpr.Type);
+                    return new JType.JMap(k, v);
+                }
+
+                case NamedTupleAccessExpr namedTupleAccessExpr:
+                    return new JType.JNamedTuple();
+
+                case SeqAccessExpr seqAccessExpr:
+                {
+                    JType t = JavaTypeFor(seqAccessExpr.SeqExpr.Type);
+                    return new JType.JList(t);
+                }
+
+                case TupleAccessExpr tupleAccessExpr:
+                    return new JType.JTuple();
+
+                case VariableAccessExpr variableAccessExpr:
+                    return JavaTypeFor(e.Type);
                 
+                default:
+                    throw new Exception($"Unknown location of {e}");
             }
         }
         
         /// <summary>
-        /// Produces the name of the Java type used to represent a value of type `type`.
+        /// Produces the Java type used to represent a value of type `type`.
         /// TODO: Do we want the values boxed??
         /// </summary>
         /// <param name="type">The P type.</param>
@@ -223,7 +295,7 @@ namespace Plang.Compiler.Backend.Java
                     return new JType.JNamedTuple();
 
                 case PermissionType _:
-                    throw new NotImplementedException($"{type.CanonicalRepresentation} values not implemented");
+                    return new JType.JMachine();
 
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return new JType();
@@ -244,7 +316,7 @@ namespace Plang.Compiler.Backend.Java
                     return new JType.JEvent();
 
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
-                    throw new NotImplementedException($"{type.CanonicalRepresentation} values not implemented");
+                    return new JType.JMachine();
 
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     return new JType.JVoid();
@@ -260,7 +332,7 @@ namespace Plang.Compiler.Backend.Java
                     return new JType.JTuple();
 
                 default:
-                    throw new NotImplementedException($"{type.CanonicalRepresentation} values not implemented");
+                    throw new NotImplementedException($"{type} values not implemented");
             }
         }
     }

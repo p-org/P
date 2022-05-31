@@ -3,12 +3,12 @@ using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks.Dataflow;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
-using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java {
 
@@ -46,12 +46,18 @@ namespace Plang.Compiler.Backend.Java {
 
             WriteImports();
             WriteLine();
-           
+
+            foreach (var e in _globalScope.Enums)
+            {
+                WriteEnumDecl(e);
+            }
+            WriteLine();
+            
             WriteLine($"static class {Constants.TopLevelClassName} {{");
 
             foreach (var e in _globalScope.Events)
             {
-                WriteEventDecl(e);     
+                WriteEventDecl(e);
             }
             WriteLine();
             
@@ -85,20 +91,18 @@ namespace Plang.Compiler.Backend.Java {
                 {
                     foreach (var (e, a) in s.AllEventHandlers)
                     {
-                        TypeManager.JType argType = _context.Types.JavaTypeFor(e.PayloadType);
-
                         switch (a)
                         {
                             case EventDoAction da:
                                 ret.Add(da.Target, e);
                                 break;
-                            case EventGotoState gs:
+                            case EventGotoState gs when gs.TransitionFunction != null:
                                 ret.Add(gs.TransitionFunction, e);
                                 break;
+                            case EventDefer _:
                             case EventIgnore i:
-                                break;
                             default:
-                                throw new NotImplementedException($"TODO: {a.GetType()} not implemented.");
+                                break;
                         }
                     }
                 }
@@ -109,12 +113,31 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteImports()
         {
-            foreach (var className in Constants.ImportStatements())
+            foreach (var stmt in Constants.ImportStatements())
             {
-                WriteLine("import " + className);
+                WriteLine(stmt);
             }
         }
 
+        private void WriteEnumDecl(PEnum e)
+        {
+            WriteLine($"enum {e.Name} {{");
+             
+            foreach (var (param, sep)in e.Values.Select((p, i) => (p, i < e.Values.Count()-1 ? "," : ";")))
+            {
+                WriteLine($"{param.Name}({param.Value}){sep}");
+            }
+
+            WriteLine();
+           
+            // Boilerplate to access the enum's value
+            WriteLine("private int val;");
+            WriteLine($"{e.Name}(int i) {{ val = i; }}");
+            WriteLine("public int getVal() { return val; }");
+            
+            WriteLine("}");
+        }
+        
         private void WriteEventDecl(PEvent e)
         {
             string eventName = _context.Names.GetNameForDecl(e);
@@ -122,8 +145,17 @@ namespace Plang.Compiler.Backend.Java {
             // FIXME: If e.PayloadType is PrimitiveType.Null, this produces an 
             // extraneous value.
             TypeManager.JType argType = _context.Types.JavaTypeFor(e.PayloadType);
+            switch (argType)
+            {
+                case TypeManager.JType.JVoid _:
+                    // Special-case an event with no payload: just emit an empty record.
+                    WriteLine($"record {eventName}() implements PObserveEvent.PEvent {{ }} ");
+                    break;
+                default:
+                    WriteLine($"record {eventName}({argType.TypeName} payload) implements PObserveEvent.PEvent {{ }} ");
+                    break;
+            }
             
-            WriteLine($"record {eventName}({argType.TypeName} payload) implements PObserveEvent.PEvent {{ }} ");
         }
 
         private void WriteMachineDecl(Machine m)
@@ -195,6 +227,7 @@ namespace Plang.Compiler.Backend.Java {
             
             foreach (var decl in f.LocalVariables)
             {
+                //TODO: for reference types the default value can simply be null; it will be reassigned later.
                 TypeManager.JType t = _context.Types.JavaTypeFor(decl.Type);
                 WriteLine($"{t.TypeName} {_context.Names.GetNameForDecl(decl)} = {t.DefaultValue};");
             }
@@ -220,7 +253,6 @@ namespace Plang.Compiler.Backend.Java {
                 Write("static ");
             }
             
-            TypeManager.JType retType = _context.Types.JavaTypeFor(f.Signature.ReturnType);
 
             string args;
             if (f.IsAnon)
@@ -235,6 +267,8 @@ namespace Plang.Compiler.Backend.Java {
                         $"{_context.Types.JavaTypeFor(v.Type).TypeName} {_context.Names.GetNameForDecl(v)}"));
             }
 
+            TypeManager.JType retType = _context.Types.JavaTypeFor(f.Signature.ReturnType);
+            
             Write($"{retType.TypeName} {fname}({args})");
 
             if (f.CanChangeState == true)
@@ -276,14 +310,24 @@ namespace Plang.Compiler.Backend.Java {
            
             switch (a)
             {
+                case EventDefer _:
+                    WriteLine($"// Ignoring deferred event {ename}");
+                    break;
                 case EventDoAction da:
+                {
                     string aname = _context.Names.GetNameForDecl(da.Target);
                     WriteLine($".withEvent({ename}.class, this::{aname})");
                     break;
+                }
                 case EventGotoState gs:
-                    goto default; // TODO
+                {
+                    string aname = _context.Names.GetNameForDecl(gs.Target);
+                    WriteLine($".withEvent({ename}.class, __ -> gotoState({aname}))");
+                    break;
+                }
                 case EventIgnore i:
-                    goto default; // TODO
+                    WriteLine($".withEvent({ename}.class, __ -> {{ ; }})");
+                    break;
                 default:
                     throw new NotImplementedException($"TODO: {a.GetType()} not implemented.");
             }
@@ -328,11 +372,11 @@ namespace Plang.Compiler.Backend.Java {
                     WriteLine("}");
                     break;
                
-                case ContinueStmt continueStmt:
+                case ContinueStmt _:
                     WriteLine("continue;");
                     break;
                     
-                case CtorStmt ctorStmt:
+                case CtorStmt _:
                     goto default;
                     
                 case FunCallStmt funCallStmt:
@@ -435,7 +479,7 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteAssignStatement(AssignStmt assignStmt)
         {
             IPExpr lval = assignStmt.Location;
-            TypeManager.JType t = _context.Types.JavaTypeFor(lval.Type);
+            TypeManager.JType t = _context.Types.JavaTypeForVarLocation(lval);
             
             IPExpr rval = assignStmt.Value;
             
@@ -524,11 +568,12 @@ namespace Plang.Compiler.Backend.Java {
                 case ChooseExpr ce:
                     goto default; //TODO
                 case CloneExpr ce:
-                    goto default; //TODO
+                    WriteClone(ce);
+                    break;
                 case CoerceExpr ce:
                     goto default; //TODO
                 case ContainsExpr ce:
-                    t = _context.Types.JavaTypeFor(ce.Type);
+                    t = _context.Types.JavaTypeFor(ce.Collection.Type);
                     // TODO: uh oh, do nested containers etc mean we actually need to do
                     // unchecked casting at every step??
                     WriteExpr(ce.Collection);
@@ -559,7 +604,21 @@ namespace Plang.Compiler.Backend.Java {
                     Write(TypeManager.JType.JInt.ToJavaLiteral(ie.Value));
                     break;
                 case KeysExpr ke:
-                    goto default; // TODO
+                    // Note: the C# runtime produces a `PrtSeq` so we do the same here.  It would save
+                    // an allocation if we knew for sure we could simply produce a Set<K>...
+                    t = _context.Types.JavaTypeFor(ke.Expr.Type);
+                    if (!(t is TypeManager.JType.JMap))
+                    {
+                        throw new Exception($"Got an unexpected {t.TypeName} rather than a Map");
+                    }
+                    TypeManager.JType.JMap mt = (TypeManager.JType.JMap)t;
+
+                    Write($"new {mt.KeyCollectionType}(");
+                    WriteExpr(ke.Expr);
+                    Write($".{mt.KeysMethodName}()");
+                    Write($")");
+                    break;
+                
                 case NamedTupleExpr ne:
                     goto default; // TODO
                     break;
@@ -573,15 +632,26 @@ namespace Plang.Compiler.Backend.Java {
                     goto default; // TODO
                     break;
                 case StringExpr se:
+                {
+                    string fmtLit = TypeManager.JType.JString.ToJavaLiteral(se.BaseString);
                     if (se.Args.Count == 0)
                     {
-                        Write(TypeManager.JType.JString.ToJavaLiteral(se.BaseString));
+                        Write(fmtLit);
                     }
                     else
                     {
-                        goto default; //TODO: Figure out exactly what TransformPrintMessage() in Rvmland is doing.
+                        Write($"MessageFormat.format({fmtLit}");
+                        foreach (var arg in se.Args)
+                        {
+                            Write(", ");
+                            WriteExpr(arg);
+                        }
+
+                        Write(")");
                     }
+
                     break;
+                }
                 case ThisRefExpr te:
                     goto default;
                     break;
@@ -676,21 +746,59 @@ namespace Plang.Compiler.Backend.Java {
             Write(")");
         }
 
+        private void WriteClone(CloneExpr ce)
+        {
+            TypeManager.JType t = _context.Types.JavaTypeFor(ce.Term.Type);
+            switch (t)
+            {
+                /* Primitive types are easy since they're copy by value. */
+                case TypeManager.JType.JVoid _:
+                case TypeManager.JType.JBool _:
+                case TypeManager.JType.JInt _:
+                case TypeManager.JType.JFloat _:
+                    WriteExpr(ce.Term);
+                    break;
+                    
+                /* Same with immutable types. */
+                case TypeManager.JType.JString _:
+                case TypeManager.JType.JMachine _:
+                    WriteExpr(ce.Term);
+                    break;
+                
+                default:
+                    throw new Exception($"{ce}.clone() not implemented yet");
+            }
+        }
+
         private void WriteStructureAccess(IPExpr e)
         {
-            TypeManager.JType t = _context.Types.JavaTypeFor(e.Type);
+            TypeManager.JType t = _context.Types.JavaTypeForVarLocation(e);
             
+            // We have to explicitly cast accesses to collections since we might be upcasting (say,
+            // if we're extracting an int out of a tuple (List<Object>).).  Use the reference
+            // type name to ensure we're casting to another Object (and let Java handle auto-unboxing
+            // if it can.)
+            switch (e)
+            {
+                case MapAccessExpr _:
+                case NamedTupleAccessExpr _:
+                case SeqAccessExpr _:
+                case TupleAccessExpr _:
+                    Write($"({_context.Types.JavaTypeFor(e.Type).ReferenceTypeName})");
+                    break;
+            }
+
             switch (e) {
                 case MapAccessExpr mapAccessExpr:
                     WriteExpr(mapAccessExpr.MapExpr);
                     Write($".{t.AccessorMethodName}(");
                     WriteExpr(mapAccessExpr.IndexExpr);
-                    WriteLine(");");
+                    Write(")");
                     break;
 
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     WriteExpr(namedTupleAccessExpr.SubExpr);
-                    WriteLine($".{t.AccessorMethodName}(\"{namedTupleAccessExpr.FieldName}\");");
+                    Write($".{t.AccessorMethodName}(\"{namedTupleAccessExpr.FieldName}\")");
                     break;
 
                 case SeqAccessExpr seqAccessExpr:
@@ -698,12 +806,12 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(seqAccessExpr.SeqExpr);
                     Write($".{t.AccessorMethodName}(");
                     WriteExpr(seqAccessExpr.IndexExpr);
-                    WriteLine(");");
+                    Write(")");
                     break;
 
                 case TupleAccessExpr tupleAccessExpr:
                     WriteExpr(tupleAccessExpr.SubExpr);
-                    WriteLine($".{t.AccessorMethodName}(\"{tupleAccessExpr.FieldNo.ToString()}\");");
+                    Write($".{t.AccessorMethodName}(\"{tupleAccessExpr.FieldNo.ToString()}\")");
                     break;
 
                 case VariableAccessExpr variableAccessExpr:

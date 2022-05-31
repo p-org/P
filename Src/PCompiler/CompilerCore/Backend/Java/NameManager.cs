@@ -44,7 +44,5 @@ namespace Plang.Compiler.Backend.Java
 
             return UniquifyName(name);
         }
-
-
     }
 }

@@ -346,15 +346,20 @@ namespace Plang.Compiler
                     outputLanguage = CompilerOutput.CSharp;
                     break;
 
+                case "java":
+                    outputLanguage = CompilerOutput.Java;
+                    break;
+                
                 case "rvm":
                     outputLanguage = CompilerOutput.Rvm;
                     break;
+                
                 case "symbolic":
                     outputLanguage = CompilerOutput.Symbolic;
                     break;
 
                 default:
-                    throw new CommandlineParsingError($"Expected C, CSharp or Symbolic as target, received {projectXml.Element("Target")?.Value}");
+                    throw new CommandlineParsingError($"Expected C, CSharp, Java, RVM, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
             }
         }
 

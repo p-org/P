@@ -319,10 +319,18 @@ namespace Plang.Compiler.Backend.Java {
                     WriteLine($".withEvent({ename}.class, this::{aname})");
                     break;
                 }
-                case EventGotoState gs:
+                case EventGotoState gs when gs.TransitionFunction == null:
                 {
                     string aname = _context.Names.GetNameForDecl(gs.Target);
                     WriteLine($".withEvent({ename}.class, __ -> gotoState({aname}))");
+                    break;
+                }
+                case EventGotoState gs when gs.TransitionFunction != null:
+                {
+                    // TODO: transition function args??
+                    string aname = _context.Names.GetNameForDecl(gs.Target);
+                    string tname = _context.Names.GetNameForDecl(gs.TransitionFunction);
+                    WriteLine($".withEvent({ename}.class, __ -> {{ {tname}(); gotoState({aname})) }}");
                     break;
                 }
                 case EventIgnore i:
@@ -764,9 +772,18 @@ namespace Plang.Compiler.Backend.Java {
                 case TypeManager.JType.JMachine _:
                     WriteExpr(ce.Term);
                     break;
+
+                /* Non-boxable reference types must be cloned explicitly. */
+                case TypeManager.JType.JMap _:
+                case TypeManager.JType.JList _:
+                case TypeManager.JType.JSet _:
+                    Write("Values.clone(");
+                    WriteExpr(ce.Term);
+                    Write(")");
+                    break;
                 
                 default:
-                    throw new Exception($"{ce}.clone() not implemented yet");
+                    throw new NotImplementedException(ce.ToString());
             }
         }
 

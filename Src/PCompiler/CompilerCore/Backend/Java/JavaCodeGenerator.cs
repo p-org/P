@@ -425,9 +425,10 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(insertStmt.Value);
                     WriteLine(");");
                     break;
-                    
+
                 case MoveAssignStmt moveAssignStmt:
-                    goto default;
+                    WriteMoveAssignStatement(moveAssignStmt);
+                    break;
                     
                 case NoStmt _:
                     break;
@@ -491,7 +492,7 @@ namespace Plang.Compiler.Backend.Java {
                     //throw new NotImplementedException(stmt.GetType().ToString());
             }
         }
-
+        
         private void WriteAssignStatement(AssignStmt assignStmt)
         {
             IPExpr lval = assignStmt.Location;
@@ -543,6 +544,22 @@ namespace Plang.Compiler.Backend.Java {
             }
         }
 
+        private void WriteMoveAssignStatement(MoveAssignStmt moveAssignStmt)
+        {
+            if (!moveAssignStmt.FromVariable.Type.IsSameTypeAs(moveAssignStmt.ToLocation.Type))
+            {
+                throw new NotImplementedException("Typecasting in MoveAssignStmt is not yet implemented.");
+            }
+            IPExpr lval = moveAssignStmt.ToLocation;
+            TypeManager.JType t = _context.Types.JavaTypeForVarLocation(lval);
+            
+            IPExpr rval = new VariableAccessExpr(moveAssignStmt.SourceLocation, moveAssignStmt.FromVariable);
+
+            AssignStmt assignStmt = new AssignStmt(moveAssignStmt.SourceLocation, lval, rval);
+            WriteLine("// MoveAssignStmt");
+            WriteAssignStatement(assignStmt);
+        }
+
         private void WriteFunctionCall(Function f, IEnumerable<IPExpr> args)
         {
             if (f.Owner == null)
@@ -592,8 +609,6 @@ namespace Plang.Compiler.Backend.Java {
                     goto default; //TODO
                 case ContainsExpr ce:
                     t = _context.Types.JavaTypeFor(ce.Collection.Type);
-                    // TODO: uh oh, do nested containers etc mean we actually need to do
-                    // unchecked casting at every step??
                     WriteExpr(ce.Collection);
                     Write($".{t.ContainsMethodName}()");
                     break;
@@ -606,7 +621,7 @@ namespace Plang.Compiler.Backend.Java {
                 case EnumElemRefExpr ee:
                     string typeName = ee.Value.ParentEnum.Name;
                     string valueName = ee.Value.Name;
-                    Write($"{typeName}.{valueName}");
+                    Write($"{typeName}.{valueName}.getVal()");
                     break;
                 case EventRefExpr _:
                     goto default; //TODO
@@ -851,6 +866,10 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteClone(CloneExpr ce)
         {
             TypeManager.JType t = _context.Types.JavaTypeFor(ce.Term.Type);
+            // Note: We elide calls to Clone for types that are either immutable
+            // or can unbox to copy-by-value types.  If there's an issue, comment
+            // out the first two writExpr; break; s and fall through to the non-boxable
+            // reference type case.
             switch (t)
             {
                 /* Primitive types are easy since they're copy by value. */
@@ -895,7 +914,7 @@ namespace Plang.Compiler.Backend.Java {
                 case NamedTupleAccessExpr _:
                 case SeqAccessExpr _:
                 case TupleAccessExpr _:
-                    Write($"({_context.Types.JavaTypeFor(e.Type).ReferenceTypeName})");
+                    Write($"({_context.Types.JavaTypeFor(e.Type).ReferenceTypeName})(");
                     break;
             }
 
@@ -927,8 +946,10 @@ namespace Plang.Compiler.Backend.Java {
 
                 case VariableAccessExpr variableAccessExpr:
                     Write(_context.Names.GetNameForDecl(variableAccessExpr.Variable));
-                    break;
+                    return; // Early return so we don't close the paren that we never opened!!
             }
+
+            Write(")");
         }
 
         private void WriteLine(string s = "")

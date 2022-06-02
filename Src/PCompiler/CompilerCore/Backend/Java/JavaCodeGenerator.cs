@@ -392,7 +392,14 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 
                 case GotoStmt gotoStmt:
-                    WriteLine($"gotoState({_context.Names.IdentForState(gotoStmt.State)});");
+                    WriteLine($"gotoState({_context.Names.IdentForState(gotoStmt.State)}");
+                    if (gotoStmt.Payload != null)
+                    {
+                        Write(", Optional.of(");
+                        WriteExpr(gotoStmt.Payload);
+                        Write(")");
+                    }
+                    WriteLine(");");
                     WriteLine("return;");
                     break;
                     
@@ -566,6 +573,7 @@ namespace Plang.Compiler.Backend.Java {
                     Write($"({TypeManager.JType.JBool.ToJavaLiteral(ble.Value)})");
                     break;
                 case CastExpr ce:
+                {
                     t = _context.Types.JavaTypeFor(ce.Type);
                     //TODO: I am 99% sure it's fine to never worry about casting to the boxed type.
                     Write($"(");
@@ -573,6 +581,7 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(ce.SubExpr);
                     Write($")");
                     break;
+                }
                 case ChooseExpr ce:
                     goto default; //TODO
                 case CloneExpr ce:
@@ -700,59 +709,150 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteBinOp(IPExpr left, BinOpType op, IPExpr right)
         {
-            Write("(");
+
+            // This emits a raw comparison operation between `left` and `right`.
+            void writeDirectComparisonExpr(string op)
+            {
+                Write("(");
+                WriteExpr(left);
+                Write($" {op} ");
+                WriteExpr(right);
+                Write(")");
+            }
+           
+            // This emits a call to the P runtime's `Values.compare()` static method,
+            // which returns a value on -1, 0, 1 in the usual Java manner.
+            void writeComparatorCall(string op)
+            {
+                Write("(");
+
+                Write("Values.compare(");
+                WriteExpr(left);
+                Write(", ");
+                WriteExpr(right);
+                Write(")");
+
+                Write($" {op} 0");
+                Write(")");
+            }
+
+            // This emits a call to the P runtime's `Values.equality()` static method,
+            // and compares the result with `op` against the value `true`.
+            void writeEqualitycall(string op)
+            {
+                Write("(");
+                
+                Write("Values.equal(");
+                WriteExpr(left);
+                Write(", ");
+                WriteExpr(right);
+                Write(")");
+               
+                Write($" {op} true");
+                Write(")");
+            }
+            
+            // Numeric operations are straightforward, since `left` and `right` will either be
+            // primitive types or boxed primitive types (in which case we let auto-unboxing do its thing)
             switch (op)
             {
                 // Arithmetic operators
                 case BinOpType.Add:
-                    WriteExpr(left); Write(" + "); WriteExpr(right);
-                    break;
+                    writeDirectComparisonExpr("+");
+                    return;
                 case BinOpType.Sub:
-                    WriteExpr(left); Write(" - "); WriteExpr(right);
-                    break;
+                    writeDirectComparisonExpr("-");
+                    return;
                 case BinOpType.Mul:
-                    WriteExpr(left); Write(" * "); WriteExpr(right);
-                    break;
+                    writeDirectComparisonExpr("*");
+                    return;
                 case BinOpType.Div:
-                    WriteExpr(left); Write(" / "); WriteExpr(right);
-                    break;
+                    writeDirectComparisonExpr("/");
+                    return;
                 case BinOpType.Mod:
-                    WriteExpr(left); Write(" % "); WriteExpr(right);
-                    break;
+                    writeDirectComparisonExpr("%");
+                    return;
+            }
+          
+            // Note: the following tries to be smart about using auto-unboxing when the left and right-hand
+            // sides of the operator can be coersed into a primitive type (and thus `==`, `<`, etc can be
+            // used without a method call.)  To disable this for debugging purposes, uncomment the following
+            // two lines and all comparisons will go through the Values interface.  Examples of the difference:
+            //
+            //    TMP_tmp22 = (Values.equal(TMP_tmp21, tTransStatus.ERROR) == true);
+            //    TMP_tmp22 = (TMP_tmp21 == tTransStatus.ERROR);
+            //
+            //    TMP_tmp26 = (Values.compare(TMP_tmp25, 0) > 0);
+            //    TMP_tmp26 = (TMP_tmp25 > 0);
+            //WriteComparisonBinOp(left, op, right, writeComparatorCall, writeEqualitycall);
+            //return;
+           
+            // Non-numeric binary operators are comparison operators.  Depending on the
+            // type we may be able to use straightforward comparison like "<", but in
+            // other cases we will have to fall back on comparators.
+            
+            TypeManager.JType lhsType = _context.Types.JavaTypeFor(left.Type);
+            TypeManager.JType rhsType = _context.Types.JavaTypeFor(right.Type);
+            switch (lhsType, rhsType)
+            {
+                // Types for which we can use direct operators like "<", "==",
+                // emitted via `writeDirectComparisonExpr`.
+                case (TypeManager.JType.JBool _, TypeManager.JType.JBool _):
+                case (TypeManager.JType.JInt _, TypeManager.JType.JInt _):
+                case (TypeManager.JType.JFloat _, TypeManager.JType.JFloat _):
+                case (TypeManager.JType.JMachine _, TypeManager.JType.JMachine _):
+                    WriteComparisonBinOp(left, op, right, writeDirectComparisonExpr, writeDirectComparisonExpr);
+                    return;
                 
+                // Types for which we need non-Java operators (i.e. "Values.equals()", "Values.Compare()", ...)
+                // which are emitted via the `writeComparatorCall` delegate.
+                default:
+                    WriteComparisonBinOp(left, op, right, writeComparatorCall, writeEqualitycall);
+                    return;
+            }
+        }
+
+        /*
+         * compareIt is a delegate that takes an ordering operator and emits a comparison check.
+         * equalIt is a delegate that takes an ordering operator and emits an equality check.
+         */
+        private void WriteComparisonBinOp(IPExpr left, BinOpType op, IPExpr right, Action<string> compareIt, Action<string> equalIt)
+        {
+            switch (op)
+            {
                 // Comparison operators
-                // TODO: Do we need to worry about comparisons between data structures
-                // (i.e. for lexiographic equality)?  If so we will need to use Objects.compare()
-                // with the correct Comparator object.
                 case BinOpType.Lt:
-                    WriteExpr(left); Write(" < "); WriteExpr(right);
+                    compareIt("<");
                     break;
                 case BinOpType.Le:
-                    WriteExpr(left); Write(" <= "); WriteExpr(right);
+                    compareIt("<=");
                     break;
                 case BinOpType.Ge:
-                    WriteExpr(left); Write(" >= "); WriteExpr(right);
+                    compareIt(">=");
                     break;
                 case BinOpType.Gt:
-                    WriteExpr(left); Write(" > "); WriteExpr(right);
+                    compareIt(">");
                     break;
 
-                // Equality operators (Note: Objects.equals() auto-boxes primitive types for us.)
+                // Equality operators 
                 case BinOpType.Neq:
-                    Write("!");
-                    goto case BinOpType.Eq;
-                case BinOpType.Eq:
-                    Write("Objects.equals(");
-                    WriteExpr(left);
-                    Write(", ");
-                    WriteExpr(right);
-                    Write(")");
+                    equalIt("!=");
                     break;
+                case BinOpType.Eq:
+                    equalIt("==");
+                    break;
+                
+                // Arithmetic operators
+                case BinOpType.Add:
+                case BinOpType.Sub:
+                case BinOpType.Mul:
+                case BinOpType.Div:
+                case BinOpType.Mod:
                 default:
                     throw new NotImplementedException(op.ToString());
             }
-            Write(")");
         }
+
 
         private void WriteClone(CloneExpr ce)
         {

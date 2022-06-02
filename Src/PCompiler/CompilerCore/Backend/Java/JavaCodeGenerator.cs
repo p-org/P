@@ -3,7 +3,6 @@ using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks.Dataflow;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -96,11 +95,13 @@ namespace Plang.Compiler.Backend.Java {
                             case EventDoAction da:
                                 ret.Add(da.Target, e);
                                 break;
-                            case EventGotoState gs when gs.TransitionFunction != null:
+                            case EventGotoState { TransitionFunction: { } } gs:
                                 ret.Add(gs.TransitionFunction, e);
                                 break;
                             case EventDefer _:
-                            case EventIgnore i:
+                                goto default;
+                            case EventIgnore _:
+                                goto default;
                             default:
                                 break;
                         }
@@ -319,13 +320,13 @@ namespace Plang.Compiler.Backend.Java {
                     WriteLine($".withEvent({ename}.class, this::{aname})");
                     break;
                 }
-                case EventGotoState gs when gs.TransitionFunction == null:
+                case EventGotoState { TransitionFunction: null } gs:
                 {
                     string aname = _context.Names.GetNameForDecl(gs.Target);
                     WriteLine($".withEvent({ename}.class, __ -> gotoState({aname}))");
                     break;
                 }
-                case EventGotoState gs when gs.TransitionFunction != null:
+                case EventGotoState { TransitionFunction: { } } gs:
                 {
                     // TODO: transition function args??
                     string aname = _context.Names.GetNameForDecl(gs.Target);
@@ -333,7 +334,7 @@ namespace Plang.Compiler.Backend.Java {
                     WriteLine($".withEvent({ename}.class, __ -> {{ {tname}(); gotoState({aname})) }}");
                     break;
                 }
-                case EventIgnore i:
+                case EventIgnore _:
                     WriteLine($".withEvent({ename}.class, __ -> {{ ; }})");
                     break;
                 default:
@@ -437,10 +438,10 @@ namespace Plang.Compiler.Backend.Java {
                     WriteLine(");");
                     break;
                 
-                case RaiseStmt raiseStmt:
+                case RaiseStmt _:
                     goto default; // TODO
                     
-                case ReceiveStmt receiveStmt:
+                case ReceiveStmt _:
                     goto default; 
                     
                 case RemoveStmt removeStmt:
@@ -460,7 +461,7 @@ namespace Plang.Compiler.Backend.Java {
                     WriteLine(";");
                     break;
                     
-                case SendStmt sendStmt:
+                case SendStmt _:
                     goto default;
 
                 case ForeachStmt foreachStmt:
@@ -481,7 +482,7 @@ namespace Plang.Compiler.Backend.Java {
                     WriteStmt(whileStmt.Body);
                     break;
                 
-                case AnnounceStmt announceStmt:
+                case AnnounceStmt _:
                     goto default;
                     
                 default:
@@ -582,12 +583,12 @@ namespace Plang.Compiler.Backend.Java {
                     Write($")");
                     break;
                 }
-                case ChooseExpr ce:
+                case ChooseExpr _:
                     goto default; //TODO
                 case CloneExpr ce:
                     WriteClone(ce);
                     break;
-                case CoerceExpr ce:
+                case CoerceExpr _:
                     goto default; //TODO
                 case ContainsExpr ce:
                     t = _context.Types.JavaTypeFor(ce.Collection.Type);
@@ -596,7 +597,7 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(ce.Collection);
                     Write($".{t.ContainsMethodName}()");
                     break;
-                case CtorExpr ce:
+                case CtorExpr _:
                     goto default;
                 case DefaultExpr de:
                     t = _context.Types.JavaTypeFor(de.Type);
@@ -607,9 +608,9 @@ namespace Plang.Compiler.Backend.Java {
                     string valueName = ee.Value.Name;
                     Write($"{typeName}.{valueName}");
                     break;
-                case EventRefExpr ee:
+                case EventRefExpr _:
                     goto default; //TODO
-                case FairNondetExpr fe:
+                case FairNondetExpr _:
                     goto default;
                 case FloatLiteralExpr fe:
                     Write(TypeManager.JType.JFloat.ToJavaLiteral(fe.Value));
@@ -624,11 +625,10 @@ namespace Plang.Compiler.Backend.Java {
                     // Note: the C# runtime produces a `PrtSeq` so we do the same here.  It would save
                     // an allocation if we knew for sure we could simply produce a Set<K>...
                     t = _context.Types.JavaTypeFor(ke.Expr.Type);
-                    if (!(t is TypeManager.JType.JMap))
+                    if (!(t is TypeManager.JType.JMap mt))
                     {
                         throw new Exception($"Got an unexpected {t.TypeName} rather than a Map");
                     }
-                    TypeManager.JType.JMap mt = (TypeManager.JType.JMap)t;
 
                     Write($"new {mt.KeyCollectionType}(");
                     WriteExpr(ke.Expr);
@@ -636,18 +636,15 @@ namespace Plang.Compiler.Backend.Java {
                     Write($")");
                     break;
                 
-                case NamedTupleExpr ne:
+                case NamedTupleExpr _:
                     goto default; // TODO
-                    break;
-                case NondetExpr ne:
+                case NondetExpr _:
                     goto default; // TODO
-                    break;
-                case NullLiteralExpr ne:
+                case NullLiteralExpr _:
                     Write("null");
                     break;
-                case SizeofExpr se:
+                case SizeofExpr _:
                     goto default; // TODO
-                    break;
                 case StringExpr se:
                 {
                     string fmtLit = TypeManager.JType.JString.ToJavaLiteral(se.BaseString);
@@ -669,9 +666,8 @@ namespace Plang.Compiler.Backend.Java {
 
                     break;
                 }
-                case ThisRefExpr te:
+                case ThisRefExpr _:
                     goto default;
-                    break;
                 case UnaryOpExpr ue:
                     switch (ue.Operation)
                     {
@@ -687,12 +683,10 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(ue.SubExpr);
                     Write(")");
                     break;
-                case UnnamedTupleExpr ue:
+                case UnnamedTupleExpr _:
                     goto default; // TODO
-                    break;
-                case ValuesExpr ve:
+                case ValuesExpr _:
                     goto default; // TODO
-                    break;
                 
                 case MapAccessExpr _:
                 case NamedTupleAccessExpr _:
@@ -711,7 +705,7 @@ namespace Plang.Compiler.Backend.Java {
         {
 
             // This emits a raw comparison operation between `left` and `right`.
-            void writeDirectComparisonExpr(string op)
+            void WriteDirectComparisonExpr(string op)
             {
                 Write("(");
                 WriteExpr(left);
@@ -722,7 +716,7 @@ namespace Plang.Compiler.Backend.Java {
            
             // This emits a call to the P runtime's `Values.compare()` static method,
             // which returns a value on -1, 0, 1 in the usual Java manner.
-            void writeComparatorCall(string op)
+            void WriteComparatorCall(string op)
             {
                 Write("(");
 
@@ -738,7 +732,7 @@ namespace Plang.Compiler.Backend.Java {
 
             // This emits a call to the P runtime's `Values.equality()` static method,
             // and compares the result with `op` against the value `true`.
-            void writeEqualitycall(string op)
+            void WriteEqualitycall(string op)
             {
                 Write("(");
                 
@@ -758,19 +752,19 @@ namespace Plang.Compiler.Backend.Java {
             {
                 // Arithmetic operators
                 case BinOpType.Add:
-                    writeDirectComparisonExpr("+");
+                    WriteDirectComparisonExpr("+");
                     return;
                 case BinOpType.Sub:
-                    writeDirectComparisonExpr("-");
+                    WriteDirectComparisonExpr("-");
                     return;
                 case BinOpType.Mul:
-                    writeDirectComparisonExpr("*");
+                    WriteDirectComparisonExpr("*");
                     return;
                 case BinOpType.Div:
-                    writeDirectComparisonExpr("/");
+                    WriteDirectComparisonExpr("/");
                     return;
                 case BinOpType.Mod:
-                    writeDirectComparisonExpr("%");
+                    WriteDirectComparisonExpr("%");
                     return;
             }
           
@@ -801,13 +795,13 @@ namespace Plang.Compiler.Backend.Java {
                 case (TypeManager.JType.JInt _, TypeManager.JType.JInt _):
                 case (TypeManager.JType.JFloat _, TypeManager.JType.JFloat _):
                 case (TypeManager.JType.JMachine _, TypeManager.JType.JMachine _):
-                    WriteComparisonBinOp(left, op, right, writeDirectComparisonExpr, writeDirectComparisonExpr);
+                    WriteComparisonBinOp(op, WriteDirectComparisonExpr, WriteDirectComparisonExpr);
                     return;
                 
                 // Types for which we need non-Java operators (i.e. "Values.equals()", "Values.Compare()", ...)
                 // which are emitted via the `writeComparatorCall` delegate.
                 default:
-                    WriteComparisonBinOp(left, op, right, writeComparatorCall, writeEqualitycall);
+                    WriteComparisonBinOp(op, WriteComparatorCall, WriteEqualitycall);
                     return;
             }
         }
@@ -816,7 +810,7 @@ namespace Plang.Compiler.Backend.Java {
          * compareIt is a delegate that takes an ordering operator and emits a comparison check.
          * equalIt is a delegate that takes an ordering operator and emits an equality check.
          */
-        private void WriteComparisonBinOp(IPExpr left, BinOpType op, IPExpr right, Action<string> compareIt, Action<string> equalIt)
+        private void WriteComparisonBinOp(BinOpType op, Action<string> compareIt, Action<string> equalIt)
         {
             switch (op)
             {

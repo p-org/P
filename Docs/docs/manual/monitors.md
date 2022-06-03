@@ -82,5 +82,5 @@ spec GuaranteedProgress observes eRequest, eResponse {
 
 The above specification checks the global liveness property that every event `eRequest` is eventually followed by a corresponding successful `eResponse` event. The key idea is that the system satisfies a liveness specification if at the end of the execution the monitor is not in a **hot** state (line 13). The programmers can use `hot` annotation on states to mark them as intermediate or error states. Hence, properties like `eventually something holds` or `every event X is eventually followed by Y` or `eventually the system enters a convergence state`, all such properties can be specified by marking the intermediate state as `hot` states and the checker checks that all the executions of the system eventually end in a non-hot state. If there exists an execution that fails to come out of a hot state eventually then it is flagged as a potential liveness violation.
 
-Details about the importance of liveness specifications is described [here](../advanced/importanceliveness.md). For several examples of liveness properties, please check the specifications in the turorial examples.
+Details about the importance of liveness specifications is described [here](../advanced/importanceliveness.md). For several examples of liveness properties, please check the specifications in the tutorial examples.
 

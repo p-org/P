@@ -148,7 +148,7 @@ namespace Plang.Compiler.Backend.Java
                     $"HashMap<{_k.ReferenceTypeName},{_v.ReferenceTypeName}>";
                 internal override string AccessorMethodName => "get";
                 internal override string ContainsMethodName => "containsKey";
-                internal override string MutatorMethodName => "set";
+                internal override string MutatorMethodName => "put";
                 internal override string RemoveMethodName => "remove";
 
                 /// <summary>

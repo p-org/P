@@ -322,16 +322,16 @@ namespace Plang.Compiler.Backend.Java {
                 }
                 case EventGotoState { TransitionFunction: null } gs:
                 {
-                    string aname = _context.Names.GetNameForDecl(gs.Target);
-                    WriteLine($".withEvent({ename}.class, __ -> gotoState({aname}))");
+                    string sname = _context.Names.IdentForState(gs.Target);
+                    WriteLine($".withEvent({ename}.class, __ -> gotoState({sname}))");
                     break;
                 }
                 case EventGotoState { TransitionFunction: { } } gs:
                 {
                     // TODO: transition function args??
-                    string aname = _context.Names.GetNameForDecl(gs.Target);
+                    string sname = _context.Names.IdentForState(gs.Target);
                     string tname = _context.Names.GetNameForDecl(gs.TransitionFunction);
-                    WriteLine($".withEvent({ename}.class, __ -> {{ {tname}(); gotoState({aname})) }}");
+                    WriteLine($".withEvent({ename}.class, e -> {{ {tname}(e); gotoState({sname}); }})");
                     break;
                 }
                 case EventIgnore _:
@@ -393,7 +393,7 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 
                 case GotoStmt gotoStmt:
-                    WriteLine($"gotoState({_context.Names.IdentForState(gotoStmt.State)}");
+                    Write($"gotoState({_context.Names.IdentForState(gotoStmt.State)}");
                     if (gotoStmt.Payload != null)
                     {
                         Write(", Optional.of(");
@@ -610,7 +610,9 @@ namespace Plang.Compiler.Backend.Java {
                 case ContainsExpr ce:
                     t = _context.Types.JavaTypeFor(ce.Collection.Type);
                     WriteExpr(ce.Collection);
-                    Write($".{t.ContainsMethodName}()");
+                    Write($".{t.ContainsMethodName}(");
+                    WriteExpr(ce.Item);
+                    Write(")");
                     break;
                 case CtorExpr _:
                     goto default;
@@ -914,7 +916,7 @@ namespace Plang.Compiler.Backend.Java {
                 case NamedTupleAccessExpr _:
                 case SeqAccessExpr _:
                 case TupleAccessExpr _:
-                    Write($"({_context.Types.JavaTypeFor(e.Type).ReferenceTypeName})(");
+                    Write($"(({_context.Types.JavaTypeFor(e.Type).ReferenceTypeName})");
                     break;
             }
 

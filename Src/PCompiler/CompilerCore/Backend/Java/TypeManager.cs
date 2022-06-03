@@ -246,6 +246,12 @@ namespace Plang.Compiler.Backend.Java
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     return new JType.JNamedTuple();
 
+                case SetAccessExpr setAccessExpr:
+                {
+                    JType t = JavaTypeFor(setAccessExpr.SetExpr.Type);
+                    return new JType.JSet(t);
+                }
+                
                 case SeqAccessExpr seqAccessExpr:
                 {
                     JType t = JavaTypeFor(seqAccessExpr.SeqExpr.Type);

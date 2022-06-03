@@ -725,6 +725,7 @@ namespace Plang.Compiler.Backend.Java {
 
                 case MapAccessExpr _:
                 case NamedTupleAccessExpr _:
+                case SetAccessExpr _:
                 case SeqAccessExpr _:
                 case TupleAccessExpr _:
                 case VariableAccessExpr _:
@@ -732,7 +733,7 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 
                 default:
-                    throw new NotImplementedException(expr.GetType().ToString());
+                    throw new NotImplementedException(expr.ToString());
             }
         }
 
@@ -937,6 +938,7 @@ namespace Plang.Compiler.Backend.Java {
             {
                 case MapAccessExpr _:
                 case NamedTupleAccessExpr _:
+                case SetAccessExpr _:
                 case SeqAccessExpr _:
                 case TupleAccessExpr _:
                     Write($"(({_context.Types.JavaTypeFor(e.Type).ReferenceTypeName})");
@@ -956,6 +958,13 @@ namespace Plang.Compiler.Backend.Java {
                     Write($".{t.AccessorMethodName}(\"{namedTupleAccessExpr.FieldName}\")");
                     break;
 
+                case SetAccessExpr setAccessExpr:
+                    WriteExpr(setAccessExpr.SetExpr);
+                    Write($".{t.AccessorMethodName}(");
+                    WriteExpr(setAccessExpr.IndexExpr);
+                    Write(")");
+                    break;
+                    
                 case SeqAccessExpr seqAccessExpr:
                     // TODO: do we need to think about handling out of bounds exceptions?
                     WriteExpr(seqAccessExpr.SeqExpr);

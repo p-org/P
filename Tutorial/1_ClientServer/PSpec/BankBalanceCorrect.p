@@ -66,7 +66,7 @@ spec BankBalanceIsAlwaysCorrect observes eWithDrawReq,  eWithDrawResp, eSpec_Ban
       {
         assert resp.balance == bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount,
           format ("Bank balance for the account {0} is {1} and not the expected value {2}, Bank is lying!",
-            resp.accountId, resp.balance, bankBalance[resp.accountId]);
+            resp.accountId, resp.balance, bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount);
         // update the new account balance
         bankBalance[resp.accountId] = resp.balance;
       }

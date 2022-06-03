@@ -20,10 +20,8 @@ namespace Plang.Compiler.Backend.Java
             {
                 case PEvent { IsNullEvent: true }:
                     return "DefaultEvent";
-                    break;
                 case PEvent { IsHaltEvent: true }:
                     return "PHalt";
-                    break;
                 case Interface i:
                     name = "I_" + i.Name;
                     break;

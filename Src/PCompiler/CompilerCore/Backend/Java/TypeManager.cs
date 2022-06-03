@@ -159,12 +159,12 @@ namespace Plang.Compiler.Backend.Java
                 /// <summary>
                 /// The type of a collection containing the keys of this Map.
                 /// </summary>
-                internal string KeyCollectionType => $"List<{_k}>";
+                internal string KeyCollectionType => $"ArrayList<{_k.ReferenceTypeName}>";
                 
                 /// <summary>
                 /// The type of a collection containing the keys of this Map.
                 /// </summary>
-                internal string ValueCollectionType => $"List<{_v}>";
+                internal string ValueCollectionType => $"ArrayList<{_v.ReferenceTypeName}>";
             }
             
             internal class JSet : JType

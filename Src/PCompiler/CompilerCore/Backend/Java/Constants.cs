@@ -33,11 +33,11 @@ namespace Plang.Compiler.Backend.Java
                 .Select(pkg => $"import {pkg};");
         }
 
-        /// <summary>
-        /// The name for the top-level Java class, that will contain all implementation / monitor
-        /// nested classes.
-        /// </summary>
-        internal static string TopLevelClassName = "PImplementation";
 
+        internal static string DoNotEditWarning => $@"
+/***************************************************************************
+ * This file was auto-generated on {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}.  
+ * Please do not edit manually!
+ **************************************************************************/";
     }
 }

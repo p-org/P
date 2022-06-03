@@ -45,6 +45,9 @@ namespace Plang.Compiler.Backend.Java {
 
             WriteImports();
             WriteLine();
+            
+            WriteLine(Constants.DoNotEditWarning);
+            WriteLine();
 
             foreach (var e in _globalScope.Enums)
             {
@@ -52,7 +55,7 @@ namespace Plang.Compiler.Backend.Java {
             }
             WriteLine();
             
-            WriteLine($"static class {Constants.TopLevelClassName} {{");
+            WriteLine($"public class {_context.FileName.Replace(".java", "")} {{");
 
             foreach (var e in _globalScope.Events)
             {
@@ -74,7 +77,7 @@ namespace Plang.Compiler.Backend.Java {
                 }
             }
             
-            WriteLine($"}} // {Constants.TopLevelClassName} class definition");
+            WriteLine($"}} // {_context.FileName} class definition");
             
             return new List<CompiledFile> { _source };
         }
@@ -357,7 +360,7 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 
                 case AssertStmt assertStmt:
-                    Write("TryAssert(");
+                    Write("tryAssert(");
                     WriteExpr(assertStmt.Assertion);
                     Write(", ");
                     WriteExpr(assertStmt.Message);
@@ -551,12 +554,9 @@ namespace Plang.Compiler.Backend.Java {
                 throw new NotImplementedException("Typecasting in MoveAssignStmt is not yet implemented.");
             }
             IPExpr lval = moveAssignStmt.ToLocation;
-            TypeManager.JType t = _context.Types.JavaTypeForVarLocation(lval);
-            
             IPExpr rval = new VariableAccessExpr(moveAssignStmt.SourceLocation, moveAssignStmt.FromVariable);
 
             AssignStmt assignStmt = new AssignStmt(moveAssignStmt.SourceLocation, lval, rval);
-            WriteLine("// MoveAssignStmt");
             WriteAssignStatement(assignStmt);
         }
 
@@ -639,20 +639,22 @@ namespace Plang.Compiler.Backend.Java {
                     Write(TypeManager.JType.JInt.ToJavaLiteral(ie.Value));
                     break;
                 case KeysExpr ke:
-                    // Note: the C# runtime produces a `PrtSeq` so we do the same here.  It would save
-                    // an allocation if we knew for sure we could simply produce a Set<K>...
+                {
                     t = _context.Types.JavaTypeFor(ke.Expr.Type);
                     if (!(t is TypeManager.JType.JMap mt))
                     {
                         throw new Exception($"Got an unexpected {t.TypeName} rather than a Map");
                     }
 
+                    // Note: P key sets are in fact sequences, so get the j.l.Set() and then
+                    // construct a new List from that collection.
                     Write($"new {mt.KeyCollectionType}(");
                     WriteExpr(ke.Expr);
                     Write($".{mt.KeysMethodName}()");
-                    Write($")");
+                    Write(")");
                     break;
-                
+                }
+
                 case NamedTupleExpr _:
                     goto default; // TODO
                 case NondetExpr _:
@@ -660,8 +662,10 @@ namespace Plang.Compiler.Backend.Java {
                 case NullLiteralExpr _:
                     Write("null");
                     break;
-                case SizeofExpr _:
-                    goto default; // TODO
+                case SizeofExpr se:
+                    WriteExpr(se.Expr);
+                    Write(".size()");
+                    break;
                 case StringExpr se:
                 {
                     string fmtLit = TypeManager.JType.JString.ToJavaLiteral(se.BaseString);
@@ -702,9 +706,23 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 case UnnamedTupleExpr _:
                     goto default; // TODO
-                case ValuesExpr _:
-                    goto default; // TODO
-                
+                case ValuesExpr ve:
+                {
+                    t = _context.Types.JavaTypeFor(ve.Expr.Type);
+                    if (!(t is TypeManager.JType.JMap mt))
+                    {
+                        throw new Exception($"Got an unexpected {t.TypeName} rather than a Map");
+                    }
+
+                    // Note: P key sets are in fact sequences, so get the j.l.Set() and then
+                    // construct a new List from that collection.
+                    Write($"new {mt.ValueCollectionType}(");
+                    WriteExpr(ve.Expr);
+                    Write($".{mt.KeysMethodName}()");
+                    Write(")");
+                    break;
+                }
+
                 case MapAccessExpr _:
                 case NamedTupleAccessExpr _:
                 case SeqAccessExpr _:
@@ -868,6 +886,7 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteClone(CloneExpr ce)
         {
             TypeManager.JType t = _context.Types.JavaTypeFor(ce.Term.Type);
+            
             // Note: We elide calls to Clone for types that are either immutable
             // or can unbox to copy-by-value types.  If there's an issue, comment
             // out the first two writExpr; break; s and fall through to the non-boxable
@@ -888,17 +907,21 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(ce.Term);
                     break;
 
-                /* Non-boxable reference types must be cloned explicitly. */
+                /* Non-boxable reference types must be cloned explicitly and then
+                 * cast to their expected type (since clone() is Object-producing). */
                 case TypeManager.JType.JMap _:
                 case TypeManager.JType.JList _:
                 case TypeManager.JType.JSet _:
+                case TypeManager.JType.JTuple _:
+                case TypeManager.JType.JNamedTuple _:
+                    Write($"({t.TypeName})");
                     Write("Values.clone(");
                     WriteExpr(ce.Term);
                     Write(")");
                     break;
                 
                 default:
-                    throw new NotImplementedException(ce.ToString());
+                    throw new NotImplementedException(t.TypeName);
             }
         }
 

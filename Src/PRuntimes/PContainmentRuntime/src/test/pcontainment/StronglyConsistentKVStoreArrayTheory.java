@@ -1,14 +1,15 @@
 package pcontainment;
 
-import com.microsoft.z3.BoolExpr;
-import com.microsoft.z3.Expr;
-import com.microsoft.z3.IntExpr;
+import com.microsoft.z3.*;
 import org.junit.jupiter.api.Test;
 import p.runtime.values.PInt;
 import pcontainment.runtime.Event;
 import pcontainment.runtime.Message;
 import pcontainment.runtime.Payloads;
-import pcontainment.runtime.machine.*;
+import pcontainment.runtime.machine.Locals;
+import pcontainment.runtime.machine.Machine;
+import pcontainment.runtime.machine.State;
+import pcontainment.runtime.machine.SymbolicMachineIdentifier;
 import pcontainment.runtime.machine.eventhandlers.EventHandler;
 import pcontainment.runtime.machine.eventhandlers.EventHandlerReturnReason;
 
@@ -16,7 +17,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
-public class StronglyConsistentKVStore {
+public class StronglyConsistentKVStoreArrayTheory {
 
     static Event eReadRequest = new Event("eReadRequest");
     static Event eReadResponse = new Event("eReadResponse");
@@ -41,6 +42,8 @@ public class StronglyConsistentKVStore {
             target.setStarted(true);
             BoolExpr body = c.mkBool(true);
             Map<BoolExpr, Triple<Integer, Locals, EventHandlerReturnReason>> retMap = new HashMap<>();
+            c.declLocal("kvStore", c.mkMap("kvStore"));
+            c.declLocal("keys", c.mkSeq());
             retMap.put(body, new Triple<>(numSends, locals, new EventHandlerReturnReason.NormalReturn()));
             return retMap;
         }
@@ -57,10 +60,11 @@ public class StronglyConsistentKVStore {
             Map<BoolExpr, Triple<Integer, Locals, EventHandlerReturnReason>> retMap = new HashMap<>();
             // success
             int successSends = sends;
-            c.declLocal("kvStore_key=" + payloads.get("key"), c.mkInt(-1));
-            c.declLocal("kvStore_key=" + payloads.get("key") + "_exists", c.mkBool(false));
-            Locals updatedLocals = locals.immutablePut("kvStore_key=" + payloads.get("key"), (Expr<?>) payloads.get("val"));
-            updatedLocals = updatedLocals.immutablePut("kvStore_key=" + payloads.get("key") + "_exists", c.mkBool(true));
+            Locals updatedLocals = locals.immutablePut("kvStore",
+                    c.mkAdd((ArrayExpr<IntSort, IntSort>) locals.get("kvStore"),
+                    (IntExpr) payloads.get("key"), (IntExpr) payloads.get("val")));
+            updatedLocals = updatedLocals.immutablePut("keys",
+                    c.mkAdd((SeqExpr<IntSort>) locals.get("keys"), (IntExpr) payloads.get("key")));
             Message success = new Message(eWriteResponse,
                             new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
                             new Payloads("status", c.mkInt(SUCCESS)));
@@ -76,7 +80,7 @@ public class StronglyConsistentKVStore {
             Message timeout = new Message(eWriteResponse,
                     new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
                     new Payloads("status", c.mkInt(TIMEOUT)));
-            //retMap.put(c.send(timeoutSends++, timeout), new Triple<>(timeoutSends, locals, new EventHandlerReturnReason.NormalReturn()));
+            retMap.put(c.send(timeoutSends++, timeout), new Triple<>(timeoutSends, locals, new EventHandlerReturnReason.NormalReturn()));
             return retMap;
         }
     }
@@ -90,29 +94,20 @@ public class StronglyConsistentKVStore {
                                                                                             Payloads payloads) {
             Checker c = target.getChecker();
             Map<BoolExpr, Triple<Integer, Locals, EventHandlerReturnReason>> retMap = new HashMap<>();
-            String localNameForKey = "kvStore_key=" + payloads.get("key");
-            String localNameForKeyExists = "kvStore_key=" + payloads.get("key") + "_exists";
+            IntExpr key = (IntExpr) payloads.get("key");
             List<BoolExpr> branches = new ArrayList<>();
             // timeout
             branches.add(c.send(sends, new Message(eReadResponse,
                                 new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
                                 new Payloads("val", c.mkInt(0), "status", c.mkInt(TIMEOUT)))));
-            if (locals.containsKey(localNameForKey)) {
-                Expr<?> readVal = locals.get(localNameForKey);
-                System.out.println("locals get local name for key: " + readVal);
-                BoolExpr keyExists = (BoolExpr) locals.get(localNameForKeyExists);
-                branches.add(c.mkAnd(keyExists, c.send(sends, new Message(eReadResponse,
+            // not timeout
+            BoolExpr containsKey = c.mkContains((SeqExpr<IntSort>) locals.get("keys"), key);
+            branches.add(c.mkAnd(containsKey, c.send(sends, new Message(eReadResponse,
                                      new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
-                                     new Payloads("val", readVal, "status", c.mkInt(SUCCESS))))));
-                branches.add(c.mkAnd(c.mkNot(keyExists), c.send(sends, new Message(eReadResponse,
+                                     new Payloads("val", c.mkGet(((ArrayExpr<IntSort, IntSort>) locals.get("kvStore")), key), "status", c.mkInt(SUCCESS))))));
+            branches.add(c.mkAnd(c.mkNot(containsKey), c.send(sends, new Message(eReadResponse,
                         new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
                         new Payloads("val", c.mkInt(0), "status", c.mkInt(FAILURE))))));
-            }
-            if (!locals.containsKey(localNameForKey)) {
-                branches.add(c.send(sends, new Message(eReadResponse,
-                                    new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
-                                    new Payloads("val", c.mkInt(0), "status", c.mkInt(FAILURE)))));
-            }
             sends++;
             retMap.put(c.mkBool(true), new Triple<>(sends, locals,
                     new EventHandlerReturnReason.NormalReturn()));

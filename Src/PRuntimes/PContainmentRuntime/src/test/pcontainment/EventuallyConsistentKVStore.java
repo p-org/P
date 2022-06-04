@@ -1,8 +1,6 @@
 package pcontainment;
 
-import com.microsoft.z3.BoolExpr;
-import com.microsoft.z3.Expr;
-import com.microsoft.z3.IntExpr;
+import com.microsoft.z3.*;
 import org.junit.jupiter.api.Test;
 import p.runtime.values.PInt;
 import pcontainment.runtime.Event;
@@ -43,6 +41,11 @@ public class EventuallyConsistentKVStore {
             int numSends = sends;
             target.setStarted(true);
             BoolExpr body = c.mkBool(true);
+            c.declLocal("kvStore", c.mkMap("kvStore"));
+            c.declLocal("keys", c.mkSeq());
+            c.declLocal("pending_keys", c.mkSeq());
+            c.declLocal("pending_vals", c.mkSeq());
+            c.declLocal("pending_length", c.mkInt(0));
             Map<BoolExpr, Triple<Integer, Locals, EventHandlerReturnReason>> retMap = new HashMap<>();
             retMap.put(body, new Triple<>(numSends, locals, new EventHandlerReturnReason.NormalReturn()));
             return retMap;
@@ -60,10 +63,13 @@ public class EventuallyConsistentKVStore {
             Map<BoolExpr, Triple<Integer, Locals, EventHandlerReturnReason>> retMap = new HashMap<>();
             // success
             int successSends = sends;
-            c.declLocal("kvStore_key=" + payloads.get("key"), c.mkInt(-1));
-            c.declLocal("kvStore_key=" + payloads.get("key") + "_exists", c.mkBool(false));
-            Locals updatedLocals = locals.immutablePut("kvStore_key=" + payloads.get("key"), (Expr<?>) payloads.get("val"));
-            updatedLocals = updatedLocals.immutablePut("kvStore_key=" + payloads.get("key") + "_exists", c.mkBool(true));
+            // add to pending
+            Locals updatedLocals = locals.immutablePut("pending_keys",
+                    c.mkAdd((SeqExpr<IntSort>) locals.get("pending_keys"), (IntExpr) payloads.get("key")));
+            updatedLocals  = updatedLocals.immutablePut("pending_vals",
+                    c.mkAdd((SeqExpr<IntSort>) locals.get("pending_vals"), (IntExpr) payloads.get("val")));
+            updatedLocals = locals.immutablePut("pending_length",
+                            c.mkPlus((IntExpr) updatedLocals.get("pending_length"), c.mkInt(1)));
             Message success = new Message(eWriteResponse,
                             new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
                             new Payloads("status", c.mkInt(SUCCESS)));
@@ -96,28 +102,41 @@ public class EventuallyConsistentKVStore {
             String localNameForKey = "kvStore_key=" + payloads.get("key");
             String localNameForKeyExists = "kvStore_key=" + payloads.get("key") + "_exists";
             List<BoolExpr> branches = new ArrayList<>();
+            Locals updatedLocals = locals;
+            // nondet update
+            BoolExpr updateCond = c.mkAnd(c.mkGt((IntExpr) updatedLocals.get("pending_length"), c.mkInt(0)),
+                                            c.mkFreshBoolConst());
+            IntExpr tmp = c.mkFreshIntConst();
+            BoolExpr tmpCond = c.mkAnd(c.mkOr(c.mkGt(tmp, c.mkInt(0)), c.mkEq(tmp, c.mkInt(0))),
+                                c.mkGt((IntExpr) updatedLocals.get("pending_length"), tmp));
+            IntExpr key = (IntExpr) c.mkGet((SeqExpr<IntSort>) updatedLocals.get("pending_keys"), tmp);
+            IntExpr val = (IntExpr) c.mkGet((SeqExpr<IntSort>) updatedLocals.get("pending_vals"), tmp);
+            // remove pending!!
+            updatedLocals = updatedLocals.immutablePut("pending_keys",
+                                c.mkSubseq((SeqExpr<?>) updatedLocals.get("pending_keys"),
+                                        (IntExpr) c.mkPlus(tmp, c.mkInt(1))));
+            updatedLocals = updatedLocals.immutablePut("pending_vals",
+                    c.mkSubseq((SeqExpr<?>) updatedLocals.get("pending_vals"),
+                            (IntExpr) c.mkPlus(tmp, c.mkInt(1))));
+            // update map
+            updatedLocals = updatedLocals.immutablePut("kvStore",
+                    c.mkAdd((ArrayExpr<IntSort, IntSort>) updatedLocals.get("kvStore"), key, val));
+            updatedLocals = updatedLocals.immutablePut("keys",
+                    c.mkAdd((SeqExpr<IntSort>) updatedLocals.get("keys"), key));
             // timeout
             branches.add(c.send(sends, new Message(eReadResponse,
                                 new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
                                 new Payloads("val", c.mkInt(0), "status", c.mkInt(TIMEOUT)))));
-            if (locals.containsKey(localNameForKey)) {
-                Expr<?> readVal = locals.get(localNameForKey);
-                System.out.println("locals get local name for key: " + readVal);
-                BoolExpr keyExists = (BoolExpr) locals.get(localNameForKeyExists);
-                branches.add(c.mkAnd(keyExists, c.send(sends, new Message(eReadResponse,
-                                     new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
-                                     new Payloads("val", readVal, "status", c.mkInt(SUCCESS))))));
-                branches.add(c.mkAnd(c.mkNot(keyExists), c.send(sends, new Message(eReadResponse,
-                        new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
-                        new Payloads("val", c.mkInt(0), "status", c.mkInt(FAILURE))))));
-            }
-            if (!locals.containsKey(localNameForKey)) {
-                branches.add(c.send(sends, new Message(eReadResponse,
-                                    new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
-                                    new Payloads("val", c.mkInt(0), "status", c.mkInt(FAILURE)))));
-            }
+            // no timeout
+            BoolExpr containsKey = c.mkContains((SeqExpr<IntSort>) updatedLocals.get("keys"), key);
+            branches.add(c.mkAnd(containsKey, c.send(sends, new Message(eReadResponse,
+                    new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
+                    new Payloads("val", c.mkGet(((ArrayExpr<IntSort, IntSort>) updatedLocals.get("kvStore")), key), "status", c.mkInt(SUCCESS))))));
+            branches.add(c.mkAnd(c.mkNot(containsKey), c.send(sends, new Message(eReadResponse,
+                    new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
+                    new Payloads("val", c.mkInt(0), "status", c.mkInt(FAILURE))))));
             sends++;
-            retMap.put(c.mkBool(true), new Triple<>(sends, locals,
+            retMap.put(c.mkBool(true), new Triple<>(sends, updatedLocals,
                     new EventHandlerReturnReason.NormalReturn()));
             return retMap;
         }
@@ -207,7 +226,7 @@ public class EventuallyConsistentKVStore {
         KVStore kvStore = new KVStore("store", 0);
         Client client = new Client("clt", 0);
         Instant startTime = Instant.now();
-        List<Message> trace = getTrace(10, client, kvStore);
+        List<Message> trace = getTrace(100, client, kvStore);
         for (Message msg : trace) {
             kvStore.observeMessage(msg);
             if (!msg.getTargetId().equals(kvStore.getId())) {

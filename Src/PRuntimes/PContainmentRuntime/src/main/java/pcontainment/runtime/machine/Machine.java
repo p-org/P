@@ -107,10 +107,6 @@ public abstract class Machine {
     }
 
     public void processEventToCompletion(Message receive) {
-        System.out.println("process event " + receive.getEvent().toString() + " to completion");
-        for (Map.Entry<String, Object> pld : receive.payloads.entrySet()) {
-            System.out.println("pld " + pld.getKey() + ": " + pld.getValue());
-        }
         Message encoded = new Message(receive.getEvent(), receive.getTargetId(),
                 checker.encodeConcretePayload(receive.payloads));
         final EventHandlerReturnReason eventRaiseEventHandlerReturnReason =

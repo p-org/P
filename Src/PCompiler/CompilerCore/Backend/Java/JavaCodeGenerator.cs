@@ -8,6 +8,7 @@ using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java {
 
@@ -179,7 +180,7 @@ namespace Plang.Compiler.Backend.Java {
                 TypeManager.JType type = _context.Types.JavaTypeFor(field.Type);
                 string name = _context.Names.GetNameForDecl(field);
 
-                Write($"private {type.TypeName} {name} = {type.DefaultValue};");
+                WriteLine($"private {type.TypeName} {name} = {type.DefaultValue};");
             }
             WriteLine();
 
@@ -233,6 +234,11 @@ namespace Plang.Compiler.Backend.Java {
             {
                 //TODO: for reference types the default value can simply be null; it will be reassigned later.
                 TypeManager.JType t = _context.Types.JavaTypeFor(decl.Type);
+                switch (decl.Type)
+                {
+                    case PermissionType _:
+                        break;
+                }
                 WriteLine($"{t.TypeName} {_context.Names.GetNameForDecl(decl)} = {t.DefaultValue};");
             }
             WriteLine(); 
@@ -411,8 +417,16 @@ namespace Plang.Compiler.Backend.Java {
                     Write("if (");
                     WriteExpr(ifStmt.Condition);
                     Write(") ");
+
+                    if (ifStmt.ThenBranch.Statements.Count == 0)
+                    {
+                        Write("{}");    
+                    }
+                    else
+                    {
+                        WriteStmt(ifStmt.ThenBranch);
+                    }
                     
-                    WriteStmt(ifStmt.ThenBranch);
                     if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Count > 0)
                     {
                         WriteLine(" else ");
@@ -608,12 +622,14 @@ namespace Plang.Compiler.Backend.Java {
                 case CoerceExpr _:
                     goto default; //TODO
                 case ContainsExpr ce:
+                {
                     t = _context.Types.JavaTypeFor(ce.Collection.Type);
                     WriteExpr(ce.Collection);
                     Write($".{t.ContainsMethodName}(");
                     WriteExpr(ce.Item);
                     Write(")");
                     break;
+                }
                 case CtorExpr _:
                     goto default;
                 case DefaultExpr de:
@@ -723,12 +739,15 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 }
 
+                case VariableAccessExpr variableAccessExpr:
+                    Write(_context.Names.GetNameForDecl(variableAccessExpr.Variable));
+                    break;
+                
                 case MapAccessExpr _:
                 case NamedTupleAccessExpr _:
                 case SetAccessExpr _:
                 case SeqAccessExpr _:
                 case TupleAccessExpr _:
-                case VariableAccessExpr _:
                     WriteStructureAccess(expr);
                     break;
                 
@@ -934,16 +953,11 @@ namespace Plang.Compiler.Backend.Java {
             // if we're extracting an int out of a tuple (List<Object>).).  Use the reference
             // type name to ensure we're casting to another Object (and let Java handle auto-unboxing
             // if it can.)
-            switch (e)
-            {
-                case MapAccessExpr _:
-                case NamedTupleAccessExpr _:
-                case SetAccessExpr _:
-                case SeqAccessExpr _:
-                case TupleAccessExpr _:
-                    Write($"(({_context.Types.JavaTypeFor(e.Type).ReferenceTypeName})");
-                    break;
-            }
+            //
+            // Note: P collections are covariant (i.e. seq[int] extends seq[any]).  This means we'll
+            // throw if we downcast and then try to assign a different type into it.  Confirm that
+            // this is okay (or at least undefined in the language spec).
+            Write($"({_context.Types.JavaTypeFor(e.Type).ReferenceTypeName})");
 
             switch (e) {
                 case MapAccessExpr mapAccessExpr:
@@ -959,8 +973,9 @@ namespace Plang.Compiler.Backend.Java {
                     break;
 
                 case SetAccessExpr setAccessExpr:
+                    Write("Values.setElementAt(");
                     WriteExpr(setAccessExpr.SetExpr);
-                    Write($".{t.AccessorMethodName}(");
+                    Write(", ");
                     WriteExpr(setAccessExpr.IndexExpr);
                     Write(")");
                     break;
@@ -978,12 +993,7 @@ namespace Plang.Compiler.Backend.Java {
                     Write($".{t.AccessorMethodName}(\"{tupleAccessExpr.FieldNo.ToString()}\")");
                     break;
 
-                case VariableAccessExpr variableAccessExpr:
-                    Write(_context.Names.GetNameForDecl(variableAccessExpr.Variable));
-                    return; // Early return so we don't close the paren that we never opened!!
             }
-
-            Write(")");
         }
 
         private void WriteLine(string s = "")

@@ -177,9 +177,12 @@ namespace Plang.Compiler.Backend.Java
                 }
 
                 internal override string TypeName => 
-                    $"HashSet<{_t.ReferenceTypeName}>";
+                    $"LinkedHashSet<{_t.ReferenceTypeName}>";
+
+                // Note: There's no AccessorMethodName for a JSet because, unfortunately,
+                // we have to build a bit more mechanism in order to "index" into a
+                // LinkedHashSet that the C# set datatype gives us directly.
                 
-                internal override string AccessorMethodName => "contains";
                 internal override string ContainsMethodName => "contains";
                 internal override string MutatorMethodName => "add";
                 internal override string RemoveMethodName => "remove";
@@ -271,11 +274,9 @@ namespace Plang.Compiler.Backend.Java
         
         /// <summary>
         /// Produces the Java type used to represent a value of type `type`.
-        /// TODO: Do we want the values boxed??
         /// </summary>
         /// <param name="type">The P type.</param>
-        /// <returns>The Java type's name.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">If we're not implemented yet.</exception>
+        /// <returns>The Java type.</returns>
         /// TODO: Make this private and stick a weak ref cache in front of it.
         internal JType JavaTypeFor(PLanguageType type)
         {

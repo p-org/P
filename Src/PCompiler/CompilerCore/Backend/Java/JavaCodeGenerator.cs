@@ -179,8 +179,11 @@ namespace Plang.Compiler.Backend.Java {
             {
                 TypeManager.JType type = _context.Types.JavaTypeFor(field.Type);
                 string name = _context.Names.GetNameForDecl(field);
+                string methodName = name[0].ToString().ToUpper() + name.Substring(1);
 
                 WriteLine($"private {type.TypeName} {name} = {type.DefaultValue};");
+                WriteLine($"public {type.TypeName} get{methodName}() {{ return this.{name}; }};");
+                WriteLine();
             }
             WriteLine();
 
@@ -188,7 +191,7 @@ namespace Plang.Compiler.Backend.Java {
             foreach (var s in m.States)
             {
                 //TODO: I think it's fine to use unqualified names here.  But, confirm.
-                WriteLine($"private String {_context.Names.IdentForState(s)} = \"{s.Name}\";");
+                WriteLine($"public String {_context.Names.IdentForState(s)} = \"{s.Name}\";");
             }
             WriteLine();
             

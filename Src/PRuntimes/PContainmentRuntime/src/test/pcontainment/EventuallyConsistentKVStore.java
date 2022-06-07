@@ -41,7 +41,7 @@ public class EventuallyConsistentKVStore {
             int numSends = sends;
             target.setStarted(true);
             BoolExpr body = c.mkBool(true);
-            c.declLocal("kvStore", c.mkMap("kvStore"));
+            c.declLocal("kvStore", c.mkMap());
             c.declLocal("keys", c.mkSeq());
             c.declLocal("pending_keys", c.mkSeq());
             c.declLocal("pending_vals", c.mkSeq());
@@ -64,11 +64,11 @@ public class EventuallyConsistentKVStore {
             // success
             int successSends = sends;
             // add to pending
-            Locals updatedLocals = locals.immutablePut("pending_keys",
+            Locals updatedLocals = locals.immutableAssign("pending_keys",
                     c.mkAdd((SeqExpr<IntSort>) locals.get("pending_keys"), (IntExpr) payloads.get("key")));
-            updatedLocals  = updatedLocals.immutablePut("pending_vals",
+            updatedLocals  = updatedLocals.immutableAssign("pending_vals",
                     c.mkAdd((SeqExpr<IntSort>) locals.get("pending_vals"), (IntExpr) payloads.get("val")));
-            updatedLocals = locals.immutablePut("pending_length",
+            updatedLocals = locals.immutableAssign("pending_length",
                             c.mkPlus((IntExpr) updatedLocals.get("pending_length"), c.mkInt(1)));
             Message success = new Message(eWriteResponse,
                             new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
@@ -112,16 +112,16 @@ public class EventuallyConsistentKVStore {
             IntExpr key = (IntExpr) c.mkGet((SeqExpr<IntSort>) updatedLocals.get("pending_keys"), tmp);
             IntExpr val = (IntExpr) c.mkGet((SeqExpr<IntSort>) updatedLocals.get("pending_vals"), tmp);
             // remove pending!!
-            updatedLocals = updatedLocals.immutablePut("pending_keys",
+            updatedLocals = updatedLocals.immutableAssign("pending_keys",
                                 c.mkSubseq((SeqExpr<?>) updatedLocals.get("pending_keys"),
                                         (IntExpr) c.mkPlus(tmp, c.mkInt(1))));
-            updatedLocals = updatedLocals.immutablePut("pending_vals",
+            updatedLocals = updatedLocals.immutableAssign("pending_vals",
                     c.mkSubseq((SeqExpr<?>) updatedLocals.get("pending_vals"),
                             (IntExpr) c.mkPlus(tmp, c.mkInt(1))));
             // update map
-            updatedLocals = updatedLocals.immutablePut("kvStore",
+            updatedLocals = updatedLocals.immutableAssign("kvStore",
                     c.mkAdd((ArrayExpr<IntSort, IntSort>) updatedLocals.get("kvStore"), key, val));
-            updatedLocals = updatedLocals.immutablePut("keys",
+            updatedLocals = updatedLocals.immutableAssign("keys",
                     c.mkAdd((SeqExpr<IntSort>) updatedLocals.get("keys"), key));
             // timeout
             branches.add(c.send(sends, new Message(eReadResponse,

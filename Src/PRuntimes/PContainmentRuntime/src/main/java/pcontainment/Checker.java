@@ -10,7 +10,6 @@ import pcontainment.runtime.machine.eventhandlers.EventHandler;
 import pcontainment.runtime.machine.eventhandlers.EventHandlerReturnReason;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Checker {
     private final Context ctx = new Context();
@@ -21,8 +20,10 @@ public class Checker {
     private final List<Message> concreteSends = new ArrayList<>();
     private IntExpr currentState = ctx.mkIntConst("state_-1");
     private IntExpr nextState = ctx.mkIntConst("state_0");
-    private Locals locals = new Locals();
+    private Locals locals = new Locals(this);
     private int localMergeCount = 0;
+    @Getter
+    private Model lastModel = null;
 
     public Expr<?> getExprFor(PValue<?> value) {
         if (value instanceof PInt) {
@@ -66,14 +67,14 @@ public class Checker {
         if (default_value instanceof PValue) {
             PValue<?> value = (PValue<?>) default_value;
             val = getExprFor(value);
-            locals.put(name, getConstWithSameType(val, name + "_" + depth));
+            locals.assign(name, getConstWithSameType(val, name + "_" + depth));
             solver.add(mkEq(val, locals.get(name)));
         } else if (default_value instanceof Expr) {
             val = (Expr<?>) default_value;
-            locals.put(name, getConstWithSameType(val, name + "_" + depth));
+            locals.assign(name, getConstWithSameType(val, name + "_" + depth));
             solver.add(mkEq(val, locals.get(name)));
         } else {
-            locals.put(name, mkInt(-1));
+            locals.assign(name, mkInt(-1));
         }
     }
 
@@ -86,7 +87,7 @@ public class Checker {
     }
 
     private Expr<?> getLocal(String name, int depth) {
-        if (!locals.containsKey(name))
+        if (!locals.contains(name))
             throw new RuntimeException("Tried to access undeclared local: " + name + "");
         if (depth != getDepth()) {
             if (locals.get(name) == null) return null;
@@ -97,7 +98,7 @@ public class Checker {
 
     private List<Expr<?>> getNextLocals() {
         List<Expr<?>> nextLocals = new ArrayList<>();
-        for (String localName : locals.keySet()) {
+        for (String localName : locals.symbolicVarSet()) {
             //System.out.println(localName + ": " + getNextLocal(localName));
             nextLocals.add(getNextLocal(localName));
         }
@@ -169,8 +170,12 @@ public class Checker {
         return ctx.mkNth(seq, idx);
     }
 
-    public <T extends Sort> SeqExpr<T> mkAdd(SeqExpr<T> seq, Expr<T> toAdd) {
-        return ctx.mkConcat(seq, ctx.mkUnit(toAdd));
+    //public <T extends Sort> SeqExpr<T> mkAdd(SeqExpr<T> seq, Expr<T> toAdd) {
+    //    return ctx.mkConcat(seq, ctx.mkUnit(toAdd));
+    //}
+
+    public <T extends Sort> SeqExpr<T> mkAdd(SeqExpr<T> seq, Expr<?> toAdd) {
+        return ctx.mkConcat(seq, (SeqExpr<T>) ctx.mkUnit(toAdd));
     }
 
     public <T extends Sort> SeqExpr<T> mkSubseq(SeqExpr<T> seq, Expr<IntSort> idx) {
@@ -181,12 +186,13 @@ public class Checker {
         return ctx.mkContains(seq, ctx.mkUnit(val));
     }
 
-    public ArrayExpr<IntSort, IntSort> mkMap(String name) {
-        return ctx.mkArrayConst(name, ctx.getIntSort(), ctx.getIntSort());
+
+    public ArrayExpr<IntSort, IntSort> mkMap() {
+        return mkMap(ctx.getIntSort(), mkInt(0));
     }
 
-    public <K extends Sort, V extends Sort> ArrayExpr<K, V> mkMap(String name, K keySort, V valSort) {
-        return ctx.mkArrayConst(name, keySort, valSort);
+    public <K extends Sort, V extends Sort> ArrayExpr<K, V> mkMap(K keySort, Expr<V> defaultVal) {
+        return ctx.mkConstArray(keySort, defaultVal);
     }
 
     public <K extends Sort, V extends Sort> ArrayExpr<K, V> mkAdd(ArrayExpr<K, V> map, Expr<K> key, Expr<V> val) {
@@ -253,8 +259,8 @@ public class Checker {
         depth++;
         currentState = nextState;
         nextState = ctx.mkIntConst("state_" + (depth + 1));
-        for (String k : locals.keySet()) {
-            locals.put(k, getConstWithSameType(locals.get(k), k + "_" + depth));
+        for (String k : locals.symbolicVarSet()) {
+            locals.assign(k, getConstWithSameType(locals.get(k), k + "_" + depth));
         }
     }
 
@@ -266,8 +272,8 @@ public class Checker {
         sendTgtIds.clear();
         payloads.clear();
         concreteSends.clear();
-        for (String k : locals.keySet()) {
-            locals.put(k, getConstWithSameType(locals.get(k), k + "_" + depth));
+        for (String k : locals.symbolicVarSet()) {
+            locals.assign(k, getConstWithSameType(locals.get(k), k + "_" + depth));
         }
     }
 
@@ -355,24 +361,13 @@ public class Checker {
         }
     }
 
-    public void check() {
-        BoolExpr[] asserts = solver.getAssertions();
-        /*
-        for (BoolExpr asst : asserts) {
-            System.out.println(asst.simplify().toString());
-        }
-        */
-        Status res = solver.check();
-        if (res != Status.SATISFIABLE) {
-            throw new RuntimeException("Trace containment check failed: " + res.name());
-        }
-        Model m = solver.getModel();
-        FuncDecl<?>[] decls = m.getConstDecls();
-        boolean addOld = false;
+    public void determinize(Model model) {
         List<BoolExpr> boolExprs = new ArrayList<>();
-        Expr<?> interp = m.getConstInterp(nextState);
-        if (interp != null) {
-            BoolExpr eq = ctx.mkEq(nextState, interp);
+        boolean addOld = false;
+
+        Expr<?> stateInterp = model.getConstInterp(nextState);
+        if (stateInterp != null) {
+            BoolExpr eq = ctx.mkEq(nextState, stateInterp);
             if (solver.check(ctx.mkNot(eq)) != Status.SATISFIABLE) {
                 //System.out.println("Value for state " + nextState + " is unique!! " + interp.toString());
                 boolExprs.add(eq);
@@ -383,11 +378,13 @@ public class Checker {
         } else {
             addOld = true;
         }
-        for (Expr<?> e : getNextLocals()) {
-            if (e == null) continue;
-            interp = m.getConstInterp(e);
-            if (interp == null) continue;
-            BoolExpr eq = ctx.mkEq(e, interp);
+
+        Interpretation interp = locals.getInterpretation(model);
+        for (String varName : locals.symbolicVarSet()) {
+            Expr<?> nextLocal = getNextLocal(varName);
+            Expr<?> interpretation = interp.getInterpretation(varName);
+            if (interpretation == null) continue;
+            BoolExpr eq = ctx.mkEq(nextLocal, interpretation);
             if (solver.check(ctx.mkNot(eq)) != Status.SATISFIABLE) {
                 //System.out.println("Value for " + e.toString() + " is unique!!");
                 boolExprs.add(eq);
@@ -395,27 +392,7 @@ public class Checker {
                 addOld = true;
             }
         }
-        /*
-        for (BoolExpr hasSendPred : hasSendPreds) {
-            BoolExpr eq = ctx.mkEq(hasSendPred, m.getConstInterp(hasSendPred));
-            if (solver.check(ctx.mkNot(eq)) != Status.SATISFIABLE) {
-                boolExprs.add(eq);
-            } else {
-                addOld = true;
-            }
-        }
-         */
-        /*
-        for (IntExpr sendTgtId : sendTgtIds) {
-            BoolExpr eq = ctx.mkEq(sendTgtId, m.getConstInterp(sendTgtId));
-            if (solver.check(ctx.mkNot(eq)) != Status.SATISFIABLE) {
-                boolExprs.add(eq);
-            } else {
-                addOld = true;
-            }
-        }
-         */
-        //solver = ctx.mkSolver();
+        BoolExpr[] asserts = solver.getAssertions();
         if (addOld) {
             solver.reset();
             for (BoolExpr a : asserts) {
@@ -427,6 +404,15 @@ public class Checker {
                 solver.add(a);
             }
         }
+    }
+
+    public void check() {
+        Status res = solver.check();
+        if (res != Status.SATISFIABLE) {
+            throw new RuntimeException("Trace containment check failed: " + res.name());
+        }
+        Model m = solver.getModel();
+        determinize(m);
     }
 
     private IntExpr getCurrentState(int n) {
@@ -455,13 +441,13 @@ public class Checker {
     }
 
     private Pair<BoolExpr, Locals> frameRule(Locals locals) {
-        Locals newLocals = new Locals();
-        BoolExpr[] eqs = new BoolExpr[locals.size()];
+        Locals newLocals = new Locals(this);
+        BoolExpr[] eqs = new BoolExpr[locals.symbolicVarSet().size()];
         int i = 0;
-        for (Map.Entry<String, Expr<?>> entry : locals.entrySet()) {
-            Expr<?> nextLocal = getNextLocal(entry.getKey());
-            eqs[i] = ctx.mkEq(entry.getValue(), nextLocal);
-            newLocals.put(entry.getKey(), nextLocal);
+        for (String varName : locals.symbolicVarSet()) {
+            Expr<?> nextLocal = getNextLocal(varName);
+            eqs[i] = ctx.mkEq(locals.get(varName), nextLocal);
+            newLocals.assign(varName, nextLocal);
             i++;
         }
         return new Pair<>(ctx.mkAnd(eqs), newLocals);
@@ -487,55 +473,50 @@ public class Checker {
     }
 
     private Locals mergeLocals(Set<Pair<BoolExpr, Locals>> localsSet) {
-        Locals mergedLocalMap= new Locals();
-        for (Map.Entry<String, Expr<?>> entry: locals.entrySet()) {
-            String key = entry.getKey();
-            String mergedName = key + "_" + depth + "_merge_" + localMergeCount;
-            Expr<?> mergedVal = getConstWithSameType(entry.getValue(), mergedName);
-            mergedLocalMap.put(key, mergedVal);
+        Locals mergedLocalMap= new Locals(this);
+        locals.convertConcreteToSymbolic();
+        // unflatten sequences, sets, maps as needed
+        Set<String> unflatten = new HashSet<>();
+        for (String seq : locals.seqSet()) {
+            for (Pair<BoolExpr, Locals> locals : localsSet) {
+                if (locals.second.symbolicVarSet().contains(seq)) {
+                    unflatten.add(seq);
+                    break;
+                }
+            }
+        }
+        for (String seq : locals.setSet()) {
+            for (Pair<BoolExpr, Locals> locals : localsSet) {
+                if (locals.second.symbolicVarSet().contains(seq)) {
+                    unflatten.add(seq);
+                    break;
+                }
+            }
+        }
+        for (String seq : locals.mapSet()) {
+            for (Pair<BoolExpr, Locals> locals : localsSet) {
+                if (locals.second.symbolicVarSet().contains(seq)) {
+                    unflatten.add(seq);
+                    break;
+                }
+            }
+        }
+        for (String toUnflatten : unflatten) {
+            locals.unflatten(toUnflatten);
+        }
+        for (String varName: locals.symbolicVarSet()) {
+            String mergedName = varName + "_" + depth + "_merge_" + localMergeCount;
+            Expr<?> mergedVal = getConstWithSameType(locals.get(varName), mergedName);
+            mergedLocalMap.assign(varName, mergedVal);
             BoolExpr mergedEncoding = ctx.mkTrue();
             for (Pair<BoolExpr, Locals> locals : localsSet) {
-                if (locals.second.containsKey(key)) {
+                if (locals.second.contains(varName)) {
                     mergedEncoding = mkOr(mergedEncoding,
-                            mkAnd(locals.first, mkEq(mergedVal, locals.second.get(key))));
+                            mkAnd(locals.first, mkEq(mergedVal, locals.second.get(varName))));
                 }
             }
             solver.add(mergedEncoding);
         }
-        /*
-        // sequences
-        for (DeterministicSeq<Expr<?>> entry : locals.getDetSeqs()) {
-            String name = entry.getName();
-            boolean deterministicSize = true;
-            int size = -1;
-            for (Pair<BoolExpr, Locals> locals : localsSet) {
-                if (locals.second.hasSeq(name)) {
-                    if (size == -1) {
-                        size = locals.second.getSeq(name).size();
-                    } else if (size != locals.second.getSeq(name).size()) {
-                        deterministicSize = false;
-                    }
-                } else {
-                    deterministicSize = false;
-                }
-            }
-            if (!deterministicSize) {
-                // TODO: convert to symbolic
-                throw new RuntimeException("Sequence " + name + " is not deterministic!");
-            }
-            for (int i = 0; i < size; i++) {
-                String mergedName = name + "_idx_" + i + "_" + depth + "_merge_" + localMergeCount;
-                Expr<?> mergedVal = getConstWithSameType(entry.get(i), mergedName);
-                mergedLocalMap.getSeq(name).add(i, mergedVal);
-                BoolExpr mergedEncoding = ctx.mkTrue();
-                for (Pair<BoolExpr, Locals> locals : localsSet) {
-                    mergedEncoding = mkOr(mergedEncoding,
-                            mkAnd(locals.first, mkEq(mergedVal, locals.second.get(name, i))));
-                }
-                solver.add(mergedEncoding);
-            }
-        }
-        */
         localMergeCount++;
         return mergedLocalMap;
     }
@@ -556,33 +537,24 @@ public class Checker {
     private Pair<BoolExpr, Locals> encodeOutcomesToCompletion(int sends, int states, Locals locals,
                                                 Machine target, EventHandlerReturnReason.Goto goTo) {
         Map<BoolExpr, Integer> sendCounts = new HashMap<>();
-        Locals mergedLocals = new Locals();
-        for (Map.Entry<String, Expr<?>> entry: locals.entrySet()) {
-            String key = entry.getKey();
-            String mergedName = key + "_" + depth + "_" + states;
-            mergedLocals.put(key, getConstWithSameType(entry.getValue(), mergedName));
-        }
+        Set<Pair<BoolExpr, Locals>> localsToMerge = new HashSet<>();
         for (State state : target.getStates()) {
             BoolExpr stateExit = ctx.mkEq(getCurrentState(states), ctx.mkInt(state.getId()));
             Map<BoolExpr, Pair<Integer, Locals>> exitRes =
                     state.getExitEncoding(sends, locals, this, target);
-            BoolExpr branches = ctx.mkFalse();
+            //BoolExpr branches = ctx.mkFalse();
             for (Map.Entry<BoolExpr, Pair<Integer, Locals>> branch : exitRes.entrySet()) {
                 sendCounts.put(ctx.mkAnd(stateExit, branch.getKey()), branch.getValue().first);
-                BoolExpr merge = ctx.mkTrue();
-                for (Map.Entry<String, Expr<?>> entry : branch.getValue().second.entrySet()) {
-                    merge = ctx.mkAnd(merge, ctx.mkEq(entry.getValue(),
-                                                      mergedLocals.get(entry.getKey())));
-                }
-                branches = ctx.mkOr(branches, ctx.mkAnd(branch.getKey(), merge));
+                localsToMerge.add(new Pair<>(branch.getKey(), branch.getValue().second));
             }
         }
+        Locals mergedLocals = mergeLocals(localsToMerge);
         states++;
         BoolExpr entries = ctx.mkFalse();
         System.out.println("state update for " + getCurrentState(states).toString());
         System.out.println("equal to " + goTo.getGoTo().getId());
         BoolExpr stateUpdate = ctx.mkEq(getCurrentState(states), ctx.mkInt(goTo.getGoTo().getId()));
-        Set<Pair<BoolExpr, Locals>> localsToMerge = new HashSet<>();
+        localsToMerge = new HashSet<>();
         for (Map.Entry<BoolExpr, Integer> branch : sendCounts.entrySet()) {
             Pair<BoolExpr, Locals> thisEntry = runEncoding(target, states,
                                                 goTo.getGoTo().getEntryEncoding(branch.getValue(),this, mergedLocals,

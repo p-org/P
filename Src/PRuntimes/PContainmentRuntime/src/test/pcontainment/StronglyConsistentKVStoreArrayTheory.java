@@ -42,7 +42,7 @@ public class StronglyConsistentKVStoreArrayTheory {
             target.setStarted(true);
             BoolExpr body = c.mkBool(true);
             Map<BoolExpr, Triple<Integer, Locals, EventHandlerReturnReason>> retMap = new HashMap<>();
-            c.declLocal("kvStore", c.mkMap("kvStore"));
+            c.declLocal("kvStore", c.mkMap());
             c.declLocal("keys", c.mkSeq());
             retMap.put(body, new Triple<>(numSends, locals, new EventHandlerReturnReason.NormalReturn()));
             return retMap;
@@ -60,10 +60,10 @@ public class StronglyConsistentKVStoreArrayTheory {
             Map<BoolExpr, Triple<Integer, Locals, EventHandlerReturnReason>> retMap = new HashMap<>();
             // success
             int successSends = sends;
-            Locals updatedLocals = locals.immutablePut("kvStore",
+            Locals updatedLocals = locals.immutableAssign("kvStore",
                     c.mkAdd((ArrayExpr<IntSort, IntSort>) locals.get("kvStore"),
                     (IntExpr) payloads.get("key"), (IntExpr) payloads.get("val")));
-            updatedLocals = updatedLocals.immutablePut("keys",
+            updatedLocals = updatedLocals.immutableAssign("keys",
                     c.mkAdd((SeqExpr<IntSort>) locals.get("keys"), (IntExpr) payloads.get("key")));
             Message success = new Message(eWriteResponse,
                             new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),

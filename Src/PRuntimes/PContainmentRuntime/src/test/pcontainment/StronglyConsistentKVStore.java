@@ -5,6 +5,7 @@ import com.microsoft.z3.Expr;
 import com.microsoft.z3.IntExpr;
 import org.junit.jupiter.api.Test;
 import p.runtime.values.PInt;
+import p.runtime.values.PValue;
 import pcontainment.runtime.Event;
 import pcontainment.runtime.Message;
 import pcontainment.runtime.Payloads;
@@ -59,8 +60,8 @@ public class StronglyConsistentKVStore {
             int successSends = sends;
             c.declLocal("kvStore_key=" + payloads.get("key"), c.mkInt(-1));
             c.declLocal("kvStore_key=" + payloads.get("key") + "_exists", c.mkBool(false));
-            Locals updatedLocals = locals.immutablePut("kvStore_key=" + payloads.get("key"), (Expr<?>) payloads.get("val"));
-            updatedLocals = updatedLocals.immutablePut("kvStore_key=" + payloads.get("key") + "_exists", c.mkBool(true));
+            Locals updatedLocals = locals.immutableAssign("kvStore_key=" + payloads.get("key"), (Expr<?>) payloads.get("val"));
+            updatedLocals = updatedLocals.immutableAssign("kvStore_key=" + payloads.get("key") + "_exists", c.mkBool(true));
             Message success = new Message(eWriteResponse,
                             new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
                             new Payloads("status", c.mkInt(SUCCESS)));
@@ -97,18 +98,18 @@ public class StronglyConsistentKVStore {
             branches.add(c.send(sends, new Message(eReadResponse,
                                 new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
                                 new Payloads("val", c.mkInt(0), "status", c.mkInt(TIMEOUT)))));
-            if (locals.containsKey(localNameForKey)) {
+            if (locals.contains(localNameForKey)) {
                 Expr<?> readVal = locals.get(localNameForKey);
                 System.out.println("locals get local name for key: " + readVal);
                 BoolExpr keyExists = (BoolExpr) locals.get(localNameForKeyExists);
                 branches.add(c.mkAnd(keyExists, c.send(sends, new Message(eReadResponse,
-                                     new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
+                                    new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
                                      new Payloads("val", readVal, "status", c.mkInt(SUCCESS))))));
                 branches.add(c.mkAnd(c.mkNot(keyExists), c.send(sends, new Message(eReadResponse,
                         new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
                         new Payloads("val", c.mkInt(0), "status", c.mkInt(FAILURE))))));
             }
-            if (!locals.containsKey(localNameForKey)) {
+            if (!locals.contains(localNameForKey)) {
                 branches.add(c.send(sends, new Message(eReadResponse,
                                     new SymbolicMachineIdentifier((IntExpr) payloads.get("client")),
                                     new Payloads("val", c.mkInt(0), "status", c.mkInt(FAILURE)))));

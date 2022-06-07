@@ -5,6 +5,7 @@ using Plang.Compiler.TypeChecker.AST.States;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -27,6 +28,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, RefinementTest> refinementTests = new Dictionary<string, RefinementTest>();
         private readonly IDictionary<string, SafetyTest> safetyTests = new Dictionary<string, SafetyTest>();
         private readonly IDictionary<string, State> states = new Dictionary<string, State>();
+        private readonly IDictionary<string, NamedTupleType> tuples = new Dictionary<string, NamedTupleType>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
 
@@ -70,6 +72,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<Interface> Interfaces => interfaces.Values;
         public IEnumerable<Machine> Machines => machines.Values;
         public IEnumerable<State> States => states.Values;
+        public IEnumerable<NamedTupleType> Tuples => tuples.Values;
         public IEnumerable<TypeDef> Typedefs => typedefs.Values;
         public IEnumerable<Variable> Variables => variables.Values;
         public IEnumerable<SafetyTest> SafetyTests => safetyTests.Values;
@@ -110,8 +113,24 @@ namespace Plang.Compiler.TypeChecker
             Debug.Assert(!implementations.Any());
             implementations.Add(defaultImplDecl.Name, defaultImplDecl);
         }
-
         #endregion Add Default Impl. Declaration
+        
+        #region Add Tuple Declaration
+        public bool AddTuple(TupleType tuple)
+        {
+            return AddTuple(tuple.ToNamedTuple());
+        }
+        public bool AddTuple(NamedTupleType tuple)
+        {
+            if (tuples.ContainsKey(tuple.CanonicalRepresentation))
+            {
+                return true;
+            }
+            tuples.Add(tuple.CanonicalRepresentation, tuple);
+            return false;
+        }
+
+        #endregion Add Tuple Declaration
 
         #region Overloaded getters
 
@@ -154,7 +173,7 @@ namespace Plang.Compiler.TypeChecker
         {
             return states.TryGetValue(name, out tree);
         }
-
+        
         public bool Get(string name, out TypeDef tree)
         {
             return typedefs.TryGetValue(name, out tree);

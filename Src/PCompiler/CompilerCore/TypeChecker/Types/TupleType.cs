@@ -17,6 +17,22 @@ namespace Plang.Compiler.TypeChecker.Types
                 : new Lazy<IReadOnlyList<PEvent>>(() => Types.SelectMany(t => t.AllowedPermissions.Value).ToList());
         }
 
+        // Lifts a TupleType into an equivalent NamedTupleType, where the names of each field are numbers
+        // starting from 0 (matching how non-NamedTuples are accessed in P and extracted code).
+        public NamedTupleType ToNamedTuple()
+        {
+            List<NamedTupleEntry> fields = Types.Select((t, i) =>
+            {
+                NamedTupleEntry e = new NamedTupleEntry();
+                e.Name = i.ToString();
+                e.FieldNo = i;
+                e.Type = t;
+                return e;
+            }).ToList();
+            
+            return new NamedTupleType(fields);
+        }
+
         public IReadOnlyList<PLanguageType> Types { get; }
 
         public override string OriginalRepresentation { get; }

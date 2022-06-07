@@ -100,7 +100,9 @@ namespace Plang.Compiler.TypeChecker
 
             public override PLanguageType VisitTupleType(PParser.TupleTypeContext context)
             {
-                return new TupleType(context._tupTypes.Select(Visit).ToArray());
+                TupleType ret = new TupleType(context._tupTypes.Select(Visit).ToArray());
+                scope.AddTuple(ret);
+                return ret;
             }
 
             public override PLanguageType VisitNamedTupleType(PParser.NamedTupleTypeContext context)
@@ -122,7 +124,9 @@ namespace Plang.Compiler.TypeChecker
                     fields[i] = new NamedTupleEntry { Name = fieldName, FieldNo = i, Type = Visit(field.type()) };
                 }
 
-                return new NamedTupleType(fields);
+                NamedTupleType ret = new NamedTupleType(fields);
+                scope.AddTuple(ret);
+                return ret;
             }
 
             public override PLanguageType VisitPrimitiveType(PParser.PrimitiveTypeContext context)

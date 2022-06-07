@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using Plang.Compiler.TypeChecker.AST.States;
 
 namespace Plang.Compiler.Backend
 {
@@ -50,17 +49,6 @@ namespace Plang.Compiler.Backend
             return SetNameForNode(decl, declName);
         }
 
-        /// <summary>
-        /// Produces a Java String value representing a particular State.  This can be
-        /// registered with State Builders and used as arguments to `gotoState()`.
-        /// </summary>
-        /// <param name="s">The state.</param>
-        /// <returns>The identifier.</returns>
-        public string IdentForState(State s)
-        {
-            return $"{s.Name.ToUpper()}_STATE";
-        }
-        
         protected abstract string ComputeNameForDecl(IPDecl decl);
 
         private string SetNameForNode(IPDecl node, string name)

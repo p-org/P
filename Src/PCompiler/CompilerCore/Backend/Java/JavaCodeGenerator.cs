@@ -3,6 +3,7 @@ using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mime;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -58,6 +59,12 @@ namespace Plang.Compiler.Backend.Java {
             
             WriteLine($"public class {_context.FileName.Replace(".java", "")} {{");
 
+            foreach (var t in _globalScope.Tuples)
+            {
+                WriteNamedTupleDecl(t);
+            }
+            WriteLine();
+            
             foreach (var e in _globalScope.Events)
             {
                 WriteEventDecl(e);
@@ -122,6 +129,77 @@ namespace Plang.Compiler.Backend.Java {
             {
                 WriteLine(stmt);
             }
+        }
+
+        private void WriteNamedTupleDecl(NamedTupleType t)
+        {
+            // This is a sequence of <typeName, stringName> pairs.
+            List<Tuple<string, string>> fields = new List<Tuple<string, string>>();
+            
+            // Build up our list of fields.
+            foreach (var e in t.Fields)
+            {
+                string name = e.Name;
+                PLanguageType type = e.Type;
+
+                // In the case where the field type is a typedef, follow
+                // the typename resolution until we've found the actual type.
+                while (type is TypeDefType tdef)
+                {
+                    type = tdef.TypeDefDecl.Type;
+
+                }
+
+                string typeName;
+
+                switch (type)
+                {
+                    case TupleType tField:
+                        typeName = _context.Names.NameForNamedTuple(tField.ToNamedTuple());
+                        break;
+                    case NamedTupleType tField:
+                        typeName = _context.Names.NameForNamedTuple(tField);
+                        break;
+                    default:
+                        typeName = _context.Types.JavaTypeFor(e.Type).TypeName;
+                        break;
+                }
+                
+                fields.Add(new Tuple<string, string>(typeName, name));
+            }
+
+            string tname = _context.Names.NameForNamedTuple(t);
+            WriteLine($"class {tname} {{");
+            WriteLine($"// {t.CanonicalRepresentation}");
+
+            // Write the fields.
+            foreach (var (typeName, fieldName) in fields)
+            {
+                WriteLine($"public {typeName} {fieldName};");
+            }
+            WriteLine();
+
+            // Write the constructor signature.
+            Write($"public {tname}(");
+            foreach (var ((typeName, fieldName), sep) in
+                     fields.Select((tpl, i) => (tpl, i > 0 ? "," : "")))
+            {
+               Write($"{sep}{typeName} {fieldName}"); 
+            }
+
+            // Write the constructor.
+            WriteLine($") {{");
+            foreach (var (typeName, fieldName) in fields)
+            {
+                WriteLine($"this.{fieldName} = {fieldName};");
+            }
+            WriteLine($"}}");
+            WriteLine();
+            
+            // Write clone().
+            WriteLine($"public {tname} Clone() {{ throw new NotImplementedException(\"TODO\"); }}");
+            
+            WriteLine($"}}");
         }
 
         private void WriteEnumDecl(PEnum e)

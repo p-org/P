@@ -52,20 +52,24 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine(Constants.DoNotEditWarning);
             WriteLine();
 
+            
+            WriteLine($"public class {_context.FileName.Replace(".java", "")} {{");
+
+            WriteLine("/** Enums */");
             foreach (var e in _globalScope.Enums)
             {
                 WriteEnumDecl(e);
             }
             WriteLine();
             
-            WriteLine($"public class {_context.FileName.Replace(".java", "")} {{");
-
+            WriteLine("/** Tuples */");
             foreach (var t in _globalScope.Tuples)
             {
                 WriteNamedTupleDecl(t);
             }
             WriteLine();
             
+            WriteLine("/** Events */");
             foreach (var e in _globalScope.Events)
             {
                 WriteEventDecl(e);
@@ -255,19 +259,12 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteEnumDecl(PEnum e)
         {
-            WriteLine($"enum {e.Name} {{");
-             
-            foreach (var (param, sep)in e.Values.Select((p, i) => (p, i < e.Values.Count()-1 ? "," : ";")))
+            WriteLine($"public static class {e.Name} {{");
+            
+            foreach (var param in e.Values) 
             {
-                WriteLine($"{param.Name}({param.Value}){sep}");
+                WriteLine($"public static final int {param.Name} = {param.Value};");
             }
-
-            WriteLine();
-           
-            // Boilerplate to access the enum's value
-            WriteLine("private int val;");
-            WriteLine($"{e.Name}(int i) {{ val = i; }}");
-            WriteLine("public int getVal() { return val; }");
             
             WriteLine("}");
         }
@@ -768,7 +765,7 @@ namespace Plang.Compiler.Backend.Java {
                 case EnumElemRefExpr ee:
                     string typeName = ee.Value.ParentEnum.Name;
                     string valueName = ee.Value.Name;
-                    Write($"{typeName}.{valueName}.getVal()");
+                    Write($"{typeName}.{valueName}");
                     break;
                 case EventRefExpr _:
                     goto default; //TODO

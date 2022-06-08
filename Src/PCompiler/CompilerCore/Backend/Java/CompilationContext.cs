@@ -11,7 +11,7 @@ namespace Plang.Compiler.Backend.Java
             : base(job)
         {
             Names = new NameManager("PGEN_");
-            Types = new TypeManager();
+            Types = new TypeManager(Names);
 
             FileName = $"{ProjectName}.java";
             ProjectDependencies = job.ProjectDependencies.Count == 0 ? new List<string>() { ProjectName } : job.ProjectDependencies;

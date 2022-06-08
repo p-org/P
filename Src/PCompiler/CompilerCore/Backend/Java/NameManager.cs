@@ -11,7 +11,7 @@ namespace Plang.Compiler.Backend.Java
     public class NameManager : NameManagerBase
     {
         // Maps the NamedTuple to some generated Java class name;
-        private Dictionary<NamedTupleType, string> namedTupleJTypes = new Dictionary<NamedTupleType, string>();
+        private readonly Dictionary<NamedTupleType, string> _namedTupleJTypes = new Dictionary<NamedTupleType, string>();
         
         public NameManager(string namePrefix) : base(namePrefix)
         {
@@ -36,10 +36,10 @@ namespace Plang.Compiler.Backend.Java
         internal string NameForNamedTuple(NamedTupleType t)
         {
             string val;
-            if (!namedTupleJTypes.TryGetValue(t, out val))
+            if (!_namedTupleJTypes.TryGetValue(t, out val))
             {
-                val = UniquifyName("Tuple");
-                namedTupleJTypes.Add(t, val);
+                val = UniquifyName("Gen_PTuple");
+                _namedTupleJTypes.Add(t, val);
             }
 
             return val;

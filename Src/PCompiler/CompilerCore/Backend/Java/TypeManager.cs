@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection.Metadata;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.Types;
@@ -11,7 +14,13 @@ namespace Plang.Compiler.Backend.Java
     /// </summary>
     internal class TypeManager
     {
-
+        internal NameManager Names { get;  }
+        
+        public TypeManager(NameManager names)
+        {
+            Names = names;
+        }
+        
         internal class JType
         {
             /// <summary>
@@ -188,25 +197,25 @@ namespace Plang.Compiler.Backend.Java
                 internal override string RemoveMethodName => "remove";
             }
 
-            // TODO: maybe we can hack it as a Record??  A bummer that we don't have Scala's Tuple[A,B,C,...].
             internal class JNamedTuple : JType
             {
-                internal override string TypeName => "HashMap<String, Object>";
+                /// <summary>
+                /// The name of the generated Java class name for this tuple.
+                /// </summary>
+                internal string JClassName;
                 
-                internal override string AccessorMethodName => "get";
-                internal override string ContainsMethodName => "containsKey";
-                internal override string MutatorMethodName => "set";
-                internal override string RemoveMethodName => "remove";
-            }
-           
-            internal class JTuple : JType
-            {
-                internal override string TypeName => "ArrayList<Object>";
+                /// <summary>
+                /// The sequence of (name, type) pairs for the tuple's fields.
+                /// </summary>
+                internal IEnumerable<(string, JType)> Fields;
                 
-                internal override string AccessorMethodName => "get";
-                internal override string ContainsMethodName => "contains";
-                internal override string MutatorMethodName => "set";
-                internal override string RemoveMethodName => "remove";
+                internal JNamedTuple(string jClassName, IEnumerable<(string, JType)> fields)
+                {
+                    JClassName = jClassName;
+                    Fields = fields;
+                }
+
+                internal override string TypeName => JClassName;
             }
            
             //TODO: not sure about this one.  Is the base class sufficient?
@@ -247,7 +256,7 @@ namespace Plang.Compiler.Backend.Java
                 }
 
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    return new JType.JNamedTuple();
+                    return JavaTypeFor(namedTupleAccessExpr.Type);
 
                 case SetAccessExpr setAccessExpr:
                 {
@@ -262,7 +271,7 @@ namespace Plang.Compiler.Backend.Java
                 }
 
                 case TupleAccessExpr tupleAccessExpr:
-                    return new JType.JTuple();
+                    return JavaTypeFor(tupleAccessExpr.Type);
 
                 case VariableAccessExpr variableAccessExpr:
                     return JavaTypeFor(e.Type);
@@ -298,8 +307,15 @@ namespace Plang.Compiler.Backend.Java
                     JType v = JavaTypeFor(m.ValueType);
                     return new JType.JMap(k, v);
 
-                case NamedTupleType _:
-                    return new JType.JNamedTuple();
+                case NamedTupleType nt:
+                {
+                    List<NamedTupleEntry> fields = nt.Fields.ToList();
+                    fields.Sort((e1, e2) => e1.FieldNo.CompareTo(e2.FieldNo));
+
+                    return new JType.JNamedTuple(
+                        Names.NameForNamedTuple(nt),
+                        fields.Select(e => (e.Name, JavaTypeFor(e.Type))));
+                }
 
                 case PermissionType _:
                     return new JType.JMachine();
@@ -334,9 +350,8 @@ namespace Plang.Compiler.Backend.Java
                 case SetType s:
                     return new JType.JSet(JavaTypeFor(s.ElementType));
 
-                case TupleType _:
-                    //TODO: return new JType.JList(JType.Any) ???  Is this cleaner/clearer?
-                    return new JType.JTuple();
+                case TupleType t:
+                    return JavaTypeFor(t.ToNamedTuple());
 
                 default:
                     throw new NotImplementedException($"{type} values not implemented");

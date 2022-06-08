@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mime;
+using Antlr4.Runtime;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -133,8 +134,9 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteNamedTupleDecl(NamedTupleType t)
         {
-            // This is a sequence of <typeName, stringName> pairs.
-            List<Tuple<string, string>> fields = new List<Tuple<string, string>>();
+            // This is a sequence of <type, stringName> pairs.
+            List<(TypeManager.JType, string)> fields = 
+                new List<(TypeManager.JType, string)>();
             
             // Build up our list of fields.
             foreach (var e in t.Fields)
@@ -147,59 +149,108 @@ namespace Plang.Compiler.Backend.Java {
                 while (type is TypeDefType tdef)
                 {
                     type = tdef.TypeDefDecl.Type;
-
                 }
 
-                string typeName;
-
-                switch (type)
-                {
-                    case TupleType tField:
-                        typeName = _context.Names.NameForNamedTuple(tField.ToNamedTuple());
-                        break;
-                    case NamedTupleType tField:
-                        typeName = _context.Names.NameForNamedTuple(tField);
-                        break;
-                    default:
-                        typeName = _context.Types.JavaTypeFor(e.Type).TypeName;
-                        break;
-                }
+                TypeManager.JType jType = _context.Types.JavaTypeFor(type);
                 
-                fields.Add(new Tuple<string, string>(typeName, name));
+                fields.Add((jType, name));
             }
 
             string tname = _context.Names.NameForNamedTuple(t);
-            WriteLine($"class {tname} {{");
+            WriteLine($"static class {tname} {{");
             WriteLine($"// {t.CanonicalRepresentation}");
 
             // Write the fields.
-            foreach (var (typeName, fieldName) in fields)
+            foreach (var (jType, fieldName) in fields)
             {
-                WriteLine($"public {typeName} {fieldName};");
+                WriteLine($"public {jType.TypeName} {fieldName};");
             }
             WriteLine();
 
-            // Write the constructor signature.
-            Write($"public {tname}(");
-            foreach (var ((typeName, fieldName), sep) in
-                     fields.Select((tpl, i) => (tpl, i > 0 ? "," : "")))
+            // Write the default constructor.
+            WriteLine($"public {tname}() {{");
+            foreach (var (jtype, fieldName) in fields)
             {
-               Write($"{sep}{typeName} {fieldName}"); 
+                WriteLine($"this.{fieldName} = {jtype.DefaultValue};");
+                
             }
-
-            // Write the constructor.
+            WriteLine($"}}");
+            WriteLine();
+            
+            // Write the explicit constructor.
+            Write($"public {tname}(");
+            foreach (var ((jType, fieldName), sep) in fields.Select((pair, i) => (pair, i > 0 ? ", " : "")))
+            {
+                Write($"{sep}{jType.TypeName} {fieldName}");
+            }
             WriteLine($") {{");
-            foreach (var (typeName, fieldName) in fields)
+            foreach (var (jtype, fieldName) in fields)
             {
                 WriteLine($"this.{fieldName} = {fieldName};");
             }
             WriteLine($"}}");
             WriteLine();
             
-            // Write clone().
-            WriteLine($"public {tname} Clone() {{ throw new NotImplementedException(\"TODO\"); }}");
+            // Write the copy constructor for cloning.
+            WriteLine($"public {tname} clone() {{");
+            Write($"return new {tname}(");
+            foreach (var ((jType, fieldName), sep) in fields.Select((pair, i) => (pair, i > 0 ? ", " : "")))
+            {
+                Write(sep);
+                
+                /* Note: this looks _a lot_ like CloneExpr().  Can we make this more harmonious? */
+                switch (jType)
+                {
+                /* Primitive types are easy since they're copy by value. */
+                case TypeManager.JType.JVoid _:
+                case TypeManager.JType.JBool _:
+                case TypeManager.JType.JInt _:
+                case TypeManager.JType.JFloat _:
+                case TypeManager.JType.JString _:
+                case TypeManager.JType.JMachine _:
+                    Write($"{fieldName}");
+                    break;
+
+                /* Non-boxable reference types must be cloned explicitly and then
+                 * cast to their expected type (since clone() is Object-producing). */
+                case TypeManager.JType.JMap _:
+                case TypeManager.JType.JList _:
+                case TypeManager.JType.JSet _:
+                    Write($"({jType.TypeName})Values.clone({fieldName})");
+                    break;
+               
+                /* JNamedTuples have a copy constructor. */
+                case TypeManager.JType.JNamedTuple nt:
+                    Write($"{fieldName}.clone()");
+                    break;
+                
+                default:
+                    throw new NotImplementedException(jType.ToString());
+                }
+            }
+            WriteLine($");");
+            WriteLine($"}} // clone() method end ");
+           
+            // Write toString() in the same output style as a Java record.
+            WriteLine($"public String toString() {{ ");
+            WriteLine($"StringBuilder sb = new StringBuilder(\"{tname}\");"); 
+            WriteLine("sb.append(\"[\");");
+            foreach (var ((jType, fieldName), i) in fields.Select((pair, i) => (pair, i)))
+            {
+                if (i > 0)
+                {
+                    WriteLine("sb.append(\",\"); ");
+                }
+                WriteLine($"sb.append(\"{fieldName}=\");");
+                WriteLine($"sb.append({fieldName});");
+            }
+            WriteLine("sb.append(\"]\");");
+            WriteLine("return sb.toString();");
+            WriteLine("} // toString()");
             
-            WriteLine($"}}");
+            WriteLine($"}} //{tname} class definition");
+
+            WriteLine();
         }
 
         private void WriteEnumDecl(PEnum e)
@@ -315,11 +366,6 @@ namespace Plang.Compiler.Backend.Java {
             {
                 //TODO: for reference types the default value can simply be null; it will be reassigned later.
                 TypeManager.JType t = _context.Types.JavaTypeFor(decl.Type);
-                switch (decl.Type)
-                {
-                    case PermissionType _:
-                        break;
-                }
                 WriteLine($"{t.TypeName} {_context.Names.GetNameForDecl(decl)} = {t.DefaultValue};");
             }
             WriteLine(); 
@@ -611,9 +657,11 @@ namespace Plang.Compiler.Backend.Java {
 
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     WriteExpr(namedTupleAccessExpr.SubExpr);
-                    Write($".{t.MutatorMethodName}(\"{namedTupleAccessExpr.FieldName}\",");
+                    Write(".");
+                    Write(namedTupleAccessExpr.FieldName);
+                    Write(" = ");
                     WriteExpr(rval);
-                    WriteLine(");");
+                    WriteLine(";");
                     break;
 
                 case SeqAccessExpr seqAccessExpr:
@@ -1013,12 +1061,16 @@ namespace Plang.Compiler.Backend.Java {
                 case TypeManager.JType.JMap _:
                 case TypeManager.JType.JList _:
                 case TypeManager.JType.JSet _:
-                case TypeManager.JType.JTuple _:
-                case TypeManager.JType.JNamedTuple _:
                     Write($"({t.TypeName})");
                     Write("Values.clone(");
                     WriteExpr(ce.Term);
                     Write(")");
+                    break;
+               
+                /* JNamedTuples have a copy constructor. */
+                case TypeManager.JType.JNamedTuple nt:
+                    WriteExpr(ce.Term);
+                    Write(".clone()");
                     break;
                 
                 default:
@@ -1038,7 +1090,7 @@ namespace Plang.Compiler.Backend.Java {
             // Note: P collections are covariant (i.e. seq[int] extends seq[any]).  This means we'll
             // throw if we downcast and then try to assign a different type into it.  Confirm that
             // this is okay (or at least undefined in the language spec).
-            Write($"({_context.Types.JavaTypeFor(e.Type).ReferenceTypeName})");
+            // Write($"({_context.Types.JavaTypeFor(e.Type).ReferenceTypeName})");
 
             switch (e) {
                 case MapAccessExpr mapAccessExpr:
@@ -1050,7 +1102,7 @@ namespace Plang.Compiler.Backend.Java {
 
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     WriteExpr(namedTupleAccessExpr.SubExpr);
-                    Write($".{t.AccessorMethodName}(\"{namedTupleAccessExpr.FieldName}\")");
+                    Write($".{namedTupleAccessExpr.FieldName}");
                     break;
 
                 case SetAccessExpr setAccessExpr:
@@ -1071,7 +1123,7 @@ namespace Plang.Compiler.Backend.Java {
 
                 case TupleAccessExpr tupleAccessExpr:
                     WriteExpr(tupleAccessExpr.SubExpr);
-                    Write($".{t.AccessorMethodName}(\"{tupleAccessExpr.FieldNo.ToString()}\")");
+                    Write($".{tupleAccessExpr.FieldNo.ToString()}");
                     break;
 
             }

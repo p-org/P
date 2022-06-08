@@ -7,6 +7,9 @@ namespace Plang.Compiler.TypeChecker.Types
 {
     public class TupleType : PLanguageType
     {
+        // null if this type was not defined as part of a TypeDefDecl.
+        public string TypeDefedName { get; set; }
+        
         public TupleType(params PLanguageType[] types) : base(TypeKind.Tuple)
         {
             Types = new List<PLanguageType>(types);

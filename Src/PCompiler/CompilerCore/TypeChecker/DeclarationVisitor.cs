@@ -58,6 +58,19 @@ namespace Plang.Compiler.TypeChecker
             // (COLON type)?
             pEvent.PayloadType = ResolveType(context.type());
 
+            // For Tuple types, now that we have resolved the type of the typedef
+            // we set the tuple's type's name.
+            // TODO: this seems like the wrong place for this?
+            switch (pEvent.PayloadType)
+            {
+                case NamedTupleType nt:
+                    nt.TypeDefedName = pEvent.Name;
+                    break;
+                case TupleType tt:
+                    tt.TypeDefedName = pEvent.Name;
+                    break;
+            }
+            
             // SEMI 
             return pEvent;
         }
@@ -160,6 +173,20 @@ namespace Plang.Compiler.TypeChecker
             var typedef = (TypeDef) nodesToDeclarations.Get(context);
             // ASSIGN type 
             typedef.Type = ResolveType(context.type());
+           
+            // For Tuple types, now that we have resolved the type of the typedef
+            // we set the tuple's type's name.
+            // TODO: this seems like the wrong place for this?
+            switch (typedef.Type)
+            {
+                case NamedTupleType nt:
+                    nt.TypeDefedName = typedef.Name;
+                    break;
+                case TupleType tt:
+                    tt.TypeDefedName = typedef.Name;
+                    break;
+            }
+            
             // SEMI
             return typedef;
         }

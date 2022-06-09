@@ -158,6 +158,7 @@ namespace Plang.Compiler.TypeChecker
             foreach (PParser.ProgramContext programUnit in programUnits)
             {
                 DeclarationVisitor.PopulateDeclarations(handler, globalScope, programUnit, nodesToDeclarations);
+                TupleDeclNameVisitor.HydrateTupleDecls(handler, globalScope, programUnit, nodesToDeclarations);
             }
 
             return globalScope;

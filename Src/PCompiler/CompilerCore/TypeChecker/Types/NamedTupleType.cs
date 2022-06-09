@@ -7,6 +7,9 @@ namespace Plang.Compiler.TypeChecker.Types
 {
     public class NamedTupleType : PLanguageType
     {
+        // null if this type was not defined as part of a TypeDefDecl.
+        public string TypeDefedName { get; set; }
+
         private readonly IDictionary<string, NamedTupleEntry> lookupTable;
 
         public NamedTupleType(IReadOnlyList<NamedTupleEntry> fields) : base(TypeKind.NamedTuple)

@@ -43,16 +43,16 @@ namespace Plang.Compiler.Backend.Java {
             _context = new CompilationContext(job);
             _source = new CompiledFile(_context.FileName);
             _globalScope = scope;
-            
+
             _argumentForAnon = GenerateAnonArgLookup();
 
             WriteImports();
             WriteLine();
-            
+
             WriteLine(Constants.DoNotEditWarning);
             WriteLine();
 
-            
+
             WriteLine($"public class {_context.FileName.Replace(".java", "")} {{");
 
             WriteLine("/** Enums */");
@@ -61,21 +61,21 @@ namespace Plang.Compiler.Backend.Java {
                 WriteEnumDecl(e);
             }
             WriteLine();
-            
+
             WriteLine("/** Tuples */");
             foreach (var t in _globalScope.Tuples)
             {
                 WriteNamedTupleDecl(t);
             }
             WriteLine();
-            
+
             WriteLine("/** Events */");
             foreach (var e in _globalScope.Events)
             {
                 WriteEventDecl(e);
             }
             WriteLine();
-            
+
             //TODO: Do specs need interfaces?
 
             foreach (var m in _globalScope.Machines)
@@ -89,9 +89,9 @@ namespace Plang.Compiler.Backend.Java {
                     WriteMachineDecl(m);
                 }
             }
-            
+
             WriteLine($"}} // {_context.FileName} class definition");
-            
+
             return new List<CompiledFile> { _source };
         }
 
@@ -139,9 +139,9 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteNamedTupleDecl(NamedTupleType t)
         {
             // This is a sequence of <type, stringName> pairs.
-            List<(TypeManager.JType, string)> fields = 
+            List<(TypeManager.JType, string)> fields =
                 new List<(TypeManager.JType, string)>();
-            
+
             // Build up our list of fields.
             foreach (var e in t.Fields)
             {
@@ -156,7 +156,7 @@ namespace Plang.Compiler.Backend.Java {
                 }
 
                 TypeManager.JType jType = _context.Types.JavaTypeFor(type);
-                
+
                 fields.Add((jType, name));
             }
 
@@ -176,11 +176,11 @@ namespace Plang.Compiler.Backend.Java {
             foreach (var (jtype, fieldName) in fields)
             {
                 WriteLine($"this.{fieldName} = {jtype.DefaultValue};");
-                
+
             }
             WriteLine($"}}");
             WriteLine();
-            
+
             // Write the explicit constructor.
             Write($"public {tname}(");
             foreach (var ((jType, fieldName), sep) in fields.Select((pair, i) => (pair, i > 0 ? ", " : "")))
@@ -194,14 +194,14 @@ namespace Plang.Compiler.Backend.Java {
             }
             WriteLine($"}}");
             WriteLine();
-            
+
             // Write the copy constructor for cloning.
             WriteLine($"public {tname} clone() {{");
             Write($"return new {tname}(");
             foreach (var ((jType, fieldName), sep) in fields.Select((pair, i) => (pair, i > 0 ? ", " : "")))
             {
                 Write(sep);
-                
+
                 /* Note: this looks _a lot_ like CloneExpr().  Can we make this more harmonious? */
                 switch (jType)
                 {
@@ -222,22 +222,22 @@ namespace Plang.Compiler.Backend.Java {
                 case TypeManager.JType.JSet _:
                     Write($"({jType.TypeName})Values.clone({fieldName})");
                     break;
-               
+
                 /* JNamedTuples have a copy constructor. */
                 case TypeManager.JType.JNamedTuple nt:
                     Write($"{fieldName}.clone()");
                     break;
-                
+
                 default:
                     throw new NotImplementedException(jType.ToString());
                 }
             }
             WriteLine($");");
             WriteLine($"}} // clone() method end ");
-           
+
             // Write toString() in the same output style as a Java record.
             WriteLine($"public String toString() {{ ");
-            WriteLine($"StringBuilder sb = new StringBuilder(\"{tname}\");"); 
+            WriteLine($"StringBuilder sb = new StringBuilder(\"{tname}\");");
             WriteLine("sb.append(\"[\");");
             foreach (var ((jType, fieldName), i) in fields.Select((pair, i) => (pair, i)))
             {
@@ -251,7 +251,7 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine("sb.append(\"]\");");
             WriteLine("return sb.toString();");
             WriteLine("} // toString()");
-            
+
             WriteLine($"}} //{tname} class definition");
 
             WriteLine();
@@ -286,18 +286,18 @@ namespace Plang.Compiler.Backend.Java {
                     WriteLine($"record {eventName}({argType.TypeName} payload) implements PObserveEvent.PEvent {{ }} ");
                     break;
             }
-            
+
         }
 
         private void WriteMachineDecl(Machine m)
         {
             WriteLine($"// PMachine {m.Name} elided ");
         }
-        
+
         private void WriteMonitorDecl(Machine m)
         {
             string cname = _context.Names.GetNameForDecl(m);
-            
+
             WriteLine($"static class {cname} extends Monitor {{");
 
             // monitor fields
@@ -320,17 +320,17 @@ namespace Plang.Compiler.Backend.Java {
                 WriteLine($"public String {_context.Names.IdentForState(s)} = \"{s.Name}\";");
             }
             WriteLine();
-            
+
             // functions
             foreach (var f in m.Methods)
             {
                 WriteFunction(f);
             }
             WriteLine();
-            
+
             // constructor
             WriteMonitorCstr(m);
-            
+
 
             WriteLine($"}} // {cname} monitor definition");
         }
@@ -347,7 +347,7 @@ namespace Plang.Compiler.Backend.Java {
             {
                 WriteLine($"// Async function {f.Name} elided");
             }
-           
+
             WriteFunctionSignature(f); WriteLine(" {");
 
             if (f.IsAnon && f.Signature.Parameters.Any())
@@ -358,20 +358,20 @@ namespace Plang.Compiler.Backend.Java {
 
                 WriteLine($"{t.TypeName} {name} = pEvent.payload;");
             }
-            
+
             foreach (var decl in f.LocalVariables)
             {
                 //TODO: for reference types the default value can simply be null; it will be reassigned later.
                 TypeManager.JType t = _context.Types.JavaTypeFor(decl.Type);
                 WriteLine($"{t.TypeName} {_context.Names.GetNameForDecl(decl)} = {t.DefaultValue};");
             }
-            WriteLine(); 
-            
+            WriteLine();
+
             foreach (var stmt in f.Body.Statements)
             {
                 WriteStmt(stmt);
             }
-            
+
             WriteLine("}");
         }
 
@@ -380,20 +380,20 @@ namespace Plang.Compiler.Backend.Java {
             string fname = _context.Names.GetNameForDecl(f);
 
             Write("private ");
-            
+
             bool isStatic = f.Owner == null;
             if (isStatic)
             {
                 Write("static ");
             }
-            
+
 
             string args;
             if (f.IsAnon)
             {
                 args = $"{_argumentForAnon[f].Name} pEvent";
-            } 
-            else 
+            }
+            else
             {
                 args = string.Join(
                     ",",
@@ -402,7 +402,7 @@ namespace Plang.Compiler.Backend.Java {
             }
 
             TypeManager.JType retType = _context.Types.JavaTypeFor(f.Signature.ReturnType);
-            
+
             Write($"{retType.TypeName} {fname}({args})");
 
             if (f.CanChangeState == true)
@@ -410,21 +410,21 @@ namespace Plang.Compiler.Backend.Java {
                 Write(" throws TransitionException");
             }
         }
-        
+
         private void WriteMonitorCstr(Machine m)
         {
             string cname = _context.Names.GetNameForDecl(m);
-            
+
             WriteLine($"public {cname}() {{");
             WriteLine("super();");
-            
+
             foreach (var s in m.States)
-            {   
+            {
                 WriteStateBuilderDecl(s);
             }
             WriteLine("} // constructor");
         }
-        
+
         private void WriteStateBuilderDecl(State s)
         {
             WriteLine($"addState(new State.Builder({_context.Names.IdentForState(s)})");
@@ -434,14 +434,14 @@ namespace Plang.Compiler.Backend.Java {
             {
                 WriteStateBuilderEventHandler(e, a);
             }
-            
+
             WriteLine(".build());");
         }
-        
+
         private void WriteStateBuilderEventHandler(PEvent e, IStateAction a)
         {
             string ename = _context.Names.GetNameForDecl(e);
-           
+
             switch (a)
             {
                 case EventDefer _:
@@ -496,15 +496,15 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(assertStmt.Message);
                     WriteLine(");");
                     break;
-                
+
                 case AssignStmt assignStmt:
                     WriteAssignStatement(assignStmt);
                     break;
-                
+
                 case BreakStmt _:
                     WriteLine("break;");
                     break;
-                
+
                 case CompoundStmt compoundStmt:
                     WriteLine("{");
                     foreach (var s in compoundStmt.Statements)
@@ -513,18 +513,18 @@ namespace Plang.Compiler.Backend.Java {
                     }
                     WriteLine("}");
                     break;
-               
+
                 case ContinueStmt _:
                     WriteLine("continue;");
                     break;
-                    
+
                 case CtorStmt _:
                     goto default;
-                    
+
                 case FunCallStmt funCallStmt:
                     WriteFunctionCall(funCallStmt.Function, funCallStmt.ArgsList);
                     break;
-                
+
                 case GotoStmt gotoStmt:
                     Write($"gotoState({_context.Names.IdentForState(gotoStmt.State)}");
                     if (gotoStmt.Payload != null)
@@ -536,7 +536,7 @@ namespace Plang.Compiler.Backend.Java {
                     WriteLine(");");
                     WriteLine("return;");
                     break;
-                    
+
                 case IfStmt ifStmt:
                     Write("if (");
                     WriteExpr(ifStmt.Condition);
@@ -544,21 +544,21 @@ namespace Plang.Compiler.Backend.Java {
 
                     if (ifStmt.ThenBranch.Statements.Count == 0)
                     {
-                        Write("{}");    
+                        Write("{}");
                     }
                     else
                     {
                         WriteStmt(ifStmt.ThenBranch);
                     }
-                    
+
                     if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Count > 0)
                     {
                         WriteLine(" else ");
                         WriteStmt(ifStmt.ElseBranch);
                     }
                     break;
-                    
-                
+
+
                 case InsertStmt insertStmt:
                     t = _context.Types.JavaTypeFor(insertStmt.Variable.Type);
                     WriteExpr(insertStmt.Variable);
@@ -593,7 +593,7 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(removeStmt.Value);
                     WriteLine(");");
                     break;
-                
+
                 case ReturnStmt returnStmt:
                     Write("return ");
                     if (returnStmt.ReturnValue != null)
@@ -602,7 +602,7 @@ namespace Plang.Compiler.Backend.Java {
                     }
                     WriteLine(";");
                     break;
-                    
+
                 case SendStmt _:
                     goto default;
 
@@ -610,7 +610,7 @@ namespace Plang.Compiler.Backend.Java {
                 {
                     string varname = _context.Names.GetNameForDecl(foreachStmt.Item);
                     t = _context.Types.JavaTypeFor(foreachStmt.Item.Type);
-                    
+
                     Write($"for ({t.TypeName} {varname} : ");
                     WriteExpr(foreachStmt.IterCollection);
                     Write(") ");
@@ -623,24 +623,24 @@ namespace Plang.Compiler.Backend.Java {
                     Write(") ");
                     WriteStmt(whileStmt.Body);
                     break;
-                
+
                 case AnnounceStmt _:
                     goto default;
-                    
+
                 default:
                     WriteLine($"// TODO: {stmt}");
                     return;
                     //throw new NotImplementedException(stmt.GetType().ToString());
             }
         }
-        
+
         private void WriteAssignStatement(AssignStmt assignStmt)
         {
             IPExpr lval = assignStmt.Location;
             TypeManager.JType t = _context.Types.JavaTypeForVarLocation(lval);
-            
+
             IPExpr rval = assignStmt.Value;
-            
+
             switch (lval)
             {
                 case MapAccessExpr mapAccessExpr:
@@ -708,7 +708,7 @@ namespace Plang.Compiler.Backend.Java {
             }
 
             string fname = _context.Names.GetNameForDecl(f);
-            
+
             Write($"{fname}(");
             foreach (var (param, sep)in args.Select((p, i) => (p, i > 0 ? ", " : "")))
             {
@@ -721,7 +721,7 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteExpr(IPExpr expr)
         {
             TypeManager.JType t;
-            
+
             switch (expr)
             {
                 case BinOpExpr binOpExpr:
@@ -868,7 +868,7 @@ namespace Plang.Compiler.Backend.Java {
                 case VariableAccessExpr variableAccessExpr:
                     Write(_context.Names.GetNameForDecl(variableAccessExpr.Variable));
                     break;
-                
+
                 case MapAccessExpr _:
                 case NamedTupleAccessExpr _:
                 case SetAccessExpr _:
@@ -876,7 +876,7 @@ namespace Plang.Compiler.Backend.Java {
                 case TupleAccessExpr _:
                     WriteStructureAccess(expr);
                     break;
-                
+
                 default:
                     throw new NotImplementedException(expr.ToString());
             }
@@ -894,7 +894,7 @@ namespace Plang.Compiler.Backend.Java {
                 WriteExpr(right);
                 Write(")");
             }
-           
+
             // This emits a call to the P runtime's `Values.compare()` static method,
             // which returns a value on -1, 0, 1 in the usual Java manner.
             void WriteComparatorCall(string op)
@@ -916,17 +916,17 @@ namespace Plang.Compiler.Backend.Java {
             void WriteEqualitycall(string op)
             {
                 Write("(");
-                
+
                 Write("Values.equal(");
                 WriteExpr(left);
                 Write(", ");
                 WriteExpr(right);
                 Write(")");
-               
+
                 Write($" {op} true");
                 Write(")");
             }
-            
+
             // Numeric operations are straightforward, since `left` and `right` will either be
             // primitive types or boxed primitive types (in which case we let auto-unboxing do its thing)
             switch (op)
@@ -948,7 +948,7 @@ namespace Plang.Compiler.Backend.Java {
                     WriteDirectComparisonExpr("%");
                     return;
             }
-          
+
             // Note: the following tries to be smart about using auto-unboxing when the left and right-hand
             // sides of the operator can be coersed into a primitive type (and thus `==`, `<`, etc can be
             // used without a method call.)  To disable this for debugging purposes, uncomment the following
@@ -961,11 +961,11 @@ namespace Plang.Compiler.Backend.Java {
             //    TMP_tmp26 = (TMP_tmp25 > 0);
             //WriteComparisonBinOp(left, op, right, writeComparatorCall, writeEqualitycall);
             //return;
-           
+
             // Non-numeric binary operators are comparison operators.  Depending on the
             // type we may be able to use straightforward comparison like "<", but in
             // other cases we will have to fall back on comparators.
-            
+
             TypeManager.JType lhsType = _context.Types.JavaTypeFor(left.Type);
             TypeManager.JType rhsType = _context.Types.JavaTypeFor(right.Type);
             switch (lhsType, rhsType)
@@ -978,7 +978,7 @@ namespace Plang.Compiler.Backend.Java {
                 case (TypeManager.JType.JMachine _, TypeManager.JType.JMachine _):
                     WriteComparisonBinOp(op, WriteDirectComparisonExpr, WriteDirectComparisonExpr);
                     return;
-                
+
                 // Types for which we need non-Java operators (i.e. "Values.equals()", "Values.Compare()", ...)
                 // which are emitted via the `writeComparatorCall` delegate.
                 default:
@@ -1009,14 +1009,14 @@ namespace Plang.Compiler.Backend.Java {
                     compareIt(">");
                     break;
 
-                // Equality operators 
+                // Equality operators
                 case BinOpType.Neq:
                     equalIt("!=");
                     break;
                 case BinOpType.Eq:
                     equalIt("==");
                     break;
-                
+
                 // Arithmetic operators
                 case BinOpType.Add:
                 case BinOpType.Sub:
@@ -1032,7 +1032,7 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteClone(CloneExpr ce)
         {
             TypeManager.JType t = _context.Types.JavaTypeFor(ce.Term.Type);
-            
+
             // Note: We elide calls to Clone for types that are either immutable
             // or can unbox to copy-by-value types.  If there's an issue, comment
             // out the first two writExpr; break; s and fall through to the non-boxable
@@ -1046,7 +1046,7 @@ namespace Plang.Compiler.Backend.Java {
                 case TypeManager.JType.JFloat _:
                     WriteExpr(ce.Term);
                     break;
-                    
+
                 /* Same with immutable types. */
                 case TypeManager.JType.JString _:
                 case TypeManager.JType.JMachine _:
@@ -1063,13 +1063,13 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(ce.Term);
                     Write(")");
                     break;
-               
+
                 /* JNamedTuples have a copy constructor. */
                 case TypeManager.JType.JNamedTuple nt:
                     WriteExpr(ce.Term);
                     Write(".clone()");
                     break;
-                
+
                 default:
                     throw new NotImplementedException(t.TypeName);
             }
@@ -1078,7 +1078,7 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteStructureAccess(IPExpr e)
         {
             TypeManager.JType t = _context.Types.JavaTypeForVarLocation(e);
-            
+
             // We have to explicitly cast accesses to collections since we might be upcasting (say,
             // if we're extracting an int out of a tuple (List<Object>).).  Use the reference
             // type name to ensure we're casting to another Object (and let Java handle auto-unboxing
@@ -1109,7 +1109,7 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(setAccessExpr.IndexExpr);
                     Write(")");
                     break;
-                    
+
                 case SeqAccessExpr seqAccessExpr:
                     // TODO: do we need to think about handling out of bounds exceptions?
                     WriteExpr(seqAccessExpr.SeqExpr);

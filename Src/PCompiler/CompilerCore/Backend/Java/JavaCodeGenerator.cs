@@ -260,21 +260,19 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteEnumDecl(PEnum e)
         {
             WriteLine($"public static class {e.Name} {{");
-            
-            foreach (var param in e.Values) 
+
+            foreach (var param in e.Values)
             {
                 WriteLine($"public static final int {param.Name} = {param.Value};");
             }
-            
+
             WriteLine("}");
         }
-        
+
         private void WriteEventDecl(PEvent e)
         {
             string eventName = _context.Names.GetNameForDecl(e);
-            
-            // FIXME: If e.PayloadType is PrimitiveType.Null, this produces an 
-            // extraneous value.
+
             TypeManager.JType argType = _context.Types.JavaTypeFor(e.PayloadType);
             switch (argType)
             {
@@ -461,7 +459,6 @@ namespace Plang.Compiler.Backend.Java {
                 }
                 case EventGotoState { TransitionFunction: { } } gs:
                 {
-                    // TODO: transition function args??
                     string sname = _context.Names.IdentForState(gs.Target);
                     string tname = _context.Names.GetNameForDecl(gs.TransitionFunction);
                     WriteLine($".withEvent({ename}.class, e -> {{ {tname}(e); gotoState({sname}); }})");
@@ -478,7 +475,7 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteStmt(IPStmt stmt)
         {
             TypeManager.JType t;
-            
+
             switch (stmt)
             {
                 case AddStmt addStmt:
@@ -488,7 +485,7 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(addStmt.Value);
                     WriteLine(");");
                     break;
-                
+
                 case AssertStmt assertStmt:
                     Write("tryAssert(");
                     WriteExpr(assertStmt.Assertion);
@@ -570,22 +567,33 @@ namespace Plang.Compiler.Backend.Java {
                 case MoveAssignStmt moveAssignStmt:
                     WriteMoveAssignStatement(moveAssignStmt);
                     break;
-                    
+
                 case NoStmt _:
                     break;
-                
+
                 case PrintStmt printStmt:
                     Write("System.out.println(");
                     WriteExpr(printStmt.Message);
                     WriteLine(");");
                     break;
-                
-                case RaiseStmt _:
-                    goto default; // TODO
-                    
+
+                case RaiseStmt raiseStmt:
+                    Write("tryRaiseEvent(new ");
+                    WriteExpr(raiseStmt.PEvent);
+                    Write("(");
+                    foreach (var (param, sep)in raiseStmt.Payload.Select((p, i) => (p, i > 0 ? ", " : "")))
+                    {
+                        Write(sep);
+                        WriteExpr(param);
+                    }
+                    Write(")");
+                    WriteLine(");");
+                    WriteLine("return;");
+                    break;
+
                 case ReceiveStmt _:
-                    goto default; 
-                    
+                    goto default;
+
                 case RemoveStmt removeStmt:
                     t = _context.Types.JavaTypeFor(removeStmt.Variable.Type);
                     WriteExpr(removeStmt.Variable);
@@ -797,8 +805,18 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 }
 
-                case NamedTupleExpr _:
-                    goto default; // TODO
+                case NamedTupleExpr te:
+                {
+                    t = _context.Types.JavaTypeFor(te.Type);
+                    Write($"new {t.TypeName}(");
+                    foreach (var (field, sep) in te.TupleFields.Select((e, i) => (e, i > 0 ? ", " : "")))
+                    {
+                        Write(sep);
+                        WriteExpr(field);
+                    }
+                    Write(")");
+                    break;
+                }
                 case NondetExpr _:
                     goto default; // TODO
                 case NullLiteralExpr _:
@@ -840,14 +858,25 @@ namespace Plang.Compiler.Backend.Java {
                         case UnaryOpType.Not:
                             Write("!");
                             break;
-                                
+
                     }
                     Write("(");
                     WriteExpr(ue.SubExpr);
                     Write(")");
                     break;
-                case UnnamedTupleExpr _:
-                    goto default; // TODO
+                case UnnamedTupleExpr te:
+                {
+                    t = _context.Types.JavaTypeFor(te.Type);
+                    Write($"new {t.TypeName}(");
+                    foreach (var (field, sep) in te.TupleFields.Select((e, i) =>
+                                 (e, i > 0 ? ", " : "")))
+                    {
+                        Write(sep);
+                        WriteExpr(field);
+                    }
+                    Write(")");
+                    break;
+                }
                 case ValuesExpr ve:
                 {
                     t = _context.Types.JavaTypeFor(ve.Expr.Type);

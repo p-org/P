@@ -403,10 +403,22 @@ namespace Plang.Compiler.Backend.Java {
 
             Write($"{retType.TypeName} {fname}({args})");
 
+            // If this function has exceptional control flow (for raising events or state transition)
+            // we need to annotate it appropriately.
+            List<string> throwables = new List<string>();
             if (f.CanChangeState == true)
             {
-                Write(" throws TransitionException");
+                throwables.Add("TransitionException");
             }
+            if (f.CanRaiseEvent == true)
+            {
+                throwables.Add("RaiseEventException");
+            }
+            if (throwables.Count > 0)
+            {
+                Write($"throws {string.Join(", ", throwables)}");
+            }
+
         }
 
         private void WriteMonitorCstr(Machine m)

@@ -161,8 +161,8 @@ namespace Plang.Compiler.Backend.Java {
             }
 
             string tname = _context.Names.NameForNamedTuple(t);
-            WriteLine($"static class {tname} {{");
             WriteLine($"// {t.CanonicalRepresentation}");
+            WriteLine($"static class {tname} implements Values.PTuple<{tname}> {{");
 
             // Write the fields.
             foreach (var (jType, fieldName) in fields)
@@ -196,7 +196,7 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine();
 
             // Write the copy constructor for cloning.
-            WriteLine($"public {tname} clone() {{");
+            WriteLine($"public {tname} deepClone() {{");
             Write($"return new {tname}(");
             foreach (var ((jType, fieldName), sep) in fields.Select((pair, i) => (pair, i > 0 ? ", " : "")))
             {
@@ -220,33 +220,36 @@ namespace Plang.Compiler.Backend.Java {
                 case TypeManager.JType.JMap _:
                 case TypeManager.JType.JList _:
                 case TypeManager.JType.JSet _:
-                    Write($"({jType.TypeName})Values.clone({fieldName})");
+                    Write($"({jType.TypeName})Values.deepClone({fieldName})");
                     break;
 
-                /* JNamedTuples have a copy constructor. */
+                /* JNamedTuples have a copy constructor which avoids us having
+                 * to bounce through Values.deepClone(). */
                 case TypeManager.JType.JNamedTuple nt:
-                    Write($"{fieldName}.clone()");
+                    Write($"{fieldName}.deepClone()");
                     break;
 
                 default:
                     throw new NotImplementedException(jType.ToString());
                 }
             }
-            WriteLine($");");
-            WriteLine($"}} // clone() method end ");
+            WriteLine(");");
+            WriteLine("} // deepClone()");
+            WriteLine();
+
+            // Deep equality predicate.
+            WriteLine($"public boolean deepEquals({tname} o2) {{");
+            WriteLine("return Values.deepEquals(this, o2);");
+            WriteLine("} // deepEquals()");
+            WriteLine();
 
             // Write toString() in the same output style as a Java record.
-            WriteLine($"public String toString() {{ ");
+            WriteLine("public String toString() {");
             WriteLine($"StringBuilder sb = new StringBuilder(\"{tname}\");");
             WriteLine("sb.append(\"[\");");
-            foreach (var ((jType, fieldName), i) in fields.Select((pair, i) => (pair, i)))
+            foreach (var ((_, fieldName), sep) in fields.Select((pair, i) => (pair, i > 0 ? "," : "")))
             {
-                if (i > 0)
-                {
-                    WriteLine("sb.append(\",\"); ");
-                }
-                WriteLine($"sb.append(\"{fieldName}=\");");
-                WriteLine($"sb.append({fieldName});");
+                WriteLine($"sb.append(\"{sep}{fieldName}=\" + {fieldName});");
             }
             WriteLine("sb.append(\"]\");");
             WriteLine("return sb.toString();");
@@ -958,7 +961,7 @@ namespace Plang.Compiler.Backend.Java {
             {
                 Write("(");
 
-                Write("Values.equal(");
+                Write("Values.deepEqual(");
                 WriteExpr(left);
                 Write(", ");
                 WriteExpr(right);
@@ -995,7 +998,7 @@ namespace Plang.Compiler.Backend.Java {
             // used without a method call.)  To disable this for debugging purposes, uncomment the following
             // two lines and all comparisons will go through the Values interface.  Examples of the difference:
             //
-            //    TMP_tmp22 = (Values.equal(TMP_tmp21, tTransStatus.ERROR) == true);
+            //    TMP_tmp22 = (Values.deepEqual(TMP_tmp21, tTransStatus.ERROR) == true);
             //    TMP_tmp22 = (TMP_tmp21 == tTransStatus.ERROR);
             //
             //    TMP_tmp26 = (Values.compare(TMP_tmp25, 0) > 0);
@@ -1020,7 +1023,7 @@ namespace Plang.Compiler.Backend.Java {
                     WriteComparisonBinOp(op, WriteDirectComparisonExpr, WriteDirectComparisonExpr);
                     return;
 
-                // Types for which we need non-Java operators (i.e. "Values.equals()", "Values.Compare()", ...)
+                // Types for which we need non-Java operators (i.e. "Values.deepEquals()", "Values.Compare()", ...)
                 // which are emitted via the `writeComparatorCall` delegate.
                 default:
                     WriteComparisonBinOp(op, WriteComparatorCall, WriteEqualitycall);
@@ -1100,7 +1103,7 @@ namespace Plang.Compiler.Backend.Java {
                 case TypeManager.JType.JList _:
                 case TypeManager.JType.JSet _:
                     Write($"({t.TypeName})");
-                    Write("Values.clone(");
+                    Write("Values.deepClone(");
                     WriteExpr(ce.Term);
                     Write(")");
                     break;
@@ -1108,7 +1111,7 @@ namespace Plang.Compiler.Backend.Java {
                 /* JNamedTuples have a copy constructor. */
                 case TypeManager.JType.JNamedTuple nt:
                     WriteExpr(ce.Term);
-                    Write(".clone()");
+                    Write(".deepClone()");
                     break;
 
                 default:

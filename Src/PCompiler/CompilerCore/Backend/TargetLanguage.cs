@@ -2,6 +2,7 @@ using Plang.Compiler.Backend.C;
 using Plang.Compiler.Backend.CSharp;
 using Plang.Compiler.Backend.Rvm;
 using System.Collections.Generic;
+using Plang.Compiler.Backend.Java;
 using Plang.Compiler.Backend.Symbolic;
 
 namespace Plang.Compiler.Backend
@@ -15,6 +16,7 @@ namespace Plang.Compiler.Backend
         {
             RegisterCodeGenerator(CompilerOutput.CSharp, new CSharpCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.C, new CCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.Java, new JavaCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.Rvm, new RvmCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.Symbolic, new SymbolicCodeGenerator());
         }

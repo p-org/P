@@ -21,12 +21,12 @@ namespace Plang.Compiler.Backend.Java {
         private CompiledFile _source;
         private Scope _globalScope;
 
-        // In the C# and Rvm compilers, ANONs' function signatures are hard-coded to
+        // In the C# and Rvm compilers, event handlers' signatures are hard-coded to
         // be an abstract Event type.  However, our Java runtime takes advantage of the
-        // typechecker to be able to specify exactly _which_ subclass it is going to be
+        // typechecker to be able to specify exactly _which_ event it is going to be
         // handed.  This isn't something explicitly handed to us in the AST so we
         // accumulate it ourselves before proceeding with code generation.
-        private Dictionary<Function, PEvent> _argumentForAnon;
+        private Dictionary<Function, PEvent> _eventArgForFn;
 
         /// <summary>
         /// Generates Java code for a given compilation job.
@@ -44,7 +44,7 @@ namespace Plang.Compiler.Backend.Java {
             _source = new CompiledFile(_context.FileName);
             _globalScope = scope;
 
-            _argumentForAnon = GenerateAnonArgLookup();
+            _eventArgForFn = GenerateFunctionToArgMapping();
 
             WriteImports();
             WriteLine();
@@ -95,7 +95,7 @@ namespace Plang.Compiler.Backend.Java {
             return new List<CompiledFile> { _source };
         }
 
-        private Dictionary<Function, PEvent> GenerateAnonArgLookup()
+        private Dictionary<Function, PEvent> GenerateFunctionToArgMapping()
         {
             Dictionary<Function, PEvent> ret = new Dictionary<Function, PEvent>();
 
@@ -106,13 +106,24 @@ namespace Plang.Compiler.Backend.Java {
                 {
                     foreach (var (e, a) in s.AllEventHandlers)
                     {
+                        PEvent e2;
                         switch (a)
                         {
                             case EventDoAction da:
-                                ret.Add(da.Target, e);
+                                if (ret.TryGetValue(da.Target, out e2) && e != e2)
+                                {
+                                    throw new Exception(
+                                        $"Inconsistent argument type to {da.Target.Name}: seen both {e2.Name} and {e.Name}");
+                                }
+                                ret[da.Target] = e;
                                 break;
                             case EventGotoState { TransitionFunction: { } } gs:
-                                ret.Add(gs.TransitionFunction, e);
+                                if (ret.TryGetValue(gs.TransitionFunction, out e2) && e != e2)
+                                {
+                                    throw new Exception(
+                                        $"Inconsistent argument type to {gs.TransitionFunction.Name}: seen both {e2.Name} and {e.Name}");
+                                }
+                                ret[gs.TransitionFunction] = e;
                                 break;
                             case EventDefer _:
                                 goto default;
@@ -392,7 +403,7 @@ namespace Plang.Compiler.Backend.Java {
             string args;
             if (f.IsAnon)
             {
-                args = $"{_argumentForAnon[f].Name} pEvent";
+                args = $"{_eventArgForFn[f].Name} pEvent";
             }
             else
             {

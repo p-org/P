@@ -408,7 +408,20 @@ namespace Plang.Compiler.Backend.Java {
             string args;
             if (f.IsAnon)
             {
-                args = $"{_eventArgForFn[f].Name} pEvent";
+                if (f.Signature.Parameters.Count == 0)
+                {
+                    args = "";
+                }
+                else if (f.Signature.Parameters.Count == 1)
+                {
+                    args = $"{_eventArgForFn[f].Name} pEvent";
+                }
+                else
+                {
+                    int line = f.SourceLocation.start.Line;
+                    throw new Exception(
+                        $"Function beginning at line {line} has unexpected number {f.Signature.Parameters.Count} of arguments");
+                }
             }
             else
             {
@@ -476,7 +489,13 @@ namespace Plang.Compiler.Backend.Java {
                 case EventDefer _:
                     WriteLine($"// Ignoring deferred event {ename}");
                     break;
-                case EventDoAction da:
+                case EventDoAction da when da.Target.Signature.Parameters.Count == 0:
+                {
+                    string aname = _context.Names.GetNameForDecl(da.Target);
+                    WriteLine($".withEvent({ename}.class, __ -> {aname}(); )");
+                    break;
+                }
+                case EventDoAction da when da.Target.Signature.Parameters.Count > 0:
                 {
                     string aname = _context.Names.GetNameForDecl(da.Target);
                     WriteLine($".withEvent({ename}.class, this::{aname})");

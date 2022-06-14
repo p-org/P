@@ -222,8 +222,16 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine();
 
             // Deep equality predicate.
-            WriteLine($"public boolean deepEquals({tname} o2) {{");
-            WriteLine("return Values.deepEquals(this, o2);");
+            WriteLine($"public boolean deepEquals({tname} other) {{");
+            WriteLine("return (true");
+            foreach (var (jType, fieldName) in fields)
+            {
+                Write(" && ");
+                WriteLine(jType.IsPrimitive
+                    ? $"this.{fieldName} == other.{fieldName}"
+                    : $"Values.deepEquals(this.{fieldName}, other.{fieldName})");
+            }
+            WriteLine(");");
             WriteLine("} // deepEquals()");
             WriteLine();
 
@@ -969,8 +977,6 @@ namespace Plang.Compiler.Backend.Java {
                     break;
             }
         }
-
-
 
         private void WriteStructureAccess(IPExpr e)
         {

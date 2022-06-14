@@ -3,8 +3,6 @@ using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Mime;
-using Antlr4.Runtime;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -204,7 +202,7 @@ namespace Plang.Compiler.Backend.Java {
                 Write($"{sep}{jType.TypeName} {fieldName}");
             }
             WriteLine($") {{");
-            foreach (var (jtype, fieldName) in fields)
+            foreach (var (_, fieldName) in fields)
             {
                 WriteLine($"this.{fieldName} = {fieldName};");
             }
@@ -217,37 +215,7 @@ namespace Plang.Compiler.Backend.Java {
             foreach (var ((jType, fieldName), sep) in fields.Select((pair, i) => (pair, i > 0 ? ", " : "")))
             {
                 Write(sep);
-
-                /* Note: this looks _a lot_ like CloneExpr().  Can we make this more harmonious? */
-                switch (jType)
-                {
-                /* Primitive types are easy since they're copy by value. */
-                case TypeManager.JType.JVoid _:
-                case TypeManager.JType.JBool _:
-                case TypeManager.JType.JInt _:
-                case TypeManager.JType.JFloat _:
-                case TypeManager.JType.JString _:
-                case TypeManager.JType.JMachine _:
-                    Write($"{fieldName}");
-                    break;
-
-                /* Non-boxable reference types must be cloned explicitly and then
-                 * cast to their expected type (since clone() is Object-producing). */
-                case TypeManager.JType.JMap _:
-                case TypeManager.JType.JList _:
-                case TypeManager.JType.JSet _:
-                    Write($"({jType.TypeName})Values.deepClone({fieldName})");
-                    break;
-
-                /* JNamedTuples have a copy constructor which avoids us having
-                 * to bounce through Values.deepClone(). */
-                case TypeManager.JType.JNamedTuple nt:
-                    Write($"{fieldName}.deepClone()");
-                    break;
-
-                default:
-                    throw new NotImplementedException(jType.ToString());
-                }
+                WriteClone(jType, () => Write(fieldName));
             }
             WriteLine(");");
             WriteLine("} // deepClone()");
@@ -782,7 +750,8 @@ namespace Plang.Compiler.Backend.Java {
                 case ChooseExpr _:
                     goto default; //TODO
                 case CloneExpr ce:
-                    WriteClone(ce);
+                    t = _context.Types.JavaTypeFor(ce.Type);
+                    WriteClone(t, () => WriteExpr(ce.Term));
                     break;
                 case CoerceExpr _:
                     goto default; //TODO
@@ -944,196 +913,64 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteBinOp(IPExpr left, BinOpType op, IPExpr right)
         {
-
-            // This emits a raw comparison operation between `left` and `right`.
-            void WriteDirectComparisonExpr(string op)
+            void WritePrim()
             {
-                Write("(");
-                WriteExpr(left);
-                Write($" {op} ");
-                WriteExpr(right);
-                Write(")");
+                WriteExpr(left); Write($" {op.JavaPrimitiveBinOp()} "); WriteExpr(right);
             }
-
-            // This emits a call to the P runtime's `Values.compare()` static method,
-            // which returns a value on -1, 0, 1 in the usual Java manner.
-            void WriteComparatorCall(string op)
-            {
-                Write("(");
-
-                Write("Values.compare(");
-                WriteExpr(left);
-                Write(", ");
-                WriteExpr(right);
-                Write(")");
-
-                Write($" {op} 0");
-                Write(")");
-            }
-
-            // This emits a call to the P runtime's `Values.equality()` static method,
-            // and compares the result with `op` against the value `true`.
-            void WriteEqualitycall(string op)
-            {
-                Write("(");
-
-                Write("Values.deepEqual(");
-                WriteExpr(left);
-                Write(", ");
-                WriteExpr(right);
-                Write(")");
-
-                Write($" {op} true");
-                Write(")");
-            }
-
-            // Numeric operations are straightforward, since `left` and `right` will either be
-            // primitive types or boxed primitive types (in which case we let auto-unboxing do its thing)
-            switch (op)
-            {
-                // Arithmetic operators
-                case BinOpType.Add:
-                    WriteDirectComparisonExpr("+");
-                    return;
-                case BinOpType.Sub:
-                    WriteDirectComparisonExpr("-");
-                    return;
-                case BinOpType.Mul:
-                    WriteDirectComparisonExpr("*");
-                    return;
-                case BinOpType.Div:
-                    WriteDirectComparisonExpr("/");
-                    return;
-                case BinOpType.Mod:
-                    WriteDirectComparisonExpr("%");
-                    return;
-            }
-
-            // Note: the following tries to be smart about using auto-unboxing when the left and right-hand
-            // sides of the operator can be coersed into a primitive type (and thus `==`, `<`, etc can be
-            // used without a method call.)  To disable this for debugging purposes, uncomment the following
-            // two lines and all comparisons will go through the Values interface.  Examples of the difference:
-            //
-            //    TMP_tmp22 = (Values.deepEqual(TMP_tmp21, tTransStatus.ERROR) == true);
-            //    TMP_tmp22 = (TMP_tmp21 == tTransStatus.ERROR);
-            //
-            //    TMP_tmp26 = (Values.compare(TMP_tmp25, 0) > 0);
-            //    TMP_tmp26 = (TMP_tmp25 > 0);
-            //WriteComparisonBinOp(left, op, right, writeComparatorCall, writeEqualitycall);
-            //return;
-
-            // Non-numeric binary operators are comparison operators.  Depending on the
-            // type we may be able to use straightforward comparison like "<", but in
-            // other cases we will have to fall back on comparators.
 
             TypeManager.JType lhsType = _context.Types.JavaTypeFor(left.Type);
             TypeManager.JType rhsType = _context.Types.JavaTypeFor(right.Type);
-            switch (lhsType, rhsType)
+
+            switch (op.GetKind())
             {
-                // Types for which we can use direct operators like "<", "==",
-                // emitted via `writeDirectComparisonExpr`.
-                case (TypeManager.JType.JBool _, TypeManager.JType.JBool _):
-                case (TypeManager.JType.JInt _, TypeManager.JType.JInt _):
-                case (TypeManager.JType.JFloat _, TypeManager.JType.JFloat _):
-                case (TypeManager.JType.JMachine _, TypeManager.JType.JMachine _):
-                    WriteComparisonBinOp(op, WriteDirectComparisonExpr, WriteDirectComparisonExpr);
-                    return;
-
-                // Types for which we need non-Java operators (i.e. "Values.deepEquals()", "Values.Compare()", ...)
-                // which are emitted via the `writeComparatorCall` delegate.
-                default:
-                    WriteComparisonBinOp(op, WriteComparatorCall, WriteEqualitycall);
-                    return;
-            }
-        }
-
-        /*
-         * compareIt is a delegate that takes an ordering operator and emits a comparison check.
-         * equalIt is a delegate that takes an ordering operator and emits an equality check.
-         */
-        private void WriteComparisonBinOp(BinOpType op, Action<string> compareIt, Action<string> equalIt)
-        {
-            switch (op)
-            {
-                // Comparison operators
-                case BinOpType.Lt:
-                    compareIt("<");
-                    break;
-                case BinOpType.Le:
-                    compareIt("<=");
-                    break;
-                case BinOpType.Ge:
-                    compareIt(">=");
-                    break;
-                case BinOpType.Gt:
-                    compareIt(">");
+                // Numeric and boolean operations are straightforward, since `left` and `right` will either be
+                // primitive types or boxed primitive types (in which case we let auto-unboxing do its thing)
+                case BinOpKind.Boolean:
+                case BinOpKind.Numeric:
+                    WritePrim();
                     break;
 
-                // Equality operators
-                case BinOpType.Neq:
-                    equalIt("!=");
-                    break;
-                case BinOpType.Eq:
-                    equalIt("==");
-                    break;
-
-                // Arithmetic operators
-                case BinOpType.Add:
-                case BinOpType.Sub:
-                case BinOpType.Mul:
-                case BinOpType.Div:
-                case BinOpType.Mod:
-                default:
-                    throw new NotImplementedException(op.ToString());
-            }
-        }
-
-
-        private void WriteClone(CloneExpr ce)
-        {
-            TypeManager.JType t = _context.Types.JavaTypeFor(ce.Term.Type);
-
-            // Note: We elide calls to Clone for types that are either immutable
-            // or can unbox to copy-by-value types.  If there's an issue, comment
-            // out the first two writExpr; break; s and fall through to the non-boxable
-            // reference type case.
-            switch (t)
-            {
-                /* Primitive types are easy since they're copy by value. */
-                case TypeManager.JType.JVoid _:
-                case TypeManager.JType.JBool _:
-                case TypeManager.JType.JInt _:
-                case TypeManager.JType.JFloat _:
-                    WriteExpr(ce.Term);
+                // Comparison and equality operators are less straightforward, because we have to emit different
+                // Java code depending on whether they are primitive types (i.e. "left == right") versus reference
+                // types (i.e. "left.equals(right) == true").
+                case BinOpKind.Comparison when lhsType.IsPrimitive && rhsType.IsPrimitive:
+                case BinOpKind.Equality when lhsType.IsPrimitive && rhsType.IsPrimitive:
+                    WritePrim();
                     break;
 
-                /* Same with immutable types. */
-                case TypeManager.JType.JString _:
-                case TypeManager.JType.JMachine _:
-                    WriteExpr(ce.Term);
-                    break;
+                // Comparison and equality operators are less straightforward, because we have to emit different
+                // Java code depending on whether they are primitive types (i.e. "left == right") versus reference
+                // types (i.e. "left.equals(right) == true").
 
-                /* Non-boxable reference types must be cloned explicitly and then
-                 * cast to their expected type (since clone() is Object-producing). */
-                case TypeManager.JType.JMap _:
-                case TypeManager.JType.JList _:
-                case TypeManager.JType.JSet _:
-                    Write($"({t.TypeName})");
-                    Write("Values.deepClone(");
-                    WriteExpr(ce.Term);
+                case BinOpKind.Comparison:
+                    Write("(");
+
+                    Write("Values.compare(");
+                    WriteExpr(left);
+                    Write(", ");
+                    WriteExpr(right);
+                    Write(")");
+
+                    Write($" {op.JavaPrimitiveBinOp()} 0");
                     Write(")");
                     break;
 
-                /* JNamedTuples have a copy constructor. */
-                case TypeManager.JType.JNamedTuple nt:
-                    WriteExpr(ce.Term);
-                    Write(".deepClone()");
-                    break;
+                case BinOpKind.Equality:
+                    Write("(");
 
-                default:
-                    throw new NotImplementedException(t.TypeName);
+                    Write("Values.deepEqual(");
+                    WriteExpr(left);
+                    Write(", ");
+                    WriteExpr(right);
+                    Write(")");
+
+                    Write($" {op.JavaPrimitiveBinOp()} true");
+                    Write(")");
+                    break;
             }
         }
+
+
 
         private void WriteStructureAccess(IPExpr e)
         {
@@ -1183,6 +1020,49 @@ namespace Plang.Compiler.Backend.Java {
                     Write($".{tupleAccessExpr.FieldNo.ToString()}");
                     break;
 
+            }
+        }
+
+        private void WriteClone(TypeManager.JType t, Action writeTermToBeCloned)
+        {
+            // Note: We elide calls to Clone for types that are either immutable
+            // or can unbox to copy-by-value types.  To despecialise these cases,
+            // fall through to the non-boxable reference type case.
+            switch (t)
+            {
+                /* Primitive types are easy since they're copy by value. */
+                case TypeManager.JType.JVoid _:
+                case TypeManager.JType.JBool _:
+                case TypeManager.JType.JInt _:
+                case TypeManager.JType.JFloat _:
+                    writeTermToBeCloned();
+                    break;
+
+                /* Same with immutable types. */
+                case TypeManager.JType.JString _:
+                case TypeManager.JType.JMachine _:
+                    writeTermToBeCloned();
+                    break;
+
+                /* Non-boxable reference types must be cloned explicitly and then
+                 * cast to their expected type (since clone() is Object-producing). */
+                case TypeManager.JType.JMap _:
+                case TypeManager.JType.JList _:
+                case TypeManager.JType.JSet _:
+                    Write($"({t.TypeName})");
+                    Write("Values.deepClone(");
+                    writeTermToBeCloned();
+                    Write(")");
+                    break;
+
+                /* JNamedTuples have a copy constructor. */
+                case TypeManager.JType.JNamedTuple _:
+                    writeTermToBeCloned();
+                    Write(".deepClone()");
+                    break;
+
+                default:
+                    throw new NotImplementedException(t.TypeName);
             }
         }
 

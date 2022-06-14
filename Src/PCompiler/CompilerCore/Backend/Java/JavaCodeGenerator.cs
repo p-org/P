@@ -221,6 +221,15 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine("} // deepClone()");
             WriteLine();
 
+            // .equals() implementation: this simply defers to deepEquals() but explicitly overriding it is useful
+            // for calling assertEquals() in unit tests, for example.
+            WriteLine($"public boolean equals(Object other) {{");
+            WriteLine("return (this.getClass() == other.getClass() && ");
+            WriteLine($"this.deepEquals(({tname})other)");
+            WriteLine(");");
+            WriteLine("} // equals()");
+            WriteLine();
+
             // Deep equality predicate.
             WriteLine($"public boolean deepEquals({tname} other) {{");
             WriteLine("return (true");

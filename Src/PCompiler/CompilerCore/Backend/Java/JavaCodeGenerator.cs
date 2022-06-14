@@ -176,7 +176,7 @@ namespace Plang.Compiler.Backend.Java {
 
             string tname = _context.Names.NameForNamedTuple(t);
             WriteLine($"// {t.CanonicalRepresentation}");
-            WriteLine($"static class {tname} implements Values.PTuple<{tname}> {{");
+            WriteLine($"public static class {tname} implements Values.PTuple<{tname}> {{");
 
             // Write the fields.
             foreach (var (jType, fieldName) in fields)
@@ -273,10 +273,10 @@ namespace Plang.Compiler.Backend.Java {
             {
                 case TypeManager.JType.JVoid _:
                     // Special-case an event with no payload: just emit an empty record.
-                    WriteLine($"record {eventName}() implements PObserveEvent.PEvent {{ }} ");
+                    WriteLine($"public record {eventName}() implements PObserveEvent.PEvent {{ }} ");
                     break;
                 default:
-                    WriteLine($"record {eventName}({argType.TypeName} payload) implements PObserveEvent.PEvent {{ }} ");
+                    WriteLine($"public record {eventName}({argType.TypeName} payload) implements PObserveEvent.PEvent {{ }} ");
                     break;
             }
 
@@ -291,7 +291,7 @@ namespace Plang.Compiler.Backend.Java {
         {
             string cname = _context.Names.GetNameForDecl(m);
 
-            WriteLine($"static class {cname} extends Monitor {{");
+            WriteLine($"public static class {cname} extends Monitor {{");
 
             // monitor fields
             foreach (var field in m.Fields)

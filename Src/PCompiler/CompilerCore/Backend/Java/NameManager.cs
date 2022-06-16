@@ -79,5 +79,28 @@ namespace Plang.Compiler.Backend.Java
 
             return UniquifyName(name);
         }
+
+        /// <summary>
+        /// Produces the class name for the foreign function bridge class for a given machine.
+        ///
+        /// In the C# code generator, partial classes are used to automatically weave together
+        /// the machine class and its foreign functions.  For instance, a machine called Client
+        /// that relies on foreign functions would have the latter implemented in a partial class
+        /// also called Client.  The C# compiler would then merge the two together into a final
+        /// class definition.
+        ///
+        /// Java does not have this language feature, unfortunately, so we need a different approach:
+        /// we need foreign function writers to implement foreign functions as static methods
+        /// in a class whose name is derived from the monitor class.  The naming convention is
+        /// specified by the return value of this function.
+        ///
+        /// <see url="https://en.wikipedia.org/wiki/Bridge_pattern"/>
+        /// </summary>
+        /// <param name="machineName"></param>
+        /// <returns></returns>
+        public string FFIBridgeForMachine(string machineName)
+        {
+            return $"{machineName}FFI";
+        }
     }
 }

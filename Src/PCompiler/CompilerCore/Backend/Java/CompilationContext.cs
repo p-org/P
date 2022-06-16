@@ -20,6 +20,8 @@ namespace Plang.Compiler.Backend.Java
         public NameManager Names { get; }
         public TypeManager Types { get; }
 
+        public string GlobalFunctionClassName => "GlobalFunctions";
+
         //public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
 
         public string FileName { get; }

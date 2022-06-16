@@ -33,6 +33,7 @@ namespace Plang.Compiler.Backend.Java
                 .Select(pkg => $"import {pkg};");
         }
 
+        internal static string GlobalForeignFunClassName => "GlobalFFI";
 
         internal static string DoNotEditWarning => $@"
 /***************************************************************************

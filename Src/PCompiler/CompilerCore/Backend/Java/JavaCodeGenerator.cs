@@ -19,6 +19,8 @@ namespace Plang.Compiler.Backend.Java {
         private CompiledFile _source;
         private Scope _globalScope;
 
+        private Machine _currentMachine; // Some generated code is machine-dependent, so stash the current machine here.
+
         /// <summary>
         /// Generates Java code for a given compilation job.
         ///
@@ -35,35 +37,52 @@ namespace Plang.Compiler.Backend.Java {
             _source = new CompiledFile(_context.FileName);
             _globalScope = scope;
 
-            WriteImports();
-            WriteLine();
-
             WriteLine(Constants.DoNotEditWarning);
             WriteLine();
 
+            WriteImports();
+            WriteLine();
+
+            foreach (var t in _globalScope.Typedefs)
+            {
+                if (t.Type is ForeignType foreignType)
+                {
+                    WriteForeignType(foreignType);
+                }
+            }
+            WriteLine();
 
             WriteLine($"public class {_context.FileName.Replace(".java", "")} {{");
 
-            WriteLine("/** Enums */");
-            foreach (var e in _globalScope.Enums)
+            if (_globalScope.Enums.Any())
             {
-                WriteEnumDecl(e);
+                WriteLine("/* Enums */");
+                foreach (var e in _globalScope.Enums)
+                {
+                    WriteEnumDecl(e);
+                }
+                WriteLine();
             }
-            WriteLine();
 
-            WriteLine("/** Tuples */");
-            foreach (var t in _globalScope.Tuples)
+            if (_globalScope.Tuples.Any())
             {
-                WriteNamedTupleDecl(t);
+                WriteLine("/* Tuples */");
+                foreach (var t in _globalScope.Tuples)
+                {
+                    WriteNamedTupleDecl(t);
+                }
+                WriteLine();
             }
-            WriteLine();
 
-            WriteLine("/** Events */");
-            foreach (var e in _globalScope.Events)
+            if (_globalScope.Events.Any())
             {
-                WriteEventDecl(e);
+                WriteLine("/* Events */");
+                foreach (var e in _globalScope.Events)
+                {
+                    WriteEventDecl(e);
+                }
+                WriteLine();
             }
-            WriteLine();
 
             //TODO: Do specs need interfaces?
 
@@ -203,6 +222,11 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine();
         }
 
+        private void WriteForeignType(ForeignType ft)
+        {
+            WriteLine($"import {ft.CanonicalRepresentation};");
+        }
+
         private void WriteEnumDecl(PEnum e)
         {
             WriteLine($"public static class {e.Name} {{");
@@ -235,11 +259,24 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteMachineDecl(Machine m)
         {
+            if (_currentMachine != null)
+            {
+                throw new Exception($"Already processing machine {_currentMachine.Name}");
+            }
+            _currentMachine = m;
+
             WriteLine($"// PMachine {m.Name} elided ");
+            _currentMachine = null;
         }
 
         private void WriteMonitorDecl(Machine m)
         {
+            if (_currentMachine != null)
+            {
+                throw new Exception($"Already processing machine {_currentMachine.Name}");
+            }
+            _currentMachine = m;
+
             string cname = _context.Names.GetNameForDecl(m);
 
             WriteLine($"public static class {cname} extends Monitor {{");
@@ -249,10 +286,9 @@ namespace Plang.Compiler.Backend.Java {
             {
                 TypeManager.JType type = _context.Types.JavaTypeFor(field.Type);
                 string name = _context.Names.GetNameForDecl(field);
-                string methodName = name[0].ToString().ToUpper() + name.Substring(1);
 
                 WriteLine($"private {type.TypeName} {name} = {type.DefaultValue};");
-                WriteLine($"public {type.TypeName} get{methodName}() {{ return this.{name}; }};");
+                WriteLine($"public {type.TypeName} get_{name}() {{ return this.{name}; }};");
                 WriteLine();
             }
             WriteLine();
@@ -275,8 +311,9 @@ namespace Plang.Compiler.Backend.Java {
             // constructor
             WriteMonitorCstr(m);
 
-
             WriteLine($"}} // {cname} monitor definition");
+
+            _currentMachine = null;
         }
 
 
@@ -284,23 +321,28 @@ namespace Plang.Compiler.Backend.Java {
         {
             if (f.IsForeign)
             {
-                WriteLine($"// Foreign function {f.Name} elided");
+                WriteLine($"// Ensure foreign function {f.Name} is on the classpath");
+                return;
             }
 
             if (f.CanReceive == true)
             {
                 WriteLine($"// Async function {f.Name} elided");
+                return;
             }
 
             WriteFunctionSignature(f); WriteLine(" {");
 
-            foreach (var decl in f.LocalVariables)
+            if (f.LocalVariables.Any())
             {
-                //TODO: for reference types the default value can simply be null; it will be reassigned later.
-                TypeManager.JType t = _context.Types.JavaTypeFor(decl.Type);
-                WriteLine($"{t.TypeName} {_context.Names.GetNameForDecl(decl)} = {t.DefaultValue};");
+                foreach (var decl in f.LocalVariables)
+                {
+                    //TODO: for reference types the default value can simply be null; it will be reassigned later.
+                    TypeManager.JType t = _context.Types.JavaTypeFor(decl.Type);
+                    WriteLine($"{t.TypeName} {_context.Names.GetNameForDecl(decl)} = {t.DefaultValue};");
+                }
+                WriteLine();
             }
-            WriteLine();
 
             foreach (var stmt in f.Body.Statements)
             {
@@ -713,14 +755,19 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteFunctionCall(Function f, IEnumerable<IPExpr> args)
         {
-            if (f.Owner == null)
+            bool isStatic = f.Owner == null;
+            if (isStatic && !f.IsForeign)
             {
                 throw new NotImplementedException("StaticFunCallExpr is not implemented.");
             }
 
+            string ffiBridge = f.IsForeign ?
+                (isStatic
+                    ? Constants.GlobalForeignFunClassName
+                    : _context.Names.FFIBridgeForMachine(_currentMachine.Name)) + "." : "";
             string fname = _context.Names.GetNameForDecl(f);
 
-            Write($"{fname}(");
+            Write($"{ffiBridge}{fname}(");
             foreach (var (param, sep)in args.Select((p, i) => (p, i > 0 ? ", " : "")))
             {
                 Write(sep);

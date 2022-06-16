@@ -229,6 +229,25 @@ namespace Plang.Compiler.Backend.Java
                 internal override string TypeName => JClassName;
             }
 
+            internal class JForeign : JType
+            {
+                /// <summary>
+                /// The name of the generated Java class name for this tuple.
+                /// </summary>
+                internal string JClassName { get; }
+                internal JForeign(string clazz)
+                {
+                    JClassName = clazz;
+                }
+
+                internal override string TypeName => JClassName;
+                internal override bool IsPrimitive => false;
+
+                /// We don't know how to construct a value of this type and it might not have a nullary constructor.
+                /// TODO: how safe is this?  values.deepClone() and values.deepEqual() are null-safe, at least.
+                internal override string DefaultValue => "null";
+            }
+
             //TODO: not sure about this one.  Is the base class sufficient?
             //Generate some Java files and see.
             internal class JEvent : JType
@@ -309,10 +328,8 @@ namespace Plang.Compiler.Backend.Java
                 case EnumType _:
                     return new JType.JInt();
 
-                case ForeignType _:
-                    // return type.CanonicalRepresentation;
-                    // TODO: The above might be wrong for .NET -> Java extraction!
-                    throw new NotImplementedException($"{type.CanonicalRepresentation} values not implemented");
+                case ForeignType ft:
+                    return new JType.JForeign(ft.CanonicalRepresentation);
 
                 case MapType m:
                     JType k = JavaTypeFor(m.KeyType);

@@ -194,5 +194,17 @@ namespace Plang.CSharpRuntime.Values
             retStr += ">";
             return retStr;
         }
+
+        public string ToEscapedString()
+        {
+            string retStr = "<";
+            for (int i = 0; i < fieldValues.Count; i++)
+            {
+                retStr += fieldNames[i] + ":" + fieldValues[i].ToEscapedString() + ", ";
+            }
+
+            retStr += ">";
+            return retStr;
+        }
     }
 }

@@ -176,5 +176,15 @@ namespace Plang.CSharpRuntime.Values
         {
             return value;
         }
+
+        /// <summary>
+        /// Like ToString, but emits a representation of a string literal, surrounded by double-quotes,
+        /// and where all interior double-quotes are escaped.
+        /// </summary>
+        /// <returns></returns>
+        public string ToEscapedString()
+        {
+            return $"\"{value.Replace("\"", "\\\"")}\"";
+        }
     }
 }

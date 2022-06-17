@@ -24,7 +24,7 @@ namespace Plang.Compiler.Backend.Java {
         // typechecker to be able to specify exactly _which_ event it is going to be
         // handed.  This isn't something explicitly handed to us in the AST so we
         // accumulate it ourselves before proceeding with code generation.
-        private Dictionary<Function, PEvent> _eventArgForFn;
+        private Dictionary<Function, PEvent> _pEventForEventHandler;
 
         /// <summary>
         /// Generates Java code for a given compilation job.
@@ -42,7 +42,7 @@ namespace Plang.Compiler.Backend.Java {
             _source = new CompiledFile(_context.FileName);
             _globalScope = scope;
 
-            _eventArgForFn = GenerateFunctionToArgMapping();
+            _pEventForEventHandler = CollateEventHandlerToEventMappings();
 
             WriteImports();
             WriteLine();
@@ -93,7 +93,7 @@ namespace Plang.Compiler.Backend.Java {
             return new List<CompiledFile> { _source };
         }
 
-        private Dictionary<Function, PEvent> GenerateFunctionToArgMapping()
+        private Dictionary<Function, PEvent> CollateEventHandlerToEventMappings()
         {
             Dictionary<Function, PEvent> ret = new Dictionary<Function, PEvent>();
 
@@ -352,7 +352,7 @@ namespace Plang.Compiler.Backend.Java {
 
             WriteFunctionSignature(f); WriteLine(" {");
 
-            if (f.IsAnon && f.Signature.Parameters.Any())
+            if ((f.Role & (FunctionRole.TransitionFunction | FunctionRole.EventHandler)) != 0 && f.Signature.Parameters.Any())
             {
                 Variable p = f.Signature.Parameters.First();
                 TypeManager.JType t = _context.Types.JavaTypeFor(p.Type);
@@ -399,13 +399,38 @@ namespace Plang.Compiler.Backend.Java {
                 }
                 else if (f.Signature.Parameters.Count == 1)
                 {
-                    args = $"{_eventArgForFn[f].Name} pEvent";
+                    // Two possibilities:
+                    // 1) this is an event handler, in which case our argument is the PEvent in question.
+                    // The body of this function will later extract the payload field from it.
+                    if ((f.Role & (FunctionRole.TransitionFunction | FunctionRole.EventHandler)) != 0)
+                    {
+                        args = $"{_pEventForEventHandler[f].Name} pEvent";
+                    }
+                    // 2) This is an entry handler, in which case the argument is the payload itself (as there isn't
+                    // a triggering "event", per se, since state transitions happen internally to the state machine.
+                    else if ((f.Role & FunctionRole.EntryHandler) != 0)
+                    {
+                        TypeManager.JType t = _context.Types.JavaTypeFor(f.Signature.ParameterTypes.First());
+                        args = $"{t.TypeName} pEvent";
+                    }
+                    else
+                    {
+                        string file = f.SourceLocation.start.TokenSource.SourceName;
+                        int line = f.SourceLocation.start.Line;
+                        throw new Exception($"Unexpected role {f.Role} for anonymous unary function at {file}:{line}.");
+                    }
+
+                    // TODO: that we have two separate cases above is rather unergonomic.  Is there a fundamential
+                    // reason why an event handler's payload couldn't be unwrapped by the runtime and passed to it,
+                    // unifying these two mechanisms?  This would require a bit more type astronautics to ensure the
+                    // payload argument typechecks on the Java side, but probably not impossible.
                 }
                 else
                 {
+                    string file = f.SourceLocation.start.TokenSource.SourceName;
                     int line = f.SourceLocation.start.Line;
                     throw new Exception(
-                        $"Function beginning at line {line} has unexpected number {f.Signature.Parameters.Count} of arguments");
+                        $"Function beginning at {file}:{line} has unexpected number {f.Signature.Parameters.Count} of arguments");
                 }
             }
             else
@@ -477,7 +502,7 @@ namespace Plang.Compiler.Backend.Java {
                 case EventDoAction da when da.Target.Signature.Parameters.Count == 0:
                 {
                     string aname = _context.Names.GetNameForDecl(da.Target);
-                    WriteLine($".withEvent({ename}.class, __ -> {aname}(); )");
+                    WriteLine($".withEvent({ename}.class, __ -> {aname}())");
                     break;
                 }
                 case EventDoAction da when da.Target.Signature.Parameters.Count > 0:
@@ -496,7 +521,19 @@ namespace Plang.Compiler.Backend.Java {
                 {
                     string sname = _context.Names.IdentForState(gs.Target);
                     string tname = _context.Names.GetNameForDecl(gs.TransitionFunction);
-                    WriteLine($".withEvent({ename}.class, e -> {{ {tname}(e); gotoState({sname}); }})");
+                    int argcount = gs.TransitionFunction.Signature.ParameterTypes.Count();
+
+                    switch (argcount)
+                    {
+                        case 0:
+                            WriteLine($".withEvent({ename}.class, __ -> {{ {tname}(); gotoState({sname}); }})");
+                            break;
+                        case 1:
+                            WriteLine($".withEvent({ename}.class, e -> {{ {tname}(e); gotoState({sname}); }})");
+                            break;
+                        default:
+                            throw new Exception($"Unexpected {argcount}-arity for event handler for {ename}");
+                    }
                     break;
                 }
                 case EventIgnore _:

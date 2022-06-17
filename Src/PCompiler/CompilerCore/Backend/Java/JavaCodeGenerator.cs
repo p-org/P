@@ -19,13 +19,6 @@ namespace Plang.Compiler.Backend.Java {
         private CompiledFile _source;
         private Scope _globalScope;
 
-        // In the C# and Rvm compilers, event handlers' signatures are hard-coded to
-        // be an abstract Event type.  However, our Java runtime takes advantage of the
-        // typechecker to be able to specify exactly _which_ event it is going to be
-        // handed.  This isn't something explicitly handed to us in the AST so we
-        // accumulate it ourselves before proceeding with code generation.
-        private Dictionary<Function, PEvent> _pEventForEventHandler;
-
         /// <summary>
         /// Generates Java code for a given compilation job.
         ///
@@ -41,8 +34,6 @@ namespace Plang.Compiler.Backend.Java {
             _context = new CompilationContext(job);
             _source = new CompiledFile(_context.FileName);
             _globalScope = scope;
-
-            _pEventForEventHandler = CollateEventHandlerToEventMappings();
 
             WriteImports();
             WriteLine();
@@ -91,55 +82,6 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine($"}} // {_context.FileName} class definition");
 
             return new List<CompiledFile> { _source };
-        }
-
-        private Dictionary<Function, PEvent> CollateEventHandlerToEventMappings()
-        {
-            Dictionary<Function, PEvent> ret = new Dictionary<Function, PEvent>();
-
-
-            foreach (var m in _globalScope.Machines)
-            {
-                foreach (var s in m.States)
-                {
-                    foreach (var (e, a) in s.AllEventHandlers)
-                    {
-                        Function f;
-                        switch (a)
-                        {
-                            case EventDoAction da:
-                                f = da.Target;
-                                break;
-                            case EventGotoState { TransitionFunction: { } } gs:
-                                f = gs.TransitionFunction;
-                                break;
-                            case EventDefer _:
-                                continue;
-                            case EventIgnore _:
-                                continue;
-                            default:
-                                continue;
-                        }
-
-                        PEvent e2;
-                        if (ret.TryGetValue(f, out e2))
-                        {
-                            if (f.Signature.Parameters.Count > 0 && e != e2)
-                            {
-                                string name = (f.IsAnon ? $"function at line {f.SourceLocation.Start.Line}" : f.Name);
-                                throw new Exception(
-                                    $"Inconsistent argument type to {name}: seen both {e2.Name} and {e.Name}");
-                            }
-                        }
-                        else
-                        {
-                            ret.Add(f, e);
-                        }
-                    }
-                }
-            }
-
-            return ret;
         }
 
         private void WriteImports()
@@ -352,15 +294,6 @@ namespace Plang.Compiler.Backend.Java {
 
             WriteFunctionSignature(f); WriteLine(" {");
 
-            if ((f.Role & (FunctionRole.TransitionFunction | FunctionRole.EventHandler)) != 0 && f.Signature.Parameters.Any())
-            {
-                Variable p = f.Signature.Parameters.First();
-                TypeManager.JType t = _context.Types.JavaTypeFor(p.Type);
-                string name = _context.Names.GetNameForDecl(p);
-
-                WriteLine($"{t.TypeName} {name} = pEvent.payload;");
-            }
-
             foreach (var decl in f.LocalVariables)
             {
                 //TODO: for reference types the default value can simply be null; it will be reassigned later.
@@ -399,31 +332,9 @@ namespace Plang.Compiler.Backend.Java {
                 }
                 else if (f.Signature.Parameters.Count == 1)
                 {
-                    // Two possibilities:
-                    // 1) this is an event handler, in which case our argument is the PEvent in question.
-                    // The body of this function will later extract the payload field from it.
-                    if ((f.Role & (FunctionRole.TransitionFunction | FunctionRole.EventHandler)) != 0)
-                    {
-                        args = $"{_pEventForEventHandler[f].Name} pEvent";
-                    }
-                    // 2) This is an entry handler, in which case the argument is the payload itself (as there isn't
-                    // a triggering "event", per se, since state transitions happen internally to the state machine.
-                    else if ((f.Role & FunctionRole.EntryHandler) != 0)
-                    {
-                        TypeManager.JType t = _context.Types.JavaTypeFor(f.Signature.ParameterTypes.First());
-                        args = $"{t.TypeName} pEvent";
-                    }
-                    else
-                    {
-                        string file = f.SourceLocation.start.TokenSource.SourceName;
-                        int line = f.SourceLocation.start.Line;
-                        throw new Exception($"Unexpected role {f.Role} for anonymous unary function at {file}:{line}.");
-                    }
-
-                    // TODO: that we have two separate cases above is rather unergonomic.  Is there a fundamential
-                    // reason why an event handler's payload couldn't be unwrapped by the runtime and passed to it,
-                    // unifying these two mechanisms?  This would require a bit more type astronautics to ensure the
-                    // payload argument typechecks on the Java side, but probably not impossible.
+                    TypeManager.JType t = _context.Types.JavaTypeFor(f.Signature.ParameterTypes.First());
+                    string argname = _context.Names.GetNameForDecl(f.Signature.Parameters.First());
+                    args = $"{t.TypeName} {argname}";
                 }
                 else
                 {

@@ -482,12 +482,26 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine($"addState(new State.Builder({_context.Names.IdentForState(s)})");
             WriteLine($".isInitialState({TypeManager.JType.JBool.ToJavaLiteral(s.IsStart)})");
 
+            if (s.Entry != null)
+            {
+                WriteStateBuilderEntryHandler(s.Entry);
+            }
             foreach (var (e, a) in s.AllEventHandlers)
             {
                 WriteStateBuilderEventHandler(e, a);
             }
+            if (s.Exit != null)
+            {
+                WriteStateBuilderExitHandler(s.Exit);
+            }
 
             WriteLine(".build());");
+        }
+
+        private void WriteStateBuilderEntryHandler(Function f)
+        {
+            string fname = _context.Names.GetNameForDecl(f);
+            WriteLine($".withEntry(this::{fname})");
         }
 
         private void WriteStateBuilderEventHandler(PEvent e, IStateAction a)
@@ -542,6 +556,12 @@ namespace Plang.Compiler.Backend.Java {
                 default:
                     throw new NotImplementedException($"TODO: {a.GetType()} not implemented.");
             }
+        }
+
+        private void WriteStateBuilderExitHandler(Function f)
+        {
+            string fname = _context.Names.GetNameForDecl(f);
+            WriteLine($".withExit(this::{fname})");
         }
 
         private void WriteStmt(IPStmt stmt)

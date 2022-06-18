@@ -454,7 +454,7 @@ namespace Plang.Compiler.Backend.Java {
                             WriteLine($".withEvent({ename}.class, __ -> {{ {tname}(); gotoState({sname}); }})");
                             break;
                         case 1:
-                            WriteLine($".withEvent({ename}.class, e -> {{ {tname}(e); gotoState({sname}); }})");
+                            WriteLine($".withEvent({ename}.class, p -> {{ {tname}(p); gotoState({sname}); }})");
                             break;
                         default:
                             throw new Exception($"Unexpected {argcount}-arity for event handler for {ename}");

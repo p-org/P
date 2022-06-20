@@ -227,7 +227,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteForeignType(ForeignType ft)
         {
-            WriteLine($"import {ft.CanonicalRepresentation};");
+            WriteLine($"// Ensure that {ft.CanonicalRepresentation}.class is on your classpath");
         }
 
         private void WriteEnumDecl(PEnum e)

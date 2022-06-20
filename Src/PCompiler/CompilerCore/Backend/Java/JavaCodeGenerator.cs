@@ -137,7 +137,7 @@ namespace Plang.Compiler.Backend.Java {
 
             string tname = _context.Names.NameForNamedTuple(t);
             WriteLine($"// {t.CanonicalRepresentation}");
-            WriteLine($"public static class {tname} implements Values.PTuple<{tname}> {{");
+            WriteLine($"public static class {tname} implements Values.PValue<{tname}> {{");
 
             // Write the fields.
             foreach (var (jType, fieldName) in fields)
@@ -984,15 +984,15 @@ namespace Plang.Compiler.Backend.Java {
                 // Comparison and equality operators are less straightforward, because we have to emit different
                 // Java code depending on whether they are primitive types (i.e. "left == right") versus reference
                 // types (i.e. "left.equals(right) == true").
+
+                // So long as both sides are primitive types, this is easy, just like the above case.
                 case BinOpKind.Comparison when lhsType.IsPrimitive && rhsType.IsPrimitive:
                 case BinOpKind.Equality when lhsType.IsPrimitive && rhsType.IsPrimitive:
                     WritePrim();
                     break;
 
-                // Comparison and equality operators are less straightforward, because we have to emit different
-                // Java code depending on whether they are primitive types (i.e. "left == right") versus reference
-                // types (i.e. "left.equals(right) == true").
-
+                // For reference types, defer to Values.compare() or Values.deepEqual() , which
+                // will runtime-dispatch on the arguments' classes.
                 case BinOpKind.Comparison:
                     Write("(");
 
@@ -1095,9 +1095,11 @@ namespace Plang.Compiler.Backend.Java {
 
                 /* Non-boxable reference types must be cloned explicitly and then
                  * cast to their expected type (since clone() is Object-producing). */
+                case TypeManager.JType.JAny _:
                 case TypeManager.JType.JMap _:
                 case TypeManager.JType.JList _:
                 case TypeManager.JType.JSet _:
+                case TypeManager.JType.JForeign _: //TODO: is this right?
                     Write($"({t.TypeName})");
                     Write("Values.deepClone(");
                     writeTermToBeCloned();
@@ -1111,7 +1113,7 @@ namespace Plang.Compiler.Backend.Java {
                     break;
 
                 default:
-                    throw new NotImplementedException(t.TypeName);
+                    throw new NotImplementedException(t.ToString());
             }
         }
 

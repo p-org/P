@@ -10,7 +10,7 @@ namespace Plang.Compiler.Backend.Java
         public CompilationContext(ICompilationJob job)
             : base(job)
         {
-            Names = new NameManager("PGEN_");
+            Names = new NameManager(job.ProjectName, "PGEN_");
             Types = new TypeManager(Names);
 
             FileName = $"{ProjectName}.java";
@@ -19,8 +19,6 @@ namespace Plang.Compiler.Backend.Java
 
         public NameManager Names { get; }
         public TypeManager Types { get; }
-
-        public string GlobalFunctionClassName => "GlobalFunctions";
 
         //public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
 

@@ -14,8 +14,11 @@ namespace Plang.Compiler.Backend.Java
         // Maps the NamedTuple to some generated Java class name;
         private readonly Dictionary<NamedTupleType, string> _namedTupleJTypes = new Dictionary<NamedTupleType, string>();
 
-        public NameManager(string namePrefix) : base(namePrefix)
+        public string TopLevelCName { get; }
+
+        public NameManager(string topLevelCName, string namePrefix) : base(namePrefix)
         {
+            TopLevelCName = topLevelCName;
         }
 
         /// <summary>
@@ -111,6 +114,15 @@ namespace Plang.Compiler.Backend.Java
             if (name.StartsWith("$"))
             {
                 name = "TMP_" + name.Substring(1);
+            }
+
+            // Handle the case where a declaration happens to match the name of the top level
+            // classname (which, as it isn't strictly a declaration in the grammar, doesn't
+            // pass through here)
+            if (name == TopLevelCName)
+            {
+                string cname = decl.GetType().ToString().Split(".").Last();
+                name = $"{name}_{cname}";
             }
 
             return UniquifyName(name);

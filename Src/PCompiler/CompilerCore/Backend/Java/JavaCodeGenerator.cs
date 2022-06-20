@@ -43,16 +43,19 @@ namespace Plang.Compiler.Backend.Java {
             WriteImports();
             WriteLine();
 
-            foreach (var t in _globalScope.Typedefs)
+            if (_globalScope.Typedefs.Any())
             {
-                if (t.Type is ForeignType foreignType)
+                foreach (var t in _globalScope.Typedefs)
                 {
-                    WriteForeignType(foreignType);
+                    if (t.Type is ForeignType foreignType)
+                    {
+                        WriteForeignType(foreignType);
+                    }
                 }
+                WriteLine();
             }
-            WriteLine();
 
-            WriteLine($"public class {_context.FileName.Replace(".java", "")} {{");
+            WriteLine($"public class {_context.ProjectName} {{");
 
             if (_globalScope.Enums.Any())
             {

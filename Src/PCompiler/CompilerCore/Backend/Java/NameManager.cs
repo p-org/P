@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
@@ -34,19 +36,53 @@ namespace Plang.Compiler.Backend.Java
         /// <returns>A consistent but distinct identifier for `t`.</returns>
         internal string NameForNamedTuple(NamedTupleType t)
         {
-            string val;
-            if (!_namedTupleJTypes.TryGetValue(t, out val))
+            if (!_namedTupleJTypes.TryGetValue(t, out var val))
             {
                 IEnumerable<string> names = t.Names;
-                if (names.Count() > 5)
-                {
-                    names = names.Select(f => f.Substring(0, 3)).ToArray();
-                }
+                names = names.Select(AbbreviateTupleName).ToArray();
                 val = UniquifyName("PTuple_" + string.Join("_", names));
                 _namedTupleJTypes.Add(t, val);
             }
 
             return val;
+        }
+
+        /// <summary>
+        /// Attempts to simplify the given tuple name while still leaving it somewhat readable.
+        /// </summary>
+        /// <param name="name">The token to simplify</param>
+        /// <returns>The simplified token.</returns>
+        private static string AbbreviateTupleName(string name)
+        {
+            // Short names are already as succinct as we can reasonably expect.
+            if (name.Length <= 5)
+            {
+                return name;
+            }
+
+            // Is it a superLongCamelCaseFieldName?  Abbreviate it that way.
+            if (name.Count(char.IsUpper) >= 3)
+            {
+                return String.Concat(name.Where(char.IsUpper)).ToLower();
+            }
+
+            // Strip and simplify some common prefixes and suffixes.
+            name = Regex.Replace(name, "^is([A-Z].*)", "$1");
+            name = Regex.Replace(name, "(.*)Id$", "$1");
+            name = Regex.Replace(name, "(.*)Val$", "$1");
+            if (name.Length <= 5)
+            {
+                return name;
+            }
+
+            // If not, strip the vowels in the middle of a word out so it still seems pronounceable at a distance.
+            name = name.Substring(0, 1) + Regex.Replace(name.Substring(1), "[aeiou]", "");
+            if (name.Length <= 5)
+            {
+                return name.ToLower();
+            }
+
+            return name.Substring(0, 5).ToLower();
         }
 
         protected override string ComputeNameForDecl(IPDecl decl)

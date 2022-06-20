@@ -19,13 +19,6 @@ namespace Plang.Compiler.Backend.Java {
         private CompiledFile _source;
         private Scope _globalScope;
 
-        // In the C# and Rvm compilers, event handlers' signatures are hard-coded to
-        // be an abstract Event type.  However, our Java runtime takes advantage of the
-        // typechecker to be able to specify exactly _which_ event it is going to be
-        // handed.  This isn't something explicitly handed to us in the AST so we
-        // accumulate it ourselves before proceeding with code generation.
-        private Dictionary<Function, PEvent> _eventArgForFn;
-
         /// <summary>
         /// Generates Java code for a given compilation job.
         ///
@@ -41,8 +34,6 @@ namespace Plang.Compiler.Backend.Java {
             _context = new CompilationContext(job);
             _source = new CompiledFile(_context.FileName);
             _globalScope = scope;
-
-            _eventArgForFn = GenerateFunctionToArgMapping();
 
             WriteImports();
             WriteLine();
@@ -91,55 +82,6 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine($"}} // {_context.FileName} class definition");
 
             return new List<CompiledFile> { _source };
-        }
-
-        private Dictionary<Function, PEvent> GenerateFunctionToArgMapping()
-        {
-            Dictionary<Function, PEvent> ret = new Dictionary<Function, PEvent>();
-
-
-            foreach (var m in _globalScope.Machines)
-            {
-                foreach (var s in m.States)
-                {
-                    foreach (var (e, a) in s.AllEventHandlers)
-                    {
-                        Function f;
-                        switch (a)
-                        {
-                            case EventDoAction da:
-                                f = da.Target;
-                                break;
-                            case EventGotoState { TransitionFunction: { } } gs:
-                                f = gs.TransitionFunction;
-                                break;
-                            case EventDefer _:
-                                continue;
-                            case EventIgnore _:
-                                continue;
-                            default:
-                                continue;
-                        }
-
-                        PEvent e2;
-                        if (ret.TryGetValue(f, out e2))
-                        {
-                            if (f.Signature.Parameters.Count > 0 && e != e2)
-                            {
-                                string name = (f.IsAnon ? $"function at line {f.SourceLocation.Start.Line}" : f.Name);
-                                throw new Exception(
-                                    $"Inconsistent argument type to {name}: seen both {e2.Name} and {e.Name}");
-                            }
-                        }
-                        else
-                        {
-                            ret.Add(f, e);
-                        }
-                    }
-                }
-            }
-
-            return ret;
         }
 
         private void WriteImports()
@@ -352,15 +294,6 @@ namespace Plang.Compiler.Backend.Java {
 
             WriteFunctionSignature(f); WriteLine(" {");
 
-            if (f.IsAnon && f.Signature.Parameters.Any())
-            {
-                Variable p = f.Signature.Parameters.First();
-                TypeManager.JType t = _context.Types.JavaTypeFor(p.Type);
-                string name = _context.Names.GetNameForDecl(p);
-
-                WriteLine($"{t.TypeName} {name} = pEvent.payload;");
-            }
-
             foreach (var decl in f.LocalVariables)
             {
                 //TODO: for reference types the default value can simply be null; it will be reassigned later.
@@ -399,13 +332,16 @@ namespace Plang.Compiler.Backend.Java {
                 }
                 else if (f.Signature.Parameters.Count == 1)
                 {
-                    args = $"{_eventArgForFn[f].Name} pEvent";
+                    TypeManager.JType t = _context.Types.JavaTypeFor(f.Signature.ParameterTypes.First());
+                    string argname = _context.Names.GetNameForDecl(f.Signature.Parameters.First());
+                    args = $"{t.TypeName} {argname}";
                 }
                 else
                 {
+                    string file = f.SourceLocation.start.TokenSource.SourceName;
                     int line = f.SourceLocation.start.Line;
                     throw new Exception(
-                        $"Function beginning at line {line} has unexpected number {f.Signature.Parameters.Count} of arguments");
+                        $"Function beginning at {file}:{line} has unexpected number {f.Signature.Parameters.Count} of arguments");
                 }
             }
             else
@@ -457,12 +393,26 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine($"addState(new State.Builder({_context.Names.IdentForState(s)})");
             WriteLine($".isInitialState({TypeManager.JType.JBool.ToJavaLiteral(s.IsStart)})");
 
+            if (s.Entry != null)
+            {
+                WriteStateBuilderEntryHandler(s.Entry);
+            }
             foreach (var (e, a) in s.AllEventHandlers)
             {
                 WriteStateBuilderEventHandler(e, a);
             }
+            if (s.Exit != null)
+            {
+                WriteStateBuilderExitHandler(s.Exit);
+            }
 
             WriteLine(".build());");
+        }
+
+        private void WriteStateBuilderEntryHandler(Function f)
+        {
+            string fname = _context.Names.GetNameForDecl(f);
+            WriteLine($".withEntry(this::{fname})");
         }
 
         private void WriteStateBuilderEventHandler(PEvent e, IStateAction a)
@@ -477,7 +427,7 @@ namespace Plang.Compiler.Backend.Java {
                 case EventDoAction da when da.Target.Signature.Parameters.Count == 0:
                 {
                     string aname = _context.Names.GetNameForDecl(da.Target);
-                    WriteLine($".withEvent({ename}.class, __ -> {aname}(); )");
+                    WriteLine($".withEvent({ename}.class, __ -> {aname}())");
                     break;
                 }
                 case EventDoAction da when da.Target.Signature.Parameters.Count > 0:
@@ -496,7 +446,19 @@ namespace Plang.Compiler.Backend.Java {
                 {
                     string sname = _context.Names.IdentForState(gs.Target);
                     string tname = _context.Names.GetNameForDecl(gs.TransitionFunction);
-                    WriteLine($".withEvent({ename}.class, e -> {{ {tname}(e); gotoState({sname}); }})");
+                    int argcount = gs.TransitionFunction.Signature.ParameterTypes.Count();
+
+                    switch (argcount)
+                    {
+                        case 0:
+                            WriteLine($".withEvent({ename}.class, __ -> {{ {tname}(); gotoState({sname}); }})");
+                            break;
+                        case 1:
+                            WriteLine($".withEvent({ename}.class, p -> {{ {tname}(p); gotoState({sname}); }})");
+                            break;
+                        default:
+                            throw new Exception($"Unexpected {argcount}-arity for event handler for {ename}");
+                    }
                     break;
                 }
                 case EventIgnore _:
@@ -505,6 +467,12 @@ namespace Plang.Compiler.Backend.Java {
                 default:
                     throw new NotImplementedException($"TODO: {a.GetType()} not implemented.");
             }
+        }
+
+        private void WriteStateBuilderExitHandler(Function f)
+        {
+            string fname = _context.Names.GetNameForDecl(f);
+            WriteLine($".withExit(this::{fname})");
         }
 
         private void WriteStmt(IPStmt stmt)

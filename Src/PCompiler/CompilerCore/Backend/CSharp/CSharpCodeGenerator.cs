@@ -23,7 +23,38 @@ namespace Plang.Compiler.Backend.CSharp
 
         public void Compile(ICompilationJob job)
         {
-            CSharpCodeCompiler.Compile(job);
+            var csprojName = $"{job.ProjectName}.csproj";
+            var csprojPath = Path.Combine(job.ProjectRootPath.FullName, csprojName);
+            var mainFilePath = Path.Combine(job.ProjectRootPath.FullName, "Test.cs");
+            string stdout = "";
+            string stderr = "";
+            // if the file does not exist then create the file
+            if (!File.Exists(csprojPath))
+            {
+                string csprojTemplate = Constants.csprojTemplate.Replace("-directory-",
+                    Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName));
+                File.WriteAllText(csprojPath, csprojTemplate);
+            }
+
+            // if the Main file does not exist then create the file
+            if (!File.Exists(mainFilePath))
+            {
+                string mainCode = Constants.mainCode.Replace("-projectName-", job.ProjectName);
+                File.WriteAllText(mainFilePath, mainCode);
+            }
+
+            // compile the csproj file
+            string[] args = new[] { "build -c Release", csprojName };
+
+            int exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "dotnet", args);
+            if (exitCode != 0)
+            {
+                throw new TranslationException($"Compiling generated C# code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
+            }
+            else
+            {
+                job.Output.WriteInfo($"{stdout}");
+            }
         }
 
         public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)

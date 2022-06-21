@@ -6,6 +6,7 @@ using Plang.Compiler.TypeChecker;
 using System;
 using System.IO;
 using System.Linq;
+using Plang.Compiler.Backend.Java;
 using Plang.Compiler.Backend.Symbolic;
 
 namespace Plang.Compiler
@@ -51,12 +52,18 @@ namespace Plang.Compiler
                 job.Output.WriteInfo($"Compiling {job.ProjectName}.csproj ..\n");
                 CSharpCodeCompiler.Compile(job);
                 job.Output.WriteInfo($"----------------------------------------");
-
             }
             else if (job.OutputLanguage == CompilerOutput.Symbolic)
             {
                 job.Output.WriteInfo($"Compiling {job.ProjectName} module ..\n");
                 SymbolicCodeCompiler.Compile(job);
+                job.Output.WriteInfo($"----------------------------------------");
+            }
+            else if (job.OutputLanguage == CompilerOutput.Java)
+            {
+                job.Output.WriteInfo($"Assembling JAR from {Constants.BuildFileName} ...");
+                JavaCompiler jc = (job.Backend as JavaCompiler);
+                jc.Assemble();
                 job.Output.WriteInfo($"----------------------------------------");
             }
         }

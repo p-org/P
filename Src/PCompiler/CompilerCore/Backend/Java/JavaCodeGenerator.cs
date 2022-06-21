@@ -12,7 +12,7 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java {
 
-    public class JavaCodeGenerator : ICodeGenerator
+    internal class JavaCodeGenerator : ICodeGenerator
     {
 
         private CompilationContext _context;
@@ -36,6 +36,8 @@ namespace Plang.Compiler.Backend.Java {
             _context = new CompilationContext(job);
             _source = new CompiledFile(_context.FileName);
             _globalScope = scope;
+
+            WriteLine("package PGenerated; ");
 
             WriteLine(Constants.DoNotEditWarning);
             WriteLine();
@@ -227,7 +229,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteForeignType(ForeignType ft)
         {
-            WriteLine($"// Ensure that {ft.CanonicalRepresentation}.class is on your classpath");
+            WriteLine($"import PForeign.globals.{ft.CanonicalRepresentation};");
         }
 
         private void WriteEnumDecl(PEnum e)
@@ -786,10 +788,9 @@ namespace Plang.Compiler.Backend.Java {
                 throw new NotImplementedException("StaticFunCallExpr is not implemented.");
             }
 
-            string ffiBridge = f.IsForeign ?
-                (isStatic
-                    ? Constants.GlobalForeignFunClassName
-                    : _context.Names.FFIBridgeForMachine(_currentMachine.Name)) + "." : "";
+            string ffiBridge = (f.IsForeign && !isStatic)
+                ? _context.Names.FFIBridgeForMachine(_currentMachine.Name) + "."
+                : "";
             string fname = _context.Names.GetNameForDecl(f);
 
             Write($"{ffiBridge}{fname}(");

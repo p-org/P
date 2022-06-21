@@ -148,7 +148,7 @@ namespace Plang.Compiler.Backend.Java
         /// <returns></returns>
         public string FFIBridgeForMachine(string machineName)
         {
-            return $"{machineName}FFI";
+            return $"{Constants.FFIPackage}.{machineName}";
         }
     }
 }

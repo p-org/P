@@ -220,16 +220,38 @@ namespace Plang.Compiler.Backend.Java {
             string eventName = _context.Names.GetNameForDecl(e);
 
             TypeManager.JType argType = _context.Types.JavaTypeFor(e.PayloadType);
-            switch (argType)
+            bool hasPayload = !(argType is TypeManager.JType.JVoid);
+
+            WriteLine($"public static class {eventName} extends PObserveEvent.PEvent<{argType.ReferenceTypeName}> {{");
+
+            if (hasPayload)
             {
-                case TypeManager.JType.JVoid _:
-                    // Special-case an event with no payload: just emit an empty record.
-                    WriteLine($"public record {eventName}() implements PObserveEvent.PEvent {{ }} ");
-                    break;
-                default:
-                    WriteLine($"public record {eventName}({argType.TypeName} payload) implements PObserveEvent.PEvent {{ }} ");
-                    break;
+                WriteLine($"public {eventName}({argType.TypeName} p) {{ this.payload = p; }}");
             }
+            else
+            {
+                WriteLine($"public {eventName}() {{ }}");
+            }
+
+            WriteLine($"private {argType.ReferenceTypeName} payload; ");
+            WriteLine($"public {argType.ReferenceTypeName} getPayload() {{ return payload; }}");
+            WriteLine();
+
+            WriteLine("@Override");
+            WriteLine("public String toString() {");
+            if (hasPayload)
+            {
+                WriteLine($"return \"{eventName}[\" + payload + \"]\";");
+            }
+            else
+            {
+                WriteLine($"return \"{eventName}\";");
+            }
+            WriteLine("} // toString()");
+            WriteLine();
+
+            WriteLine($"}} // PEvent definition for {eventName}");
+
 
         }
 

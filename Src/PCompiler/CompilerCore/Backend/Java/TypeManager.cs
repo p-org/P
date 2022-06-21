@@ -26,7 +26,8 @@ namespace Plang.Compiler.Backend.Java
             /// <summary>
             /// The name of the Java class that corresponds to this type.
             /// </summary>
-            internal virtual string TypeName => "Object";
+            internal virtual string TypeName =>
+                throw new Exception($"TypeName not implemented for {this.GetType()}");
 
             /// <summary>
             /// The name of the Java class that corresponds to this type, should it be treated.
@@ -74,6 +75,18 @@ namespace Plang.Compiler.Backend.Java
             /// </summary>
             internal virtual string RemoveMethodName =>
                 throw new Exception($"RemoveMethodName not implemented for {this.TypeName}");
+
+            internal class JAny : JType
+            {
+                /// "PValue" is the interface in the Java runtime that requires deepClone() and deepEquals() to
+                /// be implemented.
+                internal override string TypeName => "PValue";
+                internal override bool IsPrimitive => false;
+
+                /// We don't know how to construct a value of this type and it might not have a nullary constructor.
+                /// TODO: how safe is this?  values.deepClone() and values.deepEqual() are null-safe, at least.
+                internal override string DefaultValue => "null";
+            }
 
             internal class JBool : JType
             {
@@ -229,6 +242,25 @@ namespace Plang.Compiler.Backend.Java
                 internal override string TypeName => JClassName;
             }
 
+            internal class JForeign : JType
+            {
+                /// <summary>
+                /// The name of the Java class that this foreign type corresponds to.
+                /// </summary>
+                internal string JClassName { get; }
+                internal JForeign(string clazz)
+                {
+                    JClassName = clazz;
+                }
+
+                internal override string TypeName => JClassName;
+                internal override bool IsPrimitive => false;
+
+                /// We don't know how to construct a value of this type and it might not have a nullary constructor.
+                /// TODO: how safe is this?  values.deepClone() and values.deepEqual() are null-safe, at least.
+                internal override string DefaultValue => "null";
+            }
+
             //TODO: not sure about this one.  Is the base class sufficient?
             //Generate some Java files and see.
             internal class JEvent : JType
@@ -309,10 +341,8 @@ namespace Plang.Compiler.Backend.Java
                 case EnumType _:
                     return new JType.JInt();
 
-                case ForeignType _:
-                    // return type.CanonicalRepresentation;
-                    // TODO: The above might be wrong for .NET -> Java extraction!
-                    throw new NotImplementedException($"{type.CanonicalRepresentation} values not implemented");
+                case ForeignType ft:
+                    return new JType.JForeign(ft.CanonicalRepresentation);
 
                 case MapType m:
                     JType k = JavaTypeFor(m.KeyType);
@@ -333,7 +363,7 @@ namespace Plang.Compiler.Backend.Java
                     return new JType.JMachine();
 
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
-                    return new JType();
+                    return new JType.JAny();
 
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
                     return new JType.JBool();

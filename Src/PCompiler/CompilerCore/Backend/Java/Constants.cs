@@ -9,13 +9,14 @@ namespace Plang.Compiler.Backend.Java
     /// </summary>
     internal static class Constants
     {
-        private static string[] defaultImports = {
-            "com.amazon.pobserve.todo.Event",
-            "com.amazon.pobserve.todo.Monitor",
-            "com.amazon.pobserve.todo.State",
+        private static readonly string[] PrtImports = {
+            "events.PObserveEvent",
+            "prt.State",
+            "prt.Monitor",
+            "prt.Values"
         };
 
-        private static string[] jreDefaultImports =
+        private static readonly string[] JreDefaultImports =
         {
             "java.text.MessageFormat",
             "java.util.*",
@@ -28,11 +29,15 @@ namespace Plang.Compiler.Backend.Java
         /// <returns></returns>
         internal static IEnumerable<string> ImportStatements()
         {
-            return defaultImports
-                .Concat(jreDefaultImports)
-                .Select(pkg => $"import {pkg};");
+            List<string> classes = PrtImports
+                .Concat(JreDefaultImports)
+                .ToList();
+            classes.Sort();
+
+            return classes.Select(pkg => $"import {pkg};");
         }
 
+        internal static string GlobalForeignFunClassName => "GlobalFFI";
 
         internal static string DoNotEditWarning => $@"
 /***************************************************************************

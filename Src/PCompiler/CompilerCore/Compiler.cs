@@ -3,8 +3,11 @@ using Antlr4.Runtime.Atn;
 using Plang.Compiler.Backend;
 using Plang.Compiler.TypeChecker;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler
 {
@@ -28,14 +31,14 @@ namespace Plang.Compiler
             Scope scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
 
             // Convert functions to lowered SSA form with explicit cloning
-            foreach (TypeChecker.AST.Declarations.Function fun in scope.GetAllMethods())
+            foreach (Function fun in scope.GetAllMethods())
             {
                 IRTransformer.SimplifyMethod(fun);
             }
 
             job.Output.WriteInfo($"Code generation ...");
             // Run the selected backend on the project and write the files.
-            System.Collections.Generic.IEnumerable<CompiledFile> compiledFiles = job.Backend.GenerateCode(job, scope);
+            IEnumerable<CompiledFile> compiledFiles = job.Backend.GenerateCode(job, scope);
             foreach (CompiledFile file in compiledFiles)
             {
                 job.Output.WriteInfo($"Generated {file.FileName}.");
@@ -106,6 +109,43 @@ namespace Plang.Compiler
             {
                 throw handler.ParseFailure(inputFile, $"line {line}:{charPositionInLine} {msg}");
             }
+        }
+
+        public static int RunWithOutput(string activeDirectory,
+            out string stdout,
+            out string stderr, string exeName,
+            params string[] argumentList)
+        {
+            ProcessStartInfo psi = new ProcessStartInfo(exeName)
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                WorkingDirectory = activeDirectory,
+                Arguments = string.Join(" ", argumentList)
+            };
+
+            string mStdout = "", mStderr = "";
+
+            Process proc = new Process { StartInfo = psi };
+            proc.OutputDataReceived += (s, e) => { mStdout += $"{e.Data}\n"; };
+            proc.ErrorDataReceived += (s, e) =>
+            {
+                if (!string.IsNullOrWhiteSpace(e.Data))
+                {
+                    mStderr += $"{e.Data}\n";
+                }
+            };
+
+            proc.Start();
+            proc.BeginErrorReadLine();
+            proc.BeginOutputReadLine();
+            proc.WaitForExit();
+            stdout = mStdout;
+            stderr = mStderr;
+            return proc.ExitCode;
         }
     }
 }

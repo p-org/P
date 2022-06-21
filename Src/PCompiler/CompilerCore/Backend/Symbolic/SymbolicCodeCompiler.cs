@@ -1,11 +1,10 @@
 using System.IO;
-using Plang.Compiler.Backend.CSharp;
 
 namespace Plang.Compiler.Backend.Symbolic
 {
     public class SymbolicCodeCompiler
     {
-        private static string pomTemplate = 
+        private static string pomTemplate =
 @"
 <?xml version=""1.0"" encoding=""UTF-8""?>
 <project xmlns=""http://maven.apache.org/POM/4.0.0""
@@ -60,7 +59,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         <java.version>16</java.version>
     </properties>
 </project>";
-        
+
         public static void Compile(ICompilationJob job)
         {
             var pomPath = Path.Combine(job.ProjectRootPath.FullName, "pom.xml");
@@ -76,7 +75,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
             // compile the csproj file
             string[] args = new[] { "clean package"};
 
-            int exitCode = CSharpCodeCompiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args);
+            int exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args);
             if (exitCode != 0)
             {
                 throw new TranslationException($"Compiling generated Symbolic Java code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");

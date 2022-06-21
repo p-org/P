@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using Plang.Compiler.Backend.CSharp;
 using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler.Backend.Java
@@ -47,7 +44,7 @@ namespace Plang.Compiler.Backend.Java
             string stderr = "";
 
             string[] args = { "clean", "package"};
-            if (CSharpCodeCompiler.RunWithOutput(
+            if (Compiler.RunWithOutput(
                 job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args) != 0)
             {
                 throw new TranslationException($"Java project compilation failed.\n" + $"{stdout}\n" + $"{stderr}\n");

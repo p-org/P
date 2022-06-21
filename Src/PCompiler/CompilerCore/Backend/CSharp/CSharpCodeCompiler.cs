@@ -77,7 +77,7 @@ namespace -projectName-
             // compile the csproj file
             string[] args = new[] { "build -c Release", csprojName };
 
-            int exitCode = RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "dotnet", args);
+            int exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "dotnet", args);
             if (exitCode != 0)
             {
                 throw new TranslationException($"Compiling generated C# code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
@@ -86,43 +86,6 @@ namespace -projectName-
             {
                 job.Output.WriteInfo($"{stdout}");
             }
-        }
-
-        public static int RunWithOutput(string activeDirectory,
-            out string stdout,
-            out string stderr, string exeName,
-            params string[] argumentList)
-        {
-            ProcessStartInfo psi = new ProcessStartInfo(exeName)
-            {
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardError = true,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                WorkingDirectory = activeDirectory,
-                Arguments = string.Join(" ", argumentList)
-            };
-
-            string mStdout = "", mStderr = "";
-
-            Process proc = new Process { StartInfo = psi };
-            proc.OutputDataReceived += (s, e) => { mStdout += $"{e.Data}\n"; };
-            proc.ErrorDataReceived += (s, e) =>
-            {
-                if (!string.IsNullOrWhiteSpace(e.Data))
-                {
-                    mStderr += $"{e.Data}\n";
-                }
-            };
-
-            proc.Start();
-            proc.BeginErrorReadLine();
-            proc.BeginOutputReadLine();
-            proc.WaitForExit();
-            stdout = mStdout;
-            stderr = mStderr;
-            return proc.ExitCode;
         }
     }
 }

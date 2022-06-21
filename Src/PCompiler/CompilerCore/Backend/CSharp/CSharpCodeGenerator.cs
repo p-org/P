@@ -15,6 +15,17 @@ namespace Plang.Compiler.Backend.CSharp
 {
     public class CSharpCodeGenerator : ICodeGenerator
     {
+
+        /// <summary>
+        /// This compiler has a compilation stage.
+        /// </summary>
+        public bool HasCompilationStage => true;
+
+        public void Compile(ICompilationJob job)
+        {
+            CSharpCodeCompiler.Compile(job);
+        }
+
         public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
         {
             CompilationContext context = new CompilationContext(job);
@@ -933,9 +944,9 @@ namespace Plang.Compiler.Backend.CSharp
                     if (receiveStmt.Cases.All(kv => kv.Key.Name != "PHalt"))
                     {
                         context.WriteLine(output,"case PHalt _hv: { currentMachine.TryRaiseEvent(_hv); break;} ");
-                    
+
                     }
-            
+
                     foreach (var (key, value) in receiveStmt.Cases)
                     {
                         var caseName = context.Names.GetTemporaryName("evt");
@@ -1053,7 +1064,7 @@ namespace Plang.Compiler.Backend.CSharp
 
                     context.WriteLine(output, ");");
                     break;
-                
+
                 case ForeachStmt foreachStmt:
                     var tempVarName = $"__temp_{context.Names.GetNameForDecl(foreachStmt.Item)}";
                     context.Write(output, $"foreach (var {tempVarName} in ");
@@ -1063,7 +1074,7 @@ namespace Plang.Compiler.Backend.CSharp
                     WriteStmt(context, output, function, foreachStmt.Body);
                     context.WriteLine(output, "}");
                     break;
-                
+
                 case WhileStmt whileStmt:
                     context.Write(output, "while (");
                     WriteExpr(context, output, whileStmt.Condition);
@@ -1088,7 +1099,7 @@ namespace Plang.Compiler.Backend.CSharp
                     WriteExpr(context, output, mapAccessExpr.IndexExpr);
                     context.Write(output, "]");
                     break;
-                
+
                 case SetAccessExpr setAccessExpr:
                     context.Write(output, "((PrtSet)");
                     WriteLValue(context, output, setAccessExpr.SetExpr);
@@ -1096,7 +1107,7 @@ namespace Plang.Compiler.Backend.CSharp
                     WriteExpr(context, output, setAccessExpr.IndexExpr);
                     context.Write(output, "]");
                     break;
-                
+
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     context.Write(output, "((PrtNamedTuple)");
                     WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
@@ -1609,10 +1620,10 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case BinOpType.Div:
                     return "/";
-                
+
                 case BinOpType.Mod:
                     return "%";
-                
+
                 case BinOpType.Lt:
                     return "<";
 

@@ -1,13 +1,10 @@
 ﻿using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Plang.Compiler.Backend;
-using Plang.Compiler.Backend.CSharp;
 using Plang.Compiler.TypeChecker;
 using System;
 using System.IO;
 using System.Linq;
-using Plang.Compiler.Backend.Java;
-using Plang.Compiler.Backend.Symbolic;
 
 namespace Plang.Compiler
 {
@@ -17,7 +14,7 @@ namespace Plang.Compiler
         {
 
             job.Output.WriteInfo($"----------------------------------------");
-            job.Output.WriteInfo($"Parsing ..");
+            job.Output.WriteInfo($"Parsing ...");
             // Run parser on every input file
             PParser.ProgramContext[] trees = job.InputFiles.Select(file =>
             {
@@ -35,37 +32,25 @@ namespace Plang.Compiler
             {
                 IRTransformer.SimplifyMethod(fun);
             }
-            job.Output.WriteInfo($"Code generation ....");
+
+            job.Output.WriteInfo($"Code generation ...");
             // Run the selected backend on the project and write the files.
             System.Collections.Generic.IEnumerable<CompiledFile> compiledFiles = job.Backend.GenerateCode(job, scope);
             foreach (CompiledFile file in compiledFiles)
             {
-                job.Output.WriteInfo($"Generated {file.FileName}");
+                job.Output.WriteInfo($"Generated {file.FileName}.");
                 job.Output.WriteFile(file);
             }
-            job.Output.WriteInfo($"----------------------------------------");
 
-            // Compiling the generated C# code
-            // TODO: This is a special case right now but needs to be factored in after the Java code path is available
-            if(job.OutputLanguage == CompilerOutput.CSharp)
+            // Not every backend has a compilation stage following code generation.
+            // For those that do, execute that stage.
+            if (job.Backend.HasCompilationStage)
             {
-                job.Output.WriteInfo($"Compiling {job.ProjectName}.csproj ..\n");
-                CSharpCodeCompiler.Compile(job);
                 job.Output.WriteInfo($"----------------------------------------");
+                job.Output.WriteInfo($"Compiling {job.ProjectName}...");
+                job.Backend.Compile(job);
             }
-            else if (job.OutputLanguage == CompilerOutput.Symbolic)
-            {
-                job.Output.WriteInfo($"Compiling {job.ProjectName} module ..\n");
-                SymbolicCodeCompiler.Compile(job);
-                job.Output.WriteInfo($"----------------------------------------");
-            }
-            else if (job.OutputLanguage == CompilerOutput.Java)
-            {
-                job.Output.WriteInfo($"Assembling JAR from {Constants.BuildFileName} ...");
-                JavaCompiler jc = (job.Backend as JavaCompiler);
-                jc.Assemble();
-                job.Output.WriteInfo($"----------------------------------------");
-            }
+            job.Output.WriteInfo($"----------------------------------------");
         }
 
         private static PParser.ProgramContext Parse(ICompilationJob job, FileInfo inputFile)

@@ -10,19 +10,17 @@ namespace Plang.Compiler.Backend.Java
 
     public class JavaCompiler : ICodeGenerator
     {
-        private ICompilationJob _job;
-
-        public void GenerateBuildScript()
+        public void GenerateBuildScript(ICompilationJob job)
         {
-            var pomPath = Path.Combine(_job.ProjectRootPath.FullName, Constants.BuildFileName);
+            var pomPath = Path.Combine(job.ProjectRootPath.FullName, Constants.BuildFileName);
             if (File.Exists(pomPath))
             {
-                _job.Output.WriteInfo("Reusing existing " + Constants.BuildFileName);
+                job.Output.WriteInfo("Reusing existing " + Constants.BuildFileName);
                 return;
             }
 
-            File.WriteAllText(pomPath, Constants.BuildFileTemplate(_job.ProjectName));
-            _job.Output.WriteInfo("Generated " + Constants.BuildFileName);
+            File.WriteAllText(pomPath, Constants.BuildFileTemplate(job.ProjectName));
+            job.Output.WriteInfo("Generated " + Constants.BuildFileName);
         }
 
         /// <summary>
@@ -31,23 +29,26 @@ namespace Plang.Compiler.Backend.Java
         /// </summary>
         public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope scope)
         {
-            _job = job;
-
-            GenerateBuildScript();
+            GenerateBuildScript(job);
             return new JavaCodeGenerator().GenerateCode(job, scope);
         }
 
         /// <summary>
+        /// This compiler has a compilation stage.
+        /// </summary>
+        public bool HasCompilationStage => true;
+
+        /// <summary>
         /// Collates the previously-generated Java sources into a final JAR.
         /// </summary>
-        public void Assemble()
+        public void Compile(ICompilationJob job)
         {
             string stdout = "";
             string stderr = "";
 
             string[] args = { "clean", "package"};
             if (CSharpCodeCompiler.RunWithOutput(
-                _job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args) != 0)
+                job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args) != 0)
             {
                 throw new TranslationException($"Java project compilation failed.\n" + $"{stdout}\n" + $"{stderr}\n");
             }

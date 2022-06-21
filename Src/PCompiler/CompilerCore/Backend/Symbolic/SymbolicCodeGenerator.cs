@@ -23,6 +23,16 @@ namespace Plang.Compiler.Backend.Symbolic
             return new List<CompiledFile> { javaSource };
         }
 
+        /// <summary>
+        /// This compiler has a compilation stage.
+        /// </summary>
+        public bool HasCompilationStage => true;
+
+        public void Compile(ICompilationJob job)
+        {
+            SymbolicCodeCompiler.Compile(job);
+        }
+
         private CompiledFile GenerateSource(CompilationContext context, Scope globalScope)
         {
             var source = new CompiledFile(context.FileName);
@@ -607,7 +617,7 @@ namespace Plang.Compiler.Backend.Symbolic
             }
 
             if (function is WhileFunction)
-            { 
+            {
                 /* Prologue */
                 var loopPCScope = context.FreshPathConstraintScope();
                 context.WriteLine(output, $"Guard {loopPCScope.PathConstraintVar} = {rootPCScope.PathConstraintVar};");
@@ -1261,7 +1271,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 NamedTupleType valueTupleType = (NamedTupleType) valueType;
                 NamedTupleType locationTupleType = (NamedTupleType) locationType;
-                
+
                 if (valueTupleType.Fields.Count != locationTupleType.Fields.Count)
                         throw new NotImplementedException(
                             $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
@@ -1284,7 +1294,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 TupleType valueTupleType = (TupleType) valueType;
                 TupleType locationTupleType = (TupleType) locationType;
-                
+
                 if (valueTupleType.Types.Count != locationTupleType.Types.Count)
                         throw new NotImplementedException(
                             $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
@@ -2081,13 +2091,13 @@ namespace Plang.Compiler.Backend.Symbolic
                     return foreignType.CanonicalRepresentation;
                 case SequenceType _:
                     return "PSeq";
-                case MapType _: 
+                case MapType _:
                     return "PMap";
-                case NamedTupleType _: 
+                case NamedTupleType _:
                     return "PNamedTuple";
-                case TupleType _: 
+                case TupleType _:
                     return "PTuple";
-                case EnumType _: 
+                case EnumType _:
                     return "PEnum";
                 default:
                     throw new NotImplementedException($"Concrete type '{type.OriginalRepresentation}' is not supported");
@@ -2153,7 +2163,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"PrimitiveVS<{foreignType.CanonicalRepresentation}>";
                 case SequenceType sequenceType:
                     return $"ListVS<{GetSymbolicType(sequenceType.ElementType, true)}>";
-                case MapType mapType: 
+                case MapType mapType:
                     return $"MapVS<" +
                         $"{GetConcreteBoxedType(mapType.KeyType)}, " +
                         $"{GetSymbolicType(mapType.ValueType, true)}>";

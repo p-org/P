@@ -30,7 +30,26 @@ namespace Plang.Compiler.Backend.Symbolic
 
         public void Compile(ICompilationJob job)
         {
-            SymbolicCodeCompiler.Compile(job);
+            var pomPath = Path.Combine(job.ProjectRootPath.FullName, "pom.xml");
+            string stdout = "";
+            string stderr = "";
+            // if the file does not exist then create the file
+            if (!File.Exists(pomPath))
+            {
+                string pomTemplate = Constants.pomTemplate.Replace("projectName",job.ProjectName);
+                File.WriteAllText(pomPath, pomTemplate);
+            }
+
+            // compile the csproj file
+            string[] args = new[] { "clean package"};
+
+            int exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args);
+            if (exitCode != 0)
+            {
+                throw new TranslationException($"Compiling generated Symbolic Java code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
+            }
+
+            job.Output.WriteInfo($"{stdout}");
         }
 
         private CompiledFile GenerateSource(CompilationContext context, Scope globalScope)

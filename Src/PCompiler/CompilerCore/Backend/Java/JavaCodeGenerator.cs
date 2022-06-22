@@ -591,7 +591,8 @@ namespace Plang.Compiler.Backend.Java {
                     goto default;
 
                 case FunCallStmt funCallStmt:
-                    WriteFunctionCall(funCallStmt.Function, funCallStmt.ArgsList);
+                    WriteFunctionCallExpr(funCallStmt.Function, funCallStmt.ArgsList);
+                    WriteLine(";");
                     break;
 
                 case GotoStmt gotoStmt:
@@ -780,7 +781,7 @@ namespace Plang.Compiler.Backend.Java {
             WriteAssignStatement(assignStmt);
         }
 
-        private void WriteFunctionCall(Function f, IEnumerable<IPExpr> args)
+        private void WriteFunctionCallExpr(Function f, IEnumerable<IPExpr> args)
         {
             bool isStatic = f.Owner == null;
             if (isStatic && !f.IsForeign)
@@ -860,7 +861,7 @@ namespace Plang.Compiler.Backend.Java {
                     Write(TypeManager.JType.JFloat.ToJavaLiteral(fe.Value));
                     break;
                 case FunCallExpr fe:
-                    WriteFunctionCall(fe.Function, fe.Arguments);
+                    WriteFunctionCallExpr(fe.Function, fe.Arguments);
                     break;
                 case IntLiteralExpr ie:
                     Write(TypeManager.JType.JInt.ToJavaLiteral(ie.Value));

@@ -154,8 +154,9 @@ namespace Plang.CSharpRuntime.Values
             string sep = "";
             foreach (IPrtValue value in values)
             {
+                string v = value == null ? "null" : value.ToEscapedString();
                 sb.Append(sep);
-                sb.Append(value.ToEscapedString());
+                sb.Append(v);
                 sep = ", ";
             }
 

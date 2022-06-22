@@ -200,7 +200,8 @@ namespace Plang.CSharpRuntime.Values
             string retStr = "<";
             for (int i = 0; i < fieldValues.Count; i++)
             {
-                retStr += fieldNames[i] + ":" + fieldValues[i].ToEscapedString() + ", ";
+                string v = fieldValues[i] == null ? "null" : fieldValues[i].ToEscapedString();
+                retStr += fieldNames[i] + ":" + v + ", ";
             }
 
             retStr += ">";

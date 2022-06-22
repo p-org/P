@@ -142,7 +142,7 @@ namespace Plang.Compiler.Backend.Java {
 
             string tname = _context.Names.NameForNamedTuple(t);
             WriteLine($"// {t.CanonicalRepresentation}");
-            WriteLine($"public static class {tname} implements Values.PValue<{tname}> {{");
+            WriteLine($"public static class {tname} implements {Constants.PValueClass}<{tname}> {{");
 
             // Write the fields.
             foreach (var (jType, fieldName) in fields)
@@ -204,7 +204,7 @@ namespace Plang.Compiler.Backend.Java {
                 Write(" && ");
                 WriteLine(jType.IsPrimitive
                     ? $"this.{fieldName} == other.{fieldName}"
-                    : $"Values.deepEquals(this.{fieldName}, other.{fieldName})");
+                    : $"{Constants.PrtDeepEqualsMethodName}(this.{fieldName}, other.{fieldName})");
             }
             WriteLine(");");
             WriteLine("} // deepEquals()");
@@ -251,7 +251,7 @@ namespace Plang.Compiler.Backend.Java {
             TypeManager.JType argType = _context.Types.JavaTypeFor(e.PayloadType);
             bool hasPayload = !(argType is TypeManager.JType.JVoid);
 
-            WriteLine($"public static class {eventName} extends PObserveEvent.PEvent<{argType.ReferenceTypeName}> {{");
+            WriteLine($"public static class {eventName} extends {Constants.PEventsClass}<{argType.ReferenceTypeName}> {{");
 
             if (hasPayload)
             {
@@ -306,7 +306,7 @@ namespace Plang.Compiler.Backend.Java {
 
             string cname = _context.Names.GetNameForDecl(m);
 
-            WriteLine($"public static class {cname} extends Monitor {{");
+            WriteLine($"public static class {cname} extends prt.Monitor {{");
 
             // monitor fields
             foreach (var field in m.Fields)
@@ -430,11 +430,11 @@ namespace Plang.Compiler.Backend.Java {
             List<string> throwables = new List<string>();
             if (f.CanChangeState == true)
             {
-                throwables.Add("TransitionException");
+                throwables.Add("prt.TransitionException");
             }
             if (f.CanRaiseEvent == true)
             {
-                throwables.Add("RaiseEventException");
+                throwables.Add("prt.RaiseEventException");
             }
             if (throwables.Count > 0)
             {
@@ -459,7 +459,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteStateBuilderDecl(State s)
         {
-            WriteLine($"addState(new State.Builder({_context.Names.IdentForState(s)})");
+            WriteLine($"addState(new prt.State.Builder({_context.Names.IdentForState(s)})");
             WriteLine($".isInitialState({TypeManager.JType.JBool.ToJavaLiteral(s.IsStart)})");
 
             if (s.Entry != null)
@@ -1022,7 +1022,7 @@ namespace Plang.Compiler.Backend.Java {
                 case BinOpKind.Comparison:
                     Write("(");
 
-                    Write("Values.compare(");
+                    Write($"{Constants.PrtCompareMethodName}(");
                     WriteExpr(left);
                     Write(", ");
                     WriteExpr(right);
@@ -1035,7 +1035,7 @@ namespace Plang.Compiler.Backend.Java {
                 case BinOpKind.Equality:
                     Write("(");
 
-                    Write("Values.deepEqual(");
+                    Write($"{Constants.PrtDeepEqualsMethodName}(");
                     WriteExpr(left);
                     Write(", ");
                     WriteExpr(right);
@@ -1075,7 +1075,7 @@ namespace Plang.Compiler.Backend.Java {
                     break;
 
                 case SetAccessExpr setAccessExpr:
-                    Write("Values.setElementAt(");
+                    Write($"{Constants.PrtSetElementAtMethodName}(");
                     WriteExpr(setAccessExpr.SetExpr);
                     Write(", ");
                     WriteExpr(setAccessExpr.IndexExpr);
@@ -1127,7 +1127,7 @@ namespace Plang.Compiler.Backend.Java {
                 case TypeManager.JType.JSet _:
                 case TypeManager.JType.JForeign _: //TODO: is this right?
                     Write($"({t.TypeName})");
-                    Write("Values.deepClone(");
+                    Write($"{Constants.PrtDeepCloneMethodName}(");
                     writeTermToBeCloned();
                     Write(")");
                     break;

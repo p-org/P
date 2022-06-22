@@ -11,20 +11,10 @@ namespace Plang.Compiler.Backend.Java
     {
         #region Java source code generation
 
-        private static readonly string[] PrtImports = {
-            "events.PObserveEvent",
-            "prt.State",
-            "prt.Monitor",
-            "prt.RaiseEventException",
-            "prt.TransitionException",
-            "prt.Values"
-        };
-
         private static readonly string[] JreDefaultImports =
         {
             "java.text.MessageFormat",
             "java.util.*",
-            "java.util.stream.Stream"
         };
 
         /// <summary>
@@ -33,9 +23,7 @@ namespace Plang.Compiler.Backend.Java
         /// <returns></returns>
         internal static IEnumerable<string> ImportStatements()
         {
-            List<string> classes = PrtImports
-                .Concat(JreDefaultImports)
-                .ToList();
+            List<string> classes = JreDefaultImports.ToList();
             classes.Sort();
 
             return classes.Select(pkg => $"import {pkg};");
@@ -94,6 +82,44 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
     </build>
 </project>", projectName);
         }
+        #endregion
+
+        #region P runtime identifiers
+
+        /// <summary>
+        /// The fully-qualified name of the static `deepClone(PrtValue)` method exposed by
+        /// the Java PRT runtime.
+        /// </summary>
+        public static readonly string PrtDeepCloneMethodName = "prt.values.Clone.deepClone";
+
+        /// <summary>
+        /// The fully-qualified name of the static `deepEquality(Object, Object)` method
+        /// exposed by the Java PRT runtime.
+        /// </summary>
+        public static readonly string PrtDeepEqualsMethodName = "prt.values.Equality.deepEquals";
+
+        /// <summary>
+        /// The fully-qualified name of the static `compare(Comparable, Comparable)` method
+        /// exposed by the Java PRT runtime.
+        /// </summary>
+        public static readonly string PrtCompareMethodName = "prt.values.Equality.compare";
+
+        /// <summary>
+        /// The fully-qualified name of the static `eleemntAt(LinkedHashSet, int)` method
+        /// exposed by the Java PRT runtime.
+        /// </summary>
+        public static readonly string PrtSetElementAtMethodName = "prt.values.SetIndexing.elementAt";
+
+        /// <summary>
+        /// The fully-qualified class name of the Java P runtime's PValue class.
+        /// </summary>
+        public static readonly string PValueClass = "prt.values.PValue";
+
+        /// <summary>
+        /// The fully-qualified class name of the Java P runtime's PEvent class.
+        /// </summary>
+        public static readonly string PEventsClass = "prt.events.PEvent";
+
         #endregion
     }
 }

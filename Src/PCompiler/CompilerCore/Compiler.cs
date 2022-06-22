@@ -1,12 +1,13 @@
 ﻿using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Plang.Compiler.Backend;
-using Plang.Compiler.Backend.CSharp;
 using Plang.Compiler.TypeChecker;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Plang.Compiler.Backend.Symbolic;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler
 {
@@ -16,7 +17,7 @@ namespace Plang.Compiler
         {
 
             job.Output.WriteInfo($"----------------------------------------");
-            job.Output.WriteInfo($"Parsing ..");
+            job.Output.WriteInfo($"Parsing ...");
             // Run parser on every input file
             PParser.ProgramContext[] trees = job.InputFiles.Select(file =>
             {
@@ -30,35 +31,29 @@ namespace Plang.Compiler
             Scope scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
 
             // Convert functions to lowered SSA form with explicit cloning
-            foreach (TypeChecker.AST.Declarations.Function fun in scope.GetAllMethods())
+            foreach (Function fun in scope.GetAllMethods())
             {
                 IRTransformer.SimplifyMethod(fun);
             }
-            job.Output.WriteInfo($"Code generation ....");
+
+            job.Output.WriteInfo($"Code generation ...");
             // Run the selected backend on the project and write the files.
-            System.Collections.Generic.IEnumerable<CompiledFile> compiledFiles = job.Backend.GenerateCode(job, scope);
+            IEnumerable<CompiledFile> compiledFiles = job.Backend.GenerateCode(job, scope);
             foreach (CompiledFile file in compiledFiles)
             {
-                job.Output.WriteInfo($"Generated {file.FileName}");
+                job.Output.WriteInfo($"Generated {file.FileName}.");
                 job.Output.WriteFile(file);
             }
+
+            // Not every backend has a compilation stage following code generation.
+            // For those that do, execute that stage.
+            if (job.Backend.HasCompilationStage)
+            {
+                job.Output.WriteInfo($"----------------------------------------");
+                job.Output.WriteInfo($"Compiling {job.ProjectName}...");
+                job.Backend.Compile(job);
+            }
             job.Output.WriteInfo($"----------------------------------------");
-
-            // Compiling the generated C# code
-            // TODO: This is a special case right now but needs to be factored in after the Java code path is available
-            if(job.OutputLanguage == CompilerOutput.CSharp)
-            {
-                job.Output.WriteInfo($"Compiling {job.ProjectName}.csproj ..\n");
-                CSharpCodeCompiler.Compile(job);
-                job.Output.WriteInfo($"----------------------------------------");
-
-            }
-            else if (job.OutputLanguage == CompilerOutput.Symbolic)
-            {
-                job.Output.WriteInfo($"Compiling {job.ProjectName} module ..\n");
-                SymbolicCodeCompiler.Compile(job);
-                job.Output.WriteInfo($"----------------------------------------");
-            }
         }
 
         private static PParser.ProgramContext Parse(ICompilationJob job, FileInfo inputFile)
@@ -114,6 +109,43 @@ namespace Plang.Compiler
             {
                 throw handler.ParseFailure(inputFile, $"line {line}:{charPositionInLine} {msg}");
             }
+        }
+
+        public static int RunWithOutput(string activeDirectory,
+            out string stdout,
+            out string stderr, string exeName,
+            params string[] argumentList)
+        {
+            ProcessStartInfo psi = new ProcessStartInfo(exeName)
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                WorkingDirectory = activeDirectory,
+                Arguments = string.Join(" ", argumentList)
+            };
+
+            string mStdout = "", mStderr = "";
+
+            Process proc = new Process { StartInfo = psi };
+            proc.OutputDataReceived += (s, e) => { mStdout += $"{e.Data}\n"; };
+            proc.ErrorDataReceived += (s, e) =>
+            {
+                if (!string.IsNullOrWhiteSpace(e.Data))
+                {
+                    mStderr += $"{e.Data}\n";
+                }
+            };
+
+            proc.Start();
+            proc.BeginErrorReadLine();
+            proc.BeginOutputReadLine();
+            proc.WaitForExit();
+            stdout = mStdout;
+            stderr = mStderr;
+            return proc.ExitCode;
         }
     }
 }

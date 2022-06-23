@@ -9,7 +9,7 @@ namespace Plang.Compiler.Backend.Java
     /// </summary>
     internal static class Constants
     {
-        #region Java source code generation
+        #region Machine source code generation
 
         private static readonly string[] JreDefaultImports =
         {
@@ -34,6 +34,13 @@ namespace Plang.Compiler.Backend.Java
  * This file was auto-generated on {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}.  
  * Please do not edit manually!
  **************************************************************************/";
+
+        #endregion
+
+        #region Event source generation
+
+        public static readonly string EventNamespaceName = "Events";
+        public static readonly string EventDefnFileName = $"{EventNamespaceName}.java";
 
         #endregion
 

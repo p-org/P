@@ -12,7 +12,7 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java {
 
-    internal class JavaCodeGenerator : ICodeGenerator
+    internal class MachineCodeGenerator : ICodeGenerator
     {
 
         private CompilationContext _context;
@@ -22,7 +22,7 @@ namespace Plang.Compiler.Backend.Java {
         private Machine _currentMachine; // Some generated code is machine-dependent, so stash the current machine here.
 
         /// <summary>
-        /// Generates Java code for a given compilation job.
+        /// Generates Java code for a given compilation job's machine and monitor definitions.
         ///
         /// Currently, we should be able to use nested classes to put everything we need in a single
         /// Java file, in a manner similar to how the C# extractor uses namespaces.
@@ -75,16 +75,6 @@ namespace Plang.Compiler.Backend.Java {
                 foreach (var t in _globalScope.Tuples)
                 {
                     WriteNamedTupleDecl(t);
-                }
-                WriteLine();
-            }
-
-            if (_globalScope.Events.Any())
-            {
-                WriteLine("/* Events */");
-                foreach (var e in _globalScope.Events)
-                {
-                    WriteEventDecl(e);
                 }
                 WriteLine();
             }
@@ -244,45 +234,6 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine("}");
         }
 
-        private void WriteEventDecl(PEvent e)
-        {
-            string eventName = _context.Names.GetNameForDecl(e);
-
-            TypeManager.JType argType = _context.Types.JavaTypeFor(e.PayloadType);
-            bool hasPayload = !(argType is TypeManager.JType.JVoid);
-
-            WriteLine($"public static class {eventName} extends {Constants.PEventsClass}<{argType.ReferenceTypeName}> {{");
-
-            if (hasPayload)
-            {
-                WriteLine($"public {eventName}({argType.TypeName} p) {{ this.payload = p; }}");
-            }
-            else
-            {
-                WriteLine($"public {eventName}() {{ }}");
-            }
-
-            WriteLine($"private {argType.ReferenceTypeName} payload; ");
-            WriteLine($"public {argType.ReferenceTypeName} getPayload() {{ return payload; }}");
-            WriteLine();
-
-            WriteLine("@Override");
-            WriteLine("public String toString() {");
-            if (hasPayload)
-            {
-                WriteLine($"return \"{eventName}[\" + payload + \"]\";");
-            }
-            else
-            {
-                WriteLine($"return \"{eventName}\";");
-            }
-            WriteLine("} // toString()");
-            WriteLine();
-
-            WriteLine($"}} // PEvent definition for {eventName}");
-
-
-        }
 
         private void WriteMachineDecl(Machine m)
         {
@@ -348,7 +299,6 @@ namespace Plang.Compiler.Backend.Java {
         {
             if (f.IsForeign)
             {
-                WriteLine($"// Ensure foreign function {f.Name} is on the classpath");
                 return;
             }
 
@@ -486,7 +436,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteStateBuilderEventHandler(PEvent e, IStateAction a)
         {
-            string ename = _context.Names.GetNameForDecl(e);
+            string ename = $"{Constants.EventNamespaceName}.{_context.Names.GetNameForDecl(e)}";
 
             switch (a)
             {

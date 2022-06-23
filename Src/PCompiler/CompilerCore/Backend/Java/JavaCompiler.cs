@@ -31,12 +31,15 @@ namespace Plang.Compiler.Backend.Java
 
             List<ICodeGenerator> generators = new List<ICodeGenerator>()
             {
-                new JavaSourceGenerator(),
-                new EventGenerator()
+                new MachineGenerator(Constants.MachineDefnFileName),
+                new EventGenerator(Constants.EventDefnFileName),
+                new TypesGenerator(Constants.TypesDefnFileName)
             };
 
             return generators.SelectMany(g => g.GenerateCode(job, scope));
         }
+
+
 
         /// <summary>
         /// This compiler has a compilation stage.

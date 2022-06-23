@@ -30,7 +30,7 @@ namespace Plang.Compiler.Backend.Java
         }
 
 
-        public static readonly string MachineNamespaceName = "TopDeclarations";
+        public static readonly string MachineNamespaceName = "Machines";
         public static readonly string MachineDefnFileName = $"{MachineNamespaceName}.java";
 
         #endregion
@@ -39,6 +39,13 @@ namespace Plang.Compiler.Backend.Java
 
         public static readonly string EventNamespaceName = "PEvents";
         public static readonly string EventDefnFileName = $"{EventNamespaceName}.java";
+
+        #endregion
+
+        #region Types source generation
+
+        public static readonly string TypesNamespaceName = "PTypes";
+        public static readonly string TypesDefnFileName = $"{TypesNamespaceName}.java";
 
         #endregion
 

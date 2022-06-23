@@ -1,18 +1,34 @@
-using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST.Declarations;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Plang.Compiler.Backend.Java
 {
-    internal class EventGenerator : ICodeGenerator {
+    internal class EventGenerator : JavaSourceGenerator {
 
-        private CompilationContext _context;
-        private CompiledFile _source;
-        private Scope _globalScope;
+        internal EventGenerator(string filename) : base(filename)
+        {
+        }
 
-        public IEnumerable<PEvent> monitoredEvents(IEnumerable<Machine> machines)
+        /// <summary>
+        /// Generates Java code for a given compilation job's used events.
+        ///
+        /// We only emit code for events that are actually used in Monitors (i.e. they
+        /// appear in at least one Monitor's `observes` set.)
+        /// </summary>
+        protected override void GenerateCodeImpl()
+        {
+            WriteLine($"public class {Constants.EventNamespaceName} {{");
+            foreach (var e in monitoredEvents(GlobalScope.Machines))
+            {
+                WriteEventDecl(e);
+                WriteLine();
+            }
+            WriteLine("}");
+        }
+
+
+        private IEnumerable<PEvent> monitoredEvents(IEnumerable<Machine> machines)
         {
             HashSet<PEvent> events = new HashSet<PEvent>();
 
@@ -27,50 +43,17 @@ namespace Plang.Compiler.Backend.Java
             return events;
         }
 
-
-        /// <summary>
-        /// Generates Java code for a given compilation job's used events.
-        ///
-        /// We only emit code for events that are actually used in Monitors (i.e. they
-        /// appear in at least one Monitor's `observes` set.)
-        /// </summary>
-        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope scope)
-        {
-            _context = new CompilationContext(job);
-            _source = new CompiledFile(Constants.EventDefnFileName);
-            _globalScope = scope;
-
-            WriteLine("package PGenerated; ");
-            WriteLine("import java.util.*;");
-
-            WriteLine(Constants.DoNotEditWarning);
-            WriteLine();
-
-            WriteLine();
-
-            WriteLine($"public class {Constants.EventNamespaceName} {{");
-            foreach (var e in monitoredEvents(scope.Machines))
-            {
-                WriteEventDecl(e);
-                WriteLine();
-            }
-            WriteLine("}");
-            return new List<CompiledFile> { _source };
-        }
-
         private void WriteEventDecl(PEvent e)
         {
-            string eventName = _context.Names.GetNameForDecl(e);
-
-            TypeManager.JType argType = _context.Types.JavaTypeFor(e.PayloadType);
-            bool hasPayload = !(argType is TypeManager.JType.JVoid);
+            string eventName = Names.GetNameForDecl(e);
+            TypeManager.JType argType = Types.JavaTypeFor(e.PayloadType);
 
             string payloadType = argType.TypeName;
             string payloadRefType = argType.ReferenceTypeName;
 
             WriteLine($"public static class {eventName} extends {Constants.PEventsClass}<{payloadRefType}> {{");
 
-
+            bool hasPayload = !(argType is TypeManager.JType.JVoid);
             if (hasPayload)
             {
                 WriteLine($"public {eventName}({payloadType} p) {{ this.payload = p; }}");
@@ -80,9 +63,7 @@ namespace Plang.Compiler.Backend.Java
             else
             {
                 WriteLine($"public {eventName}() {{ }}");
-                WriteLine($"public {payloadRefType} getPayload() {{ ");
-                WriteLine($"throw new RuntimeException(\"No payload defined for event type {eventName}\");");
-                WriteLine("}");
+                WriteLine($"public Void getPayload() {{ return null; }}");
             }
 
             WriteLine();
@@ -98,16 +79,6 @@ namespace Plang.Compiler.Backend.Java
             }
 
             WriteLine($"}} // {eventName}");
-        }
-
-        private void WriteLine(string s = "")
-        {
-            _context.WriteLine(_source.Stream, s);
-        }
-
-        private void Write(string s)
-        {
-            _context.Write(_source.Stream, s);
         }
     }
 }

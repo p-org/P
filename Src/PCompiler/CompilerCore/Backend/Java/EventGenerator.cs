@@ -2,6 +2,7 @@ using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Plang.Compiler.Backend.Java
 {
@@ -11,16 +12,28 @@ namespace Plang.Compiler.Backend.Java
         private CompiledFile _source;
         private Scope _globalScope;
 
+        public IEnumerable<PEvent> monitoredEvents(IEnumerable<Machine> machines)
+        {
+            HashSet<PEvent> events = new HashSet<PEvent>();
+
+            foreach (Machine m in machines.Where(m => m.IsSpec))
+            {
+                foreach (PEvent e in m.Observes.Events)
+                {
+                    events.Add(e);
+                }
+            }
+
+            return events;
+        }
+
+
         /// <summary>
-        /// Generates Java code for a given compilation job's machine and monitor definitions.
+        /// Generates Java code for a given compilation job's used events.
         ///
-        /// Currently, we should be able to use nested classes to put everything we need in a single
-        /// Java file, in a manner similar to how the C# extractor uses namespaces.
+        /// We only emit code for events that are actually used in Monitors (i.e. they
+        /// appear in at least one Monitor's `observes` set.)
         /// </summary>
-        /// <param name="job"></param>
-        /// <param name="scope"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
         public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope scope)
         {
             _context = new CompilationContext(job);
@@ -34,10 +47,11 @@ namespace Plang.Compiler.Backend.Java
 
             WriteLine();
 
-            WriteLine($"public class Events {Constants.EventNamespaceName} {{");
-            foreach (var e in _globalScope.Events)
+            WriteLine($"public class {Constants.EventNamespaceName} {{");
+            foreach (var e in monitoredEvents(scope.Machines))
             {
                 WriteEventDecl(e);
+                WriteLine();
             }
             WriteLine("}");
             return new List<CompiledFile> { _source };
@@ -66,17 +80,15 @@ namespace Plang.Compiler.Backend.Java
             WriteLine();
 
             WriteLine("@Override");
-            WriteLine("public String toString() {");
+            Write("public String toString() {");
             if (hasPayload)
             {
-                WriteLine($"return \"{eventName}[\" + payload + \"]\";");
+                WriteLine($" return \"{eventName}[\" + payload + \"]\"; }}");
             }
             else
             {
-                WriteLine($"return \"{eventName}\";");
+                WriteLine($" return \"{eventName}\"; }}");
             }
-            WriteLine("} // toString()");
-            WriteLine();
 
             WriteLine($"}} // {eventName}");
         }

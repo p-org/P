@@ -124,9 +124,10 @@ namespace Plang.CSharpRuntime.Values
             var sep = "";
             foreach (var value in set)
             {
+                string v = value == null ? "null" : value.ToEscapedString();
                 sb.Append(sep);
                 sb.Append("<");
-                sb.Append(value.ToEscapedString());
+                sb.Append(v);
                 sb.Append(">");
                 sep = ", ";
             }

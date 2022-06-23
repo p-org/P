@@ -41,6 +41,7 @@ namespace Plang.Compiler.Backend.Java
             _globalScope = scope;
 
             WriteLine("package PGenerated; ");
+            WriteLine("import java.util.*;");
 
             WriteLine(Constants.DoNotEditWarning);
             WriteLine();
@@ -64,21 +65,27 @@ namespace Plang.Compiler.Backend.Java
             TypeManager.JType argType = _context.Types.JavaTypeFor(e.PayloadType);
             bool hasPayload = !(argType is TypeManager.JType.JVoid);
 
-            WriteLine($"public static class {eventName} extends {Constants.PEventsClass}<{argType.ReferenceTypeName}> {{");
+            string payloadType = argType.TypeName;
+            string payloadRefType = argType.ReferenceTypeName;
+
+            WriteLine($"public static class {eventName} extends {Constants.PEventsClass}<{payloadRefType}> {{");
+
 
             if (hasPayload)
             {
-                WriteLine($"public {eventName}({argType.TypeName} p) {{ this.payload = p; }}");
+                WriteLine($"public {eventName}({payloadType} p) {{ this.payload = p; }}");
+                WriteLine($"private {payloadType} payload; ");
+                WriteLine($"public {payloadRefType} getPayload() {{ return payload; }}");
             }
             else
             {
                 WriteLine($"public {eventName}() {{ }}");
+                WriteLine($"public {payloadRefType} getPayload() {{ ");
+                WriteLine($"throw new RuntimeException(\"No payload defined for event type {eventName}\");");
+                WriteLine("}");
             }
 
-            WriteLine($"private {argType.ReferenceTypeName} payload; ");
-            WriteLine($"public {argType.ReferenceTypeName} getPayload() {{ return payload; }}");
             WriteLine();
-
             WriteLine("@Override");
             Write("public String toString() {");
             if (hasPayload)

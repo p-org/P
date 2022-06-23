@@ -31,7 +31,7 @@ namespace Plang.Compiler.Backend.Java
 
             List<ICodeGenerator> generators = new List<ICodeGenerator>()
             {
-                new MachineCodeGenerator(),
+                new JavaSourceGenerator(),
                 new EventGenerator()
             };
 

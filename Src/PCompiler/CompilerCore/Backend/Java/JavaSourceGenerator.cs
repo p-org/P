@@ -12,7 +12,7 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java {
 
-    internal class MachineCodeGenerator : ICodeGenerator
+    internal class JavaSourceGenerator : ICodeGenerator
     {
 
         private CompilationContext _context;
@@ -34,7 +34,7 @@ namespace Plang.Compiler.Backend.Java {
         public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope scope)
         {
             _context = new CompilationContext(job);
-            _source = new CompiledFile(_context.FileName);
+            _source = new CompiledFile(Constants.MachineDefnFileName);
             _globalScope = scope;
 
             WriteLine("package PGenerated; ");
@@ -57,7 +57,7 @@ namespace Plang.Compiler.Backend.Java {
                 WriteLine();
             }
 
-            WriteLine($"public class {_context.ProjectName} {{");
+            WriteLine($"public class {Constants.MachineNamespaceName} {{");
 
             if (_globalScope.Enums.Any())
             {
@@ -863,7 +863,7 @@ namespace Plang.Compiler.Backend.Java {
                     }
                     else
                     {
-                        Write($"MessageFormat.format({fmtLit}");
+                        Write($"java.text.MessageFormat.format({fmtLit}");
                         foreach (var arg in se.Args)
                         {
                             Write(", ");

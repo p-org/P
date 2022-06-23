@@ -24,12 +24,12 @@ namespace Plang.Compiler.TypeChecker.Types
             List<NamedTupleEntry> fields = Types.Select((t, i) =>
             {
                 NamedTupleEntry e = new NamedTupleEntry();
-                e.Name = i.ToString();
+                e.Name = "arg_" + i;
                 e.FieldNo = i;
                 e.Type = t;
                 return e;
             }).ToList();
-            
+
             return new NamedTupleType(fields);
         }
 

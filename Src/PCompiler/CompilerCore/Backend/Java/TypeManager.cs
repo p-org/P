@@ -38,7 +38,7 @@ namespace Plang.Compiler.Backend.Java
                         throw new Exception($"TypeName not implemented for {this.GetType()}");
                     }
 
-                    string prefix = (isUserDefined ? Constants.MachineNamespaceName + "." : "");
+                    string prefix = (isUserDefined ? Constants.TypesNamespaceName + "." : "");
                     return prefix + _unboxedType;
                 }
             }
@@ -301,6 +301,21 @@ namespace Plang.Compiler.Backend.Java
                 internal override string DefaultValue => "null";
             }
 
+            internal class JEnum : JType
+            {
+                private readonly string _defaultValue;
+
+                internal JEnum(EnumType e)
+                {
+                    _unboxedType = e.CanonicalRepresentation;
+                    _defaultValue = e.EnumDecl.Values.First().Name; // An arbitrary enum value is fine.
+                }
+
+                internal override bool isUserDefined => true;
+
+                internal override string DefaultValue => $"{Constants.TypesNamespaceName}.{_unboxedType}.{_defaultValue}";
+            }
+
             //TODO: not sure about this one.  Is the base class sufficient?
             //Generate some Java files and see.
             internal class JEvent : JType
@@ -384,8 +399,8 @@ namespace Plang.Compiler.Backend.Java
                 case DataType _:
                     throw new NotImplementedException($"{type.CanonicalRepresentation} values not implemented");
 
-                case EnumType _:
-                    return new JType.JInt();
+                case EnumType e:
+                    return new JType.JEnum(e);
 
                 case ForeignType ft:
                     return new JType.JForeign(ft.CanonicalRepresentation);

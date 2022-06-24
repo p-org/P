@@ -635,7 +635,7 @@ namespace Plang.Compiler.Backend.Java {
                 case EnumElemRefExpr ee:
                     string typeName = ee.Value.ParentEnum.Name;
                     string valueName = ee.Value.Name;
-                    Write($"{typeName}.{valueName}");
+                    Write($"{Constants.TypesNamespaceName}.{typeName}.{valueName}");
                     break;
                 case EventRefExpr _:
                     goto default; //TODO

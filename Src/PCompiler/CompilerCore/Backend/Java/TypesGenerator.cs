@@ -44,12 +44,16 @@ namespace Plang.Compiler.Backend.Java
 
         private void WriteEnumDecl(PEnum e)
         {
-            WriteLine($"public static class {e.Name} {{");
+            WriteLine($"public enum {e.Name} {{");
 
-            foreach (var param in e.Values)
+            int numFields = e.Values.Count();
+            foreach (var (param, sep) in e.Values.Select((pair, i) => (pair, i < numFields - 1? "," : ";")))
             {
-                WriteLine($"public static final int {param.Name} = {param.Value.ToString()};");
+                WriteLine($"{param.Name}({param.Value.ToString()}){sep}");
             }
+
+            WriteLine("private final int value;");
+            WriteLine($"{e.Name}(int i) {{ value = i; }}");
 
             WriteLine("}");
         }

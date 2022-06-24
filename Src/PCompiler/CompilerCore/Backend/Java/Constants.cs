@@ -30,7 +30,7 @@ namespace Plang.Compiler.Backend.Java
         }
 
 
-        public static readonly string MachineNamespaceName = "Machines";
+        public static readonly string MachineNamespaceName = "PMachines";
         public static readonly string MachineDefnFileName = $"{MachineNamespaceName}.java";
 
         #endregion

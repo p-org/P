@@ -88,6 +88,7 @@ namespace Plang.Compiler.Backend.Java
 
                 /* Same with immutable types. */
                 case TypeManager.JType.JString _:
+                case TypeManager.JType.JEnum _:
                 case TypeManager.JType.JMachine _:
                     writeTermToBeCloned();
                     break;

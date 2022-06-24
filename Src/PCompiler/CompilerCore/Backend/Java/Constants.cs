@@ -9,11 +9,11 @@ namespace Plang.Compiler.Backend.Java
     /// </summary>
     internal static class Constants
     {
-        #region Java source code generation
+
+        #region Machine source generation
 
         private static readonly string[] JreDefaultImports =
         {
-            "java.text.MessageFormat",
             "java.util.*",
         };
 
@@ -29,11 +29,16 @@ namespace Plang.Compiler.Backend.Java
             return classes.Select(pkg => $"import {pkg};");
         }
 
-        internal static string DoNotEditWarning => $@"
-/***************************************************************************
- * This file was auto-generated on {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}.  
- * Please do not edit manually!
- **************************************************************************/";
+
+        public static readonly string MachineNamespaceName = "TopDeclarations";
+        public static readonly string MachineDefnFileName = $"{MachineNamespaceName}.java";
+
+        #endregion
+
+        #region Event source generation
+
+        public static readonly string EventNamespaceName = "PEvents";
+        public static readonly string EventDefnFileName = $"{EventNamespaceName}.java";
 
         #endregion
 
@@ -45,6 +50,12 @@ namespace Plang.Compiler.Backend.Java
         #endregion
 
         #region Project build file generation
+
+        internal static string DoNotEditWarning => $@"
+/***************************************************************************
+ * This file was auto-generated on {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}.  
+ * Please do not edit manually!
+ **************************************************************************/";
 
         internal static string BuildFileName => "pom.xml";
 

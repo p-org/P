@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler.Backend.Java
@@ -27,7 +28,14 @@ namespace Plang.Compiler.Backend.Java
         public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope scope)
         {
             GenerateBuildScript(job);
-            return new JavaCodeGenerator().GenerateCode(job, scope);
+
+            List<ICodeGenerator> generators = new List<ICodeGenerator>()
+            {
+                new JavaSourceGenerator(),
+                new EventGenerator()
+            };
+
+            return generators.SelectMany(g => g.GenerateCode(job, scope));
         }
 
         /// <summary>

@@ -23,11 +23,25 @@ namespace Plang.Compiler.Backend.Java
 
         internal class JType
         {
+            private string _unboxedType;
+            private string _refType;
+
             /// <summary>
             /// The name of the Java class that corresponds to this type.
             /// </summary>
-            internal virtual string TypeName =>
-                throw new Exception($"TypeName not implemented for {this.GetType()}");
+            internal string TypeName
+            {
+                get
+                {
+                    if (_unboxedType == null)
+                    {
+                        throw new Exception($"TypeName not implemented for {this.GetType()}");
+                    }
+
+                    string prefix = (isUserDefined ? Constants.MachineNamespaceName + "." : "");
+                    return prefix + _unboxedType;
+                }
+            }
 
             /// <summary>
             /// The name of the Java class that corresponds to this type, should it be treated.
@@ -35,7 +49,18 @@ namespace Plang.Compiler.Backend.Java
             /// this is the same as `TypeName`, but for primitive types this returns the boxed
             /// type name instead.
             /// </summary>
-            internal virtual string ReferenceTypeName => TypeName;
+            internal string ReferenceTypeName
+            {
+                get
+                {
+                    if (_refType == null)
+                    {
+                        return TypeName;
+                    }
+                    string prefix = (isUserDefined ? Constants.MachineNamespaceName + "." : "");
+                    return prefix + _refType;
+                }
+            }
 
             /// <summary>
             /// Whether this can be represented as a primitive (or potentially-boxed) Java type
@@ -76,11 +101,21 @@ namespace Plang.Compiler.Backend.Java
             internal virtual string RemoveMethodName =>
                 throw new Exception($"RemoveMethodName not implemented for {this.TypeName}");
 
+            /// <summary>
+            /// Returns whether this type is defined by user P code (i.e. a tuple) or if it's a built-in
+            /// type (i.e. a seq or a map).  This is used to qualify type identifiers.
+            /// </summary>
+            internal virtual bool isUserDefined => false;
+
             internal class JAny : JType
             {
                 /// "PValue" is the interface in the Java runtime that requires deepClone() and deepEquals() to
                 /// be implemented.
-                internal override string TypeName => "PValue";
+                internal JAny()
+                {
+                    _unboxedType = "PValue";
+                }
+
                 internal override bool IsPrimitive => false;
 
                 /// We don't know how to construct a value of this type and it might not have a nullary constructor.
@@ -90,8 +125,12 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JBool : JType
             {
-                internal override string TypeName => "boolean";
-                internal override string ReferenceTypeName => "Boolean";
+                internal JBool()
+                {
+                    _unboxedType = "boolean";
+                    _refType = "Boolean";
+                }
+
                 internal override string DefaultValue => ToJavaLiteral(false);
 
                 internal static string ToJavaLiteral(bool b)
@@ -102,8 +141,12 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JInt : JType
             {
-                internal override string TypeName => "int";
-                internal override string ReferenceTypeName => "Integer";
+                internal JInt()
+                {
+                    _unboxedType = "int";
+                    _refType = "Integer";
+                }
+
                 internal override string DefaultValue => ToJavaLiteral(0);
 
                 internal static string ToJavaLiteral(int i)
@@ -114,8 +157,11 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JFloat : JType
             {
-                internal override string TypeName => "float";
-                internal override string ReferenceTypeName => "Float";
+                internal JFloat()
+                {
+                    _unboxedType = "float";
+                    _refType = "Float";
+                }
                 internal override string DefaultValue => ToJavaLiteral(0.0);
 
                 internal static string ToJavaLiteral(double d)
@@ -126,7 +172,11 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JString : JType
             {
-                internal override string TypeName => "String";
+                internal JString()
+                {
+                    _unboxedType = "String";
+                }
+
                 internal override string DefaultValue => ToJavaLiteral("");
                 internal override bool IsPrimitive => false;
 
@@ -140,8 +190,11 @@ namespace Plang.Compiler.Backend.Java
             {
                 // Source/Core/Actors/ActorId.cs stores ActorID values as ulongs
 
-                internal override string TypeName => "long";
-                internal override string ReferenceTypeName => "Long";
+                internal JMachine()
+                {
+                    _unboxedType = "long";
+                    _refType = "Long";
+                }
                 internal override string DefaultValue => ToJavaLiteral(0L);
                 internal static string ToJavaLiteral(long l)
                 {
@@ -151,14 +204,12 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JList : JType
             {
-                private readonly JType _t;
                 internal JList(JType t)
                 {
-                    _t = t;
+                    _unboxedType = $"ArrayList<{t.ReferenceTypeName}>";
                 }
 
                 internal override bool IsPrimitive => false;
-                internal override string TypeName => $"ArrayList<{_t.ReferenceTypeName}>";
                 internal override string AccessorMethodName => "get";
                 internal override string ContainsMethodName => "contains";
                 internal override string MutatorMethodName => "set";
@@ -172,11 +223,10 @@ namespace Plang.Compiler.Backend.Java
                 {
                     _k = k;
                     _v = v;
+                    _unboxedType = $"HashMap<{_k.ReferenceTypeName},{_v.ReferenceTypeName}>";
                 }
 
                 internal override bool IsPrimitive => false;
-                internal override string TypeName =>
-                    $"HashMap<{_k.ReferenceTypeName},{_v.ReferenceTypeName}>";
                 internal override string AccessorMethodName => "get";
                 internal override string ContainsMethodName => "containsKey";
                 internal override string MutatorMethodName => "put";
@@ -205,15 +255,16 @@ namespace Plang.Compiler.Backend.Java
                 internal JSet(JType t)
                 {
                     _t = t;
+                    _unboxedType = $"LinkedHashSet<{_t.ReferenceTypeName}>";
                 }
 
                 internal override bool IsPrimitive => false;
-                internal override string TypeName =>
-                    $"LinkedHashSet<{_t.ReferenceTypeName}>";
 
                 // Note: There's no AccessorMethodName for a JSet because, unfortunately,
                 // we have to build a bit more mechanism in order to "index" into a
-                // LinkedHashSet that the C# set datatype gives us directly.
+                // LinkedHashSet that the C# set datatype gives us directly.  For this,
+                // the code generator emits a call to setElementAt(LinkedHashSet, int) in
+                // the Java PRT runtime.
 
                 internal override string ContainsMethodName => "contains";
                 internal override string MutatorMethodName => "add";
@@ -222,24 +273,13 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JNamedTuple : JType
             {
-                /// <summary>
-                /// The name of the generated Java class name for this tuple.
-                /// </summary>
-                internal string JClassName;
-
-                /// <summary>
-                /// The sequence of (name, type) pairs for the tuple's fields.
-                /// </summary>
-                internal IEnumerable<(string, JType)> Fields;
-
                 internal JNamedTuple(string jClassName, IEnumerable<(string, JType)> fields)
                 {
-                    JClassName = jClassName;
-                    Fields = fields;
+                    _unboxedType = jClassName;
                 }
 
                 internal override bool IsPrimitive => false;
-                internal override string TypeName => JClassName;
+                internal override bool isUserDefined => true;
             }
 
             internal class JForeign : JType
@@ -248,12 +288,12 @@ namespace Plang.Compiler.Backend.Java
                 /// The name of the Java class that this foreign type corresponds to.
                 /// </summary>
                 internal string JClassName { get; }
+
                 internal JForeign(string clazz)
                 {
-                    JClassName = clazz;
+                    _unboxedType = clazz;
                 }
 
-                internal override string TypeName => JClassName;
                 internal override bool IsPrimitive => false;
 
                 /// We don't know how to construct a value of this type and it might not have a nullary constructor.
@@ -265,8 +305,11 @@ namespace Plang.Compiler.Backend.Java
             //Generate some Java files and see.
             internal class JEvent : JType
             {
+                internal JEvent()
+                {
+                    _unboxedType = "PEvent";
+                }
                 internal override bool IsPrimitive => false;
-                internal override string TypeName => "PEvent";
             }
 
             internal class JVoid : JType
@@ -275,8 +318,11 @@ namespace Plang.Compiler.Backend.Java
                 // XXX: This is slightly hacky in that `void` can be a return type but
                 // not a variable type, and `Void` can be a variable type and a return
                 // type but a valueless-return statement doesn't "autobox" into a Void.
-                internal override string TypeName => "void";
-                internal override string ReferenceTypeName => "Void";
+                public JVoid()
+                {
+                    _refType = "Void";
+                    _unboxedType = "void";
+                }
             }
         }
 

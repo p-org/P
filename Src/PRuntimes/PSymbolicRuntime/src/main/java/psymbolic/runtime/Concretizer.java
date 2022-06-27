@@ -1,10 +1,8 @@
 package psymbolic.runtime;
 
-import p.runtime.values.*;
+import psymbolic.runtime.concretevalues.*;
 import psymbolic.valuesummary.*;
-import psymbolic.runtime.Message;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.Event;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -252,11 +250,11 @@ public class Concretizer {
     }
 
     /**
-     * Get a list of concrete values for the arguments
-     * @param pc Guard under which to concretize values
-     * @param stop specifies when to stop getting more concrete values
+     * Get a list of concrete concretevalues for the arguments
+     * @param pc Guard under which to concretize concretevalues
+     * @param stop specifies when to stop getting more concrete concretevalues
      * @param args arguments
-     * @return list of concrete values for arguments
+     * @return list of concrete concretevalues for arguments
      */ 
     public static List<GuardedValue<List<Object>>> getConcreteValues(Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary ... args) {
         Guard iterPc = Guard.constFalse();
@@ -305,11 +303,11 @@ public class Concretizer {
     }
 
     /**
-     * Get the number of concrete values for the arguments
-     * @param pc Guard under which to concretize values
-     * @param stop specifies when to stop getting more concrete values
+     * Get the number of concrete concretevalues for the arguments
+     * @param pc Guard under which to concretize concretevalues
+     * @param stop specifies when to stop getting more concrete concretevalues
      * @param args arguments
-     * @return number of concrete values for arguments
+     * @return number of concrete concretevalues for arguments
      */
     public static int countConcreteValues(Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary ... args) {
         Guard iterPc = Guard.constFalse();
@@ -345,10 +343,10 @@ public class Concretizer {
     }
 
     /**
-     * Count the number of concrete values for arguments
-     * @param pc Guard under which to concretize values
+     * Count the number of concrete concretevalues for arguments
+     * @param pc Guard under which to concretize concretevalues
      * @param args arguments
-     * @return number of concrete values
+     * @return number of concrete concretevalues
      */ 
     public static int getNumConcreteValues(Guard pc, ValueSummary ... args) {
     	int i = 0;
@@ -359,7 +357,7 @@ public class Concretizer {
                 i = countConcreteValues(pc, x -> false, Concretizer::concretize, args);
             }
     	} catch (NullPointerException e) {
-            throw new RuntimeException("Counting concrete values failed.");
+            throw new RuntimeException("Counting concrete concretevalues failed.");
     	}
     	return i;
     }

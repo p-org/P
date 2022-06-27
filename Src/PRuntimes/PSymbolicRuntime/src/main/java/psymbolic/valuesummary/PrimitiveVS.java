@@ -11,9 +11,9 @@ import java.util.stream.Collectors;
  */
 public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     /**
-     * A primitive value is a collection of guarded values
+     * A primitive value is a collection of guarded concretevalues
      *
-     * The guards on these values *must* be mutually exclusive.
+     * The guards on these concretevalues *must* be mutually exclusive.
      * In other words, for any two 'value1', 'value2' of type T, the following must be identically false:
      *
      *      and(guardedValues.get(value1), guardedValues.get(value2))
@@ -22,15 +22,15 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
      */
     private final Map<T, Guard> guardedValues;
 
-    /** Cached list of guarded values */
+    /** Cached list of guarded concretevalues */
     private List<GuardedValue<T>> guardedValuesList;
-    /** Cached set of values */
+    /** Cached set of concretevalues */
     private Set<T> values = null;
 
     /** Cached universe */
     private Guard universe = null;
 
-    /** Get all the different possible guarded values */
+    /** Get all the different possible guarded concretevalues */
     public List<GuardedValue<T>> getGuardedValues() {
         if (guardedValuesList == null)
             guardedValuesList = guardedValues.entrySet().stream()
@@ -61,8 +61,8 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     }
 
     /**
-     * Create a value summary with the given guarded values
-     * Caution: The caller must take care to ensure that the guards on the provided values are mutually exclusive.
+     * Create a value summary with the given guarded concretevalues
+     * Caution: The caller must take care to ensure that the guards on the provided concretevalues are mutually exclusive.
      */
     public PrimitiveVS(Map<T, Guard> guardedValues) {
         this.guardedValues = new HashMap<>();
@@ -113,10 +113,10 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     }
 
     /**
-     * Apply the function `func` to each guarded value of type T in the Value Summary and return a primitive value summary with values of type U
+     * Apply the function `func` to each guarded value of type T in the Value Summary and return a primitive value summary with concretevalues of type U
      * @param func Function to be applied
-     * @param <U> Type of the values in the resultant primitive value summary
-     * @return A primitive value summary with values of type U
+     * @param <U> Type of the concretevalues in the resultant primitive value summary
+     * @return A primitive value summary with concretevalues of type U
      */
     public <U> PrimitiveVS<U> apply(Function<T, U> func) {
         final Map<U, Guard> results = new HashMap<>();
@@ -130,10 +130,10 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     }
 
     /**
-     * Remove the provided Primitive VS values from the set of values
+     * Remove the provided Primitive VS concretevalues from the set of concretevalues
      *
-     * @param rm The PrimitiveVS values to remove from the current value summary
-     * @return The PrimitiveVS after removal of values
+     * @param rm The PrimitiveVS concretevalues to remove from the current value summary
+     * @return The PrimitiveVS after removal of concretevalues
      */
     @Deprecated
     public PrimitiveVS<T> remove(PrimitiveVS<T> rm) {

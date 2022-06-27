@@ -237,7 +237,7 @@ namespace Plang.Compiler.Backend.Java {
         {
             WriteLine("public java.util.List<Class<? extends prt.events.PEvent>> getEventTypes() {");
             Write("return java.util.Arrays.asList(");
-            foreach (var (ev, sep) in _currentMachine.Observes.Events.Select((p, i) => (p, i > 0 ? ", " : "")))
+            foreach (var (sep, ev) in _currentMachine.Observes.Events.WithPrefixSep(", "))
             {
                 Write($"{sep}{Constants.EventNamespaceName}.{ev.Name}.class");
             }
@@ -442,10 +442,10 @@ namespace Plang.Compiler.Backend.Java {
                     Write("tryRaiseEvent(new ");
                     WriteExpr(raiseStmt.PEvent);
                     Write("(");
-                    foreach (var (param, sep)in raiseStmt.Payload.Select((p, i) => (p, i > 0 ? ", " : "")))
+                    foreach (var (sep, expr) in raiseStmt.Payload.WithPrefixSep(", "))
                     {
                         Write(sep);
-                        WriteExpr(param);
+                        WriteExpr(expr);
                     }
                     Write(")");
                     WriteLine(");");
@@ -583,10 +583,10 @@ namespace Plang.Compiler.Backend.Java {
             string fname = Names.GetNameForDecl(f);
 
             Write($"{ffiBridge}{fname}(");
-            foreach (var (param, sep)in args.Select((p, i) => (p, i > 0 ? ", " : "")))
+            foreach (var (sep, expr) in args.WithPrefixSep(", "))
             {
                 Write(sep);
-                WriteExpr(param);
+                WriteExpr(expr);
             }
             Write($")");
         }
@@ -675,7 +675,7 @@ namespace Plang.Compiler.Backend.Java {
                 {
                     t = Types.JavaTypeFor(te.Type);
                     Write($"new {t.TypeName}(");
-                    foreach (var (field, sep) in te.TupleFields.Select((e, i) => (e, i > 0 ? ", " : "")))
+                    foreach (var (sep, field) in te.TupleFields.WithPrefixSep(", "))
                     {
                         Write(sep);
                         WriteExpr(field);
@@ -734,8 +734,7 @@ namespace Plang.Compiler.Backend.Java {
                 {
                     t = Types.JavaTypeFor(te.Type);
                     Write($"new {t.TypeName}(");
-                    foreach (var (field, sep) in te.TupleFields.Select((e, i) =>
-                                 (e, i > 0 ? ", " : "")))
+                    foreach (var (sep, field) in te.TupleFields.WithPrefixSep(", "))
                     {
                         Write(sep);
                         WriteExpr(field);

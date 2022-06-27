@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler.Backend.Java
@@ -124,6 +125,27 @@ namespace Plang.Compiler.Backend.Java
         protected void Write(string s)
         {
             _context.Write(Source.Stream, s);
+        }
+    }
+
+    static class IEnumerableExtensions
+    {
+
+        /// <summary>
+        /// Given some sequence and a separator value, emit a sequence such that on the first iteration
+        /// the prefix is the empty string, and on all other iterations it is the supplied prefix.  We
+        /// can use this for emitting values from `it` where `prefix` is a separator string.  For instance,
+        ///
+        /// `foreach (s, i) in WithPrefixSep(",", [1,2,3]) { Console.Out.Write(sep + i) }` would emit `"1,2,3"`.
+        ///
+        /// </summary>
+        /// <param name="prefix">The separator value.</param>
+        /// <param name="it">The sequence of Ts to iterate through</param>
+        /// <typeparam name="T">The type of the values in it.</typeparam>
+        /// <returns>A sequence of (string, T) pairs, where the string is either the empty string or the separator.</returns>
+        internal static IEnumerable<(string, T)> WithPrefixSep<T>(this IEnumerable<T> it, string prefix)
+        {
+            return it.Select((val, i) => (i > 0 ? prefix : "", val));
         }
     }
 }

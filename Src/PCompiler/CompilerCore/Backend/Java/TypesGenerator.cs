@@ -106,7 +106,7 @@ namespace Plang.Compiler.Backend.Java
 
             // Write the explicit constructor.
             Write($"public {tname}(");
-            foreach (var ((jType, fieldName), sep) in fields.Select((pair, i) => (pair, i > 0 ? ", " : "")))
+            foreach (var (sep, (jType, fieldName)) in fields.WithPrefixSep(", "))
             {
                 Write($"{sep}{jType.TypeName} {fieldName}");
             }
@@ -121,7 +121,7 @@ namespace Plang.Compiler.Backend.Java
             // Write the copy constructor for cloning.
             WriteLine($"public {tname} deepClone() {{");
             Write($"return new {tname}(");
-            foreach (var ((jType, fieldName), sep) in fields.Select((pair, i) => (pair, i > 0 ? ", " : "")))
+            foreach (var (sep, (jType, fieldName)) in fields.WithPrefixSep(", "))
             {
                 Write(sep);
                 WriteClone(jType, () => Write(fieldName));
@@ -157,7 +157,7 @@ namespace Plang.Compiler.Backend.Java
             WriteLine("public String toString() {");
             WriteLine($"StringBuilder sb = new StringBuilder(\"{tname}\");");
             WriteLine("sb.append(\"[\");");
-            foreach (var ((_, fieldName), sep) in fields.Select((pair, i) => (pair, i > 0 ? "," : "")))
+            foreach (var (sep, (_, fieldName)) in fields.WithPrefixSep(", "))
             {
                 WriteLine($"sb.append(\"{sep}{fieldName}=\" + {fieldName});");
             }

@@ -50,14 +50,16 @@ namespace Plang.Compiler.Backend.Java {
 
             foreach (var m in GlobalScope.Machines)
             {
+                _currentMachine = m;
                 if (m.IsSpec)
                 {
-                    WriteMonitorDecl(m);
+                    WriteMonitorDecl();
                 }
                 else
                 {
-                    WriteMachineDecl(m);
+                    WriteMachineDecl();
                 }
+                _currentMachine = null;
             }
             WriteLine("}");
         }
@@ -69,32 +71,19 @@ namespace Plang.Compiler.Backend.Java {
         }
 
 
-        private void WriteMachineDecl(Machine m)
+        private void WriteMachineDecl()
         {
-            if (_currentMachine != null)
-            {
-                throw new Exception($"Already processing machine {_currentMachine.Name}");
-            }
-            _currentMachine = m;
-
-            WriteLine($"// PMachine {m.Name} elided ");
-            _currentMachine = null;
+            WriteLine($"// PMachine {_currentMachine.Name} elided ");
         }
 
-        private void WriteMonitorDecl(Machine m)
+        private void WriteMonitorDecl()
         {
-            if (_currentMachine != null)
-            {
-                throw new Exception($"Already processing machine {_currentMachine.Name}");
-            }
-            _currentMachine = m;
-
-            string cname = Names.GetNameForDecl(m);
+            string cname = Names.GetNameForDecl(_currentMachine);
 
             WriteLine($"public static class {cname} extends prt.Monitor {{");
 
             // monitor fields
-            foreach (var field in m.Fields)
+            foreach (var field in _currentMachine.Fields)
             {
                 TypeManager.JType type = Types.JavaTypeFor(field.Type);
                 string name = Names.GetNameForDecl(field);
@@ -106,26 +95,29 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine();
 
             // state identifiers
-            foreach (var s in m.States)
+            foreach (var s in _currentMachine.States)
             {
                 //TODO: I think it's fine to use unqualified names here.  But, confirm.
                 WriteLine($"public String {Names.IdentForState(s)} = \"{s.Name}\";");
             }
             WriteLine();
 
+            // constructor
+            WriteMonitorCstr();
+            WriteLine();
+
+            // .getEventTypes()
+            WriteEventsAccessor();
+            WriteLine();
+
             // functions
-            foreach (var f in m.Methods)
+            foreach (var f in _currentMachine.Methods)
             {
                 WriteFunction(f);
             }
             WriteLine();
 
-            // constructor
-            WriteMonitorCstr(m);
-
             WriteLine($"}} // {cname} monitor definition");
-
-            _currentMachine = null;
         }
 
 
@@ -227,18 +219,30 @@ namespace Plang.Compiler.Backend.Java {
 
         }
 
-        private void WriteMonitorCstr(Machine m)
+        private void WriteMonitorCstr()
         {
-            string cname = Names.GetNameForDecl(m);
+            string cname = Names.GetNameForDecl(_currentMachine);
 
             WriteLine($"public {cname}() {{");
             WriteLine("super();");
 
-            foreach (var s in m.States)
+            foreach (var s in _currentMachine.States)
             {
                 WriteStateBuilderDecl(s);
             }
             WriteLine("} // constructor");
+        }
+
+        private void WriteEventsAccessor()
+        {
+            WriteLine("public java.util.List<Class<? extends prt.events.PEvent>> getEventTypes() {");
+            Write("return java.util.Arrays.asList(");
+            foreach (var (ev, sep) in _currentMachine.Observes.Events.Select((p, i) => (p, i > 0 ? ", " : "")))
+            {
+                Write($"{sep}{Constants.EventNamespaceName}.{ev.Name}.class");
+            }
+            WriteLine(");");
+            WriteLine("}");
         }
 
         private void WriteStateBuilderDecl(State s)

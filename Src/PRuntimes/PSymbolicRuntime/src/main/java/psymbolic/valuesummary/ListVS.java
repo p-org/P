@@ -60,7 +60,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     public PrimitiveVS<Integer> size() { return size; }
 
     /**
-     * Is the value summary empty with no values in it
+     * Is the value summary empty with no concretevalues in it
      */
     @Override
     public boolean isEmptyVS() {

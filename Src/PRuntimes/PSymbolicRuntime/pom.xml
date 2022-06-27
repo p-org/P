@@ -254,13 +254,6 @@
     </dependency>
 
     <dependency>
-      <groupId>p.runtime</groupId>
-      <artifactId>PJavaRuntime</artifactId>
-      <version>1.0.0</version>
-      <scope>compile</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.reflections</groupId>
       <artifactId>reflections</artifactId>
       <version>0.9.12</version>

@@ -1,7 +1,7 @@
-package p.runtime.values.exceptions;
+package psymbolic.runtime.concretevalues.exceptions;
 
-import p.runtime.PRuntimeException;
-import p.runtime.values.PNamedTuple;
+import psymbolic.runtime.concretevalues.PRuntimeException;
+import psymbolic.runtime.concretevalues.PNamedTuple;
 
 /**
  * Exception to capture the invalid field access for NamedTuples

@@ -45,7 +45,7 @@ public class ValueSummaryChecks {
         return !BooleanVS.isEverFalse(a.restrict(guard).symbolicEquals(b.restrict(guard), guard).restrict(guard));
     }
 
-    /** Is the provided PrimVS such that its guarded values have disjoint guards?
+    /** Is the provided PrimVS such that its guarded concretevalues have disjoint guards?
      * @param vs The PrimVS
      */
     public static boolean disjointGuards(PrimitiveVS<?> vs) {

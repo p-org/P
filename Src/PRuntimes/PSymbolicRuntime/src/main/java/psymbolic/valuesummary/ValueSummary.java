@@ -94,7 +94,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
      }
 
     /**
-     * Check whether a value summary has any values under any path condition
+     * Check whether a value summary has any concretevalues under any path condition
      *
      * @return Whether the path condition is empty
      */
@@ -145,7 +145,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
 
     /**
      * Get the Guard that represents the universe of the value summary
-     * Disjunction of the guards of all the guarded values
+     * Disjunction of the guards of all the guarded concretevalues
      * @return The universe of the value summary
      */
     Guard getUniverse();

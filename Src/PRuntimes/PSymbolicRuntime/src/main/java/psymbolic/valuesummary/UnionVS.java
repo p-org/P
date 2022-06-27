@@ -23,7 +23,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
     public UnionVS(Guard pc, Class<? extends ValueSummary> type, ValueSummary values) {
         this.type = new PrimitiveVS<Class<? extends ValueSummary>>(type).restrict(pc);
         this.value = new HashMap<>();
-        // TODO: why are we not restricting the values?
+        // TODO: why are we not restricting the concretevalues?
         this.value.put(type, values);
         assert(this.type != null);
     }

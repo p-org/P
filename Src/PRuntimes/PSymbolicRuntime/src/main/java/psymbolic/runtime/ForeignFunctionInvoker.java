@@ -1,21 +1,19 @@
 package psymbolic.runtime;
 
-import p.runtime.values.*;
-import p.runtime.values.exceptions.InvalidIndexException;
-import p.runtime.values.exceptions.KeyNotFoundException;
+import psymbolic.runtime.concretevalues.*;
+import psymbolic.runtime.concretevalues.exceptions.InvalidIndexException;
+import psymbolic.runtime.concretevalues.exceptions.KeyNotFoundException;
 import psymbolic.valuesummary.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+
 import java.util.List;
-import java.util.Map;
+
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 public class ForeignFunctionInvoker {
 
-    /* Maximum number of times to invoke the foreign function on different values */
+    /* Maximum number of times to invoke the foreign function on different concretevalues */
     public static int times = 1;
 
     public static List<GuardedValue<List<Object>>> getConcreteValues (Guard pc, ValueSummary ... args) {

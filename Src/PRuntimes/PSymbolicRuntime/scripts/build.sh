@@ -8,14 +8,12 @@ cd ../../../../Bld/
 
 popd
 
-cd ../..
+pushd .
 
-cd PJavaRuntime
-
-mvn install
-
-cd ../PSymbolicRuntime
+cd ..
 
 mvn clean
 
 mvn install
+
+popd

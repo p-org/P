@@ -10,7 +10,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     /** The underlying set */
     private final ListVS<T> elements;
 
-    /** Get all the different possible guarded values */
+    /** Get all the different possible guarded concretevalues */
     public ListVS<T> getElements() {
         return elements;
     }

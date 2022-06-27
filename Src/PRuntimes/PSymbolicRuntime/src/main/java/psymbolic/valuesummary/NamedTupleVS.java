@@ -1,6 +1,6 @@
 package psymbolic.valuesummary;
 
-import p.runtime.values.PString;
+import psymbolic.runtime.concretevalues.PString;
 
 import java.util.*;
 
@@ -40,7 +40,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     }
 
     /** Make a new NamedTupleVS with the provided names and fields
-     * @param namesAndFields Alternating String and ValueSummary values where the Strings give the field names
+     * @param namesAndFields Alternating String and ValueSummary concretevalues where the Strings give the field names
      */
     public NamedTupleVS(Object... namesAndFields) {
         names = new ArrayList<>();

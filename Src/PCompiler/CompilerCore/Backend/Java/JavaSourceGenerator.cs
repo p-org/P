@@ -29,7 +29,7 @@ namespace Plang.Compiler.Backend.Java
             GlobalScope = scope;
         }
 
-        private void WriteFileHeader()
+        protected virtual void WriteFileHeader()
         {
             WriteLine("package PGenerated;");
 

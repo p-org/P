@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Plang.Compiler.Backend.Java
 {
@@ -51,8 +52,34 @@ namespace Plang.Compiler.Backend.Java
 
         #region FFI generation
 
-        internal static string FFIPackage = "PForeign";
-        internal static string GlobalFFIPackage = $"{FFIPackage}.globals";
+        private static readonly string rawFFIBanner = $@"
+P <-> Java Foreign Function Interface Stubs
+
+This file was auto-generated on {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}.  
+
+Please separate each generated class into its own .java file (detailed throughout the file), filling
+in the body of each function definition as necessary for your project's business logic.
+";
+
+        internal static readonly string FFIStubFileName = "FFIStubs.txt";
+
+        internal static readonly string FFIPackage = "PForeign";
+        internal static readonly string GlobalFFIPackage = $"{FFIPackage}.globals";
+
+        // Something that is clearly not valid Java.
+        private static readonly string FFICommentToken = "%";
+
+        public static string FFICommentDivider = new StringBuilder(72).Insert(0, FFICommentToken, 72).ToString();
+
+        internal static string AsFFIComment(string line)
+        {
+            return FFICommentToken + " " + line;
+        }
+
+        internal static string[] FfiBanner => rawFFIBanner
+            .Split("\n")
+            .Select(AsFFIComment)
+            .ToArray();
 
         #endregion
 

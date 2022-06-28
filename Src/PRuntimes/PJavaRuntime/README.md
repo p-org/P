@@ -1,6 +1,7 @@
-# PrtSandbox
+# Java PRT
 
-An experimental Coyote-like state machine runtime for P.
+This project is the Java runtime for executing monitors compiled by the P Java
+backend.  It reimplements a subset of the Coyote state machine runtime.
 
 ## Building
 
@@ -16,8 +17,8 @@ $ mvn test
 
 ## Installation
 
-This builds and places the compiled JAR in your local Maven
-repository, which by default is located at `~/.m2/`.
+This builds and places the compiled JAR in your local Maven repository, which
+by default is located at `~/.m2/`.
 
 ```
 $ mvn install

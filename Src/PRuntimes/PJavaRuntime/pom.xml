@@ -6,7 +6,7 @@
 
     <groupId>p.runtime</groupId>
     <artifactId>PJavaRuntime</artifactId>
-    <version>1.0</version>
+    <version>${revision}</version>
 
     <name>Java runtime for the P programming language</name>
     <url>https://github.com/p-org/P</url>
@@ -75,6 +75,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <log4j2.configurationFile>${project.basedir}/src/main/resources/log4j2.xml</log4j2.configurationFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <revision>1.0.0-SNAPSHOT</revision>
     </properties>
     
 </project>

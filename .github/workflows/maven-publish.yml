@@ -27,7 +27,10 @@ jobs:
 
     - name: Build with Maven
       working-directory: Src/PRuntimes/PJavaRuntime
-      run: mvn -B package --file pom.xml
+      run: |
+        # The environment variable GITHUB_REF is refs/tags/p-*
+        VERSION=${GITHUB_REF:12}
+        mvn -B package --file pom.xml -Drevision=${VERSION}
 
     - name: Publish to GitHub Packages Apache Maven
       working-directory: Src/PRuntimes/PJavaRuntime

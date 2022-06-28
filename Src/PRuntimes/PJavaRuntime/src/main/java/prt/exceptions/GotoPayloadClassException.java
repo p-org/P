@@ -1,4 +1,6 @@
-package prt;
+package prt.exceptions;
+
+import prt.State;
 
 /**
  * Thrown when the prt.Monitor tries to pass a state transition payload of the wrong type to

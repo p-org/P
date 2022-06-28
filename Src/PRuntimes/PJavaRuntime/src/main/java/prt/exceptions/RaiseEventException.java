@@ -1,4 +1,4 @@
-package prt;
+package prt.exceptions;
 
 import prt.events.PEvent;
 

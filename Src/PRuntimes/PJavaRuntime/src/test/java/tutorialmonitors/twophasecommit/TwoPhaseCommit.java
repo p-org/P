@@ -5,9 +5,10 @@ package tutorialmonitors.twophasecommit;
  * Please do not edit manually!
  **************************************************************************/
 
+import prt.exceptions.TransitionException;
+
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.stream.Stream;
 
 
 public class TwoPhaseCommit {
@@ -751,7 +752,7 @@ public class TwoPhaseCommit {
             TMP_tmp0_2 = pendingTransactions + 1;
             pendingTransactions = TMP_tmp0_2;
         }
-        private void Anon_4()throws prt.TransitionException {
+        private void Anon_4()throws TransitionException {
             int TMP_tmp0_3 = 0;
             boolean TMP_tmp1_2 = false;
 

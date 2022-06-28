@@ -7,6 +7,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import prt.*;
+import prt.exceptions.PAssertionFailureException;
+import prt.exceptions.UnhandledEventException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,7 +39,7 @@ public class ClientServerTest {
     void testAssertsOnInvalidAccountID() {
         BankBalanceIsAlwaysCorrect m = initedBankBalanceIsAlwaysCorrect();
 
-        assertThrows(prt.PAssertionFailureException.class,
+        assertThrows(PAssertionFailureException.class,
                 () -> m.process(new eWithDrawReq(
                         new PTuple_src_accnt_amnt_rId(0L, 31337, 10, 0))),
                 "Assertion failure: Unknown accountId 102 in the withdraw request. Valid accountIds = [100, 101]");
@@ -65,7 +67,7 @@ public class ClientServerTest {
 
         m.process(new eWithDrawReq(new PTuple_src_accnt_amnt_rId(1L, 100, 10, 0)));
 
-        assertThrows(prt.PAssertionFailureException.class,
+        assertThrows(PAssertionFailureException.class,
                 () -> m.process(new eWithDrawResp(new PTuple_stts_accnt_blnc_rId(
                         tWithDrawRespStatus.WITHDRAW_SUCCESS,
                         100,

@@ -1,4 +1,4 @@
-package prt.values;
+package prt.exceptions;
 
 public class UncloneableValueException extends RuntimeException {
     public UncloneableValueException(Class<?> c) {

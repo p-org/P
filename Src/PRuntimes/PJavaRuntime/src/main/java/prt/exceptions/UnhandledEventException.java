@@ -1,5 +1,6 @@
-package prt;
+package prt.exceptions;
 
+import prt.State;
 import prt.events.PEvent;
 
 /**
@@ -10,7 +11,7 @@ public class UnhandledEventException extends RuntimeException {
     private Class<? extends PEvent> clazz;
 
     /**
-     * Instantiates a new prt.UnhandledEventException.
+     * Instantiates a new prt.exceptions.UnhandledEventException.
      *
      * @param s the state missing some event.
      * @param c the subclass of Event.Payload without a handler.

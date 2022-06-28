@@ -1,4 +1,4 @@
-package prt;
+package prt.exceptions;
 
 /**
  * Analogous to `Microsoft.Coyote.AssertionFailureException`: if a `Plang.Compiler...AnnounceStmt`

@@ -5,9 +5,10 @@ package tutorialmonitors.clientserver;
  * Please do not edit manually!
  **************************************************************************/
 
+import prt.exceptions.TransitionException;
+
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.stream.Stream;
 
 
 public class ClientServer {
@@ -478,7 +479,7 @@ public class ClientServer {
             TMP_tmp0_2 = req_1.rId;
             pendingWDReqs.add(TMP_tmp0_2);
         }
-        private void Anon_4(PTuple_stts_accnt_blnc_rId resp_1)throws prt.TransitionException {
+        private void Anon_4(PTuple_stts_accnt_blnc_rId resp_1)throws TransitionException {
             int TMP_tmp0_3 = 0;
             boolean TMP_tmp1_2 = false;
             int TMP_tmp2_2 = 0;

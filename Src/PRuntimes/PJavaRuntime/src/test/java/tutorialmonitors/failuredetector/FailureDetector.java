@@ -5,9 +5,9 @@ package tutorialmonitors.failuredetector;
  * Please do not edit manually!
  **************************************************************************/
 
-import java.text.MessageFormat;
+import prt.exceptions.TransitionException;
+
 import java.util.*;
-import java.util.stream.Stream;
 
 
 public class FailureDetector {
@@ -343,7 +343,7 @@ public class FailureDetector {
                 i = TMP_tmp5;
             }
         }
-        private void Anon_1(long node)throws prt.TransitionException {
+        private void Anon_1(long node)throws TransitionException {
             long TMP_tmp0_1 = 0L;
             boolean TMP_tmp1_1 = false;
             boolean TMP_tmp2_1 = false;
@@ -359,7 +359,7 @@ public class FailureDetector {
                 return;
             }
         }
-        private void Anon_2(LinkedHashSet<Long> nodes_1)throws prt.TransitionException {
+        private void Anon_2(LinkedHashSet<Long> nodes_1)throws TransitionException {
             int i_1 = 0;
             int TMP_tmp0_2 = 0;
             boolean TMP_tmp1_2 = false;

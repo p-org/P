@@ -1,7 +1,6 @@
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import prt.values.UncloneableValueException;
-import tutorialmonitors.clientserver.ClientServer;
+import prt.exceptions.UncloneableValueException;
 
 
 import java.util.*;
@@ -9,7 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static prt.values.Clone.deepClone;
-import prt.values.*;
 
 public class ValueCloneTest {
 

@@ -1,6 +1,8 @@
 package prt;
 
 import prt.events.PEvent;
+import prt.exceptions.RaiseEventException;
+import prt.exceptions.TransitionException;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -36,12 +38,12 @@ public class State {
     }
 
     /**
-     * Functionally-equivalent to a Runnable, but may throw the checked prt.TransitionException within run().
+     * Functionally-equivalent to a Runnable, but may throw the checked prt.exceptions.TransitionException within run().
      */
     @FunctionalInterface
     public interface TransitionableRunnable {
         /**
-         * Runs the Runnable; a `prt.TransitionException` may be thrown prior to the consumer terminating,
+         * Runs the Runnable; a `prt.exceptions.TransitionException` may be thrown prior to the consumer terminating,
          * @throws TransitionException if invoking the function results in a state transition.
          */
         void run() throws TransitionException;

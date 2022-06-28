@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import prt.PAssertionFailureException;
+import prt.exceptions.PAssertionFailureException;
 
 import static org.junit.jupiter.api.Assertions.*;
 

@@ -2,6 +2,8 @@ import prt.events.PEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import prt.*;
+import prt.exceptions.GotoPayloadClassException;
+import prt.exceptions.PAssertionFailureException;
 
 import java.util.ArrayList;
 import java.util.List;

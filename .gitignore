@@ -241,3 +241,9 @@ target/
 
 #Mkdocs 
 site/
+
+
+### IntelliJ IDEA ###
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/

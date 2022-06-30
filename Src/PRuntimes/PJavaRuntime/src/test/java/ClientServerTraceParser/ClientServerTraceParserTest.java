@@ -2,8 +2,8 @@ package ClientServerTraceParser;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import tutorialmonitors.clientserver.ClientServer;
+import tutorialmonitors.clientserver.PEvents;
+import tutorialmonitors.clientserver.PTypes;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -43,31 +43,13 @@ public class ClientServerTraceParserTest {
         assertEquals(1, evs.size());
         assertEquals(new PObserveEvent(
                         new TimestampInterval(1L),
-                        new ClientServer.eWithDrawReq(
-                                    new ClientServer.PTuple_src_accnt_amnt_rId(4L, 0, 2, 1))),
+                        new PEvents.eWithDrawReq(
+                                    new PTypes.PTuple_src_accnt_amnt_rId(4L, 0, 2, 1))),
                     evs.get(0));
     }
 
     @Test
-    @DisplayName("Can extract an eReadQuery from a SendLog message")
-    public void testCanParseReadQuery() {
-        String line = "<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' " +
-                "sent event 'eReadQuery with payload (<accountId:0, >)' to 'Database(5)'.";
-
-        List<PObserveEvent> evs = ClientServerTraceParser
-                .eventsFrom(Stream.of(line))
-                .collect(toList());
-
-        assertEquals(1, evs.size());
-        assertEquals(
-                new PObserveEvent(
-                        new TimestampInterval(1L),
-                        new ClientServer.eReadQuery(new ClientServer.PTuple_accnt(0))),
-                evs.get(0));
-    }
-
-    @Test
-    @DisplayName("Can extract an eReadQueryResp from a SendLog message")
+    @DisplayName("Will skip over messages it can't parse from a SendLog message")
     public void testCanParseReadQueryResp() {
         String line = "<SendLog> 'Database(5)' in state 'Init_1' sent event 'eReadQueryResp with payload (<accountId:0, balance:15, >)' to 'BankServer(3)'.";
 
@@ -75,12 +57,7 @@ public class ClientServerTraceParserTest {
                 .eventsFrom(Stream.of(line))
                         .collect(toList());
 
-        assertEquals(1, evs.size());
-        assertEquals(
-                new PObserveEvent(
-                        new TimestampInterval(1L),
-                        new ClientServer.eReadQueryResp(new ClientServer.PTuple_accnt_blnc(0, 15))),
-                evs.get(0));
+        assertEquals(0, evs.size());
     }
 
     @Test
@@ -88,25 +65,22 @@ public class ClientServerTraceParserTest {
     public void testCanExtractMultipleSendLogLines() {
         Stream<String> lines = Stream.of(
             "<SendLog> 'Client(4)' in state 'WithdrawMoney' sent event 'eWithDrawReq with payload (<source:Client(4), accountId:0, amount:2, rId:1, >)' to 'BankServer(3)'.",
-            "<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' sent event 'eReadQuery with payload (<accountId:0, >)' to 'Database(5)'.",
-            "<SendLog> 'Database(5)' in state 'Init_1' sent event 'eReadQueryResp with payload (<accountId:0, balance:15, >)' to 'BankServer(3)'. ");
+            "<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' sent event 'eReadQuery with payload (<accountId:0, >)' to 'Database(5)'.", /* This one will be skipped */
+            "<SendLog> 'Database(5)' in state 'Init_1' sent event 'eWithDrawResp with payload (<status:0, accountId:15, balance:99, rid:42, >)' to 'BankServer(3)'. ");
 
         Stream<PObserveEvent> evs = ClientServerTraceParser.eventsFrom(lines);
         Iterator<PObserveEvent> it = evs.iterator();
 
         assertEquals(
                 new PObserveEvent(new TimestampInterval(1L),
-                    new ClientServer.eWithDrawReq(
-                            new ClientServer.PTuple_src_accnt_amnt_rId(4L, 0, 2, 1))),
+                    new PEvents.eWithDrawReq(
+                            new PTypes.PTuple_src_accnt_amnt_rId(4L, 0, 2, 1))),
                 it.next());
         assertEquals(
                 new PObserveEvent(new TimestampInterval(2L),
-                        new ClientServer.eReadQuery(new ClientServer.PTuple_accnt(0))),
-                it.next());
-        assertEquals(
-                new PObserveEvent(new TimestampInterval(3L),
-                        new ClientServer.eReadQueryResp(
-                            new ClientServer.PTuple_accnt_blnc(0, 15))),
+                        new PEvents.eWithDrawResp(
+                                new PTypes.PTuple_stts_accnt_blnc_rId(
+                                        PTypes.tWithDrawRespStatus.WITHDRAW_SUCCESS,15,99, 42))),
                 it.next());
     }
 }

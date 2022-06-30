@@ -2,7 +2,6 @@ package ClientServerTraceParser;
 
 import prt.events.PEvent;
 import parsers.PTraceParserUtils;
-import tutorialmonitors.clientserver.ClientServer;
 
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +10,9 @@ import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
+
+import static tutorialmonitors.clientserver.PEvents.*;
+import static tutorialmonitors.clientserver.PTypes.*;
 
 /**
  * Here is an example of a P parser that makes use of the PTraceParserUtils` helper class to
@@ -31,10 +33,7 @@ public class ClientServerTraceParser {
      * for a given P event type, and parses out the corresponding PEvent and its
      * deserialised, typesafe payload.
      */
-    private static final HashMap<String, Function<String, PEvent>> handlers = new HashMap<>(Map.of(
-            "eReadQuery", ClientServerTraceParser::payloadToReadQuery,
-            "eReadQueryResp", ClientServerTraceParser::payloadToReadQueryResp,
-            "eUpdateQuery", ClientServerTraceParser::payloadToUpdateQuery,
+    private static final HashMap<String, Function<String, ? extends PEvent<?>>> handlers = new HashMap<>(Map.of(
             "eWithDrawReq", ClientServerTraceParser::payloadToWithdrawReq,
             "eWithDrawResp", ClientServerTraceParser::payloadToWithdrawResp
     ));
@@ -46,48 +45,23 @@ public class ClientServerTraceParser {
         this.ts = 0;
     }
 
-    private static ClientServer.eReadQuery payloadToReadQuery(String payload) {
+    private static eWithDrawReq payloadToWithdrawReq(String payload) {
         List<String> params = PTraceParserUtils.Conversions.namedTupleToKVPairs(payload);
 
-        return new ClientServer.eReadQuery(
-                new ClientServer.PTuple_accnt(
-                        PTraceParserUtils.Conversions.kvPairToInt(params.get(0))));
-    }
-
-    private static ClientServer.eUpdateQuery payloadToUpdateQuery(String payload) {
-        List<String> params = PTraceParserUtils.Conversions.namedTupleToKVPairs(payload);
-
-        return new ClientServer.eUpdateQuery(
-                new ClientServer.PTuple_accnt_blnc(
-                    PTraceParserUtils.Conversions.kvPairToInt(params.get(0)),
-                    PTraceParserUtils.Conversions.kvPairToInt(params.get(1))));
-    }
-
-    private static ClientServer.eReadQueryResp payloadToReadQueryResp(String payload) {
-        List<String> params = PTraceParserUtils.Conversions.namedTupleToKVPairs(payload);
-
-        return new ClientServer.eReadQueryResp(
-                new ClientServer.PTuple_accnt_blnc(
-                        PTraceParserUtils.Conversions.kvPairToInt(params.get(0)),
-                        PTraceParserUtils.Conversions.kvPairToInt(params.get(1))));
-    }
-    private static ClientServer.eWithDrawReq payloadToWithdrawReq(String payload) {
-        List<String> params = PTraceParserUtils.Conversions.namedTupleToKVPairs(payload);
-
-        return new ClientServer.eWithDrawReq(
-                new ClientServer.PTuple_src_accnt_amnt_rId(
+        return new eWithDrawReq(
+                new PTuple_src_accnt_amnt_rId(
                         PTraceParserUtils.Conversions.kvPairToMachineId(params.get(0)),
                         PTraceParserUtils.Conversions.kvPairToInt(params.get(1)),
                         PTraceParserUtils.Conversions.kvPairToInt(params.get(2)),
                         PTraceParserUtils.Conversions.kvPairToInt(params.get(3))));
     }
 
-    private static ClientServer.eWithDrawResp payloadToWithdrawResp(String payload) {
+    private static eWithDrawResp payloadToWithdrawResp(String payload) {
         List<String> params = PTraceParserUtils.Conversions.namedTupleToKVPairs(payload);
 
-        return new ClientServer.eWithDrawResp(
-                new ClientServer.PTuple_stts_accnt_blnc_rId(
-                        PTraceParserUtils.Conversions.kvPairToInt(params.get(0)),
+        return new eWithDrawResp(
+                new PTuple_stts_accnt_blnc_rId(
+                        tWithDrawRespStatus.values()[(PTraceParserUtils.Conversions.kvPairToInt(params.get(0)))],
                         PTraceParserUtils.Conversions.kvPairToInt(params.get(1)),
                         PTraceParserUtils.Conversions.kvPairToInt(params.get(2)),
                         PTraceParserUtils.Conversions.kvPairToInt(params.get(3))));
@@ -116,7 +90,7 @@ public class ClientServerTraceParser {
 
         if (handlers.containsKey(evtName)) {
             ts++;
-            Function<String, PEvent> f = handlers.get(evtName);
+            Function<String, ? extends PEvent<?>> f = handlers.get(evtName);
             return Stream.of(new PObserveEvent(new TimestampInterval(ts), f.apply(payload)));
         }
         return Stream.empty();

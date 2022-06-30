@@ -5,6 +5,8 @@ package tutorialmonitors.clientserver;
  * Please do not edit manually!
  **************************************************************************/
 
+import prt.exceptions.TransitionException;
+
 import java.util.*;
 
 
@@ -37,7 +39,7 @@ public class PMachines {
                     .build());
         } // constructor
 
-        public java.util.List<Class<? extends prt.events.PEvent>> getEventTypes() {
+        public java.util.List<Class<? extends prt.events.PEvent<?>>> getEventTypes() {
             return java.util.Arrays.asList(PEvents.eSpec_BankBalanceIsAlwaysCorrect_Init.class, PEvents.eWithDrawReq.class, PEvents.eWithDrawResp.class);
         }
 
@@ -207,7 +209,7 @@ public class PMachines {
                     .build());
         } // constructor
 
-        public java.util.List<Class<? extends prt.events.PEvent>> getEventTypes() {
+        public java.util.List<Class<? extends prt.events.PEvent<?>>> getEventTypes() {
             return java.util.Arrays.asList(PEvents.eWithDrawReq.class, PEvents.eWithDrawResp.class);
         }
 
@@ -217,7 +219,7 @@ public class PMachines {
             TMP_tmp0_2 = req_1.rId;
             pendingWDReqs.add(TMP_tmp0_2);
         }
-        private void Anon_4(PTypes.PTuple_stts_accnt_blnc_rId resp_1)throws prt.TransitionException {
+        private void Anon_4(PTypes.PTuple_stts_accnt_blnc_rId resp_1)throws TransitionException {
             int TMP_tmp0_3 = 0;
             boolean TMP_tmp1_2 = false;
             int TMP_tmp2_2 = 0;

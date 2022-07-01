@@ -1,5 +1,6 @@
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import prt.exceptions.IncomparableValuesException;
 import prt.values.*;
 
 import java.util.ArrayList;
@@ -77,16 +78,16 @@ public class ValueCompareTest {
     @DisplayName("equals() does not coerse numeric types")
     public void testNoCorersionForEquality() {
         // int <-> bool
-        assertFalse(Equality.deepEquals(0, false));
-        assertFalse(Equality.deepEquals(1, true));
+        assertThrows(IncomparableValuesException.class, () -> Equality.deepEquals(0, false));
+        assertThrows(IncomparableValuesException.class, () -> Equality.deepEquals(1, true));
 
         // int <-> float
-        assertFalse(Equality.deepEquals(0, 0.0));
-        assertFalse(Equality.deepEquals(42, 42.0f));
+        assertThrows(IncomparableValuesException.class, () -> Equality.deepEquals(0, 0.0f));
+        assertThrows(IncomparableValuesException.class, () -> Equality.deepEquals(1, 1.0f));
 
         // int <-> long
-        assertFalse(Equality.deepEquals(0, 0L));
-        assertFalse(Equality.deepEquals(42, 42L));
+        assertThrows(IncomparableValuesException.class, () -> Equality.deepEquals(0, 0L));
+        assertThrows(IncomparableValuesException.class, () -> Equality.deepEquals(1, 1L));
     }
 
     @Test

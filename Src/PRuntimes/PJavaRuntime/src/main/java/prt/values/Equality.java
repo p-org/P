@@ -1,6 +1,7 @@
 package prt.values;
 
 import prt.events.PEvent;
+import prt.exceptions.IncomparableValuesException;
 
 import java.util.*;
 
@@ -106,12 +107,13 @@ public class Equality {
                 return deepHashMapEquals((HashMap<?, ?>) o1, (HashMap<?, ?>) o2);
             if (c1 == LinkedHashSet.class && c2 == LinkedHashSet.class)
                 return deepLinkedHashSetEquals((LinkedHashSet<?>) o1, (LinkedHashSet<?>) o2);
+
+            throw new IncomparableValuesException(c1, c2);
         } catch (ClassCastException e) {
             // The C# P runtime is pretty permissive about comparing different types (no runtime exception,
             // they just evaluate to false) so we do the same here in case we are passed incomparable types.
             return false;
         }
-        return false;
     }
 
 }

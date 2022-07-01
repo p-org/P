@@ -33,7 +33,8 @@ namespace Plang.Compiler.Backend.Java
             {
                 new MachineGenerator(Constants.MachineDefnFileName),
                 new EventGenerator(Constants.EventDefnFileName),
-                new TypesGenerator(Constants.TypesDefnFileName)
+                new TypesGenerator(Constants.TypesDefnFileName),
+                new FFIStubGenerator(Constants.FFIStubFileName)
             };
 
             return generators.SelectMany(g => g.GenerateCode(job, scope));

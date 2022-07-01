@@ -5,6 +5,7 @@ package tutorialmonitors.twophasecommit;
  * Please do not edit manually!
  **************************************************************************/
 
+import prt.events.PEvent;
 import prt.exceptions.TransitionException;
 
 import java.text.MessageFormat;
@@ -585,6 +586,9 @@ public class TwoPhaseCommit {
     // PMachine Coordinator elided
     // PMachine Participant elided
     public static class AtomicityInvariant extends prt.Monitor {
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); } //XXX: dummy implementation.
+
         private HashMap<Integer,HashMap<Integer,Integer>> participantsResponse = new HashMap<Integer,HashMap<Integer,Integer>>();
         public HashMap<Integer,HashMap<Integer,Integer>> get_participantsResponse() { return this.participantsResponse; };
 
@@ -738,6 +742,9 @@ public class TwoPhaseCommit {
         } // constructor
     } // AtomicityInvariant monitor definition
     public static class Progress extends prt.Monitor {
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); } //XXX: dummy implementation.
+
         private int pendingTransactions = 0;
         public int get_pendingTransactions() { return this.pendingTransactions; };
 

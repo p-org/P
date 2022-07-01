@@ -20,6 +20,7 @@ public class MonitorTest {
             super();
             addState(new State.Builder(INIT_STATE).build());
         }
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
 
     /**
@@ -33,6 +34,8 @@ public class MonitorTest {
             addState(new State.Builder(INIT_STATE).isInitialState(true).build());
             addState(new State.Builder(OTHER_STATE).isInitialState(true).build());
         }
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
 
     /**
@@ -46,6 +49,8 @@ public class MonitorTest {
             addState(new State.Builder(INIT_STATE).isInitialState(true).build());
             addState(new State.Builder(INIT_STATE).isInitialState(true).build());
         }
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
 
     /**
@@ -75,6 +80,8 @@ public class MonitorTest {
                     .withEvent(AddEvent.class, i -> count += i)
                     .build());
         }
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
 
     class ChainedEntryHandlerMonitor extends Monitor {
@@ -101,6 +108,8 @@ public class MonitorTest {
                     .withEntry(() -> stateAcc.add(C_STATE))
                     .build());
         }
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
 
     class GotoStateWithPayloadsMonitor extends Monitor {
@@ -131,7 +140,10 @@ public class MonitorTest {
                     .withEntry(s -> eventsProcessed.add(s))
                     .build());
         }
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
+
 
     class GotoStateWithPayloadsMonitorIncludingInitialEntryHandler extends Monitor {
         private String A_STATE = "A";
@@ -162,6 +174,8 @@ public class MonitorTest {
                     .withEntry((String s) -> eventsProcessed.add(s))
                     .build());
         }
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(CounterMonitor.AddEvent.class); }
     }
 
 
@@ -184,6 +198,8 @@ public class MonitorTest {
                     .withEntry((String s) -> eventsProcessed.add(s))
                     .build());
         }
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
 
     /**
@@ -199,6 +215,8 @@ public class MonitorTest {
                     .withEntry(() -> tryAssert(1 > 2, "Math works"))
                     .build());
         }
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
 
     /* Here is a simple auto-generated monitor with a single event and a single piece of ghost state. */
@@ -252,6 +270,7 @@ public class MonitorTest {
             public PTuple_a getPayload() { return payload; }
         }
 
+
         class A_Event extends Monitor {
             private PTuple_a v = new PTuple_a();
             public PTuple_a getV() { return this.v; };
@@ -277,6 +296,10 @@ public class MonitorTest {
                         .withEvent(ev.class, this::Anon)
                         .build());
             } // constructor
+
+
+            public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(DefaultEvent.class, PHalt.class, ev.class); }
+
         } // foo monitor definition
     } // foo.java class definition
 
@@ -290,6 +313,8 @@ public class MonitorTest {
         public class noopEvent extends PEvent<Void> {
             public Void getPayload() { return null; }
         }
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(testEvent.class, noopEvent.class); }
 
         public RaiseEventMonitor() {
             super();

@@ -1,6 +1,7 @@
 package prt;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -16,7 +17,7 @@ import prt.exceptions.*;
  * A prt.Monitor encapsulates a state machine.
  *
  */
-public class Monitor {
+public abstract class Monitor {
     private final Logger logger = LogManager.getLogger(this.getClass());
     private static final Marker PROCESSING_MARKER = MarkerManager.getMarker("EVENT_PROCESSING");
     private static final Marker TRANSITIONING_MARKER = MarkerManager.getMarker("STATE_TRANSITIONING");
@@ -225,4 +226,7 @@ public class Monitor {
 
         currentState = new State.Builder("_pre_init").build();
     }
+
+    public abstract List<Class<? extends PEvent<?>>> getEventTypes();
+
 }

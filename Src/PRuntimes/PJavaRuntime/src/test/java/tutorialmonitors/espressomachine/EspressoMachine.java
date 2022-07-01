@@ -5,6 +5,8 @@ package tutorialmonitors.espressomachine;
  * Please do not edit manually!
  **************************************************************************/
 
+import prt.events.PEvent;
+
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Stream;
@@ -337,6 +339,8 @@ public class EspressoMachine {
     // PMachine EspressoCoffeeMaker elided
     // PMachine CoffeeMakerControlPanel elided
     public static class EspressoMachineModesOfOperation extends prt.Monitor {
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); } //XXX: dummy implementation.
 
         public String STARTUP_STATE = "StartUp";
         public String WARMUP_STATE = "WarmUp";

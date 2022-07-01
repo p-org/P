@@ -5,6 +5,7 @@ package tutorialmonitors.failuredetector;
  * Please do not edit manually!
  **************************************************************************/
 
+import prt.events.PEvent;
 import prt.exceptions.TransitionException;
 
 import java.util.*;
@@ -308,6 +309,9 @@ public class FailureDetector {
     // PMachine FailureDetector elided
     // PMachine Node elided
     public static class ReliableFailureDetector extends prt.Monitor {
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); } //XXX: dummy implementation.
+
         private LinkedHashSet<Long> nodesShutdownAndNotDetected = new LinkedHashSet<Long>();
         public LinkedHashSet<Long> get_nodesShutdownAndNotDetected() { return this.nodesShutdownAndNotDetected; };
 

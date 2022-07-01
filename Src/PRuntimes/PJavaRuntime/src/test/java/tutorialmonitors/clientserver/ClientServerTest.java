@@ -13,7 +13,9 @@ import prt.exceptions.UnhandledEventException;
 import static org.junit.jupiter.api.Assertions.*;
 
 import static prt.values.Equality.deepEquals;
-import static tutorialmonitors.clientserver.ClientServer.*;
+import static tutorialmonitors.clientserver.PMachines.*;
+import static tutorialmonitors.clientserver.PEvents.*;
+import static tutorialmonitors.clientserver.PTypes.*;
 
 public class ClientServerTest {
     private BankBalanceIsAlwaysCorrect initedBankBalanceIsAlwaysCorrect() {
@@ -132,9 +134,9 @@ public class ClientServerTest {
     @Test
     @DisplayName("equality makes sense for generated events")
     public void testEqualityOnEventObjects() {
-        ClientServer.PTuple_src_accnt_amnt_rId t1 =
-                new ClientServer.PTuple_src_accnt_amnt_rId(4L, 0, 2, 1);
-        ClientServer.PTuple_src_accnt_amnt_rId t2 = t1.deepClone();
+        PTuple_src_accnt_amnt_rId t1 =
+                new PTuple_src_accnt_amnt_rId(4L, 0, 2, 1);
+        PTuple_src_accnt_amnt_rId t2 = t1.deepClone();
         assertTrue(deepEquals(t1, t2));
     }
 

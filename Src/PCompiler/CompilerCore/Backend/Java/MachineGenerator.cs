@@ -235,7 +235,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteEventsAccessor()
         {
-            WriteLine("public java.util.List<Class<? extends prt.events.PEvent>> getEventTypes() {");
+            WriteLine("public java.util.List<Class<? extends prt.events.PEvent<?>>> getEventTypes() {");
             Write("return java.util.Arrays.asList(");
             foreach (var (sep, ev) in _currentMachine.Observes.Events.WithPrefixSep(", "))
             {

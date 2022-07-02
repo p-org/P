@@ -223,7 +223,7 @@ namespace Plang.Compiler.Backend.Java
                 {
                     _k = k;
                     _v = v;
-                    _unboxedType = $"HashMap<{_k.ReferenceTypeName},{_v.ReferenceTypeName}>";
+                    _unboxedType = $"HashMap<{_k.ReferenceTypeName}, {_v.ReferenceTypeName}>";
                 }
 
                 internal override bool IsPrimitive => false;

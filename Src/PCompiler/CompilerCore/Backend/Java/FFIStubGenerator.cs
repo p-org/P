@@ -94,13 +94,11 @@ namespace Plang.Compiler.Backend.Java
 
             foreach (var t in ExtractForeignTypesFromMonitors())
             {
-                WriteLine(Constants.FFICommentDivider);
                 WriteForeignTypeStub(t);
             }
 
             foreach (Machine m in GlobalScope.Machines.Where(m => m.IsSpec))
             {
-                WriteLine(Constants.FFICommentDivider);
                 WriteForeignFunctions(m);
             }
         }
@@ -117,6 +115,9 @@ namespace Plang.Compiler.Backend.Java
 
         private void WriteForeignTypeStub(ForeignType t)
         {
+            WriteLine(Constants.FFICommentDivider);
+            WriteLine();
+
             WriteFFIGlobalHeader(t.CanonicalRepresentation);
             WriteLine();
 
@@ -153,6 +154,8 @@ namespace Plang.Compiler.Backend.Java
                 return;
             }
 
+            WriteLine(Constants.FFICommentDivider);
+
             WriteLine();
             WriteFFIHeader(m.Name);
             WriteLine();
@@ -164,6 +167,7 @@ namespace Plang.Compiler.Backend.Java
             foreach (ForeignType t in ExtractForeignTypesFrom(m))
             {
                 TypeManager.JType toImport = Types.JavaTypeFor(t);
+                WriteLine($"import java.util.*;"); // To avoid having to fully-qualify e.g. j.u.HashMap, etc.
                 WriteLine($"import {Constants.GlobalFFIPackage}.{toImport.TypeName};");
                 WriteLine();
             }
@@ -176,14 +180,14 @@ namespace Plang.Compiler.Backend.Java
             {
                 TypeManager.JType ret = Types.JavaTypeFor(f.Signature.ReturnType);
 
-                Write($"public static {ret.TypeName} {f.Name}(");
+                WriteLine($"public static {ret.TypeName} {f.Name}(");
 
-                foreach (var (sep, param) in f.Signature.Parameters.WithPrefixSep(", "))
+                foreach (var (param, sep) in f.Signature.Parameters.WithPostfixSep(","))
                 {
                     string pname = param.Name;
                     TypeManager.JType ptype = Types.JavaTypeFor(param.Type);
 
-                    Write($"{sep}{ptype.TypeName} {pname}");
+                    WriteLine($"{ptype.TypeName} {pname}{sep}");
                 }
 
                 WriteLine(") {");

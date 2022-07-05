@@ -136,7 +136,7 @@ namespace Plang.Compiler.Backend.Java
         /// the prefix is the empty string, and on all other iterations it is the supplied prefix.  We
         /// can use this for emitting values from `it` where `prefix` is a separator string.  For instance,
         ///
-        /// `foreach (s, i) in WithPrefixSep(",", [1,2,3]) { Console.Out.Write(sep + i) }` would emit `"1,2,3"`.
+        /// `foreach (sep, i) in [1,2,3].withPrefixSep(",") { Console.Out.Write(sep + i) }` would emit `"1,2,3"`.
         ///
         /// </summary>
         /// <param name="prefix">The separator value.</param>
@@ -146,6 +146,24 @@ namespace Plang.Compiler.Backend.Java
         internal static IEnumerable<(string, T)> WithPrefixSep<T>(this IEnumerable<T> it, string prefix)
         {
             return it.Select((val, i) => (i > 0 ? prefix : "", val));
+        }
+
+        /// <summary>
+        /// Given some sequence and a separator value, emit a sequence such that on the final iteration
+        /// the suffix is the empty string, and on all other iterations it is the supplied suffix.  We
+        /// can use this for emitting values from `it` where `suffix` is a separator string.  For instance,
+        ///
+        /// `foreach (i, sep) in [1,2,3].withPostfixSep(",") { Console.Out.Write(i + sep) }` would emit `"1,2,3"`.
+        ///
+        /// </summary>
+        /// <param name="prefix">The separator value.</param>
+        /// <param name="it">The sequence of Ts to iterate through</param>
+        /// <typeparam name="T">The type of the values in it.</typeparam>
+        /// <returns>A sequence of (T, string) pairs, where the string is either the empty string or the separator.</returns>
+        internal static IEnumerable<(T, string)> WithPostfixSep<T>(this IEnumerable<T> it, string suffix)
+        {
+            int len = it.Count();
+            return it.Select((val, i) => (val, i < len - 1 ? suffix : ""));
         }
     }
 }

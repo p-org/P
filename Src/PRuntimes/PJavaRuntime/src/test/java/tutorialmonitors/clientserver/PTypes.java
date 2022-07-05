@@ -19,8 +19,8 @@ public class PTypes {
     /* Tuples */
     // (accountId:int,balance:int)
     public static class PTuple_accnt_blnc implements prt.values.PValue<PTuple_accnt_blnc> {
-        public int accountId;
-        public int balance;
+        public final int accountId;
+        public final int balance;
 
         public PTuple_accnt_blnc() {
             this.accountId = 0;
@@ -61,7 +61,7 @@ public class PTypes {
 
     // (accountId:int)
     public static class PTuple_accnt implements prt.values.PValue<PTuple_accnt> {
-        public int accountId;
+        public final int accountId;
 
         public PTuple_accnt() {
             this.accountId = 0;
@@ -98,10 +98,10 @@ public class PTypes {
 
     // (source:Client,accountId:int,amount:int,rId:int)
     public static class PTuple_src_accnt_amnt_rId implements prt.values.PValue<PTuple_src_accnt_amnt_rId> {
-        public long source;
-        public int accountId;
-        public int amount;
-        public int rId;
+        public final long source;
+        public final int accountId;
+        public final int amount;
+        public final int rId;
 
         public PTuple_src_accnt_amnt_rId() {
             this.source = 0L;
@@ -151,9 +151,9 @@ public class PTypes {
     // (status:tWithDrawRespStatus,accountId:int,balance:int,rId:int)
     public static class PTuple_stts_accnt_blnc_rId implements prt.values.PValue<PTuple_stts_accnt_blnc_rId> {
         public PTypes.tWithDrawRespStatus status;
-        public int accountId;
-        public int balance;
-        public int rId;
+        public final int accountId;
+        public final int balance;
+        public final int rId;
 
         public PTuple_stts_accnt_blnc_rId() {
             this.status = PTypes.tWithDrawRespStatus.WITHDRAW_SUCCESS;

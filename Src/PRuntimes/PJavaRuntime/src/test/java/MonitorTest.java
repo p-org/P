@@ -353,7 +353,7 @@ public class MonitorTest {
     @DisplayName("Monitors must be ready()ied before events can be processed")
     public void testNonReadyMonitors() {
         CounterMonitor m = new CounterMonitor();
-        Throwable e = assertThrows(RuntimeException.class, () -> m.process(m.new AddEvent(42)));
+        Throwable e = assertThrows(RuntimeException.class, () -> m.accept(m.new AddEvent(42)));
         assertTrue(e.getMessage().contains("not running"));
     }
 
@@ -364,9 +364,9 @@ public class MonitorTest {
         m.ready();
 
         assertEquals(m.count, 0);
-        m.process(m.new AddEvent(1));
-        m.process(m.new AddEvent(2));
-        m.process(m.new AddEvent(3));
+        m.accept(m.new AddEvent(1));
+        m.accept(m.new AddEvent(2));
+        m.accept(m.new AddEvent(3));
         assertEquals(m.count, 6);
     }
 
@@ -448,6 +448,6 @@ public class MonitorTest {
         RaiseEventMonitor m = new RaiseEventMonitor();
         m.ready();
 
-        m.process(m.new testEvent());
+        m.accept(m.new testEvent());
     }
 }

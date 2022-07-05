@@ -22,6 +22,7 @@ namespace Plang.Compiler.Backend.Java
             if (GlobalScope.Enums.Any())
             {
                 WriteLine("/* Enums */");
+                WriteLine();
                 foreach (var e in GlobalScope.Enums)
                 {
                     WriteEnumDecl(e);
@@ -32,6 +33,7 @@ namespace Plang.Compiler.Backend.Java
             if (GlobalScope.Tuples.Any())
             {
                 WriteLine("/* Tuples */");
+                WriteLine();
                 foreach (var t in GlobalScope.Tuples)
                 {
                     WriteNamedTupleDecl(t);
@@ -90,7 +92,7 @@ namespace Plang.Compiler.Backend.Java
             // Write the fields.
             foreach (var (jType, fieldName) in fields)
             {
-                WriteLine($"public {jType.TypeName} {fieldName};");
+                WriteLine($"public final {jType.TypeName} {fieldName};");
             }
             WriteLine();
 

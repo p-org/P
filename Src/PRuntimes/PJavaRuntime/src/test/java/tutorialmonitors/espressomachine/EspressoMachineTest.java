@@ -14,7 +14,7 @@ public class EspressoMachineTest {
         m.ready();
 
         assertEquals(m.getCurrentState(), "StartUp");
-        m.process(new eInWarmUpState());
+        m.accept(new eInWarmUpState());
         assertEquals(m.getCurrentState(), "WarmUp");
     }
 
@@ -24,12 +24,12 @@ public class EspressoMachineTest {
         EspressoMachineModesOfOperation m = new EspressoMachineModesOfOperation();
         m.ready();
 
-        m.process(new eInWarmUpState());
-        m.process(new eInReadyState());
-        m.process(new eInReadyState()); // Duplicate; should be ignored.
-        m.process(new eInBeansGrindingState());
-        m.process(new eInCoffeeBrewingState());
-        m.process(new eInReadyState());
+        m.accept(new eInWarmUpState());
+        m.accept(new eInReadyState());
+        m.accept(new eInReadyState()); // Duplicate; should be ignored.
+        m.accept(new eInBeansGrindingState());
+        m.accept(new eInCoffeeBrewingState());
+        m.accept(new eInReadyState());
     }
 
     @Test
@@ -38,13 +38,13 @@ public class EspressoMachineTest {
         EspressoMachineModesOfOperation m = new EspressoMachineModesOfOperation();
         m.ready();
 
-        m.process(new eInWarmUpState());
-        m.process(new eInReadyState());
-        m.process(new eInBeansGrindingState());
+        m.accept(new eInWarmUpState());
+        m.accept(new eInReadyState());
+        m.accept(new eInBeansGrindingState());
 
-        m.process(new eErrorHappened());
+        m.accept(new eErrorHappened());
         assertEquals(m.getCurrentState(), "Error");
-        m.process(new eResetPerformed());
+        m.accept(new eResetPerformed());
         assertEquals(m.getCurrentState(), "StartUp");
     }
 }

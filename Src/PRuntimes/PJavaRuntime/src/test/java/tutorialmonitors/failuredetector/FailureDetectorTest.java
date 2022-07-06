@@ -19,12 +19,12 @@ public class FailureDetectorTest {
 
         assertEquals(0, m.get_nodesDownDetected().size());
         assertEquals(0, m.get_nodesShutdownAndNotDetected().size());
-        m.process(new eShutDown(1L));
+        m.accept(new eShutDown(1L));
         assertEquals(0, m.get_nodesDownDetected().size());
         assertEquals(1, m.get_nodesShutdownAndNotDetected().size());
 
         LinkedHashSet<Long> nodes = new LinkedHashSet<>(Set.of(1L, 2L, 3L));
-        m.process(new eNotifyNodesDown(nodes));
+        m.accept(new eNotifyNodesDown(nodes));
         assertEquals(3, m.get_nodesDownDetected().size());
         assertEquals(0, m.get_nodesShutdownAndNotDetected().size());
     }

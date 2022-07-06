@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import prt.events.PEvent;
 import org.apache.logging.log4j.LogManager;
@@ -17,7 +18,7 @@ import prt.exceptions.*;
  * A prt.Monitor encapsulates a state machine.
  *
  */
-public abstract class Monitor {
+public abstract class Monitor implements Consumer<PEvent<?>> {
     private final Logger logger = LogManager.getLogger(this.getClass());
     private static final Marker PROCESSING_MARKER = MarkerManager.getMarker("EVENT_PROCESSING");
     private static final Marker TRANSITIONING_MARKER = MarkerManager.getMarker("STATE_TRANSITIONING");
@@ -124,7 +125,7 @@ public abstract class Monitor {
      * @throws UnhandledEventException if the pEvent's type has no associated handler.
      */
     @SuppressWarnings(value = "unchecked")
-    public <P> void process(PEvent p) throws UnhandledEventException {
+    public void accept(PEvent<?> p) throws UnhandledEventException {
         Objects.requireNonNull(p);
 
         if (!isRunning) {
@@ -133,13 +134,15 @@ public abstract class Monitor {
 
         logger.info(PROCESSING_MARKER, new StringMapMessage().with("event", p));
 
-        Optional<State.TransitionableConsumer<P>> oc = currentState.getHandler(p.getClass());
+        // XXX: We can technically avoid this downcast, but to fulfill the interface for Consumer<T>
+        // this method cannot accept a type parameter, so this can't be a TransitionableConsumer<P>.
+        Optional<State.TransitionableConsumer<Object>> oc = currentState.getHandler(p.getClass());
         if (oc.isEmpty()) {
             logger.atFatal().log(currentState + " missing event handler for " + p.getClass().getSimpleName());
             throw new UnhandledEventException(currentState, p.getClass());
         }
 
-        invokeWithTrampoline(oc.get(), (P) p.getPayload());
+        invokeWithTrampoline(oc.get(), p.getPayload());
     }
 
     /**
@@ -180,7 +183,7 @@ public abstract class Monitor {
             handleTransition(e.getTargetState(), e.getPayload());
         } catch (RaiseEventException e) {
             // ...An event to be raised.  If it does, process the event in the current state.
-            process(e.getEvent());
+            accept(e.getEvent());
         } catch (ClassCastException e) {
             // ...An invalid cast: in the case where the event handler's type parameter is incompatible
             // with the runtime type of `p`.  This is a code generation or programming error.

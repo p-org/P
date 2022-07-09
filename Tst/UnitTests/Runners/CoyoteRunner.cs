@@ -69,7 +69,7 @@ namespace UnitTests.Runners
             if (exitCode == 0)
             {
                 exitCode = RunCoyoteTester(scratchDirectory.FullName,
-                    Path.Combine(scratchDirectory.FullName, "./netcoreapp3.1/Main.dll"), out string testStdout, out string testStderr);
+                    Path.Combine(scratchDirectory.FullName, "./net6.0/Main.dll"), out string testStdout, out string testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
             }
@@ -82,15 +82,15 @@ namespace UnitTests.Runners
             const string csprojTemplate = @"
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <ApplicationIcon />
+    <TargetFramework>net6.0</TargetFramework>
+    <ApplicationIcon/>
     <OutputType>Exe</OutputType>
-    <StartupObject />
+    <StartupObject/>
     <LangVersion>latest</LangVersion>
     <OutputPath>.</OutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
+    <PackageReference Include=""Microsoft.Coyote.Test"" Version=""1.5.7""/>
     <ProjectReference Include=""$(PFolder)/Src/PRuntimes/PCSharpRuntime/CSharpRuntime.csproj"" />
   </ItemGroup>
 </Project>";

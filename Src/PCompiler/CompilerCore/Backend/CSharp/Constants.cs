@@ -8,15 +8,15 @@ namespace Plang.Compiler.Backend.CSharp
         internal static readonly string csprojTemplate = @"
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <ApplicationIcon />
+    <TargetFramework>net6.0</TargetFramework>
+    <ApplicationIcon/>
     <OutputType>Exe</OutputType>
-    <StartupObject />
+    <StartupObject/>
     <LangVersion>latest</LangVersion>
     <OutputPath>POutput/</OutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
+    <PackageReference Include=""Microsoft.Coyote.Test"" Version=""1.5.7""/>
     <PackageReference Include=""PCSharpRuntime"" Version=""*""/>
   </ItemGroup>
 </Project>";

@@ -206,15 +206,15 @@ namespace Plang.Compiler.Backend.Java {
             List<string> throwables = new List<string>();
             if (f.CanChangeState == true)
             {
-                throwables.Add("prt.TransitionException");
+                throwables.Add("prt.exceptions.TransitionException");
             }
             if (f.CanRaiseEvent == true)
             {
-                throwables.Add("prt.RaiseEventException");
+                throwables.Add("prt.exceptions.RaiseEventException");
             }
             if (throwables.Count > 0)
             {
-                Write($"throws {string.Join(", ", throwables)}");
+                Write($" throws {string.Join(", ", throwables)}");
             }
 
         }

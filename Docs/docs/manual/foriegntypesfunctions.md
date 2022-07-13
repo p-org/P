@@ -72,7 +72,7 @@ pc -proj:PriorityQueue.pproj
 
       Determining projects to restore...
       Restored P/Tutorial/PriorityQueue/PriorityQueue.csproj (in 757 ms).
-      PriorityQueue -> P/Tutorial/PriorityQueue/POutput/netcoreapp3.1/PriorityQueue.dll
+      PriorityQueue -> P/Tutorial/PriorityQueue/POutput/net6.0/PriorityQueue.dll
 
     Build succeeded.
         0 Warning(s)
@@ -89,7 +89,7 @@ pmc <path>/PriorityQueue.dll -v
 
 ??? note "Expected Output"
     ```
-    . Testing P/Tutorial/PriorityQueue/POutput/netcoreapp3.1/PriorityQueue.dll
+    . Testing P/Tutorial/PriorityQueue/POutput/net6.0/PriorityQueue.dll
     Starting TestingProcessScheduler in process 49983
     ... Created '1' testing task.
     ... Task 0 is using 'random' strategy (seed:3421113095).

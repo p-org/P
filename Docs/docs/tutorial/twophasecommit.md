@@ -131,7 +131,7 @@ pc -proj:TwoPhaseCommit.pproj
 
     Determining projects to restore...
     All projects are up-to-date for restore.
-    TwoPhaseCommit ->  P/Tutorial/2_TwoPhaseCommit/POutput/netcoreapp3.1/TwoPhaseCommit.dll
+    TwoPhaseCommit ->  P/Tutorial/2_TwoPhaseCommit/POutput/netcoreapp /TwoPhaseCommit.dll
 
     Build succeeded.
         0 Warning(s)

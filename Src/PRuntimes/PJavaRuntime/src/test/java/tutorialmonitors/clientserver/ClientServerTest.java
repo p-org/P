@@ -144,7 +144,7 @@ public class ClientServerTest {
     @DisplayName("can drive a ClientServer monitor from parsed events")
     public void testParseEventsAndMonitorExecution() {
         /*
-        //  pmc POutput/netcoreapp3.1/ClientServer.dll \
+        //  pmc POutput/net6.0/ClientServer.dll \
         //      -m PImplementation.tcSingleClient.Execute \
         //      -i 100 -v | grep SendLog | head
         String logs = """

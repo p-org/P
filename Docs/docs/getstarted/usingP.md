@@ -93,7 +93,7 @@ There are two ways of compiling a P program:
 
         Determining projects to restore...
         All projects are up-to-date for restore.
-        ClientServer -> P/Tutorial/1_ClientServer/POutput/netcoreapp3.1/ClientServer.dll
+        ClientServer -> P/Tutorial/1_ClientServer/POutput/net6.0/ClientServer.dll
 
         Build succeeded.
             0 Warning(s)
@@ -157,7 +157,7 @@ There are two ways of compiling a P program:
 
         Determining projects to restore...
         Restored P/Tutorial/1_ClientServer/PGenerated/ClientServer.csproj (in 602 ms).
-        ClientServer -> P/Tutorial/1_ClientServer/PGenerated/POutput/netcoreapp3.1/ClientServer.dll
+        ClientServer -> P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
 
         Build succeeded.
             0 Warning(s)
@@ -260,8 +260,8 @@ pmc <Path>/ClientServer.dll \
     ..... Iteration #1
     ... Task 0 found a bug.
     ... Emitting task 0 traces:
-    ..... Writing /POutput/netcoreapp3.1/Output/ClientServer.dll/CoyoteOutput/ClientServer_0_0.txt
-    ..... Writing /POutput/netcoreapp3.1/Output/ClientServer.dll/CoyoteOutput/ClientServer_0_0.schedule
+    ..... Writing /POutput/net6.0/Output/ClientServer.dll/CoyoteOutput/ClientServer_0_0.txt
+    ..... Writing /POutput/net6.0/Output/ClientServer.dll/CoyoteOutput/ClientServer_0_0.schedule
     ... Elapsed 0.1971223 sec.
     ... Testing statistics:
     ..... Found 1 bug.

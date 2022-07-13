@@ -47,7 +47,7 @@ public class TestCaseExecutor {
         // Invoke the P compiler to compile the test Case
         boolean isWindows = System.getProperty("os.name")
                 .toLowerCase().startsWith("windows");
-        String compilerDirectory = "../../../Bld/Drops/Release/Binaries/netcoreapp3.1/P.dll";
+        String compilerDirectory = "../../../Bld/Drops/Release/Binaries/net6.0/P.dll";
 
         String prefix = testCasePathPrefix;
         assert testCasePaths.stream().allMatch(p -> p.contains(prefix));

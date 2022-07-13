@@ -18,8 +18,8 @@ pmc <Path>/ClientServer.dll \
     ..... Iteration #1
     ... Task 0 found a bug.
     ... Emitting task 0 traces:
-    ..... Writing /POutput/netcoreapp3.1/Output/ClientServer.dll/CoyoteOutput/ClientServer_0_0.txt
-    ..... Writing /POutput/netcoreapp3.1/Output/ClientServer.dll/CoyoteOutput/ClientServer_0_0.schedule
+    ..... Writing /POutput/net6.0/Output/ClientServer.dll/CoyoteOutput/ClientServer_0_0.txt
+    ..... Writing /POutput/net6.0/Output/ClientServer.dll/CoyoteOutput/ClientServer_0_0.schedule
     ... Elapsed 0.1971223 sec.
     ... Testing statistics:
     ..... Found 1 bug.

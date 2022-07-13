@@ -96,7 +96,7 @@ pc -proj:EspressoMachine.pproj
 
     Determining projects to restore...
     All projects are up-to-date for restore.
-    EspressoMachine -> P/Tutorial/3_EspressoMachine/POutput/netcoreapp3.1/EspressoMachine.dll
+    EspressoMachine -> P/Tutorial/3_EspressoMachine/POutput/net6.0/EspressoMachine.dll
 
     Build succeeded.
         0 Warning(s)

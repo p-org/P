@@ -129,7 +129,7 @@ pc -proj:ClientServer.pproj
 
     Determining projects to restore...
     All projects are up-to-date for restore.
-    ClientServer -> P/Tutorial/1_ClientServer/POutput/netcoreapp3.1/ClientServer.dll
+    ClientServer -> P/Tutorial/1_ClientServer/POutput/net6.0/ClientServer.dll
 
     Build succeeded.
         0 Warning(s)

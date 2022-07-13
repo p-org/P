@@ -5,17 +5,17 @@ P is built to be cross platform and can be used on MacOS, Linux, and Windows. We
 
 ### [Step 1] Install .Net Core SDK
 The P compiler and checker are implemented in C# and hence the tool chain requires `dotnet`. 
-P currently uses the specific version of [.Net SDK 3.1](https://dotnet.microsoft.com/download/dotnet/3.1).
-To install .Net Core 3.1 SDK use:
+P currently uses the specific version of [.Net SDK 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
+To install .Net 6.0 SDK use:
 
 === "MacOS"
 
     Installing .Net SDK on MacOS using Homebrew ([details](https://formulae.brew.sh/cask/dotnet))
     ```
     brew tap isen-ng/dotnet-sdk-versions
-    brew install --cask dotnet-sdk3-1-400
+    brew install --cask dotnet-sdk6-0-200
     ```
-    Dont have Homebrew? :upside_down_face: Install directly using the [installer](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-macos-x64-installer). 
+    Dont have Homebrew? :upside_down_face: Install directly using the [installer for Intel](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.302-macos-x64-installer) or the [installer for arm64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.302-macos-arm64-installer).
 
 === "Ubuntu"
 
@@ -31,7 +31,7 @@ To install .Net Core 3.1 SDK use:
     sudo apt-get update; \
     sudo apt-get install -y apt-transport-https && \
     sudo apt-get update && \
-    sudo apt-get install -y dotnet-sdk-3.1
+    sudo apt-get install -y dotnet-sdk-6.0
     ```
 
 === "Amazon Linux"
@@ -42,17 +42,17 @@ To install .Net Core 3.1 SDK use:
     ```
 
     ```
-    sudo yum install dotnet-sdk-3.1
+    sudo yum install dotnet-sdk-6.0
     ```
 
 === "Windows"
 
-    Installing .Net SDK on Windows using the installer ([details](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-windows-x64-installer))
+    Installing .Net SDK on Windows using the installer ([details](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.302-windows-x64-installer))
 
 ??? hint "Troubleshoot: Confirm that dotnet is correctly installed on your machine."
     `dotnet --list-sdks`
 
-    You must see an SDK with `3.1.*` dotnet version installed.
+    You must see an SDK with `6.0.*` dotnet version installed.
     If you get `dotnet` command not found error, mostly likely, you need to add the path to dotnet in your `PATH`.
 
 ### [Step 2] Install Java Runtime

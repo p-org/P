@@ -113,7 +113,7 @@ pc -proj:FailureDetector.pproj
 
     Determining projects to restore...
     Restored P/Tutorial/4_FailureDetector/FailureDetector.csproj (in 880 ms).
-    FailureDetector -> P/Tutorial/4_FailureDetector/POutput/netcoreapp3.1/FailureDetector.dll
+    FailureDetector -> P/Tutorial/4_FailureDetector/POutput/net6.0/FailureDetector.dll
 
     Build succeeded.
         0 Warning(s)

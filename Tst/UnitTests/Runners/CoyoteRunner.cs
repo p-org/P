@@ -90,7 +90,7 @@ namespace UnitTests.Runners
     <OutputPath>.</OutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Coyote.Test"" Version=""1.5.7""/>
+    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
     <ProjectReference Include=""$(PFolder)/Src/PRuntimes/PCSharpRuntime/CSharpRuntime.csproj"" />
   </ItemGroup>
 </Project>";

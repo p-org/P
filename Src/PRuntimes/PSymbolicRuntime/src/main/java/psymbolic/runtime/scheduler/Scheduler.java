@@ -67,6 +67,8 @@ public class Scheduler implements SymbolicSearch {
     /** Whether or not search is done */
     private Guard done = Guard.constFalse();
 
+    private boolean syncStep = false;
+
     int choiceDepth = 0;
 
     List<List<List<ValueSummary>>> prevStates = new ArrayList<>();
@@ -182,7 +184,7 @@ public class Scheduler implements SymbolicSearch {
         List<ValueSummary> list = new ArrayList<>();
         while (BooleanVS.isEverTrue(IntegerVS.lessThan(index, size))) {
             Guard cond = BooleanVS.getTrueGuard(IntegerVS.lessThan(index, size));
-            list.add(candidates.get(index).restrict(pc));
+            list.add(candidates.get(index.restrict(cond)).restrict(pc));
             index = IntegerVS.add(index, 1);
         }
         return list;
@@ -288,7 +290,23 @@ public class Scheduler implements SymbolicSearch {
             Assert.prop(depth < configuration.getMaxDepthBound(), "Maximum allowed depth " + configuration.getMaxDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             step();
         }
+        /*
         List<List<ValueSummary>> finalState = prevStates.get(prevStates.size() - 1);
+        // paxos example
+        Guard trueCond = Guard.constFalse();
+        for (List<ValueSummary> machineState : finalState) {
+            for (ValueSummary vs : machineState) {
+                if (vs instanceof MapVS) {
+                  System.out.println(vs);
+                  List<GuardedValue<List<Object>>> gvl = Concretizer.getConcreteValues(Guard.constTrue(), x -> false, Concretizer::concretize, vs);
+                  System.out.println("map values:");
+                  for (GuardedValue<List<Object>> gv : gvl) {
+                    System.out.println("map: " + (gv.getValue()));
+                  }
+                }
+            }
+        }*/
+         
         // specific for OOPSLA example
         /*
         Guard trueCond = Guard.constFalse();
@@ -315,6 +333,7 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public List<PrimitiveVS> getNextSenderChoices() {
+        syncStep = false;
         // prioritize the create actions
         for (Machine machine : machines) {
             if (!machine.sendBuffer.isEmpty()) {
@@ -332,6 +351,7 @@ public class Scheduler implements SymbolicSearch {
                 Guard syncCond = machine.sendBuffer.hasSyncEventUnderGuard().getGuardFor(true);
                 if (!syncCond.isFalse()) {
                     PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(syncCond);
+                    syncStep = true;
                     return new ArrayList<>(Arrays.asList(ret));
                 }
             }
@@ -481,11 +501,12 @@ public class Scheduler implements SymbolicSearch {
 
         performEffect(effect.restrict(done.not()));
 
-        List<List<ValueSummary>> newStates = new ArrayList<>();
-        for (Machine machine : machines) {
-            newStates.add(machine.getLocalState());
-        }
-        for (List<List<ValueSummary>> preStates : prevStates) {
+        if (!syncStep) {
+          List<List<ValueSummary>> newStates = new ArrayList<>();
+          for (Machine machine : machines) {
+              newStates.add(machine.getLocalState());
+          }
+          for (List<List<ValueSummary>> preStates : prevStates) {
             if (preStates.size() != newStates.size()) {
                 continue;
             }
@@ -498,8 +519,9 @@ public class Scheduler implements SymbolicSearch {
                 }
             }
             done = done.or(eq.getGuardFor(true));
+          }
+          prevStates.add(newStates);
         }
-        prevStates.add(newStates);
 
 
         // performing node clean-up

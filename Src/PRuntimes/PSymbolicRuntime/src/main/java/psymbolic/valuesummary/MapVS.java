@@ -130,6 +130,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(MapVS<K, V> cmp, Guard pc) {
         Guard equalCond = Guard.constFalse();
+        Guard nequalCond = Guard.constFalse();
         Guard guard = BooleanVS.getTrueGuard(this.keys.symbolicEquals(cmp.keys, Guard.constTrue()));
         ListVS<PrimitiveVS<K>> thisSet = this.restrict(guard).keys.getElements();
         ListVS<PrimitiveVS<K>> cmpSet = cmp.restrict(guard).keys.getElements();
@@ -144,11 +145,13 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
             for (GuardedValue<K> key : thisVal.getGuardedValues()) {
                 PrimitiveVS<Boolean> compareVals = entries.get(key.getValue()).restrict(key.getGuard())
                         .symbolicEquals(cmp.entries.get(key.getValue()).restrict(key.getGuard()), guard);
-                equalCond = equalCond.or(BooleanVS.getTrueGuard(compareVals));
+                nequalCond = nequalCond.or(BooleanVS.getFalseGuard(compareVals));
             }
             thisSet = thisSet.removeAt(new PrimitiveVS<>(0).restrict(thisVal.getUniverse()));
             cmpSet = cmpSet.removeAt(new PrimitiveVS<>(0).restrict(thisVal.getUniverse()));
         }
+
+        equalCond = nequalCond.not().and(pc);
 
         return BooleanVS.trueUnderGuard(pc.and(equalCond));
     }
@@ -283,6 +286,11 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
             contains = BooleanVS.or(contains, containsKey(val));
         }
         return contains;
+    }
+
+    @Override
+    public String toString() {
+      return entries.toString();
     }
 
 }

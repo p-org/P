@@ -49,6 +49,7 @@ public class Concretizer {
         } else if (valueSummary instanceof MapVS<?, ?>) {
             MapVS<?, ?> mapVS = (MapVS<?, ?>) valueSummary;
             Guard pc = mapVS.getUniverse();
+            if (pc.isFalse()) return null;
             Map map = new HashMap<>();
             ListVS<?> keyList = mapVS.keys.getElements();
             List<GuardedValue<Integer>> guardedValues = keyList.size().getGuardedValues();
@@ -60,7 +61,7 @@ public class Concretizer {
                     GuardedValue<?> key = concretize(keyList.get(new PrimitiveVS<>(i).restrict(pc)));
                     pc = pc.and(key.getGuard());
                     mapVS = mapVS.restrict(pc);
-                    GuardedValue<?> value = concretize(mapVS.entries.get(key));
+                    GuardedValue<?> value = concretize(mapVS.entries.get(key.getValue()));
                     pc = pc.and(value.getGuard());
                     map.put(key.getValue(), value.getValue());
                 }
@@ -69,6 +70,7 @@ public class Concretizer {
         } else if (valueSummary instanceof SetVS<?>) {
             SetVS<?> setVS = (SetVS<?>) valueSummary;
             Guard pc = setVS.getUniverse();
+            if (pc.isFalse()) return null;
             List set = new ArrayList<>();
             ListVS<?> eltList = setVS.getElements();
             List<GuardedValue<Integer>> guardedValues = eltList.size().getGuardedValues();
@@ -138,6 +140,7 @@ public class Concretizer {
             messageComponents.add(guardedVectorClock.getValue());
             return new GuardedValue(messageComponents, guardedPayloadValue.getGuard());
         }
+        System.out.println("class: " + valueSummary.getClass());
         return null;
     }
 

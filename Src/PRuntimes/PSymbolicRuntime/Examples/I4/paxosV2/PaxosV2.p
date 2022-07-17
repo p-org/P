@@ -348,6 +348,7 @@ machine Global {
           if (i != pld.v) {
             assert(!decision[pld.n][pld.r][i]);
           } 
+          i = i + 1;
         }
       }
       if (change) {

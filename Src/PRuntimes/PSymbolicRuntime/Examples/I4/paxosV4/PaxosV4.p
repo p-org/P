@@ -536,6 +536,7 @@ machine Global {
             if (i != v) {
               assert(!decision[n][r][i]);
             }
+            i = i + 1;
           }
         }
       }

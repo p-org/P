@@ -247,7 +247,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteStateBuilderDecl(State s)
         {
-            WriteLine($"addState(new prt.State.Builder<>({Names.IdentForState(s)})");
+            WriteLine($"addState(prt.State.keyedOn({Names.IdentForState(s)})");
             WriteLine($".isInitialState({TypeManager.JType.JBool.ToJavaLiteral(s.IsStart)})");
 
             if (s.Entry != null)

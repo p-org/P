@@ -413,12 +413,12 @@ public class FailureDetector {
 
         public ReliableFailureDetector() {
             super();
-            addState(new prt.State.Builder<>(ALLSHUTDOWNNODESAREDETECTED_STATE)
+            addState(prt.State.keyedOn(ALLSHUTDOWNNODESAREDETECTED_STATE)
                     .isInitialState(true)
                     .withEvent(eNotifyNodesDown.class, this::Anon)
                     .withEvent(eShutDown.class, this::Anon_1)
                     .build());
-            addState(new prt.State.Builder<>(NODESSHUTDOWNBUTNOTDETECTED_STATE)
+            addState(prt.State.keyedOn(NODESSHUTDOWNBUTNOTDETECTED_STATE)
                     .isInitialState(false)
                     .withEvent(eNotifyNodesDown.class, this::Anon_2)
                     .withEvent(eShutDown.class, this::Anon_3)

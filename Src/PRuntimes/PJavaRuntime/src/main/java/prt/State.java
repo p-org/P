@@ -124,6 +124,15 @@ public class State<K> {
     }
 
     /**
+     * A factory method to construct a new Builder.  A more fluid interface to the prt.Builder constructor.
+     * @param k the key for this eventual state.
+     * @return a builder for the state.
+     */
+    public static <K> Builder<K> keyedOn(K k) {
+        return new Builder<>(k);
+    }
+
+    /**
      * Builds a prt.State.
      */
     static public class Builder<K> {
@@ -139,6 +148,7 @@ public class State<K> {
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         private Optional<Runnable> onExit;
 
+
         /**
          * Instantiates a new Builder.
          *
@@ -152,8 +162,6 @@ public class State<K> {
             onExit = Optional.empty();
             temp = Temperature.UNSET;
         }
-
-
 
         /**
          * Sets whether our new prt.State should be the prt.Monitor's initial state.

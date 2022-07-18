@@ -29,15 +29,16 @@ namespace Plang.Compiler.Backend.Java
         {
             GenerateBuildScript(job);
 
-            List<ICodeGenerator> generators = new List<ICodeGenerator>()
+            List<JavaSourceGenerator> generators = new List<JavaSourceGenerator>()
             {
-                new MachineGenerator(Constants.MachineDefnFileName),
-                new EventGenerator(Constants.EventDefnFileName),
                 new TypesGenerator(Constants.TypesDefnFileName),
+                new EventGenerator(Constants.EventDefnFileName),
+                new MachineGenerator(Constants.MachineDefnFileName),
                 new FFIStubGenerator(Constants.FFIStubFileName)
             };
 
-            return generators.SelectMany(g => g.GenerateCode(job, scope));
+            CompilationContext ctx = new CompilationContext(job);
+            return generators.SelectMany(g => g.GenerateCode(ctx, scope));
         }
 
 

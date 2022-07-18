@@ -1,11 +1,33 @@
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using System.Collections.Generic;
 using System.Linq;
+using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java
 {
     internal class TypesGenerator : JavaSourceGenerator {
+
+        private static HashSet<NamedTupleType> AllTuples(Scope scope)
+        {
+            HashSet<NamedTupleType> ret = new HashSet<NamedTupleType>();
+
+            foreach (var t in scope.Tuples)
+            {
+                ret.Add(t);
+            }
+
+            foreach (var t in scope.Functions.SelectMany(f => AllTuples(f.Scope)))
+            {
+                ret.Add(t);
+            }
+            foreach (var t in scope.Machines.SelectMany(m => AllTuples(m.Scope)))
+            {
+                ret.Add(t);
+            }
+
+            return ret;
+        }
 
         internal TypesGenerator(string filename) : base(filename)
         {
@@ -30,11 +52,12 @@ namespace Plang.Compiler.Backend.Java
                 WriteLine();
             }
 
-            if (GlobalScope.Tuples.Any())
+            HashSet<NamedTupleType> tuples = AllTuples(GlobalScope);
+            if (tuples.Any())
             {
                 WriteLine("/* Tuples */");
                 WriteLine();
-                foreach (var t in GlobalScope.Tuples)
+                foreach (var t in tuples)
                 {
                     WriteNamedTupleDecl(t);
                 }

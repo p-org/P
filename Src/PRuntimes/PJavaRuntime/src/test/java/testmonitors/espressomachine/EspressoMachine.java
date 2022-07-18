@@ -1,4 +1,4 @@
-package tutorialmonitors.espressomachine;
+package testmonitors.espressomachine;
 
 /***************************************************************************
  * This file was auto-generated on Wednesday, 22 June 2022 at 11:28:46.
@@ -7,9 +7,7 @@ package tutorialmonitors.espressomachine;
 
 import prt.events.PEvent;
 
-import java.text.MessageFormat;
 import java.util.*;
-import java.util.stream.Stream;
 
 public class EspressoMachine {
     /* Enums */
@@ -342,44 +340,46 @@ public class EspressoMachine {
 
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); } //XXX: dummy implementation.
 
-        public String STARTUP_STATE = "StartUp";
-        public String WARMUP_STATE = "WarmUp";
-        public String READY_STATE = "Ready";
-        public String BEANGRINDING_STATE = "BeanGrinding";
-        public String MAKINGCOFFEE_STATE = "MakingCoffee";
-        public String ERROR_STATE = "Error";
+        public enum States {
+            STARTUP_STATE,
+            WARMUP_STATE,
+            READY_STATE,
+            BEANGRINDING_STATE,
+            MAKINGCOFFEE_STATE,
+            ERROR_STATE
+        }
 
 
         public EspressoMachineModesOfOperation() {
             super();
-            addState(new prt.State.Builder(STARTUP_STATE)
+            addState(new prt.State.Builder(States.STARTUP_STATE)
                     .isInitialState(true)
-                    .withEvent(eInWarmUpState.class, __ -> gotoState(WARMUP_STATE))
+                    .withEvent(eInWarmUpState.class, __ -> gotoState(States.WARMUP_STATE))
                     .build());
-            addState(new prt.State.Builder(WARMUP_STATE)
+            addState(new prt.State.Builder(States.WARMUP_STATE)
                     .isInitialState(false)
-                    .withEvent(eErrorHappened.class, __ -> gotoState(ERROR_STATE))
-                    .withEvent(eInReadyState.class, __ -> gotoState(READY_STATE))
+                    .withEvent(eErrorHappened.class, __ -> gotoState(States.ERROR_STATE))
+                    .withEvent(eInReadyState.class, __ -> gotoState(States.READY_STATE))
                     .build());
-            addState(new prt.State.Builder(READY_STATE)
+            addState(new prt.State.Builder(States.READY_STATE)
                     .isInitialState(false)
                     .withEvent(eInReadyState.class, __ -> { ; })
-                    .withEvent(eInBeansGrindingState.class, __ -> gotoState(BEANGRINDING_STATE))
-                    .withEvent(eErrorHappened.class, __ -> gotoState(ERROR_STATE))
+                    .withEvent(eInBeansGrindingState.class, __ -> gotoState(States.BEANGRINDING_STATE))
+                    .withEvent(eErrorHappened.class, __ -> gotoState(States.ERROR_STATE))
                     .build());
-            addState(new prt.State.Builder(BEANGRINDING_STATE)
+            addState(new prt.State.Builder(States.BEANGRINDING_STATE)
                     .isInitialState(false)
-                    .withEvent(eInCoffeeBrewingState.class, __ -> gotoState(MAKINGCOFFEE_STATE))
-                    .withEvent(eErrorHappened.class, __ -> gotoState(ERROR_STATE))
+                    .withEvent(eInCoffeeBrewingState.class, __ -> gotoState(States.MAKINGCOFFEE_STATE))
+                    .withEvent(eErrorHappened.class, __ -> gotoState(States.ERROR_STATE))
                     .build());
-            addState(new prt.State.Builder(MAKINGCOFFEE_STATE)
+            addState(new prt.State.Builder(States.MAKINGCOFFEE_STATE)
                     .isInitialState(false)
-                    .withEvent(eInReadyState.class, __ -> gotoState(READY_STATE))
-                    .withEvent(eErrorHappened.class, __ -> gotoState(ERROR_STATE))
+                    .withEvent(eInReadyState.class, __ -> gotoState(States.READY_STATE))
+                    .withEvent(eErrorHappened.class, __ -> gotoState(States.ERROR_STATE))
                     .build());
-            addState(new prt.State.Builder(ERROR_STATE)
+            addState(new prt.State.Builder(States.ERROR_STATE)
                     .isInitialState(false)
-                    .withEvent(eResetPerformed.class, __ -> gotoState(STARTUP_STATE))
+                    .withEvent(eResetPerformed.class, __ -> gotoState(States.STARTUP_STATE))
                     .withEvent(eErrorHappened.class, __ -> { ; })
                     .build());
         } // constructor

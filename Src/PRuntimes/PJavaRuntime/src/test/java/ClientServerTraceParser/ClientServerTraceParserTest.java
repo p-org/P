@@ -2,8 +2,8 @@ package ClientServerTraceParser;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import tutorialmonitors.clientserver.PEvents;
-import tutorialmonitors.clientserver.PTypes;
+import testmonitors.clientserver.PEvents;
+import testmonitors.clientserver.PTypes;
 
 import java.util.Arrays;
 import java.util.Iterator;

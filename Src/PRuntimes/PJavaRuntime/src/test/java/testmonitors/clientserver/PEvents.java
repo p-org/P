@@ -1,4 +1,4 @@
-package tutorialmonitors.clientserver;
+package testmonitors.clientserver;
 
 /***************************************************************************
  * This file was auto-generated on Thursday, 30 June 2022 at 14:23:48.

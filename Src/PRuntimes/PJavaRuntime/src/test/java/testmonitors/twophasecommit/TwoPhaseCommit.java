@@ -1,4 +1,4 @@
-package tutorialmonitors.twophasecommit;
+package testmonitors.twophasecommit;
 
 /***************************************************************************
  * This file was auto-generated on Wednesday, 22 June 2022 at 11:28:16.
@@ -596,8 +596,10 @@ public class TwoPhaseCommit {
         public int get_numParticipants() { return this.numParticipants; };
 
 
-        public String INIT_STATE = "Init";
-        public String WAITFOREVENTS_STATE = "WaitForEvents";
+        private enum States {
+            INIT_STATE,
+            WAITFOREVENTS_STATE
+        }
 
         private void Anon(int n) {
             numParticipants = n;
@@ -730,11 +732,11 @@ public class TwoPhaseCommit {
 
         public AtomicityInvariant() {
             super();
-            addState(prt.State.keyedOn(INIT_STATE)
+            addState(prt.State.keyedOn(States.INIT_STATE)
                     .isInitialState(true)
-                    .withEvent(eMonitor_AtomicityInitialize.class, p -> { Anon(p); gotoState(WAITFOREVENTS_STATE); })
+                    .withEvent(eMonitor_AtomicityInitialize.class, p -> { Anon(p); gotoState(States.WAITFOREVENTS_STATE); })
                     .build());
-            addState(prt.State.keyedOn(WAITFOREVENTS_STATE)
+            addState(prt.State.keyedOn(States.WAITFOREVENTS_STATE)
                     .isInitialState(false)
                     .withEvent(ePrepareResp.class, this::Anon_1)
                     .withEvent(eWriteTransResp.class, this::Anon_2)
@@ -749,9 +751,11 @@ public class TwoPhaseCommit {
         public int get_pendingTransactions() { return this.pendingTransactions; };
 
 
-        public String INIT_STATE = "Init";
-        public String WAITFORRESPONSES_STATE = "WaitForResponses";
-        public String ALLTRANSACTIONSFINISHED_STATE = "AllTransactionsFinished";
+        private enum States {
+            INIT_STATE,
+            WAITFORRESPONSES_STATE,
+            ALLTRANSACTIONSFINISHED_STATE
+        }
 
         private void Anon_3() {
             int TMP_tmp0_2 = 0;
@@ -767,7 +771,7 @@ public class TwoPhaseCommit {
             pendingTransactions = TMP_tmp0_3;
             TMP_tmp1_2 = pendingTransactions == 0;
             if (TMP_tmp1_2) {
-                gotoState(ALLTRANSACTIONSFINISHED_STATE);
+                gotoState(States.ALLTRANSACTIONSFINISHED_STATE);
                 return;
             }
         }
@@ -786,18 +790,18 @@ public class TwoPhaseCommit {
 
         public Progress() {
             super();
-            addState(prt.State.keyedOn(INIT_STATE)
+            addState(prt.State.keyedOn(States.INIT_STATE)
                     .isInitialState(true)
-                    .withEvent(eWriteTransReq.class, __ -> { Anon_3(); gotoState(WAITFORRESPONSES_STATE); })
+                    .withEvent(eWriteTransReq.class, __ -> { Anon_3(); gotoState(States.WAITFORRESPONSES_STATE); })
                     .build());
-            addState(prt.State.keyedOn(WAITFORRESPONSES_STATE)
+            addState(prt.State.keyedOn(States.WAITFORRESPONSES_STATE)
                     .isInitialState(false)
                     .withEvent(eWriteTransResp.class, __ -> Anon_4())
                     .withEvent(eWriteTransReq.class, __ -> Anon_5())
                     .build());
-            addState(prt.State.keyedOn(ALLTRANSACTIONSFINISHED_STATE)
+            addState(prt.State.keyedOn(States.ALLTRANSACTIONSFINISHED_STATE)
                     .isInitialState(false)
-                    .withEvent(eWriteTransReq.class, __ -> { Anon_6(); gotoState(WAITFORRESPONSES_STATE); })
+                    .withEvent(eWriteTransReq.class, __ -> { Anon_6(); gotoState(States.WAITFORRESPONSES_STATE); })
                     .build());
         } // constructor
     } // Progress monitor definition

@@ -15,7 +15,7 @@ import java.util.Optional;
  *
  * To construct a prt.State, use the `prt.State.Builder` interface.
  */
-public class State<K> {
+public class State<K extends Enum<K>> {
 
     public enum Temperature {
         HOT, COLD, UNSET
@@ -128,14 +128,14 @@ public class State<K> {
      * @param k the key for this eventual state.
      * @return a builder for the state.
      */
-    public static <K> Builder<K> keyedOn(K k) {
+    public static <K extends Enum<K>> Builder<K> keyedOn(K k) {
         return new Builder<>(k);
     }
 
     /**
      * Builds a prt.State.
      */
-    static public class Builder<K> {
+    static public class Builder<K extends Enum<K>> {
         private boolean isInitialState;
 
         private final K key;

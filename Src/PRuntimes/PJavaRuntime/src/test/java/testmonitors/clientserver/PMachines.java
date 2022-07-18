@@ -1,4 +1,4 @@
-package tutorialmonitors.clientserver;
+package testmonitors.clientserver;
 
 /***************************************************************************
  * This file was auto-generated on Thursday, 30 June 2022 at 14:23:48.
@@ -23,16 +23,18 @@ public class PMachines {
         public HashMap<Integer,PTypes.PTuple_src_accnt_amnt_rId> get_pendingWithDraws() { return this.pendingWithDraws; };
 
 
-        public String INIT_STATE = "Init";
-        public String WAITFORWITHDRAWREQANDRESP_STATE = "WaitForWithDrawReqAndResp";
+        private enum States {
+            INIT_STATE,
+            WAITFORWITHDRAWREQANDRESP_STATE
+        }
 
         public BankBalanceIsAlwaysCorrect() {
             super();
-            addState(prt.State.keyedOn(INIT_STATE)
+            addState(prt.State.keyedOn(States.INIT_STATE)
                     .isInitialState(true)
-                    .withEvent(PEvents.eSpec_BankBalanceIsAlwaysCorrect_Init.class, p -> { Anon(p); gotoState(WAITFORWITHDRAWREQANDRESP_STATE); })
+                    .withEvent(PEvents.eSpec_BankBalanceIsAlwaysCorrect_Init.class, p -> { Anon(p); gotoState(States.WAITFORWITHDRAWREQANDRESP_STATE); })
                     .build());
-            addState(prt.State.keyedOn(WAITFORWITHDRAWREQANDRESP_STATE)
+            addState(prt.State.keyedOn(States.WAITFORWITHDRAWREQANDRESP_STATE)
                     .isInitialState(false)
                     .withEvent(PEvents.eWithDrawReq.class, this::Anon_1)
                     .withEvent(PEvents.eWithDrawResp.class, this::Anon_2)
@@ -193,19 +195,21 @@ public class PMachines {
         public LinkedHashSet<Integer> get_pendingWDReqs() { return this.pendingWDReqs; };
 
 
-        public String NOPENDINGREQUESTS_STATE = "NopendingRequests";
-        public String PENDINGREQS_STATE = "PendingReqs";
+        private enum States {
+            NOPENDINGREQUESTS_STATE,
+            PENDINGREQS_STATE
+        }
 
         public GuaranteedWithDrawProgress() {
             super();
-            addState(prt.State.keyedOn(NOPENDINGREQUESTS_STATE)
+            addState(prt.State.keyedOn(States.NOPENDINGREQUESTS_STATE)
                     .isInitialState(true)
-                    .withEvent(PEvents.eWithDrawReq.class, p -> { Anon_3(p); gotoState(PENDINGREQS_STATE); })
+                    .withEvent(PEvents.eWithDrawReq.class, p -> { Anon_3(p); gotoState(States.PENDINGREQS_STATE); })
                     .build());
-            addState(prt.State.keyedOn(PENDINGREQS_STATE)
+            addState(prt.State.keyedOn(States.PENDINGREQS_STATE)
                     .isInitialState(false)
                     .withEvent(PEvents.eWithDrawResp.class, this::Anon_4)
-                    .withEvent(PEvents.eWithDrawReq.class, p -> { Anon_5(p); gotoState(PENDINGREQS_STATE); })
+                    .withEvent(PEvents.eWithDrawReq.class, p -> { Anon_5(p); gotoState(States.PENDINGREQS_STATE); })
                     .build());
         } // constructor
 
@@ -240,7 +244,7 @@ public class PMachines {
             TMP_tmp6_1 = pendingWDReqs.size();
             TMP_tmp7_1 = TMP_tmp6_1 == 0;
             if (TMP_tmp7_1) {
-                gotoState(NOPENDINGREQUESTS_STATE);
+                gotoState(States.NOPENDINGREQUESTS_STATE);
                 return;
             }
         }

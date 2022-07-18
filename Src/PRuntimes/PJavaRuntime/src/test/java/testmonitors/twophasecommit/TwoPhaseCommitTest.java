@@ -1,4 +1,4 @@
-package tutorialmonitors.twophasecommit;
+package testmonitors.twophasecommit;
 
 import java.util.List;
 
@@ -8,7 +8,7 @@ import prt.exceptions.PAssertionFailureException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import static tutorialmonitors.twophasecommit.TwoPhaseCommit.*;
+import static testmonitors.twophasecommit.TwoPhaseCommit.*;
 
 public class TwoPhaseCommitTest {
     private AtomicityInvariant initedMonitor() {

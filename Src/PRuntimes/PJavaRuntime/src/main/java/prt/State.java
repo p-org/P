@@ -15,7 +15,7 @@ import java.util.Optional;
  *
  * To construct a prt.State, use the `prt.State.Builder` interface.
  */
-public class State {
+public class State<K> {
 
     public enum Temperature {
         HOT, COLD, UNSET
@@ -50,7 +50,7 @@ public class State {
     }
 
     private final boolean isInitialState;
-    private final String key;
+    private final K key;
     private final Temperature temp;
     private final HashMap<Class<? extends PEvent<?>>, TransitionableConsumer<?>> dispatch;
 
@@ -62,7 +62,7 @@ public class State {
     private State(
             HashMap<Class<? extends PEvent<?>>, TransitionableConsumer<?>> dispatch,
             boolean isInitialState,
-            String key,
+            K key,
             Optional<TransitionableConsumer<Object>> onEntry,
             Optional<Runnable> onExit,
             Temperature temp) {
@@ -79,12 +79,18 @@ public class State {
      *
      * @return the key
      */
-    public String getKey() { return key; }
+    public K getKey() { return key; }
 
+    /**
+     * @return The entry handler for this prt.State.
+     */
     public Optional<TransitionableConsumer<Object>> getOnEntry() {
         return onEntry;
     }
 
+    /**
+     * @return The void-consuming exit handler for this prt.State.
+     */
     public Optional<Runnable> getOnExit() {
         return onExit;
     }
@@ -120,10 +126,10 @@ public class State {
     /**
      * Builds a prt.State.
      */
-    static public class Builder {
+    static public class Builder<K> {
         private boolean isInitialState;
 
-        private final String key;
+        private final K key;
         private Temperature temp;
         private final HashMap<Class<? extends PEvent<?>>, TransitionableConsumer<?>> dispatch;
 
@@ -138,7 +144,7 @@ public class State {
          *
          * @param _key the uniquely-identifying key for our new prt.State.
          */
-        public Builder(String _key) {
+        public Builder(K _key) {
             key = _key;
             isInitialState = false;
             dispatch = new HashMap<>();
@@ -152,7 +158,7 @@ public class State {
         /**
          * Sets whether our new prt.State should be the prt.Monitor's initial state.
          */
-        public Builder isInitialState(boolean b) {
+        public Builder<K> isInitialState(boolean b) {
             isInitialState = b;
             return this;
         }
@@ -166,7 +172,7 @@ public class State {
          * @param clazz the subclass of Payload
          * @param f     the handler to be invoked at runtime.
          */
-        public <P, PE extends PEvent<P>> Builder withEvent(Class<PE> clazz, TransitionableConsumer<P> f) {
+        public <P, PE extends PEvent<P>> Builder<K> withEvent(Class<PE> clazz, TransitionableConsumer<P> f) {
             Objects.requireNonNull(f);
             Objects.requireNonNull(clazz);
 
@@ -182,7 +188,7 @@ public class State {
          *
          * @param t the temperature.
          */
-        public Builder withTemperature(Temperature t) {
+        public Builder<K> withTemperature(Temperature t) {
             this.temp = t;
             return this;
         }
@@ -203,7 +209,7 @@ public class State {
          * @param <P> The type parameter of the payload we wish to consume.
          */
         @SuppressWarnings(value = "unchecked")
-        public <P> Builder withEntry(TransitionableConsumer<P> f) {
+        public <P> Builder<K> withEntry(TransitionableConsumer<P> f) {
             Objects.requireNonNull(f);
 
             if (onEntry.isPresent()) {
@@ -221,7 +227,7 @@ public class State {
          * @param f the void procedure to invoke.
          * @return the builder
          */
-        public Builder withEntry(TransitionableRunnable f) {
+        public Builder<K> withEntry(TransitionableRunnable f) {
             Objects.requireNonNull(f);
 
             if (onEntry.isPresent()) {
@@ -231,7 +237,7 @@ public class State {
             return this;
         }
 
-        public Builder withExit(Runnable f) {
+        public Builder<K> withExit(Runnable f) {
             Objects.requireNonNull(f);
 
             if (onExit.isPresent()) {
@@ -247,7 +253,7 @@ public class State {
          *
          * @return the new prt.State
          */
-        public State build() {
+        public State<K> build() {
             return new State(
                     dispatch,
                     isInitialState,

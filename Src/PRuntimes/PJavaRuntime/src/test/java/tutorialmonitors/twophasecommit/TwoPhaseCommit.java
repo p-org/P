@@ -730,11 +730,11 @@ public class TwoPhaseCommit {
 
         public AtomicityInvariant() {
             super();
-            addState(new prt.State.Builder(INIT_STATE)
+            addState(new prt.State.Builder<>(INIT_STATE)
                     .isInitialState(true)
                     .withEvent(eMonitor_AtomicityInitialize.class, p -> { Anon(p); gotoState(WAITFOREVENTS_STATE); })
                     .build());
-            addState(new prt.State.Builder(WAITFOREVENTS_STATE)
+            addState(new prt.State.Builder<>(WAITFOREVENTS_STATE)
                     .isInitialState(false)
                     .withEvent(ePrepareResp.class, this::Anon_1)
                     .withEvent(eWriteTransResp.class, this::Anon_2)
@@ -786,16 +786,16 @@ public class TwoPhaseCommit {
 
         public Progress() {
             super();
-            addState(new prt.State.Builder(INIT_STATE)
+            addState(new prt.State.Builder<>(INIT_STATE)
                     .isInitialState(true)
                     .withEvent(eWriteTransReq.class, __ -> { Anon_3(); gotoState(WAITFORRESPONSES_STATE); })
                     .build());
-            addState(new prt.State.Builder(WAITFORRESPONSES_STATE)
+            addState(new prt.State.Builder<>(WAITFORRESPONSES_STATE)
                     .isInitialState(false)
                     .withEvent(eWriteTransResp.class, __ -> Anon_4())
                     .withEvent(eWriteTransReq.class, __ -> Anon_5())
                     .build());
-            addState(new prt.State.Builder(ALLTRANSACTIONSFINISHED_STATE)
+            addState(new prt.State.Builder<>(ALLTRANSACTIONSFINISHED_STATE)
                     .isInitialState(false)
                     .withEvent(eWriteTransReq.class, __ -> { Anon_6(); gotoState(WAITFORRESPONSES_STATE); })
                     .build());

@@ -18,7 +18,7 @@ public class MonitorTest {
         private String INIT_STATE= "Init";
         public NoDefaultStateMonitor() {
             super();
-            addState(new State.Builder(INIT_STATE).build());
+            addState(new State.Builder<>(INIT_STATE).build());
         }
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
@@ -31,8 +31,8 @@ public class MonitorTest {
         private String OTHER_STATE= "Other";
         public MultipleDefaultStateMonitors() {
             super();
-            addState(new State.Builder(INIT_STATE).isInitialState(true).build());
-            addState(new State.Builder(OTHER_STATE).isInitialState(true).build());
+            addState(new State.Builder<>(INIT_STATE).isInitialState(true).build());
+            addState(new State.Builder<>(OTHER_STATE).isInitialState(true).build());
         }
 
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
@@ -46,8 +46,8 @@ public class MonitorTest {
         private String OTHER_STATE= "Other";
         public NonUniqueStateKeyMonitor() {
             super();
-            addState(new State.Builder(INIT_STATE).isInitialState(true).build());
-            addState(new State.Builder(INIT_STATE).isInitialState(true).build());
+            addState(new State.Builder<>(INIT_STATE).isInitialState(true).build());
+            addState(new State.Builder<>(INIT_STATE).isInitialState(true).build());
         }
 
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
@@ -75,7 +75,7 @@ public class MonitorTest {
             super();
             count = 0;
 
-            addState(new State.Builder(INIT_STATE)
+            addState(new State.Builder<>(INIT_STATE)
                     .isInitialState(true)
                     .withEvent(AddEvent.class, i -> count += i)
                     .build());
@@ -95,16 +95,16 @@ public class MonitorTest {
 
             stateAcc = new ArrayList<>();
 
-            addState(new State.Builder(A_STATE)
+            addState(new State.Builder<>(A_STATE)
                     .isInitialState(true)
                     .withEntry(() -> gotoState(B_STATE))
                     .withExit(() -> stateAcc.add(A_STATE))
                     .build());
-            addState(new State.Builder(B_STATE)
+            addState(new State.Builder<>(B_STATE)
                     .withEntry(() -> gotoState(C_STATE))
                     .withExit(() -> stateAcc.add(B_STATE))
                     .build());
-            addState(new State.Builder(C_STATE)
+            addState(new State.Builder<>(C_STATE)
                     .withEntry(() -> stateAcc.add(C_STATE))
                     .build());
         }
@@ -124,19 +124,19 @@ public class MonitorTest {
 
             eventsProcessed = new ArrayList<>();
 
-            addState(new State.Builder(A_STATE)
+            addState(new State.Builder<>(A_STATE)
                     .isInitialState(true)
                     .withEntry(() -> {
                         gotoState(B_STATE, "Hello from prt.State A");
                     })
                     .build());
-            addState(new State.Builder(B_STATE)
+            addState(new State.Builder<>(B_STATE)
                     .withEntry(s -> {
                         eventsProcessed.add(s);
                         gotoState(C_STATE, "Hello from prt.State B");
                     })
                     .build());
-            addState(new State.Builder(C_STATE)
+            addState(new State.Builder<>(C_STATE)
                     .withEntry(s -> eventsProcessed.add(s))
                     .build());
         }
@@ -157,20 +157,20 @@ public class MonitorTest {
 
             eventsProcessed = new ArrayList<>();
 
-            addState(new State.Builder(A_STATE)
+            addState(new State.Builder<>(A_STATE)
                     .isInitialState(true)
                     .withEntry((String s) -> {
                         eventsProcessed.add(s);
                         gotoState(B_STATE, "Hello from prt.State A");
                     })
                     .build());
-            addState(new State.Builder(B_STATE)
+            addState(new State.Builder<>(B_STATE)
                     .withEntry((String s) -> {
                         eventsProcessed.add(s);
                         gotoState(C_STATE, "Hello from prt.State B");
                     })
                     .build());
-            addState(new State.Builder(C_STATE)
+            addState(new State.Builder<>(C_STATE)
                     .withEntry((String s) -> eventsProcessed.add(s))
                     .build());
         }
@@ -190,11 +190,11 @@ public class MonitorTest {
 
             eventsProcessed = new ArrayList<>();
 
-            addState(new State.Builder(A_STATE)
+            addState(new State.Builder<>(A_STATE)
                     .isInitialState(true)
                     .withEntry(() -> gotoState(B_STATE, Integer.valueOf(42)))
                     .build());
-            addState(new State.Builder(B_STATE)
+            addState(new State.Builder<>(B_STATE)
                     .withEntry((String s) -> eventsProcessed.add(s))
                     .build());
         }
@@ -210,7 +210,7 @@ public class MonitorTest {
 
         public ImmediateAssertionMonitor() {
             super();
-            addState(new State.Builder(INIT_STATE)
+            addState(new State.Builder<>(INIT_STATE)
                     .isInitialState(true)
                     .withEntry(() -> tryAssert(1 > 2, "Math works"))
                     .build());
@@ -291,7 +291,7 @@ public class MonitorTest {
 
             public A_Event() {
                 super();
-                addState(new State.Builder(INIT_STATE)
+                addState(new State.Builder<>(INIT_STATE)
                         .isInitialState(true)
                         .withEvent(ev.class, this::Anon)
                         .build());
@@ -318,7 +318,7 @@ public class MonitorTest {
 
         public RaiseEventMonitor() {
             super();
-            addState(new State.Builder(INIT_STATE)
+            addState(new State.Builder<>(INIT_STATE)
                     .isInitialState(true)
                     .withEvent(testEvent.class, __ -> {
                         tryRaiseEvent(new noopEvent());

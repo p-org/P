@@ -28,11 +28,11 @@ public class PMachines {
 
         public BankBalanceIsAlwaysCorrect() {
             super();
-            addState(new prt.State.Builder(INIT_STATE)
+            addState(new prt.State.Builder<>(INIT_STATE)
                     .isInitialState(true)
                     .withEvent(PEvents.eSpec_BankBalanceIsAlwaysCorrect_Init.class, p -> { Anon(p); gotoState(WAITFORWITHDRAWREQANDRESP_STATE); })
                     .build());
-            addState(new prt.State.Builder(WAITFORWITHDRAWREQANDRESP_STATE)
+            addState(new prt.State.Builder<>(WAITFORWITHDRAWREQANDRESP_STATE)
                     .isInitialState(false)
                     .withEvent(PEvents.eWithDrawReq.class, this::Anon_1)
                     .withEvent(PEvents.eWithDrawResp.class, this::Anon_2)
@@ -198,11 +198,11 @@ public class PMachines {
 
         public GuaranteedWithDrawProgress() {
             super();
-            addState(new prt.State.Builder(NOPENDINGREQUESTS_STATE)
+            addState(new prt.State.Builder<>(NOPENDINGREQUESTS_STATE)
                     .isInitialState(true)
                     .withEvent(PEvents.eWithDrawReq.class, p -> { Anon_3(p); gotoState(PENDINGREQS_STATE); })
                     .build());
-            addState(new prt.State.Builder(PENDINGREQS_STATE)
+            addState(new prt.State.Builder<>(PENDINGREQS_STATE)
                     .isInitialState(false)
                     .withEvent(PEvents.eWithDrawResp.class, this::Anon_4)
                     .withEvent(PEvents.eWithDrawReq.class, p -> { Anon_5(p); gotoState(PENDINGREQS_STATE); })

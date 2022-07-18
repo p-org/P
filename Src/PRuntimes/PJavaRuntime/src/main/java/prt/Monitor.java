@@ -24,10 +24,10 @@ public abstract class Monitor implements Consumer<PEvent<?>> {
     private static final Marker TRANSITIONING_MARKER = MarkerManager.getMarker("STATE_TRANSITIONING");
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private Optional<State> startState;
-    private State currentState;
+    private Optional<State<String>> startState;
+    private State<String> currentState;
 
-    private final HashMap<String, State> states;
+    private final HashMap<String, State<String>> states;
 
     /**
      * If the prt.Monitor is running, new states must not be able to be added.
@@ -40,7 +40,7 @@ public abstract class Monitor implements Consumer<PEvent<?>> {
      *
      * @param s The state.
      */
-    protected void addState(State s) {
+    protected void addState(State<String> s) {
         Objects.requireNonNull(s);
         if (isRunning) {
             throw new RuntimeException("prt.Monitor is already running; no new states may be added.");

@@ -1,9 +1,6 @@
 package prt;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 
 import prt.events.PEvent;
@@ -27,7 +24,7 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
     private Optional<State<StateKey>> startState;
     private State<StateKey> currentState;
 
-    private final HashMap<StateKey, State<StateKey>> states;
+    private EnumMap<StateKey, State<StateKey>> states;
 
     /**
      * If the prt.Monitor is running, new states must not be able to be added.
@@ -44,6 +41,10 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
         Objects.requireNonNull(s);
         if (isRunning) {
             throw new RuntimeException("prt.Monitor is already running; no new states may be added.");
+        }
+
+        if (states == null) {
+            states = new EnumMap<>((Class<StateKey>) s.getKey().getClass());
         }
 
         if (states.containsKey(s.getKey())) {
@@ -213,8 +214,13 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
     }
 
     private <P> void readyImpl(Optional<P> payload) {
-        if (isRunning)
+        if (isRunning) {
             throw new RuntimeException("prt.Monitor is already running.");
+        }
+
+        if (states.size() == 0) {
+            throw new RuntimeException("No states have been added to this Monitor!");
+        }
 
         isRunning = true;
 
@@ -233,9 +239,9 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
      */
     protected Monitor() {
         startState = Optional.empty();
-        states = new HashMap<>();
         isRunning = false;
 
+        states = null; // We need a concrete class to instantiate an EnumMap; do this lazily on the first addState() call.
         currentState = null; // So long as we have not yet readied, this will be null!
     }
 

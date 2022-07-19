@@ -115,7 +115,7 @@ namespace Plang.Compiler.Backend.Java
             // Write the fields.
             foreach (var (jType, fieldName) in fields)
             {
-                WriteLine($"public final {jType.TypeName} {fieldName};");
+                WriteLine($"public {jType.TypeName} {fieldName};");
             }
             WriteLine();
 

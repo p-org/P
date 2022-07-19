@@ -24,7 +24,8 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
     private Optional<State<StateKey>> startState;
     private State<StateKey> currentState;
 
-    private EnumMap<StateKey, State<StateKey>> states;
+    private EnumMap<StateKey, State<StateKey>> states; // All registered states
+    private StateKey[] stateUniverse;                  // all possible states
 
     /**
      * If the prt.Monitor is running, new states must not be able to be added.
@@ -45,6 +46,7 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
 
         if (states == null) {
             states = new EnumMap<>((Class<StateKey>) s.getKey().getClass());
+            stateUniverse = s.getKey().getDeclaringClass().getEnumConstants();
         }
 
         if (states.containsKey(s.getKey())) {
@@ -218,8 +220,10 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
             throw new RuntimeException("prt.Monitor is already running.");
         }
 
-        if (states.size() == 0) {
-            throw new RuntimeException("No states have been added to this Monitor!");
+        for (StateKey k : stateUniverse) {
+            if (!states.containsKey(k)) {
+                throw new NonTotalStateMapException(k);
+            }
         }
 
         isRunning = true;

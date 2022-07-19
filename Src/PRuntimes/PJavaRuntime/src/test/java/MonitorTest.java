@@ -3,6 +3,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import prt.*;
 import prt.exceptions.GotoPayloadClassException;
+import prt.exceptions.NonTotalStateMapException;
 import prt.exceptions.PAssertionFailureException;
 
 import java.util.ArrayList;
@@ -41,6 +42,17 @@ public class MonitorTest {
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
 
+    /**
+     * This monitor should have two default states but only one is implemented.
+     */
+    class NonTotalStateMapMonitor extends Monitor {
+        public NonTotalStateMapMonitor() {
+            super();
+            addState(new State.Builder<>(BiState.INIT_STATE).isInitialState(true).build());
+        }
+
+        public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
+    }
     /**
      * This monitor has two states with the same key; an exception will be thrown in the second addState().
      */
@@ -176,10 +188,12 @@ public class MonitorTest {
 
             addState(new State.Builder<>(ABCState.A_STATE)
                     .isInitialState(true)
-                    .withEntry(() -> gotoState(ABCState.B_STATE, Integer.valueOf(42)))
+                    .withEntry(() -> gotoState(ABCState.B_STATE, Integer.valueOf(42))) // Here we pass an Integer to the interrupt handler...
                     .build());
             addState(new State.Builder<>(ABCState.B_STATE)
-                    .withEntry((String s) -> eventsProcessed.add(s))
+                    .withEntry((String s) -> eventsProcessed.add(s)) //...but here we enforce that it must be a string!
+                    .build());
+            addState(new State.Builder<>(ABCState.C_STATE)
                     .build());
         }
 
@@ -234,6 +248,13 @@ public class MonitorTest {
 
         e = assertThrows(RuntimeException.class, () -> new MultipleDefaultStateMonitors().ready());
         assertTrue(e.getMessage().contains("Initial state already set"));
+    }
+
+    @Test
+    @DisplayName("Monitors' state maps must be total")
+    public void testTotalMonitorMap() {
+        NonTotalStateMapMonitor m = new NonTotalStateMapMonitor();
+        assertThrows(NonTotalStateMapException.class, () -> m.ready(), "State map is not total");
     }
 
     @Test

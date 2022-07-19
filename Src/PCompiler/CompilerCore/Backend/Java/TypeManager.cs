@@ -166,7 +166,7 @@ namespace Plang.Compiler.Backend.Java
 
                 internal static string ToJavaLiteral(double d)
                 {
-                    return d + "d";
+                    return d + "f";
                 }
             }
 

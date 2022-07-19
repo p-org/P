@@ -5,7 +5,7 @@ using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler.Backend.Java
 {
-    public abstract class JavaSourceGenerator : ICodeGenerator
+    public abstract class JavaSourceGenerator
     {
         private CompilationContext _context;
         protected CompiledFile Source;
@@ -23,9 +23,9 @@ namespace Plang.Compiler.Backend.Java
             Source = new CompiledFile(filename);
         }
 
-        private void Initialize(ICompilationJob job, Scope scope)
+        private void Initialize(CompilationContext ctx, Scope scope)
         {
-            _context = new CompilationContext(job);
+            _context = ctx;
             GlobalScope = scope;
         }
 
@@ -54,12 +54,12 @@ namespace Plang.Compiler.Backend.Java
         /// imports and "do not edit" comment blocks, the functionality in `GenerateCodeImpl`
         /// will be invoked.
         /// </summary>
-        /// <param name="job"></param>
+        /// <param name="ctx"></param>
         /// <param name="scope"></param>
         /// <returns>The single compiled file.</returns>
-        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope scope)
+        internal IEnumerable<CompiledFile> GenerateCode(CompilationContext ctx, Scope scope)
         {
-            Initialize(job, scope);
+            Initialize(ctx, scope);
             WriteFileHeader();
             GenerateCodeImpl();
             return new List<CompiledFile> { Source };

@@ -22,14 +22,14 @@ namespace Plang.Compiler.Backend.Java
         }
 
         /// <summary>
-        /// Produces a Java String value representing a particular State.  This can be
+        /// Produces a Java enum value representing a particular State.  This can be
         /// registered with State Builders and used as arguments to `gotoState()`.
         /// </summary>
         /// <param name="s">The state.</param>
         /// <returns>The identifier.</returns>
         public string IdentForState(State s)
         {
-            return $"{s.Name.ToUpper()}_STATE";
+            return Constants.StateEnumName + "." + s.Name;
         }
 
         /// <summary>

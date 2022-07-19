@@ -1,10 +1,10 @@
-package tutorialmonitors.espressomachine;
+package testmonitors.espressomachine;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-import static tutorialmonitors.espressomachine.EspressoMachine.*;
+import static testmonitors.espressomachine.EspressoMachine.*;
 
 public class EspressoMachineTest {
     @Test
@@ -13,9 +13,9 @@ public class EspressoMachineTest {
         EspressoMachineModesOfOperation m = new EspressoMachineModesOfOperation();
         m.ready();
 
-        assertEquals(m.getCurrentState(), "StartUp");
+        assertEquals(m.getCurrentState(), EspressoMachineModesOfOperation.States.STARTUP_STATE);
         m.accept(new eInWarmUpState());
-        assertEquals(m.getCurrentState(), "WarmUp");
+        assertEquals(m.getCurrentState(), EspressoMachineModesOfOperation.States.WARMUP_STATE);
     }
 
     @Test
@@ -43,8 +43,8 @@ public class EspressoMachineTest {
         m.accept(new eInBeansGrindingState());
 
         m.accept(new eErrorHappened());
-        assertEquals(m.getCurrentState(), "Error");
+        assertEquals(m.getCurrentState(), EspressoMachineModesOfOperation.States.ERROR_STATE);
         m.accept(new eResetPerformed());
-        assertEquals(m.getCurrentState(), "StartUp");
+        assertEquals(m.getCurrentState(), EspressoMachineModesOfOperation.States.STARTUP_STATE);
     }
 }

@@ -1,9 +1,6 @@
 package prt;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 
 import prt.events.PEvent;
@@ -18,16 +15,17 @@ import prt.exceptions.*;
  * A prt.Monitor encapsulates a state machine.
  *
  */
-public abstract class Monitor implements Consumer<PEvent<?>> {
+public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consumer<PEvent<?>> {
     private final Logger logger = LogManager.getLogger(this.getClass());
     private static final Marker PROCESSING_MARKER = MarkerManager.getMarker("EVENT_PROCESSING");
     private static final Marker TRANSITIONING_MARKER = MarkerManager.getMarker("STATE_TRANSITIONING");
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private Optional<State> startState;
-    private State currentState;
+    private Optional<State<StateKey>> startState;
+    private State<StateKey> currentState;
 
-    private final HashMap<String, State> states;
+    private EnumMap<StateKey, State<StateKey>> states; // All registered states
+    private StateKey[] stateUniverse;                  // all possible states
 
     /**
      * If the prt.Monitor is running, new states must not be able to be added.
@@ -40,10 +38,15 @@ public abstract class Monitor implements Consumer<PEvent<?>> {
      *
      * @param s The state.
      */
-    protected void addState(State s) {
+    protected void addState(State<StateKey> s) {
         Objects.requireNonNull(s);
         if (isRunning) {
             throw new RuntimeException("prt.Monitor is already running; no new states may be added.");
+        }
+
+        if (states == null) {
+            states = new EnumMap<>((Class<StateKey>) s.getKey().getClass());
+            stateUniverse = s.getKey().getDeclaringClass().getEnumConstants();
         }
 
         if (states.containsKey(s.getKey())) {
@@ -59,7 +62,11 @@ public abstract class Monitor implements Consumer<PEvent<?>> {
         }
     }
 
-    public String getCurrentState() {
+    public StateKey getCurrentState() {
+        if (!isRunning) {
+            throw new RuntimeException("prt.Monitor is not running (did you call ready()?)");
+        }
+
         return currentState.getKey();
     }
 
@@ -91,7 +98,7 @@ public abstract class Monitor implements Consumer<PEvent<?>> {
      *
      * @throws RuntimeException if `k` is not a state in the state machine.
      */
-    protected void gotoState(String k) throws TransitionException {
+    protected void gotoState(StateKey k) throws TransitionException {
         Objects.requireNonNull(k);
 
         if (!states.containsKey(k)) {
@@ -108,7 +115,7 @@ public abstract class Monitor implements Consumer<PEvent<?>> {
      *
      * @throws RuntimeException if `k` is not a state in the state machine.
      */
-    protected <P> void gotoState(String k, P payload) throws TransitionException {
+    protected <P> void gotoState(StateKey k, P payload) throws TransitionException {
         Objects.requireNonNull(k);
         Objects.requireNonNull(payload);
 
@@ -150,7 +157,7 @@ public abstract class Monitor implements Consumer<PEvent<?>> {
      * entry handler, and updating internal bookkeeping.
      * @param s The new state.
      */
-    private <P> void handleTransition(State s, Optional<P> payload) {
+    private <P> void handleTransition(State<StateKey> s, Optional<P> payload) {
         if (!isRunning) {
             throw new RuntimeException("prt.Monitor is not running (did you call ready()?)");
         }
@@ -209,14 +216,26 @@ public abstract class Monitor implements Consumer<PEvent<?>> {
     }
 
     private <P> void readyImpl(Optional<P> payload) {
-        if (isRunning)
+        if (isRunning) {
             throw new RuntimeException("prt.Monitor is already running.");
+        }
+
+        for (StateKey k : stateUniverse) {
+            if (!states.containsKey(k)) {
+                throw new NonTotalStateMapException(k);
+            }
+        }
 
         isRunning = true;
 
-        State s = startState.orElseThrow(() ->
-                new RuntimeException("No initial state set (did you specify an initial state, or is the machine halted?)"));
-        handleTransition(s, payload);
+        currentState = startState.orElseThrow(() ->
+                new RuntimeException(
+                        "No initial state set (did you specify an initial state, or is the machine halted?)"));
+
+        currentState.getOnEntry().ifPresent(handler -> {
+            Object p = payload.orElse(null);
+            invokeWithTrampoline(handler, p);
+        });
     }
 
     /**
@@ -224,10 +243,10 @@ public abstract class Monitor implements Consumer<PEvent<?>> {
      */
     protected Monitor() {
         startState = Optional.empty();
-        states = new HashMap<>();
         isRunning = false;
 
-        currentState = new State.Builder("_pre_init").build();
+        states = null; // We need a concrete class to instantiate an EnumMap; do this lazily on the first addState() call.
+        currentState = null; // So long as we have not yet readied, this will be null!
     }
 
     public abstract List<Class<? extends PEvent<?>>> getEventTypes();

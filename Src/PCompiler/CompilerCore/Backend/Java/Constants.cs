@@ -34,6 +34,8 @@ namespace Plang.Compiler.Backend.Java
         public static readonly string MachineNamespaceName = "PMachines";
         public static readonly string MachineDefnFileName = $"{MachineNamespaceName}.java";
 
+        public static readonly string StateEnumName = "PrtStates";
+
         #endregion
 
         #region Event source generation

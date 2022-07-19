@@ -1,4 +1,4 @@
-package tutorialmonitors.failuredetector;
+package testmonitors.failuredetector;
 
 /***************************************************************************
  * This file was auto-generated on Wednesday, 22 June 2022 at 11:29:15.
@@ -319,8 +319,10 @@ public class FailureDetector {
         public LinkedHashSet<Long> get_nodesDownDetected() { return this.nodesDownDetected; };
 
 
-        public String ALLSHUTDOWNNODESAREDETECTED_STATE = "AllShutdownNodesAreDetected";
-        public String NODESSHUTDOWNBUTNOTDETECTED_STATE = "NodesShutDownButNotDetected";
+        private enum States {
+            ALLSHUTDOWNNODESAREDETECTED_STATE,
+            NODESSHUTDOWNBUTNOTDETECTED_STATE
+        }
 
         private void Anon(LinkedHashSet<Long> nodes) {
             int i = 0;
@@ -359,7 +361,7 @@ public class FailureDetector {
             if (TMP_tmp2_1) {
                 TMP_tmp3_1 = ((long)node);
                 nodesShutdownAndNotDetected.add(TMP_tmp3_1);
-                gotoState(NODESSHUTDOWNBUTNOTDETECTED_STATE);
+                gotoState(States.NODESSHUTDOWNBUTNOTDETECTED_STATE);
                 return;
             }
         }
@@ -392,7 +394,7 @@ public class FailureDetector {
             TMP_tmp6 = nodesShutdownAndNotDetected.size();
             TMP_tmp7 = TMP_tmp6 == 0;
             if (TMP_tmp7) {
-                gotoState(ALLSHUTDOWNNODESAREDETECTED_STATE);
+                gotoState(States.ALLSHUTDOWNNODESAREDETECTED_STATE);
                 return;
             }
         }
@@ -413,12 +415,12 @@ public class FailureDetector {
 
         public ReliableFailureDetector() {
             super();
-            addState(new prt.State.Builder(ALLSHUTDOWNNODESAREDETECTED_STATE)
+            addState(prt.State.keyedOn(States.ALLSHUTDOWNNODESAREDETECTED_STATE)
                     .isInitialState(true)
                     .withEvent(eNotifyNodesDown.class, this::Anon)
                     .withEvent(eShutDown.class, this::Anon_1)
                     .build());
-            addState(new prt.State.Builder(NODESSHUTDOWNBUTNOTDETECTED_STATE)
+            addState(prt.State.keyedOn(States.NODESSHUTDOWNBUTNOTDETECTED_STATE)
                     .isInitialState(false)
                     .withEvent(eNotifyNodesDown.class, this::Anon_2)
                     .withEvent(eShutDown.class, this::Anon_3)

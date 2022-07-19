@@ -95,11 +95,12 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine();
 
             // state identifiers
-            foreach (var s in _currentMachine.States)
+            WriteLine($"public enum {Constants.StateEnumName} {{");
+            foreach (var (state, sep) in _currentMachine.States.WithPostfixSep(","))
             {
-                //TODO: I think it's fine to use unqualified names here.  But, confirm.
-                WriteLine($"public String {Names.IdentForState(s)} = \"{s.Name}\";");
+                WriteLine($"{state.Name}{sep}");
             }
+            WriteLine("}");
             WriteLine();
 
             // constructor
@@ -247,8 +248,11 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteStateBuilderDecl(State s)
         {
-            WriteLine($"addState(new prt.State.Builder({Names.IdentForState(s)})");
-            WriteLine($".isInitialState({TypeManager.JType.JBool.ToJavaLiteral(s.IsStart)})");
+            WriteLine($"addState(prt.State.keyedOn({Names.IdentForState(s)})");
+            if (s.IsStart)
+            {
+                WriteLine($".isInitialState(true)");
+            }
 
             if (s.Entry != null)
             {

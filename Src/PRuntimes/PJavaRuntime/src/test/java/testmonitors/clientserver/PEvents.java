@@ -1,17 +1,17 @@
 package testmonitors.clientserver;
 
 /***************************************************************************
- * This file was auto-generated on Thursday, 30 June 2022 at 14:23:48.
+ * This file was auto-generated on Wednesday, 20 July 2022 at 14:12:46.
  * Please do not edit manually!
  **************************************************************************/
 
 import java.util.*;
 
 public class PEvents {
-    public static class eSpec_BankBalanceIsAlwaysCorrect_Init extends prt.events.PEvent<HashMap<Integer,Integer>> {
-        public eSpec_BankBalanceIsAlwaysCorrect_Init(HashMap<Integer,Integer> p) { this.payload = p; }
-        private HashMap<Integer,Integer> payload;
-        public HashMap<Integer,Integer> getPayload() { return payload; }
+    public static class eSpec_BankBalanceIsAlwaysCorrect_Init extends prt.events.PEvent<HashMap<Long, Long>> {
+        public eSpec_BankBalanceIsAlwaysCorrect_Init(HashMap<Long, Long> p) { this.payload = p; }
+        private HashMap<Long, Long> payload;
+        public HashMap<Long, Long> getPayload() { return payload; }
 
         @Override
         public String toString() { return "eSpec_BankBalanceIsAlwaysCorrect_Init[" + payload + "]"; }

@@ -19,10 +19,6 @@ public class Clone {
         return b; //already immutable!  No cloning necessary.
     }
 
-    private static Integer cloneInteger(Integer i) {
-        return i; //already immutable!  No cloning necessary.
-    }
-
     private static Long cloneLong(Long l) {
         // NB: Actor IDs are stored as Longs.
         return l; //already immutable!  No cloning necessary.
@@ -90,8 +86,6 @@ public class Clone {
         Class<?> clazz = o.getClass();
         if (clazz == Boolean.class)
             return cloneBoolean((Boolean)o);
-        if (clazz == Integer.class)
-            return cloneInteger((Integer)o);
         if (clazz == Long.class)
             return cloneLong((Long)o);
         if (clazz == Float.class)

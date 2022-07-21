@@ -140,12 +140,7 @@ machine Main {
         j = j + 1;
       }
       global = new Global((driver=this, clients=clients, servers=servers)); 
-      if (choose()) {
-          send global, eConnect;
-      }
-      else {
-          send global, eDisconnect;
-      }
+      raise eNext;
     }
 
     on eNext do {

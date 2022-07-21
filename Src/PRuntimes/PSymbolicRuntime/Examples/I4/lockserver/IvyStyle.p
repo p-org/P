@@ -1,5 +1,4 @@
-event eConnect : (client : int, server : int);
-event eDisconnect : (client : int, server : int);
+event eEvent : (client : int, server : int);
 event eNext;
 
 machine Global {
@@ -29,19 +28,29 @@ machine Global {
       }
     }
 
-    on eConnect do (pld : (client : int, server : int)) {
-      if (semaphore[pld.server]) {
+    on eEvent do (pld : (client : int, server : int)) {
+      var connect : bool;
+      var disconnect : bool;
+      connect = semaphore[pld.server];
+      disconnect = link[pld.client][pld.server];
+      // choice
+      if (connect && disconnect) {
+        print("both");
+        if (choose()) {
+          connect = false;
+        } else {
+          disconnect = false;
+        }
+      }
+      if (connect) {
         link[pld.client][pld.server] = true;
         semaphore[pld.server] = false;
-        send driver, eNext;      
-        check();
       }
-    }
-
-    on eDisconnect do (pld : (client : int, server : int)) {
-      if (link[pld.client][pld.server]) {
+      if (disconnect) {
         link[pld.client][pld.server] = false;
         semaphore[pld.server] = true;
+      }
+      if (connect || disconnect) {
         send driver, eNext;      
         check();
       }
@@ -81,7 +90,7 @@ machine Main {
       var j : int;
       var numClients : int;
       var numServers : int;
-      numClients = 3;
+      numClients = 5;
       numServers = 2;
       i = 0;
       while (i < numClients) {
@@ -94,21 +103,15 @@ machine Main {
         j = j + 1;
       }
       global = new Global((driver=this, clients=clients, servers=servers)); 
-      if (choose()) {
-          send global, eConnect, (client=choose(clients), server=choose(servers));
-      }
-      else {
-          send global, eDisconnect, (client=choose(clients), server=choose(servers));
-      }
+      raise eNext;
     }
 
     on eNext do {
-      if (choose()) {
-          send global, eConnect, (client=choose(clients), server=choose(servers));
-      }
-      else {
-          send global, eDisconnect, (client=choose(clients), server=choose(servers));
-      }
+      var client : int;
+      var server : int;
+      client = choose(clients);
+      server = choose(servers);
+      send global, eEvent, (client=client, server=server);
     }
   }
 }

@@ -164,6 +164,18 @@ namespace Plang.Compiler.Backend.Java
             WriteLine("} // equals()");
             WriteLine();
 
+            // hashCode() implementation.
+            WriteLine($"public int hashCode() {{");
+            Write($"return Objects.hash(");
+            foreach (var (sep, (_, fieldName)) in fields.WithPrefixSep(", "))
+            {
+                Write($"{sep}{fieldName}");
+            }
+            WriteLine(");");
+            WriteLine("} // hashCode()");
+            WriteLine();
+
+
             // Deep equality predicate.
             WriteLine($"public boolean deepEquals({tname} other) {{");
             WriteLine("return (true");

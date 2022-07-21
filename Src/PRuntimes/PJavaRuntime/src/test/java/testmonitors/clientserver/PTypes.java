@@ -1,7 +1,7 @@
 package testmonitors.clientserver;
 
 /***************************************************************************
- * This file was auto-generated on Wednesday, 20 July 2022 at 14:24:31.
+ * This file was auto-generated on Thursday, 21 July 2022 at 12:34:44.
  * Please do not edit manually!
  **************************************************************************/
 
@@ -44,6 +44,9 @@ public class PTypes {
             );
         } // equals()
 
+        public int hashCode() {
+            return Objects.hash(accountId, balance);
+        } // hashCode()
         public boolean deepEquals(PTuple_accnt_blnc other) {
             return (true
                     && this.accountId == other.accountId
@@ -83,6 +86,9 @@ public class PTypes {
             );
         } // equals()
 
+        public int hashCode() {
+            return Objects.hash(accountId);
+        } // hashCode()
         public boolean deepEquals(PTuple_accnt other) {
             return (true
                     && this.accountId == other.accountId
@@ -129,6 +135,9 @@ public class PTypes {
             );
         } // equals()
 
+        public int hashCode() {
+            return Objects.hash(source, accountId, amount, rId);
+        } // hashCode()
         public boolean deepEquals(PTuple_src_accnt_amnt_rId other) {
             return (true
                     && this.source == other.source
@@ -181,6 +190,9 @@ public class PTypes {
             );
         } // equals()
 
+        public int hashCode() {
+            return Objects.hash(status, accountId, balance, rId);
+        } // hashCode()
         public boolean deepEquals(PTuple_stts_accnt_blnc_rId other) {
             return (true
                     && this.status == other.status
@@ -227,6 +239,9 @@ public class PTypes {
             );
         } // equals()
 
+        public int hashCode() {
+            return Objects.hash(server, initialBalance);
+        } // hashCode()
         public boolean deepEquals(PTuple_srvr_intlb other) {
             return (true
                     && this.server == other.server
@@ -272,6 +287,9 @@ public class PTypes {
             );
         } // equals()
 
+        public int hashCode() {
+            return Objects.hash(serv, accountId, balance);
+        } // hashCode()
         public boolean deepEquals(PTuple_serv_accnt_blnc other) {
             return (true
                     && this.serv == other.serv

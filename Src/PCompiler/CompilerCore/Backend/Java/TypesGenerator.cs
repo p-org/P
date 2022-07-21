@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.Types;
+using static Plang.Compiler.Backend.Java.TypeManager;
 
 namespace Plang.Compiler.Backend.Java
 {
@@ -86,9 +87,9 @@ namespace Plang.Compiler.Backend.Java
 
         private void WriteNamedTupleDecl(NamedTupleType t)
         {
-            // This is a sequence of <type, stringName> pairs.
-            List<(TypeManager.JType, string)> fields =
-                new List<(TypeManager.JType, string)>();
+            // This is a sequence of <type, field name> pairs.
+            List<(JType, string)> fields =
+                new List<(JType, string)>();
 
             // Build up our list of fields.
             foreach (var e in t.Fields)
@@ -103,22 +104,42 @@ namespace Plang.Compiler.Backend.Java
                     type = tdef.TypeDefDecl.Type;
                 }
 
-                TypeManager.JType jType = Types.JavaTypeFor(type);
+                JType jType = Types.JavaTypeFor(type);
 
                 fields.Add((jType, name));
             }
 
             string tname = Names.NameForNamedTuple(t);
-            WriteLine($"// {t.CanonicalRepresentation}");
             WriteLine($"public static class {tname} implements {Constants.PValueClass}<{tname}> {{");
+            WriteLine($"// {t.CanonicalRepresentation}");
 
-            // Write the fields.
+            WriteNamedTupleFields(fields);
+            WriteLine();
+
+            WriteNamedTupleConstructors(tname, fields);
+            WriteLine();
+
+            WriteNamedTupleEqualityMethods(tname, fields);
+            WriteLine();
+
+            WriteNamedTupleToString(tname, fields);
+            WriteLine();
+
+            WriteLine($"}} //{tname} class definition");
+
+            WriteLine();
+        }
+
+        private void WriteNamedTupleFields(List<(JType, string)> fields)
+        {
             foreach (var (jType, fieldName) in fields)
             {
                 WriteLine($"public {jType.TypeName} {fieldName};");
             }
-            WriteLine();
+        }
 
+        private void WriteNamedTupleConstructors(string tname, List<(JType, string)> fields)
+        {
             // Write the default constructor.
             WriteLine($"public {tname}() {{");
             foreach (var (jtype, fieldName) in fields)
@@ -154,7 +175,10 @@ namespace Plang.Compiler.Backend.Java
             WriteLine(");");
             WriteLine("} // deepClone()");
             WriteLine();
+        }
 
+        private void WriteNamedTupleEqualityMethods(string tname, List<(JType, string)> fields)
+        {
             // .equals() implementation: this simply defers to deepEquals() but explicitly overriding it is useful
             // for calling assertEquals() in unit tests, for example.
             WriteLine($"public boolean equals(Object other) {{");
@@ -163,6 +187,18 @@ namespace Plang.Compiler.Backend.Java
             WriteLine(");");
             WriteLine("} // equals()");
             WriteLine();
+
+            // hashCode() implementation.
+            WriteLine($"public int hashCode() {{");
+            Write($"return Objects.hash(");
+            foreach (var (sep, (_, fieldName)) in fields.WithPrefixSep(", "))
+            {
+                Write($"{sep}{fieldName}");
+            }
+            WriteLine(");");
+            WriteLine("} // hashCode()");
+            WriteLine();
+
 
             // Deep equality predicate.
             WriteLine($"public boolean deepEquals({tname} other) {{");
@@ -177,23 +213,24 @@ namespace Plang.Compiler.Backend.Java
             WriteLine(");");
             WriteLine("} // deepEquals()");
             WriteLine();
+        }
 
+        private void WriteNamedTupleToString(string tname, List<(JType, string)> fields)
+        {
             // Write toString() in the same output style as a Java record.
             WriteLine("public String toString() {");
             WriteLine($"StringBuilder sb = new StringBuilder(\"{tname}\");");
+            
             WriteLine("sb.append(\"[\");");
             foreach (var (sep, (_, fieldName)) in fields.WithPrefixSep(", "))
             {
                 WriteLine($"sb.append(\"{sep}{fieldName}=\" + {fieldName});");
             }
             WriteLine("sb.append(\"]\");");
+
             WriteLine("return sb.toString();");
             WriteLine("} // toString()");
-
-            WriteLine($"}} //{tname} class definition");
-
-            WriteLine();
-       }
+        }
 
     }
 }

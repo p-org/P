@@ -1,7 +1,7 @@
 package testmonitors.clientserver;
 
 /***************************************************************************
- * This file was auto-generated on Wednesday, 20 July 2022 at 14:24:31.
+ * This file was auto-generated on Thursday, 21 July 2022 at 13:40:36.
  * Please do not edit manually!
  **************************************************************************/
 
@@ -19,8 +19,8 @@ public class PTypes {
 
     /* Tuples */
 
-    // (accountId:int,balance:int)
     public static class PTuple_accnt_blnc implements prt.values.PValue<PTuple_accnt_blnc> {
+        // (accountId:int,balance:int)
         public long accountId;
         public long balance;
 
@@ -38,11 +38,16 @@ public class PTypes {
             return new PTuple_accnt_blnc(accountId, balance);
         } // deepClone()
 
+
         public boolean equals(Object other) {
             return (this.getClass() == other.getClass() &&
                     this.deepEquals((PTuple_accnt_blnc)other)
             );
         } // equals()
+
+        public int hashCode() {
+            return Objects.hash(accountId, balance);
+        } // hashCode()
 
         public boolean deepEquals(PTuple_accnt_blnc other) {
             return (true
@@ -50,6 +55,7 @@ public class PTypes {
                     && this.balance == other.balance
             );
         } // deepEquals()
+
 
         public String toString() {
             StringBuilder sb = new StringBuilder("PTuple_accnt_blnc");
@@ -59,10 +65,11 @@ public class PTypes {
             sb.append("]");
             return sb.toString();
         } // toString()
+
     } //PTuple_accnt_blnc class definition
 
-    // (accountId:int)
     public static class PTuple_accnt implements prt.values.PValue<PTuple_accnt> {
+        // (accountId:int)
         public long accountId;
 
         public PTuple_accnt() {
@@ -77,17 +84,23 @@ public class PTypes {
             return new PTuple_accnt(accountId);
         } // deepClone()
 
+
         public boolean equals(Object other) {
             return (this.getClass() == other.getClass() &&
                     this.deepEquals((PTuple_accnt)other)
             );
         } // equals()
 
+        public int hashCode() {
+            return Objects.hash(accountId);
+        } // hashCode()
+
         public boolean deepEquals(PTuple_accnt other) {
             return (true
                     && this.accountId == other.accountId
             );
         } // deepEquals()
+
 
         public String toString() {
             StringBuilder sb = new StringBuilder("PTuple_accnt");
@@ -96,10 +109,11 @@ public class PTypes {
             sb.append("]");
             return sb.toString();
         } // toString()
+
     } //PTuple_accnt class definition
 
-    // (source:Client,accountId:int,amount:int,rId:int)
     public static class PTuple_src_accnt_amnt_rId implements prt.values.PValue<PTuple_src_accnt_amnt_rId> {
+        // (source:Client,accountId:int,amount:int,rId:int)
         public long source;
         public long accountId;
         public long amount;
@@ -123,11 +137,16 @@ public class PTypes {
             return new PTuple_src_accnt_amnt_rId(source, accountId, amount, rId);
         } // deepClone()
 
+
         public boolean equals(Object other) {
             return (this.getClass() == other.getClass() &&
                     this.deepEquals((PTuple_src_accnt_amnt_rId)other)
             );
         } // equals()
+
+        public int hashCode() {
+            return Objects.hash(source, accountId, amount, rId);
+        } // hashCode()
 
         public boolean deepEquals(PTuple_src_accnt_amnt_rId other) {
             return (true
@@ -137,6 +156,7 @@ public class PTypes {
                     && this.rId == other.rId
             );
         } // deepEquals()
+
 
         public String toString() {
             StringBuilder sb = new StringBuilder("PTuple_src_accnt_amnt_rId");
@@ -148,10 +168,11 @@ public class PTypes {
             sb.append("]");
             return sb.toString();
         } // toString()
+
     } //PTuple_src_accnt_amnt_rId class definition
 
-    // (status:tWithDrawRespStatus,accountId:int,balance:int,rId:int)
     public static class PTuple_stts_accnt_blnc_rId implements prt.values.PValue<PTuple_stts_accnt_blnc_rId> {
+        // (status:tWithDrawRespStatus,accountId:int,balance:int,rId:int)
         public PTypes.tWithDrawRespStatus status;
         public long accountId;
         public long balance;
@@ -175,11 +196,16 @@ public class PTypes {
             return new PTuple_stts_accnt_blnc_rId(status, accountId, balance, rId);
         } // deepClone()
 
+
         public boolean equals(Object other) {
             return (this.getClass() == other.getClass() &&
                     this.deepEquals((PTuple_stts_accnt_blnc_rId)other)
             );
         } // equals()
+
+        public int hashCode() {
+            return Objects.hash(status, accountId, balance, rId);
+        } // hashCode()
 
         public boolean deepEquals(PTuple_stts_accnt_blnc_rId other) {
             return (true
@@ -189,6 +215,7 @@ public class PTypes {
                     && this.rId == other.rId
             );
         } // deepEquals()
+
 
         public String toString() {
             StringBuilder sb = new StringBuilder("PTuple_stts_accnt_blnc_rId");
@@ -200,10 +227,11 @@ public class PTypes {
             sb.append("]");
             return sb.toString();
         } // toString()
+
     } //PTuple_stts_accnt_blnc_rId class definition
 
-    // (server:BankServer,initialBalance:map[int,int])
     public static class PTuple_srvr_intlb implements prt.values.PValue<PTuple_srvr_intlb> {
+        // (server:BankServer,initialBalance:map[int,int])
         public long server;
         public HashMap<Long, Long> initialBalance;
 
@@ -221,11 +249,16 @@ public class PTypes {
             return new PTuple_srvr_intlb(server, (HashMap<Long, Long>)prt.values.Clone.deepClone(initialBalance));
         } // deepClone()
 
+
         public boolean equals(Object other) {
             return (this.getClass() == other.getClass() &&
                     this.deepEquals((PTuple_srvr_intlb)other)
             );
         } // equals()
+
+        public int hashCode() {
+            return Objects.hash(server, initialBalance);
+        } // hashCode()
 
         public boolean deepEquals(PTuple_srvr_intlb other) {
             return (true
@@ -233,6 +266,7 @@ public class PTypes {
                     && prt.values.Equality.deepEquals(this.initialBalance, other.initialBalance)
             );
         } // deepEquals()
+
 
         public String toString() {
             StringBuilder sb = new StringBuilder("PTuple_srvr_intlb");
@@ -242,10 +276,11 @@ public class PTypes {
             sb.append("]");
             return sb.toString();
         } // toString()
+
     } //PTuple_srvr_intlb class definition
 
-    // (serv:BankServer,accountId:int,balance:int)
     public static class PTuple_serv_accnt_blnc implements prt.values.PValue<PTuple_serv_accnt_blnc> {
+        // (serv:BankServer,accountId:int,balance:int)
         public long serv;
         public long accountId;
         public long balance;
@@ -266,11 +301,16 @@ public class PTypes {
             return new PTuple_serv_accnt_blnc(serv, accountId, balance);
         } // deepClone()
 
+
         public boolean equals(Object other) {
             return (this.getClass() == other.getClass() &&
                     this.deepEquals((PTuple_serv_accnt_blnc)other)
             );
         } // equals()
+
+        public int hashCode() {
+            return Objects.hash(serv, accountId, balance);
+        } // hashCode()
 
         public boolean deepEquals(PTuple_serv_accnt_blnc other) {
             return (true
@@ -279,6 +319,7 @@ public class PTypes {
                     && this.balance == other.balance
             );
         } // deepEquals()
+
 
         public String toString() {
             StringBuilder sb = new StringBuilder("PTuple_serv_accnt_blnc");
@@ -289,6 +330,7 @@ public class PTypes {
             sb.append("]");
             return sb.toString();
         } // toString()
+
     } //PTuple_serv_accnt_blnc class definition
 
 

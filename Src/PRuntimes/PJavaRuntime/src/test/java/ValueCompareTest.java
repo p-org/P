@@ -2,6 +2,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import prt.exceptions.IncomparableValuesException;
 import prt.values.*;
+import testmonitors.clientserver.PEvents;
+import testmonitors.clientserver.PTypes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -98,5 +100,26 @@ public class ValueCompareTest {
 
         assertFalse(m1.get("123") == m2.get("123")); // Ensure that the values are different references
         assertTrue(Equality.deepEquals(m1, m2));
+    }
+    @Test
+    @DisplayName("hashcode() and equals() is correctly overridden for P tuples and events.")
+    public void testPTypeHashing() {
+        // Tuples.
+        PTypes.PTuple_src_accnt_amnt_rId t1 = new PTypes.PTuple_src_accnt_amnt_rId();
+        PTypes.PTuple_src_accnt_amnt_rId t2 = new PTypes.PTuple_src_accnt_amnt_rId();
+
+        assertFalse(t1 == t2);
+        assertTrue(t1.equals(t2));
+        assertTrue(Equality.deepEquals(t1, t2));
+        assertTrue(t1.hashCode() == t2.hashCode());
+
+        // Events.
+        PEvents.eWithDrawReq e1 = new PEvents.eWithDrawReq(t1);
+        PEvents.eWithDrawReq e2 = new PEvents.eWithDrawReq(t1);
+
+        assertFalse(e1 == e2);
+        assertTrue(e1.equals(e2));
+        assertTrue(Equality.deepEquals(e1, e2));
+        assertTrue(e1.hashCode() == e2.hashCode());
     }
 }

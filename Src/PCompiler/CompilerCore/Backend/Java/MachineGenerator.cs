@@ -875,11 +875,12 @@ namespace Plang.Compiler.Backend.Java {
                     break;
 
                 case SeqAccessExpr seqAccessExpr:
-                    // TODO: do we need to think about handling out of bounds exceptions?
                     WriteExpr(seqAccessExpr.SeqExpr);
-                    Write($".{t.AccessorMethodName}(");
+                    // IndexExpr is a JInt and thus emitted as a long. In this particular case,
+                    // though, `ArrayList#get()` takes an int so we have to downcast.
+                    Write($".{t.AccessorMethodName}((int)(");
                     WriteExpr(seqAccessExpr.IndexExpr);
-                    Write(")");
+                    Write("))");
                     break;
 
                 case TupleAccessExpr tupleAccessExpr:

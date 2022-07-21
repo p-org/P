@@ -143,15 +143,15 @@ namespace Plang.Compiler.Backend.Java
             {
                 internal JInt()
                 {
-                    _unboxedType = "int";
-                    _refType = "Integer";
+                    _unboxedType = "long";
+                    _refType = "Long";
                 }
 
-                internal override string DefaultValue => ToJavaLiteral(0);
+                internal override string DefaultValue => ToJavaLiteral(0L);
 
-                internal static string ToJavaLiteral(int i)
+                internal static string ToJavaLiteral(long l)
                 {
-                    return i.ToString();
+                    return l + "L";
                 }
             }
 

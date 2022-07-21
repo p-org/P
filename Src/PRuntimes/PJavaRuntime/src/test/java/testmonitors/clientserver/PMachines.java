@@ -1,11 +1,9 @@
 package testmonitors.clientserver;
 
 /***************************************************************************
- * This file was auto-generated on Thursday, 30 June 2022 at 14:23:48.
+ * This file was auto-generated on Wednesday, 20 July 2022 at 14:24:31.
  * Please do not edit manually!
  **************************************************************************/
-
-import prt.exceptions.TransitionException;
 
 import java.util.*;
 
@@ -16,26 +14,25 @@ public class PMachines {
     // PMachine Client elided
     // PMachine AbstractBankServer elided
     public static class BankBalanceIsAlwaysCorrect extends prt.Monitor {
-        private HashMap<Integer,Integer> bankBalance = new HashMap<Integer,Integer>();
-        public HashMap<Integer,Integer> get_bankBalance() { return this.bankBalance; };
+        private HashMap<Long, Long> bankBalance = new HashMap<Long, Long>();
+        public HashMap<Long, Long> get_bankBalance() { return this.bankBalance; };
 
-        private HashMap<Integer,PTypes.PTuple_src_accnt_amnt_rId> pendingWithDraws = new HashMap<Integer,PTypes.PTuple_src_accnt_amnt_rId>();
-        public HashMap<Integer,PTypes.PTuple_src_accnt_amnt_rId> get_pendingWithDraws() { return this.pendingWithDraws; };
+        private HashMap<Long, PTypes.PTuple_src_accnt_amnt_rId> pendingWithDraws = new HashMap<Long, PTypes.PTuple_src_accnt_amnt_rId>();
+        public HashMap<Long, PTypes.PTuple_src_accnt_amnt_rId> get_pendingWithDraws() { return this.pendingWithDraws; };
 
 
-        private enum States {
-            INIT_STATE,
-            WAITFORWITHDRAWREQANDRESP_STATE
+        public enum PrtStates {
+            Init,
+            WaitForWithDrawReqAndResp
         }
 
         public BankBalanceIsAlwaysCorrect() {
             super();
-            addState(prt.State.keyedOn(States.INIT_STATE)
+            addState(prt.State.keyedOn(PrtStates.Init)
                     .isInitialState(true)
-                    .withEvent(PEvents.eSpec_BankBalanceIsAlwaysCorrect_Init.class, p -> { Anon(p); gotoState(States.WAITFORWITHDRAWREQANDRESP_STATE); })
+                    .withEvent(PEvents.eSpec_BankBalanceIsAlwaysCorrect_Init.class, p -> { Anon(p); gotoState(PrtStates.WaitForWithDrawReqAndResp); })
                     .build());
-            addState(prt.State.keyedOn(States.WAITFORWITHDRAWREQANDRESP_STATE)
-                    .isInitialState(false)
+            addState(prt.State.keyedOn(PrtStates.WaitForWithDrawReqAndResp)
                     .withEvent(PEvents.eWithDrawReq.class, this::Anon_1)
                     .withEvent(PEvents.eWithDrawResp.class, this::Anon_2)
                     .build());
@@ -45,80 +42,80 @@ public class PMachines {
             return java.util.Arrays.asList(PEvents.eSpec_BankBalanceIsAlwaysCorrect_Init.class, PEvents.eWithDrawReq.class, PEvents.eWithDrawResp.class);
         }
 
-        private void Anon(HashMap<Integer,Integer> balance) {
-            bankBalance = (HashMap<Integer,Integer>)prt.values.Clone.deepClone(balance);
+        private void Anon(HashMap<Long, Long> balance) {
+            bankBalance = (HashMap<Long, Long>)prt.values.Clone.deepClone(balance);
         }
         private void Anon_1(PTypes.PTuple_src_accnt_amnt_rId req) {
-            int TMP_tmp0 = 0;
+            long TMP_tmp0 = 0L;
             boolean TMP_tmp1 = false;
-            int TMP_tmp2 = 0;
-            ArrayList<Integer> TMP_tmp3 = new ArrayList<Integer>();
+            long TMP_tmp2 = 0L;
+            ArrayList<Long> TMP_tmp3 = new ArrayList<Long>();
             String TMP_tmp4 = "";
-            int TMP_tmp5 = 0;
+            long TMP_tmp5 = 0L;
 
             TMP_tmp0 = req.accountId;
             TMP_tmp1 = bankBalance.containsKey(TMP_tmp0);
             TMP_tmp2 = req.accountId;
-            TMP_tmp3 = new ArrayList<Integer>(bankBalance.keySet());
+            TMP_tmp3 = new ArrayList<Long>(bankBalance.keySet());
             TMP_tmp4 = java.text.MessageFormat.format("Unknown accountId {0} in the withdraw request. Valid accountIds = {1}", TMP_tmp2, TMP_tmp3);
             tryAssert(TMP_tmp1, TMP_tmp4);
             TMP_tmp5 = req.rId;
             pendingWithDraws.put(TMP_tmp5,req.deepClone());
         }
         private void Anon_2(PTypes.PTuple_stts_accnt_blnc_rId resp) {
-            int TMP_tmp0_1 = 0;
+            long TMP_tmp0_1 = 0L;
             boolean TMP_tmp1_1 = false;
-            int TMP_tmp2_1 = 0;
+            long TMP_tmp2_1 = 0L;
             String TMP_tmp3_1 = "";
-            int TMP_tmp4_1 = 0;
+            long TMP_tmp4_1 = 0L;
             boolean TMP_tmp5_1 = false;
-            int TMP_tmp6 = 0;
+            long TMP_tmp6 = 0L;
             String TMP_tmp7 = "";
-            int TMP_tmp8 = 0;
+            long TMP_tmp8 = 0L;
             boolean TMP_tmp9 = false;
             String TMP_tmp10 = "";
             PTypes.tWithDrawRespStatus TMP_tmp11 = PTypes.tWithDrawRespStatus.WITHDRAW_SUCCESS;
             boolean TMP_tmp12 = false;
-            int TMP_tmp13 = 0;
-            int TMP_tmp14 = 0;
-            int TMP_tmp15 = 0;
-            int TMP_tmp16 = 0;
+            long TMP_tmp13 = 0L;
+            long TMP_tmp14 = 0L;
+            long TMP_tmp15 = 0L;
+            long TMP_tmp16 = 0L;
             PTypes.PTuple_src_accnt_amnt_rId TMP_tmp17 = new PTypes.PTuple_src_accnt_amnt_rId();
-            int TMP_tmp18 = 0;
-            int TMP_tmp19 = 0;
+            long TMP_tmp18 = 0L;
+            long TMP_tmp19 = 0L;
             boolean TMP_tmp20 = false;
-            int TMP_tmp21 = 0;
-            int TMP_tmp22 = 0;
-            int TMP_tmp23 = 0;
-            int TMP_tmp24 = 0;
-            int TMP_tmp25 = 0;
+            long TMP_tmp21 = 0L;
+            long TMP_tmp22 = 0L;
+            long TMP_tmp23 = 0L;
+            long TMP_tmp24 = 0L;
+            long TMP_tmp25 = 0L;
             PTypes.PTuple_src_accnt_amnt_rId TMP_tmp26 = new PTypes.PTuple_src_accnt_amnt_rId();
-            int TMP_tmp27 = 0;
-            int TMP_tmp28 = 0;
+            long TMP_tmp27 = 0L;
+            long TMP_tmp28 = 0L;
             String TMP_tmp29 = "";
-            int TMP_tmp30 = 0;
-            int TMP_tmp31 = 0;
-            int TMP_tmp32 = 0;
-            int TMP_tmp33 = 0;
-            int TMP_tmp34 = 0;
-            int TMP_tmp35 = 0;
+            long TMP_tmp30 = 0L;
+            long TMP_tmp31 = 0L;
+            long TMP_tmp32 = 0L;
+            long TMP_tmp33 = 0L;
+            long TMP_tmp34 = 0L;
+            long TMP_tmp35 = 0L;
             PTypes.PTuple_src_accnt_amnt_rId TMP_tmp36 = new PTypes.PTuple_src_accnt_amnt_rId();
-            int TMP_tmp37 = 0;
-            int TMP_tmp38 = 0;
+            long TMP_tmp37 = 0L;
+            long TMP_tmp38 = 0L;
             boolean TMP_tmp39 = false;
-            int TMP_tmp40 = 0;
+            long TMP_tmp40 = 0L;
             PTypes.PTuple_src_accnt_amnt_rId TMP_tmp41 = new PTypes.PTuple_src_accnt_amnt_rId();
-            int TMP_tmp42 = 0;
-            int TMP_tmp43 = 0;
-            int TMP_tmp44 = 0;
+            long TMP_tmp42 = 0L;
+            long TMP_tmp43 = 0L;
+            long TMP_tmp44 = 0L;
             String TMP_tmp45 = "";
-            int TMP_tmp46 = 0;
-            int TMP_tmp47 = 0;
-            int TMP_tmp48 = 0;
+            long TMP_tmp46 = 0L;
+            long TMP_tmp47 = 0L;
+            long TMP_tmp48 = 0L;
             boolean TMP_tmp49 = false;
-            int TMP_tmp50 = 0;
-            int TMP_tmp51 = 0;
-            int TMP_tmp52 = 0;
+            long TMP_tmp50 = 0L;
+            long TMP_tmp51 = 0L;
+            long TMP_tmp52 = 0L;
             String TMP_tmp53 = "";
 
             TMP_tmp0_1 = resp.accountId;
@@ -132,7 +129,7 @@ public class PMachines {
             TMP_tmp7 = java.text.MessageFormat.format("Unknown rId {0} in the withdraw response!", TMP_tmp6);
             tryAssert(TMP_tmp5_1, TMP_tmp7);
             TMP_tmp8 = resp.balance;
-            TMP_tmp9 = TMP_tmp8 >= 10;
+            TMP_tmp9 = TMP_tmp8 >= 10L;
             TMP_tmp10 = "Bank balance in all accounts must always be greater than or equal to 10!!";
             tryAssert(TMP_tmp9, TMP_tmp10);
             TMP_tmp11 = resp.status;
@@ -169,7 +166,7 @@ public class PMachines {
                 TMP_tmp36 = pendingWithDraws.get(TMP_tmp35);
                 TMP_tmp37 = TMP_tmp36.amount;
                 TMP_tmp38 = TMP_tmp34 - TMP_tmp37;
-                TMP_tmp39 = TMP_tmp38 < 10;
+                TMP_tmp39 = TMP_tmp38 < 10L;
                 TMP_tmp40 = resp.rId;
                 TMP_tmp41 = pendingWithDraws.get(TMP_tmp40);
                 TMP_tmp42 = TMP_tmp41.amount;
@@ -191,25 +188,24 @@ public class PMachines {
 
     } // BankBalanceIsAlwaysCorrect monitor definition
     public static class GuaranteedWithDrawProgress extends prt.Monitor {
-        private LinkedHashSet<Integer> pendingWDReqs = new LinkedHashSet<Integer>();
-        public LinkedHashSet<Integer> get_pendingWDReqs() { return this.pendingWDReqs; };
+        private LinkedHashSet<Long> pendingWDReqs = new LinkedHashSet<Long>();
+        public LinkedHashSet<Long> get_pendingWDReqs() { return this.pendingWDReqs; };
 
 
-        private enum States {
-            NOPENDINGREQUESTS_STATE,
-            PENDINGREQS_STATE
+        public enum PrtStates {
+            NopendingRequests,
+            PendingReqs
         }
 
         public GuaranteedWithDrawProgress() {
             super();
-            addState(prt.State.keyedOn(States.NOPENDINGREQUESTS_STATE)
+            addState(prt.State.keyedOn(PrtStates.NopendingRequests)
                     .isInitialState(true)
-                    .withEvent(PEvents.eWithDrawReq.class, p -> { Anon_3(p); gotoState(States.PENDINGREQS_STATE); })
+                    .withEvent(PEvents.eWithDrawReq.class, p -> { Anon_3(p); gotoState(PrtStates.PendingReqs); })
                     .build());
-            addState(prt.State.keyedOn(States.PENDINGREQS_STATE)
-                    .isInitialState(false)
+            addState(prt.State.keyedOn(PrtStates.PendingReqs)
                     .withEvent(PEvents.eWithDrawResp.class, this::Anon_4)
-                    .withEvent(PEvents.eWithDrawReq.class, p -> { Anon_5(p); gotoState(States.PENDINGREQS_STATE); })
+                    .withEvent(PEvents.eWithDrawReq.class, p -> { Anon_5(p); gotoState(PrtStates.PendingReqs); })
                     .build());
         } // constructor
 
@@ -218,38 +214,38 @@ public class PMachines {
         }
 
         private void Anon_3(PTypes.PTuple_src_accnt_amnt_rId req_1) {
-            int TMP_tmp0_2 = 0;
+            long TMP_tmp0_2 = 0L;
 
             TMP_tmp0_2 = req_1.rId;
             pendingWDReqs.add(TMP_tmp0_2);
         }
-        private void Anon_4(PTypes.PTuple_stts_accnt_blnc_rId resp_1)throws TransitionException {
-            int TMP_tmp0_3 = 0;
+        private void Anon_4(PTypes.PTuple_stts_accnt_blnc_rId resp_1) throws prt.exceptions.TransitionException {
+            long TMP_tmp0_3 = 0L;
             boolean TMP_tmp1_2 = false;
-            int TMP_tmp2_2 = 0;
-            LinkedHashSet<Integer> TMP_tmp3_2 = new LinkedHashSet<Integer>();
+            long TMP_tmp2_2 = 0L;
+            LinkedHashSet<Long> TMP_tmp3_2 = new LinkedHashSet<Long>();
             String TMP_tmp4_2 = "";
-            int TMP_tmp5_2 = 0;
-            int TMP_tmp6_1 = 0;
+            long TMP_tmp5_2 = 0L;
+            long TMP_tmp6_1 = 0L;
             boolean TMP_tmp7_1 = false;
 
             TMP_tmp0_3 = resp_1.rId;
             TMP_tmp1_2 = pendingWDReqs.contains(TMP_tmp0_3);
             TMP_tmp2_2 = resp_1.rId;
-            TMP_tmp3_2 = (LinkedHashSet<Integer>)prt.values.Clone.deepClone(pendingWDReqs);
+            TMP_tmp3_2 = (LinkedHashSet<Long>)prt.values.Clone.deepClone(pendingWDReqs);
             TMP_tmp4_2 = java.text.MessageFormat.format("unexpected rId: {0} received, expected one of {1}", TMP_tmp2_2, TMP_tmp3_2);
             tryAssert(TMP_tmp1_2, TMP_tmp4_2);
             TMP_tmp5_2 = resp_1.rId;
             pendingWDReqs.remove(TMP_tmp5_2);
             TMP_tmp6_1 = pendingWDReqs.size();
-            TMP_tmp7_1 = TMP_tmp6_1 == 0;
+            TMP_tmp7_1 = TMP_tmp6_1 == 0L;
             if (TMP_tmp7_1) {
-                gotoState(States.NOPENDINGREQUESTS_STATE);
+                gotoState(PrtStates.NopendingRequests);
                 return;
             }
         }
         private void Anon_5(PTypes.PTuple_src_accnt_amnt_rId req_2) {
-            int TMP_tmp0_4 = 0;
+            long TMP_tmp0_4 = 0L;
 
             TMP_tmp0_4 = req_2.rId;
             pendingWDReqs.add(TMP_tmp0_4);

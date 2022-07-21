@@ -19,8 +19,8 @@ import static testmonitors.clientserver.PTypes.*;
 
 public class ClientServerTest {
     private BankBalanceIsAlwaysCorrect initedBankBalanceIsAlwaysCorrect() {
-        HashMap<Integer, Integer> initialBalances =
-                new HashMap<>(Map.of(100, 42, 101, 10));
+        HashMap<Long, Long> initialBalances =
+                new HashMap<>(Map.of(100L, 42L, 101L, 10L));
 
         BankBalanceIsAlwaysCorrect m = new BankBalanceIsAlwaysCorrect();
         m.ready();

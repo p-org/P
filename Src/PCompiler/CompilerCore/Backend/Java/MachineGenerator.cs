@@ -46,8 +46,6 @@ namespace Plang.Compiler.Backend.Java {
 
             WriteLine($"public class {Constants.MachineNamespaceName} {{");
 
-            //TODO: Do specs need interfaces?
-
             foreach (var m in GlobalScope.Machines)
             {
                 _currentMachine = m;
@@ -81,6 +79,10 @@ namespace Plang.Compiler.Backend.Java {
             string cname = Names.GetNameForDecl(_currentMachine);
 
             WriteLine($"public static class {cname} extends prt.Monitor {{");
+
+            WriteLine();
+            WriteSupplierCDef(cname);
+            WriteLine();
 
             // monitor fields
             foreach (var field in _currentMachine.Fields)
@@ -119,6 +121,17 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine();
 
             WriteLine($"}} // {cname} monitor definition");
+        }
+
+        private void WriteSupplierCDef(string cname)
+        {
+            WriteLine($"public static class Supplier implements java.util.function.Supplier<{cname}> {{");
+            WriteLine($"public {cname} get() {{");
+            WriteLine($"{cname} ret = new {cname}();");
+            WriteLine("ret.ready();"); // TODO: at this point, we may as well ready() within the monitor's constructor?
+            WriteLine("return ret;");
+            WriteLine("}");
+            WriteLine("}");
         }
 
 

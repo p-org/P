@@ -2,6 +2,7 @@ package testmonitors.clientserver;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -167,5 +168,13 @@ public class ClientServerTest {
         ClientServerTraceParser.eventsFrom(logs.lines()).forEach(e -> m.process(e.getpEvent()));
 
          */
+    }
+
+    @Test
+    @DisplayName("Can extract Monitors from providers")
+    public void testMonitorProvider() {
+        Supplier<BankBalanceIsAlwaysCorrect> s = new BankBalanceIsAlwaysCorrect.Supplier();
+        Monitor m = s.get();
+        assertEquals(m.getCurrentState(), BankBalanceIsAlwaysCorrect.PrtStates.Init);
     }
 }

@@ -2,7 +2,9 @@ package testmonitors.clientserver;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
+import ClientServerTraceParser.ClientServerTraceParser;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -143,29 +145,37 @@ public class ClientServerTest {
     @Test
     @DisplayName("can drive a ClientServer monitor from parsed events")
     public void testParseEventsAndMonitorExecution() {
-        /*
         //  pmc POutput/netcoreapp3.1/ClientServer.dll \
         //      -m PImplementation.tcSingleClient.Execute \
         //      -i 100 -v | grep SendLog | head
-        String logs = """
-<SendLog> 'Client(4)' in state 'WithdrawMoney' sent event 'eWithDrawReq with payload (<source:Client(4), accountId:0, amount:29, rId:1, >)' to 'BankServer(3)'.
-<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' sent event 'eWithDrawResp with payload (<status:0, accountId:0, balance:11, rId:1, >)' to 'Client(4)'.
-<SendLog> 'Client(4)' in state 'WithdrawMoney' sent event 'eWithDrawReq with payload (<source:Client(4), accountId:0, amount:6, rId:2, >)' to 'BankServer(3)'.
-<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' sent event 'eWithDrawResp with payload (<status:1, accountId:0, balance:11, rId:2, >)' to 'Client(4)'.
-<SendLog> 'Client(4)' in state 'WithdrawMoney' sent event 'eWithDrawReq with payload (<source:Client(4), accountId:0, amount:7, rId:3, >)' to 'BankServer(3)'.
-<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' sent event 'eWithDrawResp with payload (<status:1, accountId:0, balance:11, rId:3, >)' to 'Client(4)'.
-<SendLog> 'Client(4)' in state 'WithdrawMoney' sent event 'eWithDrawReq with payload (<source:Client(4), accountId:0, amount:4, rId:4, >)' to 'BankServer(3)'.
-<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' sent event 'eWithDrawResp with payload (<status:1, accountId:0, balance:11, rId:4, >)' to 'Client(4)'.
-<SendLog> 'Client(4)' in state 'WithdrawMoney' sent event 'eWithDrawReq with payload (<source:Client(4), accountId:0, amount:3, rId:5, >)' to 'BankServer(3)'.
-<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' sent event 'eWithDrawResp with payload (<status:1, accountId:0, balance:11, rId:5, >)' to 'Client(4)'.""";
-        HashMap<Integer, Integer> initialBalances = new HashMap<>(Map.of(0, 40));
+        String logs = String.join("\n", new String[] {
+"<SendLog> 'Client(4)' in state 'WithdrawMoney' sent event 'eWithDrawReq with payload (<source:Client(4), accountId:0, amount:29, rId:1, >)' to 'BankServer(3)'.",
+"<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' sent event 'eWithDrawResp with payload (<status:0, accountId:0, balance:11, rId:1, >)' to 'Client(4)'.",
+"<SendLog> 'Client(4)' in state 'WithdrawMoney' sent event 'eWithDrawReq with payload (<source:Client(4), accountId:0, amount:6, rId:2, >)' to 'BankServer(3)'.",
+"<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' sent event 'eWithDrawResp with payload (<status:1, accountId:0, balance:11, rId:2, >)' to 'Client(4)'.",
+"<SendLog> 'Client(4)' in state 'WithdrawMoney' sent event 'eWithDrawReq with payload (<source:Client(4), accountId:0, amount:7, rId:3, >)' to 'BankServer(3)'.",
+"<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' sent event 'eWithDrawResp with payload (<status:1, accountId:0, balance:11, rId:3, >)' to 'Client(4)'.",
+"<SendLog> 'Client(4)' in state 'WithdrawMoney' sent event 'eWithDrawReq with payload (<source:Client(4), accountId:0, amount:4, rId:4, >)' to 'BankServer(3)'.",
+"<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' sent event 'eWithDrawResp with payload (<status:1, accountId:0, balance:11, rId:4, >)' to 'Client(4)'.",
+"<SendLog> 'Client(4)' in state 'WithdrawMoney' sent event 'eWithDrawReq with payload (<source:Client(4), accountId:0, amount:3, rId:5, >)' to 'BankServer(3)'.",
+"<SendLog> 'BankServer(3)' in state 'WaitForWithdrawRequests' sent event 'eWithDrawResp with payload (<status:1, accountId:0, balance:11, rId:5, >)' to 'Client(4)'."
+        });
+
+        HashMap<Long, Long> initialBalances = new HashMap<>(Map.of(0L, 40L));
 
         BankBalanceIsAlwaysCorrect m = new BankBalanceIsAlwaysCorrect();
         m.ready();
-        m.process(new eSpec_BankBalanceIsAlwaysCorrect_Init(initialBalances));
+        m.accept(new eSpec_BankBalanceIsAlwaysCorrect_Init(initialBalances));
 
-        ClientServerTraceParser.eventsFrom(logs.lines()).forEach(e -> m.process(e.getpEvent()));
+        ClientServerTraceParser.eventsFrom(logs.lines()).forEach(e -> m.accept(e.getpEvent()));
 
-         */
+    }
+
+    @Test
+    @DisplayName("Can extract Monitors from providers")
+    public void testMonitorProvider() {
+        Supplier<BankBalanceIsAlwaysCorrect> s = new BankBalanceIsAlwaysCorrect.Supplier();
+        Monitor m = s.get();
+        assertEquals(m.getCurrentState(), BankBalanceIsAlwaysCorrect.PrtStates.Init);
     }
 }

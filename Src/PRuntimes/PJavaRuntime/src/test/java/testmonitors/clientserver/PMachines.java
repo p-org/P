@@ -1,7 +1,7 @@
 package testmonitors.clientserver;
 
 /***************************************************************************
- * This file was auto-generated on Wednesday, 20 July 2022 at 14:24:31.
+ * This file was auto-generated on Friday, 22 July 2022 at 08:49:45.
  * Please do not edit manually!
  **************************************************************************/
 
@@ -14,6 +14,15 @@ public class PMachines {
     // PMachine Client elided
     // PMachine AbstractBankServer elided
     public static class BankBalanceIsAlwaysCorrect extends prt.Monitor {
+
+        public static class Supplier implements java.util.function.Supplier<BankBalanceIsAlwaysCorrect> {
+            public BankBalanceIsAlwaysCorrect get() {
+                BankBalanceIsAlwaysCorrect ret = new BankBalanceIsAlwaysCorrect();
+                ret.ready();
+                return ret;
+            }
+        }
+
         private HashMap<Long, Long> bankBalance = new HashMap<Long, Long>();
         public HashMap<Long, Long> get_bankBalance() { return this.bankBalance; };
 
@@ -188,6 +197,15 @@ public class PMachines {
 
     } // BankBalanceIsAlwaysCorrect monitor definition
     public static class GuaranteedWithDrawProgress extends prt.Monitor {
+
+        public static class Supplier implements java.util.function.Supplier<GuaranteedWithDrawProgress> {
+            public GuaranteedWithDrawProgress get() {
+                GuaranteedWithDrawProgress ret = new GuaranteedWithDrawProgress();
+                ret.ready();
+                return ret;
+            }
+        }
+
         private LinkedHashSet<Long> pendingWDReqs = new LinkedHashSet<Long>();
         public LinkedHashSet<Long> get_pendingWDReqs() { return this.pendingWDReqs; };
 

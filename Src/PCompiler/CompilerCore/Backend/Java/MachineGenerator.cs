@@ -65,7 +65,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteForeignType(ForeignType ft)
         {
-            WriteLine($"import PForeign.globals.{ft.CanonicalRepresentation};");
+            WriteLine($"import {Constants.FFITypesPackage}.{ft.CanonicalRepresentation};");
         }
 
 
@@ -594,12 +594,20 @@ namespace Plang.Compiler.Backend.Java {
                 throw new NotImplementedException("StaticFunCallExpr is not implemented.");
             }
 
-            string ffiBridge = (f.IsForeign && !isStatic)
-                ? Names.FFIBridgeForMachine(_currentMachine.Name) + "."
-                : "";
             string fname = Names.GetNameForDecl(f);
+            if (f.IsForeign)
+            {
+                string ffiBridge = Names.FFIBridgeForMachine(
+                    isStatic
+                    ? Constants.FFIGlobalScopeCname
+                    : _currentMachine.Name);
+                Write($"{ffiBridge}.{fname}(");
+            }
+            else
+            {
+                Write($"{fname}(");
+            }
 
-            Write($"{ffiBridge}{fname}(");
             foreach (var (sep, expr) in args.WithPrefixSep(", "))
             {
                 Write(sep);

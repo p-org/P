@@ -66,7 +66,9 @@ in the body of each function definition as necessary for your project's business
         internal static readonly string FFIStubFileName = "FFIStubs.txt";
 
         internal static readonly string FFIPackage = "PForeign";
-        internal static readonly string GlobalFFIPackage = $"{FFIPackage}.globals";
+        internal static readonly string FFITypesPackage = $"{FFIPackage}.types";
+        internal static readonly string FFIGlobalScopeCname = $"P_TopScope";
+
 
         // Something that is clearly not valid Java.
         private static readonly string FFICommentToken = "%";

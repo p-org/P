@@ -5,6 +5,29 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java
 {
+    /// <summary>
+    /// Generates Java-language stubs for foreign types and foreign functions. The layout is as follows:
+    ///
+    /// Each Machine scope is contained in its own class, named after the machine itself, in the
+    /// `PForeign` package.  This is to hew as closely as possible to the C# code generator that weaves
+    /// in FFI definitions into Machine class itself (defined as a partial class).  We don't have that
+    /// functionality here, so `PGenerated.SomeMachine`'s FFI stuff will be found in `PForeign.SomeMachine`.
+    /// The code generator knows how to deal with this.
+    ///
+    /// Top-level definitions are placed in their own special class, defined in Constants.FFIGLobalScopeCname.
+    /// Foreign type stubs are created as classes for each type, named after the type, in the `PForeign.types`
+    /// subpackage.
+    ///
+    /// This code generator only emits the above stubs into a single file, `PGenerated/FFIStubs.txt`.  The
+    /// developer has to, currently, manually organise them by package under `PForeign/`, like below:
+    ///
+    /// nathta@bcd0741cf59d pprojtest % tree PForeign
+    /// PForeign
+    /// ├── Monitor.java
+    /// ├── P_TopScope.java
+    /// └── types
+    ///     └── UnboundedInt.java
+    /// </summary>
     internal class FFIStubGenerator : JavaSourceGenerator
     {
 
@@ -20,6 +43,7 @@ namespace Plang.Compiler.Backend.Java
             {
                 WriteLine(line);
             }
+
             WriteLine(Constants.FFICommentDivider);
 
             WriteLine();
@@ -28,21 +52,21 @@ namespace Plang.Compiler.Backend.Java
 
         private IEnumerable<ForeignType> resolveForeignType(Variable v)
         {
-                PLanguageType type = v.Type;
+            PLanguageType type = v.Type;
 
-                // In the case where the field type is a typedef, follow
-                // the typename resolution until we've found the actual type.
-                while (type is TypeDefType tdef)
-                {
-                    type = tdef.TypeDefDecl.Type;
-                }
+            // In the case where the field type is a typedef, follow
+            // the typename resolution until we've found the actual type.
+            while (type is TypeDefType tdef)
+            {
+                type = tdef.TypeDefDecl.Type;
+            }
 
-                if (type is ForeignType f)
-                {
-                    return new[] { f };
-                }
+            if (type is ForeignType f)
+            {
+                return new[] { f };
+            }
 
-                return new ForeignType[] {} ;
+            return new ForeignType[] { };
         }
 
         /// <summary>
@@ -52,8 +76,21 @@ namespace Plang.Compiler.Backend.Java
         private IEnumerable<ForeignType> ExtractForeignTypesFromMonitors()
         {
             return GlobalScope.Machines.Where(m => m.IsSpec)
-                    .SelectMany(ExtractForeignTypesFrom)
-                    .ToHashSet();
+                .SelectMany(ExtractForeignTypesFrom)
+                .ToHashSet();
+        }
+
+        /// <summary>
+        /// Extracts all the foreign types used by a given Function.
+        /// </summary>
+        ///
+        /// <param name="f"></param>
+        /// <returns></returns>
+        private IEnumerable<ForeignType> ExtractForeignTypesFrom(Function f)
+        {
+            IEnumerable<ForeignType> foreignParams = f.Signature.Parameters.SelectMany(resolveForeignType);
+            IEnumerable<ForeignType> foreignLocals = f.LocalVariables.SelectMany(resolveForeignType);
+            return foreignLocals.Concat(foreignParams).ToHashSet();
         }
 
         /// <summary>
@@ -63,15 +100,8 @@ namespace Plang.Compiler.Backend.Java
         /// <returns></returns>
         private IEnumerable<ForeignType> ExtractForeignTypesFrom(Machine m)
         {
-            IEnumerable<ForeignType> foreignFields =
-                    m.Fields.Where(f => f.Type is ForeignType _)
-                    .SelectMany(resolveForeignType);
-
-            IEnumerable<ForeignType> foreignFnVars =
-                    m.Methods
-                    .SelectMany(f => f.LocalVariables)
-                    .SelectMany(resolveForeignType);
-
+            IEnumerable<ForeignType> foreignFields = m.Fields.SelectMany(resolveForeignType);
+            IEnumerable<ForeignType> foreignFnVars = m.Methods.SelectMany(ExtractForeignTypesFrom);
             return foreignFields.Concat(foreignFnVars).ToHashSet();
         }
 
@@ -97,20 +127,24 @@ namespace Plang.Compiler.Backend.Java
                 WriteForeignTypeStub(t);
             }
 
+            WriteTopLevelForeignFunctions();
+
             foreach (Machine m in GlobalScope.Machines.Where(m => m.IsSpec))
             {
                 WriteForeignFunctions(m);
             }
         }
 
-        private void WriteFFIGlobalHeader(string classname)
+        private void WriteFFITypesHeader(string classname)
         {
-            WriteLine(Constants.AsFFIComment($"Please place and complete the following class in {Constants.FFIPackage}/globals/{classname}.java :"));
+            WriteLine(Constants.AsFFIComment(
+                $"Please place and complete the following class in {Constants.FFIPackage}/types/{classname}.java :"));
         }
 
         private void WriteFFIHeader(string monitorName)
         {
-            WriteLine(Constants.AsFFIComment($"Please place and complete the following class in {Constants.FFIPackage}/{monitorName}.java :"));
+            WriteLine(Constants.AsFFIComment(
+                $"Please place and complete the following class in {Constants.FFIPackage}/{monitorName}.java :"));
         }
 
         private void WriteForeignTypeStub(ForeignType t)
@@ -118,10 +152,10 @@ namespace Plang.Compiler.Backend.Java
             WriteLine(Constants.FFICommentDivider);
             WriteLine();
 
-            WriteFFIGlobalHeader(t.CanonicalRepresentation);
+            WriteFFITypesHeader(t.CanonicalRepresentation);
             WriteLine();
 
-            WriteLine($"package {Constants.GlobalFFIPackage};");
+            WriteLine($"package {Constants.FFITypesPackage};");
             WriteLine();
 
             string cname = t.CanonicalRepresentation;
@@ -131,21 +165,82 @@ namespace Plang.Compiler.Backend.Java
             WriteLine($"public {cname}() {{ }}");
             WriteLine();
 
-            // PValue interfaces.
+            // Override PValue interfaces.
+            WriteLine("@Override");
             WriteLine($"public {cname} deepClone() {{");
             WriteLine($"throw new RuntimeException(\"{cname}#deepClone() not implemented yet!\"); // TODO");
             WriteLine("}");
             WriteLine();
 
+            WriteLine("@Override");
             WriteLine($"public boolean deepEquals({cname} other) {{");
             WriteLine($"throw new RuntimeException(\"{cname}#deepEquals() not implemented yet!\"); // TODO");
             WriteLine("}");
             WriteLine();
 
+            // Override default j.l.Object methods.
+            WriteLine("@Override");
+            WriteLine("public int hashCode() {");
+            WriteLine($"throw new RuntimeException(\"{cname}#hashCode() not implemented yet!\"); // TODO");
+            WriteLine("}");
+            WriteLine();
+
+            WriteLine("@Override");
+            WriteLine("public boolean equals(Object o) {");
+            WriteLine("if (this == o) return true;");
+            WriteLine("if (o == null || getClass() != o.getClass()) return false;");
+            WriteLine($"{cname} that = ({cname}) o;");
+            WriteLine("return deepEquals(that);");
+            WriteLine("}");
+
+
             WriteLine("}");
             WriteLine();
         }
 
+        /// <summary>
+        /// Emits all foreign function stubs defined at the top-level program scope (i.e. not within
+        /// a Machine definition).
+        /// </summary>
+        private void WriteTopLevelForeignFunctions()
+        {
+            WriteLine(Constants.FFICommentDivider);
+
+            WriteLine();
+            WriteFFIHeader(Constants.FFIGlobalScopeCname);
+            WriteLine();
+
+            WriteLine($"package {Constants.FFIPackage};");
+            WriteLine();
+
+            // The foreign types we need to import are the ones occuring in the signature of
+            // a top-level foreign function.
+            IEnumerable<Function> ffs = GlobalScope.Functions.Where(f => f.IsForeign);
+            foreach (ForeignType t in ffs.SelectMany(ExtractForeignTypesFrom))
+            {
+                TypeManager.JType toImport = Types.JavaTypeFor(t);
+                WriteLine($"import {Constants.FFITypesPackage}.{toImport.TypeName};");
+            }
+
+            WriteLine();
+
+            // Unlike Machine-scoped functions, top-level scoped ones need to go in a special
+            // class, `PForeign.Globals`.
+            WriteLine($"public class {Constants.FFIGlobalScopeCname} {{");
+            foreach (Function f in GlobalScope.Functions.Where(f => f.IsForeign))
+            {
+                WriteForeignFunctionStub(f);
+            }
+
+            WriteLine("}");
+            WriteLine();
+        }
+
+        /// <summary>
+        /// Writes all foreign function stubs for a particular machine.  If no foreign
+        /// functions are defined at this scope, this is a no-op.
+        /// </summary>
+        /// <param name="m">The machine.</param>
         private void WriteForeignFunctions(Machine m)
         {
             IEnumerable<Function> ffs = ExtractForeignFunctionsFrom(m);
@@ -163,37 +258,55 @@ namespace Plang.Compiler.Backend.Java
             WriteLine($"package {Constants.FFIPackage};");
             WriteLine();
 
-            // Any foreign types that this function depends on should be imported too.
-            foreach (ForeignType t in ExtractForeignTypesFrom(m))
+            // Import dependencies for a FFI bridge for a monitor are whatever foreign types are used
+            // by foreign functions in this monitor.
+            foreach (ForeignType t in ffs.SelectMany(ExtractForeignTypesFrom))
             {
                 TypeManager.JType toImport = Types.JavaTypeFor(t);
-                WriteLine($"import java.util.*;"); // To avoid having to fully-qualify e.g. j.u.HashMap, etc.
-                WriteLine($"import {Constants.GlobalFFIPackage}.{toImport.TypeName};");
-                WriteLine();
+                WriteLine($"import {Constants.FFITypesPackage}.{toImport.TypeName};");
             }
 
+            WriteLine();
+
             // Class definition: By convention, this "para-class" has the same name as
-            // the P machine that imports it, to mimic the C#-style partial class mixin
+            // the P machine it is defined within, to mimic the C#-style partial class mixin
             // functionalty that we are not afforded in Java, unfortunately.
             WriteLine($"public class {m.Name} {{");
             foreach (Function f in ffs)
             {
-                TypeManager.JType ret = Types.JavaTypeFor(f.Signature.ReturnType);
+                WriteForeignFunctionStub(f);
+            }
 
-                WriteLine($"public static {ret.TypeName} {f.Name}(");
+            WriteLine("}");
+            WriteLine();
+        }
 
-                foreach (var (param, sep) in f.Signature.Parameters.WithPostfixSep(","))
-                {
-                    string pname = param.Name;
-                    TypeManager.JType ptype = Types.JavaTypeFor(param.Type);
+        void WriteForeignFunctionStub(Function f)
+        {
+            TypeManager.JType ret = Types.JavaTypeFor(f.Signature.ReturnType);
 
-                    WriteLine($"{ptype.TypeName} {pname}{sep}");
-                }
-
-                WriteLine(") {");
-                WriteLine($"return {ret.DefaultValue}; // TODO");
-                WriteLine("}");
+            Write($"public static {ret.TypeName} {f.Name}(");
+            if (f.Signature.Parameters.Any())
+            {
                 WriteLine();
+            }
+
+            foreach (var (param, sep) in f.Signature.Parameters.WithPostfixSep(","))
+            {
+                string pname = param.Name;
+                TypeManager.JType ptype = Types.JavaTypeFor(param.Type);
+
+                WriteLine($"{ptype.TypeName} {pname}{sep}");
+            }
+
+            WriteLine(") {");
+            if (ret is TypeManager.JType.JVoid _)
+            {
+                WriteLine($"// TODO");
+            }
+            else
+            {
+                WriteLine($"return {ret.DefaultValue}; // TODO");
             }
             WriteLine("}");
             WriteLine();

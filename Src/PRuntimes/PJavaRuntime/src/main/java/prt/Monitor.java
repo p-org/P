@@ -75,7 +75,7 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
      * @param cond The predicate to assert on.
      * @param msg The message to deliver if the predicate is false.
      */
-    protected void tryAssert(boolean cond, String msg)
+    public void tryAssert(boolean cond, String msg)
     {
         if (!cond) throw new PAssertionFailureException(msg);
     }
@@ -86,7 +86,7 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
      * @throws RaiseEventException to context-switch back into the runtime.
      */
     @SuppressWarnings(value = "unchecked")
-    protected <P> void tryRaiseEvent(PEvent<P> ev) throws RaiseEventException
+    public <P> void tryRaiseEvent(PEvent<P> ev) throws RaiseEventException
     {
         throw new RaiseEventException((PEvent<Object>) ev);
     }
@@ -98,7 +98,7 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
      *
      * @throws RuntimeException if `k` is not a state in the state machine.
      */
-    protected void gotoState(StateKey k) throws TransitionException {
+    public void gotoState(StateKey k) throws TransitionException {
         Objects.requireNonNull(k);
 
         if (!states.containsKey(k)) {
@@ -115,7 +115,7 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
      *
      * @throws RuntimeException if `k` is not a state in the state machine.
      */
-    protected <P> void gotoState(StateKey k, P payload) throws TransitionException {
+    public <P> void gotoState(StateKey k, P payload) throws TransitionException {
         Objects.requireNonNull(k);
         Objects.requireNonNull(payload);
 

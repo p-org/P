@@ -1,6 +1,6 @@
 package prt.values;
 
-public interface PValue<P extends PValue<?>> {
+public interface PValue<P extends PValue<P>> {
     /**
      * Performs a deep copy of a P tuple by
      * (The performance difference between a hand-rolled deep copy and using serializers

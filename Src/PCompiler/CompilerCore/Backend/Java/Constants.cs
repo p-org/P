@@ -30,6 +30,7 @@ namespace Plang.Compiler.Backend.Java
             return classes.Select(pkg => $"import {pkg};");
         }
 
+        public static readonly string PGeneratedNamespaceName = "PGenerated";
 
         public static readonly string MachineNamespaceName = "PMachines";
         public static readonly string MachineDefnFileName = $"{MachineNamespaceName}.java";

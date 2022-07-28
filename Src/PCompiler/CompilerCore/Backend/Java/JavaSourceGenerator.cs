@@ -31,7 +31,7 @@ namespace Plang.Compiler.Backend.Java
 
         protected virtual void WriteFileHeader()
         {
-            WriteLine("package PGenerated;");
+            WriteLine($"package {Constants.PGeneratedNamespaceName};");
 
             WriteLine(Constants.DoNotEditWarning);
             WriteLine();
@@ -84,13 +84,13 @@ namespace Plang.Compiler.Backend.Java
                 case TypeManager.JType.JBool _:
                 case TypeManager.JType.JInt _:
                 case TypeManager.JType.JFloat _:
+                case TypeManager.JType.JMachine _:
                     writeTermToBeCloned();
                     break;
 
                 /* Same with immutable types. */
                 case TypeManager.JType.JString _:
                 case TypeManager.JType.JEnum _:
-                case TypeManager.JType.JMachine _:
                     writeTermToBeCloned();
                     break;
 

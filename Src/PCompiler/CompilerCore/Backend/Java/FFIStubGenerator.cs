@@ -214,6 +214,9 @@ namespace Plang.Compiler.Backend.Java
             WriteLine($"package {Constants.FFIPackage};");
             WriteLine();
 
+            WriteLine("import prt.exceptions.*;");
+            WriteLine($"import {Constants.PGeneratedNamespaceName}.*;");
+
             // The foreign types we need to import are the ones occuring in the signature of
             // a top-level foreign function.
             IEnumerable<Function> ffs = GlobalScope.Functions.Where(f => f.IsForeign);
@@ -222,7 +225,6 @@ namespace Plang.Compiler.Backend.Java
                 JType toImport = Types.JavaTypeFor(t);
                 WriteLine($"import {Constants.FFITypesPackage}.{toImport.TypeName};");
             }
-
             WriteLine();
 
             // Unlike Machine-scoped functions, top-level scoped ones need to go in a special
@@ -259,6 +261,10 @@ namespace Plang.Compiler.Backend.Java
             WriteLine($"package {Constants.FFIPackage};");
             WriteLine();
 
+            WriteLine("import prt.exceptions.*;");
+            WriteLine($"import {Constants.PGeneratedNamespaceName}.*;");
+            WriteLine($"import {Constants.PGeneratedNamespaceName}.{Constants.MachineNamespaceName}.{m.Name}.PrtStates;");
+
             // Import dependencies for a FFI bridge for a monitor are whatever foreign types are used
             // by foreign functions in this monitor.
             foreach (ForeignType t in ffs.SelectMany(ExtractForeignTypesFrom))
@@ -266,7 +272,6 @@ namespace Plang.Compiler.Backend.Java
                 JType toImport = Types.JavaTypeFor(t);
                 WriteLine($"import {Constants.FFITypesPackage}.{toImport.TypeName};");
             }
-
             WriteLine();
 
             // Class definition: By convention, this "para-class" has the same name as
@@ -301,8 +306,8 @@ namespace Plang.Compiler.Backend.Java
             // type the enclosing machine's state enum type is (it's always the `PrtStates`
             // enum inner class) so we can be as precise as we need to be.
             string monitorType = (m == null
-                ? "prt.Monitor<? extends Enum<?>>"
-                : $"{Constants.PGeneratedNamespaceName}.{Constants.MachineNamespaceName}.{m.Name}");
+                ? "prt.Monitor<?>"
+                : $"{Constants.MachineNamespaceName}.{m.Name}");
             Write($"{monitorType} machine");
 
             foreach (var param in f.Signature.Parameters)
@@ -314,7 +319,9 @@ namespace Plang.Compiler.Backend.Java
                 Write($"{ptype.TypeName} {pname}");
             }
 
-            WriteLine(") {");
+            WriteLine(")");
+            WriteLine(" /* throws RaiseEventException, TransitionException */ {");
+
             if (ret is JType.JVoid _)
             {
                 WriteLine($"// TODO");

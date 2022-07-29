@@ -58,7 +58,7 @@ namespace Plang.Compiler.Backend.Java
         private static readonly string rawFFIBanner = $@"
 P <-> Java Foreign Function Interface Stubs
 
-This file was auto-generated on {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}.  
+This file was auto-generated on {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}.
 
 Please separate each generated class into its own .java file (detailed throughout the file), filling
 in the body of each function definition as necessary for your project's business logic.
@@ -92,7 +92,7 @@ in the body of each function definition as necessary for your project's business
 
         internal static string DoNotEditWarning => $@"
 /***************************************************************************
- * This file was auto-generated on {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}.  
+ * This file was auto-generated on {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}.
  * Please do not edit manually!
  **************************************************************************/";
 

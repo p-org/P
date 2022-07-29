@@ -226,7 +226,7 @@ namespace Plang.Compiler.Backend.Java
             WriteLine();
 
             // Unlike Machine-scoped functions, top-level scoped ones need to go in a special
-            // class, `PForeign.Globals`.
+            // class, `PForeign.P_TopScope`.
             WriteLine($"public class {Constants.FFIGlobalScopeCname} {{");
             foreach (Function f in GlobalScope.Functions.Where(f => f.IsForeign))
             {
@@ -300,10 +300,10 @@ namespace Plang.Compiler.Backend.Java
             // have to wildcard it.  Within a Machine scope, though, we know exactly what
             // type the enclosing machine's state enum type is (it's always the `PrtStates`
             // enum inner class) so we can be as precise as we need to be.
-            string stateEnumType = (m == null
-                ? "? extends Enum<?>"
-                : $"{Constants.PGeneratedNamespaceName}.{Constants.MachineNamespaceName}.{m.Name}.{Constants.StateEnumName}");
-            Write($"prt.Monitor<{stateEnumType}> machine");
+            string monitorType = (m == null
+                ? "prt.Monitor<? extends Enum<?>>"
+                : $"{Constants.PGeneratedNamespaceName}.{Constants.MachineNamespaceName}.{m.Name}");
+            Write($"{monitorType} machine");
 
             foreach (var param in f.Signature.Parameters)
             {

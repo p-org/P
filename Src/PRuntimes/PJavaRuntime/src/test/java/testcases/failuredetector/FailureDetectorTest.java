@@ -1,4 +1,4 @@
-package testmonitors.failuredetector;
+package testcases.failuredetector;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import static testmonitors.failuredetector.FailureDetector.*;
+import static testcases.failuredetector.FailureDetector.*;
 
 public class FailureDetectorTest {
     @Test

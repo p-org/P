@@ -1,10 +1,10 @@
-package testmonitors.espressomachine;
+package testcases.espressomachine;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-import static testmonitors.espressomachine.EspressoMachine.*;
+import static testcases.espressomachine.EspressoMachine.*;
 
 public class EspressoMachineTest {
     @Test

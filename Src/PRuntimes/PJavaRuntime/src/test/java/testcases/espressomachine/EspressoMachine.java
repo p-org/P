@@ -1,4 +1,4 @@
-package testmonitors.espressomachine;
+package testcases.espressomachine;
 
 /***************************************************************************
  * This file was auto-generated on Wednesday, 22 June 2022 at 11:28:46.

@@ -1,4 +1,4 @@
-package testmonitors.clientserver;
+package testcases.clientserver;
 
 /***************************************************************************
  * This file was auto-generated on Thursday, 21 July 2022 at 13:40:36.

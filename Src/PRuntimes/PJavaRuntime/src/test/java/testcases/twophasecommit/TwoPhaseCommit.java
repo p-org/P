@@ -1,4 +1,4 @@
-package testmonitors.twophasecommit;
+package testcases.twophasecommit;
 
 /***************************************************************************
  * This file was auto-generated on Wednesday, 22 June 2022 at 11:28:16.

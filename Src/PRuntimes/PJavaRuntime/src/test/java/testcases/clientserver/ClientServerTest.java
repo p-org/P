@@ -1,4 +1,4 @@
-package testmonitors.clientserver;
+package testcases.clientserver;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,9 +15,9 @@ import prt.exceptions.UnhandledEventException;
 import static org.junit.jupiter.api.Assertions.*;
 
 import static prt.values.Equality.deepEquals;
-import static testmonitors.clientserver.PMachines.*;
-import static testmonitors.clientserver.PEvents.*;
-import static testmonitors.clientserver.PTypes.*;
+import static testcases.clientserver.PMachines.*;
+import static testcases.clientserver.PEvents.*;
+import static testcases.clientserver.PTypes.*;
 
 public class ClientServerTest {
     private BankBalanceIsAlwaysCorrect initedBankBalanceIsAlwaysCorrect() {

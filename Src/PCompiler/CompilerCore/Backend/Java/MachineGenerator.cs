@@ -562,7 +562,6 @@ namespace Plang.Compiler.Backend.Java {
                     break;
 
                 case SeqAccessExpr seqAccessExpr:
-                    // TODO: do we need to think about handling out of bounds exceptions?
                     WriteExpr(seqAccessExpr.SeqExpr);
                     Write($".{t.MutatorMethodName}(");
                     WriteExpr(seqAccessExpr.IndexExpr);

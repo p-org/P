@@ -527,6 +527,20 @@ namespace Plang.Compiler.Backend.Java {
 
             IPExpr rval = assignStmt.Value;
 
+            // In the case where the types of each side of the assignment differ due to subtyping, we need to ensure
+            // that we cast the given rval to the lval's type.  For example, if we are assigning a `seq[int]` to a
+            // `seq[any]`, then we need to first downcast the `ArrayList<Long>` to an Object, and then _re-upcast_ it
+            // to an `ArrayList<Object>` (due to collection invariance in Java - slightly unfortunate here).
+            // TODO: arguably, this should be done across all backends in the StatementVisitor?
+            if (!lval.Type.IsSameTypeAs(rval.Type))
+            {
+                rval = new CastExpr(assignStmt.SourceLocation, rval, PrimitiveType.Any);
+                if (!lval.Type.IsSameTypeAs(PrimitiveType.Any))
+                {
+                    rval = new CastExpr(assignStmt.SourceLocation, rval, lval.Type);
+                }
+            }
+
             switch (lval)
             {
                 case MapAccessExpr mapAccessExpr:
@@ -631,7 +645,6 @@ namespace Plang.Compiler.Backend.Java {
                 case CastExpr ce:
                 {
                     t = Types.JavaTypeFor(ce.Type);
-                    //TODO: I am 99% sure it's fine to never worry about casting to the boxed type.
                     Write($"(");
                     Write($"({t.TypeName})");
                     WriteExpr(ce.SubExpr);

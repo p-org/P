@@ -94,20 +94,21 @@ namespace Plang.Compiler.Backend.Java
                     writeTermToBeCloned();
                     break;
 
-                /* Non-boxable reference types must be cloned explicitly and then
-                 * cast to their expected type (since clone() is Object-producing). */
+                /* Collections and `any` types must be explicitly cloned with the Java P runtime's `deepClone` method;
+                 * there is one override for each of these. */
                 case TypeManager.JType.JAny _:
                 case TypeManager.JType.JMap _:
                 case TypeManager.JType.JList _:
                 case TypeManager.JType.JSet _:
-                case TypeManager.JType.JForeign _: //TODO: is this right?
-                    Write($"({t.TypeName})");
                     Write($"{Constants.PrtDeepCloneMethodName}(");
                     writeTermToBeCloned();
                     Write(")");
                     break;
 
-                /* JNamedTuples have a copy constructor. */
+                /* JNamedTuples and foreign types extend prt.values.PValue, and thus have an explicit `.deepEquals()`
+                 * method.  (We could have just as easily passed these to the runtime's `deepClone` method, but this
+                 * saves us a type dispatch). */
+                case TypeManager.JType.JForeign _:
                 case TypeManager.JType.JNamedTuple _:
                     writeTermToBeCloned();
                     Write(".deepClone()");
@@ -128,7 +129,7 @@ namespace Plang.Compiler.Backend.Java
         }
     }
 
-    static class IEnumerableExtensions
+    static class EnumerableExtensions
     {
 
         /// <summary>

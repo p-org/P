@@ -113,7 +113,7 @@ namespace Plang.Compiler.Backend.Java
                 /// be implemented.
                 internal JAny()
                 {
-                    _unboxedType = "PValue";
+                    _unboxedType = "Object";
                 }
 
                 internal override bool IsPrimitive => false;

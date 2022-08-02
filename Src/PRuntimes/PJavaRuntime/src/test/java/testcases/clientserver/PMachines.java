@@ -1,7 +1,7 @@
-package testmonitors.clientserver;
+package testcases.clientserver;
 
 /***************************************************************************
- * This file was auto-generated on Friday, 22 July 2022 at 08:49:45.
+ * This file was auto-generated on Monday, 01 August 2022 at 11:28:45.
  * Please do not edit manually!
  **************************************************************************/
 
@@ -52,7 +52,7 @@ public class PMachines {
         }
 
         private void Anon(HashMap<Long, Long> balance) {
-            bankBalance = (HashMap<Long, Long>)prt.values.Clone.deepClone(balance);
+            bankBalance = prt.values.Clone.deepClone(balance);
         }
         private void Anon_1(PTypes.PTuple_src_accnt_amnt_rId req) {
             long TMP_tmp0 = 0L;
@@ -250,7 +250,7 @@ public class PMachines {
             TMP_tmp0_3 = resp_1.rId;
             TMP_tmp1_2 = pendingWDReqs.contains(TMP_tmp0_3);
             TMP_tmp2_2 = resp_1.rId;
-            TMP_tmp3_2 = (LinkedHashSet<Long>)prt.values.Clone.deepClone(pendingWDReqs);
+            TMP_tmp3_2 = prt.values.Clone.deepClone(pendingWDReqs);
             TMP_tmp4_2 = java.text.MessageFormat.format("unexpected rId: {0} received, expected one of {1}", TMP_tmp2_2, TMP_tmp3_2);
             tryAssert(TMP_tmp1_2, TMP_tmp4_2);
             TMP_tmp5_2 = resp_1.rId;

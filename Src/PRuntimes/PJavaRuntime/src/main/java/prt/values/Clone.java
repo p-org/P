@@ -15,51 +15,56 @@ public class Clone {
      * they are included.
      */
 
-    private static Boolean cloneBoolean(Boolean b) {
+    public static Boolean deepClone(Boolean b) {
         return b; //already immutable!  No cloning necessary.
     }
 
-    private static Long cloneLong(Long l) {
-        // NB: Actor IDs are stored as Longs.
+    public static Long deepClone(Long l) {
         return l; //already immutable!  No cloning necessary.
     }
 
-    private static Float cloneFloat(Float f) {
+    public static Float deepClone(Float f) {
         return f; //already immutable!  No cloning necessary.
     }
 
-    private static String cloneString(String s) {
+    public static String deepClone(String s) {
         return s; //already immutable!  No cloning necessary.
     }
 
-    private static Enum cloneEnum(Enum e) {
+    public static Enum<?> deepClone(Enum<?> e) {
         return e; //already immutable!  No cloning necessary.
     }
 
-    private static ArrayList<Object> cloneList(ArrayList<?> a) {
-        ArrayList<Object> cloned = new ArrayList<>();
+    public static <T> ArrayList<T> deepClone(ArrayList<T> a) {
+        if (a == null) return null;
+
+        ArrayList<T> cloned = new ArrayList<>();
         cloned.ensureCapacity(a.size());
-        for (Object val : a) {
+        for (T val : a) {
             cloned.add(deepClone(val));
         }
         return cloned;
     }
 
-    private static LinkedHashSet<Object> cloneSet(LinkedHashSet<?> s)
+    public static <T> LinkedHashSet<T> deepClone(LinkedHashSet<T> s)
     {
-        LinkedHashSet<Object> cloned = new LinkedHashSet<>();
-        for (Object val : s) {
+        if (s == null) return null;
+
+        LinkedHashSet<T> cloned = new LinkedHashSet<>();
+        for (T val : s) {
             cloned.add(deepClone(val));
         }
         return cloned;
     }
 
-    private static HashMap<Object, Object> cloneMap(HashMap<?, ?> m)
+    public static <T,U> HashMap<T, U> deepClone(HashMap<T, U> m)
     {
-        HashMap<Object, Object> cloned = new HashMap<>();
-        for (Map.Entry<?,?> e : m.entrySet()) {
-            Object k = deepClone(e.getKey());
-            Object v = deepClone(e.getValue());
+        if (m == null) return null;
+
+        HashMap<T, U> cloned = new HashMap<>();
+        for (Map.Entry<T,U> e : m.entrySet()) {
+            T k = deepClone(e.getKey());
+            U v = deepClone(e.getValue());
             cloned.put(k, v);
         }
         return cloned;
@@ -75,32 +80,32 @@ public class Clone {
      * @return a structurally-equivalent version of `o` but such that mutations of
      * one object are not visible within the other.
      */
-    public static Object deepClone(Object o) {
+    public static <T> T deepClone(T o) {
         if (o == null) {
             return null;
         }
+
         if (o instanceof PValue<?>) {
-            return ((PValue<?>)o).deepClone();
+            return (T) ((PValue<?>)o).deepClone();
         }
 
         Class<?> clazz = o.getClass();
         if (clazz == Boolean.class)
-            return cloneBoolean((Boolean)o);
+            return (T) deepClone((Boolean)o);
         if (clazz == Long.class)
-            return cloneLong((Long)o);
+            return (T) deepClone((Long)o);
         if (clazz == Float.class)
-            return cloneFloat((Float)o);
+            return (T) deepClone((Float)o);
         if (clazz == String.class)
-            return cloneString((String)o);
+            return (T) deepClone((String)o);
         if (clazz == ArrayList.class)
-            return cloneList((ArrayList<?>) o);
+            return (T) deepClone((ArrayList<?>) o);
         if (clazz == HashMap.class)
-            return cloneMap((HashMap<?, ?>) o);
+            return (T) deepClone((HashMap<?, ?>) o);
         if (clazz == LinkedHashSet.class)
-            return cloneSet((LinkedHashSet<?>) o);
+            return (T) deepClone((LinkedHashSet<?>) o);
         if (Enum.class.isAssignableFrom(clazz))
-            return cloneEnum((Enum) o);
-
+            return (T) deepClone((Enum<?>) o);
 
         throw new UncloneableValueException(clazz);
     }

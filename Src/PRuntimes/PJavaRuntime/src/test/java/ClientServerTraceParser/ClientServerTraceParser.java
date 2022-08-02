@@ -11,8 +11,8 @@ import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
-import static testmonitors.clientserver.PEvents.*;
-import static testmonitors.clientserver.PTypes.*;
+import static testcases.clientserver.PEvents.*;
+import static testcases.clientserver.PTypes.*;
 
 /**
  * Here is an example of a P parser that makes use of the PTraceParserUtils` helper class to

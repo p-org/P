@@ -1,8 +1,11 @@
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import prt.exceptions.UncloneableValueException;
+import prt.values.PValue;
+import testcases.UnboundedNat;
 
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -14,22 +17,24 @@ public class ValueCloneTest {
     @Test
     @DisplayName("Can 'clone' a null value")
     public void testNullClone() {
-        assertEquals(deepClone(null), null);
+        assertNull(deepClone((Boolean) null));
+        assertNull(deepClone((Long) null));
+        assertNull(deepClone((ArrayList<Object>) null));
     }
 
     @Test
     @DisplayName("Can clone boxed primitive types")
     public void testClonePrimitives() {
-        Boolean b = Boolean.valueOf(true);
+        Boolean b = Boolean.TRUE;
         assertEquals(deepClone(b), b);
 
-        Long i = Long.valueOf(31337);
+        Long i = 31337L;
         assertEquals(deepClone(i), i);
 
-        Float f = Float.valueOf(1.61803f);
+        Float f = 1.61803f;
         assertEquals(deepClone(f), f);
 
-        Long l = Long.valueOf(314159265L);
+        Long l = 3141592653L;
         assertEquals(deepClone(l), l);
     }
 
@@ -38,7 +43,7 @@ public class ValueCloneTest {
     public void testCloneList() {
         // Ensure the clone completes successfully
         ArrayList<Long> a1 = new ArrayList<>(List.of(1L,2L,3L,4L,5L));
-        ArrayList<Long> a2 = (ArrayList<Long>) deepClone(a1);
+        ArrayList<Long> a2 = deepClone(a1);
         assertEquals(a1, a2);
 
         // Now reassign an element and ensure only structural equality
@@ -59,7 +64,7 @@ public class ValueCloneTest {
     public void testCloneSet() {
         // Ensure the clone completes successfully
         LinkedHashSet<Long> s1 = new LinkedHashSet<>(List.of(1L,2L,3L,4L,5L));
-        LinkedHashSet<Long> s2 = (LinkedHashSet<Long>) deepClone(s1);
+        LinkedHashSet<Long> s2 = deepClone(s1);
         assertEquals(s1, s2);
 
         // Now mutate an element and ensure only structural equality
@@ -76,7 +81,7 @@ public class ValueCloneTest {
                 "A", 1L,
                 "B", 2L,
                 "C", 3L));
-        HashMap<String, Long> m2 = (HashMap<String, Long>) deepClone(m1);
+        HashMap<String, Long> m2 = deepClone(m1);
         assertEquals(m1, m2);
 
 
@@ -106,7 +111,7 @@ public class ValueCloneTest {
                 "123", new ArrayList<>(List.of(1L,2L,3L)),
                 "987", new ArrayList<>(List.of(9L,8L,7L))
         ));
-        HashMap<String, ArrayList<Long>> m2 = (HashMap<String, ArrayList<Long>>) deepClone(m1);
+        HashMap<String, ArrayList<Long>> m2 = deepClone(m1);
         assertEquals(m1, m2);
 
         // Mutate a mutable reference value and ensure no aliasing
@@ -173,20 +178,6 @@ public class ValueCloneTest {
         assertThrows(UncloneableValueException.class, () -> deepClone(i));
     }
 
-    private class FancyLinkedHashSet<E> extends LinkedHashSet<E> {
-        public FancyLinkedHashSet(List<E> e) { super(e); }
-    }
-
-    @Test
-    @DisplayName("Cannot clone a subclass of a valid cloneable class")
-    public void testInvalidCloneOfSubclass() {
-        // LinkedHashSet extends hashSet, but we expect this should fail nonetheless.
-        // (Relaxing this criterion would require walking the inheritance tree via
-        // reflection, and it isn't clear what the return type of the cloned value would be.)
-        FancyLinkedHashSet<Long> lh = new FancyLinkedHashSet<>(List.of(1L,2L,3L,4L,5L));
-        assertThrows(UncloneableValueException.class, () -> deepClone(lh));
-    }
-
     enum anEnum {
         VALUE_ZERO(0),
         VALUE_ONE(1);
@@ -202,5 +193,27 @@ public class ValueCloneTest {
         assertEquals(e1, e2);
     }
 
+    // A simple subclass of PValue.
+    @Test
+    @DisplayName("Can clone a subclass of PValue (ie. foreign types)")
+    public void testFFIClone() {
+        UnboundedNat n = new UnboundedNat();
+        UnboundedNat n2;
+        n.add(42);
 
+        // Test the deepClone method.
+        n2 = n.deepClone();
+        assertFalse(n == n2);
+        assertTrue(n.deepEquals(n2));
+        n.add(1);
+        assertFalse(n.deepEquals(n2));
+
+        // Test indirect cloning via the static PRT method.  This will dispatch onto the deepClone(Object) overload
+        // and do a runtime type dispatch back into `n#deepClone()`.
+        n2 = prt.values.Clone.deepClone(n);
+        assertFalse(n == n2);
+        assertTrue(n.deepEquals(n2));
+        n.add(1);
+        assertFalse(n.deepEquals(n2));
+    }
 }

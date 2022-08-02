@@ -2,8 +2,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import prt.exceptions.IncomparableValuesException;
 import prt.values.*;
-import testmonitors.clientserver.PEvents;
-import testmonitors.clientserver.PTypes;
+import testcases.clientserver.PEvents;
+import testcases.clientserver.PTypes;
 
 import java.util.ArrayList;
 import java.util.HashMap;

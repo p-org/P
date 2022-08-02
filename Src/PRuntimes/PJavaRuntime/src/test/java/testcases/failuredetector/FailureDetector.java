@@ -1,4 +1,4 @@
-package testmonitors.failuredetector;
+package testcases.failuredetector;
 
 /***************************************************************************
  * This file was auto-generated on Wednesday, 22 June 2022 at 11:29:15.

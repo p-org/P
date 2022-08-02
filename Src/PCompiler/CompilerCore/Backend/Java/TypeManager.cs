@@ -312,7 +312,7 @@ namespace Plang.Compiler.Backend.Java
             {
                 internal JEvent()
                 {
-                    _unboxedType = $"{Constants.EventNamespaceName}.PEvent";
+                    _unboxedType = $"{Constants.PEventsClass}<?>";
                 }
                 internal override bool IsPrimitive => false;
             }

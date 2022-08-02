@@ -10,7 +10,6 @@ namespace Plang.Compiler.Backend.Java
     /// </summary>
     internal static class Constants
     {
-
         #region Machine source generation
 
         private static readonly string[] JreDefaultImports =
@@ -31,6 +30,7 @@ namespace Plang.Compiler.Backend.Java
         }
 
         public static readonly string PGeneratedNamespaceName = "PGenerated";
+        public static readonly string PRTNamespaceName = "prt";
 
         public static readonly string MachineNamespaceName = "PMachines";
         public static readonly string MachineDefnFileName = $"{MachineNamespaceName}.java";
@@ -64,11 +64,11 @@ Please separate each generated class into its own .java file (detailed throughou
 in the body of each function definition as necessary for your project's business logic.
 ";
 
-        internal static readonly string FFIStubFileName = "FFIStubs.txt";
+        public static readonly string FFIStubFileName = "FFIStubs.txt";
 
-        internal static readonly string FFIPackage = "PForeign";
+        public static readonly string FFIPackage = "PForeign";
         internal static readonly string FFITypesPackage = $"{FFIPackage}.types";
-        internal static readonly string FFIGlobalScopeCname = $"P_TopScope";
+        public static readonly string FFIGlobalScopeCname = "P_TopScope";
 
 
         // Something that is clearly not valid Java.
@@ -197,6 +197,36 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         /// The fully-qualified class name of the Java P runtime's PEvent class.
         /// </summary>
         public static readonly string PEventsClass = "prt.events.PEvent";
+
+        #endregion
+
+
+        #region Reserved words
+
+        private static HashSet<string> _reservedWords = null;
+
+        /// <summary>
+        /// Reflects out all the string fields defined in this class.
+        /// </summary>
+        private static HashSet<string> ExtractReservedWords()
+        {
+            Type self = typeof(Constants);
+            return self.GetFields()
+                .Where(f => f.IsStatic && f.FieldType == typeof(string))
+                .Select(f => (string)f.GetValue(null) /* passed null b/c all our fields are static */ )
+                .ToHashSet();
+        }
+
+        /// <summary>
+        /// Checks whether the given string should be considered a reserved word for the Java backend.  For our
+        /// purposes, if the string matches a static string defined in this class, then we consider it a reserved
+        /// word (since that string will be used actively in code generation)
+        /// </summary>
+        public static bool IsReserved(string token)
+        {
+            _reservedWords ??= ExtractReservedWords();
+            return _reservedWords.Contains(token);
+        }
 
         #endregion
     }

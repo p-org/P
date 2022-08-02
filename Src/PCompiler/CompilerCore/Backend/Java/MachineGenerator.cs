@@ -100,7 +100,8 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine($"public enum {Constants.StateEnumName} {{");
             foreach (var (state, sep) in _currentMachine.States.WithPostfixSep(","))
             {
-                WriteLine($"{state.Name}{sep}");
+                string name = Names.GetNameForDecl(state);
+                WriteLine($"{name}{sep}");
             }
             WriteLine("}");
             WriteLine();
@@ -253,7 +254,8 @@ namespace Plang.Compiler.Backend.Java {
             Write("return java.util.Arrays.asList(");
             foreach (var (sep, ev) in _currentMachine.Observes.Events.WithPrefixSep(", "))
             {
-                Write($"{sep}{Constants.EventNamespaceName}.{ev.Name}.class");
+                string name = Names.GetNameForDecl(ev);
+                Write($"{sep}{Constants.EventNamespaceName}.{name}.class");
             }
             WriteLine(");");
             WriteLine("}");

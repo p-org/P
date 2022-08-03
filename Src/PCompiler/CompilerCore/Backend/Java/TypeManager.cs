@@ -38,8 +38,7 @@ namespace Plang.Compiler.Backend.Java
                         throw new Exception($"TypeName not implemented for {this.GetType()}");
                     }
 
-                    string prefix = (isUserDefined ? Constants.TypesNamespaceName + "." : "");
-                    return prefix + _unboxedType;
+                    return _unboxedType;
                 }
             }
 
@@ -57,8 +56,7 @@ namespace Plang.Compiler.Backend.Java
                     {
                         return TypeName;
                     }
-                    string prefix = (isUserDefined ? Constants.MachineNamespaceName + "." : "");
-                    return prefix + _refType;
+                    return _refType;
                 }
             }
 
@@ -100,12 +98,6 @@ namespace Plang.Compiler.Backend.Java
             /// </summary>
             internal virtual string RemoveMethodName =>
                 throw new Exception($"RemoveMethodName not implemented for {this.TypeName}");
-
-            /// <summary>
-            /// Returns whether this type is defined by user P code (i.e. a tuple) or if it's a built-in
-            /// type (i.e. a seq or a map).  This is used to qualify type identifiers.
-            /// </summary>
-            internal virtual bool isUserDefined => false;
 
             internal class JAny : JType
             {
@@ -275,11 +267,10 @@ namespace Plang.Compiler.Backend.Java
             {
                 internal JNamedTuple(string jClassName, IEnumerable<(string, JType)> fields)
                 {
-                    _unboxedType = jClassName;
+                    _unboxedType = $"{Constants.TypesNamespaceName}.{jClassName}";
                 }
 
                 internal override bool IsPrimitive => false;
-                internal override bool isUserDefined => true;
             }
 
             internal class JForeign : JType
@@ -307,13 +298,12 @@ namespace Plang.Compiler.Backend.Java
 
                 internal JEnum(EnumType e)
                 {
-                    _unboxedType = e.CanonicalRepresentation;
+                    _unboxedType = Constants.TypesNamespaceName + "." + e.CanonicalRepresentation;
                     _defaultValue = e.EnumDecl.Values.First().Name; // An arbitrary enum value is fine.
                 }
 
-                internal override bool isUserDefined => true;
 
-                internal override string DefaultValue => $"{Constants.TypesNamespaceName}.{_unboxedType}.{_defaultValue}";
+                internal override string DefaultValue => $"{_unboxedType}.{_defaultValue}";
             }
 
             //TODO: not sure about this one.  Is the base class sufficient?
@@ -322,7 +312,7 @@ namespace Plang.Compiler.Backend.Java
             {
                 internal JEvent()
                 {
-                    _unboxedType = "PEvent";
+                    _unboxedType = $"{Constants.EventNamespaceName}.PEvent";
                 }
                 internal override bool IsPrimitive => false;
             }

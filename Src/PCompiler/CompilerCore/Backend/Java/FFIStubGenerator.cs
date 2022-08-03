@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using System.Linq;
 using Plang.Compiler.TypeChecker.Types;
+using static Plang.Compiler.Backend.Java.TypeManager;
 
 namespace Plang.Compiler.Backend.Java
 {
@@ -213,19 +214,21 @@ namespace Plang.Compiler.Backend.Java
             WriteLine($"package {Constants.FFIPackage};");
             WriteLine();
 
+            WriteLine("import prt.exceptions.*;");
+            WriteLine($"import {Constants.PGeneratedNamespaceName}.*;");
+
             // The foreign types we need to import are the ones occuring in the signature of
             // a top-level foreign function.
             IEnumerable<Function> ffs = GlobalScope.Functions.Where(f => f.IsForeign);
             foreach (ForeignType t in ffs.SelectMany(ExtractForeignTypesFrom))
             {
-                TypeManager.JType toImport = Types.JavaTypeFor(t);
+                JType toImport = Types.JavaTypeFor(t);
                 WriteLine($"import {Constants.FFITypesPackage}.{toImport.TypeName};");
             }
-
             WriteLine();
 
             // Unlike Machine-scoped functions, top-level scoped ones need to go in a special
-            // class, `PForeign.Globals`.
+            // class, `PForeign.P_TopScope`.
             WriteLine($"public class {Constants.FFIGlobalScopeCname} {{");
             foreach (Function f in GlobalScope.Functions.Where(f => f.IsForeign))
             {
@@ -258,14 +261,17 @@ namespace Plang.Compiler.Backend.Java
             WriteLine($"package {Constants.FFIPackage};");
             WriteLine();
 
+            WriteLine("import prt.exceptions.*;");
+            WriteLine($"import {Constants.PGeneratedNamespaceName}.*;");
+            WriteLine($"import {Constants.PGeneratedNamespaceName}.{Constants.MachineNamespaceName}.{m.Name}.PrtStates;");
+
             // Import dependencies for a FFI bridge for a monitor are whatever foreign types are used
             // by foreign functions in this monitor.
             foreach (ForeignType t in ffs.SelectMany(ExtractForeignTypesFrom))
             {
-                TypeManager.JType toImport = Types.JavaTypeFor(t);
+                JType toImport = Types.JavaTypeFor(t);
                 WriteLine($"import {Constants.FFITypesPackage}.{toImport.TypeName};");
             }
-
             WriteLine();
 
             // Class definition: By convention, this "para-class" has the same name as
@@ -274,33 +280,49 @@ namespace Plang.Compiler.Backend.Java
             WriteLine($"public class {m.Name} {{");
             foreach (Function f in ffs)
             {
-                WriteForeignFunctionStub(f);
+                WriteForeignFunctionStub(f, m);
             }
 
             WriteLine("}");
             WriteLine();
         }
 
-        void WriteForeignFunctionStub(Function f)
+        /// <summary>
+        /// Write a foreign function stub for the given function f, contained within an optional
+        /// Machine scope.  (The latter is used to emit a non-wildcard type parameter for the
+        /// State enum type.)
+        /// </summary>
+        /// <param name="f">The function.</param>
+        /// <param name="m">The machine scope (if null, treated as the global scope)</param>
+        void WriteForeignFunctionStub(Function f, Machine m = null)
         {
-            TypeManager.JType ret = Types.JavaTypeFor(f.Signature.ReturnType);
+            JType ret = Types.JavaTypeFor(f.Signature.ReturnType);
 
-            Write($"public static {ret.TypeName} {f.Name}(");
-            if (f.Signature.Parameters.Any())
-            {
-                WriteLine();
-            }
+            WriteLine($"public static {ret.TypeName} {f.Name}(");
 
-            foreach (var (param, sep) in f.Signature.Parameters.WithPostfixSep(","))
+            // If the function is being emitted at global scope, any monitor can call it
+            // and hence we can't say anything about the monitor's state enum type, so we
+            // have to wildcard it.  Within a Machine scope, though, we know exactly what
+            // type the enclosing machine's state enum type is (it's always the `PrtStates`
+            // enum inner class) so we can be as precise as we need to be.
+            string monitorType = (m == null
+                ? "prt.Monitor<?>"
+                : $"{Constants.MachineNamespaceName}.{m.Name}");
+            Write($"{monitorType} machine");
+
+            foreach (var param in f.Signature.Parameters)
             {
                 string pname = param.Name;
-                TypeManager.JType ptype = Types.JavaTypeFor(param.Type);
+                JType ptype = Types.JavaTypeFor(param.Type);
 
-                WriteLine($"{ptype.TypeName} {pname}{sep}");
+                WriteLine(",");
+                Write($"{ptype.TypeName} {pname}");
             }
 
-            WriteLine(") {");
-            if (ret is TypeManager.JType.JVoid _)
+            WriteLine(")");
+            WriteLine(" /* throws RaiseEventException, TransitionException */ {");
+
+            if (ret is JType.JVoid _)
             {
                 WriteLine($"// TODO");
             }

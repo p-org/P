@@ -60,11 +60,11 @@ public class Equality {
         return true;
     }
 
-    private static <P1 extends PValue<P1>, P2 extends PValue<P2>> boolean deepPValueEquals(P1 t1, P2 t2) {
+    private static <T extends PValue<T>, U extends PValue<U>> boolean deepPValueEquals(PValue<T> t1, PValue<U> t2) {
         if (t1.getClass() != t2.getClass()) {
             return false;
         }
-        return t1.deepEquals((P1)t2);
+        return t1.deepEquals((T)t2);
     }
 
 
@@ -81,10 +81,10 @@ public class Equality {
             // For PValues, defer to their `deepEquals()` method (which may recursively call
             // back into `Values.deepEquals()`.
             if (o1 instanceof PValue<?> && o2 instanceof PValue<?>) {
-                return deepPValueEquals((PValue) o1, (PValue) o2);
+                return deepPValueEquals((PValue<?>) o1, (PValue<?>) o2);
             }
 
-            if (o1 instanceof PEvent && o2 instanceof PEvent<?>) {
+            if (o1 instanceof PEvent<?> && o2 instanceof PEvent<?>) {
                 return o1.equals(o2);
             }
 

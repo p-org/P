@@ -78,7 +78,7 @@ namespace Plang.Compiler.Backend.Java {
         {
             string cname = Names.GetNameForDecl(_currentMachine);
 
-            WriteLine($"public static class {cname} extends prt.Monitor {{");
+            WriteLine($"public static class {cname} extends prt.Monitor<{cname}.{Constants.StateEnumName}> {{");
 
             WriteLine();
             WriteSupplierCDef(cname);
@@ -615,6 +615,9 @@ namespace Plang.Compiler.Backend.Java {
                     ? Constants.FFIGlobalScopeCname
                     : _currentMachine.Name);
                 Write($"{ffiBridge}.{fname}(");
+
+                // All foreign functions have an implicit first argument to the current machine
+                args = args.Prepend(new ThisRefExpr(f.SourceLocation, _currentMachine));
             }
             else
             {
@@ -751,7 +754,8 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 }
                 case ThisRefExpr _:
-                    goto default;
+                    Write("this");
+                    break;
                 case UnaryOpExpr ue:
                     switch (ue.Operation)
                     {

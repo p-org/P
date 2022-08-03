@@ -404,9 +404,8 @@ namespace Plang.Compiler.Backend.Java {
                     Write($"gotoState({Names.IdentForState(gotoStmt.State)}");
                     if (gotoStmt.Payload != null)
                     {
-                        Write(", Optional.of(");
+                        Write(", ");
                         WriteExpr(gotoStmt.Payload);
-                        Write(")");
                     }
                     WriteLine(");");
                     WriteLine("return;");

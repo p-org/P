@@ -1,10 +1,10 @@
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import prt.values.SetIndexing;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,22 +33,58 @@ public class ValueSetElementAtTest {
     }
 
     @Test
-    @DisplayName("Returns valid elements on valid indices")
-    public void testValidIndexing() {
-        LinkedHashSet<Integer> s = new LinkedHashSet<>(List.of(1,2,3,4,5));
+    @DisplayName("Returns valid elements on sequential accesses")
+    public void testValidSequentialIndexing() {
+        LinkedHashSet<Integer> s =
+                new LinkedHashSet<>(IntStream.range(1, SetIndexing.MIN_SETSIZE + 1)
+                        .boxed()
+                        .collect(Collectors.toList()));
 
-        // In-order iteration
-        assertEquals(prt.values.SetIndexing.elementAt(s, 0), 1);
-        assertEquals(prt.values.SetIndexing.elementAt(s, 1), 2);
-        assertEquals(prt.values.SetIndexing.elementAt(s, 2), 3);
-        assertEquals(prt.values.SetIndexing.elementAt(s, 3), 4);
-        assertEquals(prt.values.SetIndexing.elementAt(s, 4), 5);
+        for (int i = 0; i < s.size(); i++) {
+            assertEquals(prt.values.SetIndexing.elementAt(s, i), i+1);
+        }
+
+        for (int i = s.size() - 1; i >= 0; i--) {
+            assertEquals(prt.values.SetIndexing.elementAt(s, i), i+1);
+        }
+    }
+
+    @Test
+    @DisplayName("Returns valid elements on random accesses")
+    public void testValidRandomIndexing() {
+        LinkedHashSet<Integer> s =
+                new LinkedHashSet<>(IntStream.range(1, SetIndexing.MIN_SETSIZE + 1)
+                        .boxed()
+                        .collect(Collectors.toList()));
 
         // Arbitrary iteration
-        Random r = new Random(42);
-        for (int i = 0; i < 100; i++) {
-            int idx = r.nextInt(5);
+        Random r = new Random();
+        for (int i = 0; i < 2000; i++) {
+            int idx = r.nextInt(s.size());
             assertEquals(prt.values.SetIndexing.elementAt(s, idx), idx+1);
+
+            // Periodically force the iterator cache to be invalidated in a few different ways:
+
+            // 1) Perform a minor collection, which will zap out unretained weak references.
+            if (r.nextInt(10) == 0) {
+                System.gc();
+            }
+
+            // 2) Construct a new set, so the cached set will differ by pointer comparison to the current one.
+            if (r.nextInt(10) == 0) {
+                s = new LinkedHashSet<>(IntStream.range(1, SetIndexing.MIN_SETSIZE + 1)
+                                .boxed()
+                                .collect(Collectors.toList()));
+                if (r.nextInt(5) == 0) {
+                    System.gc();
+                }
+            }
+
+            // 3) Mutate the collection, which will internally result in an ConcurrentModificationException to be thrown
+            // when using the now-invalid cached iterator.
+            if (r.nextInt(10) == 0) {
+                s.add(s.size() + 1);
+            }
         }
     }
 }

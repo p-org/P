@@ -252,10 +252,12 @@ namespace Plang.Compiler.Backend.Java
                 return;
             }
 
+            string mname = Names.GetNameForDecl(m);
+
             WriteLine(Constants.FFICommentDivider);
 
             WriteLine();
-            WriteFFIHeader(m.Name);
+            WriteFFIHeader(mname);
             WriteLine();
 
             WriteLine($"package {Constants.FFIPackage};");
@@ -277,7 +279,7 @@ namespace Plang.Compiler.Backend.Java
             // Class definition: By convention, this "para-class" has the same name as
             // the P machine it is defined within, to mimic the C#-style partial class mixin
             // functionalty that we are not afforded in Java, unfortunately.
-            WriteLine($"public class {m.Name} {{");
+            WriteLine($"public class {mname} {{");
             foreach (Function f in ffs)
             {
                 WriteForeignFunctionStub(f, m);
@@ -296,9 +298,14 @@ namespace Plang.Compiler.Backend.Java
         /// <param name="m">The machine scope (if null, treated as the global scope)</param>
         void WriteForeignFunctionStub(Function f, Machine m = null)
         {
-            JType ret = Types.JavaTypeFor(f.Signature.ReturnType);
+            string fname = Names.GetNameForDecl(f);
+            TypeManager.JType ret = Types.JavaTypeFor(f.Signature.ReturnType);
 
-            WriteLine($"public static {ret.TypeName} {f.Name}(");
+            Write($"public static {ret.TypeName} {fname}(");
+            if (f.Signature.Parameters.Any())
+            {
+                WriteLine();
+            }
 
             // If the function is being emitted at global scope, any monitor can call it
             // and hence we can't say anything about the monitor's state enum type, so we
@@ -312,8 +319,8 @@ namespace Plang.Compiler.Backend.Java
 
             foreach (var param in f.Signature.Parameters)
             {
-                string pname = param.Name;
-                JType ptype = Types.JavaTypeFor(param.Type);
+                string pname = Names.GetNameForDecl(param);
+                TypeManager.JType ptype = Types.JavaTypeFor(param.Type);
 
                 WriteLine(",");
                 Write($"{ptype.TypeName} {pname}");

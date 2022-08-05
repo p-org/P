@@ -29,7 +29,8 @@ namespace Plang.Compiler.Backend.Java
         /// <returns>The identifier.</returns>
         public string IdentForState(State s)
         {
-            return Constants.StateEnumName + "." + s.Name;
+            string name = GetNameForDecl(s);
+            return Constants.StateEnumName + "." + name;
         }
 
         /// <summary>
@@ -116,13 +117,13 @@ namespace Plang.Compiler.Backend.Java
                 name = "TMP_" + name.Substring(1);
             }
 
-            // Handle the case where a declaration happens to match the name of the top level
-            // classname (which, as it isn't strictly a declaration in the grammar, doesn't
-            // pass through here)
-            if (name == TopLevelCName)
+            // If the name matches a reserved word (either a string defined in the Constants class or the top-level
+            // compilation job), pre-uniquify it so there is no collision during Java compilation.
+            if (name == TopLevelCName || Constants.IsReserved(name))
             {
-                string cname = decl.GetType().ToString().Split(".").Last();
-                name = $"{name}_{cname}";
+                //No need to use the fully-qualified typename, just grab the innermost class name for this.
+                string tname = decl.GetType().ToString().Split(".").Last();
+                name = $"{name}_{tname}";
             }
 
             return UniquifyName(name);

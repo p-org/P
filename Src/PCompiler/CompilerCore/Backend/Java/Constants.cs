@@ -6,10 +6,21 @@ using System.Text;
 namespace Plang.Compiler.Backend.Java
 {
     /// <summary>
-    /// Holds some string constants for the JavaCodeGenerator.
+    /// Holds some string constants for the JavaCodeGenerator.  Any public strings
+    /// defined in this class are additionally implicitly Java backend-specific
+    /// keywords and will be renamed if a P programmer gives an identifier a name
+    /// matching one of them.  See the `Reserved words` region for details.
     /// </summary>
     internal static class Constants
     {
+        #region P Java runtime constants
+
+        public static readonly string PRTNamespaceName = "prt";
+
+        public static readonly string TryAssertMethodName = "tryAssert";
+        public static readonly string TryRaiseEventMethodName = "tryRaiseEvent";
+
+        #endregion
 
         #region Machine source generation
 
@@ -64,17 +75,17 @@ Please separate each generated class into its own .java file (detailed throughou
 in the body of each function definition as necessary for your project's business logic.
 ";
 
-        internal static readonly string FFIStubFileName = "FFIStubs.txt";
+        public static readonly string FFIStubFileName = "FFIStubs.txt";
 
-        internal static readonly string FFIPackage = "PForeign";
+        public static readonly string FFIPackage = "PForeign";
         internal static readonly string FFITypesPackage = $"{FFIPackage}.types";
-        internal static readonly string FFIGlobalScopeCname = $"P_TopScope";
+        public static readonly string FFIGlobalScopeCname = "P_TopScope";
 
 
         // Something that is clearly not valid Java.
         private static readonly string FFICommentToken = "%";
 
-        public static string FFICommentDivider = new StringBuilder(72).Insert(0, FFICommentToken, 72).ToString();
+        internal static readonly string FFICommentDivider = new StringBuilder(72).Insert(0, FFICommentToken, 72).ToString();
 
         internal static string AsFFIComment(string line)
         {
@@ -168,35 +179,124 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         /// The fully-qualified name of the static `deepClone(PrtValue)` method exposed by
         /// the Java PRT runtime.
         /// </summary>
-        public static readonly string PrtDeepCloneMethodName = "prt.values.Clone.deepClone";
+        internal static readonly string PrtDeepCloneMethodName = "prt.values.Clone.deepClone";
 
         /// <summary>
         /// The fully-qualified name of the static `deepEquality(Object, Object)` method
         /// exposed by the Java PRT runtime.
         /// </summary>
-        public static readonly string PrtDeepEqualsMethodName = "prt.values.Equality.deepEquals";
+        internal static readonly string PrtDeepEqualsMethodName = "prt.values.Equality.deepEquals";
 
         /// <summary>
         /// The fully-qualified name of the static `compare(Comparable, Comparable)` method
         /// exposed by the Java PRT runtime.
         /// </summary>
-        public static readonly string PrtCompareMethodName = "prt.values.Equality.compare";
+        internal static readonly string PrtCompareMethodName = "prt.values.Equality.compare";
 
         /// <summary>
         /// The fully-qualified name of the static `eleemntAt(LinkedHashSet, int)` method
         /// exposed by the Java PRT runtime.
         /// </summary>
-        public static readonly string PrtSetElementAtMethodName = "prt.values.SetIndexing.elementAt";
+        internal static readonly string PrtSetElementAtMethodName = "prt.values.SetIndexing.elementAt";
 
         /// <summary>
         /// The fully-qualified class name of the Java P runtime's PValue class.
         /// </summary>
-        public static readonly string PValueClass = "prt.values.PValue";
+        internal static readonly string PValueClass = "prt.values.PValue";
 
         /// <summary>
         /// The fully-qualified class name of the Java P runtime's PEvent class.
         /// </summary>
-        public static readonly string PEventsClass = "prt.events.PEvent";
+        internal static readonly string PEventsClass = "prt.events.PEvent";
+
+        #endregion
+
+
+        #region Reserved words
+
+        // https://docs.oracle.com/javase/tutorial/java/nutsandbolts/_keywords.html
+        // keywords that match P reserved words are commented out.
+        private static IEnumerable<string> _javaKeywords = new[]
+        {
+            "abstract",
+            /*"assert",*/
+            /*"boolean",*/
+            /*"break",*/
+            "byte",
+            /*"case",*/
+            "catch",
+            "char",
+            "class",
+            "const",
+            "continue",
+            "default",
+            /*"do",*/
+            /*"double",*/
+            "else",
+            "enum",
+            "extends",
+            "final",
+            "finally",
+            /*"float",*/
+            /*"for",*/
+            /*"goto",*/
+            /*"if",*/
+            "implements",
+            "import",
+            "instanceof",
+            /*"int",*/
+            "interface",
+            "java", /* not strictly a keyword but it's the top level language import */
+            "long",
+            "native",
+            /*"new",*/
+            "package",
+            "private",
+            "protected",
+            "public",
+            /*"return",*/
+            "short",
+            "static",
+            "strictfp",
+            "super",
+            "switch",
+            "synchronized",
+            /*"this",*/
+            "throw",
+            "throws",
+            "transient",
+            "try",
+            /*"void",*/
+            "volatile",
+            /*"while",*/
+        };
+
+        private static HashSet<string> _reservedWords = null;
+
+        /// <summary>
+        /// Reflects out all the string fields defined in this class.
+        /// </summary>
+        private static HashSet<string> ExtractReservedWords()
+        {
+            Type self = typeof(Constants);
+            return self.GetFields()
+                .Where(f => f.IsStatic && f.FieldType == typeof(string))
+                .Select(f => (string)f.GetValue(null) /* passed null b/c all our fields are static */ )
+                .ToHashSet();
+        }
+
+        /// <summary>
+        /// Checks whether the given string should be considered a reserved word for the Java backend.  For our
+        /// purposes, if the string matches a static string defined in this class, then we consider it a reserved
+        /// word (since that string will be used actively in code generation)
+        /// </summary>
+        public static bool IsReserved(string token)
+        {
+            _reservedWords ??= ExtractReservedWords()
+                .Concat(_javaKeywords)
+                .ToHashSet();
+            return _reservedWords.Contains(token);
+        }
 
         #endregion
     }

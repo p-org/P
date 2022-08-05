@@ -194,7 +194,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         internal static readonly string PrtCompareMethodName = "prt.values.Equality.compare";
 
         /// <summary>
-        /// The fully-qualified name of the static `eleemntAt(LinkedHashSet, int)` method
+        /// The fully-qualified name of the static `elementAt(LinkedHashSet, long)` method
         /// exposed by the Java PRT runtime.
         /// </summary>
         internal static readonly string PrtSetElementAtMethodName = "prt.values.SetIndexing.elementAt";

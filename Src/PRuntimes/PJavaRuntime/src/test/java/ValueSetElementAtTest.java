@@ -58,8 +58,8 @@ public class ValueSetElementAtTest {
                         .collect(Collectors.toList()));
 
         // Arbitrary iteration
-        Random r = new Random();
-        for (int i = 0; i < 2000; i++) {
+        Random r = new Random(System.currentTimeMillis());
+        for (int i = 0; i < 500; i++) {
             int idx = r.nextInt(s.size());
             assertEquals(prt.values.SetIndexing.elementAt(s, idx), idx+1);
 

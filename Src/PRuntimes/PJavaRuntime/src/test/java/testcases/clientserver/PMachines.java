@@ -1,7 +1,7 @@
 package testcases.clientserver;
 
 /***************************************************************************
- * This file was auto-generated on Monday, 01 August 2022 at 11:28:45.
+ * This file was auto-generated on Friday, 05 August 2022 at 09:21:39.
  * Please do not edit manually!
  **************************************************************************/
 
@@ -13,7 +13,7 @@ public class PMachines {
     // PMachine Database elided
     // PMachine Client elided
     // PMachine AbstractBankServer elided
-    public static class BankBalanceIsAlwaysCorrect extends prt.Monitor {
+    public static class BankBalanceIsAlwaysCorrect extends prt.Monitor<BankBalanceIsAlwaysCorrect.PrtStates> {
 
         public static class Supplier implements java.util.function.Supplier<BankBalanceIsAlwaysCorrect> {
             public BankBalanceIsAlwaysCorrect get() {
@@ -58,8 +58,8 @@ public class PMachines {
             long TMP_tmp0 = 0L;
             boolean TMP_tmp1 = false;
             long TMP_tmp2 = 0L;
-            ArrayList<Long> TMP_tmp3 = new ArrayList<Long>();
-            String TMP_tmp4 = "";
+            ArrayList<Long> TMP_tmp3 = null;
+            String TMP_tmp4 = null;
             long TMP_tmp5 = 0L;
 
             TMP_tmp0 = req.accountId;
@@ -75,21 +75,21 @@ public class PMachines {
             long TMP_tmp0_1 = 0L;
             boolean TMP_tmp1_1 = false;
             long TMP_tmp2_1 = 0L;
-            String TMP_tmp3_1 = "";
+            String TMP_tmp3_1 = null;
             long TMP_tmp4_1 = 0L;
             boolean TMP_tmp5_1 = false;
             long TMP_tmp6 = 0L;
-            String TMP_tmp7 = "";
+            String TMP_tmp7 = null;
             long TMP_tmp8 = 0L;
             boolean TMP_tmp9 = false;
-            String TMP_tmp10 = "";
+            String TMP_tmp10 = null;
             PTypes.tWithDrawRespStatus TMP_tmp11 = PTypes.tWithDrawRespStatus.WITHDRAW_SUCCESS;
             boolean TMP_tmp12 = false;
             long TMP_tmp13 = 0L;
             long TMP_tmp14 = 0L;
             long TMP_tmp15 = 0L;
             long TMP_tmp16 = 0L;
-            PTypes.PTuple_src_accnt_amnt_rId TMP_tmp17 = new PTypes.PTuple_src_accnt_amnt_rId();
+            PTypes.PTuple_src_accnt_amnt_rId TMP_tmp17 = null;
             long TMP_tmp18 = 0L;
             long TMP_tmp19 = 0L;
             boolean TMP_tmp20 = false;
@@ -98,26 +98,26 @@ public class PMachines {
             long TMP_tmp23 = 0L;
             long TMP_tmp24 = 0L;
             long TMP_tmp25 = 0L;
-            PTypes.PTuple_src_accnt_amnt_rId TMP_tmp26 = new PTypes.PTuple_src_accnt_amnt_rId();
+            PTypes.PTuple_src_accnt_amnt_rId TMP_tmp26 = null;
             long TMP_tmp27 = 0L;
             long TMP_tmp28 = 0L;
-            String TMP_tmp29 = "";
+            String TMP_tmp29 = null;
             long TMP_tmp30 = 0L;
             long TMP_tmp31 = 0L;
             long TMP_tmp32 = 0L;
             long TMP_tmp33 = 0L;
             long TMP_tmp34 = 0L;
             long TMP_tmp35 = 0L;
-            PTypes.PTuple_src_accnt_amnt_rId TMP_tmp36 = new PTypes.PTuple_src_accnt_amnt_rId();
+            PTypes.PTuple_src_accnt_amnt_rId TMP_tmp36 = null;
             long TMP_tmp37 = 0L;
             long TMP_tmp38 = 0L;
             boolean TMP_tmp39 = false;
             long TMP_tmp40 = 0L;
-            PTypes.PTuple_src_accnt_amnt_rId TMP_tmp41 = new PTypes.PTuple_src_accnt_amnt_rId();
+            PTypes.PTuple_src_accnt_amnt_rId TMP_tmp41 = null;
             long TMP_tmp42 = 0L;
             long TMP_tmp43 = 0L;
             long TMP_tmp44 = 0L;
-            String TMP_tmp45 = "";
+            String TMP_tmp45 = null;
             long TMP_tmp46 = 0L;
             long TMP_tmp47 = 0L;
             long TMP_tmp48 = 0L;
@@ -125,7 +125,7 @@ public class PMachines {
             long TMP_tmp50 = 0L;
             long TMP_tmp51 = 0L;
             long TMP_tmp52 = 0L;
-            String TMP_tmp53 = "";
+            String TMP_tmp53 = null;
 
             TMP_tmp0_1 = resp.accountId;
             TMP_tmp1_1 = bankBalance.containsKey(TMP_tmp0_1);
@@ -196,7 +196,7 @@ public class PMachines {
         }
 
     } // BankBalanceIsAlwaysCorrect monitor definition
-    public static class GuaranteedWithDrawProgress extends prt.Monitor {
+    public static class GuaranteedWithDrawProgress extends prt.Monitor<GuaranteedWithDrawProgress.PrtStates> {
 
         public static class Supplier implements java.util.function.Supplier<GuaranteedWithDrawProgress> {
             public GuaranteedWithDrawProgress get() {
@@ -241,8 +241,8 @@ public class PMachines {
             long TMP_tmp0_3 = 0L;
             boolean TMP_tmp1_2 = false;
             long TMP_tmp2_2 = 0L;
-            LinkedHashSet<Long> TMP_tmp3_2 = new LinkedHashSet<Long>();
-            String TMP_tmp4_2 = "";
+            LinkedHashSet<Long> TMP_tmp3_2 = null;
+            String TMP_tmp4_2 = null;
             long TMP_tmp5_2 = 0L;
             long TMP_tmp6_1 = 0L;
             boolean TMP_tmp7_1 = false;

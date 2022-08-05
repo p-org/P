@@ -155,9 +155,18 @@ namespace Plang.Compiler.Backend.Java {
             {
                 foreach (var decl in f.LocalVariables)
                 {
-                    //TODO: for reference types the default value can simply be null; it will be reassigned later.
                     TypeManager.JType t = Types.JavaTypeFor(decl.Type);
-                    WriteLine($"{t.TypeName} {Names.GetNameForDecl(decl)} = {t.DefaultValue};");
+
+                    if (decl.Role.HasFlag(VariableRole.Temp) && !t.IsPrimitive)
+                    {
+                        /* Temporary values are only emitted as part of the frontend's SSA algorithm, and therefore
+                         * will never be read but only overwritten.  Save us allocating a dummy rval in such cases. */
+                        WriteLine($"{t.TypeName} {Names.GetNameForDecl(decl)} = null;");
+                    }
+                    else
+                    {
+                        WriteLine($"{t.TypeName} {Names.GetNameForDecl(decl)} = {t.DefaultValue};");
+                    }
                 }
                 WriteLine();
             }

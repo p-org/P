@@ -157,11 +157,13 @@ namespace Plang.Compiler.Backend.Java {
                 {
                     TypeManager.JType t = Types.JavaTypeFor(decl.Type);
 
-                    if (decl.Role.HasFlag(VariableRole.Temp) && !t.IsPrimitive)
+                    if (decl.Role.HasFlag(VariableRole.Temp))
                     {
                         /* Temporary values are only emitted as part of the frontend's SSA algorithm, and therefore
-                         * will never be read but only overwritten.  Save us allocating a dummy rval in such cases. */
-                        WriteLine($"{t.TypeName} {Names.GetNameForDecl(decl)} = null;");
+                         * will never be read but only overwritten.  There's no need to initialise this variable,
+                         * especially if it's a reference type (resulting in a GC allocation that will be thrown
+                         * away immediately). */
+                        WriteLine($"{t.TypeName} {Names.GetNameForDecl(decl)};");
                     }
                     else
                     {

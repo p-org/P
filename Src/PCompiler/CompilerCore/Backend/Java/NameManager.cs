@@ -43,7 +43,7 @@ namespace Plang.Compiler.Backend.Java
             if (!_namedTupleJTypes.TryGetValue(t, out var val))
             {
                 IEnumerable<string> names = t.Names;
-                names = names.Select(AbbreviateTupleName).ToArray();
+                names = names.Select(AbbreviateTupleName);
                 val = UniquifyName("PTuple_" + string.Join("_", names));
                 _namedTupleJTypes.Add(t, val);
             }

@@ -32,18 +32,6 @@ namespace Plang.Compiler.Backend.Java {
         /// <exception cref="Exception"></exception>
         protected override void GenerateCodeImpl()
         {
-            if (GlobalScope.Typedefs.Any())
-            {
-                foreach (var t in GlobalScope.Typedefs)
-                {
-                    if (t.Type is ForeignType foreignType)
-                    {
-                        WriteForeignType(foreignType);
-                    }
-                }
-                WriteLine();
-            }
-
             WriteLine($"public class {Constants.MachineNamespaceName} {{");
 
             foreach (var m in GlobalScope.Machines)
@@ -60,12 +48,6 @@ namespace Plang.Compiler.Backend.Java {
                 _currentMachine = null;
             }
             WriteLine("}");
-        }
-
-
-        private void WriteForeignType(ForeignType ft)
-        {
-            WriteLine($"import {Constants.FFITypesPackage}.{ft.CanonicalRepresentation};");
         }
 
 

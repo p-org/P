@@ -1,7 +1,7 @@
 package testcases.clientserver;
 
 /***************************************************************************
- * This file was auto-generated on Thursday, 21 July 2022 at 13:40:36.
+ * This file was auto-generated on Monday, 08 August 2022 at 17:03:57.
  * Please do not edit manually!
  **************************************************************************/
 
@@ -246,7 +246,7 @@ public class PTypes {
         }
 
         public PTuple_srvr_intlb deepClone() {
-            return new PTuple_srvr_intlb(server, (HashMap<Long, Long>)prt.values.Clone.deepClone(initialBalance));
+            return new PTuple_srvr_intlb(server, prt.values.Clone.deepClone(initialBalance));
         } // deepClone()
 
 

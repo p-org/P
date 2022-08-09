@@ -101,8 +101,8 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JAny : JType
             {
-                /// "PValue" is the interface in the Java runtime that requires deepClone() and deepEquals() to
-                /// be implemented.
+                /// A JAny can either be a PEvent, a PValue, or a collection type like ArrayList, HashSet, etc.
+                /// For a complete list, see the implementation of `deepEquals()` and `deepClone` in the P java runtime:
                 internal JAny()
                 {
                     _unboxedType = "Object";
@@ -110,8 +110,6 @@ namespace Plang.Compiler.Backend.Java
 
                 internal override bool IsPrimitive => false;
 
-                /// We don't know how to construct a value of this type and it might not have a nullary constructor.
-                /// TODO: how safe is this?  values.deepClone() and values.deepEqual() are null-safe, at least.
                 internal override string DefaultValue => "null";
             }
 
@@ -242,12 +240,9 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JSet : JType
             {
-                private readonly JType _t;
-
                 internal JSet(JType t)
                 {
-                    _t = t;
-                    _unboxedType = $"LinkedHashSet<{_t.ReferenceTypeName}>";
+                    _unboxedType = $"LinkedHashSet<{t.ReferenceTypeName}>";
                 }
 
                 internal override bool IsPrimitive => false;
@@ -265,7 +260,7 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JNamedTuple : JType
             {
-                internal JNamedTuple(string jClassName, IEnumerable<(string, JType)> fields)
+                internal JNamedTuple(string jClassName)
                 {
                     _unboxedType = $"{Constants.TypesNamespaceName}.{jClassName}";
                 }
@@ -275,20 +270,13 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JForeign : JType
             {
-                /// <summary>
-                /// The name of the Java class that this foreign type corresponds to.
-                /// </summary>
-                internal string JClassName { get; }
-
                 internal JForeign(string clazz)
                 {
-                    _unboxedType = clazz;
+                    _unboxedType = $"{Constants.FFITypesPackage}.{clazz}";
                 }
 
                 internal override bool IsPrimitive => false;
 
-                /// We don't know how to construct a value of this type and it might not have a nullary constructor.
-                /// TODO: how safe is this?  values.deepClone() and values.deepEqual() are null-safe, at least.
                 internal override string DefaultValue => "null";
             }
 
@@ -396,19 +384,14 @@ namespace Plang.Compiler.Backend.Java
                     return new JType.JForeign(ft.CanonicalRepresentation);
 
                 case MapType m:
-                    JType k = JavaTypeFor(m.KeyType);
-                    JType v = JavaTypeFor(m.ValueType);
+                {
+                    var k = JavaTypeFor(m.KeyType);
+                    var v = JavaTypeFor(m.ValueType);
                     return new JType.JMap(k, v);
+                }
 
                 case NamedTupleType nt:
-                {
-                    List<NamedTupleEntry> fields = nt.Fields.ToList();
-                    fields.Sort((e1, e2) => e1.FieldNo.CompareTo(e2.FieldNo));
-
-                    return new JType.JNamedTuple(
-                        Names.NameForNamedTuple(nt),
-                        fields.Select(e => (e.Name, JavaTypeFor(e.Type))));
-                }
+                    return new JType.JNamedTuple(Names.NameForNamedTuple(nt));
 
                 case PermissionType _:
                     return new JType.JMachine();

@@ -408,26 +408,38 @@ namespace Plang.Compiler.Backend.Java {
                     break;
 
                 case IfStmt ifStmt:
+                    if (!ifStmt.ThenBranch.Statements.Any() && !ifStmt.ElseBranch.Statements.Any())
+                    {
+                        break;
+                    }
+
+                    if (!ifStmt.ThenBranch.Statements.Any() && ifStmt.ElseBranch.Statements.Any())
+                    {
+                        UnaryOpExpr inverted = new UnaryOpExpr(
+                            ifStmt.SourceLocation,
+                            UnaryOpType.Not,
+                            ifStmt.Condition
+                        );
+                        WriteStmt(new IfStmt(
+                            ifStmt.SourceLocation,
+                            inverted,
+                            ifStmt.ElseBranch,
+                            ifStmt.ThenBranch));
+                        break;
+                    }
+
                     Write("if (");
                     WriteExpr(ifStmt.Condition);
                     Write(") ");
 
-                    if (ifStmt.ThenBranch.Statements.Count == 0)
-                    {
-                        Write("{}");
-                    }
-                    else
-                    {
-                        WriteStmt(ifStmt.ThenBranch);
-                    }
+                    WriteStmt(ifStmt.ThenBranch);
 
-                    if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Count > 0)
+                    if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Any())
                     {
                         WriteLine(" else ");
                         WriteStmt(ifStmt.ElseBranch);
                     }
                     break;
-
 
                 case InsertStmt insertStmt:
                     t = Types.JavaTypeFor(insertStmt.Variable.Type);
@@ -636,7 +648,7 @@ namespace Plang.Compiler.Backend.Java {
                     WriteBinOp(binOpExpr.Lhs, binOpExpr.Operation, binOpExpr.Rhs);
                     break;
                 case BoolLiteralExpr ble:
-                    Write($"({TypeManager.JType.JBool.ToJavaLiteral(ble.Value)})");
+                    Write($"{TypeManager.JType.JBool.ToJavaLiteral(ble.Value)}");
                     break;
                 case CastExpr ce:
                 {
@@ -676,7 +688,7 @@ namespace Plang.Compiler.Backend.Java {
                     Write($"{Constants.TypesNamespaceName}.{typeName}.{valueName}");
                     break;
                 case EventRefExpr _:
-                    goto default; //TODO
+                    goto default;
                 case FairNondetExpr _:
                     goto default;
                 case FloatLiteralExpr fe:
@@ -759,7 +771,6 @@ namespace Plang.Compiler.Backend.Java {
                         case UnaryOpType.Not:
                             Write("!");
                             break;
-
                     }
                     Write("(");
                     WriteExpr(ue.SubExpr);

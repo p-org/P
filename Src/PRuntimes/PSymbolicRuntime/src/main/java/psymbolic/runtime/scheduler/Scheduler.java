@@ -62,6 +62,11 @@ public class Scheduler implements SymbolicSearch {
      */
     public boolean useSleepSets() { return configuration.isUseSleepSets(); }
 
+    /** Get whether to compute fixed points
+     * @return whether to compute fixed points
+     */
+    public boolean computeFixedPoints() { return configuration.isComputeFixedPoints(); }
+
     /** Current depth of exploration */
     private int depth = 0;
     /** Whether or not search is done */
@@ -501,7 +506,7 @@ public class Scheduler implements SymbolicSearch {
 
         performEffect(effect.restrict(done.not()));
 
-        if (!syncStep) {
+        if (computeFixedPoints() && !syncStep) {
           List<List<ValueSummary>> newStates = new ArrayList<>();
           for (Machine machine : machines) {
               newStates.add(machine.getLocalState());

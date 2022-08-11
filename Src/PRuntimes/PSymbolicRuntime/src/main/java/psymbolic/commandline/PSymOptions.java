@@ -96,6 +96,14 @@ public class PSymOptions {
                 .build();
         options.addOption(dpor);
 
+        // whether or not to compute fixed points
+        Option fp = Option.builder("fp")
+                .longOpt("compute-fixed-points")
+                .desc("Enable computation of fixed points")
+                .numberOfArgs(0)
+                .build();
+        options.addOption(fp);
+
         // set the level of verbosity
         Option verbosity = Option.builder("v")
                 .longOpt("verbose")
@@ -202,6 +210,10 @@ public class PSymOptions {
                 case "dpor":
                 case "use-dpor":
                     config.setDpor(true);
+                    break;
+                case "fp":
+                case "compute-fixed-points":
+                    config.setComputeFixedPoints(true);
                     break;
                 case "h":
                 case "help":

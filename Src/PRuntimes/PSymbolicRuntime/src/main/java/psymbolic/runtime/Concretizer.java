@@ -21,6 +21,11 @@ public class Concretizer {
      * @return a concrete value represented by the value summary
      */ 
     public static GuardedValue concretize (Object valueSummary) {
+        if (valueSummary instanceof  ValueSummary) {
+            if (((ValueSummary<?>) valueSummary).isEmptyVS()) {
+                return null;
+            }
+        }
         if (valueSummary instanceof PrimitiveVS<?>) {
             List<? extends GuardedValue<?>> list = ((PrimitiveVS<?>) valueSummary).getGuardedValues();
             if (list.size() > 0) {
@@ -140,7 +145,6 @@ public class Concretizer {
             messageComponents.add(guardedVectorClock.getValue());
             return new GuardedValue(messageComponents, guardedPayloadValue.getGuard());
         }
-        System.out.println("class: " + valueSummary.getClass());
         return null;
     }
 

@@ -65,4 +65,8 @@ public class PSymConfiguration {
     @Getter @Setter
     // whether to collect stats or not
     private boolean collectStats = false;
+
+    @Getter @Setter
+    // whether to compute fixed points or not
+    private boolean computeFixedPoints = false;
 }

@@ -1642,6 +1642,38 @@ namespace Plang.Compiler.Backend.Symbolic
                     );
                     break;
                 case SetAccessExpr setAccessExpr:
+                    elementType = setAccessExpr.Type;
+
+                    WriteWithLValueMutationContext(
+                        context,
+                        output,
+                        pcScope,
+                        setAccessExpr.SetExpr,
+                        true,
+                        setTemp =>
+                        {
+                            var elementTemp = context.FreshTempVar();
+                            var indexTemp = context.FreshTempVar();
+
+                            context.Write(output, $"{GetSymbolicType(PrimitiveType.Int)} {indexTemp} = ");
+                            WriteExpr(context, output, pcScope, setAccessExpr.IndexExpr);
+                            context.WriteLine(output, ";");
+
+                            context.Write(output, $"{GetSymbolicType(elementType)} {elementTemp}");
+                            if (needOrigValue)
+                            {
+                                context.WriteLine(output, $" = {setTemp}.get({indexTemp});");
+                            }
+                            else
+                            {
+                                context.WriteLine(output, ";");
+                            }
+
+                            writeMutator(elementTemp);
+
+                            context.WriteLine(output, $"{setTemp} = {setTemp}.set({indexTemp}, {elementTemp});");
+                        }
+                    );
                     break;
                 case VariableAccessExpr variableAccessExpr:
                     var name = variableAccessExpr.Variable.Name;
@@ -1805,6 +1837,12 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, pcScope, seqAccessExpr.SeqExpr);
                     context.Write(output, ".get(");
                     WriteExpr(context, output, pcScope, seqAccessExpr.IndexExpr);
+                    context.Write(output, ")");
+                    break;
+                case SetAccessExpr setAccessExpr:
+                    WriteExpr(context, output, pcScope, setAccessExpr.SetExpr);
+                    context.Write(output, ".get(");
+                    WriteExpr(context, output, pcScope, setAccessExpr.IndexExpr);
                     context.Write(output, ")");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:

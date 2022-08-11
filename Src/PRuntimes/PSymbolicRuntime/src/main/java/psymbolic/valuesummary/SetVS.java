@@ -107,6 +107,16 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     }
 
     /**
+     * Get an item from the SetVS' underlying ListVS
+     *
+     * @param index The index to get
+     * @return The element gotten
+     */
+    public T get(PrimitiveVS<Integer> index) {
+      return elements.get(index);
+    }
+
+    /**
      * Remove an item from the SetVS if present (otherwise no op)
      * @param itemSummary The element to remove. Should be possible under a subset of the SetVS's conditions.
      * @return The SetVS with the element removed.
@@ -117,5 +127,10 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
         if (idx.isEmptyVS()) return this;
         ListVS<T> newElements = elements.removeAt(idx);
         return new SetVS<>(newElements);
+    }
+
+    @Override
+    public String toString() {
+      return "Set of " + elements.toString();
     }
 }

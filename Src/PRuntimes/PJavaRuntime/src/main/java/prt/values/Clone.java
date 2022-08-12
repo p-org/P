@@ -31,9 +31,6 @@ public class Clone {
         return s; //already immutable!  No cloning necessary.
     }
 
-    public static Enum<?> deepClone(Enum<?> e) {
-        return e; //already immutable!  No cloning necessary.
-    }
 
     public static <T> ArrayList<T> deepClone(ArrayList<T> a) {
         if (a == null) return null;
@@ -63,7 +60,7 @@ public class Clone {
 
         HashMap<T, U> cloned = new HashMap<>();
         for (Map.Entry<T,U> e : m.entrySet()) {
-            T k = deepClone(e.getKey());
+            T k = deepClone(e.getKey()); // TODO: shouldn't keys be immutable as-is?  Can we elide this deep clone?
             U v = deepClone(e.getValue());
             cloned.put(k, v);
         }
@@ -85,27 +82,29 @@ public class Clone {
             return null;
         }
 
-        if (o instanceof PValue<?>) {
-            return (T) ((PValue<?>)o).deepClone();
-        }
-
         Class<?> clazz = o.getClass();
+        // Immutable types require no special cloning operation.
         if (clazz == Boolean.class)
-            return (T) deepClone((Boolean)o);
+            return o;
         if (clazz == Long.class)
-            return (T) deepClone((Long)o);
+            return o;
         if (clazz == Float.class)
-            return (T) deepClone((Float)o);
+            return o;
         if (clazz == String.class)
-            return (T) deepClone((String)o);
+            return o;
+        if (o instanceof Enum<?>)
+            return o;
+
+        // Collection types necessitate recursive cloning of its elements.
+        if (o instanceof PValue<?>)
+            return (T) ((PValue<?>)o).deepClone();
+
         if (clazz == ArrayList.class)
             return (T) deepClone((ArrayList<?>) o);
         if (clazz == HashMap.class)
             return (T) deepClone((HashMap<?, ?>) o);
         if (clazz == LinkedHashSet.class)
             return (T) deepClone((LinkedHashSet<?>) o);
-        if (Enum.class.isAssignableFrom(clazz))
-            return (T) deepClone((Enum<?>) o);
 
         throw new UncloneableValueException(clazz);
     }

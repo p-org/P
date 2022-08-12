@@ -91,6 +91,7 @@ public class Equality {
             // Otherwise, dispatch on the classes.
             Class<?> c1 = o1.getClass();
             Class<?> c2 = o2.getClass();
+
             if (c1 == Boolean.class && c2 == Boolean.class)
                 return compare((Boolean) o1, (Boolean) o2) == 0;
             if (c1 == Integer.class && c2 == Integer.class)
@@ -108,7 +109,13 @@ public class Equality {
             if (c1 == LinkedHashSet.class && c2 == LinkedHashSet.class)
                 return deepLinkedHashSetEquals((LinkedHashSet<?>) o1, (LinkedHashSet<?>) o2);
 
+            if (Enum.class.isAssignableFrom(c1) && Enum.class.isAssignableFrom(c2)) {
+                if (c1 == c2) {
+                    return ((Enum<?>)o1).ordinal() == ((Enum<?>)o2).ordinal();
+                }
+            }
             throw new IncomparableValuesException(c1, c2);
+
         } catch (ClassCastException e) {
             // The C# P runtime is pretty permissive about comparing different types (no runtime exception,
             // they just evaluate to false) so we do the same here in case we are passed incomparable types.

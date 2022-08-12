@@ -109,7 +109,7 @@ public class Equality {
             if (c1 == LinkedHashSet.class && c2 == LinkedHashSet.class)
                 return deepLinkedHashSetEquals((LinkedHashSet<?>) o1, (LinkedHashSet<?>) o2);
 
-            if (Enum.class.isAssignableFrom(c1) && Enum.class.isAssignableFrom(c2)) {
+            if (Enum.class.isAssignableFrom(c1)) {
                 if (c1 == c2) {
                     return ((Enum<?>)o1).ordinal() == ((Enum<?>)o2).ordinal();
                 }

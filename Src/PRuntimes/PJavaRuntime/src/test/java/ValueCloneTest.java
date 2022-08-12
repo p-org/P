@@ -189,7 +189,7 @@ public class ValueCloneTest {
     @DisplayName("Can clone an enum")
     public void testEnumClone() {
         anEnum e1 = anEnum.VALUE_ONE;
-        anEnum e2 = (anEnum) deepClone(e1);
+        anEnum e2 = deepClone(e1);
         assertEquals(e1, e2);
     }
 

@@ -53,6 +53,13 @@ public class ValueCompareTest {
         anEnum(int i) { value = i; }
     }
 
+    enum anotherEnum {
+        VALUE_0(0),
+        VALUE_1(1);
+        private final int value;
+        anotherEnum(int i) { value = i; }
+    }
+
     @Test
     @DisplayName("tests enums")
     public void testEnumEquality()
@@ -65,6 +72,12 @@ public class ValueCompareTest {
         assertEquals(Equality.compare(anEnum.VALUE_ZERO, anEnum.VALUE_ONE), -1);
         assertEquals(Equality.compare(anEnum.VALUE_ONE, anEnum.VALUE_ZERO), 1);
         assertEquals(Equality.compare(anEnum.VALUE_ONE, anEnum.VALUE_ONE), 0);
+
+        assertTrue(Equality.deepEquals(anEnum.VALUE_ZERO, anEnum.VALUE_ZERO));
+        assertFalse(Equality.deepEquals(anEnum.VALUE_ZERO, anEnum.VALUE_ONE));
+
+        assertThrows(IncomparableValuesException.class, () ->
+                Equality.deepEquals(anEnum.VALUE_ZERO, anotherEnum.VALUE_0));
     }
 
     @Test

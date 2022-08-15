@@ -566,9 +566,10 @@ namespace Plang.Compiler.Backend.Java {
 
                 case TupleAccessExpr tupleAccessExpr:
                     WriteExpr(tupleAccessExpr.SubExpr);
-                    Write($".put({tupleAccessExpr.FieldNo.ToString()}, ");
+                    Write($".{Constants.UnnamedTupleFieldPrefix + tupleAccessExpr.FieldNo}");
+                    Write(" = ");
                     WriteExpr(rval);
-                    WriteLine(");");
+                    WriteLine(";");
                     break;
 
                 case VariableAccessExpr variableAccessExpr:
@@ -916,7 +917,7 @@ namespace Plang.Compiler.Backend.Java {
 
                 case TupleAccessExpr tupleAccessExpr:
                     WriteExpr(tupleAccessExpr.SubExpr);
-                    Write($".{tupleAccessExpr.FieldNo.ToString()}");
+                    Write($".{Constants.UnnamedTupleFieldPrefix + tupleAccessExpr.FieldNo}");
                     break;
 
             }

@@ -2,6 +2,7 @@ using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Plang.Compiler.Backend.Java;
 
 namespace Plang.Compiler.TypeChecker.Types
 {
@@ -24,7 +25,7 @@ namespace Plang.Compiler.TypeChecker.Types
             List<NamedTupleEntry> fields = Types.Select((t, i) =>
             {
                 NamedTupleEntry e = new NamedTupleEntry();
-                e.Name = "arg_" + i;
+                e.Name = Constants.UnnamedTupleFieldPrefix + i;
                 e.FieldNo = i;
                 e.Type = t;
                 return e;

@@ -62,6 +62,8 @@ namespace Plang.Compiler.Backend.Java
         public static readonly string TypesNamespaceName = "PTypes";
         public static readonly string TypesDefnFileName = $"{TypesNamespaceName}.java";
 
+        public static readonly string UnnamedTupleFieldPrefix = "arg_";
+
         #endregion
 
         #region FFI generation

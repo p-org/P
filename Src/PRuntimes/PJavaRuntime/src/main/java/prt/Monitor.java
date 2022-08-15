@@ -191,10 +191,6 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
         } catch (RaiseEventException e) {
             // ...An event to be raised.  If it does, process the event in the current state.
             accept(e.getEvent());
-        } catch (ClassCastException e) {
-            // ...An invalid cast: in the case where the event handler's type parameter is incompatible
-            // with the runtime type of `p`.  This is a code generation or programming error.
-            throw new GotoPayloadClassException(o, currentState);
         }
     }
 

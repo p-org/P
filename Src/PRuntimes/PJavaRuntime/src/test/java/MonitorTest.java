@@ -2,7 +2,6 @@ import prt.events.PEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import prt.*;
-import prt.exceptions.GotoPayloadClassException;
 import prt.exceptions.NonTotalStateMapException;
 import prt.exceptions.PAssertionFailureException;
 
@@ -118,6 +117,7 @@ public class MonitorTest {
 
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
+
 
     class GotoStateWithPayloadsMonitor extends Monitor {
         public List<Object> eventsProcessed; // We'll use this to track what events we've processed
@@ -339,7 +339,7 @@ public class MonitorTest {
     public void testChainedEntryHandlersWithIllTypedPayloads() {
         GotoStateWithIllTypedPayloadsMonitor m = new GotoStateWithIllTypedPayloadsMonitor();
 
-        assertThrows(GotoPayloadClassException.class, () -> m.ready());
+        assertThrows(ClassCastException.class, () -> m.ready());
     }
 
     @Test
@@ -347,7 +347,7 @@ public class MonitorTest {
     public void testIllTypedReadyCallThrows() {
         GotoStateWithPayloadsMonitorIncludingInitialEntryHandler m =
                 new GotoStateWithPayloadsMonitorIncludingInitialEntryHandler();
-        assertThrows(GotoPayloadClassException.class, () -> m.ready(Integer.valueOf(42)));
+        assertThrows(ClassCastException.class, () -> m.ready(Integer.valueOf(42)));
     }
 
     @Test

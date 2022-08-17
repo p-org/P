@@ -5,16 +5,16 @@ GREEN='\033[0;32m'
 ORANGE='\033[0;33m'
 set -e
 
+BLD_PATH=$(dirname $0)
+pushd $BLD_PATH/..
+
 echo -e "${ORANGE} ---- Fetching git submodules ----${NOCOLOR}"
-pushd ..
+
 # Initialize submodules
 git submodule update --init --recursive
 
 echo -e "${ORANGE} ---- Building the Java P runtime ----${NOCOLOR}"
-mvn clean compile -f ./Src/PRuntimes/PJavaRuntime/pom.xml
-
-echo -e "${ORANGE} ---- Building PUnit ----${NOCOLOR}"
-mvn clean compile -f ./Tst/PUnit/pom.xml
+mvn compile -q -f ./Src/PRuntimes/PJavaRuntime/pom.xml
 
 echo -e "${ORANGE} ---- Building the PCompiler ----${NOCOLOR}"
 # Run the build!

@@ -59,6 +59,7 @@ machine Global {
       var q21 : seq[int];
       var q22 : seq[int];
       var q23 : seq[int];
+      M = pld.M;
       driver = pld.driver;
       highestP1ABallot = -1;
       acceptors = pld.acceptSeq;
@@ -431,8 +432,8 @@ machine Main {
       var MAXB : int;
       N = 4;
       M = 2;
-      STOP = 2;
-      MAXB = 3;
+      STOP = 3;
+      MAXB = 5;
       i = 1;
       while (i <= N) {
         acceptors += (sizeof(acceptors), i);

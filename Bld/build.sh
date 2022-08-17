@@ -13,6 +13,9 @@ git submodule update --init --recursive
 echo -e "${ORANGE} ---- Building the Java P runtime ----${NOCOLOR}"
 mvn clean compile -f ./Src/PRuntimes/PJavaRuntime/pom.xml
 
+echo -e "${ORANGE} ---- Building PUnit ----${NOCOLOR}"
+mvn clean compile -f ./Tst/PUnit/pom.xml
+
 echo -e "${ORANGE} ---- Building the PCompiler ----${NOCOLOR}"
 # Run the build!
 

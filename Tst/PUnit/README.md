@@ -2,6 +2,19 @@
 
 PUnit is a library that extends JUnit test suites with P specifications.
 
+## Dependencies
+
+The P Java runtime (PRT) is required on your classpath.  You likely already
+have it installed by virtue of executing P monitors extracted to Java; but, to
+install it from this repo into your local Maven repository,
+
+```
+$ cd Src/PRuntimes/PJavaRuntime
+$ mvn install
+```
+
+All other dependencies will be pulled from remote repositories.
+
 ## Overview and Tutorial
 
 Imagine I have an implementation of an algebraic ring (I can add and multiply

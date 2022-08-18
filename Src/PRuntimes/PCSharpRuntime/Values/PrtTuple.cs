@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Plang.CSharpRuntime.Exceptions;
 
 namespace Plang.CSharpRuntime.Values
 {
@@ -103,8 +104,8 @@ namespace Plang.CSharpRuntime.Values
     [Serializable]
     public class PrtNamedTuple : IPrtValue
     {
-        public readonly List<IPrtValue> fieldValues;
-        public List<string> fieldNames;
+        private readonly List<IPrtValue> fieldValues;
+        private List<string> fieldNames;
 
         public PrtNamedTuple()
         {
@@ -129,8 +130,24 @@ namespace Plang.CSharpRuntime.Values
 
         public IPrtValue this[string name]
         {
-            get => fieldValues[fieldNames.IndexOf(name)];
-            set => fieldValues[fieldNames.IndexOf(name)] = value;
+            get
+            {
+                int idx = fieldNames.IndexOf(name);
+                if (idx == -1)
+                {
+                    throw UnknownNamedTupleFieldAccess.FromFields(name, fieldNames);
+                }
+                return fieldValues[fieldNames.IndexOf(name)];
+            }
+            set
+            {
+                int idx = fieldNames.IndexOf(name);
+                if (idx == -1)
+                {
+                    throw UnknownNamedTupleFieldAccess.FromFields(name, fieldNames);
+                }
+                fieldValues[fieldNames.IndexOf(name)] = value;
+            }
         }
 
         public IPrtValue Clone()

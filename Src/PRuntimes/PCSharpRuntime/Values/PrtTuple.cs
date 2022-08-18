@@ -104,8 +104,8 @@ namespace Plang.CSharpRuntime.Values
     [Serializable]
     public class PrtNamedTuple : IPrtValue
     {
-        private readonly List<IPrtValue> fieldValues;
-        private List<string> fieldNames;
+        public readonly List<IPrtValue> fieldValues;
+        public List<string> fieldNames;
 
         public PrtNamedTuple()
         {

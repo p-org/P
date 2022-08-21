@@ -73,8 +73,8 @@ machine Global {
       }
       i = 0;
       emptyBalVSet[-1] = emptyVSet;
-      while (i < sizeof(ballots)) {
-        emptyBalVSet[ballots[i]] = emptyVSet;
+      while (i < sizeof(ballots) + M) {
+        emptyBalVSet[i] = emptyVSet;
         i = i + 1;
       } 
       i = 0;
@@ -108,14 +108,14 @@ machine Global {
       }
       // sent acc msgs
       i = 0;
-      while (i < sizeof(ballots)) {
-        SentP1A += (ballots[i], false);
-        SentP2A += (ballots[i], emptyValSet);
-        SentP3A += (ballots[i], emptySlotSet);
-        SentP1B += (ballots[i], emptyValSet);
-        SentP2B += (ballots[i], emptyVSet);
-        SatQ1[ballots[i]] = false;
-        SatQ2[ballots[i]] = false;
+      while (i < sizeof(ballots) + M) {
+        SentP1A += (i, false);
+        SentP2A += (i, emptyValSet);
+        SentP3A += (i, emptySlotSet);
+        SentP1B += (i, emptyValSet);
+        SentP2B += (i, emptyVSet);
+        SatQ1[i] = false;
+        SatQ2[i] = false;
         i = i + 1;
       }
       i = 0;
@@ -169,14 +169,14 @@ machine Global {
             chose = false;
             while (!chose && (k < sizeof(slots))) {
               l = 0;
-              while (!chose && (l < sizeof(ballots))) {
+              while (!chose && (l < sizeof(ballots) + M)) {
                 m = 0;
                 while (!chose && (m < sizeof(vals))) {
-                  if (SentP2A[ballots[j]][slots[k]][ballots[l]][vals[m]]) {
+                  if (SentP2A[ballots[j]][slots[k]][l][vals[m]]) {
                     if (ballots[j] > maxBal[acceptors[i]]) {
                       choices += (sizeof(choices), (1, acceptors[i], ballots[j]));
                       chose = true;
-                    } else if (!hVal[acceptors[i]][slots[k]][ballots[l]][vals[m]]) {
+                    } else if (!hVal[acceptors[i]][slots[k]][l][vals[m]]) {
                       choices += (sizeof(choices), (1, acceptors[i], ballots[j]));
                       chose = true;
                     }
@@ -194,42 +194,46 @@ machine Global {
       }
       i = 0;
       while (i < sizeof(leaders)) {
-        if((s[leaders[i]] in slots) && (b[leaders[i]] in ballots)) {
-          // P1L - try to get elected
+        if((pc[leaders[i]] == 0 && (s[leaders[i]] in slots) && (b[leaders[i]] in ballots)) ||
+           !(pc[leaders[i]] == 0)) {
           if (pc[leaders[i]] == 0) {
+            pc[leaders[i]] = 1;
+          }
+          // P1L - try to get elected
+          if (pc[leaders[i]] == 1) {
             if (elected[leaders[i]]) {
-              pc[leaders[i]] = 2;
+              pc[leaders[i]] = 3;
             }
             else {
               choices += (sizeof(choices), (3, leaders[i], b[leaders[i]]));
             } 
           }
-          if (pc[leaders[i]] == 1 || pc[leaders[i]] == 3) {
+          if (pc[leaders[i]] == 2 || pc[leaders[i]] == 4) {
             // CP1L - collect responses
-            if (pc[leaders[i]] == 1 && SatQ1[b[leaders[i]]]) {
+            if (pc[leaders[i]] == 2 && SatQ1[b[leaders[i]]]) {
               //canCollectP1 += (sizeof(canCollectP1), leaders[i]);
               choices += (sizeof(choices), (4, leaders[i], b[leaders[i]]));
             }
             // CP2L - collect responses
-            if (pc[leaders[i]] == 3 && SatQ2[b[leaders[i]]]) {
+            if (pc[leaders[i]] == 4 && SatQ2[b[leaders[i]]]) {
               //canCollectP2 += (sizeof(canCollectP2), leaders[i]);
               choices += (sizeof(choices), (6, leaders[i], b[leaders[i]]));
             }
             if (highestP1ABallot > b[leaders[i]]) {
               // CP1L - collect responses
-              if (pc[leaders[i]] == 1) {
+              if (pc[leaders[i]] == 2) {
                 //canCollectP1 += (sizeof(canCollectP1), leaders[i]);
                 choices += (sizeof(choices), (4, leaders[i], b[leaders[i]]));
               }
               // CP2L - collect responses
-              if (pc[leaders[i]] == 3) {
+              if (pc[leaders[i]] == 4) {
                 //canCollectP2 += (sizeof(canCollectP2), leaders[i]);
                 choices += (sizeof(choices), (6, leaders[i], b[leaders[i]]));
               }
             }
           }
           // phase 2
-          if (pc[leaders[i]] == 2) {
+          if (pc[leaders[i]] == 3) {
             // P2L
             choices += (sizeof(choices), (5, leaders[i], b[leaders[i]]));
           }
@@ -272,12 +276,12 @@ machine Global {
       print("replyP1");
       maxBal[pld.acceptor] = pld.b;
       i = 0;
-      while (i < sizeof(ballots)) {
+      while (i < sizeof(ballots) + M) {
         j = 0;
         while (j < sizeof(slots)) {
           k = 0;
           while (k < sizeof(vals)) {
-            SentP1B[pld.b][slots[j]][ballots[i]][vals[k]] = hVal[pld.acceptor][slots[j]][ballots[i]][vals[k]];
+            SentP1B[pld.b][slots[j]][i][vals[k]] = hVal[pld.acceptor][slots[j]][i][vals[k]];
             k = k + 1;
           }
           j = j + 1;
@@ -315,14 +319,14 @@ machine Global {
       print("replyP2");
       maxBal[pld.acceptor] = pld.b;
       i = 0;
-      while (i < sizeof(ballots)) {
+      while (i < sizeof(ballots) + M) {
         j = 0;
         while (j < sizeof(slots)) {
           k = 0;
           while (k < sizeof(vals)) {
-            if (SentP2A[pld.b][slots[j]][ballots[i]][vals[k]] &&
-                !hVal[pld.acceptor][slots[j]][ballots[i]][vals[k]]) {
-              choices += (sizeof(choices), (slots[j], ballots[i], vals[k]));
+            if (SentP2A[pld.b][slots[j]][i][vals[k]] &&
+                !hVal[pld.acceptor][slots[j]][i][vals[k]]) {
+              choices += (sizeof(choices), (slots[j], i, vals[k]));
             }
             k = k + 1;
           }
@@ -357,10 +361,10 @@ machine Global {
       b[leader] = b[leader] + M;
       print("sendP1");
       SentP1A[b[leader]] = true;
-      if (b[leader] > highestP1ABallot) {
+      if ((b[leader] > highestP1ABallot) && b[leader] <= ballots[sizeof(ballots) - 1]) {
         highestP1ABallot = b[leader];
       }
-      pc[leader] = 1;
+      pc[leader] = 2;
       send driver, eNext;
     }
 
@@ -372,13 +376,13 @@ machine Global {
       if (highestP1ABallot <= b[leader]) {
         elected[leader] = true;
         i = 0;
-        while (i < sizeof(ballots)) {
+        while (i < sizeof(ballots) + M) {
           j = 0;
           while (j < sizeof(slots)) {
             k = 0;
             while (k < sizeof(vals)) {
-              if (SentP1B[b[leader]][slots[j]][ballots[i]][vals[k]]) {
-                pVal[leader][slots[j]][ballots[i]][vals[k]] = true;
+              if (SentP1B[b[leader]][slots[j]][i][vals[k]]) {
+                pVal[leader][slots[j]][i][vals[k]] = true;
               }
               k = k + 1;
             }
@@ -387,7 +391,7 @@ machine Global {
           i = i + 1;
         }
       }
-      pc[leader] = 0;
+      pc[leader] = 1;
       send driver, eNext;
     }
 
@@ -399,13 +403,13 @@ machine Global {
       print("sendP2");
       // count cardinality of pVal
       i = 0;
-      while (i < sizeof(ballots)) {
+      while (i < sizeof(ballots) + M) {
         j = 0;
         while (j < sizeof(slots)) {
           k = 0; 
           while (k < sizeof(vals)) { 
-            if (pVal[leader][slots[j]][ballots[i]][vals[k]]) {
-              pVals += (sizeof(pVals), (slots[j], ballots[i], vals[k]));
+            if (pVal[leader][slots[j]][i][vals[k]]) {
+              pVals += (sizeof(pVals), (slots[j], i, vals[k]));
             }
             k = k + 1;
           }
@@ -419,7 +423,7 @@ machine Global {
         i = choose(sizeof(pVals));
         SentP2A[b[leader]][pVals[i].0][pVals[i].1][pVals[i].2] = true;
       }
-      pc[leader] = 3;
+      pc[leader] = 4;
       send driver, eNext;
     }
 

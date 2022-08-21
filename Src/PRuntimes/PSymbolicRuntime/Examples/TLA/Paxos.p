@@ -92,13 +92,13 @@ machine Global {
       // sent acc msgs
       i = 0;
       SentP1A = emptySet;
-      while (i < sizeof(ballots)) {
-        SentP2A += (ballots[i], emptySet2);
-        SentP3A += (ballots[i], sent3As);
-        SentP1B += (ballots[i], emptySet2);
-        SentP2B += (ballots[i], emptySet);
-        SatQ1[ballots[i]] = false;
-        SatQ2[ballots[i]] = false;
+      while (i < sizeof(ballots) + M) {
+        SentP2A += (i, emptySet2);
+        SentP3A += (i, sent3As);
+        SentP1B += (i, emptySet2);
+        SentP2B += (i, emptySet);
+        SatQ1[i] = false;
+        SatQ2[i] = false;
         i = i + 1;
       }
       i = 0;
@@ -175,42 +175,46 @@ machine Global {
       }
       i = 0;
       while (i < sizeof(leaders)) {
-        if((s[leaders[i]] in slots) && (b[leaders[i]] in ballots)) {
-          // P1L - try to get elected
+        if((pc[leaders[i]] == 0 && ((s[leaders[i]] in slots) && (b[leaders[i]] in ballots))) ||
+           !(pc[leaders[i]] == 0)) {
           if (pc[leaders[i]] == 0) {
+            pc[leaders[i]] = 1;
+          }
+          // P1L - try to get elected
+          if (pc[leaders[i]] == 1) {
             if (elected[leaders[i]]) {
-              pc[leaders[i]] = 2;
+              pc[leaders[i]] = 3;
             }
             else {
               choices += (sizeof(choices), (3, leaders[i], b[leaders[i]]));
             } 
           }
-          if (pc[leaders[i]] == 1 || pc[leaders[i]] == 3) {
+          if (pc[leaders[i]] == 2 || pc[leaders[i]] == 4) {
             // CP1L - collect responses
-            if (pc[leaders[i]] == 1 && SatQ1[b[leaders[i]]]) {
+            if (pc[leaders[i]] == 2 && SatQ1[b[leaders[i]]]) {
               //canCollectP1 += (sizeof(canCollectP1), leaders[i]);
               choices += (sizeof(choices), (4, leaders[i], b[leaders[i]]));
             }
             // CP2L - collect responses
-            if (pc[leaders[i]] == 3 && SatQ2[b[leaders[i]]]) {
+            if (pc[leaders[i]] == 4 && SatQ2[b[leaders[i]]]) {
               //canCollectP2 += (sizeof(canCollectP2), leaders[i]);
               choices += (sizeof(choices), (6, leaders[i], b[leaders[i]]));
             }
             if (highestP1ABallot > b[leaders[i]]) {
               // CP1L - collect responses
-              if (pc[leaders[i]] == 1) {
+              if (pc[leaders[i]] == 2) {
                 //canCollectP1 += (sizeof(canCollectP1), leaders[i]);
                 choices += (sizeof(choices), (4, leaders[i], b[leaders[i]]));
               }
               // CP2L - collect responses
-              if (pc[leaders[i]] == 3) {
+              if (pc[leaders[i]] == 4) {
                 //canCollectP2 += (sizeof(canCollectP2), leaders[i]);
                 choices += (sizeof(choices), (6, leaders[i], b[leaders[i]]));
               }
             }
           }
           // phase 2
-          if (pc[leaders[i]] == 2) {
+          if (pc[leaders[i]] == 3) {
             // P2L
             choices += (sizeof(choices), (5, leaders[i], b[leaders[i]]));
           }
@@ -338,10 +342,10 @@ machine Global {
       b[leader] = b[leader] + M;
       print("sendP1");
       SentP1A += (b[leader]);//(sizeof(SentP1A), b[leader]);
-      if (b[leader] > highestP1ABallot) {
+      if ((b[leader] > highestP1ABallot) && b[leader] <= ballots[sizeof(ballots) - 1]) {
         highestP1ABallot = b[leader];
       }
-      pc[leader] = 1;
+      pc[leader] = 2;
       send driver, eNext;
     }
 
@@ -355,7 +359,7 @@ machine Global {
           i = i + 1;
         }
       }
-      pc[leader] = 0;
+      pc[leader] = 1;
       send driver, eNext;
     }
 
@@ -376,7 +380,7 @@ machine Global {
         i = choose(sizeof(pVals));
         SentP2A[b[leader]] += ((pVals[i]));
       }
-      pc[leader] = 3;
+      pc[leader] = 4;
       send driver, eNext;
     }
 

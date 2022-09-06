@@ -22,6 +22,7 @@ machine Voldchain {
   var driver : machine;
   var cntr : map[int, int];
   var hver : map[int, int];
+  var states : seq[(chain : seq[int], pc : map[int, int], up : map[int, bool], FailNum : int, cntr : map[int, int], hver : map[int, int], db : map[int, (ver : int, val : int, cli : int)], msg : map[int, (ver : int, val : int, cli : int)])];
   start state Init {
     entry (pld : (driver : machine, N : int, C : int, STOP : int, FAILNUM : int)) {
       var i : int;
@@ -47,10 +48,18 @@ machine Voldchain {
 
     on eNext do {
       var i : int;
+      var j : int;
       var choices : seq[(int, int)];
       var ifBranch : bool;
       var added : bool;
+      var next : bool;
+      var chainTmp : seq[int];
+      var chainTmp2 : seq[int];
+      var st : (chain : seq[int], pc : map[int, int], up : map[int, bool], FailNum : int, cntr : map[int, int], hver : map[int, int], db : map[int, (ver : int, val : int, cli : int)], msg : map[int, (ver : int, val : int, cli : int)]);
+      var st2 : (chain : seq[int], pc : map[int, int], up : map[int, bool], FailNum : int, cntr : map[int, int], hver : map[int, int], db : map[int, (ver : int, val : int, cli : int)], msg : map[int, (ver : int, val : int, cli : int)]);
       i = 0;
+      st = (chain=chain, pc=pc, up=up, FailNum=FailNum, cntr=cntr, hver=hver, db=db, msg=msg); 
+      st2 = (chain=chainTmp, pc=pc, up=up, FailNum=FailNum, cntr=cntr, hver=hver, db=db, msg=msg); 
       // node
       while (i < sizeof(nodes)) {
         if (pc[nodes[i]] == 0) {
@@ -93,7 +102,11 @@ machine Voldchain {
               choices += (sizeof(choices), (clients[i], 3));
             }
           } else {
-            choices += (sizeof(choices), (clients[i], 4));
+            // execute after CLR loop here
+            hver[clients[i]] = msg[clients[i]].ver + 1;
+            msg -= clients[i];
+            pc[clients[i]] = 3;
+            //choices += (sizeof(choices), (clients[i], 4));
           }
         }
         if (pc[clients[i]] == 3) {
@@ -121,7 +134,12 @@ machine Voldchain {
             }
           }
           else {
-            choices += (sizeof(choices), (clients[i], 6));
+            // execute after CLW while loop here
+            cntr[clients[i]] = cntr[clients[i]] + 1;
+            msg -= clients[i];
+            pc[clients[i]] = 1;
+            next = true;
+            //choices += (sizeof(choices), (clients[i], 6));
           }
         }
         i = i + 1;
@@ -132,8 +150,12 @@ machine Voldchain {
         i = 0;
         while (i < sizeof(nodes)) {
           if (up[nodes[i]] && !(nodes[i] in chain)) {
-            // for testing {
-            choices += (sizeof(choices), (nodes[i], 7));
+            chainTmp2 = chain;
+            chainTmp2 += (sizeof(chainTmp2), nodes[i]);
+            st2.chain = chainTmp2;
+            if (!(st2 in states)) {
+              choices += (sizeof(choices), (nodes[i], 7));
+            }
             ifBranch = true;
           }
           i = i + 1;
@@ -144,14 +166,27 @@ machine Voldchain {
         i = 0;
         while (!added && (i < sizeof(chain))) {
           if (!up[chain[i]]) {
-            choices += (sizeof(choices), (i, 8));
+            // try checking if resulting state would be new
+            chainTmp2 = chainTmp;
+            j = 0;
+            while (j < sizeof(chain)) {
+              if (j != i) {
+                chainTmp2 += (sizeof(chainTmp2), chain[j]);
+              }
+              j = j + 1;
+            }
+            st2.chain = chainTmp2;
+            if (!(st2 in states)) {
+              choices += (sizeof(choices), (i, 8));
+            }
             added = true;
           }
           i = i + 1;
         }
       }
-      if (sizeof(choices) > 0) {
+      if (!(st in states) && (sizeof(choices) > 0)) {
         i = choose(sizeof(choices));
+        states += (sizeof(states), st);
         if (choices[i].1 == 0) {
           raise NM, choices[i].0;
         }
@@ -177,8 +212,11 @@ machine Voldchain {
           raise AddNode, choices[i].0;
         }
         if (choices[i].1 == 8) {
-          raise Filter, choices[i].0;
+          raise Filter, 0;
         }
+      } else if (!(st in states) && next) {
+        states += (sizeof(states), st);
+        send driver, eNext;
       }
     }
 
@@ -276,6 +314,7 @@ machine Voldchain {
         }
         i = i + 1;
       }
+      chain = newChain;
       send driver, eNext;
     }
   }
@@ -285,7 +324,7 @@ machine Main {
   var voldchain : machine;
   start state Init {
     entry {
-      voldchain = new Voldchain((driver=this, N=2, C=1, STOP=1, FAILNUM=1));
+      voldchain = new Voldchain((driver=this, N=4, C=2, STOP=0, FAILNUM=0));
       send voldchain, eNext;
     }
     on eNext do {

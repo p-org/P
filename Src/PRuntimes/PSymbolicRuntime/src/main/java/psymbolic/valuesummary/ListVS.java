@@ -163,7 +163,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
                         .mapToObj((i) -> this.items.get(i).symbolicEquals(cmp.items.get(i), pc).getGuardFor(Boolean.TRUE))
                         .reduce(Guard::and)
                         .orElse(Guard.constTrue());
-                equalCond = equalCond.or(listEqual);
+                equalCond = equalCond.or(listEqual.and(size.getGuard()).and(cmp.size.getGuardFor(size.getValue())));
             }
         }
         return BooleanVS.trueUnderGuard(pc.and(equalCond).and(this.size.symbolicEquals(cmp.size, pc).getGuardFor(true)));

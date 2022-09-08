@@ -22,6 +22,7 @@ machine Voldchain {
   var driver : machine;
   var cntr : map[int, int];
   var hver : map[int, int];
+  var states : seq[(chain : seq[int], pc : map[int, int], up : map[int, bool], FailNum : int, cntr : map[int, int], hver : map[int, int], db : map[int, (ver : int, val : int, cli : int)], msg : map[int, (ver : int, val : int, cli : int)])];
   start state Init {
     entry (pld : (driver : machine, N : int, C : int, STOP : int, FAILNUM : int)) {
       var i : int;
@@ -54,7 +55,11 @@ machine Voldchain {
       var next : bool;
       var chainTmp : seq[int];
       var chainTmp2 : seq[int];
+      var st : (chain : seq[int], pc : map[int, int], up : map[int, bool], FailNum : int, cntr : map[int, int], hver : map[int, int], db : map[int, (ver : int, val : int, cli : int)], msg : map[int, (ver : int, val : int, cli : int)]);
+      var st2 : (chain : seq[int], pc : map[int, int], up : map[int, bool], FailNum : int, cntr : map[int, int], hver : map[int, int], db : map[int, (ver : int, val : int, cli : int)], msg : map[int, (ver : int, val : int, cli : int)]);
       i = 0;
+      st = (chain=chain, pc=pc, up=up, FailNum=FailNum, cntr=cntr, hver=hver, db=db, msg=msg); 
+      st2 = (chain=chainTmp, pc=pc, up=up, FailNum=FailNum, cntr=cntr, hver=hver, db=db, msg=msg); 
       // node
       while (i < sizeof(nodes)) {
         if (pc[nodes[i]] == 0) {
@@ -70,10 +75,10 @@ machine Voldchain {
         // NEM
         else if (pc[nodes[i]] == 1) {
           // consume
-          choices += (sizeof(choices), (nodes[i], 1));
-          // option: execute NEM here
-          // msg -= nodes[i];
-          // pc[nodes[i]] = 0;
+          // execute NEM here
+          msg -= nodes[i];
+          pc[nodes[i]] = 0;
+          //choices += (sizeof(choices), (nodes[i], 1));
         }
         i = i + 1;
       }
@@ -148,7 +153,12 @@ machine Voldchain {
         i = 0;
         while (i < sizeof(nodes)) {
           if (up[nodes[i]] && !(nodes[i] in chain)) {
-            choices += (sizeof(choices), (nodes[i], 7));
+            chainTmp2 = chain;
+            chainTmp2 += (sizeof(chainTmp2), nodes[i]);
+            st2.chain = chainTmp2;
+            if (!(st2 in states)) {
+              choices += (sizeof(choices), (nodes[i], 7));
+            }
             ifBranch = true;
           }
           i = i + 1;
@@ -159,14 +169,27 @@ machine Voldchain {
         i = 0;
         while (!added && (i < sizeof(chain))) {
           if (!up[chain[i]]) {
-            choices += (sizeof(choices), (i, 8));
+            // try checking if resulting state would be new
+            chainTmp2 = chainTmp;
+            j = 0;
+            while (j < sizeof(chain)) {
+              if (j != i) {
+                chainTmp2 += (sizeof(chainTmp2), chain[j]);
+              }
+              j = j + 1;
+            }
+            st2.chain = chainTmp2;
+            if (!(st2 in states)) {
+              choices += (sizeof(choices), (i, 8));
+            }
             added = true;
           }
           i = i + 1;
         }
       }
-      if (sizeof(choices) > 0) {
+      if (!(st in states) && (sizeof(choices) > 0)) {
         i = choose(sizeof(choices));
+        states += (sizeof(states), st);
         if (choices[i].1 == 0) {
           raise NM, choices[i].0;
         }
@@ -194,7 +217,8 @@ machine Voldchain {
         if (choices[i].1 == 8) {
           raise Filter, 0;
         }
-      } else if (next) {
+      } else if (!(st in states) && next) {
+        states += (sizeof(states), st);
         send driver, eNext;
       }
     }

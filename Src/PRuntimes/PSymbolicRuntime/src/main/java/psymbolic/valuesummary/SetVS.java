@@ -10,7 +10,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     /** The underlying set */
     private final ListVS<T> elements;
 
-    /** Get all the different possible guarded concretevalues */
+    /** Get all the different possible guarded values */
     public ListVS<T> getElements() {
         return elements;
     }
@@ -128,5 +128,42 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
         if (idx.isEmptyVS()) return this;
         ListVS<T> newElements = elements.removeAt(idx);
         return new SetVS<>(newElements);
+    }
+
+    /** Get an item from the SetVS
+     * @param indexSummary The index to take from the SetVS. Should be possible under a subset of the SetVS's conditions.
+     */
+    public T get(PrimitiveVS<Integer> indexSummary) {
+        return elements.get(indexSummary);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder out = new StringBuilder();
+        out.append("Set[");
+        List<GuardedValue<Integer>> guardedSizeList = elements.size().getGuardedValues();
+        for (int j = 0; j < guardedSizeList.size(); j++) {
+            GuardedValue<Integer> guardedSize = guardedSizeList.get(j);
+            out.append("  #" + guardedSize.getValue() + ": [");
+            for (int i = 0; i < guardedSize.getValue(); i++) {
+                out.append(this.elements.getItems().get(i).restrict(guardedSize.getGuard()));
+                if (i < guardedSize.getValue() - 1) {
+                    out.append(", ");
+                }
+            }
+            if (j < guardedSizeList.size() - 1) {
+                out.append(",");
+            }
+        }
+        out.append("]");
+        return out.toString();
+    }
+
+    public String toStringDetailed() {
+        StringBuilder out = new StringBuilder();
+        out.append("Set[");
+        out.append(elements.toStringDetailed());
+        out.append("]");
+        return out.toString();
     }
 }

@@ -1,5 +1,6 @@
 package psymbolic.valuesummary;
 
+import lombok.Getter;
 import psymbolic.runtime.values.PString;
 
 import java.util.*;
@@ -9,6 +10,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     /** List of names of the fields in the declared order*/
     private final List<String> names;
     /** Underlying representation as a TupleVS */
+    @Getter
     private final TupleVS tuple;
 
     private NamedTupleVS(List<String> names, TupleVS tuple) {
@@ -40,7 +42,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     }
 
     /** Make a new NamedTupleVS with the provided names and fields
-     * @param namesAndFields Alternating String and ValueSummary concretevalues where the Strings give the field names
+     * @param namesAndFields Alternating String and ValueSummary values where the Strings give the field names
      */
     public NamedTupleVS(Object... namesAndFields) {
         names = new ArrayList<>();
@@ -101,6 +103,9 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
         final List<TupleVS> tuples = new ArrayList<TupleVS>();
 
         for (NamedTupleVS summary : summaries) {
+            if (!Arrays.equals(getNames(), summary.getNames())) {
+                throw new RuntimeException("Merging named tuples with different fields is unsupported.");
+            }
             tuples.add(summary.tuple);
         }
 
@@ -119,6 +124,9 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
 
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(NamedTupleVS cmp, Guard pc) {
+        if (cmp == null) {
+            return new PrimitiveVS<>(false).restrict(pc);
+        }
         if (!Arrays.deepEquals(names.toArray(), cmp.names.toArray())) {
             // TODO: raise an exception checking equality of two incompatible types
             return new PrimitiveVS<>(false).restrict(pc);
@@ -129,5 +137,25 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     @Override
     public Guard getUniverse() {
         return tuple.getUniverse();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder("( ");
+        for (int i = 0; i < names.size(); i++) {
+            str.append(names.get(i)).append("=");
+            str.append((tuple.getClass(i)).cast(tuple.getField(i)).toString()).append(", ");
+        }
+        str.append(")");
+        return str.toString();
+    }
+
+    public String toStringDetailed() {
+        StringBuilder out = new StringBuilder();
+        out.append("NamedTuple[ names: ");
+        out.append(names).append(", tuple: ");
+        out.append(tuple.toStringDetailed());
+        out.append("]");
+        return out.toString();
     }
 }

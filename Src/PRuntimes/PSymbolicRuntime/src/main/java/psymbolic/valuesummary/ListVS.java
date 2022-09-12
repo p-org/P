@@ -1,6 +1,7 @@
 package psymbolic.valuesummary;
 
 import com.google.common.collect.ImmutableList;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +16,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     private final PrimitiveVS<Integer> size;
     /** The contents of the list, where T is a value summary itself,
      * value summary at index i represents the possible content at that index */
+    @Getter
     private final List<T> items;
 
     private ListVS(PrimitiveVS<Integer> size, List<T> items) {
@@ -60,7 +62,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     public PrimitiveVS<Integer> size() { return size; }
 
     /**
-     * Is the value summary empty with no concretevalues in it
+     * Is the value summary empty with no values in it
      */
     @Override
     public boolean isEmptyVS() {
@@ -437,15 +439,35 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     public String toString() {
         StringBuilder out = new StringBuilder();
         out.append("List[");
-        for (GuardedValue<Integer> guardedSize : size.getGuardedValues()) {
-            out.append("VS { _ : {");
+        List<GuardedValue<Integer>> guardedSizeList = size.getGuardedValues();
+        for (int j = 0; j < guardedSizeList.size(); j++) {
+            GuardedValue<Integer> guardedSize = guardedSizeList.get(j);
+            out.append("  #" + guardedSize.getValue() + ": [");
             for (int i = 0; i < guardedSize.getValue(); i++) {
                 out.append(this.items.get(i).restrict(guardedSize.getGuard()));
                 if (i < guardedSize.getValue() - 1) {
-                    out.append("  ,   ");
+                    out.append(", ");
                 }
             }
-            out.append("}}, ").append(System.lineSeparator());
+            if (j < guardedSizeList.size() - 1) {
+                out.append(",");
+            }
+        }
+        out.append("]");
+        return out.toString();
+    }
+
+    public String toStringDetailed() {
+        StringBuilder out = new StringBuilder();
+        out.append("List[");
+        List<GuardedValue<Integer>> guardedSizeList = size.getGuardedValues();
+        for (int j = 0; j < guardedSizeList.size(); j++) {
+            GuardedValue<Integer> guardedSize = guardedSizeList.get(j);
+            out.append("  #" + guardedSize.getValue() + ": [");
+            for (int i = 0; i < guardedSize.getValue(); i++) {
+                out.append(this.items.get(i).restrict(guardedSize.getGuard()).toStringDetailed()).append(", ");
+            }
+            out.append(",");
         }
         out.append("]");
         return out.toString();

@@ -23,7 +23,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
     public UnionVS(Guard pc, Class<? extends ValueSummary> type, ValueSummary values) {
         this.type = new PrimitiveVS<Class<? extends ValueSummary>>(type).restrict(pc);
         this.value = new HashMap<>();
-        // TODO: why are we not restricting the concretevalues?
+        // TODO: why are we not restricting the values?
         this.value.put(type, values);
         assert(this.type != null);
     }
@@ -128,7 +128,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
             }
         }
 
-        if (valuesToMerge.size() == 0) return new UnionVS();
+        if (valuesToMerge.size() == 0) return new UnionVS(this);
 
         final PrimitiveVS<Class<? extends ValueSummary>> mergedType = type.merge(typesToMerge);
         final Map<Class<? extends ValueSummary>, ValueSummary> mergedValue = new HashMap<>(this.value);
@@ -163,6 +163,9 @@ public class UnionVS implements ValueSummary<UnionVS> {
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(UnionVS cmp, Guard pc) {
         assert(type != null);
+        if (cmp == null) {
+            return BooleanVS.trueUnderGuard(Guard.constFalse());
+        }
         PrimitiveVS res = type.symbolicEquals(cmp.type, pc);
         for (Map.Entry<Class<? extends ValueSummary>, ValueSummary> payload : cmp.value.entrySet()) {
             if (!value.containsKey(payload.getKey())) {
@@ -189,6 +192,16 @@ public class UnionVS implements ValueSummary<UnionVS> {
         for (Class<? extends ValueSummary>type : type.getValues()) {
             out.append(value.get(type).toString());
             out.append(", ");
+        }
+        out.append("]");
+        return out.toString();
+    }
+
+    public String toStringDetailed() {
+        StringBuilder out = new StringBuilder();
+        out.append("Union[");
+        for (Class<? extends ValueSummary>type : type.getValues()) {
+            out.append(value.get(type).toStringDetailed()).append(", ");
         }
         out.append("]");
         return out.toString();

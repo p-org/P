@@ -1,5 +1,7 @@
 package psymbolic.valuesummary;
 
+import psymbolic.runtime.Message;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +38,10 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
                  return new PrimitiveVS<>(pc);
              }
              System.out.println(anyVal.restrict(typeGuard));
-             throw new ClassCastException(String.format("Casting to %s under path constraint %s is not defined",
+             throw new ClassCastException(String.format("Casting to %s under path constraint %s is not defined for %s",
                      type,
-                     pcNotDefined));
+                     pcNotDefined,
+                     anyVal));
          }
          result = anyVal.getValue(type).restrict(pc);
 /*
@@ -94,7 +97,52 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
      }
 
     /**
-     * Check whether a value summary has any concretevalues under any path condition
+     * Get all the different possible guarded values from a valueSummary type.
+     *
+     * @param valueSummary A ValueSummary of which guarded values are extracted
+     * @return A list of guarded values
+     */
+    static List<GuardedValue<?>> getGuardedValues(ValueSummary<?> valueSummary) {
+        List<GuardedValue<?>> guardedValueList = new ArrayList<>();
+        if (valueSummary instanceof PrimitiveVS<?>) {
+            for (GuardedValue<?> entry: ((PrimitiveVS<?>) valueSummary).getGuardedValues()) {
+                guardedValueList.add(entry);
+            }
+            return guardedValueList;
+        } else if (valueSummary instanceof TupleVS) {
+            TupleVS tupleVS = (TupleVS) valueSummary;
+            Guard pc = tupleVS.getUniverse();
+            if (pc.isFalse()) return guardedValueList;
+            int length = tupleVS.getArity();
+            if (length == 0) return guardedValueList;
+            for (GuardedValue<?> key : ValueSummary.getGuardedValues(tupleVS.getField(0))) {
+                Guard guard = key.getGuard();
+                StringBuilder value = new StringBuilder();
+                for (int i = 0; i < length; i++) {
+                    List<GuardedValue<?>> elementGV = ValueSummary.getGuardedValues(tupleVS.getField(i).restrict(guard));
+                    if (!elementGV.isEmpty()) {
+                        assert(elementGV.size() == 1);
+                        value.append(elementGV.get(0).getValue());
+                    }
+                    value.append(", ");
+                }
+                guardedValueList.add(new GuardedValue<>(value.toString(), guard));
+            }
+            return guardedValueList;
+        } else if (valueSummary instanceof NamedTupleVS) {
+            return ValueSummary.getGuardedValues(((NamedTupleVS) valueSummary).getTuple());
+        } else if (valueSummary instanceof ListVS<?>) {
+        } else if (valueSummary instanceof VectorClockVS) {
+        } else if (valueSummary instanceof MapVS<?, ?>) {
+        } else if (valueSummary instanceof SetVS<?>) {
+        } else if (valueSummary instanceof UnionVS) {
+        } else if (valueSummary instanceof Message) {
+        }
+        throw new RuntimeException("Fetching guarded values for composite types is unsupported. Ensure map keys are of primitive, tuple, or named tuple type.");
+    }
+
+    /**
+     * Check whether a value summary has any values under any path condition
      *
      * @return Whether the path condition is empty
      */
@@ -145,7 +193,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
 
     /**
      * Get the Guard that represents the universe of the value summary
-     * Disjunction of the guards of all the guarded concretevalues
+     * Disjunction of the guards of all the guarded values
      * @return The universe of the value summary
      */
     Guard getUniverse();
@@ -156,4 +204,18 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
      * @return A new cloned copy of the value summary
      */
     T getCopy();
+
+    /**
+     * String representation of the value summary
+     *
+     * @return A string
+     */
+    String toString();
+
+    /**
+     * Detailed string representation of the value summary
+     *
+     * @return A string
+     */
+    String toStringDetailed();
 }

@@ -59,6 +59,13 @@ public class TupleVS implements ValueSummary<TupleVS> {
         return fields[i];
     }
 
+    /** Get the i-th class in the TupleVS
+     * @param i The index to get from the TupleVS
+     * @return The class at index i */
+    public Class getClass(int i) {
+        return classes[i];
+    }
+
     /** Set the i-th value in the TupleVS to the provided value
      * @param i The index to set in the TupleVS
      * @param val The value to set in the TupleVS
@@ -142,5 +149,15 @@ public class TupleVS implements ValueSummary<TupleVS> {
         }
         str.append(")");
         return str.toString();
+    }
+
+    public String toStringDetailed() {
+        StringBuilder out = new StringBuilder();
+        out.append("Tuple[");
+        for (int i = 0; i < classes.length; i++) {
+            out.append(getField(i).toStringDetailed()).append(", ");
+        }
+        out.append("]");
+        return out.toString();
     }
 }

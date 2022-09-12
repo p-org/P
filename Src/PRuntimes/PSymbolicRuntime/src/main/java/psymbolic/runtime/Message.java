@@ -240,21 +240,45 @@ public class Message implements ValueSummary<Message> {
 
     @Override
     public String toString() {
-        String str = "{";
+        StringBuilder out = new StringBuilder();
+        out.append("{");
         int i = 0;
         for (GuardedValue<Event> event : getEvent().getGuardedValues()) {
-            str += event.getValue();
-            str += " @ " + event.getGuard();
+            out.append(event.getValue());
+            out.append(" @ ");
+            out.append(event.getGuard());
             //str += " -> " + getMachine().guard(name.guard);
             if (payload.size() > 0 && payload.containsKey(event.getValue())) {
-                str += ": " + payload.get(event.getValue());
+                out.append(": ");
+                out.append(payload.get(event.getValue()));
             }
             if (i < getEvent().getGuardedValues().size() - 1)
-                str += System.lineSeparator();
+                out.append(System.lineSeparator());
         }
-        str += "}";
-        return str;
+        out.append("}");
+        return out.toString();
     }
 
+    public String toStringDetailed() {
+        StringBuilder out = new StringBuilder();
+        out.append("Message[");
+        out.append("event: {");
+        for (GuardedValue<Event> event : getEvent().getGuardedValues()) {
+            out.append(event.getValue());
+            out.append(" @ ");
+            out.append(event.getGuard());
+            if (payload.size() > 0 && payload.containsKey(event.getValue())) {
+                out.append(": ");
+                out.append(payload.get(event.getValue()).toStringDetailed());
+            }
+            out.append(", ");
+        }
+        out.append("}, target: ");
+        out.append(target.toStringDetailed());
+        out.append(", clock: ");
+        out.append(clock.toStringDetailed());
+        out.append("]");
+        return out.toString();
+    }
 
 }

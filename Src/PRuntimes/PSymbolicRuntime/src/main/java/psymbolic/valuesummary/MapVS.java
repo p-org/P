@@ -245,4 +245,29 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
         return keys.contains(keySummary);
     }
 
+    @Override
+    public String toString() {
+        StringBuilder out = new StringBuilder();
+        out.append("Map[");
+        out.append("  keys: ");
+        out.append(keys);
+        out.append(",  values: ");
+        out.append(entries);
+        out.append("]");
+        return out.toString();
+    }
+
+    public String toStringDetailed() {
+        StringBuilder out = new StringBuilder();
+        out.append("Map[ keys: ");
+        out.append(keys.toStringDetailed());
+        out.append(", values: {");
+        for (Map.Entry<K, V> entry : entries.entrySet()) {
+            out.append(entry.getKey()).append(" -> ");
+            out.append(entry.getValue().toStringDetailed()).append(", ");
+        }
+        out.append("} ]");
+        return out.toString();
+    }
+
 }

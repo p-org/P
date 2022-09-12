@@ -242,6 +242,8 @@ target/
 #Mkdocs 
 site/
 
+# Output
+output/
 
 ### IntelliJ IDEA ###
 out/

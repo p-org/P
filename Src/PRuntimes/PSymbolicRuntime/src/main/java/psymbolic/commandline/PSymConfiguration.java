@@ -12,21 +12,30 @@ import java.io.Serializable;
  */
 public class PSymConfiguration implements Serializable {
 
-    // name of the main machine
     @Getter @Setter
-    private String mainMachine = "Main";
+    // debug mode (internal)
+    private String debugMode = "default";
+
+    @Getter
+    // default name of the test driver
+    private final String testDriverDefault = "DefaultTestDriver";
+
+    // name of the test driver
+    @Getter @Setter
+    private String testDriver = testDriverDefault;
+
 
     // name of the target project
     @Getter @Setter
     private String projectName = "test";
 
-    @Getter
-    // max depth bound after which the search will stop automatically
-    private final int maxDepthBound = 1000;
+    // name of the output folder
+    @Getter @Setter
+    private String outputFolder = "output";
 
     @Getter @Setter
     // max depth bound provided by the user
-    private int depthBound = maxDepthBound;
+    private int depthBound = 1000;
 
     @Getter @Setter
     // max iterations bound provided by the user
@@ -113,4 +122,9 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     // random seed
     private int randomSeed = 0;
+
+    public boolean isSymbolic() {
+        return (getSchedChoiceBound() != 1 || getInputChoiceBound() != 1);
+    }
+
 }

@@ -72,35 +72,38 @@ namespace Plang.Compiler.Backend.Symbolic
             foreach (var decl in decls)
                 WriteDecl(context, source.Stream, decl);
 
-            context.WriteLine(source.Stream, "Map<Event, List<Monitor>> listeners = new HashMap<>();");
-            context.WriteLine(source.Stream, "List<Monitor> monitors = new ArrayList<>();");
-            context.WriteLine(source.Stream, "private boolean listenersInitialized = false;");
+            WriteMainDriver(context, source.Stream, globalScope, decls);
 
-            WriteMonitorMap(context, source.Stream, decls);
-            WriteMonitorList(context, source.Stream, decls);
+            context.WriteLine(source.Stream, "PTestDriver testDriver = null;");
+            context.WriteLine(source.Stream, "public PTestDriver getTestDriver() { return testDriver; }");
+            context.WriteLine(source.Stream, "public void setTestDriver(PTestDriver input) { testDriver = input; }");
+            context.WriteLine(source.Stream);
 
-            WriteMainDriver(context, source.Stream, globalScope);
+            context.WriteLine(source.Stream, "public Machine getStart() { return testDriver.getStart(); }");
+            context.WriteLine(source.Stream, "public List<Monitor> getMonitors() { return testDriver.getMonitors(); }");
+            context.WriteLine(source.Stream, "public Map<Event, List<Monitor>> getListeners() { return testDriver.getListeners(); }");
+            context.WriteLine(source.Stream);
 
             WriteSourceEpilogue(context, source.Stream);
 
             return source;
         }
 
-        private void WriteMonitorList(CompilationContext context, StringWriter output, IEnumerable<IPDecl> decls)
+        private void WriteDriver(CompilationContext context, StringWriter output, String startMachine, IEnumerable<IPDecl> decls)
         {
+            WriteDriverConfigure(context, output, startMachine, decls);
             context.WriteLine(output);
-            context.WriteLine(output, "public List<Monitor> getMonitorList() {");
-            context.WriteLine(output, "    if (!listenersInitialized) getMonitorMap();");
-            context.WriteLine(output, "    return monitors;");
-            context.WriteLine(output, "}");
         }
 
-        private void WriteMonitorMap(CompilationContext context, StringWriter output, IEnumerable<IPDecl> decls)
+        private void WriteDriverConfigure(CompilationContext context, StringWriter output, String startMachine, IEnumerable<IPDecl> decls)
         {
             context.WriteLine(output);
-            context.WriteLine(output, "public Map<Event, List<Monitor>> getMonitorMap() {");
-            context.WriteLine(output, "    if (listenersInitialized) return listeners;");
-            context.WriteLine(output, "    listenersInitialized = true;");
+            context.WriteLine(output, "public void configure() {");
+
+            context.WriteLine(output, $"    mainMachine = new {startMachine}(0);");
+            context.WriteLine(output, $"    monitorList.clear();");
+            context.WriteLine(output, $"    observerMap.clear();");
+
             foreach (var decl in decls)
             {
                 switch(decl)
@@ -108,14 +111,15 @@ namespace Plang.Compiler.Backend.Symbolic
                     case Machine machine:
                         if (machine.IsSpec)
                         {
+                            context.WriteLine(output);
                             var declName = context.GetNameForDecl(machine);
                             context.WriteLine(output, $"    Monitor instance_{declName} = new {declName}(0);");
-                            context.WriteLine(output, $"    monitors.add(instance_{declName});");
+                            context.WriteLine(output, $"    monitorList.add(instance_{declName});");
                             foreach (var pEvent in machine.Observes.Events)
                             {
-                                context.WriteLine(output, $"    if(!listeners.containsKey({pEvent.Name}))");
-                                context.WriteLine(output, $"        listeners.put({pEvent.Name}, new ArrayList<>());");
-                                context.WriteLine(output, $"    listeners.get({pEvent.Name}).add(instance_{declName});");
+                                context.WriteLine(output, $"    if(!observerMap.containsKey({pEvent.Name}))");
+                                context.WriteLine(output, $"        observerMap.put({pEvent.Name}, new ArrayList<>());");
+                                context.WriteLine(output, $"    observerMap.get({pEvent.Name}).add(instance_{declName});");
                             }
                         }
                         break;
@@ -123,9 +127,33 @@ namespace Plang.Compiler.Backend.Symbolic
                         break;
                 }
             }
-            context.WriteLine(output, "    return listeners;");
+
             context.WriteLine(output, "}");
-            context.WriteLine(output);
+        }
+
+        private void WriteMainDriver(CompilationContext context, StringWriter output, Scope globalScope, IEnumerable<IPDecl> decls)
+        {
+            // TODO: Determine how main machine should be selected.  Should the 'main' method even
+            // be generated from the P program, or should it be provided externally?
+            Machine mainMachine = null;
+            foreach (Machine machine in globalScope.Machines)
+            {
+                if (machine.Name == "Main")
+                {
+                    if (mainMachine != null)
+                        throw new NotImplementedException("Cannot have multiple main machines.");
+
+                    mainMachine = machine;
+                }
+            }
+
+            if (mainMachine != null)
+            {
+                context.WriteLine(output, "public static class DefaultTestDriver extends PTestDriver {");
+                WriteDriver(context, output, mainMachine.Name, decls);
+                context.WriteLine(output, "}");
+                context.WriteLine(output);
+            }
         }
 
         private void WriteEvent(CompilationContext context, StringWriter output, PEvent ev)
@@ -152,10 +180,21 @@ namespace Plang.Compiler.Backend.Symbolic
                 case PEvent ev:
                     WriteEvent(context, output, ev);
                     break;
+                case SafetyTest safety:
+                    WriteSafetyTestDecl(context, output, safety);
+                    break;
                 default:
                     context.WriteLine(output, $"// Skipping {decl.GetType().Name} '{decl.Name}'\n");
                     break;
             }
+        }
+
+        private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
+        {
+            context.WriteLine(output, $"public static class {context.GetNameForDecl(safety)} extends PTestDriver {{");
+            WriteDriver(context, output, safety.Main, safety.ModExpr.ModuleInfo.MonitorMap.Keys);
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
         }
 
         private void WriteMonitor(CompilationContext context, StringWriter output, Machine machine)
@@ -2340,32 +2379,6 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "@Override");
             context.WriteLine(output, $"public void setScheduler (Scheduler s) {{ this.{CompilationContext.SchedulerVar} = s; }}");
             context.WriteLine(output);
-        }
-
-        private void WriteMainDriver(CompilationContext context, StringWriter output, Scope globalScope)
-        {
-            // TODO: Determine how main machine should be selected.  Should the 'main' method even
-            // be generated from the P program, or should it be provided externally?
-            Machine mainMachine = null;
-            foreach (Machine machine in globalScope.Machines)
-            {
-                if (machine.Name == "Main")
-                {
-                    if (mainMachine != null)
-                        throw new NotImplementedException("Cannot have multiple main machines.");
-
-                    mainMachine = machine;
-                }
-            }
-
-            if (mainMachine != null)
-            {
-                context.WriteLine(output, $"private static Machine start = new {context.GetNameForDecl(mainMachine)}(0);");
-                context.WriteLine(output);
-                context.WriteLine(output, "@Override");
-                context.WriteLine(output, "public Machine getStart() { return start; }");
-                context.WriteLine(output);
-            }
         }
 
         private void WriteSourceEpilogue(CompilationContext context, StringWriter output)

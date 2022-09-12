@@ -21,15 +21,25 @@ public class PSymOptions {
     static {
         options = new Options();
 
-        // input file to be tested
-        Option inputFile = Option.builder("m")
-                .longOpt("main")
-                .desc("Name of the main machine from where the symbolic engine should start exploration")
+        // test driver name
+        Option debugMode = Option.builder("d")
+                .longOpt("debug")
+                .desc("Debug mode (internal)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Name of Main Machine (string)")
+                .argName("Debug Mode (string)")
                 .build();
-        options.addOption(inputFile);
+        options.addOption(debugMode);
+
+        // test driver name
+        Option testName = Option.builder("m")
+                .longOpt("method")
+                .desc("Name of the test method from where the symbolic engine should start exploration")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Name of Test Method (string)")
+                .build();
+        options.addOption(testName);
 
         // project name
         Option projectName = Option.builder("p")
@@ -40,6 +50,16 @@ public class PSymOptions {
                 .argName("Project Name (string)")
                 .build();
         options.addOption(projectName);
+
+        // output folder
+        Option outputDir = Option.builder("o")
+                .longOpt("output")
+                .desc("Name of the output folder")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Output Folder (string)")
+                .build();
+        options.addOption(outputDir);
 
         // read program state from file
         Option readFromFile = Option.builder("r")
@@ -243,25 +263,21 @@ public class PSymOptions {
         PSymConfiguration config = new PSymConfiguration();
         for (Option option : cmd.getOptions()) {
             switch (option.getOpt()) {
+                case "d":
+                case "debug":
+                    config.setDebugMode(option.getValue());
+                    break;
                 case "m":
-                case "main":
-                    config.setMainMachine(option.getValue());
-                    Reflections reflections = new Reflections("psymbolic");
-
-                    Set<Class<? extends Program>> subTypes = reflections.getSubTypesOf(Program.class);
-                    for(Class<? extends Program> clazz :subTypes)
-                    {
-                        System.out.println("Found Program implementations:" +  clazz.toString());
-                    }
-                    if(subTypes.stream().count() == 0)
-                    {
-                        formatter.printHelp("m", String.format("Main machine %s not found", option.getValue()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "m", options);
-                    }
+                case "method":
+                    config.setTestDriver(option.getValue());
                     break;
                 case "p":
                 case "project":
                     config.setProjectName(option.getValue());
+                    break;
+                case "o":
+                case "output":
+                    config.setOutputFolder(option.getValue());
                     break;
                 case "r":
                 case "read":

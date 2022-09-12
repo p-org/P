@@ -48,7 +48,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public CompoundStmt Body { get; set; }
         public Scope Scope { get; set; }
 
-        public string Name { get; }
+        public string Name { get; set; }
         public ParserRuleContext SourceLocation { get; }
 
         public void AddLocalVariable(Variable local)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
@@ -208,7 +209,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 var state = machine.States.ElementAt(i);
                 context.Write(output, $"static State {context.GetNameForDecl(state)} = ");
-                WriteState(context, output, state);
+                WriteState(context, output, state, machine);
                 context.WriteLine(output, ";");
             }
 
@@ -266,7 +267,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 var state = machine.States.ElementAt(i);
                 context.Write(output, $"static State {context.GetNameForDecl(state)} = ");
-                WriteState(context, output, state);
+                WriteState(context, output, state, machine);
                 context.WriteLine(output, ";");
             }
 
@@ -363,14 +364,14 @@ namespace Plang.Compiler.Backend.Symbolic
                 {
                     context.WriteLine(output, ",");
                 }
-                WriteEventHandler(context, output, handler);
+                WriteEventHandler(context, output, handler, state);
             }
             context.WriteLine(output, ");");
         }
 
-        private void WriteState(CompilationContext context, StringWriter output, State state)
+        private void WriteState(CompilationContext context, StringWriter output, State state, Machine machine)
         {
-            context.Write(output, $"new State(\"{context.GetNameForDecl(state)}\"");
+            context.Write(output, $"new State(\"{context.GetNameForDecl(state)}\", \"{context.GetNameForDecl(machine)}\"");
             /*
             foreach (var handler in state.AllEventHandlers)
             {
@@ -387,6 +388,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, $"@Override public void entry(Guard {entryPcScope.PathConstraintVar}, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {{");
 
                 var entryFunc = state.Entry;
+                entryFunc.Name = $"{context.GetNameForDecl(state)}_entry";
                 context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}({entryPcScope.PathConstraintVar}, machine.sendBuffer");
                 if (entryFunc.CanChangeState ?? false)
                     context.Write(output, ", outcome");
@@ -420,7 +422,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.Write(output, "}");
         }
 
-        private void WriteEventHandler(CompilationContext context, StringWriter output, KeyValuePair<PEvent, IStateAction> handler)
+        private void WriteEventHandler(CompilationContext context, StringWriter output, KeyValuePair<PEvent, IStateAction> handler, State state)
         {
             var eventTag = context.GetNameForDecl(handler.Key);
             switch (handler.Value)
@@ -432,6 +434,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"new EventHandler({eventTag}) {{");
                     context.WriteLine(output, "@Override public void handleEvent(Guard pc, Machine machine, UnionVS payload, EventHandlerReturnReason outcome) {");
                     var actionFunc = action.Target;
+                    actionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}";
                     context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc, machine.sendBuffer");
                     if (actionFunc.CanChangeState ?? false)
                         context.Write(output, ", outcome");
@@ -965,25 +968,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case PrintStmt printStmt:
-                    //context.Write(output, $"PSymLogger.info(");
-                    context.Write(output, $"System.out.println(");
-                    //TODO: use WriteExpr(context, output, flowContext.pcScope, printStmt.Message);
-                    switch (printStmt.Message) {
-                        case StringExpr stringExpr:
-                            context.Write(output, $"\"{stringExpr.BaseString}\"");
-                            foreach(var arg in stringExpr.Args)
-                            {
-                                context.Write(output, ", ");
-                                WriteExpr(context, output, flowContext.pcScope, arg);
-                            }
-                            context.Write(output, ");");
-                            break;
-                        default:
-                            context.Write(output, "(");
-                            WriteExpr(context, output, flowContext.pcScope, printStmt.Message);
-                            context.Write(output, ").toString());");
-                            break;
-                    }
+                    context.Write(output, "System.out.println(");
+                    WriteExpr(context, output, flowContext.pcScope, printStmt.Message);
+                    context.WriteLine(output, ");");
                     break;
 
                 case BreakStmt breakStmt:
@@ -1222,7 +1209,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"this.receive(\"{context.GetContinuationName(splitStmt.Cont)}\", {flowContext.pcScope.PathConstraintVar});");
                     break;
                 default:
-                    throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported");
+                    throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported, found in {function.Name}");
             }
         }
 
@@ -1796,6 +1783,68 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        private static string TransformPrintMessage(string message)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < message.Length; i++)
+            {
+                if (message[i] == '\'')
+                {
+                    sb.Append("''");
+                }
+                else if (message[i] == '{')
+                {
+                    if (i + 1 == message.Length)
+                    {
+                        throw new ArgumentException("unmatched opening brace", nameof(message));
+                    }
+
+                    if (message[i + 1] == '{')
+                    {
+                        // handle "{{"
+                        i++;
+                        sb.Append("'{'");
+                    }
+                    else if (char.IsDigit(message[i + 1]))
+                    {
+                        sb.Append("{");
+                        while (++i < message.Length && '0' <= message[i] && message[i] <= '9')
+                        {
+                            sb.Append(message[i]);
+                        }
+
+                        if (i == message.Length || message[i] != '}')
+                        {
+                            throw new ArgumentException("unmatched opening brace in position expression",
+                                nameof(message));
+                        }
+                        sb.Append("}");
+                    }
+                    else
+                    {
+                        throw new ArgumentException("opening brace not followed by digits", nameof(message));
+                    }
+                }
+                else if (message[i] == '}')
+                {
+                    if (i + 1 == message.Length || message[i + 1] != '}')
+                    {
+                        throw new ArgumentException("unmatched closing brace", nameof(message));
+                    }
+
+                    // handle "}}"
+                    sb.Append("'}'");
+                    i++;
+                }
+                else
+                {
+                    sb.Append(message[i]);
+                }
+            }
+
+            return sb.ToString();
+        }
+
         private void WriteExpr(CompilationContext context, StringWriter output, PathConstraintScope pcScope, IPExpr expr)
         {
             switch (expr)
@@ -2068,7 +2117,15 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, ".size()");
                     break;
                 case StringExpr stringExpr:
-                    context.Write(output, $"new { GetSymbolicType(PrimitiveType.String) }(String.format(\"{stringExpr.BaseString}\"");
+                    if (stringExpr.Args.Count == 0)
+                    {
+                        context.Write(output, $"new { GetSymbolicType(PrimitiveType.String) }(String.format(\"{stringExpr.BaseString}\"");
+                    }
+                    else
+                    {
+                        string baseString = TransformPrintMessage(stringExpr.BaseString);
+                        context.Write(output, $"new { GetSymbolicType(PrimitiveType.String) }(MessageFormat.format(\"{baseString}\"");
+                    }
                     foreach(var arg in stringExpr.Args)
                     {
                         context.Write(output, ", ");
@@ -2368,6 +2425,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import java.util.HashMap;");
             context.WriteLine(output, "import java.util.function.Consumer;");
             context.WriteLine(output, "import java.util.function.Function;");
+            context.WriteLine(output, "import java.text.MessageFormat;");
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.ProjectName.ToLower()} implements Program {{");
             context.WriteLine(output);

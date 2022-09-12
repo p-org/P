@@ -1481,11 +1481,11 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteFunCallStmt(CompilationContext context, StringWriter output, ControlFlowContext flowContext, Function function, IReadOnlyList<IPExpr> args, IPExpr dest=null)
         {
-            var isAsync = function.CanReceive == true;
-            if (isAsync && !(function is WhileFunction))
-            {
-                throw new NotImplementedException("Calls to async methods not yet supported");
-            }
+            // var isAsync = function.CanReceive == true;
+            // if (isAsync && !(function is WhileFunction))
+            // {
+            //     throw new NotImplementedException($"Calls to async methods not yet supported in {function.Name}");
+            // }
             if (function.IsForeign)
             {
                 WriteForeignFunCallStmt(context, output, flowContext, function, args, dest);

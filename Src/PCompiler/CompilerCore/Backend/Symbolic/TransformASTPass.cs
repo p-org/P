@@ -19,7 +19,7 @@ namespace Plang.Compiler.Backend.Symbolic
     {
 
          static private int continuationNumber = 0;
-         static private int whileNumber = 0;
+//         static private int whileNumber = 0;
          static private int callNum = 0;
 
          static public List<IPDecl> GetTransformedDecls(Scope globalScope)
@@ -48,7 +48,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     if (function.IsForeign)
                         return function;
                     else
-                        return null;
+                        // return null;
+                        return function;
                 case Machine machine:
                     if (machine.Receives.Events.GetEnumerator().MoveNext())
                         return TransformMachine(machine);
@@ -70,13 +71,20 @@ namespace Plang.Compiler.Backend.Symbolic
             Dictionary<Function, Function> functionMap = new Dictionary<Function, Function>();
             foreach (var method in machine.Methods)
             {
-                InlineInFunction(method);
+                if (!method.IsForeign)
+                {
+                    InlineInFunction(method);
+                }
             }
             foreach (var method in machine.Methods)
             {
-                Function transformedFunction = TransformFunction(method, transformedMachine);
-                functionMap.Add(method, transformedFunction);
-                transformedMachine.AddMethod(transformedFunction);
+                Function transformedFunction = method;
+                if (!method.IsForeign)
+                {
+                    transformedFunction = TransformFunction(method, transformedMachine);
+                    functionMap.Add(method, transformedFunction);
+                    transformedMachine.AddMethod(transformedFunction);
+                }
             }
             transformedMachine.StartState = machine.StartState;
             transformedMachine.Observes = machine.Observes;
@@ -215,11 +223,19 @@ namespace Plang.Compiler.Backend.Symbolic
                  case AssignStmt assign:
                      if (assign.Value is FunCallExpr)
                      {
-                         InlineInFunction(((FunCallExpr) assign.Value).Function);
-                         List<IPStmt> appendToBody = new List<IPStmt>();
-                         GenerateInline(function, ((FunCallExpr) assign.Value).Function, ((FunCallExpr) assign.Value).Arguments, appendToBody, assign.SourceLocation);
-                         appendToBody = ReplaceReturn(appendToBody, assign.Location);
-                         foreach (var statement in appendToBody) body.Add(statement);
+                         FunCallExpr rhsExpr = ((FunCallExpr) assign.Value);
+                         if (!rhsExpr.Function.IsForeign)
+                         {
+                            InlineInFunction(rhsExpr.Function);
+                            List<IPStmt> appendToBody = new List<IPStmt>();
+                            GenerateInline(function, rhsExpr.Function, rhsExpr.Arguments, appendToBody, assign.SourceLocation);
+                            appendToBody = ReplaceReturn(appendToBody, assign.Location);
+                            foreach (var statement in appendToBody) body.Add(statement);
+                         }
+                         else
+                         {
+                             body.Add(assign);
+                         }
                      }
                      else
                      {
@@ -230,7 +246,7 @@ namespace Plang.Compiler.Backend.Symbolic
                      foreach (var statement in compound.Statements) InlineStmt(function, statement, body);
                      break;
                  case FunCallStmt call:
-                     if (call.Function.CanReceive ?? true)
+                     if ((!call.Function.IsForeign) & (call.Function.CanReceive ?? true))
                      {
                          InlineInFunction(call.Function);
                          GenerateInline(function, call.Function, call.ArgsList, body, call.SourceLocation);
@@ -270,13 +286,15 @@ namespace Plang.Compiler.Backend.Symbolic
 
          static private void InlineInFunction(Function function)
          {
-             List<IPStmt> body = new List<IPStmt>();
-             foreach (var stmt in function.Body.Statements)
-             {
-                 InlineStmt(function, stmt, body);
-             }
-             function.Body = new CompoundStmt(function.Body.SourceLocation, body);
-             return;
+            if (!function.Callees.Contains(function)) {
+                List<IPStmt> body = new List<IPStmt>();
+                foreach (var stmt in function.Body.Statements)
+                {
+                    InlineStmt(function, stmt, body);
+                }
+                function.Body = new CompoundStmt(function.Body.SourceLocation, body);
+            }
+            return;
          }
 
          static private IPStmt ReplaceVars(IPStmt stmt, Dictionary<Variable,Variable> varMap)
@@ -551,61 +569,62 @@ namespace Plang.Compiler.Backend.Symbolic
                                  result.Add(split);
                                  break;
                              case WhileStmt loop:
-                                 // turn the while statement into a recursive function
-                                 WhileFunction rec = new WhileFunction(loop.SourceLocation);
-                                 rec.Owner = function.Owner;
-                                 rec.ParentFunction = function;
-                                 foreach (var param in function.Signature.Parameters) rec.AddParameter(param);
-                                 Dictionary<Variable,Variable> newVarMap = new Dictionary<Variable,Variable>();
-                                 foreach (var local in function.LocalVariables)
-                                 {
-                                     Variable machineVar = new Variable($"while_{whileNumber}_{local.Name}", local.SourceLocation, local.Role);
-                                     machineVar.Type = local.Type;
-                                     machine.AddField(machineVar);
-                                     newVarMap.Add(local, machineVar);
-                                 }
-                                 foreach (var i in function.CreatesInterfaces) rec.AddCreatesInterface(i);
-                                 rec.CanChangeState = function.CanChangeState;
-                                 rec.CanRaiseEvent = function.CanRaiseEvent;
-                                 rec.CanReceive = function.CanReceive;
-                                 rec.IsNondeterministic = function.IsNondeterministic;
-                                 // make while loop body
-                                 List<IPStmt> loopBody = new List<IPStmt>();
-                                 IEnumerator<IPStmt> bodyEnumerator = loop.Body.Statements.GetEnumerator();
-                                 while (bodyEnumerator.MoveNext())
-                                 {   
-                                     IPStmt stmt = bodyEnumerator.Current;
-                                     IPStmt replaceBreak = ReplaceBreaks(stmt);
-                                     if (replaceBreak != null) {
-                                         loopBody.Add(ReplaceVars(replaceBreak, newVarMap));
-                                     }
-                                 }
-                                 List<VariableAccessExpr> recArgs = new List<VariableAccessExpr>();
-                                 foreach (var param in rec.Signature.Parameters)
-                                 {
-                                     recArgs.Add(new VariableAccessExpr(rec.SourceLocation, param));
-                                 }
-                                 // call the function
-                                 FunCallStmt recCall = new FunCallStmt(loop.SourceLocation, rec, recArgs);
-                                 loopBody = new List<IPStmt>(((CompoundStmt) HandleReceives(new CompoundStmt(rec.SourceLocation, loopBody), rec, machine)).Statements);
-                                 rec.Body = new CompoundStmt(rec.SourceLocation, loopBody);
-                                 if (machine != null) machine.AddMethod(rec);
-                                 // assign local variables
-                                 foreach (var local in function.LocalVariables)
-                                 {
-                                     result.Add(new AssignStmt(local.SourceLocation, new VariableAccessExpr(local.SourceLocation, newVarMap[local]), new VariableAccessExpr(local.SourceLocation, local)));
-                                 }
-                                 // replace the while statement with a function call
-                                 result.Add(recCall);
-                                 if (after != null)
-                                 {
-                                     foreach (var stmt in after.Statements)
-                                     {
-                                         result.Add(ReplaceVars(stmt, newVarMap));
-                                     }
-                                 }
-                                 whileNumber++;
-                                 break;
+                                 throw new NotImplementedException($"Receive in a while statement is not yet supported, found in {machine.Name}");
+                                //  // turn the while statement into a recursive function
+                                //  WhileFunction rec = new WhileFunction(loop.SourceLocation);
+                                //  rec.Owner = function.Owner;
+                                //  rec.ParentFunction = function;
+                                //  foreach (var param in function.Signature.Parameters) rec.AddParameter(param);
+                                //  Dictionary<Variable,Variable> newVarMap = new Dictionary<Variable,Variable>();
+                                //  foreach (var local in function.LocalVariables)
+                                //  {
+                                //      Variable machineVar = new Variable($"while_{whileNumber}_{local.Name}", local.SourceLocation, local.Role);
+                                //      machineVar.Type = local.Type;
+                                //      machine.AddField(machineVar);
+                                //      newVarMap.Add(local, machineVar);
+                                //  }
+                                //  foreach (var i in function.CreatesInterfaces) rec.AddCreatesInterface(i);
+                                //  rec.CanChangeState = function.CanChangeState;
+                                //  rec.CanRaiseEvent = function.CanRaiseEvent;
+                                //  rec.CanReceive = function.CanReceive;
+                                //  rec.IsNondeterministic = function.IsNondeterministic;
+                                //  // make while loop body
+                                //  List<IPStmt> loopBody = new List<IPStmt>();
+                                //  IEnumerator<IPStmt> bodyEnumerator = loop.Body.Statements.GetEnumerator();
+                                //  while (bodyEnumerator.MoveNext())
+                                //  {   
+                                //      IPStmt stmt = bodyEnumerator.Current;
+                                //      IPStmt replaceBreak = ReplaceBreaks(stmt);
+                                //      if (replaceBreak != null) {
+                                //          loopBody.Add(ReplaceVars(replaceBreak, newVarMap));
+                                //      }
+                                //  }
+                                //  List<VariableAccessExpr> recArgs = new List<VariableAccessExpr>();
+                                //  foreach (var param in rec.Signature.Parameters)
+                                //  {
+                                //      recArgs.Add(new VariableAccessExpr(rec.SourceLocation, param));
+                                //  }
+                                //  // call the function
+                                //  FunCallStmt recCall = new FunCallStmt(loop.SourceLocation, rec, recArgs);
+                                //  loopBody = new List<IPStmt>(((CompoundStmt) HandleReceives(new CompoundStmt(rec.SourceLocation, loopBody), rec, machine)).Statements);
+                                //  rec.Body = new CompoundStmt(rec.SourceLocation, loopBody);
+                                //  if (machine != null) machine.AddMethod(rec);
+                                //  // assign local variables
+                                //  foreach (var local in function.LocalVariables)
+                                //  {
+                                //      result.Add(new AssignStmt(local.SourceLocation, new VariableAccessExpr(local.SourceLocation, newVarMap[local]), new VariableAccessExpr(local.SourceLocation, local)));
+                                //  }
+                                //  // replace the while statement with a function call
+                                //  result.Add(recCall);
+                                //  if (after != null)
+                                //  {
+                                //      foreach (var stmt in after.Statements)
+                                //      {
+                                //          result.Add(ReplaceVars(stmt, newVarMap));
+                                //      }
+                                //  }
+                                //  whileNumber++;
+                                //  break;
                              default:
                                  if (after == null) return compound;
                                  result.Add(first);

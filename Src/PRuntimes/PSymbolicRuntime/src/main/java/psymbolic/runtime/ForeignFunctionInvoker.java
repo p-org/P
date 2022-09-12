@@ -5,19 +5,21 @@ import psymbolic.runtime.values.exceptions.InvalidIndexException;
 import psymbolic.runtime.values.exceptions.KeyNotFoundException;
 import psymbolic.valuesummary.*;
 
-
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class ForeignFunctionInvoker {
 
-    /* Maximum number of times to invoke the foreign function on different concretevalues */
-    public static int times = 1;
+    /* Maximum number of times to invoke the foreign function on different values */
+    public static int times = 100;
 
     public static List<GuardedValue<List<Object>>> getConcreteValues (Guard pc, ValueSummary ... args) {
-       return Concretizer.getConcreteValues(pc, x -> x < times, Concretizer::concretizePType, args);
+       return Concretizer.getConcreteValues(pc, x -> x >= times, Concretizer::concretizePType, args);
     }
 
     /**
@@ -28,7 +30,6 @@ public class ForeignFunctionInvoker {
      */ 
     public static void invoke(Guard pc, Consumer<List<Object>> fn, ValueSummary ... args) {
         List<GuardedValue<List<Object>>> concreteArgs = getConcreteValues(pc, args);  
-        UnionVS ret = new UnionVS();
         for (int i = 0; i < concreteArgs.size(); i++) {
             GuardedValue<List<Object>> guardedArgs = concreteArgs.get(i);
             fn.accept(guardedArgs.getValue());
@@ -101,15 +102,14 @@ public class ForeignFunctionInvoker {
             PNamedTuple namedTuple = (PNamedTuple) o;
             String[] fields = namedTuple.getFields();
             Object[] namesAndFields = new Object[fields.length * 2];
-            for (int i = 0; i < namesAndFields.length; i += 2) {
-                namesAndFields[i] = fields[i];
-                namesAndFields[i + 1] = namedTuple.getField(fields[i]);
+            for (int i = 0, j = 0; i < namesAndFields.length; i += 2, j++) {
+                namesAndFields[i] = fields[j];
+                namesAndFields[i + 1] = convertConcrete(pc, namedTuple.getField(fields[j]));
             }
             return new NamedTupleVS(namesAndFields);
         } else if (o instanceof PBool){
            return new PrimitiveVS<>(((PBool) o).getValue()).restrict(pc);
         } else if (o instanceof PInt){
-            System.out.println("int");
             return new PrimitiveVS<>(((PInt) o).getValue()).restrict(pc);
         } else if (o instanceof PFloat){
             return new PrimitiveVS<>(((PFloat) o).getValue()).restrict(pc);
@@ -118,7 +118,7 @@ public class ForeignFunctionInvoker {
         } else if (o instanceof PEnum){
             return new PrimitiveVS<>(((PEnum) o).getValue()).restrict(pc);
         } else {
-            return new PrimitiveVS(o);
+            return new PrimitiveVS(o).restrict(pc);
         }
     }
 

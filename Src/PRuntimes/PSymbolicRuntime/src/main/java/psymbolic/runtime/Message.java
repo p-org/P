@@ -1,6 +1,7 @@
 package psymbolic.runtime;
 
 
+import psymbolic.commandline.Assert;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.valuesummary.*;
 
@@ -29,9 +30,10 @@ public class Message implements ValueSummary<Message> {
         for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
             cond = cond.or(machine.getValue().hasStarted().getGuardFor(true).and(machine.getGuard()));
 
-            if (BooleanVS.isEverFalse(machine.getValue().hasStarted())) {
-                throw new RuntimeException("Internal Error: All Machines must be runnable at this point!!");
-            }
+//            Assert.prop(!BooleanVS.isEverFalse(machine.getValue().hasStarted()), "Internal Error: All Machines must be runnable at this point!! Check event " + getEvent().getValues() + " in machine " + machine.getValue(), machine.getValue().getScheduler(), BooleanVS.getFalseGuard(machine.getValue().hasStarted()));
+//            if (BooleanVS.isEverFalse(machine.getValue().hasStarted())) {
+//                throw new RuntimeException("Internal Error: All Machines must be runnable at this point!! Check machine " + machine.getValue());
+//            }
         }
         return BooleanVS.trueUnderGuard(cond);
     }

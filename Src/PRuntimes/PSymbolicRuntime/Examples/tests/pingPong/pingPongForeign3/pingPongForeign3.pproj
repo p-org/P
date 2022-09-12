@@ -1,0 +1,7 @@
+<Project>
+<ProjectName>pingPongForeign3</ProjectName>
+<InputFiles>
+	<PFile>./</PFile>
+</InputFiles>
+<Target>Symbolic</Target>
+</Project>

@@ -15,7 +15,7 @@ public class SearchLogger {
     @Getter @Setter
     static int verbosity;
 
-    public static void Initialize(int verb)
+    public static void Initialize(int verb, String outputFolder)
     {
         verbosity = verb;
         // remove all the appenders
@@ -35,7 +35,7 @@ public class SearchLogger {
             // get new file name
             SimpleDateFormat formatter = new SimpleDateFormat("dd:MM:yyyy HH:mm:ss");
             Date date = new Date();
-            String fileName = "output/searchStats-"+date.toString() + ".log";
+            String fileName = outputFolder + "/searchStats-"+date.toString() + ".log";
             //Define file appender with layout and output log file name
             RollingFileAppender fileAppender = new RollingFileAppender(layout, fileName);
             //Add the appender to root logger
@@ -43,7 +43,7 @@ public class SearchLogger {
         }
         catch (IOException e)
         {
-            System.out.println("Failed to add appender to the SearchLogger!!");
+            PSymLogger.error("Failed to add appender to the SearchLogger!!");
         }
     }
 
@@ -55,9 +55,24 @@ public class SearchLogger {
         log.setLevel(Level.ALL);
     }
 
+    public static void logMessage(String str) {
+        if(verbosity > 1) {
+            log.info(str);
+        }
+    }
+
     public static void log(String message)
     {
         log.info(message);
+    }
+
+    public static void log(String key, String value)
+    {
+        log(String.format("%-40s%s", key+":", value));
+    }
+
+    public static void finishedExecution(int steps) {
+        log.info(String.format("Execution finished in %d steps", steps));
     }
 
     public static void logResumeExecution(int iter, int step)

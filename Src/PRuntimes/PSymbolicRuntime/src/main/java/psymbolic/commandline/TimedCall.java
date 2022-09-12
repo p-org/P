@@ -3,6 +3,7 @@ package psymbolic.commandline;
 import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeoutException;
 
 public class TimedCall implements Callable<Integer> {
     private final IterativeBoundedScheduler scheduler;
@@ -14,7 +15,7 @@ public class TimedCall implements Callable<Integer> {
     }
 
     @Override
-    public Integer call() throws MemoutException, BugFoundException {
+    public Integer call() throws MemoutException, BugFoundException, TimeoutException {
         try {
             if (!this.resume)
                 this.scheduler.doSearch();
@@ -23,6 +24,8 @@ public class TimedCall implements Callable<Integer> {
         } catch (MemoutException e) {
             throw e;
         } catch (BugFoundException e) {
+            throw e;
+        } catch (TimeoutException e) {
             throw e;
         }
         return 0;

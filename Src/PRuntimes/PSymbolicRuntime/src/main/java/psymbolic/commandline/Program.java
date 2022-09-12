@@ -13,6 +13,8 @@ public interface Program extends Serializable {
     Machine getStart();
     Scheduler getScheduler();
     void setScheduler(Scheduler s);
-    Map<Event, List<Monitor>> getMonitorMap();
-    List<Monitor> getMonitorList();
+    Map<Event, List<Monitor>> getListeners();
+    List<Monitor> getMonitors();
+    PTestDriver getTestDriver();
+    void setTestDriver(PTestDriver input);
 }

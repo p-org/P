@@ -8,6 +8,7 @@ import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
 import psymbolic.valuesummary.*;
 
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 public class ReplayScheduler extends Scheduler {
@@ -36,7 +37,7 @@ public class ReplayScheduler extends Scheduler {
     }
 
     @Override
-    public void doSearch() {
+    public void doSearch() throws TimeoutException {
         TraceLogger.logStartReplayCex(cexLength);
         super.doSearch();
     }

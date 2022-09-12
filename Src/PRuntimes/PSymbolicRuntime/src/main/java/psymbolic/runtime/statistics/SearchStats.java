@@ -125,27 +125,39 @@ public class SearchStats implements Serializable {
     @Getter
     private HashMap<Integer, IterationStats> iterationStats = new HashMap<>();
     @Setter
-    private int current_iter = 0;
+    private int current_iter = 1;
+    private int lastCompletedIteration = 1;
 
 
     public void addDepthStatistics(int depth, DepthStats depthStats)
     {
-        iterationStats.get(current_iter).addDepthStatistics(depth, depthStats);
+        if (iterationStats.containsKey(current_iter)) {
+            iterationStats.get(current_iter).addDepthStatistics(depth, depthStats);
+        }
     }
 
     public int getIterationBacktracks()
     {
-        return iterationStats.get(current_iter).getNumBacktracks();
+        if (iterationStats.containsKey(current_iter)) {
+            return iterationStats.get(current_iter).getNumBacktracks();
+        } else {
+            return 0;
+        }
     }
 
-    public void setIterationBacktracks(int numBacktracks)
+    public void setIterationStats(int numBacktracks)
     {
-        iterationStats.get(current_iter).setNumBacktracks(numBacktracks);
+        if (iterationStats.containsKey(current_iter)) {
+            iterationStats.get(current_iter).setNumBacktracks(numBacktracks);
+        }
+        lastCompletedIteration = current_iter;
     }
 
     public void setIterationCompleted()
     {
-        iterationStats.get(current_iter).setCompleted(true);
+        if (iterationStats.containsKey(current_iter)) {
+            iterationStats.get(current_iter).setCompleted(true);
+        }
     }
 
     public void startNewIteration(int iteration, int backtrack)
@@ -180,11 +192,15 @@ public class SearchStats implements Serializable {
         int totalTransitions = 0;
         int totalMergedTransitions = 0;
         int totalTransitionsExplored = 0;
-        for(IterationStats entry: iterationStats.values())
+
+        for(int i=1; i<=lastCompletedIteration; i++)
         {
+            if (!iterationStats.containsKey(i))
+                continue;
+            IterationStats entry = iterationStats.get(i);
             DepthStats d = entry.getIterationNewTotal();
             if (d.getDepth() == 0)
-                continue;;
+                continue;
             if (d.getDepth() > maxDepth) {
                 maxDepth = d.getDepth();
             }

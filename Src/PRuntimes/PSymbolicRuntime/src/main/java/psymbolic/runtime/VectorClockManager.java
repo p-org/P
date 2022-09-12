@@ -21,11 +21,11 @@ public class VectorClockManager implements Serializable {
 
     public void disable() { this.enabled = false; }
 
-    private MapVS<Machine, PrimitiveVS<Integer>> idxMap = new MapVS<>(Guard.constTrue());
+    private MapVS<Machine, PrimitiveVS<Machine>, PrimitiveVS<Integer>> idxMap = new MapVS<>(Guard.constTrue());
 
     public void addMachine(Guard cond, Machine m) {
         if (!enabled) return;
-        idxMap = idxMap.add(new PrimitiveVS<>(m).restrict(cond), IntegerVS.add(idxMap.getSize(), 1));
+        idxMap = idxMap.add(new PrimitiveVS<>(m).restrict(cond), IntegerVS.add(idxMap.size(), 1));
     }
 
     public Guard hasIdx(PrimitiveVS<Machine> m) {

@@ -4,10 +4,11 @@ import psymbolic.valuesummary.util.ValueSummaryChecks;
 import java.util.*;
 
 /** Class for map value summaries */
-public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K,V>> {
+public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> implements ValueSummary<MapVS<K, T, V>> {
     /** The set of keys */
-    public final SetVS<PrimitiveVS<K>> keys;
-    /** The mapping from all possible keys to concretevalues */
+    public final SetVS<T> keys;
+    /** The mapping from all possible keys to values */
+    /** The mapping from all possible keys to values */
     public final Map<K, V> entries;
 
     /** Make a new MapVS with the specified set of keys and mapping
@@ -15,7 +16,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      * @param keys The set of keys
      * @param entries The mapping from all possible keys to value summaries
      */
-    public MapVS(SetVS<PrimitiveVS<K>> keys, Map<K, V> entries) {
+    public MapVS(SetVS<T> keys, Map<K, V> entries) {
         this.keys = keys;
         this.entries = entries;
     }
@@ -32,7 +33,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     /** Copy-constructor for MapVS
      * @param old The MapVS to copy
      */
-    public MapVS(MapVS<K, V> old) {
+    public MapVS(MapVS<K, T, V> old) {
         this(new SetVS<>(old.keys), new HashMap<>(old.entries));
     }
 
@@ -41,7 +42,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      *
      * @return A new cloned copy of the value summary
      */
-    public MapVS<K, V> getCopy() {
+    public MapVS<K, T, V> getCopy() {
         return new MapVS(this);
     }
 
@@ -49,7 +50,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      *
      * @return The size of the MapVS
      * */
-    public PrimitiveVS<Integer> getSize() {
+    public PrimitiveVS<Integer> size() {
         return keys.size();
     }
 
@@ -57,8 +58,20 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      *
      * @return The keys of the MapVS in a ListVS
      */
-    public ListVS<PrimitiveVS<K>> getKeys() {
+    public ListVS<T> getKeys() {
         return this.keys.getElements();
+    }
+
+    /** Get the values in the MapVS as a ListVS
+     *
+     * @return The values of the MapVS in a ListVS
+     */
+    public ListVS<V> getValues() {
+        ListVS<V> result = new ListVS<V>(getUniverse());
+        for (V value: this.entries.values()) {
+            result.add(value);
+        }
+        return result;
     }
 
     @Override
@@ -67,8 +80,8 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     }
 
     @Override
-    public MapVS<K, V> restrict(Guard guard) {
-        final SetVS<PrimitiveVS<K>> newKeys = keys.restrict(guard);
+    public MapVS<K, T, V> restrict(Guard guard) {
+        final SetVS<T> newKeys = keys.restrict(guard);
         final Map<K, V> newEntries = new HashMap<>();
 
         for (Map.Entry<K, V> entry : entries.entrySet()) {
@@ -81,18 +94,18 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     }
 
     @Override
-    public MapVS<K, V> merge(Iterable<MapVS<K, V>> summaries) {
-        final List<SetVS<PrimitiveVS<K>>> keysToMerge = new ArrayList<>();
+    public MapVS<K, T, V> merge(Iterable<MapVS<K, T, V>> summaries) {
+        final List<SetVS<T>> keysToMerge = new ArrayList<>();
         final Map<K, List<V>> valuesToMerge = new HashMap<>();
 
-        // add this set of entries' concretevalues, too
+        // add this set of entries' values, too
         for (Map.Entry<K, V> entry : entries.entrySet()) {
             valuesToMerge
                     .computeIfAbsent(entry.getKey(), (key) -> new ArrayList<>())
                     .add(entry.getValue());
         }
 
-        for (MapVS<K, V> summary : summaries) {
+        for (MapVS<K, T, V> summary : summaries) {
             keysToMerge.add(summary.keys);
 
             for (Map.Entry<K, V> entry : summary.entries.entrySet()) {
@@ -102,7 +115,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
             }
         }
 
-        final SetVS<PrimitiveVS<K>> mergedKeys = keys.merge(keysToMerge);
+        final SetVS<T> mergedKeys = keys.merge(keysToMerge);
 
         final Map<K, V> mergedValues = new HashMap<>();
         for (Map.Entry<K, List<V>> entriesToMerge : valuesToMerge.entrySet()) {
@@ -116,29 +129,29 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     }
 
     @Override
-    public MapVS<K, V> merge(MapVS<K, V> summary) {
+    public MapVS<K, T, V> merge(MapVS<K, T, V> summary) {
         return merge(Collections.singletonList(summary));
     }
 
     @Override
-    public MapVS<K, V> updateUnderGuard(Guard guard, MapVS<K, V> update) {
+    public MapVS<K, T, V> updateUnderGuard(Guard guard, MapVS<K, T, V> update) {
         return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));
     }
 
     @Override
-    public PrimitiveVS<Boolean> symbolicEquals(MapVS<K, V> cmp, Guard pc) {
+    public PrimitiveVS<Boolean> symbolicEquals(MapVS<K, T, V> cmp, Guard pc) {
         Guard equalCond = Guard.constFalse();
         Guard guard = BooleanVS.getTrueGuard(this.keys.symbolicEquals(cmp.keys, Guard.constTrue()));
-        ListVS<PrimitiveVS<K>> thisSet = this.restrict(guard).keys.getElements();
-        ListVS<PrimitiveVS<K>> cmpSet = cmp.restrict(guard).keys.getElements();
+        ListVS<T> thisSet = this.restrict(guard).getKeys();
+        ListVS<T> cmpSet = cmp.restrict(guard).getKeys();
 
         if (thisSet.isEmpty() && cmpSet.isEmpty()) return BooleanVS.trueUnderGuard(pc.and(guard));
 
         while (!thisSet.isEmpty()) {
-            PrimitiveVS<K> thisVal = thisSet.get(new PrimitiveVS<>(0).restrict(guard));
-            PrimitiveVS<K> cmpVal = cmpSet.get(new PrimitiveVS<>(0).restrict(guard));
+            T thisVal = thisSet.get(new PrimitiveVS<>(0).restrict(guard));
+            T cmpVal = cmpSet.get(new PrimitiveVS<>(0).restrict(guard));
             assert(ValueSummaryChecks.equalUnder(thisVal, cmpVal, guard));
-            for (GuardedValue<K> key : thisVal.getGuardedValues()) {
+            for (GuardedValue<?> key : ValueSummary.getGuardedValues(thisVal)) {
                 PrimitiveVS<Boolean> compareVals = entries.get(key.getValue()).restrict(key.getGuard())
                         .symbolicEquals(cmp.entries.get(key.getValue()).restrict(key.getGuard()), guard);
                 equalCond = equalCond.or(BooleanVS.getTrueGuard(compareVals));
@@ -161,15 +174,15 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      * @param valSummary The value VS
      * @return The updated MapVS
      */
-    public MapVS<K, V> put(PrimitiveVS<K> keySummary, V valSummary) {
-        final SetVS<PrimitiveVS<K>> newKeys = keys.add(keySummary);
+    public MapVS<K, T, V> put(T keySummary, V valSummary) {
+        final SetVS<T> newKeys = keys.add(keySummary);
         final Map<K, V> newEntries = new HashMap<>(entries);
-        for (GuardedValue<K> guardedKey : keySummary.getGuardedValues()) {
+        for (GuardedValue<?> guardedKey : ValueSummary.getGuardedValues(keySummary)) {
             V oldVal = entries.get(guardedKey.getValue());
             if (oldVal == null) {
-                newEntries.put(guardedKey.getValue(), valSummary);
+                newEntries.put((K) guardedKey.getValue(), valSummary);
             } else {
-                newEntries.put(guardedKey.getValue(), oldVal.updateUnderGuard(guardedKey.getGuard(), valSummary));
+                newEntries.put((K) guardedKey.getValue(), oldVal.updateUnderGuard(guardedKey.getGuard(), valSummary));
             }
         }
 
@@ -182,7 +195,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      * @param valSummary The value value summary
      * @return The updated MapVS
      */
-    public MapVS<K, V> add(PrimitiveVS<K> keySummary, V valSummary) {
+    public MapVS<K, T, V> add(T keySummary, V valSummary) {
         assert(ValueSummaryChecks.hasSameUniverse(keySummary.getUniverse(), valSummary.getUniverse()));
         return put(keySummary, valSummary);
     }
@@ -192,11 +205,11 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      * @param keySummary The key value summary
      * @return The updated MapVS
      */
-    public MapVS<K, V> remove(PrimitiveVS<K> keySummary) {
-        final SetVS<PrimitiveVS<K>> newKeys = keys.remove(keySummary);
+    public MapVS<K, T, V> remove(T keySummary) {
+        final SetVS<T> newKeys = keys.remove(keySummary);
 
         final Map<K, V> newEntries = new HashMap<>(entries);
-        for (GuardedValue<K> guardedKey : keySummary.getGuardedValues()) {
+        for (GuardedValue<?> guardedKey : ValueSummary.getGuardedValues(keySummary)) {
             V oldVal = entries.get(guardedKey.getValue());
             if (oldVal == null) {
                 continue;
@@ -206,7 +219,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
             if (remainingVal.isEmptyVS()) {
                 newEntries.remove(guardedKey.getValue());
             } else {
-                newEntries.put(guardedKey.getValue(), remainingVal);
+                newEntries.put((K) guardedKey.getValue(), remainingVal);
             }
         }
 
@@ -218,7 +231,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      * @param keySummary The key value summary.
      * @return The option containing value corresponding to the key or an empty option if no such value
      */
-    public V get(PrimitiveVS<K> keySummary) {
+    public V get(T keySummary) {
         if (!containsKey(keySummary).restrict(keySummary.getUniverse()).getGuardFor(false).isFalse()) {
             // there is a possibility that the key is not present
             throw new NoSuchElementException();
@@ -226,7 +239,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
 
         V merger = null;
         List<V> toMerge = new ArrayList<>();
-        for (GuardedValue<K> key : keySummary.getGuardedValues()) {
+        for (GuardedValue<?> key : ValueSummary.getGuardedValues(keySummary)) {
             if (merger == null)
                 merger = entries.get(key.getValue()).restrict(key.getGuard());
             toMerge.add(entries.get(key.getValue()).restrict(key.getGuard()));
@@ -241,7 +254,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      * @param keySummary The key ValueSummary
      * @return Whether or not the MapVS contains a key
      */
-    public PrimitiveVS<Boolean> containsKey(PrimitiveVS<K> keySummary) {
+    public PrimitiveVS<Boolean> containsKey(T keySummary) {
         return keys.contains(keySummary);
     }
 

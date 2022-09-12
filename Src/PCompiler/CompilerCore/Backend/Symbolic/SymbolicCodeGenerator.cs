@@ -1541,11 +1541,13 @@ namespace Plang.Compiler.Backend.Symbolic
             bool needOrigValue,
             Action<string> writeMutator)
         {
+            PLanguageType elementType;
             switch (lvalue)
             {
                 case MapAccessExpr mapAccessExpr:
                     PLanguageType valueType = mapAccessExpr.Type;
-                    PLanguageType indexType = mapAccessExpr.IndexExpr.Type;
+                    IPExpr indexExpr = mapAccessExpr.IndexExpr;
+                    PLanguageType indexType = indexExpr.Type;
 
                     WriteWithLValueMutationContext(
                         context,
@@ -1559,7 +1561,7 @@ namespace Plang.Compiler.Backend.Symbolic
                             var indexTemp = context.FreshTempVar();
 
                             context.Write(output, $"{GetSymbolicType(indexType)} {indexTemp} = ");
-                            WriteExpr(context, output, pcScope, mapAccessExpr.IndexExpr);
+                            WriteExpr(context, output, pcScope, indexExpr);
                             context.WriteLine(output, ";");
 
                             context.Write(output, $"{GetSymbolicType(valueType)} {valueTemp}");
@@ -1654,7 +1656,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case SeqAccessExpr seqAccessExpr:
-                    PLanguageType elementType = seqAccessExpr.Type;
+                    elementType = seqAccessExpr.Type;
 
                     WriteWithLValueMutationContext(
                         context,
@@ -1687,7 +1689,40 @@ namespace Plang.Compiler.Backend.Symbolic
                         }
                     );
                     break;
+
                 case SetAccessExpr setAccessExpr:
+                    elementType = setAccessExpr.Type;
+
+                    WriteWithLValueMutationContext(
+                        context,
+                        output,
+                        pcScope,
+                        setAccessExpr.SetExpr,
+                        true,
+                        setTemp =>
+                        {
+                            var elementTemp = context.FreshTempVar();
+                            var indexTemp = context.FreshTempVar();
+
+                            context.Write(output, $"{GetSymbolicType(PrimitiveType.Int)} {indexTemp} = ");
+                            WriteExpr(context, output, pcScope, setAccessExpr.IndexExpr);
+                            context.WriteLine(output, ";");
+
+                            context.Write(output, $"{GetSymbolicType(elementType)} {elementTemp}");
+                            if (needOrigValue)
+                            {
+                                context.WriteLine(output, $" = {setTemp}.get({indexTemp});");
+                            }
+                            else
+                            {
+                                context.WriteLine(output, ";");
+                            }
+
+                            writeMutator(elementTemp);
+
+                            context.WriteLine(output, $"{setTemp} = {setTemp}.set({indexTemp}, {elementTemp});");
+                        }
+                    );
                     break;
                 case VariableAccessExpr variableAccessExpr:
                     var name = variableAccessExpr.Variable.Name;
@@ -1838,8 +1873,13 @@ namespace Plang.Compiler.Backend.Symbolic
                         break;
                     }
                 case KeysExpr keyExpr:
+                    MapType keyArgType = (MapType) keyExpr.Expr.Type.Canonicalize();
                     WriteExpr(context, output, pcScope, keyExpr.Expr);
                     context.Write(output, $".getKeys().restrict({pcScope.PathConstraintVar})");
+                    break;
+                case ValuesExpr valuesExpr:
+                    WriteExpr(context, output, pcScope, valuesExpr.Expr);
+                    context.Write(output, $".getValues().restrict({pcScope.PathConstraintVar})");
                     break;
                 case MapAccessExpr mapAccessExpr:
                     WriteExpr(context, output, pcScope, mapAccessExpr.MapExpr);
@@ -1851,6 +1891,12 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, pcScope, seqAccessExpr.SeqExpr);
                     context.Write(output, ".get(");
                     WriteExpr(context, output, pcScope, seqAccessExpr.IndexExpr);
+                    context.Write(output, ")");
+                    break;
+                case SetAccessExpr setAccessExpr:
+                    WriteExpr(context, output, pcScope, setAccessExpr.SetExpr);
+                    context.Write(output, ".get(");
+                    WriteExpr(context, output, pcScope, setAccessExpr.IndexExpr);
                     context.Write(output, ")");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
@@ -1966,6 +2012,11 @@ namespace Plang.Compiler.Backend.Symbolic
                             break;
                         case SetType setType:
                             context.Write(output, $"({GetSymbolicType(setType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
+                            WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
+                            context.Write(output, $", {pcScope.PathConstraintVar})");
+                            break;
+                        case MapType mapType:
+                            context.Write(output, $"({GetSymbolicType(mapType.KeyType)}) {CompilationContext.SchedulerVar}.getNextElement(");
                             WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
                             context.Write(output, $", {pcScope.PathConstraintVar})");
                             break;
@@ -2185,6 +2236,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case MapType mapType:
                     return $"MapVS<" +
                         $"{GetConcreteBoxedType(mapType.KeyType)}, " +
+                        $"{GetSymbolicType(mapType.KeyType, true)}, " +
                         $"{GetSymbolicType(mapType.ValueType, true)}>";
                 case NamedTupleType _:
                     return "NamedTupleVS";

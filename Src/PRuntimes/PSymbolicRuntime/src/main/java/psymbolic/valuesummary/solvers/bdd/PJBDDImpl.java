@@ -39,7 +39,7 @@ public class PJBDDImpl implements SolverLib<DD> {
                 .build();
         e = new DotExporter();
         i = new BDDStringImporter(c);
-        System.out.println("Using BDDs");
+//        System.out.println("Using BDDs");
     }
 
     public DD constFalse() {

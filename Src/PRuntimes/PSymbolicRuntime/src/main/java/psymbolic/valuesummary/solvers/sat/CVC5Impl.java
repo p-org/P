@@ -42,8 +42,8 @@ public class CVC5Impl implements SatLib<Term> {
 //            System.out.println("Options:");
 //            for (String option: solver.getOptionNames()) {
 //                try {
-//                    System.out.println("\t" + option + ":\t" + solver.getOption(option));
-////                  System.out.println("\t\t" + solver.getOptionInfo(option));
+//                    System.out.println("  " + option + ": " + solver.getOption(option));
+////                  System.out.println("    " + solver.getOptionInfo(option));
 //                } finally {
 //                }
 //            }
@@ -139,7 +139,7 @@ public class CVC5Impl implements SatLib<Term> {
     }
 
     public String toString(Term booleanFormula) {
-        return String.format("%d\t%.80s", booleanFormula.getId(), booleanFormula.toString());
+        return String.format("%d:%.80s", booleanFormula.getId(), booleanFormula.toString());
     }
 
     public Term fromString(String s) {

@@ -1,19 +1,14 @@
 pushd .
-echo "-------------------------"
-echo "Building the P Compiler"
-echo "-------------------------"
-
-cd ../../../../Bld/
+echo "-------------------"
+echo "Building P Compiler"
+echo "-------------------"
+cd ../../../Bld/
 ./build.sh
-
 popd
 
 pushd .
-
-cd ..
-
-mvn clean
-
-mvn install
-
+echo "---------------------"
+echo "Building PSym Runtime"
+echo "---------------------"
+mvn clean install
 popd

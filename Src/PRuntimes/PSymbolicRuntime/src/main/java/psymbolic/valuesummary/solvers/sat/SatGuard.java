@@ -31,6 +31,8 @@ public class SatGuard implements SolverLib<SatExpr> {
                 break;
             case Z3:	                satImpl = new Z3Impl();
                 break;
+            case MONOSAT:	            satImpl = new MonoSat();
+                break;
             case JAVASMT_BOOLECTOR:
             case JAVASMT_CVC4:
             case JAVASMT_MATHSAT5:

@@ -311,6 +311,8 @@ public class PSymOptions {
                         break;
                     case "z3":		    config.setSolverType(SolverType.Z3);
                         break;
+                    case "monosat":		config.setSolverType(SolverType.MONOSAT);
+                        break;
                 	case "boolector":	config.setSolverType(SolverType.JAVASMT_BOOLECTOR);
             			break;
                 	case "mathsat5":	config.setSolverType(SolverType.JAVASMT_MATHSAT5);

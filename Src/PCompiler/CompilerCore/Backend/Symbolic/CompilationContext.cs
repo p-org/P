@@ -77,6 +77,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     if (!pEvent.IsBuiltIn)
                         return $"{pEvent.Name}";
                     else return $"_{pEvent.Name}";
+                case SafetyTest safety:
+                    return $"{safety.Name}";
                 default:
                     throw new NotImplementedException($"decl type {decl.GetType().Name} not supported");
             }

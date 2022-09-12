@@ -1215,6 +1215,12 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteContinuation(CompilationContext context, StringWriter output, Continuation continuation)
         {
+            bool voidReturn = continuation.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null);
+            if (!voidReturn)
+            {
+                throw new NotImplementedException($"Receive statement in a function with non-void return type is not supported. Found in function named {continuation.ParentFunction.Name}.");
+            }
+
             context.Write(output, $"void clear_{context.GetContinuationName(continuation)}() ");
             context.WriteLine(output, "{");
             foreach (var param in continuation.StoreParameters)
@@ -1243,8 +1249,10 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "{");
 
             var funcContext = ControlFlowContext.FreshFuncContext(context, rootPCScope);
+            var continuationLocalParams = new HashSet<string>();
             foreach (var local in continuation.LocalParameters)
             {
+                continuationLocalParams.Add(local.Name);
                 context.Write(output, $"{GetSymbolicType(local.Type, true)} {CompilationContext.GetVar(local.Name)}");
                 context.WriteLine(output, $"= {CompilationContext.GetVar(continuation.StoreForLocal[local].Name)}.restrict({rootPCScope.PathConstraintVar});");
             }
@@ -1268,12 +1276,19 @@ namespace Plang.Compiler.Backend.Symbolic
                         throw new NotImplementedException($"Too many parameters ({continuation.Cases[e].Signature.Parameters.Count}) in receive case");
                     }
                     var arg = continuation.Cases[e].Signature.Parameters[0];
-                    Variable argValue = new Variable("payload", continuation.SourceLocation, VariableRole.Param);
+                    Variable argValue = new Variable($"{arg.Name}_payload", continuation.SourceLocation, VariableRole.Param);
                     argValue.Type = PrimitiveType.Any;
-                    context.WriteLine(output, $"UnionVS var_payload = {messageName}_{idx}.restrict({caseScope.PathConstraintVar}).getPayload();");
+                    context.WriteLine(output, $"UnionVS var_{arg.Name}_payload = {messageName}_{idx}.restrict({caseScope.PathConstraintVar}).getPayload();");
                     AssignStmt assignMsg = new AssignStmt(continuation.SourceLocation, new VariableAccessExpr(continuation.SourceLocation, arg), new VariableAccessExpr(continuation.SourceLocation, argValue));
                     context.WriteLine(output, $"{GetSymbolicType(arg.Type)} {CompilationContext.GetVar(arg.Name)} = {GetDefaultValue(context, caseScope, arg.Type)};");
                     WriteStmt(continuation, context, output, caseContext, assignMsg);
+                }
+                foreach (var local in continuation.Cases[e].LocalVariables)
+                {
+                    if (!continuationLocalParams.Contains(local.Name))
+                    {
+                        context.WriteLine(output, $"{GetSymbolicType(local.Type)} {CompilationContext.GetVar(local.Name)} = {GetDefaultValue(context, caseScope, local.Type)};");
+                    }
                 }
                 WriteStmt(continuation, context, output, caseContext, continuation.Cases[e].Body);
                 context.WriteLine(output, "}");
@@ -1308,6 +1323,9 @@ namespace Plang.Compiler.Backend.Symbolic
                 return;
 
             if (locationType.IsSameTypeAs(PrimitiveType.Any) || valueType.IsSameTypeAs(PrimitiveType.Any))
+                return;
+
+            if (locationType.IsSameTypeAs(PrimitiveType.Data) || valueType.IsSameTypeAs(PrimitiveType.Data))
                 return;
 
             valueType = valueType.Canonicalize();
@@ -1367,10 +1385,10 @@ namespace Plang.Compiler.Backend.Symbolic
             if (valueIsMachineRef && locationIsMachineRef)
                 return "";
 
-            if (locationType.IsSameTypeAs(PrimitiveType.Any)) {
+            if (locationType.IsSameTypeAs(PrimitiveType.Any) || locationType.IsSameTypeAs(PrimitiveType.Data)) {
                 //return $"new UnionVS ({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, valueType)}.getClass(), ";
                 return $"ValueSummary.castToAny({pcScope.PathConstraintVar}, ";
-            } else if (valueType.IsSameTypeAs(PrimitiveType.Any))
+            } else if (valueType.IsSameTypeAs(PrimitiveType.Any) || valueType.IsSameTypeAs(PrimitiveType.Data))
             {
                 return $"({GetSymbolicType(locationType)}) ValueSummary.castFromAny({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationType)}, ";
             }
@@ -1426,7 +1444,8 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (returnConvention)
             {
                 case FunctionReturnConvention.RETURN_VALUE:
-                    context.Write(output, $"{GetGenericSymbolicType(function.Signature.ReturnType)}.class, x -> ");
+                    context.Write(output, $"{GetDefaultValueNoGuard(context, function.Signature.ReturnType)}, x -> ");
+                    // context.Write(output, $"{GetGenericSymbolicType(function.Signature.ReturnType)}.class, x -> ");
                     context.Write(output, "{ return ");
                     context.Write(output, $"wrapper__{context.GetNameForDecl(function)}(x);");
                     context.Write(output, " }");
@@ -1859,8 +1878,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, $").apply(({lambdaTemp}) -> {UnOpToStr(unaryOpExpr.Operation)}{lambdaTemp})");
                     break;
                 case BinOpExpr binOpExpr:
-                    var isPrimitive = binOpExpr.Lhs.Type is PrimitiveType && binOpExpr.Rhs.Type is PrimitiveType;
-                    var isEnum = binOpExpr.Lhs.Type is EnumType && binOpExpr.Rhs.Type is EnumType;
+                    var isPrimitive = binOpExpr.Lhs.Type.Canonicalize() is PrimitiveType && binOpExpr.Rhs.Type.Canonicalize() is PrimitiveType;
+                    var isEnum = binOpExpr.Lhs.Type.Canonicalize() is EnumType && binOpExpr.Rhs.Type.Canonicalize() is EnumType;
                     var isEquality = binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq;
 
                     if (!(isPrimitive || isEquality))
@@ -2086,7 +2105,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output, $"({CompilationContext.SchedulerVar}.getNextBoolean({pcScope.PathConstraintVar}))");
                         return;
                     }
-                    switch (chooseExpr.SubExpr.Type)
+                    switch (chooseExpr.SubExpr.Type.Canonicalize())
                     {
                         case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
                             context.Write(output, $"{CompilationContext.SchedulerVar}.getNextInteger(");
@@ -2192,6 +2211,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "*";
                 case BinOpType.Div:
                     return "/";
+                case BinOpType.Mod:
+                    return "%";
                 case BinOpType.Lt:
                     return "<";
                 case BinOpType.Le:
@@ -2226,9 +2247,23 @@ namespace Plang.Compiler.Backend.Symbolic
                     throw new ArgumentOutOfRangeException(nameof(operation));
             }
         }
-        private string GetConcreteBoxedType(PLanguageType type)
+
+        private IPExpr convertToStringExpr(IPExpr expr)
+         {
+            switch (expr.Type)
+            {
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
+                    return expr;
+                default:
+                    List<IPExpr> newListArgs = new List<IPExpr>();
+                    newListArgs.Add(expr);
+                    return new StringExpr(expr.SourceLocation, "{0}", newListArgs);
+            }
+         }
+
+         private string GetConcreteBoxedType(PLanguageType type)
         {
-            switch (type)
+            switch (type.Canonicalize())
             {
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
                     return "Boolean";
@@ -2236,6 +2271,27 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "Integer";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return "Float";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
+                    return "Event";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
+                    return "String";
+                case DataType _:
+                    return "String";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
+                    return "String";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
+                case PermissionType _:
+                    return "Machine";
+                case TypeDefType typeDefType:
+                    return $"{typeDefType.CanonicalRepresentation}";
+                case ForeignType foreignType:
+                    return $"{foreignType.CanonicalRepresentation}";
+                case NamedTupleType _: 
+                    return "String";
+                case TupleType _: 
+                    return "String";
+                case EnumType _: 
+                    return "Integer";
                 default:
                     throw new NotImplementedException($"Concrete type '{type.OriginalRepresentation}' is not supported");
             }
@@ -2318,6 +2374,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "PrimitiveVS<Event>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return "UnionVS";
+                case DataType _:
+                    return "UnionVS";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
                     return "PrimitiveVS<String>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
@@ -2366,6 +2424,8 @@ namespace Plang.Compiler.Backend.Symbolic
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return $"new {GetSymbolicType(type)}({CompilationContext.NullEventName})";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
+                    return $"new {GetSymbolicType(type)}()";
+                case DataType _:
                     return $"new {GetSymbolicType(type)}()";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
                     return $"new {GetSymbolicType(type)}(\"\")";

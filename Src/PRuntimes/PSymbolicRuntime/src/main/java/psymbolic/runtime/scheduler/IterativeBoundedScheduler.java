@@ -31,12 +31,6 @@ import java.util.stream.Collectors;
  */
 public class IterativeBoundedScheduler extends Scheduler {
 
-    @Getter
-    int iter = 0;
-
-    @Getter
-    int start_iter = 0;
-
     private int backtrack = 0;
 
     private boolean isDoneIterating = false;
@@ -204,13 +198,27 @@ public class IterativeBoundedScheduler extends Scheduler {
         if (configuration.getCollectStats() > 2) {
             SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
         }
-        if (configuration.getIterationBound() >= 0) {
-            isDoneIterating = ((iter - start_iter) >= configuration.getIterationBound());
+        if (configuration.getMaxExecutions() >= 0) {
+            isDoneIterating = ((iter - start_iter) >= configuration.getMaxExecutions());
         }
         GlobalData.getCoverage().updateIterationCoverage(getChoiceDepth()-1);
+        printCurrentStatus();
         if (!isDoneIterating) {
             postIterationCleanup();
+//            if ((iter % 100) == 0) {
+//                if (configuration.isSymbolic() && SolverEngine.getSolverType() == SolverType.BDD) {
+//                    SolverEngine.resumeEngine();
+//                }
+//            }
         }
+    }
+
+    private void printCurrentStatus() {
+        PSymLogger.info("--------------------");
+        PSymLogger.info(String.format("    Status after %.2f seconds:", TimeMonitor.getInstance().getRuntime()));
+        PSymLogger.info(String.format("      Coverage:    %.5f %%", GlobalData.getCoverage().getEstimatedCoverage()));
+        PSymLogger.info(String.format("      Executions:  %d", (iter - start_iter)));
+        PSymLogger.info(String.format("      Memory:      %.2f MB", MemoryMonitor.getMemSpent()));
     }
 
     @Override

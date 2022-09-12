@@ -21,7 +21,7 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
 
     public void send(Guard pc, PrimitiveVS<Machine> dest, PrimitiveVS<Event> eventName, UnionVS payload) {
         if (eventName.getGuardedValues().size() > 1) {
-            throw new RuntimeException("Not Implemented");
+            throw new RuntimeException(String.format("Handling multiple events together is not supported, in ", eventName));
         }
         TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
         if (sender != null)
@@ -43,7 +43,9 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
         if (payload != null) payload = payload.restrict(pc);
         if (sender != null)
             sender.incrementClock(pc);
-        enqueue(new Message(Event.createMachine, machine, payload, sender.getClock()).restrict(pc));
+        Message event = new Message(Event.createMachine, machine, payload, sender.getClock()).restrict(pc);
+        enqueue(event);
+//        scheduler.performEffect(event);
         return machine;
     }
 
@@ -81,12 +83,13 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
     }
 
     @Override
-    public ValueSummary getEvents() { return this.elements; }
+    public ValueSummary getEvents() {
+        return this.elements;
+    }
 
     @Override
     public void setEvents(ValueSummary events) {
         this.elements = (ListVS<Message>) events;
-//        this.elements = new ListVS((ListVS<Message>) events);
         resetPeek();
     }
 }

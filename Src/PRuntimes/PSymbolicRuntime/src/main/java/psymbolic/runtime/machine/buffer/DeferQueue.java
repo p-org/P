@@ -2,7 +2,9 @@ package psymbolic.runtime.machine.buffer;
 
 import psymbolic.runtime.Message;
 import psymbolic.valuesummary.Guard;
+import psymbolic.valuesummary.ListVS;
 import psymbolic.valuesummary.PrimitiveVS;
+import psymbolic.valuesummary.ValueSummary;
 
 import java.io.Serializable;
 import java.util.function.Function;
@@ -28,5 +30,14 @@ public class DeferQueue extends SymbolicQueue<Message> implements Serializable {
         assert(!cond.isFalse());
         Message top = peek(cond);
         return pred.apply(top).restrict(top.getUniverse());
+    }
+
+    public ValueSummary getEvents() {
+        return this.elements;
+    }
+
+    public void setEvents(ValueSummary events) {
+        this.elements = (ListVS<Message>) events;
+        resetPeek();
     }
 }

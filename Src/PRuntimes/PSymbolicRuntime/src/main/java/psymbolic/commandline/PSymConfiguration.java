@@ -38,8 +38,8 @@ public class PSymConfiguration implements Serializable {
     private int depthBound = 1000;
 
     @Getter @Setter
-    // max iterations bound provided by the user
-    private int iterationBound = 1;
+    // max number of executions bound provided by the user
+    private int maxExecutions = 1;
 
     // max input choice bound at each depth after which the search will truncate the choices
     private final int maxInputChoiceBound = 100;

@@ -3,50 +3,58 @@ package psymbolic.runtime.machine;
 import psymbolic.commandline.BugFoundException;
 import psymbolic.runtime.Event;
 import psymbolic.runtime.Message;
+import psymbolic.runtime.StateEvents;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.eventhandlers.EventHandler;
 import psymbolic.runtime.machine.eventhandlers.IgnoreEventHandler;
 import psymbolic.runtime.machine.eventhandlers.EventHandlerReturnReason;
+import psymbolic.utils.GlobalData;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.util.ValueSummaryChecks;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
 
 public abstract class State implements Serializable {
-    private final Map<Event, EventHandler> eventHandlers;
-    private final String name;
-    private final List<Event> ignored;
+    public final String name;
+    public final String machineName;
+
     public void entry(Guard pc, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {}
     public void exit(Guard pc, Machine machine) {}
 
-    public State(String name, EventHandler... eventHandlers) {
-        this.eventHandlers = new HashMap<>();
+    public State(String name, String machineName, EventHandler... eventHandlers) {
         this.name = name;
-        this.ignored = new ArrayList<>();
+        this.machineName = machineName;
+    }
+
+    private String getStateKey() {
+        return String.format("%s_%s", name, machineName);
+    }
+
+    private StateEvents getStateEvents() {
+        String key = getStateKey();
+        if (!GlobalData.getInstance().allStateEvents.containsKey(key))
+            GlobalData.getInstance().allStateEvents.put(key, new StateEvents());
+        return GlobalData.getInstance().allStateEvents.get(key);
     }
 
     public void addHandlers(EventHandler... eventHandlers) {
         for (EventHandler handler : eventHandlers) {
-            this.eventHandlers.put(handler.event, handler);
+            getStateEvents().eventHandlers.put(handler.event, handler);
             if (handler instanceof IgnoreEventHandler) {
-                ignored.add(handler.event);
+                getStateEvents().ignored.add(handler.event);
             }
         }
     }
 
     public Boolean isIgnored(Event event) {
-        return ignored.contains(event);
+        return getStateEvents().ignored.contains(event);
     }
 
     public PrimitiveVS<Boolean> hasHandler(Message message) {
         Guard has = Guard.constFalse();
         for (GuardedValue<Event> entry : message.getEvent().getGuardedValues()) {
-            if (eventHandlers.containsKey(entry.getValue())) {
+            if (getStateEvents().eventHandlers.containsKey(entry.getValue())) {
                 has = has.or(entry.getGuard());
             }
         }
@@ -62,11 +70,11 @@ public abstract class State implements Serializable {
             TraceLogger.handle(machine, this, message.restrict(entry.getGuard()));
             Guard handledPc = Guard.constFalse();
             for (GuardedValue<State> guardedValue : current.getGuardedValues()) {
-                if (guardedValue.getValue().eventHandlers.containsKey(event)) {
+                if (guardedValue.getValue().getStateEvents().eventHandlers.containsKey(event)) {
                     //System.out.println("payload: " + event.guard(guardedValue.guard).getPayload());
                     //if (event.guard(guardedValue.guard).getPayload() != null)
                     //System.out.println("payload class: " + event.guard(guardedValue.guard).getPayload().getClass());
-                    guardedValue.getValue().eventHandlers.get(event).handleEvent(
+                    guardedValue.getValue().getStateEvents().eventHandlers.get(event).handleEvent(
                             eventPc.and(guardedValue.getGuard()),
                             machine,
                             message.restrict(guardedValue.getGuard()).getPayload(),

@@ -30,6 +30,12 @@ import java.util.stream.Collectors;
 
 public class Scheduler implements SymbolicSearch {
 
+    @Getter
+    int iter = 0;
+
+    @Getter
+    int start_iter = 0;
+
     protected SearchStats searchStats = new SearchStats();
 
     @Getter

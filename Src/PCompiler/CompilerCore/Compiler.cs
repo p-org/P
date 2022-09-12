@@ -31,6 +31,7 @@ namespace Plang.Compiler
             Scope scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
 
             // Convert functions to lowered SSA form with explicit cloning
+            IRTransformer.SetOutputLanguage(job.OutputLanguage);
             foreach (Function fun in scope.GetAllMethods())
             {
                 IRTransformer.SimplifyMethod(fun);

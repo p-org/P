@@ -1,6 +1,6 @@
-package psymbolic.runtime.concretevalues;
+package psymbolic.runtime.values;
 
-import psymbolic.runtime.concretevalues.exceptions.InvalidIndexException;
+import psymbolic.runtime.values.exceptions.InvalidIndexException;
 
 import java.util.ArrayList;
 import java.util.List;

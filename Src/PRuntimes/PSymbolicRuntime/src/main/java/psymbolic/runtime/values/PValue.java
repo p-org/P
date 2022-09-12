@@ -1,7 +1,7 @@
-package psymbolic.runtime.concretevalues;
+package psymbolic.runtime.values;
 
 /**
- * Interface that must be implemented by all P concretevalues.
+ * Interface that must be implemented by all P values.
  * @param <T> T is the type of P Value
  */
 public abstract class PValue<T extends PValue<T>> {
@@ -20,7 +20,7 @@ public abstract class PValue<T extends PValue<T>> {
     /**
      * Checks if the current PValue is equal to the passed PValue
      * @param other the other value
-     * @return true if the two concretevalues are equal and false otherwise
+     * @return true if the two values are equal and false otherwise
      */
     public abstract boolean equals(Object other);
 
@@ -44,7 +44,7 @@ public abstract class PValue<T extends PValue<T>> {
      * Checks the equality of two PValues
      * @param val1 first PValue
      * @param val2 second PValue
-     * @return true if the two concretevalues are equal and false otherwise
+     * @return true if the two values are equal and false otherwise
      */
     static boolean equals(PValue<?> val1, PValue<?> val2) {
         if (val1 == null) {

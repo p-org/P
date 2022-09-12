@@ -2270,6 +2270,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import psymbolic.runtime.logger.*;");
             context.WriteLine(output, "import psymbolic.runtime.machine.buffer.*;");
             context.WriteLine(output, "import psymbolic.runtime.machine.eventhandlers.*;");
+            context.WriteLine(output, "import psymbolic.runtime.values.*;");
             context.WriteLine(output, "import java.util.List;");
             context.WriteLine(output, "import java.util.ArrayList;");
             context.WriteLine(output, "import java.util.Map;");

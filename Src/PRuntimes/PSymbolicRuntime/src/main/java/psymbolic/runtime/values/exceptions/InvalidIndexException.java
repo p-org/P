@@ -1,8 +1,7 @@
-package psymbolic.runtime.concretevalues.exceptions;
+package psymbolic.runtime.values.exceptions;
 
-import psymbolic.runtime.concretevalues.PRuntimeException;
-import psymbolic.runtime.concretevalues.PSeq;
-import psymbolic.runtime.concretevalues.PSet;
+import psymbolic.runtime.values.PSeq;
+import psymbolic.runtime.values.PSet;
 
 public class InvalidIndexException extends PRuntimeException {
     public InvalidIndexException(String message) {

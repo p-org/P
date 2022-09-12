@@ -1,6 +1,6 @@
-package psymbolic.runtime.concretevalues;
+package psymbolic.runtime.values;
 
-import psymbolic.runtime.concretevalues.exceptions.KeyNotFoundException;
+import psymbolic.runtime.values.exceptions.KeyNotFoundException;
 
 import java.util.ArrayList;
 import java.util.HashMap;

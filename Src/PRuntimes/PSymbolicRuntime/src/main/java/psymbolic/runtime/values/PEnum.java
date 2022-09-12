@@ -1,4 +1,4 @@
-package psymbolic.runtime.concretevalues;
+package psymbolic.runtime.values;
 
 public class PEnum extends PValue<PEnum> {
     // stores the int value

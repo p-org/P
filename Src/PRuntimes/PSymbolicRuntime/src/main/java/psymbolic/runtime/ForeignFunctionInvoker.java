@@ -1,8 +1,8 @@
 package psymbolic.runtime;
 
-import psymbolic.runtime.concretevalues.*;
-import psymbolic.runtime.concretevalues.exceptions.InvalidIndexException;
-import psymbolic.runtime.concretevalues.exceptions.KeyNotFoundException;
+import psymbolic.runtime.values.*;
+import psymbolic.runtime.values.exceptions.InvalidIndexException;
+import psymbolic.runtime.values.exceptions.KeyNotFoundException;
 import psymbolic.valuesummary.*;
 
 

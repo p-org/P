@@ -1,7 +1,6 @@
-package psymbolic.runtime.concretevalues.exceptions;
+package psymbolic.runtime.values.exceptions;
 
-import psymbolic.runtime.concretevalues.PRuntimeException;
-import psymbolic.runtime.concretevalues.PTuple;
+import psymbolic.runtime.values.PTuple;
 
 public class TupleInvalidIndexException extends PRuntimeException {
     public TupleInvalidIndexException(String message) {

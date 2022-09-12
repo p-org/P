@@ -1,4 +1,4 @@
-package psymbolic.runtime.concretevalues;
+package psymbolic.runtime.values;
 
 public class PString extends PValue<PString> {
     // stores the int value

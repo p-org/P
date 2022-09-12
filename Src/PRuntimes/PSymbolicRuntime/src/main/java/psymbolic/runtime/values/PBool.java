@@ -1,4 +1,4 @@
-package psymbolic.runtime.concretevalues;
+package psymbolic.runtime.values;
 
 public class PBool extends PValue<PBool>{
     // stores the int value

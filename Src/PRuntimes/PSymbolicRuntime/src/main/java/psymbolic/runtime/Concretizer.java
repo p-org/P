@@ -1,6 +1,6 @@
 package psymbolic.runtime;
 
-import psymbolic.runtime.concretevalues.*;
+import psymbolic.runtime.values.*;
 import psymbolic.valuesummary.*;
 import psymbolic.runtime.machine.Machine;
 

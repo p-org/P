@@ -1,7 +1,6 @@
-package psymbolic.runtime.concretevalues.exceptions;
+package psymbolic.runtime.values.exceptions;
 
-import psymbolic.runtime.concretevalues.PRuntimeException;
-import psymbolic.runtime.concretevalues.PValue;
+import psymbolic.runtime.values.PValue;
 
 import java.util.Map;
 

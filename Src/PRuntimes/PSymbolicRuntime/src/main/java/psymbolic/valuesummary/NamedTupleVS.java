@@ -1,6 +1,6 @@
 package psymbolic.valuesummary;
 
-import psymbolic.runtime.concretevalues.PString;
+import psymbolic.runtime.values.PString;
 
 import java.util.*;
 

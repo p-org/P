@@ -1,11 +1,11 @@
-package psymbolic.runtime.concretevalues;
+package psymbolic.runtime.values;
 
-import psymbolic.runtime.concretevalues.exceptions.TupleInvalidIndexException;
+import psymbolic.runtime.values.exceptions.TupleInvalidIndexException;
 
 import java.util.Arrays;
 
 public class PTuple extends PValue<PTuple> {
-    // stores the fields concretevalues
+    // stores the fields values
     private final PValue<?>[] fields;
 
     public PTuple(PValue<?>[] input_fields) {

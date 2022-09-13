@@ -10,5 +10,6 @@ pushd .
 echo "---------------------"
 echo "Building PSym Runtime"
 echo "---------------------"
-mvn clean install
+mvn clean initialize
+mvn install
 popd

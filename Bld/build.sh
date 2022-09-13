@@ -16,10 +16,6 @@ git submodule update --init --recursive
 echo -e "${ORANGE} ---- Building the Java P runtime ----${NOCOLOR}"
 mvn compile -q -f ./Src/PRuntimes/PJavaRuntime/pom.xml
 
-echo -e "${ORANGE} ---- Building the PSym runtime ----${NOCOLOR}"
-mvn clean initialize -q -f ./Src/PRuntimes/PSymbolicRuntime/pom.xml
-mvn install -q -f ./Src/PRuntimes/PSymbolicRuntime/pom.xml
-
 echo -e "${ORANGE} ---- Building the PCompiler ----${NOCOLOR}"
 # Run the build!
 

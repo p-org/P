@@ -6,9 +6,6 @@ git submodule update --init --recursive
 
 mvn clean compile -f ./Src/PRuntimes/PJavaRuntime/pom.xml
 
-mvn clean initialize -q -f ./Src/PRuntimes/PSymbolicRuntime/pom.xml
-mvn install -q -f ./Src/PRuntimes/PSymbolicRuntime/pom.xml
-
 # Run the build! :D
 dotnet build -c Release
 

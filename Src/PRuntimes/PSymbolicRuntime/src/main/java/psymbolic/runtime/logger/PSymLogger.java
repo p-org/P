@@ -34,6 +34,10 @@ public class PSymLogger {
         log.info(String.format("--------------------"));
     }
 
+    public static void log(String message) {
+        log.info(message);
+    }
+
     public static void info(String message) {
         log.info(message);
     }

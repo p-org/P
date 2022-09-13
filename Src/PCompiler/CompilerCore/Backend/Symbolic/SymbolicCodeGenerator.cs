@@ -968,9 +968,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case PrintStmt printStmt:
-                    context.Write(output, "System.out.println(");
+                    context.Write(output, "PSymLogger.log(");
                     WriteExpr(context, output, flowContext.pcScope, printStmt.Message);
-                    context.WriteLine(output, ");");
+                    context.WriteLine(output, ".toString());");
                     break;
 
                 case BreakStmt breakStmt:

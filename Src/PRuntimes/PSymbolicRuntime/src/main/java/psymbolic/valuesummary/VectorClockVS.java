@@ -173,4 +173,11 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
     public String toString() {
         return clock.toString();
     }
+
+    public String toStringDetailed() {
+        StringBuilder out = new StringBuilder();
+        out.append("Clock[");
+        out.append(clock.toStringDetailed()).append("]");
+        return out.toString();
+    }
 }

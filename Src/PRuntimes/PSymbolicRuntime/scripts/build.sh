@@ -1,19 +1,18 @@
+#!/usr/bin/env bash
+NOCOLOR='\033[0m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+ORANGE='\033[0;33m'
+set -e
+
 pushd .
-echo "-------------------------"
-echo "Building the P Compiler"
-echo "-------------------------"
-
-cd ../../../../Bld/
-./build.sh
-
+echo -e "${ORANGE} ---- Building PSym runtime ----${NOCOLOR}"
+mvn clean initialize -q
+mvn install -q
 popd
 
 pushd .
-
-cd ..
-
-mvn clean
-
-mvn install
-
+echo -e "${ORANGE} ---- Building P ----${NOCOLOR}"
+cd ../../../Bld/
+./build.sh
 popd

@@ -4,25 +4,37 @@ import lombok.Getter;
 import lombok.Setter;
 import psymbolic.commandline.*;
 import psymbolic.runtime.*;
+import psymbolic.runtime.logger.PSymLogger;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Monitor;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.runtime.statistics.SolverStats;
+import psymbolic.utils.GlobalData;
+import psymbolic.utils.MemoryMonitor;
+import psymbolic.utils.TimeMonitor;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.solvers.SolverEngine;
 import psymbolic.runtime.machine.buffer.*;
 import psymbolic.runtime.logger.StatLogger;
+import psymbolic.valuesummary.solvers.SolverGuard;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
 public class Scheduler implements SymbolicSearch {
+
+    @Getter
+    int iter = 0;
+
+    @Getter
+    int start_iter = 0;
 
     protected SearchStats searchStats = new SearchStats();
 
@@ -104,7 +116,10 @@ public class Scheduler implements SymbolicSearch {
         done = false;
         machineCounters.clear();
         machines.clear();
-        totalStates.clear();
+        srcState = null;
+        schedule.setSchedulerDepth(getDepth());
+        schedule.setSchedulerChoiceDepth(getChoiceDepth());
+        schedule.setSchedulerState(srcState);
     }
 
     /** Restore scheduler state
@@ -222,7 +237,11 @@ public class Scheduler implements SymbolicSearch {
         List<ValueSummary> list = new ArrayList<>();
         while (BooleanVS.isEverTrue(IntegerVS.lessThan(index, size))) {
             Guard cond = BooleanVS.getTrueGuard(IntegerVS.lessThan(index, size));
-            list.add(candidates.get(index).restrict(pc));
+            if (cond.isTrue()) {
+                list.add(candidates.get(index).restrict(pc));
+            } else {
+                list.add(candidates.restrict(cond).get(index).restrict(pc));
+            }
             index = IntegerVS.add(index, 1);
         }
         return list;
@@ -261,6 +280,11 @@ public class Scheduler implements SymbolicSearch {
     @Override
     public ValueSummary getNextElement(SetVS<? extends ValueSummary> s, Guard pc) {
         return getNextElement(s.getElements(), pc);
+    }
+
+    @Override
+    public ValueSummary getNextElement(MapVS<?, ? extends ValueSummary, ? extends ValueSummary> s, Guard pc) {
+        return getNextElement(s.getKeys(), pc);
     }
 
     /** Start execution with the specified machine
@@ -314,23 +338,23 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public void initializeSearch() {
-        listeners = program.getMonitorMap();
-        monitors = new ArrayList<>(program.getMonitorList());
-        for (Machine m : program.getMonitorList()) {
+        assert(getDepth() == 0);
+
+        listeners = program.getListeners();
+        monitors = new ArrayList<>(program.getMonitors());
+        for (Machine m : program.getMonitors()) {
             startWith(m);
         }
         Machine target = program.getStart();
         startWith(target);
         start = target;
+        depth++;
     }
 
     public void restoreState(List<List<ValueSummary>> state) {
         int idx = 0;
-        for (Machine machine : machines) {
-            List<ValueSummary> machineLocalState = state.get(idx++);
-            machine.setLocalState(machineLocalState);
-        }
-        for (Monitor machine : monitors) {
+        assert(state.size() == schedule.getMachines().size());
+        for (Machine machine : schedule.getMachines()) {
             List<ValueSummary> machineLocalState = state.get(idx++);
             machine.setLocalState(machineLocalState);
         }
@@ -357,20 +381,22 @@ public class Scheduler implements SymbolicSearch {
     }
 
     @Override
-    public void doSearch() {
+    public void doSearch() throws TimeoutException {
         initializeSearch();
         performSearch();
     }
 
-    public void performSearch() {
+    public void performSearch() throws TimeoutException {
         while (!isDone()) {
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
-            Assert.prop(depth < configuration.getMaxDepthBound(), "Maximum allowed depth " + configuration.getMaxDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
+            Assert.prop(depth < configuration.getDepthBound(), "Maximum allowed depth " + configuration.getDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             step();
         }
-        searchStats.setIterationBacktracks(schedule.getNumBacktracks());
+        searchStats.setIterationStats(schedule.getNumBacktracks());
         if (done) {
             searchStats.setIterationCompleted();
+        } else {
+//            cleanup();
         }
     }
 
@@ -378,50 +404,36 @@ public class Scheduler implements SymbolicSearch {
     public void print_stats() {
         SearchStats.TotalStats totalStats = searchStats.getSearchTotal();
         Instant end = Instant.now();
-        Runtime runtime = Runtime.getRuntime();
-        double timeUsed = (Duration.between(EntryPoint.start, end).toMillis() / 1000.0);
-        double memoryUsed = ((runtime.totalMemory() - runtime.freeMemory()) / 1000000.0);
+        double timeUsed = (Duration.between(TimeMonitor.getInstance().getStart(), end).toMillis() / 1000.0);
+        double memoryUsed = MemoryMonitor.getMemSpent();
 
         // print basic statistics
-        StatLogger.log(String.format("result:\t%s", result));
-        StatLogger.log(String.format("time-seconds:\t%.1f", timeUsed));
-        StatLogger.log(String.format("memory-max-MB:\t%.1f", SolverStats.maxMemSpent));
-        StatLogger.log(String.format("memory-current-MB:\t%.1f", memoryUsed));
-        StatLogger.log(String.format("max-depth-explored:\t%d", totalStats.getDepthStats().getDepth()));
+        StatLogger.log("result", String.format("%s", result));
+        StatLogger.log("time-seconds", String.format("%.1f", timeUsed));
+        StatLogger.log("memory-max-MB", String.format("%.1f", MemoryMonitor.getMaxMemSpent()));
+        StatLogger.log("memory-current-MB", String.format("%.1f", memoryUsed));
+        StatLogger.log("max-depth-explored", String.format("%d", totalStats.getDepthStats().getDepth()));
 
         if (configuration.getCollectStats() != 0) {
             // print solver statistics
-            StatLogger.log(String.format("time-create-guards-%%:\t%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
-            StatLogger.log(String.format("time-solve-guards-%%:\t%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
-            StatLogger.log(String.format("time-create-guards-max-seconds:\t%.3f", SolverStats.timeMaxCreateGuards/1000.0));
-            StatLogger.log(String.format("time-solve-guards-max-seconds:\t%.3f", SolverStats.timeMaxSolveGuards/1000.0));
+            StatLogger.log("time-create-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
+            StatLogger.log("time-solve-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
+            StatLogger.log("time-create-guards-seconds", String.format("%.1f", SolverStats.timeTotalCreateGuards/1000.0));
+            StatLogger.log("time-solve-guards-seconds", String.format("%.1f", SolverStats.timeTotalSolveGuards/1000.0));
+            StatLogger.log("time-create-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxCreateGuards/1000.0));
+            StatLogger.log("time-solve-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxSolveGuards/1000.0));
             StatLogger.logSolverStats();
 
-            if (configuration.getCollectStats() > 2) {
-                // print search statistics
-                StatLogger.log(String.format("#-states:\t%d", getTotalStates()));
-                StatLogger.log(String.format("#-events:\t%d", totalStats.getDepthStats().getNumOfTransitions()));
-                StatLogger.log(String.format("#-events-merged:\t%d", totalStats.getDepthStats().getNumOfMergedTransitions()));
-                StatLogger.log(String.format("#-events-explored:\t%d", totalStats.getDepthStats().getNumOfTransitionsExplored()));
-            }
-        }
-
-        if (configuration.getCollectStats() != 0) {
-            // print schedule statistics
-            StatLogger.log(String.format("#-choices-covered:\t%d scheduling, %d data",
-                    schedule.getNumScheduleChoicesExplored(),
-                    schedule.getNumDataChoicesExplored()));
-            StatLogger.log(String.format("#-choices-remaining:\t%d scheduling, %d data",
-                    schedule.getNumScheduleChoicesRemaining(),
-                    schedule.getNumDataChoicesRemaining()));
-            StatLogger.log(String.format("#-backtracks:\t%d", schedule.getNumBacktracks()));
+            // print search statistics
+            StatLogger.log("#-events", String.format("%d", totalStats.getDepthStats().getNumOfTransitions()));
+            StatLogger.log("#-events-merged", String.format("%d", totalStats.getDepthStats().getNumOfMergedTransitions()));
+            StatLogger.log("#-events-explored", String.format("%d", totalStats.getDepthStats().getNumOfTransitionsExplored()));
         }
     }
 
     public void reset_stats() {
         searchStats.reset_stats();
-        schedule.reset_stats();
-        totalStates.clear();
+        GlobalData.getCoverage().resetCoverage();
     }
 
     public List<PrimitiveVS> getNextSenderChoices() {
@@ -566,17 +578,30 @@ public class Scheduler implements SymbolicSearch {
         if (srcState != null)
             return;
         srcState = new ArrayList<>();
-        for (Machine machine : machines) {
-            List<ValueSummary> machineLocalState = machine.getLocalState();
-            srcState.add(machineLocalState);
-        }
-        for (Monitor machine : monitors) {
+        for (Machine machine : schedule.getMachines()) {
             List<ValueSummary> machineLocalState = machine.getLocalState();
             srcState.add(machineLocalState);
         }
     }
 
-    public void step() {
+    private String globalStateString() {
+        StringBuilder out = new StringBuilder();
+        out.append("Src State:").append(System.lineSeparator());
+        for (Machine machine : schedule.getMachines()) {
+            List<ValueSummary> machineLocalState = machine.getLocalState();
+            out.append(String.format("  Machine: %s", machine)).append(System.lineSeparator());
+            for (ValueSummary vs: machineLocalState) {
+                out.append(String.format("    %s", vs.toStringDetailed())).append(System.lineSeparator());
+            }
+        }
+        return out.toString();
+    }
+
+    public static void cleanup() {
+        SolverEngine.cleanupEngine();
+    }
+
+    public void step() throws TimeoutException {
         srcState = null;
 
         int numStates = 0;
@@ -607,12 +632,14 @@ public class Scheduler implements SymbolicSearch {
 
         if (choices.isEmptyVS()) {
             done = true;
-            TraceLogger.finishedExecution(depth);
+            SearchLogger.finishedExecution(depth);
         }
 
         if (done) {
             return;
         }
+
+        TimeMonitor.getInstance().checkTimeout();
 
         Message effect = null;
         List<Message> effects = new ArrayList<>();
@@ -622,10 +649,10 @@ public class Scheduler implements SymbolicSearch {
             Guard guard = sender.getGuard();
             Message removed = rmBuffer(machine, guard);
             if (configuration.getVerbosity() > 3) {
-                System.out.println("\tMachine " + machine.toString());
-                System.out.println("\t  state   " + machine.getCurrentState().toStringDetailed());
-                System.out.println("\t  message " + removed.toString());
-                System.out.println("\t  target " + removed.getTarget().toString());
+                System.out.println("  Machine " + machine.toString());
+                System.out.println("    state   " + machine.getCurrentState().toStringDetailed());
+                System.out.println("    message " + removed.toString());
+                System.out.println("    target " + removed.getTarget().toString());
             }
             if (configuration.getCollectStats() > 2) {
                 numMessages += Concretizer.getNumConcreteValues(Guard.constTrue(), removed);
@@ -644,6 +671,7 @@ public class Scheduler implements SymbolicSearch {
 
         assert effect != null;
         effect = effect.merge(effects);
+
         TraceLogger.schedule(depth, effect, choices);
 
         performEffect(effect);
@@ -654,9 +682,10 @@ public class Scheduler implements SymbolicSearch {
         // switch engine
 //        SolverEngine.switchEngineAuto();
 
-        // performing node clean-up
-        SolverEngine.cleanupEngine();
-        System.gc();
+        double memoryUsed = MemoryMonitor.getMemSpent();
+        if (memoryUsed > (0.8* SolverStats.memLimit)) {
+            Scheduler.cleanup();
+        }
 
         // record depth statistics
         SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, numStates, numMessages, numMessagesMerged, numMessagesExplored);
@@ -664,24 +693,24 @@ public class Scheduler implements SymbolicSearch {
 
         // log statistics
         if (configuration.getCollectStats() != 0) {
-            double timeUsed = SolverStats.getTime();
-            double memoryUsed = SolverStats.getMemory();
+            double timeUsed = TimeMonitor.getInstance().getRuntime();
             if (configuration.getCollectStats() > 1) {
-                System.out.println("--------------------");
-                System.out.println("Resource Stats::");
-                System.out.println(String.format("time-seconds:\t%.1f", timeUsed));
-                System.out.println(String.format("memory-max-MB:\t%.1f", SolverStats.maxMemSpent));
-                System.out.println(String.format("memory-current-MB:\t%.1f", memoryUsed));
-                System.out.println("--------------------");
-                System.out.println("Solver Stats::");
-                System.out.println(String.format("time-create-guards-%%:\t%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
-                System.out.println(String.format("time-solve-guards-%%:\t%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
-                System.out.println(String.format("time-create-guards-max-seconds:\t%.3f", SolverStats.timeMaxCreateGuards/1000.0));
-                System.out.println(String.format("time-solve-guards-max-seconds:\t%.3f", SolverStats.timeMaxSolveGuards/1000.0));
-                System.out.println(SolverStats.prettyPrint());
-                System.out.println("--------------------");
-                System.out.println("Detailed Solver Stats::\n" + SolverEngine.getStats());
-                System.out.println("--------------------");
+                SearchLogger.log("--------------------");
+                SearchLogger.log("Resource Stats::");
+                SearchLogger.log("time-seconds", String.format("%.1f", timeUsed));
+                SearchLogger.log("memory-max-MB", String.format("%.1f", MemoryMonitor.getMaxMemSpent()));
+                SearchLogger.log("memory-current-MB", String.format("%.1f", memoryUsed));
+                SearchLogger.log("--------------------");
+                SearchLogger.log("Solver Stats::");
+                SearchLogger.log("time-create-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
+                SearchLogger.log("time-solve-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
+                SearchLogger.log("time-create-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxCreateGuards/1000.0));
+                SearchLogger.log("time-solve-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxSolveGuards/1000.0));
+                SolverStats.logSolverStats();
+                SearchLogger.log("--------------------");
+                SearchLogger.log("Detailed Solver Stats::");
+                SearchLogger.log(SolverEngine.getStats());
+                SearchLogger.log("--------------------");
             }
         }
 
@@ -751,7 +780,7 @@ public class Scheduler implements SymbolicSearch {
         }
     }
 
-    void performEffect(Message event) {
+    public void performEffect(Message event) {
         runMonitors(event);
         for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
             target.getValue().processEventToCompletion(target.getGuard(), event.restrict(target.getGuard()));

@@ -21,9 +21,9 @@ import psymbolic.valuesummary.util.SerializableRunnable;
 public abstract class Machine implements Serializable {
 
     private EventBufferSemantics semantics;
-    private String name;
+    private final String name;
     @Getter
-    private int instanceId;
+    private final int instanceId;
     @Getter
     private Scheduler scheduler;
     private final State startState;
@@ -107,16 +107,22 @@ public abstract class Machine implements Serializable {
         localState.add(this.currentState);
         localState.add(this.sendBuffer.getEvents());
         localState.add(this.clock);
+        localState.add(this.deferredQueue.getEvents());
+        localState.add(this.receives);
+        localState.add(this.started);
+        localState.add(this.halted);
         return localState;
     }
 
     public int setLocalState(List<ValueSummary> localState) {
         int idx = 0;
         this.currentState = (PrimitiveVS<State>) localState.get(idx++);
-//        this.currentState = new PrimitiveVS((PrimitiveVS<State>) localState.get(idx++));
         this.sendBuffer.setEvents(localState.get(idx++));
         this.clock = (VectorClockVS) localState.get(idx++);
-//        this.clock = new VectorClockVS((VectorClockVS) localState.get(idx++));
+        this.deferredQueue.setEvents(localState.get(idx++));
+        this.receives = (PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>>) localState.get(idx++);
+        this.started = (PrimitiveVS<Boolean>) localState.get(idx++);
+        this.halted = (PrimitiveVS<Boolean>) localState.get(idx++);
         return idx;
     }
 
@@ -181,10 +187,13 @@ public abstract class Machine implements Serializable {
                   EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
                   nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not()));
                   Guard deferred = Guard.constFalse();
+                  PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> oldReceives = new PrimitiveVS<>(receives);
+                  receives = receives.restrict(receiveGuard.not());
                   for (GuardedValue<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> receiver : runNow.getGuardedValues()) {
                       deferred = deferred.or(receiver.getValue().apply(receiver.getGuard()).apply(nextEventHandlerReturnReason, m.restrict(receiver.getGuard())));
                   }
-                  receives = receives.restrict(receiveGuard.not().or(deferred));
+                  oldReceives = oldReceives.restrict(receiveGuard.not().or(deferred));
+                  receives.merge(oldReceives);
                   eventHandlerReturnReason = nextEventHandlerReturnReason;
               } else {
                   // clean up receives

@@ -1,8 +1,10 @@
 package psymbolic.runtime;
 
-import psymbolic.runtime.concretevalues.*;
+import psymbolic.runtime.values.*;
 import psymbolic.valuesummary.*;
+import psymbolic.runtime.Message;
 import psymbolic.runtime.machine.Machine;
+import psymbolic.runtime.Event;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,8 +47,8 @@ public class Concretizer {
         } else if (valueSummary instanceof VectorClockVS) {
             VectorClockVS clkVS = (VectorClockVS) valueSummary;
             return concretize(clkVS.asListVS());
-        } else if (valueSummary instanceof MapVS<?, ?>) {
-            MapVS<?, ?> mapVS = (MapVS<?, ?>) valueSummary;
+        } else if (valueSummary instanceof MapVS<?, ?, ?>) {
+            MapVS<?, ?, ?> mapVS = (MapVS<?, ?, ?>) valueSummary;
             Guard pc = mapVS.getUniverse();
             Map map = new HashMap<>();
             ListVS<?> keyList = mapVS.keys.getElements();
@@ -59,7 +61,7 @@ public class Concretizer {
                     GuardedValue<?> key = concretize(keyList.get(new PrimitiveVS<>(i).restrict(pc)));
                     pc = pc.and(key.getGuard());
                     mapVS = mapVS.restrict(pc);
-                    GuardedValue<?> value = concretize(mapVS.entries.get(key));
+                    GuardedValue<?> value = concretize(mapVS.entries.get(key.getValue()));
                     if (value != null) {
                         pc = pc.and(value.getGuard());
                         map.put(key.getValue(), value.getValue());
@@ -120,16 +122,22 @@ public class Concretizer {
             Message messageVS = (Message) valueSummary;
             Guard pc = messageVS.getUniverse();
             if (pc.isFalse()) return null;
-            GuardedValue<Machine> guardedMachineValue = messageVS.getTarget().getGuardedValues().get(0);
-            Machine m = guardedMachineValue.getValue();
-            messageVS = messageVS.restrict(guardedMachineValue.getGuard());
+            List<GuardedValue<Machine>> guardedMachineValues = messageVS.getTarget().getGuardedValues();
+            Machine m = null;
+            if (!guardedMachineValues.isEmpty()) {
+                GuardedValue<Machine> guardedMachineValue = messageVS.getTarget().getGuardedValues().get(0);
+                m = guardedMachineValue.getValue();
+                messageVS = messageVS.restrict(guardedMachineValue.getGuard());
+            }
             GuardedValue<Event> guardedEventValue = messageVS.getEvent().getGuardedValues().get(0);
             Event e = guardedEventValue.getValue();
             messageVS = messageVS.restrict(guardedEventValue.getGuard());
             GuardedValue guardedPayloadValue = concretize(messageVS.getPayload());
             GuardedValue guardedVectorClock = concretize(messageVS.getVectorClock());
             List<Object> messageComponents = new ArrayList<>();
-            messageComponents.add(m);
+            if (m != null) {
+                messageComponents.add(m);
+            }
             messageComponents.add(e);
             if (guardedPayloadValue == null) {
                 return new GuardedValue(messageComponents, guardedEventValue.getGuard());
@@ -176,8 +184,8 @@ public class Concretizer {
                 }
             }
             return new GuardedValue<>(list, pc);
-        } else if (valueSummary instanceof MapVS<?, ?>) {
-            MapVS<?, ?> mapVS = (MapVS<?, ?>) valueSummary;
+        } else if (valueSummary instanceof MapVS<?, ?, ?>) {
+            MapVS<?, ?, ?> mapVS = (MapVS<?, ?, ?>) valueSummary;
             Guard pc = mapVS.getUniverse();
             PMap map = new PMap(new HashMap<>());
             ListVS<?> keyList = mapVS.keys.getElements();
@@ -250,20 +258,23 @@ public class Concretizer {
     }
 
     /**
-     * Get a list of concrete concretevalues for the arguments
-     * @param pc Guard under which to concretize concretevalues
-     * @param stop specifies when to stop getting more concrete concretevalues
+     * Get a list of concrete values for the arguments
+     * @param pc Guard under which to concretize values
+     * @param stop specifies when to stop getting more concrete values
      * @param args arguments
-     * @return list of concrete concretevalues for arguments
+     * @return list of concrete values for arguments
      */ 
     public static List<GuardedValue<List<Object>>> getConcreteValues(Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary ... args) {
         Guard iterPc = Guard.constFalse();
         Guard alreadySeen = Guard.constFalse();
         boolean skip = false;
-        UnionVS ret = new UnionVS();
         boolean done = false;
         int i = 0;
         List<GuardedValue<List<Object>>> concreteArgsList = new ArrayList();
+        if (args.length == 0) {
+            concreteArgsList.add(new GuardedValue<>(new ArrayList<>(), pc));
+            return concreteArgsList;
+        }
         while (!stop.test(i)) {
             iterPc = pc.and(alreadySeen.not());
             List<Object> concreteArgs = new ArrayList<>();
@@ -303,11 +314,11 @@ public class Concretizer {
     }
 
     /**
-     * Get the number of concrete concretevalues for the arguments
-     * @param pc Guard under which to concretize concretevalues
-     * @param stop specifies when to stop getting more concrete concretevalues
+     * Get the number of concrete values for the arguments
+     * @param pc Guard under which to concretize values
+     * @param stop specifies when to stop getting more concrete values
      * @param args arguments
-     * @return number of concrete concretevalues for arguments
+     * @return number of concrete values for arguments
      */
     public static int countConcreteValues(Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary ... args) {
         Guard iterPc = Guard.constFalse();
@@ -343,10 +354,10 @@ public class Concretizer {
     }
 
     /**
-     * Count the number of concrete concretevalues for arguments
-     * @param pc Guard under which to concretize concretevalues
+     * Count the number of concrete values for arguments
+     * @param pc Guard under which to concretize values
      * @param args arguments
-     * @return number of concrete concretevalues
+     * @return number of concrete values
      */ 
     public static int getNumConcreteValues(Guard pc, ValueSummary ... args) {
     	int i = 0;
@@ -357,7 +368,7 @@ public class Concretizer {
                 i = countConcreteValues(pc, x -> false, Concretizer::concretize, args);
             }
     	} catch (NullPointerException e) {
-            throw new RuntimeException("Counting concrete concretevalues failed.");
+            throw new RuntimeException("Counting concrete values failed.");
     	}
     	return i;
     }

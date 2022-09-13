@@ -7,6 +7,7 @@ public enum SolverType {
 	  CVC5,
 	  YICES2,
 	  Z3,
+	  MONOSAT,
 	  JAVASMT_BOOLECTOR,
 	  JAVASMT_CVC4,
 	  JAVASMT_MATHSAT5,

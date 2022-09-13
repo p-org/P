@@ -22,6 +22,10 @@
 <!--    <abc.jarpath>${deps.path}/Deps/abc_java_bindings/dist/lib/abc.jar</abc.jarpath>-->
     <abc.libpath>${deps.path}/Deps/abc_java_bindings/dist/lib</abc.libpath>
 
+    <monosat.jarpath>${deps.path}/Jars/monosat.jar</monosat.jarpath>
+<!--    <monosat.jarpath>${deps.path}/Deps/monosat/monosat.jar</monosat.jarpath>-->
+    <monosat.libpath>${deps.path}/Deps/monosat</monosat.libpath>
+
     <yices.jarpath>${deps.path}/Jars/yices.jar</yices.jarpath>
 <!--    <yices.jarpath>${deps.path}/Deps/yices2_java_bindings/dist/lib/yices.jar</yices.jarpath>-->
     <yices.libpath>${deps.path}/Deps/yices2_java_bindings/dist/lib</yices.libpath>
@@ -47,6 +51,7 @@
         <configuration>
           <source>9</source>
           <target>9</target>
+	  <forceJavacCompilerUse>true</forceJavacCompilerUse>
         </configuration>
       </plugin>
       <plugin>
@@ -65,6 +70,20 @@
               <version>1.0.0</version>
               <packaging>jar</packaging>
               <file>${abc.jarpath}</file>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-monosat</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <groupId>io.github.monosat</groupId>
+              <artifactId>monosat</artifactId>
+              <version>1.6.0</version>
+              <packaging>jar</packaging>
+              <file>${monosat.jarpath}</file>
             </configuration>
           </execution>
           <execution>
@@ -132,7 +151,7 @@
         <configuration>
           <systemPropertyVariables>
             <propertyName>java.library.path</propertyName>
-            <buildDirectory>${abc.libpath}:${yices.libpath}:${z3.libpath}:${cvc5.libpath}</buildDirectory>
+            <buildDirectory>${abc.libpath}:${monosat.libpath}:${yices.libpath}:${z3.libpath}:${cvc5.libpath}</buildDirectory>
           </systemPropertyVariables>
         </configuration>
       </plugin>
@@ -179,6 +198,18 @@
     </dependency>
 
     <dependency>
+      <groupId>io.github.monosat</groupId>
+      <artifactId>monosat</artifactId>
+      <version>1.6.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.sri.yices</groupId>
+      <artifactId>yices</artifactId>
+      <version>1.0</version>
+    </dependency>
+
+    <dependency>
       <groupId>com.microsoft.z3</groupId>
       <artifactId>z3</artifactId>
       <version>4.8.14</version>
@@ -188,12 +219,6 @@
       <groupId>io.github.cvc5</groupId>
       <artifactId>cvc5</artifactId>
       <version>0.0.7</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.sri.yices</groupId>
-      <artifactId>yices</artifactId>
-      <version>1.0</version>
     </dependency>
 
     <dependency>
@@ -260,22 +285,22 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-1.2-api</artifactId>
-      <version>2.17.2</version>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>[2.17.1,)</version>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.apache.logging.log4j</groupId>-->
+<!--      <artifactId>log4j-core</artifactId>-->
+<!--      <version>[2.17.1,)</version>-->
+<!--    </dependency>-->
 
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>[2.17.1,)</version>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.apache.logging.log4j</groupId>-->
+<!--      <artifactId>log4j-slf4j-impl</artifactId>-->
+<!--      <version>[2.17.1,)</version>-->
+<!--    </dependency>-->
 
     <dependency>
         <groupId>backport-util-concurrent</groupId>

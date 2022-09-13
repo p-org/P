@@ -463,7 +463,7 @@ public class SolverGuard implements Serializable {
         if (!(o instanceof SolverGuard)) return false;
         SolverGuard that = (SolverGuard) o;
         if (formula == null || that.formula == null) {
-            return (id == that.id) && (type == that.type) && (name == that.name) && (children == that.children);
+            return (id == that.id) && (type == that.type) && name.equals(that.name) && (children == that.children || children.equals(that.children));
         }
         return SolverEngine.getSolver().areEqual(formula, that.formula);
 //        return SolverEngine.getSolver().areEqual(formula, that.formula) && statusTrue.equals(that.statusTrue) && statusFalse.equals(that.statusFalse);

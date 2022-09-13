@@ -544,17 +544,7 @@ namespace Plang.Compiler.Backend
                         .ToList();
 
                 case ForeachStmt foreachStmt:
-                    (IExprTerm collectionExpr, List<IPStmt> collectionDeps) = SimplifyExpression(foreachStmt.IterCollection);
-                    (VariableAccessExpr collTemp, IPStmt collStore) = SaveInTemporary(new CloneExpr(collectionExpr));
-                    
-                    CompoundStmt body = new CompoundStmt(
-                        foreachStmt.Body.SourceLocation,
-                        SimplifyStatement(foreachStmt.Body));
-                    
-                    return collectionDeps
-                            .Append(collStore)
-                            .Concat( new[]{ new ForeachStmt(location, foreachStmt.Item, collTemp, body) })
-                            .ToList();
+                    return SimplifyStatement(SimplifyForeachStmt(foreachStmt));
 
                 case WhileStmt whileStmt:
                     (IExprTerm condExpr, List<IPStmt> condDeps) = SimplifyExpression(whileStmt.Condition);
@@ -575,6 +565,84 @@ namespace Plang.Compiler.Backend
                 default:
                     throw new ArgumentOutOfRangeException(nameof(statement));
             }
+        }
+
+        private IPStmt SimplifyForeachStmt(ForeachStmt foreachStmt)
+        {
+            // var item: element.type;
+            // foreach(item in collection) {
+            //   body;
+            // }
+            //
+            // is transformed to
+            //
+            // var item: element.type;
+            // var collectionCopy: collection.type;
+            // collectionCopy = collection;
+            // var i: int;
+            // var sizeof: int;
+            // i = 0;
+            // sizeof = sizeof(collectionCopy);
+            // while(i < sizeof) {
+            //     item = collectionCopy[i];
+            //     body;
+            //     i = i + 1;
+            // }
+
+            Antlr4.Runtime.ParserRuleContext location = foreachStmt.SourceLocation;
+            Variable item = foreachStmt.Item;
+            IPExpr collection = foreachStmt.IterCollection;
+            (IPExpr collectionCopy, IPStmt collectionCopyStore) = SaveInTemporary(collection);
+            IPStmt body = foreachStmt.Body;
+
+            List<IPStmt> newBody = new List<IPStmt>();
+            newBody.Add(collectionCopyStore);
+
+            // var i: int;
+            Variable iVar = function.Scope.Put($"$i_{item.Name}_tmp{numTemp++}", location, VariableRole.Local);
+            iVar.Type = PrimitiveType.Int;
+            function.AddLocalVariable(iVar);
+
+            // var sizeof: int;
+            Variable sizeVar = new Variable($"sizeof_{item.Name}_tmp{numTemp++}", location, VariableRole.Local);
+            sizeVar.Type = PrimitiveType.Int;
+            function.AddLocalVariable(sizeVar);
+
+            // i = 0;
+            newBody.Add(new AssignStmt(location, new VariableAccessExpr(location, iVar), new IntLiteralExpr(location, 0)));
+
+            // sizeof = sizeof(collection)
+            newBody.Add(new AssignStmt(location, new VariableAccessExpr(location, sizeVar), new SizeofExpr(location, collectionCopy)));
+
+            // while(i < sizeof)
+            IPExpr cond = new BinOpExpr(location, BinOpType.Lt, new VariableAccessExpr(location, iVar), new VariableAccessExpr(location, sizeVar));
+
+            // inside loop: item = collection[i]
+            IPExpr accessExpr;
+            switch (collectionCopy.Type.Canonicalize())
+            {
+                case SequenceType seqType:
+                    accessExpr = new SeqAccessExpr(location, collectionCopy, new VariableAccessExpr(location, iVar), seqType.ElementType);
+                    break;
+
+                case SetType setType:
+                    accessExpr = new SetAccessExpr(location, collectionCopy, new VariableAccessExpr(location, iVar), setType.ElementType);
+                    break;
+
+                default:
+                    throw new ArgumentException($"Error in converting foreach to while in {function.Name}");
+            }
+            IPStmt assignItem = new AssignStmt(location, new VariableAccessExpr(location, item), accessExpr);
+
+            // inside loop: i = i+1;
+            IPStmt incrementI = new AssignStmt(location, new VariableAccessExpr(location, iVar), 
+                                                            new BinOpExpr(location, 
+                                                                            BinOpType.Add,
+                                                                            new VariableAccessExpr(location, iVar), 
+                                                                            new IntLiteralExpr(location, 1)));
+
+            newBody.Add(new WhileStmt(location, cond, new CompoundStmt(location, new List<IPStmt>{ assignItem,  body, incrementI })));
+            return new CompoundStmt(location, newBody);
         }
 
         private (IReadOnlyList<IVariableRef> args, List<IPStmt> deps) SimplifyArgPack(IEnumerable<IPExpr> argsPack)

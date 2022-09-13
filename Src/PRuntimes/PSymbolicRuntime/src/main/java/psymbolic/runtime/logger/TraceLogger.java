@@ -5,7 +5,6 @@ import org.apache.log4j.*;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
 import psymbolic.runtime.machine.State;
-import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
 
@@ -22,7 +21,7 @@ public class TraceLogger extends PSymLogger {
     @Setter
     static int verbosity;
 
-    public static void Initialize(int verb)
+    public static void Initialize(int verb, String outputFolder)
     {
         verbosity = verb;
         // remove all the appenders
@@ -42,7 +41,7 @@ public class TraceLogger extends PSymLogger {
             // get new file name
             SimpleDateFormat formatter = new SimpleDateFormat("dd:MM:yyyy HH:mm:ss");
             Date date = new Date();
-            String fileName = "output/trace-"+date.toString() + ".log";
+            String fileName = outputFolder + "/trace-"+date.toString() + ".log";
             //Define file appender with layout and output log file name
             RollingFileAppender fileAppender = new RollingFileAppender(layout, fileName);
             //Add the appender to root logger
@@ -90,18 +89,6 @@ public class TraceLogger extends PSymLogger {
         }
     }
 
-    public static void finishedExecution(int steps) {
-        log.info(String.format("Execution finished in %d steps", steps));
-    }
-
-    public static void finished(int iter, long timeSpent, String result, String mode) {
-        log.info(String.format("--------------------"));
-        log.info(String.format("Explored %d %s executions", iter, mode));
-        log.info(String.format("Took %d seconds and %.1f GB", timeSpent, SolverStats.maxMemSpent/1000.0));
-        log.info(String.format("Result: " + result));
-        log.info(String.format("--------------------"));
-    }
-
     public static void handle(Machine m, State st, Message event) {
         if(verbosity > 1) {
             log.info("Machine " + m + " handling event " + event.getEvent() + " in state " + st);
@@ -136,8 +123,8 @@ public class TraceLogger extends PSymLogger {
 
     public static void logStartReplayCex(int length)
     {
-        log.info("--------------------");
         log.info("Replaying Counterexample of Length " + length);
+        log.info("--------------------");
     }
 
     public static void enable() {

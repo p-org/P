@@ -1,7 +1,6 @@
 package psymbolic.commandline;
 
 import org.apache.commons.cli.*;
-import org.reflections.Reflections;
 
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
@@ -9,7 +8,6 @@ import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Set;
 
 /**
  * Represents the commandline options for the tool
@@ -21,15 +19,25 @@ public class PSymOptions {
     static {
         options = new Options();
 
-        // input file to be tested
-        Option inputFile = Option.builder("m")
-                .longOpt("main")
-                .desc("Name of the main machine from where the symbolic engine should start exploration")
+        // test driver name
+        Option debugMode = Option.builder("d")
+                .longOpt("debug")
+                .desc("Debug mode (internal)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Name of Main Machine (string)")
+                .argName("Debug Mode (string)")
                 .build();
-        options.addOption(inputFile);
+        options.addOption(debugMode);
+
+        // test driver name
+        Option testName = Option.builder("m")
+                .longOpt("method")
+                .desc("Name of the test method from where the symbolic engine should start exploration")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Name of Test Method (string)")
+                .build();
+        options.addOption(testName);
 
         // project name
         Option projectName = Option.builder("p")
@@ -40,6 +48,16 @@ public class PSymOptions {
                 .argName("Project Name (string)")
                 .build();
         options.addOption(projectName);
+
+        // output folder
+        Option outputDir = Option.builder("o")
+                .longOpt("output")
+                .desc("Name of the output folder")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Output Folder (string)")
+                .build();
+        options.addOption(outputDir);
 
         // read program state from file
         Option readFromFile = Option.builder("r")
@@ -100,24 +118,24 @@ public class PSymOptions {
         options.addOption(exprLibType);
 
         // max depth bound for the search
-        Option depthBound = Option.builder("db")
-                .longOpt("depth-bound")
-                .desc("Max Depth bound for the search")
+        Option depthBound = Option.builder("ms")
+                .longOpt("max-steps")
+                .desc("Max scheduling steps for the search")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Max Depth Bound (integer)")
+                .argName("Max Steps (integer)")
                 .build();
         options.addOption(depthBound);
 
-        // max iteration bound for the search
-        Option maxIterationBound = Option.builder("ib")
-                .longOpt("iteration-bound")
-                .desc("Max iteration bound for the search")
+        // max number of executions for the search
+        Option maxExecutions = Option.builder("me")
+                .longOpt("max-executions")
+                .desc("Max number of executions to run")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Max Iteration Bound (integer)")
+                .argName("Max Executions (integer)")
                 .build();
-        options.addOption(maxIterationBound);
+        options.addOption(maxExecutions);
 
         // max choice bound for the search
         Option inputChoiceBound = Option.builder("cb")
@@ -198,8 +216,8 @@ public class PSymOptions {
         options.addOption(random);
 
         // random seed for the search
-        Option randomSeed = Option.builder("rs")
-                .longOpt("random-seed")
+        Option randomSeed = Option.builder("seed")
+                .longOpt("seed")
                 .desc("Random seed for the search")
                 .numberOfArgs(1)
                 .hasArg()
@@ -243,34 +261,30 @@ public class PSymOptions {
         PSymConfiguration config = new PSymConfiguration();
         for (Option option : cmd.getOptions()) {
             switch (option.getOpt()) {
+                case "d":
+                case "debug":
+                    config.setDebugMode(option.getValue());
+                    break;
                 case "m":
-                case "main":
-                    config.setMainMachine(option.getValue());
-                    Reflections reflections = new Reflections("psymbolic");
-
-                    Set<Class<? extends Program>> subTypes = reflections.getSubTypesOf(Program.class);
-                    for(Class<? extends Program> clazz :subTypes)
-                    {
-                        System.out.println("Found Program implementations:" +  clazz.toString());
-                    }
-                    if(subTypes.stream().count() == 0)
-                    {
-                        formatter.printHelp("m", String.format("Main machine %s not found", option.getValue()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "m", options);
-                    }
+                case "method":
+                    config.setTestDriver(option.getValue());
                     break;
                 case "p":
                 case "project":
                     config.setProjectName(option.getValue());
+                    break;
+                case "o":
+                case "output":
+                    config.setOutputFolder(option.getValue());
                     break;
                 case "r":
                 case "read":
                     config.setReadFromFile(option.getValue());
                     File file = new File(config.getReadFromFile());
                     try {
-                        System.out.println(file.getCanonicalPath() + " exists? "+ file.exists());
+                        file.getCanonicalPath();
                     } catch (IOException e) {
-                        formatter.printHelp("r", String.format("File %s does not exist", option.getValue()), options, "Try \"--help\" option for details.");
+                        formatter.printHelp("r", String.format("File %s does not exist", config.getReadFromFile()), options, "Try \"--help\" option for details.");
                         formatter.printUsage(writer, 80, "r", options);
                     }
                     break;
@@ -310,6 +324,8 @@ public class PSymOptions {
                     case "yices2":		config.setSolverType(SolverType.YICES2);
                         break;
                     case "z3":		    config.setSolverType(SolverType.Z3);
+                        break;
+                    case "monosat":		config.setSolverType(SolverType.MONOSAT);
                         break;
                 	case "boolector":	config.setSolverType(SolverType.JAVASMT_BOOLECTOR);
             			break;
@@ -353,22 +369,22 @@ public class PSymOptions {
                         formatter.printUsage(writer, 80, "sb", options);
                     }
                     break;
-                case "db":
-                case "depth-bound":
+                case "ms":
+                case "max-steps":
                     try {
-                        config.setDepthBound(Integer.parseInt(option.getValue()));
+                        config.setDepthBound(Integer.parseInt(option.getValue())+1);
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("db", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "db", options);
+                        formatter.printHelp("ms", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                        formatter.printUsage(writer, 80, "ms", options);
                     }
                     break;
-                case "ib":
-                case "iteration-bound":
+                case "me":
+                case "max-executions":
                     try {
-                        config.setIterationBound(Integer.parseInt(option.getValue()));
+                        config.setMaxExecutions(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("ib", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "ib", options);
+                        formatter.printHelp("me", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                        formatter.printUsage(writer, 80, "me", options);
                     }
                     break;
                 case "cb":
@@ -421,12 +437,11 @@ public class PSymOptions {
                 case "no-random":
                     config.setUseRandom(false);
                     break;
-                case "rs":
-                case "random-seed":
+                case "seed":
                     try {
                         config.setRandomSeed(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("rs", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                        formatter.printHelp("seed", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
                     }
                     break;
                 case "h":

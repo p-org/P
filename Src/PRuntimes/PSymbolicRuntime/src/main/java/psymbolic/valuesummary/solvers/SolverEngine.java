@@ -2,7 +2,9 @@ package psymbolic.valuesummary.solvers;
 
 import lombok.Getter;
 import lombok.Setter;
+import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.statistics.SolverStats;
+import psymbolic.utils.MemoryMonitor;
 import psymbolic.valuesummary.solvers.bdd.PJBDDImpl;
 import psymbolic.valuesummary.solvers.sat.SatExpr;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
@@ -28,13 +30,13 @@ public class SolverEngine {
     }
 
     private static void simplifyEngine() {
-//        System.out.println("Simplifying solver engine: "
+//        SearchLogger.log("Simplifying solver engine: "
 //                + getSolverType().toString() + " + "
 //                + getExprLibType().toString());
         SatExpr.startSimplify();
         SolverGuard.simplifySolverGuard();
         SatExpr.stopSimplify();
-//        System.out.println("\tDone");
+//        SearchLogger.log("\tDone");
     }
 
     public static void switchEngineAuto() {
@@ -43,11 +45,10 @@ public class SolverEngine {
         switch (getSolverType()) {
             case BDD:
             case CBDD:
-                if ((SolverStats.memLimit > 0) && (SolverStats.getMemory() > (0.8*SolverStats.memLimit))) {
+                if ((SolverStats.memLimit > 0) && (MemoryMonitor.getMemSpent() > (0.8* SolverStats.memLimit))) {
 //                if (SolverEngine.getSolver().getNodeCount() > 20000000) {
                     switchEngine(SolverType.YICES2, ExprLibType.Fraig);
                     SolverEngine.cleanupEngine();
-                    System.gc();
                 }
                 break;
         }
@@ -56,23 +57,22 @@ public class SolverEngine {
     private static void switchEngine(SolverType type, ExprLibType etype) {
         if (type == getSolverType() && etype == getExprLibType())
             return;
-        System.out.println("Switching solver engine:\n\t"
-                            + getSolverType().toString() + "\t-> " + type.toString() + "\n\t"
-                            + getExprLibType().toString() + "\t-> " + etype.toString());
+        SearchLogger.log("Switching solver engine:");
+        SearchLogger.log(String.format("  %-20s->%-20s", getSolverType().toString(), type.toString()));
+        SearchLogger.log(String.format("  %-20s->%-20s", getExprLibType().toString(), etype.toString()));
         setSolver(type, etype);
         SolverGuard.switchSolverGuard();
     }
 
     public static void resumeEngine() {
-        System.out.println("Resuming solver engine:\n\t"
-                + getSolverType().toString() + " + "
-                + getExprLibType().toString());
+        SearchLogger.log("Resuming solver engine:");
+        SearchLogger.log(String.format("  %-20s->%-20s", getSolverType().toString(), getExprLibType().toString()));
         setSolver(getSolverType(), getExprLibType());
         SolverGuard.resumeSolverGuard();
     }
 
     public static void resetEngine(SolverType type, ExprLibType etype) {
-        System.out.println("Resetting solver engine to "
+        SearchLogger.log("Setting solver engine to "
                 + type.toString() + " + "
                 + etype.toString());
     	setSolver(type, etype);

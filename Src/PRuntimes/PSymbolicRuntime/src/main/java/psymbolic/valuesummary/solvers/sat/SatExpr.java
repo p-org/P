@@ -128,7 +128,7 @@ public class SatExpr {
 //            	System.out.println("Checking satisfiability of formula: " + Aig.toString(formula.expr));
                 boolean isSat = SatGuard.getSolver().isSat(satFormula.formula);
                 if (SearchLogger.getVerbosity() > 5) {
-                	System.out.println("\t\tSAT ? [ " + getExprImpl().toString(formula.expr) + " ] :\t" + isSat);
+                	SearchLogger.log("    SAT ? [ " + getExprImpl().toString(formula.expr) + " ] : " + isSat);
                 }
 //            	System.out.println("Result: " + isSat);
                 if (isSat) {

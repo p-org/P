@@ -1,16 +1,16 @@
 package psymbolic.runtime;
 
-import psymbolic.commandline.Program;
 import psymbolic.valuesummary.*;
 
 import java.io.Serializable;
+import java.util.concurrent.TimeoutException;
 
 /** Search interface for exploring different schedules */
 public interface SymbolicSearch extends Serializable {
 
     /** Perform the Search
      */
-    void doSearch ();
+    void doSearch () throws TimeoutException;
 
     /** Return the next integer (within a bound) based on the search and strategy.
      *
@@ -38,5 +38,12 @@ public interface SymbolicSearch extends Serializable {
      * @return a integer
      */
     ValueSummary getNextElement(SetVS<? extends ValueSummary> s, Guard pc);
+
+    /** Return the next key of a finite map based on the search and strategy.
+     *
+     * @param s map to choose from
+     * @return a integer
+     */
+    ValueSummary getNextElement(MapVS<?, ? extends ValueSummary, ? extends ValueSummary> s, Guard pc);
 
 }

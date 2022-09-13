@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
@@ -72,35 +73,38 @@ namespace Plang.Compiler.Backend.Symbolic
             foreach (var decl in decls)
                 WriteDecl(context, source.Stream, decl);
 
-            context.WriteLine(source.Stream, "Map<Event, List<Monitor>> listeners = new HashMap<>();");
-            context.WriteLine(source.Stream, "List<Monitor> monitors = new ArrayList<>();");
-            context.WriteLine(source.Stream, "private boolean listenersInitialized = false;");
+            WriteMainDriver(context, source.Stream, globalScope, decls);
 
-            WriteMonitorMap(context, source.Stream, decls);
-            WriteMonitorList(context, source.Stream, decls);
+            context.WriteLine(source.Stream, "PTestDriver testDriver = null;");
+            context.WriteLine(source.Stream, "public PTestDriver getTestDriver() { return testDriver; }");
+            context.WriteLine(source.Stream, "public void setTestDriver(PTestDriver input) { testDriver = input; }");
+            context.WriteLine(source.Stream);
 
-            WriteMainDriver(context, source.Stream, globalScope);
+            context.WriteLine(source.Stream, "public Machine getStart() { return testDriver.getStart(); }");
+            context.WriteLine(source.Stream, "public List<Monitor> getMonitors() { return testDriver.getMonitors(); }");
+            context.WriteLine(source.Stream, "public Map<Event, List<Monitor>> getListeners() { return testDriver.getListeners(); }");
+            context.WriteLine(source.Stream);
 
             WriteSourceEpilogue(context, source.Stream);
 
             return source;
         }
 
-        private void WriteMonitorList(CompilationContext context, StringWriter output, IEnumerable<IPDecl> decls)
+        private void WriteDriver(CompilationContext context, StringWriter output, String startMachine, IEnumerable<IPDecl> decls)
         {
+            WriteDriverConfigure(context, output, startMachine, decls);
             context.WriteLine(output);
-            context.WriteLine(output, "public List<Monitor> getMonitorList() {");
-            context.WriteLine(output, "    if (!listenersInitialized) getMonitorMap();");
-            context.WriteLine(output, "    return monitors;");
-            context.WriteLine(output, "}");
         }
 
-        private void WriteMonitorMap(CompilationContext context, StringWriter output, IEnumerable<IPDecl> decls)
+        private void WriteDriverConfigure(CompilationContext context, StringWriter output, String startMachine, IEnumerable<IPDecl> decls)
         {
             context.WriteLine(output);
-            context.WriteLine(output, "public Map<Event, List<Monitor>> getMonitorMap() {");
-            context.WriteLine(output, "    if (listenersInitialized) return listeners;");
-            context.WriteLine(output, "    listenersInitialized = true;");
+            context.WriteLine(output, "public void configure() {");
+
+            context.WriteLine(output, $"    mainMachine = new {startMachine}(0);");
+            context.WriteLine(output, $"    monitorList.clear();");
+            context.WriteLine(output, $"    observerMap.clear();");
+
             foreach (var decl in decls)
             {
                 switch(decl)
@@ -108,14 +112,15 @@ namespace Plang.Compiler.Backend.Symbolic
                     case Machine machine:
                         if (machine.IsSpec)
                         {
+                            context.WriteLine(output);
                             var declName = context.GetNameForDecl(machine);
                             context.WriteLine(output, $"    Monitor instance_{declName} = new {declName}(0);");
-                            context.WriteLine(output, $"    monitors.add(instance_{declName});");
+                            context.WriteLine(output, $"    monitorList.add(instance_{declName});");
                             foreach (var pEvent in machine.Observes.Events)
                             {
-                                context.WriteLine(output, $"    if(!listeners.containsKey({pEvent.Name}))");
-                                context.WriteLine(output, $"        listeners.put({pEvent.Name}, new ArrayList<>());");
-                                context.WriteLine(output, $"    listeners.get({pEvent.Name}).add(instance_{declName});");
+                                context.WriteLine(output, $"    if(!observerMap.containsKey({pEvent.Name}))");
+                                context.WriteLine(output, $"        observerMap.put({pEvent.Name}, new ArrayList<>());");
+                                context.WriteLine(output, $"    observerMap.get({pEvent.Name}).add(instance_{declName});");
                             }
                         }
                         break;
@@ -123,9 +128,33 @@ namespace Plang.Compiler.Backend.Symbolic
                         break;
                 }
             }
-            context.WriteLine(output, "    return listeners;");
+
             context.WriteLine(output, "}");
-            context.WriteLine(output);
+        }
+
+        private void WriteMainDriver(CompilationContext context, StringWriter output, Scope globalScope, IEnumerable<IPDecl> decls)
+        {
+            // TODO: Determine how main machine should be selected.  Should the 'main' method even
+            // be generated from the P program, or should it be provided externally?
+            Machine mainMachine = null;
+            foreach (Machine machine in globalScope.Machines)
+            {
+                if (machine.Name == "Main")
+                {
+                    if (mainMachine != null)
+                        throw new NotImplementedException("Cannot have multiple main machines.");
+
+                    mainMachine = machine;
+                }
+            }
+
+            if (mainMachine != null)
+            {
+                context.WriteLine(output, "public static class DefaultTestDriver extends PTestDriver {");
+                WriteDriver(context, output, mainMachine.Name, decls);
+                context.WriteLine(output, "}");
+                context.WriteLine(output);
+            }
         }
 
         private void WriteEvent(CompilationContext context, StringWriter output, PEvent ev)
@@ -152,10 +181,21 @@ namespace Plang.Compiler.Backend.Symbolic
                 case PEvent ev:
                     WriteEvent(context, output, ev);
                     break;
+                case SafetyTest safety:
+                    WriteSafetyTestDecl(context, output, safety);
+                    break;
                 default:
                     context.WriteLine(output, $"// Skipping {decl.GetType().Name} '{decl.Name}'\n");
                     break;
             }
+        }
+
+        private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
+        {
+            context.WriteLine(output, $"public static class {context.GetNameForDecl(safety)} extends PTestDriver {{");
+            WriteDriver(context, output, safety.Main, safety.ModExpr.ModuleInfo.MonitorMap.Keys);
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
         }
 
         private void WriteMonitor(CompilationContext context, StringWriter output, Machine machine)
@@ -169,7 +209,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 var state = machine.States.ElementAt(i);
                 context.Write(output, $"static State {context.GetNameForDecl(state)} = ");
-                WriteState(context, output, state);
+                WriteState(context, output, state, machine);
                 context.WriteLine(output, ";");
             }
 
@@ -227,7 +267,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 var state = machine.States.ElementAt(i);
                 context.Write(output, $"static State {context.GetNameForDecl(state)} = ");
-                WriteState(context, output, state);
+                WriteState(context, output, state, machine);
                 context.WriteLine(output, ";");
             }
 
@@ -324,14 +364,14 @@ namespace Plang.Compiler.Backend.Symbolic
                 {
                     context.WriteLine(output, ",");
                 }
-                WriteEventHandler(context, output, handler);
+                WriteEventHandler(context, output, handler, state);
             }
             context.WriteLine(output, ");");
         }
 
-        private void WriteState(CompilationContext context, StringWriter output, State state)
+        private void WriteState(CompilationContext context, StringWriter output, State state, Machine machine)
         {
-            context.Write(output, $"new State(\"{context.GetNameForDecl(state)}\"");
+            context.Write(output, $"new State(\"{context.GetNameForDecl(state)}\", \"{context.GetNameForDecl(machine)}\"");
             /*
             foreach (var handler in state.AllEventHandlers)
             {
@@ -348,6 +388,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, $"@Override public void entry(Guard {entryPcScope.PathConstraintVar}, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {{");
 
                 var entryFunc = state.Entry;
+                entryFunc.Name = $"{context.GetNameForDecl(state)}_entry";
                 context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}({entryPcScope.PathConstraintVar}, machine.sendBuffer");
                 if (entryFunc.CanChangeState ?? false)
                     context.Write(output, ", outcome");
@@ -381,7 +422,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.Write(output, "}");
         }
 
-        private void WriteEventHandler(CompilationContext context, StringWriter output, KeyValuePair<PEvent, IStateAction> handler)
+        private void WriteEventHandler(CompilationContext context, StringWriter output, KeyValuePair<PEvent, IStateAction> handler, State state)
         {
             var eventTag = context.GetNameForDecl(handler.Key);
             switch (handler.Value)
@@ -393,6 +434,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"new EventHandler({eventTag}) {{");
                     context.WriteLine(output, "@Override public void handleEvent(Guard pc, Machine machine, UnionVS payload, EventHandlerReturnReason outcome) {");
                     var actionFunc = action.Target;
+                    actionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}";
                     context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc, machine.sendBuffer");
                     if (actionFunc.CanChangeState ?? false)
                         context.Write(output, ", outcome");
@@ -926,25 +968,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case PrintStmt printStmt:
-                    //context.Write(output, $"PSymLogger.info(");
-                    context.Write(output, $"System.out.println(");
-                    //TODO: use WriteExpr(context, output, flowContext.pcScope, printStmt.Message);
-                    switch (printStmt.Message) {
-                        case StringExpr stringExpr:
-                            context.Write(output, $"\"{stringExpr.BaseString}\"");
-                            foreach(var arg in stringExpr.Args)
-                            {
-                                context.Write(output, ", ");
-                                WriteExpr(context, output, flowContext.pcScope, arg);
-                            }
-                            context.Write(output, ");");
-                            break;
-                        default:
-                            context.Write(output, "(");
-                            WriteExpr(context, output, flowContext.pcScope, printStmt.Message);
-                            context.Write(output, ").toString());");
-                            break;
-                    }
+                    context.Write(output, "PSymLogger.log(");
+                    WriteExpr(context, output, flowContext.pcScope, printStmt.Message);
+                    context.WriteLine(output, ".toString());");
                     break;
 
                 case BreakStmt breakStmt:
@@ -1183,12 +1209,18 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"this.receive(\"{context.GetContinuationName(splitStmt.Cont)}\", {flowContext.pcScope.PathConstraintVar});");
                     break;
                 default:
-                    throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported");
+                    throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported, found in {function.Name}");
             }
         }
 
         private void WriteContinuation(CompilationContext context, StringWriter output, Continuation continuation)
         {
+            bool voidReturn = continuation.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null);
+            if (!voidReturn)
+            {
+                throw new NotImplementedException($"Receive statement in a function with non-void return type is not supported. Found in function named {continuation.ParentFunction.Name}.");
+            }
+
             context.Write(output, $"void clear_{context.GetContinuationName(continuation)}() ");
             context.WriteLine(output, "{");
             foreach (var param in continuation.StoreParameters)
@@ -1217,8 +1249,10 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "{");
 
             var funcContext = ControlFlowContext.FreshFuncContext(context, rootPCScope);
+            var continuationLocalParams = new HashSet<string>();
             foreach (var local in continuation.LocalParameters)
             {
+                continuationLocalParams.Add(local.Name);
                 context.Write(output, $"{GetSymbolicType(local.Type, true)} {CompilationContext.GetVar(local.Name)}");
                 context.WriteLine(output, $"= {CompilationContext.GetVar(continuation.StoreForLocal[local].Name)}.restrict({rootPCScope.PathConstraintVar});");
             }
@@ -1242,12 +1276,19 @@ namespace Plang.Compiler.Backend.Symbolic
                         throw new NotImplementedException($"Too many parameters ({continuation.Cases[e].Signature.Parameters.Count}) in receive case");
                     }
                     var arg = continuation.Cases[e].Signature.Parameters[0];
-                    Variable argValue = new Variable("payload", continuation.SourceLocation, VariableRole.Param);
+                    Variable argValue = new Variable($"{arg.Name}_payload", continuation.SourceLocation, VariableRole.Param);
                     argValue.Type = PrimitiveType.Any;
-                    context.WriteLine(output, $"UnionVS var_payload = {messageName}_{idx}.restrict({caseScope.PathConstraintVar}).getPayload();");
+                    context.WriteLine(output, $"UnionVS var_{arg.Name}_payload = {messageName}_{idx}.restrict({caseScope.PathConstraintVar}).getPayload();");
                     AssignStmt assignMsg = new AssignStmt(continuation.SourceLocation, new VariableAccessExpr(continuation.SourceLocation, arg), new VariableAccessExpr(continuation.SourceLocation, argValue));
                     context.WriteLine(output, $"{GetSymbolicType(arg.Type)} {CompilationContext.GetVar(arg.Name)} = {GetDefaultValue(context, caseScope, arg.Type)};");
                     WriteStmt(continuation, context, output, caseContext, assignMsg);
+                }
+                foreach (var local in continuation.Cases[e].LocalVariables)
+                {
+                    if (!continuationLocalParams.Contains(local.Name))
+                    {
+                        context.WriteLine(output, $"{GetSymbolicType(local.Type)} {CompilationContext.GetVar(local.Name)} = {GetDefaultValue(context, caseScope, local.Type)};");
+                    }
                 }
                 WriteStmt(continuation, context, output, caseContext, continuation.Cases[e].Body);
                 context.WriteLine(output, "}");
@@ -1282,6 +1323,9 @@ namespace Plang.Compiler.Backend.Symbolic
                 return;
 
             if (locationType.IsSameTypeAs(PrimitiveType.Any) || valueType.IsSameTypeAs(PrimitiveType.Any))
+                return;
+
+            if (locationType.IsSameTypeAs(PrimitiveType.Data) || valueType.IsSameTypeAs(PrimitiveType.Data))
                 return;
 
             valueType = valueType.Canonicalize();
@@ -1341,10 +1385,10 @@ namespace Plang.Compiler.Backend.Symbolic
             if (valueIsMachineRef && locationIsMachineRef)
                 return "";
 
-            if (locationType.IsSameTypeAs(PrimitiveType.Any)) {
+            if (locationType.IsSameTypeAs(PrimitiveType.Any) || locationType.IsSameTypeAs(PrimitiveType.Data)) {
                 //return $"new UnionVS ({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, valueType)}.getClass(), ";
                 return $"ValueSummary.castToAny({pcScope.PathConstraintVar}, ";
-            } else if (valueType.IsSameTypeAs(PrimitiveType.Any))
+            } else if (valueType.IsSameTypeAs(PrimitiveType.Any) || valueType.IsSameTypeAs(PrimitiveType.Data))
             {
                 return $"({GetSymbolicType(locationType)}) ValueSummary.castFromAny({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationType)}, ";
             }
@@ -1400,7 +1444,8 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (returnConvention)
             {
                 case FunctionReturnConvention.RETURN_VALUE:
-                    context.Write(output, $"{GetGenericSymbolicType(function.Signature.ReturnType)}.class, x -> ");
+                    context.Write(output, $"{GetDefaultValueNoGuard(context, function.Signature.ReturnType)}, x -> ");
+                    // context.Write(output, $"{GetGenericSymbolicType(function.Signature.ReturnType)}.class, x -> ");
                     context.Write(output, "{ return ");
                     context.Write(output, $"wrapper__{context.GetNameForDecl(function)}(x);");
                     context.Write(output, " }");
@@ -1436,11 +1481,11 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteFunCallStmt(CompilationContext context, StringWriter output, ControlFlowContext flowContext, Function function, IReadOnlyList<IPExpr> args, IPExpr dest=null)
         {
-            var isAsync = function.CanReceive == true;
-            if (isAsync && !(function is WhileFunction))
-            {
-                throw new NotImplementedException("Calls to async methods not yet supported");
-            }
+            // var isAsync = function.CanReceive == true;
+            // if (isAsync && !(function is WhileFunction))
+            // {
+            //     throw new NotImplementedException($"Calls to async methods not yet supported in {function.Name}");
+            // }
             if (function.IsForeign)
             {
                 WriteForeignFunCallStmt(context, output, flowContext, function, args, dest);
@@ -1541,11 +1586,13 @@ namespace Plang.Compiler.Backend.Symbolic
             bool needOrigValue,
             Action<string> writeMutator)
         {
+            PLanguageType elementType;
             switch (lvalue)
             {
                 case MapAccessExpr mapAccessExpr:
                     PLanguageType valueType = mapAccessExpr.Type;
-                    PLanguageType indexType = mapAccessExpr.IndexExpr.Type;
+                    IPExpr indexExpr = mapAccessExpr.IndexExpr;
+                    PLanguageType indexType = indexExpr.Type;
 
                     WriteWithLValueMutationContext(
                         context,
@@ -1559,7 +1606,7 @@ namespace Plang.Compiler.Backend.Symbolic
                             var indexTemp = context.FreshTempVar();
 
                             context.Write(output, $"{GetSymbolicType(indexType)} {indexTemp} = ");
-                            WriteExpr(context, output, pcScope, mapAccessExpr.IndexExpr);
+                            WriteExpr(context, output, pcScope, indexExpr);
                             context.WriteLine(output, ";");
 
                             context.Write(output, $"{GetSymbolicType(valueType)} {valueTemp}");
@@ -1654,7 +1701,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case SeqAccessExpr seqAccessExpr:
-                    PLanguageType elementType = seqAccessExpr.Type;
+                    elementType = seqAccessExpr.Type;
 
                     WriteWithLValueMutationContext(
                         context,
@@ -1687,7 +1734,40 @@ namespace Plang.Compiler.Backend.Symbolic
                         }
                     );
                     break;
+
                 case SetAccessExpr setAccessExpr:
+                    elementType = setAccessExpr.Type;
+
+                    WriteWithLValueMutationContext(
+                        context,
+                        output,
+                        pcScope,
+                        setAccessExpr.SetExpr,
+                        true,
+                        setTemp =>
+                        {
+                            var elementTemp = context.FreshTempVar();
+                            var indexTemp = context.FreshTempVar();
+
+                            context.Write(output, $"{GetSymbolicType(PrimitiveType.Int)} {indexTemp} = ");
+                            WriteExpr(context, output, pcScope, setAccessExpr.IndexExpr);
+                            context.WriteLine(output, ";");
+
+                            context.Write(output, $"{GetSymbolicType(elementType)} {elementTemp}");
+                            if (needOrigValue)
+                            {
+                                context.WriteLine(output, $" = {setTemp}.get({indexTemp});");
+                            }
+                            else
+                            {
+                                context.WriteLine(output, ";");
+                            }
+
+                            writeMutator(elementTemp);
+
+                            context.WriteLine(output, $"{setTemp} = {setTemp}.set({indexTemp}, {elementTemp});");
+                        }
+                    );
                     break;
                 case VariableAccessExpr variableAccessExpr:
                     var name = variableAccessExpr.Variable.Name;
@@ -1722,6 +1802,68 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        private static string TransformPrintMessage(string message)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < message.Length; i++)
+            {
+                if (message[i] == '\'')
+                {
+                    sb.Append("''");
+                }
+                else if (message[i] == '{')
+                {
+                    if (i + 1 == message.Length)
+                    {
+                        throw new ArgumentException("unmatched opening brace", nameof(message));
+                    }
+
+                    if (message[i + 1] == '{')
+                    {
+                        // handle "{{"
+                        i++;
+                        sb.Append("'{'");
+                    }
+                    else if (char.IsDigit(message[i + 1]))
+                    {
+                        sb.Append("{");
+                        while (++i < message.Length && '0' <= message[i] && message[i] <= '9')
+                        {
+                            sb.Append(message[i]);
+                        }
+
+                        if (i == message.Length || message[i] != '}')
+                        {
+                            throw new ArgumentException("unmatched opening brace in position expression",
+                                nameof(message));
+                        }
+                        sb.Append("}");
+                    }
+                    else
+                    {
+                        throw new ArgumentException("opening brace not followed by digits", nameof(message));
+                    }
+                }
+                else if (message[i] == '}')
+                {
+                    if (i + 1 == message.Length || message[i + 1] != '}')
+                    {
+                        throw new ArgumentException("unmatched closing brace", nameof(message));
+                    }
+
+                    // handle "}}"
+                    sb.Append("'}'");
+                    i++;
+                }
+                else
+                {
+                    sb.Append(message[i]);
+                }
+            }
+
+            return sb.ToString();
+        }
+
         private void WriteExpr(CompilationContext context, StringWriter output, PathConstraintScope pcScope, IPExpr expr)
         {
             switch (expr)
@@ -1736,8 +1878,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, $").apply(({lambdaTemp}) -> {UnOpToStr(unaryOpExpr.Operation)}{lambdaTemp})");
                     break;
                 case BinOpExpr binOpExpr:
-                    var isPrimitive = binOpExpr.Lhs.Type is PrimitiveType && binOpExpr.Rhs.Type is PrimitiveType;
-                    var isEnum = binOpExpr.Lhs.Type is EnumType && binOpExpr.Rhs.Type is EnumType;
+                    var isPrimitive = binOpExpr.Lhs.Type.Canonicalize() is PrimitiveType && binOpExpr.Rhs.Type.Canonicalize() is PrimitiveType;
+                    var isEnum = binOpExpr.Lhs.Type.Canonicalize() is EnumType && binOpExpr.Rhs.Type.Canonicalize() is EnumType;
                     var isEquality = binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq;
 
                     if (!(isPrimitive || isEquality))
@@ -1838,8 +1980,13 @@ namespace Plang.Compiler.Backend.Symbolic
                         break;
                     }
                 case KeysExpr keyExpr:
+                    MapType keyArgType = (MapType) keyExpr.Expr.Type.Canonicalize();
                     WriteExpr(context, output, pcScope, keyExpr.Expr);
                     context.Write(output, $".getKeys().restrict({pcScope.PathConstraintVar})");
+                    break;
+                case ValuesExpr valuesExpr:
+                    WriteExpr(context, output, pcScope, valuesExpr.Expr);
+                    context.Write(output, $".getValues().restrict({pcScope.PathConstraintVar})");
                     break;
                 case MapAccessExpr mapAccessExpr:
                     WriteExpr(context, output, pcScope, mapAccessExpr.MapExpr);
@@ -1851,6 +1998,12 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, pcScope, seqAccessExpr.SeqExpr);
                     context.Write(output, ".get(");
                     WriteExpr(context, output, pcScope, seqAccessExpr.IndexExpr);
+                    context.Write(output, ")");
+                    break;
+                case SetAccessExpr setAccessExpr:
+                    WriteExpr(context, output, pcScope, setAccessExpr.SetExpr);
+                    context.Write(output, ".get(");
+                    WriteExpr(context, output, pcScope, setAccessExpr.IndexExpr);
                     context.Write(output, ")");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
@@ -1952,7 +2105,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output, $"({CompilationContext.SchedulerVar}.getNextBoolean({pcScope.PathConstraintVar}))");
                         return;
                     }
-                    switch (chooseExpr.SubExpr.Type)
+                    switch (chooseExpr.SubExpr.Type.Canonicalize())
                     {
                         case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
                             context.Write(output, $"{CompilationContext.SchedulerVar}.getNextInteger(");
@@ -1969,6 +2122,11 @@ namespace Plang.Compiler.Backend.Symbolic
                             WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
                             context.Write(output, $", {pcScope.PathConstraintVar})");
                             break;
+                        case MapType mapType:
+                            context.Write(output, $"({GetSymbolicType(mapType.KeyType)}) {CompilationContext.SchedulerVar}.getNextElement(");
+                            WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
+                            context.Write(output, $", {pcScope.PathConstraintVar})");
+                            break;
                         default:
                             throw new NotImplementedException($"Cannot handle choose on expressions of type {chooseExpr.SubExpr.Type}.");
                     }
@@ -1978,7 +2136,15 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, ".size()");
                     break;
                 case StringExpr stringExpr:
-                    context.Write(output, $"new { GetSymbolicType(PrimitiveType.String) }(String.format(\"{stringExpr.BaseString}\"");
+                    if (stringExpr.Args.Count == 0)
+                    {
+                        context.Write(output, $"new { GetSymbolicType(PrimitiveType.String) }(String.format(\"{stringExpr.BaseString}\"");
+                    }
+                    else
+                    {
+                        string baseString = TransformPrintMessage(stringExpr.BaseString);
+                        context.Write(output, $"new { GetSymbolicType(PrimitiveType.String) }(MessageFormat.format(\"{baseString}\"");
+                    }
                     foreach(var arg in stringExpr.Args)
                     {
                         context.Write(output, ", ");
@@ -2045,6 +2211,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "*";
                 case BinOpType.Div:
                     return "/";
+                case BinOpType.Mod:
+                    return "%";
                 case BinOpType.Lt:
                     return "<";
                 case BinOpType.Le:
@@ -2079,9 +2247,23 @@ namespace Plang.Compiler.Backend.Symbolic
                     throw new ArgumentOutOfRangeException(nameof(operation));
             }
         }
-        private string GetConcreteBoxedType(PLanguageType type)
+
+        private IPExpr convertToStringExpr(IPExpr expr)
+         {
+            switch (expr.Type)
+            {
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
+                    return expr;
+                default:
+                    List<IPExpr> newListArgs = new List<IPExpr>();
+                    newListArgs.Add(expr);
+                    return new StringExpr(expr.SourceLocation, "{0}", newListArgs);
+            }
+         }
+
+         private string GetConcreteBoxedType(PLanguageType type)
         {
-            switch (type)
+            switch (type.Canonicalize())
             {
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
                     return "Boolean";
@@ -2089,6 +2271,27 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "Integer";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return "Float";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
+                    return "Event";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
+                    return "String";
+                case DataType _:
+                    return "String";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
+                    return "String";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
+                case PermissionType _:
+                    return "Machine";
+                case TypeDefType typeDefType:
+                    return $"{typeDefType.CanonicalRepresentation}";
+                case ForeignType foreignType:
+                    return $"{foreignType.CanonicalRepresentation}";
+                case NamedTupleType _: 
+                    return "String";
+                case TupleType _: 
+                    return "String";
+                case EnumType _: 
+                    return "Integer";
                 default:
                     throw new NotImplementedException($"Concrete type '{type.OriginalRepresentation}' is not supported");
             }
@@ -2171,6 +2374,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "PrimitiveVS<Event>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return "UnionVS";
+                case DataType _:
+                    return "UnionVS";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
                     return "PrimitiveVS<String>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
@@ -2185,6 +2390,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case MapType mapType:
                     return $"MapVS<" +
                         $"{GetConcreteBoxedType(mapType.KeyType)}, " +
+                        $"{GetSymbolicType(mapType.KeyType, true)}, " +
                         $"{GetSymbolicType(mapType.ValueType, true)}>";
                 case NamedTupleType _:
                     return "NamedTupleVS";
@@ -2218,6 +2424,8 @@ namespace Plang.Compiler.Backend.Symbolic
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return $"new {GetSymbolicType(type)}({CompilationContext.NullEventName})";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
+                    return $"new {GetSymbolicType(type)}()";
+                case DataType _:
                     return $"new {GetSymbolicType(type)}()";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
                     return $"new {GetSymbolicType(type)}(\"\")";
@@ -2270,12 +2478,14 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import psymbolic.runtime.logger.*;");
             context.WriteLine(output, "import psymbolic.runtime.machine.buffer.*;");
             context.WriteLine(output, "import psymbolic.runtime.machine.eventhandlers.*;");
+            context.WriteLine(output, "import psymbolic.runtime.values.*;");
             context.WriteLine(output, "import java.util.List;");
             context.WriteLine(output, "import java.util.ArrayList;");
             context.WriteLine(output, "import java.util.Map;");
             context.WriteLine(output, "import java.util.HashMap;");
             context.WriteLine(output, "import java.util.function.Consumer;");
             context.WriteLine(output, "import java.util.function.Function;");
+            context.WriteLine(output, "import java.text.MessageFormat;");
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.ProjectName.ToLower()} implements Program {{");
             context.WriteLine(output);
@@ -2287,32 +2497,6 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "@Override");
             context.WriteLine(output, $"public void setScheduler (Scheduler s) {{ this.{CompilationContext.SchedulerVar} = s; }}");
             context.WriteLine(output);
-        }
-
-        private void WriteMainDriver(CompilationContext context, StringWriter output, Scope globalScope)
-        {
-            // TODO: Determine how main machine should be selected.  Should the 'main' method even
-            // be generated from the P program, or should it be provided externally?
-            Machine mainMachine = null;
-            foreach (Machine machine in globalScope.Machines)
-            {
-                if (machine.Name == "Main")
-                {
-                    if (mainMachine != null)
-                        throw new NotImplementedException("Cannot have multiple main machines.");
-
-                    mainMachine = machine;
-                }
-            }
-
-            if (mainMachine != null)
-            {
-                context.WriteLine(output, $"private static Machine start = new {context.GetNameForDecl(mainMachine)}(0);");
-                context.WriteLine(output);
-                context.WriteLine(output, "@Override");
-                context.WriteLine(output, "public Machine getStart() { return start; }");
-                context.WriteLine(output);
-            }
         }
 
         private void WriteSourceEpilogue(CompilationContext context, StringWriter output)

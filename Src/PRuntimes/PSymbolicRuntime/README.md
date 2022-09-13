@@ -7,7 +7,7 @@ PSym is composed of two components:
   2) [Runtime analysis](../PSymbolicRuntime) in Java that performs systematic symbolic exploration by executing the symbolically-instrumented Java code.
 
 ## Installing PSym
-Run: `` ./scripts/build.sh ``
+Run: `` ./Bld/build.sh `` in the P project directory.
 
 This installs PSym with the default BDD backend. For detailed solver options, check [SOLVERS.md](SOLVERS.md)
 

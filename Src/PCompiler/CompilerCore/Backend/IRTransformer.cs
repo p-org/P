@@ -13,18 +13,12 @@ namespace Plang.Compiler.Backend
 {
     public class IRTransformer
     {
-        private static CompilerOutput OutputLanguage;
         private readonly Function function;
         private int numTemp;
 
         private IRTransformer(Function function)
         {
             this.function = function;
-        }
-
-        public static void SetOutputLanguage(CompilerOutput outputLanguage)
-        {
-            OutputLanguage = outputLanguage;
         }
 
         public static void SimplifyMethod(Function function)
@@ -550,23 +544,7 @@ namespace Plang.Compiler.Backend
                         .ToList();
 
                 case ForeachStmt foreachStmt:
-                    if (IRTransformer.OutputLanguage == CompilerOutput.Symbolic)
-                    {
-                        return SimplifyStatement(SimplifyForeachStmt(foreachStmt));
-                    } else {
-                        (IExprTerm collectionExpr, List<IPStmt> collectionDeps) = SimplifyExpression(foreachStmt.IterCollection);
-                        (VariableAccessExpr collTemp, IPStmt collStore) = SaveInTemporary(new CloneExpr(collectionExpr));
-                        
-                        CompoundStmt body = new CompoundStmt(
-                            foreachStmt.Body.SourceLocation,
-                            SimplifyStatement(foreachStmt.Body));
-                        
-                        return collectionDeps
-                                .Append(collStore)
-                                .Concat( new[]{ new ForeachStmt(location, foreachStmt.Item, collTemp, body) })
-                                .ToList();
-                    }
-
+                    return SimplifyStatement(SimplifyForeachStmt(foreachStmt));
 
                 case WhileStmt whileStmt:
                     (IExprTerm condExpr, List<IPStmt> condDeps) = SimplifyExpression(whileStmt.Condition);

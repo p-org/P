@@ -4,7 +4,6 @@ event Propose : (node : int, e : int);
 event Vote : (node : int, e : int);
 
 machine Str0 {
-  var pc : map[int, int];
   var exists : map[int, bool];
   var nChain : map[int, seq[int]];
   var Msgs : seq[(chain : seq[int], epoch : int, sender : int)];
@@ -20,9 +19,8 @@ machine Str0 {
       EMAX = pld.EMAX;
       driver = pld.driver;
       while (i < N) {
-        pc[i] = 0;
-        i = i + 1;
         nChain[i] = chain;
+        i = i + 1;
       }
       i = 0;
       while (i <= EMAX) {
@@ -43,17 +41,10 @@ machine Str0 {
       while (i < N) {
         e = 0;
         while (e <= EMAX) {
-          if (pc[i] == 0) {
-            if (mod(e, N) == i) { 
-              pc[i] = 1;
-            } else {
-              pc[i] = 2;
-            }
-          }
-          if ((pc[i] == 1) && !exists[e]) {
+          if ((mod(e, N) == i) && !exists[e]) {
             choices += (sizeof(choices), (i, 0, e));
           }
-          if ((pc[i] == 2) && exists[e]) {
+          else if (exists[e]) {
             choices += (sizeof(choices), (i, 1, e));
           }
           e = e + 1;
@@ -130,7 +121,6 @@ machine Str0 {
       }
       Msgs += (sizeof(Msgs), (chain=chain, epoch=pld.e, sender=pld.node));
       exists[pld.e] = true;
-      pc[pld.node] = 0;
       send driver, eNext;
     }
     on Vote do (pld : (node : int, e : int)) {
@@ -151,7 +141,6 @@ machine Str0 {
           Msgs += (sizeof(Msgs), (chain=chain, epoch=pld.e, sender=pld.node));
         }
         exists[pld.e] = true;
-        pc[pld.node] = 0;
         send driver, eNext;
       } 
     }

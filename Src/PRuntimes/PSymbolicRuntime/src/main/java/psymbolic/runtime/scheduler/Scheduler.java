@@ -17,7 +17,7 @@ import psymbolic.utils.TimeMonitor;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.solvers.SolverEngine;
 import psymbolic.runtime.machine.buffer.*;
-import psymbolic.runtime.logger.StatLogger;
+import psymbolic.runtime.logger.StatWriter;
 import psymbolic.valuesummary.solvers.SolverGuard;
 
 import java.time.Duration;
@@ -389,14 +389,12 @@ public class Scheduler implements SymbolicSearch {
     public void performSearch() throws TimeoutException {
         while (!isDone()) {
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
-            Assert.prop(depth < configuration.getDepthBound(), "Maximum allowed depth " + configuration.getDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
+            Assert.prop(getDepth() < configuration.getDepthBound(), "Maximum allowed depth " + configuration.getDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             step();
         }
         searchStats.setIterationStats(schedule.getNumBacktracks());
         if (done) {
             searchStats.setIterationCompleted();
-        } else {
-//            cleanup();
         }
     }
 
@@ -408,26 +406,26 @@ public class Scheduler implements SymbolicSearch {
         double memoryUsed = MemoryMonitor.getMemSpent();
 
         // print basic statistics
-        StatLogger.log("result", String.format("%s", result));
-        StatLogger.log("time-seconds", String.format("%.1f", timeUsed));
-        StatLogger.log("memory-max-MB", String.format("%.1f", MemoryMonitor.getMaxMemSpent()));
-        StatLogger.log("memory-current-MB", String.format("%.1f", memoryUsed));
-        StatLogger.log("max-depth-explored", String.format("%d", totalStats.getDepthStats().getDepth()));
+        StatWriter.log("result", String.format("%s", result));
+        StatWriter.log("time-seconds", String.format("%.1f", timeUsed));
+        StatWriter.log("memory-max-MB", String.format("%.1f", MemoryMonitor.getMaxMemSpent()));
+        StatWriter.log("memory-current-MB", String.format("%.1f", memoryUsed));
+        StatWriter.log("max-depth-explored", String.format("%d", totalStats.getDepthStats().getDepth()));
 
         if (configuration.getCollectStats() != 0) {
             // print solver statistics
-            StatLogger.log("time-create-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
-            StatLogger.log("time-solve-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
-            StatLogger.log("time-create-guards-seconds", String.format("%.1f", SolverStats.timeTotalCreateGuards/1000.0));
-            StatLogger.log("time-solve-guards-seconds", String.format("%.1f", SolverStats.timeTotalSolveGuards/1000.0));
-            StatLogger.log("time-create-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxCreateGuards/1000.0));
-            StatLogger.log("time-solve-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxSolveGuards/1000.0));
-            StatLogger.logSolverStats();
+            StatWriter.log("time-create-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
+            StatWriter.log("time-solve-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
+            StatWriter.log("time-create-guards-seconds", String.format("%.1f", SolverStats.timeTotalCreateGuards/1000.0));
+            StatWriter.log("time-solve-guards-seconds", String.format("%.1f", SolverStats.timeTotalSolveGuards/1000.0));
+            StatWriter.log("time-create-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxCreateGuards/1000.0));
+            StatWriter.log("time-solve-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxSolveGuards/1000.0));
+            StatWriter.logSolverStats();
 
             // print search statistics
-            StatLogger.log("#-events", String.format("%d", totalStats.getDepthStats().getNumOfTransitions()));
-            StatLogger.log("#-events-merged", String.format("%d", totalStats.getDepthStats().getNumOfMergedTransitions()));
-            StatLogger.log("#-events-explored", String.format("%d", totalStats.getDepthStats().getNumOfTransitionsExplored()));
+            StatWriter.log("#-events", String.format("%d", totalStats.getDepthStats().getNumOfTransitions()));
+            StatWriter.log("#-events-merged", String.format("%d", totalStats.getDepthStats().getNumOfMergedTransitions()));
+            StatWriter.log("#-events-explored", String.format("%d", totalStats.getDepthStats().getNumOfTransitionsExplored()));
         }
     }
 

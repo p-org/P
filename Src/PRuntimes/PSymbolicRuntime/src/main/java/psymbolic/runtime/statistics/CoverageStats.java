@@ -1,9 +1,9 @@
 package psymbolic.runtime.statistics;
 
 import lombok.Getter;
-import psymbolic.runtime.logger.CoverageLogger;
+import psymbolic.runtime.logger.CoverageWriter;
 import psymbolic.runtime.logger.SearchLogger;
-import psymbolic.runtime.logger.StatLogger;
+import psymbolic.runtime.logger.StatWriter;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -205,7 +205,7 @@ public class CoverageStats implements Serializable {
         for (int d = 0; d < perDepthStats.size(); d++) {
             CoverageDepthStats val = perDepthStats.get(d);
             if (!val.isEmpty())
-                CoverageLogger.log(d, val);
+                CoverageWriter.log(d, val);
         }
     }
 
@@ -247,10 +247,10 @@ public class CoverageStats implements Serializable {
         }
 
         // print schedule statistics
-        StatLogger.log("#-choices-covered", String.format("%d scheduling, %d data",
+        StatWriter.log("#-choices-covered", String.format("%d scheduling, %d data",
                 getNumScheduleChoicesExplored(),
                 getNumDataChoicesExplored()), false);
-        StatLogger.log("#-choices-remaining", String.format("%d scheduling, %d data",
+        StatWriter.log("#-choices-remaining", String.format("%d scheduling, %d data",
                 getNumScheduleChoicesRemaining(),
                 getNumDataChoicesRemaining()), false);
     }

@@ -1,29 +1,42 @@
 package psymbolic.runtime.logger;
 
-import org.apache.log4j.*;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import psymbolic.utils.MemoryMonitor;
 
 /**
  * Represents the P Symbolic logger configuration
  */
 public class PSymLogger {
+    static Logger log = null;
+    static LoggerContext context = null;
 
-    /* Get actual class name to be printed on */
-    static Logger log = Logger.getLogger(PSymLogger.class.getName());
+    public static void Initialize() {
+        log = Log4JConfig.getContext().getLogger(PSymLogger.class.getName());
+        org.apache.logging.log4j.core.Logger coreLogger =
+                (org.apache.logging.log4j.core.Logger) LogManager.getLogger(PSymLogger.class.getName());
+        context = coreLogger.getContext();
 
-    public static void Initialize()
-    {
-        // remove all the appenders
-        log.removeAllAppenders();
-        // setting up the logger
-        //This is the root logger provided by log4j
-        log.setLevel(Level.ALL);
+        Configuration config = Log4JConfig.getContext().getConfiguration();
+        PatternLayout layout = PatternLayout.createDefaultLayout(config);
+        ConsoleAppender consoleAppender = ConsoleAppender.createDefaultAppenderForLayout(layout);
+        consoleAppender.start();
 
-        //Define log pattern layout
-        PatternLayout layout = new PatternLayout("%m%n");
+        context.getConfiguration().addLoggerAppender(coreLogger, consoleAppender);
+    }
 
-        //Add console appender to root logger
-        log.addAppender(new ConsoleAppender(layout));
+    public static void disable() {
+        Configurator.setLevel(PSymLogger.class.getName(), Level.OFF);
+    }
+
+    public static void enable() {
+        Configurator.setLevel(PSymLogger.class.getName(), Level.ALL);
     }
 
     public static void finished(int totalIter, int newIter, long timeSpent, String result, String mode) {
@@ -52,25 +65,10 @@ public class PSymLogger {
 
     public static void ResetAllConfigurations(int verbosity, String projectName, String outputFolder)
     {
-        BasicConfigurator.resetConfiguration();
         Initialize();
         SearchLogger.Initialize(verbosity, outputFolder);
         TraceLogger.Initialize(verbosity, outputFolder);
-        StatLogger.Initialize(projectName, outputFolder);
-        CoverageLogger.Initialize(projectName, outputFolder);
-    }
-
-    public static void ErrorReproMode()
-    {
-        SearchLogger.disable();
-        TraceLogger.enable();
-        CoverageLogger.disable();
-    }
-
-    public static void SearchMode()
-    {
-        SearchLogger.enable();
-        TraceLogger.enable();
-        CoverageLogger.enable();
+        StatWriter.Initialize(projectName, outputFolder);
+        CoverageWriter.Initialize(projectName, outputFolder);
     }
 }

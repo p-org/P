@@ -1,6 +1,6 @@
 package psymbolic.runtime.scheduler;
 
-import lombok.Getter;
+import psymbolic.commandline.Assert;
 import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.logger.*;
@@ -13,7 +13,7 @@ import psymbolic.utils.TimeMonitor;
 import psymbolic.valuesummary.*;
 import psymbolic.runtime.machine.buffer.*;
 import psymbolic.valuesummary.solvers.SolverEngine;
-import psymbolic.valuesummary.solvers.SolverType;
+import psymbolic.valuesummary.solvers.SolverGuard;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -45,8 +45,8 @@ public class IterativeBoundedScheduler extends Scheduler {
 
         // print statistics
         if (configuration.getCollectStats() != 0) {
-            StatLogger.log("#-backtracks", String.format("%d", schedule.getNumBacktracks()));
-            StatLogger.log("#-executions", String.format("%d", (iter - start_iter)));
+            StatWriter.log("#-backtracks", String.format("%d", schedule.getNumBacktracks()));
+            StatWriter.log("#-executions", String.format("%d", (iter - start_iter)));
         }
     }
 
@@ -66,7 +66,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         SearchLogger.log("--------------------");
         SearchLogger.log(String.format("Estimated Coverage:: %.5f %%", GlobalData.getCoverage().getEstimatedCoverage()));
         if (configuration.getCollectStats() != 0) {
-            StatLogger.log("coverage-%", String.format("%.10f", GlobalData.getCoverage().getEstimatedCoverage(10)), false);
+            StatWriter.log("coverage-%", String.format("%.10f", GlobalData.getCoverage().getEstimatedCoverage(10)), false);
         }
     }
 
@@ -186,7 +186,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         String writeFileName = prefix + "_d" + depth + "_cd" + choiceDepth + "_pid" + pid + ".out";
         // write to file
         writeToFile(writeFileName);
-        BacktrackLogger.log(writeFileName, GlobalData.getCoverage().getPathCoverageAtDepth(choiceDepth), depth, choiceDepth);
+        BacktrackWriter.log(writeFileName, GlobalData.getCoverage().getPathCoverageAtDepth(choiceDepth), depth, choiceDepth);
 
         // restore schedule to original choices
         schedule.setChoices(originalChoices);

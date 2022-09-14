@@ -1,56 +1,79 @@
 package psymbolic.runtime.logger;
 
+import lombok.Getter;
 import lombok.Setter;
-import org.apache.log4j.*;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.appender.OutputStreamAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
 import psymbolic.runtime.machine.State;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
  * Represents the trace logger for P Symbolic
  */
 public class TraceLogger extends PSymLogger {
+    static Logger log = null;
+    static LoggerContext context = null;
 
-    static Logger log = Logger.getLogger(TraceLogger.class.getName());
+    @Getter
     @Setter
     static int verbosity;
 
-    public static void Initialize(int verb, String outputFolder)
-    {
+    public static void Initialize(int verb, String outputFolder) {
         verbosity = verb;
-        // remove all the appenders
-        log.removeAllAppenders();
-        // setting up the logger
-        //This is the root logger provided by log4j
-        log.setLevel(Level.ALL);
+        log = Log4JConfig.getContext().getLogger(TraceLogger.class.getName());
+        org.apache.logging.log4j.core.Logger coreLogger =
+                (org.apache.logging.log4j.core.Logger) LogManager.getLogger(TraceLogger.class.getName());
+        context = coreLogger.getContext();
 
-        //Define log pattern layout
-        PatternLayout layout = new PatternLayout("%m%n");
-
-        //Add console appender to root logger
-        log.addAppender(new ConsoleAppender(layout));
-
-        try
-        {
+        try {
             // get new file name
-            SimpleDateFormat formatter = new SimpleDateFormat("dd:MM:yyyy HH:mm:ss");
             Date date = new Date();
-            String fileName = outputFolder + "/trace-"+date.toString() + ".log";
-            //Define file appender with layout and output log file name
-            RollingFileAppender fileAppender = new RollingFileAppender(layout, fileName);
-            //Add the appender to root logger
-            log.addAppender(fileAppender);
+            String fileName = outputFolder + "/trace-" + date + ".log";
+            File file = new File(fileName);
+            file.getParentFile().mkdirs();
+            file.createNewFile();
+
+            //Define new file printer
+            FileOutputStream fout = new FileOutputStream(fileName,false);
+
+            Configuration config = Log4JConfig.getContext().getConfiguration();
+            PatternLayout layout = PatternLayout.createDefaultLayout(config);
+            Appender fileAppender = OutputStreamAppender.createAppender(layout, null, fout, fileName, false, true);
+            ConsoleAppender consoleAppender = ConsoleAppender.createDefaultAppenderForLayout(layout);
+            fileAppender.start();
+            consoleAppender.start();
+
+            context.getConfiguration().addLoggerAppender(coreLogger, fileAppender);
+            context.getConfiguration().addLoggerAppender(coreLogger, consoleAppender);
         }
         catch (IOException e)
         {
-            PSymLogger.error("Failed to add appender to the TraceLogger!!");
+            System.out.println("Failed to set printer to the TraceLogger!!");
         }
+    }
+
+    public static void disable() {
+        Configurator.setLevel(TraceLogger.class.getName(), Level.OFF);
+    }
+
+    public static void enable() {
+        Configurator.setLevel(TraceLogger.class.getName(), Level.INFO);
     }
 
     public static void onProcessEvent(Guard pc, Machine machine, Message message)
@@ -126,13 +149,4 @@ public class TraceLogger extends PSymLogger {
         log.info("Replaying Counterexample of Length " + length);
         log.info("--------------------");
     }
-
-    public static void enable() {
-        log.setLevel(Level.ALL);
-    }
-
-    public static void disable() {
-        log.setLevel(Level.OFF);
-    }
-
 }

@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class StatLogger {
+public class StatWriter {
     static PrintWriter log = null;
 
     public static void Initialize(String projectName, String outputFolder)

@@ -59,9 +59,9 @@ public class EntryPoint {
             SearchLogger.log("expr-type", String.format("%s", configuration.getExprLibType().toString()));
             SearchLogger.log("time-limit-seconds", String.format("%.1f", configuration.getTimeLimit()));
             SearchLogger.log("memory-limit-MB", String.format("%.1f", configuration.getMemLimit()));
-            StatLogger.log("status", String.format("%s", status));
+            StatWriter.log("status", String.format("%s", status));
             scheduler.print_stats();
-            StatLogger.log("time-search-seconds", String.format("%.1f", searchTime));
+            StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
         }
         scheduler.reportEstimatedCoverage();
     }
@@ -76,13 +76,13 @@ public class EntryPoint {
         }
         if (configuration.getCollectStats() != 0) {
             double preSearchTime = TimeMonitor.getInstance().findInterval(TimeMonitor.getInstance().getStart());
-            StatLogger.log("project-name", String.format("%s", configuration.getProjectName()), false);
-            StatLogger.log("mode", String.format("%s", mode), false);
-            StatLogger.log("solver", String.format("%s", configuration.getSolverType().toString()), false);
-            StatLogger.log("expr-type", String.format("%s", configuration.getExprLibType().toString()), false);
-            StatLogger.log("time-limit-seconds", String.format("%.1f", configuration.getTimeLimit()), false);
-            StatLogger.log("memory-limit-MB", String.format("%.1f", configuration.getMemLimit()), false);
-            StatLogger.log("time-pre-seconds", String.format("%.1f", preSearchTime), false);
+            StatWriter.log("project-name", String.format("%s", configuration.getProjectName()), false);
+            StatWriter.log("mode", String.format("%s", mode), false);
+            StatWriter.log("solver", String.format("%s", configuration.getSolverType().toString()), false);
+            StatWriter.log("expr-type", String.format("%s", configuration.getExprLibType().toString()), false);
+            StatWriter.log("time-limit-seconds", String.format("%.1f", configuration.getTimeLimit()), false);
+            StatWriter.log("memory-limit-MB", String.format("%.1f", configuration.getMemLimit()), false);
+            StatWriter.log("time-pre-seconds", String.format("%.1f", preSearchTime), false);
         }
         Concretizer.print = (configuration.getVerbosity() > 6);
     }
@@ -111,7 +111,7 @@ public class EntryPoint {
 
 //            TraceLogger.setVerbosity(2);
             SearchLogger.disable();
-            CoverageLogger.disable();
+            CoverageWriter.disable();
             Guard pc = e.pathConstraint;
 
             ReplayScheduler replay = new ReplayScheduler(configuration, scheduler.getProgram(), scheduler.getSchedule(), pc, scheduler.getDepth());

@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 
-public class BacktrackLogger {
+public class BacktrackWriter {
     static PrintWriter log = null;
 
     public static void Initialize(String projectName, String outputFolder)

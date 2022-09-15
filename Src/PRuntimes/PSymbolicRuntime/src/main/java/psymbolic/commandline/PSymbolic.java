@@ -1,9 +1,10 @@
 package psymbolic.commandline;
 
 import org.reflections.Reflections;
-import psymbolic.runtime.logger.BacktrackLogger;
+import psymbolic.runtime.logger.BacktrackWriter;
+import psymbolic.runtime.logger.Log4JConfig;
 import psymbolic.runtime.logger.PSymLogger;
-import psymbolic.runtime.logger.StatLogger;
+import psymbolic.runtime.logger.StatWriter;
 import psymbolic.runtime.scheduler.DPORScheduler;
 import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
 import psymbolic.runtime.statistics.SolverStats;
@@ -23,6 +24,7 @@ import java.util.jar.JarInputStream;
 public class PSymbolic {
 
     public static void main(String[] args) {
+        Log4JConfig.configureLog4J();
         // parse the commandline arguments to create the configuration
         PSymConfiguration config = PSymOptions.ParseCommandlineArgs(args);
         PSymLogger.ResetAllConfigurations(config.getVerbosity(), config.getProjectName(), config.getOutputFolder());
@@ -47,6 +49,10 @@ public class PSymbolic {
             LoadAllClassesInJar(jarPath);
             IterativeBoundedScheduler scheduler;
 
+            if (config.isWriteToFile()) {
+                BacktrackWriter.Initialize(config.getProjectName(), config.getOutputFolder());
+            }
+
             if (config.getReadFromFile() == "") {
                 Set<Class<? extends Program>> subTypesProgram = reflections.getSubTypesOf(Program.class);
                 if(subTypesProgram.stream().count() == 0) {
@@ -66,7 +72,6 @@ public class PSymbolic {
             }
 
             if (config.isWriteToFile()) {
-                BacktrackLogger.Initialize(config.getProjectName(), config.getOutputFolder());
                 EntryPoint.writeToFile();
             }
 
@@ -80,7 +85,7 @@ public class PSymbolic {
         } finally {
             if (config.getCollectStats() != 0) {
                 double postSearchTime = TimeMonitor.getInstance().stopInterval();
-                StatLogger.log("time-post-seconds", String.format("%.1f", postSearchTime), false);
+                StatWriter.log("time-post-seconds", String.format("%.1f", postSearchTime), false);
             }
             System.exit(exit_code);
         }

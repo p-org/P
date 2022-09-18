@@ -1,6 +1,6 @@
 <div align="center">
   <img src="Icon/icon.png" width="20%">
-  <h2>Formal Modeling and Analysis of Distributed Systems (Event-Driven Systems)</h2>
+  <h2>Formal Modeling and Analysis of Distributed (Event-Driven) Systems </h2>
 </div>
 
 [![NuGet](https://img.shields.io/nuget/v/p.svg)](https://www.nuget.org/packages/P/)

@@ -14,28 +14,28 @@ machine Global {
   var ballots : seq[int];
   // acceptor
   var maxBal : map[int, int];
-  var hVal : map[int, set[(int, int, int)]];
+  var hVal : map[int, seq[(int, int, int)]];
   var decided : map[int, map[int, set[int]]];
   // leader
   var b : map[int, int];
   var s : map[int, int];
   var elected : map[int, bool];
   var lv : map[int, int];
-  var pVal : map[int, set[(int, int, int)]];
+  var pVal : map[int, seq[(int, int, int)]];
   var pc : map[int, int];
   // quora
-  var q1 : set[set[int]];
-  var q2 : set[set[int]];
+  var q1 : seq[seq[int]];
+  var q2 : seq[seq[int]];
   // globals
   var SentP1A : set[int];
-  var SentP2A : map[int, set[(int, int, int)]];
-  var SentP3A : map[int, set[(slot : int, dcd : int)]];
-  var SentP1B : map[int, set[(int, int, int)]];
-  var SentP2B : map[int, set[int]];
-  var p1BSenderBallot : map[int, set[int]];
-  var p2BSenderBallot : map[int, set[int]];
-  var SatQ1 : set[int];
-  var SatQ2 : set[int];
+  var SentP2A : map[int, seq[(int, int, int)]];
+  var SentP3A : map[int, seq[(slot : int, dcd : int)]];
+  var SentP1B : map[int, seq[(int, int, int)]];
+  var SentP2B : map[int, seq[int]];
+  var p1BSenderBallot : map[int, map[int, bool]];
+  var p2BSenderBallot : map[int, map[int, bool]];
+  var SatQ1 : map[int, bool];
+  var SatQ2 : map[int, bool];
   var highestP1ABallot : int;
   var driver : machine;
   var M : int;
@@ -46,18 +46,19 @@ machine Global {
       var i : int;
       var j : int;
       var emptySet : set[int];
-      var emptySet2 : set[(int, int, int)];
+      var emptySeq : seq[int];
+      var emptySeq2 : seq[(int, int, int)];
       var decidedMap : map[int, set[int]];
       var sentBallots : map[int, bool];
       var sentBallots2 : map[int, bool];
-      var sent3As : set[(slot:int,dcd:int)];
-      var valSet : set[(int, int, int)];
-      var q10 : set[int];
-      var q11 : set[int];
-      var q20 : set[int];
-      var q21 : set[int];
-      var q22 : set[int];
-      var q23 : set[int];
+      var sent3As : seq[(slot:int,dcd:int)];
+      var valSet : seq[(int, int, int)];
+      var q10 : seq[int];
+      var q11 : seq[int];
+      var q20 : seq[int];
+      var q21 : seq[int];
+      var q22 : seq[int];
+      var q23 : seq[int];
       M = pld.M;
       driver = pld.driver;
       highestP1ABallot = -1;
@@ -65,7 +66,7 @@ machine Global {
       leaders = pld.leadSeq;
       slots = pld.slotSeq; 
       ballots = pld.ballotSeq;
-      valSet += ((-1, -1, -1));
+      valSet += (0, (-1, -1, -1));
       // acceptor initialization
       while (i < sizeof(slots)) {
         decidedMap += (slots[i], emptySet); 
@@ -93,10 +94,12 @@ machine Global {
       i = 0;
       SentP1A = emptySet;
       while (i < sizeof(ballots) + M) {
-        SentP2A += (i, emptySet2);
+        SentP2A += (i, emptySeq2);
         SentP3A += (i, sent3As);
-        SentP1B += (i, emptySet2);
-        SentP2B += (i, emptySet);
+        SentP1B += (i, emptySeq2);
+        SentP2B += (i, emptySeq);
+        SatQ1[i] = false;
+        SatQ2[i] = false;
         i = i + 1;
       }
       i = 0;
@@ -105,24 +108,24 @@ machine Global {
         p2BSenderBallot[acceptors[i]] = SatQ1;
         i = i + 1;
       }
-      q10 += (1);
-      q10 += (2);
-      q1 += (q10);
-      q11 += (3);
-      q11 += (4);
-      q1 += (q11);
-      q20 += (1);
-      q20 += (3);
-      q2 += (q20);
-      q21 += (2);
-      q21 += (4);
-      q2 += (q21);
-      q22 += (1);
-      q22 += (4);
-      q2 += (q22);
-      q23 += (2);
-      q23 += (3);
-      q2 += (q23);
+      q10 += (0, 1);
+      q10 += (1, 2);
+      q1 += (0, q10);
+      q11 += (0, 3);
+      q11 += (1, 4);
+      q1 += (1, q11);
+      q20 += (0, 1);
+      q20 += (1, 3);
+      q2 += (0, q20);
+      q21 += (0, 2);
+      q21 += (1, 4);
+      q2 += (1, q21);
+      q22 += (0, 1);
+      q22 += (1, 4);
+      q2 += (2, q22);
+      q23 += (0, 2);
+      q23 += (1, 3);
+      q2 += (3, q23);
     }
 
     on eNext do {
@@ -195,12 +198,12 @@ machine Global {
           }
           if (pc[leader] == 2 || pc[leader] == 4) {
             // CP1L - collect responses
-            if (pc[leader] == 2 && (bLeader in SatQ1)) {
+            if (pc[leader] == 2 && SatQ1[bLeader]) {
               //canCollectP1 += (sizeof(canCollectP1), leader);
               choices += (sizeof(choices), (4, leader, bLeader));
             }
             // CP2L - collect responses
-            if (pc[leader] == 4 && (bLeader in SatQ2)) {
+            if (pc[leader] == 4 && SatQ2[bLeader]) {
               //canCollectP2 += (sizeof(canCollectP2), leader);
               choices += (sizeof(choices), (6, leader, bLeader));
             }
@@ -263,11 +266,13 @@ machine Global {
       var pldAcceptor : int;
       pldB = pld.b;
       pldAcceptor = pld.acceptor;
-      //print("replyP1");
+      print("replyP1");
       maxBal[pldAcceptor] = pldB;
-      while (i < sizeof(hVal[pldAcceptor])) {
-        SentP1B[pld.b] += (hVal[pldAcceptor][i]); //(sizeof(SentP1B[pld.b]), hVal[pld.acceptor]);
-        p1BSenderBallot[pldAcceptor] += (pldB);
+      while (i < sizeof(hVal[pld.acceptor])) {
+        if (!(hVal[pldAcceptor][i] in SentP1B[pldB] )) {
+          SentP1B[pldB] += (sizeof(SentP1B[pldB]), hVal[pldAcceptor][i]);
+        }
+        p1BSenderBallot[pldAcceptor][pldB] = true;
         i = i + 1;
       }
       // reevaluate SatQ1
@@ -277,7 +282,7 @@ machine Global {
         j = 0;
         forall = true;
         while (j < sizeof(q1[i])) {
-          if (!(pldB in p1BSenderBallot[q1[i][j]])) {
+          if (!p1BSenderBallot[q1[i][j]][pldB]) {
             forall = false;
           }
           j = j + 1;
@@ -285,11 +290,7 @@ machine Global {
         exists = exists || forall;
         i = i + 1;
       }
-      if (exists) {
-        SatQ1 += (pldB);
-      } else {
-        SatQ1 -= (pldB);
-      }
+      SatQ1[pldB] = exists;
       send driver, eNext;
     }
 
@@ -314,9 +315,13 @@ machine Global {
         i = i + 1;
       }
       choice = choices[choose(sizeof(choices))];
-      hVal[pldAcceptor] += (choice); //(sizeof(hVal[pld.acceptor]), choice.2);
-      SentP2B[pldB] += (choice.2);
-      p2BSenderBallot[pldAcceptor] += (pldB);
+      if (!(choice in hVal[pldAcceptor])) {
+        hVal[pldAcceptor] += (sizeof(hVal[pldAcceptor]), choice);
+      }
+      if (!(choice.2 in SentP2B[pldB])) {
+        SentP2B[pldB] += (sizeof(SentP2B[pldB]), choice.2);
+      }
+      p2BSenderBallot[pldAcceptor][pldB] = true;
       // reevaluate SatQ2
       i = 0;
       exists = false;
@@ -324,7 +329,7 @@ machine Global {
         j = 0;
         forall = true;
         while (j < sizeof(q2[i])) {
-          if (!(pld.b in p2BSenderBallot[q2[i][j]])) {
+          if (!p2BSenderBallot[q2[i][j]][pldB]) {
             forall = false;
           }
           j = j + 1;
@@ -332,9 +337,7 @@ machine Global {
         exists = exists || forall;
         i = i + 1;
       }
-      if (exists) {
-        SatQ2 += (pldB);
-      }
+      SatQ2[pldB] = exists;
       send driver, eNext;
     } 
 
@@ -348,7 +351,7 @@ machine Global {
       var slot : int;
       pldB = pld.b;
       pldAcceptor = pld.acceptor;
-      //print("recvP3");
+      print("recvP3");
       maxBal[pldAcceptor] = pldB;
       i = 0;
       while (i < sizeof(SentP3A[pldB])) {
@@ -368,7 +371,7 @@ machine Global {
 
     on eSendP1 do (leader : int) {
       b[leader] = b[leader] + M;
-      //print("sendP1");
+      print("sendP1");
       SentP1A += (b[leader]);//(sizeof(SentP1A), b[leader]);
       if ((b[leader] > highestP1ABallot) && b[leader] <= ballots[sizeof(ballots) - 1]) {
         highestP1ABallot = b[leader];
@@ -381,11 +384,13 @@ machine Global {
       var i : int;
       var ballot : int;
       ballot = b[leader];
-      //print("collectP1");
+      print("collectP1");
       if (highestP1ABallot <= ballot) {
         elected[leader] = true;
         while (i < sizeof(SentP1B[ballot])) {
-          pVal[leader] += (SentP1B[ballot][i]); //(sizeof(pVal[leader]), SentP1B[b[leader]][i]);
+          if (!(SentP1B[ballot][i] in pVal[leader])) {
+            pVal[leader] += (sizeof(pVal[leader]), SentP1B[ballot][i]);
+          }
           i = i + 1;
         }
       }
@@ -395,24 +400,28 @@ machine Global {
 
     on eSendP2 do (leader : int) {
       var i : int;
-      var pVals : set[(int, int, int)];
+      var pVals : seq[(int, int, int)];
       var ballot : int;
       var slot : int;
       ballot = b[leader];
       slot = s[leader];
-      //print("sendP2");
+      print("sendP2");
       // count cardinality of pVal
       while (i < sizeof(pVal[leader])) {
         if (pVal[leader][i].0 == slot) {
-          pVals += (pVal[leader][i]); //(sizeof(pVals), pVal[i]);
+          pVals += (sizeof(pVals), pVal[leader][i]); //(sizeof(pVals), pVal[i]);
         }
         i = i + 1;
       }
       if (sizeof(pVals) == 0) {
-        SentP2A[ballot] += ((slot, ballot, leader));
+        if (!((slot, ballot, leader) in SentP2A[ballot])) {
+          SentP2A[ballot] += (sizeof(SentP2A[ballot]), (slot, ballot, leader));
+        }
       } else {
         i = choose(sizeof(pVals));
-        SentP2A[ballot] += ((pVals[i]));
+        if (!(pVals[i] in SentP2A[ballot])) {
+          SentP2A[ballot] += (sizeof(SentP2A[ballot]), (pVals[i]));
+        }
       }
       pc[leader] = 4;
       send driver, eNext;
@@ -424,7 +433,7 @@ machine Global {
       var slot : int;
       ballot = b[leader];
       slot = s[leader];
-      //print("collectP2");
+      print("collectP2");
       if (highestP1ABallot > ballot) {
         elected[leader] = false;
       } else {
@@ -432,10 +441,13 @@ machine Global {
         vv = SentP2B[ballot][choose(sizeof(SentP2B[ballot]))];
         lv[leader] = vv;
       }
+      print("phase 3");
       // Phase 3
       if (elected[leader]) {
         // SendP3
-        SentP3A[ballot] += ((slot=slot, dcd=lv[leader]));
+        if (!((slot=slot, dcd=lv[leader]) in SentP3A[ballot])) {
+          SentP3A[ballot] += (sizeof(SentP3A[ballot]), (slot=slot, dcd=lv[leader]));
+        }
         s[leader] = slot + 1;
       }
       pc[leader] = 0;

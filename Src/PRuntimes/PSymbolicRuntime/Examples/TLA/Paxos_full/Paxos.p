@@ -163,9 +163,9 @@ machine Global {
                 if (!(SentP3A[ballots[j]][k].dcd in
                       decided[acceptors[i]][SentP3A[ballots[j]][k].slot])) {
                   // just run RcvP3 here, since it is independent of everything else
-                  decided[acceptors[i]][SentP3A[ballots[j]][k].slot] += (SentP3A[ballots[j]][k].dcd);
-                  assert(sizeof(decided[acceptors[i]][SentP3A[ballots[j]][k].slot]) == 1);
-                  //choices += (sizeof(choices), (2, acceptors[i], ballots[j]));
+                  //decided[acceptors[i]][SentP3A[ballots[j]][k].slot] += (SentP3A[ballots[j]][k].dcd);
+                  //assert(sizeof(decided[acceptors[i]][SentP3A[ballots[j]][k].slot]) == 1);
+                  choices += (sizeof(choices), (2, acceptors[i], ballots[j]));
                 }
                 k = k + 1;
               }
@@ -348,7 +348,7 @@ machine Global {
       var slot : int;
       pldB = pld.b;
       pldAcceptor = pld.acceptor;
-      //print("recvP3");
+      print("recvP3");
       maxBal[pldAcceptor] = pldB;
       i = 0;
       while (i < sizeof(SentP3A[pldB])) {
@@ -368,7 +368,7 @@ machine Global {
 
     on eSendP1 do (leader : int) {
       b[leader] = b[leader] + M;
-      //print("sendP1");
+      print("sendP1");
       SentP1A += (b[leader]);//(sizeof(SentP1A), b[leader]);
       if ((b[leader] > highestP1ABallot) && b[leader] <= ballots[sizeof(ballots) - 1]) {
         highestP1ABallot = b[leader];
@@ -424,7 +424,7 @@ machine Global {
       var slot : int;
       ballot = b[leader];
       slot = s[leader];
-      //print("collectP2");
+      print("collectP2");
       if (highestP1ABallot > ballot) {
         elected[leader] = false;
       } else {

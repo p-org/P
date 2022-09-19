@@ -4,6 +4,8 @@ event eDecide : int;
 event eFail : int;
 event eCommit : int;
 event eAbort : int;
+event eTAC : (tsbts : int, st : int);
+event eF : int;
 
 machine TransactionCommit {
   var RM : seq[int];
@@ -34,6 +36,9 @@ machine TransactionCommit {
     on eNext do {
       var choices : seq[(int, int)];
       var choice : int;
+      var choicePair : (int, int);
+      var choicePC : int;
+      var choiceProc : int;
       var i : int;
       var allPrepared : bool;
       var atLeastOneCommit : bool;
@@ -82,42 +87,70 @@ machine TransactionCommit {
         }
       }
       if (btManagerPC == 0) {
-        if (canCommit && tmState == 1) {
+        if (canCommit) {
           choices += (sizeof(choices), (3, 1)); 
         }
-        if (canAbort && tmState == 1) {
+        if (canAbort) {
           choices += (sizeof(choices), (4, 1));
         }
+      }
+      if (tManagerPC > 0) {
+        choices += (sizeof(choices), (5, 0));
+      }
+      if (btManagerPC > 0) {
+        choices += (sizeof(choices), (5, 1));
       }
 
       if (sizeof(choices) > 0) {
         choice = choose(sizeof(choices));
-        if (choices[choice].0 == 0) {
-          raise ePrepare, choices[choice].1;
+        choicePair = choices[choice];
+        choicePC = choicePair.0;
+        choiceProc = choicePair.1;
+        
+        if (choicePC == 0) {
+          raise ePrepare, choiceProc;
         }
-        if (choices[choice].0 == 1) {
-          raise eDecide, choices[choice].1;
+        if (choicePC == 1) {
+          raise eDecide, choiceProc;
         }
-        if (choices[choice].0 == 2) {
-          raise eFail, choices[choice].1;
+        if (choicePC == 2) {
+          raise eFail, choiceProc;
         }
-        if (choices[choice].0 == 3) {
-          raise eCommit, choices[choice].1;
+        if (choicePC == 3) {
+          raise eCommit, choiceProc;
         }
-        if (choices[choice].0 == 4) {
-          raise eAbort, choices[choice].1;
+        if (choicePC == 4) {
+          raise eAbort, choiceProc;
+        }
+        if (choicePC == 5) {
+          if (choiceProc == 0) {
+            if (tManagerPC == 1) {
+              raise eTAC, (tsbts=0, st=2);
+            } else if (tManagerPC == 2) {
+              raise eTAC, (tsbts=0, st=3);
+            } else {
+              raise eF, 0;
+            }
+          }
+          else {
+            if (btManagerPC == 1) {
+              raise eTAC, (tsbts=1, st=2);
+            } else {
+              raise eTAC, (tsbts=1, st=3);
+            }
+          }
         }
       }
     }
 
     on ePrepare do (p : int) {
-      print("prepare");
+//      print("prepare");
       rmState[p] = 1;
       send driver, eNext;
     }
 
     on eDecide do (p : int) {
-      print("decide");
+//      print("decide");
       if (tmState == 2) {
         rmState[p] = 2;
       }
@@ -128,7 +161,7 @@ machine TransactionCommit {
     }
 
     on eFail do (p : int) {
-      print("fail");
+ //     print("fail");
       if (RMMAYFAIL) {
         rmState[p] = 4;
       }
@@ -136,12 +169,8 @@ machine TransactionCommit {
     }
 
     on eCommit do (tsbts : int) {
-      print("commit");
-      tmState = 2;
+//      print("commit branch");
       if (tsbts == 0) {
-        if (TMMAYFAIL) {
-          tmState = 1;
-        }
         tManagerPC = 1;
       } else {
         btManagerPC = 1;
@@ -150,18 +179,30 @@ machine TransactionCommit {
     }
 
     on eAbort do (tsbts : int) {
-      print("abort");
-      tmState = 3;
+//      print("abort branch");
       if (tsbts == 0) {
-        if (TMMAYFAIL) {
-          tmState = 1;
-        }
-        tManagerPC = 1;
+        tManagerPC = 2;
       } else {
-        btManagerPC = 1;
+        btManagerPC = 2;
       }
       send driver, eNext;
     }
+
+    on eTAC do (pld : (tsbts : int, st : int)) {
+      tmState = pld.st;
+      if (pld.tsbts == 0) {
+        tManagerPC = 3;
+      } else {
+        btManagerPC = 0;
+      }
+    }
+
+    on eF do (ts : int) {
+      if (TMMAYFAIL) {
+        tmState = 1;
+      }
+      tManagerPC = 0;
+    }      
   }
 }
 

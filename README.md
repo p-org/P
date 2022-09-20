@@ -9,20 +9,23 @@
 ![GitHub Action (CI on Ubuntu)](https://github.com/p-org/P/workflows/CI%20on%20Ubuntu/badge.svg)
 ![GitHub Action (CI on MacOS)](https://github.com/p-org/P/workflows/CI%20on%20MacOS/badge.svg)
 
-P is a state machine based programming language for modeling and specifying complex
-distributed systems. P allows programmers to model their system as a collection of
+**Challenge**: 
+Distributed systems are notoriously hard to get right. Programming these systems is challenging because of the need to reason about correctness in the presence of myriad possible interleaving of messages and failures. Unsurprisingly, it is common for service teams to uncover correctness bugs after deployment. Formal methods can play an important role in addressing this challenge!
+
+
+**P Overview:** 
+P is a state machine based programming language for formally modeling and specifying complex
+distributed systems. P allows programmers to model their system design as a collection of
 communicating state machines. P supports several backend analysis engines
 (based on automated reasoning techniques like model
 checking and symbolic execution) to check that the distributed system modeled in P
-satisfy the desired correctness specifications. Not only can a P program be systematically
-tested (e.g., model checking), but it can also be compiled into executable code.
-Essentially, P unifies modeling, specifying, implementing, and testing into one activity for the
-programmer.
+satisfy the desired correctness specifications.
 
-P is currently being used extensively inside Amazon (AWS) for analysis of
-complex distributed systems. P is also being used for programming safe robotics systems. P
-was first used to implement and validate the USB device driver stack that ships with
-Microsoft Windows 8 and Windows Phone.
+
+**Impact**: P is currently being used extensively inside Amazon (AWS) for analysis of complex distributed systems. For example, Amazon S3 used P to formally reason about the core distributed protocols involved in its strong consistency launch. Teams across AWS are now using P for thinking and reasoning about their systems formally. P is also being used for programming safe robotics systems in Academia. P was first used to implement and validate the USB device driver stack that ships with Microsoft Windows 8 and Windows Phone.
+
+**Experience and lessons learned**:
+In our experience of using P inside AWS, Academia, and Microsoft. We have observed that P has helped developers in three critical ways: (1) “P as a thinking tool”: Writing formal specifications in P forces developers to think about their system design rigorously, and in turn helped in bridging gaps in their understanding of the system. A large fraction of the bugs can be eliminated in the process of writing specifications itself! (2) “P as a bug finder”: Model checking helped find corner case bugs in system design that were missed by stress and integration testing. (3) “P helped boost developer velocity”: After the initial overhead of creating the formal models, future update,s and feature additions could be rolled out faster as these non-trivial changes are rigorously validated before implementation.
 
 > :sparkles: **_Programming concurrent, distributed systems is fun but challenging, however, a pinch of programming language design with a dash of automated reasoning can go a long way in addressing the challenge and amplify the fun!._** :sparkles:
 

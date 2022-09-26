@@ -127,7 +127,7 @@ machine Paxos {
             if (!(0 in M2b[i][j])) {
               choices += (sizeof(choices), (3, i, j));
             }
-            if (!(1 in M2b[i][j]))) {
+            if (!(1 in M2b[i][j])) {
               choices += (sizeof(choices), (4, i, j));
             }
           }
@@ -210,7 +210,7 @@ machine Paxos {
       send driver, eNext;
     }
 
-    on Phase2b do (pld : (int, int)) {
+    on Phase2b do (pld : (int, int, int)) {
       var a : int;
       var b : int;
       var i : int;

@@ -175,7 +175,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
                 res = BooleanVS.and(res, payload.getValue().symbolicEquals(value.get(payload.getKey()), pc));
             }
         }
-        return res;
+        return res.restrict(getUniverse().and(cmp.getUniverse()));
     }
 
     @Override

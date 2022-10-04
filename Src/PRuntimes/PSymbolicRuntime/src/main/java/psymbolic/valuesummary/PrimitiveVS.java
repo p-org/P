@@ -223,7 +223,13 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     }
 
     @Override
-    public PrimitiveVS<Boolean> symbolicEquals(PrimitiveVS<T> cmp, Guard pc) {
+    public PrimitiveVS<Boolean> symbolicEquals(PrimitiveVS<T> cmp_orig, Guard pc) {
+        PrimitiveVS<T> cmp;
+        if (cmp_orig == null) {
+            cmp = new PrimitiveVS<>((T) null);
+        } else {
+            cmp = cmp_orig;
+        }
         Guard equalCond = Guard.constFalse();
         for (Map.Entry<T, Guard> entry : this.guardedValues.entrySet()) {
             if (cmp.guardedValues.containsKey(entry.getKey())) {
@@ -231,7 +237,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
             }
         }
         equalCond = equalCond.or(getUniverse().and(cmp.getUniverse()).not());
-        return BooleanVS.trueUnderGuard(pc.and(equalCond));
+        return BooleanVS.trueUnderGuard(pc.and(equalCond)).restrict(getUniverse().and(cmp.getUniverse()));
     }
 
     @Override

@@ -141,6 +141,10 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
 
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(ListVS<T> cmp, Guard pc) {
+        if (cmp == null) {
+            return BooleanVS.trueUnderGuard(Guard.constFalse());
+        }
+
         // check if size is empty
         if (size.isEmptyVS()) {
             if (cmp.isEmptyVS()) {
@@ -161,7 +165,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
                 equalCond = equalCond.or(listEqual);
             }
         }
-        return BooleanVS.trueUnderGuard(pc.and(equalCond));
+        return BooleanVS.trueUnderGuard(pc.and(equalCond)).restrict(getUniverse().and(cmp.getUniverse()));
     }
 
     @Override
@@ -214,7 +218,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      */
     public T get(PrimitiveVS<Integer> indexSummary) {
         //assert(Checks.includedIn(indexSummary.getUniverse(), getUniverse()));
-        //assert(!indexSummary.isEmptyVS());
+        assert(!indexSummary.isEmptyVS());
         return this.restrict(indexSummary.getUniverse()).getHelper(indexSummary);
     }
 

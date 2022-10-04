@@ -220,6 +220,7 @@ $RECYCLE.BIN/
 /P.VC.db
 /packages/
 .idea/
+.vscode/
 
 # all P compiler generated output files.
 Bld/*

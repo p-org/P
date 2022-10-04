@@ -2440,7 +2440,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"new {GetSymbolicType(type)}()";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
-                    return $"new {GetSymbolicType(type)}()";
+                    return $"new {GetSymbolicType(type)}((Machine) null)";
                 case SequenceType _:
                     return $"new {GetSymbolicType(type)}(Guard.constTrue())";
                 case MapType _:

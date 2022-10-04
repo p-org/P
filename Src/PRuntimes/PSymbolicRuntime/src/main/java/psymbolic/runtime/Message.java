@@ -73,6 +73,7 @@ public class Message implements ValueSummary<Message> {
     }
 
     private Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, Map<Event, UnionVS> map, VectorClockVS clock) {
+        assert(!machine.getValues().contains(null));
         this.event = names;
         this.target = machine;
         this.payload = new HashMap<>(map);
@@ -108,6 +109,7 @@ public class Message implements ValueSummary<Message> {
     }
 
     public Message(PrimitiveVS<Event> events, PrimitiveVS<Machine> machine, UnionVS payload, VectorClockVS clock) {
+        assert(!machine.getValues().contains(null));
         this.event = events;
         this.target = machine;
         this.payload = new HashMap<>();
@@ -232,7 +234,7 @@ public class Message implements ValueSummary<Message> {
                 mapping = mapping.or(event.getGuard());
             }
         }
-        return BooleanVS.trueUnderGuard(pc.and(nameAndTarget).and(mapping));
+        return BooleanVS.trueUnderGuard(pc.and(nameAndTarget).and(mapping)).restrict(getUniverse().and(cmp.getUniverse()));
     }
 
     @Override

@@ -1,6 +1,7 @@
 package psymbolic.runtime.statistics;
 
 import lombok.Getter;
+import lombok.Setter;
 import psymbolic.runtime.logger.CoverageWriter;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.logger.StatWriter;
@@ -23,6 +24,7 @@ public class CoverageStats implements Serializable {
      * Track of number of choices explored versus remaining in aggregate at each depth
      */
     private List<CoverageDepthStats> perDepthStats = new ArrayList<>();
+    @Getter @Setter
     /**
      * Track of path coverage during depth-first iterative search
      */
@@ -50,18 +52,23 @@ public class CoverageStats implements Serializable {
 
     }
 
-    static class CoverageChoiceDepthStats implements Serializable {
+    public static class CoverageChoiceDepthStats implements Serializable {
         BigDecimal pathCoverage;
         int numTotal;
 
         CoverageChoiceDepthStats() {
-            pathCoverage = new BigDecimal(1);
-            numTotal = 0;
+            this(new BigDecimal(1), 0);
+        }
+
+        private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal) {
+            this.pathCoverage = inputPathCoverage;
+            this.numTotal = inputNumTotal;
         }
 
         void update(CoverageChoiceDepthStats prefix, int numExplored, int numRemaining, boolean isNewChoice) {
             pathCoverage = prefix.pathCoverage;
             if (isNewChoice) {
+                assert(numRemaining >= 0);
                 numTotal = numExplored + numRemaining;
             }
             if (numTotal != 0)
@@ -71,6 +78,10 @@ public class CoverageStats implements Serializable {
         void reset() {
             pathCoverage = new BigDecimal(1);
             numTotal = 0;
+        }
+
+        public CoverageChoiceDepthStats getCopy() {
+            return new CoverageChoiceDepthStats(this.pathCoverage, this.numTotal);
         }
     }
 
@@ -110,7 +121,7 @@ public class CoverageStats implements Serializable {
      * @param numRemaining Number of choices remaining in current iteration at choiceDepth
      * @param isNewChoice Whether or not this is a new choice
      */
-    private void updatePathCoverage(int choiceDepth, int numExplored, int numRemaining, boolean isNewChoice) {
+    public void updatePathCoverage(int choiceDepth, int numExplored, int numRemaining, boolean isNewChoice) {
         CoverageChoiceDepthStats prefix;
         if (choiceDepth == 0)
             prefix = new CoverageChoiceDepthStats();
@@ -166,6 +177,15 @@ public class CoverageStats implements Serializable {
     }
 
     /**
+     * Get path coverage of an interation after an iteration has ended
+     * @param choiceDepth Highest choice depth at which the last iteration ended
+     */
+    public BigDecimal getIterationCoverage(int choiceDepth) {
+        assert(choiceDepth < perChoiceDepthStats.size());
+        return perChoiceDepthStats.get(choiceDepth).pathCoverage;
+    }
+
+    /**
      * Reset coverage statistics after a resumed run
      */
     public void resetCoverage() {
@@ -195,7 +215,7 @@ public class CoverageStats implements Serializable {
 
     public BigDecimal getPathCoverageAtDepth(int choiceDepth) {
         assert(choiceDepth < perChoiceDepthStats.size());
-        return perChoiceDepthStats.get(choiceDepth).pathCoverage.multiply(hundred).setScale(20, RoundingMode.HALF_DOWN);
+        return perChoiceDepthStats.get(choiceDepth).pathCoverage;
     }
 
     /**

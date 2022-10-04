@@ -37,7 +37,7 @@ public class ReplayScheduler extends Scheduler {
     }
 
     @Override
-    public void doSearch() throws TimeoutException {
+    public void doSearch() throws TimeoutException, InterruptedException {
         TraceLogger.logStartReplayCex(cexLength);
         super.doSearch();
     }

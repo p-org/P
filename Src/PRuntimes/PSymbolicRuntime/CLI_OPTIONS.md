@@ -5,6 +5,11 @@ PSym runtime provides a range of options to configure the model exploration.
 Here is a summary of these options:
 
 ````
+[Configure Orchestration]
+    -orch,--orchestration <Orchestration Mode (string)>               Orchestration options: random,
+                                                                      coverage-astar, coverage-estimate,
+                                                                      dfs, none                                                                     
+
 [Configure Symbolic Width]
     -sb,--sched-choice-bound <Max Schedule Choice Bound (integer)>   Max scheduling choice bound at
                                                                      each depth during the search

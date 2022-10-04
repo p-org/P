@@ -398,7 +398,7 @@ public class Scheduler implements SymbolicSearch {
     }
 
     @Override
-    public void doSearch() throws TimeoutException {
+    public void doSearch() throws TimeoutException, InterruptedException {
         initializeSearch();
         performSearch();
     }
@@ -409,7 +409,6 @@ public class Scheduler implements SymbolicSearch {
             Assert.prop(getDepth() < configuration.getDepthBound(), "Maximum allowed depth " + configuration.getDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             step();
         }
-        searchStats.setIterationStats(schedule.getNumBacktracks());
         if (done) {
             searchStats.setIterationCompleted();
         }

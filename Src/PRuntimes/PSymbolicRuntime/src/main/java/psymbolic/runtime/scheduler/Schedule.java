@@ -150,14 +150,11 @@ public class Schedule implements Serializable {
             filter = f;
         }
 
-        public int getNumScheduleChoicesRemaining() {
-            return getBacktrackSender().size();
-        }
-
-        public int getNumDataChoicesRemaining() {
-            return getBacktrackBool().size() +
-                   getBacktrackInt().size() +
-                   getBacktrackElement().size();
+        public int getNumChoicesExplored() {
+            return repeatSender.getValues().size() +
+                    repeatBool.getValues().size() +
+                    repeatInt.getValues().size() +
+                    repeatElement.getValues().size();
         }
 
         public Guard getRepeatUniverse() {
@@ -290,7 +287,7 @@ public class Schedule implements Serializable {
         choices.get(d).clear();
     }
 
-    public int getNumBacktracks() {
+    public int getNumBacktracksInSchedule() {
         int count = 0;
         for (Choice backtrack : choices) {
             if (!backtrack.isBacktrackEmpty()) count++;

@@ -2,6 +2,7 @@ package psymbolic.commandline;
 
 import org.apache.commons.cli.*;
 
+import psymbolic.utils.OrchestrationMode;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -18,6 +19,16 @@ public class PSymOptions {
 
     static {
         options = new Options();
+
+        // mode of orchestration
+        Option orch = Option.builder("orch")
+                .longOpt("orchestration")
+                .desc("Orchestration options: random, coverage-astar, coverage-estimate, dfs, none")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Orchestration Mode (string)")
+                .build();
+        options.addOption(orch);
 
         // test driver name
         Option debugMode = Option.builder("d")
@@ -269,6 +280,32 @@ public class PSymOptions {
         PSymConfiguration config = new PSymConfiguration();
         for (Option option : cmd.getOptions()) {
             switch (option.getOpt()) {
+                case "orch":
+                case "orchestration":
+                    switch (option.getValue()) {
+                        case "none":
+                            config.setOrchestration(OrchestrationMode.None);
+                            break;
+                        case "random":
+                            config.setOrchestration(OrchestrationMode.Random);
+                            break;
+                        case "coverage-astar":
+                            config.setOrchestration(OrchestrationMode.CoverageAStar);
+                            break;
+                        case "coverage-estimate":
+                            config.setOrchestration(OrchestrationMode.CoverageEstimate);
+                            break;
+                        case "coverage-parent":
+                            config.setOrchestration(OrchestrationMode.CoverageParent);
+                            break;
+                        case "dfs":
+                            config.setOrchestration(OrchestrationMode.DepthFirst);
+                            break;
+                        default:
+                            formatter.printHelp("orch", String.format("Unrecognized orchestration mode, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                            formatter.printUsage(writer, 80, "orch", options);
+                    }
+                    break;
                 case "d":
                 case "debug":
                     config.setDebugMode(option.getValue());

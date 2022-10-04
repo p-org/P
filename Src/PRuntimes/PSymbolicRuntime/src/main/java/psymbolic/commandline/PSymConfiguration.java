@@ -2,6 +2,7 @@ package psymbolic.commandline;
 
 import lombok.Getter;
 import lombok.Setter;
+import psymbolic.utils.OrchestrationMode;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -11,6 +12,10 @@ import java.io.Serializable;
  * Represents the configuration of the P Symbolic tool
  */
 public class PSymConfiguration implements Serializable {
+
+    @Getter @Setter
+    // mode of orchestrating
+    private OrchestrationMode orchestration = OrchestrationMode.None;
 
     @Getter @Setter
     // debug mode (internal)

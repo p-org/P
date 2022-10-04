@@ -10,7 +10,7 @@ public interface SymbolicSearch extends Serializable {
 
     /** Perform the Search
      */
-    void doSearch () throws TimeoutException;
+    void doSearch () throws TimeoutException, InterruptedException;
 
     /** Return the next integer (within a bound) based on the search and strategy.
      *

@@ -31,8 +31,6 @@ import java.util.stream.Collectors;
  */
 public class IterativeBoundedScheduler extends Scheduler {
 
-    private int backtrack = 0;
-
     private boolean isDoneIterating = false;
 
     public IterativeBoundedScheduler(PSymConfiguration config, Program p) {
@@ -235,7 +233,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                 iter++;
                 SearchLogger.logStartExecution(iter, getDepth());
             }
-            searchStats.startNewIteration(iter, backtrack);
+            searchStats.startNewIteration(iter, backtrackDepth);
             super.performSearch();
             summarizeIteration();
         }
@@ -255,7 +253,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                 iter++;
                 SearchLogger.logStartExecution(iter, getDepth());
             }
-            searchStats.startNewIteration(iter, backtrack);
+            searchStats.startNewIteration(iter, backtrackDepth);
             super.performSearch();
             summarizeIteration();
             if (resetAfterInitial) {
@@ -288,8 +286,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                     schedule.setFilter(choice.getFilter());
                 }
                 SearchLogger.logMessage("backtrack to " + d);
-                backtrack = d;
-                SearchLogger.logMessage("pending backtracks: " + schedule.getNumBacktracks());
+                backtrackDepth = d;
                 if (newDepth == 0) {
                     reset();
                     initializeSearch();

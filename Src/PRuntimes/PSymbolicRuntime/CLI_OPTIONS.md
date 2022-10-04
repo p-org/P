@@ -45,11 +45,15 @@ Here is a summary of these options:
                                                                      backtrack state
     -w,--write                                                       Enable writing program state
 
-[Configure Incremental Backtracks, Filtering, Queue Semantics]
-    -nb,--no-backtrack                                               Disable incremental backtracking
+[Configure Backtracks, Filtering, Queue Semantics]
+    -nb,--no-backtrack                                               Disable stateful backtracking
     -nf,--no-filters                                                 Disable filter-based reductions
     -rq,--receiver-queue                                             Disable sender queue reduction to
                                                                      get receiver queue semantics
+
+[Configure State Caching]
+    -sc,--state-caching                                              Enable state caching via
+                                                                     enumeration of exact states
 
 [Configure Randomness]
     -nr,--no-random                                                  Disable randomization

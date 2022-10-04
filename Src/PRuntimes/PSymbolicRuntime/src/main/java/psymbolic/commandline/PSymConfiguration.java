@@ -60,6 +60,10 @@ public class PSymConfiguration implements Serializable {
     private int maxInternalSteps = 1000;
 
     @Getter @Setter
+    // use state caching
+    private boolean useStateCaching = false;
+
+    @Getter @Setter
     // intersect with receiver queue semantics
     private boolean useReceiverQueueSemantics = false;
 

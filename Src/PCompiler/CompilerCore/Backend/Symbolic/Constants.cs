@@ -51,6 +51,14 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
             <artifactId>SymbolicRuntime</artifactId>
             <version>1.0</version>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+        <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>1.18.20</version>
+        <scope>provided</scope>
+        </dependency>
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

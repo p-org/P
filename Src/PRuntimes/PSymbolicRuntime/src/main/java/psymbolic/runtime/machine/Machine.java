@@ -71,8 +71,7 @@ public abstract class Machine implements Serializable {
     }
 
     public void reset() {
-        started = new PrimitiveVS<>(false);
-        currentState = new PrimitiveVS<>(startState);
+        this.currentState = new PrimitiveVS<>(startState);
         if (semantics == EventBufferSemantics.bag) {
             this.sendBuffer = new EventBag(this);
         } else if (semantics == EventBufferSemantics.receiver) {
@@ -80,12 +79,14 @@ public abstract class Machine implements Serializable {
         } else {
             this.sendBuffer = new EventQueue(this);
         }
+        this.clock = new VectorClockVS(Guard.constTrue());
         while (!deferredQueue.isEmpty()) {
             deferredQueue.dequeueEntry(deferredQueue.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
         }
-        receives = new PrimitiveVS<>();
+        this.receives = new PrimitiveVS<>();
         for (Runnable r : clearContinuationVars) { r.run(); }
-        clock = new VectorClockVS(Guard.constTrue());
+        this.started = new PrimitiveVS<>(false);
+        this.halted = new PrimitiveVS<>(false);
     }
 
     public void setSemantics(EventBufferSemantics semantics) {
@@ -176,9 +177,6 @@ public abstract class Machine implements Serializable {
         int steps = 0;
         // Outer loop: process sequences of 'goto's, 'raise's, 'push's, 'pop's, and events from the deferred queue.
         while (!eventHandlerReturnReason.isNormalReturn()) {
-            // TODO: Determine if this can be safely optimized into a concrete boolean
-            Guard performedTransition = Guard.constFalse();
-
             if (!eventHandlerReturnReason.getRaiseCond().isFalse()) {
               Message m = eventHandlerReturnReason.getMessageSummary();
               Guard receiveGuard = getBlockedOnReceiveGuard().and(pc).and(this.currentState.apply(m.getEvent(), (x, msg) -> x.isIgnored(msg)).getGuardFor(false));
@@ -193,7 +191,7 @@ public abstract class Machine implements Serializable {
                       deferred = deferred.or(receiver.getValue().apply(receiver.getGuard()).apply(nextEventHandlerReturnReason, m.restrict(receiver.getGuard())));
                   }
                   oldReceives = oldReceives.restrict(receiveGuard.not().or(deferred));
-                  receives.merge(oldReceives);
+                  receives = receives.merge(oldReceives);
                   eventHandlerReturnReason = nextEventHandlerReturnReason;
               } else {
                   // clean up receives
@@ -209,7 +207,6 @@ public abstract class Machine implements Serializable {
                 EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
                 // goto
                 if (!eventHandlerReturnReason.getGotoCond().isFalse()) {
-                    performedTransition = performedTransition.or(eventHandlerReturnReason.getGotoCond());
                     processStateTransition(
                             eventHandlerReturnReason.getGotoCond(),
                             nextEventHandlerReturnReason,
@@ -223,15 +220,6 @@ public abstract class Machine implements Serializable {
                 }
 
                 eventHandlerReturnReason = nextEventHandlerReturnReason;
-            }
-
-            // Process events from the deferred queue
-            pc = performedTransition.and(deferredQueue.isEnabledUnderGuard());
-            if (!pc.isFalse()) {
-                EventHandlerReturnReason deferredRaiseEventHandlerReturnReason = new EventHandlerReturnReason();
-                Message deferredMessage = deferredQueue.dequeueEntry(pc);
-                deferredRaiseEventHandlerReturnReason.raiseGuardedMessage(deferredMessage);
-                eventHandlerReturnReason = deferredRaiseEventHandlerReturnReason;
             }
         }
     }
@@ -278,6 +266,30 @@ public abstract class Machine implements Serializable {
         }
     }
 
+    /**
+     * Run events from the deferred queue
+     * @param pc Guard under which to run
+     */
+    void runDeferredEvents(Guard pc) {
+        List<Guard> deferredMessageGuards = new ArrayList<>();
+        List<Message> deferredMessages = new ArrayList<>();
+        while (true) {
+            Guard deferredPc = pc.and(getBlockedOnReceiveGuard().not()).and(deferredQueue.isEnabledUnderGuard());
+            if (!deferredPc.isFalse()) {
+                Message deferredMessage = deferredQueue.dequeueEntry(deferredPc);
+                deferredMessageGuards.add(deferredPc);
+                deferredMessages.add(deferredMessage);
+            } else {
+                break;
+            }
+        }
+        for (int i = 0; i < deferredMessageGuards.size(); i++) {
+            EventHandlerReturnReason deferredRaiseEventHandlerReturnReason = new EventHandlerReturnReason();
+            deferredRaiseEventHandlerReturnReason.raiseGuardedMessage(deferredMessages.get(i));
+            runOutcomesToCompletion(deferredMessageGuards.get(i), deferredRaiseEventHandlerReturnReason);
+        }
+    }
+
     public void processEventToCompletion(Guard pc, Message message) {
         final EventHandlerReturnReason eventRaiseEventHandlerReturnReason = new EventHandlerReturnReason();
         eventRaiseEventHandlerReturnReason.raiseGuardedMessage(message);
@@ -285,7 +297,14 @@ public abstract class Machine implements Serializable {
             this.incrementClock(pc);
             clock = clock.update(message.getVectorClock());
         }
+
+        // Process events from the deferred queue first
+        runDeferredEvents(pc);
+
         runOutcomesToCompletion(pc, eventRaiseEventHandlerReturnReason);
+
+        // Process events from the deferred queue again
+        runDeferredEvents(pc);
     }
 
     @Override

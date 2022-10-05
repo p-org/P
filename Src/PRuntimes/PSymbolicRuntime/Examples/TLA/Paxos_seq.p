@@ -298,6 +298,7 @@ machine Global {
         }
         i = i + 1;
       }
+      assert(sizeof(choices) != 0);
       choice = choices[choose(sizeof(choices))];
       if (!(choice in hVal[pld.acceptor])) {
         hVal[pld.acceptor] += (sizeof(hVal[pld.acceptor]), choice);

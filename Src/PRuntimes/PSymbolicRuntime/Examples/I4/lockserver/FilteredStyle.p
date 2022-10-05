@@ -121,6 +121,8 @@ machine Main {
   var clients : seq[int];
   var servers : seq[int];
   var global  : machine;
+  var maxNumRequests : int;
+  var numRequests : int;
   start state Init {
     entry {
       var i : int;
@@ -129,6 +131,7 @@ machine Main {
       var numServers : int;
       numClients = 5;
       numServers = 2;
+      maxNumRequests = 10;
       i = 0;
       while (i < numClients) {
         clients += (i, i);
@@ -144,6 +147,10 @@ machine Main {
     }
 
     on eNext do {
+      numRequests = numRequests + 1;
+      if (numRequests >= maxNumRequests) {
+          raise halt;
+      }
       if (choose()) {
           send global, eConnect;
       }

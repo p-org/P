@@ -295,6 +295,7 @@ machine Global {
         }
         i = i + 1;
       }
+      assert(sizeof(choices) != 0);
       choice = choices[choose(sizeof(choices))];
       hVal[pld.acceptor] += (choice); //(sizeof(hVal[pld.acceptor]), choice.2);
       SentP2B[pld.b] += (choice.2);

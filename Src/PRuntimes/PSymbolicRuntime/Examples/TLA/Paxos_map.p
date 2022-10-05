@@ -334,6 +334,7 @@ machine Global {
         }
         i = i + 1;
       }
+      assert(sizeof(choices) != 0);
       choice = choices[choose(sizeof(choices))];
       hVal[pld.acceptor][choice.0][choice.1][choice.2] = true;
       SentP2B[pld.b][choice.2] = true;

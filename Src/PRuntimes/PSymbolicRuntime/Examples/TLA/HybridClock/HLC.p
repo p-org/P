@@ -106,6 +106,7 @@ machine HLC {
         }
         i = i + 1;
       }
+      assert(sizeof(choices) != 0);
       i = choose(sizeof(choices));
       msg[choices[i]] = ((l = L[j], c = C[j]));
       pcL[j] = 0;

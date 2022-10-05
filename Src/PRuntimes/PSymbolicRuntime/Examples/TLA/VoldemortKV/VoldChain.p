@@ -301,12 +301,19 @@ machine Voldchain {
 
 machine Main {
   var voldchain : machine;
+  var maxNumRequests : int;
+  var numRequests : int;
   start state Init {
     entry {
+      maxNumRequests = 10;
       voldchain = new Voldchain((driver=this, N=2, C=1, STOP=1, FAILNUM=1));
       send voldchain, eNext;
     }
     on eNext do {
+      numRequests = numRequests + 1;
+      if (numRequests >= maxNumRequests) {
+          raise halt;
+      }
       send voldchain, eNext;
     }
   }

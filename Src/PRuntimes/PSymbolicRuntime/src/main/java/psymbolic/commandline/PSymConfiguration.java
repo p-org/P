@@ -18,6 +18,9 @@ public class PSymConfiguration implements Serializable {
     private OrchestrationMode orchestration = OrchestrationMode.None;
 
     @Getter @Setter
+    private int maxBacktrackTasksPerExecution = 2;
+
+    @Getter @Setter
     // debug mode (internal)
     private String debugMode = "default";
 

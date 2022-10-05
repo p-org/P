@@ -30,6 +30,16 @@ public class PSymOptions {
                 .build();
         options.addOption(orch);
 
+        // max number of backtrack tasks per execution
+        Option maxBacktrackTasksPerExecution = Option.builder("orchmt")
+                .longOpt("orchestration-max-tasks")
+                .desc("Max number of backtrack tasks to generate per execution")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Max Backtrack Tasks (integer)")
+                .build();
+        options.addOption(maxBacktrackTasksPerExecution);
+
         // test driver name
         Option debugMode = Option.builder("d")
                 .longOpt("debug")
@@ -304,6 +314,15 @@ public class PSymOptions {
                         default:
                             formatter.printHelp("orch", String.format("Unrecognized orchestration mode, got %s", option.getValue()), options, "Try \"--help\" option for details.");
                             formatter.printUsage(writer, 80, "orch", options);
+                    }
+                    break;
+                case "orchmt":
+                case "orchestration-max-tasks":
+                    try {
+                        config.setMaxBacktrackTasksPerExecution(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        formatter.printHelp("orch-mt", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                        formatter.printUsage(writer, 80, "orch-mt", options);
                     }
                     break;
                 case "d":

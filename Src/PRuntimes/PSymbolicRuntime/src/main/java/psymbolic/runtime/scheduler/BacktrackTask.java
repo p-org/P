@@ -14,7 +14,7 @@ import java.util.List;
 public class BacktrackTask implements Serializable {
     @Getter
     private int id;
-    @Setter
+    @Getter @Setter
     private BigDecimal prefixCoverage = new BigDecimal(0);
     @Getter
     private BigDecimal coverage = new BigDecimal(0);

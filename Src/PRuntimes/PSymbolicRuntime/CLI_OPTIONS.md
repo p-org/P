@@ -9,6 +9,8 @@ Here is a summary of these options:
     -orch,--orchestration <Orchestration Mode (string)>               Orchestration options: random,
                                                                       coverage-astar, coverage-estimate,
                                                                       dfs, none                                                                     
+    -orchmt,--orchestration-max-tasks <Max Backtrack Tasks (integer)> Max number of backtrack tasks
+                                                                      to generate per execution
 
 [Configure Symbolic Width]
     -sb,--sched-choice-bound <Max Schedule Choice Bound (integer)>   Max scheduling choice bound at

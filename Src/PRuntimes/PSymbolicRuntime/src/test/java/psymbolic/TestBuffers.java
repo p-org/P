@@ -46,13 +46,13 @@ public class TestBuffers {
 
     @Test
     public void testQueue() {
-        PSymbolic.initializeDefault();
+        PSymbolic.initializeDefault("output/testCases/testQueue");
         testBuffer(new EventQueue(null));
     }
 
     @Test
     public void testBag() {
-        PSymbolic.initializeDefault();
+        PSymbolic.initializeDefault("output/testCases/testBag");
         testBuffer(new EventBag((null)));
     }
 }

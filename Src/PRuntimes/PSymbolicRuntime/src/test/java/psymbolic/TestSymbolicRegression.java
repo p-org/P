@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.function.Executable;
+import psymbolic.runtime.logger.Log4JConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  */
 public class TestSymbolicRegression {
     private String runArgs = "-sb 1 -cb 1 -me 2";
+    private String outputDirectory = "output/testCases";
 
     Map<String, List<String>> getFiles(String testDirPath, String[] excluded) {
         Map<String, List<String>> result = new HashMap<>();
@@ -45,17 +47,21 @@ public class TestSymbolicRegression {
                 e.printStackTrace();
             }
         }
-        System.out.println(String.format("  Found %s tests in %s", result.size(), testDirPath));
+        PSymTestLogger.log(String.format("  Found %s tests in %s", result.size(), testDirPath));
         return result;
     }
 
     void runDynamicTest(int expected, List<String> testCasePaths, String testCasePath, String runArgs, Collection<DynamicTest> dynamicTests) {
-        Executable exec = () -> Assertions.assertEquals(expected, TestCaseExecutor.runTestCase(testCasePaths, testCasePath, runArgs));
+        Executable exec = () -> Assertions.assertEquals(expected, TestCaseExecutor.runTestCase(testCasePaths, testCasePath, runArgs, outputDirectory));
         DynamicTest dynamicTest = DynamicTest.dynamicTest(testCasePath, () -> assertTimeoutPreemptively(Duration.ofMinutes(60), exec));
         dynamicTests.add(dynamicTest);
     }
 
     Collection<DynamicTest> loadTests(String testDirPath, String[] excluded) {
+        if (!PSymTestLogger.isInitialized()) {
+            Log4JConfig.configureLog4J();
+            PSymTestLogger.Initialize(outputDirectory);
+        }
 
         Collection<DynamicTest> dynamicTests = new ArrayList<>();
 

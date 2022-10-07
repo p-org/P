@@ -12,8 +12,6 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static psymbolic.Utils.splitPath;
-
 
 public class TestCaseExecutor {
     private static int testCounter = 0;
@@ -45,7 +43,7 @@ public class TestCaseExecutor {
      * @param testCasePaths paths to test case; only accepts list of p files
      * @return 0 = successful, 1 = compile error, 2 = dynamic error
      */
-    static int runTestCase(List<String> testCasePaths, String testCasePathPrefix, String runArgs) {
+    static int runTestCase(List<String> testCasePaths, String testCasePathPrefix, String runArgs, String mainOutputDirectory) {
         testCounter++;
 
         // Invoke the P compiler to compile the test Case
@@ -64,9 +62,9 @@ public class TestCaseExecutor {
         testName = testName.replaceAll("_", "");
         testName = testName.replaceAll("-", "");
 
-        String outputDirectory = "output/testCases/" + testName;
+        String outputDirectory = mainOutputDirectory + "/" + testName;
         recreateDirectory(outputDirectory);
-        System.out.println(String.format("  [%d] %s", testCounter, testName));
+        PSymTestLogger.log(String.format("  [%d] %s", testCounter, testName));
 
         List<String> pTestCasePaths = testCasePaths.stream().filter(p -> p.contains(".p")).collect(Collectors.toList());
         String testCasePathsString = String.join(" ", pTestCasePaths);
@@ -75,7 +73,7 @@ public class TestCaseExecutor {
         try {
             String pCompileCommand = String.format("dotnet %s %s -generate:Symbolic -t:%s -outputDir:%s"
                     , compilerDirectory, testCasePathsString, testName, outputDirectory);
-            System.out.println(String.format("      compiling"));
+            PSymTestLogger.log(String.format("      compiling"));
             process = buildCompileProcess(pCompileCommand, outputDirectory);
 
             StreamGobbler errorStreamGobbler = new StreamGobbler(process.getErrorStream(), System.out::println);
@@ -85,11 +83,11 @@ public class TestCaseExecutor {
             int exitCode = process.waitFor();
 
             if (exitCode != 0) {
-                TraceLogger.logMessage("Compilation failure.");
+                PSymTestLogger.log(String.format("      compilation failure"));
                 return 1;
             }
         } catch (IOException | InterruptedException e) {
-            TraceLogger.logMessage("Compilation failure.");
+            PSymTestLogger.log(String.format("      compilation failure"));
             e.printStackTrace();
         }
 
@@ -99,7 +97,7 @@ public class TestCaseExecutor {
         try {
             String runJarCommand = String.format("java -ea -jar -Xms2G %s -p %s -o %s %s",
                     pathToJar, testName, outputDirectory+"/output", runArgs);
-            System.out.println(String.format("      running"));
+            PSymTestLogger.log(String.format("      running"));
             process = buildRunProcess(runJarCommand, outputDirectory);
 
             StreamGobbler streamGobbler = new StreamGobbler(process.getErrorStream(), System.out::println);
@@ -109,26 +107,26 @@ public class TestCaseExecutor {
             int exitCode = process.waitFor();
 
             if (exitCode == 0) {
-                System.out.println(String.format("      ok"));
+                PSymTestLogger.log(String.format("      ok"));
                 return 0;
             } else if (exitCode == 2) {
-                System.out.println(String.format("      bug found"));
+                PSymTestLogger.log(String.format("      bug"));
                 return 2;
             } else if (exitCode == 3) {
-                System.out.println(String.format("      timeout"));
+                PSymTestLogger.log(String.format("      timeout"));
                 return 2;
             } else if (exitCode == 4) {
-                System.out.println(String.format("      memout"));
+                PSymTestLogger.log(String.format("      memout"));
                 return 2;
             } else {
-                System.out.println(String.format("      error"));
+                PSymTestLogger.log(String.format("      error"));
                 return 2;
             }
         } catch (IOException | InterruptedException e) {
-            TraceLogger.logMessage("Runtime failure.");
+            PSymTestLogger.error(String.format("      fail"));
             e.printStackTrace();
         }
-        System.out.println(String.format("      fail"));
+        PSymTestLogger.error(String.format("      fail"));
         return -1;
     }
 

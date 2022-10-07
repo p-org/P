@@ -172,12 +172,13 @@ public class PSymbolic {
         return classes;
     }
 
-    public static void initializeDefault() {
+    public static void initializeDefault(String outputFolder) {
         Log4JConfig.configureLog4J();
         SearchLogger.disable();
         TraceLogger.disable();
         // parse the commandline arguments to create the configuration
         PSymConfiguration config = PSymOptions.ParseCommandlineArgs(new String[0]);
+        config.setOutputFolder(outputFolder);
         PSymLogger.ResetAllConfigurations(config.getVerbosity(), config.getProjectName(), config.getOutputFolder());
         SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
         SolverStats.setTimeLimit(config.getTimeLimit());

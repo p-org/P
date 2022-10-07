@@ -35,6 +35,9 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
                  return new PrimitiveVS<>((Machine)null);
              }
          }
+         if (anyVal.isEmptyVS()) {
+             return def.getCopy();
+         }
 
          Class<? extends ValueSummary> type = def.getClass();
          Guard typeGuard = anyVal.getGuardFor(type);

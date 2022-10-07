@@ -18,7 +18,7 @@ event sharer_id: machine;
 //Host machine 
 machine Main {
 	var curr_client : machine;
-	var clients : (machine, machine, machine);
+	var clients : seq[machine];
 	var curr_cpu : machine;
 	var sharer_list : seq[machine];
 	var is_curr_req_excl : bool;
@@ -29,12 +29,11 @@ machine Main {
 		entry {
 			
 			temp = new Client(this, false);
-			clients.0 = temp;
+			clients += (0, temp);
 			temp = new Client(this, false);
-			clients.1 = temp;
+			clients += (0, temp);
 			temp = new Client(this, false);
-			clients.2 = temp;
-			curr_client = null as machine;
+			clients += (0, temp);
 			curr_cpu = new CPU(clients);
 			assert(sizeof(sharer_list) == 0);
 			raise unit;
@@ -232,10 +231,11 @@ machine Client {
 
 //Environment machine in the form of a CPU which makes request to the clients
 machine CPU {
-	var cache : (machine, machine, machine);
+	var cache : seq[machine];
+        var req_count : int;
 
 	start state init {
-		entry (payload: (machine, machine, machine)) {
+		entry (payload: seq[machine]) {
 			cache = payload;
 			raise unit;
 		}
@@ -247,29 +247,32 @@ machine CPU {
 			if ($)
 			{
 				if ($)
-			              send cache.0, ask_share;
+			              send cache[0], ask_share;
 				else
-			              send cache.0, ask_excl;
+			              send cache[0], ask_excl;
 			}
 			else if ($)
 			{
 				if ($)
-			              send cache.1, ask_share;
+			              send cache[1], ask_share;
 				else 
-			              send cache.1, ask_excl;
+			              send cache[1], ask_excl;
 			}
 			else
 			{
 				if ($)
 				{
-				    send cache.2, ask_share;
+				    send cache[2], ask_share;
 				}
 				else
 				{
-				    send cache.2, ask_excl;
+				    send cache[2], ask_excl;
 				}
 			}
-			raise unit;
+                        if (req_count < 3) {
+                            req_count = req_count + 1;
+			    raise unit;
+                        }
 		}
 		on unit goto makeReq;
 	}

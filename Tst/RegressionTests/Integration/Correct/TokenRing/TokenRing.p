@@ -67,9 +67,7 @@ machine Node assume 100 {
 
     state StopSending_Main_Node {
       entry (payload: machine) {
-        if (IsSending == true)
-          send NextMachine, Empty;
-        else 
+        if (payload != this)
           send NextMachine, Done, payload;
         raise Unit;
       }
@@ -89,6 +87,7 @@ machine Main {
 		    var Rand2 : bool;
 		    var RandSrc : machine;
 		    var RandDst : machine;
+                    var loopCount : int;
 
     start state Boot_Main_Ring4 {
       entry {
@@ -156,7 +155,10 @@ machine Main {
                    RandDst = N4;
                    
                 send RandSrc, Send, RandDst;
-                raise Unit;
+                if (loopCount < 1) {
+                  loopCount = loopCount + 1;
+                  raise Unit;
+                }
       }
 
       on Unit goto RandomComm_Main_Ring4;

@@ -1957,12 +1957,12 @@ namespace Plang.Compiler.Backend.Symbolic
                         case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
                             context.Write(output, "(");
                             WriteExpr(context, output, pcScope, coerceExpr.SubExpr);
-                            context.Write(output, $").apply({GetDefaultValue(context, pcScope, PrimitiveType.Float)}, x -> x.floatValue())");
+                            context.Write(output, $").apply(x -> x.floatValue())");
                             break;
                         case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Int):
                             context.Write(output, "(");
                             WriteExpr(context, output, pcScope, coerceExpr.SubExpr);
-                            context.Write(output, $").apply({GetDefaultValue(context, pcScope, PrimitiveType.Int)}, x -> x.intValue())");
+                            context.Write(output, $").apply(x -> x.intValue())");
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(

@@ -174,6 +174,11 @@ public abstract class Machine implements Serializable {
     }
 
     void runOutcomesToCompletion(Guard pc, EventHandlerReturnReason eventHandlerReturnReason) {
+        pc = pc.and(hasHalted().getGuardFor(false));
+        if (pc.isFalse()) {
+            return;
+        }
+
         int steps = 0;
         // Outer loop: process sequences of 'goto's, 'raise's, 'push's, 'pop's, and events from the deferred queue.
         while (!eventHandlerReturnReason.isNormalReturn()) {
@@ -201,7 +206,9 @@ public abstract class Machine implements Serializable {
 
             // Inner loop: process sequences of 'goto's and 'raise's.
             while (!eventHandlerReturnReason.isNormalReturn()) {
-                Assert.prop(scheduler.getMaxInternalSteps() < 0 || steps < scheduler.getMaxInternalSteps(), scheduler,
+                Assert.prop(scheduler.getMaxInternalSteps() < 0 || steps < scheduler.getMaxInternalSteps(),
+                        String.format("Possible infinite loop found in machine %s", this),
+                        scheduler,
                         pc.and(eventHandlerReturnReason.getGotoCond().or(eventHandlerReturnReason.getRaiseCond())));
                 steps++;
                 EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();

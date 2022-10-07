@@ -274,7 +274,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
         // make sure it is always in range
         if (!inRange.getGuardFor(false).isFalse()) {
             // there is a possibility that the index is out-of-bounds
-            throw new IndexOutOfBoundsException();
+            throw new IndexOutOfBoundsException("Index was out of range. Must be non-negative and less than the size of the collection.");
         }
 
         ListVS<T> merger = null;

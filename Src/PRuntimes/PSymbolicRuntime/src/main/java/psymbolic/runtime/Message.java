@@ -67,6 +67,16 @@ public class Message implements ValueSummary<Message> {
         return BooleanVS.trueUnderGuard(cond);
     }
 
+    public boolean hasNullEvent() {
+        PrimitiveVS<Event> events = this.getEvent();
+        for (GuardedValue<Event> event : events.getGuardedValues()) {
+            if (event.getValue().equals(Event.nullEvent) && !event.getGuard().isFalse()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Message getForMachine(Machine machine) {
         Guard cond = this.target.getGuardFor(machine);
         return this.restrict(cond);

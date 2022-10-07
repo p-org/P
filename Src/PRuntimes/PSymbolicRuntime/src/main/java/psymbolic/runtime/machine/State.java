@@ -83,11 +83,14 @@ public abstract class State implements Serializable {
                     handledPc = handledPc.or(guardedValue.getGuard());
                 }
             }
-            if (event.equals(Event.haltMachine)) {
+            if (event.equals(Event.haltEvent)) {
                 machine.halt(eventPc.and(handledPc.not()));
             }
             else if (!ValueSummaryChecks.hasSameUniverse(handledPc, eventPc)) {
-                new BugFoundException("State " + this.name + " missing handler for event: " + event, eventPc);
+                throw new BugFoundException(
+                        String.format("%s received event %s that cannot be handled in state %s",
+                                machine, event, this.name),
+                        eventPc);
             }
         }
     }

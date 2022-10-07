@@ -903,6 +903,9 @@ public class Scheduler implements SymbolicSearch {
 
     public void announce(PrimitiveVS<Event> names, UnionVS payload) {
         Message event = new Message(names, new PrimitiveVS<>(), payload);
+        if (event.hasNullEvent()) {
+            throw new RuntimeException(String.format("Machine cannot announce a null event: %s", event));
+        }
         runMonitors(event);
     }
 

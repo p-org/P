@@ -1,5 +1,7 @@
 package psymbolic.valuesummary;
 
+import psymbolic.runtime.Event;
+
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -225,15 +227,23 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(PrimitiveVS<T> cmp_orig, Guard pc) {
         PrimitiveVS<T> cmp;
+        boolean isNullCompare = false;
         if (cmp_orig == null) {
+            isNullCompare = true;
             cmp = new PrimitiveVS<>((T) null);
         } else {
             cmp = cmp_orig;
         }
         Guard equalCond = Guard.constFalse();
         for (Map.Entry<T, Guard> entry : this.guardedValues.entrySet()) {
-            if (cmp.guardedValues.containsKey(entry.getKey())) {
-                equalCond = equalCond.or(entry.getValue().and(cmp.guardedValues.get(entry.getKey())));
+            if (isNullCompare) {
+                if (entry.getKey() == null || entry.getKey().equals(Event.nullEvent)) {
+                    equalCond = equalCond.or(entry.getValue());
+                }
+            } else {
+                if (cmp.guardedValues.containsKey(entry.getKey())) {
+                    equalCond = equalCond.or(entry.getValue().and(cmp.guardedValues.get(entry.getKey())));
+                }
             }
         }
         equalCond = equalCond.or(getUniverse().and(cmp.getUniverse()).not());

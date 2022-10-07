@@ -13,7 +13,7 @@ namespace Plang.Compiler.Backend.Symbolic
 {
     public class Continuation : Function
     {
-        public Continuation(IReadOnlyDictionary<PEvent, Function> cases, IPStmt after, ParserRuleContext location) : base(null, location)
+        public Continuation(string name, IReadOnlyDictionary<PEvent, Function> cases, IPStmt after, ParserRuleContext location) : base(name, location)
         {
             Cases = cases;
             After = after;

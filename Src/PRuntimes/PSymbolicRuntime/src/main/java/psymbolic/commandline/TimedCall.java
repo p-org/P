@@ -15,7 +15,7 @@ public class TimedCall implements Callable<Integer> {
     }
 
     @Override
-    public Integer call() throws MemoutException, BugFoundException, TimeoutException {
+    public Integer call() throws MemoutException, BugFoundException, TimeoutException, InterruptedException {
         try {
             if (!this.resume)
                 this.scheduler.doSearch();
@@ -26,6 +26,8 @@ public class TimedCall implements Callable<Integer> {
         } catch (BugFoundException e) {
             throw e;
         } catch (TimeoutException e) {
+            throw e;
+        } catch (InterruptedException e) {
             throw e;
         }
         return 0;

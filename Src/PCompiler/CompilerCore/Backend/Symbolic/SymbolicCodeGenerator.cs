@@ -411,6 +411,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, "@Override public void exit(Guard pc, Machine machine) {");
 
                 var exitFunc = state.Exit;
+                exitFunc.Name = $"{context.GetNameForDecl(state)}_exit";
                 Debug.Assert(!(exitFunc.CanChangeState ?? false));
                 Debug.Assert(!(exitFunc.CanRaiseEvent ?? false));
                 if (exitFunc.Signature.Parameters.Count() != 0)
@@ -856,6 +857,9 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (stmt)
             {
                 case AssignStmt assignStmt:
+                    Debug.Assert(assignStmt != null);
+                    Debug.Assert(assignStmt.Value != null);
+                    Debug.Assert(assignStmt.Location != null);
                     CheckIsSupportedAssignment(assignStmt.Value.Type, assignStmt.Location.Type);
 
                     WriteWithLValueMutationContext(
@@ -1305,8 +1309,11 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 var afterCaseScope = context.FreshPathConstraintScope();
                 context.WriteLine(output, $"Guard {afterCaseScope.PathConstraintVar} = {rootPCScope.PathConstraintVar}.and(deferGuard.not());");
+                context.WriteLine(output, $"if (!{afterCaseScope.PathConstraintVar}.isFalse())");
+                context.WriteLine(output, "{");
                 var afterCaseContext = ControlFlowContext.FreshFuncContext(context, afterCaseScope);
                 WriteStmt(continuation, context, output, afterCaseContext, continuation.After);
+                context.WriteLine(output, "}");
             }
             context.WriteLine(output, "return deferGuard;");
             context.WriteLine(output, "}");
@@ -1950,12 +1957,12 @@ namespace Plang.Compiler.Backend.Symbolic
                         case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
                             context.Write(output, "(");
                             WriteExpr(context, output, pcScope, coerceExpr.SubExpr);
-                            context.Write(output, $").apply({GetDefaultValue(context, pcScope, PrimitiveType.Float)}, x -> x.floatValue())");
+                            context.Write(output, $").apply(x -> x.floatValue())");
                             break;
                         case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Int):
                             context.Write(output, "(");
                             WriteExpr(context, output, pcScope, coerceExpr.SubExpr);
-                            context.Write(output, $").apply({GetDefaultValue(context, pcScope, PrimitiveType.Int)}, x -> x.intValue())");
+                            context.Write(output, $").apply(x -> x.intValue())");
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(
@@ -2433,7 +2440,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"new {GetSymbolicType(type)}()";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
-                    return $"new {GetSymbolicType(type)}()";
+                    return $"new {GetSymbolicType(type)}((Machine) null)";
                 case SequenceType _:
                     return $"new {GetSymbolicType(type)}(Guard.constTrue())";
                 case MapType _:

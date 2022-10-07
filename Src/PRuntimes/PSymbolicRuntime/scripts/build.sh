@@ -8,7 +8,7 @@ set -e
 pushd .
 echo -e "${ORANGE} ---- Building PSym runtime ----${NOCOLOR}"
 mvn clean initialize -q
-mvn install -q
+mvn install -Dmaven.test.skip -q
 popd
 
 pushd .

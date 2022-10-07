@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.function.Executable;
+import psymbolic.runtime.logger.Log4JConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  *  Place test cases as source P files at ../Tst/SymbolicRegressionTests/
  */
 public class TestSymbolicRegression {
+    private String runArgs = "-sb 1 -cb 1 -me 2";
+    private String outputDirectory = "output/testCases";
 
     Map<String, List<String>> getFiles(String testDirPath, String[] excluded) {
         Map<String, List<String>> result = new HashMap<>();
@@ -38,23 +41,27 @@ public class TestSymbolicRegression {
                     projectFilesStream = projectFilesStream.filter(f -> Arrays.stream(excluded).noneMatch(f::contains));
                 }
                 List<String> projectFiles = projectFilesStream.collect(Collectors.toList());
-                projectFiles.forEach(System.out::println);
                 if (!projectFiles.isEmpty())
                     result.put(dir.toString(), projectFiles);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+        PSymTestLogger.log(String.format("  Found %s tests in %s", result.size(), testDirPath));
         return result;
     }
 
-    void runDynamicTest(int expected, List<String> testCasePaths, String testCasePath, Collection<DynamicTest> dynamicTests) {
-        Executable exec = () -> Assertions.assertEquals(expected, TestCaseExecutor.runTestCase(testCasePaths, testCasePath));
+    void runDynamicTest(int expected, List<String> testCasePaths, String testCasePath, String runArgs, Collection<DynamicTest> dynamicTests) {
+        Executable exec = () -> Assertions.assertEquals(expected, TestCaseExecutor.runTestCase(testCasePaths, testCasePath, runArgs, outputDirectory));
         DynamicTest dynamicTest = DynamicTest.dynamicTest(testCasePath, () -> assertTimeoutPreemptively(Duration.ofMinutes(60), exec));
         dynamicTests.add(dynamicTest);
     }
 
     Collection<DynamicTest> loadTests(String testDirPath, String[] excluded) {
+        if (!PSymTestLogger.isInitialized()) {
+            Log4JConfig.configureLog4J();
+            PSymTestLogger.Initialize(outputDirectory);
+        }
 
         Collection<DynamicTest> dynamicTests = new ArrayList<>();
 
@@ -69,18 +76,20 @@ public class TestSymbolicRegression {
 
         for (String testDir : testDirs) {
             Map<String, List<String>> paths = getFiles(testDir, excluded);
-            Executable exec;
+            List<String> pathKeys = new ArrayList<>(paths.keySet());
+            Collections.sort(pathKeys, String.CASE_INSENSITIVE_ORDER);
+
             if (testDir.contains("Correct")) {
-                for (Map.Entry<String, List<String>> entry : paths.entrySet()) {
-                    runDynamicTest(0, entry.getValue(), entry.getKey(), dynamicTests);
+                for (String key : pathKeys) {
+                    runDynamicTest(0, paths.get(key), key, runArgs, dynamicTests);
                 }
             } else if (testDir.contains("DynamicError")) {
-                for (Map.Entry<String, List<String>> entry : paths.entrySet()) {
-                    runDynamicTest(2, entry.getValue(), entry.getKey(), dynamicTests);
+                for (String key : pathKeys) {
+                    runDynamicTest(2, paths.get(key), key, runArgs, dynamicTests);
                 }
             } else if (testDir.contains("StaticError")) {
-                for (Map.Entry<String, List<String>> entry : paths.entrySet()) {
-                    runDynamicTest(1, entry.getValue(), entry.getKey(), dynamicTests);
+                for (String key : pathKeys) {
+                    runDynamicTest(1, paths.get(key), key, runArgs, dynamicTests);
                 }
             }
         }
@@ -89,6 +98,12 @@ public class TestSymbolicRegression {
 
     @Test
     void Dummy() {}
+
+    @TestFactory
+    //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+    public Collection<DynamicTest>  loadPingPongTests() {
+        return loadTests("./SymbolicRegressionTests/PingPong", null);
+    }
 
     @TestFactory
     //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)

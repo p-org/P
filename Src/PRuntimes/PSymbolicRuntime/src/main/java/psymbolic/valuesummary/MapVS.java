@@ -86,9 +86,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
 
         for (Map.Entry<K, V> entry : entries.entrySet()) {
             final V newValue = entry.getValue().restrict(guard);
-            if (!newValue.isEmptyVS()) {
-                newEntries.put(entry.getKey(), newValue);
-            }
+            newEntries.put(entry.getKey(), newValue);
         }
         return new MapVS<>(newKeys, newEntries);
     }
@@ -140,12 +138,16 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
 
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(MapVS<K, T, V> cmp, Guard pc) {
+        if (cmp == null) {
+            return BooleanVS.trueUnderGuard(Guard.constFalse());
+        }
+
         Guard equalCond = Guard.constFalse();
         Guard guard = BooleanVS.getTrueGuard(this.keys.symbolicEquals(cmp.keys, Guard.constTrue()));
         ListVS<T> thisSet = this.restrict(guard).getKeys();
         ListVS<T> cmpSet = cmp.restrict(guard).getKeys();
 
-        if (thisSet.isEmpty() && cmpSet.isEmpty()) return BooleanVS.trueUnderGuard(pc.and(guard));
+        if (thisSet.isEmpty() && cmpSet.isEmpty()) return BooleanVS.trueUnderGuard(pc.and(guard)).restrict(getUniverse().and(cmp.getUniverse()));
 
         while (!thisSet.isEmpty()) {
             T thisVal = thisSet.get(new PrimitiveVS<>(0).restrict(guard));
@@ -160,7 +162,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
             cmpSet = cmpSet.removeAt(new PrimitiveVS<>(0).restrict(thisVal.getUniverse()));
         }
 
-        return BooleanVS.trueUnderGuard(pc.and(equalCond));
+        return BooleanVS.trueUnderGuard(pc.and(equalCond)).restrict(getUniverse().and(cmp.getUniverse()));
     }
 
     @Override
@@ -196,7 +198,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
      * @return The updated MapVS
      */
     public MapVS<K, T, V> add(T keySummary, V valSummary) {
-        assert(ValueSummaryChecks.hasSameUniverse(keySummary.getUniverse(), valSummary.getUniverse()));
+//        assert(ValueSummaryChecks.hasSameUniverse(keySummary.getUniverse(), valSummary.getUniverse()));
         return put(keySummary, valSummary);
     }
 

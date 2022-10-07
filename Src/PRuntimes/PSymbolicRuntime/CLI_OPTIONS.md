@@ -5,6 +5,13 @@ PSym runtime provides a range of options to configure the model exploration.
 Here is a summary of these options:
 
 ````
+[Configure Orchestration]
+    -orch,--orchestration <Orchestration Mode (string)>               Orchestration options: random,
+                                                                      coverage-astar, coverage-estimate,
+                                                                      dfs, none                                                                     
+    -orchmt,--orchestration-max-tasks <Max Backtrack Tasks (integer)> Max number of backtrack tasks
+                                                                      to generate per execution
+
 [Configure Symbolic Width]
     -sb,--sched-choice-bound <Max Schedule Choice Bound (integer)>   Max scheduling choice bound at
                                                                      each depth during the search
@@ -45,11 +52,15 @@ Here is a summary of these options:
                                                                      backtrack state
     -w,--write                                                       Enable writing program state
 
-[Configure Incremental Backtracks, Filtering, Queue Semantics]
-    -nb,--no-backtrack                                               Disable incremental backtracking
+[Configure Backtracks, Filtering, Queue Semantics]
+    -nb,--no-backtrack                                               Disable stateful backtracking
     -nf,--no-filters                                                 Disable filter-based reductions
     -rq,--receiver-queue                                             Disable sender queue reduction to
                                                                      get receiver queue semantics
+
+[Configure State Caching]
+    -sc,--state-caching                                              Enable state caching via
+                                                                     enumeration of exact states
 
 [Configure Randomness]
     -nr,--no-random                                                  Disable randomization

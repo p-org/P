@@ -1,6 +1,7 @@
 package psymbolic.valuesummary;
 
 import psymbolic.runtime.Message;
+import psymbolic.runtime.machine.Machine;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -29,6 +30,15 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
          if (def instanceof UnionVS) {
              return anyVal;
          }
+         if (anyVal == null) {
+             if (def instanceof PrimitiveVS) {
+                 return new PrimitiveVS<>((Machine)null);
+             }
+         }
+         if (anyVal.isEmptyVS()) {
+             return def.getCopy();
+         }
+
          Class<? extends ValueSummary> type = def.getClass();
          Guard typeGuard = anyVal.getGuardFor(type);
          Guard pcNotDefined = pc.and(typeGuard.not());

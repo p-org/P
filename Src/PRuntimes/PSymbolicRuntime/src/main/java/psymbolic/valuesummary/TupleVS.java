@@ -124,6 +124,10 @@ public class TupleVS implements ValueSummary<TupleVS> {
 
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(TupleVS cmp, Guard pc) {
+        if (cmp == null) {
+            return BooleanVS.trueUnderGuard(Guard.constFalse());
+        }
+
         if (fields.length != cmp.fields.length) {
             return new PrimitiveVS<>(false);
         }
@@ -131,7 +135,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
                 .mapToObj((i) -> fields[i].symbolicEquals(cmp.fields[i], pc).getGuardFor(true))
                 .reduce(Guard::and)
                 .orElse(Guard.constTrue());
-        return BooleanVS.trueUnderGuard(pc.and(tupleEqual));
+        return BooleanVS.trueUnderGuard(pc.and(tupleEqual).and(getUniverse()).and(cmp.getUniverse()));
     }
 
     @Override

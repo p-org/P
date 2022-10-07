@@ -1,6 +1,7 @@
 package psymbolic;
 
 import org.junit.jupiter.api.Test;
+import psymbolic.commandline.PSymbolic;
 import psymbolic.runtime.*;
 import psymbolic.runtime.Message;
 import psymbolic.runtime.machine.buffer.EventBag;
@@ -45,11 +46,13 @@ public class TestBuffers {
 
     @Test
     public void testQueue() {
+        PSymbolic.initializeDefault();
         testBuffer(new EventQueue(null));
     }
 
     @Test
     public void testBag() {
+        PSymbolic.initializeDefault();
         testBuffer(new EventBag((null)));
     }
 }

@@ -19,7 +19,7 @@ This installs PSym with the default BDD backend. For detailed solver options, ch
 
 ### Example
     
-    ./scripts/run_psym.sh Examples/tests/pingPong/pingPongNew/ psymExample 
+    ./scripts/run_psym.sh Examples/tests/PingPong/ psymExample 
 
 ### Output
 PSym creates a directory `` output/<project-name> `` which contains results, statistics and logs relating to the run.

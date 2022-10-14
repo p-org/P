@@ -34,6 +34,11 @@ public class TestSymbolicRegression {
         Map<String, List<String>> result = new HashMap<>();
         File[] directories = new File(testDirPath).listFiles(File::isDirectory);
         for (File dir : directories) {
+            if (excluded != null) {
+                if (Arrays.stream(excluded).anyMatch(dir.toString()::equals)) {
+                    continue;
+                }
+            }
             try (Stream<Path> walk = Files.walk(Paths.get(dir.toURI()))) {
                 Stream<String> projectFilesStream = walk.map(Path::toString)
                         .filter(f -> f.endsWith(".java") || f.endsWith(".p"));
@@ -106,6 +111,12 @@ public class TestSymbolicRegression {
     }
 
     @TestFactory
+        //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+    Collection<DynamicTest>  loadSymbolicRegressionsTests() {
+        return loadTests("./SymbolicRegressionTests/Integration", null);
+    }
+
+    @TestFactory
     //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     public Collection<DynamicTest>  loadIntegrationTests() {
         return loadTests("../../../Tst/RegressionTests/Integration", null);
@@ -113,14 +124,13 @@ public class TestSymbolicRegression {
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadDataTypeTests() {
-        return loadTests("../../../Tst/RegressionTests/Feature4DataTypes", null);
+    Collection<DynamicTest>  loadCombinedTests() {
+        return loadTests("../../../Tst/RegressionTests/Combined", null);
     }
 
     @TestFactory
-        //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadExpressionTests() {
-        return loadTests("../../../Tst/RegressionTests/Feature3Exprs", null);
+    Collection<DynamicTest>  loadSMLevelDeclsTests() {
+        return loadTests("../../../Tst/RegressionTests/Feature1SMLevelDecls", null);
     }
 
     @TestFactory
@@ -131,12 +141,23 @@ public class TestSymbolicRegression {
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadSymbolicRegressionsTests() {
-        return loadTests("./SymbolicRegressionTests/Integration", null);
+    Collection<DynamicTest>  loadExpressionTests() {
+        String[] excluded = new String[]{
+                "../../../Tst/RegressionTests/Feature3Exprs/Correct/ShortCircuitEval"
+        };
+
+        return loadTests("../../../Tst/RegressionTests/Feature3Exprs", excluded);
     }
 
     @TestFactory
-    Collection<DynamicTest>  loadSMLevelDeclsTests() {
-        return loadTests("../../../Tst/RegressionTests/Feature1SMLevelDecls", null);
+        //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+    Collection<DynamicTest>  loadDataTypeTests() {
+        return loadTests("../../../Tst/RegressionTests/Feature4DataTypes", null);
+    }
+
+    @TestFactory
+        //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+    Collection<DynamicTest>  loadModuleSystemTests() {
+        return loadTests("../../../Tst/RegressionTests/Feature5ModuleSystem", null);
     }
 }

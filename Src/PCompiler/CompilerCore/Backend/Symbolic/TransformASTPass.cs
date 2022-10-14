@@ -48,8 +48,14 @@ namespace Plang.Compiler.Backend.Symbolic
                     if (function.IsForeign)
                         return function;
                     else
-                        // return null;
-                        return function;
+                        if (function.CanReceive == true)
+                        {
+                            return null;
+                        }
+                        else
+                        {
+                            return function;
+                        }
                 case Machine machine:
                     if (machine.Receives.Events.GetEnumerator().MoveNext())
                         return TransformMachine(machine);
@@ -265,7 +271,7 @@ namespace Plang.Compiler.Backend.Symbolic
                      foreach (var statement in compound.Statements) InlineStmt(function, statement, body);
                      break;
                  case FunCallStmt call:
-                     if ((!call.Function.IsForeign) & (call.Function.CanReceive ?? true))
+                     if ((!call.Function.IsForeign) & (call.Function.CanReceive == true))
                      {
                          InlineInFunction(call.Function);
                          GenerateInline(function, call.Function, call.ArgsList, body, call.SourceLocation);

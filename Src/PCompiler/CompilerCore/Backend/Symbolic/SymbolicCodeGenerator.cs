@@ -1122,6 +1122,15 @@ namespace Plang.Compiler.Backend.Symbolic
                 case InsertStmt insertStmt:
                     {
                         var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
+                        var isSet = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Set);
+                        PLanguageType elementType = null;
+                        if (isMap) {
+                            elementType = ((MapType) insertStmt.Variable.Type.Canonicalize()).ValueType;
+                        } else if (isSet) {
+                            elementType = ((SetType) insertStmt.Variable.Type.Canonicalize()).ElementType;
+                        } else {
+                            elementType = ((SequenceType) insertStmt.Variable.Type.Canonicalize()).ElementType;
+                        }
 
                         WriteWithLValueMutationContext(
                             context,
@@ -1139,7 +1148,14 @@ namespace Plang.Compiler.Backend.Symbolic
                                     context.Write(output, $".insert(");
                                 WriteExpr(context, output, flowContext.pcScope, insertStmt.Index);
                                 context.Write(output, ", ");
+
+                                string castPrefix = "";
+                                if (elementType != null) {
+                                    castPrefix = GetInlineCastPrefix(insertStmt.Value.Type, elementType, context, flowContext.pcScope);
+                                }
+                                context.Write(output, castPrefix);
                                 WriteExpr(context, output, flowContext.pcScope, insertStmt.Value);
+                                if (castPrefix != "") context.Write(output, ")");
                                 context.WriteLine(output, ");");
                             }
                         );
@@ -1903,7 +1919,15 @@ namespace Plang.Compiler.Backend.Symbolic
                         }
                         WriteExpr(context, output, pcScope, binOpExpr.Lhs);
                         context.Write(output, ".symbolicEquals(");
-                        WriteExpr(context, output, pcScope, binOpExpr.Rhs);
+
+                        {
+                                string castPrefix = "";
+                                castPrefix = GetInlineCastPrefix(binOpExpr.Rhs.Type, binOpExpr.Lhs.Type, context, pcScope);
+                                context.Write(output, castPrefix);
+                                WriteExpr(context, output, pcScope, binOpExpr.Rhs);
+                                if (castPrefix != "") context.Write(output, ")");
+                        }
+
                         context.Write(output, $", {pcScope.PathConstraintVar})");
                         if (binOpExpr.Operation == BinOpType.Neq)
                         {
@@ -2088,6 +2112,15 @@ namespace Plang.Compiler.Backend.Symbolic
                     throw new InvalidOperationException("Compilation of call expressions should be handled as part of assignment statements");
                 case ContainsExpr containsExpr:
                     var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
+                    var isSet = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Set);
+                    PLanguageType elementType = null;
+                    if (isMap) {
+                        elementType = ((MapType) containsExpr.Collection.Type.Canonicalize()).KeyType;
+                    } else if (isSet) {
+                        elementType = ((SetType) containsExpr.Collection.Type.Canonicalize()).ElementType;
+                    } else {
+                        elementType = ((SequenceType) containsExpr.Collection.Type.Canonicalize()).ElementType;
+                    }
 
                     WriteExpr(context, output, pcScope, containsExpr.Collection);
 
@@ -2096,7 +2129,15 @@ namespace Plang.Compiler.Backend.Symbolic
                     else
                         context.Write(output, ".contains(");
 
-                    WriteExpr(context, output, pcScope, containsExpr.Item);
+                    {
+                        string castPrefix = "";
+                        if (elementType != null) {
+                            castPrefix = GetInlineCastPrefix(containsExpr.Item.Type, elementType, context, pcScope);
+                        }
+                        context.Write(output, castPrefix);
+                        WriteExpr(context, output, pcScope, containsExpr.Item);
+                        if (castPrefix != "") context.Write(output, ")");
+                    }
                     context.Write(output, ")");
                     break;
                 case CtorExpr ctorExpr:

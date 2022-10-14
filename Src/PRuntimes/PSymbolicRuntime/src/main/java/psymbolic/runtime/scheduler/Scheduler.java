@@ -98,7 +98,7 @@ public class Scheduler implements SymbolicSearch {
     /** Start depth at which create machine events are already explored */
     int startDepth = Integer.MAX_VALUE;
 
-    List<List<ValueSummary>> srcState = new ArrayList<>();
+    Map<Machine, List<ValueSummary>> srcState = new HashMap<>();
 
     /** Map of distinct concrete state to number of times state is visited */
     private Map<String, Integer> distinctStates = new HashMap<>();
@@ -368,26 +368,20 @@ public class Scheduler implements SymbolicSearch {
         depth++;
     }
 
-    public void restoreState(List<List<ValueSummary>> state) {
-        int idx = 0;
-        assert(state.size() == schedule.getMachines().size());
-        for (Machine machine : schedule.getMachines()) {
-            List<ValueSummary> machineLocalState = state.get(idx++);
-            machine.setLocalState(machineLocalState);
+    public void restoreState(Map<Machine, List<ValueSummary>> state) {
+        for (Map.Entry<Machine, List<ValueSummary>> entry: state.entrySet()) {
+            entry.getKey().setLocalState(entry.getValue());
+        }
+        for (Machine m: machines) {
+            if (!state.containsKey(m)) {
+                m.reset();
+            }
         }
     }
 
     public void restoreStringState(List<List<String>> state) {
         int idx = 0;
         for (Machine machine : machines) {
-            List<String> machineStringState = state.get(idx++);
-            List<ValueSummary> machineLocalState = new ArrayList<>();
-            for (String s: machineStringState) {
-                machineLocalState.add((ValueSummary) SerializeObject.objectFromString(s));
-            }
-            machine.setLocalState(machineLocalState);
-        }
-        for (Monitor machine : monitors) {
             List<String> machineStringState = state.get(idx++);
             List<ValueSummary> machineLocalState = new ArrayList<>();
             for (String s: machineStringState) {
@@ -619,17 +613,17 @@ public class Scheduler implements SymbolicSearch {
     private void storeSrcState() {
         if (srcState != null)
             return;
-        srcState = new ArrayList<>();
-        for (Machine machine : schedule.getMachines()) {
+        srcState = new HashMap<>();
+        for (Machine machine : machines) {
             List<ValueSummary> machineLocalState = machine.getLocalState();
-            srcState.add(machineLocalState);
+            srcState.put(machine, machineLocalState);
         }
     }
 
     private String globalStateString() {
         StringBuilder out = new StringBuilder();
         out.append("Src State:").append(System.lineSeparator());
-        for (Machine machine : schedule.getMachines()) {
+        for (Machine machine : machines) {
             List<ValueSummary> machineLocalState = machine.getLocalState();
             out.append(String.format("  Machine: %s", machine)).append(System.lineSeparator());
             for (ValueSummary vs: machineLocalState) {
@@ -645,7 +639,7 @@ public class Scheduler implements SymbolicSearch {
      * @param symState symbolic state
      * @return number of concrete states represented by the symbolic state
      */
-    public int[] enumerateConcreteStates(Function<ValueSummary, GuardedValue<?>> concretizer, List<List<ValueSummary>> symState) {
+    public int[] enumerateConcreteStates(Function<ValueSummary, GuardedValue<?>> concretizer, Map<Machine, List<ValueSummary>> symState) {
         Guard iterPc = Guard.constTrue();
         Guard alreadySeen = Guard.constFalse();
         int numConcreteStates = 0;
@@ -666,8 +660,11 @@ public class Scheduler implements SymbolicSearch {
         while (!iterPc.isFalse()) {
             Guard concreteStateGuard = Guard.constTrue();
             List<List<Object>> globalStateConcrete = new ArrayList<>();
-            for (int i = 0; i < symState.size(); i++) {
-                List<ValueSummary> machineStateSymbolic = symState.get(i);
+            int i = 0;
+            for(Machine m: machines) {
+                if (!symState.containsKey(m))
+                    continue;
+                List<ValueSummary> machineStateSymbolic = symState.get(m);
                 List<Object> machineStateConcrete = new ArrayList<>();
                 for (int j = 0; j < machineStateSymbolic.size(); j++) {
                     GuardedValue<?> guardedValue = concretizer.apply(machineStateSymbolic.get(j).restrict(iterPc));
@@ -685,6 +682,7 @@ public class Scheduler implements SymbolicSearch {
                 if (!machineStateConcrete.isEmpty()) {
                     globalStateConcrete.add(machineStateConcrete);
                 }
+                i++;
             }
 
             if (!globalStateConcrete.isEmpty()) {

@@ -458,7 +458,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                     newDepth = 0;
                 }
                 if (newDepth == 0) {
-                    for (Machine machine : schedule.getMachines()) {
+                    for (Machine machine : machines) {
                         machine.reset();
                     }
                 } else {
@@ -498,7 +498,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                            Consumer<Integer> clearBacktrack, BiConsumer<PrimitiveVS, Integer> addRepeat,
                            BiConsumer<List, Integer> addBacktrack, Supplier<List> getChoices,
                            Function<List, PrimitiveVS> generateNext, boolean isData) {
-        List<PrimitiveVS> choices = new ArrayList();
+        List<ValueSummary> choices = new ArrayList();
         boolean isNewChoice = false;
 
         if (depth < schedule.size()) {
@@ -532,8 +532,8 @@ public class IterativeBoundedScheduler extends Scheduler {
 //            }
         }
 
-        List<PrimitiveVS> chosen = new ArrayList();
-        List<PrimitiveVS> backtrack = new ArrayList();
+        List<ValueSummary> chosen = new ArrayList();
+        List<ValueSummary> backtrack = new ArrayList();
         for (int i = 0; i < choices.size(); i++) {
             if (i < bound) {
                 chosen.add(choices.get(i));

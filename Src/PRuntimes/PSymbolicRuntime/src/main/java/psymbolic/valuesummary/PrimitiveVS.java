@@ -252,7 +252,15 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
     @Override
     public String toString() {
-        return getValues().toString();
+        StringBuilder out = new StringBuilder();
+        Iterator itr = getValues().iterator();
+        while (itr.hasNext()) {
+            out.append(itr.next().toString());
+            if (itr.hasNext()) {
+                out.append(", ");
+            }
+        }
+        return out.toString();
     }
 
     public String toStringDetailed() {

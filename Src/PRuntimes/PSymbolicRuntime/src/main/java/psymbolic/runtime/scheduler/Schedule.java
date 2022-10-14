@@ -22,7 +22,7 @@ public class Schedule implements Serializable {
     @Setter
     private int schedulerChoiceDepth = 0;
     @Setter
-    private List<List<ValueSummary>> schedulerState = new ArrayList<>();
+    private Map<Machine, List<ValueSummary>> schedulerState = new HashMap<>();
 
     public void restrictFilter(Guard c) { filter = filter.and(c); }
     public void setFilter(Guard c) { filter = c; }
@@ -93,7 +93,7 @@ public class Schedule implements Serializable {
         @Getter
         int schedulerChoiceDepth = 0;
         @Getter
-        List<List<ValueSummary>> choiceState = null;
+        Map<Machine, List<ValueSummary>> choiceState = null;
         @Getter
         Guard filter = null;
 
@@ -128,7 +128,7 @@ public class Schedule implements Serializable {
             return new Choice(this);
         }
 
-        public List<List<ValueSummary>> copyState(List<List<ValueSummary>> state) {
+        public Map<Machine, List<ValueSummary>> copyState(Map<Machine, List<ValueSummary>> state) {
             if (state == null)
                 return null;
             return state;
@@ -143,7 +143,7 @@ public class Schedule implements Serializable {
 //            return copiedState;
         }
 
-        public void storeState(int depth, int cdepth, List<List<ValueSummary>> state, Guard f) {
+        public void storeState(int depth, int cdepth, Map<Machine, List<ValueSummary>> state, Guard f) {
             schedulerDepth = depth;
             schedulerChoiceDepth = cdepth;
             choiceState = copyState(state);

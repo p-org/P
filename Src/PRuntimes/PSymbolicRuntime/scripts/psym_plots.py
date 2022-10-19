@@ -270,6 +270,7 @@ def depth_vs_time():
     ax.set_xlim(0, timeLimit)
     ax.yaxis.set_major_formatter(FormatStrFormatter('%d'))
     set_plot(ax, time, depth)
+    plt.gca().invert_yaxis()
 
     ax.set(xlabel='Time (s)', ylabel='Depth', title=projectName+": Depth vs Time")
     ax.grid()

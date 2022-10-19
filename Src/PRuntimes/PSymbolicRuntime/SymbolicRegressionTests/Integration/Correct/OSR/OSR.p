@@ -355,6 +355,7 @@ machine OSRDriver {
 	state sStoppingTimerDriver {
 		ignore eD0Entry;
 		defer eSwitchStatusChange;
+		defer eD0Exit;
 		entry {
 			send TimerV, eStopTimer;
 		}

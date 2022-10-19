@@ -1,5 +1,7 @@
 # PSym
 
+[![PSym on Ubuntu](https://github.com/p-org/P/actions/workflows/psym.yml/badge.svg)](https://github.com/p-org/P/actions/workflows/psym.yml)
+
 The basic idea behind PSym is to perform symbolic exploration of P models, powered by automated reasoning through Binary Decision Diagrams (BDDs) or SAT/SMT solvers.
 
 PSym is composed of two components: 

@@ -7,6 +7,7 @@ machine Main {
   var Follower0: machine;
   var Follower1: machine;
   var Controller: machine;
+  var count: int;
 
   start state Init {
     entry {
@@ -14,6 +15,7 @@ machine Main {
       Follower1 = new Follower();
       Controller = new Controller((_follower0 = Follower0, _follower1 = Follower1));
       debug();
+      assert(count == 4), format ("count = {0}", count);
     }
   }
 
@@ -26,10 +28,12 @@ machine Main {
 
     foreach(follower in allFollowers) {
         print format ("Follower {0}", follower);
+        count = count + 1;
     }
 
     foreach(follower in allFollowers) {
         print format ("(repeat) Follower {0}", follower);
+        count = count + 1;
     }
   }
 }

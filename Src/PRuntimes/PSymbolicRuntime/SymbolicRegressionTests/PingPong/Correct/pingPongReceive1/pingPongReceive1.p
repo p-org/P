@@ -6,13 +6,15 @@ event pong1;
 machine Main {
   var Follower0: machine;
   var Follower1: machine;
+  var count: int;
 
   start state Init {
     entry {
       Follower0 = new Follower();
       Follower1 = new Follower();
-      debug(0);
       debug(1);
+      debug(2);
+      assert(count == 38), format ("count = {0}", count);
     }
   }
 
@@ -21,6 +23,7 @@ machine Main {
     print format ("{0}: ping1 sent", id);
     receive {
         case pong1: {
+            count = (count + 1) * id;
             print format ("{0}: pong1 received", id);
         }
     }
@@ -28,9 +31,11 @@ machine Main {
     print format ("{0}: ping0 sent", id);
     receive {
         case pong0: {
+            count = (count + 1) * id;
             print format ("{0}: pong0 received", id);
        }
     }
+    count = (count + 1) * id;
     print format ("{0}: done", id);
   }
 }

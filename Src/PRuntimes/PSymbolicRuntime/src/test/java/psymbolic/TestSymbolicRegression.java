@@ -105,12 +105,6 @@ public class TestSymbolicRegression {
     void Dummy() {}
 
     @TestFactory
-    //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    public Collection<DynamicTest>  loadPingPongTests() {
-        return loadTests("./SymbolicRegressionTests/PingPong", null);
-    }
-
-    @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     Collection<DynamicTest>  loadSymbolicRegressionsTests() {
         return loadTests("./SymbolicRegressionTests/Integration", null);

@@ -5,9 +5,7 @@ name: PSym Build and Test on Ubuntu
 
 on:
   push:
-    branches: [ "master" ]
   pull_request:
-    branches: [ "master" ]
   workflow_dispatch:
     inputs:
       args:

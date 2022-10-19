@@ -104,6 +104,8 @@ public class Scheduler implements SymbolicSearch {
     private Map<String, Integer> distinctStates = new HashMap<>();
     /** List of distinct concrete states */
     private List<String> distinctStatesList = new ArrayList<>();
+    /** Total number of states */
+    private int totalStateCount = 0;
     /** Guard corresponding on distinct states at a step */
     private Guard distinctStateGuard = null;
 
@@ -113,12 +115,7 @@ public class Scheduler implements SymbolicSearch {
     private Boolean syncStep = false;
 
     public int getTotalStates() {
-        int result = 0;
-        int sz = distinctStatesList.size();
-        for (int i=0; i<sz; i++) {
-            result += distinctStates.getOrDefault(distinctStatesList.get(i), 0);
-        }
-        return result;
+        return totalStateCount;
     }
 
     public int getTotalDistinctStates() {
@@ -210,6 +207,10 @@ public class Scheduler implements SymbolicSearch {
 
     public List<PrimitiveVS> getNextIntegerChoices(PrimitiveVS<Integer> bound, Guard pc) {
         List<PrimitiveVS> choices = new ArrayList<>();
+        Guard zeroGuard = bound.getGuardFor(0);
+        if (!zeroGuard.isFalse()) {
+            bound = bound.updateUnderGuard(zeroGuard, new PrimitiveVS<Integer>(1));
+        }
         for (int i = 0; i < IntegerVS.maxValue(bound); i++) {
             Guard cond = IntegerVS.lessThan(i, bound).getGuardFor(true);
             choices.add(new PrimitiveVS<>(i).restrict(cond).restrict(pc));
@@ -445,6 +446,7 @@ public class Scheduler implements SymbolicSearch {
         searchStats.reset_stats();
         distinctStates.clear();
         distinctStatesList.clear();
+        totalStateCount = 0;
         GlobalData.getCoverage().resetCoverage();
     }
 
@@ -690,12 +692,14 @@ public class Scheduler implements SymbolicSearch {
                 numConcreteStates += 1;
                 if (distinctStates.containsKey(concreteState)) {
                     distinctStates.put(concreteState, distinctStates.get(concreteState) + 1);
+                    totalStateCount += 1;
                     if (configuration.getVerbosity() > 3) {
                         PSymLogger.info("Repeated State: " + concreteState);
                     }
                 } else {
                     numDistinctConcreteStates += 1;
                     distinctStates.put(concreteState, 1);
+                    totalStateCount += 1;
                     distinctStatesList.add(concreteState);
                     if (configuration.isUseStateCaching()) {
                         distinctStateGuard = distinctStateGuard.or(concreteStateGuard);

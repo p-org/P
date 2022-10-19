@@ -69,7 +69,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
     public ListVS<V> getValues() {
         ListVS<V> result = new ListVS<V>(getUniverse());
         for (V value: this.entries.values()) {
-            result.add(value);
+            result = result.add(value);
         }
         return result;
     }
@@ -234,8 +234,11 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
      * @return The option containing value corresponding to the key or an empty option if no such value
      */
     public V get(T keySummary) {
-        if (!containsKey(keySummary).restrict(keySummary.getUniverse()).getGuardFor(false).isFalse()) {
-            // there is a possibility that the key is not present
+        // there is a possibility that the key is not present
+        if (keySummary.isEmptyVS()) {
+            throw new NoSuchElementException();
+        }
+        if (!containsKey(keySummary).getGuardFor(false).isFalse()) {
             throw new NoSuchElementException();
         }
 
@@ -249,6 +252,20 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
 
         assert merger != null;
         return merger.merge(toMerge);
+    }
+
+    /** Get a value from the MapVS or return default value if key does not exist
+     *
+     * @param keySummary The key value summary.
+     * @param defaultValue The default value.
+     * @return The option containing value corresponding to the key or default option if no such value
+     */
+    public V getOrDefault(T keySummary, V defaultValue) {
+        try {
+            return get(keySummary);
+        } catch (NoSuchElementException e) {
+            return defaultValue;
+        }
     }
 
     /** Get whether the MapVS contains a

@@ -182,14 +182,23 @@ public abstract class Machine implements Serializable {
         int steps = 0;
         // Outer loop: process sequences of 'goto's, 'raise's, 'push's, 'pop's, and events from the deferred queue.
         while (!eventHandlerReturnReason.isNormalReturn()) {
+            Guard deferred = Guard.constFalse();
             if (!eventHandlerReturnReason.getRaiseCond().isFalse()) {
               Message m = eventHandlerReturnReason.getMessageSummary();
+              Guard haltGuard = m.getHaltEventGuard().and(pc);
+              if (!haltGuard.isFalse()) {
+                  EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
+                  nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(haltGuard.not()));
+                  processEvent(haltGuard, nextEventHandlerReturnReason, m.restrict(haltGuard));
+                  eventHandlerReturnReason = nextEventHandlerReturnReason;
+                  receives = receives.restrict(haltGuard.not());
+                  continue;
+              }
               Guard receiveGuard = getBlockedOnReceiveGuard().and(pc).and(this.currentState.apply(m.getEvent(), (x, msg) -> x.isIgnored(msg)).getGuardFor(false));
               if (!receiveGuard.isFalse()) {
                   PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> runNow = receives.restrict(receiveGuard);
                   EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
                   nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not()));
-                  Guard deferred = Guard.constFalse();
                   PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> oldReceives = new PrimitiveVS<>(receives);
                   receives = receives.restrict(receiveGuard.not());
                   for (GuardedValue<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> receiver : runNow.getGuardedValues()) {
@@ -228,6 +237,8 @@ public abstract class Machine implements Serializable {
 
                 eventHandlerReturnReason = nextEventHandlerReturnReason;
             }
+
+            runDeferredEvents(pc.and(deferred.not()));
         }
     }
 
@@ -278,10 +289,13 @@ public abstract class Machine implements Serializable {
      * @param pc Guard under which to run
      */
     void runDeferredEvents(Guard pc) {
+        if (pc.isFalse()) {
+            return;
+        }
         List<Guard> deferredMessageGuards = new ArrayList<>();
         List<Message> deferredMessages = new ArrayList<>();
         while (true) {
-            Guard deferredPc = pc.and(getBlockedOnReceiveGuard().not()).and(deferredQueue.isEnabledUnderGuard());
+            Guard deferredPc = pc.and(deferredQueue.isEnabledUnderGuard());
             if (!deferredPc.isFalse()) {
                 Message deferredMessage = deferredQueue.dequeueEntry(deferredPc);
                 deferredMessageGuards.add(deferredPc);
@@ -306,12 +320,12 @@ public abstract class Machine implements Serializable {
         }
 
         // Process events from the deferred queue first
-        runDeferredEvents(pc);
+        runDeferredEvents(pc.and(getBlockedOnReceiveGuard().not()));
 
         runOutcomesToCompletion(pc, eventRaiseEventHandlerReturnReason);
 
         // Process events from the deferred queue again
-        runDeferredEvents(pc);
+        runDeferredEvents(pc.and(getBlockedOnReceiveGuard().not()));
     }
 
     @Override

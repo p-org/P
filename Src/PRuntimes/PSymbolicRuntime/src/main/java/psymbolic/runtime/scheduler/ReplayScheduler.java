@@ -44,7 +44,7 @@ public class ReplayScheduler extends Scheduler {
 
     @Override
     public boolean isDone() {
-        return super.isDone() || this.getDepth() >= schedule.size();
+        return super.isDone() || this.getChoiceDepth() >= schedule.size();
     }
 
     @Override
@@ -87,7 +87,6 @@ public class ReplayScheduler extends Scheduler {
     @Override
     public PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc) {
         PrimitiveVS<Integer> res = schedule.getRepeatInt(choiceDepth);
-        assert(IntegerVS.lessThan(res, bound).getGuardFor(false).isFalse());
         choiceDepth++;
         return res;
     }

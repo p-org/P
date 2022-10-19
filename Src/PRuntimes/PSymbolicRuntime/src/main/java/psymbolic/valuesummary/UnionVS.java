@@ -45,19 +45,24 @@ public class UnionVS implements ValueSummary<UnionVS> {
     }
 
     public UnionVS(ValueSummary vs) {
-        UnionVStype type;
-        if (vs instanceof NamedTupleVS) {
-            type = UnionVStype.getUnionVStype(vs.getClass(), ((NamedTupleVS) vs).getNames());
-        } else if (vs instanceof TupleVS) {
-            type = UnionVStype.getUnionVStype(vs.getClass(), ((TupleVS) vs).getNames());
+        if (vs == null) {
+            this.type = new PrimitiveVS<>();
+            this.value = new HashMap<>();
         } else {
-            type = UnionVStype.getUnionVStype(vs.getClass(), null);
+            UnionVStype type;
+            if (vs instanceof NamedTupleVS) {
+                type = UnionVStype.getUnionVStype(vs.getClass(), ((NamedTupleVS) vs).getNames());
+            } else if (vs instanceof TupleVS) {
+                type = UnionVStype.getUnionVStype(vs.getClass(), ((TupleVS) vs).getNames());
+            } else {
+                type = UnionVStype.getUnionVStype(vs.getClass(), null);
+            }
+            this.type = new PrimitiveVS<UnionVStype>(type).restrict(vs.getUniverse());
+            this.value = new HashMap<>();
+            // TODO: why are we not restricting the values?
+            this.value.put(type, vs);
+            assert (this.type != null);
         }
-        this.type = new PrimitiveVS<UnionVStype>(type).restrict(vs.getUniverse());
-        this.value = new HashMap<>();
-        // TODO: why are we not restricting the values?
-        this.value.put(type, vs);
-        assert(this.type != null);
     }
 
     /**
@@ -189,6 +194,9 @@ public class UnionVS implements ValueSummary<UnionVS> {
             } else {
                 res = BooleanVS.and(res, payload.getValue().symbolicEquals(value.get(payload.getKey()), pc));
             }
+        }
+        if (res.isEmptyVS()) {
+            return BooleanVS.trueUnderGuard(Guard.constFalse());
         }
         return res.restrict(getUniverse().and(cmp.getUniverse()));
     }

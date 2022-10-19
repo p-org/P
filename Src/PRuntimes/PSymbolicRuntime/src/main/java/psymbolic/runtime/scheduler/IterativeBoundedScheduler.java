@@ -544,7 +544,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         List<ValueSummary> chosen = new ArrayList();
         List<ValueSummary> backtrack = new ArrayList();
         for (int i = 0; i < choices.size(); i++) {
-            if (i < bound) {
+            if ((bound <= 0) || (i < bound)) {
                 chosen.add(choices.get(i));
             } else {
                 backtrack.add(choices.get(i));

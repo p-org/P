@@ -182,6 +182,7 @@ public abstract class Machine implements Serializable {
         int steps = 0;
         // Outer loop: process sequences of 'goto's, 'raise's, 'push's, 'pop's, and events from the deferred queue.
         while (!eventHandlerReturnReason.isNormalReturn()) {
+            boolean runDeferred = false;
             Guard deferred = Guard.constFalse();
             if (!eventHandlerReturnReason.getRaiseCond().isFalse()) {
               Message m = eventHandlerReturnReason.getMessageSummary();
@@ -207,6 +208,7 @@ public abstract class Machine implements Serializable {
                   oldReceives = oldReceives.restrict(receiveGuard.not().or(deferred));
                   receives = receives.merge(oldReceives);
                   eventHandlerReturnReason = nextEventHandlerReturnReason;
+                  runDeferred = true;
               } else {
                   // clean up receives
                   for (Runnable r : clearContinuationVars) { r.run(); }
@@ -238,7 +240,9 @@ public abstract class Machine implements Serializable {
                 eventHandlerReturnReason = nextEventHandlerReturnReason;
             }
 
-            runDeferredEvents(pc.and(deferred.not()));
+            if (runDeferred) {
+                runDeferredEvents(pc.and(deferred.not()));
+            }
         }
     }
 

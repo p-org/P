@@ -43,7 +43,9 @@ public class TestCaseExecutor {
      * @param testCasePaths paths to test case; only accepts list of p files
      * @return 0 = successful, 1 = compile error, 2 = dynamic error
      */
-    static int runTestCase(List<String> testCasePaths, String testCasePathPrefix, String runArgs, String mainOutputDirectory) {
+    static int runTestCase(List<String> testCasePaths, String testCasePathPrefix, String runArgs, String mainOutputDirectory, int expected) {
+        int resultCode = 0;
+
         testCounter++;
 
         // Invoke the P compiler to compile the test Case
@@ -80,15 +82,18 @@ public class TestCaseExecutor {
             Executors.newSingleThreadExecutor().submit(errorStreamGobbler);
             StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
             Executors.newSingleThreadExecutor().submit(streamGobbler);
-            int exitCode = process.waitFor();
-
-            if (exitCode != 0) {
-                PSymTestLogger.log(String.format("      compilation failure"));
-                return 1;
-            }
+            resultCode = process.waitFor();
         } catch (IOException | InterruptedException e) {
-            PSymTestLogger.log(String.format("      compilation failure"));
             e.printStackTrace();
+            resultCode = -1;
+        }
+
+        if (resultCode != 0) {
+            PSymTestLogger.log(String.format("      compile-fail"));
+            if (resultCode != expected) {
+                PSymTestLogger.log(String.format("      unexpected"));
+            }
+            return resultCode;
         }
 
         // Next, try to dynamically load and compile this file
@@ -108,26 +113,29 @@ public class TestCaseExecutor {
 
             if (exitCode == 0) {
                 PSymTestLogger.log(String.format("      ok"));
-                return 0;
+                resultCode = 0;
             } else if (exitCode == 2) {
                 PSymTestLogger.log(String.format("      bug"));
-                return 2;
+                resultCode = 2;
             } else if (exitCode == 3) {
                 PSymTestLogger.log(String.format("      timeout"));
-                return 2;
+                resultCode = 2;
             } else if (exitCode == 4) {
                 PSymTestLogger.log(String.format("      memout"));
-                return 2;
+                resultCode = 2;
             } else {
                 PSymTestLogger.log(String.format("      error"));
-                return 2;
+                resultCode = 2;
             }
         } catch (IOException | InterruptedException e) {
             PSymTestLogger.error(String.format("      fail"));
             e.printStackTrace();
+            resultCode = -1;
         }
-        PSymTestLogger.error(String.format("      fail"));
-        return -1;
+        if (resultCode != expected) {
+            PSymTestLogger.log(String.format("      expected %d, got %d", expected, resultCode));
+        }
+        return resultCode;
     }
 
     /**

@@ -91,7 +91,7 @@ public class TestCaseExecutor {
         if (resultCode != 0) {
             PSymTestLogger.log(String.format("      compile-fail"));
             if (resultCode != expected) {
-                PSymTestLogger.log(String.format("      unexpected"));
+                PSymTestLogger.log(String.format("      unexpected result for %s (expected: %d, got: %d)", prefix, expected, resultCode));
             }
             return resultCode;
         }
@@ -133,7 +133,7 @@ public class TestCaseExecutor {
             resultCode = -1;
         }
         if (resultCode != expected) {
-            PSymTestLogger.log(String.format("      expected %d, got %d", expected, resultCode));
+            PSymTestLogger.log(String.format("      unexpected result for %s (expected: %d, got: %d)", prefix, expected, resultCode));
         }
         return resultCode;
     }

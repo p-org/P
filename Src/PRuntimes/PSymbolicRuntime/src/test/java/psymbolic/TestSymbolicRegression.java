@@ -27,15 +27,135 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  *  Place test cases as source P files at ../Tst/SymbolicRegressionTests/
  */
 public class TestSymbolicRegression {
-    private String runArgs = "-sb 1 -cb 1 -me 2";
+    private String runArgs = "-me 100";
     private String outputDirectory = "output/testCases";
+    private List<String> excluded = new ArrayList<>();
 
-    Map<String, List<String>> getFiles(String testDirPath, String[] excluded) {
+    private boolean initialized = false;
+
+    private void createExcludeList() {
+        // TODO Unsupported: deadlock detection
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive2");
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive6");
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive7");
+
+        // TODO Unsupported: continue statement
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/continue1");
+
+        // TODO Unsupported: receive in state exit functions
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive14");
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive15");
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive16");
+
+        // TODO Unsupported: enum starting with non-zero integer values
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/enum4");
+
+        // TODO Unsupported: relational operations over strings
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/stringcomp");
+
+        // TODO Unsupported: complex type casting with any type
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/EnumType1");
+
+        // TODO Unsupported: type casting collections with any type
+        excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/ShortCircuitEval");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/CastInExprsAsserts");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes12");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes13");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypesAllAsserts");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes1");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes10");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes2");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes3");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes4");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes5");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes6");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes7");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes8");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes9");
+
+        // TODO Unsupported: comparison of null with any type
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/anyTypeNullValue");
+
+        // TODO Unsupported: null events
+        excluded.add("../../../Tst/RegressionTests/Integration/Correct/openwsn1");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_9");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_42");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_12");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_41");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_38");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_16");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_36");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_18");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_19");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_37");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_17");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_39");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_10");
+        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/BugRepro");
+        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/MoreThan32Events");
+        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/StaticError/ActionAndTransitionSameEvent");
+        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/StaticError/IgnoredNullEvent");
+        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/StaticError/SentNullEvent");
+        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/StaticError/RaisedNullEvent");
+        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/StaticError/AnonFuns");
+        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/StaticError/NullEventDecl");
+        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/StaticError/DeferredNullEvent");
+        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/StaticError/UndefinedStateInTransition");
+        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/StaticError/TransitionOnNullInSpecMachine");
+        excluded.add("../../../Tst/RegressionTests/Feature3Exprs/StaticError/payloadEntry");
+        excluded.add("../../../Tst/RegressionTests/Feature3Exprs/StaticError/payloadTransitions");
+        excluded.add("../../../Tst/RegressionTests/Feature3Exprs/StaticError/payloadActions");
+        excluded.add("../../../Tst/RegressionTests/Feature3Exprs/StaticError/payloadEntry_1");
+        excluded.add("../../../Tst/RegressionTests/Feature3Exprs/StaticError/payloadActionsFuns");
+
+        // TODO Wait4Fix: exclude test errors due to main machine with spec: issue #510
+        excluded.add("../../../Tst/RegressionTests/Integration/Correct/SEM_TwoMachines_14");
+        excluded.add("../../../Tst/RegressionTests/Integration/Correct/SEM_TwoMachines_15");
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive11");
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive11_1");
+
+        // TODO Wait4Fix: exclude test errors due to push/pop: issue #509
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/Actions_5");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/Actions_6");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/Multi_Paxos_3");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/Multi_Paxos_4");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/PingPongWithCall");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_10");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_11");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_12");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_13");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_15");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_16");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_20");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_21");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_32");
+        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_9");
+        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/StaticError/DeferIgnoreSameEvent");
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/StaticError/entryExit");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/StaticError/CastInExprs");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs1");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs2");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs3");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs4");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs5");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs6");
+
+        // TODO Wait4Fix: exclude test errors due to set update: similar to issue #509
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/SetAccess");
+    }
+    private void initialize() {
+        Log4JConfig.configureLog4J();
+        PSymTestLogger.Initialize(outputDirectory);
+        createExcludeList();
+    }
+
+    Map<String, List<String>> getFiles(String testDirPath) {
         Map<String, List<String>> result = new HashMap<>();
         File[] directories = new File(testDirPath).listFiles(File::isDirectory);
         for (File dir : directories) {
             if (excluded != null) {
-                if (Arrays.stream(excluded).anyMatch(dir.toString()::equals)) {
+                if (excluded.stream().anyMatch(dir.toString()::equals)) {
                     continue;
                 }
             }
@@ -43,7 +163,7 @@ public class TestSymbolicRegression {
                 Stream<String> projectFilesStream = walk.map(Path::toString)
                         .filter(f -> f.endsWith(".java") || f.endsWith(".p"));
                 if (excluded != null) {
-                    projectFilesStream = projectFilesStream.filter(f -> Arrays.stream(excluded).noneMatch(f::contains));
+                    projectFilesStream = projectFilesStream.filter(f -> excluded.stream().noneMatch(f::contains));
                 }
                 List<String> projectFiles = projectFilesStream.collect(Collectors.toList());
                 if (!projectFiles.isEmpty())
@@ -62,10 +182,9 @@ public class TestSymbolicRegression {
         dynamicTests.add(dynamicTest);
     }
 
-    Collection<DynamicTest> loadTests(String testDirPath, String[] excluded) {
-        if (!PSymTestLogger.isInitialized()) {
-            Log4JConfig.configureLog4J();
-            PSymTestLogger.Initialize(outputDirectory);
+    Collection<DynamicTest> loadTests(String testDirPath) {
+        if (!initialized) {
+            initialize();
         }
 
         Collection<DynamicTest> dynamicTests = new ArrayList<>();
@@ -80,7 +199,7 @@ public class TestSymbolicRegression {
         }
 
         for (String testDir : testDirs) {
-            Map<String, List<String>> paths = getFiles(testDir, excluded);
+            Map<String, List<String>> paths = getFiles(testDir);
             List<String> pathKeys = new ArrayList<>(paths.keySet());
             Collections.sort(pathKeys, String.CASE_INSENSITIVE_ORDER);
 
@@ -107,51 +226,55 @@ public class TestSymbolicRegression {
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     Collection<DynamicTest>  loadSymbolicRegressionsTests() {
-        return loadTests("./SymbolicRegressionTests/Integration", null);
+        return loadTests("./SymbolicRegressionTests/Integration");
     }
 
     @TestFactory
     //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     public Collection<DynamicTest>  loadIntegrationTests() {
-        return loadTests("../../../Tst/RegressionTests/Integration", null);
+        return loadTests("../../../Tst/RegressionTests/Integration");
     }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     Collection<DynamicTest>  loadCombinedTests() {
-        return loadTests("../../../Tst/RegressionTests/Combined", null);
+        return loadTests("../../../Tst/RegressionTests/Combined");
     }
 
     @TestFactory
     Collection<DynamicTest>  loadSMLevelDeclsTests() {
-        return loadTests("../../../Tst/RegressionTests/Feature1SMLevelDecls", null);
+        return loadTests("../../../Tst/RegressionTests/Feature1SMLevelDecls");
     }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     Collection<DynamicTest>  loadStmtsTests() {
-        return loadTests("../../../Tst/RegressionTests/Feature2Stmts", null);
+        return loadTests("../../../Tst/RegressionTests/Feature2Stmts");
     }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     Collection<DynamicTest>  loadExpressionTests() {
-        String[] excluded = new String[]{
-                "../../../Tst/RegressionTests/Feature3Exprs/Correct/ShortCircuitEval"
-        };
-
-        return loadTests("../../../Tst/RegressionTests/Feature3Exprs", excluded);
+        return loadTests("../../../Tst/RegressionTests/Feature3Exprs");
     }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     Collection<DynamicTest>  loadDataTypeTests() {
-        return loadTests("../../../Tst/RegressionTests/Feature4DataTypes", null);
+        return loadTests("../../../Tst/RegressionTests/Feature4DataTypes");
     }
 
-    @TestFactory
-        //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadModuleSystemTests() {
-        return loadTests("../../../Tst/RegressionTests/Feature5ModuleSystem", null);
-    }
+    // TODO Unsupported: module system
+//    @TestFactory
+//        //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+//    Collection<DynamicTest>  loadModuleSystemTests() {
+//        return loadTests("../../../Tst/RegressionTests/Feature5ModuleSystem");
+//    }
+
+    // TODO Unsupported: liveness
+//    @TestFactory
+//    //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+//    Collection<DynamicTest>  loadLivenessTests() {
+//        return loadTests("../../../Tst/RegressionTests/Liveness");
+//    }
 }

@@ -27,13 +27,13 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  *  Place test cases as source P files at ../Tst/SymbolicRegressionTests/
  */
 public class TestSymbolicRegression {
-    private String runArgs = "-me 100";
-    private String outputDirectory = "output/testCases";
-    private List<String> excluded = new ArrayList<>();
+    private static String runArgs = "-me 100";
+    private static String outputDirectory = "output/testCases";
+    private static List<String> excluded = new ArrayList<>();
 
-    private boolean initialized = false;
+    private static boolean initialized = false;
 
-    private void createExcludeList() {
+    private static void createExcludeList() {
         // TODO Unsupported: deadlock detection
         excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive2");
         excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive6");
@@ -144,10 +144,11 @@ public class TestSymbolicRegression {
         // TODO Wait4Fix: exclude test errors due to set update: similar to issue #509
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/SetAccess");
     }
-    private void initialize() {
+    private static void initialize() {
         Log4JConfig.configureLog4J();
         PSymTestLogger.Initialize(outputDirectory);
         createExcludeList();
+        initialized = true;
     }
 
     Map<String, List<String>> getFiles(String testDirPath) {
@@ -185,7 +186,6 @@ public class TestSymbolicRegression {
     Collection<DynamicTest> loadTests(String testDirPath) {
         if (!initialized) {
             initialize();
-            initialized = true;
         }
 
         Collection<DynamicTest> dynamicTests = new ArrayList<>();

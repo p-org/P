@@ -23,7 +23,7 @@ public class PSymOptions {
         // mode of orchestration
         Option orch = Option.builder("orch")
                 .longOpt("orchestration")
-                .desc("Orchestration options: coverage-astar, coverage-estimate, random, dfs")
+                .desc("Orchestration options: coverage-astar, coverage-estimate, random, dfs (default: coverage-astar)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Orchestration Mode (string)")
@@ -33,7 +33,7 @@ public class PSymOptions {
         // max number of backtrack tasks per execution
         Option maxBacktrackTasksPerExecution = Option.builder("orchmt")
                 .longOpt("orchestration-max-tasks")
-                .desc("Max number of backtrack tasks to generate per execution")
+                .desc("Max number of backtrack tasks to generate per execution (default: 2)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Max Backtrack Tasks (integer)")
@@ -63,7 +63,7 @@ public class PSymOptions {
         // project name
         Option projectName = Option.builder("p")
                 .longOpt("project")
-                .desc("Name of the project")
+                .desc("Name of the project (default: test)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Project Name (string)")
@@ -73,7 +73,7 @@ public class PSymOptions {
         // output folder
         Option outputDir = Option.builder("o")
                 .longOpt("output")
-                .desc("Name of the output folder")
+                .desc("Name of the output folder (default: output)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Output Folder (string)")
@@ -101,7 +101,7 @@ public class PSymOptions {
         // time limit
         Option timeLimit = Option.builder("tl")
                 .longOpt("time-limit")
-                .desc("Time limit in seconds. Use 0 for no limit.")
+                .desc("Time limit in seconds (default: 60). Use 0 for no limit.")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Time Limit (seconds)")
@@ -121,7 +121,7 @@ public class PSymOptions {
         // solver type
         Option solverType = Option.builder("st")
                 .longOpt("solver")
-                .desc("Solver type to use: bdd, yices2, z3, cvc5")
+                .desc("Solver type to use: bdd, yices2, z3, cvc5 (default: bdd)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Solver Type (string)")
@@ -131,7 +131,7 @@ public class PSymOptions {
         // expression type
         Option exprLibType = Option.builder("et")
                 .longOpt("expr")
-                .desc("Expression type to use: bdd, fraig, aig, native")
+                .desc("Expression type to use: bdd, fraig, aig, native (default: bdd)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Expression Type (string)")
@@ -141,7 +141,7 @@ public class PSymOptions {
         // max depth bound for the search
         Option depthBound = Option.builder("ms")
                 .longOpt("max-steps")
-                .desc("Max scheduling steps for the search")
+                .desc("Max scheduling steps for the search (default: 1000)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Max Steps (integer)")
@@ -151,7 +151,7 @@ public class PSymOptions {
         // max number of executions for the search
         Option maxExecutions = Option.builder("me")
                 .longOpt("max-executions")
-                .desc("Max number of executions to run")
+                .desc("Max number of executions to run (default: no-limit)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Max Executions (integer)")
@@ -161,7 +161,7 @@ public class PSymOptions {
         // max choice bound for the search
         Option inputChoiceBound = Option.builder("cb")
                 .longOpt("choice-bound")
-                .desc("Max choice bound at each depth during the search (integer)")
+                .desc("Max choice bound at each depth during the search (default: 1)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Max Choice Bound (integer)")
@@ -171,7 +171,7 @@ public class PSymOptions {
         // max scheduling choice bound for the search
         Option maxSchedBound = Option.builder("sb")
                 .longOpt("sched-choice-bound")
-                .desc("Max scheduling choice bound at each depth during the search")
+                .desc("Max scheduling choice bound at each depth during the search (default: 1)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Max Schedule Choice Bound (integer)")
@@ -205,7 +205,7 @@ public class PSymOptions {
         // whether or not to collect search stats
         Option collectStats = Option.builder("s")
                 .longOpt("stats")
-                .desc("Level of stats collection during the search")
+                .desc("Level of stats collection during the search (default: 1)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Collection Level")
@@ -247,7 +247,7 @@ public class PSymOptions {
         // random seed for the search
         Option randomSeed = Option.builder("seed")
                 .longOpt("seed")
-                .desc("Random seed for the search")
+                .desc("Random seed for the search (default: 0)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Random Seed (integer)")
@@ -257,7 +257,7 @@ public class PSymOptions {
         // set the level of verbosity
         Option verbosity = Option.builder("v")
                 .longOpt("verbose")
-                .desc("Level of verbosity for the logging")
+                .desc("Level of verbosity for the logging (default: 1)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Log Verbosity")

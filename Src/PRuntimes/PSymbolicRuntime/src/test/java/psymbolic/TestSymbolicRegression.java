@@ -185,6 +185,7 @@ public class TestSymbolicRegression {
     Collection<DynamicTest> loadTests(String testDirPath) {
         if (!initialized) {
             initialize();
+            initialized = true;
         }
 
         Collection<DynamicTest> dynamicTests = new ArrayList<>();

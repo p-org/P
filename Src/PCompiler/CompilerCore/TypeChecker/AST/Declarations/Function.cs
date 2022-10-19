@@ -59,6 +59,11 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             localVariables.Add(local);
         }
 
+        public void RemoveLocalVariable(Variable local)
+        {
+            localVariables.Remove(local);
+        }
+
         public void AddCreatesInterface(Interface i)
         {
             createsInterfaces.Add(i);

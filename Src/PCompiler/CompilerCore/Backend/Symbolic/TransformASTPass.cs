@@ -144,7 +144,19 @@ namespace Plang.Compiler.Backend.Symbolic
              
              foreach (var handler in state.AllEventHandlers)
              {
+                 if (handler.Key.IsNullEvent)
+                 {
+                    throw new NotImplementedException($"Null actions are not supported, found in state {transformedState.Name} of machine {transformedState.OwningMachine.Name}");
+                 }
                  transformedState[handler.Key] = TransformAction(handler.Value, functionMap);
+             }
+
+             if (transformedState.Exit != null)
+             {
+                if (transformedState.Exit.CanReceive == true)
+                {
+                    throw new NotImplementedException($"Receive in state exit functions are not supported, found in state {transformedState.Name} of machine {transformedState.OwningMachine.Name}");
+                }
              }
 
              return transformedState;
@@ -187,7 +199,6 @@ namespace Plang.Compiler.Backend.Symbolic
              foreach(var funStmt in callee.Body.Statements)
                  body.Add(ReplaceVars(funStmt, newVarMap));
              callNum++;
-             caller.RemoveCallee(callee);
          }
 
          static private List<IPStmt> ReplaceReturn(IReadOnlyList<IPStmt> body, IPExpr location)
@@ -251,7 +262,9 @@ namespace Plang.Compiler.Backend.Symbolic
                          FunCallExpr rhsExpr = ((FunCallExpr) assign.Value);
                          if (!rhsExpr.Function.IsForeign)
                          {
-                            InlineInFunction(rhsExpr.Function);
+                            bool inlined = InlineInFunction(rhsExpr.Function);
+                            if (inlined)
+                                function.RemoveCallee(rhsExpr.Function);
                             List<IPStmt> appendToBody = new List<IPStmt>();
                             GenerateInline(function, rhsExpr.Function, rhsExpr.Arguments, appendToBody, assign.SourceLocation);
                             appendToBody = ReplaceReturn(appendToBody, assign.Location);
@@ -273,7 +286,9 @@ namespace Plang.Compiler.Backend.Symbolic
                  case FunCallStmt call:
                      if ((!call.Function.IsForeign) & (call.Function.CanReceive == true))
                      {
-                         InlineInFunction(call.Function);
+                         bool inlined = InlineInFunction(call.Function);
+                         if (inlined)
+                            function.RemoveCallee(call.Function);
                          GenerateInline(function, call.Function, call.ArgsList, body, call.SourceLocation);
                      }
                      else
@@ -309,7 +324,7 @@ namespace Plang.Compiler.Backend.Symbolic
              }
          }
 
-         static private void InlineInFunction(Function function)
+         static private bool InlineInFunction(Function function)
          {
             if (!function.Callees.Contains(function) && (function.CanReceive == true)) {
                 List<IPStmt> body = new List<IPStmt>();
@@ -318,8 +333,12 @@ namespace Plang.Compiler.Backend.Symbolic
                     InlineStmt(function, stmt, body);
                 }
                 function.Body = new CompoundStmt(function.Body.SourceLocation, body);
+                return true;
             }
-            return;
+            else
+            {
+                return false;
+            }
          }
 
          static private IPStmt ReplaceVars(IPStmt stmt, Dictionary<Variable,Variable> varMap)
@@ -362,7 +381,7 @@ namespace Plang.Compiler.Backend.Symbolic
                  case RaiseStmt raiseStmt:
                      List<IPExpr> payload = new List<IPExpr>();
                      foreach(var p in raiseStmt.Payload) payload.Add(ReplaceVars(p, varMap));
-                     return new RaiseStmt(raiseStmt.SourceLocation, raiseStmt.PEvent, payload);
+                     return new RaiseStmt(raiseStmt.SourceLocation, ReplaceVars(raiseStmt.PEvent, varMap), payload);
                  case ReceiveStmt receiveStmt:
                      Dictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
                      foreach(KeyValuePair<PEvent, Function> entry in receiveStmt.Cases)
@@ -591,14 +610,61 @@ namespace Plang.Compiler.Backend.Symbolic
                                   break;
                              case ReceiveStmt recv:
                                  IDictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
+                                 bool canReceiveInCase = false;
+                                 foreach (KeyValuePair<PEvent, Function> c in recv.Cases)
+                                 {
+                                     if (c.Value.CanReceive == true)
+                                     {
+                                         canReceiveInCase = true;
+                                         if (c.Value.LocalVariables.Count() != 0)
+                                         {
+                                            Dictionary<Variable,Variable> caseVarMap = new Dictionary<Variable,Variable>();
+                                            foreach (var local in c.Value.LocalVariables)
+                                            {
+                                                Variable caseVar = new Variable($"{c.Key.Name}_{local.Name}", local.SourceLocation, local.Role);
+                                                caseVar.Type = local.Type;
+                                                caseVarMap.Add(local, caseVar);
+                                            }
+                                            foreach(KeyValuePair<Variable, Variable> entry in caseVarMap)
+                                            {
+                                                c.Value.RemoveLocalVariable(entry.Key);
+                                                c.Value.AddLocalVariable(entry.Value);
+                                            }
+                                            if (c.Value.Body != null)
+                                            {
+                                                List<IPStmt> newCaseBody = new List<IPStmt>();
+                                                newCaseBody.Add(ReplaceVars(c.Value.Body, caseVarMap));
+                                                c.Value.Body = new CompoundStmt(c.Value.Body.SourceLocation, newCaseBody);
+                                            }
+                                         }
+                                     }
+                                 }
                                  foreach (KeyValuePair<PEvent, Function> c in recv.Cases)
                                  {
                                      c.Value.AddLocalVariables(function.Signature.Parameters);
                                      c.Value.AddLocalVariables(function.LocalVariables);
-                                     if (c.Value.CanReceive == true) {
-                                         throw new NotImplementedException($"Receive inside a case statement is not yet supported, found in {machine.Name}");
+                                     if (canReceiveInCase == true && after != null)
+                                     {
+                                        List<IPStmt> caseStmts = new List<IPStmt>();
+                                        CompoundStmt caseBody = c.Value.Body;
+                                        if (caseBody != null)
+                                        {
+                                            foreach (var stmt in caseBody.Statements)
+                                            {
+                                                caseStmts.Add(stmt);
+                                            }
+                                        }
+                                        if (after != null)
+                                        {
+                                            caseStmts.Add(after);
+                                        }
+                                        c.Value.Body = new CompoundStmt(c.Value.Body.SourceLocation, caseStmts);
                                      }
                                      cases.Add(c.Key, TransformFunction(c.Value, machine));
+                                 }
+                                 if (canReceiveInCase)
+                                 {
+                                    after = null;
                                  }
                                  if (after != null)
                                  {

@@ -435,7 +435,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"new EventHandler({eventTag}) {{");
                     context.WriteLine(output, "@Override public void handleEvent(Guard pc, Machine machine, UnionVS payload, EventHandlerReturnReason outcome) {");
                     var actionFunc = action.Target;
-                    actionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}";
+                    if (actionFunc.Name == "")
+                        actionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}";
                     context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc, machine.sendBuffer");
                     if (actionFunc.CanChangeState ?? false)
                         context.Write(output, ", outcome");
@@ -465,6 +466,8 @@ namespace Plang.Compiler.Backend.Symbolic
                         var transitionFunc = gotoState.TransitionFunction;
                         Debug.Assert(!(transitionFunc.CanChangeState ?? false));
                         Debug.Assert(!(transitionFunc.CanRaiseEvent ?? false));
+                        if (transitionFunc.Name == "")
+                            transitionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}_{destTag}";
 
                         context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(pc, machine.sendBuffer");
                         if (transitionFunc.Signature.Parameters.Count() == 1)
@@ -873,7 +876,7 @@ namespace Plang.Compiler.Backend.Symbolic
                             IPExpr expr = UnnestCloneExpr(assignStmt.Value);
                             if (expr is NullLiteralExpr)
                             {
-                                context.Write(output, $"{locationTemp} = {GetDefaultValueNoGuard(context, assignStmt.Location.Type)}.restrict(Guard.constFalse());");
+                                context.WriteLine(output, $"{locationTemp} = {GetDefaultValueNoGuard(context, assignStmt.Location.Type)}.restrict(Guard.constFalse());");
                             } else
                             {
                                 string inlineCastPrefix = GetInlineCastPrefix(assignStmt.Value.Type, assignStmt.Location.Type, context, flowContext.pcScope);
@@ -1635,7 +1638,9 @@ namespace Plang.Compiler.Backend.Symbolic
                             context.Write(output, $"{GetSymbolicType(valueType)} {valueTemp}");
                             if (needOrigValue)
                             {
-                                context.WriteLine(output, $" = {mapTemp}.get({indexTemp});");
+                                context.Write(output, $" = {mapTemp}.getOrDefault({indexTemp}, ");
+                                context.Write(output, GetDefaultValue(context, pcScope, valueType));
+                                context.WriteLine(output, ");");
                             }
                             else
                             {
@@ -1889,6 +1894,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteExpr(CompilationContext context, StringWriter output, PathConstraintScope pcScope, IPExpr expr)
         {
+            PLanguageType elementType = null;
             switch (expr)
             {
                 case CloneExpr cloneExpr:
@@ -2021,8 +2027,10 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case MapAccessExpr mapAccessExpr:
                     WriteExpr(context, output, pcScope, mapAccessExpr.MapExpr);
-                    context.Write(output, ".get(");
+                    context.Write(output, ".getOrDefault(");
                     WriteExpr(context, output, pcScope, mapAccessExpr.IndexExpr);
+                    context.Write(output, ", ");
+                    context.Write(output, GetDefaultValue(context, pcScope, mapAccessExpr.Type));
                     context.Write(output, ")");
                     break;
                 case SeqAccessExpr seqAccessExpr:
@@ -2054,7 +2062,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, $"({GetSymbolicType(tupleAccessExpr.Type)})(");
-                    string tuplePrefix = GetInlineCastPrefix((tupleAccessExpr.SubExpr.Type as TupleType).Types[tupleAccessExpr.FieldNo], tupleAccessExpr.Type, context, pcScope);
+                    var tupleType = (tupleAccessExpr.SubExpr.Type.Canonicalize() as TupleType);
+                    string tuplePrefix = GetInlineCastPrefix(tupleType.Types[tupleAccessExpr.FieldNo], tupleAccessExpr.Type, context, pcScope);
                     context.Write(output, "(");
                     context.Write(output, tuplePrefix);
                     WriteExpr(context, output, pcScope, tupleAccessExpr.SubExpr);
@@ -2113,7 +2122,6 @@ namespace Plang.Compiler.Backend.Symbolic
                 case ContainsExpr containsExpr:
                     var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
                     var isSet = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Set);
-                    PLanguageType elementType = null;
                     if (isMap) {
                         elementType = ((MapType) containsExpr.Collection.Type.Canonicalize()).KeyType;
                     } else if (isSet) {

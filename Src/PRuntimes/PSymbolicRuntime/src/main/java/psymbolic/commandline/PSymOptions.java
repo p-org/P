@@ -23,7 +23,7 @@ public class PSymOptions {
         // mode of orchestration
         Option orch = Option.builder("orch")
                 .longOpt("orchestration")
-                .desc("Orchestration options: random, coverage-astar, coverage-estimate, dfs, none")
+                .desc("Orchestration options: coverage-astar, coverage-estimate, random, dfs")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Orchestration Mode (string)")
@@ -178,13 +178,13 @@ public class PSymOptions {
                 .build();
         options.addOption(maxSchedBound);
 
-        // whether or not to enable state caching
-        Option stateCaching = Option.builder("sc")
-                .longOpt("state-caching")
-                .desc("Enable state caching via enumeration of exact states")
+        // whether or not to disable state caching
+        Option noStateCaching = Option.builder("nsc")
+                .longOpt("no-state-caching")
+                .desc("Disable state caching")
                 .numberOfArgs(0)
                 .build();
-        options.addOption(stateCaching);
+        options.addOption(noStateCaching);
 
         // whether or not to disable receiver queue semantics
         Option receiverQueue = Option.builder("rq")
@@ -293,8 +293,8 @@ public class PSymOptions {
                 case "orch":
                 case "orchestration":
                     switch (option.getValue()) {
-                        case "none":
-                            config.setOrchestration(OrchestrationMode.None);
+                        case "dfs":
+                            config.setOrchestration(OrchestrationMode.DepthFirst);
                             break;
                         case "random":
                             config.setOrchestration(OrchestrationMode.Random);
@@ -308,8 +308,8 @@ public class PSymOptions {
                         case "coverage-parent":
                             config.setOrchestration(OrchestrationMode.CoverageParent);
                             break;
-                        case "dfs":
-                            config.setOrchestration(OrchestrationMode.DepthFirst);
+                        case "chronological":
+                            config.setOrchestration(OrchestrationMode.Chronological);
                             break;
                         default:
                             formatter.printHelp("orch", String.format("Unrecognized orchestration mode, got %s", option.getValue()), options, "Try \"--help\" option for details.");
@@ -468,9 +468,9 @@ public class PSymOptions {
                         formatter.printHelp("v", String.format("Expected an integer value (0, 1 or 2), got %s", option.getValue()), options, "Try \"--help\" option for details.");
                     }
                     break;
-                case "sc":
-                case "state-caching":
-                    config.setUseStateCaching(true);
+                case "nsc":
+                case "no-state-caching":
+                    config.setUseStateCaching(false);
                     break;
                 case "rq":
                 case "receiver-queue":

@@ -238,12 +238,14 @@ public class IterativeBoundedScheduler extends Scheduler {
             isDoneIterating = ((iter - start_iter) >= configuration.getMaxExecutions());
         }
         GlobalData.getCoverage().updateIterationCoverage(getChoiceDepth()-1);
-        if (configuration.getOrchestration() != OrchestrationMode.None) {
+        if (configuration.getOrchestration() != OrchestrationMode.DepthFirst) {
             setBacktrackTasks();
             BacktrackTask nextTask = setNextBacktrackTask();
             if (nextTask != null) {
-                PSymLogger.log(String.format("Next is %s [depth: %d, priority: %.4f, parent: %s]",
-                        nextTask, nextTask.getDepth(), nextTask.getPriority(), nextTask.getParentTask()));
+                if (configuration.getVerbosity() > 1) {
+                    PSymLogger.log(String.format("    Next is %s [depth: %d, priority: %.4f, parent: %s]",
+                            nextTask, nextTask.getDepth(), nextTask.getPriority(), nextTask.getParentTask()));
+                }
             }
         }
         printCurrentStatus();
@@ -270,8 +272,10 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
         parentTask.setCoverage(GlobalData.getCoverage().getIterationCoverage(getChoiceDepth()-1));
         finishedTasks.add(parentTask.getId());
-        PSymLogger.log(String.format("Finished %s [depth: %d, priority: %.4f, parent: %s]",
-                parentTask, parentTask.getDepth(), parentTask.getPriority(), parentTask.getParentTask()));
+        if (configuration.getVerbosity() > 1) {
+            PSymLogger.log(String.format("  Finished %s [depth: %d, priority: %.4f, parent: %s]",
+                    parentTask, parentTask.getDepth(), parentTask.getPriority(), parentTask.getParentTask()));
+        }
 
         int numBacktracksAdded = 0;
         for (int i = 0; i < schedule.size(); i++) {
@@ -290,9 +294,14 @@ public class IterativeBoundedScheduler extends Scheduler {
                 }
             }
         }
-        PSymLogger.log(String.format("  Added %d new tasks", parentTask.getChildren().size()));
-        for (Integer i: parentTask.getChildren()) {
-            PSymLogger.log(String.format("    %s [depth: %d, priority: %.4f]", getTask(i), getTask(i).getDepth(), getTask(i).getPriority()));
+
+        if (configuration.getVerbosity() > 1) {
+            PSymLogger.log(String.format("    Added %d new tasks", parentTask.getChildren().size()));
+            if (configuration.getVerbosity() > 2) {
+                for (Integer i : parentTask.getChildren()) {
+                    PSymLogger.log(String.format("      %s [depth: %d, priority: %.4f]", getTask(i), getTask(i).getDepth(), getTask(i).getPriority()));
+                }
+            }
         }
     }
 

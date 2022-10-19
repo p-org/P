@@ -126,7 +126,7 @@ machine Main {
 		  
 		  //t2[1] = s6;                       //error: invalid casting
 		  t2[0][0] = s6[0] as Foo;          //dynamic error: "value must be a member of type"
-		  
+
 		  ////////////////////////////map of sequences of enum type
 		  v1 = default(SeqFoo);
 		  v1 += (0,foo1);

@@ -35,12 +35,12 @@ machine B {
 				case F: { 	
 					assert(x ==  1); x = x + 1; 
 					receive {
-						case F : { assert(false);}
+						case F : { assert(false), format("Assertion 1 failed"); }
 					}
 				}
 			}
 			
 		}
-		on F goto X with { assert false; }
+		on F goto X with { assert false, format("Assertion 2 failed"); }
 	}
 }

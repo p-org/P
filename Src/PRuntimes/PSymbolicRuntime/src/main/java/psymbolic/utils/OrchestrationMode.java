@@ -1,10 +1,10 @@
 package psymbolic.utils;
 
 public enum OrchestrationMode {
-    None,
+    DepthFirst,
     Random,
     CoverageAStar,
     CoverageEstimate,
     CoverageParent,
-    DepthFirst
+    Chronological
 }

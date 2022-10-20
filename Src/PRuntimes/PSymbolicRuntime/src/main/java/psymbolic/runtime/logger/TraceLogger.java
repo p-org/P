@@ -120,16 +120,15 @@ public class TraceLogger extends PSymLogger {
 
     public static void send(Message effect) {
         if(verbosity > 1) {
-            String msg = "Send effect " + effect.getEvent() + " to " + effect.getTarget();
+            String msg = "Send effect [" + effect.getEvent() + "] to [" + effect.getTarget() + "]";
             log.info(msg);
         }
     }
 
     public static void schedule(int step, Message effect, PrimitiveVS<Machine> src) {
         if(verbosity > 0) {
-            String msg = "Step " + step + ": scheduled event"   + effect.getEvent().toString()
-                                        + " from " + src
-                                        + " sent to " + effect.getTarget();
+            String msg = String.format("  Step %d: scheduled event[%s] from [%s] sent to [%s]",
+                            step, effect.getEvent().toString(), src, effect.getTarget());
             log.info(msg);
         }
     }

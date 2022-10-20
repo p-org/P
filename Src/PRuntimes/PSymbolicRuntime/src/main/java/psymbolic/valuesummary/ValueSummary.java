@@ -31,20 +31,30 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
              return anyVal;
          }
          if (anyVal == null) {
-             if (def instanceof PrimitiveVS) {
-                 return new PrimitiveVS<>((Machine)null);
-             }
+             return def.restrict(pc);
+//             if (def instanceof PrimitiveVS) {
+//                 return new PrimitiveVS<>((Machine)null);
+//             } else {
+//                 return def.restrict(pc);
+//             }
          }
          if (anyVal.isEmptyVS()) {
              return def.getCopy();
          }
 
-         Class<? extends ValueSummary> type = def.getClass();
+         UnionVStype type;
+         if (def instanceof NamedTupleVS) {
+             type = UnionVStype.getUnionVStype(def.getClass(), ((NamedTupleVS) def).getNames());
+         } else if (def instanceof TupleVS) {
+             type = UnionVStype.getUnionVStype(def.getClass(), ((TupleVS) def).getNames());
+         } else {
+             type = UnionVStype.getUnionVStype(def.getClass(), null);
+         }
          Guard typeGuard = anyVal.getGuardFor(type);
          Guard pcNotDefined = pc.and(typeGuard.not());
          Guard pcDefined = pc.and(typeGuard);
          if (pcDefined.isFalse()) {
-             if (type.equals(PrimitiveVS.class)) {
+             if (type.equals(UnionVStype.getUnionVStype(PrimitiveVS.class, null))) {
                  return new PrimitiveVS<>(pc);
              }
              System.out.println(anyVal.restrict(typeGuard));

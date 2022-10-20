@@ -29,7 +29,7 @@ machine Main {
 		assert tmp == 1;
 		st += (3);                  
 	        assert 3 in st;
-		assert (6 in st) == false;  
+		assert (6 in st) == false;
 		st1 += (3);
 		st1 += (5);
 		assert st == st1;

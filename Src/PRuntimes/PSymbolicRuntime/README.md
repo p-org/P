@@ -1,5 +1,7 @@
 # PSym
 
+[![PSym on Ubuntu](https://github.com/p-org/P/actions/workflows/psym.yml/badge.svg)](https://github.com/p-org/P/actions/workflows/psym.yml)
+
 The basic idea behind PSym is to perform symbolic exploration of P models, powered by automated reasoning through Binary Decision Diagrams (BDDs) or SAT/SMT solvers.
 
 PSym is composed of two components: 
@@ -19,7 +21,7 @@ This installs PSym with the default BDD backend. For detailed solver options, ch
 
 ### Example
     
-    ./scripts/run_psym.sh Examples/tests/pingPong/pingPongNew/ psymExample 
+    ./scripts/run_psym.sh Examples/tests/PingPong/ psymExample 
 
 ### Output
 PSym creates a directory `` output/<project-name> `` which contains results, statistics and logs relating to the run.

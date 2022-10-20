@@ -7,6 +7,7 @@ import psymbolic.runtime.machine.State;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.UnionVS;
 import psymbolic.valuesummary.Guard;
+import psymbolic.valuesummary.UnionVStype;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -39,7 +40,7 @@ public class EventHandlerReturnReason implements Serializable {
      * Condition under which the event handler did a goto
      * @return condition for goto
      */
-    public Message getMessageSummary() { return (Message) outcome.getValue(Message.class).restrict(getRaiseCond()); }
+    public Message getMessageSummary() { return (Message) outcome.getValue(UnionVStype.getUnionVStype(Message.class, null)).restrict(getRaiseCond()); }
 
     public void raiseGuardedMessage(Message newMessage) {
         outcome = outcome.merge(new UnionVS(newMessage));
@@ -62,7 +63,7 @@ public class EventHandlerReturnReason implements Serializable {
         raiseGuardedEvent(pc, eventName, null);
     }
 
-    public PrimitiveVS<State> getGotoStateSummary() { return (PrimitiveVS<State>) outcome.getValue(PrimitiveVS.class).restrict(getGotoCond()); }
+    public PrimitiveVS<State> getGotoStateSummary() { return (PrimitiveVS<State>) outcome.getValue(UnionVStype.getUnionVStype(PrimitiveVS.class, null)).restrict(getGotoCond()); }
 
     public void addGuardedGoto(Guard pc, State newDest, UnionVS newPayload) {
         outcome = outcome.merge(new UnionVS(new PrimitiveVS<>(newDest).restrict(pc)));

@@ -71,7 +71,7 @@ public class ForeignFunctionInvoker {
             int size = list.size();
             for (int i = 0; i < size; i++) {
                 try {
-                    listVS.add(convertConcrete(pc, list.getValue(i)));
+                    listVS = listVS.add(convertConcrete(pc, list.getValue(i)));
                 } catch (InvalidIndexException e) {
                     e.printStackTrace();
                 }

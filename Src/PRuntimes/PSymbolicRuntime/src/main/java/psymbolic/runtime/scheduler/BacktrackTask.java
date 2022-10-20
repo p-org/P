@@ -99,7 +99,7 @@ public class BacktrackTask implements Serializable {
      */
     public void setPriority(OrchestrationMode orchestration) {
         switch (orchestration) {
-            case None:
+            case DepthFirst:
                 throw new RuntimeException("Unexpected orchestration mode: " + orchestration);
             case Random:
                 priority = BigDecimal.valueOf(RandomNumberGenerator.getInstance().getRandomLong());
@@ -121,7 +121,7 @@ public class BacktrackTask implements Serializable {
                     priority = parentTask.getCoverage();
                 }
                 break;
-            case DepthFirst:
+            case Chronological:
                 priority = BigDecimal.valueOf(this.id);
                 break;
             default:

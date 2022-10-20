@@ -46,6 +46,16 @@ public class TupleVS implements ValueSummary<TupleVS> {
         return new TupleVS(this);
     }
 
+    /** Get the names of the TupleVS fields
+     * @return Array containing the names of the TupleVS fields */
+    public String[] getNames() {
+        String [] result = new String[classes.length];
+        for (int i=0; i<classes.length; i++) {
+            result[i] = classes[i].toString();
+        }
+        return result;
+    }
+
     /** Get the arity of the TupleVS
      * @return The arity of the TupleVS */
     public int getArity() {

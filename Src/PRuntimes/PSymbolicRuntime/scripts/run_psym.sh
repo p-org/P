@@ -33,8 +33,14 @@ then
     cp ${inputJavaFiles} ${outPath}
 fi
 
-dotnet ../../../Bld/Drops/Release/Binaries/netcoreapp3.1/P.dll -generate:symbolic ${inputFiles} -t:${projectName} -outputDir:${outPath} > ${outPath}/compile.out 2>> >(tee -a $outPath/compile.err >&2)
-echo -e "Done"
+dotnet ../../../Bld/Drops/Release/Binaries/netcoreapp3.1/P.dll -generate:symbolic ${inputFiles} -t:${projectName} -outputDir:${outPath} > ${outPath}/compile.out
+if grep -q "BUILD SUCCESS" ${outPath}/compile.out; then
+  echo -e "  Done"
+else
+  echo -e "  Compilation fail. Check  ${outPath}/compile.out for details"
+  tail -50 ${outPath}/compile.out
+  exit
+fi
 
 echo -e "--------------------"
 echo -e "Running PSym"

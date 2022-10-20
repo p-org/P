@@ -22,13 +22,10 @@ import java.util.Date;
  * Represents the P Symbolic test logger configuration
  */
 public class PSymTestLogger {
-    @Getter
-    static boolean initialized = false;
     static Logger log = null;
     static LoggerContext context = null;
 
     public static void Initialize(String outputFolder) {
-        initialized = true;
         log = Log4JConfig.getContext().getLogger(PSymTestLogger.class.getName());
         org.apache.logging.log4j.core.Logger coreLogger =
                 (org.apache.logging.log4j.core.Logger) LogManager.getLogger(PSymTestLogger.class.getName());

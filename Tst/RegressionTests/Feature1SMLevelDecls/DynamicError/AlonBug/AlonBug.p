@@ -14,7 +14,7 @@ machine Main {
 	state Call {
 		   entry { 
 			 if (i == 3) {
-				    pop; 
+//				    pop;
 			}
             else
 			    {

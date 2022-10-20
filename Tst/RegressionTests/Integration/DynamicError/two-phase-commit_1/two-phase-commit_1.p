@@ -24,7 +24,7 @@ event announce_READ_SUCCESS:(m: machine, key:int, val:int);
 event announce_READ_FAILURE:machine;
 event announce_UPDATE:(m:machine, key:int, val:int);
 event goEnd;
-event final;
+//event final;
 
 /*
 All the external APIs which are called by the protocol

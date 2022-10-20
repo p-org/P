@@ -15,12 +15,12 @@ machine Main {
 			z += (0, 14.1511);
 			z += (0, 12.1114);
 
-			assert x == true || x == false;
-			assert choose(0) == 0 && choose(1) == 0;
-			assert choose(10) < 10 && choose(10) >= 0;
-			assert choose(y) in y;
-			assert choose(z) < 115.0 && choose(z) > 1.11;
-			assert choose(z) to int != choose(y);
+			assert x == true || x == false, format ("Assertion 0 failed");
+			assert choose(0) == 0 && choose(1) == 0, format ("Assertion 1 failed");
+			assert choose(10) < 10 && choose(10) >= 0, format ("Assertion 2 failed");
+			assert choose(y) in y, format ("Assertion 3 failed");
+			assert choose(z) < 115.0 && choose(z) > 1.11, format ("Assertion 4 failed");
+			assert choose(z) to int != choose(y), format ("Assertion 5 failed");
 
 		}
 	}

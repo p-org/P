@@ -84,7 +84,7 @@ public class SearchLogger {
     }
 
     public static void finishedExecution(int steps) {
-        log.info(String.format("Execution finished in %d steps", steps));
+        log.info(String.format("  Execution finished in %d steps", steps));
     }
 
     public static void logResumeExecution(int iter, int step) {

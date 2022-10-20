@@ -6,21 +6,20 @@ Here is a summary of these options:
 
 ````
 [Configure Orchestration]
-    -orch,--orchestration <Orchestration Mode (string)>               Orchestration options: random,
-                                                                      coverage-astar, coverage-estimate,
-                                                                      dfs, none                                                                     
+    -orch,--orchestration <Orchestration Mode (string)>               Orchestration options: coverage-astar, 
+                                                                      coverage-estimate, random, dfs (default: coverage-astar)                                                                     
     -orchmt,--orchestration-max-tasks <Max Backtrack Tasks (integer)> Max number of backtrack tasks
-                                                                      to generate per execution
+                                                                      to generate per execution (default: 2)
 
 [Configure Symbolic Width]
     -sb,--sched-choice-bound <Max Schedule Choice Bound (integer)>   Max scheduling choice bound at
-                                                                     each depth during the search
+                                                                     each depth during the search (default: 1)
     -cb,--choice-bound <Max Choice Bound (integer)>                  Max data choice bound at each depth
-                                                                     during the search
+                                                                     during the search (default: 1)
 
 [Configure Resource Limits]
-    -tl,--time-limit <Time Limit (seconds)>                          Time limit in seconds. Use 0 for
-                                                                     no limit.
+    -tl,--time-limit <Time Limit (seconds)>                          Time limit in seconds (default: 60).
+                                                                     Use 0 for no limit.
     -ml,--memory-limit <Memory Limit (MB)>                           Memory limit in megabytes (MB).
                                                                      Use 0 for no limit.
 
@@ -31,21 +30,21 @@ Here is a summary of these options:
 
 [Configure Search Depth]
     -ms,--max-steps <Max Steps (integer)>                            Max scheduling steps for the
-                                                                     search
+                                                                     search (default: 1000)
 
 [Configure Search Iterations]
-    -me,--max-executions <Max Executions (integer)>                  Max number of executions to run
+    -me,--max-executions <Max Executions (integer)>                  Max number of executions to run (default: no-limit)
 
 
 [Configure Solver Backend]
     -st,--solver <Solver Type (string)>                              Solver type to use: bdd, monosat,
-                                                                     yices2, z3, cvc5
+                                                                     yices2, z3, cvc5 (default: bdd)
     -et,--expr <Expression Type (string)>                            Expression type to use: bdd,
-                                                                     fraig, aig, native
+                                                                     fraig, aig, native (default: bdd)
 
 [Configure Output/Project Name]
-    -o,--output <Output Folder (string)>                             Name of the output folder
-    -p,--project <Project Name (string)>                             Name of the project
+    -o,--output <Output Folder (string)>                             Name of the output folder (default: output)
+    -p,--project <Project Name (string)>                             Name of the project (default: test)
 
 [Configure Reading/Writing Backtracks]
     -r,--read <File Name (string)>                                   Name of the file with the program
@@ -59,18 +58,17 @@ Here is a summary of these options:
                                                                      get receiver queue semantics
 
 [Configure State Caching]
-    -sc,--state-caching                                              Enable state caching via
-                                                                     enumeration of exact states
+    -nsc,--no-state-caching                                          Disable state caching
 
 [Configure Randomness]
     -nr,--no-random                                                  Disable randomization
-    -seed,--seed <Random Seed (integer)>                             Random seed for the search
+    -seed,--seed <Random Seed (integer)>                             Random seed for the search (default: 0)
 
 [Configure Statistics and Logs]
     -s,--stats <Collection Level>                                    Level of stats collection during
-                                                                     the search
+                                                                     the search (default: 1)
     -v,--verbose <Log Verbosity>                                     Level of verbosity for the logging
-    -h,--help                                                        Print this help message
+    -h,--help                                                        Print this help message (default: 1)
 ````
 
 For example, running:

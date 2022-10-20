@@ -83,7 +83,29 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
 
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(SetVS<T> cmp, Guard pc) {
-        return this.elements.symbolicEquals(cmp.elements, pc);
+        if (cmp == null) {
+            return BooleanVS.trueUnderGuard(Guard.constFalse());
+        }
+
+        // check if size is empty
+        if (elements.size().isEmptyVS()) {
+            if (cmp.isEmptyVS()) {
+                return BooleanVS.trueUnderGuard(pc);
+            } else {
+                return BooleanVS.trueUnderGuard(Guard.constFalse());
+            }
+        }
+
+        // check if each item in the set is symbolically equal
+        Guard equalCond = Guard.constTrue();
+        for (T lhs: this.elements.getItems()) {
+            equalCond = equalCond.and(cmp.contains(lhs).getGuardFor(true));
+        }
+        for (T rhs: cmp.elements.getItems()) {
+            equalCond = equalCond.and(this.contains(rhs).getGuardFor(true));
+        }
+
+        return BooleanVS.trueUnderGuard(pc.and(equalCond)).restrict(getUniverse().and(cmp.getUniverse()));
     }
 
     @Override

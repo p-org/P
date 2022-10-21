@@ -249,7 +249,7 @@ namespace Microsoft.Coyote.SystematicTesting
 
             // Do not create the output directory yet if we have to scroll back the history first.
             OutputDirectory = Reporter.GetOutputDirectory(configuration.OutputFilePath, configuration.AssemblyToBeAnalyzed,
-                "CoyoteOutput", createDir: !makeHistory);
+                "POutput", createDir: !makeHistory);
             if (!makeHistory)
             {
                 return;

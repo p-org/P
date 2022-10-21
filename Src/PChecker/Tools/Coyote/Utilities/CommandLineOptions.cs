@@ -21,9 +21,9 @@ namespace Microsoft.Coyote.Utilities
         /// </summary>
         internal CommandLineOptions()
         {
-            this.Parser = new CommandLineArgumentParser("Coyote",
-                "The Coyote tool enables you to systematically test a specified Coyote test, generate " +
-                "a reproducible bug-trace if a bug is found, and replay a bug-trace using the VS debugger.");
+            this.Parser = new CommandLineArgumentParser("PChecker",
+                "The PChecker tool enables you to systematically explore a specified P test case, generate " +
+                "a reproducible bug-trace if a bug is found, and replay a bug-trace.");
 
             var basicOptions = this.Parser.GetOrCreateGroup("Basic", "Basic options");
             var commandArg = basicOptions.AddPositionalArgument("command", "The operation perform (test, replay)");

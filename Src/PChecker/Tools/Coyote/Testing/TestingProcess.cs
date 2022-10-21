@@ -26,7 +26,7 @@ namespace Microsoft.Coyote.SystematicTesting
         /// <summary>
         /// A name for the test client
         /// </summary>
-        private readonly string Name = "CoyoteTestingProcess";
+        private readonly string Name = "PCheckerProcess";
 
         /// <summary>
         /// Configuration.

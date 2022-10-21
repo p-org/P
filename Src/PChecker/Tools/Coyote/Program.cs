@@ -147,16 +147,13 @@ namespace Microsoft.Coyote
             {
                 if (ex is ExecutionCanceledException)
                 {
-                    Error.Report("[CoyoteTester] unhandled exception: {0}: {1}", ex.GetType().ToString(),
-                        "This can mean you have a code path that is not controlled by the runtime that threw an unhandled exception. " +
-                        "This typically happens when you create a 'System.Threading.Tasks.Task' instead of 'Microsoft.Coyote.Tasks.Task' " +
-                        "or create a 'Task' inside a 'StateMachine' handler. One known issue that causes this is using 'async void' " +
-                        "methods, which is not supported.");
+                    Error.Report("[PChecker] unhandled exception: {0}: {1}", ex.GetType().ToString(),
+                        "This can mean you have a code path that is not controlled by the runtime that threw an unhandled exception.");
                     StdOut.WriteLine(ex.StackTrace);
                 }
                 else
                 {
-                    Error.Report("[CoyoteTester] unhandled exception: {0}: {1}", ex.GetType().ToString(), ex.Message);
+                    Error.Report("[PChecker] unhandled exception: {0}: {1}", ex.GetType().ToString(), ex.Message);
                     StdOut.WriteLine(ex.StackTrace);
                 }
             }

@@ -132,7 +132,7 @@ namespace Microsoft.Coyote.SystematicTesting
         /// </summary>
         private void NotifyBugFound(uint processId)
         {
-            string name = "CoyoteTestingProcess." + processId;
+            string name = "PCheckerProcess." + processId;
             lock (this.Terminating)
             {
                 this.Terminating.Add(name);
@@ -142,7 +142,7 @@ namespace Microsoft.Coyote.SystematicTesting
             {
                 if (!this.Configuration.PerformFullExploration && this.BugFoundByProcess is null)
                 {
-                    Console.WriteLine($"... Task {processId} found a bug.");
+                    Console.WriteLine($"... Process {processId} found a bug.");
                     this.BugFoundByProcess = processId;
                     // must be async relative to this NotifyBugFound handler.
                     Task.Run(() => this.CleanupTestProcesses(processId));
@@ -166,7 +166,7 @@ namespace Microsoft.Coyote.SystematicTesting
                 {
                     if (testingProcess.Key != bugProcessId)
                     {
-                        string name = "CoyoteTestingProcess." + testingProcess.Key;
+                        string name = "PCheckerProcess." + testingProcess.Key;
 
                         lock (this.Terminating)
                         {
@@ -208,7 +208,7 @@ namespace Microsoft.Coyote.SystematicTesting
                     }
                     catch (Exception e)
                     {
-                        IO.Debug.WriteLine("... Unable to terminate testing task: " + e.Message);
+                        IO.Debug.WriteLine("... Unable to terminate testing process: " + e.Message);
                     }
                 }
 
@@ -526,7 +526,7 @@ namespace Microsoft.Coyote.SystematicTesting
             {
                 string fileName = this.Configuration.AssemblyToBeAnalyzed;
                 string targetDir = Path.GetDirectoryName(fileName);
-                string outputDir = Path.Combine(targetDir, "Output", Path.GetFileName(fileName), "CoyoteOutput");
+                string outputDir = Path.Combine(targetDir, "Output", Path.GetFileName(fileName), "PCheckerOutput");
                 string remoteFileName = Path.GetFileName(report.FileName);
                 string localTraceFile = Path.Combine(outputDir, remoteFileName);
                 File.WriteAllText(localTraceFile, report.Contents);

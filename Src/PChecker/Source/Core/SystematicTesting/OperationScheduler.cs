@@ -619,7 +619,6 @@ namespace Microsoft.Coyote.SystematicTesting
 
                 this.Runtime.LogWriter.LogAssertionFailure($"<ErrorLog> {text}");
                 StackTrace trace = new StackTrace();
-                this.Runtime.LogWriter.LogAssertionFailure(string.Format("<StackTrace> {0}", trace.ToString()));
                 this.Runtime.RaiseOnFailureEvent(new AssertionFailureException(text));
                 this.Runtime.LogWriter.LogStrategyDescription(this.Configuration.SchedulingStrategy,
                     this.Strategy.GetDescription());

@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PChecker", "PChecker", "{F7
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Src\PChecker\Source\Core\Core.csproj", "{37778F65-BDBF-4AEA-BA34-01026A223083}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Coyote", "Src\PChecker\Tools\Coyote\Coyote.csproj", "{A44CA80A-776D-4960-BB27-FD70EDCE4960}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,10 @@ Global
 		{37778F65-BDBF-4AEA-BA34-01026A223083}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37778F65-BDBF-4AEA-BA34-01026A223083}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{37778F65-BDBF-4AEA-BA34-01026A223083}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A44CA80A-776D-4960-BB27-FD70EDCE4960}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A44CA80A-776D-4960-BB27-FD70EDCE4960}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A44CA80A-776D-4960-BB27-FD70EDCE4960}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A44CA80A-776D-4960-BB27-FD70EDCE4960}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -57,6 +63,7 @@ Global
 		{41F39ADD-B75F-473F-AC41-D1A9CDA9A9CD} = {1B21372A-3030-4532-8B30-2A1A3E74527A}
 		{27E011B3-3995-454A-B200-57800CC941DA} = {D641DC13-F2F0-4365-963A-DCFC80BABCAA}
 		{37778F65-BDBF-4AEA-BA34-01026A223083} = {F7D2A6F5-841A-4E22-9ECD-2E1CF736F7EA}
+		{A44CA80A-776D-4960-BB27-FD70EDCE4960} = {F7D2A6F5-841A-4E22-9ECD-2E1CF736F7EA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BD6B0E25-71B7-4A8F-8D0F-946BA6D47C7C}

@@ -63,6 +63,9 @@ nav:
       - Structure of a P Program: advanced/structureOfPProgram.md
       - P Project File: advanced/PProject.md
       - Debugging Error Traces (counter examples): advanced/debuggingerror.md
+      - PSym:
+        - What is PSym?: advanced/psym/whatisPSym.md
+        - Installing PSym: advanced/psym/install.md
   - Language Manual:
       - P Program (Outline): manualoutline.md
       - P DataTypes: manual/datatypes.md

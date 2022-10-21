@@ -47,16 +47,16 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
     </build>
     <dependencies>
         <dependency>
-            <groupId>psymbolic</groupId>
-            <artifactId>SymbolicRuntime</artifactId>
-            <version>1.0</version>
+            <groupId>io.github.p-org</groupId>
+            <artifactId>psym</artifactId>
+            <version>[0.1,)</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
         <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
-        <version>1.18.20</version>
+        <version>1.18.24</version>
         <scope>provided</scope>
         </dependency>
     </dependencies>

@@ -25,7 +25,7 @@ public class PFloat extends PValue<PFloat> {
 
     @Override
     public int hashCode() {
-        return new Double(value).hashCode();
+        return Double.valueOf(value).hashCode();
     }
 
     @Override

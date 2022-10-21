@@ -1,8 +1,8 @@
-# What PSym currently do not support
+# What PSym currently does not support
 
 Here is a summary of P features and constructs that PSym *does not* currently support:
 - C# foreign functions (PSym supports Java foreign functions instead)
-- Module system or refinement, except basic test scripts
+- Module refinement and interfaces
 - Liveness checking (coming soon)
 - Deadlock detection (coming soon)
 - Recursive functions (except tail recursion)

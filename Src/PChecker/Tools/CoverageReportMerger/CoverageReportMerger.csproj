@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\Common\build.props" />
+  <Import Project="..\..\Common\key.props" />
+  <PropertyGroup>
+    <Description>The Coyote coverage report merger.</Description>
+    <AssemblyName>CoyoteCoverageReportMerger</AssemblyName>
+    <RootNamespace>CoyoteCoverageReportMerger</RootNamespace>
+    <PackageTags>coverage;merger;coyote</PackageTags>
+    <OutputType>Exe</OutputType>
+    <OutputPath>..\..\bin\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)'=='Windows_NT'">
+    <TargetFrameworks>netcoreapp3.1;net46;net47;net48</TargetFrameworks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)'=='UNIX'">
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Source\Core\Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>The PChecker command line tool.</Description>
+    <AssemblyName>pc</AssemblyName>
+    <RootNamespace>Plang</RootNamespace>
+    <ToolCommandName>pc</ToolCommandName>
+    <PackageTags>systematic;tester;pchecker</PackageTags>
+    <PackAsTool>true</PackAsTool>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Source\Core\Core.csproj" />
+  </ItemGroup>
+</Project>

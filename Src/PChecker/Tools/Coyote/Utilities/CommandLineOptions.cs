@@ -28,17 +28,15 @@ namespace Microsoft.Coyote.Utilities
             var basicOptions = this.Parser.GetOrCreateGroup("Basic", "Basic options");
             var commandArg = basicOptions.AddPositionalArgument("command", "The operation perform (test, replay)");
             commandArg.AllowedValues = new List<string>(new string[] { "test", "replay" });
-            basicOptions.AddPositionalArgument("path", "Path to the Coyote program to test");
-            basicOptions.AddArgument("method", "m", "Suffix of the test method to execute");
+            basicOptions.AddPositionalArgument("path", "Path to the P program to test");
+            basicOptions.AddArgument("testcase", "tc", "Suffix of the test method to execute");
 
             var basicGroup = this.Parser.GetOrCreateGroup("Basic", "Basic options");
             basicGroup.AddArgument("timeout", "t", "Timeout in seconds (disabled by default)", typeof(uint));
             basicGroup.AddArgument("outdir", "o", "Dump output to directory x (absolute path or relative to current directory");
             basicGroup.AddArgument("verbose", "v", "Enable verbose log output during testing", typeof(bool));
             basicGroup.AddArgument("debug", "d", "Enable debugging", typeof(bool)).IsHidden = true;
-            basicGroup.AddArgument("break", "b", "Attaches the debugger and also adds a breakpoint when an assertion fails (disabled during parallel testing)", typeof(bool));
-            basicGroup.AddArgument("version", null, "Show tool version", typeof(bool));
-
+            
             var testingGroup = this.Parser.GetOrCreateGroup("testingGroup", "Systematic testing options");
             testingGroup.DependsOn = new CommandLineArgumentDependency() { Name = "command", Value = "test" };
             testingGroup.AddArgument("iterations", "i", "Number of schedules to explore for bugs", typeof(uint));
@@ -58,29 +56,14 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
             var replayOptions = this.Parser.GetOrCreateGroup("replayOptions", "Replay and debug options");
             replayOptions.DependsOn = new CommandLineArgumentDependency() { Name = "command", Value = "replay" };
             replayOptions.AddPositionalArgument("schedule", "Schedule file to replay");
-
-            var coverageGroup = this.Parser.GetOrCreateGroup("coverageGroup", "Code and activity coverage options");
-            var coverageArg = coverageGroup.AddArgument("coverage", "c", @"Generate code coverage statistics (via VS instrumentation) with zero or more values equal to:
- code: Generate code coverage statistics (via VS instrumentation)
- activity: Generate activity (state machine, event, etc.) coverage statistics
- activity-debug: Print activity coverage statistics with debug info", typeof(string));
-            coverageArg.AllowedValues = new List<string>(new string[] { string.Empty, "code", "activity", "activity-debug" });
-            coverageArg.IsMultiValue = true;
-            coverageGroup.AddArgument("instrument", "instr", "Additional file spec(s) to instrument for code coverage (wildcards supported)", typeof(string));
-            coverageGroup.AddArgument("instrument-list", "instr-list", "File containing the paths to additional file(s) to instrument for code " +
-                "coverage, one per line, wildcards supported, lines starting with '//' are skipped", typeof(string));
-
+            
             var advancedGroup = this.Parser.GetOrCreateGroup("advancedGroup", "Advanced options");
             advancedGroup.AddArgument("explore", null, "Keep testing until the bound (e.g. iteration or time) is reached", typeof(bool));
             advancedGroup.AddArgument("seed", null, "Specify the random value generator seed", typeof(uint));
-            advancedGroup.AddArgument("wait-for-testing-processes", null, "Wait for testing processes to start (default is to launch them)", typeof(bool));
-            advancedGroup.AddArgument("testing-scheduler-ipaddress", null, "Specify server ip address and optional port (default: 127.0.0.1:0))", typeof(string));
-            advancedGroup.AddArgument("testing-scheduler-endpoint", null, "Specify a name for the server (default: CoyoteTestScheduler)", typeof(string));
             advancedGroup.AddArgument("graph-bug", null, "Output a DGML graph of the iteration that found a bug", typeof(bool));
             advancedGroup.AddArgument("graph", null, "Output a DGML graph of all test iterations whether a bug was found or not", typeof(bool));
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
-            advancedGroup.AddArgument("actor-runtime-log", null, "Specify an additional custom logger using fully qualified name: 'fullclass,assembly'", typeof(string));
-
+            
             // Hidden options (for debugging or experimentation only).
             var hiddenGroup = this.Parser.GetOrCreateGroup("hiddenGroup", "Hidden Options");
             hiddenGroup.IsHidden = true;
@@ -157,8 +140,8 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                 case "path":
                     configuration.AssemblyToBeAnalyzed = (string)option.Value;
                     break;
-                case "method":
-                    configuration.TestMethodName = (string)option.Value;
+                case "testcase":
+                    configuration.TestCaseName = (string)option.Value;
                     break;
                 case "seed":
                     configuration.RandomGeneratorSeed = (uint)option.Value;
@@ -205,7 +188,7 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                     configuration.ParallelDebug = true;
                     break;
                 case "wait-for-testing-processes":
-                    configuration.WaitForTestingProcesses = true;
+                    configuration.WaitForTestingProcesses = false;
                     break;
                 case "testing-scheduler-ipaddress":
                     {
@@ -258,37 +241,7 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                     configuration.PerformFullExploration = true;
                     break;
                 case "coverage":
-                    if (option.Value == null)
-                    {
-                        configuration.ReportCodeCoverage = true;
-                        configuration.ReportActivityCoverage = true;
-                    }
-                    else
-                    {
-                        foreach (var item in (string[])option.Value)
-                        {
-                            switch (item)
-                            {
-                                case "code":
-                                    configuration.ReportCodeCoverage = true;
-                                    break;
-                                case "activity":
-                                    configuration.ReportActivityCoverage = true;
-                                    break;
-                                case "activity-debug":
-                                    configuration.ReportActivityCoverage = true;
-                                    configuration.DebugActivityCoverage = true;
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
-                    }
-
-                    break;
-                case "instrument":
-                case "instrument-list":
-                    configuration.AdditionalCodeCoverageAssemblies[(string)option.Value] = false;
+                    configuration.ReportActivityCoverage = true;
                     break;
                 case "timeout-delay":
                     configuration.TimeoutDelay = (uint)option.Value;

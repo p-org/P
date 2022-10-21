@@ -7,6 +7,7 @@
     <PackageTags>systematic;tester;pchecker</PackageTags>
     <PackAsTool>true</PackAsTool>
     <OutputType>Exe</OutputType>
+    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>

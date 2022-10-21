@@ -46,10 +46,10 @@ namespace Microsoft.Coyote
         public string AssemblyToBeAnalyzed;
 
         /// <summary>
-        /// Test method to be used.
+        /// Test case to be used.
         /// </summary>
         [DataMember]
-        public string TestMethodName;
+        public string TestCaseName;
 
         /// <summary>
         /// The systematic testing strategy to use.
@@ -317,7 +317,7 @@ namespace Microsoft.Coyote
             this.RuntimeGeneration = 0;
 
             this.AssemblyToBeAnalyzed = string.Empty;
-            this.TestMethodName = string.Empty;
+            this.TestCaseName = string.Empty;
 
             this.SchedulingStrategy = "random";
             this.TestingIterations = 1;

@@ -118,7 +118,7 @@ namespace Microsoft.Coyote.SystematicTesting
                 this.TestingEngine.TestReport.NumOfFoundBugs > 0 &&
                 !this.Configuration.RunAsParallelBugFindingTask)
             {
-                Console.WriteLine($"... Task {this.Configuration.TestingProcessId} found a bug.");
+                Console.WriteLine($"... Process {this.Configuration.TestingProcessId} found a bug.");
             }
 
             // we want the graph generation even if doing full exploration.
@@ -131,7 +131,7 @@ namespace Microsoft.Coyote.SystematicTesting
             // Closes the remote notification listener.
             if (this.Configuration.IsVerbose)
             {
-                Console.WriteLine($"... ### Task {this.Configuration.TestingProcessId} is terminating");
+                Console.WriteLine($"... ### Process {this.Configuration.TestingProcessId} is terminating");
             }
 
             this.Disconnect();
@@ -283,7 +283,7 @@ namespace Microsoft.Coyote.SystematicTesting
             // If this is a separate (sub-)process, CodeCoverageInstrumentation.OutputDirectory may not have been set up.
             CodeCoverageInstrumentation.SetOutputDirectory(this.Configuration, makeHistory: false);
 
-            Console.WriteLine($"... Emitting task {this.Configuration.TestingProcessId} traces:");
+            Console.WriteLine($"... Emitting process {this.Configuration.TestingProcessId} traces:");
             var traces = new List<string>(this.TestingEngine.TryEmitTraces(CodeCoverageInstrumentation.OutputDirectory, file));
 
             if (this.Server != null && this.Server.IsConnected)

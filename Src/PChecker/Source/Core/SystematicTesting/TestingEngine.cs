@@ -131,11 +131,11 @@ namespace Microsoft.Coyote.SystematicTesting
             TestMethodInfo testMethodInfo = null;
             try
             {
-                testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, configuration.TestMethodName);
+                testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, configuration.TestCaseName);
             }
             catch
             {
-                Error.ReportAndExit($"Failed to get test method '{configuration.TestMethodName}' from assembly '{assembly.FullName}'");
+                Error.ReportAndExit($"Failed to get test method '{configuration.TestCaseName}' from assembly '{assembly.FullName}'");
             }
 
             return new TestingEngine(configuration, testMethodInfo);
@@ -769,10 +769,10 @@ namespace Microsoft.Coyote.SystematicTesting
                     Append(Environment.NewLine);
             }
 
-            if (!string.IsNullOrEmpty(this.Configuration.TestMethodName))
+            if (!string.IsNullOrEmpty(this.Configuration.TestCaseName))
             {
                 stringBuilder.Append("--test-method:" +
-                    this.Configuration.TestMethodName).
+                    this.Configuration.TestCaseName).
                     Append(Environment.NewLine);
             }
 
@@ -835,7 +835,7 @@ namespace Microsoft.Coyote.SystematicTesting
                 }
                 else if (line.StartsWith("--test-method:"))
                 {
-                    this.Configuration.TestMethodName =
+                    this.Configuration.TestCaseName =
                         line.Substring("--test-method:".Length);
                 }
             }

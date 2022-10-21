@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>Plang.Compiler</RootNamespace>
     <ToolCommandName>pc</ToolCommandName>
-    <AssemblyName>P</AssemblyName>
+    <AssemblyName>p</AssemblyName>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
     <LangVersion>latest</LangVersion>

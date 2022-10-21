@@ -49,9 +49,9 @@ namespace Microsoft.Coyote.SystematicTesting
                 arguments.Append("--debug ");
             }
 
-            if (!string.IsNullOrEmpty(configuration.TestMethodName))
+            if (!string.IsNullOrEmpty(configuration.TestCaseName))
             {
-                arguments.Append($"--method {configuration.TestMethodName} ");
+                arguments.Append($"--testcase {configuration.TestCaseName} ");
             }
 
             arguments.Append($"--iterations {configuration.TestingIterations} ");
@@ -125,9 +125,6 @@ namespace Microsoft.Coyote.SystematicTesting
             }
 
             arguments.Append("--run-as-parallel-testing-task ");
-            arguments.Append($"--testing-scheduler-endpoint {configuration.TestingSchedulerEndPoint} ");
-            arguments.Append($"--testing-scheduler-ipaddress {configuration.TestingSchedulerIpAddress} ");
-            arguments.Append($"--testing-process-id {id} ");
 
             if (configuration.ParallelDebug)
             {

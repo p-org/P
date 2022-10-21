@@ -79,9 +79,9 @@ namespace Microsoft.Coyote
             }
 
             Console.WriteLine(". Testing " + Configuration.AssemblyToBeAnalyzed);
-            if (!string.IsNullOrEmpty(Configuration.TestMethodName))
+            if (!string.IsNullOrEmpty(Configuration.TestCaseName))
             {
-                Console.WriteLine("... Method {0}", Configuration.TestMethodName);
+                Console.WriteLine("... Method {0}", Configuration.TestCaseName);
             }
 
             // Creates and runs the testing process scheduler.

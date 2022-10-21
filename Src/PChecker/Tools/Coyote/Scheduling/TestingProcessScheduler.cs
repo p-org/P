@@ -308,13 +308,6 @@ namespace Microsoft.Coyote.SystematicTesting
         {
             this.LastMessageTime = Environment.TickCount;
 
-            // wait for the parallel tasks to connect to us
-            while (this.TestProcessesConnected < this.TestingProcesses.Count)
-            {
-                await Task.Delay(100);
-                this.AssertTestProcessActivity(maxWait);
-            }
-
             // wait 60 seconds for tasks to call back with all their reports and disconnect.
             // and reset the click each time a message is received
             while (this.TestingProcessChannels.Count > 0)

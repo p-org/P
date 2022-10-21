@@ -35,7 +35,7 @@ machine Main {
     if (tF in followerName) {
         print format ("key {0} is present with value={1}", tF, followerName[tF]);
     } else {
-        print format ("key {0} is absent", tF);
+        assert false, format ("key {0} is absent", tF);
     }
   }
 }

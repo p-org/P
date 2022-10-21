@@ -116,7 +116,7 @@ public class Concretizer {
         } else if (valueSummary instanceof UnionVS) {
             UnionVS unionVS = (UnionVS) valueSummary;
             if (unionVS.getUniverse().isFalse()) return null;
-            Class<? extends ValueSummary> type = ((GuardedValue<Class<? extends ValueSummary>>) concretize(unionVS.getType())).getValue();
+            UnionVStype type = ((GuardedValue<UnionVStype>) concretize(unionVS.getType())).getValue();
             return concretize(unionVS.getValue(type));
         } else if (valueSummary instanceof Message) {
             Message messageVS = (Message) valueSummary;
@@ -251,7 +251,7 @@ public class Concretizer {
         } else if (valueSummary instanceof UnionVS) {
             UnionVS unionVS = (UnionVS) valueSummary;
             if (unionVS.getUniverse().isFalse()) return null;
-            Class<? extends ValueSummary> type = ((GuardedValue<Class<? extends ValueSummary>>) concretize(unionVS.getType())).getValue();
+            UnionVStype type = ((GuardedValue<UnionVStype>) concretize(unionVS.getType())).getValue();
             return concretize(unionVS.getValue(type));
         }
         return null;

@@ -29,7 +29,10 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         {
             Debug.Assert(sourceNode is PParser.FunDeclContext ||
                          sourceNode is PParser.AnonEventHandlerContext ||
-                         sourceNode is PParser.NoParamAnonEventHandlerContext);
+                         sourceNode is PParser.NoParamAnonEventHandlerContext ||
+                         sourceNode is PParser.ReceiveStmtContext ||
+                         sourceNode is PParser.WhileStmtContext ||
+                         sourceNode is PParser.ForeachStmtContext);
             Name = name;
             SourceLocation = sourceNode;
         }
@@ -56,6 +59,11 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             localVariables.Add(local);
         }
 
+        public void RemoveLocalVariable(Variable local)
+        {
+            localVariables.Remove(local);
+        }
+
         public void AddCreatesInterface(Interface i)
         {
             createsInterfaces.Add(i);
@@ -70,6 +78,12 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         {
             callee.callers.Add(this);
             callees.Add(callee);
+        }
+
+        public void RemoveCallee(Function callee)
+        {
+            callee.callers.Remove(this);
+            callees.Remove(callee);
         }
 
         #region Analysis results

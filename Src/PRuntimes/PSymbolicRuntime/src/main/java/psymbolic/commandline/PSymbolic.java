@@ -1,10 +1,7 @@
 package psymbolic.commandline;
 
 import org.reflections.Reflections;
-import psymbolic.runtime.logger.BacktrackWriter;
-import psymbolic.runtime.logger.Log4JConfig;
-import psymbolic.runtime.logger.PSymLogger;
-import psymbolic.runtime.logger.StatWriter;
+import psymbolic.runtime.logger.*;
 import psymbolic.runtime.scheduler.DPORScheduler;
 import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
 import psymbolic.runtime.statistics.SolverStats;
@@ -74,14 +71,18 @@ public class PSymbolic {
             if (config.isWriteToFile()) {
                 EntryPoint.writeToFile();
             }
-
         } catch (BugFoundException e) {
             e.printStackTrace();
             exit_code = 2;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
-            exit_code = 10;
+            if (ex.getMessage() == "TIMEOUT") {
+                exit_code = 3;
+            } else if (ex.getMessage() == "MEMOUT") {
+                exit_code = 4;
+            } else {
+                exit_code = 5;
+            }
         } finally {
             if (config.getCollectStats() != 0) {
                 double postSearchTime = TimeMonitor.getInstance().stopInterval();
@@ -169,6 +170,22 @@ public class PSymbolic {
         }
 
         return classes;
+    }
+
+    public static void initializeDefault(String outputFolder) {
+        Log4JConfig.configureLog4J();
+        SearchLogger.disable();
+        TraceLogger.disable();
+        // parse the commandline arguments to create the configuration
+        PSymConfiguration config = PSymOptions.ParseCommandlineArgs(new String[0]);
+        config.setOutputFolder(outputFolder);
+        PSymLogger.ResetAllConfigurations(config.getVerbosity(), config.getProjectName(), config.getOutputFolder());
+        SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
+        SolverStats.setTimeLimit(config.getTimeLimit());
+        SolverStats.setMemLimit(config.getMemLimit());
+        MemoryMonitor.setup();
+        RandomNumberGenerator.setup(config.getRandomSeed());
+        TimeMonitor.setup(config.getTimeLimit());
     }
 
 }

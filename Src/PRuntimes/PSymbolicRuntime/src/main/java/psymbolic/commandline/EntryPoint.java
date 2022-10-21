@@ -161,7 +161,7 @@ public class EntryPoint {
 
     public static void writeToFile() throws Exception {
         if (configuration.getCollectStats() != 0) {
-            PSymLogger.info(String.format("Writing 1 current and %d backtrack states in %s/", scheduler.schedule.getNumBacktracks(), configuration.getOutputFolder()));
+            PSymLogger.info(String.format("Writing 1 current and %d backtrack states in %s/", scheduler.getNumBacktracks(), configuration.getOutputFolder()));
         }
         long pid = ProcessHandle.current().pid();
         String writeFileName = configuration.getOutputFolder() + "/current" + "_pid" + pid + ".out";

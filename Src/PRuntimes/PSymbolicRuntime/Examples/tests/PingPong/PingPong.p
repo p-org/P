@@ -11,28 +11,34 @@ machine Main {
     entry {
       Follower0 = new Follower();
       Follower1 = new Follower();
-      debug(0);
-      debug(1);
+      goto Send;
     }
   }
 
-  fun debug(id: int) {
-    send Follower0, ping1, this;
-    print format ("{0}: ping1 sent", id);
-    receive {
-        case pong1: {
-            print format ("{0}: pong1 received", id);
-        }
+  state Send {
+    entry {
+      if ($) {
+          send Follower0, ping0, this;
+          send Follower1, ping1, this;
+      } else {
+          send Follower1, ping1, this;
+          send Follower0, ping0, this;
+      }
+      goto WaitPong1;
     }
-    send Follower1, ping0, this;
-    print format ("{0}: ping0 sent", id);
-    receive {
-        case pong0: {
-            print format ("{0}: pong0 received", id);
-       }
-    }
-    print format ("{0}: done", id);
   }
+
+  state WaitPong1 {
+    on pong0 goto WaitPong2;
+    on pong1 goto WaitPong2;
+  }
+
+  state WaitPong2 {
+    on pong0 goto Done;
+    on pong1 goto Done;
+  }
+
+  state Done {}
 }
 
 machine Follower {

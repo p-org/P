@@ -12,13 +12,13 @@ machine Main {
 	start state Init {
 			 entry { i = 0; raise E; }
 	
-		on E push Call;    
+		on E goto Call;
 	}
 
 	state Call {
 		   entry { 
 			 if (i == 3) {
-				    pop;           //no error
+//				    pop;           //no error
 					Action4();
 					raise E;       //no error
 					Action5();
@@ -35,7 +35,7 @@ machine Main {
 			 }
 	}
 	fun Action1() : int {		                          
-		pop;   
+//		pop;
 		return 1;
     }
 	fun Action2() : int {
@@ -47,7 +47,7 @@ machine Main {
 		return 1;
     }
 	fun Action4() {		                          
-		pop;   
+//		pop;
 		
     }
 	fun Action5() {

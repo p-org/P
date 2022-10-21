@@ -69,7 +69,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
     public ListVS<V> getValues() {
         ListVS<V> result = new ListVS<V>(getUniverse());
         for (V value: this.entries.values()) {
-            result.add(value);
+            result = result.add(value);
         }
         return result;
     }
@@ -86,9 +86,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
 
         for (Map.Entry<K, V> entry : entries.entrySet()) {
             final V newValue = entry.getValue().restrict(guard);
-            if (!newValue.isEmptyVS()) {
-                newEntries.put(entry.getKey(), newValue);
-            }
+            newEntries.put(entry.getKey(), newValue);
         }
         return new MapVS<>(newKeys, newEntries);
     }
@@ -140,12 +138,16 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
 
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(MapVS<K, T, V> cmp, Guard pc) {
+        if (cmp == null) {
+            return BooleanVS.trueUnderGuard(Guard.constFalse());
+        }
+
         Guard equalCond = Guard.constFalse();
         Guard guard = BooleanVS.getTrueGuard(this.keys.symbolicEquals(cmp.keys, Guard.constTrue()));
         ListVS<T> thisSet = this.restrict(guard).getKeys();
         ListVS<T> cmpSet = cmp.restrict(guard).getKeys();
 
-        if (thisSet.isEmpty() && cmpSet.isEmpty()) return BooleanVS.trueUnderGuard(pc.and(guard));
+        if (thisSet.isEmpty() && cmpSet.isEmpty()) return BooleanVS.trueUnderGuard(pc.and(guard)).restrict(getUniverse().and(cmp.getUniverse()));
 
         while (!thisSet.isEmpty()) {
             T thisVal = thisSet.get(new PrimitiveVS<>(0).restrict(guard));
@@ -160,7 +162,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
             cmpSet = cmpSet.removeAt(new PrimitiveVS<>(0).restrict(thisVal.getUniverse()));
         }
 
-        return BooleanVS.trueUnderGuard(pc.and(equalCond));
+        return BooleanVS.trueUnderGuard(pc.and(equalCond)).restrict(getUniverse().and(cmp.getUniverse()));
     }
 
     @Override
@@ -196,7 +198,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
      * @return The updated MapVS
      */
     public MapVS<K, T, V> add(T keySummary, V valSummary) {
-        assert(ValueSummaryChecks.hasSameUniverse(keySummary.getUniverse(), valSummary.getUniverse()));
+//        assert(ValueSummaryChecks.hasSameUniverse(keySummary.getUniverse(), valSummary.getUniverse()));
         return put(keySummary, valSummary);
     }
 
@@ -232,8 +234,11 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
      * @return The option containing value corresponding to the key or an empty option if no such value
      */
     public V get(T keySummary) {
-        if (!containsKey(keySummary).restrict(keySummary.getUniverse()).getGuardFor(false).isFalse()) {
-            // there is a possibility that the key is not present
+        // there is a possibility that the key is not present
+        if (keySummary.isEmptyVS()) {
+            throw new NoSuchElementException();
+        }
+        if (!containsKey(keySummary).getGuardFor(false).isFalse()) {
             throw new NoSuchElementException();
         }
 
@@ -247,6 +252,20 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
 
         assert merger != null;
         return merger.merge(toMerge);
+    }
+
+    /** Get a value from the MapVS or return default value if key does not exist
+     *
+     * @param keySummary The key value summary.
+     * @param defaultValue The default value.
+     * @return The option containing value corresponding to the key or default option if no such value
+     */
+    public V getOrDefault(T keySummary, V defaultValue) {
+        try {
+            return get(keySummary);
+        } catch (NoSuchElementException e) {
+            return defaultValue;
+        }
     }
 
     /** Get whether the MapVS contains a

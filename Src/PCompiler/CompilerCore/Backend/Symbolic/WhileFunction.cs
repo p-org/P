@@ -12,7 +12,7 @@ namespace Plang.Compiler.Backend.Symbolic
 {
     public class WhileFunction : Function
     {
-        public WhileFunction(ParserRuleContext location) : base(null, location)
+        public WhileFunction(string name, ParserRuleContext location) : base(name, location)
         {
         }
 

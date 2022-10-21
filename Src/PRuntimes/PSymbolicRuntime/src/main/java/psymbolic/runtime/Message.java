@@ -67,12 +67,33 @@ public class Message implements ValueSummary<Message> {
         return BooleanVS.trueUnderGuard(cond);
     }
 
+    public Guard getHaltEventGuard() {
+        PrimitiveVS<Event> events = this.getEvent();
+        for (GuardedValue<Event> event : events.getGuardedValues()) {
+            if (event.getValue().equals(Event.haltEvent) && !event.getGuard().isFalse()) {
+                return event.getGuard();
+            }
+        }
+        return Guard.constFalse();
+    }
+
+    public boolean hasNullEvent() {
+        PrimitiveVS<Event> events = this.getEvent();
+        for (GuardedValue<Event> event : events.getGuardedValues()) {
+            if (event.getValue().equals(Event.nullEvent) && !event.getGuard().isFalse()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Message getForMachine(Machine machine) {
         Guard cond = this.target.getGuardFor(machine);
         return this.restrict(cond);
     }
 
     private Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, Map<Event, UnionVS> map, VectorClockVS clock) {
+        assert(!machine.getValues().contains(null));
         this.event = names;
         this.target = machine;
         this.payload = new HashMap<>(map);
@@ -107,7 +128,17 @@ public class Message implements ValueSummary<Message> {
         this(events, machine, payload, new VectorClockVS(Guard.constFalse()));
     }
 
+    private Guard getNullMachineGuard(PrimitiveVS<Machine> machine) {
+        return machine.getGuardFor((Machine) null);
+    }
+
     public Message(PrimitiveVS<Event> events, PrimitiveVS<Machine> machine, UnionVS payload, VectorClockVS clock) {
+        if (!getNullMachineGuard(machine).isFalse()) {
+            throw new RuntimeException(
+                    String.format("Object reference not set to an instance of an object, in event %s",
+                            events.restrict(getNullMachineGuard(machine))));
+        }
+        assert(!machine.getValues().contains(null));
         this.event = events;
         this.target = machine;
         this.payload = new HashMap<>();
@@ -232,7 +263,7 @@ public class Message implements ValueSummary<Message> {
                 mapping = mapping.or(event.getGuard());
             }
         }
-        return BooleanVS.trueUnderGuard(pc.and(nameAndTarget).and(mapping));
+        return BooleanVS.trueUnderGuard(pc.and(nameAndTarget).and(mapping)).restrict(getUniverse().and(cmp.getUniverse()));
     }
 
     @Override

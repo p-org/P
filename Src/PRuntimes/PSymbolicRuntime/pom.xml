@@ -51,7 +51,7 @@
         <configuration>
           <source>9</source>
           <target>9</target>
-	  <forceJavacCompilerUse>true</forceJavacCompilerUse>
+	      <forceJavacCompilerUse>true</forceJavacCompilerUse>
         </configuration>
       </plugin>
       <plugin>
@@ -307,5 +307,13 @@
         <artifactId>backport-util-concurrent</artifactId>
         <version>3.1</version>
     </dependency>
+
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.7</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 </project>

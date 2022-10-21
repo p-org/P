@@ -2,6 +2,7 @@ package psymbolic.commandline;
 
 import lombok.Getter;
 import lombok.Setter;
+import psymbolic.utils.OrchestrationMode;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -11,6 +12,13 @@ import java.io.Serializable;
  * Represents the configuration of the P Symbolic tool
  */
 public class PSymConfiguration implements Serializable {
+
+    @Getter @Setter
+    // mode of orchestrating
+    private OrchestrationMode orchestration = OrchestrationMode.CoverageAStar;
+
+    @Getter @Setter
+    private int maxBacktrackTasksPerExecution = 2;
 
     @Getter @Setter
     // debug mode (internal)
@@ -39,25 +47,23 @@ public class PSymConfiguration implements Serializable {
 
     @Getter @Setter
     // max number of executions bound provided by the user
-    private int maxExecutions = 1;
-
-    // max input choice bound at each depth after which the search will truncate the choices
-    private final int maxInputChoiceBound = 100;
+    private int maxExecutions = -1;
 
     @Getter @Setter
     // max input choice bound provided by the user
-    private int inputChoiceBound = maxInputChoiceBound;
-
-    // max scheduling choice bound at each depth after which the search will truncate the scheduling choices
-    private final int maxSchedChoiceBound = 100;
+    private int inputChoiceBound = 1;
 
     @Getter @Setter
     // max input choice bound provided by the user
-    private int schedChoiceBound = maxSchedChoiceBound;
+    private int schedChoiceBound = 1;
 
     @Getter
     // max internal steps before throwing an exception
     private int maxInternalSteps = 1000;
+
+    @Getter @Setter
+    // use state caching
+    private boolean useStateCaching = true;
 
     @Getter @Setter
     // intersect with receiver queue semantics
@@ -97,7 +103,7 @@ public class PSymConfiguration implements Serializable {
 
     @Getter @Setter
     // time limit in seconds (0 means infinite)
-    private double timeLimit = 0;
+    private double timeLimit = 60;
 
     @Getter @Setter
     // memory limit in megabytes (0 means infinite)

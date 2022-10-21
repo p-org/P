@@ -70,20 +70,18 @@ machine Coordinator
                         }
 		}
 
-                on local_read_event push WaitForReadResponses;
+                on local_read_event goto WaitForReadResponses;
 
-		on local_write_event push WaitForPrepareResponses;
+		on local_write_event goto WaitForPrepareResponses;
 	}
 
         state WaitForReadResponses {
             defer ePrepareSuccess, ePrepareFailed, eTimeOut, eReadTransaction, eWriteTransaction;
             on eReadSuccess do (result:int) {
                 send pendingRTrans.client, eReadTransSuccess, result;
-                pop;
             }
             on eReadFailed do {
                 send pendingRTrans.client, eReadTransFailed;
-                pop;
             }
         }
 
@@ -114,7 +112,6 @@ machine Coordinator
 					send pendingWrTrans.client, eWriteTransSuccess;
                                         send timer, eCancelTimer;
 					//it is not safe to pop back to the parent state
-					pop;
 				}
 			}
 		}
@@ -123,13 +120,11 @@ machine Coordinator
 			if (currTransId == transId) {
 				DoGlobalAbort();
                                 send timer, eCancelTimer;
-				pop;
 			}
 		}
 
 		on eTimeOut do { 
 			DoGlobalAbort(); 
-			pop;
 		}
 
 		exit {

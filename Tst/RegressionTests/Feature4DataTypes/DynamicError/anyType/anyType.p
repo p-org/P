@@ -14,7 +14,7 @@ machine Main {
 			vAny = 1;
 			
 			vInt = 1;
-			assert(vAny == vInt);  //holds
+			assert(vAny == vInt), format("Assertion 0 failed");  //holds
 			
 			vEvent = E;
 			vAny = E;
@@ -22,16 +22,16 @@ machine Main {
 			
 			vAny = true;
 			vInt = 1;
-			assert(vAny != vInt);  //holds
+			assert(vAny != vInt), format("Assertion 1 failed");  //holds
 			
 			//assert(vAny == vInt);  //fails
 			
 			vAny = null;
 			
 			vEvent = default(event);
-			assert (vAny == vEvent);  //holds
+			assert (vAny == vEvent), format("Assertion 2 failed");  //holds
 			
-			assert(vAny == 1);  //fails
+			assert(vAny == 1), format("Assertion 3 failed");  //fails
 			
 	   }
 	}

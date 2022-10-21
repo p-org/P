@@ -336,7 +336,7 @@ machine OSRDriver {
 		entry {
 			raise(eUnit);
 		}
-		on eUnit push sStoppingTimerDriver;
+		on eUnit goto sStoppingTimerDriver;
 		on eTimerStopped goto sStoringSwitchAndCheckingIfStateChangedDriver;
 	}
 	
@@ -349,7 +349,7 @@ machine OSRDriver {
 		}
 		
 		on eTimerStopped goto sCompletingD0ExitDriver;
-		on eUnit push sStoppingTimerDriver;
+		on eUnit goto sStoppingTimerDriver;
 		
 	}
 	

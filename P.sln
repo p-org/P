@@ -17,6 +17,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompilerCore", "Src\PCompil
 EndProject
 Project("{9344BDBB-3E7F-41FC-A0DD-8665D75EE146}") = "CSharpRuntime", "Src\PRuntimes\PCSharpRuntime\CSharpRuntime.csproj", "{27E011B3-3995-454A-B200-57800CC941DA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PChecker", "PChecker", "{F7D2A6F5-841A-4E22-9ECD-2E1CF736F7EA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Src\PChecker\Source\Core\Core.csproj", "{37778F65-BDBF-4AEA-BA34-01026A223083}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,10 @@ Global
 		{27E011B3-3995-454A-B200-57800CC941DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{27E011B3-3995-454A-B200-57800CC941DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{27E011B3-3995-454A-B200-57800CC941DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{37778F65-BDBF-4AEA-BA34-01026A223083}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37778F65-BDBF-4AEA-BA34-01026A223083}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37778F65-BDBF-4AEA-BA34-01026A223083}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37778F65-BDBF-4AEA-BA34-01026A223083}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -48,6 +56,7 @@ Global
 		{C1A8AF94-F550-4EC7-889A-9D0CCA259502} = {1B21372A-3030-4532-8B30-2A1A3E74527A}
 		{41F39ADD-B75F-473F-AC41-D1A9CDA9A9CD} = {1B21372A-3030-4532-8B30-2A1A3E74527A}
 		{27E011B3-3995-454A-B200-57800CC941DA} = {D641DC13-F2F0-4365-963A-DCFC80BABCAA}
+		{37778F65-BDBF-4AEA-BA34-01026A223083} = {F7D2A6F5-841A-4E22-9ECD-2E1CF736F7EA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BD6B0E25-71B7-4A8F-8D0F-946BA6D47C7C}

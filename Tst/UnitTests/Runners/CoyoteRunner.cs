@@ -69,7 +69,7 @@ namespace UnitTests.Runners
             if (exitCode == 0)
             {
                 exitCode = RunCoyoteTester(scratchDirectory.FullName,
-                    Path.Combine(scratchDirectory.FullName, "./netcoreapp3.1/Main.dll"), out string testStdout, out string testStderr);
+                    Path.Combine(scratchDirectory.FullName, "./net6.0/Main.dll"), out string testStdout, out string testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
             }

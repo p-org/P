@@ -371,7 +371,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteState(CompilationContext context, StringWriter output, State state, Machine machine)
         {
-            context.Write(output, $"new State(\"{context.GetNameForDecl(state)}\", \"{context.GetNameForDecl(machine)}\"");
+            string temperature = Enum.GetName(state.Temperature.GetType(), state.Temperature);
+            context.Write(output, $"new State(\"{context.GetNameForDecl(state)}\", \"{context.GetNameForDecl(machine)}\", StateTemperature.{temperature}");
             /*
             foreach (var handler in state.AllEventHandlers)
             {
@@ -2535,6 +2536,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import psymbolic.runtime.machine.buffer.*;");
             context.WriteLine(output, "import psymbolic.runtime.machine.eventhandlers.*;");
             context.WriteLine(output, "import psymbolic.runtime.values.*;");
+            context.WriteLine(output, "import psymbolic.utils.*;");
             context.WriteLine(output, "import java.util.List;");
             context.WriteLine(output, "import java.util.ArrayList;");
             context.WriteLine(output, "import java.util.Map;");

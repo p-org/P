@@ -413,6 +413,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                 printCurrentStatus();
             }
         }
+        super.checkLiveness();
         searchStats.setIterationStats(getNumBacktracks());
         if (done) {
             searchStats.setIterationCompleted();

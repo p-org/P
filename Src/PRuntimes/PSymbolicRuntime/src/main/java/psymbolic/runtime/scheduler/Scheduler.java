@@ -9,6 +9,7 @@ import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Monitor;
+import psymbolic.runtime.machine.State;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.utils.GlobalData;
@@ -114,6 +115,9 @@ public class Scheduler implements SymbolicSearch {
     /** Flag whether current step is a sync step */
     private Boolean syncStep = false;
 
+    /** Flag whether current execution finished */
+    private Boolean executionFinished = false;
+
     public int getTotalStates() {
         return totalStateCount;
     }
@@ -151,11 +155,18 @@ public class Scheduler implements SymbolicSearch {
         return vcManager;
     }
 
-    /** Find out whether symbolic execution is finished
+    /** Find out whether symbolic execution is done
      * @return Whether or not there are more steps to run
      */
     public boolean isDone() {
         return done || depth == configuration.getDepthBound();
+    }
+
+    /** Find out whether current execution finished completely
+     * @return Whether or not current execution finished
+     */
+    public boolean isFinishedExecution() {
+        return executionFinished || depth == configuration.getDepthBound();
     }
 
     /** Get current depth
@@ -407,6 +418,30 @@ public class Scheduler implements SymbolicSearch {
         if (done) {
             searchStats.setIterationCompleted();
         }
+        checkLiveness();
+    }
+
+    protected void checkLiveness() {
+        if (isFinishedExecution()) {
+            for (Monitor m : monitors) {
+                PrimitiveVS<State> monitorState = m.getCurrentState();
+                for (GuardedValue<State> entry : monitorState.getGuardedValues()) {
+                    State s = entry.getValue();
+                    if (s.isHotState()) {
+                        Guard g = entry.getGuard();
+                        if (executionFinished) {
+                            Assert.prop(g.isFalse(), String.format(
+                                    "Monitor %s detected liveness bug in hot state %s at the end of program execution",
+                                    m, s), this, g);
+                        } else {
+                            Assert.prop(g.isFalse(), String.format(
+                                    "Monitor %s detected potential liveness bug in hot state %s",
+                                    m, s), this, g);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // print statistics
@@ -505,7 +540,9 @@ public class Scheduler implements SymbolicSearch {
         if (useFilters()) {
             guardedMachines = filter(guardedMachines, InterleaveOrder.getInstance());
         }
-        
+
+        executionFinished = guardedMachines.isEmpty();
+
         if (configuration.isUseStateCaching()) {
             if (distinctStateGuard != null) {
                 guardedMachines = filterDistinct(guardedMachines);

@@ -9,6 +9,7 @@ import psymbolic.runtime.machine.eventhandlers.EventHandler;
 import psymbolic.runtime.machine.eventhandlers.IgnoreEventHandler;
 import psymbolic.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psymbolic.utils.GlobalData;
+import psymbolic.utils.StateTemperature;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.util.ValueSummaryChecks;
@@ -18,13 +19,15 @@ import java.io.Serializable;
 public abstract class State implements Serializable {
     public final String name;
     public final String machineName;
+    public final StateTemperature temperature;
 
     public void entry(Guard pc, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {}
     public void exit(Guard pc, Machine machine) {}
 
-    public State(String name, String machineName, EventHandler... eventHandlers) {
+    public State(String name, String machineName, StateTemperature temperature, EventHandler... eventHandlers) {
         this.name = name;
         this.machineName = machineName;
+        this.temperature = temperature;
     }
 
     private String getStateKey() {
@@ -93,6 +96,10 @@ public abstract class State implements Serializable {
                         eventPc);
             }
         }
+    }
+
+    public boolean isHotState() {
+        return temperature == StateTemperature.Hot;
     }
 
     @Override

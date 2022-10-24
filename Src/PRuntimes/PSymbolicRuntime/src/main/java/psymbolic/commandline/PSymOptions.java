@@ -2,7 +2,7 @@ package psymbolic.commandline;
 
 import org.apache.commons.cli.*;
 
-import psymbolic.utils.OrchestrationMode;
+import psymbolic.runtime.scheduler.orchestration.OrchestrationMode;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -304,12 +304,6 @@ public class PSymOptions {
                             break;
                         case "coverage-estimate":
                             config.setOrchestration(OrchestrationMode.CoverageEstimate);
-                            break;
-                        case "coverage-parent":
-                            config.setOrchestration(OrchestrationMode.CoverageParent);
-                            break;
-                        case "chronological":
-                            config.setOrchestration(OrchestrationMode.Chronological);
                             break;
                         default:
                             formatter.printHelp("orch", String.format("Unrecognized orchestration mode, got %s", option.getValue()), options, "Try \"--help\" option for details.");

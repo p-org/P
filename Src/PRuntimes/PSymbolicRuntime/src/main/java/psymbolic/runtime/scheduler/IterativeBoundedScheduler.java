@@ -5,19 +5,17 @@ import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.logger.*;
 import psymbolic.runtime.machine.Machine;
+import psymbolic.runtime.scheduler.orchestration.OrchestrationMode;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.utils.*;
 import psymbolic.valuesummary.*;
 import psymbolic.runtime.machine.buffer.*;
-import psymbolic.valuesummary.solvers.SolverEngine;
-import psymbolic.valuesummary.solvers.SolverGuard;
 
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -33,7 +31,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     /** List of all backtrack tasks */
     private List<BacktrackTask> allTasks = new ArrayList<>();
     /** Priority queue of all backtrack tasks that are pending */
-    private transient PriorityBlockingQueue<Integer> pendingTasks = null;
+    private Set<Integer> pendingTasks = new HashSet<>();
     /** List of all backtrack tasks that finished */
     private List<Integer> finishedTasks = new ArrayList<>();
     /** Task id of the latest backtrack task */
@@ -47,11 +45,13 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     private void resetBacktrackTasks() {
         finishedTasks.clear();
-        pendingTasks = new PriorityBlockingQueue<Integer>(100, new Comparator<Integer>() {
-            public int compare(Integer a, Integer b) {
-                return getTask(b).getPriority().compareTo(getTask(a).getPriority());
-            }
-        });
+        BacktrackTask.initialize(configuration.getOrchestration());
+    }
+
+    private void resumePendingTasks() {
+        for (Integer i: pendingTasks) {
+            getTask(i).setPriority();
+        }
     }
 
     private void isValidTaskId(int taskId) {
@@ -243,8 +243,8 @@ public class IterativeBoundedScheduler extends Scheduler {
             BacktrackTask nextTask = setNextBacktrackTask();
             if (nextTask != null) {
                 if (configuration.getVerbosity() > 1) {
-                    PSymLogger.log(String.format("    Next is %s [depth: %d, priority: %.4f, parent: %s]",
-                            nextTask, nextTask.getDepth(), nextTask.getPriority(), nextTask.getParentTask()));
+                    PSymLogger.log(String.format("    Next is %s [depth: %d, parent: %s]",
+                            nextTask, nextTask.getDepth(), nextTask.getParentTask()));
                 }
             }
         }
@@ -263,18 +263,18 @@ public class IterativeBoundedScheduler extends Scheduler {
         BacktrackTask parentTask;
         if (latestTaskId == 0) {
             assert(allTasks.isEmpty());
+            BacktrackTask.setOrchestration(configuration.getOrchestration());
             parentTask = new BacktrackTask(0);
             parentTask.setPrefixCoverage(new BigDecimal(1));
-            parentTask.setPriority(configuration.getOrchestration());
             allTasks.add(parentTask);
         } else {
             parentTask = getTask(latestTaskId);
         }
-        parentTask.setCoverage(GlobalData.getCoverage().getIterationCoverage(getChoiceDepth()-1));
+        parentTask.postProcess(GlobalData.getCoverage().getIterationCoverage(getChoiceDepth()-1));
         finishedTasks.add(parentTask.getId());
         if (configuration.getVerbosity() > 1) {
-            PSymLogger.log(String.format("  Finished %s [depth: %d, priority: %.4f, parent: %s]",
-                    parentTask, parentTask.getDepth(), parentTask.getPriority(), parentTask.getParentTask()));
+            PSymLogger.log(String.format("  Finished %s [depth: %d, parent: %s]",
+                    parentTask, parentTask.getDepth(), parentTask.getParentTask()));
         }
 
         int numBacktracksAdded = 0;
@@ -298,8 +298,8 @@ public class IterativeBoundedScheduler extends Scheduler {
         if (configuration.getVerbosity() > 1) {
             PSymLogger.log(String.format("    Added %d new tasks", parentTask.getChildren().size()));
             if (configuration.getVerbosity() > 2) {
-                for (Integer i : parentTask.getChildren()) {
-                    PSymLogger.log(String.format("      %s [depth: %d, priority: %.4f]", getTask(i), getTask(i).getDepth(), getTask(i).getPriority()));
+                for (BacktrackTask t : parentTask.getChildren()) {
+                    PSymLogger.log(String.format("      %s [depth: %d]", t, t.getDepth()));
                 }
             }
         }
@@ -340,10 +340,9 @@ public class IterativeBoundedScheduler extends Scheduler {
         newTask.setChoices(schedule.getChoices());
         newTask.setPerChoiceDepthStats(GlobalData.getCoverage().getPerChoiceDepthStats());
         newTask.setParentTask(parentTask);
-        newTask.setPriority(configuration.getOrchestration());
+        newTask.setPriority();
         allTasks.add(newTask);
-
-        parentTask.addChild(newTask.getId());
+        parentTask.addChild(newTask);
         pendingTasks.add(newTask.getId());
 
         // restore schedule to original choices
@@ -356,8 +355,10 @@ public class IterativeBoundedScheduler extends Scheduler {
     public BacktrackTask setNextBacktrackTask() throws InterruptedException {
         if (pendingTasks.isEmpty())
             return null;
-        latestTaskId = pendingTasks.take();
-        BacktrackTask latestTask = getTask(latestTaskId);
+        BacktrackTask latestTask = BacktrackTask.getNextTask();
+        latestTaskId = latestTask.getId();
+        assert(!latestTask.isCompleted());
+        pendingTasks.remove(latestTaskId);
 
         schedule.getChoices().clear();
         GlobalData.getCoverage().getPerChoiceDepthStats().clear();
@@ -433,6 +434,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         isDoneIterating = false;
         start_iter = iter;
         resetBacktrackTasks();
+        resumePendingTasks();
         reset_stats();
         boolean resetAfterInitial = isDone();
         while (!isDoneIterating) {

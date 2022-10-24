@@ -2,7 +2,7 @@ package psymbolic.commandline;
 
 import lombok.Getter;
 import lombok.Setter;
-import psymbolic.utils.OrchestrationMode;
+import psymbolic.runtime.scheduler.orchestration.OrchestrationMode;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 

@@ -4,5 +4,6 @@ public enum OrchestrationMode {
     DepthFirst,
     Random,
     CoverageAStar,
-    CoverageEstimate
+    CoverageEstimate,
+    CoverageRL
 }

@@ -24,5 +24,8 @@ public class RandomNumberGenerator {
     public long getRandomLong() {
         return rand.nextLong();
     }
+    public double getRandomDouble() {
+        return rand.nextDouble();
+    }
 
 }

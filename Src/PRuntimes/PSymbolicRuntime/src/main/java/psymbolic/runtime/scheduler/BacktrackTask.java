@@ -120,6 +120,7 @@ public class BacktrackTask implements Serializable {
             case Random:
             case CoverageAStar:
             case CoverageEstimate:
+            case CoverageRL:
                 orchestrator.addPriority(this);
                 break;
             default:
@@ -143,6 +144,7 @@ public class BacktrackTask implements Serializable {
                 // do nothing
                 break;
             case CoverageEstimate:
+            case CoverageRL:
                 if (!isInitialTask()) {
                     assert(parentTask != null);
                     for (BacktrackTask t: parentTask.getChildren()) {
@@ -173,6 +175,9 @@ public class BacktrackTask implements Serializable {
             case CoverageEstimate:
                 orchestrator = new OrchestratorCoverageEstimate();
                 break;
+            case CoverageRL:
+                orchestrator = new OrchestratorCoverageRL();
+                break;
             default:
                 throw new RuntimeException("Unrecognized orchestration mode: " + orchestration);
         }
@@ -186,6 +191,7 @@ public class BacktrackTask implements Serializable {
             case Random:
             case CoverageAStar:
             case CoverageEstimate:
+            case CoverageRL:
                 result = orchestrator.getNext();
                 break;
             default:

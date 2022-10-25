@@ -305,6 +305,9 @@ public class PSymOptions {
                         case "coverage-estimate":
                             config.setOrchestration(OrchestrationMode.CoverageEstimate);
                             break;
+                        case "coverage-rl":
+                            config.setOrchestration(OrchestrationMode.CoverageRL);
+                            break;
                         default:
                             formatter.printHelp("orch", String.format("Unrecognized orchestration mode, got %s", option.getValue()), options, "Try \"--help\" option for details.");
                             formatter.printUsage(writer, 80, "orch", options);

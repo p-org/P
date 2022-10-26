@@ -119,13 +119,16 @@ public class BacktrackTask implements Serializable {
                 throw new RuntimeException("Unexpected orchestration mode: " + orchestration);
             case Random:
             case CoverageAStar:
+                // do nothing
+                break;
             case CoverageEstimate:
             case CoverageRL:
-                orchestrator.addPriority(this);
+                setCoverageEstimate();
                 break;
             default:
                 throw new RuntimeException("Unrecognized orchestration mode: " + orchestration);
         }
+        orchestrator.addPriority(this);
     }
 
     public void postProcess(BigDecimal inputCoverage) {

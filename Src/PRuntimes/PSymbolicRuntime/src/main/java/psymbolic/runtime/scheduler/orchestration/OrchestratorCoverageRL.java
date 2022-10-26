@@ -4,7 +4,8 @@ import psymbolic.runtime.scheduler.BacktrackTask;
 import psymbolic.utils.RandomNumberGenerator;
 
 public class OrchestratorCoverageRL implements Orchestrator {
-    private double epsilon = 0.2;
+    private double epsilon = 1;
+    private double alpha = 0.99;
     private Orchestrator orchestratorExplore;
     private Orchestrator orchestratorExploit;
     public OrchestratorCoverageRL() {
@@ -19,6 +20,7 @@ public class OrchestratorCoverageRL implements Orchestrator {
     }
 
     public BacktrackTask getNext() {
+        epsilon *= alpha;
         double randNum = RandomNumberGenerator.getInstance().getRandomDouble();
         if (randNum <= epsilon) {
             // explore

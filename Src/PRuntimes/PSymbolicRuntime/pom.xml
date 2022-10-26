@@ -26,41 +26,60 @@
     <url>https://github.com/p-org/P/tree/master</url>
   </scm>
 
+  <developers>
+    <developer>
+      <name>Aman Goel</name>
+      <email>amangoel.umich@gmail.com</email>
+    </developer>
+  </developers>
+
   <dependencies>
+    <dependency>
+      <groupId>org.sosy_lab.pjbdd</groupId>
+      <artifactId>pjbdd</artifactId>
+      <version>1.0.10-10</version>
+      <scope>system</scope>
+      <systemPath>${pjbdd.jarpath}</systemPath>
+    </dependency>
     <dependency>
       <groupId>com.berkeley.abc</groupId>
       <artifactId>abc</artifactId>
       <version>1.0.0</version>
+      <scope>system</scope>
+      <systemPath>${abc.jarpath}</systemPath>
     </dependency>
     <dependency>
       <groupId>io.github.monosat</groupId>
       <artifactId>monosat</artifactId>
       <version>1.6.0</version>
+      <scope>system</scope>
+      <systemPath>${monosat.jarpath}</systemPath>
     </dependency>
     <dependency>
       <groupId>com.sri.yices</groupId>
       <artifactId>yices</artifactId>
       <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${yices.jarpath}</systemPath>
     </dependency>
     <dependency>
       <groupId>com.microsoft.z3</groupId>
       <artifactId>z3</artifactId>
       <version>4.8.14</version>
+      <scope>system</scope>
+      <systemPath>${z3.jarpath}</systemPath>
     </dependency>
     <dependency>
       <groupId>io.github.cvc5</groupId>
       <artifactId>cvc5</artifactId>
       <version>0.0.7</version>
+      <scope>system</scope>
+      <systemPath>${cvc5.jarpath}</systemPath>
     </dependency>
     <dependency>
       <groupId>org.sosy-lab</groupId>
       <artifactId>java-smt</artifactId>
       <version>3.14.3</version>
-    </dependency>
-    <dependency>
-      <groupId>org.sosy_lab.pjbdd</groupId>
-      <artifactId>pjbdd</artifactId>
-      <version>1.0.10-9</version>
     </dependency>
     <dependency>
       <groupId>commons-cli</groupId>
@@ -132,19 +151,12 @@
     </dependency>
   </dependencies>
 
-  <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-  </distributionManagement>
-
   <build>
     <plugins>
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.7</version>
+        <version>1.6.13</version>
         <extensions>true</extensions>
         <configuration>
           <serverId>ossrh</serverId>
@@ -166,6 +178,20 @@
         <artifactId>maven-install-plugin</artifactId>
         <version>2.5.2</version>
         <executions>
+          <execution>
+            <id>install-pjbdd</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <groupId>org.sosy_lab.pjbdd</groupId>
+              <artifactId>pjbdd</artifactId>
+              <version>1.0.10-10</version>
+              <packaging>jar</packaging>
+              <file>${pjbdd.jarpath}</file>
+            </configuration>
+          </execution>
           <execution>
             <id>install-abc</id>
             <phase>clean</phase>
@@ -236,20 +262,6 @@
               <file>${cvc5.jarpath}</file>
             </configuration>
           </execution>
-          <execution>
-            <id>install-pjbdd</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <groupId>org.sosy_lab.pjbdd</groupId>
-              <artifactId>pjbdd</artifactId>
-              <version>1.0.10-9</version>
-              <packaging>jar</packaging>
-              <file>${pjbdd.jarpath}</file>
-            </configuration>
-          </execution>
         </executions>
       </plugin>
       <plugin>
@@ -259,7 +271,7 @@
         <configuration>
           <systemPropertyVariables>
             <propertyName>java.library.path</propertyName>
-            <buildDirectory>${abc.libpath}:${monosat.libpath}:${yices.libpath}:${z3.libpath}:${cvc5.libpath}</buildDirectory>
+            <buildDirectory>${deps.path}/*</buildDirectory>
           </systemPropertyVariables>
         </configuration>
       </plugin>
@@ -318,6 +330,27 @@
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>3.3.0</version>
+            <executions>
+              <execution>
+                <id>empty-javadoc-jar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <configuration>
+                  <classifier>javadoc</classifier>
+                  <classesDirectory>${basedir}</classesDirectory>
+                  <includes>
+                    <include>*.md</include>
+                  </includes>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
             <version>1.5</version>
             <executions>
@@ -335,14 +368,29 @@
     </profile>
   </profiles>
 
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>
+        https://s01.oss.sonatype.org/content/repositories/snapshots
+      </url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>
+        https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/
+      </url>
+    </repository>
+  </distributionManagement>
+
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <log4j2.configurationFile>${project.basedir}/src/main/resources/log4j2.xml</log4j2.configurationFile>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <revision>0.1</revision>
+    <revision>0.5.0</revision>
 
-    <deps.path>${project.basedir}/../../../Bld</deps.path>
+    <deps.path>${project.basedir}/src/main/resources</deps.path>
     <pjbdd.jarpath>${deps.path}/Jars/pjbdd-v.1.0.10-10.jar</pjbdd.jarpath>
     <abc.jarpath>${deps.path}/Jars/abc.jar</abc.jarpath>
     <abc.libpath>${deps.path}/Deps/abc_java_bindings/dist/lib</abc.libpath>

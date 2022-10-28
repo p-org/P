@@ -2,6 +2,7 @@ package psymbolic.commandline;
 
 import org.apache.commons.cli.*;
 
+import psymbolic.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
 import psymbolic.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
@@ -19,6 +20,16 @@ public class PSymOptions {
 
     static {
         options = new Options();
+
+        // mode of choice orchestration
+        Option choiceOrch = Option.builder("corch")
+                .longOpt("choice-orchestration")
+                .desc("Choice orchestration options: rl, random, none (default: random)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Choice Orchestration Mode (string)")
+                .build();
+        options.addOption(choiceOrch);
 
         // mode of task orchestration
         Option taskOrch = Option.builder("torch")
@@ -290,6 +301,23 @@ public class PSymOptions {
         PSymConfiguration config = new PSymConfiguration();
         for (Option option : cmd.getOptions()) {
             switch (option.getOpt()) {
+                case "corch":
+                case "choice-orchestration":
+                    switch (option.getValue()) {
+                        case "none":
+                            config.setChoiceOrchestration(ChoiceOrchestrationMode.None);
+                            break;
+                        case "random":
+                            config.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
+                            break;
+                        case "rl":
+                            config.setChoiceOrchestration(ChoiceOrchestrationMode.RL);
+                            break;
+                        default:
+                            formatter.printHelp("corch", String.format("Unrecognized choice orchestration mode, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                            formatter.printUsage(writer, 80, "corch", options);
+                    }
+                    break;
                 case "torch":
                 case "task-orchestration":
                     switch (option.getValue()) {
@@ -497,10 +525,6 @@ public class PSymOptions {
                 case "nb":
                 case "no-backtrack":
                     config.setUseBacktrack(false);
-                    break;
-                case "nr":
-                case "no-random":
-                    config.setUseRandom(false);
                     break;
                 case "seed":
                     try {

@@ -2,6 +2,7 @@ package psymbolic.commandline;
 
 import lombok.Getter;
 import lombok.Setter;
+import psymbolic.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
 import psymbolic.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
@@ -14,7 +15,11 @@ import java.io.Serializable;
 public class PSymConfiguration implements Serializable {
 
     @Getter @Setter
-    // mode of orchestrating
+    // mode of choice orchestration
+    private ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.Random;
+
+    @Getter @Setter
+    // mode of task orchestration
     private TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.CoverageAStar;
 
     @Getter @Setter
@@ -47,7 +52,7 @@ public class PSymConfiguration implements Serializable {
 
     @Getter @Setter
     // max number of executions bound provided by the user
-    private int maxExecutions = -1;
+    private int maxExecutions = 0;
 
     @Getter @Setter
     // max input choice bound provided by the user
@@ -120,10 +125,6 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     // use backtracking
     private boolean useBacktrack = true;
-
-    @Getter @Setter
-    // use randomization
-    private boolean useRandom = true;
 
     @Getter @Setter
     // random seed

@@ -5,7 +5,11 @@ import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.logger.*;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
+import psymbolic.runtime.scheduler.choiceorchestration.ChoiceOrchestrator;
+import psymbolic.runtime.scheduler.choiceorchestration.ChoiceOrchestratorNone;
+import psymbolic.runtime.scheduler.choiceorchestration.ChoiceOrchestratorRL;
+import psymbolic.runtime.scheduler.choiceorchestration.ChoiceOrchestratorRandom;
+import psymbolic.runtime.scheduler.taskorchestration.*;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.utils.*;
 import psymbolic.valuesummary.*;
@@ -29,18 +33,33 @@ import java.util.stream.Collectors;
 public class IterativeBoundedScheduler extends Scheduler {
 
     /** List of all backtrack tasks */
-    private List<BacktrackTask> allTasks = new ArrayList<>();
+    private final List<BacktrackTask> allTasks = new ArrayList<>();
     /** Priority queue of all backtrack tasks that are pending */
-    private Set<Integer> pendingTasks = new HashSet<>();
+    private final Set<Integer> pendingTasks = new HashSet<>();
     /** List of all backtrack tasks that finished */
-    private List<Integer> finishedTasks = new ArrayList<>();
+    private final List<Integer> finishedTasks = new ArrayList<>();
     /** Task id of the latest backtrack task */
     private int latestTaskId = 0;
 
     private boolean isDoneIterating = false;
 
+    private final ChoiceOrchestrator choiceOrchestrator;
+
     public IterativeBoundedScheduler(PSymConfiguration config, Program p) {
         super(config, p);
+        switch (config.getChoiceOrchestration()) {
+            case None:
+                choiceOrchestrator = new ChoiceOrchestratorNone();
+                break;
+            case Random:
+                choiceOrchestrator = new ChoiceOrchestratorRandom();
+                break;
+            case RL:
+                choiceOrchestrator = new ChoiceOrchestratorRL();
+                break;
+            default:
+                throw new RuntimeException("Unrecognized choice orchestration mode: " + config.getChoiceOrchestration());
+        }
     }
 
     private void resetBacktrackTasks() {
@@ -129,22 +148,16 @@ public class IterativeBoundedScheduler extends Scheduler {
      * @throws Exception Throw error if reading fails
      */
     public static IterativeBoundedScheduler readFromFile(String readFromFile) throws Exception {
-        IterativeBoundedScheduler result = null;
+        IterativeBoundedScheduler result;
         try {
             PSymLogger.info("Reading program state from file " + readFromFile);
-            FileInputStream fis = null;
+            FileInputStream fis;
             fis = new FileInputStream(readFromFile);
             ObjectInputStream ois = new ObjectInputStream(fis);
             result = (IterativeBoundedScheduler) ois.readObject();
             GlobalData.setInstance((GlobalData) ois.readObject());
             PSymLogger.info("Successfully read.");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            throw new Exception("Failed to read program state from file " + readFromFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new Exception("Failed to read program state from file " + readFromFile);
-        } catch (ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
             throw new Exception("Failed to read program state from file " + readFromFile);
         }
@@ -234,7 +247,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         if (configuration.getCollectStats() > 2) {
             SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
         }
-        if (configuration.getMaxExecutions() >= 0) {
+        if (configuration.getMaxExecutions() > 0) {
             isDoneIterating = ((iter - start_iter) >= configuration.getMaxExecutions());
         }
         GlobalData.getCoverage().updateIterationCoverage(getChoiceDepth()-1);
@@ -534,14 +547,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
 
         if (choices.size() > 1) {
-            if (configuration.isUseRandom()) {
-                Collections.shuffle(choices, new Random(RandomNumberGenerator.getInstance().getRandomLong()));
-            }
-//            Collections.sort(choices, new SortVS());
-//            SearchLogger.log("\t#Choices = " + choices.size());
-//            for (PrimitiveVS vs: choices) {
-//                SearchLogger.log("\t\t" + vs);
-//            }
+            choiceOrchestrator.reorderChoices(choices, bound, isData);
         }
 
         List<ValueSummary> chosen = new ArrayList();

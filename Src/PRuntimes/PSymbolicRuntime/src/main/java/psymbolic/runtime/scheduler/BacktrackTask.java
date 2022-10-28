@@ -119,10 +119,10 @@ public class BacktrackTask implements Serializable {
                 throw new RuntimeException("Unexpected orchestration mode: " + orchestration);
             case Random:
             case CoverageAStar:
+            case CoverageRL:
                 // do nothing
                 break;
             case CoverageEstimate:
-            case CoverageRL:
                 setCoverageEstimate();
                 break;
             default:
@@ -144,10 +144,10 @@ public class BacktrackTask implements Serializable {
                 throw new RuntimeException("Unexpected orchestration mode: " + orchestration);
             case Random:
             case CoverageAStar:
+            case CoverageRL:
                 // do nothing
                 break;
             case CoverageEstimate:
-            case CoverageRL:
                 if (!isInitialTask()) {
                     assert(parentTask != null);
                     for (BacktrackTask t: parentTask.getChildren()) {

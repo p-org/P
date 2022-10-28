@@ -692,7 +692,7 @@ public class Scheduler implements SymbolicSearch {
             }
         }
 
-        if (configuration.getVerbosity() > 3) {
+        if (configuration.getVerbosity() > 5) {
             PSymLogger.info(globalStateString());
         }
 
@@ -730,7 +730,7 @@ public class Scheduler implements SymbolicSearch {
                 if (distinctStates.containsKey(concreteState)) {
                     distinctStates.put(concreteState, distinctStates.get(concreteState) + 1);
                     totalStateCount += 1;
-                    if (configuration.getVerbosity() > 3) {
+                    if (configuration.getVerbosity() > 5) {
                         PSymLogger.info("Repeated State: " + concreteState);
                     }
                 } else {
@@ -741,7 +741,7 @@ public class Scheduler implements SymbolicSearch {
                     if (configuration.isUseStateCaching()) {
                         distinctStateGuard = distinctStateGuard.or(concreteStateGuard);
                     }
-                    if (configuration.getVerbosity() > 2) {
+                    if (configuration.getVerbosity() > 4) {
                         PSymLogger.info("New State:      " + concreteState);
                     }
                 }
@@ -800,7 +800,7 @@ public class Scheduler implements SymbolicSearch {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
             Message removed = rmBuffer(machine, guard);
-            if (configuration.getVerbosity() > 3) {
+            if (configuration.getVerbosity() > 5) {
                 System.out.println("  Machine " + machine.toString());
                 System.out.println("    state   " + machine.getCurrentState().toStringDetailed());
                 System.out.println("    message " + removed.toString());

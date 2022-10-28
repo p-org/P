@@ -70,7 +70,7 @@ public class SearchLogger {
     }
 
     public static void logMessage(String str) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             log.info(str);
         }
     }

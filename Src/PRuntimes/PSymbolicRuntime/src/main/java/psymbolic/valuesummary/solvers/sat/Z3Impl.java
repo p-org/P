@@ -51,7 +51,7 @@ public class Z3Impl implements SatLib<BoolExpr> {
 
     private BoolExpr newTerm(BoolExpr t) {
         BoolExpr tSimple = t;
-        if (SearchLogger.getVerbosity() <= 4) {
+        if (SearchLogger.getVerbosity() <= 6) {
             tSimple = (BoolExpr) t.simplify(simplifyParams);
 //        System.out.println("\toriginal term  : " + toString(t));
 //        System.out.println("\tsimplified term: " + toString(tSimple));
@@ -88,7 +88,7 @@ public class Z3Impl implements SatLib<BoolExpr> {
             table.put(formula, SatStatus.Unsat);
 //            solver.add(not(formula));
 
-            if (SearchLogger.getVerbosity() > 4) {
+            if (SearchLogger.getVerbosity() > 6) {
                 if (formula != valFalse && printCount < 10) {
                     toSmtLib("unsat", formula);
                 }

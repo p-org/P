@@ -84,7 +84,7 @@ public class EntryPoint {
             StatWriter.log("memory-limit-MB", String.format("%.1f", configuration.getMemLimit()), false);
             StatWriter.log("time-pre-seconds", String.format("%.1f", preSearchTime), false);
         }
-        Concretizer.print = (configuration.getVerbosity() > 6);
+        Concretizer.print = (configuration.getVerbosity() > 8);
     }
 
     private static void postprocess() {

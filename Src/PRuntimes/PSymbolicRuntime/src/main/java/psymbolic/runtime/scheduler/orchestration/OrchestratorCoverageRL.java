@@ -4,14 +4,15 @@ import psymbolic.runtime.scheduler.BacktrackTask;
 import psymbolic.utils.RandomNumberGenerator;
 
 public class OrchestratorCoverageRL implements Orchestrator {
-    private double epsilon = 1;
-    private double alpha = 0.99;
+    private static double EPSILON_MAX = 0.8;
+    private static double EPSILON_MIN = 0.2;
+    private static double EPSILON_DECAY_FACTOR = 0.999;
+    private static double epsilon = EPSILON_MAX;
     private Orchestrator orchestratorExplore;
     private Orchestrator orchestratorExploit;
     public OrchestratorCoverageRL() {
         orchestratorExplore = new OrchestratorRandom();
         orchestratorExploit = new OrchestratorCoverageAStar();
-//        orchestratorExploit = new OrchestratorCoverageEstimate();
     }
 
     public void addPriority(BacktrackTask task) {
@@ -20,7 +21,7 @@ public class OrchestratorCoverageRL implements Orchestrator {
     }
 
     public BacktrackTask getNext() {
-        epsilon *= alpha;
+        decayEpsilon();
         double randNum = RandomNumberGenerator.getInstance().getRandomDouble();
         if (randNum <= epsilon) {
             // explore
@@ -28,6 +29,14 @@ public class OrchestratorCoverageRL implements Orchestrator {
         } else {
             // exploit
             return orchestratorExploit.getNext();
+        }
+    }
+
+    private void decayEpsilon() {
+        if (epsilon > EPSILON_MIN) {
+            epsilon *= EPSILON_DECAY_FACTOR;
+        } else {
+            epsilon = EPSILON_MIN;
         }
     }
 

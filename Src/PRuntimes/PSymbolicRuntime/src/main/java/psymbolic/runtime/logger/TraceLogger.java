@@ -78,48 +78,48 @@ public class TraceLogger extends PSymLogger {
 
     public static void onProcessEvent(Guard pc, Machine machine, Message message)
     {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             String msg = String.format("Machine %s is processing event %s in state %s", machine, message.getEvent(), machine.getCurrentState().restrict(pc));
             log.info(msg);
         }
     }
 
     public static void onProcessStateTransition(Guard pc, Machine machine, PrimitiveVS<State> newState) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             String msg = String.format("Machine %s transitioning to state %s", machine.toString(), newState);
             log.info(msg);
         }
     }
 
     public static void onCreateMachine(Guard pc, Machine machine) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             String msg = "Machine " + machine + " was created";
             log.info(msg);
         }
     }
 
     public static void onMachineStart(Guard pc, Machine machine) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             String msg = String.format("Machine %s starting", machine.toString());
             log.info(msg);
         }
     }
 
     public static void machineState(Guard pc, Machine machine) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             String msg = String.format("Machine %s in state %s", machine, machine.getCurrentState().restrict(pc));
             log.info(msg);
         }
     }
 
     public static void handle(Machine m, State st, Message event) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             log.info("Machine " + m + " handling event " + event.getEvent() + " in state " + st);
         }
     }
 
     public static void send(Message effect) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             String msg = "Send effect [" + effect.getEvent() + "] to [" + effect.getTarget() + "]";
             log.info(msg);
         }
@@ -134,7 +134,7 @@ public class TraceLogger extends PSymLogger {
     }
 
     public static void logMessage(String str) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             log.info(str);
         }
     }

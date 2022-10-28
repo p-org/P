@@ -9,7 +9,7 @@ Here is a summary of these options:
     -corch,--choice-orchestration <Choice Orchestration Mode (string)>  Choice orchestration options: rl, random, none
                                                                         (default: random)                                                                     
     -torch,--task-orchestration <Task Orchestration Mode (string)>      Task orchestration options: rl, astar, 
-                                                                        random, estimate, dfs (default: astar)                                                                     
+                                                                        random, dfs (default: astar)                                                                     
     -mt,--max-tasks <Max Backtrack Tasks (integer)>                     Max number of backtrack tasks
                                                                         to generate per execution (default: 2)
 

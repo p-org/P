@@ -34,7 +34,7 @@ public class PSymOptions {
         // mode of task orchestration
         Option taskOrch = Option.builder("torch")
                 .longOpt("task-orchestration")
-                .desc("Task orchestration options: rl, astar, estimate, random, dfs (default: astar)")
+                .desc("Task orchestration options: rl, astar, random, dfs (default: astar)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Task Orchestration Mode (string)")
@@ -309,6 +309,9 @@ public class PSymOptions {
                             break;
                         case "random":
                             config.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
+                            break;
+                        case "estimate":
+                            config.setChoiceOrchestration(ChoiceOrchestrationMode.Estimate);
                             break;
                         case "rl":
                             config.setChoiceOrchestration(ChoiceOrchestrationMode.RL);

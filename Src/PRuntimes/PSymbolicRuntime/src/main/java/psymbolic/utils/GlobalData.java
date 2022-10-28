@@ -1,10 +1,14 @@
 package psymbolic.utils;
 
 import psymbolic.runtime.StateEvents;
+import psymbolic.runtime.scheduler.choiceorchestration.ChoiceFeature;
+import psymbolic.runtime.scheduler.choiceorchestration.ChoiceFeatureStats;
 import psymbolic.runtime.statistics.CoverageStats;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,11 +31,17 @@ public class GlobalData implements Serializable {
     public CoverageStats coverageStats;
 
     /**
+     * Global choice feature statistics
+     */
+    public ChoiceFeatureStats choiceFeatureStats;
+
+    /**
      * Private constructor to enable singleton class object
      */
     private GlobalData() {
         allStateEvents = new HashMap<>();
         coverageStats = new CoverageStats();
+        choiceFeatureStats = new ChoiceFeatureStats();
     }
 
     /**
@@ -50,6 +60,14 @@ public class GlobalData implements Serializable {
      */
     public static CoverageStats getCoverage() {
         return getInstance().coverageStats;
+    }
+
+    /**
+     * Get choice feature statistics
+     * @return ChoiceFeatureStats object
+     */
+    public static ChoiceFeatureStats getChoiceFeatureStats() {
+        return getInstance().choiceFeatureStats;
     }
 
     /**

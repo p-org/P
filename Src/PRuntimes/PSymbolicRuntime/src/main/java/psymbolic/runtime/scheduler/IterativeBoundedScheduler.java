@@ -5,10 +5,7 @@ import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.logger.*;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.scheduler.choiceorchestration.ChoiceOrchestrator;
-import psymbolic.runtime.scheduler.choiceorchestration.ChoiceOrchestratorNone;
-import psymbolic.runtime.scheduler.choiceorchestration.ChoiceOrchestratorRL;
-import psymbolic.runtime.scheduler.choiceorchestration.ChoiceOrchestratorRandom;
+import psymbolic.runtime.scheduler.choiceorchestration.*;
 import psymbolic.runtime.scheduler.taskorchestration.*;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.utils.*;
@@ -53,6 +50,9 @@ public class IterativeBoundedScheduler extends Scheduler {
                 break;
             case Random:
                 choiceOrchestrator = new ChoiceOrchestratorRandom();
+                break;
+            case Estimate:
+                choiceOrchestrator = new ChoiceOrchestratorEstimate();
                 break;
             case RL:
                 choiceOrchestrator = new ChoiceOrchestratorRL();
@@ -111,6 +111,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
         SearchLogger.log("--------------------");
         SearchLogger.log(String.format("Estimated Coverage:: %.5f %%", GlobalData.getCoverage().getEstimatedCoverage()));
+        SearchLogger.log(String.format("Distinct States Explored:: %d", getTotalDistinctStates()));
         if (configuration.getCollectStats() != 0) {
             StatWriter.log("coverage-%", String.format("%.10f", GlobalData.getCoverage().getEstimatedCoverage(10)), false);
         }
@@ -283,7 +284,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         } else {
             parentTask = getTask(latestTaskId);
         }
-        parentTask.postProcess(GlobalData.getCoverage().getIterationCoverage(getChoiceDepth()-1));
+        parentTask.postProcess(GlobalData.getCoverage().getPathCoverageAtDepth(getChoiceDepth()-1));
         finishedTasks.add(parentTask.getId());
         if (configuration.getVerbosity() > 1) {
             PSymLogger.log(String.format("  Finished %s [depth: %d, parent: %s]",
@@ -559,7 +560,8 @@ public class IterativeBoundedScheduler extends Scheduler {
                 backtrack.add(choices.get(i));
             }
         }
-        GlobalData.getCoverage().updateDepthCoverage(getDepth(), getChoiceDepth(), chosen.size(), backtrack.size(), isData, isNewChoice);
+        List<ChoiceFeature> featureList = GlobalData.getChoiceFeatureStats().getFeatureList(choices, isData);
+        GlobalData.getCoverage().updateDepthCoverage(getDepth(), getChoiceDepth(), chosen.size(), backtrack.size(), isData, isNewChoice, featureList);
 
         PrimitiveVS chosenVS = generateNext.apply(chosen);
 //        addRepeat.accept(chosenVS, depth);

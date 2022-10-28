@@ -5,6 +5,7 @@ import lombok.Setter;
 import psymbolic.runtime.logger.CoverageWriter;
 import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.logger.StatWriter;
+import psymbolic.runtime.scheduler.choiceorchestration.ChoiceFeature;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -56,16 +57,19 @@ public class CoverageStats implements Serializable {
         BigDecimal pathCoverage;
         int numTotal;
 
+        List<ChoiceFeature> featureList;
+
         CoverageChoiceDepthStats() {
-            this(new BigDecimal(1), 0);
+            this(new BigDecimal(1), 0, new ArrayList<>());
         }
 
-        private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal) {
+        private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal, List<ChoiceFeature> inputFeatureList) {
             this.pathCoverage = inputPathCoverage;
             this.numTotal = inputNumTotal;
+            this.featureList = inputFeatureList;
         }
 
-        void update(CoverageChoiceDepthStats prefix, int numExplored, int numRemaining, boolean isNewChoice) {
+        void update(CoverageChoiceDepthStats prefix, int numExplored, int numRemaining, boolean isNewChoice, List<ChoiceFeature> inputFeatureList) {
             pathCoverage = prefix.pathCoverage;
             if (isNewChoice) {
                 assert(numRemaining >= 0);
@@ -73,15 +77,17 @@ public class CoverageStats implements Serializable {
             }
             if (numTotal != 0)
                 pathCoverage = prefix.pathCoverage.multiply(BigDecimal.valueOf(numExplored).divide(BigDecimal.valueOf(numTotal), 10, RoundingMode.FLOOR));
+            featureList = inputFeatureList;
         }
 
         void reset() {
             pathCoverage = new BigDecimal(1);
             numTotal = 0;
+            featureList.clear();
         }
 
         public CoverageChoiceDepthStats getCopy() {
-            return new CoverageChoiceDepthStats(this.pathCoverage, this.numTotal);
+            return new CoverageChoiceDepthStats(this.pathCoverage, this.numTotal, new ArrayList<>(this.featureList));
         }
     }
 
@@ -121,13 +127,13 @@ public class CoverageStats implements Serializable {
      * @param numRemaining Number of choices remaining in current iteration at choiceDepth
      * @param isNewChoice Whether or not this is a new choice
      */
-    public void updatePathCoverage(int choiceDepth, int numExplored, int numRemaining, boolean isNewChoice) {
+    public void updatePathCoverage(int choiceDepth, int numExplored, int numRemaining, boolean isNewChoice, List<ChoiceFeature> inputFeatureList) {
         CoverageChoiceDepthStats prefix;
         if (choiceDepth == 0)
             prefix = new CoverageChoiceDepthStats();
         else
             prefix = perChoiceDepthStats.get(choiceDepth-1);
-        perChoiceDepthStats.get(choiceDepth).update(prefix, numExplored, numRemaining, isNewChoice);
+        perChoiceDepthStats.get(choiceDepth).update(prefix, numExplored, numRemaining, isNewChoice, inputFeatureList);
     }
 
     /**
@@ -139,7 +145,7 @@ public class CoverageStats implements Serializable {
      * @param isData Is true if the choice is a data choice
      * @param isNewChoice Whether or not this is a new choice
      */
-    public void updateDepthCoverage(int depth, int choiceDepth, int numExplored, int numRemaining, boolean isData, boolean isNewChoice) {
+    public void updateDepthCoverage(int depth, int choiceDepth, int numExplored, int numRemaining, boolean isData, boolean isNewChoice, List<ChoiceFeature> featureList) {
         // TODO: add synchronized to avoid race conditions when developing multi-threaded version
         while (depth >= perDepthStats.size()) {
             perDepthStats.add(new CoverageDepthStats());
@@ -163,7 +169,7 @@ public class CoverageStats implements Serializable {
                 perDepthStats.get(depth).numScheduleRemaining -= numExplored;
             }
         }
-        updatePathCoverage(choiceDepth, numExplored, numRemaining, isNewChoice);
+        updatePathCoverage(choiceDepth, numExplored, numRemaining, isNewChoice, featureList);
     }
 
     /**
@@ -171,18 +177,14 @@ public class CoverageStats implements Serializable {
      * @param choiceDepth Highest choice depth at which the last iteration ended
      */
     public void updateIterationCoverage(int choiceDepth) {
-        assert(choiceDepth < perChoiceDepthStats.size());
-        estimatedCoverage = estimatedCoverage.add(perChoiceDepthStats.get(choiceDepth).pathCoverage);
+        BigDecimal iterationCoverage = getPathCoverageAtDepth(choiceDepth);
+        estimatedCoverage = estimatedCoverage.add(iterationCoverage);
         assert (estimatedCoverage.doubleValue() <= 1.0): "Error in path coverage estimation";
-    }
-
-    /**
-     * Get path coverage of an interation after an iteration has ended
-     * @param choiceDepth Highest choice depth at which the last iteration ended
-     */
-    public BigDecimal getIterationCoverage(int choiceDepth) {
-        assert(choiceDepth < perChoiceDepthStats.size());
-        return perChoiceDepthStats.get(choiceDepth).pathCoverage;
+        for (CoverageChoiceDepthStats stats: perChoiceDepthStats) {
+            for (ChoiceFeature f: stats.featureList) {
+                f.getReward().add(iterationCoverage);
+            }
+        }
     }
 
     /**
@@ -213,6 +215,10 @@ public class CoverageStats implements Serializable {
         return estimatedCoverage.multiply(hundred).setScale(scale, RoundingMode.HALF_DOWN);
     }
 
+    /**
+     * Get path coverage of an interation after an iteration has ended
+     * @param choiceDepth Highest choice depth at which the last iteration ended
+     */
     public BigDecimal getPathCoverageAtDepth(int choiceDepth) {
         assert(choiceDepth < perChoiceDepthStats.size());
         return perChoiceDepthStats.get(choiceDepth).pathCoverage;

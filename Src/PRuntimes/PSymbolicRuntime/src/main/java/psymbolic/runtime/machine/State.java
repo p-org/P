@@ -15,6 +15,7 @@ import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.util.ValueSummaryChecks;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public abstract class State implements Serializable {
     public final String name;
@@ -103,7 +104,24 @@ public abstract class State implements Serializable {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        else if (!(obj instanceof State)) {
+            return false;
+        }
+        return  this.name.equals(((State) obj).name) &&
+                this.machineName.equals(((State) obj).machineName) &&
+                this.temperature.equals(((State) obj).temperature);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, machineName, temperature);
+    }
+
+    @Override
     public String toString() {
-        return String.format("%s", name);
+        return name;
     }
 }

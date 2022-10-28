@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Random;
 
 public class ChoiceOrchestratorRandom implements ChoiceOrchestrator {
+
+    public ChoiceOrchestratorRandom() {}
+
     public void reorderChoices(List<ValueSummary> choices, int bound, boolean isData) {
         if ((bound <= 0) || choices.size() <= bound) {
             return;

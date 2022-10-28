@@ -63,14 +63,8 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     private void resetBacktrackTasks() {
-        finishedTasks.clear();
+        pendingTasks.clear();
         BacktrackTask.initialize(configuration.getTaskOrchestration());
-    }
-
-    private void resumePendingTasks() {
-        for (Integer i: pendingTasks) {
-            getTask(i).setPriority();
-        }
     }
 
     private void isValidTaskId(int taskId) {
@@ -448,7 +442,6 @@ public class IterativeBoundedScheduler extends Scheduler {
         isDoneIterating = false;
         start_iter = iter;
         resetBacktrackTasks();
-        resumePendingTasks();
         reset_stats();
         boolean resetAfterInitial = isDone();
         while (!isDoneIterating) {

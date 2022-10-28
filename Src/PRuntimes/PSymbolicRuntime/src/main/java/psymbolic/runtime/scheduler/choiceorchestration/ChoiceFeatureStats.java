@@ -9,11 +9,12 @@ import psymbolic.valuesummary.GuardedValue;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.ValueSummary;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class ChoiceFeatureStats {
+public class ChoiceFeatureStats implements Serializable {
     public HashMap<ChoiceFeature, Integer> featureToId;
     public List<ChoiceFeature> allFeatures;
 

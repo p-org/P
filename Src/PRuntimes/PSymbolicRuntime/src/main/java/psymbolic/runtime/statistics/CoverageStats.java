@@ -80,7 +80,7 @@ public class CoverageStats implements Serializable {
             featureList = inputFeatureList;
         }
 
-        void reset() {
+        public void reset() {
             pathCoverage = new BigDecimal(1);
             numTotal = 0;
             featureList.clear();

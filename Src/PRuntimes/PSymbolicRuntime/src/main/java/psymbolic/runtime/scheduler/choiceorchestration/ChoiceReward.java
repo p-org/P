@@ -1,8 +1,9 @@
 package psymbolic.runtime.scheduler.choiceorchestration;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class ChoiceReward {
+public class ChoiceReward implements Serializable {
     private BigDecimal value;
 
     public ChoiceReward() {

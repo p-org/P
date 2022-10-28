@@ -2,7 +2,7 @@ package psymbolic.runtime.scheduler;
 
 import lombok.Getter;
 import lombok.Setter;
-import psymbolic.runtime.scheduler.orchestration.*;
+import psymbolic.runtime.scheduler.taskorchestration.*;
 import psymbolic.runtime.statistics.CoverageStats;
 
 import java.io.Serializable;
@@ -13,8 +13,8 @@ import java.util.List;
 
 public class BacktrackTask implements Serializable {
     @Setter
-    private static OrchestrationMode orchestration;
-    private static Orchestrator orchestrator = null;
+    private static TaskOrchestrationMode orchestration;
+    private static TaskOrchestrator taskOrchestrator = null;
     @Getter
     private int id;
     @Getter
@@ -128,7 +128,7 @@ public class BacktrackTask implements Serializable {
             default:
                 throw new RuntimeException("Unrecognized orchestration mode: " + orchestration);
         }
-        orchestrator.addPriority(this);
+        taskOrchestrator.addPriority(this);
     }
 
     public void postProcess(BigDecimal inputCoverage) {
@@ -153,7 +153,7 @@ public class BacktrackTask implements Serializable {
                     for (BacktrackTask t: parentTask.getChildren()) {
                         if (!t.completed) {
                             t.setCoverageEstimate();
-                            orchestrator.addPriority(t);
+                            taskOrchestrator.addPriority(t);
                         }
                     }
                 }
@@ -163,23 +163,23 @@ public class BacktrackTask implements Serializable {
         }
     }
 
-    public static void initialize(OrchestrationMode orch) {
+    public static void initialize(TaskOrchestrationMode orch) {
         orchestration = orch;
         switch (orchestration) {
             case DepthFirst:
                 // do nothing
                 break;
             case Random:
-                orchestrator = new OrchestratorRandom();
+                taskOrchestrator = new TaskOrchestratorRandom();
                 break;
             case CoverageAStar:
-                orchestrator = new OrchestratorCoverageAStar();
+                taskOrchestrator = new TaskOrchestratorCoverageAStar();
                 break;
             case CoverageEstimate:
-                orchestrator = new OrchestratorCoverageEstimate();
+                taskOrchestrator = new TaskOrchestratorCoverageEstimate();
                 break;
             case CoverageRL:
-                orchestrator = new OrchestratorCoverageRL();
+                taskOrchestrator = new TaskOrchestratorCoverageRL();
                 break;
             default:
                 throw new RuntimeException("Unrecognized orchestration mode: " + orchestration);
@@ -195,12 +195,12 @@ public class BacktrackTask implements Serializable {
             case CoverageAStar:
             case CoverageEstimate:
             case CoverageRL:
-                result = orchestrator.getNext();
+                result = taskOrchestrator.getNext();
                 break;
             default:
                 throw new RuntimeException("Unrecognized orchestration mode: " + orchestration);
         }
-        orchestrator.remove(result);
+        taskOrchestrator.remove(result);
         return result;
     }
 

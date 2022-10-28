@@ -2,7 +2,7 @@ package psymbolic.commandline;
 
 import lombok.Getter;
 import lombok.Setter;
-import psymbolic.runtime.scheduler.orchestration.OrchestrationMode;
+import psymbolic.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -15,7 +15,7 @@ public class PSymConfiguration implements Serializable {
 
     @Getter @Setter
     // mode of orchestrating
-    private OrchestrationMode orchestration = OrchestrationMode.CoverageAStar;
+    private TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.CoverageAStar;
 
     @Getter @Setter
     private int maxBacktrackTasksPerExecution = 2;

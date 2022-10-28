@@ -6,9 +6,9 @@ Here is a summary of these options:
 
 ````
 [Configure Orchestration]
-    -orch,--orchestration <Orchestration Mode (string)>               Orchestration options: coverage-astar, 
-                                                                      coverage-estimate, random, dfs (default: coverage-astar)                                                                     
-    -orchmt,--orchestration-max-tasks <Max Backtrack Tasks (integer)> Max number of backtrack tasks
+    -torch,--task-orchestration <Task Orchestration Mode (string)>    Task orchestration options: rl, astar, estimate, 
+                                                                      random, dfs (default: astar)                                                                     
+    -mt,--max-tasks <Max Backtrack Tasks (integer)>                   Max number of backtrack tasks
                                                                       to generate per execution (default: 2)
 
 [Configure Symbolic Width]

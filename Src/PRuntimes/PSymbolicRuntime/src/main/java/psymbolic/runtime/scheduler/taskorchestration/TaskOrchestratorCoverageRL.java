@@ -1,23 +1,23 @@
-package psymbolic.runtime.scheduler.orchestration;
+package psymbolic.runtime.scheduler.taskorchestration;
 
 import psymbolic.runtime.scheduler.BacktrackTask;
 import psymbolic.utils.RandomNumberGenerator;
 
-public class OrchestratorCoverageRL implements Orchestrator {
+public class TaskOrchestratorCoverageRL implements TaskOrchestrator {
     private static double EPSILON_MAX = 0.8;
     private static double EPSILON_MIN = 0.2;
     private static double EPSILON_DECAY_FACTOR = 0.999;
     private static double epsilon = EPSILON_MAX;
-    private Orchestrator orchestratorExplore;
-    private Orchestrator orchestratorExploit;
-    public OrchestratorCoverageRL() {
-        orchestratorExplore = new OrchestratorRandom();
-        orchestratorExploit = new OrchestratorCoverageAStar();
+    private TaskOrchestrator taskOrchestratorExplore;
+    private TaskOrchestrator taskOrchestratorExploit;
+    public TaskOrchestratorCoverageRL() {
+        taskOrchestratorExplore = new TaskOrchestratorRandom();
+        taskOrchestratorExploit = new TaskOrchestratorCoverageAStar();
     }
 
     public void addPriority(BacktrackTask task) {
-        orchestratorExplore.addPriority(task);
-        orchestratorExploit.addPriority(task);
+        taskOrchestratorExplore.addPriority(task);
+        taskOrchestratorExploit.addPriority(task);
     }
 
     public BacktrackTask getNext() {
@@ -25,10 +25,10 @@ public class OrchestratorCoverageRL implements Orchestrator {
         double randNum = RandomNumberGenerator.getInstance().getRandomDouble();
         if (randNum <= epsilon) {
             // explore
-            return orchestratorExplore.getNext();
+            return taskOrchestratorExplore.getNext();
         } else {
             // exploit
-            return orchestratorExploit.getNext();
+            return taskOrchestratorExploit.getNext();
         }
     }
 
@@ -41,7 +41,7 @@ public class OrchestratorCoverageRL implements Orchestrator {
     }
 
     public void remove(BacktrackTask task) throws InterruptedException {
-        orchestratorExplore.remove(task);
-        orchestratorExploit.remove(task);
+        taskOrchestratorExplore.remove(task);
+        taskOrchestratorExploit.remove(task);
     }
 }

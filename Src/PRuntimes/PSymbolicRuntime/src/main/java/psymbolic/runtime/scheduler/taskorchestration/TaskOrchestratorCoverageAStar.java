@@ -1,14 +1,14 @@
-package psymbolic.runtime.scheduler.orchestration;
+package psymbolic.runtime.scheduler.taskorchestration;
 
 import psymbolic.runtime.scheduler.BacktrackTask;
 
 import java.util.Comparator;
 import java.util.concurrent.PriorityBlockingQueue;
 
-public class OrchestratorCoverageAStar implements Orchestrator {
+public class TaskOrchestratorCoverageAStar implements TaskOrchestrator {
     private PriorityBlockingQueue<BacktrackTask> elements = null;
 
-    public OrchestratorCoverageAStar() {
+    public TaskOrchestratorCoverageAStar() {
         elements = new PriorityBlockingQueue<BacktrackTask>(100, new Comparator<BacktrackTask>() {
             public int compare(BacktrackTask a, BacktrackTask b) {
                 return b.getPrefixCoverage().compareTo(a.getPrefixCoverage());

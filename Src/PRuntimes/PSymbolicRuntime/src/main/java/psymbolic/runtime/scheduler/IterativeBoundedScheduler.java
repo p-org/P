@@ -5,7 +5,7 @@ import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.logger.*;
 import psymbolic.runtime.machine.Machine;
-import psymbolic.runtime.scheduler.orchestration.OrchestrationMode;
+import psymbolic.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.utils.*;
 import psymbolic.valuesummary.*;
@@ -45,7 +45,7 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     private void resetBacktrackTasks() {
         finishedTasks.clear();
-        BacktrackTask.initialize(configuration.getOrchestration());
+        BacktrackTask.initialize(configuration.getTaskOrchestration());
     }
 
     private void resumePendingTasks() {
@@ -238,7 +238,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             isDoneIterating = ((iter - start_iter) >= configuration.getMaxExecutions());
         }
         GlobalData.getCoverage().updateIterationCoverage(getChoiceDepth()-1);
-        if (configuration.getOrchestration() != OrchestrationMode.DepthFirst) {
+        if (configuration.getTaskOrchestration() != TaskOrchestrationMode.DepthFirst) {
             setBacktrackTasks();
             BacktrackTask nextTask = setNextBacktrackTask();
             if (nextTask != null) {
@@ -263,7 +263,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         BacktrackTask parentTask;
         if (latestTaskId == 0) {
             assert(allTasks.isEmpty());
-            BacktrackTask.setOrchestration(configuration.getOrchestration());
+            BacktrackTask.setOrchestration(configuration.getTaskOrchestration());
             parentTask = new BacktrackTask(0);
             parentTask.setPrefixCoverage(new BigDecimal(1));
             allTasks.add(parentTask);

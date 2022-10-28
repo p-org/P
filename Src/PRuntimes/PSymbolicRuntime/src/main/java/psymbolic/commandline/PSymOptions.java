@@ -2,7 +2,7 @@ package psymbolic.commandline;
 
 import org.apache.commons.cli.*;
 
-import psymbolic.runtime.scheduler.orchestration.OrchestrationMode;
+import psymbolic.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -20,19 +20,19 @@ public class PSymOptions {
     static {
         options = new Options();
 
-        // mode of orchestration
-        Option orch = Option.builder("orch")
-                .longOpt("orchestration")
-                .desc("Orchestration options: coverage-astar, coverage-estimate, random, dfs (default: coverage-astar)")
+        // mode of task orchestration
+        Option taskOrch = Option.builder("torch")
+                .longOpt("task-orchestration")
+                .desc("Task orchestration options: rl, astar, estimate, random, dfs (default: astar)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Orchestration Mode (string)")
+                .argName("Task Orchestration Mode (string)")
                 .build();
-        options.addOption(orch);
+        options.addOption(taskOrch);
 
         // max number of backtrack tasks per execution
-        Option maxBacktrackTasksPerExecution = Option.builder("orchmt")
-                .longOpt("orchestration-max-tasks")
+        Option maxBacktrackTasksPerExecution = Option.builder("mt")
+                .longOpt("max-tasks")
                 .desc("Max number of backtrack tasks to generate per execution (default: 2)")
                 .numberOfArgs(1)
                 .hasArg()
@@ -290,36 +290,36 @@ public class PSymOptions {
         PSymConfiguration config = new PSymConfiguration();
         for (Option option : cmd.getOptions()) {
             switch (option.getOpt()) {
-                case "orch":
-                case "orchestration":
+                case "torch":
+                case "task-orchestration":
                     switch (option.getValue()) {
                         case "dfs":
-                            config.setOrchestration(OrchestrationMode.DepthFirst);
+                            config.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
                             break;
                         case "random":
-                            config.setOrchestration(OrchestrationMode.Random);
+                            config.setTaskOrchestration(TaskOrchestrationMode.Random);
                             break;
-                        case "coverage-astar":
-                            config.setOrchestration(OrchestrationMode.CoverageAStar);
+                        case "astar":
+                            config.setTaskOrchestration(TaskOrchestrationMode.CoverageAStar);
                             break;
-                        case "coverage-estimate":
-                            config.setOrchestration(OrchestrationMode.CoverageEstimate);
+                        case "estimate":
+                            config.setTaskOrchestration(TaskOrchestrationMode.CoverageEstimate);
                             break;
-                        case "coverage-rl":
-                            config.setOrchestration(OrchestrationMode.CoverageRL);
+                        case "rl":
+                            config.setTaskOrchestration(TaskOrchestrationMode.CoverageRL);
                             break;
                         default:
-                            formatter.printHelp("orch", String.format("Unrecognized orchestration mode, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                            formatter.printUsage(writer, 80, "orch", options);
+                            formatter.printHelp("torch", String.format("Unrecognized task orchestration mode, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                            formatter.printUsage(writer, 80, "torch", options);
                     }
                     break;
-                case "orchmt":
-                case "orchestration-max-tasks":
+                case "mt":
+                case "max-tasks":
                     try {
                         config.setMaxBacktrackTasksPerExecution(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("orch-mt", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "orch-mt", options);
+                        formatter.printHelp("mt", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                        formatter.printUsage(writer, 80, "mt", options);
                     }
                     break;
                 case "d":

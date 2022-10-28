@@ -1,4 +1,4 @@
-package psymbolic.runtime.scheduler.orchestration;
+package psymbolic.runtime.scheduler.taskorchestration;
 
 import psymbolic.runtime.scheduler.BacktrackTask;
 import psymbolic.utils.RandomNumberGenerator;
@@ -6,10 +6,10 @@ import psymbolic.utils.RandomNumberGenerator;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OrchestratorRandom implements Orchestrator {
+public class TaskOrchestratorRandom implements TaskOrchestrator {
     private List<BacktrackTask> elements = null;
 
-    public OrchestratorRandom() {
+    public TaskOrchestratorRandom() {
         elements = new ArrayList<>();
     }
 

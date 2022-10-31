@@ -228,6 +228,7 @@ Bld/*
 !Bld/*.sh
 !Bld/Targets
 !Bld/Jars/
+!Bld/Deps/
 PGenerated/
 !Src/**/Zing/*.zing
 stubs.c

@@ -917,7 +917,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
                     context.Write(output, ").getValues().contains(Boolean.FALSE), ");
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Message);
-                    context.Write(output, ", scheduler, ");
+                    context.Write(output, $", {CompilationContext.SchedulerVar}, ");
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
                     context.Write(output, ".getGuardFor(Boolean.FALSE));");
                     break;
@@ -1216,7 +1216,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         break;
                     }
                 case AnnounceStmt announceStmt:
-                    context.Write(output, $"scheduler.announce(");
+                    context.Write(output, $"{CompilationContext.SchedulerVar}.announce(");
                     WriteExpr(context, output, flowContext.pcScope, announceStmt.PEvent);
                     context.Write(output, ", ");
                     if (announceStmt.Payload == null)
@@ -2547,13 +2547,13 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.ProjectName.ToLower()} implements Program {{");
             context.WriteLine(output);
-            context.WriteLine(output, $"public static Scheduler {CompilationContext.SchedulerVar};");
+            context.WriteLine(output, $"public static Scheduler programScheduler;");
             context.WriteLine(output);
             context.WriteLine(output, "@Override");
-            context.WriteLine(output, $"public Scheduler getScheduler () {{ return this.{CompilationContext.SchedulerVar}; }}");
+            context.WriteLine(output, $"public Scheduler getProgramScheduler () {{ return this.programScheduler; }}");
             context.WriteLine(output);
             context.WriteLine(output, "@Override");
-            context.WriteLine(output, $"public void setScheduler (Scheduler s) {{ this.{CompilationContext.SchedulerVar} = s; }}");
+            context.WriteLine(output, $"public void setProgramScheduler (Scheduler s) {{ this.programScheduler = s; }}");
             context.WriteLine(output);
         }
 

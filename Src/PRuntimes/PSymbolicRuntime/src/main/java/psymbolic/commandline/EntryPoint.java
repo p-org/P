@@ -115,7 +115,7 @@ public class EntryPoint {
             Guard pc = e.pathConstraint;
 
             ReplayScheduler replay = new ReplayScheduler(configuration, scheduler.getProgram(), scheduler.getSchedule(), pc, scheduler.getDepth());
-            scheduler.getProgram().setScheduler(replay);
+            scheduler.getProgram().setProgramScheduler(replay);
             replay.doSearch();
             e.printStackTrace();
             throw new BugFoundException("Found bug: " + e.getLocalizedMessage(), pc);
@@ -136,7 +136,7 @@ public class EntryPoint {
     public static void run(IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
         scheduler = sch;
         configuration = config;
-        scheduler.getProgram().setScheduler(scheduler);
+        scheduler.getProgram().setProgramScheduler(scheduler);
 
         preprocess();
         TimedCall timedCall = new TimedCall(scheduler, false);
@@ -147,7 +147,7 @@ public class EntryPoint {
     public static void resume(IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
         scheduler = sch;
         configuration = config;
-        scheduler.getProgram().setScheduler(scheduler);
+        scheduler.getProgram().setProgramScheduler(scheduler);
 
         scheduler.setConfiguration(configuration);
         TraceLogger.setVerbosity(config.getVerbosity());

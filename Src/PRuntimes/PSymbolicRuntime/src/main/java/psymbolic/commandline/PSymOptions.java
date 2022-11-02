@@ -1,7 +1,6 @@
 package psymbolic.commandline;
 
 import org.apache.commons.cli.*;
-
 import psymbolic.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
 import psymbolic.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psymbolic.valuesummary.solvers.SolverType;
@@ -17,6 +16,8 @@ import java.io.PrintWriter;
 public class PSymOptions {
 
     private static final Options options;
+    private static HelpFormatter formatter = new HelpFormatter();
+    private static final PrintWriter writer = new PrintWriter(System.out);
 
     static {
         options = new Options();
@@ -91,26 +92,6 @@ public class PSymOptions {
                 .build();
         options.addOption(outputDir);
 
-        // set the level of verbosity
-        Option verbosity = Option.builder("v")
-                .longOpt("verbose")
-                .desc("Level of verbosity for the logging (default: 1)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Log Verbosity (integer)")
-                .build();
-        options.addOption(verbosity);
-
-        // whether or not to collect search stats
-        Option collectStats = Option.builder("s")
-                .longOpt("stats")
-                .desc("Level of stats collection during the search (default: 1)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Collection Level (integer)")
-                .build();
-        options.addOption(collectStats);
-
         // max steps/depth bound for the search
         Option maxSteps = Option.builder("ms")
                 .longOpt("max-steps")
@@ -133,21 +114,21 @@ public class PSymOptions {
 
         // max scheduling choice bound for the search
         Option maxSchedBound = Option.builder("sb")
-                .longOpt("sched-choice-bound")
+                .longOpt("sched-bound")
                 .desc("Max scheduling choice bound at each step during the search (default: 1)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Schedule Choice Bound (integer)")
+                .argName("Schedule Bound (integer)")
                 .build();
         options.addOption(maxSchedBound);
 
         // max data choice bound for the search
         Option dataChoiceBound = Option.builder("db")
-                .longOpt("data-choice-bound")
+                .longOpt("data-bound")
                 .desc("Max data choice bound at each step during the search (default: 1)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Data Choice Bound (integer)")
+                .argName("Data Bound (integer)")
                 .build();
         options.addOption(dataChoiceBound);
 
@@ -169,31 +150,31 @@ public class PSymOptions {
 
         // mode of choice orchestration
         Option choiceOrch = Option.builder("corch")
-                .longOpt("choice-orchestration")
-                .desc("Choice orchestration options: rl, random, none (default: random)")
+                .longOpt("choice-orch")
+                .desc("Choice orchestration options: random, rl, none (default: random)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Choice Orchestration (string)")
+                .argName("Choice Orch. (string)")
                 .build();
         options.addOption(choiceOrch);
 
         // mode of task orchestration
         Option taskOrch = Option.builder("torch")
-                .longOpt("task-orchestration")
-                .desc("Task orchestration options: rl, astar, random, dfs (default: astar)")
+                .longOpt("task-orch")
+                .desc("Task orchestration options: astar, rl, random, dfs (default: astar)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Task Orchestration (string)")
+                .argName("Task Orch. (string)")
                 .build();
         options.addOption(taskOrch);
 
         // max number of backtrack tasks per execution
-        Option maxBacktrackTasksPerExecution = Option.builder("mtpe")
-                .longOpt("max-tasks-per-execution")
-                .desc("Max number of backtrack tasks to generate per execution (default: 2)")
+        Option maxBacktrackTasksPerExecution = Option.builder("bpe")
+                .longOpt("backtracks-per-exe")
+                .desc("Max number of backtracks to generate per execution (default: 2)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Tasks Per Execution (integer)")
+                .argName("(integer)")
                 .build();
         options.addOption(maxBacktrackTasksPerExecution);
 
@@ -267,6 +248,26 @@ public class PSymOptions {
 //                .build();
 //        options.addOption(dpor);
 
+        // whether or not to collect search stats
+        Option collectStats = Option.builder("s")
+                .longOpt("stats")
+                .desc("Level of stats collection during the search (default: 1)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Collection Level (integer)")
+                .build();
+        options.addOption(collectStats);
+
+        // set the level of verbosity
+        Option verbosity = Option.builder("v")
+                .longOpt("verbose")
+                .desc("Level of verbosity for the logging (default: 1)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Log Verbosity (integer)")
+                .build();
+        options.addOption(verbosity);
+
         Option help = Option.builder("h")
                 .longOpt("help")
                 .desc("Print the help message")
@@ -274,17 +275,24 @@ public class PSymOptions {
         options.addOption(help);
     }
 
+    private static void optionError(Option opt, String msg) {
+        Options opts = new Options();
+        opts.addOption(opt);
+        formatter.printHelp(100, opt.getOpt(), "", opts, String.format(" %s\nTry --help for details.", msg));
+        writer.flush();
+        System.exit(10);
+    }
+
     public static PSymConfiguration ParseCommandlineArgs(String[] args) {
         // Parse the commandline arguments
         CommandLineParser parser = new DefaultParser();
-        HelpFormatter formatter = new HelpFormatter();
-        final PrintWriter writer = new PrintWriter(System.out);
+        formatter.setOptionComparator(null);
         CommandLine cmd = null;
         try {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printUsage(writer, 80, "PSymbolic", options);
+            formatter.printUsage(writer, 100, "PSymbolic", options);
             writer.flush();
             System.exit(10);
         }
@@ -311,8 +319,7 @@ public class PSymOptions {
                             config.setToDebug();
                             break;
                         default:
-                            formatter.printHelp("mode", String.format("Unrecognized mode of exploration, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                            formatter.printUsage(writer, 80, "mode", options);
+                            optionError(option, String.format("Unrecognized mode of exploration, got %s", option.getValue()));
                     }
                     break;
                 case "tl":
@@ -320,8 +327,7 @@ public class PSymOptions {
                     try {
                         config.setTimeLimit(Double.parseDouble(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("tl", String.format("Expected a double value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "tl", options);
+                        optionError(option, String.format("Expected a double value, got %s", option.getValue()));
                     }
                     break;
                 case "ml":
@@ -329,15 +335,14 @@ public class PSymOptions {
                     try {
                         config.setMemLimit(Double.parseDouble(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("ml", String.format("Expected a double value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "ml", options);
+                        optionError(option, String.format("Expected a double value, got %s", option.getValue()));
                     }
                     break;
                 case "seed":
                     try {
                         config.setRandomSeed(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("seed", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
                 case "m":
@@ -352,31 +357,12 @@ public class PSymOptions {
                 case "output":
                     config.setOutputFolder(option.getValue());
                     break;
-                case "v":
-                case "verbose":
-                    try {
-                        config.setVerbosity(Integer.parseInt(option.getValue()));
-                    }
-                    catch (NumberFormatException ex) {
-                        formatter.printHelp("v", String.format("Expected an integer value (0, 1 or 2), got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                    }
-                    break;
-                case "s":
-                case "stats":
-                    try {
-                        config.setCollectStats(Integer.parseInt(option.getValue()));
-                    }
-                    catch (NumberFormatException ex) {
-                        formatter.printHelp("s", String.format("Expected an integer value (0, 1 or 2), got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                    }
-                    break;
                 case "ms":
                 case "max-steps":
                     try {
-                        config.setMaxStepBound(Integer.parseInt(option.getValue())+1);
+                        config.setMaxStepBound(Integer.parseInt(option.getValue()) + 1);
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("ms", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "ms", options);
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
                 case "me":
@@ -384,25 +370,23 @@ public class PSymOptions {
                     try {
                         config.setMaxExecutions(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("me", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "me", options);
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
                 case "sb":
-                case "sched-choice-bound":
+                case "sched-bound":
                     try {
                         config.setSchedChoiceBound(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("sb", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "sb", options);
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
                 case "db":
-                case "data-choice-bound":
+                case "data-bound":
                     try {
                         config.setDataChoiceBound(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("db", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
                 case "nsc":
@@ -414,7 +398,7 @@ public class PSymOptions {
                     config.setUseBacktrack(false);
                     break;
                 case "corch":
-                case "choice-orchestration":
+                case "choice-orch":
                     switch (option.getValue()) {
                         case "none":
                             config.setChoiceOrchestration(ChoiceOrchestrationMode.None);
@@ -429,12 +413,11 @@ public class PSymOptions {
                             config.setChoiceOrchestration(ChoiceOrchestrationMode.RL);
                             break;
                         default:
-                            formatter.printHelp("corch", String.format("Unrecognized choice orchestration mode, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                            formatter.printUsage(writer, 80, "corch", options);
+                            optionError(option, String.format("Unrecognized choice orchestration mode, got %s", option.getValue()));
                     }
                     break;
                 case "torch":
-                case "task-orchestration":
+                case "task-orch":
                     switch (option.getValue()) {
                         case "dfs":
                             config.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
@@ -452,67 +435,80 @@ public class PSymOptions {
                             config.setTaskOrchestration(TaskOrchestrationMode.CoverageRL);
                             break;
                         default:
-                            formatter.printHelp("torch", String.format("Unrecognized task orchestration mode, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                            formatter.printUsage(writer, 80, "torch", options);
+                            optionError(option, String.format("Unrecognized task orchestration mode, got %s", option.getValue()));
                     }
                     break;
-                case "mtpe":
-                case "max-tasks-per-execution":
+                case "bpe":
+                case "backtracks-per-exe":
                     try {
                         config.setMaxBacktrackTasksPerExecution(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
-                        formatter.printHelp("mt", String.format("Expected an integer value, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "mtpre", options);
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
                 case "st":
                 case "solver":
                     switch (option.getValue()) {
-                        case "abc":			config.setSolverType(SolverType.ABC);
+                        case "abc":
+                            config.setSolverType(SolverType.ABC);
                             break;
-                        case "bdd":			config.setSolverType(SolverType.BDD);
+                        case "bdd":
+                            config.setSolverType(SolverType.BDD);
                             break;
-                        case "cbdd":		config.setSolverType(SolverType.CBDD);
+                        case "cbdd":
+                            config.setSolverType(SolverType.CBDD);
                             break;
-                        case "cvc5":		config.setSolverType(SolverType.CVC5);
+                        case "cvc5":
+                            config.setSolverType(SolverType.CVC5);
                             break;
-                        case "yices2":		config.setSolverType(SolverType.YICES2);
+                        case "yices2":
+                            config.setSolverType(SolverType.YICES2);
                             break;
-                        case "z3":		    config.setSolverType(SolverType.Z3);
+                        case "z3":
+                            config.setSolverType(SolverType.Z3);
                             break;
-                        case "monosat":		config.setSolverType(SolverType.MONOSAT);
+                        case "monosat":
+                            config.setSolverType(SolverType.MONOSAT);
                             break;
-                        case "boolector":	config.setSolverType(SolverType.JAVASMT_BOOLECTOR);
+                        case "boolector":
+                            config.setSolverType(SolverType.JAVASMT_BOOLECTOR);
                             break;
-                        case "mathsat5":	config.setSolverType(SolverType.JAVASMT_MATHSAT5);
+                        case "mathsat5":
+                            config.setSolverType(SolverType.JAVASMT_MATHSAT5);
                             break;
-                        case "princess":	config.setSolverType(SolverType.JAVASMT_PRINCESS);
+                        case "princess":
+                            config.setSolverType(SolverType.JAVASMT_PRINCESS);
                             break;
-                        case "smtinterpol":	config.setSolverType(SolverType.JAVASMT_SMTINTERPOL);
+                        case "smtinterpol":
+                            config.setSolverType(SolverType.JAVASMT_SMTINTERPOL);
                             break;
                         default:
-                            formatter.printHelp("st", String.format("Expected a solver type, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                            formatter.printUsage(writer, 80, "st", options);
+                            optionError(option, String.format("Expected a solver type, got %s", option.getValue()));
                     }
                     break;
                 case "et":
                 case "expr":
                     switch (option.getValue()) {
-                        case "aig":		        config.setExprLibType(ExprLibType.Aig);
+                        case "aig":
+                            config.setExprLibType(ExprLibType.Aig);
                             break;
-                        case "auto":    		config.setExprLibType(ExprLibType.Auto);
+                        case "auto":
+                            config.setExprLibType(ExprLibType.Auto);
                             break;
-                        case "bdd":    		    config.setExprLibType(ExprLibType.Bdd);
+                        case "bdd":
+                            config.setExprLibType(ExprLibType.Bdd);
                             break;
-                        case "fraig":		    config.setExprLibType(ExprLibType.Fraig);
+                        case "fraig":
+                            config.setExprLibType(ExprLibType.Fraig);
                             break;
-                        case "iaig":		    config.setExprLibType(ExprLibType.Iaig);
+                        case "iaig":
+                            config.setExprLibType(ExprLibType.Iaig);
                             break;
-                        case "native":			config.setExprLibType(ExprLibType.NativeExpr);
+                        case "native":
+                            config.setExprLibType(ExprLibType.NativeExpr);
                             break;
                         default:
-                            formatter.printHelp("et", String.format("Expected a expression type, got %s", option.getValue()), options, "Try \"--help\" option for details.");
-                            formatter.printUsage(writer, 80, "et", options);
+                            optionError(option, String.format("Expected an expression type, got %s", option.getValue()));
                     }
                     break;
                 case "r":
@@ -522,8 +518,7 @@ public class PSymOptions {
                     try {
                         file.getCanonicalPath();
                     } catch (IOException e) {
-                        formatter.printHelp("r", String.format("File %s does not exist", config.getReadFromFile()), options, "Try \"--help\" option for details.");
-                        formatter.printUsage(writer, 80, "r", options);
+                        optionError(option, String.format("File %s does not exist", config.getReadFromFile()));
                     }
                     break;
                 case "w":
@@ -534,18 +529,34 @@ public class PSymOptions {
                 case "no-filters":
                     config.setUseFilters(false);
                     break;
-//                case "rq":
-//                case "receiver-queue":
-//                    config.setUseReceiverQueueSemantics(true);
-//                    break;
-//                case "sl":
-//                case "sleep-sets":
-//                    config.setUseSleepSets(true);
-//                    break;
-//                case "dpor":
-//                case "use-dpor":
-//                    config.setDpor(true);
-//                    break;
+                //                case "rq":
+                //                case "receiver-queue":
+                //                    config.setUseReceiverQueueSemantics(true);
+                //                    break;
+                //                case "sl":
+                //                case "sleep-sets":
+                //                    config.setUseSleepSets(true);
+                //                    break;
+                //                case "dpor":
+                //                case "use-dpor":
+                //                    config.setDpor(true);
+                //                    break;
+                case "s":
+                case "stats":
+                    try {
+                        config.setCollectStats(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
+                case "v":
+                case "verbose":
+                    try {
+                        config.setVerbosity(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
                 case "h":
                 case "help":
                 default:

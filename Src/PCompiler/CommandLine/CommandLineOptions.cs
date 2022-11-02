@@ -86,7 +86,7 @@ namespace Plang.Compiler
             CommandlineOutput.WriteInfo("        CSharp  : generate C# code ");
             CommandlineOutput.WriteInfo("        Java    : generate Java code (WIP)");
             CommandlineOutput.WriteInfo("        RVM     : generate Monitor code");
-            CommandlineOutput.WriteInfo("        Symbolic : generate code for symbolic execution");
+            CommandlineOutput.WriteInfo("        PSym    : generate code for PSym");
             CommandlineOutput.WriteInfo("    -h, -help, --help          -- display this help message");
             CommandlineOutput.WriteInfo("------------------------------------------");
         }

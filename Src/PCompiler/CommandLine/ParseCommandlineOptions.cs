@@ -137,7 +137,7 @@ namespace Plang.Compiler
                                 switch (colonArg?.ToLowerInvariant())
                                 {
                                     case null:
-                                        throw new CommandlineParsingError("Missing generation argument, expecting generate:[C,CSharp,Java,RVM,Symbolic]");
+                                        throw new CommandlineParsingError("Missing generation argument, expecting generate:[C,CSharp,Java,RVM,PSym]");
                                     case "c":
                                         outputLanguage = CompilerOutput.C;
                                         break;
@@ -150,11 +150,12 @@ namespace Plang.Compiler
                                     case "rvm":
                                         outputLanguage = CompilerOutput.Rvm;
                                         break;
+                                    case "psym":
                                     case "symbolic":
                                         outputLanguage = CompilerOutput.Symbolic;
                                         break;
                                     default:
-                                        throw new CommandlineParsingError($"Unrecognized generate option '{colonArg}', expecting one of C, CSharp, Java, RVM, Symbolic.");
+                                        throw new CommandlineParsingError($"Unrecognized generate option '{colonArg}', expecting one of C, CSharp, Java, RVM, PSym.");
                                 }
                                 break;
 
@@ -354,12 +355,13 @@ namespace Plang.Compiler
                     outputLanguage = CompilerOutput.Rvm;
                     break;
                 
+                case "psym":
                 case "symbolic":
                     outputLanguage = CompilerOutput.Symbolic;
                     break;
 
                 default:
-                    throw new CommandlineParsingError($"Expected C, CSharp, Java, RVM, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
+                    throw new CommandlineParsingError($"Expected C, CSharp, Java, RVM, or PSym as target, received {projectXml.Element("Target")?.Value}");
             }
         }
 

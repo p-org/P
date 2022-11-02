@@ -45,14 +45,6 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     String outputFolder = "output";
 
-    // level of verbosity for the logging
-    @Getter @Setter
-    int verbosity = 1;
-
-    // level of stats collection
-    @Getter @Setter
-    int collectStats = 1;
-
     // max steps/depth bound provided by the user
     @Getter @Setter
     int maxStepBound = 1000;
@@ -124,6 +116,14 @@ public class PSymConfiguration implements Serializable {
     // apply DPOR
     @Getter @Setter
     boolean dpor = false;
+
+    // level of stats collection
+    @Getter @Setter
+    int collectStats = 1;
+
+    // level of verbosity for the logging
+    @Getter @Setter
+    int verbosity = 1;
 
     // max internal steps before throwing an exception
     @Getter

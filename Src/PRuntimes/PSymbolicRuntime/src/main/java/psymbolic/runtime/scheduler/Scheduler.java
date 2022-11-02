@@ -2,14 +2,20 @@ package psymbolic.runtime.scheduler;
 
 import lombok.Getter;
 import lombok.Setter;
-import psymbolic.commandline.*;
+import psymbolic.commandline.Assert;
+import psymbolic.commandline.PSymConfiguration;
+import psymbolic.commandline.Program;
 import psymbolic.runtime.*;
 import psymbolic.runtime.logger.PSymLogger;
-import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.logger.SearchLogger;
+import psymbolic.runtime.logger.StatWriter;
+import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Monitor;
 import psymbolic.runtime.machine.State;
+import psymbolic.runtime.machine.buffer.EventBufferSemantics;
+import psymbolic.runtime.scheduler.choiceorchestration.ChoiceFeature;
+import psymbolic.runtime.statistics.CoverageStats;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.utils.GlobalData;
@@ -17,9 +23,6 @@ import psymbolic.utils.MemoryMonitor;
 import psymbolic.utils.TimeMonitor;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.solvers.SolverEngine;
-import psymbolic.runtime.machine.buffer.*;
-import psymbolic.runtime.logger.StatWriter;
-import psymbolic.valuesummary.solvers.SolverGuard;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -759,6 +762,7 @@ public class Scheduler implements SymbolicSearch {
 
     public void step() throws TimeoutException {
         srcState = null;
+        int preChoiceDepth = choiceDepth;
 
         int numStates = 0;
         int numStatesDistinct = 0;
@@ -837,6 +841,14 @@ public class Scheduler implements SymbolicSearch {
         double memoryUsed = MemoryMonitor.getMemSpent();
         if (memoryUsed > (0.8* SolverStats.memLimit)) {
             Scheduler.cleanup();
+        }
+
+        // reward choices
+        List<CoverageStats.CoverageChoiceDepthStats> coverageChoiceDepthStats = GlobalData.getCoverage().getPerChoiceDepthStats();
+        for(int i = preChoiceDepth; i<coverageChoiceDepthStats.size() && i<choiceDepth; i++) {
+            for(ChoiceFeature f: coverageChoiceDepthStats.get(i).getFeatureList()) {
+                f.getReward().addStepReward(numStatesDistinct);
+            }
         }
 
         // record depth statistics

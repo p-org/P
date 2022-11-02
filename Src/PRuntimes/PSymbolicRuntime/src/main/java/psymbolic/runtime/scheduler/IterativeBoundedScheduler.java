@@ -104,10 +104,10 @@ public class IterativeBoundedScheduler extends Scheduler {
             GlobalData.getCoverage().reportChoiceCoverage();
         }
         SearchLogger.log("--------------------");
-        SearchLogger.log(String.format("Estimated Coverage:: %.5f %%", GlobalData.getCoverage().getEstimatedCoverage()));
+        SearchLogger.log(String.format("Estimated Coverage:: %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
         SearchLogger.log(String.format("Distinct States Explored:: %d", getTotalDistinctStates()));
         if (configuration.getCollectStats() != 0) {
-            StatWriter.log("coverage-%", String.format("%.10f", GlobalData.getCoverage().getEstimatedCoverage(10)), false);
+            StatWriter.log("coverage-%", String.format("%.20f", GlobalData.getCoverage().getEstimatedCoverage(20)), false);
         }
     }
 
@@ -381,7 +381,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     private void printCurrentStatus() {
         PSymLogger.info("--------------------");
         PSymLogger.info(String.format("    Status after %.2f seconds:", TimeMonitor.getInstance().getRuntime()));
-        PSymLogger.info(String.format("      Coverage:         %.5f %%", GlobalData.getCoverage().getEstimatedCoverage()));
+        PSymLogger.info(String.format("      Coverage:         %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
         PSymLogger.info(String.format("      Executions:       %d", (iter - start_iter)));
         PSymLogger.info(String.format("      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
         PSymLogger.info(String.format("      Finished:         %d", finishedTasks.size()));
@@ -553,7 +553,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                 backtrack.add(choices.get(i));
             }
         }
-        List<ChoiceFeature> featureList = GlobalData.getChoiceFeatureStats().getFeatureList(choices, isData);
+        List<ChoiceFeature> featureList = GlobalData.getChoiceFeatureStats().getFeatureList(chosen, isData);
         GlobalData.getCoverage().updateDepthCoverage(getDepth(), getChoiceDepth(), chosen.size(), backtrack.size(), isData, isNewChoice, featureList);
 
         PrimitiveVS chosenVS = generateNext.apply(chosen);

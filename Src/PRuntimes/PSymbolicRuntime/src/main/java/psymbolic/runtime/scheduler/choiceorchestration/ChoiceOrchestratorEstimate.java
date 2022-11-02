@@ -25,7 +25,7 @@ public class ChoiceOrchestratorEstimate implements ChoiceOrchestrator {
             assert(lhsReward != null);
             assert(rhsReward != null);
 
-            return rhsReward.compareTo(lhsReward);
+            return lhsReward.compareStepReward(rhsReward);
         }
     }
 

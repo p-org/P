@@ -44,15 +44,14 @@ public class ChoiceFeatureStats implements Serializable {
         } else {
             for (ValueSummary choice: choices) {
                 assert(choice instanceof PrimitiveVS);
-                addScheduleFeatures(result, (PrimitiveVS) choice);
+                result.addAll(getScheduleFeatures((PrimitiveVS) choice));
             }
         }
         return result;
     }
 
     public ChoiceReward getChoiceRewardCumulative(PrimitiveVS choice) {
-        List<ChoiceFeature> choiceFeatureList = new ArrayList<>();
-        addScheduleFeatures(choiceFeatureList, choice);;
+        List<ChoiceFeature> choiceFeatureList = getScheduleFeatures(choice);;
         ChoiceReward result = new ChoiceReward();
         for (ChoiceFeature f: choiceFeatureList) {
             result.addReward(f.getReward());
@@ -60,7 +59,8 @@ public class ChoiceFeatureStats implements Serializable {
         return result;
     }
 
-    private void addScheduleFeatures(List<ChoiceFeature> result, PrimitiveVS choice) {
+    private List<ChoiceFeature> getScheduleFeatures(PrimitiveVS choice) {
+        List<ChoiceFeature> result = new ArrayList<>();
         List<GuardedValue> guardedValues = choice.getGuardedValues();
         for (GuardedValue gv: guardedValues) {
             Guard g = gv.getGuard();
@@ -68,6 +68,7 @@ public class ChoiceFeatureStats implements Serializable {
             Machine source = (Machine) gv.getValue();
             addMachineFeatures(result, source, g);
         }
+        return result;
     }
 
     private void addMachineFeatures(List<ChoiceFeature> result, Machine source, Guard pc) {

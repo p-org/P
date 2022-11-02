@@ -4,26 +4,37 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 public class ChoiceReward implements Serializable {
-    private BigDecimal value;
+    private int stepReward;
+    private BigDecimal executionReward;
 
     public ChoiceReward() {
-        this.value = BigDecimal.valueOf(0);
+        this.stepReward = 0;
+        this.executionReward = BigDecimal.valueOf(0);
     }
 
-    public void add(BigDecimal val) {
-        this.value = this.value.add(val);
+    public void addStepReward(int val) {
+        this.stepReward += val;
+    }
+
+    public void addExecutionReward(BigDecimal val) {
+        this.executionReward = this.executionReward.add(val);
     }
 
     public void addReward(ChoiceReward reward) {
-        this.add(reward.value);
+        this.addStepReward(reward.stepReward);
+        this.addExecutionReward(reward.executionReward);
     }
 
-    public int compareTo(ChoiceReward rhs) {
-        return this.value.compareTo(rhs.value);
+    public int compareStepReward(ChoiceReward rhs) {
+        return Integer.compare(rhs.stepReward, this.stepReward);
+    }
+
+    public int compareExecutionReward(ChoiceReward rhs) {
+        return rhs.executionReward.compareTo(this.executionReward);
     }
 
     @Override
     public String toString() {
-        return String.format("%f", value);
+        return String.format("(%d, %f)", stepReward, executionReward);
     }
 }

@@ -57,6 +57,7 @@ public class CoverageStats implements Serializable {
         BigDecimal pathCoverage;
         int numTotal;
 
+        @Getter
         List<ChoiceFeature> featureList;
 
         CoverageChoiceDepthStats() {
@@ -76,7 +77,7 @@ public class CoverageStats implements Serializable {
                 numTotal = numExplored + numRemaining;
             }
             if (numTotal != 0)
-                pathCoverage = prefix.pathCoverage.multiply(BigDecimal.valueOf(numExplored).divide(BigDecimal.valueOf(numTotal), 10, RoundingMode.FLOOR));
+                pathCoverage = prefix.pathCoverage.multiply(BigDecimal.valueOf(numExplored).divide(BigDecimal.valueOf(numTotal), 20, RoundingMode.FLOOR));
             featureList = inputFeatureList;
         }
 
@@ -182,7 +183,7 @@ public class CoverageStats implements Serializable {
         assert (estimatedCoverage.doubleValue() <= 1.0): "Error in path coverage estimation";
         for (CoverageChoiceDepthStats stats: perChoiceDepthStats) {
             for (ChoiceFeature f: stats.featureList) {
-                f.getReward().add(iterationCoverage);
+                f.getReward().addExecutionReward(iterationCoverage);
             }
         }
     }
@@ -208,11 +209,11 @@ public class CoverageStats implements Serializable {
      * Return estimated state-space coverage between 0 - 100%
      */
     public BigDecimal getEstimatedCoverage() {
-        return getEstimatedCoverage(5);
+        return getEstimatedCoverage(10);
     }
 
     public BigDecimal getEstimatedCoverage(int scale) {
-        return estimatedCoverage.multiply(hundred).setScale(scale, RoundingMode.HALF_DOWN);
+        return estimatedCoverage.multiply(hundred).setScale(scale, RoundingMode.FLOOR);
     }
 
     /**

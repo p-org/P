@@ -167,14 +167,14 @@ public class Scheduler implements SymbolicSearch {
      * @return Whether or not there are more steps to run
      */
     public boolean isDone() {
-        return done || depth == configuration.getDepthBound();
+        return done || depth == configuration.getMaxStepBound();
     }
 
     /** Find out whether current execution finished completely
      * @return Whether or not current execution finished
      */
     public boolean isFinishedExecution() {
-        return executionFinished || depth == configuration.getDepthBound();
+        return executionFinished || depth == configuration.getMaxStepBound();
     }
 
     /** Get current depth
@@ -420,7 +420,7 @@ public class Scheduler implements SymbolicSearch {
     public void performSearch() throws TimeoutException {
         while (!isDone()) {
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
-            Assert.prop(getDepth() < configuration.getDepthBound(), "Maximum allowed depth " + configuration.getDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
+            Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             step();
         }
         if (done) {

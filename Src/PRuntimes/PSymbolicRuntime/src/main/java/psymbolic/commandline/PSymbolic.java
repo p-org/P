@@ -98,7 +98,7 @@ public class PSymbolic {
      * @param config Input PSymConfiguration
      * @throws Exception Throws exception if test driver is not found
      */
-    public static void setTestDriver(Program p,PSymConfiguration config) throws Exception {
+    public static void setTestDriver(Program p, PSymConfiguration config) throws Exception {
         String name = config.getTestDriver();
         Reflections reflections = new Reflections("psymbolic");
         Set<Class<? extends PTestDriver>> subTypesDriver = reflections.getSubTypesOf(PTestDriver.class);

@@ -105,7 +105,9 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
         SearchLogger.log("--------------------");
         SearchLogger.log(String.format("Estimated Coverage:: %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
-        SearchLogger.log(String.format("Distinct States Explored:: %d", getTotalDistinctStates()));
+        if (configuration.isUseStateCaching()) {
+            SearchLogger.log(String.format("Distinct States Explored:: %d", getTotalDistinctStates()));
+        }
         if (configuration.getCollectStats() != 0) {
             StatWriter.log("coverage-%", String.format("%.20f", GlobalData.getCoverage().getEstimatedCoverage(20)), false);
         }
@@ -124,14 +126,14 @@ public class IterativeBoundedScheduler extends Scheduler {
                 result += "partially safe with " + totalStats.getNumBacktracks() + " backtracks remaining";
             }
         } else {
-            int safeDepth = configuration.getDepthBound();
+            int safeDepth = configuration.getMaxStepBound();
             if (totalStats.getDepthStats().getDepth() < safeDepth) {
                 safeDepth = totalStats.getDepthStats().getDepth();
             }
             if (totalStats.getNumBacktracks() == 0) {
                 result += "safe up to step " + safeDepth;
             } else {
-                result += "partially safe up to step " + (configuration.getDepthBound()-1) + " with " + totalStats.getNumBacktracks() + " backtracks remaining";
+                result += "partially safe up to step " + (configuration.getMaxStepBound()-1) + " with " + totalStats.getNumBacktracks() + " backtracks remaining";
             }
         }
     }
@@ -416,9 +418,9 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void performSearch() throws TimeoutException {
         while (!isDone()) {
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
-            Assert.prop(getDepth() < configuration.getDepthBound(), "Maximum allowed depth " + configuration.getDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
+            Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             super.step();
-            if (configuration.getDebugMode().startsWith("exp")) {
+            if (configuration.getMode().equals("debug")) {
                 printCurrentStatus();
             }
         }
@@ -576,7 +578,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     @Override
     public PrimitiveVS<Boolean> getNextBoolean(Guard pc) {
         int depth = choiceDepth;
-        PrimitiveVS<Boolean> res = getNext(depth, configuration.getInputChoiceBound(), schedule::getRepeatBool, schedule::getBacktrackBool,
+        PrimitiveVS<Boolean> res = getNext(depth, configuration.getDataChoiceBound(), schedule::getRepeatBool, schedule::getBacktrackBool,
                 schedule::clearBacktrack, schedule::addRepeatBool, schedule::addBacktrackBool,
                 () -> super.getNextBooleanChoices(pc), super::getNextBoolean, true);
         choiceDepth = depth + 1;
@@ -586,7 +588,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     @Override
     public PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc) {
         int depth = choiceDepth;
-        PrimitiveVS<Integer> res = getNext(depth, configuration.getInputChoiceBound(), schedule::getRepeatInt, schedule::getBacktrackInt,
+        PrimitiveVS<Integer> res = getNext(depth, configuration.getDataChoiceBound(), schedule::getRepeatInt, schedule::getBacktrackInt,
                 schedule::clearBacktrack, schedule::addRepeatInt, schedule::addBacktrackInt,
                 () -> super.getNextIntegerChoices(bound, pc), super::getNextInteger, true);
         choiceDepth = depth + 1;
@@ -596,7 +598,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     @Override
     public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
         int depth = choiceDepth;
-        PrimitiveVS<ValueSummary> res = getNext(depth, configuration.getInputChoiceBound(), schedule::getRepeatElement, schedule::getBacktrackElement,
+        PrimitiveVS<ValueSummary> res = getNext(depth, configuration.getDataChoiceBound(), schedule::getRepeatElement, schedule::getBacktrackElement,
                 schedule::clearBacktrack, schedule::addRepeatElement, schedule::addBacktrackElement,
                 () -> super.getNextElementChoices(candidates, pc), super::getNextElementHelper, true);
         choiceDepth = depth + 1;

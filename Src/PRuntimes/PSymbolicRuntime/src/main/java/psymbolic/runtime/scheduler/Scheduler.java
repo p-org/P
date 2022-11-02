@@ -99,6 +99,9 @@ public class Scheduler implements SymbolicSearch {
 
     int backtrackDepth = 0;
 
+    /** Starting choice depth from previous iteration, i.e., corresponding to srcState */
+    int preChoiceDepth = Integer.MAX_VALUE;
+
     /** Start depth at which create machine events are already explored */
     int startDepth = Integer.MAX_VALUE;
 
@@ -134,6 +137,7 @@ public class Scheduler implements SymbolicSearch {
     public void reset() {
         depth = 0;
         choiceDepth = 0;
+        preChoiceDepth = Integer.MAX_VALUE;
         done = false;
         machineCounters.clear();
         machines.clear();
@@ -148,6 +152,7 @@ public class Scheduler implements SymbolicSearch {
     public void restore(int d, int cd) {
         depth = d;
         choiceDepth = cd;
+        preChoiceDepth = Integer.MAX_VALUE;
         done = false;
     }
 
@@ -762,7 +767,6 @@ public class Scheduler implements SymbolicSearch {
 
     public void step() throws TimeoutException {
         srcState = null;
-        int preChoiceDepth = choiceDepth;
 
         int numStates = 0;
         int numStatesDistinct = 0;
@@ -783,6 +787,16 @@ public class Scheduler implements SymbolicSearch {
             schedule.setSchedulerChoiceDepth(getChoiceDepth());
             schedule.setSchedulerState(srcState);
         }
+
+        // reward previous choices
+        List<CoverageStats.CoverageChoiceDepthStats> coverageChoiceDepthStats = GlobalData.getCoverage().getPerChoiceDepthStats();
+        for(int i = preChoiceDepth; i<coverageChoiceDepthStats.size() && i<choiceDepth; i++) {
+            for(ChoiceFeature f: coverageChoiceDepthStats.get(i).getFeatureList()) {
+                f.getReward().addStepReward(numStatesDistinct);
+            }
+        }
+        preChoiceDepth = choiceDepth;
+
 
         PrimitiveVS<Machine> choices = getNextSender();
 
@@ -841,14 +855,6 @@ public class Scheduler implements SymbolicSearch {
         double memoryUsed = MemoryMonitor.getMemSpent();
         if (memoryUsed > (0.8* SolverStats.memLimit)) {
             Scheduler.cleanup();
-        }
-
-        // reward choices
-        List<CoverageStats.CoverageChoiceDepthStats> coverageChoiceDepthStats = GlobalData.getCoverage().getPerChoiceDepthStats();
-        for(int i = preChoiceDepth; i<coverageChoiceDepthStats.size() && i<choiceDepth; i++) {
-            for(ChoiceFeature f: coverageChoiceDepthStats.get(i).getFeatureList()) {
-                f.getReward().addStepReward(numStatesDistinct);
-            }
         }
 
         // record depth statistics

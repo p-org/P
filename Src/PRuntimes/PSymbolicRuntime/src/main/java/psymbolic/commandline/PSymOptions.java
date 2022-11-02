@@ -278,7 +278,8 @@ public class PSymOptions {
     private static void optionError(Option opt, String msg) {
         Options opts = new Options();
         opts.addOption(opt);
-        formatter.printHelp(100, opt.getOpt(), "", opts, String.format(" %s\nTry --help for details.", msg));
+        writer.println(msg);
+        formatter.printHelp(writer, 100, opt.getOpt(), "", opts, 2, 2, "Try --help for details.");
         writer.flush();
         System.exit(10);
     }

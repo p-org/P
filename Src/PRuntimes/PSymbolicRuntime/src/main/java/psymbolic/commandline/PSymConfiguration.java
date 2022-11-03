@@ -37,9 +37,13 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     String testDriver = testDriverDefault;
 
-    // name of the target project
+    // default name of the project
+    @Getter
+    final String projectNameDefault = "test";
+
+    // name of the project
     @Getter @Setter
-    String projectName = "test";
+    String projectName = projectNameDefault;
 
     // name of the output folder
     @Getter @Setter

@@ -22,28 +22,43 @@ public class PSymbolic {
 
     public static void main(String[] args) {
         Log4JConfig.configureLog4J();
+        PSymLogger.Initialize();
+        Reflections reflections = new Reflections("psymbolic");
+        Program p = null;
+
         // parse the commandline arguments to create the configuration
         PSymConfiguration config = PSymOptions.ParseCommandlineArgs(args);
-        PSymLogger.ResetAllConfigurations(config.getVerbosity(), config.getProjectName(), config.getOutputFolder());
-        Reflections reflections = new Reflections("psymbolic");
-    	SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
-        SolverStats.setTimeLimit(config.getTimeLimit());
-        SolverStats.setMemLimit(config.getMemLimit());
-        MemoryMonitor.setup();
-        RandomNumberGenerator.setup(config.getRandomSeed());
-        TimeMonitor.setup(config.getTimeLimit());
 
-        int exit_code = 0;
+        // load all the files in the passed jar
+        String jarPath = null;
         try {
-            // load all the files in the passed jar
-            String jarPath = PSymbolic.class
+            jarPath = PSymbolic.class
                     .getProtectionDomain()
                     .getCodeSource()
                     .getLocation()
                     .toURI()
                     .getPath();
-
             LoadAllClassesInJar(jarPath);
+            if (config.getReadFromFile() == "") {
+                Set<Class<? extends Program>> subTypesProgram = reflections.getSubTypesOf(Program.class);
+                if (subTypesProgram.stream().count() == 0) {
+                    throw new Exception("No program found.");
+                }
+
+                Optional<Class<? extends Program>> program = subTypesProgram.stream().findFirst();
+                Object instance = program.get().getDeclaredConstructor().newInstance();
+                p = (Program) instance;
+                setProjectName(p, config);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.exit(5);
+        }
+
+        setup(config);
+
+        int exit_code = 0;
+        try {
             IterativeBoundedScheduler scheduler;
 
             if (config.isWriteToFile()) {
@@ -51,14 +66,7 @@ public class PSymbolic {
             }
 
             if (config.getReadFromFile() == "") {
-                Set<Class<? extends Program>> subTypesProgram = reflections.getSubTypesOf(Program.class);
-                if(subTypesProgram.stream().count() == 0) {
-                    throw new Exception("No program found.");
-                }
-
-                Optional<Class<? extends Program>> program = subTypesProgram.stream().findFirst();
-                Object instance = program.get().getDeclaredConstructor().newInstance();
-                Program p = (Program) instance;
+                assert(p != null);
                 setTestDriver(p, config);
                 scheduler = new IterativeBoundedScheduler(config, p);
                 if (config.isDpor()) scheduler = new DPORScheduler(config, p);
@@ -89,6 +97,27 @@ public class PSymbolic {
                 StatWriter.log("time-post-seconds", String.format("%.1f", postSearchTime), false);
             }
             System.exit(exit_code);
+        }
+    }
+
+    private static void setup(PSymConfiguration config) {
+        PSymLogger.ResetAllConfigurations(config.getVerbosity(), config.getProjectName(), config.getOutputFolder());
+        SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
+        SolverStats.setTimeLimit(config.getTimeLimit());
+        SolverStats.setMemLimit(config.getMemLimit());
+        MemoryMonitor.setup();
+        RandomNumberGenerator.setup(config.getRandomSeed());
+        TimeMonitor.setup(config.getTimeLimit());
+    }
+
+    /**
+     * Set the project name
+     * @param p Input program instance
+     * @param config Input PSymConfiguration
+     */
+    public static void setProjectName(Program p, PSymConfiguration config) {
+        if(config.getProjectName().equals(config.getProjectNameDefault())) {
+            config.setProjectName(p.getClass().getSimpleName());
         }
     }
 
@@ -179,13 +208,7 @@ public class PSymbolic {
         // parse the commandline arguments to create the configuration
         PSymConfiguration config = PSymOptions.ParseCommandlineArgs(new String[0]);
         config.setOutputFolder(outputFolder);
-        PSymLogger.ResetAllConfigurations(config.getVerbosity(), config.getProjectName(), config.getOutputFolder());
-        SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
-        SolverStats.setTimeLimit(config.getTimeLimit());
-        SolverStats.setMemLimit(config.getMemLimit());
-        MemoryMonitor.setup();
-        RandomNumberGenerator.setup(config.getRandomSeed());
-        TimeMonitor.setup(config.getTimeLimit());
+        setup(config);
     }
 
 }

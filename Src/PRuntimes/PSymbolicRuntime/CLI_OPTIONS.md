@@ -13,7 +13,7 @@ Commandline options for PSym
  -seed,--seed <Random Seed (integer)>           Random seed for the search (default: 0)
  -m,--method <Test Method (string)>             Name of the test method from where the symbolic
                                                 engine should start exploration
- -p,--project <Project Name (string)>           Name of the project (default: test)
+ -p,--project <Project Name (string)>           Name of the project (default: auto)
  -o,--outdir <Output Dir (string)>              Name of the output directory (default: output)
  -ms,--max-steps <Max Steps (integer)>          Max scheduling steps to be explored (default: 1000)
  -i,--iterations <Max Executions (integer)>     Number of schedules/executions to explore (default:

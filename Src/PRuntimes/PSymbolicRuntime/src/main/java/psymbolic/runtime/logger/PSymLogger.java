@@ -65,7 +65,6 @@ public class PSymLogger {
 
     public static void ResetAllConfigurations(int verbosity, String projectName, String outputFolder)
     {
-        Initialize();
         SearchLogger.Initialize(verbosity, outputFolder);
         TraceLogger.Initialize(verbosity, outputFolder);
         StatWriter.Initialize(projectName, outputFolder);

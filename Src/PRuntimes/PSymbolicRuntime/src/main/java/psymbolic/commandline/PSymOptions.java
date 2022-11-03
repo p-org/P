@@ -75,7 +75,7 @@ public class PSymOptions {
         // project name
         Option projectName = Option.builder("p")
                 .longOpt("project")
-                .desc("Name of the project (default: test)")
+                .desc("Name of the project (default: auto)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Project Name (string)")

@@ -84,18 +84,18 @@ public class PSymOptions {
 
         // output folder
         Option outputDir = Option.builder("o")
-                .longOpt("output")
-                .desc("Name of the output folder (default: output)")
+                .longOpt("outdir")
+                .desc("Name of the output directory (default: output)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Output Folder (string)")
+                .argName("Output Dir (string)")
                 .build();
         options.addOption(outputDir);
 
         // max steps/depth bound for the search
         Option maxSteps = Option.builder("ms")
                 .longOpt("max-steps")
-                .desc("Max steps/depth for the search (default: 1000)")
+                .desc("Max scheduling steps to be explored (default: 1000)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Max Steps (integer)")
@@ -103,9 +103,9 @@ public class PSymOptions {
         options.addOption(maxSteps);
 
         // max number of executions for the search
-        Option maxExecutions = Option.builder("me")
-                .longOpt("max-executions")
-                .desc("Max number of executions to run (default: no-limit)")
+        Option maxExecutions = Option.builder("i")
+                .longOpt("iterations")
+                .desc("Number of schedules/executions to explore (default: no-limit)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Max Executions (integer)")
@@ -355,7 +355,7 @@ public class PSymOptions {
                     config.setProjectName(option.getValue());
                     break;
                 case "o":
-                case "output":
+                case "outdir":
                     config.setOutputFolder(option.getValue());
                     break;
                 case "ms":
@@ -366,8 +366,8 @@ public class PSymOptions {
                         optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
-                case "me":
-                case "max-executions":
+                case "i":
+                case "iterations":
                     try {
                         config.setMaxExecutions(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {

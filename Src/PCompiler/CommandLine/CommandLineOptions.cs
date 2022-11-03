@@ -42,12 +42,23 @@ namespace Plang.Compiler
             {
                 return HelpRequested;
             }
+            // generate takes priority over everything else
+            CompilerOutput? generateLang = null;
+            var generateArg = commandlineArgs.FirstOrDefault(a => a.ToLowerInvariant().Contains("-generate:"));
+            if (generateArg != null)
+            {
+                commandlineArgs.Remove(generateArg);
+                if (!commandlineParser.ParseCommandLineGenerateOption(generateArg, ref generateLang))
+                {
+                    return Failure;
+                }
+            }
             // proj takes priority over everything else and no other arguments should be allowed
             if (commandlineArgs.Any(a => a.ToLowerInvariant().Contains("-proj:")))
             {
                 if (commandlineArgs.Count() > 1)
                 {
-                    CommandlineOutput.WriteMessage("-proj option cannot be combined with other commandline options", SeverityKind.Error);
+                    CommandlineOutput.WriteMessage("-proj option cannot be combined with other commandline options (except -generate)", SeverityKind.Error);
                     return Failure;
                 }
                 else
@@ -55,13 +66,13 @@ namespace Plang.Compiler
                     var option = commandlineArgs.First();
                     var projectPath = option.Substring(option.IndexOf(":", StringComparison.Ordinal) + 1);
                     // Parse the project file and generate the compilation job
-                    return commandlineParser.ParseProjectFile(projectPath, out job) ? Success : Failure;
+                    return commandlineParser.ParseProjectFile(projectPath, generateLang, out job) ? Success : Failure;
                 }
             }
             else
             {
                 // parse command line options and generate the compilation job
-                return commandlineParser.ParseCommandLineOptions(commandlineArgs, out job) ? Success : Failure;
+                return commandlineParser.ParseCommandLineOptions(commandlineArgs, generateLang, out job) ? Success : Failure;
             }
         }
 
@@ -87,7 +98,7 @@ namespace Plang.Compiler
             CommandlineOutput.WriteInfo("        Java    : generate Java code (WIP)");
             CommandlineOutput.WriteInfo("        RVM     : generate Monitor code");
             CommandlineOutput.WriteInfo("        PSym    : generate code for PSym");
-            CommandlineOutput.WriteInfo("    -h, -help, --help          -- display this help message");
+            CommandlineOutput.WriteInfo("    -h, -help, --help            -- display this help message");
             CommandlineOutput.WriteInfo("------------------------------------------");
         }
     }

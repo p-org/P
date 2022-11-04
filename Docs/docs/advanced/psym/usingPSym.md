@@ -21,31 +21,36 @@ using the [client server](../../tutorial/clientserver.md) example in Tutorials.
 
 ### Compiling a P program for PSym
 
+
 Simply pass the commandline argument `-generate:PSym` when running the P compiler `pc`.
 
-??? info "Alternative way"
+??? info "Alternative way: Set `<Target>` as `PSym` in `*.pproj`"
+
     Set the `<Target>` field as `PSym` in the P project file (`*.pproj`)
 
-    ??? example "Example"
-        ```xml hl_lines="10"
-        <!-- P Project file for the Client Server example -->
-        <Project>
-        <ProjectName>ClientServer</ProjectName>
-        <InputFiles>
-           <PFile>./PSrc/</PFile>
-           <PFile>./PSpec/</PFile>
-           <PFile>./PTst/</PFile>
-        </InputFiles>
-        <OutputDir>./PGenerated/</OutputDir>
-        <Target>PSym</Target>
-        </Project>
-        ```
+    Example:
+
+    ```xml hl_lines="10"
+    <!-- P Project file for the Client Server example -->
+    <Project>
+    <ProjectName>ClientServer</ProjectName>
+    <InputFiles>
+       <PFile>./PSrc/</PFile>
+       <PFile>./PSpec/</PFile>
+       <PFile>./PTst/</PFile>
+    </InputFiles>
+    <OutputDir>./PGenerated/</OutputDir>
+    <Target>PSym</Target>
+    </Project>
+    ```
+
 
 !!! tip "Recommendation"
 
     We recommend using the P project file `*.pproj` along with passing `-generate:PSym` as commandline argument to the compiler 
     to compile a P program for PSym.
     Commandline argument `-generate:XXX` takes priority over `<Target>YYY</Target>` in `*.pproj` file.
+
 
 === "Compiling the ClientServer project for PSym"
 
@@ -1055,7 +1060,7 @@ can be found in `` output/coverage-clientserver.log ``
     `choose(*)` expression, such as the number of data choices in setting the initial bank balances in expression
     `choose(100)` [here](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L30).
 
-??? danger "[Important] Coverage report is incomplete"
+??? danger "[Important] Remaining choices in Coverage Report"
 
     Note that the coverage report can be incomplete, since it tabulates the remaining choices as of by the end of a run.
     Each remaining choice, say at a step N, when explored by PSym can discover many more choices at steps >= N+1.

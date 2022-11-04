@@ -79,10 +79,10 @@ To install Java use:
 
 === "Amazon Linux"
 
-    Installing Java 8 on Amazon Linux (you can use any version of java > 8)
+    Installing Java 11 on Amazon Linux (you can use any version of java >= 9)
 
     ```
-    sudo yum install java-1.8.0-openjdk
+    sudo yum install java-11-amazon-corretto-devel
     ```
 
 === "Windows"

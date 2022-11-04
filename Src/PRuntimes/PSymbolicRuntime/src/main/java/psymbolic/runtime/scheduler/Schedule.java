@@ -23,6 +23,8 @@ public class Schedule implements Serializable {
     private int schedulerChoiceDepth = 0;
     @Setter
     private Map<Machine, List<ValueSummary>> schedulerState = new HashMap<>();
+    private int numBacktracks = 0;
+    private int numDataBacktracks = 0;
 
     public void restrictFilter(Guard c) { filter = filter.and(c); }
     public void setFilter(Guard c) { filter = c; }
@@ -295,20 +297,25 @@ public class Schedule implements Serializable {
         choices.get(d).clear();
     }
 
-    public int getNumBacktracksInSchedule() {
-        int count = 0;
+    public void setNumBacktracksInSchedule() {
+        numBacktracks = 0;
+        numDataBacktracks = 0;
         for (Choice backtrack : choices) {
-            if (!backtrack.isBacktrackEmpty()) count++;
+            if (!backtrack.isBacktrackEmpty()) {
+                numBacktracks++;
+                if(!backtrack.isDataBacktrackEmpty()) {
+                    numDataBacktracks++;
+                }
+            }
         }
-        return count;
+    }
+
+    public int getNumBacktracksInSchedule() {
+        return numBacktracks;
     }
 
     public int getNumDataBacktracksInSchedule() {
-        int count = 0;
-        for (Choice backtrack : choices) {
-            if (!backtrack.isDataBacktrackEmpty()) count++;
-        }
-        return count;
+        return numDataBacktracks;
     }
 
 
@@ -352,6 +359,7 @@ public class Schedule implements Serializable {
         for (PrimitiveVS<Machine> choice : machines) {
             choices.get(depth).addBacktrackSender(choice);
         }
+        numBacktracks++;
     }
 
     public void addBacktrackBool(List<PrimitiveVS<Boolean>> bools, int depth) {
@@ -366,6 +374,8 @@ public class Schedule implements Serializable {
         for (PrimitiveVS<Boolean> choice : bools) {
             choices.get(depth).addBacktrackBool(choice);
         }
+        numBacktracks++;
+        numDataBacktracks++;
     }
 
     public void addBacktrackInt(List<PrimitiveVS<Integer>> ints, int depth) {
@@ -380,6 +390,8 @@ public class Schedule implements Serializable {
         for (PrimitiveVS<Integer> choice : ints) {
             choices.get(depth).addBacktrackInt(choice);
         }
+        numBacktracks++;
+        numDataBacktracks++;
     }
 
     public void addBacktrackElement(List<ValueSummary> elements, int depth) {
@@ -394,6 +406,8 @@ public class Schedule implements Serializable {
         for (ValueSummary choice : elements) {
             choices.get(depth).addBacktrackElement(choice);
         }
+        numBacktracks++;
+        numDataBacktracks++;
     }
 
     public PrimitiveVS<Machine> getRepeatSender(int depth) {

@@ -1,5 +1,6 @@
 package psymbolic.runtime.scheduler;
 
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import psymbolic.commandline.Assert;
 import psymbolic.commandline.PSymConfiguration;
@@ -39,6 +40,9 @@ public class IterativeBoundedScheduler extends Scheduler {
     private final List<Integer> finishedTasks = new ArrayList<>();
     /** Task id of the latest backtrack task */
     private int latestTaskId = 0;
+    private int numPendingBacktracks = 0;
+    private int numPendingDataBacktracks = 0;
+
 
     private boolean isDoneIterating = false;
 
@@ -66,6 +70,8 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     private void resetBacktrackTasks() {
         pendingTasks.clear();
+        numPendingBacktracks = 0;
+        numPendingDataBacktracks = 0;
         BacktrackTask.initialize(configuration.getTaskOrchestration());
     }
 
@@ -353,10 +359,22 @@ public class IterativeBoundedScheduler extends Scheduler {
         newTask.setPriority();
         allTasks.add(newTask);
         parentTask.addChild(newTask);
-        pendingTasks.add(newTask.getId());
+        addPendingTask(newTask);
 
         // restore schedule to original choices
         schedule.setChoices(originalChoices);
+    }
+
+    private void addPendingTask(BacktrackTask task) {
+        pendingTasks.add(task.getId());
+        numPendingBacktracks += task.getNumBacktracks();
+        numPendingDataBacktracks += task.getNumDataBacktracks();
+    }
+
+    private void removePendingTask(BacktrackTask task) {
+        pendingTasks.remove(task.getId());
+        numPendingBacktracks -= task.getNumBacktracks();
+        numPendingDataBacktracks -= task.getNumDataBacktracks();
     }
 
     /**
@@ -368,7 +386,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         BacktrackTask latestTask = BacktrackTask.getNextTask();
         latestTaskId = latestTask.getId();
         assert(!latestTask.isCompleted());
-        pendingTasks.remove(latestTaskId);
+        removePendingTask(latestTask);
 
         schedule.getChoices().clear();
         GlobalData.getCoverage().getPerChoiceDepthStats().clear();
@@ -473,6 +491,7 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     @Override
     public void performSearch() throws TimeoutException {
+        schedule.setNumBacktracksInSchedule();
         while (!isDone()) {
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
             Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
@@ -492,11 +511,7 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     public int getTotalNumBacktracks() {
         int count = schedule.getNumBacktracksInSchedule();
-        for (Integer id: pendingTasks) {
-            for (Schedule.Choice backtrack : getTask(id).getChoices()) {
-                if (!backtrack.isBacktrackEmpty()) count++;
-            }
-        }
+        count += numPendingBacktracks;
         return count;
     }
 
@@ -506,11 +521,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             return 0.0;
         }
         int count = schedule.getNumDataBacktracksInSchedule();
-        for (Integer id: pendingTasks) {
-            for (Schedule.Choice backtrack : getTask(id).getChoices()) {
-                if (!backtrack.isDataBacktrackEmpty()) count++;
-            }
-        }
+        count += numPendingDataBacktracks;
         return (count * 100.0) / totalBacktracks;
     }
 
@@ -520,6 +531,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         start_iter = iter;
         resetBacktrackTasks();
         reset_stats();
+        schedule.setNumBacktracksInSchedule();
         boolean resetAfterInitial = isDone();
         if (configuration.getVerbosity() == 0 && configuration.getCollectStats() == 0) {
             printProgressHeader(true);

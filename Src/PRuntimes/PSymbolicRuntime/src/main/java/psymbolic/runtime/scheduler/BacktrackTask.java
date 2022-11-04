@@ -30,6 +30,10 @@ public class BacktrackTask implements Serializable {
     private int choiceDepth = -1;
     @Getter
     final private List<Schedule.Choice> choices = new ArrayList<>();
+    @Getter
+    private int numBacktracks = 0;
+    @Getter
+    private int numDataBacktracks = 0;
     @Getter @Setter
     private BacktrackTask parentTask = null;
     @Getter
@@ -46,6 +50,8 @@ public class BacktrackTask implements Serializable {
 
     public void cleanup() {
         choices.clear();
+        numBacktracks = 0;
+        numDataBacktracks = 0;
         perChoiceDepthStats.clear();
     }
 
@@ -53,6 +59,12 @@ public class BacktrackTask implements Serializable {
         assert(choices.isEmpty());
         for (Schedule.Choice choice: inputChoices) {
             choices.add(choice.getCopy());
+            if (!choice.isBacktrackEmpty()) {
+                numBacktracks++;
+                if (!choice.isDataBacktrackEmpty()) {
+                    numDataBacktracks++;
+                }
+            }
         }
     }
 

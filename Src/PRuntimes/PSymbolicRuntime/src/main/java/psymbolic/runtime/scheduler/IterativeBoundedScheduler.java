@@ -82,12 +82,10 @@ public class IterativeBoundedScheduler extends Scheduler {
         super.print_stats();
 
         // print statistics
-        if (configuration.getCollectStats() != 0) {
-            StatWriter.log("#-tasks-finished", String.format("%d", finishedTasks.size()));
-            StatWriter.log("#-tasks-remaining", String.format("%d",  (allTasks.size() - finishedTasks.size())));
-            StatWriter.log("#-backtracks", String.format("%d", getNumBacktracks()));
-            StatWriter.log("#-executions", String.format("%d", (iter - start_iter)));
-        }
+        StatWriter.log("#-tasks-finished", String.format("%d", finishedTasks.size()));
+        StatWriter.log("#-tasks-remaining", String.format("%d",  (allTasks.size() - finishedTasks.size())));
+        StatWriter.log("#-backtracks", String.format("%d", getNumBacktracks()));
+        StatWriter.log("#-executions", String.format("%d", (iter - start_iter)));
     }
 
     @Override
@@ -99,18 +97,14 @@ public class IterativeBoundedScheduler extends Scheduler {
      * Estimates and prints a coverage percentage based on number of choices explored versus remaining at each depth
      */
     public void reportEstimatedCoverage() {
-        if (configuration.getCollectStats() != 0) {
-            GlobalData.getCoverage().logPerDepthCoverage();
-            GlobalData.getCoverage().reportChoiceCoverage();
-        }
+        GlobalData.getCoverage().reportChoiceCoverage();
+
         SearchLogger.log("--------------------");
         SearchLogger.log(String.format("Estimated Coverage:: %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
         if (configuration.isUseStateCaching()) {
             SearchLogger.log(String.format("Distinct States Explored:: %d", getTotalDistinctStates()));
         }
-        if (configuration.getCollectStats() != 0) {
-            StatWriter.log("coverage-%", String.format("%.20f", GlobalData.getCoverage().getEstimatedCoverage(20)), false);
-        }
+        StatWriter.log("coverage-%", String.format("%.20f", GlobalData.getCoverage().getEstimatedCoverage(20)));
     }
 
     void recordResult() {
@@ -172,7 +166,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(this);
             oos.writeObject(GlobalData.getInstance());
-            if (configuration.getCollectStats() != 0) {
+            if (configuration.getVerbosity() > 0) {
                 long szBytes = Files.size(Paths.get(writeFileName));
                 PSymLogger.info(String.format("  %,.1f MB  written in %s", (szBytes / 1024.0 / 1024.0), writeFileName));
             }
@@ -241,7 +235,7 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     private void summarizeIteration() throws InterruptedException {
         recordResult();
-        if (configuration.getCollectStats() > 2) {
+        if (configuration.getVerbosity() > 3) {
             SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
         }
         if (configuration.getMaxExecutions() > 0) {
@@ -253,12 +247,14 @@ public class IterativeBoundedScheduler extends Scheduler {
             BacktrackTask nextTask = setNextBacktrackTask();
             if (nextTask != null) {
                 if (configuration.getVerbosity() > 1) {
-                    PSymLogger.log(String.format("    Next is %s [depth: %d, parent: %s]",
+                    PSymLogger.info(String.format("    Next is %s [depth: %d, parent: %s]",
                             nextTask, nextTask.getDepth(), nextTask.getParentTask()));
                 }
             }
         }
-        printCurrentStatus();
+        if (configuration.getCollectStats() > 0) {
+            printCurrentStatus();
+        }
         if (!isDoneIterating) {
             postIterationCleanup();
 //            if ((iter % 100) == 0) {
@@ -283,7 +279,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         parentTask.postProcess(GlobalData.getCoverage().getPathCoverageAtDepth(getChoiceDepth()-1));
         finishedTasks.add(parentTask.getId());
         if (configuration.getVerbosity() > 1) {
-            PSymLogger.log(String.format("  Finished %s [depth: %d, parent: %s]",
+            PSymLogger.info(String.format("  Finished %s [depth: %d, parent: %s]",
                     parentTask, parentTask.getDepth(), parentTask.getParentTask()));
         }
 
@@ -306,10 +302,10 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
 
         if (configuration.getVerbosity() > 1) {
-            PSymLogger.log(String.format("    Added %d new tasks", parentTask.getChildren().size()));
+            PSymLogger.info(String.format("    Added %d new tasks", parentTask.getChildren().size()));
             if (configuration.getVerbosity() > 2) {
                 for (BacktrackTask t : parentTask.getChildren()) {
-                    PSymLogger.log(String.format("      %s [depth: %d]", t, t.getDepth()));
+                    PSymLogger.info(String.format("      %s [depth: %d]", t, t.getDepth()));
                 }
             }
         }
@@ -420,7 +416,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
             Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             super.step();
-            if (configuration.getMode().equals("debug")) {
+            if (configuration.getCollectStats() > 1) {
                 printCurrentStatus();
             }
         }

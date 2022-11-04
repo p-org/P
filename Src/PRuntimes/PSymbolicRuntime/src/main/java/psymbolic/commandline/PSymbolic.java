@@ -22,12 +22,12 @@ public class PSymbolic {
 
     public static void main(String[] args) {
         Log4JConfig.configureLog4J();
-        PSymLogger.Initialize();
         Reflections reflections = new Reflections("psymbolic");
         Program p = null;
 
         // parse the commandline arguments to create the configuration
         PSymConfiguration config = PSymOptions.ParseCommandlineArgs(args);
+        PSymLogger.Initialize(config.getVerbosity());
 
         // load all the files in the passed jar
         String jarPath = null;
@@ -92,10 +92,8 @@ public class PSymbolic {
                 exit_code = 5;
             }
         } finally {
-            if (config.getCollectStats() != 0) {
-                double postSearchTime = TimeMonitor.getInstance().stopInterval();
-                StatWriter.log("time-post-seconds", String.format("%.1f", postSearchTime), false);
-            }
+            double postSearchTime = TimeMonitor.getInstance().stopInterval();
+            StatWriter.log("time-post-seconds", String.format("%.1f", postSearchTime));
             System.exit(exit_code);
         }
     }
@@ -149,12 +147,19 @@ public class PSymbolic {
             }
         }
         if(driver == null) {
-            PSymLogger.info("No test driver found named \"" + name + "\"");
-            PSymLogger.info("Possible Test Drivers::");
-            for (Class<? extends PTestDriver> td: subTypesDriver) {
-                PSymLogger.info("\t" + td.getSimpleName());
+            if (!name.equals(config.getTestDriverDefault())) {
+                PSymLogger.info("No test driver found named \"" + name + "\"");
             }
-            throw new Exception("No test driver found named \"" + name + "\"");
+            PSymLogger.info("Provide /method or -m flag to qualify the test method name you wish to use.");
+            PSymLogger.info("Possible options are::");
+            for (Class<? extends PTestDriver> td: subTypesDriver) {
+                PSymLogger.info(td.getSimpleName());
+            }
+            if (!name.equals(config.getTestDriverDefault())) {
+                throw new Exception("No test driver found named \"" + name + "\"");
+            } else {
+                System.exit(5);
+            }
         }
         p.setTestDriver(driver);
     }

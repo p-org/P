@@ -24,6 +24,15 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
                 <version>2.22.2</version>
             </plugin>
             <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
@@ -34,6 +43,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
                     </execution>
                 </executions>
                 <configuration>
+                    <finalName>projectName</finalName>
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>

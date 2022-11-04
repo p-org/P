@@ -123,11 +123,11 @@ public class PSymConfiguration implements Serializable {
 
     // level of stats collection
     @Getter @Setter
-    int collectStats = 1;
+    int collectStats = 0;
 
     // level of verbosity for the logging
     @Getter @Setter
-    int verbosity = 1;
+    int verbosity = 0;
 
     // max internal steps before throwing an exception
     @Getter

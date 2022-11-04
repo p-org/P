@@ -3,14 +3,16 @@ package psymbolic.runtime.statistics;
 import lombok.Getter;
 import lombok.Setter;
 import psymbolic.runtime.logger.CoverageWriter;
-import psymbolic.runtime.logger.SearchLogger;
 import psymbolic.runtime.logger.StatWriter;
 import psymbolic.runtime.scheduler.choiceorchestration.ChoiceFeature;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Class to track all coverage statistics
@@ -240,24 +242,24 @@ public class CoverageStats implements Serializable {
      * Prints a coverage report based on number of choices explored versus remaining at each depth
      */
     public void reportChoiceCoverage() {
-        SearchLogger.log("-----------------");
-        SearchLogger.log("Coverage Report::");
-        SearchLogger.log("-----------------");
-        SearchLogger.log(String.format("  Covered choices:   %5s scheduling, %5s data",
+        CoverageWriter.info("-----------------");
+        CoverageWriter.info("Coverage Report::");
+        CoverageWriter.info("-----------------");
+        CoverageWriter.info(String.format("  Covered choices:   %5s scheduling, %5s data",
                 getNumScheduleChoicesExplored(),
                 getNumDataChoicesExplored()));
-        SearchLogger.log(String.format("  Remaining choices: %5s scheduling, %5s data",
+        CoverageWriter.info(String.format("  Remaining choices: %5s scheduling, %5s data",
                 getNumScheduleChoicesRemaining(),
                 getNumDataChoicesRemaining() ));
 
         String s = "";
-        SearchLogger.log("\t-------------------------------------");
+        CoverageWriter.info("\t-------------------------------------");
         s += String.format("\t   Step  ");
         s += String.format("  Covered        Remaining");
         s += String.format("\n\t%5s  %5s   %5s  ", "", "sch", "data");
         s += String.format(" %5s   %5s ", "sch", "data");
-        SearchLogger.log(s);
-        SearchLogger.log("\t-------------------------------------");
+        CoverageWriter.info(s);
+        CoverageWriter.info("\t-------------------------------------");
         for (int d = 0; d< perDepthStats.size(); d++) {
             CoverageDepthStats val = perDepthStats.get(d);
             if (!val.isEmpty()) {
@@ -269,17 +271,17 @@ public class CoverageStats implements Serializable {
                 s += String.format(" %5s   %5s ",
                         (val.numScheduleRemaining == 0 ? "" : val.numScheduleRemaining),
                         (val.numDataRemaining == 0 ? "" : val.numDataRemaining));
-                SearchLogger.log(s);
+                CoverageWriter.info(s);
             }
         }
 
         // print schedule statistics
         StatWriter.log("#-choices-covered", String.format("%d scheduling, %d data",
                 getNumScheduleChoicesExplored(),
-                getNumDataChoicesExplored()), false);
+                getNumDataChoicesExplored()));
         StatWriter.log("#-choices-remaining", String.format("%d scheduling, %d data",
                 getNumScheduleChoicesRemaining(),
-                getNumDataChoicesRemaining()), false);
+                getNumDataChoicesRemaining()));
     }
 
     /**

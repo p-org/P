@@ -42,15 +42,19 @@ namespace Plang.Compiler.Backend.Symbolic
             }
 
             // compile the csproj file
-            string[] args = new[] { "clean package"};
+            string[] args = new[] { "clean package -q"};
 
             int exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args);
             if (exitCode != 0)
             {
                 throw new TranslationException($"Compiling generated Symbolic Java code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
             }
-
-            job.Output.WriteInfo($"{stdout}");
+            else
+            {
+//                job.Output.WriteInfo($"{stdout}");
+                job.Output.WriteInfo($"  {job.ProjectName} -> target/{job.ProjectName}-jar-with-dependencies.jar");
+                job.Output.WriteInfo("Build succeeded.");
+            }
         }
 
         private CompiledFile GenerateSource(CompilationContext context, Scope globalScope)

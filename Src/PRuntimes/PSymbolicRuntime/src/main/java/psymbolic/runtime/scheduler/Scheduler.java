@@ -466,23 +466,21 @@ public class Scheduler implements SymbolicSearch {
         StatWriter.log("memory-current-MB", String.format("%.1f", memoryUsed));
         StatWriter.log("max-depth-explored", String.format("%d", totalStats.getDepthStats().getDepth()));
 
-        if (configuration.getCollectStats() != 0) {
-            // print solver statistics
-            StatWriter.log("time-create-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
-            StatWriter.log("time-solve-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
-            StatWriter.log("time-create-guards-seconds", String.format("%.1f", SolverStats.timeTotalCreateGuards/1000.0));
-            StatWriter.log("time-solve-guards-seconds", String.format("%.1f", SolverStats.timeTotalSolveGuards/1000.0));
-            StatWriter.log("time-create-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxCreateGuards/1000.0));
-            StatWriter.log("time-solve-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxSolveGuards/1000.0));
-            StatWriter.logSolverStats();
+        // print solver statistics
+        StatWriter.log("time-create-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
+        StatWriter.log("time-solve-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
+        StatWriter.log("time-create-guards-seconds", String.format("%.1f", SolverStats.timeTotalCreateGuards/1000.0));
+        StatWriter.log("time-solve-guards-seconds", String.format("%.1f", SolverStats.timeTotalSolveGuards/1000.0));
+        StatWriter.log("time-create-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxCreateGuards/1000.0));
+        StatWriter.log("time-solve-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxSolveGuards/1000.0));
+        StatWriter.logSolverStats();
 
-            // print search statistics
-            StatWriter.log("#-states", String.format("%d", getTotalStates()));
-            StatWriter.log("#-distinct-states", String.format("%d", getTotalDistinctStates()));
-            StatWriter.log("#-events", String.format("%d", totalStats.getDepthStats().getNumOfTransitions()));
-            StatWriter.log("#-events-merged", String.format("%d", totalStats.getDepthStats().getNumOfMergedTransitions()));
-            StatWriter.log("#-events-explored", String.format("%d", totalStats.getDepthStats().getNumOfTransitionsExplored()));
-        }
+        // print search statistics
+        StatWriter.log("#-states", String.format("%d", getTotalStates()));
+        StatWriter.log("#-distinct-states", String.format("%d", getTotalDistinctStates()));
+        StatWriter.log("#-events", String.format("%d", totalStats.getDepthStats().getNumOfTransitions()));
+        StatWriter.log("#-events-merged", String.format("%d", totalStats.getDepthStats().getNumOfMergedTransitions()));
+        StatWriter.log("#-events-explored", String.format("%d", totalStats.getDepthStats().getNumOfTransitionsExplored()));
     }
 
     public void reset_stats() {
@@ -774,7 +772,7 @@ public class Scheduler implements SymbolicSearch {
         int numMessagesMerged = 0;
         int numMessagesExplored = 0;
 
-        if (configuration.getCollectStats() > 2 || configuration.isUseStateCaching()) {
+        if (configuration.getCollectStats() > 3 || configuration.isUseStateCaching()) {
             storeSrcState();
             int[] numConcrete = enumerateConcreteStates(Concretizer::concretize, srcState);
             numStates = numConcrete[0];
@@ -824,7 +822,7 @@ public class Scheduler implements SymbolicSearch {
                 System.out.println("    message " + removed.toString());
                 System.out.println("    target " + removed.getTarget().toString());
             }
-            if (configuration.getCollectStats() > 2) {
+            if (configuration.getCollectStats() > 3) {
                 numMessages += Concretizer.getNumConcreteValues(Guard.constTrue(), removed);
             }
             if (effect == null) {
@@ -834,7 +832,7 @@ public class Scheduler implements SymbolicSearch {
             }
         }
 
-        if (configuration.getCollectStats() > 2) {
+        if (configuration.getCollectStats() > 3) {
             numMessagesMerged = Concretizer.getNumConcreteValues(Guard.constTrue(), effect);
             numMessagesExplored = Concretizer.getNumConcreteValues(Guard.constTrue(), effect.getTarget(), effect.getEvent());
         }
@@ -862,9 +860,9 @@ public class Scheduler implements SymbolicSearch {
         searchStats.addDepthStatistics(depth, depthStats);
 
         // log statistics
-        if (configuration.getCollectStats() != 0) {
+        if (configuration.getVerbosity() > 3) {
             double timeUsed = TimeMonitor.getInstance().getRuntime();
-            if (configuration.getCollectStats() > 1) {
+            if (configuration.getVerbosity() > 4) {
                 SearchLogger.log("--------------------");
                 SearchLogger.log("Resource Stats::");
                 SearchLogger.log("time-seconds", String.format("%.1f", timeUsed));
@@ -885,7 +883,7 @@ public class Scheduler implements SymbolicSearch {
         }
 
         // log depth statistics
-        if (configuration.getCollectStats() > 2) {
+        if (configuration.getVerbosity() > 4) {
           SearchLogger.logDepthStats(depthStats);
           System.out.println("--------------------");
           System.out.println("Collect Stats::");

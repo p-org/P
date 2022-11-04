@@ -251,7 +251,7 @@ public class PSymOptions {
         // whether or not to collect search stats
         Option collectStats = Option.builder("s")
                 .longOpt("stats")
-                .desc("Level of stats collection during the search (default: 1)")
+                .desc("Level of stats collection/reporting during the search (default: 0)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Collection Level (integer)")
@@ -261,7 +261,7 @@ public class PSymOptions {
         // set the level of verbosity
         Option verbosity = Option.builder("v")
                 .longOpt("verbose")
-                .desc("Level of verbosity for the logging (default: 1)")
+                .desc("Level of verbosity in the log output (default: 0)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Log Verbosity (integer)")

@@ -1,9 +1,10 @@
 package psymbolic.runtime.logger;
 
+import psymbolic.runtime.statistics.CoverageStats;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import psymbolic.runtime.statistics.CoverageStats;
 
 public class CoverageWriter {
     static PrintWriter log = null;
@@ -19,7 +20,7 @@ public class CoverageWriter {
             statFile.getParentFile().mkdirs();
             statFile.createNewFile();
             log = new PrintWriter(statFile);
-            info(String.format("%15s%15s%15s%15s%15s", "Step", "CoveredSch", "CoveredData", "RemainingSch", "RemainingData"));
+//            info(String.format("%15s%15s%15s%15s%15s", "Step", "CoveredSch", "CoveredData", "RemainingSch", "RemainingData"));
         }
         catch (IOException e)
         {

@@ -37,9 +37,9 @@ Commandline options for PSym
  -r,--read <File Name (string)>                 Name of the file with the program state
  -w,--write                                     Enable writing program state
  -nf,--no-filters                               Disable filter-based reductions
- -s,--stats <Collection Level (integer)>        Level of stats collection during the search
-                                                (default: 1)
- -v,--verbose <Log Verbosity (integer)>         Level of verbosity for the logging (default: 1)
+ -s,--stats <Collection Level (integer)>        Level of stats collection/reporting during the
+                                                search (default: 0)
+ -v,--verbose <Log Verbosity (integer)>         Level of verbosity in the log output (default: 0)
  -h,--help                                      Print the help message
 ````
 

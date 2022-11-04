@@ -16,8 +16,10 @@ import psymbolic.utils.MemoryMonitor;
 public class PSymLogger {
     static Logger log = null;
     static LoggerContext context = null;
+    static int verbosity = 1;
 
-    public static void Initialize() {
+    public static void Initialize(int verb) {
+        verbosity = verb;
         log = Log4JConfig.getContext().getLogger(PSymLogger.class.getName());
         org.apache.logging.log4j.core.Logger coreLogger =
                 (org.apache.logging.log4j.core.Logger) LogManager.getLogger(PSymLogger.class.getName());
@@ -48,7 +50,9 @@ public class PSymLogger {
     }
 
     public static void log(String message) {
-        log.info(message);
+        if (verbosity > 0) {
+            log.info(message);
+        }
     }
 
     public static void info(String message) {

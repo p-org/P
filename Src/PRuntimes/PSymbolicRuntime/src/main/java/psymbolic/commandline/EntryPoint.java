@@ -49,20 +49,9 @@ public class EntryPoint {
     private static void print_stats() {
         double searchTime = TimeMonitor.getInstance().stopInterval();
         TimeMonitor.getInstance().startInterval();
-        if (configuration.getCollectStats() != 0) {
-            SearchLogger.log("--------------------");
-            SearchLogger.log("Statistics Report::");
-            SearchLogger.log("--------------------");
-            SearchLogger.log("project-name", String.format("%s", configuration.getProjectName()));
-            SearchLogger.log("mode", String.format("%s", mode));
-            SearchLogger.log("solver", String.format("%s", configuration.getSolverType().toString()));
-            SearchLogger.log("expr-type", String.format("%s", configuration.getExprLibType().toString()));
-            SearchLogger.log("time-limit-seconds", String.format("%.1f", configuration.getTimeLimit()));
-            SearchLogger.log("memory-limit-MB", String.format("%.1f", configuration.getMemLimit()));
-            StatWriter.log("status", String.format("%s", status));
-            scheduler.print_stats();
-            StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
-        }
+        StatWriter.log("status", String.format("%s", status));
+        scheduler.print_stats();
+        StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
         scheduler.reportEstimatedCoverage();
     }
 
@@ -72,18 +61,16 @@ public class EntryPoint {
         if (configuration.isSymbolic()) {
             mode = "symbolic";
         } else {
-            mode = "concrete";
+            mode = "single";
         }
-        if (configuration.getCollectStats() != 0) {
-            double preSearchTime = TimeMonitor.getInstance().findInterval(TimeMonitor.getInstance().getStart());
-            StatWriter.log("project-name", String.format("%s", configuration.getProjectName()), false);
-            StatWriter.log("mode", String.format("%s", mode), false);
-            StatWriter.log("solver", String.format("%s", configuration.getSolverType().toString()), false);
-            StatWriter.log("expr-type", String.format("%s", configuration.getExprLibType().toString()), false);
-            StatWriter.log("time-limit-seconds", String.format("%.1f", configuration.getTimeLimit()), false);
-            StatWriter.log("memory-limit-MB", String.format("%.1f", configuration.getMemLimit()), false);
-            StatWriter.log("time-pre-seconds", String.format("%.1f", preSearchTime), false);
-        }
+        double preSearchTime = TimeMonitor.getInstance().findInterval(TimeMonitor.getInstance().getStart());
+        StatWriter.log("project-name", String.format("%s", configuration.getProjectName()));
+        StatWriter.log("mode", String.format("%s", mode));
+        StatWriter.log("solver", String.format("%s", configuration.getSolverType().toString()));
+        StatWriter.log("expr-type", String.format("%s", configuration.getExprLibType().toString()));
+        StatWriter.log("time-limit-seconds", String.format("%.1f", configuration.getTimeLimit()));
+        StatWriter.log("memory-limit-MB", String.format("%.1f", configuration.getMemLimit()));
+        StatWriter.log("time-pre-seconds", String.format("%.1f", preSearchTime));
         Concretizer.print = (configuration.getVerbosity() > 8);
     }
 
@@ -160,14 +147,14 @@ public class EntryPoint {
     }
 
     public static void writeToFile() throws Exception {
-        if (configuration.getCollectStats() != 0) {
+        if (configuration.getVerbosity() > 0) {
             PSymLogger.info(String.format("Writing 1 current and %d backtrack states in %s/", scheduler.getNumBacktracks(), configuration.getOutputFolder()));
         }
         long pid = ProcessHandle.current().pid();
         String writeFileName = configuration.getOutputFolder() + "/current" + "_pid" + pid + ".out";
         scheduler.writeToFile(writeFileName);
         scheduler.writeBacktracksToFiles(configuration.getOutputFolder() + "/backtrack");
-        if (configuration.getCollectStats() != 0) {
+        if (configuration.getVerbosity() > 0) {
             PSymLogger.info("--------------------");
         }
     }

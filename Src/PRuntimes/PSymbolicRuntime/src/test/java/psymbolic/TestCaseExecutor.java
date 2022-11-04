@@ -1,7 +1,6 @@
 package psymbolic;
 
 import org.apache.commons.io.FileUtils;
-import psymbolic.runtime.logger.TraceLogger;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -73,7 +72,7 @@ public class TestCaseExecutor {
 
         Process process;
         try {
-            String pCompileCommand = String.format("dotnet %s %s -generate:Symbolic -t:%s -outputDir:%s"
+            String pCompileCommand = String.format("dotnet %s %s -generate:PSym -t:%s -outputDir:%s"
                     , compilerDirectory, testCasePathsString, testName, outputDirectory);
             PSymTestLogger.log(String.format("      compiling"));
             process = buildCompileProcess(pCompileCommand, outputDirectory);
@@ -97,7 +96,7 @@ public class TestCaseExecutor {
         }
 
         // Next, try to dynamically load and compile this file
-        String pathToJar = outputDirectory + "/target/" + testName + "-1.0-jar-with-dependencies.jar";
+        String pathToJar = outputDirectory + "/target/" + testName + "-jar-with-dependencies.jar";
 
         try {
             String runJarCommand = String.format("java -ea -jar -Xms2G %s -p %s -o %s %s",

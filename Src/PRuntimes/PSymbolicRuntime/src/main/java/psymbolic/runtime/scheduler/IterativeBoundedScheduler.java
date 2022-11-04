@@ -1,5 +1,6 @@
 package psymbolic.runtime.scheduler;
 
+import org.apache.commons.lang3.StringUtils;
 import psymbolic.commandline.Assert;
 import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -84,7 +86,8 @@ public class IterativeBoundedScheduler extends Scheduler {
         // print statistics
         StatWriter.log("#-tasks-finished", String.format("%d", finishedTasks.size()));
         StatWriter.log("#-tasks-remaining", String.format("%d",  (allTasks.size() - finishedTasks.size())));
-        StatWriter.log("#-backtracks", String.format("%d", getNumBacktracks()));
+        StatWriter.log("#-backtracks", String.format("%d", getTotalNumBacktracks()));
+        StatWriter.log("%-backtracks-data", String.format("%.2f", getTotalDataBacktracksPercent()));
         StatWriter.log("#-executions", String.format("%d", (iter - start_iter)));
     }
 
@@ -99,7 +102,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void reportEstimatedCoverage() {
         GlobalData.getCoverage().reportChoiceCoverage();
 
-        SearchLogger.log("--------------------");
+        SearchLogger.log("\n--------------------");
         SearchLogger.log(String.format("Estimated Coverage:: %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
         if (configuration.isUseStateCaching()) {
             SearchLogger.log(String.format("Distinct States Explored:: %d", getTotalDistinctStates()));
@@ -114,20 +117,20 @@ public class IterativeBoundedScheduler extends Scheduler {
             result += "(resumed run) ";
         }
         if (totalStats.isCompleted()) {
-            if (totalStats.getNumBacktracks() == 0) {
+            if (getTotalNumBacktracks() == 0) {
                 result += "safe for any depth";
             } else {
-                result += "partially safe with " + totalStats.getNumBacktracks() + " backtracks remaining";
+                result += "partially safe with " + getTotalNumBacktracks() + " backtracks remaining";
             }
         } else {
             int safeDepth = configuration.getMaxStepBound();
             if (totalStats.getDepthStats().getDepth() < safeDepth) {
                 safeDepth = totalStats.getDepthStats().getDepth();
             }
-            if (totalStats.getNumBacktracks() == 0) {
+            if (getTotalNumBacktracks() == 0) {
                 result += "safe up to step " + safeDepth;
             } else {
-                result += "partially safe up to step " + (configuration.getMaxStepBound()-1) + " with " + totalStats.getNumBacktracks() + " backtracks remaining";
+                result += "partially safe up to step " + (configuration.getMaxStepBound()-1) + " with " + getTotalNumBacktracks() + " backtracks remaining";
             }
         }
     }
@@ -252,6 +255,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                 }
             }
         }
+        printProgress();
         if (configuration.getCollectStats() > 0) {
             printCurrentStatus();
         }
@@ -376,14 +380,68 @@ public class IterativeBoundedScheduler extends Scheduler {
         return latestTask;
     }
 
+    private void printProgressHeader(boolean consolePrint) {
+        StringBuilder s = new StringBuilder(100);
+        s.append(StringUtils.center("Time", 12));
+        s.append(StringUtils.center("Memory", 12));
+        s.append(StringUtils.center("Coverage", 18));
+        s.append(StringUtils.center("Finished", 12));
+        s.append(StringUtils.center("Remaining", 24));
+        s.append(StringUtils.center("Depth", 10));
+        if (configuration.isUseStateCaching()) {
+            s.append(StringUtils.center("States", 12));
+        }
+
+        if (consolePrint) {
+            System.out.println(s);
+        } else {
+            SearchLogger.log(s.toString());
+        }
+    }
+
+    private void printProgress() {
+        boolean consolePrint = (configuration.getVerbosity() == 0 && configuration.getCollectStats() == 0);
+        if (!consolePrint) {
+            return;
+        }
+
+        long runtime = (long) (TimeMonitor.getInstance().getRuntime() * 1000);
+        String runtimeHms =  String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(runtime),
+                TimeUnit.MILLISECONDS.toMinutes(runtime) % TimeUnit.HOURS.toMinutes(1),
+                TimeUnit.MILLISECONDS.toSeconds(runtime) % TimeUnit.MINUTES.toSeconds(1));
+
+        StringBuilder s = new StringBuilder(100);
+        if (consolePrint) {
+            s.append('\r');
+        } else {
+            SearchLogger.log("--------------------");
+            printProgressHeader(false);
+        }
+        s.append(StringUtils.center(String.format("%s", runtimeHms), 12));
+        s.append(StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 12));
+        s.append(StringUtils.center(String.format("%.10f %%", GlobalData.getCoverage().getEstimatedCoverage()), 18));
+        s.append(StringUtils.center(String.format("%d", (iter - start_iter)), 12));
+        s.append(StringUtils.center(String.format("%d (%.0f %% data)", getTotalNumBacktracks(), getTotalDataBacktracksPercent()), 24));
+        s.append(StringUtils.center(String.format("%d", getDepth()), 10));
+        if (configuration.isUseStateCaching()) {
+            s.append(StringUtils.center(String.format("%d", getTotalDistinctStates()), 12));
+        }
+
+        if (consolePrint) {
+            System.out.print(s);
+        } else {
+            SearchLogger.log(s.toString());
+        }
+    }
+
     private void printCurrentStatus() {
         PSymLogger.info("--------------------");
         PSymLogger.info(String.format("    Status after %.2f seconds:", TimeMonitor.getInstance().getRuntime()));
         PSymLogger.info(String.format("      Coverage:         %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
         PSymLogger.info(String.format("      Executions:       %d", (iter - start_iter)));
         PSymLogger.info(String.format("      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
-        PSymLogger.info(String.format("      Finished:         %d", finishedTasks.size()));
-        PSymLogger.info(String.format("      Remaining:        %d", (allTasks.size() - finishedTasks.size())));
+        PSymLogger.info(String.format("      Finished:         %d", (iter - start_iter)));
+        PSymLogger.info(String.format("      Remaining:        %d", getTotalNumBacktracks()));
         PSymLogger.info(String.format("      Depth:            %d", getDepth()));
         PSymLogger.info(String.format("      States:           %d", getTotalStates()));
         PSymLogger.info(String.format("      DistinctStates:   %d", getTotalDistinctStates()));
@@ -397,6 +455,9 @@ public class IterativeBoundedScheduler extends Scheduler {
         resetBacktrackTasks();
         SearchLogger.logStartExecution(iter, getDepth());
         initializeSearch();
+        if (configuration.getVerbosity() == 0 && configuration.getCollectStats() == 0) {
+            printProgressHeader(true);
+        }
         while (!isDoneIterating) {
             if (initialRun) {
                 initialRun = false;
@@ -416,12 +477,12 @@ public class IterativeBoundedScheduler extends Scheduler {
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
             Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             super.step();
+            printProgress();
             if (configuration.getCollectStats() > 1) {
                 printCurrentStatus();
             }
         }
         super.checkLiveness();
-        searchStats.setIterationStats(getNumBacktracks());
         if (done) {
             searchStats.setIterationCompleted();
         } else {
@@ -429,10 +490,28 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
     }
 
-    public int getNumBacktracks() {
+    public int getTotalNumBacktracks() {
         int count = schedule.getNumBacktracksInSchedule();
-        count += pendingTasks.size();
+        for (Integer id: pendingTasks) {
+            for (Schedule.Choice backtrack : getTask(id).getChoices()) {
+                if (!backtrack.isBacktrackEmpty()) count++;
+            }
+        }
         return count;
+    }
+
+    public double getTotalDataBacktracksPercent() {
+        int totalBacktracks = getTotalNumBacktracks();
+        if (totalBacktracks == 0) {
+            return 0.0;
+        }
+        int count = schedule.getNumDataBacktracksInSchedule();
+        for (Integer id: pendingTasks) {
+            for (Schedule.Choice backtrack : getTask(id).getChoices()) {
+                if (!backtrack.isDataBacktrackEmpty()) count++;
+            }
+        }
+        return (count * 100.0) / totalBacktracks;
     }
 
     public void resumeSearch() throws TimeoutException, InterruptedException {
@@ -442,6 +521,9 @@ public class IterativeBoundedScheduler extends Scheduler {
         resetBacktrackTasks();
         reset_stats();
         boolean resetAfterInitial = isDone();
+        if (configuration.getVerbosity() == 0 && configuration.getCollectStats() == 0) {
+            printProgressHeader(true);
+        }
         while (!isDoneIterating) {
             if (initialRun) {
                 initialRun = false;

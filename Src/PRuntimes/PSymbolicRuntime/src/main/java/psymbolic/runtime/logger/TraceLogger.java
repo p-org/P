@@ -125,10 +125,10 @@ public class TraceLogger extends PSymLogger {
         }
     }
 
-    public static void schedule(int step, Message effect, PrimitiveVS<Machine> src) {
+    public static void schedule(int depth, Message effect, PrimitiveVS<Machine> src) {
         if(verbosity > 0) {
-            String msg = String.format("  Step %d: scheduled event[%s] from [%s] sent to [%s]",
-                            step, effect.getEvent().toString(), src, effect.getTarget());
+            String msg = String.format("  Depth %d: scheduled event[%s] from [%s] sent to [%s]",
+                    depth, effect.getEvent().toString(), src, effect.getTarget());
             log.info(msg);
         }
     }

@@ -183,7 +183,15 @@ public class Schedule implements Serializable {
         }
 
         public boolean isBacktrackEmpty() {
-            return getBacktrackSender().isEmpty() && getBacktrackBool().isEmpty() && getBacktrackInt().isEmpty() && getBacktrackElement().isEmpty();
+            return isScheduleBacktrackEmpty() && isDataBacktrackEmpty();
+        }
+
+        public boolean isScheduleBacktrackEmpty() {
+            return getBacktrackSender().isEmpty();
+        }
+
+        public boolean isDataBacktrackEmpty() {
+            return getBacktrackBool().isEmpty() && getBacktrackInt().isEmpty() && getBacktrackElement().isEmpty();
         }
 
         public Choice restrict(Guard pc) {
@@ -291,6 +299,14 @@ public class Schedule implements Serializable {
         int count = 0;
         for (Choice backtrack : choices) {
             if (!backtrack.isBacktrackEmpty()) count++;
+        }
+        return count;
+    }
+
+    public int getNumDataBacktracksInSchedule() {
+        int count = 0;
+        for (Choice backtrack : choices) {
+            if (!backtrack.isDataBacktrackEmpty()) count++;
         }
         return count;
     }

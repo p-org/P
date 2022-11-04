@@ -254,7 +254,7 @@ public class CoverageStats implements Serializable {
 
         String s = "";
         CoverageWriter.info("\t-------------------------------------");
-        s += String.format("\t   Step  ");
+        s += String.format("\t  Depth  ");
         s += String.format("  Covered        Remaining");
         s += String.format("\n\t%5s  %5s   %5s  ", "", "sch", "data");
         s += String.format(" %5s   %5s ", "sch", "data");

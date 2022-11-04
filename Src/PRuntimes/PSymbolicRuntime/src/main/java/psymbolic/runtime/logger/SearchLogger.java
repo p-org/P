@@ -83,18 +83,24 @@ public class SearchLogger {
         log(String.format("%-40s%s", key+":", value));
     }
 
-    public static void finishedExecution(int steps) {
-        log.info(String.format("  Execution finished in %d steps", steps));
+    public static void finishedExecution(int depth) {
+        if (verbosity > 0) {
+            log.info(String.format("  Execution finished at depth %d", depth));
+        }
     }
 
-    public static void logResumeExecution(int iter, int step) {
-        log.info("--------------------");
-        log.info("Resuming Iteration: " + iter + " from Step: " + step);
+    public static void logResumeExecution(int iter, int depth) {
+        if (verbosity > 0) {
+            log.info("--------------------");
+            log.info("Resuming Iteration: " + iter + " from Depth: " + depth);
+        }
     }
 
-    public static void logStartExecution(int iter, int step) {
-        log.info("--------------------");
-        log.info("Starting Iteration: " + iter + " from Step: " + step);
+    public static void logStartExecution(int iter, int depth) {
+        if (verbosity > 0) {
+            log.info("--------------------");
+            log.info("Starting Iteration: " + iter + " from Depth: " + depth);
+        }
     }
 
     public static void logDepthStats(SearchStats.DepthStats depthStats) {

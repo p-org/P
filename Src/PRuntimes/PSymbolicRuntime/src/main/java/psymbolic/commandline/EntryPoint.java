@@ -56,6 +56,13 @@ public class EntryPoint {
     }
 
     private static void preprocess() {
+        PSymLogger.info(String.format("... Method " +  configuration.getTestDriver()));
+        PSymLogger.info(String.format("... Project %s is using '%s' strategy (seed:%s)",
+                                            configuration.getProjectName(),
+                                            configuration.getMode(),
+                                            configuration.getRandomSeed()));
+        PSymLogger.info("--------------------");
+
         executor = Executors.newSingleThreadExecutor();
         status = "error";
         if (configuration.isSymbolic()) {
@@ -148,7 +155,7 @@ public class EntryPoint {
 
     public static void writeToFile() throws Exception {
         if (configuration.getVerbosity() > 0) {
-            PSymLogger.info(String.format("Writing 1 current and %d backtrack states in %s/", scheduler.getNumBacktracks(), configuration.getOutputFolder()));
+            PSymLogger.info(String.format("Writing 1 current and %d backtrack states in %s/", scheduler.getTotalNumBacktracks(), configuration.getOutputFolder()));
         }
         long pid = ProcessHandle.current().pid();
         String writeFileName = configuration.getOutputFolder() + "/current" + "_pid" + pid + ".out";

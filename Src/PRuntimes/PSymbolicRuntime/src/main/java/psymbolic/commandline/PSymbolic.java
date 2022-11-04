@@ -133,7 +133,6 @@ public class PSymbolic {
         for (Class<? extends PTestDriver> td: subTypesDriver) {
             if (td.getSimpleName().equalsIgnoreCase(name)) {
                 driver = td.getDeclaredConstructor().newInstance();
-                PSymLogger.info("Setting Test Driver:: " + td.getSimpleName());
                 break;
             }
         }
@@ -142,7 +141,6 @@ public class PSymbolic {
            && subTypesDriver.size() == 1) {
             for (Class<? extends PTestDriver> td: subTypesDriver) {
                 driver = td.getDeclaredConstructor().newInstance();
-                PSymLogger.info("Setting Test Driver to Default:: " + td.getSimpleName());
                 break;
             }
         }
@@ -161,6 +159,8 @@ public class PSymbolic {
                 System.exit(5);
             }
         }
+        assert(driver != null);
+        config.setTestDriver(driver.getClass().getSimpleName());
         p.setTestDriver(driver);
     }
 
@@ -177,7 +177,7 @@ public class PSymbolic {
                     new FileInputStream(pathToJar));
             JarEntry jarEntry;
 
-            PSymLogger.info("Loading:: " + pathToJar);
+            PSymLogger.info(". Checking " + pathToJar);
             while (true) {
                 jarEntry = jarFile.getNextJarEntry();
                 if (jarEntry == null) {

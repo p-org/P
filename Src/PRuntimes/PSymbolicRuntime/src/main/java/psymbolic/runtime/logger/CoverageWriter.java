@@ -20,7 +20,7 @@ public class CoverageWriter {
             statFile.getParentFile().mkdirs();
             statFile.createNewFile();
             log = new PrintWriter(statFile);
-//            info(String.format("%15s%15s%15s%15s%15s", "Step", "CoveredSch", "CoveredData", "RemainingSch", "RemainingData"));
+//            info(String.format("%15s%15s%15s%15s%15s", "Depth", "CoveredSch", "CoveredData", "RemainingSch", "RemainingData"));
         }
         catch (IOException e)
         {

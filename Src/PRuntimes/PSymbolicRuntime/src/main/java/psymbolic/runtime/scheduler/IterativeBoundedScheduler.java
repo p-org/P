@@ -403,7 +403,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         s.append(StringUtils.center("Time", 12));
         s.append(StringUtils.center("Memory", 12));
         s.append(StringUtils.center("Coverage", 18));
-        s.append(StringUtils.center("Finished", 12));
+        s.append(StringUtils.center("Iteration", 12));
         s.append(StringUtils.center("Remaining", 24));
         s.append(StringUtils.center("Depth", 10));
         if (configuration.isUseStateCaching()) {

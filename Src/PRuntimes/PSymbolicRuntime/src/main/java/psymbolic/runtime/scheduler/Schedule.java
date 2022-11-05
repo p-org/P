@@ -355,11 +355,11 @@ public class Schedule implements Serializable {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
         } else {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+            numBacktracks++;
         }
         for (PrimitiveVS<Machine> choice : machines) {
             choices.get(depth).addBacktrackSender(choice);
         }
-        numBacktracks++;
     }
 
     public void addBacktrackBool(List<PrimitiveVS<Boolean>> bools, int depth) {
@@ -370,12 +370,12 @@ public class Schedule implements Serializable {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
         } else {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+            numBacktracks++;
+            numDataBacktracks++;
         }
         for (PrimitiveVS<Boolean> choice : bools) {
             choices.get(depth).addBacktrackBool(choice);
         }
-        numBacktracks++;
-        numDataBacktracks++;
     }
 
     public void addBacktrackInt(List<PrimitiveVS<Integer>> ints, int depth) {
@@ -386,12 +386,12 @@ public class Schedule implements Serializable {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
         } else {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+            numBacktracks++;
+            numDataBacktracks++;
         }
         for (PrimitiveVS<Integer> choice : ints) {
             choices.get(depth).addBacktrackInt(choice);
         }
-        numBacktracks++;
-        numDataBacktracks++;
     }
 
     public void addBacktrackElement(List<ValueSummary> elements, int depth) {
@@ -402,12 +402,12 @@ public class Schedule implements Serializable {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
         } else {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+            numBacktracks++;
+            numDataBacktracks++;
         }
         for (ValueSummary choice : elements) {
             choices.get(depth).addBacktrackElement(choice);
         }
-        numBacktracks++;
-        numDataBacktracks++;
     }
 
     public PrimitiveVS<Machine> getRepeatSender(int depth) {

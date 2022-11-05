@@ -3,7 +3,7 @@ to avoid repetition during state-space exploration. PSym guarantees to never rep
 hence, can exhaustively explore all possible executions. PSym also has an inbuilt coverage tracker that reports estimated 
 coverage to give measurable and continuous feedback (even when no bug is found during exploration).
 
-??? tip "Recommendation"
+!!! tip "Recommendation"
     
     Exhaustively exploring all possible executions is generally not possible for large models due to 
     time/memory constraints.
@@ -11,7 +11,6 @@ coverage to give measurable and continuous feedback (even when no bug is found d
     `choose(*)` expressions with fewer choices.
     
 
-### Tool flow
 P compiler has a dedicated backend for PSym, which compiles the P model into a symbolically-instrumented intermediate
 representation in Java, packed as a single `.jar` file. Executing the `.jar` file runs PSym runtime. Commandline arguments
 can be passed when running the `.jar` file to configure the exploration strategy. At the end of a run, PSym reports the 

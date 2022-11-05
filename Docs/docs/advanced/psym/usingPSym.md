@@ -131,21 +131,21 @@ java -jar target/ClientServer-jar-with-dependencies.jar \
     ``` hl_lines="9-10 12-13 15-17" linenums="1"
     Picked up JAVA_TOOL_OPTIONS: -Dlog4j2.formatMsgNoLookups=true
     WARNING: sun.reflect.Reflection.getCallerClass is not supported. This will impact performance.
-    Reflections took 86 ms to scan 1 urls, producing 38 keys and 172 values
+    Reflections took 93 ms to scan 1 urls, producing 38 keys and 172 values
     . Checking /Users/goelaman/work/ws/version/github/P/Tutorial/1_ClientServer/target/ClientServer-jar-with-dependencies.jar
-    Reflections took 44 ms to scan 1 urls, producing 38 keys and 172 values
+    Reflections took 45 ms to scan 1 urls, producing 38 keys and 172 values
     ... Method tcSingleClient
     ... Project clientserver is using 'default' strategy (seed:0)
     --------------------
       Time       Memory        Coverage      Iteration         Remaining          Depth      States   
-    00:00:10     0.2 GB     1.4246418994 %      140        1842 (100 % data)        91        8130
+    00:00:10     0.2 GB     1.4246418994 %      140        1820 (100 % data)        1         8043
     --------------------
     Estimated Coverage:: 1.4246418994 %
-    Distinct States Explored:: 8131
+    Distinct States Explored:: 8043
     --------------------
     Explored 140 single executions
     Took 10 seconds and 0.2 GB
-    Result: partially safe with 1821 backtracks remaining
+    Result: partially safe with 1820 backtracks remaining
     --------------------
     java.lang.Exception: TIMEOUT
     at psymbolic.commandline.EntryPoint.process(EntryPoint.java:97)
@@ -153,7 +153,7 @@ java -jar target/ClientServer-jar-with-dependencies.jar \
     at psymbolic.commandline.PSymbolic.main(PSymbolic.java:73)
     ```
 
-    Here, PSym explores 140 schedules/iterations, checking 8130 distinct states, and achieving an estimated coverage of ~ 1.4 %.
+    Here, PSym explores 140 schedules/iterations, checking 8043 distinct states, and achieving an estimated coverage of ~ 1.4 %.
 
     Check file `output/coverage-clientserver.log` for a detailed Coverage Report.
 
@@ -174,17 +174,17 @@ randomly-sampled schedule to be bug free.
     
     ```
       Time       Memory        Coverage      Iteration         Remaining          Depth      States   
-    00:00:10     0.2 GB     1.4246418994 %      140        1842 (100 % data)        91        8130
+    00:00:10     0.2 GB     1.4246418994 %      140        1820 (100 % data)        1         8043
     ```
     
     that summarizes:
-    
+        
     | Label     | Description                                                                      |
     |-----------|----------------------------------------------------------------------------------|
     | Time      | Elapsed runtime in ``hh:mm:ss`` format                                           |
     | Memory    | Memory usage in gigabytes                                                        |
     | Coverage  | Estimated Coverage                                                               |
-    | Finished  | Number of schedules/iterations finished                                          |
+    | Iteration | Iteration/schedule number                                                        |
     | Remaining | Number of unexplored backtracks/choices remaining (as well as % of data choices) |
     | Depth     | Current depth of the exploration                                                 |
     | States    | Number of distinct states explored                                               |
@@ -220,63 +220,63 @@ For example, coverage report corresponding to the previous ClientServer run can 
     -----------------
     Coverage Report::
     -----------------
-    Covered choices:    8328 scheduling,  1984 data
-    Remaining choices:     0 scheduling, 30519 data
+    Covered choices:    8239 scheduling,  1962 data
+    Remaining choices:     0 scheduling, 30292 data
     -------------------------------------
-    Depth    Covered        Remaining
-    sch    data     sch    data
+    Depth   Covered       Remaining
+          sch    data     sch    data
     -------------------------------------
-    0            100                 
-    1    100                         
-    2    100     135            5805
-    3    136                         
-    4    135                         
-    5    135                         
-    6    135                         
-    7    135      51            1175
-    8    135      77            2659
-    9    128                         
-    10    128                         
-    11    128      37             572
-    12    128      48            1045
-    13    125      36            1149
-    14    121                         
-    15    121      23             296
-    16    121      37             633
-    17    115      34             766
-    18    112      18             468
-    19    112      19             203
-    20    113      25             386
-    21    110      31             582
-    22    107      25             494
-    23    107      20             250
-    24    105      19             256
-    25    103      23             337
-    26     99      26             365
-    27     98      23             319
-    28     97      19             222
-    29     96      21             279
-    30     96      23             298
-    31     94      23             279
-    32     92      19             233
-    33     92      21             254
-    34     90      18             232
-    35     89      22             263
-    36     86      17             181
-    37     84      16             187
-    38     80      16             198
-    39     77      19             221
-    40     74      20             199
-    41     74      16             187
-    42     72      10             123
-    43     71      20             225
-    44     69      20             208
-    45     69      17             198
-    46     67      10             123
-    47     67      17             190
-    48     67      18             187
-    49     65      17             197
-    50     63      10             114
+     0            100                 
+     1    100                         
+     2    100     134            5806
+     3    135                         
+     4    134                         
+     5    134                         
+     6    134                         
+     7    134      50            1162
+     8    134      77            2659
+     9    127                         
+    10    127                         
+    11    127      36             559
+    12    127      48            1045
+    13    124      36            1149
+    14    120                         
+    15    120      23             296
+    16    120      36             621
+    17    114      34             766
+    18    111      18             468
+    19    111      19             203
+    20    112      24             374
+    21    109      31             582
+    22    106      25             494
+    23    106      20             250
+    24    104      19             256
+    25    102      22             326
+    26     98      26             365
+    27     97      23             319
+    28     96      19             222
+    29     95      20             268
+    30     95      23             298
+    31     93      23             279
+    32     91      19             233
+    33     91      20             243
+    34     89      18             232
+    35     88      22             263
+    36     85      17             181
+    37     83      15             176
+    38     79      16             198
+    39     76      19             221
+    40     73      20             199
+    41     73      15             176
+    42     71      10             123
+    43     70      20             225
+    44     68      20             208
+    45     68      16             187
+    46     66      10             123
+    47     66      17             190
+    48     66      18             187
+    49     64      16             186
+    50     62      10             114
                 .
                 .
                 .

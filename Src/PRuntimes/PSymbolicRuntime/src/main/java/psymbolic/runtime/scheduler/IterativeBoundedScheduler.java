@@ -1,6 +1,5 @@
 package psymbolic.runtime.scheduler;
 
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import psymbolic.commandline.Assert;
 import psymbolic.commandline.PSymConfiguration;
@@ -456,9 +455,9 @@ public class IterativeBoundedScheduler extends Scheduler {
         PSymLogger.info("--------------------");
         PSymLogger.info(String.format("    Status after %.2f seconds:", TimeMonitor.getInstance().getRuntime()));
         PSymLogger.info(String.format("      Coverage:         %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
-        PSymLogger.info(String.format("      Executions:       %d", (iter - start_iter)));
+        PSymLogger.info(String.format("      Iterations:       %d", (iter - start_iter)));
         PSymLogger.info(String.format("      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
-        PSymLogger.info(String.format("      Finished:         %d", (iter - start_iter)));
+        PSymLogger.info(String.format("      Finished:         %d", finishedTasks.size()));
         PSymLogger.info(String.format("      Remaining:        %d", getTotalNumBacktracks()));
         PSymLogger.info(String.format("      Depth:            %d", getDepth()));
         PSymLogger.info(String.format("      States:           %d", getTotalStates()));
@@ -493,14 +492,16 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void performSearch() throws TimeoutException {
         schedule.setNumBacktracksInSchedule();
         while (!isDone()) {
-            // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
-            Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
-            super.step();
             printProgress();
             if (configuration.getCollectStats() > 1) {
                 printCurrentStatus();
             }
+
+            // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
+            Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
+            super.step();
         }
+        schedule.setNumBacktracksInSchedule();
         super.checkLiveness();
         if (done) {
             searchStats.setIterationCompleted();

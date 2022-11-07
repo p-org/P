@@ -72,9 +72,11 @@ public class SolverEngine {
     }
 
     public static void resetEngine(SolverType type, ExprLibType etype) {
-        SearchLogger.log("Setting solver engine to "
-                + type.toString() + " + "
-                + etype.toString());
+        if (SearchLogger.getVerbosity() > 1) {
+            SearchLogger.log("Setting solver engine to "
+                    + type.toString() + " + "
+                    + etype.toString());
+        }
     	setSolver(type, etype);
         SolverGuard.reset();
     }

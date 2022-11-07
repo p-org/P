@@ -9,22 +9,26 @@ import psymbolic.runtime.machine.eventhandlers.EventHandler;
 import psymbolic.runtime.machine.eventhandlers.IgnoreEventHandler;
 import psymbolic.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psymbolic.utils.GlobalData;
+import psymbolic.utils.StateTemperature;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.util.ValueSummaryChecks;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public abstract class State implements Serializable {
     public final String name;
     public final String machineName;
+    public final StateTemperature temperature;
 
     public void entry(Guard pc, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {}
     public void exit(Guard pc, Machine machine) {}
 
-    public State(String name, String machineName, EventHandler... eventHandlers) {
+    public State(String name, String machineName, StateTemperature temperature, EventHandler... eventHandlers) {
         this.name = name;
         this.machineName = machineName;
+        this.temperature = temperature;
     }
 
     private String getStateKey() {
@@ -95,8 +99,29 @@ public abstract class State implements Serializable {
         }
     }
 
+    public boolean isHotState() {
+        return temperature == StateTemperature.Hot;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        else if (!(obj instanceof State)) {
+            return false;
+        }
+        return  this.name.equals(((State) obj).name) &&
+                this.machineName.equals(((State) obj).machineName) &&
+                this.temperature.equals(((State) obj).temperature);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, machineName, temperature);
+    }
+
     @Override
     public String toString() {
-        return String.format("%s", name);
+        return name;
     }
 }

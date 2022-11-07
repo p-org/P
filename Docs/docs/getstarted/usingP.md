@@ -30,7 +30,7 @@ There are two ways of compiling a P program:
 1. Using a **P project file** (`*.pproj`) to provides all the required inputs to the compiler or
 2. Passing all the P files (`*.p`) along with other options (e.g., `-generate`) **as commandline arguments** to the compiler.
 
-!!! tip "Recommentation"  
+!!! tip "Recommendation"  
     We recommend using the P project files to compile a P program.
 
 ??? help "P Compiler commandline options:"

@@ -2,7 +2,8 @@ package psymbolic.commandline;
 
 import lombok.Getter;
 import lombok.Setter;
-import psymbolic.utils.OrchestrationMode;
+import psymbolic.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
+import psymbolic.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psymbolic.valuesummary.solvers.SolverType;
 import psymbolic.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -12,125 +13,162 @@ import java.io.Serializable;
  * Represents the configuration of the P Symbolic tool
  */
 public class PSymConfiguration implements Serializable {
-
+    // mode of exploration
     @Getter @Setter
-    // mode of orchestrating
-    private OrchestrationMode orchestration = OrchestrationMode.CoverageAStar;
+    String mode = "default";
 
+    // time limit in seconds (0 means infinite)
     @Getter @Setter
-    private int maxBacktrackTasksPerExecution = 2;
+    double timeLimit = 60;
 
+    // memory limit in megabytes (0 means infinite)
     @Getter @Setter
-    // debug mode (internal)
-    private String debugMode = "default";
+    double memLimit = (Runtime.getRuntime().maxMemory() / 1000000);
 
-    @Getter
+    // random seed
+    @Getter @Setter
+    int randomSeed = 0;
+
     // default name of the test driver
-    private final String testDriverDefault = "DefaultTestDriver";
+    @Getter
+    final String testDriverDefault = "DefaultTestDriver";
 
     // name of the test driver
     @Getter @Setter
-    private String testDriver = testDriverDefault;
+    String testDriver = testDriverDefault;
 
+    // default name of the project
+    @Getter
+    final String projectNameDefault = "test";
 
-    // name of the target project
+    // name of the project
     @Getter @Setter
-    private String projectName = "test";
+    String projectName = projectNameDefault;
 
     // name of the output folder
     @Getter @Setter
-    private String outputFolder = "output";
+    String outputFolder = "output";
 
+    // max steps/depth bound provided by the user
     @Getter @Setter
-    // max depth bound provided by the user
-    private int depthBound = 1000;
+    int maxStepBound = 1000;
 
-    @Getter @Setter
     // max number of executions bound provided by the user
-    private int maxExecutions = -1;
-
     @Getter @Setter
-    // max input choice bound provided by the user
-    private int inputChoiceBound = 1;
+    int maxExecutions = 0;
 
+    // max scheduling choice bound provided by the user
     @Getter @Setter
-    // max input choice bound provided by the user
-    private int schedChoiceBound = 1;
+    int schedChoiceBound = 1;
 
-    @Getter
-    // max internal steps before throwing an exception
-    private int maxInternalSteps = 1000;
-
+    // max data choice bound provided by the user
     @Getter @Setter
+    int dataChoiceBound = 1;
+
     // use state caching
-    private boolean useStateCaching = true;
-
     @Getter @Setter
-    // intersect with receiver queue semantics
-    private boolean useReceiverQueueSemantics = false;
+    boolean useStateCaching = true;
 
+    // use backtracking
     @Getter @Setter
-    // use symbolic sleep sets
-    private boolean useSleepSets = false;
+    boolean useBacktrack = true;
 
+    // mode of choice orchestration
     @Getter @Setter
-    // turn all sender queues into bags -- currently not implemented
-    private boolean useBagSemantics = false;
+    ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.Random;
 
+    // mode of task orchestration
     @Getter @Setter
-    // apply DPOR
-    private boolean dpor = false;
+    TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.CoverageAStar;
 
+    // max number of children tasks per execution
     @Getter @Setter
-    // use filters
-    private boolean useFilters = true;
+    int maxBacktrackTasksPerExecution = 2;
 
-    @Getter @Setter
-    // level of verbosity for the logging
-    private int verbosity = 1;
-
-    @Getter @Setter
-    // level of stats collection
-    private int collectStats = 1;
-
-    @Getter @Setter
     // type of solver engine
-    private SolverType solverType = SolverType.BDD;
-
     @Getter @Setter
-    // type of solver engine
-    private ExprLibType exprLibType = ExprLibType.Bdd;
+    SolverType solverType = SolverType.BDD;
 
+    // type of expression engine
     @Getter @Setter
-    // time limit in seconds (0 means infinite)
-    private double timeLimit = 60;
-
-    @Getter @Setter
-    // memory limit in megabytes (0 means infinite)
-    private double memLimit = (Runtime.getRuntime().maxMemory() / 1000000);
+    ExprLibType exprLibType = ExprLibType.Bdd;
 
     // name of the file to read the program state
     @Getter @Setter
-    private String readFromFile = "";
+    String readFromFile = "";
 
-    @Getter @Setter
     // whether or not to write the program state(s) to file
-    private boolean writeToFile = false;
-
     @Getter @Setter
-    // use backtracking
-    private boolean useBacktrack = true;
+    boolean writeToFile = false;
 
+    // use filters
     @Getter @Setter
-    // use randomization
-    private boolean useRandom = true;
+    boolean useFilters = true;
 
+    // intersect with receiver queue semantics
     @Getter @Setter
-    // random seed
-    private int randomSeed = 0;
+    boolean useReceiverQueueSemantics = false;
+
+    // use symbolic sleep sets
+    @Getter @Setter
+    boolean useSleepSets = false;
+
+    // turn all sender queues into bags -- currently not implemented
+    @Getter @Setter
+    boolean useBagSemantics = false;
+
+    // apply DPOR
+    @Getter @Setter
+    boolean dpor = false;
+
+    // level of stats collection
+    @Getter @Setter
+    int collectStats = 0;
+
+    // level of verbosity for the logging
+    @Getter @Setter
+    int verbosity = 0;
+
+    // max internal steps before throwing an exception
+    @Getter
+    final int maxInternalSteps = 1000;
 
     public boolean isSymbolic() {
-        return (getSchedChoiceBound() != 1 || getInputChoiceBound() != 1);
+        return (getSchedChoiceBound() != 1 || getDataChoiceBound() != 1);
     }
+
+    public void setToDefault() {
+        this.setMode("default");
+    }
+
+    public void setToBmc() {
+        this.setMode("bmc");
+        this.setSchedChoiceBound(0);
+        this.setDataChoiceBound(0);
+        this.setUseStateCaching(false);
+    }
+
+    public void setToRandom() {
+        this.setMode("random");
+        this.setSchedChoiceBound(1);
+        this.setDataChoiceBound(1);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
+        this.setTaskOrchestration(TaskOrchestrationMode.Random);
+    }
+
+    public void setToFuzz() {
+        this.setMode("fuzz");
+        this.setSchedChoiceBound(1);
+        this.setDataChoiceBound(1);
+        this.setUseStateCaching(false);
+        this.setUseBacktrack(false);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
+        this.setTaskOrchestration(TaskOrchestrationMode.Random);
+    }
+
+    public void setToDebug() {
+        this.setMode("debug");
+    }
+
 
 }

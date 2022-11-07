@@ -18,8 +18,14 @@ public class RandomNumberGenerator {
         assert(randomNumberGenerator != null);
         return randomNumberGenerator;
     }
+    public int getRandomInt(int bound) {
+        return rand.nextInt(bound);
+    }
     public long getRandomLong() {
         return rand.nextLong();
+    }
+    public double getRandomDouble() {
+        return rand.nextDouble();
     }
 
 }

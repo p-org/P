@@ -147,6 +147,8 @@ def read_input():
 
     timeLimit = max(time)
     coverageLimit = min(100, max(coverage))
+    if (coverageLimit > 5):
+        coverageLimit = 100
     executionLimit = max(execution)
     memoryLimit = max(memory)
     finishedLimit = max(finished)

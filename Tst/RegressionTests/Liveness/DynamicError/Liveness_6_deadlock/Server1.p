@@ -1,5 +1,5 @@
 event Local;
-event Search : int;
+event Search;
 event SearchStarted;
 event SearchFinished;
  

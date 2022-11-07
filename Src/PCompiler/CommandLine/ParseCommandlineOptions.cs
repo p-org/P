@@ -24,9 +24,10 @@ namespace Plang.Compiler
         /// Parse the P Project file
         /// </summary>
         /// <param name="projectFile">Path to the P project file</param>
+        /// <param name="generateLang">Target language to generate</param>
         /// <param name="job">out parameter of P compilation job, after parsing the project file</param>
         /// <returns></returns>
-        public bool ParseProjectFile(string projectFile, out CompilationJob job)
+        public bool ParseProjectFile(string projectFile, CompilerOutput? generateLang, out CompilationJob job)
         {
             job = null;
             try
@@ -38,7 +39,7 @@ namespace Plang.Compiler
                 commandlineOutput.WriteInfo($"----------------------------------------");
                 commandlineOutput.WriteInfo($"==== Loading project file: {projectFile}");
 
-                var outputLanguage = CompilerOutput.CSharp;
+                CompilerOutput outputLanguage = CompilerOutput.CSharp;
                 HashSet<string> inputFiles = new HashSet<string>();
                 bool generateSourceMaps = false;
                 HashSet<string> projectDependencies = new HashSet<string>();
@@ -61,8 +62,15 @@ namespace Plang.Compiler
                 var outputDirectory = GetOutputDirectory(projectFilePath);
                 var aspectjOutputDirectory = GetAspectjOutputDirectory(projectFilePath, outputDirectory);
 
-                // get target language
-                GetTargetLanguage(projectFilePath, ref outputLanguage, ref generateSourceMaps);
+                if (generateLang != null)
+                {
+                    outputLanguage = generateLang.Value;
+                }
+                else
+                {
+                    // get target language
+                    GetTargetLanguage(projectFilePath, ref outputLanguage, ref generateSourceMaps);
+                }
 
                 job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory, aspectjOutputDirectory), outputDirectory,
                     outputLanguage: outputLanguage, inputFiles: inputFiles.ToList(), projectName: projectName, projectFilePath.Directory,
@@ -88,9 +96,10 @@ namespace Plang.Compiler
         /// Parse the commandline arguments to construct the compilation job
         /// </summary>
         /// <param name="args">Commandline arguments</param>
+        /// <param name="generateLang">Target language to generate</param>
         /// <param name="job">Generated Compilation job</param>
         /// <returns></returns>
-        internal bool ParseCommandLineOptions(IEnumerable<string> args, out CompilationJob job)
+        internal bool ParseCommandLineOptions(IEnumerable<string> args, CompilerOutput? generateLang, out CompilationJob job)
         {
             string targetName = null;
             CompilerOutput outputLanguage = CompilerOutput.CSharp;
@@ -99,6 +108,10 @@ namespace Plang.Compiler
             HashSet<string> inputFiles = new HashSet<string>();
             commandlineOutput.WriteInfo($"----------------------------------------");
             job = null;
+            if (generateLang != null)
+            {
+                outputLanguage = generateLang.Value;
+            }
             try
             {
                 foreach (string x in args)
@@ -129,32 +142,6 @@ namespace Plang.Compiler
                                 else
                                 {
                                     throw new CommandlineParsingError("Only one target must be specified with (-t)");
-                                }
-                                break;
-
-                            case "g":
-                            case "generate":
-                                switch (colonArg?.ToLowerInvariant())
-                                {
-                                    case null:
-                                        throw new CommandlineParsingError("Missing generation argument, expecting generate:[C,CSharp,Java,RVM,Symbolic]");
-                                    case "c":
-                                        outputLanguage = CompilerOutput.C;
-                                        break;
-                                    case "csharp":
-                                        outputLanguage = CompilerOutput.CSharp;
-                                        break;
-                                    case "java":
-                                        outputLanguage = CompilerOutput.Java;
-                                        break;
-                                    case "rvm":
-                                        outputLanguage = CompilerOutput.Rvm;
-                                        break;
-                                    case "symbolic":
-                                        outputLanguage = CompilerOutput.Symbolic;
-                                        break;
-                                    default:
-                                        throw new CommandlineParsingError($"Unrecognized generate option '{colonArg}', expecting one of C, CSharp, Java, RVM, Symbolic.");
                                 }
                                 break;
 
@@ -233,6 +220,53 @@ namespace Plang.Compiler
             {
                 commandlineOutput.WriteError($"<Internal Error>:\n {other.Message}\n <Please report to the P team (p-devs@amazon.com) or create an issue on GitHub, Thanks!>");
                 commandlineOutput.WriteError($"{other.StackTrace}\n");
+                return false;
+            }
+        }
+
+
+        /// <summary>
+        /// Parse the commandline argument corresponding to -generate to get the output language
+        /// </summary>
+        /// <param name="generateArg">Commandline argument</param>
+        /// <param name="generateLang">out parameter of parsing -generate arg</param>
+        /// <returns></returns>
+        internal bool ParseCommandLineGenerateOption(string generateArg, ref CompilerOutput? generateLang)
+        {
+            try
+            {
+                string colonArg = null;
+                int colonIndex = generateArg.IndexOf(':');
+                colonArg = generateArg.Substring(colonIndex + 1);
+
+                switch (colonArg?.ToLowerInvariant())
+                {
+                    case null:
+                        throw new CommandlineParsingError("Missing generation argument, expecting generate:[C,CSharp,Java,RVM,PSym]");
+                    case "c":
+                        generateLang = CompilerOutput.C;
+                        break;
+                    case "csharp":
+                        generateLang = CompilerOutput.CSharp;
+                        break;
+                    case "java":
+                        generateLang = CompilerOutput.Java;
+                        break;
+                    case "rvm":
+                        generateLang = CompilerOutput.Rvm;
+                        break;
+                    case "psym":
+                    case "symbolic":
+                        generateLang = CompilerOutput.Symbolic;
+                        break;
+                    default:
+                        throw new CommandlineParsingError($"Unrecognized generate option '{colonArg}', expecting one of C, CSharp, Java, RVM, PSym.");
+                }
+                return true;
+            }
+            catch (CommandlineParsingError ex)
+            {
+                commandlineOutput.WriteError($"<Error parsing commandline>:\n {ex.Message}");
                 return false;
             }
         }
@@ -354,12 +388,13 @@ namespace Plang.Compiler
                     outputLanguage = CompilerOutput.Rvm;
                     break;
                 
+                case "psym":
                 case "symbolic":
                     outputLanguage = CompilerOutput.Symbolic;
                     break;
 
                 default:
-                    throw new CommandlineParsingError($"Expected C, CSharp, Java, RVM, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
+                    throw new CommandlineParsingError($"Expected C, CSharp, Java, RVM, or PSym as target, received {projectXml.Element("Target")?.Value}");
             }
         }
 

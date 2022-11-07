@@ -103,7 +103,8 @@ public class EntryPoint {
             scheduler.result = "found cex of length " + scheduler.getDepth();
             postprocess();
 
-//            TraceLogger.setVerbosity(2);
+            PSymLogger.setVerbosity(1);
+            TraceLogger.setVerbosity(1);
             SearchLogger.disable();
             CoverageWriter.disable();
             Guard pc = e.pathConstraint;

@@ -1,5 +1,6 @@
 package psymbolic.runtime.logger;
 
+import lombok.Setter;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,6 +17,7 @@ import psymbolic.utils.MemoryMonitor;
 public class PSymLogger {
     static Logger log = null;
     static LoggerContext context = null;
+    @Setter
     static int verbosity = 1;
 
     public static void Initialize(int verb) {

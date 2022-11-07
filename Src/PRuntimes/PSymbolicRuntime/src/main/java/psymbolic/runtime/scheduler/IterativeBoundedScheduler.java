@@ -123,9 +123,9 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
         if (totalStats.isCompleted()) {
             if (getTotalNumBacktracks() == 0) {
-                result += "safe for any depth";
+                result += "correct for any depth";
             } else {
-                result += "partially safe with " + getTotalNumBacktracks() + " backtracks remaining";
+                result += "partially correct with " + getTotalNumBacktracks() + " backtracks remaining";
             }
         } else {
             int safeDepth = configuration.getMaxStepBound();
@@ -133,9 +133,9 @@ public class IterativeBoundedScheduler extends Scheduler {
                 safeDepth = totalStats.getDepthStats().getDepth();
             }
             if (getTotalNumBacktracks() == 0) {
-                result += "safe up to step " + safeDepth;
+                result += "correct up to step " + safeDepth;
             } else {
-                result += "partially safe up to step " + (configuration.getMaxStepBound()-1) + " with " + getTotalNumBacktracks() + " backtracks remaining";
+                result += "partially correct up to step " + (configuration.getMaxStepBound()-1) + " with " + getTotalNumBacktracks() + " backtracks remaining";
             }
         }
     }

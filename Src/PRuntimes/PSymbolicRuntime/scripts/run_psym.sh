@@ -51,4 +51,4 @@ java -ea -jar -Xms12G target/${projectName}-jar-with-dependencies.jar \
 cd ${runPath}
 
 #mkdir -p ${outPath}/plots
-#python3 scripts/psym_plots.py ${projectName} ${outPath}/run.out ${outPath}/plots
+#python3 scripts/psym_plots.py ${projectName} ${outPath}/output/scratch.log ${outPath}/plots

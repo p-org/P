@@ -38,7 +38,7 @@ Commandline options for PSym
  -w,--write                                     Enable writing program state
  -nf,--no-filters                               Disable filter-based reductions
  -s,--stats <Collection Level (integer)>        Level of stats collection/reporting during the
-                                                search (default: 0)
+                                                search (default: 1)
  -v,--verbose <Log Verbosity (integer)>         Level of verbosity in the log output (default: 0)
  -h,--help                                      Print the help message
 ````

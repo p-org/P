@@ -1,5 +1,6 @@
 package psymbolic.runtime.logger;
 
+import lombok.Getter;
 import lombok.Setter;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -18,7 +19,7 @@ public class PSymLogger {
     static Logger log = null;
     static LoggerContext context = null;
     @Setter
-    static int verbosity = 1;
+    static int verbosity;
 
     public static void Initialize(int verb) {
         verbosity = verb;
@@ -75,5 +76,6 @@ public class PSymLogger {
         TraceLogger.Initialize(verbosity, outputFolder);
         StatWriter.Initialize(projectName, outputFolder);
         CoverageWriter.Initialize(projectName, outputFolder);
+        ScratchLogger.Initialize(verbosity, outputFolder);
     }
 }

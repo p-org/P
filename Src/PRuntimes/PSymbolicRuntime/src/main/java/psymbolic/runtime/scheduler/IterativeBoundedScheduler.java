@@ -260,10 +260,8 @@ public class IterativeBoundedScheduler extends Scheduler {
                 }
             }
         }
-        printProgress();
-        if (configuration.getCollectStats() > 0) {
-            printCurrentStatus();
-        }
+        printProgress(true);
+        printCurrentStatus();
         if (!isDoneIterating) {
             postIterationCleanup();
 //            if ((iter % 100) == 0) {
@@ -412,14 +410,16 @@ public class IterativeBoundedScheduler extends Scheduler {
         if (consolePrint) {
             System.out.println(s);
         } else {
-            SearchLogger.log(s.toString());
+            PSymLogger.info(s.toString());
         }
     }
 
-    private void printProgress() {
-        boolean consolePrint = (configuration.getVerbosity() == 0 && configuration.getCollectStats() == 0);
+    private void printProgress(boolean forcePrint) {
+        boolean consolePrint = (configuration.getVerbosity() == 0);
         if (!consolePrint) {
-            return;
+            if (!forcePrint) {
+                return;
+            }
         }
 
         long runtime = (long) (TimeMonitor.getInstance().getRuntime() * 1000);
@@ -431,7 +431,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         if (consolePrint) {
             s.append('\r');
         } else {
-            SearchLogger.log("--------------------");
+            PSymLogger.info("--------------------");
             printProgressHeader(false);
         }
         s.append(StringUtils.center(String.format("%s", runtimeHms), 12));
@@ -452,16 +452,20 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     private void printCurrentStatus() {
-        PSymLogger.info("--------------------");
-        PSymLogger.info(String.format("    Status after %.2f seconds:", TimeMonitor.getInstance().getRuntime()));
-        PSymLogger.info(String.format("      Coverage:         %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
-        PSymLogger.info(String.format("      Iterations:       %d", (iter - start_iter)));
-        PSymLogger.info(String.format("      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
-        PSymLogger.info(String.format("      Finished:         %d", finishedTasks.size()));
-        PSymLogger.info(String.format("      Remaining:        %d", getTotalNumBacktracks()));
-        PSymLogger.info(String.format("      Depth:            %d", getDepth()));
-        PSymLogger.info(String.format("      States:           %d", getTotalStates()));
-        PSymLogger.info(String.format("      DistinctStates:   %d", getTotalDistinctStates()));
+        if (configuration.getCollectStats() == 0) {
+            return;
+        }
+
+        ScratchLogger.log("--------------------");
+        ScratchLogger.log(String.format("    Status after %.2f seconds:", TimeMonitor.getInstance().getRuntime()));
+        ScratchLogger.log(String.format("      Coverage:         %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
+        ScratchLogger.log(String.format("      Iterations:       %d", (iter - start_iter)));
+        ScratchLogger.log(String.format("      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
+        ScratchLogger.log(String.format("      Finished:         %d", finishedTasks.size()));
+        ScratchLogger.log(String.format("      Remaining:        %d", getTotalNumBacktracks()));
+        ScratchLogger.log(String.format("      Depth:            %d", getDepth()));
+        ScratchLogger.log(String.format("      States:           %d", getTotalStates()));
+        ScratchLogger.log(String.format("      DistinctStates:   %d", getTotalDistinctStates()));
     }
 
     @Override
@@ -472,7 +476,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         resetBacktrackTasks();
         SearchLogger.logStartExecution(iter, getDepth());
         initializeSearch();
-        if (configuration.getVerbosity() == 0 && configuration.getCollectStats() == 0) {
+        if (configuration.getVerbosity() == 0) {
             printProgressHeader(true);
         }
         while (!isDoneIterating) {
@@ -492,10 +496,8 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void performSearch() throws TimeoutException {
         schedule.setNumBacktracksInSchedule();
         while (!isDone()) {
-            printProgress();
-            if (configuration.getCollectStats() > 1) {
-                printCurrentStatus();
-            }
+            printProgress(false);
+            printCurrentStatus();
 
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
             Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
@@ -534,7 +536,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         reset_stats();
         schedule.setNumBacktracksInSchedule();
         boolean resetAfterInitial = isDone();
-        if (configuration.getVerbosity() == 0 && configuration.getCollectStats() == 0) {
+        if (configuration.getVerbosity() == 0) {
             printProgressHeader(true);
         }
         while (!isDoneIterating) {

@@ -123,7 +123,7 @@ public class PSymConfiguration implements Serializable {
 
     // level of stats collection
     @Getter @Setter
-    int collectStats = 0;
+    int collectStats = 1;
 
     // level of verbosity for the logging
     @Getter @Setter

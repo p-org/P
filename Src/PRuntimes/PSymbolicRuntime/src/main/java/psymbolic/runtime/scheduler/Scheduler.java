@@ -33,48 +33,66 @@ import java.util.stream.Collectors;
 
 
 public class Scheduler implements SymbolicSearch {
-
+    /** Iteration number */
     @Getter
     int iter = 0;
-
+    /** Start iteration number */
     @Getter
     int start_iter = 0;
-
+    /** Search statistics */
     protected SearchStats searchStats = new SearchStats();
-
+    /** Program */
     @Getter
     private final Program program;
-
     /** The scheduling choices made */
-    public final Schedule schedule;
-
+    public Schedule schedule;
     @Setter
-    PSymConfiguration configuration;
-
+    transient PSymConfiguration configuration;
     /** List of all machines along any path constraints */
     final List<Machine> machines;
-
     /** How many instances of each Machine there are */
     final Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
-
     /** The machine to start with */
     private Machine start;
-
     /** The map from events to listening monitors */
     private Map<Event, List<Monitor>> listeners;
-
     /** List of monitors instances */
     List<Monitor> monitors;
-
     /** Vector clock manager */
     private VectorClockManager vcManager;
-
     /** Result of the search */
     public String result;
+    /** Current depth of exploration */
+    private int depth = 0;
+    /** Whether or not search is done */
+    protected boolean done = false;
+    /** Choice depth */
+    int choiceDepth = 0;
+    /** Backtrack choice depth */
+    int backtrackDepth = 0;
+    /** Starting choice depth from previous iteration, i.e., corresponding to srcState */
+    int preChoiceDepth = Integer.MAX_VALUE;
+    /** Start depth at which create machine events are already explored */
+    int startDepth = Integer.MAX_VALUE;
+    /** Total number of states */
+    private int totalStateCount = 0;
+    /** Flag whether current step is a create machine step */
+    private Boolean createStep = false;
+    /** Flag whether current step is a sync step */
+    private Boolean syncStep = false;
+    /** Flag whether current execution finished */
+    private Boolean executionFinished = false;
 
-    /** Use the interleave map (if false) or not (if true) */
+    /** Source state at the beginning of each schedule step */
+    transient Map<Machine, List<ValueSummary>> srcState = new HashMap<>();
+    /** Map of distinct concrete state to number of times state is visited */
+    transient private Map<String, Integer> distinctStates = new HashMap<>();
+    /** List of distinct concrete states */
+    transient private List<String> distinctStatesList = new ArrayList<>();
+    /** Guard corresponding on distinct states at a step */
+    transient private Guard distinctStateGuard = null;
+
     private boolean useFilters() { return configuration.isUseFilters(); }
-
     /** Get whether to intersect with receiver queue semantics
      * @return whether to intersect with receiver queue semantics
      */
@@ -89,40 +107,6 @@ public class Scheduler implements SymbolicSearch {
      * @return whether to use sleep sets
      */
     public boolean useSleepSets() { return configuration.isUseSleepSets(); }
-
-    /** Current depth of exploration */
-    private int depth = 0;
-    /** Whether or not search is done */
-    protected boolean done = false;
-
-    int choiceDepth = 0;
-
-    int backtrackDepth = 0;
-
-    /** Starting choice depth from previous iteration, i.e., corresponding to srcState */
-    int preChoiceDepth = Integer.MAX_VALUE;
-
-    /** Start depth at which create machine events are already explored */
-    int startDepth = Integer.MAX_VALUE;
-
-    Map<Machine, List<ValueSummary>> srcState = new HashMap<>();
-
-    /** Map of distinct concrete state to number of times state is visited */
-    private Map<String, Integer> distinctStates = new HashMap<>();
-    /** List of distinct concrete states */
-    private List<String> distinctStatesList = new ArrayList<>();
-    /** Total number of states */
-    private int totalStateCount = 0;
-    /** Guard corresponding on distinct states at a step */
-    private Guard distinctStateGuard = null;
-
-    /** Flag whether current step is a create machine step */
-    private Boolean createStep = false;
-    /** Flag whether current step is a sync step */
-    private Boolean syncStep = false;
-
-    /** Flag whether current execution finished */
-    private Boolean executionFinished = false;
 
     public int getTotalStates() {
         return totalStateCount;
@@ -145,6 +129,18 @@ public class Scheduler implements SymbolicSearch {
         schedule.setSchedulerDepth(getDepth());
         schedule.setSchedulerChoiceDepth(getChoiceDepth());
         schedule.setSchedulerState(srcState);
+    }
+
+    /** Reinitialize scheduler */
+    public void reinitialize() {
+        // set all transient data structures
+        srcState = new HashMap<>();
+        distinctStates = new HashMap<>();
+        distinctStatesList = new ArrayList<>();
+        distinctStateGuard = null;
+        for (Machine machine : schedule.getMachines()) {
+            machine.setScheduler(this);
+        }
     }
 
     /** Restore scheduler state

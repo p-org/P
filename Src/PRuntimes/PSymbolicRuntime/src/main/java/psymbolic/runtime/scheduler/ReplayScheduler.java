@@ -1,23 +1,29 @@
 package psymbolic.runtime.scheduler;
 
+import lombok.Getter;
 import psymbolic.commandline.PSymConfiguration;
 import psymbolic.commandline.Program;
 import psymbolic.runtime.Event;
+import psymbolic.runtime.logger.PSymLogger;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
+import psymbolic.utils.GlobalData;
 import psymbolic.valuesummary.*;
 
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 public class ReplayScheduler extends Scheduler {
-
-    /** Schedule to replay */
-    private final Schedule schedule;
-
     /** Counterexample length */
     private int cexLength = 0;
+
+    @Getter
+    /** Path constraint */
+    private Guard pathConstraint;
 
     public ReplayScheduler (PSymConfiguration config, Program p, Schedule schedule, int length) {
         this(config, p, schedule, Guard.constTrue(), length);
@@ -34,6 +40,60 @@ public class ReplayScheduler extends Scheduler {
         configuration.setCollectStats(0);
         getVcManager().disable();
         cexLength = length;
+        pathConstraint = pc;
+    }
+
+    /**
+     * Write scheduler state to a file
+     * @param writeFileName Output file name
+     * @throws Exception Throw error if writing fails
+     */
+    public void writeToFile(String writeFileName) throws Exception {
+        try {
+            FileOutputStream fos = new FileOutputStream(writeFileName);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(this);
+            oos.writeObject(GlobalData.getInstance());
+            if (configuration.getVerbosity() > 0) {
+                long szBytes = Files.size(Paths.get(writeFileName));
+                PSymLogger.info(String.format("  %,.1f MB  written in %s", (szBytes / 1024.0 / 1024.0), writeFileName));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new Exception("Failed to write replayer in file " + writeFileName);
+        }
+    }
+
+    /**
+     * Read scheduler state from a file
+     * @param readFromFile Name of the input file containing the scheduler state
+     * @return A scheduler object
+     * @throws Exception Throw error if reading fails
+     */
+    public static ReplayScheduler readFromFile(String readFromFile) throws Exception {
+        ReplayScheduler result;
+        try {
+            PSymLogger.info("... Reading replayer state from file " + readFromFile);
+            FileInputStream fis;
+            fis = new FileInputStream(readFromFile);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            result = (ReplayScheduler) ois.readObject();
+            GlobalData.setInstance((GlobalData) ois.readObject());
+            result.reinitialize();
+            PSymLogger.info("... Successfully read.");
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            throw new Exception("... Failed to read replayer state from file " + readFromFile);
+        }
+        return result;
+    }
+
+    @Override
+    public void reinitialize() {
+        for (Machine machine : schedule.getMachines()) {
+            machine.reset();
+        }
+        super.reinitialize();
     }
 
     @Override

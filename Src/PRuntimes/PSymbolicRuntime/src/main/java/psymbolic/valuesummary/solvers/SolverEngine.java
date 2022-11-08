@@ -57,16 +57,20 @@ public class SolverEngine {
     private static void switchEngine(SolverType type, ExprLibType etype) {
         if (type == getSolverType() && etype == getExprLibType())
             return;
-        SearchLogger.log("Switching solver engine:");
-        SearchLogger.log(String.format("  %-20s->%-20s", getSolverType().toString(), type.toString()));
-        SearchLogger.log(String.format("  %-20s->%-20s", getExprLibType().toString(), etype.toString()));
+        if (SearchLogger.getVerbosity() > 1) {
+            SearchLogger.log("Switching solver engine:");
+            SearchLogger.log(String.format("  %-20s->%-20s", getSolverType().toString(), type.toString()));
+            SearchLogger.log(String.format("  %-20s->%-20s", getExprLibType().toString(), etype.toString()));
+        }
         setSolver(type, etype);
         SolverGuard.switchSolverGuard();
     }
 
     public static void resumeEngine() {
-        SearchLogger.log("Resuming solver engine:");
-        SearchLogger.log(String.format("  %-20s->%-20s", getSolverType().toString(), getExprLibType().toString()));
+        if (SearchLogger.getVerbosity() > 1) {
+            SearchLogger.log("Resuming solver engine:");
+            SearchLogger.log(String.format("  %-20s->%-20s", getSolverType().toString(), getExprLibType().toString()));
+        }
         setSolver(getSolverType(), getExprLibType());
         SolverGuard.resumeSolverGuard();
     }

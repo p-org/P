@@ -55,7 +55,7 @@ public class PSymOptions {
         // random seed for the search
         Option randomSeed = Option.builder("seed")
                 .longOpt("seed")
-                .desc("Random seed for the search (default: 0)")
+                .desc("Random seed for the search (default: auto)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Random Seed (integer)")
@@ -91,6 +91,16 @@ public class PSymOptions {
                 .argName("Output Dir (string)")
                 .build();
         options.addOption(outputDir);
+
+        // read replayer state from file
+        Option readReplayerFromFile = Option.builder("replay")
+                .longOpt("replay")
+                .desc("Name of the .schedule file with the counterexample")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("File Name (string)")
+                .build();
+        options.addOption(readReplayerFromFile);
 
         // max steps/depth bound for the search
         Option maxSteps = Option.builder("ms")
@@ -341,7 +351,7 @@ public class PSymOptions {
                     break;
                 case "seed":
                     try {
-                        config.setRandomSeed(Integer.parseInt(option.getValue()));
+                        config.setRandomSeed(Long.parseLong(option.getValue()));
                     } catch (NumberFormatException ex) {
                         optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
@@ -357,6 +367,15 @@ public class PSymOptions {
                 case "o":
                 case "outdir":
                     config.setOutputFolder(option.getValue());
+                    break;
+                case "replay":
+                    config.setReadReplayerFromFile(option.getValue());
+                    File file = new File(config.getReadReplayerFromFile());
+                    try {
+                        file.getCanonicalPath();
+                    } catch (IOException e) {
+                        optionError(option, String.format("File %s does not exist", config.getReadFromFile()));
+                    }
                     break;
                 case "ms":
                 case "max-steps":
@@ -515,9 +534,9 @@ public class PSymOptions {
                 case "r":
                 case "read":
                     config.setReadFromFile(option.getValue());
-                    File file = new File(config.getReadFromFile());
+                    File replayFile = new File(config.getReadFromFile());
                     try {
-                        file.getCanonicalPath();
+                        replayFile.getCanonicalPath();
                     } catch (IOException e) {
                         optionError(option, String.format("File %s does not exist", config.getReadFromFile()));
                     }

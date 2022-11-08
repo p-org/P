@@ -25,7 +25,7 @@ public abstract class Machine implements Serializable {
     @Getter
     private final int instanceId;
     @Getter
-    private Scheduler scheduler;
+    transient private Scheduler scheduler;
     private final State startState;
     private final Set<State> states;
     private PrimitiveVS<Boolean> started = new PrimitiveVS<>(false);

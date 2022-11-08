@@ -27,7 +27,7 @@ public class PSymConfiguration implements Serializable {
 
     // random seed
     @Getter @Setter
-    int randomSeed = 0;
+    long randomSeed = System.currentTimeMillis();
 
     // default name of the test driver
     @Getter
@@ -48,6 +48,10 @@ public class PSymConfiguration implements Serializable {
     // name of the output folder
     @Getter @Setter
     String outputFolder = "output";
+
+    // name of the cex file to read the replayer state
+    @Getter @Setter
+    String readReplayerFromFile = "";
 
     // max steps/depth bound provided by the user
     @Getter @Setter

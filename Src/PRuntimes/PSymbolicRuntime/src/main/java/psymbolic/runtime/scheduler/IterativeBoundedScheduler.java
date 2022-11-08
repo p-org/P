@@ -41,10 +41,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     private int latestTaskId = 0;
     private int numPendingBacktracks = 0;
     private int numPendingDataBacktracks = 0;
-
-
     private boolean isDoneIterating = false;
-
     private final ChoiceOrchestrator choiceOrchestrator;
 
     public IterativeBoundedScheduler(PSymConfiguration config, Program p) {
@@ -141,29 +138,6 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     /**
-     * Read scheduler state from a file
-     * @param readFromFile Name of the input file containing the scheduler state
-     * @return A scheduler object
-     * @throws Exception Throw error if reading fails
-     */
-    public static IterativeBoundedScheduler readFromFile(String readFromFile) throws Exception {
-        IterativeBoundedScheduler result;
-        try {
-            PSymLogger.info("Reading program state from file " + readFromFile);
-            FileInputStream fis;
-            fis = new FileInputStream(readFromFile);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            result = (IterativeBoundedScheduler) ois.readObject();
-            GlobalData.setInstance((GlobalData) ois.readObject());
-            PSymLogger.info("Successfully read.");
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            throw new Exception("Failed to read program state from file " + readFromFile);
-        }
-        return result;
-    }
-
-    /**
      * Write scheduler state to a file
      * @param writeFileName Output file name
      * @throws Exception Throw error if writing fails
@@ -238,6 +212,35 @@ public class IterativeBoundedScheduler extends Scheduler {
 
         // restore schedule to original choices
         schedule.setChoices(originalChoices);
+    }
+
+    /**
+     * Read scheduler state from a file
+     * @param readFromFile Name of the input file containing the scheduler state
+     * @return A scheduler object
+     * @throws Exception Throw error if reading fails
+     */
+    public static IterativeBoundedScheduler readFromFile(String readFromFile) throws Exception {
+        IterativeBoundedScheduler result;
+        try {
+            PSymLogger.info("... Reading program state from file " + readFromFile);
+            FileInputStream fis;
+            fis = new FileInputStream(readFromFile);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            result = (IterativeBoundedScheduler) ois.readObject();
+            GlobalData.setInstance((GlobalData) ois.readObject());
+            result.reinitialize();
+            PSymLogger.info("... Successfully read.");
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            throw new Exception("... Failed to read program state from file " + readFromFile);
+        }
+        return result;
+    }
+
+    @Override
+    public void reinitialize() {
+        super.reinitialize();
     }
 
 

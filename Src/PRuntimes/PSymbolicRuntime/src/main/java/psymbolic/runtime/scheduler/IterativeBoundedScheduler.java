@@ -571,9 +571,6 @@ public class IterativeBoundedScheduler extends Scheduler {
                 if (configuration.isUseBacktrack()) {
                     newDepth = choice.getSchedulerDepth();
                 }
-                if (newDepth < startDepth) {
-                    newDepth = 0;
-                }
                 if (newDepth == 0) {
                     for (Machine machine : machines) {
                         machine.reset();
@@ -714,11 +711,13 @@ public class IterativeBoundedScheduler extends Scheduler {
             assert (iter != 0);
             allocated = schedule.getMachine(machineType, guardedCount).restrict(pc);
             assert(allocated.getValues().size() == 1);
-            TraceLogger.onCreateMachine(pc, allocated.getValues().iterator().next());
-            allocated.getValues().iterator().next().setScheduler(this);
-            machines.add(allocated.getValues().iterator().next());
-        }
-        else {
+            Machine m = allocated.getValues().iterator().next();
+            TraceLogger.onCreateMachine(pc, m);
+            m.setScheduler(this);
+            if (!machines.contains(m)) {
+                machines.add(m);
+            }
+        } else {
             Machine newMachine;
             newMachine = constructor.apply(IntegerVS.maxValue(guardedCount));
 

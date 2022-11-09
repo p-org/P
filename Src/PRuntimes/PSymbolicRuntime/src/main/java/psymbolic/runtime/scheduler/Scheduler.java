@@ -51,7 +51,7 @@ public class Scheduler implements SymbolicSearch {
     /** List of all machines along any path constraints */
     final List<Machine> machines;
     /** How many instances of each Machine there are */
-    final Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
+    protected Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
     /** The machine to start with */
     private Machine start;
     /** The map from events to listening monitors */
@@ -72,8 +72,6 @@ public class Scheduler implements SymbolicSearch {
     int backtrackDepth = 0;
     /** Starting choice depth from previous iteration, i.e., corresponding to srcState */
     int preChoiceDepth = Integer.MAX_VALUE;
-    /** Start depth at which create machine events are already explored */
-    int startDepth = Integer.MAX_VALUE;
     /** Total number of states */
     private int totalStateCount = 0;
     /** Flag whether current step is a create machine step */
@@ -125,10 +123,10 @@ public class Scheduler implements SymbolicSearch {
         done = false;
         machineCounters.clear();
         machines.clear();
-        srcState = null;
+        srcState.clear();
         schedule.setSchedulerDepth(getDepth());
         schedule.setSchedulerChoiceDepth(getChoiceDepth());
-        schedule.setSchedulerState(srcState);
+        schedule.setSchedulerState(srcState, machineCounters);
     }
 
     /** Reinitialize scheduler */
@@ -384,15 +382,16 @@ public class Scheduler implements SymbolicSearch {
         depth++;
     }
 
-    public void restoreState(Map<Machine, List<ValueSummary>> state) {
-        for (Map.Entry<Machine, List<ValueSummary>> entry: state.entrySet()) {
+    public void restoreState(Schedule.ChoiceState state) {
+        for (Map.Entry<Machine, List<ValueSummary>> entry: state.getMachineStates().entrySet()) {
             entry.getKey().setLocalState(entry.getValue());
         }
         for (Machine m: machines) {
-            if (!state.containsKey(m)) {
+            if (!state.getMachineStates().containsKey(m)) {
                 m.reset();
             }
         }
+        machineCounters = state.getMachineCounters();
     }
 
     public void restoreStringState(List<List<String>> state) {
@@ -503,11 +502,6 @@ public class Scheduler implements SymbolicSearch {
                     return new ArrayList<>(Arrays.asList(ret));
                 }
             }
-        }
-
-        if (startDepth > getDepth()) {
-            startDepth = getDepth();
-            TraceLogger.logMessage("Increasing start depth to " + startDepth);
         }
 
         // prioritize the sync actions i.e. events that are marked as synchronous
@@ -655,9 +649,9 @@ public class Scheduler implements SymbolicSearch {
     }
 
     private void storeSrcState() {
-        if (srcState != null)
+        if (!srcState.isEmpty())
             return;
-        srcState = new HashMap<>();
+        srcState.clear();
         for (Machine machine : machines) {
             List<ValueSummary> machineLocalState = machine.getLocalState();
             srcState.put(machine, machineLocalState);
@@ -763,7 +757,7 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public void step() throws TimeoutException {
-        srcState = null;
+        srcState.clear();
 
         int numStates = 0;
         int numStatesDistinct = 0;
@@ -782,7 +776,7 @@ public class Scheduler implements SymbolicSearch {
             storeSrcState();
             schedule.setSchedulerDepth(getDepth());
             schedule.setSchedulerChoiceDepth(getChoiceDepth());
-            schedule.setSchedulerState(srcState);
+            schedule.setSchedulerState(srcState, machineCounters);
         }
 
         // reward previous choices

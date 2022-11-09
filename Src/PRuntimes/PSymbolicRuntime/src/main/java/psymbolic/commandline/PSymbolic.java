@@ -60,7 +60,7 @@ public class PSymbolic {
 
             if (config.getReadFromFile() == "") {
                 assert(p != null);
-                setTestDriver(p, config);
+                setTestDriver(p, config, reflections);
                 scheduler = new IterativeBoundedScheduler(config, p);
                 if (config.isDpor()) scheduler = new DPORScheduler(config, p);
                 EntryPoint.run(scheduler, config);
@@ -105,7 +105,7 @@ public class PSymbolic {
      * @param p Input program instance
      * @param config Input PSymConfiguration
      */
-    public static void setProjectName(Program p, PSymConfiguration config) {
+    private static void setProjectName(Program p, PSymConfiguration config) {
         if(config.getProjectName().equals(config.getProjectNameDefault())) {
             config.setProjectName(p.getClass().getSimpleName());
         }
@@ -117,13 +117,13 @@ public class PSymbolic {
      * @param config Input PSymConfiguration
      * @throws Exception Throws exception if test driver is not found
      */
-    public static void setTestDriver(Program p, PSymConfiguration config) throws Exception {
-        String name = config.getTestDriver();
-        Reflections reflections = new Reflections("psymbolic");
+    private static void setTestDriver(Program p, PSymConfiguration config, Reflections reflections) throws Exception {
+        final String name = sanitizeTestName(config.getTestDriver());
+
         Set<Class<? extends PTestDriver>> subTypesDriver = reflections.getSubTypesOf(PTestDriver.class);
         PTestDriver driver = null;
         for (Class<? extends PTestDriver> td: subTypesDriver) {
-            if (td.getSimpleName().equalsIgnoreCase(name)) {
+            if (sanitizeTestName(td.getSimpleName()).equals(name)) {
                 driver = td.getDeclaredConstructor().newInstance();
                 break;
             }
@@ -143,10 +143,10 @@ public class PSymbolic {
             PSymLogger.info("Provide /method or -m flag to qualify the test method name you wish to use.");
             PSymLogger.info("Possible options are::");
             for (Class<? extends PTestDriver> td: subTypesDriver) {
-                PSymLogger.info(td.getSimpleName());
+                PSymLogger.info(String.format("  %s", td.getSimpleName()));
             }
             if (!name.equals(config.getTestDriverDefault())) {
-                throw new Exception("No test driver found named \"" + name + "\"");
+                throw new Exception("No test driver found named \"" + config.getTestDriver() + "\"");
             } else {
                 System.exit(5);
             }
@@ -154,6 +154,16 @@ public class PSymbolic {
         assert(driver != null);
         config.setTestDriver(driver.getClass().getSimpleName());
         p.setTestDriver(driver);
+    }
+
+    private static String sanitizeTestName(String name) {
+        String result = name.toLowerCase();
+        result = result.replaceFirst("^pimplementation.", "");
+        int index = result.lastIndexOf(".execute");
+        if (index > 0) {
+            result = result.substring(0, index);
+        }
+        return result;
     }
 
     public static void initializeDefault(String outputFolder) {

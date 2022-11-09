@@ -68,7 +68,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
 
             // copy source files
-            args = new[] { $"{job.ProjectName}.java {sourceDirectory}" };
+            string sourceFilePath = Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName);
+            args = new[] { $"{sourceFilePath}/{job.ProjectName}.java {sourceDirectory}" };
             exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "cp", args);
             if (exitCode != 0)
             {

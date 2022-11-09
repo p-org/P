@@ -527,8 +527,9 @@ public class Scheduler implements SymbolicSearch {
 
         for (Machine machine : machines) {
             if (!machine.sendBuffer.isEmpty()) {
-                Guard canRun = machine.hasHalted().getGuardFor(true).not();
-                canRun = canRun.and(machine.sendBuffer.satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true));
+                Guard canRun = machine.sendBuffer.satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true);
+//                Guard canRun = machine.hasHalted().getGuardFor(true).not();
+//                canRun = canRun.and(machine.sendBuffer.satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true));
                 if (!canRun.isFalse()) {
                     guardedMachines.add(new GuardedValue(machine, canRun));
  //                   candidateSenders.add(new PrimitiveVS<>(machine).restrict(canRun));

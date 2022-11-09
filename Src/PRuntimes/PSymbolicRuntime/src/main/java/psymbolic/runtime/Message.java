@@ -28,7 +28,9 @@ public class Message implements ValueSummary<Message> {
     public PrimitiveVS<Boolean> canRun() {
         Guard cond = Guard.constFalse();
         for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
-            cond = cond.or(machine.getValue().hasStarted().getGuardFor(true).and(machine.getGuard()));
+            Machine m = machine.getValue();
+            Guard g = machine.getGuard();
+            cond = cond.or(g.and(m.hasStarted().getGuardFor(true)).and(m.hasHalted().getGuardFor(false)));
 
 //            Assert.prop(!BooleanVS.isEverFalse(machine.getValue().hasStarted()), "Internal Error: All Machines must be runnable at this point!! Check event " + getEvent().getValues() + " in machine " + machine.getValue(), machine.getValue().getScheduler(), BooleanVS.getFalseGuard(machine.getValue().hasStarted()));
 //            if (BooleanVS.isEverFalse(machine.getValue().hasStarted())) {

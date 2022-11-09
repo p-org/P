@@ -25,7 +25,7 @@ public class PSymOptions {
         // mode of exploration
         Option mode = Option.builder("mode")
                 .longOpt("mode")
-                .desc("Mode of exploration: default, bmc, random, fuzz")
+                .desc("Mode of exploration: default, bmc, random, fuzz, dfs")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Mode (string)")
@@ -325,6 +325,9 @@ public class PSymOptions {
                             break;
                         case "fuzz":
                             config.setToFuzz();
+                            break;
+                        case "dfs":
+                            config.setToDfs();
                             break;
                         case "debug":
                             config.setToDebug();

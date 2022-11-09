@@ -383,6 +383,7 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public void restoreState(Schedule.ChoiceState state) {
+        assert(state != null);
         for (Map.Entry<Machine, List<ValueSummary>> entry: state.getMachineStates().entrySet()) {
             entry.getKey().setLocalState(entry.getValue());
         }

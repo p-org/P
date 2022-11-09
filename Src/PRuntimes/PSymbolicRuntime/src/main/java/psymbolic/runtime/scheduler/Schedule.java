@@ -79,18 +79,18 @@ public class Schedule implements Serializable {
             this(new HashMap<>(), new HashMap<>());
         }
         public ChoiceState(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
-            this.machineStates = ms;
-            this.machineCounters = mc;
-        }
-        public void copy(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
             this.machineStates = new HashMap<>(ms);
             this.machineCounters = new HashMap<>(mc);
+        }
+        public void update(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
+            this.machineStates = ms;
+            this.machineCounters = mc;
         }
     }
     private ChoiceState schedulerState = new ChoiceState();
 
     public void setSchedulerState(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
-        schedulerState.copy(ms, mc);
+        schedulerState.update(ms, mc);
     }
 
     public class Choice implements Serializable {
@@ -156,15 +156,6 @@ public class Schedule implements Serializable {
             if (state == null)
                 return null;
             return new ChoiceState(state.getMachineStates(), state.getMachineCounters());
-//            List<List<ValueSummary>> copiedState = new ArrayList<>();
-//            for (List<ValueSummary> ls: state) {
-//                List<ValueSummary> localState = new ArrayList<>();
-//                for (ValueSummary vs: ls) {
-//                    localState.add(vs.getCopy());
-//                }
-//                copiedState.add(localState);
-//            }
-//            return copiedState;
         }
 
         public void storeState(int depth, int cdepth, ChoiceState state, Guard f) {

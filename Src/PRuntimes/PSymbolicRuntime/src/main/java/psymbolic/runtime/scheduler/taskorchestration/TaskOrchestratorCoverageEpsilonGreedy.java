@@ -3,14 +3,14 @@ package psymbolic.runtime.scheduler.taskorchestration;
 import psymbolic.runtime.scheduler.BacktrackTask;
 import psymbolic.utils.RandomNumberGenerator;
 
-public class TaskOrchestratorCoverageRL implements TaskOrchestrator {
+public class TaskOrchestratorCoverageEpsilonGreedy implements TaskOrchestrator {
     private static double EPSILON_MAX = 0.9;
     private static double EPSILON_MIN = 0.1;
     private static double EPSILON_DECAY_FACTOR = 0.999;
     private static double epsilon = EPSILON_MAX;
     private TaskOrchestrator taskOrchestratorExplore;
     private TaskOrchestrator taskOrchestratorExploit;
-    public TaskOrchestratorCoverageRL() {
+    public TaskOrchestratorCoverageEpsilonGreedy() {
         taskOrchestratorExplore = new TaskOrchestratorRandom();
         taskOrchestratorExploit = new TaskOrchestratorCoverageAStar();
     }

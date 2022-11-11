@@ -5,5 +5,5 @@ public enum TaskOrchestrationMode {
     Random,
     CoverageAStar,
     CoverageEstimate,
-    CoverageRL
+    CoverageEpsilonGreedy
 }

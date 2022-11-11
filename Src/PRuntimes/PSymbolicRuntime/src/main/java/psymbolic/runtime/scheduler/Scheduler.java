@@ -14,7 +14,6 @@ import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Monitor;
 import psymbolic.runtime.machine.State;
 import psymbolic.runtime.machine.buffer.EventBufferSemantics;
-import psymbolic.runtime.scheduler.choiceorchestration.ChoiceFeature;
 import psymbolic.runtime.statistics.CoverageStats;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.runtime.statistics.SolverStats;
@@ -48,6 +47,7 @@ public class Scheduler implements SymbolicSearch {
     public Schedule schedule;
     @Setter
     transient PSymConfiguration configuration;
+    @Getter
     /** List of all machines along any path constraints */
     final List<Machine> machines;
     /** How many instances of each Machine there are */
@@ -371,6 +371,7 @@ public class Scheduler implements SymbolicSearch {
     public void initializeSearch() {
         assert(getDepth() == 0);
 
+        GlobalData.getChoiceLearningStats().setProgramStateHash(this);
         listeners = program.getListeners();
         monitors = new ArrayList<>(program.getMonitors());
         for (Machine m : program.getMonitors()) {
@@ -487,6 +488,7 @@ public class Scheduler implements SymbolicSearch {
         distinctStatesList.clear();
         totalStateCount = 0;
         GlobalData.getCoverage().resetCoverage();
+        GlobalData.getChoiceLearningStats().setProgramStateHash(this);
     }
 
     public List<PrimitiveVS> getNextSenderChoices() {
@@ -759,6 +761,7 @@ public class Scheduler implements SymbolicSearch {
 
     public void step() throws TimeoutException {
         srcState.clear();
+        GlobalData.getChoiceLearningStats().setProgramStateHash(this);
 
         int numStates = 0;
         int numStatesDistinct = 0;
@@ -782,10 +785,8 @@ public class Scheduler implements SymbolicSearch {
 
         // reward previous choices
         List<CoverageStats.CoverageChoiceDepthStats> coverageChoiceDepthStats = GlobalData.getCoverage().getPerChoiceDepthStats();
-        for(int i = preChoiceDepth; i<coverageChoiceDepthStats.size() && i<choiceDepth; i++) {
-            for(ChoiceFeature f: coverageChoiceDepthStats.get(i).getFeatureList()) {
-                f.getReward().addStepReward(numStatesDistinct);
-            }
+        for(int i = preChoiceDepth; i< schedule.size() && i<choiceDepth; i++) {
+            GlobalData.getChoiceLearningStats().rewardStep(coverageChoiceDepthStats.get(i).getStateActions(), numStatesDistinct);
         }
         preChoiceDepth = choiceDepth;
 

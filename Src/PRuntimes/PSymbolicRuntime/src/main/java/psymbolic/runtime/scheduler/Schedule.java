@@ -82,15 +82,15 @@ public class Schedule implements Serializable {
             this.machineStates = new HashMap<>(ms);
             this.machineCounters = new HashMap<>(mc);
         }
-        public void update(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
-            this.machineStates = ms;
-            this.machineCounters = mc;
+        public void copy(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
+            this.machineStates = new HashMap<>(ms);
+            this.machineCounters = new HashMap<>(mc);
         }
     }
     private ChoiceState schedulerState = new ChoiceState();
 
     public void setSchedulerState(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
-        schedulerState.update(ms, mc);
+        schedulerState.copy(ms, mc);
     }
 
     public class Choice implements Serializable {

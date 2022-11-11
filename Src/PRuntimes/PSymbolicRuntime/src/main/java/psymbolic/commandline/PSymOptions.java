@@ -161,7 +161,7 @@ public class PSymOptions {
         // mode of choice orchestration
         Option choiceOrch = Option.builder("corch")
                 .longOpt("choice-orch")
-                .desc("Choice orchestration options: random, rl, none (default: random)")
+                .desc("Choice orchestration options: random, learn, none (default: random)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Choice Orch. (string)")
@@ -171,7 +171,7 @@ public class PSymOptions {
         // mode of task orchestration
         Option taskOrch = Option.builder("torch")
                 .longOpt("task-orch")
-                .desc("Task orchestration options: astar, rl, random, dfs (default: astar)")
+                .desc("Task orchestration options: astar, learn, random, dfs (default: astar)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Task Orch. (string)")
@@ -429,11 +429,12 @@ public class PSymOptions {
                         case "random":
                             config.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
                             break;
-                        case "estimate":
-                            config.setChoiceOrchestration(ChoiceOrchestrationMode.Estimate);
+                        case "learn-ql":
+                            config.setChoiceOrchestration(ChoiceOrchestrationMode.QLearning);
                             break;
-                        case "rl":
-                            config.setChoiceOrchestration(ChoiceOrchestrationMode.RL);
+                        case "learn":
+                        case "learn-eg":
+                            config.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
                             break;
                         default:
                             optionError(option, String.format("Unrecognized choice orchestration mode, got %s", option.getValue()));
@@ -451,11 +452,9 @@ public class PSymOptions {
                         case "astar":
                             config.setTaskOrchestration(TaskOrchestrationMode.CoverageAStar);
                             break;
-                        case "estimate":
-                            config.setTaskOrchestration(TaskOrchestrationMode.CoverageEstimate);
-                            break;
-                        case "rl":
-                            config.setTaskOrchestration(TaskOrchestrationMode.CoverageRL);
+                        case "learn":
+                        case "learn-eg":
+                            config.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
                             break;
                         default:
                             optionError(option, String.format("Unrecognized task orchestration mode, got %s", option.getValue()));

@@ -131,7 +131,7 @@ public class BacktrackTask implements Serializable {
                 throw new RuntimeException("Unexpected orchestration mode: " + orchestration);
             case Random:
             case CoverageAStar:
-            case CoverageRL:
+            case CoverageEpsilonGreedy:
                 // do nothing
                 break;
             case CoverageEstimate:
@@ -156,7 +156,7 @@ public class BacktrackTask implements Serializable {
                 throw new RuntimeException("Unexpected orchestration mode: " + orchestration);
             case Random:
             case CoverageAStar:
-            case CoverageRL:
+            case CoverageEpsilonGreedy:
                 // do nothing
                 break;
             case CoverageEstimate:
@@ -190,8 +190,8 @@ public class BacktrackTask implements Serializable {
             case CoverageEstimate:
                 taskOrchestrator = new TaskOrchestratorCoverageEstimate();
                 break;
-            case CoverageRL:
-                taskOrchestrator = new TaskOrchestratorCoverageRL();
+            case CoverageEpsilonGreedy:
+                taskOrchestrator = new TaskOrchestratorCoverageEpsilonGreedy();
                 break;
             default:
                 throw new RuntimeException("Unrecognized orchestration mode: " + orchestration);
@@ -206,7 +206,7 @@ public class BacktrackTask implements Serializable {
             case Random:
             case CoverageAStar:
             case CoverageEstimate:
-            case CoverageRL:
+            case CoverageEpsilonGreedy:
                 result = taskOrchestrator.getNext();
                 break;
             default:

@@ -53,11 +53,11 @@ public class IterativeBoundedScheduler extends Scheduler {
             case Random:
                 choiceOrchestrator = new ChoiceOrchestratorRandom();
                 break;
-            case Estimate:
-                choiceOrchestrator = new ChoiceOrchestratorEstimate();
+            case QLearning:
+                choiceOrchestrator = new ChoiceOrchestratorQLearning();
                 break;
-            case RL:
-                choiceOrchestrator = new ChoiceOrchestratorRL();
+            case EpsilonGreedy:
+                choiceOrchestrator = new ChoiceOrchestratorEpsilonGreedy();
                 break;
             default:
                 throw new RuntimeException("Unrecognized choice orchestration mode: " + config.getChoiceOrchestration());
@@ -238,43 +238,6 @@ public class IterativeBoundedScheduler extends Scheduler {
         return result;
     }
 
-    @Override
-    public void reinitialize() {
-        super.reinitialize();
-    }
-
-
-    private void summarizeIteration() throws InterruptedException {
-        recordResult();
-        if (configuration.getVerbosity() > 3) {
-            SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
-        }
-        if (configuration.getMaxExecutions() > 0) {
-            isDoneIterating = ((iter - start_iter) >= configuration.getMaxExecutions());
-        }
-        GlobalData.getCoverage().updateIterationCoverage(getChoiceDepth()-1);
-        if (configuration.getTaskOrchestration() != TaskOrchestrationMode.DepthFirst) {
-            setBacktrackTasks();
-            BacktrackTask nextTask = setNextBacktrackTask();
-            if (nextTask != null) {
-                if (configuration.getVerbosity() > 1) {
-                    PSymLogger.info(String.format("    Next is %s [depth: %d, parent: %s]",
-                            nextTask, nextTask.getDepth(), nextTask.getParentTask()));
-                }
-            }
-        }
-        printProgress(true);
-        printCurrentStatus();
-        if (!isDoneIterating) {
-            postIterationCleanup();
-//            if ((iter % 100) == 0) {
-//                if (configuration.isSymbolic() && SolverEngine.getSolverType() == SolverType.BDD) {
-//                    SolverEngine.resumeEngine();
-//                }
-//            }
-        }
-    }
-
     private void setBacktrackTasks() {
         BacktrackTask parentTask;
         if (latestTaskId == 0) {
@@ -398,6 +361,22 @@ public class IterativeBoundedScheduler extends Scheduler {
         return latestTask;
     }
 
+    public int getTotalNumBacktracks() {
+        int count = schedule.getNumBacktracksInSchedule();
+        count += numPendingBacktracks;
+        return count;
+    }
+
+    public double getTotalDataBacktracksPercent() {
+        int totalBacktracks = getTotalNumBacktracks();
+        if (totalBacktracks == 0) {
+            return 0.0;
+        }
+        int count = schedule.getNumDataBacktracksInSchedule();
+        count += numPendingDataBacktracks;
+        return (count * 100.0) / totalBacktracks;
+    }
+
     private void printProgressHeader(boolean consolePrint) {
         StringBuilder s = new StringBuilder(100);
         s.append(StringUtils.center("Time", 12));
@@ -471,95 +450,6 @@ public class IterativeBoundedScheduler extends Scheduler {
         ScratchLogger.log(String.format("      DistinctStates:   %d", getTotalDistinctStates()));
     }
 
-    @Override
-    public void doSearch() throws TimeoutException, InterruptedException {
-        boolean initialRun = true;
-        result = "incomplete";
-        iter++;
-        resetBacktrackTasks();
-        SearchLogger.logStartExecution(iter, getDepth());
-        initializeSearch();
-        if (configuration.getVerbosity() == 0) {
-            printProgressHeader(true);
-        }
-        while (!isDoneIterating) {
-            if (initialRun) {
-                initialRun = false;
-            } else {
-                iter++;
-                SearchLogger.logStartExecution(iter, getDepth());
-            }
-            searchStats.startNewIteration(iter, backtrackDepth);
-            performSearch();
-            summarizeIteration();
-        }
-    }
-
-    @Override
-    public void performSearch() throws TimeoutException {
-        schedule.setNumBacktracksInSchedule();
-        while (!isDone()) {
-            printProgress(false);
-            printCurrentStatus();
-
-            // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
-            Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
-            super.step();
-        }
-        schedule.setNumBacktracksInSchedule();
-        super.checkLiveness();
-        if (done) {
-            searchStats.setIterationCompleted();
-        } else {
-//            cleanup();
-        }
-    }
-
-    public int getTotalNumBacktracks() {
-        int count = schedule.getNumBacktracksInSchedule();
-        count += numPendingBacktracks;
-        return count;
-    }
-
-    public double getTotalDataBacktracksPercent() {
-        int totalBacktracks = getTotalNumBacktracks();
-        if (totalBacktracks == 0) {
-            return 0.0;
-        }
-        int count = schedule.getNumDataBacktracksInSchedule();
-        count += numPendingDataBacktracks;
-        return (count * 100.0) / totalBacktracks;
-    }
-
-    public void resumeSearch() throws TimeoutException, InterruptedException {
-        boolean initialRun = true;
-        isDoneIterating = false;
-        start_iter = iter;
-        resetBacktrackTasks();
-        reset_stats();
-        schedule.setNumBacktracksInSchedule();
-        boolean resetAfterInitial = isDone();
-        if (configuration.getVerbosity() == 0) {
-            printProgressHeader(true);
-        }
-        while (!isDoneIterating) {
-            if (initialRun) {
-                initialRun = false;
-                SearchLogger.logResumeExecution(iter, getDepth());
-            } else {
-                iter++;
-                SearchLogger.logStartExecution(iter, getDepth());
-            }
-            searchStats.startNewIteration(iter, backtrackDepth);
-            performSearch();
-            summarizeIteration();
-            if (resetAfterInitial) {
-                resetAfterInitial = false;
-                GlobalData.getCoverage().resetCoverage();
-            }
-        }
-    }
-
     public void postIterationCleanup() {
         schedule.resetFilter();
         for (int d = schedule.size() - 1; d >= 0; d--) {
@@ -596,6 +486,43 @@ public class IterativeBoundedScheduler extends Scheduler {
         isDoneIterating = true;
     }
 
+    private void summarizeIteration() throws InterruptedException {
+        recordResult();
+        if (configuration.getVerbosity() > 3) {
+            SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
+        }
+        if (configuration.getMaxExecutions() > 0) {
+            isDoneIterating = ((iter - start_iter) >= configuration.getMaxExecutions());
+        }
+        GlobalData.getCoverage().updateIterationCoverage(getChoiceDepth()-1);
+//        GlobalData.getChoiceLearningStats().printQTable();
+        if (configuration.getTaskOrchestration() != TaskOrchestrationMode.DepthFirst) {
+            setBacktrackTasks();
+            BacktrackTask nextTask = setNextBacktrackTask();
+            if (nextTask != null) {
+                if (configuration.getVerbosity() > 1) {
+                    PSymLogger.info(String.format("    Next is %s [depth: %d, parent: %s]",
+                            nextTask, nextTask.getDepth(), nextTask.getParentTask()));
+                }
+            }
+        }
+        printProgress(true);
+        printCurrentStatus();
+        if (!isDoneIterating) {
+            postIterationCleanup();
+//            if ((iter % 100) == 0) {
+//                if (configuration.isSymbolic() && SolverEngine.getSolverType() == SolverType.BDD) {
+//                    SolverEngine.resumeEngine();
+//                }
+//            }
+        }
+    }
+
+    @Override
+    public void reinitialize() {
+        super.reinitialize();
+    }
+
     @Override
     public void startWith(Machine machine) {
         super.startWith(machine);
@@ -606,6 +533,79 @@ public class IterativeBoundedScheduler extends Scheduler {
             super.replayStartWith(machine);
         }
          */
+    }
+
+    @Override
+    public void performSearch() throws TimeoutException {
+        schedule.setNumBacktracksInSchedule();
+        while (!isDone()) {
+            printProgress(false);
+            printCurrentStatus();
+
+            // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
+            Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
+            super.step();
+        }
+        schedule.setNumBacktracksInSchedule();
+        super.checkLiveness();
+        if (done) {
+            searchStats.setIterationCompleted();
+        } else {
+//            cleanup();
+        }
+    }
+
+    @Override
+    public void doSearch() throws TimeoutException, InterruptedException {
+        boolean initialRun = true;
+        result = "incomplete";
+        iter++;
+        resetBacktrackTasks();
+        SearchLogger.logStartExecution(iter, getDepth());
+        initializeSearch();
+        if (configuration.getVerbosity() == 0) {
+            printProgressHeader(true);
+        }
+        while (!isDoneIterating) {
+            if (initialRun) {
+                initialRun = false;
+            } else {
+                iter++;
+                SearchLogger.logStartExecution(iter, getDepth());
+            }
+            searchStats.startNewIteration(iter, backtrackDepth);
+            performSearch();
+            summarizeIteration();
+        }
+    }
+
+    public void resumeSearch() throws TimeoutException, InterruptedException {
+        boolean initialRun = true;
+        isDoneIterating = false;
+        start_iter = iter;
+        resetBacktrackTasks();
+        reset_stats();
+        schedule.setNumBacktracksInSchedule();
+        boolean resetAfterInitial = isDone();
+        if (configuration.getVerbosity() == 0) {
+            printProgressHeader(true);
+        }
+        while (!isDoneIterating) {
+            if (initialRun) {
+                initialRun = false;
+                SearchLogger.logResumeExecution(iter, getDepth());
+            } else {
+                iter++;
+                SearchLogger.logStartExecution(iter, getDepth());
+            }
+            searchStats.startNewIteration(iter, backtrackDepth);
+            performSearch();
+            summarizeIteration();
+            if (resetAfterInitial) {
+                resetAfterInitial = false;
+                GlobalData.getCoverage().resetCoverage();
+            }
+        }
     }
 
     private PrimitiveVS getNext(int depth, int bound, Function<Integer, PrimitiveVS> getRepeat, Function<Integer, List> getBacktrack,
@@ -640,16 +640,19 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
 
         List<ValueSummary> chosen = new ArrayList();
+        ChoiceQTable.ChoiceQStateKey chosenQStateKey = new ChoiceQTable.ChoiceQStateKey();
         List<ValueSummary> backtrack = new ArrayList();
         for (int i = 0; i < choices.size(); i++) {
+            ValueSummary choice = choices.get(i);
             if ((bound <= 0) || (i < bound)) {
-                chosen.add(choices.get(i));
+                chosen.add(choice);
+                chosenQStateKey.add(choice);
             } else {
-                backtrack.add(choices.get(i));
+                backtrack.add(choice);
             }
         }
-        List<ChoiceFeature> featureList = GlobalData.getChoiceFeatureStats().getFeatureList(chosen, isData);
-        GlobalData.getCoverage().updateDepthCoverage(getDepth(), getChoiceDepth(), chosen.size(), backtrack.size(), isData, isNewChoice, featureList);
+        ChoiceQTable.ChoiceQTableKey chosenActions = new ChoiceQTable.ChoiceQTableKey(GlobalData.getChoiceLearningStats().getProgramStateHash(), chosenQStateKey);
+        GlobalData.getCoverage().updateDepthCoverage(getDepth(), getChoiceDepth(), chosen.size(), backtrack.size(), isData, isNewChoice, chosenActions);
 
         PrimitiveVS chosenVS = generateNext.apply(chosen);
 //        addRepeat.accept(chosenVS, depth);
@@ -664,6 +667,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         PrimitiveVS<Machine> res = getNext(depth, configuration.getSchedChoiceBound(), schedule::getRepeatSender, schedule::getBacktrackSender,
                 schedule::clearBacktrack, schedule::addRepeatSender, schedule::addBacktrackSender, super::getNextSenderChoices,
                 super::getNextSender, false);
+
         choiceDepth = depth + 1;
         return res;
     }

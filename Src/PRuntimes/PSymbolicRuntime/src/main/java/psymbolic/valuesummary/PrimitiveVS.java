@@ -1,6 +1,7 @@
 package psymbolic.valuesummary;
 
 import psymbolic.runtime.Event;
+import psymbolic.runtime.machine.Machine;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -52,6 +53,18 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
             values = new HashSet(guardedValues.keySet());
         return values;
     }
+
+    public Class getValueClass() {
+        for (T val: getValues()) {
+            if (val instanceof Machine) {
+                return Machine.class;
+            } else {
+                return val.getClass();
+            }
+        }
+        return this.getClass();
+    }
+
 
     /**
      * Create a PrimitiveVS with the largest possible universe (restrict = true) containing only the specified value
@@ -255,7 +268,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
         StringBuilder out = new StringBuilder();
         Iterator itr = getValues().iterator();
         while (itr.hasNext()) {
-            out.append(itr.next().toString());
+            out.append(itr.next());
             if (itr.hasNext()) {
                 out.append(", ");
             }

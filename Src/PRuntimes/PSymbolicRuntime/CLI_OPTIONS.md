@@ -25,10 +25,10 @@ Commandline options for PSym
                                                 (default: 1)
  -nsc,--no-state-caching                        Disable state caching
  -nb,--no-backtrack                             Disable stateful backtracking
- -corch,--choice-orch <Choice Orch. (string)>   Choice orchestration options: random, rl, none
+ -corch,--choice-orch <Choice Orch. (string)>   Choice orchestration options: random, learn, none
                                                 (default: random)
- -torch,--task-orch <Task Orch. (string)>       Task orchestration options: astar, rl, random, dfs
-                                                (default: astar)
+ -torch,--task-orch <Task Orch. (string)>       Task orchestration options: astar, learn, random,
+                                                dfs (default: astar)
  -bpe,--backtracks-per-exe <(integer)>          Max number of backtracks to generate per execution
                                                 (default: 2)
  -st,--solver <Solver Type (string)>            Solver type to use: bdd, yices2, z3, cvc5 (default:

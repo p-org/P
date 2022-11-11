@@ -2,9 +2,9 @@ package psymbolic.commandline;
 
 import psymbolic.runtime.Concretizer;
 import psymbolic.runtime.logger.*;
-import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
 import psymbolic.runtime.scheduler.ReplayScheduler;
+import psymbolic.utils.GlobalData;
 import psymbolic.utils.TimeMonitor;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.solvers.SolverEngine;
@@ -122,6 +122,7 @@ public class EntryPoint {
             status = "error";
             throw new Exception("ERROR");
         } finally {
+//            GlobalData.getChoiceLearningStats().printQTable();
             future.cancel(true);
             executor.shutdownNow();
             TraceLogger.setVerbosity(0);

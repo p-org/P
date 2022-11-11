@@ -4,7 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import psymbolic.runtime.logger.CoverageWriter;
 import psymbolic.runtime.logger.StatWriter;
-import psymbolic.runtime.scheduler.choiceorchestration.ChoiceFeature;
+import psymbolic.runtime.scheduler.choiceorchestration.ChoiceQTable;
+import psymbolic.utils.GlobalData;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -58,21 +59,20 @@ public class CoverageStats implements Serializable {
     public static class CoverageChoiceDepthStats implements Serializable {
         BigDecimal pathCoverage;
         int numTotal;
-
         @Getter
-        List<ChoiceFeature> featureList;
+        ChoiceQTable.ChoiceQTableKey stateActions;
 
         CoverageChoiceDepthStats() {
-            this(new BigDecimal(1), 0, new ArrayList<>());
+            this(new BigDecimal(1), 0, new ChoiceQTable.ChoiceQTableKey());
         }
 
-        private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal, List<ChoiceFeature> inputFeatureList) {
+        private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal, ChoiceQTable.ChoiceQTableKey inputStateActions) {
             this.pathCoverage = inputPathCoverage;
             this.numTotal = inputNumTotal;
-            this.featureList = inputFeatureList;
+            this.stateActions = inputStateActions;
         }
 
-        void update(CoverageChoiceDepthStats prefix, int numExplored, int numRemaining, boolean isNewChoice, List<ChoiceFeature> inputFeatureList) {
+        void update(CoverageChoiceDepthStats prefix, int numExplored, int numRemaining, boolean isNewChoice, ChoiceQTable.ChoiceQTableKey chosenActions) {
             pathCoverage = prefix.pathCoverage;
             if (isNewChoice) {
                 assert(numRemaining >= 0);
@@ -80,17 +80,17 @@ public class CoverageStats implements Serializable {
             }
             if (numTotal != 0)
                 pathCoverage = prefix.pathCoverage.multiply(BigDecimal.valueOf(numExplored).divide(BigDecimal.valueOf(numTotal), 20, RoundingMode.FLOOR));
-            featureList = inputFeatureList;
+            this.stateActions = chosenActions;
         }
 
         public void reset() {
             pathCoverage = new BigDecimal(1);
             numTotal = 0;
-            featureList.clear();
+            stateActions.clear();
         }
 
         public CoverageChoiceDepthStats getCopy() {
-            return new CoverageChoiceDepthStats(this.pathCoverage, this.numTotal, new ArrayList<>(this.featureList));
+            return new CoverageChoiceDepthStats(this.pathCoverage, this.numTotal, this.stateActions);
         }
     }
 
@@ -130,13 +130,13 @@ public class CoverageStats implements Serializable {
      * @param numRemaining Number of choices remaining in current iteration at choiceDepth
      * @param isNewChoice Whether or not this is a new choice
      */
-    public void updatePathCoverage(int choiceDepth, int numExplored, int numRemaining, boolean isNewChoice, List<ChoiceFeature> inputFeatureList) {
+    public void updatePathCoverage(int choiceDepth, int numExplored, int numRemaining, boolean isNewChoice, ChoiceQTable.ChoiceQTableKey chosenActions) {
         CoverageChoiceDepthStats prefix;
         if (choiceDepth == 0)
             prefix = new CoverageChoiceDepthStats();
         else
             prefix = perChoiceDepthStats.get(choiceDepth-1);
-        perChoiceDepthStats.get(choiceDepth).update(prefix, numExplored, numRemaining, isNewChoice, inputFeatureList);
+        perChoiceDepthStats.get(choiceDepth).update(prefix, numExplored, numRemaining, isNewChoice, chosenActions);
     }
 
     /**
@@ -148,7 +148,7 @@ public class CoverageStats implements Serializable {
      * @param isData Is true if the choice is a data choice
      * @param isNewChoice Whether or not this is a new choice
      */
-    public void updateDepthCoverage(int depth, int choiceDepth, int numExplored, int numRemaining, boolean isData, boolean isNewChoice, List<ChoiceFeature> featureList) {
+    public void updateDepthCoverage(int depth, int choiceDepth, int numExplored, int numRemaining, boolean isData, boolean isNewChoice, ChoiceQTable.ChoiceQTableKey chosenActions) {
         // TODO: add synchronized to avoid race conditions when developing multi-threaded version
         while (depth >= perDepthStats.size()) {
             perDepthStats.add(new CoverageDepthStats());
@@ -172,7 +172,7 @@ public class CoverageStats implements Serializable {
                 perDepthStats.get(depth).numScheduleRemaining -= numExplored;
             }
         }
-        updatePathCoverage(choiceDepth, numExplored, numRemaining, isNewChoice, featureList);
+        updatePathCoverage(choiceDepth, numExplored, numRemaining, isNewChoice, chosenActions);
     }
 
     /**
@@ -184,9 +184,7 @@ public class CoverageStats implements Serializable {
         estimatedCoverage = estimatedCoverage.add(iterationCoverage);
         assert (estimatedCoverage.doubleValue() <= 1.0): "Error in path coverage estimation";
         for (CoverageChoiceDepthStats stats: perChoiceDepthStats) {
-            for (ChoiceFeature f: stats.featureList) {
-                f.getReward().addExecutionReward(iterationCoverage);
-            }
+            GlobalData.getChoiceLearningStats().rewardIteration(stats.getStateActions(), iterationCoverage);
         }
     }
 

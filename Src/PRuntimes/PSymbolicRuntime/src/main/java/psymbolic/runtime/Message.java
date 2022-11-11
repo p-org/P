@@ -187,6 +187,10 @@ public class Message implements ValueSummary<Message> {
         }
     }
 
+    public UnionVS getPayloadFor(Event e) {
+        return payload.getOrDefault(e, null);
+    }
+
     @Override
     public boolean isEmptyVS() {
         return event.isEmptyVS();

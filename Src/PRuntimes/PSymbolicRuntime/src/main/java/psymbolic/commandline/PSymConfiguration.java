@@ -178,6 +178,14 @@ public class PSymConfiguration implements Serializable {
         this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
     }
 
+    public void setToLearn() {
+        this.setMode("learn");
+        this.setSchedChoiceBound(1);
+        this.setDataChoiceBound(1);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
+        this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
+    }
+
     public void setToDebug() {
         this.setMode("debug");
     }

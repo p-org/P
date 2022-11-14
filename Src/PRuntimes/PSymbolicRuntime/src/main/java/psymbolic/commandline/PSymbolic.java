@@ -119,6 +119,7 @@ public class PSymbolic {
      */
     private static void setTestDriver(Program p, PSymConfiguration config, Reflections reflections) throws Exception {
         final String name = sanitizeTestName(config.getTestDriver());
+        final String defaultTestDriver = sanitizeTestName(config.getTestDriverDefault());
 
         Set<Class<? extends PTestDriver>> subTypesDriver = reflections.getSubTypesOf(PTestDriver.class);
         PTestDriver driver = null;
@@ -129,7 +130,7 @@ public class PSymbolic {
             }
         }
         if(driver == null
-           && name.equals(config.getTestDriverDefault())
+           && name.equals(defaultTestDriver)
            && subTypesDriver.size() == 1) {
             for (Class<? extends PTestDriver> td: subTypesDriver) {
                 driver = td.getDeclaredConstructor().newInstance();
@@ -137,7 +138,7 @@ public class PSymbolic {
             }
         }
         if(driver == null) {
-            if (!name.equals(config.getTestDriverDefault())) {
+            if (!name.equals(defaultTestDriver)) {
                 PSymLogger.info("No test driver found named \"" + name + "\"");
             }
             PSymLogger.info("Provide /method or -m flag to qualify the test method name you wish to use.");
@@ -145,7 +146,7 @@ public class PSymbolic {
             for (Class<? extends PTestDriver> td: subTypesDriver) {
                 PSymLogger.info(String.format("  %s", td.getSimpleName()));
             }
-            if (!name.equals(config.getTestDriverDefault())) {
+            if (!name.equals(defaultTestDriver)) {
                 throw new Exception("No test driver found named \"" + config.getTestDriver() + "\"");
             } else {
                 System.exit(5);

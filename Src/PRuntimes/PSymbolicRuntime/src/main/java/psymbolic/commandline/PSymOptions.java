@@ -329,6 +329,9 @@ public class PSymOptions {
                         case "dfs":
                             config.setToDfs();
                             break;
+                        case "learn":
+                            config.setToLearn();
+                            break;
                         case "debug":
                             config.setToDebug();
                             break;

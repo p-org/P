@@ -25,7 +25,7 @@ public class PSymOptions {
         // mode of exploration
         Option mode = Option.builder("mode")
                 .longOpt("mode")
-                .desc("Mode of exploration: default, bmc, random, fuzz, dfs")
+                .desc("Mode of exploration: default, bmc, random, fuzz, dfs, learn")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Mode (string)")
@@ -161,7 +161,7 @@ public class PSymOptions {
         // mode of choice orchestration
         Option choiceOrch = Option.builder("corch")
                 .longOpt("choice-orch")
-                .desc("Choice orchestration options: random, learn, none (default: random)")
+                .desc("Choice orchestration options: random, learn (default: random)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Choice Orch. (string)")
@@ -171,7 +171,7 @@ public class PSymOptions {
         // mode of task orchestration
         Option taskOrch = Option.builder("torch")
                 .longOpt("task-orch")
-                .desc("Task orchestration options: astar, learn, random, dfs (default: astar)")
+                .desc("Task orchestration options: astar, random, dfs, learn (default: astar)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Task Orch. (string)")

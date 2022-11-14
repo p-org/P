@@ -6,7 +6,8 @@ Here is a summary of these options:
 
 ````
 Commandline options for PSym
- -mode,--mode <Mode (string)>                   Mode of exploration: default, bmc, random, fuzz, dfs
+ -mode,--mode <Mode (string)>                   Mode of exploration: default, bmc, random, fuzz,
+                                                dfs, learn
  -tl,--time-limit <Time Limit (seconds)>        Time limit in seconds (default: 60). Use 0 for no
                                                 limit.
  -ml,--memory-limit <Memory Limit (MB)>         Memory limit in megabytes (MB). Use 0 for no limit.
@@ -25,10 +26,10 @@ Commandline options for PSym
                                                 (default: 1)
  -nsc,--no-state-caching                        Disable state caching
  -nb,--no-backtrack                             Disable stateful backtracking
- -corch,--choice-orch <Choice Orch. (string)>   Choice orchestration options: random, learn, none
+ -corch,--choice-orch <Choice Orch. (string)>   Choice orchestration options: random, learn
                                                 (default: random)
- -torch,--task-orch <Task Orch. (string)>       Task orchestration options: astar, learn, random,
-                                                dfs (default: astar)
+ -torch,--task-orch <Task Orch. (string)>       Task orchestration options: astar, random, dfs,
+                                                learn (default: astar)
  -bpe,--backtracks-per-exe <(integer)>          Max number of backtracks to generate per execution
                                                 (default: 2)
  -st,--solver <Solver Type (string)>            Solver type to use: bdd, yices2, z3, cvc5 (default:

@@ -23,13 +23,13 @@ echo -e "Compiling P Model into Symbolic IR"
 count=`ls -1 ${projectPath}/*.pproj 2>/dev/null | wc -l`
 if [ $count != 0 ]
 then
-    echo -e "\tIgnoring .pproj File"
+    echo -e "  Ignoring .pproj File"
 fi
 inputFiles=$(find ${projectPath} -not -path "*/.*" -not -name ".*" -type f -name "*.p")
 inputJavaFiles=$(find ${projectPath} -not -path "*/.*" -not -name ".*" -type f -name "*.java")
 if [[ ! -z "$inputJavaFiles" ]]
 then
-    echo -e "\tFound Java Foreign Functions"
+    echo -e "  Found Java Foreign Functions"
     cp ${inputJavaFiles} ${outPath}
 fi
 
@@ -50,5 +50,5 @@ java -ea -jar -Xms12G target/${projectName}-jar-with-dependencies.jar \
 
 cd ${runPath}
 
-#mkdir -p ${outPath}/plots
-#python3 scripts/psym_plots.py ${projectName} ${outPath}/run.out ${outPath}/plots
+#mkdir -p ${outPath}/output/plots
+#python3 scripts/psym_plots.py ${projectName} ${outPath}/output/scratch.log ${outPath}/output/plots

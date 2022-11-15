@@ -79,7 +79,7 @@ def read_input():
             i += 1
         else:
             continue
-        if ("Executions:" in line):
+        if ("Iterations:" in line):
             eVal = line.split()[1]
             line = lines[i].strip()
             i += 1
@@ -191,7 +191,7 @@ def coverage_vs_time():
     fig, ax = plt.subplots()
     ax.plot(time, coverage, color="blue", alpha=0.5, clip_on=False)
 
-    ax.set_ylim(0, coverageLimit)
+    ax.set_ylim(0, 100)
     ax.set_xlim(0, timeLimit)
     set_plot(ax, time, coverage)
 

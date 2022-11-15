@@ -26,7 +26,7 @@ import java.util.Date;
 /**
  * Represents the trace logger for P Symbolic
  */
-public class TraceLogger extends PSymLogger {
+public class TraceLogger {
     static Logger log = null;
     static LoggerContext context = null;
 

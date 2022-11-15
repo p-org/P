@@ -4,6 +4,7 @@ import psymbolic.runtime.Concretizer;
 import psymbolic.runtime.logger.*;
 import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
 import psymbolic.runtime.scheduler.ReplayScheduler;
+import psymbolic.utils.GlobalData;
 import psymbolic.utils.TimeMonitor;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.solvers.SolverEngine;
@@ -109,11 +110,11 @@ public class EntryPoint {
             CoverageWriter.disable();
             Guard pc = e.pathConstraint;
 
-            ReplayScheduler replay = new ReplayScheduler(configuration, scheduler.getProgram(), scheduler.getSchedule(), pc, scheduler.getDepth());
-            scheduler.getProgram().setProgramScheduler(replay);
-            replay.doSearch();
-            e.printStackTrace();
-            throw new BugFoundException("Found bug: " + e.getLocalizedMessage(), pc);
+            ReplayScheduler replayScheduler = new ReplayScheduler(configuration, scheduler.getProgram(), scheduler.getSchedule(), pc, scheduler.getDepth());
+            scheduler.getProgram().setProgramScheduler(replayScheduler);
+            String writeFileName = configuration.getOutputFolder() + "/cex.schedule";
+            replayScheduler.writeToFile(writeFileName);
+            replay(replayScheduler);
         } catch (InterruptedException e) {
             status = "interrupted";
             throw new Exception("INTERRUPTED");
@@ -121,6 +122,7 @@ public class EntryPoint {
             status = "error";
             throw new Exception("ERROR");
         } finally {
+//            GlobalData.getChoiceLearningStats().printQTable();
             future.cancel(true);
             executor.shutdownNow();
             TraceLogger.setVerbosity(0);
@@ -152,6 +154,30 @@ public class EntryPoint {
         TimedCall timedCall = new TimedCall(scheduler, true);
         future = executor.submit(timedCall);
         process();
+    }
+
+    private static void replay(ReplayScheduler replayScheduler) throws RuntimeException, InterruptedException, TimeoutException {
+        try {
+            replayScheduler.doSearch();
+            throw new RuntimeException("ERROR: Failed to replay counterexample");
+        } catch (BugFoundException bugFoundException) {
+            bugFoundException.printStackTrace();
+            throw new BugFoundException("Found bug: " + bugFoundException.getLocalizedMessage(), replayScheduler.getPathConstraint());
+        }
+    }
+
+    public static void replayBug(ReplayScheduler replayScheduler, PSymConfiguration config) throws RuntimeException, InterruptedException, TimeoutException {
+        SolverEngine.resumeEngine();
+        if (config.getVerbosity() == 0) {
+            PSymLogger.setVerbosity(1);
+            TraceLogger.setVerbosity(1);
+        }
+        TraceLogger.enable();
+        config.setUseReceiverQueueSemantics(false);
+        config.setCollectStats(0);
+        replayScheduler.setConfiguration(config);
+        replayScheduler.getProgram().setProgramScheduler(replayScheduler);
+        replay(replayScheduler);
     }
 
     public static void writeToFile() throws Exception {

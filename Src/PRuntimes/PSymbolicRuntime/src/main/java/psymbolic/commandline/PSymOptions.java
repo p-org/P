@@ -25,7 +25,7 @@ public class PSymOptions {
         // mode of exploration
         Option mode = Option.builder("mode")
                 .longOpt("mode")
-                .desc("Mode of exploration: default, bmc, random, fuzz")
+                .desc("Mode of exploration: default, bmc, random, fuzz, dfs, learn")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Mode (string)")
@@ -55,7 +55,7 @@ public class PSymOptions {
         // random seed for the search
         Option randomSeed = Option.builder("seed")
                 .longOpt("seed")
-                .desc("Random seed for the search (default: 0)")
+                .desc("Random seed for the search (default: auto)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Random Seed (integer)")
@@ -91,6 +91,16 @@ public class PSymOptions {
                 .argName("Output Dir (string)")
                 .build();
         options.addOption(outputDir);
+
+        // read replayer state from file
+        Option readReplayerFromFile = Option.builder("replay")
+                .longOpt("replay")
+                .desc("Name of the .schedule file with the counterexample")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("File Name (string)")
+                .build();
+        options.addOption(readReplayerFromFile);
 
         // max steps/depth bound for the search
         Option maxSteps = Option.builder("ms")
@@ -151,7 +161,7 @@ public class PSymOptions {
         // mode of choice orchestration
         Option choiceOrch = Option.builder("corch")
                 .longOpt("choice-orch")
-                .desc("Choice orchestration options: random, rl, none (default: random)")
+                .desc("Choice orchestration options: random, learn (default: random)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Choice Orch. (string)")
@@ -161,7 +171,7 @@ public class PSymOptions {
         // mode of task orchestration
         Option taskOrch = Option.builder("torch")
                 .longOpt("task-orch")
-                .desc("Task orchestration options: astar, rl, random, dfs (default: astar)")
+                .desc("Task orchestration options: astar, random, dfs, learn (default: astar)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Task Orch. (string)")
@@ -251,7 +261,7 @@ public class PSymOptions {
         // whether or not to collect search stats
         Option collectStats = Option.builder("s")
                 .longOpt("stats")
-                .desc("Level of stats collection/reporting during the search (default: 0)")
+                .desc("Level of stats collection/reporting during the search (default: 1)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Collection Level (integer)")
@@ -316,6 +326,12 @@ public class PSymOptions {
                         case "fuzz":
                             config.setToFuzz();
                             break;
+                        case "dfs":
+                            config.setToDfs();
+                            break;
+                        case "learn":
+                            config.setToLearn();
+                            break;
                         case "debug":
                             config.setToDebug();
                             break;
@@ -341,7 +357,7 @@ public class PSymOptions {
                     break;
                 case "seed":
                     try {
-                        config.setRandomSeed(Integer.parseInt(option.getValue()));
+                        config.setRandomSeed(Long.parseLong(option.getValue()));
                     } catch (NumberFormatException ex) {
                         optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
@@ -357,6 +373,15 @@ public class PSymOptions {
                 case "o":
                 case "outdir":
                     config.setOutputFolder(option.getValue());
+                    break;
+                case "replay":
+                    config.setReadReplayerFromFile(option.getValue());
+                    File file = new File(config.getReadReplayerFromFile());
+                    try {
+                        file.getCanonicalPath();
+                    } catch (IOException e) {
+                        optionError(option, String.format("File %s does not exist", config.getReadFromFile()));
+                    }
                     break;
                 case "ms":
                 case "max-steps":
@@ -407,11 +432,12 @@ public class PSymOptions {
                         case "random":
                             config.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
                             break;
-                        case "estimate":
-                            config.setChoiceOrchestration(ChoiceOrchestrationMode.Estimate);
+                        case "learn-ql":
+                            config.setChoiceOrchestration(ChoiceOrchestrationMode.QLearning);
                             break;
-                        case "rl":
-                            config.setChoiceOrchestration(ChoiceOrchestrationMode.RL);
+                        case "learn":
+                        case "learn-eg":
+                            config.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
                             break;
                         default:
                             optionError(option, String.format("Unrecognized choice orchestration mode, got %s", option.getValue()));
@@ -429,11 +455,9 @@ public class PSymOptions {
                         case "astar":
                             config.setTaskOrchestration(TaskOrchestrationMode.CoverageAStar);
                             break;
-                        case "estimate":
-                            config.setTaskOrchestration(TaskOrchestrationMode.CoverageEstimate);
-                            break;
-                        case "rl":
-                            config.setTaskOrchestration(TaskOrchestrationMode.CoverageRL);
+                        case "learn":
+                        case "learn-eg":
+                            config.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
                             break;
                         default:
                             optionError(option, String.format("Unrecognized task orchestration mode, got %s", option.getValue()));
@@ -515,9 +539,9 @@ public class PSymOptions {
                 case "r":
                 case "read":
                     config.setReadFromFile(option.getValue());
-                    File file = new File(config.getReadFromFile());
+                    File replayFile = new File(config.getReadFromFile());
                     try {
-                        file.getCanonicalPath();
+                        replayFile.getCanonicalPath();
                     } catch (IOException e) {
                         optionError(option, String.format("File %s does not exist", config.getReadFromFile()));
                     }

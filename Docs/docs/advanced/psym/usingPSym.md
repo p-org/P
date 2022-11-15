@@ -316,24 +316,26 @@ For a complete list of options, pass the argument ` --help `.
 ??? tip "Exploration Techniques"
     PSym implements a collection of configurable techniques summarized as follows:
     
-    | Technique             | Description                                                                |
-    |-----------------------|----------------------------------------------------------------------------|
-    | Search Strategy       | Configure the order in which search is performed: `astar`, `random`, `dfs` |
-    | Choice Selection      | Configure how a scheduling or data choice is selected: `random`, `none`    |
-    | Never Repeat States   | Track distinct states to avoid state revisits                              |
-    | Stateful Backtracking | Backtrack directly without replay                                          |
-    | BMC                   | Run PSym as a bounded model checker                                        |
+    | Technique             | Description                                                                         |
+    |-----------------------|-------------------------------------------------------------------------------------|
+    | Search Strategy       | Configure the order in which search is performed: `astar`, `random`, `dfs`, `learn` |
+    | Choice Selection      | Configure how a scheduling or data choice is selected: `random`, `learn`            |
+    | Never Repeat States   | Track distinct states to avoid state revisits                                       |
+    | Stateful Backtracking | Backtrack directly without replay                                                   |
+    | BMC                   | Run PSym as a bounded model checker                                                 |
 
 
 !!! info "Preconfigured Modes"
 
     For ease of usage, PSym provides a set of preconfigured exploration modes as follows:
     
-    | Mode      | Description                                                                                                                                                                                                                 |
-    |-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-    | `default` | Explore single execution at a time <br/> Search Strategy = `astar` <br/> Choice Selection = `random` <br/> Never Repeat States = `ON` <br/> Stateful Backtracking = `ON` <br/> BMC = `OFF`                                  |
-    | `bmc`     | Explore all executions together symbolically as a bounded model checker <br/> Search Strategy = `N/A` <br/> Choice Selection = `N/A` <br/> Never Repeat States = `OFF` <br/> Stateful Backtracking = `N/A` <br/> BMC = `ON` |
-    | `fuzz`    | Explore like a random fuzzer (but never repeat an execution!) <br/> Search Strategy = `random` <br/> Choice Selection = `random` <br/> Never Repeat States = `OFF` <br/> Stateful Backtracking = `OFF` <br/> BMC = `OFF`    |
+    | Mode      | Description                                                                                                                                                                                                                   |
+    |-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | `default` | Explore single execution at a time <br/> Search Strategy = `astar` <br/> Choice Selection = `random` <br/> Never Repeat States = `ON` <br/> Stateful Backtracking = `ON` <br/> BMC = `OFF`                                    |
+    | `bmc`     | Explore all executions together symbolically as a bounded model checker <br/> Search Strategy = `N/A` <br/> Choice Selection = `N/A` <br/> Never Repeat States = `OFF` <br/> Stateful Backtracking = `N/A` <br/> BMC = `ON`   |
+    | `fuzz`    | Explore like a random fuzzer (but never repeat an execution!) <br/> Search Strategy = `random` <br/> Choice Selection = `random` <br/> Never Repeat States = `OFF` <br/> Stateful Backtracking = `OFF` <br/> BMC = `OFF`      |
+    | `dfs`     | Explore single executions at a time in depth-first manner <br/> Search Strategy = `dfs` <br/> Choice Selection = `random` <br/> Never Repeat States = `ON` <br/> Stateful Backtracking = `ON` <br/> BMC = `OFF`               |
+    | `learn`   | Explore single execution at a time with learning <br/> Search Strategy = `learn` <br/> Choice Selection = `learn` <br/> Never Repeat States = `ON` <br/> Stateful Backtracking = `ON` <br/> BMC = `OFF`                       |
     
     Pass the CLI argument ` --mode <option> ` to set the exploration mode.
 

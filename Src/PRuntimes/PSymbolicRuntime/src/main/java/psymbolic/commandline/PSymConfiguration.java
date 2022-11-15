@@ -27,7 +27,7 @@ public class PSymConfiguration implements Serializable {
 
     // random seed
     @Getter @Setter
-    int randomSeed = 0;
+    long randomSeed = System.currentTimeMillis();
 
     // default name of the test driver
     @Getter
@@ -48,6 +48,10 @@ public class PSymConfiguration implements Serializable {
     // name of the output folder
     @Getter @Setter
     String outputFolder = "output";
+
+    // name of the cex file to read the replayer state
+    @Getter @Setter
+    String readReplayerFromFile = "";
 
     // max steps/depth bound provided by the user
     @Getter @Setter
@@ -123,7 +127,7 @@ public class PSymConfiguration implements Serializable {
 
     // level of stats collection
     @Getter @Setter
-    int collectStats = 0;
+    int collectStats = 1;
 
     // level of verbosity for the logging
     @Getter @Setter
@@ -164,6 +168,22 @@ public class PSymConfiguration implements Serializable {
         this.setUseBacktrack(false);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
         this.setTaskOrchestration(TaskOrchestrationMode.Random);
+    }
+
+    public void setToDfs() {
+        this.setMode("dfs");
+        this.setSchedChoiceBound(1);
+        this.setDataChoiceBound(1);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
+        this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
+    }
+
+    public void setToLearn() {
+        this.setMode("learn");
+        this.setSchedChoiceBound(1);
+        this.setDataChoiceBound(1);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
+        this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
     }
 
     public void setToDebug() {

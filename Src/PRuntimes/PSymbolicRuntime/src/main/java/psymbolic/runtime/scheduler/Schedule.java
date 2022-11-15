@@ -21,8 +21,6 @@ public class Schedule implements Serializable {
     private int schedulerDepth = 0;
     @Setter
     private int schedulerChoiceDepth = 0;
-    @Setter
-    private Map<Machine, List<ValueSummary>> schedulerState = new HashMap<>();
     private int numBacktracks = 0;
     private int numDataBacktracks = 0;
 
@@ -71,6 +69,30 @@ public class Schedule implements Serializable {
         sleepSet.remove(toRemove.restrict(sleepSet.contains(toRemove).getGuardFor(true)));
     }
 
+    public class ChoiceState implements Serializable {
+        @Getter
+        private Map<Machine, List<ValueSummary>> machineStates;
+        @Getter
+        private Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
+
+        public ChoiceState() {
+            this(new HashMap<>(), new HashMap<>());
+        }
+        public ChoiceState(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
+            this.machineStates = new HashMap<>(ms);
+            this.machineCounters = new HashMap<>(mc);
+        }
+        public void copy(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
+            this.machineStates = new HashMap<>(ms);
+            this.machineCounters = new HashMap<>(mc);
+        }
+    }
+    private ChoiceState schedulerState = new ChoiceState();
+
+    public void setSchedulerState(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
+        schedulerState.copy(ms, mc);
+    }
+
     public class Choice implements Serializable {
         @Getter
         PrimitiveVS<Machine> repeatSender = new PrimitiveVS<>();
@@ -95,7 +117,7 @@ public class Schedule implements Serializable {
         @Getter
         int schedulerChoiceDepth = 0;
         @Getter
-        Map<Machine, List<ValueSummary>> choiceState = null;
+        ChoiceState choiceState = null;
         @Getter
         Guard filter = null;
 
@@ -130,22 +152,13 @@ public class Schedule implements Serializable {
             return new Choice(this);
         }
 
-        public Map<Machine, List<ValueSummary>> copyState(Map<Machine, List<ValueSummary>> state) {
+        public ChoiceState copyState(ChoiceState state) {
             if (state == null)
                 return null;
-            return state;
-//            List<List<ValueSummary>> copiedState = new ArrayList<>();
-//            for (List<ValueSummary> ls: state) {
-//                List<ValueSummary> localState = new ArrayList<>();
-//                for (ValueSummary vs: ls) {
-//                    localState.add(vs.getCopy());
-//                }
-//                copiedState.add(localState);
-//            }
-//            return copiedState;
+            return new ChoiceState(state.getMachineStates(), state.getMachineCounters());
         }
 
-        public void storeState(int depth, int cdepth, Map<Machine, List<ValueSummary>> state, Guard f) {
+        public void storeState(int depth, int cdepth, ChoiceState state, Guard f) {
             schedulerDepth = depth;
             schedulerChoiceDepth = cdepth;
             choiceState = copyState(state);

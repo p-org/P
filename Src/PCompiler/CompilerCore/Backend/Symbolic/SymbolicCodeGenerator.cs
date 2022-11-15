@@ -55,6 +55,26 @@ namespace Plang.Compiler.Backend.Symbolic
                 job.Output.WriteInfo($"  {job.ProjectName} -> target/{job.ProjectName}-jar-with-dependencies.jar");
                 job.Output.WriteInfo("Build succeeded.");
             }
+
+            string sourceDirectory = "target/sources/psymbolic";
+
+            // create source folder
+            args = new[] { $"-p {sourceDirectory}" };
+            exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mkdir", args);
+            if (exitCode != 0)
+            {
+                throw new TranslationException($"Unable to create source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
+            }
+
+
+            // copy source files
+            string sourceFilePath = Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName);
+            args = new[] { $"{sourceFilePath}/{job.ProjectName}.java {sourceDirectory}" };
+            exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "cp", args);
+            if (exitCode != 0)
+            {
+                throw new TranslationException($"Unable to copy source file {job.ProjectName}.java to source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
+            }
         }
 
         private CompiledFile GenerateSource(CompilationContext context, Scope globalScope)
@@ -80,12 +100,17 @@ namespace Plang.Compiler.Backend.Symbolic
             WriteMainDriver(context, source.Stream, globalScope, decls);
 
             context.WriteLine(source.Stream, "PTestDriver testDriver = null;");
+            context.WriteLine(source.Stream, "@Generated");
             context.WriteLine(source.Stream, "public PTestDriver getTestDriver() { return testDriver; }");
+            context.WriteLine(source.Stream, "@Generated");
             context.WriteLine(source.Stream, "public void setTestDriver(PTestDriver input) { testDriver = input; }");
             context.WriteLine(source.Stream);
 
+            context.WriteLine(source.Stream, "@Generated");
             context.WriteLine(source.Stream, "public Machine getStart() { return testDriver.getStart(); }");
+            context.WriteLine(source.Stream, "@Generated");
             context.WriteLine(source.Stream, "public List<Monitor> getMonitors() { return testDriver.getMonitors(); }");
+            context.WriteLine(source.Stream, "@Generated");
             context.WriteLine(source.Stream, "public Map<Event, List<Monitor>> getListeners() { return testDriver.getListeners(); }");
             context.WriteLine(source.Stream);
 
@@ -103,6 +128,7 @@ namespace Plang.Compiler.Backend.Symbolic
         private void WriteDriverConfigure(CompilationContext context, StringWriter output, String startMachine, IEnumerable<IPDecl> decls)
         {
             context.WriteLine(output);
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "public void configure() {");
 
             context.WriteLine(output, $"    mainMachine = new {startMachine}(0);");
@@ -154,6 +180,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             if (mainMachine != null)
             {
+                context.WriteLine(output, "@Generated");
                 context.WriteLine(output, "public static class DefaultTestDriver extends PTestDriver {");
                 WriteDriver(context, output, mainMachine.Name, decls);
                 context.WriteLine(output, "}");
@@ -196,6 +223,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
         {
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, $"public static class {context.GetNameForDecl(safety)} extends PTestDriver {{");
             WriteDriver(context, output, safety.Main, safety.ModExpr.ModuleInfo.MonitorMap.Keys);
             context.WriteLine(output, "}");
@@ -222,6 +250,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public void reset() {");
             context.WriteLine(output, "    super.reset();");
@@ -231,6 +260,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public List<ValueSummary> getLocalState() {");
             context.WriteLine(output, "    List<ValueSummary> res = super.getLocalState();");
@@ -240,6 +270,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "}");
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public int setLocalState(List<ValueSummary> localState) {");
             context.WriteLine(output, "    int idx = super.setLocalState(localState);");
@@ -280,6 +311,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public void reset() {");
             context.WriteLine(output, "    super.reset();");
@@ -289,6 +321,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public List<ValueSummary> getLocalState() {");
             context.WriteLine(output, "    List<ValueSummary> res = super.getLocalState();");
@@ -298,6 +331,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "}");
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public int setLocalState(List<ValueSummary> localState) {");
             context.WriteLine(output, "    int idx = super.setLocalState(localState);");
@@ -1401,7 +1435,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 return;
             }
 
-            if (!valueType.IsSameTypeAs(locationType))
+            if (!locationType.IsAssignableFrom(valueType))
             {
                 throw new NotImplementedException(
                     $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
@@ -1424,7 +1458,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 return $"({GetSymbolicType(locationType)}) ValueSummary.castFromAny({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationType)}, ";
             }
 
-            if (valueType.IsSameTypeAs(locationType)) return "";
+            if (locationType.IsAssignableFrom(valueType)) return "";
 
             valueType = valueType.Canonicalize();
             locationType = locationType.Canonicalize();
@@ -2548,14 +2582,17 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import java.util.function.Consumer;");
             context.WriteLine(output, "import java.util.function.Function;");
             context.WriteLine(output, "import java.text.MessageFormat;");
+            context.WriteLine(output, "import lombok.Generated;");
             context.WriteLine(output);
-            context.WriteLine(output, $"public class {context.ProjectName.ToLower()} implements Program {{");
+            context.WriteLine(output, $"public class {context.ProjectName} implements Program {{");
             context.WriteLine(output);
             context.WriteLine(output, $"public static Scheduler programScheduler;");
             context.WriteLine(output);
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, $"public Scheduler getProgramScheduler () {{ return this.programScheduler; }}");
             context.WriteLine(output);
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, $"public void setProgramScheduler (Scheduler s) {{ this.programScheduler = s; }}");
             context.WriteLine(output);

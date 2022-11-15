@@ -1,8 +1,9 @@
 ﻿using NUnit.Framework;
-using Plang.Compiler;
+using PChecker.PChecker.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Plang.Compiler;
 using UnitTests.Core;
 
 namespace UnitTests

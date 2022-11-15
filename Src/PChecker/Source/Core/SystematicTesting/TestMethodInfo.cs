@@ -6,12 +6,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Microsoft.Coyote.Actors;
-using Microsoft.Coyote.IO;
-using Microsoft.Coyote.Runtime;
-using Microsoft.Coyote.Tasks;
+using PChecker.Actors;
+using PChecker.IO;
+using PChecker.Runtime;
+using PChecker.Tasks;
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.SystematicTesting
 {
     /// <summary>
     /// Maintains information about a method to be tested.

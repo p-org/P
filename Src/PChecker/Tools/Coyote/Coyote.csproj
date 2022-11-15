@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Description>The PChecker command line tool.</Description>
     <AssemblyName>pc</AssemblyName>
-    <RootNamespace>Plang</RootNamespace>
+    <RootNamespace>PChecker</RootNamespace>
     <ToolCommandName>pc</ToolCommandName>
     <PackageTags>systematic;tester;pchecker</PackageTags>
     <PackAsTool>true</PackAsTool>

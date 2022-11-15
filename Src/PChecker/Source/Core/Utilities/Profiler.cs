@@ -3,7 +3,7 @@
 
 using System.Diagnostics;
 
-namespace Microsoft.Coyote
+namespace PChecker
 {
     /// <summary>
     /// The Coyote profiler.

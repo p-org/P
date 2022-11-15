@@ -1,9 +1,10 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
+
+using System.Collections.Generic;
+using System.IO;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
-using System.Collections.Generic;
-using System.IO;
 
 namespace Plang.Compiler.Backend.Rvm
 {

@@ -1,5 +1,5 @@
-﻿using Plang.Compiler.TypeChecker;
-using System.IO;
+﻿using System.IO;
+using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler.Backend
 {

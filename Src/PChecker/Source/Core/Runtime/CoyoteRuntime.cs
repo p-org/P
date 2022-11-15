@@ -8,9 +8,10 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Monitor = Microsoft.Coyote.Specifications.Monitor;
+using PChecker.Specifications;
+using Monitor = PChecker.Specifications.Monitor;
 
-namespace Microsoft.Coyote.Runtime
+namespace PChecker.Runtime
 {
     /// <summary>
     /// Runtime for executing asynchronous operations.
@@ -52,7 +53,7 @@ namespace Microsoft.Coyote.Runtime
         /// <summary>
         /// List of monitors in the program.
         /// </summary>
-        protected readonly List<Monitor> Monitors;
+        protected readonly List<Specifications.Monitor> Monitors;
 
         /// <summary>
         /// Responsible for generating random values.
@@ -86,7 +87,7 @@ namespace Microsoft.Coyote.Runtime
         protected CoyoteRuntime(Configuration configuration, IRandomValueGenerator valueGenerator)
         {
             this.Configuration = configuration;
-            this.Monitors = new List<Monitor>();
+            this.Monitors = new List<Specifications.Monitor>();
             this.ValueGenerator = valueGenerator;
             this.OperationIdCounter = 0;
             this.IsRunning = true;
@@ -96,14 +97,14 @@ namespace Microsoft.Coyote.Runtime
         /// Registers a new specification monitor of the specified <see cref="Type"/>.
         /// </summary>
         public void RegisterMonitor<T>()
-            where T : Monitor =>
+            where T : Specifications.Monitor =>
             this.TryCreateMonitor(typeof(T));
 
         /// <summary>
         /// Invokes the specified monitor with the specified <see cref="Event"/>.
         /// </summary>
         public void Monitor<T>(Event e)
-            where T : Monitor
+            where T : Specifications.Monitor
         {
             // If the event is null then report an error and exit.
             this.Assert(e != null, "Cannot monitor a null event.");
@@ -139,7 +140,7 @@ namespace Microsoft.Coyote.Runtime
             (ulong)Interlocked.Increment(ref this.OperationIdCounter) - 1;
 
         /// <summary>
-        /// Tries to create a new <see cref="Coyote.Specifications.Monitor"/> of the specified <see cref="Type"/>.
+        /// Tries to create a new <see cref="Specifications.Monitor"/> of the specified <see cref="Type"/>.
         /// </summary>
         internal abstract void TryCreateMonitor(Type type);
 
@@ -154,7 +155,7 @@ namespace Microsoft.Coyote.Runtime
                 return;
             }
 
-            Monitor monitor = null;
+            Specifications.Monitor monitor = null;
 
             lock (this.Monitors)
             {

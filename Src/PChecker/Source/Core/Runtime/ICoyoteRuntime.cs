@@ -3,9 +3,9 @@
 
 using System;
 using System.IO;
-using Microsoft.Coyote.Specifications;
+using PChecker.Specifications;
 
-namespace Microsoft.Coyote.Runtime
+namespace PChecker.Runtime
 {
     /// <summary>
     /// Interface that exposes base runtime methods for Coyote.

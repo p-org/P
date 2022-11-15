@@ -13,7 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Coyote.SmartSockets
+namespace PChecker.SmartSockets
 {
     /// <summary>
     /// This class wraps the Socket class providing some useful semantics like FindServerAsync

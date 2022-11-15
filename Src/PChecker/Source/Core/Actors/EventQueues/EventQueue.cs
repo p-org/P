@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// Implements a queue of events.

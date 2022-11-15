@@ -7,16 +7,20 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using CoyoteTester.Interfaces;
-using Microsoft.Coyote.Coverage;
-using Microsoft.Coyote.SmartSockets;
+using PChecker;
+using PChecker.Coverage;
+using PChecker.SystematicTesting;
+using PChecker.Instrumentation;
+using PChecker.Interfaces;
+using PChecker.SmartSockets;
+using PChecker.Utilities;
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.Testing
 {
     /// <summary>
     /// A testing process, this can also be the client side of a multi-process test
     /// </summary>
-    internal sealed class TestingProcess
+    public class TestingProcess
     {
         /// <summary>
         /// Whether this process is terminating.
@@ -52,7 +56,7 @@ namespace Microsoft.Coyote.SystematicTesting
         /// <summary>
         /// Creates a Coyote testing process.
         /// </summary>
-        internal static TestingProcess Create(Configuration configuration)
+        public static TestingProcess Create(Configuration configuration)
         {
             return new TestingProcess(configuration);
         }
@@ -71,12 +75,12 @@ namespace Microsoft.Coyote.SystematicTesting
         /// <summary>
         /// Runs the Coyote testing process.
         /// </summary>
-        internal void Run()
+        public void Run()
         {
             this.RunAsync().Wait();
         }
 
-        internal async Task RunAsync()
+        private async Task RunAsync()
         {
             if (this.Configuration.RunAsParallelBugFindingTask)
             {

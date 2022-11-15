@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// Handles the <see cref="IActorRuntime.OnEventDropped"/> event.

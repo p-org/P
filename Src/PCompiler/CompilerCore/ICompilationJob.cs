@@ -1,7 +1,7 @@
-﻿using Plang.Compiler.Backend;
-using Plang.Compiler.TypeChecker;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
+using Plang.Compiler.Backend;
+using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler
 {
@@ -13,7 +13,6 @@ namespace Plang.Compiler
         CompilerOutput OutputLanguage { get; }
         ICompilerOutput Output { get; }
         DirectoryInfo OutputDirectory { get; }
-        DirectoryInfo AspectjOutputDirectory { get; }
         ICodeGenerator Backend { get; }
         IReadOnlyList<string> InputFiles { get; }
         IReadOnlyList<string> ProjectDependencies { get; }

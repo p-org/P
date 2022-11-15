@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 using System;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker.SystematicTesting;
 
-namespace Microsoft.Coyote.Actors.SharedObjects
+namespace PChecker.Actors.SharedObjects
 {
     /// <summary>
     /// A thread-safe register that can be shared in-memory by actors.

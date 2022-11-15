@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// Factory for creating actor instances.

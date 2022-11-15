@@ -1,7 +1,8 @@
-﻿using Plang.Compiler;
+﻿using PChecker.PChecker.Compiler;
 using System;
 using System.IO;
 using System.Linq;
+using Plang.Compiler;
 using UnitTests.Runners;
 using UnitTests.Validators;
 

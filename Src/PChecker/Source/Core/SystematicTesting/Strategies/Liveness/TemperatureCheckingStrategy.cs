@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
-using Monitor = Microsoft.Coyote.Specifications.Monitor;
+using Monitor = PChecker.Specifications.Monitor;
 
-namespace Microsoft.Coyote.SystematicTesting.Strategies
+namespace PChecker.SystematicTesting.Strategies
 {
     /// <summary>
     /// Strategy for detecting liveness property violations using the "temperature"
@@ -17,7 +17,7 @@ namespace Microsoft.Coyote.SystematicTesting.Strategies
         /// <summary>
         /// Initializes a new instance of the <see cref="TemperatureCheckingStrategy"/> class.
         /// </summary>
-        internal TemperatureCheckingStrategy(Configuration configuration, List<Monitor> monitors, ISchedulingStrategy strategy)
+        internal TemperatureCheckingStrategy(Configuration configuration, List<Specifications.Monitor> monitors, ISchedulingStrategy strategy)
             : base(configuration, monitors, strategy)
         {
         }

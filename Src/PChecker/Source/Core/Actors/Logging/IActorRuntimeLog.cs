@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 using System;
-using Microsoft.Coyote.Actors.Timers;
+using PChecker.Actors.Timers;
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// Interface that allows an external module to track what

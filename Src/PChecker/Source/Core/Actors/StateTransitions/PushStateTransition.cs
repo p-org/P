@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// Defines a push state transition.

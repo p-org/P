@@ -7,13 +7,17 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using CoyoteTester.Interfaces;
-using Microsoft.Coyote.Coverage;
-using Microsoft.Coyote.SmartSockets;
+using PChecker;
+using PChecker.Coverage;
+using PChecker.SystematicTesting;
+using PChecker.Interfaces;
+using PChecker.SmartSockets;
+using PChecker.Testing;
+using PChecker.Utilities;
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.Scheduling
 {
-    internal sealed class TestingProcessScheduler
+    public class TestingProcessScheduler
     {
         /// <summary>
         /// Configuration.
@@ -85,7 +89,7 @@ namespace Microsoft.Coyote.SystematicTesting
         /// <summary>
         /// Set if ctrl-c or ctrl-break occurred.
         /// </summary>
-        internal static bool IsProcessCanceled;
+        public static bool IsProcessCanceled;
 
         /// <summary>
         /// Set true if we have multiple parallel processes or are running code coverage.
@@ -201,14 +205,14 @@ namespace Microsoft.Coyote.SystematicTesting
                         var process = testingProcess.Value;
                         if (!process.HasExited)
                         {
-                            IO.Debug.WriteLine("... Killing child process : " + process.Id);
+                            PChecker.IO.Debug.WriteLine("... Killing child process : " + process.Id);
                             process.Kill();
                             process.Dispose();
                         }
                     }
                     catch (Exception e)
                     {
-                        IO.Debug.WriteLine("... Unable to terminate testing process: " + e.Message);
+                        PChecker.IO.Debug.WriteLine("... Unable to terminate testing process: " + e.Message);
                     }
                 }
 
@@ -230,7 +234,7 @@ namespace Microsoft.Coyote.SystematicTesting
         /// <summary>
         /// Creates a new testing process scheduler.
         /// </summary>
-        internal static TestingProcessScheduler Create(Configuration configuration)
+        public static TestingProcessScheduler Create(Configuration configuration)
         {
             return new TestingProcessScheduler(configuration);
         }
@@ -238,7 +242,7 @@ namespace Microsoft.Coyote.SystematicTesting
         /// <summary>
         /// Runs the Coyote testing scheduler.
         /// </summary>
-        internal void Run()
+        public void Run()
         {
             Console.WriteLine($"Starting TestingProcessScheduler in process {Process.GetCurrentProcess().Id}");
 
@@ -351,8 +355,8 @@ namespace Microsoft.Coyote.SystematicTesting
                 }
                 catch (InvalidOperationException)
                 {
-                    IO.Debug.WriteLine($"... Unable to wait for testing task '{testId}' to " +
-                        "terminate. Task has already terminated.");
+                    PChecker.IO.Debug.WriteLine($"... Unable to wait for testing task '{testId}' to " +
+                                                "terminate. Task has already terminated.");
                 }
             }
         }
@@ -404,7 +408,7 @@ namespace Microsoft.Coyote.SystematicTesting
             // pass this along to the TestingProcesses.
             this.Configuration.TestingSchedulerIpAddress = server.EndPoint.ToString();
 
-            IO.Debug.WriteLine($"... Server listening on '{server.EndPoint}'");
+            PChecker.IO.Debug.WriteLine($"... Server listening on '{server.EndPoint}'");
 
             this.Server = server;
         }
@@ -562,13 +566,13 @@ namespace Microsoft.Coyote.SystematicTesting
             if (this.TestReports.TryAdd(processId, testReport))
             {
                 // Merges the test report into the global report.
-                IO.Debug.WriteLine($"... Merging task {processId} test report.");
+                PChecker.IO.Debug.WriteLine($"... Merging task {processId} test report.");
                 this.GlobalTestReport.Merge(testReport);
             }
             else
             {
-                IO.Debug.WriteLine($"... Unable to merge test report from task '{processId}'. " +
-                    " Report is already merged.");
+                PChecker.IO.Debug.WriteLine($"... Unable to merge test report from task '{processId}'. " +
+                                            " Report is already merged.");
             }
         }
 

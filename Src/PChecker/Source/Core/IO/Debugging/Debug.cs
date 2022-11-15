@@ -4,7 +4,7 @@
 using System;
 using System.Globalization;
 
-namespace Microsoft.Coyote.IO
+namespace PChecker.IO
 {
     /// <summary>
     /// Static class implementing debug reporting methods.

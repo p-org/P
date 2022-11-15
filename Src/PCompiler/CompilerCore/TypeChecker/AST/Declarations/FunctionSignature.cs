@@ -1,6 +1,6 @@
-using Plang.Compiler.TypeChecker.Types;
 using System.Collections.Generic;
 using System.Linq;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {

@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace Plang.Compiler.Backend.Symbolic
 {
     internal class Constants

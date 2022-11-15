@@ -1,14 +1,13 @@
-using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker;
-using Plang.Compiler.TypeChecker.AST;
-using Plang.Compiler.TypeChecker.AST.Declarations;
-using Plang.Compiler.TypeChecker.AST.Expressions;
-using Plang.Compiler.TypeChecker.AST.Statements;
-using Plang.Compiler.TypeChecker.AST.States;
-using Plang.Compiler.TypeChecker.Types;
 using System;
 using System.IO;
 using System.Linq;
+using Antlr4.Runtime;
+using PChecker.PChecker.Compiler;
+using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler
 {

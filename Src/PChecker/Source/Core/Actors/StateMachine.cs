@@ -9,9 +9,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.Coyote.Actors.Timers;
+using PChecker.Actors.Timers;
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// Type that implements a state machine actor. Inherit from this class to declare

@@ -3,12 +3,12 @@
 
 using System;
 using System.Threading;
-using Microsoft.Coyote.Runtime;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker.Runtime;
+using PChecker.SystematicTesting;
 using TaskCanceledException = System.Threading.Tasks.TaskCanceledException;
 using TaskStatus = System.Threading.Tasks.TaskStatus;
 
-namespace Microsoft.Coyote.Tasks
+namespace PChecker.Tasks
 {
     /// <summary>
     /// Represents the producer side of a task unbound to a delegate, providing access to the consumer

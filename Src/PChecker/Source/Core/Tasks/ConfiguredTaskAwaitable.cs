@@ -3,11 +3,11 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker.SystematicTesting;
 using SystemCompiler = System.Runtime.CompilerServices;
 using SystemTasks = System.Threading.Tasks;
 
-namespace Microsoft.Coyote.Tasks
+namespace PChecker.Tasks
 {
     /// <summary>
     /// Provides an awaitable object that is the outcome of invoking <see cref="Task.ConfigureAwait"/>.

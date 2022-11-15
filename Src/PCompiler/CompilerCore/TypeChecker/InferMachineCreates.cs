@@ -1,11 +1,11 @@
-﻿using Plang.Compiler.Backend.ASTExt;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Plang.Compiler.TypeChecker
 {

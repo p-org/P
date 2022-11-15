@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Microsoft.Coyote.Actors.Mocks
+namespace PChecker.Actors.Mocks
 {
     /// <summary>
     /// Implements a queue of events that is used during testing.

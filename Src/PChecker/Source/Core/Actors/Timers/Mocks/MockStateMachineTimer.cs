@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace Microsoft.Coyote.Actors.Timers.Mocks
+namespace PChecker.Actors.Timers.Mocks
 {
     /// <summary>
     /// A mock timer that replaces <see cref="ActorTimer"/> during testing.

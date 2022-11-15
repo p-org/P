@@ -1,8 +1,8 @@
-﻿using Plang.Compiler.TypeChecker.AST;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using Plang.Compiler.TypeChecker.AST;
 
 namespace Plang.Compiler.Backend
 {

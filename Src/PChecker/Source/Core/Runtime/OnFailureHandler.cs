@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Coyote.Runtime
+namespace PChecker.Runtime
 {
     /// <summary>
     /// Handles the <see cref="ICoyoteRuntime.OnFailure"/> event.

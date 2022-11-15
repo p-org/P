@@ -9,9 +9,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.Coyote.Actors;
+using PChecker.Actors;
 
-namespace Microsoft.Coyote.Specifications
+namespace PChecker.Specifications
 {
     /// <summary>
     /// Abstract class representing a specification monitor.

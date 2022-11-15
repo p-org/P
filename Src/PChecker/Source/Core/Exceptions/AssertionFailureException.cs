@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Coyote
+namespace PChecker
 {
     /// <summary>
     /// The exception that is thrown by the Coyote runtime upon assertion failure.

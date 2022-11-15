@@ -7,7 +7,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 
-namespace Microsoft.Coyote.Utilities
+namespace PChecker.Utilities
 {
     /// <summary>
     /// Specifies a dependency between arguments.
@@ -42,7 +42,7 @@ namespace Microsoft.Coyote.Utilities
     /// <summary>
     /// A single command line argument.
     /// </summary>
-    internal class CommandLineArgument
+    public class CommandLineArgument
     {
         /// <summary>
         /// The long name referenced using two dashes (e.g. "--max-steps").
@@ -348,7 +348,7 @@ namespace Microsoft.Coyote.Utilities
     /// <summary>
     /// Provides a way of grouping command line arguments in the help text.
     /// </summary>
-    internal class CommandLineGroup
+    public class CommandLineGroup
     {
         private readonly CommandLineArgumentParser Parser;
         private readonly List<string> LongNames;
@@ -427,7 +427,7 @@ namespace Microsoft.Coyote.Utilities
     /// <summary>
     /// A handy command line argument parser.
     /// </summary>
-    internal class CommandLineArgumentParser
+    public class CommandLineArgumentParser
     {
         private readonly string AppName;
         private readonly string AppDescription;

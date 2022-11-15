@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Coyote.SystematicTesting.Strategies
+namespace PChecker.SystematicTesting.Strategies
 {
     /// <summary>
     /// This strategy combines two given strategies, using them to schedule

@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 using System.Runtime.CompilerServices;
-using Microsoft.Coyote.Runtime;
+using PChecker.Runtime;
 
-namespace Microsoft.Coyote.Random
+namespace PChecker.Random
 {
     /// <summary>
     /// Represents a pseudo-random value generator, which is an algorithm that produces

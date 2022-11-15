@@ -3,7 +3,7 @@
 
 using System.Threading.Tasks;
 
-namespace Microsoft.Coyote.Actors.SharedObjects
+namespace PChecker.Actors.SharedObjects
 {
     /// <summary>
     /// A shared counter modeled using an actor for testing.

@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using Plang.Compiler.TypeChecker.AST.Declarations;
 using System.Linq;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.Types;
-using static Plang.Compiler.Backend.Java.TypeManager;
 
 namespace Plang.Compiler.Backend.Java
 {
@@ -222,7 +221,7 @@ namespace Plang.Compiler.Backend.Java
             IEnumerable<Function> ffs = GlobalScope.Functions.Where(f => f.IsForeign);
             foreach (ForeignType t in ffs.SelectMany(ExtractForeignTypesFrom))
             {
-                JType toImport = Types.JavaTypeFor(t);
+                TypeManager.JType toImport = Types.JavaTypeFor(t);
                 WriteLine($"import {Constants.FFITypesPackage}.{toImport.TypeName};");
             }
             WriteLine();
@@ -271,7 +270,7 @@ namespace Plang.Compiler.Backend.Java
             // by foreign functions in this monitor.
             foreach (ForeignType t in ffs.SelectMany(ExtractForeignTypesFrom))
             {
-                JType toImport = Types.JavaTypeFor(t);
+                TypeManager.JType toImport = Types.JavaTypeFor(t);
                 WriteLine($"import {Constants.FFITypesPackage}.{toImport.TypeName};");
             }
             WriteLine();
@@ -329,7 +328,7 @@ namespace Plang.Compiler.Backend.Java
             WriteLine(")");
             WriteLine(" /* throws RaiseEventException, TransitionException */ {");
 
-            if (ret is JType.JVoid _)
+            if (ret is TypeManager.JType.JVoid _)
             {
                 WriteLine($"// TODO");
             }

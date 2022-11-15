@@ -1,7 +1,7 @@
-﻿using Antlr4.Runtime;
+﻿using System.IO;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
-using System.IO;
 
 namespace Plang.Compiler.TypeChecker
 {

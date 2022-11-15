@@ -4,9 +4,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker.SystematicTesting;
 
-namespace Microsoft.Coyote.Actors.SharedObjects
+namespace PChecker.Actors.SharedObjects
 {
     /// <summary>
     /// A thread-safe dictionary that can be shared in-memory by actors.

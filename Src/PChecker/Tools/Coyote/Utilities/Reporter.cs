@@ -3,9 +3,11 @@
 
 using System;
 using System.IO;
-using Microsoft.Coyote.Coverage;
+using PChecker.Coverage;
+using PChecker.SystematicTesting;
+using PChecker.Instrumentation;
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.Utilities
 {
     /// <summary>
     /// The Coyote testing reporter.

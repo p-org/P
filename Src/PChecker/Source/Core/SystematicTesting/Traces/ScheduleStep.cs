@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.SystematicTesting
 {
     /// <summary>
     /// Class implementing a program schedule step.

@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// Exception that is thrown by the runtime upon an <see cref="Actor"/> action failure.

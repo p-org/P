@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using System.IO;
-
-namespace Plang.Compiler.Backend.CSharp
+﻿namespace Plang.Compiler.Backend.CSharp
 {
     internal class Constants
     {

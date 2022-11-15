@@ -4,7 +4,7 @@
 using System;
 using System.IO;
 
-namespace Microsoft.Coyote.IO
+namespace PChecker.IO
 {
     /// <summary>
     /// Reports errors and warnings to the user.

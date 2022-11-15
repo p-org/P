@@ -4,9 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker.SystematicTesting;
 
-namespace Microsoft.Coyote.Actors.Mocks
+namespace PChecker.Actors.Mocks
 {
     /// <summary>
     /// Implements an actor manager that is used during testing.

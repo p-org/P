@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace Microsoft.Coyote.Actors.SharedObjects
+namespace PChecker.Actors.SharedObjects
 {
     /// <summary>
     /// Event containing the value of a shared dictionary.

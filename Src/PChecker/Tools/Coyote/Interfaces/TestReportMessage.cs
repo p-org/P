@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 using System.Runtime.Serialization;
-using Microsoft.Coyote.SmartSockets;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker.SystematicTesting;
+using PChecker.SmartSockets;
 
-namespace CoyoteTester.Interfaces
+namespace PChecker.Interfaces
 {
     [DataContract]
     public class TestReportMessage : SocketMessage

@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace Microsoft.Coyote.Actors.Timers.Mocks
+namespace PChecker.Actors.Timers.Mocks
 {
     /// <summary>
     /// Defines a timer elapsed event that is sent from a timer to the actor that owns the timer.

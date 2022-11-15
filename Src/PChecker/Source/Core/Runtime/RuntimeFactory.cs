@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.Coyote.Actors;
+using PChecker.Actors;
 
-namespace Microsoft.Coyote.Runtime
+namespace PChecker.Runtime
 {
     /// <summary>
     /// Provides methods for creating a <see cref="ICoyoteRuntime"/> runtime.

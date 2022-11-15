@@ -4,11 +4,11 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker.SystematicTesting;
 using SystemCompiler = System.Runtime.CompilerServices;
 using SystemTasks = System.Threading.Tasks;
 
-namespace Microsoft.Coyote.Tasks
+namespace PChecker.Tasks
 {
     /// <summary>
     /// Implements a <see cref="Task"/> awaiter. This type is intended for compiler use only.

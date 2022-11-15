@@ -3,16 +3,20 @@
 
 using System;
 using System.IO;
-using Microsoft.Coyote.IO;
-using Microsoft.Coyote.SystematicTesting;
-using Microsoft.Coyote.Utilities;
+using PChecker;
+using PChecker.IO;
+using PChecker.SystematicTesting;
+using PChecker.Instrumentation;
+using PChecker.Scheduling;
+using PChecker.Testing;
+using PChecker.Utilities;
 
-namespace Microsoft.Coyote
+namespace PChecker
 {
     /// <summary>
     /// Entry point to the Coyote tool.
     /// </summary>
-    internal class Program
+    internal class Runner
     {
         private static Configuration Configuration;
 
@@ -49,13 +53,6 @@ namespace Microsoft.Coyote
         {
             if (Configuration.RunAsParallelBugFindingTask)
             {
-                // This is being run as the child test process.
-                if (Configuration.ParallelDebug)
-                {
-                    Console.WriteLine("Attach Debugger and press ENTER to continue...");
-                    Console.ReadLine();
-                }
-
                 TestingProcess testingProcess = TestingProcess.Create(Configuration);
                 testingProcess.Run();
                 return;
@@ -164,6 +161,7 @@ namespace Microsoft.Coyote
         /// </summary>
         private static void Shutdown()
         {
+            StdOut.WriteLine("[PChecker]: Shutdown ..");
 #if NETFRAMEWORK
             if (Configuration != null && Configuration.ReportCodeCoverage && CodeCoverageMonitor.IsRunning)
             {

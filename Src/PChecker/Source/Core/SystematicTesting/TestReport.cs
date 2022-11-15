@@ -4,9 +4,9 @@
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
-using Microsoft.Coyote.Coverage;
+using PChecker.Coverage;
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.SystematicTesting
 {
     /// <summary>
     /// Class implementing the Coyote test report.

@@ -9,18 +9,18 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.Coyote.Actors;
-using Microsoft.Coyote.Actors.Mocks;
-using Microsoft.Coyote.Actors.Timers;
-using Microsoft.Coyote.Actors.Timers.Mocks;
-using Microsoft.Coyote.Coverage;
-using Microsoft.Coyote.Runtime;
-using Microsoft.Coyote.SystematicTesting.Strategies;
-using CoyoteTasks = Microsoft.Coyote.Tasks;
-using EventInfo = Microsoft.Coyote.Actors.EventInfo;
-using Monitor = Microsoft.Coyote.Specifications.Monitor;
+using PChecker.Actors;
+using PChecker.Actors.Mocks;
+using PChecker.Actors.Timers;
+using PChecker.Actors.Timers.Mocks;
+using PChecker.Coverage;
+using PChecker.Runtime;
+using PChecker.SystematicTesting.Strategies;
+using CoyoteTasks = PChecker.Tasks;
+using EventInfo = PChecker.Actors.EventInfo;
+using Monitor = PChecker.Specifications.Monitor;
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.SystematicTesting
 {
     /// <summary>
     /// Runtime for controlling asynchronous operations.
@@ -182,11 +182,11 @@ namespace Microsoft.Coyote.SystematicTesting
                     {
                         action();
                     }
-                    else if (testMethod is Func<IActorRuntime, CoyoteTasks.Task> functionWithRuntime)
+                    else if (testMethod is Func<IActorRuntime, Tasks.Task> functionWithRuntime)
                     {
                         await functionWithRuntime(this);
                     }
-                    else if (testMethod is Func<CoyoteTasks.Task> function)
+                    else if (testMethod is Func<Tasks.Task> function)
                     {
                         await function();
                     }
@@ -452,7 +452,7 @@ namespace Microsoft.Coyote.SystematicTesting
                 originInfo = new EventOriginInfo(null, "Env", "Env");
             }
 
-            EventInfo eventInfo = new EventInfo(e, originInfo)
+            Actors.EventInfo eventInfo = new Actors.EventInfo(e, originInfo)
             {
                 MustHandle = options?.MustHandle ?? false,
                 Assert = options?.Assert ?? -1
@@ -574,9 +574,9 @@ namespace Microsoft.Coyote.SystematicTesting
                 return;
             }
 
-            this.Assert(type.IsSubclassOf(typeof(Monitor)), "Type '{0}' is not a subclass of Monitor.", type.FullName);
+            this.Assert(type.IsSubclassOf(typeof(Specifications.Monitor)), "Type '{0}' is not a subclass of Monitor.", type.FullName);
 
-            Monitor monitor = Activator.CreateInstance(type) as Monitor;
+            Specifications.Monitor monitor = Activator.CreateInstance(type) as Specifications.Monitor;
             monitor.Initialize(this);
             monitor.InitializeStateInformation();
 
@@ -785,7 +785,7 @@ namespace Microsoft.Coyote.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyDequeuedEvent(Actor actor, Event e, EventInfo eventInfo)
+        internal override void NotifyDequeuedEvent(Actor actor, Event e, Actors.EventInfo eventInfo)
         {
             var op = this.Scheduler.GetOperationWithId<ActorOperation>(actor.Id.Value);
 
@@ -819,7 +819,7 @@ namespace Microsoft.Coyote.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyRaisedEvent(Actor actor, Event e, EventInfo eventInfo)
+        internal override void NotifyRaisedEvent(Actor actor, Event e, Actors.EventInfo eventInfo)
         {
             string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : null;
             this.LogWriter.LogRaiseEvent(actor.Id, stateName, e);
@@ -839,7 +839,7 @@ namespace Microsoft.Coyote.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyReceivedEvent(Actor actor, Event e, EventInfo eventInfo)
+        internal override void NotifyReceivedEvent(Actor actor, Event e, Actors.EventInfo eventInfo)
         {
             string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : null;
             this.LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: true);
@@ -848,7 +848,7 @@ namespace Microsoft.Coyote.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyReceivedEventWithoutWaiting(Actor actor, Event e, EventInfo eventInfo)
+        internal override void NotifyReceivedEventWithoutWaiting(Actor actor, Event e, Actors.EventInfo eventInfo)
         {
             string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : null;
             this.LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: false);
@@ -929,27 +929,27 @@ namespace Microsoft.Coyote.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyEnteredState(Monitor monitor)
+        internal override void NotifyEnteredState(Specifications.Monitor monitor)
         {
             string monitorState = monitor.CurrentStateName;
             this.LogWriter.LogMonitorStateTransition(monitor.GetType().FullName, monitorState, true, monitor.GetHotState());
         }
 
         /// <inheritdoc/>
-        internal override void NotifyExitedState(Monitor monitor)
+        internal override void NotifyExitedState(Specifications.Monitor monitor)
         {
             this.LogWriter.LogMonitorStateTransition(monitor.GetType().FullName,
                 monitor.CurrentStateName, false, monitor.GetHotState());
         }
 
         /// <inheritdoc/>
-        internal override void NotifyInvokedAction(Monitor monitor, MethodInfo action, string stateName, Event receivedEvent)
+        internal override void NotifyInvokedAction(Specifications.Monitor monitor, MethodInfo action, string stateName, Event receivedEvent)
         {
             this.LogWriter.LogMonitorExecuteAction(monitor.GetType().FullName, stateName, action.Name);
         }
 
         /// <inheritdoc/>
-        internal override void NotifyRaisedEvent(Monitor monitor, Event e)
+        internal override void NotifyRaisedEvent(Specifications.Monitor monitor, Event e)
         {
             string monitorState = monitor.CurrentStateName;
             this.LogWriter.LogMonitorRaiseEvent(monitor.GetType().FullName, monitorState, e);
@@ -1023,7 +1023,7 @@ namespace Microsoft.Coyote.SystematicTesting
         /// <summary>
         /// Reports coverage for the specified monitor.
         /// </summary>
-        private void ReportActivityCoverageOfMonitor(Monitor monitor)
+        private void ReportActivityCoverageOfMonitor(Specifications.Monitor monitor)
         {
             var monitorName = monitor.GetType().FullName;
             if (this.CoverageInfo.IsMachineDeclared(monitorName))

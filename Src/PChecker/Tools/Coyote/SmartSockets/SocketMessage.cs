@@ -3,7 +3,7 @@
 
 using System.Runtime.Serialization;
 
-namespace Microsoft.Coyote.SmartSockets
+namespace PChecker.SmartSockets
 {
     /// <summary>
     /// This is the base class for messages send over SmartSockets.

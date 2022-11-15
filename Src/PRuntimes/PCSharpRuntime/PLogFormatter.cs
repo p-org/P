@@ -1,8 +1,8 @@
-﻿using Microsoft.Coyote;
-using Microsoft.Coyote.Actors;
-using Plang.CSharpRuntime.Exceptions;
-using System;
+﻿using System;
 using System.Linq;
+using PChecker;
+using PChecker.Actors;
+using Plang.CSharpRuntime.Exceptions;
 
 namespace Plang.CSharpRuntime
 {

@@ -11,11 +11,11 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Coyote.Actors.Timers;
-using Microsoft.Coyote.IO;
-using Microsoft.Coyote.Runtime;
+using PChecker.Actors.Timers;
+using PChecker.IO;
+using PChecker.Runtime;
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// Type that implements an actor. Inherit from this class to declare a custom actor.

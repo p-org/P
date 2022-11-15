@@ -5,10 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Coyote.Actors.Timers;
-using Microsoft.Coyote.IO;
+using PChecker.Actors.Timers;
+using PChecker.IO;
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// Manages the installed <see cref="TextWriter"/> and all registered

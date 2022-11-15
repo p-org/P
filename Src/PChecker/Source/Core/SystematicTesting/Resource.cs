@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.SystematicTesting
 {
     /// <summary>
     /// Resource that can be used to synchronize asynchronous operations.

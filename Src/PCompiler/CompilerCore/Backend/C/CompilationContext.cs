@@ -1,7 +1,7 @@
-﻿using Plang.Compiler.TypeChecker.AST.Declarations;
+﻿using System.Collections.Generic;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
-using System.Collections.Generic;
 
 namespace Plang.Compiler.Backend.C
 {

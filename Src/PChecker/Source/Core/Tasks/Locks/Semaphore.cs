@@ -3,10 +3,10 @@
 
 using System;
 using System.Threading;
-using Microsoft.Coyote.Runtime;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker.Runtime;
+using PChecker.SystematicTesting;
 
-namespace Microsoft.Coyote.Tasks
+namespace PChecker.Tasks
 {
     /// <summary>
     /// A semaphore that limits the number of tasks that can access a resource. During testing,

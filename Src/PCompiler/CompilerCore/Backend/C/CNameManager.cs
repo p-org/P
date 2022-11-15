@@ -1,11 +1,11 @@
-﻿using Plang.Compiler.TypeChecker.AST;
-using Plang.Compiler.TypeChecker.AST.Declarations;
-using Plang.Compiler.TypeChecker.AST.States;
-using Plang.Compiler.TypeChecker.Types;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.C
 {

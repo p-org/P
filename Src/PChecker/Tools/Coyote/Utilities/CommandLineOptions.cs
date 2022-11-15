@@ -5,9 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using Microsoft.Coyote.IO;
+using PChecker;
+using PChecker.IO;
 
-namespace Microsoft.Coyote.Utilities
+namespace PChecker.Utilities
 {
     internal sealed class CommandLineOptions
     {
@@ -183,9 +184,6 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                     break;
                 case "parallel":
                     configuration.ParallelBugFindingTasks = (uint)option.Value;
-                    break;
-                case "parallel-debug":
-                    configuration.ParallelDebug = true;
                     break;
                 case "wait-for-testing-processes":
                     configuration.WaitForTestingProcesses = false;

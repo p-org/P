@@ -6,7 +6,7 @@ using System.IO;
 using System.Runtime.Serialization;
 using System.Xml;
 
-namespace Microsoft.Coyote.Coverage
+namespace PChecker.Coverage
 {
     /// <summary>
     /// Class for storing coverage-specific data

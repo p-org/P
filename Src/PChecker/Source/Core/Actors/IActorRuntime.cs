@@ -3,9 +3,9 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.Coyote.Runtime;
+using PChecker.Runtime;
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// Interface that exposes runtime methods for creating and executing actors.

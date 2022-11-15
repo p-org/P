@@ -1,9 +1,9 @@
+using System.Linq;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.Types;
-using System.Linq;
 
 namespace Plang.Compiler.TypeChecker
 {

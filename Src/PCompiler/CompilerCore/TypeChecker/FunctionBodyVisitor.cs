@@ -1,6 +1,7 @@
+using System.Diagnostics.Contracts;
+using PChecker.PChecker.Compiler;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Statements;
-using System.Diagnostics.Contracts;
 
 namespace Plang.Compiler.TypeChecker
 {

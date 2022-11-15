@@ -6,14 +6,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using Microsoft.Coyote.Runtime;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker.Runtime;
+using PChecker.SystematicTesting;
 using AsyncMethodBuilder = System.Runtime.CompilerServices.AsyncMethodBuilderAttribute;
 using MethodImpl = System.Runtime.CompilerServices.MethodImplAttribute;
 using MethodImplOptions = System.Runtime.CompilerServices.MethodImplOptions;
 using SystemTasks = System.Threading.Tasks;
 
-namespace Microsoft.Coyote.Tasks
+namespace PChecker.Tasks
 {
     /// <summary>
     /// Represents an asynchronous operation. Each <see cref="Task"/> is a thin wrapper over

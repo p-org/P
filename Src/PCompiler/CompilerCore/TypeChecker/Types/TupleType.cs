@@ -1,8 +1,8 @@
-using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Plang.Compiler.Backend.Java;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.TypeChecker.Types
 {

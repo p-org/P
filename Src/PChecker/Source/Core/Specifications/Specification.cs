@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 using System.Runtime.CompilerServices;
-using Microsoft.Coyote.Runtime;
+using PChecker.Runtime;
 
-namespace Microsoft.Coyote.Specifications
+namespace PChecker.Specifications
 {
     /// <summary>
     /// Provides static methods that are useful for writing specifications

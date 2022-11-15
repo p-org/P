@@ -1,4 +1,9 @@
-﻿using Plang.Compiler.Backend.ASTExt;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using PChecker.PChecker.Compiler;
+using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -6,10 +11,6 @@ using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace Plang.Compiler.Backend.CSharp
 {
@@ -128,10 +129,10 @@ namespace Plang.Compiler.Backend.CSharp
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
-            context.WriteLine(output, "using Microsoft.Coyote;");
-            context.WriteLine(output, "using Microsoft.Coyote.Actors;");
-            context.WriteLine(output, "using Microsoft.Coyote.Runtime;");
-            context.WriteLine(output, "using Microsoft.Coyote.Specifications;");
+            context.WriteLine(output, "using PChecker;");
+            context.WriteLine(output, "using PChecker.Actors;");
+            context.WriteLine(output, "using PChecker.Runtime;");
+            context.WriteLine(output, "using PChecker.Specifications;");
             context.WriteLine(output, "using System;");
             context.WriteLine(output, "using System.Runtime;");
             context.WriteLine(output, "using System.Collections.Generic;");
@@ -363,7 +364,7 @@ namespace Plang.Compiler.Backend.CSharp
         private void WriteTestFunction(CompilationContext context, StringWriter output, string main)
         {
             context.WriteLine(output);
-            context.WriteLine(output, "[Microsoft.Coyote.SystematicTesting.Test]");
+            context.WriteLine(output, "[PChecker.SystematicTesting.Test]");
             context.WriteLine(output, "public static void Execute(IActorRuntime runtime) {");
             context.WriteLine(output, "runtime.RegisterLog(new PLogFormatter());");
             context.WriteLine(output, "PModule.runtime = runtime;");

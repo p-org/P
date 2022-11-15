@@ -1,9 +1,10 @@
-﻿using Plang.Compiler;
-using Plang.Compiler.Backend;
+﻿using PChecker.PChecker.Compiler;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using Plang.Compiler;
+using Plang.Compiler.Backend;
 using UnitTests.Core;
 
 namespace UnitTests.Runners

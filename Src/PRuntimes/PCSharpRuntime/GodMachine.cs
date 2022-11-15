@@ -1,6 +1,6 @@
-﻿using Microsoft.Coyote;
-using Microsoft.Coyote.Actors;
-using System;
+﻿using System;
+using PChecker;
+using PChecker.Actors;
 
 namespace Plang.CSharpRuntime
 {

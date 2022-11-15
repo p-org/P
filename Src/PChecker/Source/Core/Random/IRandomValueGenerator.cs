@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace Microsoft.Coyote
+namespace PChecker
 {
     /// <summary>
     /// Interface for random value generators.

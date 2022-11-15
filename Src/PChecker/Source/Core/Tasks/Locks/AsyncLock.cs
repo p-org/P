@@ -3,11 +3,11 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Coyote.Runtime;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker.Runtime;
+using PChecker.SystematicTesting;
 using TCS = System.Threading.Tasks.TaskCompletionSource<object>;
 
-namespace Microsoft.Coyote.Tasks
+namespace PChecker.Tasks
 {
     /// <summary>
     /// A non-reentrant mutual exclusion lock that can be acquired asynchronously

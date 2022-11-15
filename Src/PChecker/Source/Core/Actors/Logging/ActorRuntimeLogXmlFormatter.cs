@@ -5,9 +5,9 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-using Microsoft.Coyote.Actors.Timers;
+using PChecker.Actors.Timers;
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// This class implements IActorRuntimeLog and generates log output in an XML format.

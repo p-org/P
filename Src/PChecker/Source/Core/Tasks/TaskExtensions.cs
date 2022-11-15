@@ -3,7 +3,7 @@
 
 using SystemTasks = System.Threading.Tasks;
 
-namespace Microsoft.Coyote.Tasks
+namespace PChecker.Tasks
 {
     /// <summary>
     /// Extension methods for <see cref="SystemTasks.Task"/> and <see cref="SystemTasks.Task{TResult}"/> objects.

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Microsoft.Coyote.Actors.SharedObjects
+namespace PChecker.Actors.SharedObjects
 {
     /// <summary>
     /// A shared dictionary modeled using an actor for testing.

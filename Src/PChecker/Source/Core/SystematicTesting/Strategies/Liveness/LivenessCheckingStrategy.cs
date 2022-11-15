@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
-using Monitor = Microsoft.Coyote.Specifications.Monitor;
+using Monitor = PChecker.Specifications.Monitor;
 
-namespace Microsoft.Coyote.SystematicTesting.Strategies
+namespace PChecker.SystematicTesting.Strategies
 {
     /// <summary>
     /// Abstract strategy for detecting liveness property violations. It
@@ -21,7 +21,7 @@ namespace Microsoft.Coyote.SystematicTesting.Strategies
         /// <summary>
         /// List of monitors in the program.
         /// </summary>
-        protected List<Monitor> Monitors;
+        protected List<Specifications.Monitor> Monitors;
 
         /// <summary>
         /// Strategy used for scheduling decisions.
@@ -31,7 +31,7 @@ namespace Microsoft.Coyote.SystematicTesting.Strategies
         /// <summary>
         /// Initializes a new instance of the <see cref="LivenessCheckingStrategy"/> class.
         /// </summary>
-        internal LivenessCheckingStrategy(Configuration configuration, List<Monitor> monitors, ISchedulingStrategy strategy)
+        internal LivenessCheckingStrategy(Configuration configuration, List<Specifications.Monitor> monitors, ISchedulingStrategy strategy)
         {
             this.Configuration = configuration;
             this.Monitors = monitors;

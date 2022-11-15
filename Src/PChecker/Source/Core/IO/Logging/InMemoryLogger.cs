@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Microsoft.Coyote.IO
+namespace PChecker.IO
 {
     /// <summary>
     /// Thread safe logger that writes text to an in-memory buffer.

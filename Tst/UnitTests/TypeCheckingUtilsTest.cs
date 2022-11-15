@@ -1,7 +1,7 @@
 ﻿using NUnit.Framework;
+using System;
 using Plang.Compiler.Backend.C;
 using Plang.Compiler.TypeChecker;
-using System;
 
 namespace UnitTests
 {

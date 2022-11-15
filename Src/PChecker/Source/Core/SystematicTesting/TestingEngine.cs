@@ -13,14 +13,14 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Microsoft.Coyote.Actors;
-using Microsoft.Coyote.Coverage;
-using Microsoft.Coyote.IO;
-using Microsoft.Coyote.Runtime;
-using Microsoft.Coyote.SystematicTesting.Strategies;
-using CoyoteTasks = Microsoft.Coyote.Tasks;
+using PChecker.Actors;
+using PChecker.Coverage;
+using PChecker.IO;
+using PChecker.Runtime;
+using PChecker.SystematicTesting.Strategies;
+using CoyoteTasks = PChecker.Tasks;
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.SystematicTesting
 {
     /// <summary>
     /// Testing engine that can run a controlled concurrency test using
@@ -29,7 +29,7 @@ namespace Microsoft.Coyote.SystematicTesting
 #if !DEBUG
     [DebuggerStepThrough]
 #endif
-    public sealed class TestingEngine
+    public class TestingEngine
     {
         /// <summary>
         /// Configuration.
@@ -162,19 +162,19 @@ namespace Microsoft.Coyote.SystematicTesting
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(Configuration configuration, Func<CoyoteTasks.Task> test) =>
+        public static TestingEngine Create(Configuration configuration, Func<Tasks.Task> test) =>
             new TestingEngine(configuration, test);
 
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(Configuration configuration, Func<ICoyoteRuntime, CoyoteTasks.Task> test) =>
+        public static TestingEngine Create(Configuration configuration, Func<ICoyoteRuntime, Tasks.Task> test) =>
             new TestingEngine(configuration, test);
 
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(Configuration configuration, Func<IActorRuntime, CoyoteTasks.Task> test) =>
+        public static TestingEngine Create(Configuration configuration, Func<IActorRuntime, Tasks.Task> test) =>
             new TestingEngine(configuration, test);
 
         /// <summary>

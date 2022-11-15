@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
-using static Plang.Compiler.CommandLineParseResult;
-
-namespace Plang.Compiler
+﻿namespace Plang
 {
     /// <summary>
     /// Result of parsing the command line arguments of P Compiler
@@ -16,7 +9,7 @@ namespace Plang.Compiler
         Failure,
         HelpRequested
     }
-
+    /*
     public static class CommandLineOptions
     {
         /// <summary>
@@ -35,7 +28,7 @@ namespace Plang.Compiler
         {
             job = null;
 
-            var commandlineParser = new ParseCommandlineOptions(CommandlineOutput);
+            var commandlineParser = new ParsePProjectFile(CommandlineOutput);
             // enforce the argument priority
             var commandlineArgs = args.ToList();
             if (commandlineArgs.Any(a => a.ToLowerInvariant().Contains("-h")))
@@ -90,5 +83,5 @@ namespace Plang.Compiler
             CommandlineOutput.WriteInfo("    -h, -help, --help          -- display this help message");
             CommandlineOutput.WriteInfo("------------------------------------------");
         }
-    }
+    }*/
 }

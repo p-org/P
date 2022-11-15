@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.SystematicTesting
 {
     /// <summary>
     /// Attribute for declaring the entry point to

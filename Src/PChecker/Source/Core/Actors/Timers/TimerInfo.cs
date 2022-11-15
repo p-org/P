@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Coyote.Actors.Timers
+namespace PChecker.Actors.Timers
 {
     /// <summary>
     /// Stores information about a timer that can send timeout events to its owner actor.

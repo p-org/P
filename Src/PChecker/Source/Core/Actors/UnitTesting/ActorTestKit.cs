@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
-namespace Microsoft.Coyote.Actors.UnitTesting
+namespace PChecker.Actors.UnitTesting
 {
     /// <summary>
     /// Provides methods for testing an actor of type <typeparamref name="T"/> in isolation.

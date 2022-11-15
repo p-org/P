@@ -4,10 +4,10 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Microsoft.Coyote.Actors.Timers;
-using Microsoft.Coyote.IO;
+using PChecker.Actors.Timers;
+using PChecker.IO;
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// This class implements IActorRuntimeLog and generates output in a a human readable text format.

@@ -1,9 +1,7 @@
 using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker.AST.Declarations;
-using System.Collections.Generic;
-using Plang.Compiler.Backend.Symbolic;
+using Plang.Compiler.TypeChecker.AST;
 
-namespace Plang.Compiler.TypeChecker.AST.Statements
+namespace Plang.Compiler.Backend.Symbolic
 {
     public class ReceiveSplitStmt : IPStmt
     {

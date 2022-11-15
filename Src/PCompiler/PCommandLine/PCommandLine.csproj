@@ -2,8 +2,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-    <RootNamespace>Plang.Compiler</RootNamespace>
-    <ToolCommandName>pc</ToolCommandName>
+    <RootNamespace>Plang</RootNamespace>
+    <ToolCommandName>p</ToolCommandName>
     <AssemblyName>p</AssemblyName>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
@@ -21,6 +21,7 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\PChecker\Tools\Coyote\Coyote.csproj" />
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
     <None Include="../../../Icon/icon.png" Pack="true" PackagePath="" />
   </ItemGroup>

@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace Microsoft.Coyote.SystematicTesting
+using PChecker;
+
+namespace PChecker.Testing
 {
     /// <summary>
     /// A portfolio of systematic testing strategies.

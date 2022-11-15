@@ -4,7 +4,7 @@
 using System;
 using System.Reflection;
 
-namespace Microsoft.Coyote.Specifications
+namespace PChecker.Specifications
 {
     /// <summary>
     /// A monitor delegate that has been cached to optimize performance of invocations.

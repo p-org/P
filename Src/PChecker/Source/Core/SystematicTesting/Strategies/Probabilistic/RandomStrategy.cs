@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.Coyote.SystematicTesting.Strategies
+namespace PChecker.SystematicTesting.Strategies
 {
     /// <summary>
     /// A simple (but effective) randomized scheduling strategy.

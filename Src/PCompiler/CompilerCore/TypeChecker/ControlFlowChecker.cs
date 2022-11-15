@@ -1,9 +1,9 @@
-﻿using Plang.Compiler.TypeChecker.AST;
-using Plang.Compiler.TypeChecker.AST.Declarations;
-using Plang.Compiler.TypeChecker.AST.Statements;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Statements;
 
 namespace Plang.Compiler.TypeChecker
 {

@@ -1,9 +1,10 @@
-﻿using Microsoft.Coyote.SystematicTesting;
-using Plang.Compiler;
+﻿using PChecker.SystematicTesting;
+using PChecker.PChecker.Compiler;
 using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Plang.Compiler;
 using UnitTests.Core;
 
 namespace UnitTests.Runners
@@ -101,8 +102,8 @@ namespace UnitTests.Runners
         private void CreateFileWithMainFunction(DirectoryInfo dir)
         {
             string testCode = @"
-using Microsoft.Coyote;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker;
+using PChecker.SystematicTesting;
 using System;
 using System.Linq;
 

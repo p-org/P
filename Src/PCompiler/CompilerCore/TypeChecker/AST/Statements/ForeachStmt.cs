@@ -1,5 +1,4 @@
 using Antlr4.Runtime;
-using Microsoft.VisualBasic;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.TypeChecker.AST.Statements

@@ -7,7 +7,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Xml;
 
-namespace Microsoft.Coyote.SmartSockets
+namespace PChecker.SmartSockets
 {
     public class SmartSocketTypeResolver : DataContractResolver
     {

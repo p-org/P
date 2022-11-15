@@ -3,7 +3,7 @@
 
 using System.Runtime.Serialization;
 
-namespace Microsoft.Coyote
+namespace PChecker
 {
     /// <summary>
     /// Abstract class representing an event.

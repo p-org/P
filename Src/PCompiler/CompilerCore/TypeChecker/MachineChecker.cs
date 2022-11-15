@@ -1,10 +1,10 @@
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 
 namespace Plang.Compiler.TypeChecker
 {

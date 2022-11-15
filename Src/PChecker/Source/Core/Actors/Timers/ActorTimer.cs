@@ -4,7 +4,7 @@
 using System;
 using System.Threading;
 
-namespace Microsoft.Coyote.Actors.Timers
+namespace PChecker.Actors.Timers
 {
     /// <summary>
     /// A timer that can send timeout events to its owner actor.

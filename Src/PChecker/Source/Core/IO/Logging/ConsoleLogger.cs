@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Microsoft.Coyote.IO
+namespace PChecker.IO
 {
     /// <summary>
     /// Logger that writes text to the console.

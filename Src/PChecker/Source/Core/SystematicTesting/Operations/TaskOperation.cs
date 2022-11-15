@@ -7,10 +7,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Microsoft.Coyote.Tasks;
+using PChecker.Tasks;
 using SystemTasks = System.Threading.Tasks;
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.SystematicTesting
 {
     /// <summary>
     /// Contains information about an asynchronous task operation

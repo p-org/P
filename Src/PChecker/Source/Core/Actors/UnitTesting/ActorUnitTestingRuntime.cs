@@ -4,9 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Coyote.Actors.Timers;
+using PChecker.Actors.Timers;
 
-namespace Microsoft.Coyote.Actors.UnitTesting
+namespace PChecker.Actors.UnitTesting
 {
     /// <summary>
     /// Runtime for testing an actor in isolation.

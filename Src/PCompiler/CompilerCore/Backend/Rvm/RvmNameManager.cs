@@ -1,11 +1,11 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
+
+using System;
+using System.Linq;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
-
-using System;
-using System.Linq;
 
 namespace Plang.Compiler.Backend.Rvm
 {

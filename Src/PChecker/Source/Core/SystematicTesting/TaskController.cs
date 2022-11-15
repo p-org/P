@@ -10,10 +10,10 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Coyote.Runtime;
-using CoyoteTasks = Microsoft.Coyote.Tasks;
+using PChecker.Runtime;
+using CoyoteTasks = PChecker.Tasks;
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.SystematicTesting
 {
     /// <summary>
     /// Responsible for controlling the execution of tasks during systematic testing.
@@ -45,7 +45,7 @@ namespace Microsoft.Coyote.SystematicTesting
 #if !DEBUG
         [DebuggerStepThrough]
 #endif
-        public CoyoteTasks.Task ScheduleAction(Action action, Task predecessor, CancellationToken cancellationToken)
+        public Tasks.Task ScheduleAction(Action action, Task predecessor, CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
             this.Assert(action != null, "The task cannot execute a null action.");
@@ -99,7 +99,7 @@ namespace Microsoft.Coyote.SystematicTesting
             this.Scheduler.WaitOperationStart(op);
             this.Scheduler.ScheduleNextEnabledOperation();
 
-            return new CoyoteTasks.Task(this, task);
+            return new Tasks.Task(this, task);
         }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace Microsoft.Coyote.SystematicTesting
 #if !DEBUG
         [DebuggerStepThrough]
 #endif
-        public CoyoteTasks.Task ScheduleFunction(Func<CoyoteTasks.Task> function, Task predecessor, CancellationToken cancellationToken)
+        public Tasks.Task ScheduleFunction(Func<Tasks.Task> function, Task predecessor, CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
             this.Assert(function != null, "The task cannot execute a null function.");
@@ -132,7 +132,7 @@ namespace Microsoft.Coyote.SystematicTesting
                         op.OnWaitTask(predecessor);
                     }
 
-                    CoyoteTasks.Task resultTask = function();
+                    Tasks.Task resultTask = function();
                     this.OnWaitTask(operationId, resultTask.UncontrolledTask);
                     return resultTask.UncontrolledTask;
                 }
@@ -160,7 +160,7 @@ namespace Microsoft.Coyote.SystematicTesting
             this.Scheduler.WaitOperationStart(op);
             this.Scheduler.ScheduleNextEnabledOperation();
 
-            return new CoyoteTasks.Task(this, innerTask);
+            return new Tasks.Task(this, innerTask);
         }
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace Microsoft.Coyote.SystematicTesting
 #if !DEBUG
         [DebuggerStepThrough]
 #endif
-        public CoyoteTasks.Task<TResult> ScheduleFunction<TResult>(Func<CoyoteTasks.Task<TResult>> function, Task predecessor,
+        public Tasks.Task<TResult> ScheduleFunction<TResult>(Func<Tasks.Task<TResult>> function, Task predecessor,
             CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
@@ -194,7 +194,7 @@ namespace Microsoft.Coyote.SystematicTesting
                         op.OnWaitTask(predecessor);
                     }
 
-                    CoyoteTasks.Task<TResult> resultTask = function();
+                    Tasks.Task<TResult> resultTask = function();
                     this.OnWaitTask(operationId, resultTask.UncontrolledTask);
                     return resultTask.UncontrolledTask;
                 }
@@ -222,7 +222,7 @@ namespace Microsoft.Coyote.SystematicTesting
             this.Scheduler.WaitOperationStart(op);
             this.Scheduler.ScheduleNextEnabledOperation();
 
-            return new CoyoteTasks.Task<TResult>(this, innerTask);
+            return new Tasks.Task<TResult>(this, innerTask);
         }
 
         /// <summary>
@@ -231,7 +231,7 @@ namespace Microsoft.Coyote.SystematicTesting
 #if !DEBUG
         [DebuggerStepThrough]
 #endif
-        public CoyoteTasks.Task<TResult> ScheduleDelegate<TResult>(Delegate work, Task predecessor, CancellationToken cancellationToken)
+        public Tasks.Task<TResult> ScheduleDelegate<TResult>(Delegate work, Task predecessor, CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
             this.Assert(work != null, "The task cannot execute a null delegate.");
@@ -299,7 +299,7 @@ namespace Microsoft.Coyote.SystematicTesting
             this.Scheduler.WaitOperationStart(op);
             this.Scheduler.ScheduleNextEnabledOperation();
 
-            return new CoyoteTasks.Task<TResult>(this, task);
+            return new Tasks.Task<TResult>(this, task);
         }
 
         /// <summary>
@@ -308,13 +308,13 @@ namespace Microsoft.Coyote.SystematicTesting
 #if !DEBUG
         [DebuggerStepThrough]
 #endif
-        public CoyoteTasks.Task ScheduleDelay(TimeSpan delay, CancellationToken cancellationToken)
+        public Tasks.Task ScheduleDelay(TimeSpan delay, CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
             if (delay.TotalMilliseconds == 0)
             {
                 // If the delay is 0, then complete synchronously.
-                return CoyoteTasks.Task.CompletedTask;
+                return Tasks.Task.CompletedTask;
             }
 
             // TODO: cache the dummy delay action to optimize memory.
@@ -387,7 +387,7 @@ namespace Microsoft.Coyote.SystematicTesting
 #if !DEBUG
         [DebuggerStepThrough]
 #endif
-        public CoyoteTasks.Task WhenAllTasksCompleteAsync(IEnumerable<CoyoteTasks.Task> tasks)
+        public Tasks.Task WhenAllTasksCompleteAsync(IEnumerable<Tasks.Task> tasks)
         {
             this.Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
             this.Assert(tasks.Count() > 0, "Cannot wait for zero tasks to complete.");
@@ -414,11 +414,11 @@ namespace Microsoft.Coyote.SystematicTesting
 
             if (exceptions != null)
             {
-                return CoyoteTasks.Task.FromException(new AggregateException(exceptions));
+                return Tasks.Task.FromException(new AggregateException(exceptions));
             }
             else
             {
-                return CoyoteTasks.Task.CompletedTask;
+                return Tasks.Task.CompletedTask;
             }
         }
 
@@ -429,7 +429,7 @@ namespace Microsoft.Coyote.SystematicTesting
 #if !DEBUG
         [DebuggerStepThrough]
 #endif
-        public CoyoteTasks.Task<TResult[]> WhenAllTasksCompleteAsync<TResult>(IEnumerable<CoyoteTasks.Task<TResult>> tasks)
+        public Tasks.Task<TResult[]> WhenAllTasksCompleteAsync<TResult>(IEnumerable<Tasks.Task<TResult>> tasks)
         {
             this.Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
             this.Assert(tasks.Count() > 0, "Cannot wait for zero tasks to complete.");
@@ -448,7 +448,7 @@ namespace Microsoft.Coyote.SystematicTesting
                 idx++;
             }
 
-            return CoyoteTasks.Task.FromResult(result);
+            return Tasks.Task.FromResult(result);
         }
 
         /// <summary>
@@ -458,7 +458,7 @@ namespace Microsoft.Coyote.SystematicTesting
 #if !DEBUG
         [DebuggerStepThrough]
 #endif
-        public CoyoteTasks.Task<CoyoteTasks.Task> WhenAnyTaskCompletesAsync(IEnumerable<CoyoteTasks.Task> tasks)
+        public Tasks.Task<Tasks.Task> WhenAnyTaskCompletesAsync(IEnumerable<Tasks.Task> tasks)
         {
             this.Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
             this.Assert(tasks.Count() > 0, "Cannot wait for zero tasks to complete.");
@@ -469,7 +469,7 @@ namespace Microsoft.Coyote.SystematicTesting
                 Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>");
             callerOp.OnWaitTasks(tasks, waitAll: false);
 
-            CoyoteTasks.Task result = null;
+            Tasks.Task result = null;
             foreach (var task in tasks)
             {
                 if (task.IsCompleted)
@@ -479,7 +479,7 @@ namespace Microsoft.Coyote.SystematicTesting
                 }
             }
 
-            return CoyoteTasks.Task.FromResult(result);
+            return Tasks.Task.FromResult(result);
         }
 
         /// <summary>
@@ -489,7 +489,7 @@ namespace Microsoft.Coyote.SystematicTesting
 #if !DEBUG
         [DebuggerStepThrough]
 #endif
-        public CoyoteTasks.Task<CoyoteTasks.Task<TResult>> WhenAnyTaskCompletesAsync<TResult>(IEnumerable<CoyoteTasks.Task<TResult>> tasks)
+        public Tasks.Task<Tasks.Task<TResult>> WhenAnyTaskCompletesAsync<TResult>(IEnumerable<Tasks.Task<TResult>> tasks)
         {
             this.Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
             this.Assert(tasks.Count() > 0, "Cannot wait for zero tasks to complete.");
@@ -500,7 +500,7 @@ namespace Microsoft.Coyote.SystematicTesting
                 Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>");
             callerOp.OnWaitTasks(tasks, waitAll: false);
 
-            CoyoteTasks.Task<TResult> result = null;
+            Tasks.Task<TResult> result = null;
             foreach (var task in tasks)
             {
                 if (task.IsCompleted)
@@ -510,14 +510,14 @@ namespace Microsoft.Coyote.SystematicTesting
                 }
             }
 
-            return CoyoteTasks.Task.FromResult(result);
+            return Tasks.Task.FromResult(result);
         }
 
         /// <summary>
         /// Waits for all of the provided controlled task objects to complete execution within
         /// a specified number of milliseconds or until a cancellation token is cancelled.
         /// </summary>
-        public bool WaitAllTasksComplete(CoyoteTasks.Task[] tasks)
+        public bool WaitAllTasksComplete(Tasks.Task[] tasks)
         {
             // TODO: support cancellations during testing.
             this.Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
@@ -540,7 +540,7 @@ namespace Microsoft.Coyote.SystematicTesting
 #if !DEBUG
         [DebuggerStepThrough]
 #endif
-        public int WaitAnyTaskCompletes(CoyoteTasks.Task[] tasks)
+        public int WaitAnyTaskCompletes(Tasks.Task[] tasks)
         {
             // TODO: support cancellations during testing.
             this.Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
@@ -570,7 +570,7 @@ namespace Microsoft.Coyote.SystematicTesting
         /// Waits for the task to complete execution. The wait terminates if a timeout interval
         /// elapses or a cancellation token is canceled before the task completes.
         /// </summary>
-        public bool WaitTaskCompletes(CoyoteTasks.Task task)
+        public bool WaitTaskCompletes(Tasks.Task task)
         {
             // TODO: return immediately if completed without errors.
             // TODO: support timeouts and cancellation tokens.
@@ -584,7 +584,7 @@ namespace Microsoft.Coyote.SystematicTesting
         /// <summary>
         /// Waits for the task to complete execution and returns the result.
         /// </summary>
-        public TResult WaitTaskCompletes<TResult>(CoyoteTasks.Task<TResult> task)
+        public TResult WaitTaskCompletes<TResult>(Tasks.Task<TResult> task)
         {
             // TODO: return immediately if completed without errors.
             var callerOp = this.Scheduler.GetExecutingOperation<TaskOperation>();
@@ -595,7 +595,7 @@ namespace Microsoft.Coyote.SystematicTesting
         }
 
         /// <summary>
-        /// Callback invoked when the <see cref="CoyoteTasks.AsyncTaskMethodBuilder.Start"/> is called.
+        /// Callback invoked when the <see cref="Tasks.AsyncTaskMethodBuilder.Start"/> is called.
         /// </summary>
 #if !DEBUG
         [DebuggerHidden]
@@ -614,7 +614,7 @@ namespace Microsoft.Coyote.SystematicTesting
         }
 
         /// <summary>
-        /// Callback invoked when the <see cref="CoyoteTasks.AsyncTaskMethodBuilder.Task"/> is accessed.
+        /// Callback invoked when the <see cref="Tasks.AsyncTaskMethodBuilder.Task"/> is accessed.
         /// </summary>
 #if !DEBUG
         [DebuggerHidden]
@@ -630,8 +630,8 @@ namespace Microsoft.Coyote.SystematicTesting
         }
 
         /// <summary>
-        /// Callback invoked when the <see cref="CoyoteTasks.AsyncTaskMethodBuilder.AwaitOnCompleted"/>
-        /// or <see cref="CoyoteTasks.AsyncTaskMethodBuilder.AwaitUnsafeOnCompleted"/> is called.
+        /// Callback invoked when the <see cref="Tasks.AsyncTaskMethodBuilder.AwaitOnCompleted"/>
+        /// or <see cref="Tasks.AsyncTaskMethodBuilder.AwaitUnsafeOnCompleted"/> is called.
         /// </summary>
 #if !DEBUG
         [DebuggerHidden]
@@ -647,7 +647,7 @@ namespace Microsoft.Coyote.SystematicTesting
                     Task.CurrentId);
             }
 
-            bool sameNamespace = awaiterType.Namespace == typeof(CoyoteTasks.Task).Namespace;
+            bool sameNamespace = awaiterType.Namespace == typeof(Tasks.Task).Namespace;
             if (!sameNamespace)
             {
                 this.Assert(false,
@@ -673,7 +673,7 @@ namespace Microsoft.Coyote.SystematicTesting
         }
 
         /// <summary>
-        /// Callback invoked when the <see cref="CoyoteTasks.YieldAwaitable.YieldAwaiter.GetResult"/> is called.
+        /// Callback invoked when the <see cref="Tasks.YieldAwaitable.YieldAwaiter.GetResult"/> is called.
         /// </summary>
 #if !DEBUG
         [DebuggerStepThrough]

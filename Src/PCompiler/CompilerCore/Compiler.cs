@@ -1,12 +1,13 @@
-﻿using Antlr4.Runtime;
-using Antlr4.Runtime.Atn;
-using Plang.Compiler.Backend;
-using Plang.Compiler.TypeChecker;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Antlr4.Runtime;
+using Antlr4.Runtime.Atn;
+using PChecker.PChecker.Compiler;
+using Plang.Compiler.Backend;
+using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler
@@ -18,17 +19,36 @@ namespace Plang.Compiler
 
             job.Output.WriteInfo($"----------------------------------------");
             job.Output.WriteInfo($"Parsing ...");
+            
             // Run parser on every input file
-            PParser.ProgramContext[] trees = job.InputFiles.Select(file =>
+            PParser.ProgramContext[] trees = null;
+            try
             {
-                PParser.ProgramContext tree = Parse(job, new FileInfo(file));
-                job.LocationResolver.RegisterRoot(tree, new FileInfo(file));
-                return tree;
-            }).ToArray();
+                trees = job.InputFiles.Select(file =>
+                {
+                    var tree = Parse(job, new FileInfo(file));
+                    job.LocationResolver.RegisterRoot(tree, new FileInfo(file));
+                    return tree;
+                }).ToArray();
+            }
+            catch (TranslationException e)
+            {
+                job.Output.WriteError("[Parser Error:]\n" + e.Message);
+                Environment.Exit(1);
+            }
 
             job.Output.WriteInfo($"Type checking ...");
-            // Run typechecker and produce AST
-            Scope scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
+            // Run type checker and produce AST
+            Scope scope = null;
+            try
+            {
+                Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
+            }
+            catch (TranslationException e)
+            {
+                job.Output.WriteError("[Error:]\n" + e.Message);
+                Environment.Exit(1);
+            }
 
             // Convert functions to lowered SSA form with explicit cloning
             foreach (Function fun in scope.GetAllMethods())
@@ -51,7 +71,16 @@ namespace Plang.Compiler
             {
                 job.Output.WriteInfo($"----------------------------------------");
                 job.Output.WriteInfo($"Compiling {job.ProjectName}...");
-                job.Backend.Compile(job);
+                try
+                {
+                    job.Backend.Compile(job);
+                }
+                catch (TranslationException e)
+                {
+                    job.Output.WriteError("[Compiling Generated Code:]\n" + e.Message);
+                    job.Output.WriteError("[THIS SHOULD NOT HAVE HAPPENED, please report it to the P team or create a GitHub issue]\n" + e.Message);
+                    Environment.Exit(1);
+                }
             }
             job.Output.WriteInfo($"----------------------------------------");
         }

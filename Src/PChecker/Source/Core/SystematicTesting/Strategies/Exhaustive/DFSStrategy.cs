@@ -3,9 +3,9 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Coyote.IO;
+using PChecker.IO;
 
-namespace Microsoft.Coyote.SystematicTesting.Strategies
+namespace PChecker.SystematicTesting.Strategies
 {
     /// <summary>
     /// A depth-first search scheduling strategy.

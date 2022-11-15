@@ -5,7 +5,7 @@ using System;
 using System.Globalization;
 using System.IO;
 
-namespace Microsoft.Coyote.IO
+namespace PChecker.IO
 {
     /// <summary>
     /// Static class implementing error reporting methods.

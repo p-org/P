@@ -5,8 +5,9 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using PChecker;
 
-namespace Microsoft.Coyote.SystematicTesting
+namespace PChecker.Testing
 {
     /// <summary>
     /// The Coyote testing process factory.
@@ -125,11 +126,6 @@ namespace Microsoft.Coyote.SystematicTesting
             }
 
             arguments.Append("--run-as-parallel-testing-task ");
-
-            if (configuration.ParallelDebug)
-            {
-                arguments.Append($"--parallel-debug ");
-            }
 
             return arguments.ToString();
         }

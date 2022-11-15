@@ -3,10 +3,10 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker.SystematicTesting;
 using SystemCompiler = System.Runtime.CompilerServices;
 
-namespace Microsoft.Coyote.Tasks
+namespace PChecker.Tasks
 {
     /// <summary>
     /// Implements an awaitable that asynchronously yields back to the current context when awaited.

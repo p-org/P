@@ -5,7 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.Serialization;
 
-namespace Microsoft.Coyote
+namespace PChecker
 {
     /// <summary>
     /// An exception that is thrown by the Coyote runtime.

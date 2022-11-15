@@ -5,11 +5,11 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Microsoft.Coyote.Runtime;
-using Microsoft.Coyote.SystematicTesting;
+using PChecker.Runtime;
+using PChecker.SystematicTesting;
 using SystemCompiler = System.Runtime.CompilerServices;
 
-namespace Microsoft.Coyote.Tasks
+namespace PChecker.Tasks
 {
     /// <summary>
     /// Represents a builder for asynchronous methods that return a <see cref="Task"/>.

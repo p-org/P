@@ -5,12 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace Microsoft.Coyote.SmartSockets
+namespace PChecker.SmartSockets
 {
     /// <summary>
     /// This class sets up a UDP broadcaster so clients on the same network can find the server by

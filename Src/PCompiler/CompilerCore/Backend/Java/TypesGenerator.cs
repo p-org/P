@@ -1,9 +1,8 @@
-using Plang.Compiler.TypeChecker.AST.Declarations;
 using System.Collections.Generic;
 using System.Linq;
 using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.Types;
-using static Plang.Compiler.Backend.Java.TypeManager;
 
 namespace Plang.Compiler.Backend.Java
 {
@@ -88,8 +87,8 @@ namespace Plang.Compiler.Backend.Java
         private void WriteNamedTupleDecl(NamedTupleType t)
         {
             // This is a sequence of <type, field name> pairs.
-            List<(JType, string)> fields =
-                new List<(JType, string)>();
+            List<(TypeManager.JType, string)> fields =
+                new List<(TypeManager.JType, string)>();
 
             // Build up our list of fields.
             foreach (var e in t.Fields)
@@ -104,7 +103,7 @@ namespace Plang.Compiler.Backend.Java
                     type = tdef.TypeDefDecl.Type;
                 }
 
-                JType jType = Types.JavaTypeFor(type);
+                TypeManager.JType jType = Types.JavaTypeFor(type);
 
                 fields.Add((jType, name));
             }
@@ -130,7 +129,7 @@ namespace Plang.Compiler.Backend.Java
             WriteLine();
         }
 
-        private void WriteNamedTupleFields(List<(JType, string)> fields)
+        private void WriteNamedTupleFields(List<(TypeManager.JType, string)> fields)
         {
             foreach (var (jType, fieldName) in fields)
             {
@@ -138,7 +137,7 @@ namespace Plang.Compiler.Backend.Java
             }
         }
 
-        private void WriteNamedTupleConstructors(string tname, List<(JType, string)> fields)
+        private void WriteNamedTupleConstructors(string tname, List<(TypeManager.JType, string)> fields)
         {
             // Write the default constructor.
             WriteLine($"public {tname}() {{");
@@ -177,7 +176,7 @@ namespace Plang.Compiler.Backend.Java
             WriteLine();
         }
 
-        private void WriteNamedTupleEqualityMethods(string tname, List<(JType, string)> fields)
+        private void WriteNamedTupleEqualityMethods(string tname, List<(TypeManager.JType, string)> fields)
         {
             // .equals() implementation: this simply defers to deepEquals() but explicitly overriding it is useful
             // for calling assertEquals() in unit tests, for example.
@@ -215,7 +214,7 @@ namespace Plang.Compiler.Backend.Java
             WriteLine();
         }
 
-        private void WriteNamedTupleToString(string tname, List<(JType, string)> fields)
+        private void WriteNamedTupleToString(string tname, List<(TypeManager.JType, string)> fields)
         {
             // Write toString() in the same output style as a Java record.
             WriteLine("public String toString() {");

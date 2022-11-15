@@ -1,6 +1,6 @@
 ﻿using System;
-using Plang.Compiler.TypeChecker;
 using System.Collections.Generic;
+using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler.Backend
 {

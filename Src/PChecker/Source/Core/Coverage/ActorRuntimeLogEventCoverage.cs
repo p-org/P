@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using Microsoft.Coyote.Actors;
-using Microsoft.Coyote.Actors.Timers;
+using PChecker.Actors;
+using PChecker.Actors.Timers;
 
-namespace Microsoft.Coyote.Coverage
+namespace PChecker.Coverage
 {
     /// <summary>
     /// This class maintains information about events received and sent from each state of each actor.

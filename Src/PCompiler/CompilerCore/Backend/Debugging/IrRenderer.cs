@@ -1,8 +1,8 @@
-﻿using Plang.Compiler.TypeChecker;
+﻿using System.Collections.Generic;
+using System.Text;
+using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.Types;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Plang.Compiler.Backend.Debugging
 {

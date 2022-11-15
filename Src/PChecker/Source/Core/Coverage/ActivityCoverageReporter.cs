@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Coyote.Actors;
+using PChecker.Actors;
 
-namespace Microsoft.Coyote.Coverage
+namespace PChecker.Coverage
 {
     /// <summary>
     /// The Coyote code coverage reporter.

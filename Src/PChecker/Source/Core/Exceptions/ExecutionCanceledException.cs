@@ -3,7 +3,7 @@
 
 using System.Diagnostics;
 
-namespace Microsoft.Coyote
+namespace PChecker
 {
     /// <summary>
     /// Exception that is thrown upon cancellation of testing execution by the runtime.

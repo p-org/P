@@ -5,7 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Globalization;
 
-namespace Microsoft.Coyote.Actors
+namespace PChecker.Actors
 {
     /// <summary>
     /// Utility class for resolving names.

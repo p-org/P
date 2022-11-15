@@ -1,17 +1,16 @@
-﻿using Plang.Compiler.Backend;
-using Plang.Compiler.TypeChecker;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Plang.Compiler.Backend;
+using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler
 {
     public class CompilationJob : ICompilationJob
     {
         public CompilationJob(ICompilerOutput output, DirectoryInfo outputDir, CompilerOutput outputLanguage, IReadOnlyList<string> inputFiles,
-            string projectName, DirectoryInfo projectRoot = null, bool generateSourceMaps = false, IReadOnlyList<string> projectDependencies = null,
-            DirectoryInfo aspectjOutputDir = null)
+            string projectName, DirectoryInfo projectRoot = null, bool generateSourceMaps = false, IReadOnlyList<string> projectDependencies = null)
         {
             if (!inputFiles.Any())
             {
@@ -20,7 +19,6 @@ namespace Plang.Compiler
 
             Output = output;
             OutputDirectory = outputDir;
-            AspectjOutputDirectory = aspectjOutputDir;
             InputFiles = inputFiles;
             ProjectName = projectName ?? Path.GetFileNameWithoutExtension(inputFiles[0]);
             ProjectRootPath = projectRoot;
@@ -35,7 +33,6 @@ namespace Plang.Compiler
         public bool GenerateSourceMaps { get; }
         public ICompilerOutput Output { get; }
         public DirectoryInfo OutputDirectory { get; }
-        public DirectoryInfo AspectjOutputDirectory { get; }
         public CompilerOutput OutputLanguage { get; }
         public string ProjectName { get; }
         public DirectoryInfo ProjectRootPath { get; }

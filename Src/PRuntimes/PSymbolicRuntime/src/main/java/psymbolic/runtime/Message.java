@@ -40,6 +40,16 @@ public class Message implements ValueSummary<Message> {
         return BooleanVS.trueUnderGuard(cond);
     }
 
+    public PrimitiveVS<Boolean> targetHalted() {
+        Guard cond = Guard.constFalse();
+        for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
+            Machine m = machine.getValue();
+            Guard g = machine.getGuard();
+            cond = cond.or(g.and(m.hasStarted().getGuardFor(true)).and(m.hasHalted().getGuardFor(true)));
+        }
+        return BooleanVS.trueUnderGuard(cond);
+    }
+
     public PrimitiveVS<Boolean> isCreateMachine() {
         Guard cond = Guard.constFalse();
         for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {

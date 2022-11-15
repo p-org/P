@@ -519,6 +519,18 @@ public class Scheduler implements SymbolicSearch {
             }
         }
 
+        // remove messages with halted target
+        for (Machine machine : machines) {
+            while (!machine.sendBuffer.isEmpty()) {
+                Guard targetHalted = machine.sendBuffer.satisfiesPredUnderGuard(x -> x.targetHalted()).getGuardFor(true);
+                if (!targetHalted.isFalse()) {
+                    rmBuffer(machine, targetHalted);
+                    continue;
+                }
+                break;
+            }
+        }
+
         // now there are no create machine and sync event actions remaining
         List<GuardedValue<Machine>> guardedMachines = new ArrayList<>();
 

@@ -108,6 +108,11 @@ public class ReplayScheduler extends Scheduler {
     }
 
     @Override
+    public boolean isFinishedExecution() {
+        return super.isFinishedExecution() || this.getChoiceDepth() >= schedule.size();
+    }
+
+    @Override
     public void startWith(Machine machine) {
         PrimitiveVS<Machine> machineVS;
         if (this.machineCounters.containsKey(machine.getClass())) {

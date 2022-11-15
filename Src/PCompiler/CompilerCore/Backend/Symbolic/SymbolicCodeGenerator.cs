@@ -1435,7 +1435,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 return;
             }
 
-            if (!valueType.IsSameTypeAs(locationType))
+            if (!locationType.IsAssignableFrom(valueType))
             {
                 throw new NotImplementedException(
                     $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
@@ -1458,7 +1458,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 return $"({GetSymbolicType(locationType)}) ValueSummary.castFromAny({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationType)}, ";
             }
 
-            if (valueType.IsSameTypeAs(locationType)) return "";
+            if (locationType.IsAssignableFrom(valueType)) return "";
 
             valueType = valueType.Canonicalize();
             locationType = locationType.Canonicalize();

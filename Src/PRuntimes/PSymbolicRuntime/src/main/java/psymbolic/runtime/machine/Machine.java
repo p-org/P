@@ -148,7 +148,7 @@ public abstract class Machine implements Serializable {
                 new EventHandler(Event.createMachine) {
                     @Override
                     public void handleEvent(Guard pc, Machine target, UnionVS payload, EventHandlerReturnReason eventHandlerReturnReason) {
-                        assert(!BooleanVS.isEverTrue(hasStarted().restrict(pc)));
+                        assert(!BooleanVS.isEverTrue(target.hasStarted().restrict(pc)));
                         target.start(pc, payload);
                     }
                 }

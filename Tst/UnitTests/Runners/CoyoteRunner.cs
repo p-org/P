@@ -73,6 +73,11 @@ namespace UnitTests.Runners
                 stdout += testStdout;
                 stderr += testStderr;
             }
+            else
+            {
+                // compilation returned unexpected error
+                exitCode = 2;
+            }
 
             return exitCode;
         }

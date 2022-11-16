@@ -13,7 +13,7 @@ machine Main {
 			send this, E1;
         }
 		
-        on E1 push Real1_S1; 
+        on E1 goto Real1_S1;
 		on E3 do Action1;          //this E3 handler is inherited by Real1_S1
         exit {  send this, E2; }   //never executed
 	}

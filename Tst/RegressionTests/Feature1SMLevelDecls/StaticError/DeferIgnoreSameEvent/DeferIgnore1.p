@@ -13,7 +13,7 @@ machine Main {
 			send this, E1;
 			send this, E2;
         }
-		on unit push Real1_S1;
+		on unit goto Real1_S1;
 		on E2 do Action2;
         //on E1 do Action2;   //Action2 handler for E1 is inherited by Real1_S1	
         exit { send this, E2;  }

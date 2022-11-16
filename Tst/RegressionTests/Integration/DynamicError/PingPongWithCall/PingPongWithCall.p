@@ -34,7 +34,7 @@ machine Main {
      }
 
      state Ping_WaitPong {
-        on Pong push Ping_SendPing;
+        on Pong goto Ping_SendPing;
      }
 
 }

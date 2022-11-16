@@ -66,7 +66,7 @@ eOperationSuccess, eOperationFailure;
 
         on eTimerFired goto DoorOpenedOkToClose;
         on eStopTimerReturned goto DoorOpened;
-        on eOpenDoor push StoppingTimer;
+        on eOpenDoor goto StoppingTimer;
     }
 
     state DoorOpenedOkToClose {
@@ -77,7 +77,7 @@ eOperationSuccess, eOperationFailure;
         }
 
         on eStopTimerReturned, eTimerFired goto DoorClosing;
-        on eCloseDoor push StoppingTimer;
+        on eCloseDoor goto StoppingTimer;
     }
 
     state DoorClosing {

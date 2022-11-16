@@ -95,16 +95,16 @@ machine XYZ {
 		    //ss = payload as seq[int];
 			//assert(ss[0] == 3);            //holds
 		}
-		on EI1 push XYZEI1;
-		on EI6 push XYZEI6;
-		on ET1 push XYZET1;
-		on ET2 push XYZET2;
-		on ESEQ1 push XYZESEQ1;
-		on ESEQ2 push XYZESEQ2;
-		on EMAP1 push XYZEMAP1;
-		on EMAP11 push XYZEMAP11;
-		on EMAP2 push XYZEMAP2;
-		on EMAP3 push XYZEMAP3;
+		on EI1 goto XYZEI1;
+		on EI6 goto XYZEI6;
+		on ET1 goto XYZET1;
+		on ET2 goto XYZET2;
+		on ESEQ1 goto XYZESEQ1;
+		on ESEQ2 goto XYZESEQ2;
+		on EMAP1 goto XYZEMAP1;
+		on EMAP11 goto XYZEMAP11;
+		on EMAP2 goto XYZEMAP2;
+		on EMAP3 goto XYZEMAP3;
 	}
 	// int is sent
 	state XYZEI1 {
@@ -113,7 +113,7 @@ machine XYZ {
 			assert(ta == 1);           //holds
 			//yt = payload as int;       //dynamic error: "value must have a concrete type" (TODO: add Sent\XYZ.p) (no error in runtime!)
 			//assert(yt == 1);           //holds?
-			pop;
+			goto init;
 		}
 	}
 	// "any as int" is sent
@@ -125,7 +125,7 @@ machine XYZ {
 			assert(yt == 1);           //holds
 			ta = payload as any;       //OK
 			assert(yt == 1);           //holds
-			pop;
+			goto init;
 		}
 	}
 	// tuple is sent via a var
@@ -135,7 +135,7 @@ machine XYZ {
 			assert (tts1.a == 1 && tts1.b == true);   //holds
 			tts1 = payload;                          //OK
 			assert (tts1.a == 1 && tts1.b == true);   //holds
-			pop;
+			goto init;
 		}
 	}
 	// tuple is sent via literal
@@ -143,7 +143,7 @@ machine XYZ {
 		entry (payload: (a: int, b: bool)) {
 			tts1 = payload as (a: int, b: bool);    //OK
 			assert (tts1.a == 2 && tts1.b == false);   //holds
-			pop;
+			goto init;
 		}
 	}
 	// seq[int] sent
@@ -161,7 +161,7 @@ machine XYZ {
 			
 			s1 = payload as seq[any];    //OK
 			assert (s1[0] == 1);          //holds
-			pop;
+			goto init;
 		}
 	}
 	// "seq[any] as seq[int]" is sent
@@ -179,7 +179,7 @@ machine XYZ {
 			
 			s1 = payload as seq[any];    //OK
 			assert (s1[0] == 1);          //holds
-			pop;
+			goto init;
 		}
 	}
 	// default(map[int,int]) is sent
@@ -204,7 +204,7 @@ machine XYZ {
 			
 			ma = payload as map[int,any];
 			//assert (ma[0] == 0);  //dynamic error: "key not found" (other XYZs)	
-			pop;
+			goto init;
 		}
 	}
 	// map[int,int] is sent (0,1) (3,3)
@@ -227,7 +227,7 @@ machine XYZ {
 			
 			ma = payload as map[int,any];
 			assert (ma[0] == 1 && ma[3] == 3);  //holds
-			pop;
+			goto init;
 		}
 	}
 	// default(map[int,any]) is sent as map[int,int]
@@ -251,7 +251,7 @@ machine XYZ {
 			ma = payload as map[int,any];     //OK
 			//assert (ma[0] == 1 && ma[3] == 3);  //dynamic error: "key not found" (other XYZs)
             			
-			pop;			
+			goto init;
 		}
 	}
 	// map[int,any] assigned a value of  map[int,int] type is sent as map[int,int]
@@ -272,7 +272,7 @@ machine XYZ {
 			
 			ma = payload as map[int,any];     //OK
 			assert (ma[0] == 1 && ma[3] == 3);  //holds
-			pop;
+			goto init;
 		}
 	}
 }

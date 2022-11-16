@@ -252,16 +252,16 @@ machine XYZ {
 		    //ss = payload as seq[int];
 			//assert(ss[0] == 3);            //holds
 		}
-		on EI1 push XYZEI1;
-        on EI6 push XYZEI6;		
-		on ET1 push XYZET1;
-		on ET2 push XYZET2;
-		on ESEQ1 push XYZESEQ1;
-		on ESEQ2 push XYZESEQ2;
-		on EMAP1 push XYZEMAP1;
-		on EMAP11 push XYZEMAP11;
-		on EMAP2 push XYZEMAP2;
-		on EMAP3 push XYZEMAP3;
+		on EI1 goto XYZEI1;
+        on EI6 goto XYZEI6;
+		on ET1 goto XYZET1;
+		on ET2 goto XYZET2;
+		on ESEQ1 goto XYZESEQ1;
+		on ESEQ2 goto XYZESEQ2;
+		on EMAP1 goto XYZEMAP1;
+		on EMAP11 goto XYZEMAP11;
+		on EMAP2 goto XYZEMAP2;
+		on EMAP3 goto XYZEMAP3;
 	}
 	// int is sent
 	state XYZEI1 {
@@ -269,7 +269,7 @@ machine XYZ {
 			yt = payload;
 			assert(yt == 1);        //holds
 			bt = payload as bool;   //error
-			pop;
+			goto init;
 		}
 	}
 	// "any as int" is sent
@@ -281,7 +281,7 @@ machine XYZ {
 			assert(yt == 1);           //holds	
 			ta = payload as any;       //OK
 			assert(yt == 1);           //holds
-			pop;
+			goto init;
 		}
 	}
 	// tuple is sent via a var
@@ -292,7 +292,7 @@ machine XYZ {
 			tts1 = payload;                          //OK
 			assert (tts1.a == 1 && tts1.b == true);   //holds
 			tts = payload as (a: int, b: int);    //error
-			pop;
+			goto init;
 		}
 	}
 	// tuple is sent via literal
@@ -301,7 +301,7 @@ machine XYZ {
 			tts1 = payload as (a: int, b: int);    //error
 			tts1 = payload;    //OK
 			assert (tts1.a == 2 && tts1.b == false);   //holds
-			pop;
+			goto init;
 		}
 	}
 	// seq[int] sent

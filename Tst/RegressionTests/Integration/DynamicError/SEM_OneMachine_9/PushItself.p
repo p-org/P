@@ -13,7 +13,7 @@ machine Main {
 			send this, E1;
         }
 		
-        on E2 push Real1_Init; 
+        on E2 goto Real1_Init;
 		on E1 goto Real1_Init;    //upon goto, "send this, E2;" is executed
         exit {  assert false; }
 	}

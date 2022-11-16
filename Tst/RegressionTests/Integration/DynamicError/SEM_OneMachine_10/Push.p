@@ -11,7 +11,7 @@ machine Main {
 			send this, E1;
         }
 		
-        on E2 push Real1_S1; 
+        on E2 goto Real1_S1;
 		on E1 goto Real1_Init;    //upon goto, "send this, E2;" is executed
         exit {  send this, E2; }
 	}

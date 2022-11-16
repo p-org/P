@@ -2,15 +2,26 @@
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.Types;
 using System.Collections.Generic;
+using System;
 
 namespace Plang.Compiler.Backend.CSharp
 {
     internal class CSharpNameManager : NameManagerBase
     {
         private readonly Dictionary<PLanguageType, string> typeNames = new Dictionary<PLanguageType, string>();
+        private readonly string[] reservedKeywords = new string[]
+        {
+            "bool", "byte", "sbyte", "short", "ushort", "int", "uint", "long", "ulong", "double", "float", "decimal",
+            "string", "char", "void", "object", "typeof", "sizeof", "null", "true", "false", "if", "else", "while", "for", "foreach", "do", "switch",
+            "case", "default", "lock", "try", "throw", "catch", "finally", "goto", "break", "continue", "return", "public", "private", "internal",
+            "protected", "static", "readonly", "sealed", "const", "fixed", "stackalloc", "volatile", "new", "override", "abstract", "virtual",
+            "event", "extern", "ref", "out", "in", "is", "as", "params", "__arglist", "__makeref", "__reftype", "__refvalue", "this", "base",
+            "namespace", "using", "class", "struct", "interface", "enum", "delegate", "checked", "unchecked", "unsafe", "operator", "implicit", "explicit"
+        };
 
         public CSharpNameManager(string namePrefix) : base(namePrefix)
         {
+            Array.Sort(reservedKeywords);
         }
 
         public IEnumerable<PLanguageType> UsedTypes => typeNames.Keys;
@@ -59,6 +70,10 @@ namespace Plang.Compiler.Backend.CSharp
             if (name.StartsWith("$"))
             {
                 name = "TMP_" + name.Substring(1);
+            }
+            else if (Array.BinarySearch(reservedKeywords, name) >= 0)
+            {
+                name = "P_" + name;
             }
 
             return UniquifyName(name);

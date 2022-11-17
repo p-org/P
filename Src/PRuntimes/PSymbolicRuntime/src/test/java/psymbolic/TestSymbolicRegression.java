@@ -57,7 +57,6 @@ public class TestSymbolicRegression {
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/EnumType1");
 
         // TODO Unsupported: type casting collections with any type
-        excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/ShortCircuitEval");
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/CastInExprsAsserts");
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes");
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes12");
@@ -73,6 +72,12 @@ public class TestSymbolicRegression {
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes7");
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes8");
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes9");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs1");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs2");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs3");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs4");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs5");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs6");
 
         // TODO Unsupported: comparison of null with any type
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/anyTypeNullValue");

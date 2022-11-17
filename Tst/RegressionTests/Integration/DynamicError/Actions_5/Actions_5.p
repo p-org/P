@@ -17,7 +17,7 @@ machine Main {
         }
 		//actions are inherited by the pushed state:
         on E2 do Action1;
-		on unit push Real_S1;
+		on unit goto Real_S1;
 		//transitions are not inherited:
         on E4 goto Real_S2;
     }

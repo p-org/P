@@ -9,7 +9,7 @@ machine Main {
 		    send this, E1;
 			raise halt;
         }
-		on halt push Real1_S1;
+		on halt goto Real1_S1;
         on E1 do Action2;   //inherited by Real1_S1
         exit { }   
 	}

@@ -14,7 +14,7 @@ machine Main {
             raise unit;	   
         }
         on E2 do (payload: int) { Action1(payload); }
-		on unit push Real_S1;
+		on unit goto Real_S1;
         on E4 goto Real_S2;
     }
 

@@ -150,7 +150,7 @@ eSetLedStateToUnstableUsingControlTransfer, eStartDebounceTimer, eStopTimer;
 		entry {
 			raise(eUnit);
 		}
-		on eUnit push sStoppingTimerDriver;
+		on eUnit goto sStoppingTimerDriver;
 		on eTimerStopped goto sStoringSwitchAndCheckingIfStateChangedDriver;
 	}
 	
@@ -163,7 +163,7 @@ eSetLedStateToUnstableUsingControlTransfer, eStartDebounceTimer, eStopTimer;
 		}
 		
 		on eTimerStopped goto sCompletingD0ExitDriver;
-		on eUnit push sStoppingTimerDriver;
+		on eUnit goto sStoppingTimerDriver;
 		
 	}
 	

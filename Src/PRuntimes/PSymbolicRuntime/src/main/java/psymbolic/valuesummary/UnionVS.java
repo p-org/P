@@ -10,9 +10,6 @@ import java.util.*;
  * */
 @SuppressWarnings("ALL")
 public class UnionVS implements ValueSummary<UnionVS> {
-    // Special default/null union value summary
-    private static UnionVS nullUnionVS = new UnionVS();
-
     /* Type of value stored in the any type variable */
     private final PrimitiveVS<UnionVStype> type;
     /* Map from the type of variable to the value summary representing the value of that type */
@@ -184,7 +181,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
     public PrimitiveVS<Boolean> symbolicEquals(UnionVS cmp, Guard pc) {
         assert(type != null);
         if (cmp == null) {
-            cmp = UnionVS.nullUnionVS;
+            return BooleanVS.trueUnderGuard(pc.and(getUniverse().not()));
         }
         PrimitiveVS res = type.symbolicEquals(cmp.type, pc);
         for (Map.Entry<UnionVStype, ValueSummary> payload : cmp.value.entrySet()) {

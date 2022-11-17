@@ -13,7 +13,7 @@ machine Main {
         entry { 
 			send this, E1;
         }	
-        on E1 push Real1_S1; 
+        on E1 goto Real1_S1;
 		on E3 do Action1;          //handling of E3 happens in Real1_Init
         exit {  send this, E2; }   //never executed
 	}
@@ -21,7 +21,7 @@ machine Main {
 		entry {
 			XYZ  = true;
 			send this, E3;
-			pop;
+			goto Real1_Init;
 		}
 	}
 	fun Action1() {

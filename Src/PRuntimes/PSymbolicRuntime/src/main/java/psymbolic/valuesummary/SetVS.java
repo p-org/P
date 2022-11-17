@@ -176,6 +176,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
             if (j < guardedSizeList.size() - 1) {
                 out.append(",");
             }
+            out.append("]");
         }
         out.append("]");
         return out.toString();

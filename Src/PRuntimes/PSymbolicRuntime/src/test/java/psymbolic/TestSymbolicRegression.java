@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  *  Place test cases as source P files at ../Tst/SymbolicRegressionTests/
  */
 public class TestSymbolicRegression {
-    private static String runArgs = "-i 20";
+    private static String runArgs = "--iterations 20 --seed 0";
     private static String outputDirectory = "output/testCases";
     private static List<String> excluded = new ArrayList<>();
 
@@ -57,7 +57,6 @@ public class TestSymbolicRegression {
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/EnumType1");
 
         // TODO Unsupported: type casting collections with any type
-        excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/ShortCircuitEval");
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/CastInExprsAsserts");
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes");
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes12");
@@ -73,6 +72,12 @@ public class TestSymbolicRegression {
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes7");
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes8");
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes9");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs1");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs2");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs3");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs4");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs5");
+        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs6");
 
         // TODO Unsupported: comparison of null with any type
         excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/anyTypeNullValue");
@@ -114,35 +119,6 @@ public class TestSymbolicRegression {
         excluded.add("../../../Tst/RegressionTests/Integration/Correct/SEM_TwoMachines_15");
         excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive11");
         excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive11_1");
-
-        // TODO Wait4Fix: exclude test errors due to push/pop: issue #509
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/Actions_5");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/Actions_6");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/Multi_Paxos_3");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/Multi_Paxos_4");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/PingPongWithCall");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_10");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_11");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_12");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_13");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_15");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_16");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_20");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_21");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_32");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_9");
-        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/StaticError/DeferIgnoreSameEvent");
-        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/StaticError/entryExit");
-        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/StaticError/CastInExprs");
-        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs1");
-        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs2");
-        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs3");
-        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs4");
-        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs5");
-        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs6");
-
-        // TODO Wait4Fix: exclude test errors due to set update: similar to issue #509
-        excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/SetAccess");
     }
     private static void initialize() {
         Log4JConfig.configureLog4J();

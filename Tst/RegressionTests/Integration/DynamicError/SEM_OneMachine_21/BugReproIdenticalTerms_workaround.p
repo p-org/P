@@ -7,13 +7,13 @@ machine Main {
 	start state Init {
 		entry { raise E; }
 		exit { assert (false); }  //unreachable
-		on E push Call;
+		on E goto Call;
 	}
 
 	state Call {
 		   entry { 
 			   
-				       pop; 					   
+				       goto Init;
 			}
 			exit { assert (false); ;}  //reachable
 	}

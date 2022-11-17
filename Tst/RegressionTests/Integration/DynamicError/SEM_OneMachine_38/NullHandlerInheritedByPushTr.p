@@ -10,7 +10,7 @@ machine Main {
 			 entry { i = 0; raise E; }
 
 		exit { assert (false); }  //unreachable
-		on E push Call;
+		on E goto Call;
 		on null do {assert(false);}  //inherited by Call; reachable
 	}
 

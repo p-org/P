@@ -483,9 +483,9 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output, ", outcome");
                     if (actionFunc.Signature.Parameters.Count() == 1)
                     {
-                        Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
-                        var payloadVSType = GetSymbolicType(handler.Key.PayloadType);
-                        var defaultPayload = GetDefaultValueNoGuard(context, handler.Key.PayloadType);
+                        Debug.Assert(!actionFunc.Signature.Parameters[0].Type.IsSameTypeAs(PrimitiveType.Null));
+                        var payloadVSType = GetSymbolicType(actionFunc.Signature.Parameters[0].Type);
+                        var defaultPayload = GetDefaultValueNoGuard(context, actionFunc.Signature.Parameters[0].Type);
                         context.Write(output, $", ({payloadVSType}) ValueSummary.castFromAny(pc, {defaultPayload}, payload)");
                     }
                     context.WriteLine(output, ");");
@@ -511,9 +511,9 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(pc, machine.sendBuffer");
                         if (transitionFunc.Signature.Parameters.Count() == 1)
                         {
-                            Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
-                            var payloadVSType = GetSymbolicType(handler.Key.PayloadType);
-                            var defaultPayload = GetDefaultValueNoGuard(context, handler.Key.PayloadType);
+                            Debug.Assert(!transitionFunc.Signature.Parameters[0].Type.IsSameTypeAs(PrimitiveType.Null));
+                            var payloadVSType = GetSymbolicType(transitionFunc.Signature.Parameters[0].Type);
+                            var defaultPayload = GetDefaultValueNoGuard(context, transitionFunc.Signature.Parameters[0].Type);
                             context.Write(output, $", ({payloadVSType}) ValueSummary.castFromAny(pc, {defaultPayload}, payload)");
                         }
                         context.WriteLine(output, ");");
@@ -1444,6 +1444,11 @@ namespace Plang.Compiler.Backend.Symbolic
         }
 
         private string GetInlineCastPrefix(PLanguageType valueType, PLanguageType locationType, CompilationContext context, PathConstraintScope pcScope) {
+            if (valueType.Equals(locationType))
+            {
+                return "";
+            }
+            
             var valueIsMachineRef = valueType.IsSameTypeAs(PrimitiveType.Machine) || valueType is PermissionType;
             var locationIsMachineRef = locationType.IsSameTypeAs(PrimitiveType.Machine) || locationType is PermissionType;
 
@@ -1453,12 +1458,11 @@ namespace Plang.Compiler.Backend.Symbolic
             if (locationType.IsSameTypeAs(PrimitiveType.Any) || locationType.IsSameTypeAs(PrimitiveType.Data)) {
                 //return $"new UnionVS ({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, valueType)}.getClass(), ";
                 return $"ValueSummary.castToAny({pcScope.PathConstraintVar}, ";
-            } else if (valueType.IsSameTypeAs(PrimitiveType.Any) || valueType.IsSameTypeAs(PrimitiveType.Data))
+            }
+            else if (valueType.IsSameTypeAs(PrimitiveType.Any) || valueType.IsSameTypeAs(PrimitiveType.Data))
             {
                 return $"({GetSymbolicType(locationType)}) ValueSummary.castFromAny({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationType)}, ";
             }
-
-            if (locationType.IsAssignableFrom(valueType)) return "";
 
             valueType = valueType.Canonicalize();
             locationType = locationType.Canonicalize();
@@ -1468,6 +1472,53 @@ namespace Plang.Compiler.Backend.Symbolic
             }
 
             if ((valueType is TupleType) && locationType is TupleType)
+            {
+                return "";
+            }
+
+            PLanguageType locationElementType = null;
+            PLanguageType valueElementType = null;
+            var isMap = PLanguageType.TypeIsOfKind(locationType, TypeKind.Map);
+            var isSet = PLanguageType.TypeIsOfKind(locationType, TypeKind.Set);
+            var isSeq = PLanguageType.TypeIsOfKind(locationType, TypeKind.Sequence);
+            if (isMap)
+            {
+                locationElementType = ((MapType) locationType).ValueType;
+                if (PLanguageType.TypeIsOfKind(valueType, TypeKind.Map))
+                {
+                    valueElementType = ((MapType) valueType).ValueType;
+                }
+            }
+            else if (isSet)
+            {
+                locationElementType = ((SetType) locationType).ElementType;
+                if (PLanguageType.TypeIsOfKind(valueType, TypeKind.Set))
+                {
+                    valueElementType = ((SetType) valueType).ElementType;
+                }
+            }
+            else if (isSeq)
+            {
+                locationElementType = ((SequenceType) locationType).ElementType;
+                if (PLanguageType.TypeIsOfKind(valueType, TypeKind.Sequence))
+                {
+                    valueElementType = ((SequenceType) valueType).ElementType;
+                }
+            }
+            if (locationElementType != null && valueElementType != null)
+            {
+                if (locationElementType.IsSameTypeAs(PrimitiveType.Any) || locationElementType.IsSameTypeAs(PrimitiveType.Data))
+                {
+                    //return $"new UnionVS ({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, valueType)}.getClass(), ";
+                    return $"({GetSymbolicType(locationType)}) ValueSummary.castToAnyCollection({pcScope.PathConstraintVar}, ";
+                }
+                else if (valueElementType.IsSameTypeAs(PrimitiveType.Any) || valueElementType.IsSameTypeAs(PrimitiveType.Data))
+                {
+                    return $"({GetSymbolicType(locationType)}) ValueSummary.castFromAnyCollection({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationElementType)}, ";
+                }
+            }
+
+            if (locationType.IsAssignableFrom(valueType))
             {
                 return "";
             }
@@ -2066,10 +2117,11 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case MapAccessExpr mapAccessExpr:
                     WriteExpr(context, output, pcScope, mapAccessExpr.MapExpr);
-                    context.Write(output, ".getOrDefault(");
+                    context.Write(output, ".get(");
+                    // context.Write(output, ".getOrDefault(");
                     WriteExpr(context, output, pcScope, mapAccessExpr.IndexExpr);
-                    context.Write(output, ", ");
-                    context.Write(output, GetDefaultValue(context, pcScope, mapAccessExpr.Type));
+                    // context.Write(output, ", ");
+                    // context.Write(output, GetDefaultValue(context, pcScope, mapAccessExpr.Type));
                     context.Write(output, ")");
                     break;
                 case SeqAccessExpr seqAccessExpr:

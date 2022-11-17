@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  *  Place test cases as source P files at ../Tst/SymbolicRegressionTests/
  */
 public class TestSymbolicRegression {
-    private static String runArgs = "-i 20";
+    private static String runArgs = "--iterations 20 --seed 0";
     private static String outputDirectory = "output/testCases";
     private static List<String> excluded = new ArrayList<>();
 

@@ -453,6 +453,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
                     out.append(", ");
                 }
             }
+            out.append("]");
             if (j < guardedSizeList.size() - 1) {
                 out.append(",");
             }

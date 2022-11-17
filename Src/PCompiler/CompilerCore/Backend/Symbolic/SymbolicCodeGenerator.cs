@@ -2117,10 +2117,11 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case MapAccessExpr mapAccessExpr:
                     WriteExpr(context, output, pcScope, mapAccessExpr.MapExpr);
-                    context.Write(output, ".getOrDefault(");
+                    context.Write(output, ".get(");
+                    // context.Write(output, ".getOrDefault(");
                     WriteExpr(context, output, pcScope, mapAccessExpr.IndexExpr);
-                    context.Write(output, ", ");
-                    context.Write(output, GetDefaultValue(context, pcScope, mapAccessExpr.Type));
+                    // context.Write(output, ", ");
+                    // context.Write(output, GetDefaultValue(context, pcScope, mapAccessExpr.Type));
                     context.Write(output, ")");
                     break;
                 case SeqAccessExpr seqAccessExpr:

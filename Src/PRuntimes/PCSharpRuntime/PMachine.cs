@@ -76,6 +76,7 @@ namespace Plang.CSharpRuntime
         public void TrySendEvent(PMachineValue target, Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot send a null event");
+            Assert(target != null, "Machine in send cannot be null");
             Assert(sends.Contains(ev.GetType().Name),
                 $"Event {ev.GetType().Name} is not in the sends set of the Machine {GetType().Name}");
             Assert(target.Permissions.Contains(ev.GetType().Name),

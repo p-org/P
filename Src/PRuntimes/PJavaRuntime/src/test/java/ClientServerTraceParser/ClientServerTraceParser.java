@@ -1,6 +1,6 @@
 package ClientServerTraceParser;
 
-import prt.events.PEvent;
+import prt.PEvent;
 import parsers.PTraceParserUtils;
 
 import java.util.HashMap;

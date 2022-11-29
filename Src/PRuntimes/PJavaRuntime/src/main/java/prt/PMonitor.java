@@ -3,7 +3,6 @@ package prt;
 import java.util.*;
 import java.util.function.Consumer;
 
-import prt.events.PEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -12,19 +11,19 @@ import org.apache.logging.log4j.message.StringMapMessage;
 import prt.exceptions.*;
 
 /**
- * A prt.Monitor encapsulates a state machine.
+ * A PMonitor implements the P specification machine.
  *
  */
-public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consumer<PEvent<?>> {
+public abstract class PMonitor<StateKey extends Enum<StateKey>> implements Consumer<PEvent<?>> {
     private final Logger logger = LogManager.getLogger(this.getClass());
     private static final Marker PROCESSING_MARKER = MarkerManager.getMarker("EVENT_PROCESSING");
     private static final Marker TRANSITIONING_MARKER = MarkerManager.getMarker("STATE_TRANSITIONING");
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private Optional<State<StateKey>> startState;
-    private State<StateKey> currentState;
+    private Optional<PState<StateKey>> startState;
+    private PState<StateKey> currentState;
 
-    private EnumMap<StateKey, State<StateKey>> states; // All registered states
+    private EnumMap<StateKey, PState<StateKey>> states; // All registered states
     private StateKey[] stateUniverse;                  // all possible states
 
     /**
@@ -38,7 +37,7 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
      *
      * @param s The state.
      */
-    protected void addState(State<StateKey> s) {
+    protected void addState(PState<StateKey> s) {
         Objects.requireNonNull(s);
         if (isRunning) {
             throw new RuntimeException("prt.Monitor is already running; no new states may be added.");
@@ -98,13 +97,13 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
      *
      * @throws RuntimeException if `k` is not a state in the state machine.
      */
-    public void gotoState(StateKey k) throws TransitionException {
+    public void gotoState(StateKey k) throws GotoTransitionException {
         Objects.requireNonNull(k);
 
         if (!states.containsKey(k)) {
             throw new RuntimeException("prt.State not present");
         }
-        throw new TransitionException(states.get(k));
+        throw new GotoTransitionException(states.get(k));
     }
 
     /**
@@ -115,14 +114,14 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
      *
      * @throws RuntimeException if `k` is not a state in the state machine.
      */
-    public <P> void gotoState(StateKey k, P payload) throws TransitionException {
+    public <P> void gotoState(StateKey k, P payload) throws GotoTransitionException {
         Objects.requireNonNull(k);
         Objects.requireNonNull(payload);
 
         if (!states.containsKey(k)) {
             throw new RuntimeException("prt.State not present");
         }
-        throw new TransitionException(states.get(k), payload);
+        throw new GotoTransitionException(states.get(k), payload);
     }
 
     /**
@@ -143,13 +142,13 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
 
         // XXX: We can technically avoid this downcast, but to fulfill the interface for Consumer<T>
         // this method cannot accept a type parameter, so this can't be a TransitionableConsumer<P>.
-        Optional<State.TransitionableConsumer<Object>> oc = currentState.getHandler(p.getClass());
+        Optional<PState.TransitionableConsumer<Object>> oc = currentState.getHandler(p.getClass());
         if (oc.isEmpty()) {
             logger.atFatal().log(currentState + " missing event handler for " + p.getClass().getSimpleName());
             throw new UnhandledEventException(currentState, p.getClass());
         }
 
-        invokeWithTrampoline(oc.get(), p.getPayload());
+        invokeWithRunToCompletion(oc.get(), p.getPayload());
     }
 
     /**
@@ -157,7 +156,7 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
      * entry handler, and updating internal bookkeeping.
      * @param s The new state.
      */
-    private <P> void handleTransition(State<StateKey> s, Optional<P> payload) {
+    private <P> void handleTransition(PState<StateKey> s, Optional<P> payload) {
         if (!isRunning) {
             throw new RuntimeException("prt.Monitor is not running (did you call ready()?)");
         }
@@ -169,7 +168,7 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
 
         currentState.getOnEntry().ifPresent(handler -> {
             Object p = payload.orElse(null);
-            invokeWithTrampoline(handler, p);
+            invokeWithRunToCompletion(handler, p);
         });
     }
 
@@ -179,12 +178,12 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
      * @param o The argument to handler.
      * @param <P> The type to be consumed by the handler.
      */
-    private <P> void invokeWithTrampoline(State.TransitionableConsumer<P> handler, P o)
+    private <P> void invokeWithRunToCompletion(PState.TransitionableConsumer<P> handler, P o)
     {
         try {
-            // Run the event handler, knowing that it might cause:
+            // Run the event handler, knowing that it might cause exception
             handler.accept(o);
-        } catch (TransitionException e) {
+        } catch (GotoTransitionException e) {
             // ...A state transition: if it does, run the exit handler, context-switch, and run
             // the new state's entry handler.
             handleTransition(e.getTargetState(), e.getPayload());
@@ -213,7 +212,7 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
 
     private <P> void readyImpl(Optional<P> payload) {
         if (isRunning) {
-            throw new RuntimeException("prt.Monitor is already running.");
+            throw new RuntimeException("PMonitor is already running.");
         }
 
         for (StateKey k : stateUniverse) {
@@ -230,19 +229,21 @@ public abstract class Monitor<StateKey extends Enum<StateKey>> implements Consum
 
         currentState.getOnEntry().ifPresent(handler -> {
             Object p = payload.orElse(null);
-            invokeWithTrampoline(handler, p);
+            invokeWithRunToCompletion(handler, p);
         });
     }
 
     /**
      * Instantiates a new prt.Monitor; users should provide domain-specific functionality in a subclass.
      */
-    protected Monitor() {
+    protected PMonitor() {
         startState = Optional.empty();
         isRunning = false;
 
-        states = null; // We need a concrete class to instantiate an EnumMap; do this lazily on the first addState() call.
-        currentState = null; // So long as we have not yet readied, this will be null!
+        // We need a concrete class to instantiate an EnumMap; do this lazily on the first addState() call.
+        states = null;
+        // So long as we have not yet readied, this will be null!
+        currentState = null;
     }
 
     public abstract List<Class<? extends PEvent<?>>> getEventTypes();

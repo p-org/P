@@ -1,10 +1,7 @@
 package prt.exceptions;
 
 /**
- * Analogous to `Microsoft.Coyote.AssertionFailureException`: if a `Plang.Compiler...AnnounceStmt`
- * evaluates at runtime to false, throw this.
- *
- * TODO: do we need to also enclose an inner exception, as Coyote does?
+ * Represents an assertion violation in P
  */
 public class PAssertionFailureException extends RuntimeException {
     private String assertMsg;

@@ -1,13 +1,13 @@
 package prt.exceptions;
 
-import prt.State;
-import prt.events.PEvent;
+import prt.PState;
+import prt.PEvent;
 
 /**
- * Thrown when a given prt.State has no handler for a given Event.
+ * Thrown when a given prt.State has no handler for a given P Event.
  */
 public class UnhandledEventException extends RuntimeException {
-    private State state;
+    private PState state;
     private Class<? extends PEvent> clazz;
 
     /**
@@ -16,7 +16,7 @@ public class UnhandledEventException extends RuntimeException {
      * @param s the state missing some event.
      * @param c the subclass of Event.Payload without a handler.
      */
-    public UnhandledEventException(State s, Class<? extends PEvent> c) {
+    public UnhandledEventException(PState s, Class<? extends PEvent> c) {
         state = s;
         clazz = c;
     }

@@ -1,6 +1,6 @@
 package prt.exceptions;
 
-import prt.events.PEvent;
+import prt.PEvent;
 
 /**
  * Thrown by an event handler when execution of the handler should be interrupted

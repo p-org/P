@@ -1,7 +1,11 @@
-package prt.events;
+package prt;
 
 import java.util.Objects;
 
+/**
+ * Represents a P event
+ * @param <P> is the type of the payload associated with this event
+ */
 public abstract class PEvent<P> {
     public abstract P getPayload();
 

@@ -1,8 +1,7 @@
 package prt;
 
-import prt.events.PEvent;
+import prt.exceptions.GotoTransitionException;
 import prt.exceptions.RaiseEventException;
-import prt.exceptions.TransitionException;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -13,9 +12,9 @@ import java.util.Optional;
  * receives an event, it defers behaviour to the current state's handler for that event, if it exists.  (If
  * no handler exists for that particular state, the Event is simply dropped.)
  *
- * To construct a prt.State, use the `prt.State.Builder` interface.
+ * To construct a prt.PState, use the `prt.PState.Builder` interface.
  */
-public class State<K extends Enum<K>> {
+public class PState<K extends Enum<K>> {
 
     public enum Temperature {
         HOT, COLD, UNSET
@@ -31,22 +30,22 @@ public class State<K extends Enum<K>> {
          * Invokes the consumer with some `t`; PRT runtime control flow exceptions may be thrown prior to the
          * consumer terminating, which the runtime needs to handle.
          * @param t the argument to the function.
-         * @throws TransitionException if invoking the function results in a state transition.
+         * @throws GotoTransitionException if invoking the function results in a state transition.
          * @throws RaiseEventException if invoking the function results in a raised event.
          */
-        void accept(T t) throws TransitionException, RaiseEventException;
+        void accept(T t) throws GotoTransitionException, RaiseEventException;
     }
 
     /**
-     * Functionally-equivalent to a Runnable, but may throw the checked prt.exceptions.TransitionException within run().
+     * Functionally-equivalent to a Runnable, but may throw the checked prt.exceptions.GotoTransitionException within run().
      */
     @FunctionalInterface
     public interface TransitionableRunnable {
         /**
-         * Runs the Runnable; a `prt.exceptions.TransitionException` may be thrown prior to the consumer terminating,
-         * @throws TransitionException if invoking the function results in a state transition.
+         * Runs the Runnable; a `prt.exceptions.GotoTransitionException` may be thrown prior to the consumer terminating,
+         * @throws GotoTransitionException if invoking the function results in a state transition.
          */
-        void run() throws TransitionException;
+        void run() throws GotoTransitionException;
     }
 
     private final boolean isInitialState;
@@ -59,7 +58,7 @@ public class State<K extends Enum<K>> {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private final Optional<Runnable> onExit;
 
-    private State(
+    private PState(
             HashMap<Class<? extends PEvent<?>>, TransitionableConsumer<?>> dispatch,
             boolean isInitialState,
             K key,
@@ -261,8 +260,8 @@ public class State<K extends Enum<K>> {
          *
          * @return the new prt.State
          */
-        public State<K> build() {
-            return new State(
+        public PState build() {
+            return new PState(
                     dispatch,
                     isInitialState,
                     key,

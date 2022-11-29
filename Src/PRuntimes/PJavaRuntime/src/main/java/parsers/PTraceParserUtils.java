@@ -76,7 +76,7 @@ public class PTraceParserUtils {
          * @return
          */
         public static int kvPairToInt(String kv) {
-            return Integer.valueOf(kv.split(":")[1]);
+            return Integer.parseInt(kv.split(":")[1]);
         }
 
         /**
@@ -86,7 +86,7 @@ public class PTraceParserUtils {
          * @return
          */
         public static long kvPairToLong(String kv) {
-            return Long.valueOf(kv.split(":")[1]);
+            return Long.parseLong(kv.split(":")[1]);
         }
 
         /**
@@ -108,7 +108,7 @@ public class PTraceParserUtils {
          * @return
          */
         public static float kvPairToFloat(String kv) {
-            return Float.valueOf(kv.split(":")[1]);
+            return Float.parseFloat(kv.split(":")[1]);
         }
 
         /**

@@ -23,4 +23,4 @@ machine Main {
 	}
 }
 
-test X [main=Main]: assert M in {Main};
+test DefaultImpl [main=Main]: assert M in {Main};

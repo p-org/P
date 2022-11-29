@@ -20,3 +20,5 @@ spec M observes E2 {
 		on E2 do (payload: bool) { assert (payload == true); }  //fails in Zinger
 	}
 }
+
+test DefaultImpl [main=Main]: assert M in { Main };

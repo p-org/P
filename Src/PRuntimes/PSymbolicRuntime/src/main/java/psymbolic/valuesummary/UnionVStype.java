@@ -2,10 +2,11 @@ package psymbolic.valuesummary;
 
 import psymbolic.runtime.Message;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class UnionVStype {
+public class UnionVStype implements Serializable {
     private static HashMap<String, UnionVStype> allTypes = new HashMap<>();
 
     Class<? extends ValueSummary> typeClass;

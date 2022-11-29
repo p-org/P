@@ -21,8 +21,8 @@ public class Schedule implements Serializable {
     private int schedulerDepth = 0;
     @Setter
     private int schedulerChoiceDepth = 0;
-    @Setter
-    private Map<Machine, List<ValueSummary>> schedulerState = new HashMap<>();
+    private int numBacktracks = 0;
+    private int numDataBacktracks = 0;
 
     public void restrictFilter(Guard c) { filter = filter.and(c); }
     public void setFilter(Guard c) { filter = c; }
@@ -69,6 +69,30 @@ public class Schedule implements Serializable {
         sleepSet.remove(toRemove.restrict(sleepSet.contains(toRemove).getGuardFor(true)));
     }
 
+    public class ChoiceState implements Serializable {
+        @Getter
+        private Map<Machine, List<ValueSummary>> machineStates;
+        @Getter
+        private Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
+
+        public ChoiceState() {
+            this(new HashMap<>(), new HashMap<>());
+        }
+        public ChoiceState(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
+            this.machineStates = new HashMap<>(ms);
+            this.machineCounters = new HashMap<>(mc);
+        }
+        public void copy(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
+            this.machineStates = new HashMap<>(ms);
+            this.machineCounters = new HashMap<>(mc);
+        }
+    }
+    private ChoiceState schedulerState = new ChoiceState();
+
+    public void setSchedulerState(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
+        schedulerState.copy(ms, mc);
+    }
+
     public class Choice implements Serializable {
         @Getter
         PrimitiveVS<Machine> repeatSender = new PrimitiveVS<>();
@@ -93,7 +117,7 @@ public class Schedule implements Serializable {
         @Getter
         int schedulerChoiceDepth = 0;
         @Getter
-        Map<Machine, List<ValueSummary>> choiceState = null;
+        ChoiceState choiceState = null;
         @Getter
         Guard filter = null;
 
@@ -128,22 +152,13 @@ public class Schedule implements Serializable {
             return new Choice(this);
         }
 
-        public Map<Machine, List<ValueSummary>> copyState(Map<Machine, List<ValueSummary>> state) {
+        public ChoiceState copyState(ChoiceState state) {
             if (state == null)
                 return null;
-            return state;
-//            List<List<ValueSummary>> copiedState = new ArrayList<>();
-//            for (List<ValueSummary> ls: state) {
-//                List<ValueSummary> localState = new ArrayList<>();
-//                for (ValueSummary vs: ls) {
-//                    localState.add(vs.getCopy());
-//                }
-//                copiedState.add(localState);
-//            }
-//            return copiedState;
+            return new ChoiceState(state.getMachineStates(), state.getMachineCounters());
         }
 
-        public void storeState(int depth, int cdepth, Map<Machine, List<ValueSummary>> state, Guard f) {
+        public void storeState(int depth, int cdepth, ChoiceState state, Guard f) {
             schedulerDepth = depth;
             schedulerChoiceDepth = cdepth;
             choiceState = copyState(state);
@@ -183,7 +198,15 @@ public class Schedule implements Serializable {
         }
 
         public boolean isBacktrackEmpty() {
-            return getBacktrackSender().isEmpty() && getBacktrackBool().isEmpty() && getBacktrackInt().isEmpty() && getBacktrackElement().isEmpty();
+            return isScheduleBacktrackEmpty() && isDataBacktrackEmpty();
+        }
+
+        public boolean isScheduleBacktrackEmpty() {
+            return getBacktrackSender().isEmpty();
+        }
+
+        public boolean isDataBacktrackEmpty() {
+            return getBacktrackBool().isEmpty() && getBacktrackInt().isEmpty() && getBacktrackElement().isEmpty();
         }
 
         public Choice restrict(Guard pc) {
@@ -287,12 +310,25 @@ public class Schedule implements Serializable {
         choices.get(d).clear();
     }
 
-    public int getNumBacktracksInSchedule() {
-        int count = 0;
+    public void setNumBacktracksInSchedule() {
+        numBacktracks = 0;
+        numDataBacktracks = 0;
         for (Choice backtrack : choices) {
-            if (!backtrack.isBacktrackEmpty()) count++;
+            if (!backtrack.isBacktrackEmpty()) {
+                numBacktracks++;
+                if(!backtrack.isDataBacktrackEmpty()) {
+                    numDataBacktracks++;
+                }
+            }
         }
-        return count;
+    }
+
+    public int getNumBacktracksInSchedule() {
+        return numBacktracks;
+    }
+
+    public int getNumDataBacktracksInSchedule() {
+        return numDataBacktracks;
     }
 
 
@@ -332,6 +368,7 @@ public class Schedule implements Serializable {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
         } else {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+            numBacktracks++;
         }
         for (PrimitiveVS<Machine> choice : machines) {
             choices.get(depth).addBacktrackSender(choice);
@@ -346,6 +383,8 @@ public class Schedule implements Serializable {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
         } else {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+            numBacktracks++;
+            numDataBacktracks++;
         }
         for (PrimitiveVS<Boolean> choice : bools) {
             choices.get(depth).addBacktrackBool(choice);
@@ -360,6 +399,8 @@ public class Schedule implements Serializable {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
         } else {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+            numBacktracks++;
+            numDataBacktracks++;
         }
         for (PrimitiveVS<Integer> choice : ints) {
             choices.get(depth).addBacktrackInt(choice);
@@ -374,6 +415,8 @@ public class Schedule implements Serializable {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
         } else {
             choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+            numBacktracks++;
+            numDataBacktracks++;
         }
         for (ValueSummary choice : elements) {
             choices.get(depth).addBacktrackElement(choice);

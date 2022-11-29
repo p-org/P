@@ -236,10 +236,14 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
     public V get(T keySummary) {
         // there is a possibility that the key is not present
         if (keySummary.isEmptyVS()) {
-            throw new NoSuchElementException();
+            throw new NoSuchElementException(
+                    String.format("KeyNotFoundException: The given key %s was not present in the dictionary %s.",
+                            keySummary, this));
         }
         if (!containsKey(keySummary).getGuardFor(false).isFalse()) {
-            throw new NoSuchElementException();
+            throw new NoSuchElementException(
+                    String.format("KeyNotFoundException: The given key %s was not present in the dictionary %s.",
+                            keySummary, this));
         }
 
         V merger = null;

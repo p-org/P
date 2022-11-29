@@ -27,10 +27,6 @@ public class SearchStats implements Serializable {
         @Getter
         private int startDepth;
 
-        // number of backtracks remaining
-        @Getter @Setter
-        private int numBacktracks;
-
         // has the iteration completed for any depth
         @Getter @Setter
         private boolean completed;
@@ -47,7 +43,6 @@ public class SearchStats implements Serializable {
             iteration = iterationNumber;
             this.startDepth = startDepth;
             perDepthStats = new HashMap<>();
-            numBacktracks = 0;
             completed = false;
         }
 
@@ -136,23 +131,6 @@ public class SearchStats implements Serializable {
         }
     }
 
-    public int getIterationBacktracks()
-    {
-        if (iterationStats.containsKey(current_iter)) {
-            return iterationStats.get(current_iter).getNumBacktracks();
-        } else {
-            return 0;
-        }
-    }
-
-    public void setIterationStats(int numBacktracks)
-    {
-        if (iterationStats.containsKey(current_iter)) {
-            iterationStats.get(current_iter).setNumBacktracks(numBacktracks);
-        }
-        lastCompletedIteration = current_iter;
-    }
-
     public void setIterationCompleted()
     {
         if (iterationStats.containsKey(current_iter)) {
@@ -178,9 +156,6 @@ public class SearchStats implements Serializable {
 
         // has the search completed
         private boolean completed;
-
-        // number of backtracks remaining
-        private int numBacktracks;
     }
 
     public TotalStats getSearchTotal()
@@ -214,7 +189,7 @@ public class SearchStats implements Serializable {
             }
         }
         DepthStats totalDepthStats = new DepthStats(maxDepth, totalStates, totalTransitions, totalMergedTransitions, totalTransitionsExplored);
-        return new TotalStats(totalDepthStats, completed, getIterationBacktracks());
+        return new TotalStats(totalDepthStats, completed);
     }
 
     public void reset_stats() {

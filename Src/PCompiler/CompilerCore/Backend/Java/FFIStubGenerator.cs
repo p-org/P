@@ -314,14 +314,12 @@ namespace Plang.Compiler.Backend.Java
             string monitorType = (m == null
                 ? "prt.Monitor<?>"
                 : $"{Constants.MachineNamespaceName}.{m.Name}");
-            Write($"{monitorType} machine");
 
             foreach (var param in f.Signature.Parameters)
             {
                 string pname = Names.GetNameForDecl(param);
                 TypeManager.JType ptype = Types.JavaTypeFor(param.Type);
 
-                WriteLine(",");
                 Write($"{ptype.TypeName} {pname}");
             }
 

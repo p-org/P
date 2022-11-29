@@ -19,7 +19,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     @Getter
     private final List<T> items;
 
-    private ListVS(PrimitiveVS<Integer> size, List<T> items) {
+    public ListVS(PrimitiveVS<Integer> size, List<T> items) {
         this.size = size;
         this.items = items;
     }
@@ -453,6 +453,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
                     out.append(", ");
                 }
             }
+            out.append("]");
             if (j < guardedSizeList.size() - 1) {
                 out.append(",");
             }

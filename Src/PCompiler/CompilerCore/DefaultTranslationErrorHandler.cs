@@ -160,6 +160,12 @@ namespace Plang.Compiler
             return IssueError(context, $"choose expects a parameter of type int (max value) or a collection type (seq, set, or map) got a parameter of type {subExprType}");
         }
 
+        public Exception IllegalFunctionUsedInSpecMachine(Function function, Machine callerOwner)
+        {
+            return IssueError(function.SourceLocation,
+                $"Method {DeclarationName(function)} is non-deterministic or has side-effects (new or send or receive), hence cannot be used in spec machine {DeclarationName(callerOwner)}.");
+        }
+
         public Exception EmittedNullEvent(IPExpr evtExpr)
         {
             return IssueError(evtExpr.SourceLocation, "cannot send null events");
@@ -175,13 +181,6 @@ namespace Plang.Compiler
             return IssueError(location,
                 $"Method {DeclarationName(method)} is used as a transition function, but might change state here.");
         }
-
-        public Exception NonDeterministicFunctionInSpecMachine(Function machineFunction)
-        {
-            return IssueError(machineFunction.SourceLocation,
-                $"Method {DeclarationName(machineFunction)} is non-deterministic, but used in spec machine.");
-        }
-        
 
         public Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol)
         {

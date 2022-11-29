@@ -6,11 +6,11 @@ public class RandomNumberGenerator {
     private static RandomNumberGenerator randomNumberGenerator;
     private Random rand;
 
-    private RandomNumberGenerator(int seed) {
+    private RandomNumberGenerator(long seed) {
         rand = new Random(seed);
     }
 
-    public static void setup(int seed) {
+    public static void setup(long seed) {
         randomNumberGenerator = new RandomNumberGenerator(seed);
     }
 
@@ -18,8 +18,14 @@ public class RandomNumberGenerator {
         assert(randomNumberGenerator != null);
         return randomNumberGenerator;
     }
+    public int getRandomInt(int bound) {
+        return rand.nextInt(bound);
+    }
     public long getRandomLong() {
         return rand.nextLong();
+    }
+    public double getRandomDouble() {
+        return rand.nextDouble();
     }
 
 }

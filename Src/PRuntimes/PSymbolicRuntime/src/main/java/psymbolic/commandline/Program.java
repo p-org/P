@@ -11,8 +11,8 @@ import java.util.Map;
 
 public interface Program extends Serializable {
     Machine getStart();
-    Scheduler getScheduler();
-    void setScheduler(Scheduler s);
+    Scheduler getProgramScheduler();
+    void setProgramScheduler(Scheduler s);
     Map<Event, List<Monitor>> getListeners();
     List<Monitor> getMonitors();
     PTestDriver getTestDriver();

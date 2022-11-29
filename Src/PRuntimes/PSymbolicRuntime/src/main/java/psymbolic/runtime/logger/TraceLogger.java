@@ -26,7 +26,7 @@ import java.util.Date;
 /**
  * Represents the trace logger for P Symbolic
  */
-public class TraceLogger extends PSymLogger {
+public class TraceLogger {
     static Logger log = null;
     static LoggerContext context = null;
 
@@ -78,63 +78,63 @@ public class TraceLogger extends PSymLogger {
 
     public static void onProcessEvent(Guard pc, Machine machine, Message message)
     {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             String msg = String.format("Machine %s is processing event %s in state %s", machine, message.getEvent(), machine.getCurrentState().restrict(pc));
             log.info(msg);
         }
     }
 
     public static void onProcessStateTransition(Guard pc, Machine machine, PrimitiveVS<State> newState) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             String msg = String.format("Machine %s transitioning to state %s", machine.toString(), newState);
             log.info(msg);
         }
     }
 
     public static void onCreateMachine(Guard pc, Machine machine) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             String msg = "Machine " + machine + " was created";
             log.info(msg);
         }
     }
 
     public static void onMachineStart(Guard pc, Machine machine) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             String msg = String.format("Machine %s starting", machine.toString());
             log.info(msg);
         }
     }
 
     public static void machineState(Guard pc, Machine machine) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             String msg = String.format("Machine %s in state %s", machine, machine.getCurrentState().restrict(pc));
             log.info(msg);
         }
     }
 
     public static void handle(Machine m, State st, Message event) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             log.info("Machine " + m + " handling event " + event.getEvent() + " in state " + st);
         }
     }
 
     public static void send(Message effect) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             String msg = "Send effect [" + effect.getEvent() + "] to [" + effect.getTarget() + "]";
             log.info(msg);
         }
     }
 
-    public static void schedule(int step, Message effect, PrimitiveVS<Machine> src) {
+    public static void schedule(int depth, Message effect, PrimitiveVS<Machine> src) {
         if(verbosity > 0) {
-            String msg = String.format("  Step %d: scheduled event[%s] from [%s] sent to [%s]",
-                            step, effect.getEvent().toString(), src, effect.getTarget());
+            String msg = String.format("  Depth %d: scheduled event[%s] from [%s] sent to [%s]",
+                    depth, effect.getEvent().toString(), src, effect.getTarget());
             log.info(msg);
         }
     }
 
     public static void logMessage(String str) {
-        if(verbosity > 1) {
+        if(verbosity > 3) {
             log.info(str);
         }
     }

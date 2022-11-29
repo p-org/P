@@ -29,15 +29,8 @@ public class StatWriter {
     }
 
     public static void log(String key, String value) {
-        log(key, value, true);
-    }
-
-    public static void log(String key, String value, boolean printToConsole) {
         log.println(String.format("%-40s%s", key+":", value));
         log.flush();
-        if (printToConsole) {
-            SearchLogger.log(String.format("%-40s%s", key+":", value));
-        }
     }
 
     public static void logSolverStats() {

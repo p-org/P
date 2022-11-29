@@ -4,46 +4,176 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>psymbolic</groupId>
-  <artifactId>SymbolicRuntime</artifactId>
-  <version>1.0</version>
+  <groupId>io.github.p-org</groupId>
+  <artifactId>psym</artifactId>
+  <version>${revision}</version>
+  <packaging>jar</packaging>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
-    <java.version>16</java.version>
+  <name>PSym runtime</name>
+  <description>PSym runtime for the P programming language</description>
+  <url>https://github.com/p-org/P</url>
 
-    <deps.path>${project.basedir}/../../../Bld</deps.path>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://spdx.org/licenses/MIT.html</url>
+    </license>
+  </licenses>
 
-    <pjbdd.jarpath>${deps.path}/Jars/pjbdd-v.1.0.10-10.jar</pjbdd.jarpath>
+  <scm>
+    <connection>scm:git:git@github.com:p-org/P.git</connection>
+    <developerConnection>scm:git:ssh://github.com:p-org/P.git</developerConnection>
+    <url>https://github.com/p-org/P/tree/master</url>
+  </scm>
 
-    <abc.jarpath>${deps.path}/Jars/abc.jar</abc.jarpath>
-<!--    <abc.jarpath>${deps.path}/Deps/abc_java_bindings/dist/lib/abc.jar</abc.jarpath>-->
-    <abc.libpath>${deps.path}/Deps/abc_java_bindings/dist/lib</abc.libpath>
+  <developers>
+    <developer>
+      <name>Aman Goel</name>
+      <email>amangoel.umich@gmail.com</email>
+    </developer>
+    <developer>
+      <name>Ankush Desai</name>
+    </developer>
+  </developers>
 
-    <monosat.jarpath>${deps.path}/Jars/monosat.jar</monosat.jarpath>
-<!--    <monosat.jarpath>${deps.path}/Deps/monosat/monosat.jar</monosat.jarpath>-->
-    <monosat.libpath>${deps.path}/Deps/monosat</monosat.libpath>
-
-    <yices.jarpath>${deps.path}/Jars/yices.jar</yices.jarpath>
-<!--    <yices.jarpath>${deps.path}/Deps/yices2_java_bindings/dist/lib/yices.jar</yices.jarpath>-->
-    <yices.libpath>${deps.path}/Deps/yices2_java_bindings/dist/lib</yices.libpath>
-
-    <z3.jarpath>${deps.path}/Jars/com.microsoft.z3.jar</z3.jarpath>
-<!--    <z3.jarpath>${deps.path}/Deps/z3/build/com.microsoft.z3.jar</z3.jarpath>-->
-    <z3.libpath>${deps.path}/Deps/z3/build</z3.libpath>
-
-    <cvc5.jarpath>${deps.path}/Jars/cvc5-0.0.7.jar</cvc5.jarpath>
-<!--    <cvc5.jarpath>${deps.path}/Deps/cvc5/build/install/share/java/cvc5-0.0.7.jar</cvc5.jarpath>-->
-    <cvc5.libpath>${deps.path}/Deps/cvc5/build/install/lib</cvc5.libpath>
-
-  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>io.github.p-org.solvers</groupId>
+      <artifactId>pjbdd</artifactId>
+      <version>${pjbdd.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.p-org.solvers</groupId>
+      <artifactId>abc</artifactId>
+      <version>${abc.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.p-org.solvers</groupId>
+      <artifactId>monosat</artifactId>
+      <version>${monosat.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.p-org.solvers</groupId>
+      <artifactId>yices</artifactId>
+      <version>${yices.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.p-org.solvers</groupId>
+      <artifactId>z3</artifactId>
+      <version>${z3.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.p-org.solvers</groupId>
+      <artifactId>cvc5</artifactId>
+      <version>${cvc5.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sosy-lab</groupId>
+      <artifactId>java-smt</artifactId>
+      <version>3.14.3</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-cli</groupId>
+      <artifactId>commons-cli</artifactId>
+      <version>1.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.9.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.9.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jooq</groupId>
+      <artifactId>joor</artifactId>
+      <version>0.9.14</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
+      <version>23.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>31.1-jre</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.24</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.reflections</groupId>
+      <artifactId>reflections</artifactId>
+      <version>0.10.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>2.19.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>2.19.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <version>2.19.0</version>
+    </dependency>
+    <dependency>
+      <groupId>backport-util-concurrent</groupId>
+      <artifactId>backport-util-concurrent</artifactId>
+      <version>3.1</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.11.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.12.0</version>
+    </dependency>
+  </dependencies>
 
   <build>
-    <!-- to enable testing through mvn test -->
-    <!-- testSourceDirectory>src/test</testSourceDirectory -->
     <plugins>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.13</version>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+        </configuration>
+      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-gpg-plugin</artifactId>-->
+<!--        <version>1.5</version>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <id>sign-artifacts</id>-->
+<!--            <phase>verify</phase>-->
+<!--            <goals>-->
+<!--              <goal>sign</goal>-->
+<!--            </goals>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -51,7 +181,7 @@
         <configuration>
           <source>9</source>
           <target>9</target>
-	      <forceJavacCompilerUse>true</forceJavacCompilerUse>
+          <forceJavacCompilerUse>true</forceJavacCompilerUse>
         </configuration>
       </plugin>
       <plugin>
@@ -59,15 +189,35 @@
         <version>2.5.2</version>
         <executions>
           <execution>
+            <id>install-pjbdd</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <groupId>io.github.p-org.solvers</groupId>
+              <artifactId>pjbdd</artifactId>
+              <version>${pjbdd.version}</version>
+              <sources>${pjbdd.jarpath}</sources>
+              <javadoc>${pjbdd.jarpath}</javadoc>
+              <pomFile>${pjbdd.pompath}</pomFile>
+              <packaging>jar</packaging>
+              <file>${pjbdd.jarpath}</file>
+            </configuration>
+          </execution>
+          <execution>
             <id>install-abc</id>
             <phase>clean</phase>
             <goals>
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <groupId>com.berkeley.abc</groupId>
+              <groupId>io.github.p-org.solvers</groupId>
               <artifactId>abc</artifactId>
-              <version>1.0.0</version>
+              <version>${abc.version}</version>
+              <sources>${abc.jarpath}</sources>
+              <javadoc>${abc.jarpath}</javadoc>
+              <pomFile>${abc.pompath}</pomFile>
               <packaging>jar</packaging>
               <file>${abc.jarpath}</file>
             </configuration>
@@ -79,9 +229,12 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <groupId>io.github.monosat</groupId>
+              <groupId>io.github.p-org.solvers</groupId>
               <artifactId>monosat</artifactId>
-              <version>1.6.0</version>
+              <version>${monosat.version}</version>
+              <sources>${monosat.jarpath}</sources>
+              <javadoc>${monosat.jarpath}</javadoc>
+              <pomFile>${monosat.pompath}</pomFile>
               <packaging>jar</packaging>
               <file>${monosat.jarpath}</file>
             </configuration>
@@ -93,9 +246,12 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <groupId>com.sri.yices</groupId>
+              <groupId>io.github.p-org.solvers</groupId>
               <artifactId>yices</artifactId>
-              <version>1.0</version>
+              <version>${yices.version}</version>
+              <sources>${yices.jarpath}</sources>
+              <javadoc>${yices.jarpath}</javadoc>
+              <pomFile>${yices.pompath}</pomFile>
               <packaging>jar</packaging>
               <file>${yices.jarpath}</file>
             </configuration>
@@ -107,9 +263,12 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <groupId>com.microsoft.z3</groupId>
+              <groupId>io.github.p-org.solvers</groupId>
               <artifactId>z3</artifactId>
-              <version>4.8.14</version>
+              <version>${z3.version}</version>
+              <sources>${z3.jarpath}</sources>
+              <javadoc>${z3.jarpath}</javadoc>
+              <pomFile>${z3.pompath}</pomFile>
               <packaging>jar</packaging>
               <file>${z3.jarpath}</file>
             </configuration>
@@ -121,25 +280,14 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <groupId>io.github.cvc5</groupId>
+              <groupId>io.github.p-org.solvers</groupId>
               <artifactId>cvc5</artifactId>
-              <version>0.0.7</version>
+              <version>${cvc5.version}</version>
+              <sources>${cvc5.jarpath}</sources>
+              <javadoc>${cvc5.jarpath}</javadoc>
+              <pomFile>${cvc5.pompath}</pomFile>
               <packaging>jar</packaging>
               <file>${cvc5.jarpath}</file>
-            </configuration>
-          </execution>
-          <execution>
-    	    <id>install-pjbdd</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <groupId>org.sosy_lab.pjbdd</groupId>
-              <artifactId>pjbdd</artifactId>
-              <version>1.0.10-9</version>
-              <packaging>jar</packaging>
-              <file>${pjbdd.jarpath}</file>
             </configuration>
           </execution>
         </executions>
@@ -187,133 +335,125 @@
     </plugins>
   </build>
 
-  <name>psymbolic</name>
-  <url>https://github.com/p-org/P</url>
+  <profiles>
+    <profile>
+      <id>release</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.4</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>3.3.0</version>
+            <executions>
+              <execution>
+                <id>empty-javadoc-jar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <configuration>
+                  <classifier>javadoc</classifier>
+                  <classesDirectory>${basedir}</classesDirectory>
+                  <includes>
+                    <include>*.md</include>
+                  </includes>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
-  <dependencies>
-    <dependency>
-      <groupId>com.berkeley.abc</groupId>
-      <artifactId>abc</artifactId>
-      <version>1.0.0</version>
-    </dependency>
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>
+        https://s01.oss.sonatype.org/content/repositories/snapshots
+      </url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>
+        https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/
+      </url>
+    </repository>
+  </distributionManagement>
 
-    <dependency>
-      <groupId>io.github.monosat</groupId>
-      <artifactId>monosat</artifactId>
-      <version>1.6.0</version>
-    </dependency>
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <log4j2.configurationFile>${project.basedir}/src/main/resources/log4j2.xml</log4j2.configurationFile>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <revision>0.5.6</revision>
 
-    <dependency>
-      <groupId>com.sri.yices</groupId>
-      <artifactId>yices</artifactId>
-      <version>1.0</version>
-    </dependency>
+    <deps.path>${project.basedir}/../../../Bld</deps.path>
 
-    <dependency>
-      <groupId>com.microsoft.z3</groupId>
-      <artifactId>z3</artifactId>
-      <version>4.8.14</version>
-    </dependency>
+    <pjbdd.version>1.0.10-10-v5</pjbdd.version>
+    <pjbdd.path>${deps.path}/Deps/pjbdd</pjbdd.path>
+    <pjbdd.jarpath>${pjbdd.path}/pjbdd-${pjbdd.version}.jar</pjbdd.jarpath>
+    <pjbdd.pompath>${pjbdd.path}/pjbdd-${pjbdd.version}.pom</pjbdd.pompath>
 
-    <dependency>
-      <groupId>io.github.cvc5</groupId>
-      <artifactId>cvc5</artifactId>
-      <version>0.0.7</version>
-    </dependency>
+    <abc.version>1.0.1-v5</abc.version>
+    <abc.path>${deps.path}/Deps/abc</abc.path>
+    <abc.jarpath>${abc.path}/abc-${abc.version}.jar</abc.jarpath>
+    <abc.pompath>${abc.path}/abc-${abc.version}.pom</abc.pompath>
+    <abc.libpath>${deps.path}/Deps/abc_java_bindings/dist/lib</abc.libpath>
 
-    <dependency>
-      <groupId>org.sosy-lab</groupId>
-      <artifactId>java-smt</artifactId>
-      <version>3.11.0</version>
-    </dependency>
+    <monosat.version>1.6.0-v5</monosat.version>
+    <monosat.path>${deps.path}/Deps/monosat</monosat.path>
+    <monosat.jarpath>${monosat.path}/monosat-${monosat.version}.jar</monosat.jarpath>
+    <monosat.pompath>${monosat.path}/monosat-${monosat.version}.pom</monosat.pompath>
+    <monosat.libpath>${deps.path}/Deps/monosat</monosat.libpath>
 
-    <dependency>
-      <groupId>org.sosy_lab.pjbdd</groupId>
-      <artifactId>pjbdd</artifactId>
-      <version>1.0.10-9</version>
-    </dependency>
+    <yices.version>1.0-v5</yices.version>
+    <yices.path>${deps.path}/Deps/yices</yices.path>
+    <yices.jarpath>${yices.path}/yices-${yices.version}.jar</yices.jarpath>
+    <yices.pompath>${yices.path}/yices-${yices.version}.pom</yices.pompath>
+    <yices.libpath>${deps.path}/Deps/yices2_java_bindings/dist/lib</yices.libpath>
 
-    <dependency>
-      <groupId>commons-cli</groupId>
-      <artifactId>commons-cli</artifactId>
-      <version>1.4</version>
-    </dependency>
+    <z3.version>4.8.14-v5</z3.version>
+    <z3.path>${deps.path}/Deps/z3</z3.path>
+    <z3.jarpath>${z3.path}/z3-${z3.version}.jar</z3.jarpath>
+    <z3.pompath>${z3.path}/z3-${z3.version}.pom</z3.pompath>
+    <z3.libpath>${deps.path}/Deps/z3/build</z3.libpath>
 
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.7.1</version>
-      <scope>test</scope>
-    </dependency>
+    <cvc5.version>0.0.7-v5</cvc5.version>
+    <cvc5.path>${deps.path}/Deps/cvc5</cvc5.path>
+    <cvc5.jarpath>${cvc5.path}/cvc5-${cvc5.version}.jar</cvc5.jarpath>
+    <cvc5.pompath>${cvc5.path}/cvc5-${cvc5.version}.pom</cvc5.pompath>
+    <cvc5.libpath>${deps.path}/Deps/cvc5/build/install/lib</cvc5.libpath>
+  </properties>
 
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>5.7.1</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jooq</groupId>
-      <artifactId>joor</artifactId>
-      <version>0.9.12</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jetbrains</groupId>
-      <artifactId>annotations</artifactId>
-      <version>17.0.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>30.0-jre</version>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>1.18.20</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.reflections</groupId>
-      <artifactId>reflections</artifactId>
-      <version>0.9.12</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>[2.17.1,)</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>[2.17.1,)</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>[2.17.1,)</version>
-    </dependency>
-
-    <dependency>
-        <groupId>backport-util-concurrent</groupId>
-        <artifactId>backport-util-concurrent</artifactId>
-        <version>3.1</version>
-    </dependency>
-
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>2.7</version>
-      <scope>test</scope>
-    </dependency>
-
-  </dependencies>
 </project>

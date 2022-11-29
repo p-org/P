@@ -42,15 +42,39 @@ namespace Plang.Compiler.Backend.Symbolic
             }
 
             // compile the csproj file
-            string[] args = new[] { "clean package"};
+            string[] args = new[] { "clean package -q"};
 
             int exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args);
             if (exitCode != 0)
             {
                 throw new TranslationException($"Compiling generated Symbolic Java code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
             }
+            else
+            {
+//                job.Output.WriteInfo($"{stdout}");
+                job.Output.WriteInfo($"  {job.ProjectName} -> target/{job.ProjectName}-jar-with-dependencies.jar");
+                job.Output.WriteInfo("Build succeeded.");
+            }
 
-            job.Output.WriteInfo($"{stdout}");
+            string sourceDirectory = "target/sources/psymbolic";
+
+            // create source folder
+            args = new[] { $"-p {sourceDirectory}" };
+            exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mkdir", args);
+            if (exitCode != 0)
+            {
+                throw new TranslationException($"Unable to create source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
+            }
+
+
+            // copy source files
+            string sourceFilePath = Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName);
+            args = new[] { $"{sourceFilePath}/{job.ProjectName}.java {sourceDirectory}" };
+            exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "cp", args);
+            if (exitCode != 0)
+            {
+                throw new TranslationException($"Unable to copy source file {job.ProjectName}.java to source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
+            }
         }
 
         private CompiledFile GenerateSource(CompilationContext context, Scope globalScope)
@@ -76,12 +100,17 @@ namespace Plang.Compiler.Backend.Symbolic
             WriteMainDriver(context, source.Stream, globalScope, decls);
 
             context.WriteLine(source.Stream, "PTestDriver testDriver = null;");
+            context.WriteLine(source.Stream, "@Generated");
             context.WriteLine(source.Stream, "public PTestDriver getTestDriver() { return testDriver; }");
+            context.WriteLine(source.Stream, "@Generated");
             context.WriteLine(source.Stream, "public void setTestDriver(PTestDriver input) { testDriver = input; }");
             context.WriteLine(source.Stream);
 
+            context.WriteLine(source.Stream, "@Generated");
             context.WriteLine(source.Stream, "public Machine getStart() { return testDriver.getStart(); }");
+            context.WriteLine(source.Stream, "@Generated");
             context.WriteLine(source.Stream, "public List<Monitor> getMonitors() { return testDriver.getMonitors(); }");
+            context.WriteLine(source.Stream, "@Generated");
             context.WriteLine(source.Stream, "public Map<Event, List<Monitor>> getListeners() { return testDriver.getListeners(); }");
             context.WriteLine(source.Stream);
 
@@ -99,6 +128,7 @@ namespace Plang.Compiler.Backend.Symbolic
         private void WriteDriverConfigure(CompilationContext context, StringWriter output, String startMachine, IEnumerable<IPDecl> decls)
         {
             context.WriteLine(output);
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "public void configure() {");
 
             context.WriteLine(output, $"    mainMachine = new {startMachine}(0);");
@@ -150,6 +180,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             if (mainMachine != null)
             {
+                context.WriteLine(output, "@Generated");
                 context.WriteLine(output, "public static class DefaultTestDriver extends PTestDriver {");
                 WriteDriver(context, output, mainMachine.Name, decls);
                 context.WriteLine(output, "}");
@@ -192,6 +223,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
         {
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, $"public static class {context.GetNameForDecl(safety)} extends PTestDriver {{");
             WriteDriver(context, output, safety.Main, safety.ModExpr.ModuleInfo.MonitorMap.Keys);
             context.WriteLine(output, "}");
@@ -218,6 +250,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public void reset() {");
             context.WriteLine(output, "    super.reset();");
@@ -227,6 +260,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public List<ValueSummary> getLocalState() {");
             context.WriteLine(output, "    List<ValueSummary> res = super.getLocalState();");
@@ -236,6 +270,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "}");
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public int setLocalState(List<ValueSummary> localState) {");
             context.WriteLine(output, "    int idx = super.setLocalState(localState);");
@@ -276,6 +311,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public void reset() {");
             context.WriteLine(output, "    super.reset();");
@@ -285,6 +321,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public List<ValueSummary> getLocalState() {");
             context.WriteLine(output, "    List<ValueSummary> res = super.getLocalState();");
@@ -294,6 +331,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "}");
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
             context.WriteLine(output, "public int setLocalState(List<ValueSummary> localState) {");
             context.WriteLine(output, "    int idx = super.setLocalState(localState);");
@@ -371,7 +409,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteState(CompilationContext context, StringWriter output, State state, Machine machine)
         {
-            context.Write(output, $"new State(\"{context.GetNameForDecl(state)}\", \"{context.GetNameForDecl(machine)}\"");
+            string temperature = Enum.GetName(state.Temperature.GetType(), state.Temperature);
+            context.Write(output, $"new State(\"{context.GetNameForDecl(state)}\", \"{context.GetNameForDecl(machine)}\", StateTemperature.{temperature}");
             /*
             foreach (var handler in state.AllEventHandlers)
             {
@@ -444,9 +483,9 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output, ", outcome");
                     if (actionFunc.Signature.Parameters.Count() == 1)
                     {
-                        Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
-                        var payloadVSType = GetSymbolicType(handler.Key.PayloadType);
-                        var defaultPayload = GetDefaultValueNoGuard(context, handler.Key.PayloadType);
+                        Debug.Assert(!actionFunc.Signature.Parameters[0].Type.IsSameTypeAs(PrimitiveType.Null));
+                        var payloadVSType = GetSymbolicType(actionFunc.Signature.Parameters[0].Type);
+                        var defaultPayload = GetDefaultValueNoGuard(context, actionFunc.Signature.Parameters[0].Type);
                         context.Write(output, $", ({payloadVSType}) ValueSummary.castFromAny(pc, {defaultPayload}, payload)");
                     }
                     context.WriteLine(output, ");");
@@ -472,9 +511,9 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(pc, machine.sendBuffer");
                         if (transitionFunc.Signature.Parameters.Count() == 1)
                         {
-                            Debug.Assert(!handler.Key.PayloadType.IsSameTypeAs(PrimitiveType.Null));
-                            var payloadVSType = GetSymbolicType(handler.Key.PayloadType);
-                            var defaultPayload = GetDefaultValueNoGuard(context, handler.Key.PayloadType);
+                            Debug.Assert(!transitionFunc.Signature.Parameters[0].Type.IsSameTypeAs(PrimitiveType.Null));
+                            var payloadVSType = GetSymbolicType(transitionFunc.Signature.Parameters[0].Type);
+                            var defaultPayload = GetDefaultValueNoGuard(context, transitionFunc.Signature.Parameters[0].Type);
                             context.Write(output, $", ({payloadVSType}) ValueSummary.castFromAny(pc, {defaultPayload}, payload)");
                         }
                         context.WriteLine(output, ");");
@@ -916,7 +955,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
                     context.Write(output, ").getValues().contains(Boolean.FALSE), ");
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Message);
-                    context.Write(output, ", scheduler, ");
+                    context.Write(output, $", {CompilationContext.SchedulerVar}, ");
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
                     context.Write(output, ".getGuardFor(Boolean.FALSE));");
                     break;
@@ -1215,7 +1254,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         break;
                     }
                 case AnnounceStmt announceStmt:
-                    context.Write(output, $"scheduler.announce(");
+                    context.Write(output, $"{CompilationContext.SchedulerVar}.announce(");
                     WriteExpr(context, output, flowContext.pcScope, announceStmt.PEvent);
                     context.Write(output, ", ");
                     if (announceStmt.Payload == null)
@@ -1396,7 +1435,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 return;
             }
 
-            if (!valueType.IsSameTypeAs(locationType))
+            if (!locationType.IsAssignableFrom(valueType))
             {
                 throw new NotImplementedException(
                     $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
@@ -1405,6 +1444,11 @@ namespace Plang.Compiler.Backend.Symbolic
         }
 
         private string GetInlineCastPrefix(PLanguageType valueType, PLanguageType locationType, CompilationContext context, PathConstraintScope pcScope) {
+            if (valueType.Equals(locationType))
+            {
+                return "";
+            }
+            
             var valueIsMachineRef = valueType.IsSameTypeAs(PrimitiveType.Machine) || valueType is PermissionType;
             var locationIsMachineRef = locationType.IsSameTypeAs(PrimitiveType.Machine) || locationType is PermissionType;
 
@@ -1414,12 +1458,11 @@ namespace Plang.Compiler.Backend.Symbolic
             if (locationType.IsSameTypeAs(PrimitiveType.Any) || locationType.IsSameTypeAs(PrimitiveType.Data)) {
                 //return $"new UnionVS ({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, valueType)}.getClass(), ";
                 return $"ValueSummary.castToAny({pcScope.PathConstraintVar}, ";
-            } else if (valueType.IsSameTypeAs(PrimitiveType.Any) || valueType.IsSameTypeAs(PrimitiveType.Data))
+            }
+            else if (valueType.IsSameTypeAs(PrimitiveType.Any) || valueType.IsSameTypeAs(PrimitiveType.Data))
             {
                 return $"({GetSymbolicType(locationType)}) ValueSummary.castFromAny({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationType)}, ";
             }
-
-            if (valueType.IsSameTypeAs(locationType)) return "";
 
             valueType = valueType.Canonicalize();
             locationType = locationType.Canonicalize();
@@ -1429,6 +1472,53 @@ namespace Plang.Compiler.Backend.Symbolic
             }
 
             if ((valueType is TupleType) && locationType is TupleType)
+            {
+                return "";
+            }
+
+            PLanguageType locationElementType = null;
+            PLanguageType valueElementType = null;
+            var isMap = PLanguageType.TypeIsOfKind(locationType, TypeKind.Map);
+            var isSet = PLanguageType.TypeIsOfKind(locationType, TypeKind.Set);
+            var isSeq = PLanguageType.TypeIsOfKind(locationType, TypeKind.Sequence);
+            if (isMap)
+            {
+                locationElementType = ((MapType) locationType).ValueType;
+                if (PLanguageType.TypeIsOfKind(valueType, TypeKind.Map))
+                {
+                    valueElementType = ((MapType) valueType).ValueType;
+                }
+            }
+            else if (isSet)
+            {
+                locationElementType = ((SetType) locationType).ElementType;
+                if (PLanguageType.TypeIsOfKind(valueType, TypeKind.Set))
+                {
+                    valueElementType = ((SetType) valueType).ElementType;
+                }
+            }
+            else if (isSeq)
+            {
+                locationElementType = ((SequenceType) locationType).ElementType;
+                if (PLanguageType.TypeIsOfKind(valueType, TypeKind.Sequence))
+                {
+                    valueElementType = ((SequenceType) valueType).ElementType;
+                }
+            }
+            if (locationElementType != null && valueElementType != null)
+            {
+                if (locationElementType.IsSameTypeAs(PrimitiveType.Any) || locationElementType.IsSameTypeAs(PrimitiveType.Data))
+                {
+                    //return $"new UnionVS ({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, valueType)}.getClass(), ";
+                    return $"({GetSymbolicType(locationType)}) ValueSummary.castToAnyCollection({pcScope.PathConstraintVar}, ";
+                }
+                else if (valueElementType.IsSameTypeAs(PrimitiveType.Any) || valueElementType.IsSameTypeAs(PrimitiveType.Data))
+                {
+                    return $"({GetSymbolicType(locationType)}) ValueSummary.castFromAnyCollection({pcScope.PathConstraintVar}, {GetDefaultValueNoGuard(context, locationElementType)}, ";
+                }
+            }
+
+            if (locationType.IsAssignableFrom(valueType))
             {
                 return "";
             }
@@ -2027,10 +2117,11 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case MapAccessExpr mapAccessExpr:
                     WriteExpr(context, output, pcScope, mapAccessExpr.MapExpr);
-                    context.Write(output, ".getOrDefault(");
+                    context.Write(output, ".get(");
+                    // context.Write(output, ".getOrDefault(");
                     WriteExpr(context, output, pcScope, mapAccessExpr.IndexExpr);
-                    context.Write(output, ", ");
-                    context.Write(output, GetDefaultValue(context, pcScope, mapAccessExpr.Type));
+                    // context.Write(output, ", ");
+                    // context.Write(output, GetDefaultValue(context, pcScope, mapAccessExpr.Type));
                     context.Write(output, ")");
                     break;
                 case SeqAccessExpr seqAccessExpr:
@@ -2535,6 +2626,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import psymbolic.runtime.machine.buffer.*;");
             context.WriteLine(output, "import psymbolic.runtime.machine.eventhandlers.*;");
             context.WriteLine(output, "import psymbolic.runtime.values.*;");
+            context.WriteLine(output, "import psymbolic.utils.*;");
             context.WriteLine(output, "import java.util.List;");
             context.WriteLine(output, "import java.util.ArrayList;");
             context.WriteLine(output, "import java.util.Map;");
@@ -2542,16 +2634,19 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import java.util.function.Consumer;");
             context.WriteLine(output, "import java.util.function.Function;");
             context.WriteLine(output, "import java.text.MessageFormat;");
+            context.WriteLine(output, "import lombok.Generated;");
             context.WriteLine(output);
-            context.WriteLine(output, $"public class {context.ProjectName.ToLower()} implements Program {{");
+            context.WriteLine(output, $"public class {context.ProjectName} implements Program {{");
             context.WriteLine(output);
-            context.WriteLine(output, $"public static Scheduler {CompilationContext.SchedulerVar};");
+            context.WriteLine(output, $"public static Scheduler programScheduler;");
             context.WriteLine(output);
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
-            context.WriteLine(output, $"public Scheduler getScheduler () {{ return this.{CompilationContext.SchedulerVar}; }}");
+            context.WriteLine(output, $"public Scheduler getProgramScheduler () {{ return this.programScheduler; }}");
             context.WriteLine(output);
+            context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
-            context.WriteLine(output, $"public void setScheduler (Scheduler s) {{ this.{CompilationContext.SchedulerVar} = s; }}");
+            context.WriteLine(output, $"public void setProgramScheduler (Scheduler s) {{ this.programScheduler = s; }}");
             context.WriteLine(output);
         }
 

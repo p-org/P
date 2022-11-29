@@ -209,8 +209,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case TypeDef typeDef:
-                    ForeignType foreignType = typeDef.Type as ForeignType;
-                    if (foreignType != null)
+                    if (typeDef.Type is ForeignType foreignType)
                     {
                         WriteForeignType(context, output, foreignType);
                     }
@@ -706,15 +705,32 @@ namespace Plang.Compiler.Backend.CSharp
                         $"{GetCSharpType(param.Type)} {context.Names.GetNameForDecl(param)}"));
             }
 
-            if (isStatic)
+            if (isStatic) // then we need to generate two versions of the function
             {
+                // for machine
                 string seperator = functionParameters == "" ? "" : ", ";
-                functionParameters += string.Concat(seperator, "PMachine currentMachine");
+                var functionParameters_machine = functionParameters + string.Concat(seperator, "PMachine currentMachine");
+                context.WriteLine(output,
+                    $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_machine})");
+                WriteFunctionBody(context, output, function);
+                
+                // for monitor
+                if (!(function.CanCreate == true || function.CanSend == true || function.IsNondeterministic == true || function.CanReceive == true))
+                {
+                    var functionParameters_monitor = functionParameters + string.Concat(seperator, "PMonitor currentMachine");
+                    context.WriteLine(output,
+                        $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_monitor})");
+                    WriteFunctionBody(context, output, function);
+                }
+                
             }
-
-            context.WriteLine(output,
-                $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters})");
-            WriteFunctionBody(context, output, function);
+            else
+            {
+                context.WriteLine(output,
+                    $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters})");
+                WriteFunctionBody(context, output, function);   
+            }
+            
         }
 
         private void WriteFunctionBody(CompilationContext context, StringWriter output, Function function)

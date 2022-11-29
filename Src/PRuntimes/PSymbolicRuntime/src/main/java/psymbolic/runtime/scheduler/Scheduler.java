@@ -2,13 +2,19 @@ package psymbolic.runtime.scheduler;
 
 import lombok.Getter;
 import lombok.Setter;
-import psymbolic.commandline.*;
+import psymbolic.commandline.Assert;
+import psymbolic.commandline.PSymConfiguration;
+import psymbolic.commandline.Program;
 import psymbolic.runtime.*;
 import psymbolic.runtime.logger.PSymLogger;
-import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.logger.SearchLogger;
+import psymbolic.runtime.logger.StatWriter;
+import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.machine.Monitor;
+import psymbolic.runtime.machine.State;
+import psymbolic.runtime.machine.buffer.EventBufferSemantics;
+import psymbolic.runtime.statistics.CoverageStats;
 import psymbolic.runtime.statistics.SearchStats;
 import psymbolic.runtime.statistics.SolverStats;
 import psymbolic.utils.GlobalData;
@@ -16,9 +22,6 @@ import psymbolic.utils.MemoryMonitor;
 import psymbolic.utils.TimeMonitor;
 import psymbolic.valuesummary.*;
 import psymbolic.valuesummary.solvers.SolverEngine;
-import psymbolic.runtime.machine.buffer.*;
-import psymbolic.runtime.logger.StatWriter;
-import psymbolic.valuesummary.solvers.SolverGuard;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -29,48 +32,65 @@ import java.util.stream.Collectors;
 
 
 public class Scheduler implements SymbolicSearch {
-
+    /** Iteration number */
     @Getter
     int iter = 0;
-
+    /** Start iteration number */
     @Getter
     int start_iter = 0;
-
+    /** Search statistics */
     protected SearchStats searchStats = new SearchStats();
-
+    /** Program */
     @Getter
     private final Program program;
-
     /** The scheduling choices made */
-    public final Schedule schedule;
-
+    public Schedule schedule;
     @Setter
-    PSymConfiguration configuration;
-
+    transient PSymConfiguration configuration;
+    @Getter
     /** List of all machines along any path constraints */
     final List<Machine> machines;
-
     /** How many instances of each Machine there are */
-    final Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
-
+    protected Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
     /** The machine to start with */
     private Machine start;
-
     /** The map from events to listening monitors */
     private Map<Event, List<Monitor>> listeners;
-
     /** List of monitors instances */
     List<Monitor> monitors;
-
     /** Vector clock manager */
     private VectorClockManager vcManager;
-
     /** Result of the search */
     public String result;
+    /** Current depth of exploration */
+    private int depth = 0;
+    /** Whether or not search is done */
+    protected boolean done = false;
+    /** Choice depth */
+    int choiceDepth = 0;
+    /** Backtrack choice depth */
+    int backtrackDepth = 0;
+    /** Starting choice depth from previous iteration, i.e., corresponding to srcState */
+    int preChoiceDepth = Integer.MAX_VALUE;
+    /** Total number of states */
+    private int totalStateCount = 0;
+    /** Flag whether current step is a create machine step */
+    private Boolean createStep = false;
+    /** Flag whether current step is a sync step */
+    private Boolean syncStep = false;
+    /** Flag whether current execution finished */
+    private Boolean executionFinished = false;
 
-    /** Use the interleave map (if false) or not (if true) */
+    /** Source state at the beginning of each schedule step */
+    transient Map<Machine, List<ValueSummary>> srcState = new HashMap<>();
+    /** Map of distinct concrete state to number of times state is visited */
+    transient private Map<String, Integer> distinctStates = new HashMap<>();
+    /** List of distinct concrete states */
+    transient private List<String> distinctStatesList = new ArrayList<>();
+    /** Guard corresponding on distinct states at a step */
+    transient private Guard distinctStateGuard = null;
+
     private boolean useFilters() { return configuration.isUseFilters(); }
-
     /** Get whether to intersect with receiver queue semantics
      * @return whether to intersect with receiver queue semantics
      */
@@ -86,34 +106,6 @@ public class Scheduler implements SymbolicSearch {
      */
     public boolean useSleepSets() { return configuration.isUseSleepSets(); }
 
-    /** Current depth of exploration */
-    private int depth = 0;
-    /** Whether or not search is done */
-    protected boolean done = false;
-
-    int choiceDepth = 0;
-
-    int backtrackDepth = 0;
-
-    /** Start depth at which create machine events are already explored */
-    int startDepth = Integer.MAX_VALUE;
-
-    Map<Machine, List<ValueSummary>> srcState = new HashMap<>();
-
-    /** Map of distinct concrete state to number of times state is visited */
-    private Map<String, Integer> distinctStates = new HashMap<>();
-    /** List of distinct concrete states */
-    private List<String> distinctStatesList = new ArrayList<>();
-    /** Total number of states */
-    private int totalStateCount = 0;
-    /** Guard corresponding on distinct states at a step */
-    private Guard distinctStateGuard = null;
-
-    /** Flag whether current step is a create machine step */
-    private Boolean createStep = false;
-    /** Flag whether current step is a sync step */
-    private Boolean syncStep = false;
-
     public int getTotalStates() {
         return totalStateCount;
     }
@@ -127,13 +119,26 @@ public class Scheduler implements SymbolicSearch {
     public void reset() {
         depth = 0;
         choiceDepth = 0;
+        preChoiceDepth = Integer.MAX_VALUE;
         done = false;
         machineCounters.clear();
         machines.clear();
-        srcState = null;
+        srcState.clear();
         schedule.setSchedulerDepth(getDepth());
         schedule.setSchedulerChoiceDepth(getChoiceDepth());
-        schedule.setSchedulerState(srcState);
+        schedule.setSchedulerState(srcState, machineCounters);
+    }
+
+    /** Reinitialize scheduler */
+    public void reinitialize() {
+        // set all transient data structures
+        srcState = new HashMap<>();
+        distinctStates = new HashMap<>();
+        distinctStatesList = new ArrayList<>();
+        distinctStateGuard = null;
+        for (Machine machine : schedule.getMachines()) {
+            machine.setScheduler(this);
+        }
     }
 
     /** Restore scheduler state
@@ -141,6 +146,7 @@ public class Scheduler implements SymbolicSearch {
     public void restore(int d, int cd) {
         depth = d;
         choiceDepth = cd;
+        preChoiceDepth = Integer.MAX_VALUE;
         done = false;
     }
 
@@ -151,11 +157,18 @@ public class Scheduler implements SymbolicSearch {
         return vcManager;
     }
 
-    /** Find out whether symbolic execution is finished
+    /** Find out whether symbolic execution is done
      * @return Whether or not there are more steps to run
      */
     public boolean isDone() {
-        return done || depth == configuration.getDepthBound();
+        return done || depth == configuration.getMaxStepBound();
+    }
+
+    /** Find out whether current execution finished completely
+     * @return Whether or not current execution finished
+     */
+    public boolean isFinishedExecution() {
+        return executionFinished || depth == configuration.getMaxStepBound();
     }
 
     /** Get current depth
@@ -358,6 +371,7 @@ public class Scheduler implements SymbolicSearch {
     public void initializeSearch() {
         assert(getDepth() == 0);
 
+        GlobalData.getChoiceLearningStats().setProgramStateHash(this);
         listeners = program.getListeners();
         monitors = new ArrayList<>(program.getMonitors());
         for (Machine m : program.getMonitors()) {
@@ -369,15 +383,17 @@ public class Scheduler implements SymbolicSearch {
         depth++;
     }
 
-    public void restoreState(Map<Machine, List<ValueSummary>> state) {
-        for (Map.Entry<Machine, List<ValueSummary>> entry: state.entrySet()) {
+    public void restoreState(Schedule.ChoiceState state) {
+        assert(state != null);
+        for (Map.Entry<Machine, List<ValueSummary>> entry: state.getMachineStates().entrySet()) {
             entry.getKey().setLocalState(entry.getValue());
         }
         for (Machine m: machines) {
-            if (!state.containsKey(m)) {
+            if (!state.getMachineStates().containsKey(m)) {
                 m.reset();
             }
         }
+        machineCounters = state.getMachineCounters();
     }
 
     public void restoreStringState(List<List<String>> state) {
@@ -399,13 +415,39 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public void performSearch() throws TimeoutException {
+        schedule.setNumBacktracksInSchedule();
         while (!isDone()) {
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
-            Assert.prop(getDepth() < configuration.getDepthBound(), "Maximum allowed depth " + configuration.getDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
+            Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             step();
         }
+        schedule.setNumBacktracksInSchedule();
         if (done) {
             searchStats.setIterationCompleted();
+        }
+        checkLiveness();
+    }
+
+    protected void checkLiveness() {
+        if (isFinishedExecution()) {
+            for (Monitor m : monitors) {
+                PrimitiveVS<State> monitorState = m.getCurrentState();
+                for (GuardedValue<State> entry : monitorState.getGuardedValues()) {
+                    State s = entry.getValue();
+                    if (s.isHotState()) {
+                        Guard g = entry.getGuard();
+                        if (executionFinished) {
+                            Assert.prop(g.isFalse(), String.format(
+                                    "Monitor %s detected liveness bug in hot state %s at the end of program execution",
+                                    m, s), this, g);
+                        } else {
+                            Assert.prop(g.isFalse(), String.format(
+                                    "Monitor %s detected potential liveness bug in hot state %s",
+                                    m, s), this, g);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -423,23 +465,21 @@ public class Scheduler implements SymbolicSearch {
         StatWriter.log("memory-current-MB", String.format("%.1f", memoryUsed));
         StatWriter.log("max-depth-explored", String.format("%d", totalStats.getDepthStats().getDepth()));
 
-        if (configuration.getCollectStats() != 0) {
-            // print solver statistics
-            StatWriter.log("time-create-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
-            StatWriter.log("time-solve-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
-            StatWriter.log("time-create-guards-seconds", String.format("%.1f", SolverStats.timeTotalCreateGuards/1000.0));
-            StatWriter.log("time-solve-guards-seconds", String.format("%.1f", SolverStats.timeTotalSolveGuards/1000.0));
-            StatWriter.log("time-create-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxCreateGuards/1000.0));
-            StatWriter.log("time-solve-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxSolveGuards/1000.0));
-            StatWriter.logSolverStats();
+        // print solver statistics
+        StatWriter.log("time-create-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
+        StatWriter.log("time-solve-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalSolveGuards/1000.0, timeUsed)));
+        StatWriter.log("time-create-guards-seconds", String.format("%.1f", SolverStats.timeTotalCreateGuards/1000.0));
+        StatWriter.log("time-solve-guards-seconds", String.format("%.1f", SolverStats.timeTotalSolveGuards/1000.0));
+        StatWriter.log("time-create-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxCreateGuards/1000.0));
+        StatWriter.log("time-solve-guards-max-seconds", String.format("%.3f", SolverStats.timeMaxSolveGuards/1000.0));
+        StatWriter.logSolverStats();
 
-            // print search statistics
-            StatWriter.log("#-states", String.format("%d", getTotalStates()));
-            StatWriter.log("#-distinct-states", String.format("%d", getTotalDistinctStates()));
-            StatWriter.log("#-events", String.format("%d", totalStats.getDepthStats().getNumOfTransitions()));
-            StatWriter.log("#-events-merged", String.format("%d", totalStats.getDepthStats().getNumOfMergedTransitions()));
-            StatWriter.log("#-events-explored", String.format("%d", totalStats.getDepthStats().getNumOfTransitionsExplored()));
-        }
+        // print search statistics
+        StatWriter.log("#-states", String.format("%d", getTotalStates()));
+        StatWriter.log("#-distinct-states", String.format("%d", getTotalDistinctStates()));
+        StatWriter.log("#-events", String.format("%d", totalStats.getDepthStats().getNumOfTransitions()));
+        StatWriter.log("#-events-merged", String.format("%d", totalStats.getDepthStats().getNumOfMergedTransitions()));
+        StatWriter.log("#-events-explored", String.format("%d", totalStats.getDepthStats().getNumOfTransitionsExplored()));
     }
 
     public void reset_stats() {
@@ -448,6 +488,7 @@ public class Scheduler implements SymbolicSearch {
         distinctStatesList.clear();
         totalStateCount = 0;
         GlobalData.getCoverage().resetCoverage();
+        GlobalData.getChoiceLearningStats().setProgramStateHash(this);
     }
 
     public List<PrimitiveVS> getNextSenderChoices() {
@@ -466,11 +507,6 @@ public class Scheduler implements SymbolicSearch {
             }
         }
 
-        if (startDepth > getDepth()) {
-            startDepth = getDepth();
-            TraceLogger.logMessage("Increasing start depth to " + startDepth);
-        }
-
         // prioritize the sync actions i.e. events that are marked as synchronous
         for (Machine machine : machines) {
             if (!machine.sendBuffer.isEmpty()) {
@@ -483,13 +519,26 @@ public class Scheduler implements SymbolicSearch {
             }
         }
 
+        // remove messages with halted target
+        for (Machine machine : machines) {
+            while (!machine.sendBuffer.isEmpty()) {
+                Guard targetHalted = machine.sendBuffer.satisfiesPredUnderGuard(x -> x.targetHalted()).getGuardFor(true);
+                if (!targetHalted.isFalse()) {
+                    rmBuffer(machine, targetHalted);
+                    continue;
+                }
+                break;
+            }
+        }
+
         // now there are no create machine and sync event actions remaining
         List<GuardedValue<Machine>> guardedMachines = new ArrayList<>();
 
         for (Machine machine : machines) {
             if (!machine.sendBuffer.isEmpty()) {
-                Guard canRun = machine.hasHalted().getGuardFor(true).not();
-                canRun = canRun.and(machine.sendBuffer.satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true));
+                Guard canRun = machine.sendBuffer.satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true);
+//                Guard canRun = machine.hasHalted().getGuardFor(true).not();
+//                canRun = canRun.and(machine.sendBuffer.satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true));
                 if (!canRun.isFalse()) {
                     guardedMachines.add(new GuardedValue(machine, canRun));
  //                   candidateSenders.add(new PrimitiveVS<>(machine).restrict(canRun));
@@ -505,7 +554,9 @@ public class Scheduler implements SymbolicSearch {
         if (useFilters()) {
             guardedMachines = filter(guardedMachines, InterleaveOrder.getInstance());
         }
-        
+
+        executionFinished = guardedMachines.isEmpty();
+
         if (configuration.isUseStateCaching()) {
             if (distinctStateGuard != null) {
                 guardedMachines = filterDistinct(guardedMachines);
@@ -613,9 +664,9 @@ public class Scheduler implements SymbolicSearch {
     }
 
     private void storeSrcState() {
-        if (srcState != null)
+        if (!srcState.isEmpty())
             return;
-        srcState = new HashMap<>();
+        srcState.clear();
         for (Machine machine : machines) {
             List<ValueSummary> machineLocalState = machine.getLocalState();
             srcState.put(machine, machineLocalState);
@@ -655,7 +706,7 @@ public class Scheduler implements SymbolicSearch {
             }
         }
 
-        if (configuration.getVerbosity() > 3) {
+        if (configuration.getVerbosity() > 5) {
             PSymLogger.info(globalStateString());
         }
 
@@ -693,7 +744,7 @@ public class Scheduler implements SymbolicSearch {
                 if (distinctStates.containsKey(concreteState)) {
                     distinctStates.put(concreteState, distinctStates.get(concreteState) + 1);
                     totalStateCount += 1;
-                    if (configuration.getVerbosity() > 3) {
+                    if (configuration.getVerbosity() > 5) {
                         PSymLogger.info("Repeated State: " + concreteState);
                     }
                 } else {
@@ -704,7 +755,7 @@ public class Scheduler implements SymbolicSearch {
                     if (configuration.isUseStateCaching()) {
                         distinctStateGuard = distinctStateGuard.or(concreteStateGuard);
                     }
-                    if (configuration.getVerbosity() > 2) {
+                    if (configuration.getVerbosity() > 4) {
                         PSymLogger.info("New State:      " + concreteState);
                     }
                 }
@@ -721,7 +772,8 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public void step() throws TimeoutException {
-        srcState = null;
+        srcState.clear();
+        GlobalData.getChoiceLearningStats().setProgramStateHash(this);
 
         int numStates = 0;
         int numStatesDistinct = 0;
@@ -729,7 +781,7 @@ public class Scheduler implements SymbolicSearch {
         int numMessagesMerged = 0;
         int numMessagesExplored = 0;
 
-        if (configuration.getCollectStats() > 2 || configuration.isUseStateCaching()) {
+        if (configuration.getCollectStats() > 3 || configuration.isUseStateCaching()) {
             storeSrcState();
             int[] numConcrete = enumerateConcreteStates(Concretizer::concretize, srcState);
             numStates = numConcrete[0];
@@ -740,8 +792,16 @@ public class Scheduler implements SymbolicSearch {
             storeSrcState();
             schedule.setSchedulerDepth(getDepth());
             schedule.setSchedulerChoiceDepth(getChoiceDepth());
-            schedule.setSchedulerState(srcState);
+            schedule.setSchedulerState(srcState, machineCounters);
         }
+
+        // reward previous choices
+        List<CoverageStats.CoverageChoiceDepthStats> coverageChoiceDepthStats = GlobalData.getCoverage().getPerChoiceDepthStats();
+        for(int i = preChoiceDepth; i< schedule.size() && i<choiceDepth; i++) {
+            GlobalData.getChoiceLearningStats().rewardStep(coverageChoiceDepthStats.get(i).getStateActions(), numStatesDistinct);
+        }
+        preChoiceDepth = choiceDepth;
+
 
         PrimitiveVS<Machine> choices = getNextSender();
 
@@ -763,13 +823,13 @@ public class Scheduler implements SymbolicSearch {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
             Message removed = rmBuffer(machine, guard);
-            if (configuration.getVerbosity() > 3) {
+            if (configuration.getVerbosity() > 5) {
                 System.out.println("  Machine " + machine.toString());
                 System.out.println("    state   " + machine.getCurrentState().toStringDetailed());
                 System.out.println("    message " + removed.toString());
                 System.out.println("    target " + removed.getTarget().toString());
             }
-            if (configuration.getCollectStats() > 2) {
+            if (configuration.getCollectStats() > 3) {
                 numMessages += Concretizer.getNumConcreteValues(Guard.constTrue(), removed);
             }
             if (effect == null) {
@@ -779,7 +839,7 @@ public class Scheduler implements SymbolicSearch {
             }
         }
 
-        if (configuration.getCollectStats() > 2) {
+        if (configuration.getCollectStats() > 3) {
             numMessagesMerged = Concretizer.getNumConcreteValues(Guard.constTrue(), effect);
             numMessagesExplored = Concretizer.getNumConcreteValues(Guard.constTrue(), effect.getTarget(), effect.getEvent());
         }
@@ -807,9 +867,9 @@ public class Scheduler implements SymbolicSearch {
         searchStats.addDepthStatistics(depth, depthStats);
 
         // log statistics
-        if (configuration.getCollectStats() != 0) {
+        if (configuration.getVerbosity() > 3) {
             double timeUsed = TimeMonitor.getInstance().getRuntime();
-            if (configuration.getCollectStats() > 1) {
+            if (configuration.getVerbosity() > 4) {
                 SearchLogger.log("--------------------");
                 SearchLogger.log("Resource Stats::");
                 SearchLogger.log("time-seconds", String.format("%.1f", timeUsed));
@@ -830,7 +890,7 @@ public class Scheduler implements SymbolicSearch {
         }
 
         // log depth statistics
-        if (configuration.getCollectStats() > 2) {
+        if (configuration.getVerbosity() > 4) {
           SearchLogger.logDepthStats(depthStats);
           System.out.println("--------------------");
           System.out.println("Collect Stats::");

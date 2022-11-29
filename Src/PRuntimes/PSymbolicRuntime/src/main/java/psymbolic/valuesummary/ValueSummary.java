@@ -1,7 +1,6 @@
 package psymbolic.valuesummary;
 
 import psymbolic.runtime.Message;
-import psymbolic.runtime.machine.Machine;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -12,6 +11,23 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
     static UnionVS castToAny(Guard pc, ValueSummary<?> toCast) {
         if (toCast instanceof UnionVS) { return (UnionVS) toCast.restrict(pc); }
         return new UnionVS(toCast).restrict(pc);
+    }
+
+    static ValueSummary<?> castToAnyCollection(Guard pc, ValueSummary<?> toCast) {
+        if (toCast instanceof ListVS) {
+            List<UnionVS> items = new ArrayList<>();
+            ListVS toCastVs = (ListVS) toCast;
+            for (Object item: toCastVs.getItems()) {
+                items.add(ValueSummary.castToAny(pc, (ValueSummary<?>) item));
+            }
+            return new ListVS<>(toCastVs.size(), items);
+        } else if (toCast instanceof SetVS) {
+            SetVS toCastVs = (SetVS) toCast;
+            ListVS elements = toCastVs.getElements();
+            return new SetVS<>((ListVS) ValueSummary.castToAnyCollection(pc, elements));
+        } else {
+            throw new ClassCastException(String.format("Casting elements in %s to any is unsupported", toCast));
+        }
     }
 
     /**
@@ -115,6 +131,23 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
           */
          return result;
      }
+
+    static ValueSummary<?> castFromAnyCollection(Guard pc, ValueSummary<?> def, ValueSummary<?> anyVal) {
+        if (anyVal instanceof ListVS) {
+            List<ValueSummary> items = new ArrayList<>();
+            ListVS toCastVs = (ListVS) anyVal;
+            for (Object item: toCastVs.getItems()) {
+                items.add(ValueSummary.castFromAny(pc, def, (UnionVS) item));
+            }
+            return new ListVS<>(toCastVs.size(), items);
+        } else if (def instanceof SetVS) {
+            SetVS toCastVs = (SetVS) anyVal;
+            ListVS elements = toCastVs.getElements();
+            return new SetVS<>((ListVS) ValueSummary.castFromAnyCollection(pc, def, elements));
+        } else {
+            throw new ClassCastException(String.format("Casting elements in %s to %s is unsupported", def.getCopy()));
+        }
+    }
 
     /**
      * Get all the different possible guarded values from a valueSummary type.

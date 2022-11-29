@@ -89,14 +89,14 @@ machine PaxosNode {
 		
 		/***** proposer ******/
 		on update do (payload :(seqmachine: int, command : int)) { CheckIfLeader(payload); }
-		on goPropose push ProposeValuePhase1;
+		on goPropose goto ProposeValuePhase1;
 		
 		/***** acceptor ****/
 		on prepare do (payload : (proposer: machine, slot : int, proposal : (round: int, servermachine : int))) { preparefun(payload); }
 		on accept do (payload : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int)) { acceptfun(payload); } 
 		
 		/**** leaner ****/
-		on chosen push RunLearner;
+		on chosen goto RunLearner;
 		
 		/*****leader election ****/
 		on Ping do (payload: (rank:int, server : machine)) { send leaderElectionService, Ping, payload; }
@@ -311,7 +311,7 @@ machine PaxosNode {
 			RunReplicatedMachine();
 			if(currCommitOperation && commitValue == receivedMess_1.value)
 			{
-				pop;
+				goto PerformOperation;
 			}
 			else
 			{

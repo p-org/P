@@ -38,7 +38,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     "When generating code for the 'Symbolic' target, the project name should " +
                     "begin with an alphabetic character and contain only alphanumeric characters");
 
-            MainClassName = ProjectName.ToLower();
+            MainClassName = ProjectName;
             anonFuncIds = new Dictionary<Function, int>();
             continuationNames = new Dictionary<Continuation, int>();
         }
@@ -91,7 +91,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         internal static string NullEventName => "_null";
 
-        internal static string SchedulerVar => "scheduler";
+        internal static string SchedulerVar => "programScheduler";
 
         internal static string EffectCollectionVar => "effects";
 

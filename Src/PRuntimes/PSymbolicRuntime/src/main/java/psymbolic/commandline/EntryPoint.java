@@ -4,6 +4,7 @@ import psymbolic.runtime.Concretizer;
 import psymbolic.runtime.logger.*;
 import psymbolic.runtime.scheduler.IterativeBoundedScheduler;
 import psymbolic.runtime.scheduler.ReplayScheduler;
+import psymbolic.utils.GlobalData;
 import psymbolic.utils.TimeMonitor;
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.solvers.SolverEngine;
@@ -49,42 +50,36 @@ public class EntryPoint {
     private static void print_stats() {
         double searchTime = TimeMonitor.getInstance().stopInterval();
         TimeMonitor.getInstance().startInterval();
-        if (configuration.getCollectStats() != 0) {
-            SearchLogger.log("--------------------");
-            SearchLogger.log("Statistics Report::");
-            SearchLogger.log("--------------------");
-            SearchLogger.log("project-name", String.format("%s", configuration.getProjectName()));
-            SearchLogger.log("mode", String.format("%s", mode));
-            SearchLogger.log("solver", String.format("%s", configuration.getSolverType().toString()));
-            SearchLogger.log("expr-type", String.format("%s", configuration.getExprLibType().toString()));
-            SearchLogger.log("time-limit-seconds", String.format("%.1f", configuration.getTimeLimit()));
-            SearchLogger.log("memory-limit-MB", String.format("%.1f", configuration.getMemLimit()));
-            StatWriter.log("status", String.format("%s", status));
-            scheduler.print_stats();
-            StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
-        }
+        StatWriter.log("status", String.format("%s", status));
+        scheduler.print_stats();
+        StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
         scheduler.reportEstimatedCoverage();
     }
 
     private static void preprocess() {
+        PSymLogger.info(String.format("... Method " +  configuration.getTestDriver()));
+        PSymLogger.info(String.format("... Project %s is using '%s' strategy (seed:%s)",
+                                            configuration.getProjectName(),
+                                            configuration.getMode(),
+                                            configuration.getRandomSeed()));
+        PSymLogger.info("--------------------");
+
         executor = Executors.newSingleThreadExecutor();
         status = "error";
         if (configuration.isSymbolic()) {
             mode = "symbolic";
         } else {
-            mode = "concrete";
+            mode = "single";
         }
-        if (configuration.getCollectStats() != 0) {
-            double preSearchTime = TimeMonitor.getInstance().findInterval(TimeMonitor.getInstance().getStart());
-            StatWriter.log("project-name", String.format("%s", configuration.getProjectName()), false);
-            StatWriter.log("mode", String.format("%s", mode), false);
-            StatWriter.log("solver", String.format("%s", configuration.getSolverType().toString()), false);
-            StatWriter.log("expr-type", String.format("%s", configuration.getExprLibType().toString()), false);
-            StatWriter.log("time-limit-seconds", String.format("%.1f", configuration.getTimeLimit()), false);
-            StatWriter.log("memory-limit-MB", String.format("%.1f", configuration.getMemLimit()), false);
-            StatWriter.log("time-pre-seconds", String.format("%.1f", preSearchTime), false);
-        }
-        Concretizer.print = (configuration.getVerbosity() > 6);
+        double preSearchTime = TimeMonitor.getInstance().findInterval(TimeMonitor.getInstance().getStart());
+        StatWriter.log("project-name", String.format("%s", configuration.getProjectName()));
+        StatWriter.log("mode", String.format("%s", mode));
+        StatWriter.log("solver", String.format("%s", configuration.getSolverType().toString()));
+        StatWriter.log("expr-type", String.format("%s", configuration.getExprLibType().toString()));
+        StatWriter.log("time-limit-seconds", String.format("%.1f", configuration.getTimeLimit()));
+        StatWriter.log("memory-limit-MB", String.format("%.1f", configuration.getMemLimit()));
+        StatWriter.log("time-pre-seconds", String.format("%.1f", preSearchTime));
+        Concretizer.print = (configuration.getVerbosity() > 8);
     }
 
     private static void postprocess() {
@@ -109,16 +104,17 @@ public class EntryPoint {
             scheduler.result = "found cex of length " + scheduler.getDepth();
             postprocess();
 
-//            TraceLogger.setVerbosity(2);
+            PSymLogger.setVerbosity(1);
+            TraceLogger.setVerbosity(1);
             SearchLogger.disable();
             CoverageWriter.disable();
             Guard pc = e.pathConstraint;
 
-            ReplayScheduler replay = new ReplayScheduler(configuration, scheduler.getProgram(), scheduler.getSchedule(), pc, scheduler.getDepth());
-            scheduler.getProgram().setScheduler(replay);
-            replay.doSearch();
-            e.printStackTrace();
-            throw new BugFoundException("Found bug: " + e.getLocalizedMessage(), pc);
+            ReplayScheduler replayScheduler = new ReplayScheduler(configuration, scheduler.getProgram(), scheduler.getSchedule(), pc, scheduler.getDepth());
+            scheduler.getProgram().setProgramScheduler(replayScheduler);
+            String writeFileName = configuration.getOutputFolder() + "/cex.schedule";
+            replayScheduler.writeToFile(writeFileName);
+            replay(replayScheduler);
         } catch (InterruptedException e) {
             status = "interrupted";
             throw new Exception("INTERRUPTED");
@@ -126,6 +122,7 @@ public class EntryPoint {
             status = "error";
             throw new Exception("ERROR");
         } finally {
+//            GlobalData.getChoiceLearningStats().printQTable();
             future.cancel(true);
             executor.shutdownNow();
             TraceLogger.setVerbosity(0);
@@ -136,7 +133,7 @@ public class EntryPoint {
     public static void run(IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
         scheduler = sch;
         configuration = config;
-        scheduler.getProgram().setScheduler(scheduler);
+        scheduler.getProgram().setProgramScheduler(scheduler);
 
         preprocess();
         TimedCall timedCall = new TimedCall(scheduler, false);
@@ -147,7 +144,7 @@ public class EntryPoint {
     public static void resume(IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
         scheduler = sch;
         configuration = config;
-        scheduler.getProgram().setScheduler(scheduler);
+        scheduler.getProgram().setProgramScheduler(scheduler);
 
         scheduler.setConfiguration(configuration);
         TraceLogger.setVerbosity(config.getVerbosity());
@@ -159,15 +156,39 @@ public class EntryPoint {
         process();
     }
 
+    private static void replay(ReplayScheduler replayScheduler) throws RuntimeException, InterruptedException, TimeoutException {
+        try {
+            replayScheduler.doSearch();
+            throw new RuntimeException("ERROR: Failed to replay counterexample");
+        } catch (BugFoundException bugFoundException) {
+            bugFoundException.printStackTrace();
+            throw new BugFoundException("Found bug: " + bugFoundException.getLocalizedMessage(), replayScheduler.getPathConstraint());
+        }
+    }
+
+    public static void replayBug(ReplayScheduler replayScheduler, PSymConfiguration config) throws RuntimeException, InterruptedException, TimeoutException {
+        SolverEngine.resumeEngine();
+        if (config.getVerbosity() == 0) {
+            PSymLogger.setVerbosity(1);
+            TraceLogger.setVerbosity(1);
+        }
+        TraceLogger.enable();
+        config.setUseReceiverQueueSemantics(false);
+        config.setCollectStats(0);
+        replayScheduler.setConfiguration(config);
+        replayScheduler.getProgram().setProgramScheduler(replayScheduler);
+        replay(replayScheduler);
+    }
+
     public static void writeToFile() throws Exception {
-        if (configuration.getCollectStats() != 0) {
-            PSymLogger.info(String.format("Writing 1 current and %d backtrack states in %s/", scheduler.getNumBacktracks(), configuration.getOutputFolder()));
+        if (configuration.getVerbosity() > 0) {
+            PSymLogger.info(String.format("Writing 1 current and %d backtrack states in %s/", scheduler.getTotalNumBacktracks(), configuration.getOutputFolder()));
         }
         long pid = ProcessHandle.current().pid();
         String writeFileName = configuration.getOutputFolder() + "/current" + "_pid" + pid + ".out";
         scheduler.writeToFile(writeFileName);
         scheduler.writeBacktracksToFiles(configuration.getOutputFolder() + "/backtrack");
-        if (configuration.getCollectStats() != 0) {
+        if (configuration.getVerbosity() > 0) {
             PSymLogger.info("--------------------");
         }
     }

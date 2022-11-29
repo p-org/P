@@ -9,6 +9,7 @@ import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFact
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 
+
 public class Log4JConfig {
     @Getter
     private static LoggerContext context = null;

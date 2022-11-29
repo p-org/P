@@ -43,22 +43,40 @@ namespace Plang.Compiler.TypeChecker
                 CreatePropagation(fn => fn.CanReceive, (fn, value) => fn.CanReceive = value,
                     true),
                 CreatePropagation(fn => fn.CanChangeState, (fn, value) => fn.CanChangeState = value,
-                    true));
+                    true),
+                CreatePropagation(fn => fn.CanCreate, (fn, value) => fn.CanCreate = value,
+                    true),
+                CreatePropagation(fn => fn.CanSend, (fn, value) => fn.CanSend = value,
+                    true),
+                CreatePropagation(fn => fn.IsNondeterministic, (fn, value) => fn.IsNondeterministic = value,
+                    true)
+                );
 
             // Step 5: Verify capability restrictions
-            foreach (Function machineFunction in allFunctions)
+            foreach (var function in allFunctions)
             {
-                // TODO: is this checked earlier?
-                if (machineFunction.Owner?.IsSpec == true && machineFunction.IsNondeterministic == true)
+                // This can been checked before but just doing it again for safety!
+                if (function.Owner?.IsSpec == true && (function.IsNondeterministic == true || function.CanCreate == true || function.CanSend == true|| function.CanReceive == true))
                 {
-                    throw handler.NonDeterministicFunctionInSpecMachine(machineFunction);
+                    throw handler.IllegalFunctionUsedInSpecMachine(function, function.Owner);
                 }
-
-                if ((machineFunction.CanChangeState == true || machineFunction.CanRaiseEvent == true) &&
-                    (machineFunction.Role.HasFlag(FunctionRole.TransitionFunction) ||
-                     machineFunction.Role.HasFlag(FunctionRole.ExitHandler)))
+                
+                // A static function if it has side effects or is non-deterministic then it cannot be called from a spec machine
+                if (function.Owner == null && (function.IsNondeterministic == true || function.CanCreate == true || function.CanSend == true|| function.CanReceive == true))
                 {
-                    throw handler.ChangedStateMidTransition(machineFunction.SourceLocation, machineFunction);
+                    foreach (var caller in function.Callers)
+                    {
+                        if (caller.Owner?.IsSpec == true)
+                        {
+                            throw handler.IllegalFunctionUsedInSpecMachine(function, caller.Owner);
+                        }
+                    }
+                }
+                if ((function.CanChangeState == true || function.CanRaiseEvent == true) &&
+                    (function.Role.HasFlag(FunctionRole.TransitionFunction) ||
+                     function.Role.HasFlag(FunctionRole.ExitHandler)))
+                {
+                    throw handler.ChangedStateMidTransition(function.SourceLocation, function);
                 }
             }
 

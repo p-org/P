@@ -113,7 +113,14 @@ public class TupleVS implements ValueSummary<TupleVS> {
         for (TupleVS summary : summaries) {
             for (int i = 0; i < summary.fields.length; i++) {
                 if (i < resultList.size()) {
-                    resultList.set(i, resultList.get(i).merge(summary.fields[i]));
+                    if (summary.fields[i].getClass() != classes[i]) {
+                        classes[i] = UnionVS.class;
+                        ValueSummary lhs = resultList.get(i);
+                        ValueSummary rhs = summary.fields[i];
+                        resultList.set(i, ValueSummary.castToAny(lhs.getUniverse(), lhs).merge(ValueSummary.castToAny(rhs.getUniverse(), rhs)));
+                    } else {
+                        resultList.set(i, resultList.get(i).merge(summary.fields[i]));
+                    }
                 } else {
                     resultList.add(summary.fields[i]);
                 }

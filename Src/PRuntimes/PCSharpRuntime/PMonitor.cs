@@ -35,5 +35,15 @@ namespace Plang.CSharpRuntime
         {
             base.Assert(predicate, s, args);
         }
+        
+        public void LogLine(string message)
+        {
+            Logger.WriteLine($"<PrintLog> {message}");
+        }
+
+        public void Log(string message)
+        {
+            Logger.Write($"{message}");
+        }
     }
 }

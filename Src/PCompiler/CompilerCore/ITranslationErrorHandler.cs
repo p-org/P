@@ -56,8 +56,6 @@ namespace Plang.Compiler
 
         Exception ChangedStateMidTransition(ParserRuleContext location, Function method);
 
-        Exception NonDeterministicFunctionInSpecMachine(Function machineFunction);
-
         Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol);
 
         Exception InvalidStringExprFormat(PParser.FormatedStringContext context, IToken symbol);
@@ -120,5 +118,6 @@ namespace Plang.Compiler
         Exception MoreThanOneParameterForHandlers(ParserRuleContext sourceLocation, int count);
 
         Exception IllegalChooseSubExprType(PParser.ChooseExprContext context, PLanguageType subExprType);
+        Exception IllegalFunctionUsedInSpecMachine(Function function, Machine callerOwner);
     }
 }

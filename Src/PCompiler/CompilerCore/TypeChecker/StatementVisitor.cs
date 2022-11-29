@@ -281,6 +281,7 @@ namespace Plang.Compiler.TypeChecker
 
             List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetInterface.PayloadType, args);
+            method.CanCreate = true;
             return new CtorStmt(context, targetInterface, args);
         }
 
@@ -369,6 +370,8 @@ namespace Plang.Compiler.TypeChecker
                 TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.Value.PayloadType, args);
             }
 
+            method.CanSend = true;
+            
             return new SendStmt(context, machineExpr, evtExpr, args);
         }
 

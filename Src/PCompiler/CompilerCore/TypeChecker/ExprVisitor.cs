@@ -172,6 +172,9 @@ namespace Plang.Compiler.TypeChecker
 
             IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, @interface.PayloadType, arguments);
+            
+            method.CanCreate = true;
+            
             return new CtorExpr(context, @interface, arguments);
         }
 

@@ -108,12 +108,6 @@ namespace Plang.CSharpRuntime
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
-        public void TryPopState()
-        {
-            base.RaisePopStateEvent();
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Pop };
-        }
-
         public int TryRandomInt(int maxValue)
         {
             return base.RandomInteger(maxValue);

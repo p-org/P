@@ -79,7 +79,7 @@ public class ClientServerTest {
                         0))));
     }
 
-    private PMonitor initedGuaranteWDProgress() {
+    private Monitor initedGuaranteWDProgress() {
         GuaranteedWithDrawProgress m = new GuaranteedWithDrawProgress();
         m.ready();
 
@@ -89,7 +89,7 @@ public class ClientServerTest {
     @Test
     @DisplayName("Can process valid events")
     public void testWithDrawReqs() {
-        PMonitor m = initedGuaranteWDProgress();
+        Monitor m = initedGuaranteWDProgress();
 
         m.accept(new eWithDrawReq(new PTuple_src_accnt_amnt_rId(1L, 100, 10, 0)));
 
@@ -103,7 +103,7 @@ public class ClientServerTest {
     @Test
     @DisplayName("Throws un invalid state transitions")
     public void testInvalidWithDrawReqs() {
-        PMonitor m = initedGuaranteWDProgress();
+        Monitor m = initedGuaranteWDProgress();
 
         // We begin in the NopendingRequests state, but that state has no handler
         // for a withDrawRewp.
@@ -118,7 +118,7 @@ public class ClientServerTest {
     @Test
     @DisplayName("Throws un invalid transactions")
     public void testInvalidWithDrawReqs2() {
-        PMonitor m = initedGuaranteWDProgress();
+        Monitor m = initedGuaranteWDProgress();
 
         m.accept(new eWithDrawReq(new PTuple_src_accnt_amnt_rId(1L, 100, 10, 0)));
 
@@ -175,7 +175,7 @@ public class ClientServerTest {
     @DisplayName("Can extract Monitors from providers")
     public void testMonitorProvider() {
         Supplier<BankBalanceIsAlwaysCorrect> s = new BankBalanceIsAlwaysCorrect.Supplier();
-        PMonitor m = s.get();
+        Monitor m = s.get();
         assertEquals(m.getCurrentState(), BankBalanceIsAlwaysCorrect.PrtStates.Init);
     }
 }

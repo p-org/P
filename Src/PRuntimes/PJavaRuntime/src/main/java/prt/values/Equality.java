@@ -1,6 +1,6 @@
 package prt.values;
 
-import prt.PEvent;
+import prt.events.PEvent;
 import prt.exceptions.IncomparableValuesException;
 
 import java.util.*;

@@ -6,11 +6,6 @@ package testcases.clientserver;
  * Please do not edit manually!
  **************************************************************************/
 
-import prt.PEvent;
-import prt.PMonitor;
-import prt.PState;
-import prt.exceptions.GotoTransitionException;
-
 import java.util.*;
 
 public class PMachines {
@@ -18,7 +13,7 @@ public class PMachines {
     // PMachine Database elided
     // PMachine Client elided
     // PMachine AbstractBankServer elided
-    public static class BankBalanceIsAlwaysCorrect extends PMonitor<BankBalanceIsAlwaysCorrect.PrtStates> {
+    public static class BankBalanceIsAlwaysCorrect extends prt.Monitor<BankBalanceIsAlwaysCorrect.PrtStates> {
 
         public static class Supplier implements java.util.function.Supplier<BankBalanceIsAlwaysCorrect> {
             public BankBalanceIsAlwaysCorrect get() {
@@ -42,17 +37,17 @@ public class PMachines {
 
         public BankBalanceIsAlwaysCorrect() {
             super();
-            addState(PState.keyedOn(PrtStates.Init)
+            addState(prt.State.keyedOn(PrtStates.Init)
                     .isInitialState(true)
                     .withEvent(PEvents.eSpec_BankBalanceIsAlwaysCorrect_Init.class, p -> { Anon(p); gotoState(PrtStates.WaitForWithDrawReqAndResp); })
                     .build());
-            addState(PState.keyedOn(PrtStates.WaitForWithDrawReqAndResp)
+            addState(prt.State.keyedOn(PrtStates.WaitForWithDrawReqAndResp)
                     .withEvent(PEvents.eWithDrawReq.class, this::Anon_1)
                     .withEvent(PEvents.eWithDrawResp.class, this::Anon_2)
                     .build());
         } // constructor
 
-        public java.util.List<Class<? extends PEvent<?>>> getEventTypes() {
+        public java.util.List<Class<? extends prt.events.PEvent<?>>> getEventTypes() {
             return java.util.Arrays.asList(PEvents.eSpec_BankBalanceIsAlwaysCorrect_Init.class, PEvents.eWithDrawReq.class, PEvents.eWithDrawResp.class);
         }
 
@@ -201,7 +196,7 @@ public class PMachines {
         }
 
     } // BankBalanceIsAlwaysCorrect monitor definition
-    public static class GuaranteedWithDrawProgress extends PMonitor<GuaranteedWithDrawProgress.PrtStates> {
+    public static class GuaranteedWithDrawProgress extends prt.Monitor<GuaranteedWithDrawProgress.PrtStates> {
 
         public static class Supplier implements java.util.function.Supplier<GuaranteedWithDrawProgress> {
             public GuaranteedWithDrawProgress get() {
@@ -222,17 +217,17 @@ public class PMachines {
 
         public GuaranteedWithDrawProgress() {
             super();
-            addState(PState.keyedOn(PrtStates.NopendingRequests)
+            addState(prt.State.keyedOn(PrtStates.NopendingRequests)
                     .isInitialState(true)
                     .withEvent(PEvents.eWithDrawReq.class, p -> { Anon_3(p); gotoState(PrtStates.PendingReqs); })
                     .build());
-            addState(PState.keyedOn(PrtStates.PendingReqs)
+            addState(prt.State.keyedOn(PrtStates.PendingReqs)
                     .withEvent(PEvents.eWithDrawResp.class, this::Anon_4)
                     .withEvent(PEvents.eWithDrawReq.class, p -> { Anon_5(p); gotoState(PrtStates.PendingReqs); })
                     .build());
         } // constructor
 
-        public java.util.List<Class<? extends PEvent<?>>> getEventTypes() {
+        public java.util.List<Class<? extends prt.events.PEvent<?>>> getEventTypes() {
             return java.util.Arrays.asList(PEvents.eWithDrawReq.class, PEvents.eWithDrawResp.class);
         }
 
@@ -242,7 +237,7 @@ public class PMachines {
             TMP_tmp0_2 = req_1.rId;
             pendingWDReqs.add(TMP_tmp0_2);
         }
-        private void Anon_4(PTypes.PTuple_stts_accnt_blnc_rId resp_1) throws GotoTransitionException {
+        private void Anon_4(PTypes.PTuple_stts_accnt_blnc_rId resp_1) throws prt.exceptions.TransitionException {
             long TMP_tmp0_3;
             boolean TMP_tmp1_2;
             long TMP_tmp2_2;

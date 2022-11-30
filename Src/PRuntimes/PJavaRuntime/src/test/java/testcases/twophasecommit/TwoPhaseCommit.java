@@ -5,10 +5,8 @@ package testcases.twophasecommit;
  * Please do not edit manually!
  **************************************************************************/
 
-import prt.PEvent;
-import prt.PMonitor;
-import prt.PState;
-import prt.exceptions.GotoTransitionException;
+import prt.events.PEvent;
+import prt.exceptions.TransitionException;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -386,7 +384,7 @@ public class TwoPhaseCommit {
 
 
     /* Events */
-    public static class DefaultEvent extends PEvent<Void> {
+    public static class DefaultEvent extends prt.events.PEvent<Void> {
         public DefaultEvent() { }
         private Void payload;
         public Void getPayload() { return payload; }
@@ -397,7 +395,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for DefaultEvent
-    public static class PHalt extends PEvent<Void> {
+    public static class PHalt extends prt.events.PEvent<Void> {
         public PHalt() { }
         private Void payload;
         public Void getPayload() { return payload; }
@@ -408,7 +406,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for PHalt
-    public static class eWriteTransReq extends PEvent<PTuple_clnt_trans> {
+    public static class eWriteTransReq extends prt.events.PEvent<PTuple_clnt_trans> {
         public eWriteTransReq(PTuple_clnt_trans p) { this.payload = p; }
         private PTuple_clnt_trans payload;
         public PTuple_clnt_trans getPayload() { return payload; }
@@ -419,7 +417,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eWriteTransReq
-    public static class eWriteTransResp extends PEvent<PTuple_trans_stts> {
+    public static class eWriteTransResp extends prt.events.PEvent<PTuple_trans_stts> {
         public eWriteTransResp(PTuple_trans_stts p) { this.payload = p; }
         private PTuple_trans_stts payload;
         public PTuple_trans_stts getPayload() { return payload; }
@@ -430,7 +428,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eWriteTransResp
-    public static class eReadTransReq extends PEvent<PTuple_clnt_key> {
+    public static class eReadTransReq extends prt.events.PEvent<PTuple_clnt_key> {
         public eReadTransReq(PTuple_clnt_key p) { this.payload = p; }
         private PTuple_clnt_key payload;
         public PTuple_clnt_key getPayload() { return payload; }
@@ -441,7 +439,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eReadTransReq
-    public static class eReadTransResp extends PEvent<PTuple_key_val_stts> {
+    public static class eReadTransResp extends prt.events.PEvent<PTuple_key_val_stts> {
         public eReadTransResp(PTuple_key_val_stts p) { this.payload = p; }
         private PTuple_key_val_stts payload;
         public PTuple_key_val_stts getPayload() { return payload; }
@@ -452,7 +450,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eReadTransResp
-    public static class ePrepareReq extends PEvent<PTuple_key_val_trans> {
+    public static class ePrepareReq extends prt.events.PEvent<PTuple_key_val_trans> {
         public ePrepareReq(PTuple_key_val_trans p) { this.payload = p; }
         private PTuple_key_val_trans payload;
         public PTuple_key_val_trans getPayload() { return payload; }
@@ -463,7 +461,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for ePrepareReq
-    public static class ePrepareResp extends PEvent<PTuple_prtcp_trans_stts> {
+    public static class ePrepareResp extends prt.events.PEvent<PTuple_prtcp_trans_stts> {
         public ePrepareResp(PTuple_prtcp_trans_stts p) { this.payload = p; }
         private PTuple_prtcp_trans_stts payload;
         public PTuple_prtcp_trans_stts getPayload() { return payload; }
@@ -474,7 +472,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for ePrepareResp
-    public static class eCommitTrans extends PEvent<Integer> {
+    public static class eCommitTrans extends prt.events.PEvent<Integer> {
         public eCommitTrans(int p) { this.payload = p; }
         private Integer payload;
         public Integer getPayload() { return payload; }
@@ -485,7 +483,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eCommitTrans
-    public static class eAbortTrans extends PEvent<Integer> {
+    public static class eAbortTrans extends prt.events.PEvent<Integer> {
         public eAbortTrans(int p) { this.payload = p; }
         private Integer payload;
         public Integer getPayload() { return payload; }
@@ -496,7 +494,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eAbortTrans
-    public static class eInformCoordinator extends PEvent<Long> {
+    public static class eInformCoordinator extends prt.events.PEvent<Long> {
         public eInformCoordinator(long p) { this.payload = p; }
         private Long payload;
         public Long getPayload() { return payload; }
@@ -507,7 +505,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eInformCoordinator
-    public static class eMonitor_AtomicityInitialize extends PEvent<Integer> {
+    public static class eMonitor_AtomicityInitialize extends prt.events.PEvent<Integer> {
         public eMonitor_AtomicityInitialize(int p) { this.payload = p; }
         private Integer payload;
         public Integer getPayload() { return payload; }
@@ -518,7 +516,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eMonitor_AtomicityInitialize
-    public static class eStartTimer extends PEvent<Void> {
+    public static class eStartTimer extends prt.events.PEvent<Void> {
         public eStartTimer() { }
         private Void payload;
         public Void getPayload() { return payload; }
@@ -529,7 +527,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eStartTimer
-    public static class eCancelTimer extends PEvent<Void> {
+    public static class eCancelTimer extends prt.events.PEvent<Void> {
         public eCancelTimer() { }
         private Void payload;
         public Void getPayload() { return payload; }
@@ -540,7 +538,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eCancelTimer
-    public static class eTimeOut extends PEvent<Void> {
+    public static class eTimeOut extends prt.events.PEvent<Void> {
         public eTimeOut() { }
         private Void payload;
         public Void getPayload() { return payload; }
@@ -551,7 +549,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eTimeOut
-    public static class eDelayedTimeOut extends PEvent<Void> {
+    public static class eDelayedTimeOut extends prt.events.PEvent<Void> {
         public eDelayedTimeOut() { }
         private Void payload;
         public Void getPayload() { return payload; }
@@ -562,7 +560,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eDelayedTimeOut
-    public static class eDelayNodeFailure extends PEvent<Void> {
+    public static class eDelayNodeFailure extends prt.events.PEvent<Void> {
         public eDelayNodeFailure() { }
         private Void payload;
         public Void getPayload() { return payload; }
@@ -573,7 +571,7 @@ public class TwoPhaseCommit {
         } // toString()
 
     } // PEvent definition for eDelayNodeFailure
-    public static class eShutDown extends PEvent<Long> {
+    public static class eShutDown extends prt.events.PEvent<Long> {
         public eShutDown(long p) { this.payload = p; }
         private Long payload;
         public Long getPayload() { return payload; }
@@ -587,7 +585,7 @@ public class TwoPhaseCommit {
 
     // PMachine Coordinator elided
     // PMachine Participant elided
-    public static class AtomicityInvariant extends PMonitor {
+    public static class AtomicityInvariant extends prt.Monitor {
 
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); } //XXX: dummy implementation.
 
@@ -734,18 +732,18 @@ public class TwoPhaseCommit {
 
         public AtomicityInvariant() {
             super();
-            addState(PState.keyedOn(States.INIT_STATE)
+            addState(prt.State.keyedOn(States.INIT_STATE)
                     .isInitialState(true)
                     .withEvent(eMonitor_AtomicityInitialize.class, p -> { Anon(p); gotoState(States.WAITFOREVENTS_STATE); })
                     .build());
-            addState(PState.keyedOn(States.WAITFOREVENTS_STATE)
+            addState(prt.State.keyedOn(States.WAITFOREVENTS_STATE)
                     .isInitialState(false)
                     .withEvent(ePrepareResp.class, this::Anon_1)
                     .withEvent(eWriteTransResp.class, this::Anon_2)
                     .build());
         } // constructor
     } // AtomicityInvariant monitor definition
-    public static class Progress extends PMonitor {
+    public static class Progress extends prt.Monitor {
 
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); } //XXX: dummy implementation.
 
@@ -765,7 +763,7 @@ public class TwoPhaseCommit {
             TMP_tmp0_2 = pendingTransactions + 1;
             pendingTransactions = TMP_tmp0_2;
         }
-        private void Anon_4()throws GotoTransitionException {
+        private void Anon_4()throws TransitionException {
             int TMP_tmp0_3 = 0;
             boolean TMP_tmp1_2 = false;
 
@@ -792,16 +790,16 @@ public class TwoPhaseCommit {
 
         public Progress() {
             super();
-            addState(PState.keyedOn(States.INIT_STATE)
+            addState(prt.State.keyedOn(States.INIT_STATE)
                     .isInitialState(true)
                     .withEvent(eWriteTransReq.class, __ -> { Anon_3(); gotoState(States.WAITFORRESPONSES_STATE); })
                     .build());
-            addState(PState.keyedOn(States.WAITFORRESPONSES_STATE)
+            addState(prt.State.keyedOn(States.WAITFORRESPONSES_STATE)
                     .isInitialState(false)
                     .withEvent(eWriteTransResp.class, __ -> Anon_4())
                     .withEvent(eWriteTransReq.class, __ -> Anon_5())
                     .build());
-            addState(PState.keyedOn(States.ALLTRANSACTIONSFINISHED_STATE)
+            addState(prt.State.keyedOn(States.ALLTRANSACTIONSFINISHED_STATE)
                     .isInitialState(false)
                     .withEvent(eWriteTransReq.class, __ -> { Anon_6(); gotoState(States.WAITFORRESPONSES_STATE); })
                     .build());

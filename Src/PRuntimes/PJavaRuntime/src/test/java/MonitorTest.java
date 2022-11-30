@@ -1,4 +1,4 @@
-import prt.PEvent;
+import prt.events.PEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import prt.*;
@@ -20,10 +20,10 @@ public class MonitorTest {
     /**
      * This monitor has no default state; an exception should be raised when .ready() is called.
      */
-    class NoDefaultStateMonitor extends PMonitor {
+    class NoDefaultStateMonitor extends Monitor {
         public NoDefaultStateMonitor() {
             super();
-            addState(new PState.Builder<>(SingleState.INIT_STATE).build());
+            addState(new State.Builder<>(SingleState.INIT_STATE).build());
         }
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
@@ -31,11 +31,11 @@ public class MonitorTest {
     /**
      * This monitor has two default states; an exception will be thrown in the second addState().
      */
-    class MultipleDefaultStateMonitors extends PMonitor {
+    class MultipleDefaultStateMonitors extends Monitor {
         public MultipleDefaultStateMonitors() {
             super();
-            addState(new PState.Builder<>(BiState.INIT_STATE).isInitialState(true).build());
-            addState(new PState.Builder<>(BiState.OTHER_STATE).isInitialState(true).build());
+            addState(new State.Builder<>(BiState.INIT_STATE).isInitialState(true).build());
+            addState(new State.Builder<>(BiState.OTHER_STATE).isInitialState(true).build());
         }
 
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
@@ -44,10 +44,10 @@ public class MonitorTest {
     /**
      * This monitor should have two default states but only one is implemented.
      */
-    class NonTotalStateMapMonitor extends PMonitor {
+    class NonTotalStateMapMonitor extends Monitor {
         public NonTotalStateMapMonitor() {
             super();
-            addState(new PState.Builder<>(BiState.INIT_STATE).isInitialState(true).build());
+            addState(new State.Builder<>(BiState.INIT_STATE).isInitialState(true).build());
         }
 
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
@@ -55,11 +55,11 @@ public class MonitorTest {
     /**
      * This monitor has two states with the same key; an exception will be thrown in the second addState().
      */
-    class NonUniqueStateKeyMonitor extends PMonitor {
+    class NonUniqueStateKeyMonitor extends Monitor {
         public NonUniqueStateKeyMonitor() {
             super();
-            addState(new PState.Builder<>(BiState.INIT_STATE).isInitialState(true).build());
-            addState(new PState.Builder<>(BiState.INIT_STATE).isInitialState(true).build());
+            addState(new State.Builder<>(BiState.INIT_STATE).isInitialState(true).build());
+            addState(new State.Builder<>(BiState.INIT_STATE).isInitialState(true).build());
         }
 
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
@@ -69,7 +69,7 @@ public class MonitorTest {
      * This prt.Monitor has one piece of ghost state: a counter that can be incremented by
      * processing events.
      */
-    class CounterMonitor extends PMonitor {
+    class CounterMonitor extends Monitor {
 
         class AddEvent extends PEvent<Integer> {
             private int payload;
@@ -85,7 +85,7 @@ public class MonitorTest {
             super();
             count = 0;
 
-            addState(new PState.Builder<>(SingleState.INIT_STATE)
+            addState(new State.Builder<>(SingleState.INIT_STATE)
                     .isInitialState(true)
                     .withEvent(AddEvent.class, i -> count += i)
                     .build());
@@ -94,23 +94,23 @@ public class MonitorTest {
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
 
-    class ChainedEntryHandlerMonitor extends PMonitor {
+    class ChainedEntryHandlerMonitor extends Monitor {
         public List<ABCState> stateAcc; // We'll use this to track what states we've transitioned through.
         public ChainedEntryHandlerMonitor() {
             super();
 
             stateAcc = new ArrayList<>();
 
-            addState(new PState.Builder<>(ABCState.A_STATE)
+            addState(new State.Builder<>(ABCState.A_STATE)
                     .isInitialState(true)
                     .withEntry(() -> gotoState(ABCState.B_STATE))
                     .withExit(() -> stateAcc.add(ABCState.A_STATE))
                     .build());
-            addState(new PState.Builder<>(ABCState.B_STATE)
+            addState(new State.Builder<>(ABCState.B_STATE)
                     .withEntry(() -> gotoState(ABCState.C_STATE))
                     .withExit(() -> stateAcc.add(ABCState.B_STATE))
                     .build());
-            addState(new PState.Builder<>(ABCState.C_STATE)
+            addState(new State.Builder<>(ABCState.C_STATE)
                     .withEntry(() -> stateAcc.add(ABCState.C_STATE))
                     .build());
         }
@@ -119,7 +119,7 @@ public class MonitorTest {
     }
 
 
-    class GotoStateWithPayloadsMonitor extends PMonitor {
+    class GotoStateWithPayloadsMonitor extends Monitor {
         public List<Object> eventsProcessed; // We'll use this to track what events we've processed
 
         public GotoStateWithPayloadsMonitor() {
@@ -127,19 +127,19 @@ public class MonitorTest {
 
             eventsProcessed = new ArrayList<>();
 
-            addState(new PState.Builder<>(ABCState.A_STATE)
+            addState(new State.Builder<>(ABCState.A_STATE)
                     .isInitialState(true)
                     .withEntry(() -> {
                         gotoState(ABCState.B_STATE, "Hello from prt.State A");
                     })
                     .build());
-            addState(new PState.Builder<>(ABCState.B_STATE)
+            addState(new State.Builder<>(ABCState.B_STATE)
                     .withEntry(s -> {
                         eventsProcessed.add(s);
                         gotoState(ABCState.C_STATE, "Hello from prt.State B");
                     })
                     .build());
-            addState(new PState.Builder<>(ABCState.C_STATE)
+            addState(new State.Builder<>(ABCState.C_STATE)
                     .withEntry(s -> eventsProcessed.add(s))
                     .build());
         }
@@ -148,7 +148,7 @@ public class MonitorTest {
     }
 
 
-    class GotoStateWithPayloadsMonitorIncludingInitialEntryHandler extends PMonitor {
+    class GotoStateWithPayloadsMonitorIncludingInitialEntryHandler extends Monitor {
         public List<Object> eventsProcessed; // We'll use this to track what events we've processed
 
         public GotoStateWithPayloadsMonitorIncludingInitialEntryHandler() {
@@ -156,20 +156,20 @@ public class MonitorTest {
 
             eventsProcessed = new ArrayList<>();
 
-            addState(new PState.Builder<>(ABCState.A_STATE)
+            addState(new State.Builder<>(ABCState.A_STATE)
                     .isInitialState(true)
                     .withEntry((String s) -> {
                         eventsProcessed.add(s);
                         gotoState(ABCState.B_STATE, "Hello from prt.State A");
                     })
                     .build());
-            addState(new PState.Builder<>(ABCState.B_STATE)
+            addState(new State.Builder<>(ABCState.B_STATE)
                     .withEntry((String s) -> {
                         eventsProcessed.add(s);
                         gotoState(ABCState.C_STATE, "Hello from prt.State B");
                     })
                     .build());
-            addState(new PState.Builder<>(ABCState.C_STATE)
+            addState(new State.Builder<>(ABCState.C_STATE)
                     .withEntry((String s) -> eventsProcessed.add(s))
                     .build());
         }
@@ -178,7 +178,7 @@ public class MonitorTest {
     }
 
 
-    class GotoStateWithIllTypedPayloadsMonitor extends PMonitor {
+    class GotoStateWithIllTypedPayloadsMonitor extends Monitor {
         public List<String> eventsProcessed; // We'll use this to track what events we've processed
 
         public GotoStateWithIllTypedPayloadsMonitor() {
@@ -186,14 +186,14 @@ public class MonitorTest {
 
             eventsProcessed = new ArrayList<>();
 
-            addState(new PState.Builder<>(ABCState.A_STATE)
+            addState(new State.Builder<>(ABCState.A_STATE)
                     .isInitialState(true)
                     .withEntry(() -> gotoState(ABCState.B_STATE, Integer.valueOf(42))) // Here we pass an Integer to the interrupt handler...
                     .build());
-            addState(new PState.Builder<>(ABCState.B_STATE)
+            addState(new State.Builder<>(ABCState.B_STATE)
                     .withEntry((String s) -> eventsProcessed.add(s)) //...but here we enforce that it must be a string!
                     .build());
-            addState(new PState.Builder<>(ABCState.C_STATE)
+            addState(new State.Builder<>(ABCState.C_STATE)
                     .build());
         }
 
@@ -203,10 +203,10 @@ public class MonitorTest {
     /**
      * This monitor immediately asserts.
      */
-    class ImmediateAssertionMonitor extends PMonitor {
+    class ImmediateAssertionMonitor extends Monitor {
         public ImmediateAssertionMonitor() {
             super();
-            addState(new PState.Builder<>(SingleState.INIT_STATE)
+            addState(new State.Builder<>(SingleState.INIT_STATE)
                     .isInitialState(true)
                     .withEntry(() -> tryAssert(1 > 2, "Math works"))
                     .build());
@@ -215,7 +215,7 @@ public class MonitorTest {
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); }
     }
 
-    class RaiseEventMonitor extends PMonitor {
+    class RaiseEventMonitor extends Monitor {
         public class testEvent extends PEvent<Void> {
             public Void getPayload() { return null; }
         }
@@ -227,7 +227,7 @@ public class MonitorTest {
 
         public RaiseEventMonitor() {
             super();
-            addState(new PState.Builder<>(SingleState.INIT_STATE)
+            addState(new State.Builder<>(SingleState.INIT_STATE)
                     .isInitialState(true)
                     .withEvent(testEvent.class, __ -> {
                         tryRaiseEvent(new noopEvent());

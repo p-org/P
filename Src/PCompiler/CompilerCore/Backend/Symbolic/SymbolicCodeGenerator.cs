@@ -42,7 +42,7 @@ namespace Plang.Compiler.Backend.Symbolic
             }
 
             // compile the csproj file
-            string[] args = new[] { "clean package -q"};
+            string[] args = new[] { "versions:use-latest-versions -DgenerateBackupPoms=false clean package -q"};
 
             int exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args);
             if (exitCode != 0)

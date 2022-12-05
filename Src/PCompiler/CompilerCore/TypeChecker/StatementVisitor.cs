@@ -398,6 +398,8 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.TypeMismatch(context.expr(), evtExpr.Type, PrimitiveType.Event);
             }
 
+            method.CanSend = true;
+            
             List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             return new AnnounceStmt(context, evtExpr, args.Count == 0 ? null : args[0]);
         }

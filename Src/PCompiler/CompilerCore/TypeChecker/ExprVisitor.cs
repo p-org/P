@@ -371,6 +371,7 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitChooseExpr(PParser.ChooseExprContext context)
         {
+            method.IsNondeterministic = true;
             // if choose is without an argument then its a choose boolean
             if (context.expr() == null)
             {
@@ -397,6 +398,7 @@ namespace Plang.Compiler.TypeChecker
                 default:
                     throw handler.IllegalChooseSubExprType(context, subExprType);
             }
+            
         }
 
         public override IPExpr VisitCastExpr(PParser.CastExprContext context)

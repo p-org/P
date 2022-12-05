@@ -12,7 +12,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>psymbolic</groupId>
+    <groupId>psym.model</groupId>
     <artifactId>projectName</artifactId>
     <version>1.0</version>
 
@@ -48,7 +48,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>psymbolic.commandline.PSymbolic</mainClass>
+                            <mainClass>psym.commandline.PSym</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
@@ -63,7 +63,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         <dependency>
             <groupId>io.github.p-org</groupId>
             <artifactId>psym</artifactId>
-            <version>[0.5.6,)</version>
+            <version>LATEST</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->

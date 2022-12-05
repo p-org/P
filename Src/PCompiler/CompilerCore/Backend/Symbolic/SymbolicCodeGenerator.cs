@@ -56,7 +56,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 job.Output.WriteInfo("Build succeeded.");
             }
 
-            string sourceDirectory = "target/sources/psymbolic";
+            string sourceDirectory = "target/sources/psym";
 
             // create source folder
             args = new[] { $"-p {sourceDirectory}" };
@@ -2619,17 +2619,18 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
-            context.WriteLine(output, "package psymbolic;");
-            context.WriteLine(output, "import psymbolic.commandline.*;");
-            context.WriteLine(output, "import psymbolic.valuesummary.*;");
-            context.WriteLine(output, "import psymbolic.runtime.*;");
-            context.WriteLine(output, "import psymbolic.runtime.scheduler.*;");
-            context.WriteLine(output, "import psymbolic.runtime.machine.*;");
-            context.WriteLine(output, "import psymbolic.runtime.logger.*;");
-            context.WriteLine(output, "import psymbolic.runtime.machine.buffer.*;");
-            context.WriteLine(output, "import psymbolic.runtime.machine.eventhandlers.*;");
-            context.WriteLine(output, "import psymbolic.runtime.values.*;");
-            context.WriteLine(output, "import psymbolic.utils.*;");
+            context.WriteLine(output, "package psym.model;");
+            context.WriteLine(output);
+            context.WriteLine(output, "import psym.commandline.*;");
+            context.WriteLine(output, "import psym.valuesummary.*;");
+            context.WriteLine(output, "import psym.runtime.*;");
+            context.WriteLine(output, "import psym.runtime.scheduler.*;");
+            context.WriteLine(output, "import psym.runtime.machine.*;");
+            context.WriteLine(output, "import psym.runtime.logger.*;");
+            context.WriteLine(output, "import psym.runtime.machine.buffer.*;");
+            context.WriteLine(output, "import psym.runtime.machine.eventhandlers.*;");
+            context.WriteLine(output, "import psym.runtime.values.*;");
+            context.WriteLine(output, "import psym.utils.*;");
             context.WriteLine(output, "import java.util.List;");
             context.WriteLine(output, "import java.util.ArrayList;");
             context.WriteLine(output, "import java.util.Map;");

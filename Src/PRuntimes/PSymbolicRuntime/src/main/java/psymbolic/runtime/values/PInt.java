@@ -11,6 +11,11 @@ public class PInt extends PValue<PInt> {
         value = val;
     }
 
+    public PInt(Object val)
+    {
+        value = (int) val;
+    }
+
     public PInt(PInt val)
     {
         value = val.value;

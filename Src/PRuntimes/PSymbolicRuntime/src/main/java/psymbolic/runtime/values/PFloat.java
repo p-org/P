@@ -13,6 +13,11 @@ public class PFloat extends PValue<PFloat> {
         value = val;
     }
 
+    public PFloat(Object val)
+    {
+        value = (double) val;
+    }
+
     public PFloat(PFloat val)
     {
         value = val.value;

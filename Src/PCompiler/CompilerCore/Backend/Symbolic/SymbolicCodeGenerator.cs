@@ -624,7 +624,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 if (i > 0)
                     context.WriteLine(output, ",");
-                context.Write(output, $"({GetConcreteForeignBoxedType(param.Type)}) args.get({i})");
+                context.Write(output, $"new {GetConcreteForeignBoxedType(param.Type)}(args.get({i}))");
                 i++;
             }
             context.WriteLine(output, ");");
@@ -2456,6 +2456,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "PFloat";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
                     return "PString";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
+                case PermissionType _:
+                    return "PMachineValue";
                 case ForeignType foreignType:
                     return foreignType.CanonicalRepresentation;
                 case SequenceType _:

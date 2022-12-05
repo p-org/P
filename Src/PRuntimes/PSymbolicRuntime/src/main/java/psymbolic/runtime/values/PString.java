@@ -11,6 +11,11 @@ public class PString extends PValue<PString> {
         value = val;
     }
 
+    public PString(Object val)
+    {
+        value = (String) val;
+    }
+
     public PString(PString val)
     {
         value = val.value;

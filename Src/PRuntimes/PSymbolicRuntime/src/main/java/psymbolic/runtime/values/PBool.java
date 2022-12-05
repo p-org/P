@@ -13,6 +13,11 @@ public class PBool extends PValue<PBool>{
         value = val;
     }
 
+    public PBool(Object val)
+    {
+        value = (boolean) val;
+    }
+
     public PBool(PBool val)
     {
         value = val.value;

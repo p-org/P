@@ -30,7 +30,9 @@ public class EventBag extends SymbolicBag<Message> implements EventBuffer, Seria
         TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
         if (sender != null)
             sender.incrementClock(pc);
-        add(new Message(eventName, dest, payload, sender.getClock()).restrict(pc));
+        Message event = new Message(eventName, dest, payload, sender.getClock()).restrict(pc);
+        add(event);
+        sender.getScheduler().runMonitors(event);
     }
 
     @Override

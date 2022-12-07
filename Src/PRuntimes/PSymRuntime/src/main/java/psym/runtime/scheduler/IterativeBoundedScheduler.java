@@ -717,10 +717,10 @@ public class IterativeBoundedScheduler extends Scheduler {
             assert(allocated.getValues().size() == 1);
             Machine m = allocated.getValues().iterator().next();
             TraceLogger.onCreateMachine(pc, m);
-            m.setScheduler(this);
             if (!machines.contains(m)) {
                 machines.add(m);
             }
+            m.setScheduler(this);
         } else {
             Machine newMachine;
             newMachine = constructor.apply(IntegerVS.maxValue(guardedCount));

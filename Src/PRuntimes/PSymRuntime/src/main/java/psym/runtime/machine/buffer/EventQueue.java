@@ -29,7 +29,9 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
         if (sender.getScheduler().useSleepSets()) {
             sender.getScheduler().getSchedule().unblock(sender.getClock());
         }
-        enqueue(new Message(eventName, dest, payload, sender.getClock()).restrict(pc));
+        Message event = new Message(eventName, dest, payload, sender.getClock()).restrict(pc);
+        enqueue(event);
+        sender.getScheduler().runMonitors(event);
     }
 
     public PrimitiveVS<Machine> create(

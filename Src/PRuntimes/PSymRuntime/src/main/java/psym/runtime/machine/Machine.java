@@ -19,6 +19,7 @@ import psym.valuesummary.util.SerializableFunction;
 import psym.valuesummary.util.SerializableRunnable;
 
 public abstract class Machine implements Serializable {
+    private static int numMachines = 0;
 
     private EventBufferSemantics semantics;
     private final String name;
@@ -129,7 +130,8 @@ public abstract class Machine implements Serializable {
 
     public Machine(String name, int id, EventBufferSemantics semantics, State startState, State... states) {
         this.name = name;
-        this.instanceId = id;
+//        this.instanceId = id;
+        this.instanceId = numMachines++;
 
         this.semantics = semantics;
         EventBuffer buffer;

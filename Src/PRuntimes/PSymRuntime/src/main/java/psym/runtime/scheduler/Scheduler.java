@@ -935,7 +935,7 @@ public class Scheduler implements SymbolicSearch {
         return new PrimitiveVS<>(newMachine).restrict(pc);
     }
 
-    void runMonitors(Message event) {
+    public void runMonitors(Message event) {
         Map<Monitor, Guard> monitorConstraints = new HashMap<>();
         for (Monitor m : monitors) {
             monitorConstraints.put(m, Guard.constFalse());
@@ -957,7 +957,6 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public void performEffect(Message event) {
-        runMonitors(event);
         for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
             target.getValue().processEventToCompletion(target.getGuard(), event.restrict(target.getGuard()));
         }

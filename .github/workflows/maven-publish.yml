@@ -6,6 +6,7 @@ name: Maven Publish
 on:
   push:
     branches: [ "maven-publish-**" ]
+  workflow_dispatch:
 
 jobs:
   Maven-Publish-Ubuntu:

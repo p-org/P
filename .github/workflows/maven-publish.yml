@@ -35,6 +35,7 @@ jobs:
           java-version: '11'
           distribution: 'adopt'
       - name: Publish to GitHub Packages
+        working-directory: Src/PRuntimes/PSymRuntime
         run: mvn --batch-mode deploy -P release -Dmaven.test.skip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

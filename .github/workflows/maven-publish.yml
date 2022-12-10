@@ -11,44 +11,71 @@ on:
 jobs:
   Maven-Publish-Ubuntu:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v3
-#      - name: Configure GPG Key
-#        run: |
-#          echo -n "$GPG_PRIVATE_KEY" | base64 | base64 --decode | gpg --import
-#        env:
-#          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-#      - name: Import GPG key
-#        id: import_gpg
-#        uses: crazy-max/ghaction-import-gpg@v4
-#        with:
-#          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-#          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-      - name: Set up Maven Central Repository
+      - name: Set up Java for publishing to Maven Central Repository
         uses: actions/setup-java@v3
         with:
           java-version: '11'
-          distribution: 'corretto'
+          distribution: 'adopt'
           server-id: ossrh
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
-          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg-passphrase: GPG_PASSPHRASE
-#      - name: Configure GPG Key
-#        run: |
-#          mkdir -p ~/.gnupg/
-#          print "${GPG_PRIVATE_KEY}" | base64 | base64 --decode > ~/.gnupg/private.key
-#          gpg --batch --passphrase ${GPG_PASSPHRASE} --import ~/.gnupg/private.key
-#        env:
-#          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-#          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-      - name: Publish package
-        working-directory: Src/PRuntimes/PSymRuntime
-        run: |
-          mvn --batch-mode deploy -P release -Dmaven.test.skip
+      - name: Publish to the Maven Central Repository
+        run: mvn --batch-mode deploy
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+      - name: Set up Java for publishing to GitHub Packages
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+      - name: Publish to GitHub Packages
+        run: mvn --batch-mode deploy -P release -Dmaven.test.skip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#    steps:
+#      - uses: actions/checkout@v3
+##      - name: Configure GPG Key
+##        run: |
+##          echo -n "$GPG_PRIVATE_KEY" | base64 | base64 --decode | gpg --import
+##        env:
+##          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+##      - name: Import GPG key
+##        id: import_gpg
+##        uses: crazy-max/ghaction-import-gpg@v4
+##        with:
+##          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+##          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+#      - name: Set up Maven Central Repository
+#        uses: actions/setup-java@v3
+#        with:
+#          java-version: '11'
+#          distribution: 'corretto'
+#          server-id: ossrh
+#          server-username: MAVEN_USERNAME
+#          server-password: MAVEN_PASSWORD
+#          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+#          gpg-passphrase: GPG_PASSPHRASE
+##      - name: Configure GPG Key
+##        run: |
+##          mkdir -p ~/.gnupg/
+##          print "${GPG_PRIVATE_KEY}" | base64 | base64 --decode > ~/.gnupg/private.key
+##          gpg --batch --passphrase ${GPG_PASSPHRASE} --import ~/.gnupg/private.key
+##        env:
+##          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+##          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+#      - name: Publish package
+#        working-directory: Src/PRuntimes/PSymRuntime
+#        run: |
+#          mvn --batch-mode deploy -P release -Dmaven.test.skip
+#        env:
+#          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+#          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+#          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+##          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+##          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}

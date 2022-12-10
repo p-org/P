@@ -35,7 +35,7 @@ jobs:
 #          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
 #          gpg-passphrase: MAVEN_GPG_PASSPHRASE
       - name: Configure GPG Key
-        run:
+        run: |
           mkdir -p ~/.gnupg/
           print "${GPG_PRIVATE_KEY}" | base64 | base64 --decode > ~/.gnupg/private.key
           gpg --batch --passphrase ${GPG_PASSPHRASE} --import ~/.gnupg/private.key
@@ -44,7 +44,7 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
       - name: Publish package
         working-directory: Src/PRuntimes/PSymRuntime
-        run:
+        run: |
           mvn --batch-mode deploy -P release -Dmaven.test.skip
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}

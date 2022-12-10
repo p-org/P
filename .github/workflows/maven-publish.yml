@@ -15,14 +15,14 @@ jobs:
       - uses: actions/checkout@v3
       - name: Configure GPG Key
         run: |
-          echo -n "$GPG_SIGNING_KEY" | base64 | base64 --decode | gpg --import
+          echo -n "$GPG_PRIVATE_KEY" | base64 | base64 --decode | gpg --import
         env:
-          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v4
         with:
-          gpg_private_key: GPG_SIGNING_KEY
+          gpg_private_key: GPG_PRIVATE_KEY
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
       - name: Set up Maven Central Repository
         uses: actions/setup-java@v3

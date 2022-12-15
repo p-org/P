@@ -13,20 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Maven Central Repository
+      - name: Set up Java for publishing to Maven Central Repository
         uses: actions/setup-java@v3
         with:
+          distribution: 'temurin'
           java-version: '11'
-          distribution: 'corretto'
           server-id: ossrh
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
-          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE
-      - name: Publish package
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }} # Value of the GPG private key to import
+          gpg-passphrase: GPG_PASSPHRASE # env variable for GPG private key passphrase
+      - name: Publish to the Maven Central Repository
         working-directory: Src/PRuntimes/PSymRuntime
-        run:
-          mvn --batch-mode deploy -P release -Dmaven.test.skip
+        run: mvn --batch-mode deploy -P release -Dmaven.test.skip
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}

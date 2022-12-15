@@ -13,6 +13,10 @@ import java.io.Serializable;
  * Represents the configuration of the P Symbolic tool
  */
 public class PSymConfiguration implements Serializable {
+    // name of the psym configuration file
+    @Getter @Setter
+    String configFile = "";
+
     // mode of exploration
     @Getter @Setter
     String mode = "default";

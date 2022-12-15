@@ -1,14 +1,19 @@
 package psym.commandline;
 
 import org.apache.commons.cli.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
+import psym.utils.GlobalData;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.util.Iterator;
+
+import static java.lang.System.exit;
 
 /**
  * Represents the commandline options for the tool
@@ -21,6 +26,16 @@ public class PSymOptions {
 
     static {
         options = new Options();
+
+        // psym configuration file
+        Option configFile = Option.builder("config")
+                .longOpt("config")
+                .desc("Name of the JSON configuration file")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("File Name (string)")
+                .build();
+        options.addOption(configFile);
 
         // mode of exploration
         Option mode = Option.builder("mode")
@@ -286,12 +301,14 @@ public class PSymOptions {
     }
 
     private static void optionError(Option opt, String msg) {
-        Options opts = new Options();
-        opts.addOption(opt);
         writer.println(msg);
-        formatter.printHelp(writer, 100, opt.getOpt(), "", opts, 2, 2, "Try --help for details.");
+        if (opt != null) {
+            Options opts = new Options();
+            opts.addOption(opt);
+            formatter.printHelp(writer, 100, opt.getOpt(), "", opts, 2, 2, "Try --help for details.");
+        }
         writer.flush();
-        System.exit(10);
+        exit(10);
     }
 
     public static PSymConfiguration ParseCommandlineArgs(String[] args) {
@@ -305,13 +322,25 @@ public class PSymOptions {
             System.out.println(e.getMessage());
             formatter.printUsage(writer, 100, "PSym", options);
             writer.flush();
-            System.exit(10);
+            exit(10);
+        }
+
+        PSymConfiguration config = new PSymConfiguration();
+
+        if (cmd.getOptionValue("config") == null) {
+            // Populate the configuration based on psym-config file (if exists)
+            File tempFile = new File("psym-config.json");
+            if (tempFile.exists()) {
+                readConfigFile(config, tempFile.getAbsolutePath(), null);
+            }
         }
 
         // Populate the configuration based on the commandline arguments
-        PSymConfiguration config = new PSymConfiguration();
         for (Option option : cmd.getOptions()) {
             switch (option.getOpt()) {
+                case "config":
+                    readConfigFile(config, option.getValue(), option);
+                    break;
                 case "mode":
                     switch (option.getValue()) {
                         case "default":
@@ -380,7 +409,7 @@ public class PSymOptions {
                     try {
                         file.getCanonicalPath();
                     } catch (IOException e) {
-                        optionError(option, String.format("File %s does not exist", config.getReadFromFile()));
+                        optionError(option, String.format("File %s does not exist", config.getReadReplayerFromFile()));
                     }
                     break;
                 case "ms":
@@ -586,9 +615,49 @@ public class PSymOptions {
                 case "help":
                 default:
                     formatter.printHelp(100, "-h or --help", "Commandline options for PSym", options, "");
-                    System.exit(0);
+                    exit(0);
             }
         }
         return config;
+    }
+
+    public static void readConfigFile(PSymConfiguration config, String configFileName, Option option) {
+        config.setConfigFile(configFileName);
+        File configFile = new File(config.getConfigFile());
+        try {
+            configFile.getCanonicalPath();
+            ParseConfigFile(config, configFile);
+        } catch (IOException e) {
+            optionError(option, String.format("File %s does not exist", config.getConfigFile()));
+        }
+    }
+
+    private static void ParseConfigFile(PSymConfiguration config, File configFile) throws FileNotFoundException {
+        InputStream configStream = new FileInputStream(configFile);
+        assert(configStream != null);
+        JSONTokener jsonTokener = new JSONTokener(configStream);
+        JSONObject jsonObject = new JSONObject(jsonTokener);
+
+        Iterator<String> keys = jsonObject.keys();
+
+        while(keys.hasNext()) {
+            String key = keys.next();
+            if (jsonObject.get(key) instanceof JSONObject) {
+                JSONObject value = (JSONObject) jsonObject.get(key);
+                switch (key) {
+                    case "sync-events":
+                        JSONArray syncEvents = value.getJSONArray("default");
+//                        System.out.println("Sync events:");
+                        for (int i = 0; i < syncEvents.length(); i++) {
+                            String syncEventName = syncEvents.getString(i);
+//                            System.out.println("  - "+syncEventName);
+                            GlobalData.getInstance().syncEvents.add(syncEventName);
+                        }
+                        break;
+                    default:
+                        optionError(null, String.format("Unrecognized key %s in config file", key));
+                }
+            }
+        }
     }
 }

@@ -6,7 +6,9 @@ import psym.runtime.statistics.CoverageStats;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Class containing global/shared data that is retained when resuming a run
@@ -21,6 +23,11 @@ public class GlobalData implements Serializable {
      * Mapping of each machine's state with its corresponding event handlers
      */
     public Map<String, StateEvents> allStateEvents;
+
+    /**
+     * Set of sync event names
+     */
+    public Set<String> syncEvents = new HashSet<>();
 
     /**
      * Global coverage statistics

@@ -27,10 +27,15 @@ then
 fi
 inputFiles=$(find ${projectPath} -not -path "*/.*" -not -name ".*" -type f -name "*.p")
 inputJavaFiles=$(find ${projectPath} -not -path "*/.*" -not -name ".*" -type f -name "*.java")
-if [[ ! -z "$inputJavaFiles" ]]
+if [[ ! -z "${inputJavaFiles}" ]]
 then
     echo -e "  Found Java Foreign Functions"
     cp ${inputJavaFiles} ${outPath}
+fi
+configFile="${projectPath}/psym-config.json"
+if test -f "${configFile}"; then
+    echo -e "  Found PSym config file"
+    cp ${configFile} ${outPath}
 fi
 
 dotnet ../../../Bld/Drops/Release/Binaries/netcoreapp3.1/P.dll -generate:PSym ${inputFiles} -t:${projectName} -outputDir:${outPath} > ${outPath}/compile.out

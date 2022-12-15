@@ -2,6 +2,7 @@ package psym.runtime;
 
 
 import psym.runtime.machine.Machine;
+import psym.utils.GlobalData;
 import psym.valuesummary.*;
 
 import java.util.*;
@@ -70,7 +71,8 @@ public class Message implements ValueSummary<Message> {
         for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
             PrimitiveVS<Event> events = this.getEvent();
             for (GuardedValue<Event> event : events.getGuardedValues()) {
-                if (event.getValue().name.contains("sync")) {
+                if (GlobalData.getInstance().syncEvents.contains(event.getValue().name)
+                    || event.getValue().name.contains("sync")) {
                     cond = cond.or(event.getGuard());
                 }
             }

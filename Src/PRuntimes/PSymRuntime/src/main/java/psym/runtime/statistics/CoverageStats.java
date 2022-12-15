@@ -78,8 +78,10 @@ public class CoverageStats implements Serializable {
                 assert(numRemaining >= 0);
                 numTotal = numExplored + numRemaining;
             }
-            if (numTotal != 0)
+            if (numTotal != 0) {
+                assert(numExplored <= numTotal);
                 pathCoverage = prefix.pathCoverage.multiply(BigDecimal.valueOf(numExplored).divide(BigDecimal.valueOf(numTotal), 20, RoundingMode.FLOOR));
+            }
             this.stateActions = chosenActions;
         }
 

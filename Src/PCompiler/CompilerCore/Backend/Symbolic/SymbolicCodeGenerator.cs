@@ -2640,7 +2640,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import java.text.MessageFormat;");
             context.WriteLine(output, "import lombok.Generated;");
             context.WriteLine(output);
-            context.WriteLine(output, $"public class {context.ProjectName} implements Program {{");
+            context.WriteLine(output, $"public class {context.MainClassName} implements Program {{");
             context.WriteLine(output);
             context.WriteLine(output, $"public static Scheduler programScheduler;");
             context.WriteLine(output);

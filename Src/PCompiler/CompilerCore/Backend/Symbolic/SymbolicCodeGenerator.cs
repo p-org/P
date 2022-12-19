@@ -56,7 +56,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 job.Output.WriteInfo("Build succeeded.");
             }
 
-            string sourceDirectory = "target/sources/psym";
+            string sourceDirectory = "target/sources/psym/model";
 
             // create source folder
             args = new[] { $"-p {sourceDirectory}" };
@@ -69,11 +69,11 @@ namespace Plang.Compiler.Backend.Symbolic
 
             // copy source files
             string sourceFilePath = Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName);
-            args = new[] { $"{sourceFilePath}/{job.ProjectName}.java {sourceDirectory}" };
+            args = new[] { $"{sourceFilePath}/{job.ProjectName}Program.java {sourceDirectory}" };
             exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "cp", args);
             if (exitCode != 0)
             {
-                throw new TranslationException($"Unable to copy source file {job.ProjectName}.java to source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
+                throw new TranslationException($"Unable to copy source file {job.ProjectName}Program.java to source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
             }
         }
 

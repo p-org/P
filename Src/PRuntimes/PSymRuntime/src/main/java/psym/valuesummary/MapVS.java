@@ -177,25 +177,18 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
      * @return The updated MapVS
      */
     public MapVS<K, T, V> put(T keySummary, V valSummary) {
-        try {
-            V oldVal = get(keySummary);
-            throw new IllegalArgumentException(
-                    String.format("ArgumentException: An item with the same key has already been added. Key: %s, Value: %s",
-                            keySummary, oldVal));
-        } catch (NoSuchElementException e) {
-            final SetVS<T> newKeys = keys.add(keySummary);
-            final Map<K, V> newEntries = new HashMap<>(entries);
-            for (GuardedValue<?> guardedKey : ValueSummary.getGuardedValues(keySummary)) {
-                V oldVal = entries.get(guardedKey.getValue());
-                if (oldVal == null) {
-                    newEntries.put((K) guardedKey.getValue(), valSummary);
-                } else {
-                    newEntries.put((K) guardedKey.getValue(), oldVal.updateUnderGuard(guardedKey.getGuard(), valSummary));
-                }
+        final SetVS<T> newKeys = keys.add(keySummary);
+        final Map<K, V> newEntries = new HashMap<>(entries);
+        for (GuardedValue<?> guardedKey : ValueSummary.getGuardedValues(keySummary)) {
+            V oldVal = entries.get(guardedKey.getValue());
+            if (oldVal == null) {
+                newEntries.put((K) guardedKey.getValue(), valSummary);
+            } else {
+                newEntries.put((K) guardedKey.getValue(), oldVal.updateUnderGuard(guardedKey.getGuard(), valSummary));
             }
-
-            return new MapVS<>(newKeys, newEntries);
         }
+
+        return new MapVS<>(newKeys, newEntries);
     }
 
     /** Add a key-value pair into the MapVS
@@ -206,7 +199,14 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
      */
     public MapVS<K, T, V> add(T keySummary, V valSummary) {
 //        assert(ValueSummaryChecks.hasSameUniverse(keySummary.getUniverse(), valSummary.getUniverse()));
-        return put(keySummary, valSummary);
+        try {
+            V oldVal = get(keySummary);
+            throw new IllegalArgumentException(
+                    String.format("ArgumentException: An item with the same key has already been added. Key: %s, Value: %s",
+                            keySummary, oldVal));
+        } catch (NoSuchElementException e) {
+            return put(keySummary, valSummary);
+        }
     }
 
     /** Remove a key-value pair from the MapVS

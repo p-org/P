@@ -235,6 +235,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
         List<T> toMerge = new ArrayList<>();
         // for each possible index value
         for (GuardedValue<Integer> index : indexSummary.getGuardedValues()) {
+            assert(items.size() > index.getValue());
             T item = items.get(index.getValue()).restrict(index.getGuard());
             if (merger == null)
                 merger = item;

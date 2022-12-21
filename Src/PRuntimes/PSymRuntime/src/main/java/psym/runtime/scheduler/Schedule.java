@@ -546,6 +546,7 @@ public class Schedule implements Serializable {
 
     public Schedule getSingleSchedule() {
         Guard pc = Guard.constTrue();
+        pc = pc.and(getFilter());
         for (Choice choice : choices) {
             Choice guarded = choice.restrict(pc);
             PrimitiveVS<Machine> sender = guarded.getRepeatSender();

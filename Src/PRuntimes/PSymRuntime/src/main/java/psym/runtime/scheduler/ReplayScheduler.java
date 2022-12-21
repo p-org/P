@@ -48,7 +48,7 @@ public class ReplayScheduler extends Scheduler {
      * @param writeFileName Output file name
      * @throws Exception Throw error if writing fails
      */
-    public void writeToFile(String writeFileName) throws Exception {
+    public void writeToFile(String writeFileName) throws RuntimeException {
         try {
             FileOutputStream fos = new FileOutputStream(writeFileName);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -60,7 +60,7 @@ public class ReplayScheduler extends Scheduler {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            throw new Exception("Failed to write replayer in file " + writeFileName);
+            throw new RuntimeException("Failed to write replayer in file " + writeFileName);
         }
     }
 

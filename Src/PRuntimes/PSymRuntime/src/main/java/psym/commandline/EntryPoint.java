@@ -29,6 +29,8 @@ public class EntryPoint {
             }
         } catch (TimeoutException e) {
             throw e;
+        } catch (BugFoundException e) {
+            throw e;
         } catch (ExecutionException e) {
             if (e.getCause() instanceof MemoutException) {
                 throw (MemoutException)e.getCause();
@@ -87,8 +89,10 @@ public class EntryPoint {
         PSymLogger.finished(scheduler.getIter(), scheduler.getIter()- scheduler.getStart_iter(), Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(), scheduler.result, mode);
     }
 
-    private static void process() throws Exception {
+    private static void process(boolean resume) throws Exception {
         try {
+            TimedCall timedCall = new TimedCall(scheduler, resume);
+            future = executor.submit(timedCall);
             TimeMonitor.getInstance().startInterval();
             runWithTimeout((long)configuration.getTimeLimit());
             status = "success";
@@ -135,9 +139,7 @@ public class EntryPoint {
         scheduler.getProgram().setProgramScheduler(scheduler);
 
         preprocess();
-        TimedCall timedCall = new TimedCall(scheduler, false);
-        future = executor.submit(timedCall);
-        process();
+        process(false);
     }
 
     public static void resume(IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
@@ -150,9 +152,7 @@ public class EntryPoint {
         SolverEngine.resumeEngine();
 
         preprocess();
-        TimedCall timedCall = new TimedCall(scheduler, true);
-        future = executor.submit(timedCall);
-        process();
+        process(true);
     }
 
     private static void replay(ReplayScheduler replayScheduler) throws RuntimeException, InterruptedException, TimeoutException {

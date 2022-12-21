@@ -6,8 +6,9 @@ Here is a summary of these options:
 
 ````
 Commandline options for PSym
+ -config,--config <File Name (string)>          Name of the JSON configuration file
  -mode,--mode <Mode (string)>                   Mode of exploration: default, bmc, random, fuzz,
-                                                dfs, learn
+                                                dfs, coverage, learn
  -tl,--time-limit <Time Limit (seconds)>        Time limit in seconds (default: 60). Use 0 for no
                                                 limit.
  -ml,--memory-limit <Memory Limit (MB)>         Memory limit in megabytes (MB). Use 0 for no limit.

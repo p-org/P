@@ -87,7 +87,7 @@ public class PSymConfiguration implements Serializable {
 
     // mode of task orchestration
     @Getter @Setter
-    TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.CoverageAStar;
+    TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.Random;
 
     // max number of children tasks per execution
     @Getter @Setter
@@ -180,6 +180,14 @@ public class PSymConfiguration implements Serializable {
         this.setDataChoiceBound(1);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
         this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
+    }
+
+    public void setToCoverage() {
+        this.setMode("coverage");
+        this.setSchedChoiceBound(1);
+        this.setDataChoiceBound(1);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
+        this.setTaskOrchestration(TaskOrchestrationMode.CoverageAStar);
     }
 
     public void setToLearn() {

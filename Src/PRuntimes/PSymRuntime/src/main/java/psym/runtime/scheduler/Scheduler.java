@@ -543,7 +543,8 @@ public class Scheduler implements SymbolicSearch {
             guardedMachines = filter(guardedMachines, InterleaveOrder.getInstance());
         }
 
-        executionFinished = guardedMachines.isEmpty();
+//        executionFinished = guardedMachines.isEmpty();
+        executionFinished = guardedMachines.stream().map(x -> x.getGuard().and(schedule.getFilter())).filter(x -> !(x.isFalse())).collect(Collectors.toList()).isEmpty();
 
         if (configuration.isUseStateCaching()) {
             if (distinctStateGuard != null) {

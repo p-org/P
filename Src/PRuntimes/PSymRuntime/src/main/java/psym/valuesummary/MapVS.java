@@ -1,5 +1,7 @@
 package psym.valuesummary;
 
+import psym.commandline.Assert;
+import psym.commandline.BugFoundException;
 import psym.valuesummary.util.ValueSummaryChecks;
 import java.util.*;
 
@@ -199,14 +201,24 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
      */
     public MapVS<K, T, V> add(T keySummary, V valSummary) {
 //        assert(ValueSummaryChecks.hasSameUniverse(keySummary.getUniverse(), valSummary.getUniverse()));
-        try {
-            V oldVal = get(keySummary);
-            throw new IllegalArgumentException(
-                    String.format("ArgumentException: An item with the same key has already been added. Key: %s, Value: %s",
-                            keySummary, oldVal));
-        } catch (NoSuchElementException e) {
-            return put(keySummary, valSummary);
+        V merger = null;
+        List<V> toMerge = new ArrayList<>();
+        for (GuardedValue<?> key : ValueSummary.getGuardedValues(keySummary.restrict(containsKey(keySummary).getGuardFor(true)))) {
+            if (entries.containsKey(key.getValue())) {
+                V val = entries.get(key.getValue());
+                if (merger == null)
+                    merger = val.restrict(key.getGuard());
+                toMerge.add(val.restrict(key.getGuard()));
+            }
         }
+
+        if (merger != null) {
+            V oldVal = merger.merge(toMerge);
+            throw new BugFoundException(
+                    String.format("ArgumentException: An item with the same key has already been added. Key: %s, Value: %s",
+                            keySummary, oldVal), keySummary.getUniverse().and(oldVal.getUniverse()));
+        }
+        return put(keySummary, valSummary);
     }
 
     /** Remove a key-value pair from the MapVS
@@ -243,22 +255,23 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
     public V get(T keySummary) {
         // there is a possibility that the key is not present
         if (keySummary.isEmptyVS()) {
-            throw new NoSuchElementException(
+            throw new BugFoundException(
                     String.format("KeyNotFoundException: The given key %s was not present in the dictionary %s.",
-                            keySummary, this));
+                            keySummary, this), Guard.constTrue());
         }
         if (!containsKey(keySummary).getGuardFor(false).isFalse()) {
-            throw new NoSuchElementException(
+            throw new BugFoundException(
                     String.format("KeyNotFoundException: The given key %s was not present in the dictionary %s.",
-                            keySummary, this));
+                            keySummary, this), containsKey(keySummary).getGuardFor(false));
         }
 
         V merger = null;
         List<V> toMerge = new ArrayList<>();
         for (GuardedValue<?> key : ValueSummary.getGuardedValues(keySummary)) {
+            V val = entries.get(key.getValue());
             if (merger == null)
-                merger = entries.get(key.getValue()).restrict(key.getGuard());
-            toMerge.add(entries.get(key.getValue()).restrict(key.getGuard()));
+                merger = val.restrict(key.getGuard());
+            toMerge.add(val.restrict(key.getGuard()));
         }
 
         assert merger != null;
@@ -272,11 +285,25 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
      * @return The option containing value corresponding to the key or default option if no such value
      */
     public V getOrDefault(T keySummary, V defaultValue) {
-        try {
-            return get(keySummary);
-        } catch (NoSuchElementException e) {
+        // there is a possibility that the key is not present
+        if (keySummary.isEmptyVS()) {
             return defaultValue;
         }
+        if (!containsKey(keySummary).getGuardFor(false).isFalse()) {
+            return defaultValue.restrict(keySummary.getUniverse());
+        }
+
+        V merger = null;
+        List<V> toMerge = new ArrayList<>();
+        for (GuardedValue<?> key : ValueSummary.getGuardedValues(keySummary)) {
+            V val = entries.getOrDefault(key.getValue(), defaultValue);
+            if (merger == null)
+                merger = val.restrict(key.getGuard());
+            toMerge.add(val.restrict(key.getGuard()));
+        }
+
+        assert merger != null;
+        return merger.merge(toMerge);
     }
 
     /** Get whether the MapVS contains a

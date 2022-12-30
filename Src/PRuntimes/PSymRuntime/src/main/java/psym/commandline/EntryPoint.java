@@ -4,6 +4,8 @@ import psym.runtime.Concretizer;
 import psym.runtime.logger.*;
 import psym.runtime.scheduler.IterativeBoundedScheduler;
 import psym.runtime.scheduler.ReplayScheduler;
+import psym.utils.BugFoundException;
+import psym.utils.LivenessException;
 import psym.utils.TimeMonitor;
 import psym.valuesummary.Guard;
 import psym.valuesummary.solvers.SolverEngine;
@@ -113,7 +115,8 @@ public class EntryPoint {
             CoverageWriter.disable();
             Guard pc = e.pathConstraint;
 
-            ReplayScheduler replayScheduler = new ReplayScheduler(configuration, scheduler.getProgram(), scheduler.getSchedule(), pc, scheduler.getDepth());
+            ReplayScheduler replayScheduler = new ReplayScheduler(configuration, scheduler.getProgram(),
+                    scheduler.getSchedule(), pc, scheduler.getDepth(), (e instanceof LivenessException));
             scheduler.getProgram().setProgramScheduler(replayScheduler);
             String writeFileName = configuration.getOutputFolder() + "/cex.schedule";
             replayScheduler.writeToFile(writeFileName);

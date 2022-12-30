@@ -1,6 +1,7 @@
 package psym.runtime.machine;
 
-import psym.commandline.BugFoundException;
+import psym.commandline.Assert;
+import psym.utils.BugFoundException;
 import psym.runtime.Event;
 import psym.runtime.Message;
 import psym.runtime.StateEvents;
@@ -91,7 +92,7 @@ public abstract class State implements Serializable {
                 machine.halt(eventPc.and(handledPc.not()));
             }
             else if (!ValueSummaryChecks.hasSameUniverse(handledPc, eventPc)) {
-                throw new BugFoundException(
+                Assert.prop(false,
                         String.format("%s received event %s that cannot be handled in state %s",
                                 machine, event, this.name),
                         eventPc);

@@ -955,7 +955,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
                     context.Write(output, ").getValues().contains(Boolean.FALSE), ");
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Message);
-                    context.Write(output, $", {CompilationContext.SchedulerVar}, ");
+                    context.Write(output, $", ");
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
                     context.Write(output, ".getGuardFor(Boolean.FALSE));");
                     break;

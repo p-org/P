@@ -6,6 +6,7 @@ import psym.runtime.scheduler.DPORScheduler;
 import psym.runtime.scheduler.IterativeBoundedScheduler;
 import psym.runtime.scheduler.ReplayScheduler;
 import psym.runtime.statistics.SolverStats;
+import psym.utils.BugFoundException;
 import psym.utils.MemoryMonitor;
 import psym.utils.RandomNumberGenerator;
 import psym.utils.TimeMonitor;

@@ -1,6 +1,7 @@
 package psym.commandline;
 
 import psym.runtime.scheduler.IterativeBoundedScheduler;
+import psym.utils.BugFoundException;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;

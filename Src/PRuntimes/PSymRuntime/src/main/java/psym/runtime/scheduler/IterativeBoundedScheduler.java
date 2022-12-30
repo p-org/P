@@ -543,11 +543,10 @@ public class IterativeBoundedScheduler extends Scheduler {
             printCurrentStatus();
 
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
-            Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
+            Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", schedule.getLengthCond(schedule.size()));
             super.step();
         }
         schedule.setNumBacktracksInSchedule();
-        super.checkLiveness();
         if (done) {
             searchStats.setIterationCompleted();
         } else {
@@ -575,6 +574,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             }
             searchStats.startNewIteration(iter, backtrackDepth);
             performSearch();
+            checkLiveness(false);
             summarizeIteration();
         }
     }
@@ -600,6 +600,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             }
             searchStats.startNewIteration(iter, backtrackDepth);
             performSearch();
+            checkLiveness(false);
             summarizeIteration();
             if (resetAfterInitial) {
                 resetAfterInitial = false;

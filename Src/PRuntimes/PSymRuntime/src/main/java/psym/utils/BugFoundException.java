@@ -1,4 +1,4 @@
-package psym.commandline;
+package psym.utils;
 
 import psym.valuesummary.Guard;
 

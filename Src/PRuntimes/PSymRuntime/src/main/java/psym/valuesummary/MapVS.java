@@ -1,7 +1,6 @@
 package psym.valuesummary;
 
 import psym.commandline.Assert;
-import psym.commandline.BugFoundException;
 import psym.valuesummary.util.ValueSummaryChecks;
 import java.util.*;
 
@@ -214,7 +213,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
 
         if (merger != null) {
             V oldVal = merger.merge(toMerge);
-            throw new BugFoundException(
+            Assert.prop(false,
                     String.format("ArgumentException: An item with the same key has already been added. Key: %s, Value: %s",
                             keySummary, oldVal), keySummary.getUniverse().and(oldVal.getUniverse()));
         }
@@ -255,12 +254,12 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
     public V get(T keySummary) {
         // there is a possibility that the key is not present
         if (keySummary.isEmptyVS()) {
-            throw new BugFoundException(
+            Assert.prop(false,
                     String.format("KeyNotFoundException: The given key %s was not present in the dictionary %s.",
                             keySummary, this), Guard.constTrue());
         }
         if (!containsKey(keySummary).getGuardFor(false).isFalse()) {
-            throw new BugFoundException(
+            Assert.prop(false,
                     String.format("KeyNotFoundException: The given key %s was not present in the dictionary %s.",
                             keySummary, this), containsKey(keySummary).getGuardFor(false));
         }

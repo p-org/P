@@ -221,7 +221,6 @@ public abstract class Machine implements Serializable {
             while (!eventHandlerReturnReason.isNormalReturn()) {
                 Assert.prop(scheduler.getMaxInternalSteps() < 0 || steps < scheduler.getMaxInternalSteps(),
                         String.format("Possible infinite loop found in machine %s", this),
-                        scheduler,
                         pc.and(eventHandlerReturnReason.getGotoCond().or(eventHandlerReturnReason.getRaiseCond())));
                 steps++;
                 EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();

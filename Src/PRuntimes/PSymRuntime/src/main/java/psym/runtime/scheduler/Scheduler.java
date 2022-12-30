@@ -418,32 +418,31 @@ public class Scheduler implements SymbolicSearch {
         schedule.setNumBacktracksInSchedule();
         while (!isDone()) {
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
-            Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
+            Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", schedule.getLengthCond(schedule.size()));
             step();
         }
         schedule.setNumBacktracksInSchedule();
         if (done) {
             searchStats.setIterationCompleted();
         }
-        checkLiveness();
     }
 
-    protected void checkLiveness() {
-        if (isFinishedExecution()) {
+    protected void checkLiveness(boolean forceCheck) {
+        if (forceCheck || isFinishedExecution()) {
             for (Monitor m : monitors) {
-                PrimitiveVS<State> monitorState = m.getCurrentState();
+                PrimitiveVS<State> monitorState = m.getCurrentState().restrict(schedule.getFilter());
                 for (GuardedValue<State> entry : monitorState.getGuardedValues()) {
                     State s = entry.getValue();
                     if (s.isHotState()) {
                         Guard g = entry.getGuard();
                         if (executionFinished) {
-                            Assert.prop(g.isFalse(), String.format(
+                            Assert.liveness(g.isFalse(), String.format(
                                     "Monitor %s detected liveness bug in hot state %s at the end of program execution",
-                                    m, s), this, g);
+                                    m, s), g);
                         } else {
-                            Assert.prop(g.isFalse(), String.format(
+                            Assert.liveness(g.isFalse(), String.format(
                                     "Monitor %s detected potential liveness bug in hot state %s",
-                                    m, s), this, g);
+                                    m, s), g);
                         }
                     }
                 }

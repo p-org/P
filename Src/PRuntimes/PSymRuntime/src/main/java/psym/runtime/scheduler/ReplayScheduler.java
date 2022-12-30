@@ -25,11 +25,15 @@ public class ReplayScheduler extends Scheduler {
     /** Path constraint */
     private Guard pathConstraint;
 
-    public ReplayScheduler (PSymConfiguration config, Program p, Schedule schedule, int length) {
-        this(config, p, schedule, Guard.constTrue(), length);
+    @Getter
+    /** Flag for liveness bug */
+    private boolean isLivenessBug;
+
+    public ReplayScheduler (PSymConfiguration config, Program p, Schedule schedule, int length, boolean livenessBug) {
+        this(config, p, schedule, Guard.constTrue(), length, livenessBug);
     }
 
-    public ReplayScheduler (PSymConfiguration config, Program p, Schedule schedule, Guard pc, int length) {
+    public ReplayScheduler (PSymConfiguration config, Program p, Schedule schedule, Guard pc, int length, boolean livenessBug) {
         super(config, p);
         TraceLogger.enable();
         this.schedule = schedule.guard(pc).getSingleSchedule();
@@ -41,6 +45,7 @@ public class ReplayScheduler extends Scheduler {
         getVcManager().disable();
         cexLength = length;
         pathConstraint = pc;
+        isLivenessBug = livenessBug;
     }
 
     /**
@@ -100,6 +105,7 @@ public class ReplayScheduler extends Scheduler {
     public void doSearch() throws TimeoutException, InterruptedException {
         TraceLogger.logStartReplayCex(cexLength);
         super.doSearch();
+        checkLiveness(isLivenessBug);
     }
 
     @Override

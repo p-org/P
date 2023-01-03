@@ -148,9 +148,9 @@ java -jar target/ClientServer-jar-with-dependencies.jar \
     Result: partially safe with 1820 backtracks remaining
     --------------------
     java.lang.Exception: TIMEOUT
-    at psymbolic.commandline.EntryPoint.process(EntryPoint.java:97)
-    at psymbolic.commandline.EntryPoint.run(EntryPoint.java:138)
-    at psymbolic.commandline.PSymbolic.main(PSymbolic.java:73)
+    at psym.commandline.EntryPoint.process(EntryPoint.java:97)
+    at psym.commandline.EntryPoint.run(EntryPoint.java:138)
+    at psym.commandline.PSym.main(PSym.java:73)
     ```
 
     Here, PSym explores 140 schedules/iterations, checking 8043 distinct states, and achieving an estimated coverage of ~ 1.4 %.

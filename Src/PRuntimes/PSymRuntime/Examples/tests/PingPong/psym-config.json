@@ -1,0 +1,11 @@
+{
+
+    "sync-events": {
+        "help"    : "Names of sync events",
+        "metavar" : "SE",
+        "default" : [
+            "ping0"
+        ]
+    }
+
+}

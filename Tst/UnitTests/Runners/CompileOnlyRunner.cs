@@ -1,5 +1,4 @@
-﻿using PChecker.PChecker.Compiler;
-using System;
+﻿using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;

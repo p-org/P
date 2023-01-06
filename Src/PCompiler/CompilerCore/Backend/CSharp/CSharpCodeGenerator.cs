@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PChecker.PChecker.Compiler;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;

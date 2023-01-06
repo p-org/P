@@ -1,5 +1,4 @@
 using System.Diagnostics.Contracts;
-using PChecker.PChecker.Compiler;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Statements;
 

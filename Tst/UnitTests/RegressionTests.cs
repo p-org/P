@@ -1,5 +1,4 @@
 ﻿using NUnit.Framework;
-using PChecker.PChecker.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;

@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
-using PChecker.PChecker.Compiler;
 using Plang.Compiler.Backend;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST.Declarations;

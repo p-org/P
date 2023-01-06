@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
-using PChecker.PChecker.Compiler;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations

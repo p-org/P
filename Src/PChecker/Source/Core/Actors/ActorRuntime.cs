@@ -11,7 +11,6 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using PChecker.Actors.Timers;
 using PChecker.Runtime;
-using Monitor = PChecker.Specifications.Monitor;
 
 namespace PChecker.Actors
 {

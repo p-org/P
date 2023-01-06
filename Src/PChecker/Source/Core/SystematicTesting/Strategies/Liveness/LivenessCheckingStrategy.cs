@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
-using Monitor = PChecker.Specifications.Monitor;
 
 namespace PChecker.SystematicTesting.Strategies
 {

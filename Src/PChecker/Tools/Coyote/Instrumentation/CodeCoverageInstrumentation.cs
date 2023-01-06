@@ -8,7 +8,6 @@ using System.Configuration;
 using System.Diagnostics;
 #endif
 using System.IO;
-using PChecker;
 using PChecker.Utilities;
 #if NETFRAMEWORK
 using System.Linq;

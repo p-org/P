@@ -3,7 +3,6 @@
 
 using System;
 using System.IO;
-using PChecker;
 using PChecker.IO;
 using PChecker.SystematicTesting;
 using PChecker.Instrumentation;

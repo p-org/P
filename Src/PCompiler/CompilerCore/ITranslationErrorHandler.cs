@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using Antlr4.Runtime;
-using PChecker.PChecker.Compiler;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;

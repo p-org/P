@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using PChecker;
-
 namespace PChecker.Testing
 {
     /// <summary>

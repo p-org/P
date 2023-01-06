@@ -1,5 +1,4 @@
 ﻿using PChecker.SystematicTesting;
-using PChecker.PChecker.Compiler;
 using System;
 using System.IO;
 using System.Linq;

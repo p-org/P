@@ -7,7 +7,6 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using PChecker;
 using PChecker.Coverage;
 using PChecker.SystematicTesting;
 using PChecker.Instrumentation;

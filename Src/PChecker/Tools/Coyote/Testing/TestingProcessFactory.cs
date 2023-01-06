@@ -5,7 +5,6 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
-using PChecker;
 
 namespace PChecker.Testing
 {

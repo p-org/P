@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
-using Microsoft.CSharp.RuntimeBinder;
 using PChecker;
 using PChecker.IO;
-using PChecker.PChecker.Compiler;
 using PChecker.SystematicTesting;
 using PChecker.Instrumentation;
 using PChecker.Scheduling;

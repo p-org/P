@@ -17,8 +17,6 @@ using PChecker.Coverage;
 using PChecker.Runtime;
 using PChecker.SystematicTesting.Strategies;
 using CoyoteTasks = PChecker.Tasks;
-using EventInfo = PChecker.Actors.EventInfo;
-using Monitor = PChecker.Specifications.Monitor;
 
 namespace PChecker.SystematicTesting
 {

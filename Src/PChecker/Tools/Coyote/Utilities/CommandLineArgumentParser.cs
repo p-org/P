@@ -28,7 +28,7 @@ namespace PChecker.Utilities
     /// <summary>
     /// Exception raised from ParseArguments.
     /// </summary>
-    internal class CommandLineException : Exception
+    public class CommandLineException : Exception
     {
         public CommandLineException(string msg, List<CommandLineArgument> result)
             : base(msg)

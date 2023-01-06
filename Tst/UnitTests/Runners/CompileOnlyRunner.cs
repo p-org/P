@@ -50,22 +50,16 @@ namespace UnitTests.Runners
 
             try
             {
-                compiler.Compile(job);
-            }
-            catch (TranslationException)
-            {
+                int exitCode = compiler.Compile(job);
                 stdout = stdoutWriter.ToString().Trim();
                 stderr = stderrWriter.ToString().Trim();
-                return 1;
+                return exitCode;
             }
             catch (Exception exception)
             {
                 job.Output.WriteMessage(exception.Message, SeverityKind.Error);
                 throw new CompilerTestException(TestCaseError.TranslationFailed, exception.Message);
             }
-            stdout = stdoutWriter.ToString().Trim();
-            stderr = stderrWriter.ToString().Trim();
-            return 0;
         }
 
         private class TestCaseOutputStream : ICompilerOutput

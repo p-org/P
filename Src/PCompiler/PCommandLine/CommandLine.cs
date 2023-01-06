@@ -149,7 +149,6 @@ namespace Plang
             CompilationJob job = null;
             ICompiler compiler = new Compiler.Compiler();
             compiler.Compile(job);
-
         }
     }
 }

@@ -165,13 +165,7 @@ namespace PImplementation
             CompilationJob compilationJob = new CompilationJob(outputStream, scratchDirectory, CompilerOutput.CSharp, sources.Select(x => x.FullName).ToList(), "Main", scratchDirectory);
             try
             {
-                compiler.Compile(compilationJob);
-                return 0;
-            }
-            catch (TranslationException e)
-            {
-                compilationJob.Output.WriteError("Error:\n" + e.Message);
-                return 1;
+                return compiler.Compile(compilationJob);
             }
             catch (Exception ex)
             {

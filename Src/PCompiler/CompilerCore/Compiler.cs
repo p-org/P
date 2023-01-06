@@ -14,9 +14,8 @@ namespace Plang.Compiler
 {
     public class Compiler : ICompiler
     {
-        public void Compile(ICompilationJob job)
+        public int Compile(ICompilationJob job)
         {
-
             job.Output.WriteInfo($"----------------------------------------");
             job.Output.WriteInfo($"Parsing ...");
             
@@ -34,7 +33,7 @@ namespace Plang.Compiler
             catch (TranslationException e)
             {
                 job.Output.WriteError("[Parser Error:]\n" + e.Message);
-                Environment.Exit(1);
+                return 1;
             }
 
             job.Output.WriteInfo($"Type checking ...");
@@ -42,12 +41,12 @@ namespace Plang.Compiler
             Scope scope = null;
             try
             {
-                Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
+                scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
             }
             catch (TranslationException e)
             {
                 job.Output.WriteError("[Error:]\n" + e.Message);
-                Environment.Exit(1);
+                return 1;
             }
 
             // Convert functions to lowered SSA form with explicit cloning
@@ -79,10 +78,11 @@ namespace Plang.Compiler
                 {
                     job.Output.WriteError("[Compiling Generated Code:]\n" + e.Message);
                     job.Output.WriteError("[THIS SHOULD NOT HAVE HAPPENED, please report it to the P team or create a GitHub issue]\n" + e.Message);
-                    Environment.Exit(1);
+                    return 1;
                 }
             }
             job.Output.WriteInfo($"----------------------------------------");
+            return 0;
         }
 
         private static PParser.ProgramContext Parse(ICompilationJob job, FileInfo inputFile)

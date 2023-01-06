@@ -163,7 +163,7 @@ namespace Plang.Compiler
         public Exception IllegalFunctionUsedInSpecMachine(Function function, Machine callerOwner)
         {
             return IssueError(function.SourceLocation,
-                $"Method {DeclarationName(function)} is non-deterministic or has side-effects (new or send or receive), hence cannot be used in spec machine {DeclarationName(callerOwner)}.");
+                $"Method {DeclarationName(function)} is non-deterministic or has side-effects (new or send or receive or announce), hence cannot be used in spec machine {DeclarationName(callerOwner)}.");
         }
 
         public Exception EmittedNullEvent(IPExpr evtExpr)

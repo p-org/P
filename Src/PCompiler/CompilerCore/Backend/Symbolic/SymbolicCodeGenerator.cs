@@ -42,7 +42,7 @@ namespace Plang.Compiler.Backend.Symbolic
             }
 
             // compile the csproj file
-            string[] args = new[] { "clean package -q"};
+            string[] args = new[] { "versions:use-latest-versions -DgenerateBackupPoms=false clean package -q"};
 
             int exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args);
             if (exitCode != 0)
@@ -56,7 +56,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 job.Output.WriteInfo("Build succeeded.");
             }
 
-            string sourceDirectory = "target/sources/psymbolic";
+            string sourceDirectory = "target/sources/psym/model";
 
             // create source folder
             args = new[] { $"-p {sourceDirectory}" };
@@ -69,11 +69,11 @@ namespace Plang.Compiler.Backend.Symbolic
 
             // copy source files
             string sourceFilePath = Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName);
-            args = new[] { $"{sourceFilePath}/{job.ProjectName}.java {sourceDirectory}" };
+            args = new[] { $"{sourceFilePath}/{job.ProjectName}Program.java {sourceDirectory}" };
             exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "cp", args);
             if (exitCode != 0)
             {
-                throw new TranslationException($"Unable to copy source file {job.ProjectName}.java to source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
+                throw new TranslationException($"Unable to copy source file {job.ProjectName}Program.java to source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
             }
         }
 
@@ -624,7 +624,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 if (i > 0)
                     context.WriteLine(output, ",");
-                context.Write(output, $"({GetConcreteForeignBoxedType(param.Type)}) args.get({i})");
+                context.Write(output, $"new {GetConcreteForeignBoxedType(param.Type)}(args.get({i}))");
                 i++;
             }
             context.WriteLine(output, ");");
@@ -955,7 +955,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
                     context.Write(output, ").getValues().contains(Boolean.FALSE), ");
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Message);
-                    context.Write(output, $", {CompilationContext.SchedulerVar}, ");
+                    context.Write(output, $", ");
                     WriteExpr(context, output, flowContext.pcScope, assertStmt.Assertion);
                     context.Write(output, ".getGuardFor(Boolean.FALSE));");
                     break;
@@ -2456,6 +2456,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "PFloat";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
                     return "PString";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
+                case PermissionType _:
+                    return "PMachineValue";
                 case ForeignType foreignType:
                     return foreignType.CanonicalRepresentation;
                 case SequenceType _:
@@ -2616,17 +2619,18 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
-            context.WriteLine(output, "package psymbolic;");
-            context.WriteLine(output, "import psymbolic.commandline.*;");
-            context.WriteLine(output, "import psymbolic.valuesummary.*;");
-            context.WriteLine(output, "import psymbolic.runtime.*;");
-            context.WriteLine(output, "import psymbolic.runtime.scheduler.*;");
-            context.WriteLine(output, "import psymbolic.runtime.machine.*;");
-            context.WriteLine(output, "import psymbolic.runtime.logger.*;");
-            context.WriteLine(output, "import psymbolic.runtime.machine.buffer.*;");
-            context.WriteLine(output, "import psymbolic.runtime.machine.eventhandlers.*;");
-            context.WriteLine(output, "import psymbolic.runtime.values.*;");
-            context.WriteLine(output, "import psymbolic.utils.*;");
+            context.WriteLine(output, "package psym.model;");
+            context.WriteLine(output);
+            context.WriteLine(output, "import psym.commandline.*;");
+            context.WriteLine(output, "import psym.valuesummary.*;");
+            context.WriteLine(output, "import psym.runtime.*;");
+            context.WriteLine(output, "import psym.runtime.scheduler.*;");
+            context.WriteLine(output, "import psym.runtime.machine.*;");
+            context.WriteLine(output, "import psym.runtime.logger.*;");
+            context.WriteLine(output, "import psym.runtime.machine.buffer.*;");
+            context.WriteLine(output, "import psym.runtime.machine.eventhandlers.*;");
+            context.WriteLine(output, "import psym.runtime.values.*;");
+            context.WriteLine(output, "import psym.utils.*;");
             context.WriteLine(output, "import java.util.List;");
             context.WriteLine(output, "import java.util.ArrayList;");
             context.WriteLine(output, "import java.util.Map;");
@@ -2636,7 +2640,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import java.text.MessageFormat;");
             context.WriteLine(output, "import lombok.Generated;");
             context.WriteLine(output);
-            context.WriteLine(output, $"public class {context.ProjectName} implements Program {{");
+            context.WriteLine(output, $"public class {context.MainClassName} implements Program {{");
             context.WriteLine(output);
             context.WriteLine(output, $"public static Scheduler programScheduler;");
             context.WriteLine(output);

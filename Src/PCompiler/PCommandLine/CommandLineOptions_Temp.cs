@@ -10,7 +10,7 @@
         HelpRequested
     }
     /*
-    public static class CommandLineOptions
+    public static class PCheckerOptions
     {
         /// <summary>
         /// Command line output: default is on console.

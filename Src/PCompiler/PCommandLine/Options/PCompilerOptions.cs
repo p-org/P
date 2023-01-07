@@ -6,7 +6,7 @@ using Plang.Compiler;
 
 namespace Plang
 {
-    public class ParserCompilerOptions
+    public class PCompilerOptions
     {
         /// <summary>
         /// Parse the commandline arguments to construct the compilation job
@@ -111,7 +111,7 @@ namespace Plang
 
                             default:
                                 //TODO:
-                                // CommandLineOptions.PrintUsage();
+                                // PCheckerOptions.PrintUsage();
                                 throw new CommandlineParsingError($"Illegal Command {arg.Substring(1)}");
                         }
                     }

@@ -21,7 +21,7 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\PChecker\Tools\Coyote\Coyote.csproj" />
+    <ProjectReference Include="..\..\PChecker\CheckerCore\CheckerCore.csproj" />
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
     <None Include="../../../Icon/icon.png" Pack="true" PackagePath="" />
   </ItemGroup>

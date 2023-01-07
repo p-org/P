@@ -29,9 +29,14 @@ namespace Plang
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
             Console.CancelKeyPress += OnProcessCanceled;
 
+            // get the command
+            if (args.Length == 0)
+            {
+                StdError.WriteLine("Provide");
+            }
             // Parses the command line options to get the configuration.
-            Configuration = new CommandLineOptions().Parse(args);
-
+            Configuration = new PCheckerOptions().Parse(args);
+            
             switch (Configuration.ToolCommand.ToLower())
             {
                 case "compile":
@@ -139,7 +144,7 @@ namespace Plang
         /// </summary>
         private static void Shutdown()
         {
-            StdOut.WriteLine("[PTool]: Shutdown ..");
+            StdOut.WriteLine("[PTool]: Thanks!");
         }
         
         public static void RunCompiler()

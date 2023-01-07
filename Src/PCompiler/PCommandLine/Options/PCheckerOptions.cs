@@ -1,28 +1,32 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using PChecker;
 using PChecker.IO;
+using PChecker.Utilities;
 
-namespace PChecker.Utilities
+namespace Plang
 {
-    internal sealed class CommandLineOptions
+    internal sealed class PCheckerOptions
     {
+        
+         
         /// <summary>
         /// The command line parser to use.
         /// </summary>
         private readonly CommandLineArgumentParser Parser;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CommandLineOptions"/> class.
+        /// Initializes a new instance of the <see cref="PCheckerOptions"/> class.
         /// </summary>
-        internal CommandLineOptions()
+        internal PCheckerOptions()
         {
-            this.Parser = new CommandLineArgumentParser("PChecker",
-                "The PChecker tool enables you to systematically explore a specified P test case, generate " +
+            this.Parser = new CommandLineArgumentParser("p",
+                "The P checker enables you to systematically explore a specified P test case, generate " +
                 "a reproducible bug-trace if a bug is found, and replay a bug-trace.");
 
             var basicOptions = this.Parser.GetOrCreateGroup("Basic", "Basic options");
@@ -51,7 +55,6 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                 "specified as the integer N in the equation 0.5 to the power of N.  So for N=1, the probability is 0.5, for N=2 the probability is 0.25, N=3 you get 0.125, etc.", typeof(uint));
             testingGroup.AddArgument("sch-pct", null, "Choose the PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
             testingGroup.AddArgument("sch-fairpct", null, "Choose the fair PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
-            testingGroup.AddArgument("sch-portfolio", null, "Choose the portfolio scheduling strategy", typeof(bool));
 
             var replayOptions = this.Parser.GetOrCreateGroup("replayOptions", "Replay and debug options");
             replayOptions.DependsOn = new CommandLineArgumentDependency() { Name = "command", Value = "replay" };
@@ -64,14 +67,6 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
             advancedGroup.AddArgument("graph", null, "Output a DGML graph of all test iterations whether a bug was found or not", typeof(bool));
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
             
-            // Hidden options (for debugging or experimentation only).
-            var hiddenGroup = this.Parser.GetOrCreateGroup("hiddenGroup", "Hidden Options");
-            hiddenGroup.IsHidden = true;
-            hiddenGroup.AddArgument("prefix", null, "Safety prefix bound", typeof(int)); // why is this needed, seems to just be an override for MaxUnfairSchedulingSteps?
-            hiddenGroup.AddArgument("run-as-parallel-testing-task", null, null, typeof(bool));
-            hiddenGroup.AddArgument("testing-process-id", null, "The id of the controlling TestingProcessScheduler", typeof(uint));
-            // hiddenGroup.AddArgument("sch-dfs", null, "Choose the DFS scheduling strategy", typeof(bool)); // currently broken, re-enable when it's fixed
-            hiddenGroup.AddArgument("parallel-debug", "pd", "Used with --parallel to put up a debugger prompt on each child process", typeof(bool));
         }
 
         /// <summary>
@@ -284,7 +279,7 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
 
         private static void WriteVersion()
         {
-            Console.WriteLine("Version: {0}", typeof(CommandLineOptions).Assembly.GetName().Version);
+            Console.WriteLine("Version: {0}", typeof(PCheckerOptions).Assembly.GetName().Version);
         }
 
         /// <summary>
@@ -329,7 +324,7 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
 #if NETCOREAPP
             if (configuration.ReportCodeCoverage)
             {
-                Error.ReportAndExit("We do not yet support code coverage reports when using the .NET Core runtime.");
+                Error.ReportAndExit("We do not yet support code coverage reports when using the .NET CheckerCore runtime.");
             }
 #endif
         }

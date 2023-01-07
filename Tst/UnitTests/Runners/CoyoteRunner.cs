@@ -96,7 +96,7 @@ namespace UnitTests.Runners
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include=""$(PFolder)/Src/PRuntimes/PCSharpRuntime/CSharpRuntime.csproj"" />
-    <ProjectReference Include=""$(PFolder)/Src/PChecker/Source/Core/Core.csproj"" />
+    <ProjectReference Include=""$(PFolder)/Src/PChecker/Source/CheckerCore/CheckerCore.csproj"" />
   </ItemGroup>
 </Project>";
             using var outputFile = new StreamWriter(Path.Combine(scratchDirectory.FullName, "Main.csproj"), false);
@@ -116,7 +116,6 @@ namespace PImplementation
     public class _TestRegression {
         public static void Main(string[] args)
         {
-            // Optional: increases verbosity level to see the Coyote runtime log.
             Configuration configuration = Configuration.Create().WithTestingIterations(1000);
             configuration.WithMaxSchedulingSteps(1000);
             TestingEngine engine = TestingEngine.Create(configuration, DefaultImpl.Execute);

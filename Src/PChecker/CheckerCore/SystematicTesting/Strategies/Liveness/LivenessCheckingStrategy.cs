@@ -13,9 +13,9 @@ namespace PChecker.SystematicTesting.Strategies
     internal abstract class LivenessCheckingStrategy : ISchedulingStrategy
     {
         /// <summary>
-        /// The configuration.
+        /// The checkerConfiguration.
         /// </summary>
-        protected Configuration Configuration;
+        protected CheckerConfiguration CheckerConfiguration;
 
         /// <summary>
         /// List of monitors in the program.
@@ -30,9 +30,9 @@ namespace PChecker.SystematicTesting.Strategies
         /// <summary>
         /// Initializes a new instance of the <see cref="LivenessCheckingStrategy"/> class.
         /// </summary>
-        internal LivenessCheckingStrategy(Configuration configuration, List<Specifications.Monitor> monitors, ISchedulingStrategy strategy)
+        internal LivenessCheckingStrategy(CheckerConfiguration checkerConfiguration, List<Specifications.Monitor> monitors, ISchedulingStrategy strategy)
         {
-            this.Configuration = configuration;
+            this.CheckerConfiguration = checkerConfiguration;
             this.Monitors = monitors;
             this.SchedulingStrategy = strategy;
         }

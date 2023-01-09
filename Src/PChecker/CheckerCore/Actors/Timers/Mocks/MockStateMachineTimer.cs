@@ -42,7 +42,7 @@ namespace PChecker.Actors.Timers.Mocks
         }
 
         /// <summary>
-        /// Initializes the timer with the specified configuration.
+        /// Initializes the timer with the specified checkerConfiguration.
         /// </summary>
         private void Setup(Event e)
         {

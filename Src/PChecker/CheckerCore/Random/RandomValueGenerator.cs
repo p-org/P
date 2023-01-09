@@ -37,9 +37,9 @@ namespace PChecker
         /// <summary>
         /// Initializes a new instance of the <see cref="RandomValueGenerator"/> class.
         /// </summary>
-        internal RandomValueGenerator(Configuration configuration)
+        internal RandomValueGenerator(CheckerConfiguration checkerConfiguration)
         {
-            this.RandomSeed = configuration.RandomGeneratorSeed ?? (uint)Guid.NewGuid().GetHashCode();
+            this.RandomSeed = checkerConfiguration.RandomGeneratorSeed ?? (uint)Guid.NewGuid().GetHashCode();
             this.Random = new System.Random((int)this.RandomSeed);
         }
 

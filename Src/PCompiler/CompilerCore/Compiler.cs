@@ -13,7 +13,7 @@ namespace Plang.Compiler
 {
     public class Compiler : ICompiler
     {
-        public int Compile(ICompilationJob job)
+        public int Compile(ICompilerConfiguration job)
         {
             job.Output.WriteInfo($"----------------------------------------");
             job.Output.WriteInfo($"Parsing ...");
@@ -84,7 +84,7 @@ namespace Plang.Compiler
             return 0;
         }
 
-        private static PParser.ProgramContext Parse(ICompilationJob job, FileInfo inputFile)
+        private static PParser.ProgramContext Parse(ICompilerConfiguration job, FileInfo inputFile)
         {
             string fileText = File.ReadAllText(inputFile.FullName);
             AntlrInputStream fileStream = new AntlrInputStream(fileText);

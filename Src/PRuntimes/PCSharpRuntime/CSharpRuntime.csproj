@@ -21,6 +21,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\PChecker\CheckerCore\CheckerCore.csproj" />
-    <ProjectReference Include="..\..\PChecker\Source\Core\Core.csproj" />
   </ItemGroup>
 </Project>

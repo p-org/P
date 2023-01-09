@@ -13,7 +13,7 @@ namespace PChecker
     /// </summary>
     [DataContract]
     [Serializable]
-    public class Configuration
+    public class CheckerConfiguration
     {
         /// <summary>
         /// The user-specified command to perform by the Coyote tool.
@@ -301,9 +301,9 @@ namespace PChecker
         public bool DisableEnvironmentExit;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Configuration"/> class.
+        /// Initializes a new instance of the <see cref="CheckerConfiguration"/> class.
         /// </summary>
-        protected Configuration()
+        protected CheckerConfiguration()
         {
             this.OutputFilePath = string.Empty;
 
@@ -341,7 +341,7 @@ namespace PChecker
             this.ScheduleTrace = string.Empty;
 
             this.ReportCodeCoverage = false;
-            this.ReportActivityCoverage = false;
+            this.ReportActivityCoverage = true;
             this.DebugActivityCoverage = false;
 
             this.IsVerbose = false;
@@ -354,30 +354,30 @@ namespace PChecker
         }
 
         /// <summary>
-        /// Creates a new configuration with default values.
+        /// Creates a new checkerConfiguration with default values.
         /// </summary>
-        public static Configuration Create()
+        public static CheckerConfiguration Create()
         {
-            return new Configuration();
+            return new CheckerConfiguration();
         }
 
         /// <summary>
-        /// Updates the configuration to use the random scheduling strategy during systematic testing.
+        /// Updates the checkerConfiguration to use the random scheduling strategy during systematic testing.
         /// </summary>
-        public Configuration WithRandomStrategy()
+        public CheckerConfiguration WithRandomStrategy()
         {
             this.SchedulingStrategy = "random";
             return this;
         }
 
         /// <summary>
-        /// Updates the configuration to use the probabilistic scheduling strategy during systematic testing.
+        /// Updates the checkerConfiguration to use the probabilistic scheduling strategy during systematic testing.
         /// You can specify a value controlling the probability of each scheduling decision. This value is
         /// specified as the integer N in the equation 0.5 to the power of N. So for N=1, the probability is
         /// 0.5, for N=2 the probability is 0.25, N=3 you get 0.125, etc. By default, this value is 3.
         /// </summary>
         /// <param name="probabilityLevel">The probability level.</param>
-        public Configuration WithProbabilisticStrategy(uint probabilityLevel = 3)
+        public CheckerConfiguration WithProbabilisticStrategy(uint probabilityLevel = 3)
         {
             this.SchedulingStrategy = "fairpct";
             this.StrategyBound = (int)probabilityLevel;
@@ -385,12 +385,12 @@ namespace PChecker
         }
 
         /// <summary>
-        /// Updates the configuration to use the PCT scheduling strategy during systematic testing.
+        /// Updates the checkerConfiguration to use the PCT scheduling strategy during systematic testing.
         /// You can specify the number of priority switch points, which by default are 10.
         /// </summary>
         /// <param name="isFair">If true, use the fair version of PCT.</param>
         /// <param name="numPrioritySwitchPoints">The nunmber of priority switch points.</param>
-        public Configuration WithPCTStrategy(bool isFair, uint numPrioritySwitchPoints = 10)
+        public CheckerConfiguration WithPCTStrategy(bool isFair, uint numPrioritySwitchPoints = 10)
         {
             this.SchedulingStrategy = isFair ? "fairpct" : "pct";
             this.StrategyBound = (int)numPrioritySwitchPoints;
@@ -398,20 +398,20 @@ namespace PChecker
         }
 
         /// <summary>
-        /// Updates the configuration to use the dfs scheduling strategy during systematic testing.
+        /// Updates the checkerConfiguration to use the dfs scheduling strategy during systematic testing.
         /// </summary>
-        public Configuration WithDFSStrategy()
+        public CheckerConfiguration WithDFSStrategy()
         {
             this.SchedulingStrategy = "dfs";
             return this;
         }
 
         /// <summary>
-        /// Updates the configuration to use the replay scheduling strategy during systematic testing.
+        /// Updates the checkerConfiguration to use the replay scheduling strategy during systematic testing.
         /// This strategy replays the specified schedule trace to reproduce the same execution.
         /// </summary>
         /// <param name="scheduleTrace">The schedule trace to be replayed.</param>
-        public Configuration WithReplayStrategy(string scheduleTrace)
+        public CheckerConfiguration WithReplayStrategy(string scheduleTrace)
         {
             this.SchedulingStrategy = "replay";
             this.ScheduleTrace = scheduleTrace;
@@ -419,54 +419,54 @@ namespace PChecker
         }
 
         /// <summary>
-        /// Updates the configuration with the specified number of iterations to run during systematic testing.
+        /// Updates the checkerConfiguration with the specified number of iterations to run during systematic testing.
         /// </summary>
         /// <param name="iterations">The number of iterations to run.</param>
-        public Configuration WithTestingIterations(uint iterations)
+        public CheckerConfiguration WithTestingIterations(uint iterations)
         {
             this.TestingIterations = (int)iterations;
             return this;
         }
 
         /// <summary>
-        /// Updates the configuration with the specified number of scheduling steps to explore per iteration
+        /// Updates the checkerConfiguration with the specified number of scheduling steps to explore per iteration
         /// (for both fair and unfair schedulers) during systematic testing.
         /// </summary>
         /// <param name="maxSteps">The scheduling steps to explore per iteration.</param>
-        public Configuration WithMaxSchedulingSteps(uint maxSteps)
+        public CheckerConfiguration WithMaxSchedulingSteps(uint maxSteps)
         {
             this.MaxSchedulingSteps = (int)maxSteps;
             return this;
         }
 
         /// <summary>
-        /// Updates the configuration with the specified number of fair scheduling steps to explore
+        /// Updates the checkerConfiguration with the specified number of fair scheduling steps to explore
         /// per iteration during systematic testing.
         /// </summary>
         /// <param name="maxFairSteps">The scheduling steps to explore per iteration.</param>
-        public Configuration WithMaxFairSchedulingSteps(uint maxFairSteps)
+        public CheckerConfiguration WithMaxFairSchedulingSteps(uint maxFairSteps)
         {
             this.MaxFairSchedulingSteps = (int)maxFairSteps;
             return this;
         }
 
         /// <summary>
-        /// Updates the configuration with the specified number of unfair scheduling steps to explore
+        /// Updates the checkerConfiguration with the specified number of unfair scheduling steps to explore
         /// per iteration during systematic testing.
         /// </summary>
         /// <param name="maxUnfairSteps">The scheduling steps to explore per iteration.</param>
-        public Configuration WithMaxUnfairSchedulingSteps(uint maxUnfairSteps)
+        public CheckerConfiguration WithMaxUnfairSchedulingSteps(uint maxUnfairSteps)
         {
             this.MaxUnfairSchedulingSteps = (int)maxUnfairSteps;
             return this;
         }
 
         /// <summary>
-        /// Updates the configuration with the specified liveness temperature threshold during systematic testing.
+        /// Updates the checkerConfiguration with the specified liveness temperature threshold during systematic testing.
         /// If this value is 0 it disables liveness checking.
         /// </summary>
         /// <param name="threshold">The liveness temperature threshold.</param>
-        public Configuration WithLivenessTemperatureThreshold(uint threshold)
+        public CheckerConfiguration WithLivenessTemperatureThreshold(uint threshold)
         {
             this.LivenessTemperatureThreshold = (int)threshold;
             return this;
@@ -478,7 +478,7 @@ namespace PChecker
         /// is not a unit of time.
         /// </summary>
         /// <param name="timeoutDelay">The timeout delay during testing.</param>
-        public Configuration WithTimeoutDelay(uint timeoutDelay)
+        public CheckerConfiguration WithTimeoutDelay(uint timeoutDelay)
         {
             this.TimeoutDelay = timeoutDelay;
             return this;
@@ -488,47 +488,47 @@ namespace PChecker
         /// Updates the seed used by the random value generator during systematic testing.
         /// </summary>
         /// <param name="seed">The seed used by the random value generator.</param>
-        public Configuration WithRandomGeneratorSeed(uint seed)
+        public CheckerConfiguration WithRandomGeneratorSeed(uint seed)
         {
             this.RandomGeneratorSeed = seed;
             return this;
         }
 
         /// <summary>
-        /// Updates the configuration with verbose output enabled or disabled.
+        /// Updates the checkerConfiguration with verbose output enabled or disabled.
         /// </summary>
         /// <param name="isVerbose">If true, then messages are logged.</param>
-        public Configuration WithVerbosityEnabled(bool isVerbose = true)
+        public CheckerConfiguration WithVerbosityEnabled(bool isVerbose = true)
         {
             this.IsVerbose = isVerbose;
             return this;
         }
 
         /// <summary>
-        /// Updates the configuration with activity coverage enabled or disabled.
+        /// Updates the checkerConfiguration with activity coverage enabled or disabled.
         /// </summary>
         /// <param name="isEnabled">If true, then enables activity coverage.</param>
-        public Configuration WithActivityCoverageEnabled(bool isEnabled = true)
+        public CheckerConfiguration WithActivityCoverageEnabled(bool isEnabled = true)
         {
             this.ReportActivityCoverage = isEnabled;
             return this;
         }
 
         /// <summary>
-        /// Updates the configuration with DGML graph generation enabled or disabled.
+        /// Updates the checkerConfiguration with DGML graph generation enabled or disabled.
         /// </summary>
         /// <param name="isEnabled">If true, then enables DGML graph generation.</param>
-        public Configuration WithDgmlGraphEnabled(bool isEnabled = true)
+        public CheckerConfiguration WithDgmlGraphEnabled(bool isEnabled = true)
         {
             this.IsDgmlGraphEnabled = isEnabled;
             return this;
         }
 
         /// <summary>
-        /// Updates the configuration with XML log generation enabled or disabled.
+        /// Updates the checkerConfiguration with XML log generation enabled or disabled.
         /// </summary>
         /// <param name="isEnabled">If true, then enables XML log generation.</param>
-        public Configuration WithXmlLogEnabled(bool isEnabled = true)
+        public CheckerConfiguration WithXmlLogEnabled(bool isEnabled = true)
         {
             this.IsXmlLogEnabled = isEnabled;
             return this;

@@ -33,16 +33,16 @@ namespace PChecker.Actors.UnitTesting
         /// <summary>
         /// Initializes a new instance of the <see cref="ActorTestKit{T}"/> class.
         /// </summary>
-        /// <param name="configuration">The runtime configuration to use.</param>
-        public ActorTestKit(Configuration configuration)
+        /// <param name="checkerConfiguration">The runtime checkerConfiguration to use.</param>
+        public ActorTestKit(CheckerConfiguration checkerConfiguration)
         {
-            if (configuration is null)
+            if (checkerConfiguration is null)
             {
-                configuration = Configuration.Create();
+                checkerConfiguration = CheckerConfiguration.Create();
             }
 
-            var valueGenerator = new RandomValueGenerator(configuration);
-            this.Runtime = new ActorUnitTestingRuntime(configuration, typeof(T), valueGenerator);
+            var valueGenerator = new RandomValueGenerator(checkerConfiguration);
+            this.Runtime = new ActorUnitTestingRuntime(checkerConfiguration, typeof(T), valueGenerator);
             this.ActorInstance = this.Runtime.Instance as T;
             this.IsRunning = false;
             this.Runtime.OnFailure += ex =>

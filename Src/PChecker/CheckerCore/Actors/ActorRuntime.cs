@@ -43,11 +43,11 @@ namespace PChecker.Actors
         /// <summary>
         /// Initializes a new instance of the <see cref="ActorRuntime"/> class.
         /// </summary>
-        internal ActorRuntime(Configuration configuration, IRandomValueGenerator valueGenerator)
-            : base(configuration, valueGenerator)
+        internal ActorRuntime(CheckerConfiguration checkerConfiguration, IRandomValueGenerator valueGenerator)
+            : base(checkerConfiguration, valueGenerator)
         {
             this.ActorMap = new ConcurrentDictionary<ActorId, Actor>();
-            this.LogWriter = new LogWriter(configuration);
+            this.LogWriter = new LogWriter(checkerConfiguration);
         }
 
         /// <summary>
@@ -392,7 +392,7 @@ namespace PChecker.Actors
         internal override void TryCreateMonitor(Type type)
         {
             // Check if monitors are enabled in production.
-            if (!this.Configuration.IsMonitoringEnabledInInProduction)
+            if (!this.CheckerConfiguration.IsMonitoringEnabledInInProduction)
             {
                 return;
             }
@@ -458,7 +458,7 @@ namespace PChecker.Actors
         internal virtual void NotifyInvokedAction(Actor actor, MethodInfo action, string handlingStateName,
             string currentStateName, Event receivedEvent)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 this.LogWriter.LogExecuteAction(actor.Id, handlingStateName, currentStateName, action.Name);
             }
@@ -469,7 +469,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyDequeuedEvent(Actor actor, Event e, EventInfo eventInfo)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
                 this.LogWriter.LogDequeueEvent(actor.Id, stateName, e);
@@ -498,7 +498,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyRaisedEvent(Actor actor, Event e, EventInfo eventInfo)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
                 this.LogWriter.LogRaiseEvent(actor.Id, stateName, e);
@@ -527,7 +527,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyReceivedEvent(Actor actor, Event e, EventInfo eventInfo)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
                 this.LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: true);
@@ -540,7 +540,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyReceivedEventWithoutWaiting(Actor actor, Event e, EventInfo eventInfo)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
                 this.LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: false);
@@ -560,7 +560,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyWaitEvent(Actor actor, IEnumerable<Type> eventTypes)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
                 var eventWaitTypesArray = eventTypes.ToArray();
@@ -580,7 +580,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyEnteredState(StateMachine stateMachine)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 this.LogWriter.LogStateTransition(stateMachine.Id, stateMachine.CurrentStateName, isEntry: true);
             }
@@ -591,7 +591,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyExitedState(StateMachine stateMachine)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 this.LogWriter.LogStateTransition(stateMachine.Id, stateMachine.CurrentStateName, isEntry: false);
             }
@@ -610,7 +610,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyInvokedOnEntryAction(StateMachine stateMachine, MethodInfo action, Event receivedEvent)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 this.LogWriter.LogExecuteAction(stateMachine.Id, stateMachine.CurrentStateName,
                     stateMachine.CurrentStateName, action.Name);
@@ -622,7 +622,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyInvokedOnExitAction(StateMachine stateMachine, MethodInfo action, Event receivedEvent)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 this.LogWriter.LogExecuteAction(stateMachine.Id, stateMachine.CurrentStateName,
                     stateMachine.CurrentStateName, action.Name);
@@ -634,7 +634,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyEnteredState(Specifications.Monitor monitor)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 string monitorState = monitor.CurrentStateNameWithTemperature;
                 this.LogWriter.LogMonitorStateTransition(monitor.GetType().FullName, monitorState,
@@ -647,7 +647,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyExitedState(Specifications.Monitor monitor)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 string monitorState = monitor.CurrentStateNameWithTemperature;
                 this.LogWriter.LogMonitorStateTransition(monitor.GetType().FullName, monitorState,
@@ -660,7 +660,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyInvokedAction(Specifications.Monitor monitor, MethodInfo action, string stateName, Event receivedEvent)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 this.LogWriter.LogMonitorExecuteAction(monitor.GetType().FullName, action.Name, stateName);
             }
@@ -671,7 +671,7 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyRaisedEvent(Specifications.Monitor monitor, Event e)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 string monitorState = monitor.CurrentStateNameWithTemperature;
                 this.LogWriter.LogMonitorRaiseEvent(monitor.GetType().FullName, monitorState, e);
@@ -683,7 +683,7 @@ namespace PChecker.Actors
         /// </summary>
         internal void NotifyMonitorError(Specifications.Monitor monitor)
         {
-            if (this.Configuration.IsVerbose)
+            if (this.CheckerConfiguration.IsVerbose)
             {
                 string monitorState = monitor.CurrentStateNameWithTemperature;
                 this.LogWriter.LogMonitorError(monitor.GetType().FullName, monitorState, monitor.GetHotState());

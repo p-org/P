@@ -6,7 +6,7 @@ namespace Plang.Compiler.Backend.CSharp
 {
     internal class CompilationContext : CompilationContextBase
     {
-        public CompilationContext(ICompilationJob job)
+        public CompilationContext(ICompilerConfiguration job)
             : base(job)
         {
             Names = new CSharpNameManager("PGEN_");

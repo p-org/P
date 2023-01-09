@@ -31,41 +31,41 @@ namespace PChecker.Runtime
         public static ICoyoteRuntime Create() => CreateAndInstall(default);
 
         /// <summary>
-        /// Creates a new Coyote runtime with the specified <see cref="Configuration"/>.
+        /// Creates a new Coyote runtime with the specified <see cref="CheckerConfiguration"/>.
         /// </summary>
-        /// <param name="configuration">The runtime configuration to use.</param>
+        /// <param name="checkerConfiguration">The runtime checkerConfiguration to use.</param>
         /// <returns>The created task runtime.</returns>
         /// <remarks>
         /// Only one task runtime can be created per process. If you create a new task
         /// runtime it replaces the previously installed one.
         /// </remarks>
-        public static ICoyoteRuntime Create(Configuration configuration) => CreateAndInstall(configuration);
+        public static ICoyoteRuntime Create(CheckerConfiguration checkerConfiguration) => CreateAndInstall(checkerConfiguration);
 
         /// <summary>
-        /// Creates a new Coyote runtime with the specified <see cref="Configuration"/> and sets
+        /// Creates a new Coyote runtime with the specified <see cref="CheckerConfiguration"/> and sets
         /// it as the installed runtime, or returns the installed runtime if it already exists.
         /// </summary>
-        private static CoyoteRuntime CreateAndInstall(Configuration configuration)
+        private static CoyoteRuntime CreateAndInstall(CheckerConfiguration checkerConfiguration)
         {
             lock (SyncObject)
             {
                 // Assign the newly created runtime as the installed runtime.
-                return InstalledRuntime = CreateWithConfiguration(configuration);
+                return InstalledRuntime = CreateWithConfiguration(checkerConfiguration);
             }
         }
 
         /// <summary>
-        /// Creates a new Coyote runtime with the specified <see cref="Configuration"/>.
+        /// Creates a new Coyote runtime with the specified <see cref="CheckerConfiguration"/>.
         /// </summary>
-        private static CoyoteRuntime CreateWithConfiguration(Configuration configuration)
+        private static CoyoteRuntime CreateWithConfiguration(CheckerConfiguration checkerConfiguration)
         {
-            if (configuration is null)
+            if (checkerConfiguration is null)
             {
-                configuration = Configuration.Create();
+                checkerConfiguration = CheckerConfiguration.Create();
             }
 
-            var valueGenerator = new RandomValueGenerator(configuration);
-            return new ActorRuntime(configuration, valueGenerator);
+            var valueGenerator = new RandomValueGenerator(checkerConfiguration);
+            return new ActorRuntime(checkerConfiguration, valueGenerator);
         }
     }
 }

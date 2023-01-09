@@ -15,10 +15,10 @@ namespace PChecker.SystematicTesting
     public class TestReport
     {
         /// <summary>
-        /// Configuration of the program-under-test.
+        /// CheckerConfiguration of the program-under-test.
         /// </summary>
         [DataMember]
-        public Configuration Configuration { get; private set; }
+        public CheckerConfiguration CheckerConfiguration { get; private set; }
 
         /// <summary>
         /// Information regarding code coverage.
@@ -107,9 +107,9 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Initializes a new instance of the <see cref="TestReport"/> class.
         /// </summary>
-        public TestReport(Configuration configuration)
+        public TestReport(CheckerConfiguration checkerConfiguration)
         {
-            this.Configuration = configuration;
+            this.CheckerConfiguration = checkerConfiguration;
 
             this.CoverageInfo = new CoverageInfo();
 
@@ -136,7 +136,7 @@ namespace PChecker.SystematicTesting
         /// <returns>True if merged successfully.</returns>
         public bool Merge(TestReport testReport)
         {
-            if (!this.Configuration.AssemblyToBeAnalyzed.Equals(testReport.Configuration.AssemblyToBeAnalyzed))
+            if (!this.CheckerConfiguration.AssemblyToBeAnalyzed.Equals(testReport.CheckerConfiguration.AssemblyToBeAnalyzed))
             {
                 // Only merge test reports that have the same program name.
                 return false;
@@ -178,9 +178,9 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Returns the testing report as a string, given a configuration and an optional prefix.
+        /// Returns the testing report as a string, given a checkerConfiguration and an optional prefix.
         /// </summary>
-        public string GetText(Configuration configuration, string prefix = "")
+        public string GetText(CheckerConfiguration checkerConfiguration, string prefix = "")
         {
             StringBuilder report = new StringBuilder();
 
@@ -231,40 +231,40 @@ namespace PChecker.SystematicTesting
                     averageExploredFairSteps,
                     this.MaxExploredFairSteps < 0 ? 0 : this.MaxExploredFairSteps);
 
-                if (configuration.MaxUnfairSchedulingSteps > 0 &&
+                if (checkerConfiguration.MaxUnfairSchedulingSteps > 0 &&
                     this.MaxUnfairStepsHitInFairTests > 0)
                 {
                     report.AppendLine();
                     report.AppendFormat(
                         "{0} Exceeded the max-steps bound of '{1}' in {2:F2}% of the fair schedules.",
                         prefix.Equals("...") ? "....." : prefix,
-                        configuration.MaxUnfairSchedulingSteps,
+                        checkerConfiguration.MaxUnfairSchedulingSteps,
                         (double)this.MaxUnfairStepsHitInFairTests / this.NumOfExploredFairSchedules * 100);
                 }
 
-                if (configuration.UserExplicitlySetMaxFairSchedulingSteps &&
-                    configuration.MaxFairSchedulingSteps > 0 &&
+                if (checkerConfiguration.UserExplicitlySetMaxFairSchedulingSteps &&
+                    checkerConfiguration.MaxFairSchedulingSteps > 0 &&
                     this.MaxFairStepsHitInFairTests > 0)
                 {
                     report.AppendLine();
                     report.AppendFormat(
                         "{0} Hit the max-steps bound of '{1}' in {2:F2}% of the fair schedules.",
                         prefix.Equals("...") ? "....." : prefix,
-                        configuration.MaxFairSchedulingSteps,
+                        checkerConfiguration.MaxFairSchedulingSteps,
                         (double)this.MaxFairStepsHitInFairTests / this.NumOfExploredFairSchedules * 100);
                 }
             }
 
             if (this.NumOfExploredUnfairSchedules > 0)
             {
-                if (configuration.MaxUnfairSchedulingSteps > 0 &&
+                if (checkerConfiguration.MaxUnfairSchedulingSteps > 0 &&
                     this.MaxUnfairStepsHitInUnfairTests > 0)
                 {
                     report.AppendLine();
                     report.AppendFormat(
                         "{0} Hit the max-steps bound of '{1}' in {2:F2}% of the unfair schedules.",
                         prefix.Equals("...") ? "....." : prefix,
-                        configuration.MaxUnfairSchedulingSteps,
+                        checkerConfiguration.MaxUnfairSchedulingSteps,
                         (double)this.MaxUnfairStepsHitInUnfairTests / this.NumOfExploredUnfairSchedules * 100);
                 }
             }

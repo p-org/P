@@ -574,11 +574,11 @@ namespace PChecker.Specifications
         internal void CheckLivenessTemperature()
         {
             if (this.ActiveState.IsHot &&
-                this.Runtime.Configuration.LivenessTemperatureThreshold > 0)
+                this.Runtime.CheckerConfiguration.LivenessTemperatureThreshold > 0)
             {
                 this.LivenessTemperature++;
                 if (this.LivenessTemperature > this.Runtime.
-                    Configuration.LivenessTemperatureThreshold)
+                    CheckerConfiguration.LivenessTemperatureThreshold)
                 {
                     this.Runtime.NotifyMonitorError(this);
                     this.Runtime.Assert(false,
@@ -595,10 +595,10 @@ namespace PChecker.Specifications
         /// </summary>
         internal void CheckLivenessTemperature(int livenessTemperature)
         {
-            if (livenessTemperature > this.Runtime.Configuration.LivenessTemperatureThreshold)
+            if (livenessTemperature > this.Runtime.CheckerConfiguration.LivenessTemperatureThreshold)
             {
                 this.Runtime.Assert(
-                    livenessTemperature <= this.Runtime.Configuration.LivenessTemperatureThreshold,
+                    livenessTemperature <= this.Runtime.CheckerConfiguration.LivenessTemperatureThreshold,
                     $"{this.GetType().FullName} detected infinite execution that violates a liveness property.");
             }
         }

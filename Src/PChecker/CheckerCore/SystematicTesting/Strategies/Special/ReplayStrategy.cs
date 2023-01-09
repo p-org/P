@@ -14,9 +14,9 @@ namespace PChecker.SystematicTesting.Strategies
     internal sealed class ReplayStrategy : ISchedulingStrategy
     {
         /// <summary>
-        /// The configuration.
+        /// The checkerConfiguration.
         /// </summary>
-        private readonly Configuration Configuration;
+        private readonly CheckerConfiguration _checkerConfiguration;
 
         /// <summary>
         /// The Coyote program schedule trace.
@@ -52,17 +52,17 @@ namespace PChecker.SystematicTesting.Strategies
         /// <summary>
         /// Initializes a new instance of the <see cref="ReplayStrategy"/> class.
         /// </summary>
-        public ReplayStrategy(Configuration configuration, ScheduleTrace trace, bool isFair)
-            : this(configuration, trace, isFair, null)
+        public ReplayStrategy(CheckerConfiguration checkerConfiguration, ScheduleTrace trace, bool isFair)
+            : this(checkerConfiguration, trace, isFair, null)
         {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ReplayStrategy"/> class.
         /// </summary>
-        public ReplayStrategy(Configuration configuration, ScheduleTrace trace, bool isFair, ISchedulingStrategy suffixStrategy)
+        public ReplayStrategy(CheckerConfiguration checkerConfiguration, ScheduleTrace trace, bool isFair, ISchedulingStrategy suffixStrategy)
         {
-            this.Configuration = configuration;
+            this._checkerConfiguration = checkerConfiguration;
             this.ScheduleTrace = trace;
             this.ScheduledSteps = 0;
             this.IsSchedulerFair = isFair;
@@ -109,7 +109,7 @@ namespace PChecker.SystematicTesting.Strategies
                 {
                     if (this.SuffixStrategy is null)
                     {
-                        if (!this.Configuration.DisableEnvironmentExit)
+                        if (!this._checkerConfiguration.DisableEnvironmentExit)
                         {
                             Error.ReportAndExit(ex.Message);
                         }
@@ -163,7 +163,7 @@ namespace PChecker.SystematicTesting.Strategies
                 {
                     if (this.SuffixStrategy is null)
                     {
-                        if (!this.Configuration.DisableEnvironmentExit)
+                        if (!this._checkerConfiguration.DisableEnvironmentExit)
                         {
                             Error.ReportAndExit(ex.Message);
                         }
@@ -218,7 +218,7 @@ namespace PChecker.SystematicTesting.Strategies
                 {
                     if (this.SuffixStrategy is null)
                     {
-                        if (!this.Configuration.DisableEnvironmentExit)
+                        if (!this._checkerConfiguration.DisableEnvironmentExit)
                         {
                             Error.ReportAndExit(ex.Message);
                         }

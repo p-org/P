@@ -36,8 +36,8 @@ namespace PChecker.Actors.UnitTesting
         /// <summary>
         /// Initializes a new instance of the <see cref="ActorUnitTestingRuntime"/> class.
         /// </summary>
-        internal ActorUnitTestingRuntime(Configuration configuration, Type actorType, IRandomValueGenerator valueGenerator)
-            : base(configuration, valueGenerator)
+        internal ActorUnitTestingRuntime(CheckerConfiguration checkerConfiguration, Type actorType, IRandomValueGenerator valueGenerator)
+            : base(checkerConfiguration, valueGenerator)
         {
             if (!actorType.IsSubclassOf(typeof(Actor)))
             {

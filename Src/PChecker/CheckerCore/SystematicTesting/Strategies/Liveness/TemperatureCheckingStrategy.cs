@@ -16,8 +16,8 @@ namespace PChecker.SystematicTesting.Strategies
         /// <summary>
         /// Initializes a new instance of the <see cref="TemperatureCheckingStrategy"/> class.
         /// </summary>
-        internal TemperatureCheckingStrategy(Configuration configuration, List<Specifications.Monitor> monitors, ISchedulingStrategy strategy)
-            : base(configuration, monitors, strategy)
+        internal TemperatureCheckingStrategy(CheckerConfiguration checkerConfiguration, List<Specifications.Monitor> monitors, ISchedulingStrategy strategy)
+            : base(checkerConfiguration, monitors, strategy)
         {
         }
 

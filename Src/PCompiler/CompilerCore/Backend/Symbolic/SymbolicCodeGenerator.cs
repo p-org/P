@@ -17,7 +17,7 @@ namespace Plang.Compiler.Backend.Symbolic
 {
     class SymbolicCodeGenerator : ICodeGenerator
     {
-        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
+        public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
         {
             var context = new CompilationContext(job);
             var javaSource = GenerateSource(context, globalScope);
@@ -29,7 +29,7 @@ namespace Plang.Compiler.Backend.Symbolic
         /// </summary>
         public bool HasCompilationStage => true;
 
-        public void Compile(ICompilationJob job)
+        public void Compile(ICompilerConfiguration job)
         {
             var pomPath = Path.Combine(job.ProjectRootPath.FullName, "pom.xml");
             string stdout = "";

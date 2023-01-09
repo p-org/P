@@ -19,9 +19,9 @@ namespace PChecker.SystematicTesting
     internal sealed class OperationScheduler
     {
         /// <summary>
-        /// The configuration used by the scheduler.
+        /// The checkerConfiguration used by the scheduler.
         /// </summary>
-        internal readonly Configuration Configuration;
+        internal readonly CheckerConfiguration CheckerConfiguration;
 
         /// <summary>
         /// The controlled runtime.
@@ -87,9 +87,9 @@ namespace PChecker.SystematicTesting
         /// Initializes a new instance of the <see cref="OperationScheduler"/> class.
         /// </summary>
         internal OperationScheduler(ControlledRuntime runtime, ISchedulingStrategy strategy,
-            ScheduleTrace trace, Configuration configuration)
+            ScheduleTrace trace, CheckerConfiguration checkerConfiguration)
         {
-            this.Configuration = configuration;
+            this.CheckerConfiguration = checkerConfiguration;
             this.Runtime = runtime;
             this.Strategy = strategy;
             this.OperationMap = new ConcurrentDictionary<ulong, IAsyncOperation>();
@@ -137,7 +137,7 @@ namespace PChecker.SystematicTesting
             // Checks if the scheduling steps bound has been reached.
             this.CheckIfSchedulingStepsBoundIsReached();
 
-            if (this.Configuration.IsProgramStateHashingEnabled)
+            if (this.CheckerConfiguration.IsProgramStateHashingEnabled)
             {
                 // Update the current operation with the hashed program state.
                 current.HashedProgramState = this.Runtime.GetProgramState();
@@ -231,7 +231,7 @@ namespace PChecker.SystematicTesting
             // Checks if the scheduling steps bound has been reached.
             this.CheckIfSchedulingStepsBoundIsReached();
 
-            if (this.Configuration.IsProgramStateHashingEnabled)
+            if (this.CheckerConfiguration.IsProgramStateHashingEnabled)
             {
                 // Update the current operation with the hashed program state.
                 this.ScheduledOperation.HashedProgramState = this.Runtime.GetProgramState();
@@ -265,7 +265,7 @@ namespace PChecker.SystematicTesting
             // Checks if the scheduling steps bound has been reached.
             this.CheckIfSchedulingStepsBoundIsReached();
 
-            if (this.Configuration.IsProgramStateHashingEnabled)
+            if (this.CheckerConfiguration.IsProgramStateHashingEnabled)
             {
                 // Update the current operation with the hashed program state.
                 this.ScheduledOperation.HashedProgramState = this.Runtime.GetProgramState();
@@ -423,7 +423,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal TestReport GetReport()
         {
-            TestReport report = new TestReport(this.Configuration);
+            TestReport report = new TestReport(this.CheckerConfiguration);
 
             if (this.BugFound)
             {
@@ -452,7 +452,7 @@ namespace PChecker.SystematicTesting
                     report.MaxFairStepsHitInFairTests++;
                 }
 
-                if (this.ScheduledSteps >= report.Configuration.MaxUnfairSchedulingSteps)
+                if (this.ScheduledSteps >= report.CheckerConfiguration.MaxUnfairSchedulingSteps)
                 {
                     report.MaxUnfairStepsHitInFairTests++;
                 }
@@ -583,11 +583,11 @@ namespace PChecker.SystematicTesting
         {
             if (this.Strategy.HasReachedMaxSchedulingSteps())
             {
-                int bound = this.Strategy.IsFair() ? this.Configuration.MaxFairSchedulingSteps :
-                    this.Configuration.MaxUnfairSchedulingSteps;
+                int bound = this.Strategy.IsFair() ? this.CheckerConfiguration.MaxFairSchedulingSteps :
+                    this.CheckerConfiguration.MaxUnfairSchedulingSteps;
                 string message = $"Scheduling steps bound of {bound} reached.";
 
-                if (this.Configuration.ConsiderDepthBoundHitAsBug)
+                if (this.CheckerConfiguration.ConsiderDepthBoundHitAsBug)
                 {
                     this.NotifyAssertionFailure(message);
                 }
@@ -620,12 +620,12 @@ namespace PChecker.SystematicTesting
                 this.Runtime.LogWriter.LogAssertionFailure($"<ErrorLog> {text}");
                 StackTrace trace = new StackTrace();
                 this.Runtime.RaiseOnFailureEvent(new AssertionFailureException(text));
-                this.Runtime.LogWriter.LogStrategyDescription(this.Configuration.SchedulingStrategy,
+                this.Runtime.LogWriter.LogStrategyDescription(this.CheckerConfiguration.SchedulingStrategy,
                     this.Strategy.GetDescription());
 
                 this.BugFound = true;
 
-                if (this.Configuration.AttachDebugger)
+                if (this.CheckerConfiguration.AttachDebugger)
                 {
                     Debugger.Break();
                 }

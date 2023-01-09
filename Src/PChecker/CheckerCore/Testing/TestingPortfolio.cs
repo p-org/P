@@ -11,27 +11,27 @@ namespace PChecker.Testing
         /// <summary>
         /// Configures the systematic testing strategy for the current testing process.
         /// </summary>
-        internal static void ConfigureStrategyForCurrentProcess(Configuration configuration)
+        internal static void ConfigureStrategyForCurrentProcess(CheckerConfiguration checkerConfiguration)
         {
             // random, fairpct[1], probabilistic[1], fairpct[5], probabilistic[2], fairpct[10], etc.
-            if (configuration.TestingProcessId == 0)
+            if (checkerConfiguration.TestingProcessId == 0)
             {
-                configuration.SchedulingStrategy = "random";
+                checkerConfiguration.SchedulingStrategy = "random";
             }
-            else if (configuration.TestingProcessId % 2 == 0)
+            else if (checkerConfiguration.TestingProcessId % 2 == 0)
             {
-                configuration.SchedulingStrategy = "probabilistic";
-                configuration.StrategyBound = (int)(configuration.TestingProcessId / 2);
+                checkerConfiguration.SchedulingStrategy = "probabilistic";
+                checkerConfiguration.StrategyBound = (int)(checkerConfiguration.TestingProcessId / 2);
             }
-            else if (configuration.TestingProcessId == 1)
+            else if (checkerConfiguration.TestingProcessId == 1)
             {
-                configuration.SchedulingStrategy = "fairpct";
-                configuration.StrategyBound = 1;
+                checkerConfiguration.SchedulingStrategy = "fairpct";
+                checkerConfiguration.StrategyBound = 1;
             }
             else
             {
-                configuration.SchedulingStrategy = "fairpct";
-                configuration.StrategyBound = 5 * (int)((configuration.TestingProcessId + 1) / 2);
+                checkerConfiguration.SchedulingStrategy = "fairpct";
+                checkerConfiguration.StrategyBound = 5 * (int)((checkerConfiguration.TestingProcessId + 1) / 2);
             }
         }
     }

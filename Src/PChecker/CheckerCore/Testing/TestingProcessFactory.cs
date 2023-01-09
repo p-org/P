@@ -16,16 +16,16 @@ namespace PChecker.Testing
         /// <summary>
         /// Creates a new testing process.
         /// </summary>
-        public static Process Create(uint id, Configuration configuration)
+        public static Process Create(uint id, CheckerConfiguration checkerConfiguration)
         {
             string assembly = Assembly.GetExecutingAssembly().Location;
             Console.WriteLine("Launching " + assembly);
 #if NETFRAMEWORK
             ProcessStartInfo startInfo = new ProcessStartInfo(assembly,
-                CreateArgumentsFromConfiguration(id, configuration));
+                CreateArgumentsFromConfiguration(id, checkerConfiguration));
 #else
             ProcessStartInfo startInfo = new ProcessStartInfo("dotnet", assembly + " " +
-                CreateArgumentsFromConfiguration(id, configuration));
+                CreateArgumentsFromConfiguration(id, checkerConfiguration));
 #endif
             startInfo.UseShellExecute = false;
 
@@ -36,92 +36,92 @@ namespace PChecker.Testing
         }
 
         /// <summary>
-        /// Creates arguments from the specified configuration.
+        /// Creates arguments from the specified checkerConfiguration.
         /// </summary>
-        internal static string CreateArgumentsFromConfiguration(uint id, Configuration configuration)
+        internal static string CreateArgumentsFromConfiguration(uint id, CheckerConfiguration checkerConfiguration)
         {
             StringBuilder arguments = new StringBuilder();
 
-            arguments.Append($"test {configuration.AssemblyToBeAnalyzed} ");
+            arguments.Append($"test {checkerConfiguration.AssemblyToBeAnalyzed} ");
 
-            if (configuration.EnableDebugging)
+            if (checkerConfiguration.EnableDebugging)
             {
                 arguments.Append("--debug ");
             }
 
-            if (!string.IsNullOrEmpty(configuration.TestCaseName))
+            if (!string.IsNullOrEmpty(checkerConfiguration.TestCaseName))
             {
-                arguments.Append($"--testcase {configuration.TestCaseName} ");
+                arguments.Append($"--testcase {checkerConfiguration.TestCaseName} ");
             }
 
-            arguments.Append($"--iterations {configuration.TestingIterations} ");
-            arguments.Append($"--timeout {configuration.Timeout} ");
+            arguments.Append($"--iterations {checkerConfiguration.TestingIterations} ");
+            arguments.Append($"--timeout {checkerConfiguration.Timeout} ");
 
-            if (configuration.UserExplicitlySetMaxFairSchedulingSteps)
+            if (checkerConfiguration.UserExplicitlySetMaxFairSchedulingSteps)
             {
-                arguments.Append($"--max-steps {configuration.MaxUnfairSchedulingSteps} " +
-                    $"{configuration.MaxFairSchedulingSteps} ");
+                arguments.Append($"--max-steps {checkerConfiguration.MaxUnfairSchedulingSteps} " +
+                    $"{checkerConfiguration.MaxFairSchedulingSteps} ");
             }
             else
             {
-                arguments.Append($"--max-steps {configuration.MaxUnfairSchedulingSteps} ");
+                arguments.Append($"--max-steps {checkerConfiguration.MaxUnfairSchedulingSteps} ");
             }
 
-            if (configuration.SchedulingStrategy is "pct" ||
-                configuration.SchedulingStrategy is "fairpct" ||
-                configuration.SchedulingStrategy is "probabilistic")
+            if (checkerConfiguration.SchedulingStrategy is "pct" ||
+                checkerConfiguration.SchedulingStrategy is "fairpct" ||
+                checkerConfiguration.SchedulingStrategy is "probabilistic")
             {
-                arguments.Append($"--sch-{configuration.SchedulingStrategy} {configuration.StrategyBound} ");
+                arguments.Append($"--sch-{checkerConfiguration.SchedulingStrategy} {checkerConfiguration.StrategyBound} ");
             }
-            else if (configuration.SchedulingStrategy is "random" ||
-                configuration.SchedulingStrategy is "portfolio")
+            else if (checkerConfiguration.SchedulingStrategy is "random" ||
+                checkerConfiguration.SchedulingStrategy is "portfolio")
             {
-                arguments.Append($"--sch-{configuration.SchedulingStrategy} ");
-            }
-
-            if (configuration.RandomGeneratorSeed.HasValue)
-            {
-                arguments.Append($"--seed {configuration.RandomGeneratorSeed.Value} ");
+                arguments.Append($"--sch-{checkerConfiguration.SchedulingStrategy} ");
             }
 
-            if (configuration.PerformFullExploration)
+            if (checkerConfiguration.RandomGeneratorSeed.HasValue)
+            {
+                arguments.Append($"--seed {checkerConfiguration.RandomGeneratorSeed.Value} ");
+            }
+
+            if (checkerConfiguration.PerformFullExploration)
             {
                 arguments.Append("--explore ");
             }
 
-            arguments.Append($"--timeout-delay {configuration.TimeoutDelay} ");
+            arguments.Append($"--timeout-delay {checkerConfiguration.TimeoutDelay} ");
 
-            if (configuration.ReportCodeCoverage && configuration.ReportActivityCoverage)
+            if (checkerConfiguration.ReportCodeCoverage && checkerConfiguration.ReportActivityCoverage)
             {
                 arguments.Append("--coverage ");
             }
-            else if (configuration.ReportCodeCoverage)
+            else if (checkerConfiguration.ReportCodeCoverage)
             {
                 arguments.Append("--coverage code ");
             }
-            else if (configuration.ReportActivityCoverage)
+            else if (checkerConfiguration.ReportActivityCoverage)
             {
                 arguments.Append("--coverage activity ");
             }
 
-            if (configuration.IsDgmlGraphEnabled)
+            if (checkerConfiguration.IsDgmlGraphEnabled)
             {
                 arguments.Append("--graph ");
             }
 
-            if (configuration.IsXmlLogEnabled)
+            if (checkerConfiguration.IsXmlLogEnabled)
             {
                 arguments.Append("--xml-trace ");
             }
 
-            if (!string.IsNullOrEmpty(configuration.CustomActorRuntimeLogType))
+            if (!string.IsNullOrEmpty(checkerConfiguration.CustomActorRuntimeLogType))
             {
-                arguments.Append($"--actor-runtime-log {configuration.CustomActorRuntimeLogType} ");
+                arguments.Append($"--actor-runtime-log {checkerConfiguration.CustomActorRuntimeLogType} ");
             }
 
-            if (configuration.OutputFilePath.Length > 0)
+            if (checkerConfiguration.OutputFilePath.Length > 0)
             {
-                arguments.Append($"--outdir {configuration.OutputFilePath} ");
+                arguments.Append($"--outdir {checkerConfiguration.OutputFilePath} ");
             }
 
             arguments.Append("--run-as-parallel-testing-task ");

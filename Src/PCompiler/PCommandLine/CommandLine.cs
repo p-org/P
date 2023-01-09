@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using PChecker;
 using PChecker.IO;
 using PChecker.SystematicTesting;
@@ -12,7 +13,6 @@ namespace Plang
 {
     public static class CommandLine
     {
-        private static Configuration Configuration;
 
         private static TextWriter StdOut;
         private static TextWriter StdError;
@@ -32,63 +32,76 @@ namespace Plang
             // get the command
             if (args.Length == 0)
             {
-                StdError.WriteLine("Provide");
+                PrintCommandHelp();
+                return;
             }
-            // Parses the command line options to get the configuration.
-            Configuration = new PCheckerOptions().Parse(args);
             
-            switch (Configuration.ToolCommand.ToLower())
+            
+            switch (args[0].ToLower())
             {
                 case "compile":
-                    RunCompiler();
+                    RunCompiler(args.Skip(1).ToArray());
                     break;
                 case "check":
-                    RunChecker();
+                    RunChecker(args.Skip(1).ToArray());
                     break;
-                case "replay":
-                    ReplayTest();
+                default:
+                    CommandLineOutput.WriteError($"Expected (compile | check) as the command input but received `{args[0]}`");
+                    PrintCommandHelp();
                     break;
             }
         }
 
-        private static void RunChecker()
+        private static void PrintCommandHelp()
         {
-            if (Configuration.RunAsParallelBugFindingTask)
+            CommandLineOutput.WriteInfo("=======================================================================");
+            CommandLineOutput.WriteInfo("The P commandline tool supports two commands (modes): compile or check.\n");
+            CommandLineOutput.WriteInfo("usage:> p command command-options");
+            CommandLineOutput.WriteInfo("\t command :: compile | check           `compile` to run the P compiler and `check` to run the P checker on the compiled code");
+            CommandLineOutput.WriteInfo("\t command-options                      use `--help` or `-h` to learn more about the corresponding command options");
+            CommandLineOutput.WriteInfo("\t -----------------------------------------------------------------------");
+            CommandLineOutput.WriteInfo("\t p compile --help                     for P compiler help");
+            CommandLineOutput.WriteInfo("\t p check --help                       for P checker help");
+            CommandLineOutput.WriteInfo("=======================================================================");
+        }
+
+        private static void RunChecker(string[] args)
+        {
+            // Parses the command line options to get the checkerConfiguration.
+            var configuration = new PCheckerOptions().Parse(args);
+            
+            // if the replay option is passed then we ignore all the other options and replay the schedule
+            if (configuration.SchedulingStrategy == "replay")
             {
-                TestingProcess testingProcess = TestingProcess.Create(Configuration);
+                CommandLineOutput.WriteInfo($"Replay option is used, checker is ignoring all other parameters and using the {configuration.ScheduleFile} to replay the schedule");
+                CommandLineOutput.WriteInfo($"... Replaying {configuration.ScheduleFile}");
+                TestingEngine engine = TestingEngine.Create(configuration);
+                engine.Run();
+                CommandLineOutput.WriteInfo(engine.GetReport());
+            }
+            if (configuration.RunAsParallelBugFindingTask)
+            {
+                TestingProcess testingProcess = TestingProcess.Create(configuration);
                 testingProcess.Run();
                 return;
             }
 
-            if (Configuration.ReportCodeCoverage || Configuration.ReportActivityCoverage)
+            if (configuration.ReportCodeCoverage || configuration.ReportActivityCoverage)
             {
                 // This has to be here because both forms of coverage require it.
-                CodeCoverageInstrumentation.SetOutputDirectory(Configuration, makeHistory: true);
+                CodeCoverageInstrumentation.SetOutputDirectory(configuration, makeHistory: true);
             }
 
-            Console.WriteLine(". Testing " + Configuration.AssemblyToBeAnalyzed);
-            if (!string.IsNullOrEmpty(Configuration.TestCaseName))
+            CommandLineOutput.WriteInfo(". Testing " + configuration.AssemblyToBeAnalyzed);
+            if (!string.IsNullOrEmpty(configuration.TestCaseName))
             {
-                Console.WriteLine("... Method {0}", Configuration.TestCaseName);
+                CommandLineOutput.WriteInfo($"... TestCase {configuration.TestCaseName}");
             }
 
             // Creates and runs the testing process scheduler.
-            TestingProcessScheduler.Create(Configuration).Run();
+            TestingProcessScheduler.Create(configuration).Run();
 
-            Console.WriteLine(". Done");
-        }
-
-        private static void ReplayTest()
-        {
-            // Set some replay specific options.
-            Configuration.SchedulingStrategy = "replay";
-            Configuration.EnableColoredConsoleOutput = true;
-            Configuration.DisableEnvironmentExit = false;
-
-            Console.WriteLine($". Replaying {Configuration.ScheduleFile}");
-            TestingEngine engine = TestingEngine.Create(Configuration);
-            engine.Run();
-            Console.WriteLine(engine.GetReport());
+            CommandLineOutput.WriteInfo(". Done");
         }
 
         /// <summary>
@@ -135,7 +148,6 @@ namespace Plang
             {
                 Error.Report($"<Internal Error>:\n {ex.Message}\n<Please report to the P team or create an issue on GitHub, Thanks!>");
                 Error.Report("[PTool] unhandled exception: {0}: {1}", ex.GetType().ToString(), ex.Message);
-                StdOut.WriteLine(ex.StackTrace);
             }
         }
 
@@ -144,14 +156,14 @@ namespace Plang
         /// </summary>
         private static void Shutdown()
         {
-            StdOut.WriteLine("[PTool]: Thanks!");
+            CommandLineOutput.WriteInfo("[PTool]: Thanks for using P!");
         }
         
-        public static void RunCompiler()
+        public static void RunCompiler(string[] args)
         {
-            CompilationJob job = null;
+            CompilerConfiguration configuration = new PCompilerOptions().Parse(args);
             ICompiler compiler = new Compiler.Compiler();
-            compiler.Compile(job);
+            compiler.Compile(configuration);
         }
     }
 }

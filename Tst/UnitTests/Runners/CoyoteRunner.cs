@@ -116,9 +116,9 @@ namespace PImplementation
     public class _TestRegression {
         public static void Main(string[] args)
         {
-            Configuration configuration = Configuration.Create().WithTestingIterations(1000);
-            configuration.WithMaxSchedulingSteps(1000);
-            TestingEngine engine = TestingEngine.Create(configuration, DefaultImpl.Execute);
+            CheckerConfiguration checkerConfiguration = CheckerConfiguration.Create().WithTestingIterations(1000);
+            checkerConfiguration.WithMaxSchedulingSteps(1000);
+            TestingEngine engine = TestingEngine.Create(checkerConfiguration, DefaultImpl.Execute);
             engine.Run();
             string bug = engine.TestReport.BugReports.FirstOrDefault();
             if (bug != null)
@@ -130,11 +130,11 @@ namespace PImplementation
 
             // for debugging:
             /* For replaying a bug and single stepping
-            Configuration configuration = Configuration.Create();
-            configuration.WithVerbosityEnabled(true);
+            CheckerConfiguration checkerConfiguration = CheckerConfiguration.Create();
+            checkerConfiguration.WithVerbosityEnabled(true);
             // update the path to the schedule file.
-            configuration.WithReplayStrategy(""AfterNewUpdate.schedule"");
-            TestingEngine engine = TestingEngine.Create(configuration, DefaultImpl.Execute);
+            checkerConfiguration.WithReplayStrategy(""AfterNewUpdate.schedule"");
+            TestingEngine engine = TestingEngine.Create(checkerConfiguration, DefaultImpl.Execute);
             engine.Run();
             string bug = engine.TestReport.BugReports.FirstOrDefault();
             if (bug != null)
@@ -160,14 +160,14 @@ namespace PImplementation
         {
             Compiler compiler = new Compiler();
             TestExecutionStream outputStream = new TestExecutionStream(scratchDirectory);
-            CompilationJob compilationJob = new CompilationJob(outputStream, scratchDirectory, CompilerOutput.CSharp, sources.Select(x => x.FullName).ToList(), "Main", scratchDirectory);
+            CompilerConfiguration compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory, CompilerOutput.CSharp, sources.Select(x => x.FullName).ToList(), "Main", scratchDirectory);
             try
             {
-                return compiler.Compile(compilationJob);
+                return compiler.Compile(compilerConfiguration);
             }
             catch (Exception ex)
             {
-                compilationJob.Output.WriteError($"<Internal Error>:\n {ex.Message}\n<Please report to the P team or create an issue on GitHub, Thanks!>");
+                compilerConfiguration.Output.WriteError($"<Internal Error>:\n {ex.Message}\n<Please report to the P team or create an issue on GitHub, Thanks!>");
                 return 1;
             }
         }

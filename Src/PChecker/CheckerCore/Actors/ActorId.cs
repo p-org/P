@@ -84,7 +84,7 @@ namespace PChecker.Actors
                 this.Runtime.Assert(this.Value != ulong.MaxValue, "Detected actor id overflow.");
             }
 
-            this.Generation = runtime.Configuration.RuntimeGeneration;
+            this.Generation = runtime.CheckerConfiguration.RuntimeGeneration;
 
             this.Type = type.FullName;
             if (this.IsNameUsedForHashing)

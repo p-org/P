@@ -208,7 +208,7 @@ namespace PChecker.Actors
         /// <param name="id">The id of the target.</param>
         /// <param name="e">The event to send.</param>
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
-        /// <param name="options">Optional configuration of a send operation.</param>
+        /// <param name="options">Optional checkerConfiguration of a send operation.</param>
         protected void SendEvent(ActorId id, Event e, Guid opGroupId = default, SendOptions options = null) =>
             this.Runtime.SendEvent(id, e, this, opGroupId, options);
 
@@ -725,7 +725,7 @@ namespace PChecker.Actors
         }
 
         /// <summary>
-        /// Registers a new timer using the specified configuration.
+        /// Registers a new timer using the specified checkerConfiguration.
         /// </summary>
         private protected TimerInfo RegisterTimer(TimeSpan dueTime, TimeSpan period, TimerElapsedEvent customEvent)
         {

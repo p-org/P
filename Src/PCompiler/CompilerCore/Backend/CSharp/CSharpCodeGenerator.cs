@@ -21,7 +21,7 @@ namespace Plang.Compiler.Backend.CSharp
         /// </summary>
         public bool HasCompilationStage => true;
 
-        public void Compile(ICompilationJob job)
+        public void Compile(ICompilerConfiguration job)
         {
             var csprojName = $"{job.ProjectName}.csproj";
             var csprojPath = Path.Combine(job.ProjectRootPath.FullName, csprojName);
@@ -57,7 +57,7 @@ namespace Plang.Compiler.Backend.CSharp
             }
         }
 
-        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
+        public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
         {
             CompilationContext context = new CompilationContext(job);
             CompiledFile csharpSource = GenerateSource(context, globalScope);

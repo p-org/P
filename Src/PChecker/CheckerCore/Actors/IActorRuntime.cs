@@ -122,7 +122,7 @@ namespace PChecker.Actors
         /// <param name="targetId">The id of the target.</param>
         /// <param name="e">The event to send.</param>
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
-        /// <param name="options">Optional configuration of a send operation.</param>
+        /// <param name="options">Optional checkerConfiguration of a send operation.</param>
         void SendEvent(ActorId targetId, Event e, Guid opGroupId = default, SendOptions options = null);
 
         /// <summary>
@@ -132,7 +132,7 @@ namespace PChecker.Actors
         /// <param name="targetId">The id of the target.</param>
         /// <param name="e">The event to send.</param>
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
-        /// <param name="options">Optional configuration of a send operation.</param>
+        /// <param name="options">Optional checkerConfiguration of a send operation.</param>
         /// <returns>Task that represents the asynchronous operation. The task result is true if
         /// the event was handled, false if the event was only enqueued.</returns>
         Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Guid opGroupId = default, SendOptions options = null);

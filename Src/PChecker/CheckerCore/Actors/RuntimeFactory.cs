@@ -20,22 +20,22 @@ namespace PChecker.Actors
         public static IActorRuntime Create() => Create(default);
 
         /// <summary>
-        /// Creates a new actor runtime with the specified <see cref="Configuration"/>.
+        /// Creates a new actor runtime with the specified <see cref="CheckerConfiguration"/>.
         /// </summary>
-        /// <param name="configuration">The runtime configuration to use.</param>
+        /// <param name="checkerConfiguration">The runtime checkerConfiguration to use.</param>
         /// <returns>The created actor runtime.</returns>
         /// <remarks>
         /// Only one runtime can be created per async local context. This is not a thread-safe operation.
         /// </remarks>
-        public static IActorRuntime Create(Configuration configuration)
+        public static IActorRuntime Create(CheckerConfiguration checkerConfiguration)
         {
-            if (configuration is null)
+            if (checkerConfiguration is null)
             {
-                configuration = Configuration.Create();
+                checkerConfiguration = CheckerConfiguration.Create();
             }
 
-            var valueGenerator = new RandomValueGenerator(configuration);
-            var runtime = new ActorRuntime(configuration, valueGenerator);
+            var valueGenerator = new RandomValueGenerator(checkerConfiguration);
+            var runtime = new ActorRuntime(checkerConfiguration, valueGenerator);
 
             // Assign the runtime to the currently executing asynchronous control flow.
             CoyoteRuntime.AssignAsyncControlFlowRuntime(runtime);

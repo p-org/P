@@ -4,7 +4,7 @@
 namespace PChecker.Actors
 {
     /// <summary>
-    /// Represents a send event configuration that is used during testing.
+    /// Represents a send event checkerConfiguration that is used during testing.
     /// </summary>
     public class SendOptions
     {

@@ -24,7 +24,7 @@ namespace PChecker.SystematicTesting
 {
     /// <summary>
     /// Testing engine that can run a controlled concurrency test using
-    /// a specified configuration.
+    /// a specified checkerConfiguration.
     /// </summary>
 #if !DEBUG
     [DebuggerStepThrough]
@@ -32,9 +32,9 @@ namespace PChecker.SystematicTesting
     public class TestingEngine
     {
         /// <summary>
-        /// Configuration.
+        /// CheckerConfiguration.
         /// </summary>
-        private readonly Configuration Configuration;
+        private readonly CheckerConfiguration _checkerConfiguration;
 
         /// <summary>
         /// The method to test.
@@ -93,7 +93,7 @@ namespace PChecker.SystematicTesting
 
         /// <summary>
         /// Contains a single iteration of XML log output in the case where the IsXmlLogEnabled
-        /// configuration is specified.
+        /// checkerConfiguration is specified.
         /// </summary>
         private StringBuilder XmlLog;
 
@@ -120,139 +120,139 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(Configuration configuration) =>
-            Create(configuration, LoadAssembly(configuration.AssemblyToBeAnalyzed));
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration) =>
+            Create(checkerConfiguration, LoadAssembly(checkerConfiguration.AssemblyToBeAnalyzed));
 
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(Configuration configuration, Assembly assembly)
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Assembly assembly)
         {
             TestMethodInfo testMethodInfo = null;
             try
             {
-                testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, configuration.TestCaseName);
+                testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, checkerConfiguration.TestCaseName);
             }
             catch
             {
-                Error.ReportAndExit($"Failed to get test method '{configuration.TestCaseName}' from assembly '{assembly.FullName}'");
+                Error.ReportAndExit($"Failed to get test method '{checkerConfiguration.TestCaseName}' from assembly '{assembly.FullName}'");
             }
 
-            return new TestingEngine(configuration, testMethodInfo);
+            return new TestingEngine(checkerConfiguration, testMethodInfo);
         }
 
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(Configuration configuration, Action test) =>
-            new TestingEngine(configuration, test);
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action test) =>
+            new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(Configuration configuration, Action<ICoyoteRuntime> test) =>
-            new TestingEngine(configuration, test);
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action<ICoyoteRuntime> test) =>
+            new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(Configuration configuration, Action<IActorRuntime> test) =>
-            new TestingEngine(configuration, test);
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action<IActorRuntime> test) =>
+            new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(Configuration configuration, Func<Tasks.Task> test) =>
-            new TestingEngine(configuration, test);
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<Tasks.Task> test) =>
+            new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(Configuration configuration, Func<ICoyoteRuntime, Tasks.Task> test) =>
-            new TestingEngine(configuration, test);
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<ICoyoteRuntime, Tasks.Task> test) =>
+            new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(Configuration configuration, Func<IActorRuntime, Tasks.Task> test) =>
-            new TestingEngine(configuration, test);
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<IActorRuntime, Tasks.Task> test) =>
+            new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TestingEngine"/> class.
         /// </summary>
-        internal TestingEngine(Configuration configuration, Delegate test)
-            : this(configuration, new TestMethodInfo(test))
+        internal TestingEngine(CheckerConfiguration checkerConfiguration, Delegate test)
+            : this(checkerConfiguration, new TestMethodInfo(test))
         {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TestingEngine"/> class.
         /// </summary>
-        private TestingEngine(Configuration configuration, TestMethodInfo testMethodInfo)
+        private TestingEngine(CheckerConfiguration checkerConfiguration, TestMethodInfo testMethodInfo)
         {
-            this.Configuration = configuration;
+            this._checkerConfiguration = checkerConfiguration;
             this.TestMethodInfo = testMethodInfo;
 
             this.Logger = new ConsoleLogger();
-            this.ErrorReporter = new ErrorReporter(configuration, this.Logger);
+            this.ErrorReporter = new ErrorReporter(checkerConfiguration, this.Logger);
             this.Profiler = new Profiler();
 
             this.PerIterationCallbacks = new HashSet<Action<int>>();
 
             // Initializes scheduling strategy specific components.
-            this.RandomValueGenerator = new RandomValueGenerator(configuration);
+            this.RandomValueGenerator = new RandomValueGenerator(checkerConfiguration);
 
-            this.TestReport = new TestReport(configuration);
+            this.TestReport = new TestReport(checkerConfiguration);
             this.ReadableTrace = string.Empty;
             this.ReproducableTrace = string.Empty;
 
             this.CancellationTokenSource = new CancellationTokenSource();
             this.PrintGuard = 1;
 
-            if (configuration.SchedulingStrategy is "replay")
+            if (checkerConfiguration.SchedulingStrategy is "replay")
             {
                 var scheduleDump = this.GetScheduleForReplay(out bool isFair);
                 ScheduleTrace schedule = new ScheduleTrace(scheduleDump);
-                this.Strategy = new ReplayStrategy(configuration, schedule, isFair);
+                this.Strategy = new ReplayStrategy(checkerConfiguration, schedule, isFair);
             }
-            else if (configuration.SchedulingStrategy is "random")
+            else if (checkerConfiguration.SchedulingStrategy is "random")
             {
-                this.Strategy = new RandomStrategy(configuration.MaxFairSchedulingSteps, this.RandomValueGenerator);
+                this.Strategy = new RandomStrategy(checkerConfiguration.MaxFairSchedulingSteps, this.RandomValueGenerator);
             }
-            else if (configuration.SchedulingStrategy is "pct")
+            else if (checkerConfiguration.SchedulingStrategy is "pct")
             {
-                this.Strategy = new PCTStrategy(configuration.MaxUnfairSchedulingSteps, configuration.StrategyBound,
+                this.Strategy = new PCTStrategy(checkerConfiguration.MaxUnfairSchedulingSteps, checkerConfiguration.StrategyBound,
                     this.RandomValueGenerator);
             }
-            else if (configuration.SchedulingStrategy is "fairpct")
+            else if (checkerConfiguration.SchedulingStrategy is "fairpct")
             {
-                var prefixLength = configuration.SafetyPrefixBound == 0 ?
-                    configuration.MaxUnfairSchedulingSteps : configuration.SafetyPrefixBound;
-                var prefixStrategy = new PCTStrategy(prefixLength, configuration.StrategyBound, this.RandomValueGenerator);
-                var suffixStrategy = new RandomStrategy(configuration.MaxFairSchedulingSteps, this.RandomValueGenerator);
+                var prefixLength = checkerConfiguration.SafetyPrefixBound == 0 ?
+                    checkerConfiguration.MaxUnfairSchedulingSteps : checkerConfiguration.SafetyPrefixBound;
+                var prefixStrategy = new PCTStrategy(prefixLength, checkerConfiguration.StrategyBound, this.RandomValueGenerator);
+                var suffixStrategy = new RandomStrategy(checkerConfiguration.MaxFairSchedulingSteps, this.RandomValueGenerator);
                 this.Strategy = new ComboStrategy(prefixStrategy, suffixStrategy);
             }
-            else if (configuration.SchedulingStrategy is "probabilistic")
+            else if (checkerConfiguration.SchedulingStrategy is "probabilistic")
             {
-                this.Strategy = new ProbabilisticRandomStrategy(configuration.MaxFairSchedulingSteps,
-                    configuration.StrategyBound, this.RandomValueGenerator);
+                this.Strategy = new ProbabilisticRandomStrategy(checkerConfiguration.MaxFairSchedulingSteps,
+                    checkerConfiguration.StrategyBound, this.RandomValueGenerator);
             }
-            else if (configuration.SchedulingStrategy is "dfs")
+            else if (checkerConfiguration.SchedulingStrategy is "dfs")
             {
-                this.Strategy = new DFSStrategy(configuration.MaxUnfairSchedulingSteps);
+                this.Strategy = new DFSStrategy(checkerConfiguration.MaxUnfairSchedulingSteps);
             }
-            else if (configuration.SchedulingStrategy is "portfolio")
+            else if (checkerConfiguration.SchedulingStrategy is "portfolio")
             {
                 Error.ReportAndExit("Portfolio testing strategy is only " +
                     "available in parallel testing.");
             }
 
-            if (configuration.SchedulingStrategy != "replay" &&
-                configuration.ScheduleFile.Length > 0)
+            if (checkerConfiguration.SchedulingStrategy != "replay" &&
+                checkerConfiguration.ScheduleFile.Length > 0)
             {
                 var scheduleDump = this.GetScheduleForReplay(out bool isFair);
                 ScheduleTrace schedule = new ScheduleTrace(scheduleDump);
-                this.Strategy = new ReplayStrategy(configuration, schedule, isFair, this.Strategy);
+                this.Strategy = new ReplayStrategy(checkerConfiguration, schedule, isFair, this.Strategy);
             }
         }
 
@@ -264,10 +264,10 @@ namespace PChecker.SystematicTesting
             try
             {
                 Task task = this.CreateTestingTask();
-                if (this.Configuration.Timeout > 0)
+                if (this._checkerConfiguration.Timeout > 0)
                 {
                     this.CancellationTokenSource.CancelAfter(
-                        this.Configuration.Timeout * 1000);
+                        this._checkerConfiguration.Timeout * 1000);
                 }
 
                 this.Profiler.StartMeasuringExecutionTime();
@@ -281,7 +281,7 @@ namespace PChecker.SystematicTesting
             {
                 if (this.CancellationTokenSource.IsCancellationRequested)
                 {
-                    this.Logger.WriteLine($"... Task {this.Configuration.TestingProcessId} timed out.");
+                    this.Logger.WriteLine($"... Task {this._checkerConfiguration.TestingProcessId} timed out.");
                 }
             }
             catch (AggregateException aex)
@@ -303,7 +303,7 @@ namespace PChecker.SystematicTesting
             }
             catch (Exception ex)
             {
-                this.Logger.WriteLine($"... Task {this.Configuration.TestingProcessId} failed due to an internal error: {ex}");
+                this.Logger.WriteLine($"... Task {this._checkerConfiguration.TestingProcessId} failed due to an internal error: {ex}");
                 this.TestReport.InternalErrors.Add(ex.ToString());
             }
             finally
@@ -318,20 +318,20 @@ namespace PChecker.SystematicTesting
         private Task CreateTestingTask()
         {
             string options = string.Empty;
-            if (this.Configuration.SchedulingStrategy is "random" ||
-                this.Configuration.SchedulingStrategy is "pct" ||
-                this.Configuration.SchedulingStrategy is "fairpct" ||
-                this.Configuration.SchedulingStrategy is "probabilistic")
+            if (this._checkerConfiguration.SchedulingStrategy is "random" ||
+                this._checkerConfiguration.SchedulingStrategy is "pct" ||
+                this._checkerConfiguration.SchedulingStrategy is "fairpct" ||
+                this._checkerConfiguration.SchedulingStrategy is "probabilistic")
             {
                 options = $" (seed:{this.RandomValueGenerator.Seed})";
             }
 
-            this.Logger.WriteLine($"... Task {this.Configuration.TestingProcessId} is " +
-                $"using '{this.Configuration.SchedulingStrategy}' strategy{options}.");
+            this.Logger.WriteLine($"... Task {this._checkerConfiguration.TestingProcessId} is " +
+                $"using '{this._checkerConfiguration.SchedulingStrategy}' strategy{options}.");
 
             return new Task(() =>
             {
-                if (this.Configuration.AttachDebugger)
+                if (this._checkerConfiguration.AttachDebugger)
                 {
                     Debugger.Launch();
                 }
@@ -341,7 +341,7 @@ namespace PChecker.SystematicTesting
                     // Invokes the user-specified initialization method.
                     this.TestMethodInfo.InitializeAllIterations();
 
-                    int maxIterations = this.IsReplayModeEnabled ? 1 : this.Configuration.TestingIterations;
+                    int maxIterations = this.IsReplayModeEnabled ? 1 : this._checkerConfiguration.TestingIterations;
                     for (int i = 0; i < maxIterations; i++)
                     {
                         if (this.CancellationTokenSource.IsCancellationRequested)
@@ -352,13 +352,13 @@ namespace PChecker.SystematicTesting
                         // Runs a new testing iteration.
                         this.RunNextIteration(i);
 
-                        if (this.IsReplayModeEnabled || (!this.Configuration.PerformFullExploration &&
+                        if (this.IsReplayModeEnabled || (!this._checkerConfiguration.PerformFullExploration &&
                             this.TestReport.NumOfFoundBugs > 0) || !this.Strategy.PrepareForNextIteration())
                         {
                             break;
                         }
 
-                        if (this.RandomValueGenerator != null && this.Configuration.IncrementalSchedulingSeed)
+                        if (this.RandomValueGenerator != null && this._checkerConfiguration.IncrementalSchedulingSeed)
                         {
                             // Increments the seed in the random number generator (if one is used), to
                             // capture the seed used by the scheduling strategy in the next iteration.
@@ -367,8 +367,8 @@ namespace PChecker.SystematicTesting
 
                         // Increases iterations if there is a specified timeout
                         // and the default iteration given.
-                        if (this.Configuration.TestingIterations == 1 &&
-                            this.Configuration.Timeout > 0)
+                        if (this._checkerConfiguration.TestingIterations == 1 &&
+                            this._checkerConfiguration.Timeout > 0)
                         {
                             maxIterations++;
                         }
@@ -428,11 +428,11 @@ namespace PChecker.SystematicTesting
             try
             {
                 // Creates a new instance of the controlled runtime.
-                runtime = new ControlledRuntime(this.Configuration, this.Strategy, this.RandomValueGenerator);
+                runtime = new ControlledRuntime(this._checkerConfiguration, this.Strategy, this.RandomValueGenerator);
 
                 // If verbosity is turned off, then intercept the program log, and also redirect
                 // the standard output and error streams to a nul logger.
-                if (!this.Configuration.IsVerbose)
+                if (!this._checkerConfiguration.IsVerbose)
                 {
                     runtimeLogger = new InMemoryLogger();
                     runtime.SetLogger(runtimeLogger);
@@ -478,7 +478,7 @@ namespace PChecker.SystematicTesting
                     if (runtimeLogger != null)
                     {
                         this.ReadableTrace = runtimeLogger.ToString();
-                        this.ReadableTrace += this.TestReport.GetText(this.Configuration, "<StrategyLog>");
+                        this.ReadableTrace += this.TestReport.GetText(this._checkerConfiguration, "<StrategyLog>");
                     }
 
                     this.ConstructReproducableTrace(runtime);
@@ -486,18 +486,18 @@ namespace PChecker.SystematicTesting
             }
             finally
             {
-                if (!this.Configuration.IsVerbose)
+                if (!this._checkerConfiguration.IsVerbose)
                 {
                     // Restores the standard output and error streams.
                     Console.SetOut(stdOut);
                     Console.SetError(stdErr);
                 }
 
-                if (!this.IsReplayModeEnabled && this.Configuration.PerformFullExploration && runtime.Scheduler.BugFound)
+                if (!this.IsReplayModeEnabled && this._checkerConfiguration.PerformFullExploration && runtime.Scheduler.BugFound)
                 {
                     this.Logger.WriteLine($"..... Iteration #{iteration + 1} " +
                         $"triggered bug #{this.TestReport.NumOfFoundBugs} " +
-                        $"[task-{this.Configuration.TestingProcessId}]");
+                        $"[task-{this._checkerConfiguration.TestingProcessId}]");
                 }
 
                 // Cleans up the runtime before the next iteration starts.
@@ -524,13 +524,13 @@ namespace PChecker.SystematicTesting
                 StringBuilder report = new StringBuilder();
                 report.AppendFormat("... Reproduced {0} bug{1}{2}.", this.TestReport.NumOfFoundBugs,
                     this.TestReport.NumOfFoundBugs == 1 ? string.Empty : "s",
-                    this.Configuration.AttachDebugger ? string.Empty : " (use --break to attach the debugger)");
+                    this._checkerConfiguration.AttachDebugger ? string.Empty : " (use --break to attach the debugger)");
                 report.AppendLine();
                 report.Append($"... Elapsed {this.Profiler.Results()} sec.");
                 return report.ToString();
             }
 
-            return this.TestReport.GetText(this.Configuration, "...");
+            return this.TestReport.GetText(this._checkerConfiguration, "...");
         }
 
         /// <summary>
@@ -558,7 +558,7 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            if (!this.Configuration.PerformFullExploration)
+            if (!this._checkerConfiguration.PerformFullExploration)
             {
                 // Emits the human readable trace, if it exists.
                 if (!string.IsNullOrEmpty(this.ReadableTrace))
@@ -571,7 +571,7 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            if (this.Configuration.IsXmlLogEnabled)
+            if (this._checkerConfiguration.IsXmlLogEnabled)
             {
                 string xmlPath = directory + file + "_" + index + ".trace.xml";
                 this.Logger.WriteLine($"..... Writing {xmlPath}");
@@ -587,7 +587,7 @@ namespace PChecker.SystematicTesting
                 yield return graphPath;
             }
 
-            if (!this.Configuration.PerformFullExploration)
+            if (!this._checkerConfiguration.PerformFullExploration)
             {
                 // Emits the reproducable trace, if it exists.
                 if (!string.IsNullOrEmpty(this.ReproducableTrace))
@@ -613,37 +613,37 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Take care of handling the <see cref="Configuration"/> settings for <see cref="Configuration.CustomActorRuntimeLogType"/>,
-        /// <see cref="Configuration.IsDgmlGraphEnabled"/>, and <see cref="Configuration.ReportActivityCoverage"/> by setting up the
+        /// Take care of handling the <see cref="_checkerConfiguration"/> settings for <see cref="_checkerConfiguration.CustomActorRuntimeLogType"/>,
+        /// <see cref="_checkerConfiguration.IsDgmlGraphEnabled"/>, and <see cref="_checkerConfiguration.ReportActivityCoverage"/> by setting up the
         /// LogWriters on the given <see cref="ControlledRuntime"/> object.
         /// </summary>
         private void InitializeCustomLogging(ControlledRuntime runtime)
         {
-            if (!string.IsNullOrEmpty(this.Configuration.CustomActorRuntimeLogType))
+            if (!string.IsNullOrEmpty(this._checkerConfiguration.CustomActorRuntimeLogType))
             {
-                var log = this.Activate<IActorRuntimeLog>(this.Configuration.CustomActorRuntimeLogType);
+                var log = this.Activate<IActorRuntimeLog>(this._checkerConfiguration.CustomActorRuntimeLogType);
                 if (log != null)
                 {
                     runtime.RegisterLog(log);
                 }
             }
 
-            if (this.Configuration.IsDgmlGraphEnabled || this.Configuration.ReportActivityCoverage)
+            if (this._checkerConfiguration.IsDgmlGraphEnabled || this._checkerConfiguration.ReportActivityCoverage)
             {
                 // Registers an activity coverage graph builder.
                 runtime.RegisterLog(new ActorRuntimeLogGraphBuilder(false)
                 {
-                    CollapseMachineInstances = this.Configuration.ReportActivityCoverage
+                    CollapseMachineInstances = this._checkerConfiguration.ReportActivityCoverage
                 });
             }
 
-            if (this.Configuration.ReportActivityCoverage)
+            if (this._checkerConfiguration.ReportActivityCoverage)
             {
                 // Need this additional logger to get the event coverage report correct
                 runtime.RegisterLog(new ActorRuntimeLogEventCoverage());
             }
 
-            if (this.Configuration.IsXmlLogEnabled)
+            if (this._checkerConfiguration.IsXmlLogEnabled)
             {
                 this.XmlLog = new StringBuilder();
                 runtime.RegisterLog(new ActorRuntimeLogXmlFormatter(XmlWriter.Create(this.XmlLog,
@@ -708,21 +708,21 @@ namespace PChecker.SystematicTesting
             // Load config file and absorb its settings.
             try
             {
-                var configFile = System.Configuration.ConfigurationManager.OpenExeConfiguration(assemblyFile);
+                var configFile = System.CheckerConfiguration.ConfigurationManager.OpenExeConfiguration(assemblyFile);
                 var settings = configFile.AppSettings.Settings;
                 foreach (var key in settings.AllKeys)
                 {
-                    if (System.Configuration.ConfigurationManager.AppSettings.Get(key) is null)
+                    if (System.CheckerConfiguration.ConfigurationManager.AppSettings.Get(key) is null)
                     {
-                        System.Configuration.ConfigurationManager.AppSettings.Set(key, settings[key].Value);
+                        System.CheckerConfiguration.ConfigurationManager.AppSettings.Set(key, settings[key].Value);
                     }
                     else
                     {
-                        System.Configuration.ConfigurationManager.AppSettings.Add(key, settings[key].Value);
+                        System.CheckerConfiguration.ConfigurationManager.AppSettings.Add(key, settings[key].Value);
                     }
                 }
             }
-            catch (System.Configuration.ConfigurationErrorsException ex)
+            catch (System.CheckerConfiguration.ConfigurationErrorsException ex)
             {
                 Error.Report(ex.Message);
             }
@@ -737,7 +737,7 @@ namespace PChecker.SystematicTesting
         private void GatherTestingStatistics(ControlledRuntime runtime)
         {
             TestReport report = runtime.Scheduler.GetReport();
-            if (this.Configuration.ReportActivityCoverage)
+            if (this._checkerConfiguration.ReportActivityCoverage)
             {
                 report.CoverageInfo.CoverageGraph = this.Graph;
             }
@@ -762,17 +762,17 @@ namespace PChecker.SystematicTesting
                 stringBuilder.Append("--fair-scheduling").Append(Environment.NewLine);
             }
 
-            if (this.Configuration.IsLivenessCheckingEnabled)
+            if (this._checkerConfiguration.IsLivenessCheckingEnabled)
             {
                 stringBuilder.Append("--liveness-temperature-threshold:" +
-                    this.Configuration.LivenessTemperatureThreshold).
+                    this._checkerConfiguration.LivenessTemperatureThreshold).
                     Append(Environment.NewLine);
             }
 
-            if (!string.IsNullOrEmpty(this.Configuration.TestCaseName))
+            if (!string.IsNullOrEmpty(this._checkerConfiguration.TestCaseName))
             {
                 stringBuilder.Append("--test-method:" +
-                    this.Configuration.TestCaseName).
+                    this._checkerConfiguration.TestCaseName).
                     Append(Environment.NewLine);
             }
 
@@ -807,13 +807,13 @@ namespace PChecker.SystematicTesting
         private string[] GetScheduleForReplay(out bool isFair)
         {
             string[] scheduleDump;
-            if (this.Configuration.ScheduleTrace.Length > 0)
+            if (this._checkerConfiguration.ScheduleTrace.Length > 0)
             {
-                scheduleDump = this.Configuration.ScheduleTrace.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+                scheduleDump = this._checkerConfiguration.ScheduleTrace.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
             }
             else
             {
-                scheduleDump = File.ReadAllLines(this.Configuration.ScheduleFile);
+                scheduleDump = File.ReadAllLines(this._checkerConfiguration.ScheduleFile);
             }
 
             isFair = false;
@@ -830,12 +830,12 @@ namespace PChecker.SystematicTesting
                 }
                 else if (line.StartsWith("--liveness-temperature-threshold:"))
                 {
-                    this.Configuration.LivenessTemperatureThreshold =
+                    this._checkerConfiguration.LivenessTemperatureThreshold =
                         int.Parse(line.Substring("--liveness-temperature-threshold:".Length));
                 }
                 else if (line.StartsWith("--test-method:"))
                 {
-                    this.Configuration.TestCaseName =
+                    this._checkerConfiguration.TestCaseName =
                         line.Substring("--test-method:".Length);
                 }
             }

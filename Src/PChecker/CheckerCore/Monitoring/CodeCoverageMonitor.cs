@@ -17,9 +17,9 @@ namespace Microsoft.Coyote.SystematicTesting
     internal static class CodeCoverageMonitor
     {
         /// <summary>
-        /// Configuration.
+        /// CheckerConfiguration.
         /// </summary>
-        private static Configuration Configuration;
+        private static CheckerConfiguration CheckerConfiguration;
 
         /// <summary>
         /// Monitoring process is running.
@@ -29,15 +29,15 @@ namespace Microsoft.Coyote.SystematicTesting
         /// <summary>
         /// Starts the code coverage monitor.
         /// </summary>
-        /// <param name="configuration">Configuration</param>
-        internal static void Start(Configuration configuration)
+        /// <param name="checkerConfiguration">CheckerConfiguration</param>
+        internal static void Start(CheckerConfiguration checkerConfiguration)
         {
             if (IsRunning)
             {
                 throw new InvalidOperationException("Process has already started.");
             }
 
-            Configuration = configuration;
+            CheckerConfiguration = checkerConfiguration;
             RunMonitorProcess(true);
             IsRunning = true;
         }
@@ -47,7 +47,7 @@ namespace Microsoft.Coyote.SystematicTesting
         /// </summary>
         internal static void Stop()
         {
-            if (Configuration is null)
+            if (CheckerConfiguration is null)
             {
                 throw new InvalidOperationException("Process has not been configured.");
             }
@@ -125,7 +125,7 @@ namespace Microsoft.Coyote.SystematicTesting
         /// </summary>
         private static string GetOutputName()
         {
-            string file = Path.GetFileNameWithoutExtension(Configuration.AssemblyToBeAnalyzed);
+            string file = Path.GetFileNameWithoutExtension(CheckerConfiguration.AssemblyToBeAnalyzed);
             string directory = CodeCoverageInstrumentation.OutputDirectory;
             return $"{directory}{file}.coverage";
         }

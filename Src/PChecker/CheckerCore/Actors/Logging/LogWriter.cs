@@ -29,11 +29,11 @@ namespace PChecker.Actors
         /// <summary>
         /// Initializes a new instance of the <see cref="LogWriter"/> class.
         /// </summary>
-        internal LogWriter(Configuration configuration)
+        internal LogWriter(CheckerConfiguration checkerConfiguration)
         {
             this.Logs = new HashSet<IActorRuntimeLog>();
 
-            if (configuration.IsVerbose)
+            if (checkerConfiguration.IsVerbose)
             {
                 this.GetOrCreateTextLog();
             }

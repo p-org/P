@@ -43,9 +43,9 @@ namespace PChecker.Runtime
         internal static bool IsExecutionControlled { get; private protected set; } = false;
 
         /// <summary>
-        /// The configuration used by the runtime.
+        /// The checkerConfiguration used by the runtime.
         /// </summary>
-        protected internal readonly Configuration Configuration;
+        protected internal readonly CheckerConfiguration CheckerConfiguration;
 
         /// <summary>
         /// List of monitors in the program.
@@ -81,9 +81,9 @@ namespace PChecker.Runtime
         /// <summary>
         /// Initializes a new instance of the <see cref="CoyoteRuntime"/> class.
         /// </summary>
-        protected CoyoteRuntime(Configuration configuration, IRandomValueGenerator valueGenerator)
+        protected CoyoteRuntime(CheckerConfiguration checkerConfiguration, IRandomValueGenerator valueGenerator)
         {
-            this.Configuration = configuration;
+            this.CheckerConfiguration = checkerConfiguration;
             this.Monitors = new List<Specifications.Monitor>();
             this.ValueGenerator = valueGenerator;
             this.OperationIdCounter = 0;
@@ -147,7 +147,7 @@ namespace PChecker.Runtime
         internal virtual void Monitor(Type type, Event e, string senderName, string senderType, string senderState)
         {
             // Check if monitors are enabled in production.
-            if (!this.Configuration.IsMonitoringEnabledInInProduction)
+            if (!this.CheckerConfiguration.IsMonitoringEnabledInInProduction)
             {
                 return;
             }
@@ -255,10 +255,10 @@ namespace PChecker.Runtime
         /// </summary>
         protected internal virtual void RaiseOnFailureEvent(Exception exception)
         {
-            if (this.Configuration.AttachDebugger)
+            if (this.CheckerConfiguration.AttachDebugger)
             {
                 System.Diagnostics.Debugger.Break();
-                this.Configuration.AttachDebugger = false;
+                this.CheckerConfiguration.AttachDebugger = false;
             }
 
             this.OnFailure?.Invoke(exception);

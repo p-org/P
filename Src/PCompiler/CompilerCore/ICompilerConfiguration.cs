@@ -5,11 +5,10 @@ using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler
 {
-    public interface ICompilationJob
+    public interface ICompilerConfiguration
     {
         string ProjectName { get; }
         DirectoryInfo ProjectRootPath { get; }
-        bool GenerateSourceMaps { get; }
         CompilerOutput OutputLanguage { get; }
         ICompilerOutput Output { get; }
         DirectoryInfo OutputDirectory { get; }

@@ -24,7 +24,7 @@
         /// <param name="args">list of commandline inputs</param>
         /// <param name="job">P's compilation job</param>
         /// <returns></returns>
-        public static CommandLineParseResult ParseArguments(IEnumerable<string> args, out CompilationJob job)
+        public static CommandLineParseResult ParseArguments(IEnumerable<string> args, out CompilerConfiguration job)
         {
             job = null;
 

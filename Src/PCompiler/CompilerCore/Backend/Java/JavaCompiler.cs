@@ -8,7 +8,7 @@ namespace Plang.Compiler.Backend.Java
 
     public class JavaCompiler : ICodeGenerator
     {
-        public void GenerateBuildScript(ICompilationJob job)
+        public void GenerateBuildScript(ICompilerConfiguration job)
         {
             var pomPath = Path.Combine(job.ProjectRootPath.FullName, Constants.BuildFileName);
             if (File.Exists(pomPath))
@@ -25,7 +25,7 @@ namespace Plang.Compiler.Backend.Java
         /// Generates all extracted Java code.  Later, this will also generate FFI stubs if they are
         /// absent.
         /// </summary>
-        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope scope)
+        public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope scope)
         {
             GenerateBuildScript(job);
 
@@ -51,7 +51,7 @@ namespace Plang.Compiler.Backend.Java
         /// <summary>
         /// Collates the previously-generated Java sources into a final JAR.
         /// </summary>
-        public void Compile(ICompilationJob job)
+        public void Compile(ICompilerConfiguration job)
         {
             string stdout = "";
             string stderr = "";

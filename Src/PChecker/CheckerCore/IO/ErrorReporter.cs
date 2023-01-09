@@ -12,9 +12,9 @@ namespace PChecker.IO
     internal sealed class ErrorReporter
     {
         /// <summary>
-        /// Configuration.
+        /// CheckerConfiguration.
         /// </summary>
-        private readonly Configuration Configuration;
+        private readonly CheckerConfiguration _checkerConfiguration;
 
         /// <summary>
         /// The installed logger.
@@ -24,9 +24,9 @@ namespace PChecker.IO
         /// <summary>
         /// Initializes a new instance of the <see cref="ErrorReporter"/> class.
         /// </summary>
-        internal ErrorReporter(Configuration configuration, TextWriter logger)
+        internal ErrorReporter(CheckerConfiguration checkerConfiguration, TextWriter logger)
         {
-            this.Configuration = configuration;
+            this._checkerConfiguration = checkerConfiguration;
             this.Logger = logger ?? new ConsoleLogger();
         }
 
@@ -45,7 +45,7 @@ namespace PChecker.IO
         /// </summary>
         private void Write(string value, ConsoleColor color)
         {
-            if (this.Configuration.EnableColoredConsoleOutput)
+            if (this._checkerConfiguration.EnableColoredConsoleOutput)
             {
                 Error.Write(this.Logger, color, value);
             }

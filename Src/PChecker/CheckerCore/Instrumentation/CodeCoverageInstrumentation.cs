@@ -4,7 +4,7 @@
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using System.Configuration;
+using System.CheckerConfiguration;
 using System.Diagnostics;
 #endif
 using System.IO;
@@ -26,11 +26,11 @@ namespace PChecker.Instrumentation
         internal static string OutputDirectory = string.Empty;
 
         /// <summary>
-        /// Set the <see cref="OutputDirectory"/> to either the user-specified <see cref="Configuration.OutputFilePath"/>
-        /// or to a unique output directory name in the same directory as <see cref="Configuration.AssemblyToBeAnalyzed"/>
+        /// Set the <see cref="OutputDirectory"/> to either the user-specified <see cref="CheckerConfiguration.OutputFilePath"/>
+        /// or to a unique output directory name in the same directory as <see cref="CheckerConfiguration.AssemblyToBeAnalyzed"/>
         /// and starting with its name.
         /// </summary>
-        public static void SetOutputDirectory(Configuration configuration, bool makeHistory)
+        public static void SetOutputDirectory(CheckerConfiguration checkerConfiguration, bool makeHistory)
         {
             if (OutputDirectory.Length > 0)
             {
@@ -38,7 +38,7 @@ namespace PChecker.Instrumentation
             }
 
             // Do not create the output directory yet if we have to scroll back the history first.
-            OutputDirectory = Reporter.GetOutputDirectory(configuration.OutputFilePath, configuration.AssemblyToBeAnalyzed,
+            OutputDirectory = Reporter.GetOutputDirectory(checkerConfiguration.OutputFilePath, checkerConfiguration.AssemblyToBeAnalyzed,
                 "POutput", createDir: !makeHistory);
             if (!makeHistory)
             {

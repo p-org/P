@@ -26,7 +26,7 @@ namespace Plang
         /// <param name="projectFile">Path to the P project file</param>
         /// <param name="job">out parameter of P compilation job, after parsing the project file</param>
         /// <returns></returns>
-        public bool ParseProjectFile(string projectFile, out CompilationJob job)
+        public bool ParseProjectFile(string projectFile, out CompilerConfiguration job)
         {
             job = null;
             try
@@ -63,9 +63,8 @@ namespace Plang
                 // get target language
                 GetTargetLanguage(projectFilePath, ref outputLanguage, ref generateSourceMaps);
 
-                job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory), outputDirectory,
-                    outputLanguage: outputLanguage, inputFiles: inputFiles.ToList(), projectName: projectName, projectFilePath.Directory,
-                    generateSourceMaps: generateSourceMaps, projectDependencies: projectDependencies.ToList());
+                job = new CompilerConfiguration(output: new DefaultCompilerOutput(outputDirectory), outputDir: outputDirectory,
+                    outputLanguage: outputLanguage, inputFiles: inputFiles.ToList(), projectName: projectName, projectRoot: projectFilePath.Directory, projectDependencies: projectDependencies.ToList());
 
                 commandlineOutput.WriteInfo($"----------------------------------------");
                 return true;
@@ -188,11 +187,7 @@ namespace Plang
                 case "java":
                     outputLanguage = CompilerOutput.Java;
                     break;
-                
-                case "rvm":
-                    outputLanguage = CompilerOutput.Rvm;
-                    break;
-                
+
                 case "symbolic":
                     outputLanguage = CompilerOutput.Symbolic;
                     break;

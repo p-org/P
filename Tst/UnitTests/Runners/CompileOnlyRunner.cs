@@ -45,7 +45,7 @@ namespace UnitTests.Runners
             StringWriter stderrWriter = new StringWriter();
             TestCaseOutputStream outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);
 
-            CompilationJob job = new CompilationJob(outputStream, scratchDirectory, compilerOutput, inputFiles, Path.GetFileNameWithoutExtension(inputFiles.First()));
+            CompilerConfiguration job = new CompilerConfiguration(outputStream, scratchDirectory, compilerOutput, inputFiles, Path.GetFileNameWithoutExtension(inputFiles.First()));
 
             try
             {

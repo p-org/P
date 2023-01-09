@@ -58,9 +58,9 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Initializes a new instance of the <see cref="ControlledRuntime"/> class.
         /// </summary>
-        internal ControlledRuntime(Configuration configuration, ISchedulingStrategy strategy,
+        internal ControlledRuntime(CheckerConfiguration checkerConfiguration, ISchedulingStrategy strategy,
             IRandomValueGenerator valueGenerator)
-            : base(configuration, valueGenerator)
+            : base(checkerConfiguration, valueGenerator)
         {
             IsExecutionControlled = true;
 
@@ -70,12 +70,12 @@ namespace PChecker.SystematicTesting
             this.CoverageInfo = new CoverageInfo();
 
             var scheduleTrace = new ScheduleTrace();
-            if (configuration.IsLivenessCheckingEnabled)
+            if (checkerConfiguration.IsLivenessCheckingEnabled)
             {
-                strategy = new TemperatureCheckingStrategy(configuration, this.Monitors, strategy);
+                strategy = new TemperatureCheckingStrategy(checkerConfiguration, this.Monitors, strategy);
             }
 
-            this.Scheduler = new OperationScheduler(this, strategy, scheduleTrace, this.Configuration);
+            this.Scheduler = new OperationScheduler(this, strategy, scheduleTrace, this.CheckerConfiguration);
             this.TaskController = new TaskController(this, this.Scheduler);
 
             // Update the current asynchronous control flow with this runtime instance,
@@ -310,7 +310,7 @@ namespace PChecker.SystematicTesting
             actor.Configure(this, id, actorManager, eventQueue);
             actor.SetupEventHandlers();
 
-            if (this.Configuration.ReportActivityCoverage)
+            if (this.CheckerConfiguration.ReportActivityCoverage)
             {
                 this.ReportActivityCoverageOfActor(actor);
             }
@@ -559,7 +559,7 @@ namespace PChecker.SystematicTesting
         internal override IActorTimer CreateActorTimer(TimerInfo info, Actor owner)
         {
             var id = this.CreateActorId(typeof(MockStateMachineTimer));
-            this.CreateActor(id, typeof(MockStateMachineTimer), new TimerSetupEvent(info, owner, this.Configuration.TimeoutDelay));
+            this.CreateActor(id, typeof(MockStateMachineTimer), new TimerSetupEvent(info, owner, this.CheckerConfiguration.TimeoutDelay));
             return this.Scheduler.GetOperationWithId<ActorOperation>(id.Value).Actor as MockStateMachineTimer;
         }
 
@@ -580,7 +580,7 @@ namespace PChecker.SystematicTesting
 
             this.LogWriter.LogCreateMonitor(type.FullName);
 
-            if (this.Configuration.ReportActivityCoverage)
+            if (this.CheckerConfiguration.ReportActivityCoverage)
             {
                 this.ReportActivityCoverageOfMonitor(monitor);
             }
@@ -955,7 +955,7 @@ namespace PChecker.SystematicTesting
 
         /// <summary>
         /// Get the coverage graph information (if any). This information is only available
-        /// when <see cref="Configuration.ReportActivityCoverage"/> is enabled.
+        /// when <see cref="CheckerConfiguration.ReportActivityCoverage"/> is enabled.
         /// </summary>
         /// <returns>A new CoverageInfo object.</returns>
         public CoverageInfo GetCoverageInfo()
@@ -966,7 +966,7 @@ namespace PChecker.SystematicTesting
                 var builder = this.LogWriter.GetLogsOfType<ActorRuntimeLogGraphBuilder>().FirstOrDefault();
                 if (builder != null)
                 {
-                    result.CoverageGraph = builder.SnapshotGraph(this.Configuration.IsDgmlBugGraph);
+                    result.CoverageGraph = builder.SnapshotGraph(this.CheckerConfiguration.IsDgmlBugGraph);
                 }
 
                 var eventCoverage = this.LogWriter.GetLogsOfType<ActorRuntimeLogEventCoverage>().FirstOrDefault();

@@ -7,12 +7,10 @@ namespace Plang.Compiler
     public class DefaultCompilerOutput : ICompilerOutput
     {
         private readonly DirectoryInfo outputDirectory;
-        private readonly DirectoryInfo aspectjOutputDirectory;
 
-        public DefaultCompilerOutput(DirectoryInfo outputDirectory, DirectoryInfo aspectjOutputDirectory = null)
+        public DefaultCompilerOutput(DirectoryInfo outputDirectory)
         {
             this.outputDirectory = outputDirectory;
-            this.aspectjOutputDirectory = aspectjOutputDirectory;
         }
 
         public void WriteMessage(string msg, SeverityKind severity)
@@ -43,13 +41,8 @@ namespace Plang.Compiler
 
         public void WriteFile(CompiledFile file)
         {
-            if (Path.GetExtension(file.FileName) == ".aj"){
-                string outputPath = Path.Combine(aspectjOutputDirectory.FullName, file.FileName);
-                File.WriteAllText(outputPath, file.Contents);
-            } else {
-                string outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
-                File.WriteAllText(outputPath, file.Contents);
-            }
+            string outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
+            File.WriteAllText(outputPath, file.Contents);
         }
 
         public void WriteError(string msg)

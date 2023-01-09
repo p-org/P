@@ -4,7 +4,7 @@ namespace Plang.Compiler.Backend.Java
 {
     internal class CompilationContext : CompilationContextBase
     {
-        public CompilationContext(ICompilationJob job)
+        public CompilationContext(ICompilerConfiguration job)
             : base(job)
         {
             Names = new NameManager(job.ProjectName, "PGEN_");

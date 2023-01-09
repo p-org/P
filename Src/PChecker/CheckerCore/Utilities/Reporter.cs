@@ -22,7 +22,7 @@ namespace PChecker.Utilities
         /// <param name="isDebug">Is a debug report</param>
         internal static void EmitTestingCoverageReport(TestReport report, uint? processId = null, bool isDebug = false)
         {
-            string file = Path.GetFileNameWithoutExtension(report.Configuration.AssemblyToBeAnalyzed);
+            string file = Path.GetFileNameWithoutExtension(report.CheckerConfiguration.AssemblyToBeAnalyzed);
             if (isDebug && processId != null)
             {
                 file += "_" + processId;

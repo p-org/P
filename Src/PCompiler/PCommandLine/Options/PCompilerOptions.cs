@@ -2,175 +2,124 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using PChecker;
+using PChecker.IO;
+using PChecker.Utilities;
 using Plang.Compiler;
 
 namespace Plang
 {
-    public class PCompilerOptions
+    internal sealed class PCompilerOptions
     {
         /// <summary>
-        /// Parse the commandline arguments to construct the compilation job
+        /// The command line parser to use.
         /// </summary>
-        /// <param name="args">Commandline arguments</param>
-        /// <param name="job">Generated Compilation job</param>
-        /// <returns></returns>
-        public static bool ParseCommandLineOptions(IEnumerable<string> args, out CompilationJob job)
+        private readonly CommandLineArgumentParser Parser;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PCompilerOptions"/> class.
+        /// </summary>
+        internal PCompilerOptions()
         {
-            string targetName = null;
-            CompilerOutput outputLanguage = CompilerOutput.CSharp;
-            DirectoryInfo outputDirectory = null;
-            DirectoryInfo aspectjOutputDirectory = null;
-            HashSet<string> inputFiles = new HashSet<string>();
-            Console.Out.WriteLine($"----------------------------------------");
-            job = null;
+            this.Parser = new CommandLineArgumentParser("p compile",
+                "The P compiler compiles all the P files in the project together and generates the executable that can be checked for correctness by the P checker");
+
+            
+            var projectGroup = this.Parser.GetOrCreateGroup("project", "P Project: Compiling using `.pproj` file");
+            projectGroup.AddArgument("pproj", "pp", "P project file to compile (*.pproj). + " +
+                                                    "If this option is not passed the compiler searches for a `*.pproj` in the current folder and compiles it");
+
+            var pfilesGroup = this.Parser.GetOrCreateGroup("commandline", "Compiling P files through commandline");
+            pfilesGroup.AddArgument("pfiles", "pf", "List of P files to compile").IsMultiValue = true;
+            pfilesGroup.AddArgument("generate", "g", "Generate output :: (csharp, symbolic, java, c). (default: csharp)");
+            pfilesGroup.AddArgument("target", "t", "Target or name of the compiled output");
+            pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path");
+        }
+
+        /// <summary>
+        /// Parses the command line options and returns a checkerConfiguration.
+        /// </summary>
+        /// <returns>The CheckerConfiguration object populated with the parsed command line options.</returns>
+        internal CompilerConfiguration Parse(string[] args)
+        {
+            var compilationJob = new CompilerConfiguration();
             try
             {
-                foreach (string x in args)
+                var result = this.Parser.ParseArguments(args);
+                foreach (var arg in result)
                 {
-                    string arg = x;
-                    string colonArg = null;
-                    if (arg[0] == '-')
-                    {
-                        int colonIndex = arg.IndexOf(':');
-                        if (colonIndex >= 0)
-                        {
-                            arg = x.Substring(0, colonIndex);
-                            colonArg = x.Substring(colonIndex + 1);
-                        }
-
-                        switch (arg.Substring(1).ToLowerInvariant())
-                        {
-                            case "t":
-                            case "target":
-                                if (colonArg == null)
-                                {
-                                    throw new CommandlineParsingError(
-                                        "Missing target project name (-t:<project name>)");
-                                }
-                                else if (targetName == null)
-                                {
-                                    targetName = colonArg;
-                                }
-                                else
-                                {
-                                    throw new CommandlineParsingError("Only one target must be specified with (-t)");
-                                }
-
-                                break;
-
-                            case "g":
-                            case "generate":
-                                switch (colonArg?.ToLowerInvariant())
-                                {
-                                    case null:
-                                        throw new CommandlineParsingError(
-                                            "Missing generation argument, expecting generate:[C,CSharp,Java,RVM,Symbolic]");
-                                    case "c":
-                                        outputLanguage = CompilerOutput.C;
-                                        break;
-                                    case "csharp":
-                                        outputLanguage = CompilerOutput.CSharp;
-                                        break;
-                                    case "java":
-                                        outputLanguage = CompilerOutput.Java;
-                                        break;
-                                    case "rvm":
-                                        outputLanguage = CompilerOutput.Rvm;
-                                        break;
-                                    case "symbolic":
-                                        outputLanguage = CompilerOutput.Symbolic;
-                                        break;
-                                    default:
-                                        throw new CommandlineParsingError(
-                                            $"Unrecognized generate option '{colonArg}', expecting one of C, CSharp, Java, RVM, Symbolic.");
-                                }
-
-                                break;
-
-                            case "o":
-                            case "outputdir":
-                                if (colonArg == null)
-                                {
-                                    throw new CommandlineParsingError(
-                                        "Must supply path for output directory (-o:<output directory>)");
-                                }
-
-                                outputDirectory = Directory.CreateDirectory(colonArg);
-                                break;
-
-                            case "a":
-                            case "aspectoutputdir":
-                                if (colonArg == null)
-                                {
-                                    throw new CommandlineParsingError(
-                                        "Must supply path for aspectj output directory (-a:<aspectj output directory>)");
-                                }
-
-                                aspectjOutputDirectory = Directory.CreateDirectory(colonArg);
-                                break;
-
-                            default:
-                                //TODO:
-                                // PCheckerOptions.PrintUsage();
-                                throw new CommandlineParsingError($"Illegal Command {arg.Substring(1)}");
-                        }
-                    }
-                    else
-                    {
-                        if (CheckFileValidity.IsLegalPFile(arg, out FileInfo fullPathName))
-                        {
-                            inputFiles.Add(fullPathName.FullName);
-                            Console.Out.WriteLine($"....... includes p file: {fullPathName.FullName}");
-                        }
-                        else
-                        {
-                            throw new CommandlineParsingError(
-                                $"Illegal P file name {arg} (file name cannot have special characters) or file not found.");
-                        }
-                    }
+                    UpdateConfigurationWithParsedArgument(compilationJob, arg);
                 }
 
-                if (inputFiles.Count == 0)
-                {
-                    Console.Error.WriteLine("At least one .p file must be provided");
-                    return false;
-                }
-
-                string projectName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles.FirstOrDefault());
-                if (!CheckFileValidity.IsLegalProjectName(projectName))
-                {
-                    Console.Error.WriteLine($"{projectName} is not a legal project name");
-                    return false;
-                }
-
-                if (outputDirectory == null)
-                {
-                    outputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
-                }
-
-                if (aspectjOutputDirectory == null)
-                {
-                    aspectjOutputDirectory = outputDirectory;
-                }
-
-                job = new CompilationJob(output: new DefaultCompilerOutput(outputDirectory, aspectjOutputDirectory),
-                    outputDirectory,
-                    outputLanguage: outputLanguage, inputFiles: inputFiles.ToList(), projectName: projectName,
-                    projectRoot: outputDirectory);
-                Console.Out.WriteLine($"----------------------------------------");
-                return true;
+                SanitizeConfiguration(compilationJob);
             }
-            catch (CommandlineParsingError ex)
+            catch (CommandLineException ex)
             {
-                Console.Out.WriteLine($"<Error parsing commandline>:\n {ex.Message}");
-                return false;
+                if ((from arg in ex.Result where arg.LongName == "version" select arg).Any())
+                {
+                    WriteVersion();
+                    Environment.Exit(1);
+                }
+                else
+                {
+                    this.Parser.PrintHelp(Console.Out);
+                    Error.ReportAndExit(ex.Message);
+                }
             }
-            catch (Exception other)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine(
-                    $"<Internal Error>:\n {other.Message}\n <Please report to the P team (p-devs@amazon.com) or create an issue on GitHub, Thanks!>");
-                Console.Error.WriteLine($"{other.StackTrace}\n");
-                return false;
+                this.Parser.PrintHelp(Console.Out);
+                Error.ReportAndExit(ex.Message);
+            }
+
+            return compilationJob;
+        }
+
+        /// <summary>
+        /// Updates the checkerConfiguration with the specified parsed argument.
+        /// </summary>
+        private static void UpdateConfigurationWithParsedArgument(CompilerConfiguration compilerConfiguration, CommandLineArgument option)
+        {
+            switch (option.LongName)
+            {
+                case "outdir":
+                    break;
+                
+                default:
+                    throw new Exception(string.Format("Unhandled parsed argument: '{0}'", option.LongName));
+            }
+        }
+
+        private static void WriteVersion()
+        {
+            Console.WriteLine("Version: {0}", typeof(PCheckerOptions).Assembly.GetName().Version);
+        }
+
+        /// <summary>
+        /// Checks the checkerConfiguration for errors and performs post-processing updates.
+        /// </summary>
+        private static void SanitizeConfiguration(CompilerConfiguration compilerConfiguration)
+        {
+            if (compilerConfiguration.InputFiles.Count == 0)
+            {
+                Error.ReportAndExit("Provide at least one input p file");
+            }
+
+            foreach (var pfile in compilerConfiguration.InputFiles)
+            {
+                if (CheckFileValidity.IsLegalPFile(pfile, out FileInfo fullPathName))
+                {
+                    Console.Out.WriteLine($"....... includes p file: {fullPathName.FullName}");
+                }
+                else
+                {
+                    Error.ReportAndExit($"Illegal P file name {fullPathName.FullName} (file name cannot have special characters) or file not found.");
+                }
+            }
+            
+            if (!CheckFileValidity.IsLegalProjectName(compilerConfiguration.ProjectName))
+            {
+                Error.ReportAndExit($"{compilerConfiguration.ProjectName} is not a legal project name");
             }
         }
     }

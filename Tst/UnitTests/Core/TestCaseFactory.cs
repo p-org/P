@@ -24,7 +24,7 @@ namespace UnitTests.Core
         }
 
         /// <summary>
-        ///     Box a test case from the given directory and parsed Prt run configuration
+        ///     Box a test case from the given directory and parsed Prt run checkerConfiguration
         /// </summary>
         /// <param name="testDir">The directory containing P source files</param>
         /// <param name="output">The desired output language</param>

@@ -7,7 +7,7 @@ namespace Plang.Compiler.Backend
     {
         private bool lineHasBeenIndented;
 
-        protected CompilationContextBase(ICompilationJob job)
+        protected CompilationContextBase(ICompilerConfiguration job)
         {
             Job = job;
             Handler = job.Handler;
@@ -15,7 +15,7 @@ namespace Plang.Compiler.Backend
             LocationResolver = job.LocationResolver;
         }
 
-        public ICompilationJob Job { get; }
+        public ICompilerConfiguration Job { get; }
         private int IndentationLevel { get; set; }
 
         public string ProjectName { get; }

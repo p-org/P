@@ -7,7 +7,7 @@ namespace Plang.Compiler.Backend.Rvm
 {
     internal class CompilationContext : CompilationContextBase
     {
-        public CompilationContext(ICompilationJob job)
+        public CompilationContext(ICompilerConfiguration job)
             : base(job)
         {
             Names = new RvmNameManager("PGEN_");

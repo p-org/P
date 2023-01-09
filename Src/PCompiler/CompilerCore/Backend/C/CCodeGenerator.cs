@@ -17,7 +17,7 @@ namespace Plang.Compiler.Backend.C
 {
     public class CCodeGenerator : ICodeGenerator
     {
-        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
+        public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
         {
             return PrtCodeGeneratorImpl.GenerateCode(job, globalScope);
         }
@@ -36,7 +36,7 @@ namespace Plang.Compiler.Backend.C
             this.context = context;
         }
 
-        public static IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
+        public static IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
         {
             CompilationContext context = new CompilationContext(job);
             PrtCodeGeneratorImpl generator = new PrtCodeGeneratorImpl(context);
@@ -109,10 +109,7 @@ namespace Plang.Compiler.Backend.C
 
         private void TraceSourceLine(TextWriter output, SourceLocation location)
         {
-            if (context.Job.GenerateSourceMaps)
-            {
-                context.WriteLine(output, $"#line {location.Line} \"{location.File.Name}\"");
-            }
+            context.WriteLine(output, $"#line {location.Line} \"{location.File.Name}\"");
         }
 
         #endregion Top-level generation methods

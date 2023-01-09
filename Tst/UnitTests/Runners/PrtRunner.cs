@@ -78,8 +78,8 @@ namespace UnitTests.Runners
         {
             Compiler compiler = new Compiler();
             TestExecutionStream outputStream = new TestExecutionStream(scratchDirectory);
-            CompilationJob compilationJob = new CompilationJob(outputStream, scratchDirectory, CompilerOutput.C, sources.Select(x => x.FullName).ToList(), "main");
-            compiler.Compile(compilationJob);
+            CompilerConfiguration compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory, CompilerOutput.C, sources.Select(x => x.FullName).ToList(), "main");
+            compiler.Compile(compilerConfiguration);
         }
 
         private static bool RunMsBuildExe(string tmpDir, out string stdout, out string stderr)
@@ -104,7 +104,7 @@ namespace UnitTests.Runners
                 out stdout,
                 out stderr,
                 msbuildpath,
-                $"/p:Configuration={Constants.BuildConfiguration}",
+                $"/p:CheckerConfiguration={Constants.BuildConfiguration}",
                 $"/p:Platform={Constants.Platform}", "/t:Build");
             return exitStatus == 0;
         }

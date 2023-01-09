@@ -29,7 +29,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         internal Dictionary<Function, int> anonFuncIds;
 
-        internal CompilationContext(ICompilationJob job)
+        internal CompilationContext(ICompilerConfiguration job)
             : base(job)
         {
             if (!IsSafeJavaIdentifier(job.ProjectName))

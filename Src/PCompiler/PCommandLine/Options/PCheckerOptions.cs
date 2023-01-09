@@ -13,8 +13,6 @@ namespace Plang
 {
     internal sealed class PCheckerOptions
     {
-        
-         
         /// <summary>
         /// The command line parser to use.
         /// </summary>
@@ -25,40 +23,36 @@ namespace Plang
         /// </summary>
         internal PCheckerOptions()
         {
-            this.Parser = new CommandLineArgumentParser("p",
-                "The P checker enables you to systematically explore a specified P test case, generate " +
-                "a reproducible bug-trace if a bug is found, and replay a bug-trace.");
+            this.Parser = new CommandLineArgumentParser("p check",
+                "The P checker enables systematic exploration of a specified P test case, it generates " +
+                "a reproducible bug-trace if a bug is found, and also allows replaying a bug-trace.");
 
             var basicOptions = this.Parser.GetOrCreateGroup("Basic", "Basic options");
-            var commandArg = basicOptions.AddPositionalArgument("command", "The operation perform (test, replay)");
-            commandArg.AllowedValues = new List<string>(new string[] { "test", "replay" });
-            basicOptions.AddPositionalArgument("path", "Path to the P program to test");
-            basicOptions.AddArgument("testcase", "tc", "Suffix of the test method to execute");
+            basicOptions.AddPositionalArgument("path", "Path to the P program dll to check");
+            basicOptions.AddArgument("testcase", "tc", "Test case to explore");
 
             var basicGroup = this.Parser.GetOrCreateGroup("Basic", "Basic options");
             basicGroup.AddArgument("timeout", "t", "Timeout in seconds (disabled by default)", typeof(uint));
-            basicGroup.AddArgument("outdir", "o", "Dump output to directory x (absolute path or relative to current directory");
-            basicGroup.AddArgument("verbose", "v", "Enable verbose log output during testing", typeof(bool));
+            basicGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path");
+            basicGroup.AddArgument("verbose", "v", "Enable verbose log output during exploration", typeof(bool));
             basicGroup.AddArgument("debug", "d", "Enable debugging", typeof(bool)).IsHidden = true;
             
-            var testingGroup = this.Parser.GetOrCreateGroup("testingGroup", "Systematic testing options");
-            testingGroup.DependsOn = new CommandLineArgumentDependency() { Name = "command", Value = "test" };
-            testingGroup.AddArgument("iterations", "i", "Number of schedules to explore for bugs", typeof(uint));
-            testingGroup.AddArgument("max-steps", "ms", @"Max scheduling steps to be explored during systematic testing (by default 10,000 unfair and 100,000 fair steps).
+            var testingGroup = this.Parser.GetOrCreateGroup("testingGroup", "Systematic exploration options");
+            testingGroup.AddArgument("iterations", "i", "Number of schedules to explore", typeof(uint));
+            testingGroup.AddArgument("max-steps", "ms", @"Max scheduling steps to be explored during systematic exploration (by default 10,000 unfair and 100,000 fair steps).
 You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue = true;
-            testingGroup.AddArgument("timeout-delay", null, "Controls the frequency of timeouts by built-in timers (not a unit of time)", typeof(uint));
             testingGroup.AddArgument("fail-on-maxsteps", null, "Consider it a bug if the test hits the specified max-steps", typeof(bool));
-            testingGroup.AddArgument("liveness-temperature-threshold", null, "Specify the liveness temperature threshold is the liveness temperature value that triggers a liveness bug", typeof(uint));
-            testingGroup.AddArgument("parallel", "p", "Number of parallel testing processes (the default '0' runs the test in-process)", typeof(uint));
-            testingGroup.AddArgument("sch-random", null, "Choose the random scheduling strategy (this is the default)", typeof(bool));
-            testingGroup.AddArgument("sch-probabilistic", "sp", "Choose the probabilistic scheduling strategy with given probability for each scheduling decision where the probability is " +
-                "specified as the integer N in the equation 0.5 to the power of N.  So for N=1, the probability is 0.5, for N=2 the probability is 0.25, N=3 you get 0.125, etc.", typeof(uint));
-            testingGroup.AddArgument("sch-pct", null, "Choose the PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
-            testingGroup.AddArgument("sch-fairpct", null, "Choose the fair PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
+            testingGroup.AddArgument("liveness-temperature-threshold", null, "Specify the liveness temperature threshold is the liveness temperature value that triggers a liveness bug", typeof(uint)).IsHidden = true;
+            
+            var schedulingGroup = this.Parser.GetOrCreateGroup("schedulingGroup", "Search prioritization options");
+            schedulingGroup.AddArgument("sch-random", null, "Choose the random scheduling strategy (this is the default)", typeof(bool));
+            schedulingGroup.AddArgument("sch-probabilistic", "sp", "Choose the probabilistic scheduling strategy with given probability for each scheduling decision where the probability is " +
+                                                                   "specified as the integer N in the equation 0.5 to the power of N.  So for N=1, the probability is 0.5, for N=2 the probability is 0.25, N=3 you get 0.125, etc.", typeof(uint));
+            schedulingGroup.AddArgument("sch-pct", null, "Choose the PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
+            schedulingGroup.AddArgument("sch-fairpct", null, "Choose the fair PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
 
             var replayOptions = this.Parser.GetOrCreateGroup("replayOptions", "Replay and debug options");
-            replayOptions.DependsOn = new CommandLineArgumentDependency() { Name = "command", Value = "replay" };
-            replayOptions.AddPositionalArgument("schedule", "Schedule file to replay");
+            replayOptions.AddArgument("replay", "r", "Schedule file to replay");
             
             var advancedGroup = this.Parser.GetOrCreateGroup("advancedGroup", "Advanced options");
             advancedGroup.AddArgument("explore", null, "Keep testing until the bound (e.g. iteration or time) is reached", typeof(bool));
@@ -70,13 +64,12 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
         }
 
         /// <summary>
-        /// Parses the command line options and returns a configuration.
+        /// Parses the command line options and returns a checkerConfiguration.
         /// </summary>
-        /// <returns>The Configuration object populated with the parsed command line options.</returns>
-        internal Configuration Parse(string[] args)
+        /// <returns>The CheckerConfiguration object populated with the parsed command line options.</returns>
+        internal CheckerConfiguration Parse(string[] args)
         {
-            var configuration = Configuration.Create();
-
+            var configuration = CheckerConfiguration.Create();
             try
             {
                 var result = this.Parser.ParseArguments(args);
@@ -110,49 +103,44 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
         }
 
         /// <summary>
-        /// Updates the configuration with the specified parsed argument.
+        /// Updates the checkerConfiguration with the specified parsed argument.
         /// </summary>
-        private static void UpdateConfigurationWithParsedArgument(Configuration configuration, CommandLineArgument option)
+        private static void UpdateConfigurationWithParsedArgument(CheckerConfiguration checkerConfiguration, CommandLineArgument option)
         {
             switch (option.LongName)
             {
-                case "command":
-                    configuration.ToolCommand = (string)option.Value;
-                    break;
                 case "outdir":
-                    configuration.OutputFilePath = (string)option.Value;
+                    checkerConfiguration.OutputFilePath = (string)option.Value;
                     break;
                 case "verbose":
-                    configuration.IsVerbose = true;
+                    checkerConfiguration.IsVerbose = true;
                     break;
                 case "debug":
-                    configuration.EnableDebugging = true;
+                    checkerConfiguration.EnableDebugging = true;
                     Debug.IsEnabled = true;
                     break;
                 case "timeout":
-                    configuration.Timeout = (int)(uint)option.Value;
+                    checkerConfiguration.Timeout = (int)(uint)option.Value;
                     break;
                 case "path":
-                    configuration.AssemblyToBeAnalyzed = (string)option.Value;
+                    checkerConfiguration.AssemblyToBeAnalyzed = (string)option.Value;
                     break;
                 case "testcase":
-                    configuration.TestCaseName = (string)option.Value;
+                    checkerConfiguration.TestCaseName = (string)option.Value;
                     break;
                 case "seed":
-                    configuration.RandomGeneratorSeed = (uint)option.Value;
+                    checkerConfiguration.RandomGeneratorSeed = (uint)option.Value;
                     break;
                 case "sch-random":
-                case "sch-dfs":
-                case "sch-portfolio":
-                    configuration.SchedulingStrategy = option.LongName.Substring(4);
+                    checkerConfiguration.SchedulingStrategy = option.LongName.Substring(4);
                     break;
                 case "sch-probabilistic":
                 case "sch-pct":
                 case "sch-fairpct":
-                    configuration.SchedulingStrategy = option.LongName.Substring(4);
-                    configuration.StrategyBound = (int)(uint)option.Value;
+                    checkerConfiguration.SchedulingStrategy = option.LongName.Substring(4);
+                    checkerConfiguration.StrategyBound = (int)(uint)option.Value;
                     break;
-                case "schedule":
+                case "replay":
                     {
                         string filename = (string)option.Value;
                         string extension = System.IO.Path.GetExtension(filename);
@@ -162,81 +150,30 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                                 "'--replay x', where 'x' has extension '.schedule'.");
                         }
 
-                        configuration.ScheduleFile = filename;
+                        checkerConfiguration.ScheduleFile = filename;
+                        checkerConfiguration.SchedulingStrategy = "replay";
+                        checkerConfiguration.EnableColoredConsoleOutput = true;
+                        checkerConfiguration.DisableEnvironmentExit = false;
                     }
 
-                    break;
-                case "version":
-                    WriteVersion();
-                    Environment.Exit(1);
-                    break;
-                case "break":
-                    configuration.AttachDebugger = true;
                     break;
                 case "iterations":
-                    configuration.TestingIterations = (int)(uint)option.Value;
+                    checkerConfiguration.TestingIterations = (int)(uint)option.Value;
                     break;
-                case "parallel":
-                    configuration.ParallelBugFindingTasks = (uint)option.Value;
-                    break;
-                case "wait-for-testing-processes":
-                    configuration.WaitForTestingProcesses = false;
-                    break;
-                case "testing-scheduler-ipaddress":
-                    {
-                        var ipAddress = (string)option.Value;
-                        int port = 0;
-                        if (ipAddress.Contains(":"))
-                        {
-                            string[] parts = ipAddress.Split(':');
-                            if (parts.Length != 2 || !int.TryParse(parts[1], out port))
-                            {
-                                Error.ReportAndExit("Please give a valid port number for --testing-scheduler-ipaddress option");
-                            }
-
-                            ipAddress = parts[0];
-                        }
-
-                        if (!IPAddress.TryParse(ipAddress, out _))
-                        {
-                            Error.ReportAndExit("Please give a valid ip address for --testing-scheduler-ipaddress option");
-                        }
-
-                        configuration.TestingSchedulerIpAddress = ipAddress + ":" + port;
-                    }
-
-                    break;
-                case "run-as-parallel-testing-task":
-                    configuration.RunAsParallelBugFindingTask = true;
-                    break;
-                case "testing-scheduler-endpoint":
-                    configuration.TestingSchedulerEndPoint = (string)option.Value;
-                    break;
-                case "testing-process-id":
-                    configuration.TestingProcessId = (uint)option.Value;
-                    break;
+                
                 case "graph":
-                    configuration.IsDgmlGraphEnabled = true;
-                    configuration.IsDgmlBugGraph = false;
+                    checkerConfiguration.IsDgmlGraphEnabled = true;
+                    checkerConfiguration.IsDgmlBugGraph = false;
                     break;
                 case "graph-bug":
-                    configuration.IsDgmlGraphEnabled = true;
-                    configuration.IsDgmlBugGraph = true;
+                    checkerConfiguration.IsDgmlGraphEnabled = true;
+                    checkerConfiguration.IsDgmlBugGraph = true;
                     break;
                 case "xml-trace":
-                    configuration.IsXmlLogEnabled = true;
-                    break;
-                case "actor-runtime-log":
-                    configuration.CustomActorRuntimeLogType = (string)option.Value;
+                    checkerConfiguration.IsXmlLogEnabled = true;
                     break;
                 case "explore":
-                    configuration.PerformFullExploration = true;
-                    break;
-                case "coverage":
-                    configuration.ReportActivityCoverage = true;
-                    break;
-                case "timeout-delay":
-                    configuration.TimeoutDelay = (uint)option.Value;
+                    checkerConfiguration.PerformFullExploration = true;
                     break;
                 case "max-steps":
                     {
@@ -251,26 +188,20 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                         if (values.Length == 2)
                         {
                             j = values[1];
-                            configuration.UserExplicitlySetMaxFairSchedulingSteps = true;
+                            checkerConfiguration.UserExplicitlySetMaxFairSchedulingSteps = true;
                         }
                         else
                         {
                             j = 10 * i;
                         }
 
-                        configuration.MaxUnfairSchedulingSteps = (int)i;
-                        configuration.MaxFairSchedulingSteps = (int)j;
+                        checkerConfiguration.MaxUnfairSchedulingSteps = (int)i;
+                        checkerConfiguration.MaxFairSchedulingSteps = (int)j;
                     }
 
                     break;
                 case "fail-on-maxsteps":
-                    configuration.ConsiderDepthBoundHitAsBug = true;
-                    break;
-                case "prefix":
-                    configuration.SafetyPrefixBound = (int)option.Value;
-                    break;
-                case "liveness-temperature-threshold":
-                    configuration.LivenessTemperatureThreshold = (int)(uint)option.Value;
+                    checkerConfiguration.ConsiderDepthBoundHitAsBug = true;
                     break;
                 default:
                     throw new Exception(string.Format("Unhandled parsed argument: '{0}'", option.LongName));
@@ -283,50 +214,37 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
         }
 
         /// <summary>
-        /// Checks the configuration for errors and performs post-processing updates.
+        /// Checks the checkerConfiguration for errors and performs post-processing updates.
         /// </summary>
-        private static void SanitizeConfiguration(Configuration configuration)
+        private static void SanitizeConfiguration(CheckerConfiguration checkerConfiguration)
         {
-            if (configuration.LivenessTemperatureThreshold == 0 &&
-                configuration.MaxFairSchedulingSteps > 0)
+            if (checkerConfiguration.LivenessTemperatureThreshold == 0 &&
+                checkerConfiguration.MaxFairSchedulingSteps > 0)
             {
-                configuration.LivenessTemperatureThreshold = configuration.MaxFairSchedulingSteps / 2;
+                checkerConfiguration.LivenessTemperatureThreshold = checkerConfiguration.MaxFairSchedulingSteps / 2;
             }
 
-            if (string.IsNullOrEmpty(configuration.AssemblyToBeAnalyzed) &&
-                string.Compare(configuration.ToolCommand, "test", StringComparison.OrdinalIgnoreCase) == 0)
-            {
-                Error.ReportAndExit("Please give a valid path to a Coyote program's dll using 'test x'.");
-            }
-
-            if (configuration.SchedulingStrategy != "portfolio" &&
-                configuration.SchedulingStrategy != "random" &&
-                configuration.SchedulingStrategy != "pct" &&
-                configuration.SchedulingStrategy != "fairpct" &&
-                configuration.SchedulingStrategy != "probabilistic" &&
-                configuration.SchedulingStrategy != "dfs")
+            if (checkerConfiguration.SchedulingStrategy != "portfolio" &&
+                checkerConfiguration.SchedulingStrategy != "random" &&
+                checkerConfiguration.SchedulingStrategy != "pct" &&
+                checkerConfiguration.SchedulingStrategy != "fairpct" &&
+                checkerConfiguration.SchedulingStrategy != "probabilistic" &&
+                checkerConfiguration.SchedulingStrategy != "dfs")
             {
                 Error.ReportAndExit("Please provide a scheduling strategy (see --sch* options)");
             }
 
-            if (configuration.MaxFairSchedulingSteps < configuration.MaxUnfairSchedulingSteps)
+            if (checkerConfiguration.MaxFairSchedulingSteps < checkerConfiguration.MaxUnfairSchedulingSteps)
             {
                 Error.ReportAndExit("For the option '-max-steps N[,M]', please make sure that M >= N.");
             }
 
-            if (configuration.SafetyPrefixBound > 0 &&
-                configuration.SafetyPrefixBound >= configuration.MaxUnfairSchedulingSteps)
+            if (checkerConfiguration.SafetyPrefixBound > 0 &&
+                checkerConfiguration.SafetyPrefixBound >= checkerConfiguration.MaxUnfairSchedulingSteps)
             {
                 Error.ReportAndExit("Please give a safety prefix bound that is less than the " +
                     "max scheduling steps bound.");
             }
-
-#if NETCOREAPP
-            if (configuration.ReportCodeCoverage)
-            {
-                Error.ReportAndExit("We do not yet support code coverage reports when using the .NET CheckerCore runtime.");
-            }
-#endif
         }
     }
 }

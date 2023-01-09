@@ -20,7 +20,7 @@ namespace Plang.Compiler.Backend.C
 
         private readonly Dictionary<PEvent, int> userEventNumbering = new Dictionary<PEvent, int>();
 
-        public CompilationContext(ICompilationJob job) : base(job)
+        public CompilationContext(ICompilerConfiguration job) : base(job)
         {
             Names = new CNameManager("P_");
             HeaderFileName = $"{job.ProjectName}.h";

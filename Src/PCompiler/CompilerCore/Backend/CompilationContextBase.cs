@@ -48,7 +48,7 @@ namespace Plang.Compiler.Backend
             // Do not indent preprocessor lines.
             if (!(format.Length > 0 && format[0] == '#') && !lineHasBeenIndented)
             {
-                for (int j = 0; j < 4 * IndentationLevel; j++)
+                for (var j = 0; j < 4 * IndentationLevel; j++)
                 {
                     output.Write(' ');
                 }
@@ -83,7 +83,7 @@ namespace Plang.Compiler.Backend
             // Do not indent preprocessor lines.
             if (!format.StartsWith("#") && !lineHasBeenIndented)
             {
-                for (int j = 0; j < 4 * IndentationLevel; j++)
+                for (var j = 0; j < 4 * IndentationLevel; j++)
                 {
                     output.Write(' ');
                 }

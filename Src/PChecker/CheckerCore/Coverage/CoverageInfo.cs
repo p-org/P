@@ -51,40 +51,40 @@ namespace PChecker.Coverage
         /// </summary>
         public CoverageInfo()
         {
-            this.Machines = new HashSet<string>();
-            this.MachinesToStates = new Dictionary<string, HashSet<string>>();
-            this.RegisteredEvents = new Dictionary<string, HashSet<string>>();
+            Machines = new HashSet<string>();
+            MachinesToStates = new Dictionary<string, HashSet<string>>();
+            RegisteredEvents = new Dictionary<string, HashSet<string>>();
         }
 
         /// <summary>
         /// Checks if the machine type has already been registered for coverage.
         /// </summary>
-        public bool IsMachineDeclared(string machineName) => this.MachinesToStates.ContainsKey(machineName);
+        public bool IsMachineDeclared(string machineName) => MachinesToStates.ContainsKey(machineName);
 
         /// <summary>
         /// Declares a state.
         /// </summary>
-        public void DeclareMachineState(string machine, string state) => this.AddState(machine, state);
+        public void DeclareMachineState(string machine, string state) => AddState(machine, state);
 
         /// <summary>
         /// Declares a registered state, event pair.
         /// </summary>
         public void DeclareStateEvent(string machine, string state, string eventName)
         {
-            this.AddState(machine, state);
+            AddState(machine, state);
 
-            string key = machine + "." + state;
-            this.InternalAddEvent(key, eventName);
+            var key = machine + "." + state;
+            InternalAddEvent(key, eventName);
         }
 
         private void InternalAddEvent(string key, string eventName)
         {
-            if (!this.RegisteredEvents.ContainsKey(key))
+            if (!RegisteredEvents.ContainsKey(key))
             {
-                this.RegisteredEvents.Add(key, new HashSet<string>());
+                RegisteredEvents.Add(key, new HashSet<string>());
             }
 
-            this.RegisteredEvents[key].Add(eventName);
+            RegisteredEvents[key].Add(eventName);
         }
 
         /// <summary>
@@ -94,14 +94,14 @@ namespace PChecker.Coverage
         {
             foreach (var machine in coverageInfo.Machines)
             {
-                this.Machines.Add(machine);
+                Machines.Add(machine);
             }
 
             foreach (var machine in coverageInfo.MachinesToStates)
             {
                 foreach (var state in machine.Value)
                 {
-                    this.DeclareMachineState(machine.Key, state);
+                    DeclareMachineState(machine.Key, state);
                 }
             }
 
@@ -109,26 +109,26 @@ namespace PChecker.Coverage
             {
                 foreach (var e in tup.Value)
                 {
-                    this.InternalAddEvent(tup.Key, e);
+                    InternalAddEvent(tup.Key, e);
                 }
             }
 
-            if (this.CoverageGraph == null)
+            if (CoverageGraph == null)
             {
-                this.CoverageGraph = coverageInfo.CoverageGraph;
+                CoverageGraph = coverageInfo.CoverageGraph;
             }
-            else if (coverageInfo.CoverageGraph != null && this.CoverageGraph != coverageInfo.CoverageGraph)
+            else if (coverageInfo.CoverageGraph != null && CoverageGraph != coverageInfo.CoverageGraph)
             {
-                this.CoverageGraph.Merge(coverageInfo.CoverageGraph);
+                CoverageGraph.Merge(coverageInfo.CoverageGraph);
             }
 
-            if (this.EventInfo == null)
+            if (EventInfo == null)
             {
-                this.EventInfo = coverageInfo.EventInfo;
+                EventInfo = coverageInfo.EventInfo;
             }
-            else if (coverageInfo.EventInfo != null && this.EventInfo != coverageInfo.EventInfo)
+            else if (coverageInfo.EventInfo != null && EventInfo != coverageInfo.EventInfo)
             {
-                this.EventInfo.Merge(coverageInfo.EventInfo);
+                EventInfo.Merge(coverageInfo.EventInfo);
             }
         }
 
@@ -137,14 +137,14 @@ namespace PChecker.Coverage
         /// </summary>
         private void AddState(string machineName, string stateName)
         {
-            this.Machines.Add(machineName);
+            Machines.Add(machineName);
 
-            if (!this.MachinesToStates.ContainsKey(machineName))
+            if (!MachinesToStates.ContainsKey(machineName))
             {
-                this.MachinesToStates.Add(machineName, new HashSet<string>());
+                MachinesToStates.Add(machineName, new HashSet<string>());
             }
 
-            this.MachinesToStates[machineName].Add(stateName);
+            MachinesToStates[machineName].Add(stateName);
         }
 
         /// <summary>
@@ -158,7 +158,7 @@ namespace PChecker.Coverage
             {
                 using (var reader = XmlDictionaryReader.CreateTextReader(fs, new XmlDictionaryReaderQuotas()))
                 {
-                    DataContractSerializerSettings settings = new DataContractSerializerSettings();
+                    var settings = new DataContractSerializerSettings();
                     settings.PreserveObjectReferences = true;
                     var ser = new DataContractSerializer(typeof(CoverageInfo), settings);
                     return (CoverageInfo)ser.ReadObject(reader, true);
@@ -174,7 +174,7 @@ namespace PChecker.Coverage
         {
             using (var fs = new FileStream(serFilePath, FileMode.Create))
             {
-                DataContractSerializerSettings settings = new DataContractSerializerSettings();
+                var settings = new DataContractSerializerSettings();
                 settings.PreserveObjectReferences = true;
                 var ser = new DataContractSerializer(typeof(CoverageInfo), settings);
                 ser.WriteObject(fs, this);

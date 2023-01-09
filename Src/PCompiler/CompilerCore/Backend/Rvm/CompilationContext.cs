@@ -20,13 +20,13 @@ namespace Plang.Compiler.Backend.Rvm
         public string GetAjFileName()
         {
             // AspectJ file name should match aspect class name
-            string aspectClassName = Names.GetAspectClassName();
+            var aspectClassName = Names.GetAspectClassName();
             return $"{aspectClassName}.aj";
         }
 
         public string GetRvmFileName(Machine machine)
         {
-            string rvmSpecName = Names.GetRvmSpecName(machine);
+            var rvmSpecName = Names.GetRvmSpecName(machine);
             return $"{rvmSpecName}.rvm";
         }
 

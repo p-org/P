@@ -26,85 +26,85 @@ namespace PChecker.SystematicTesting.Strategies
         /// </summary>
         public ComboStrategy(ISchedulingStrategy prefixStrategy, ISchedulingStrategy suffixStrategy)
         {
-            this.PrefixStrategy = prefixStrategy;
-            this.SuffixStrategy = suffixStrategy;
+            PrefixStrategy = prefixStrategy;
+            SuffixStrategy = suffixStrategy;
         }
 
         /// <inheritdoc/>
         public bool GetNextOperation(IAsyncOperation current, IEnumerable<IAsyncOperation> ops, out IAsyncOperation next)
         {
-            if (this.PrefixStrategy.HasReachedMaxSchedulingSteps())
+            if (PrefixStrategy.HasReachedMaxSchedulingSteps())
             {
-                return this.SuffixStrategy.GetNextOperation(current, ops, out next);
+                return SuffixStrategy.GetNextOperation(current, ops, out next);
             }
             else
             {
-                return this.PrefixStrategy.GetNextOperation(current, ops, out next);
+                return PrefixStrategy.GetNextOperation(current, ops, out next);
             }
         }
 
         /// <inheritdoc/>
         public bool GetNextBooleanChoice(IAsyncOperation current, int maxValue, out bool next)
         {
-            if (this.PrefixStrategy.HasReachedMaxSchedulingSteps())
+            if (PrefixStrategy.HasReachedMaxSchedulingSteps())
             {
-                return this.SuffixStrategy.GetNextBooleanChoice(current, maxValue, out next);
+                return SuffixStrategy.GetNextBooleanChoice(current, maxValue, out next);
             }
             else
             {
-                return this.PrefixStrategy.GetNextBooleanChoice(current, maxValue, out next);
+                return PrefixStrategy.GetNextBooleanChoice(current, maxValue, out next);
             }
         }
 
         /// <inheritdoc/>
         public bool GetNextIntegerChoice(IAsyncOperation current, int maxValue, out int next)
         {
-            if (this.PrefixStrategy.HasReachedMaxSchedulingSteps())
+            if (PrefixStrategy.HasReachedMaxSchedulingSteps())
             {
-                return this.SuffixStrategy.GetNextIntegerChoice(current, maxValue, out next);
+                return SuffixStrategy.GetNextIntegerChoice(current, maxValue, out next);
             }
             else
             {
-                return this.PrefixStrategy.GetNextIntegerChoice(current, maxValue, out next);
+                return PrefixStrategy.GetNextIntegerChoice(current, maxValue, out next);
             }
         }
 
         /// <inheritdoc/>
         public bool PrepareForNextIteration()
         {
-            bool doNext = this.PrefixStrategy.PrepareForNextIteration();
-            doNext |= this.SuffixStrategy.PrepareForNextIteration();
+            var doNext = PrefixStrategy.PrepareForNextIteration();
+            doNext |= SuffixStrategy.PrepareForNextIteration();
             return doNext;
         }
 
         /// <inheritdoc/>
         public int GetScheduledSteps()
         {
-            if (this.PrefixStrategy.HasReachedMaxSchedulingSteps())
+            if (PrefixStrategy.HasReachedMaxSchedulingSteps())
             {
-                return this.SuffixStrategy.GetScheduledSteps() + this.PrefixStrategy.GetScheduledSteps();
+                return SuffixStrategy.GetScheduledSteps() + PrefixStrategy.GetScheduledSteps();
             }
             else
             {
-                return this.PrefixStrategy.GetScheduledSteps();
+                return PrefixStrategy.GetScheduledSteps();
             }
         }
 
         /// <inheritdoc/>
-        public bool HasReachedMaxSchedulingSteps() => this.SuffixStrategy.HasReachedMaxSchedulingSteps();
+        public bool HasReachedMaxSchedulingSteps() => SuffixStrategy.HasReachedMaxSchedulingSteps();
 
         /// <inheritdoc/>
-        public bool IsFair() => this.SuffixStrategy.IsFair();
+        public bool IsFair() => SuffixStrategy.IsFair();
 
         /// <inheritdoc/>
         public string GetDescription() =>
-            string.Format("combo[{0},{1}]", this.PrefixStrategy.GetDescription(), this.SuffixStrategy.GetDescription());
+            string.Format("combo[{0},{1}]", PrefixStrategy.GetDescription(), SuffixStrategy.GetDescription());
 
         /// <inheritdoc/>
         public void Reset()
         {
-            this.PrefixStrategy.Reset();
-            this.SuffixStrategy.Reset();
+            PrefixStrategy.Reset();
+            SuffixStrategy.Reset();
         }
     }
 }

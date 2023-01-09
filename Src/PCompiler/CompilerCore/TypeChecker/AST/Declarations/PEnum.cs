@@ -28,7 +28,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                 return false;
             }
 
-            bool? success = elem.ParentEnum?.RemoveElement(elem);
+            var success = elem.ParentEnum?.RemoveElement(elem);
             Debug.Assert(success != false);
             elem.ParentEnum = this;
             elements.Add(elem);
@@ -43,7 +43,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                 return false;
             }
 
-            bool success = elements.Remove(elem);
+            var success = elements.Remove(elem);
             Debug.Assert(success);
             values.Remove(elem.Value);
             elem.ParentEnum = null;

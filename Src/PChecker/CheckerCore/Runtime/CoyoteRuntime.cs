@@ -83,11 +83,11 @@ namespace PChecker.Runtime
         /// </summary>
         protected CoyoteRuntime(CheckerConfiguration checkerConfiguration, IRandomValueGenerator valueGenerator)
         {
-            this.CheckerConfiguration = checkerConfiguration;
-            this.Monitors = new List<Specifications.Monitor>();
-            this.ValueGenerator = valueGenerator;
-            this.OperationIdCounter = 0;
-            this.IsRunning = true;
+            CheckerConfiguration = checkerConfiguration;
+            Monitors = new List<Specifications.Monitor>();
+            ValueGenerator = valueGenerator;
+            OperationIdCounter = 0;
+            IsRunning = true;
         }
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace PChecker.Runtime
         /// </summary>
         public void RegisterMonitor<T>()
             where T : Specifications.Monitor =>
-            this.TryCreateMonitor(typeof(T));
+            TryCreateMonitor(typeof(T));
 
         /// <summary>
         /// Invokes the specified monitor with the specified <see cref="Event"/>.
@@ -104,29 +104,29 @@ namespace PChecker.Runtime
             where T : Specifications.Monitor
         {
             // If the event is null then report an error and exit.
-            this.Assert(e != null, "Cannot monitor a null event.");
-            this.Monitor(typeof(T), e, null, null, null);
+            Assert(e != null, "Cannot monitor a null event.");
+            Monitor(typeof(T), e, null, null, null);
         }
 
         /// <summary>
         /// Returns a nondeterministic boolean choice, that can be controlled
         /// during analysis or testing.
         /// </summary>
-        public bool RandomBoolean() => this.GetNondeterministicBooleanChoice(2, null, null);
+        public bool RandomBoolean() => GetNondeterministicBooleanChoice(2, null, null);
 
         /// <summary>
         /// Returns a nondeterministic boolean choice, that can be controlled
         /// during analysis or testing. The value is used to generate a number
         /// in the range [0..maxValue), where 0 triggers true.
         /// </summary>
-        public bool RandomBoolean(int maxValue) => this.GetNondeterministicBooleanChoice(maxValue, null, null);
+        public bool RandomBoolean(int maxValue) => GetNondeterministicBooleanChoice(maxValue, null, null);
 
         /// <summary>
         /// Returns a nondeterministic integer, that can be controlled during
         /// analysis or testing. The value is used to generate an integer in
         /// the range [0..maxValue).
         /// </summary>
-        public int RandomInteger(int maxValue) => this.GetNondeterministicIntegerChoice(maxValue, null, null);
+        public int RandomInteger(int maxValue) => GetNondeterministicIntegerChoice(maxValue, null, null);
 
         /// <summary>
         /// Returns the next available unique operation id.
@@ -134,7 +134,7 @@ namespace PChecker.Runtime
         /// <returns>Value representing the next available unique operation id.</returns>
         internal ulong GetNextOperationId() =>
             // Atomically increments and safely wraps the value into an unsigned long.
-            (ulong)Interlocked.Increment(ref this.OperationIdCounter) - 1;
+            (ulong)Interlocked.Increment(ref OperationIdCounter) - 1;
 
         /// <summary>
         /// Tries to create a new <see cref="Specifications.Monitor"/> of the specified <see cref="Type"/>.
@@ -148,9 +148,9 @@ namespace PChecker.Runtime
         {
             Specifications.Monitor monitor = null;
 
-            lock (this.Monitors)
+            lock (Monitors)
             {
-                foreach (var m in this.Monitors)
+                foreach (var m in Monitors)
                 {
                     if (m.GetType() == type)
                     {
@@ -249,7 +249,7 @@ namespace PChecker.Runtime
         /// </summary>
         protected internal virtual void RaiseOnFailureEvent(Exception exception)
         {
-            this.OnFailure?.Invoke(exception);
+            OnFailure?.Invoke(exception);
         }
 
         /// <summary>
@@ -258,8 +258,8 @@ namespace PChecker.Runtime
         /// </summary>
         internal virtual void WrapAndThrowException(Exception exception, string s, params object[] args)
         {
-            string msg = string.Format(CultureInfo.InvariantCulture, s, args);
-            string message = string.Format(CultureInfo.InvariantCulture,
+            var msg = string.Format(CultureInfo.InvariantCulture, s, args);
+            var message = string.Format(CultureInfo.InvariantCulture,
                 "Exception '{0}' was thrown in {1}: {2}\n" +
                 "from location '{3}':\n" +
                 "The stack trace is:\n{4}",
@@ -271,7 +271,7 @@ namespace PChecker.Runtime
         /// <summary>
         /// Terminates the runtime and notifies each active actor to halt execution.
         /// </summary>
-        public void Stop() => this.IsRunning = false;
+        public void Stop() => IsRunning = false;
 
         /// <summary>
         /// Disposes runtime resources.
@@ -280,7 +280,7 @@ namespace PChecker.Runtime
         {
             if (disposing)
             {
-                this.OperationIdCounter = 0;
+                OperationIdCounter = 0;
             }
         }
 
@@ -289,7 +289,7 @@ namespace PChecker.Runtime
         /// </summary>
         public void Dispose()
         {
-            this.Dispose(true);
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
     }

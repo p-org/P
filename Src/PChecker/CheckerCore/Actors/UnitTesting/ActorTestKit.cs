@@ -42,12 +42,12 @@ namespace PChecker.Actors.UnitTesting
             }
 
             var valueGenerator = new RandomValueGenerator(checkerConfiguration);
-            this.Runtime = new ActorUnitTestingRuntime(checkerConfiguration, typeof(T), valueGenerator);
-            this.ActorInstance = this.Runtime.Instance as T;
-            this.IsRunning = false;
-            this.Runtime.OnFailure += ex =>
+            Runtime = new ActorUnitTestingRuntime(checkerConfiguration, typeof(T), valueGenerator);
+            ActorInstance = Runtime.Instance as T;
+            IsRunning = false;
+            Runtime.OnFailure += ex =>
             {
-                this.Runtime.Logger.WriteLine(ex.ToString());
+                Runtime.Logger.WriteLine(ex.ToString());
             };
         }
 
@@ -63,9 +63,9 @@ namespace PChecker.Actors.UnitTesting
         /// <returns>Task that represents the asynchronous operation.</returns>
         public Task StartActorAsync(Event initialEvent = null)
         {
-            this.Runtime.Assert(!this.IsRunning, string.Format("{0} is already running.", this.ActorInstance.Id));
-            this.IsRunning = true;
-            return this.Runtime.StartAsync(initialEvent);
+            Runtime.Assert(!IsRunning, string.Format("{0} is already running.", ActorInstance.Id));
+            IsRunning = true;
+            return Runtime.StartAsync(initialEvent);
         }
 
         /// <summary>
@@ -77,8 +77,8 @@ namespace PChecker.Actors.UnitTesting
         /// <returns>Task that represents the asynchronous operation.</returns>
         public Task SendEventAsync(Event e)
         {
-            this.Runtime.Assert(this.IsRunning, string.Format("{0} is not running.", this.ActorInstance.Id));
-            return this.Runtime.SendEventAndExecuteAsync(this.Runtime.Instance.Id, e, null, Guid.Empty, null);
+            Runtime.Assert(IsRunning, string.Format("{0} is not running.", ActorInstance.Id));
+            return Runtime.SendEventAndExecuteAsync(Runtime.Instance.Id, e, null, Guid.Empty, null);
         }
 
         /// <summary>
@@ -89,8 +89,8 @@ namespace PChecker.Actors.UnitTesting
         /// <param name="parameters">The parameters to the method.</param>
         public object Invoke(string methodName, params object[] parameters)
         {
-            MethodInfo method = this.GetMethod(methodName, false, null);
-            return method.Invoke(this.ActorInstance, parameters);
+            var method = GetMethod(methodName, false, null);
+            return method.Invoke(ActorInstance, parameters);
         }
 
         /// <summary>
@@ -102,8 +102,8 @@ namespace PChecker.Actors.UnitTesting
         /// <param name="parameters">The parameters to the method.</param>
         public object Invoke(string methodName, Type[] parameterTypes, params object[] parameters)
         {
-            MethodInfo method = this.GetMethod(methodName, false, parameterTypes);
-            return method.Invoke(this.ActorInstance, parameters);
+            var method = GetMethod(methodName, false, parameterTypes);
+            return method.Invoke(ActorInstance, parameters);
         }
 
         /// <summary>
@@ -114,8 +114,8 @@ namespace PChecker.Actors.UnitTesting
         /// <param name="parameters">The parameters to the method.</param>
         public async Task<object> InvokeAsync(string methodName, params object[] parameters)
         {
-            MethodInfo method = this.GetMethod(methodName, true, null);
-            var task = (Task)method.Invoke(this.ActorInstance, parameters);
+            var method = GetMethod(methodName, true, null);
+            var task = (Task)method.Invoke(ActorInstance, parameters);
             await task.ConfigureAwait(false);
             var resultProperty = task.GetType().GetProperty("Result");
             return resultProperty.GetValue(task);
@@ -130,8 +130,8 @@ namespace PChecker.Actors.UnitTesting
         /// <param name="parameters">The parameters to the method.</param>
         public async Task<object> InvokeAsync(string methodName, Type[] parameterTypes, params object[] parameters)
         {
-            MethodInfo method = this.GetMethod(methodName, true, parameterTypes);
-            var task = (Task)method.Invoke(this.ActorInstance, parameters);
+            var method = GetMethod(methodName, true, parameterTypes);
+            var task = (Task)method.Invoke(ActorInstance, parameters);
             await task.ConfigureAwait(false);
             var resultProperty = task.GetType().GetProperty("Result");
             return resultProperty.GetValue(task);
@@ -149,19 +149,19 @@ namespace PChecker.Actors.UnitTesting
             MethodInfo method;
             if (parameterTypes is null)
             {
-                method = this.ActorInstance.GetType().GetMethod(methodName, bindingFlags);
+                method = ActorInstance.GetType().GetMethod(methodName, bindingFlags);
             }
             else
             {
-                method = this.ActorInstance.GetType().GetMethod(methodName, bindingFlags,
+                method = ActorInstance.GetType().GetMethod(methodName, bindingFlags,
                     Type.DefaultBinder, parameterTypes, null);
             }
 
-            this.Runtime.Assert(method != null, string.Format("Unable to invoke method '{0}' of {1}.",
-                methodName, this.ActorInstance.Id));
-            this.Runtime.Assert(method.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) is null != isAsync,
+            Runtime.Assert(method != null, string.Format("Unable to invoke method '{0}' of {1}.",
+                methodName, ActorInstance.Id));
+            Runtime.Assert(method.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) is null != isAsync,
                 string.Format("Must invoke {0}method '{1}' of {2} using '{3}'.",
-                isAsync ? string.Empty : "async ", methodName, this.ActorInstance.Id, isAsync ? "Invoke" : "InvokeAsync"));
+                isAsync ? string.Empty : "async ", methodName, ActorInstance.Id, isAsync ? "Invoke" : "InvokeAsync"));
 
             return method;
         }
@@ -171,7 +171,7 @@ namespace PChecker.Actors.UnitTesting
         /// </summary>
         public void Assert(bool predicate)
         {
-            this.Runtime.Assert(predicate);
+            Runtime.Assert(predicate);
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace PChecker.Actors.UnitTesting
         /// </summary>
         public void Assert(bool predicate, string s, object arg0)
         {
-            this.Runtime.Assert(predicate, s, arg0);
+            Runtime.Assert(predicate, s, arg0);
         }
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace PChecker.Actors.UnitTesting
         /// </summary>
         public void Assert(bool predicate, string s, object arg0, object arg1)
         {
-            this.Runtime.Assert(predicate, s, arg0, arg1);
+            Runtime.Assert(predicate, s, arg0, arg1);
         }
 
         /// <summary>
@@ -195,7 +195,7 @@ namespace PChecker.Actors.UnitTesting
         /// </summary>
         public void Assert(bool predicate, string s, object arg0, object arg1, object arg2)
         {
-            this.Runtime.Assert(predicate, s, arg0, arg1, arg2);
+            Runtime.Assert(predicate, s, arg0, arg1, arg2);
         }
 
         /// <summary>
@@ -203,7 +203,7 @@ namespace PChecker.Actors.UnitTesting
         /// </summary>
         public void Assert(bool predicate, string s, params object[] args)
         {
-            this.Runtime.Assert(predicate, s, args);
+            Runtime.Assert(predicate, s, args);
         }
 
         /// <summary>
@@ -213,7 +213,7 @@ namespace PChecker.Actors.UnitTesting
         public void AssertStateTransition<S>()
             where S : StateMachine.State
         {
-            this.AssertStateTransition(typeof(S).FullName);
+            AssertStateTransition(typeof(S).FullName);
         }
 
         /// <summary>
@@ -223,15 +223,15 @@ namespace PChecker.Actors.UnitTesting
         /// <param name="stateName">The name of the state.</param>
         public void AssertStateTransition(string stateName)
         {
-            StateMachine sm = this.ActorInstance as StateMachine;
-            this.Runtime.Assert(sm != null, "Actor is a state machine");
-            Type currentState = sm.CurrentState;
-            this.Runtime.Assert(currentState != null, "Actor is initialized");
-            bool predicate = currentState.FullName.Equals(stateName) ||
-                currentState.FullName.Equals(
-                    currentState.DeclaringType.FullName + "+" + stateName);
-            this.Runtime.Assert(predicate, string.Format("{0} is in state '{1}', not in '{2}'.",
-                this.ActorInstance.Id, currentState.FullName, stateName));
+            var sm = ActorInstance as StateMachine;
+            Runtime.Assert(sm != null, "Actor is a state machine");
+            var currentState = sm.CurrentState;
+            Runtime.Assert(currentState != null, "Actor is initialized");
+            var predicate = currentState.FullName.Equals(stateName) ||
+                            currentState.FullName.Equals(
+                                currentState.DeclaringType.FullName + "+" + stateName);
+            Runtime.Assert(predicate, string.Format("{0} is in state '{1}', not in '{2}'.",
+                ActorInstance.Id, currentState.FullName, stateName));
         }
 
         /// <summary>
@@ -239,9 +239,9 @@ namespace PChecker.Actors.UnitTesting
         /// </summary>
         public void AssertIsWaitingToReceiveEvent(bool isWaiting)
         {
-            this.Runtime.Assert(this.Runtime.IsActorWaitingToReceiveEvent == isWaiting,
+            Runtime.Assert(Runtime.IsActorWaitingToReceiveEvent == isWaiting,
                 "{0} is {1}waiting to receive an event.",
-                this.ActorInstance.Id, this.Runtime.IsActorWaitingToReceiveEvent ? string.Empty : "not ");
+                ActorInstance.Id, Runtime.IsActorWaitingToReceiveEvent ? string.Empty : "not ");
         }
 
         /// <summary>
@@ -250,9 +250,9 @@ namespace PChecker.Actors.UnitTesting
         /// <param name="numEvents">The number of events in the inbox.</param>
         public void AssertInboxSize(int numEvents)
         {
-            this.Runtime.Assert(this.Runtime.ActorInbox.Size == numEvents,
+            Runtime.Assert(Runtime.ActorInbox.Size == numEvents,
                 "{0} contains '{1}' events in its inbox.",
-                this.ActorInstance.Id, this.Runtime.ActorInbox.Size);
+                ActorInstance.Id, Runtime.ActorInbox.Size);
         }
     }
 }

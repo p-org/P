@@ -23,12 +23,12 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Unique id of the operation.
         /// </summary>
-        public override ulong Id => this.Actor.Id.Value;
+        public override ulong Id => Actor.Id.Value;
 
         /// <summary>
         /// Unique name of the operation.
         /// </summary>
-        public override string Name => this.Actor.Id.Name;
+        public override string Name => Actor.Id.Name;
 
         /// <summary>
         /// Set of events that this operation is waiting to receive. Receiving
@@ -49,9 +49,9 @@ namespace PChecker.SystematicTesting
         internal ActorOperation(Actor actor)
             : base()
         {
-            this.Actor = actor;
-            this.EventDependencies = new HashSet<Type>();
-            this.SkipNextReceiveSchedulingPoint = false;
+            Actor = actor;
+            EventDependencies = new HashSet<Type>();
+            SkipNextReceiveSchedulingPoint = false;
         }
 
         /// <summary>
@@ -59,8 +59,8 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal void OnWaitEvent(IEnumerable<Type> eventTypes)
         {
-            this.EventDependencies.UnionWith(eventTypes);
-            this.Status = AsyncOperationStatus.BlockedOnReceive;
+            EventDependencies.UnionWith(eventTypes);
+            Status = AsyncOperationStatus.BlockedOnReceive;
         }
 
         /// <summary>
@@ -68,8 +68,8 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal void OnReceivedEvent()
         {
-            this.EventDependencies.Clear();
-            this.Status = AsyncOperationStatus.Enabled;
+            EventDependencies.Clear();
+            Status = AsyncOperationStatus.Enabled;
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal override void OnCompleted()
         {
-            this.SkipNextReceiveSchedulingPoint = true;
+            SkipNextReceiveSchedulingPoint = true;
             base.OnCompleted();
         }
     }

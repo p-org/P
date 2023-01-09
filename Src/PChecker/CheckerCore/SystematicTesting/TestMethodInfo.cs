@@ -53,7 +53,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal TestMethodInfo(Delegate method)
         {
-            this.Method = method;
+            Method = method;
         }
 
         /// <summary>
@@ -62,28 +62,28 @@ namespace PChecker.SystematicTesting
         private TestMethodInfo(Assembly assembly, Delegate method, string name, MethodInfo initMethod,
             MethodInfo disposeMethod, MethodInfo iterationDisposeMethod)
         {
-            this.Assembly = assembly;
-            this.Method = method;
-            this.Name = name;
-            this.InitMethod = initMethod;
-            this.DisposeMethod = disposeMethod;
-            this.IterationDisposeMethod = iterationDisposeMethod;
+            Assembly = assembly;
+            Method = method;
+            Name = name;
+            InitMethod = initMethod;
+            DisposeMethod = disposeMethod;
+            IterationDisposeMethod = iterationDisposeMethod;
         }
 
         /// <summary>
         /// Invokes the user-specified initialization method for all iterations executing this test.
         /// </summary>
-        internal void InitializeAllIterations() => this.InitMethod?.Invoke(null, Array.Empty<object>());
+        internal void InitializeAllIterations() => InitMethod?.Invoke(null, Array.Empty<object>());
 
         /// <summary>
         /// Invokes the user-specified disposal method for the iteration currently executing this test.
         /// </summary>
-        internal void DisposeCurrentIteration() => this.IterationDisposeMethod?.Invoke(null, null);
+        internal void DisposeCurrentIteration() => IterationDisposeMethod?.Invoke(null, null);
 
         /// <summary>
         /// Invokes the user-specified disposal method for all iterations executing this test.
         /// </summary>
-        internal void DisposeAllIterations() => this.DisposeMethod?.Invoke(null, Array.Empty<object>());
+        internal void DisposeAllIterations() => DisposeMethod?.Invoke(null, Array.Empty<object>());
 
         /// <summary>
         /// Returns the <see cref="TestMethodInfo"/> with the given name in the specified assembly.
@@ -104,8 +104,8 @@ namespace PChecker.SystematicTesting
         /// </summary>
         private static (Delegate testMethod, string testName) GetTestMethod(Assembly assembly, string methodName)
         {
-            BindingFlags flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.InvokeMethod;
-            List<MethodInfo> testMethods = FindTestMethodsWithAttribute(typeof(TestAttribute), flags, assembly);
+            var flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.InvokeMethod;
+            var testMethods = FindTestMethodsWithAttribute(typeof(TestAttribute), flags, assembly);
 
             // Filter by test method name
             var filteredTestMethods = testMethods
@@ -147,17 +147,17 @@ namespace PChecker.SystematicTesting
                 Error.ReportAndExit(msg);
             }
 
-            MethodInfo testMethod = filteredTestMethods[0];
-            ParameterInfo[] testParams = testMethod.GetParameters();
+            var testMethod = filteredTestMethods[0];
+            var testParams = testMethod.GetParameters();
 
-            bool hasVoidReturnType = testMethod.ReturnType == typeof(void) &&
-                testMethod.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) == null;
-            bool hasAsyncReturnType = testMethod.ReturnType == typeof(Task) &&
-                testMethod.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) != null;
+            var hasVoidReturnType = testMethod.ReturnType == typeof(void) &&
+                                    testMethod.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) == null;
+            var hasAsyncReturnType = testMethod.ReturnType == typeof(Task) &&
+                                     testMethod.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) != null;
 
-            bool hasNoInputParameters = testParams.Length is 0;
-            bool hasActorInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(IActorRuntime);
-            bool hasTaskInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(ICoyoteRuntime);
+            var hasNoInputParameters = testParams.Length is 0;
+            var hasActorInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(IActorRuntime);
+            var hasTaskInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(ICoyoteRuntime);
 
             if (!((hasVoidReturnType || hasAsyncReturnType) && (hasNoInputParameters || hasActorInputParameters || hasTaskInputParameters) &&
                 !testMethod.IsAbstract && !testMethod.IsVirtual && !testMethod.IsConstructor &&
@@ -220,8 +220,8 @@ namespace PChecker.SystematicTesting
         /// </summary>
         private static MethodInfo GetTestSetupMethod(Assembly assembly, Type attribute)
         {
-            BindingFlags flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.InvokeMethod;
-            List<MethodInfo> testMethods = FindTestMethodsWithAttribute(attribute, flags, assembly);
+            var flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.InvokeMethod;
+            var testMethods = FindTestMethodsWithAttribute(attribute, flags, assembly);
 
             if (testMethods.Count == 0)
             {

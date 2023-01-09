@@ -24,13 +24,13 @@ namespace PChecker.Actors
         /// </summary>
         public ActorRuntimeLogTextFormatter()
         {
-            this.Logger = new ConsoleLogger();
+            Logger = new ConsoleLogger();
         }
 
         /// <inheritdoc/>
         public virtual void OnAssertionFailure(string error)
         {
-            this.Logger.WriteLine(error);
+            Logger.WriteLine(error);
         }
 
         /// <inheritdoc/>
@@ -38,7 +38,7 @@ namespace PChecker.Actors
         {
             var source = creatorName ?? $"task '{Task.CurrentId}'";
             var text = $"<CreateLog> {id} was created by {source}.";
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -46,14 +46,14 @@ namespace PChecker.Actors
         {
             var source = creatorName ?? $"task '{Task.CurrentId}'";
             var text = $"<CreateLog> {id} was created by {source}.";
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
         public virtual void OnCreateMonitor(string monitorType)
         {
             var text = $"<CreateLog> {monitorType} was created.";
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -71,7 +71,7 @@ namespace PChecker.Actors
                 text = $"<TimerLog> Timer '{info}' (due-time:{info.DueTime.TotalMilliseconds}ms) was created by {source}.";
             }
 
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -87,13 +87,13 @@ namespace PChecker.Actors
                 text = $"<DefaultLog> {id} is executing the default handler in state '{stateName}'.";
             }
 
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
         public virtual void OnDequeueEvent(ActorId id, string stateName, Event e)
         {
-            string eventName = e.GetType().FullName;
+            var eventName = e.GetType().FullName;
             string text;
             if (stateName is null)
             {
@@ -104,15 +104,15 @@ namespace PChecker.Actors
                 text = $"<DequeueLog> {id} dequeued event '{eventName}' in state '{stateName}'.";
             }
 
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
         public virtual void OnEnqueueEvent(ActorId id, Event e)
         {
-            string eventName = e.GetType().FullName;
-            string text = $"<EnqueueLog> {id} enqueued event '{eventName}'.";
-            this.Logger.WriteLine(text);
+            var eventName = e.GetType().FullName;
+            var text = $"<EnqueueLog> {id} enqueued event '{eventName}'.";
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -128,7 +128,7 @@ namespace PChecker.Actors
                 text = $"<ExceptionLog> {id} running action '{actionName}' in state '{stateName}' chose to handle exception '{ex.GetType().Name}'.";
             }
 
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -144,7 +144,7 @@ namespace PChecker.Actors
                 text = $"<ExceptionLog> {id} running action '{actionName}' in state '{stateName}' threw exception '{ex.GetType().Name}'.";
             }
 
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -164,21 +164,21 @@ namespace PChecker.Actors
                 text = $"<ActionLog> {id} invoked action '{actionName}' in state '{currentStateName}'.";
             }
 
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
         public virtual void OnGotoState(ActorId id, string currentStateName, string newStateName)
         {
-            string text = $"<GotoLog> {id} is transitioning from state '{currentStateName}' to state '{newStateName}'.";
-            this.Logger.WriteLine(text);
+            var text = $"<GotoLog> {id} is transitioning from state '{currentStateName}' to state '{newStateName}'.";
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
         public virtual void OnHalt(ActorId id, int inboxSize)
         {
-            string text = $"<HaltLog> {id} halted with {inboxSize} events in its inbox.";
-            this.Logger.WriteLine(text);
+            var text = $"<HaltLog> {id} halted with {inboxSize} events in its inbox.";
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -189,25 +189,25 @@ namespace PChecker.Actors
         /// <inheritdoc/>
         public virtual void OnMonitorExecuteAction(string monitorType, string stateName, string actionName)
         {
-            string text = $"<MonitorLog> {monitorType} executed action '{actionName}' in state '{stateName}'.";
-            this.Logger.WriteLine(text);
+            var text = $"<MonitorLog> {monitorType} executed action '{actionName}' in state '{stateName}'.";
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
         public virtual void OnMonitorProcessEvent(string monitorType, string stateName, string senderName,
             string senderType, string senderStateName, Event e)
         {
-            string eventName = e.GetType().FullName;
-            string text = $"<MonitorLog> {monitorType} is processing event '{eventName}' in state '{stateName}'.";
-            this.Logger.WriteLine(text);
+            var eventName = e.GetType().FullName;
+            var text = $"<MonitorLog> {monitorType} is processing event '{eventName}' in state '{stateName}'.";
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
         public virtual void OnMonitorRaiseEvent(string monitorType, string stateName, Event e)
         {
-            string eventName = e.GetType().FullName;
-            string text = $"<MonitorLog> {monitorType} raised event '{eventName}' in state '{stateName}'.";
-            this.Logger.WriteLine(text);
+            var eventName = e.GetType().FullName;
+            var text = $"<MonitorLog> {monitorType} raised event '{eventName}' in state '{stateName}'.";
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -216,7 +216,7 @@ namespace PChecker.Actors
             var liveness = isInHotState.HasValue ? (isInHotState.Value ? "hot " : "cold ") : string.Empty;
             var direction = isEntry ? "enters" : "exits";
             var text = $"<MonitorLog> {monitorType} {direction} {liveness}state '{stateName}'.";
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -230,28 +230,28 @@ namespace PChecker.Actors
             currentStateName = string.IsNullOrEmpty(currentStateName) ? "[not recorded]" : currentStateName;
             var reenteredStateName = restoredStateName ?? string.Empty;
             var text = $"<PopLog> {id} popped state '{currentStateName}' and reentered state '{reenteredStateName}'.";
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
         public virtual void OnPopStateUnhandledEvent(ActorId id, string stateName, Event e)
         {
-            string eventName = e.GetType().FullName;
+            var eventName = e.GetType().FullName;
             var text = $"<PopLog> {id} popped state {stateName} due to unhandled event '{eventName}'.";
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
         public virtual void OnPushState(ActorId id, string currentStateName, string newStateName)
         {
-            string text = $"<PushLog> {id} pushed from state '{currentStateName}' to state '{newStateName}'.";
-            this.Logger.WriteLine(text);
+            var text = $"<PushLog> {id} pushed from state '{currentStateName}' to state '{newStateName}'.";
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
         public virtual void OnRaiseEvent(ActorId id, string stateName, Event e)
         {
-            string eventName = e.GetType().FullName;
+            var eventName = e.GetType().FullName;
             string text;
             if (stateName is null)
             {
@@ -262,13 +262,13 @@ namespace PChecker.Actors
                 text = $"<RaiseLog> {id} raised event '{eventName}' in state '{stateName}'.";
             }
 
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
         public virtual void OnReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)
         {
-            string eventName = e.GetType().FullName;
+            var eventName = e.GetType().FullName;
             string text;
             var unblocked = wasBlocked ? " and unblocked" : string.Empty;
             if (stateName is null)
@@ -280,7 +280,7 @@ namespace PChecker.Actors
                 text = $"<ReceiveLog> {id} dequeued event '{eventName}'{unblocked} in state '{stateName}'.";
             }
 
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -292,7 +292,7 @@ namespace PChecker.Actors
             var sender = senderName != null ? $"{senderName} in state '{senderStateName}'" : $"task '{Task.CurrentId}'";
             var eventName = e.GetType().FullName;
             var text = $"<SendLog> {sender} sent event '{eventName}' to {targetActorId}{isHalted}{opGroupIdMsg}.";
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -300,7 +300,7 @@ namespace PChecker.Actors
         {
             var direction = isEntry ? "enters" : "exits";
             var text = $"<StateLog> {id} {direction} state '{stateName}'.";
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -308,7 +308,7 @@ namespace PChecker.Actors
         {
             var source = info.OwnerId?.Name ?? $"task '{Task.CurrentId}'";
             var text = $"<TimerLog> Timer '{info}' was stopped and disposed by {source}.";
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -316,7 +316,7 @@ namespace PChecker.Actors
         {
             var desc = string.IsNullOrEmpty(description) ? $" Description: {description}" : string.Empty;
             var text = $"<StrategyLog> Found bug using '{strategyName}' strategy.{desc}";
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -332,7 +332,7 @@ namespace PChecker.Actors
                 text = $"<ReceiveLog> {id} is waiting to dequeue an event of type '{eventType.FullName}' in state '{stateName}'.";
             }
 
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -358,8 +358,8 @@ namespace PChecker.Actors
             }
             else
             {
-                string[] eventNameArray = new string[eventTypes.Length - 1];
-                for (int i = 0; i < eventTypes.Length - 2; i++)
+                var eventNameArray = new string[eventTypes.Length - 1];
+                for (var i = 0; i < eventTypes.Length - 2; i++)
                 {
                     eventNameArray[i] = eventTypes[i].FullName;
                 }
@@ -376,7 +376,7 @@ namespace PChecker.Actors
                 text = $"<ReceiveLog> {id} is waiting to dequeue an event of type {eventNames} in state '{stateName}'.";
             }
 
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
@@ -384,7 +384,7 @@ namespace PChecker.Actors
         {
             var source = callerName ?? $"Task '{Task.CurrentId}'";
             var text = $"<RandomLog> {source} nondeterministically chose '{result}'.";
-            this.Logger.WriteLine(text);
+            Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>

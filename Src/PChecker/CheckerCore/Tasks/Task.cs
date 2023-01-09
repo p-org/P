@@ -50,40 +50,40 @@ namespace PChecker.Tasks
         /// <summary>
         /// The id of this task.
         /// </summary>
-        public int Id => this.InternalTask.Id;
+        public int Id => InternalTask.Id;
 
         /// <summary>
         /// The uncontrolled <see cref="SystemTasks.Task"/> that is wrapped inside this
         /// controlled <see cref="Task"/>.
         /// </summary>
-        public SystemTasks.Task UncontrolledTask => this.InternalTask;
+        public SystemTasks.Task UncontrolledTask => InternalTask;
 
         /// <summary>
         /// Value that indicates whether the task has completed.
         /// </summary>
-        public bool IsCompleted => this.InternalTask.IsCompleted;
+        public bool IsCompleted => InternalTask.IsCompleted;
 
         /// <summary>
         /// Value that indicates whether the task completed execution due to being canceled.
         /// </summary>
-        public bool IsCanceled => this.InternalTask.IsCanceled;
+        public bool IsCanceled => InternalTask.IsCanceled;
 
         /// <summary>
         /// Value that indicates whether the task completed due to an unhandled exception.
         /// </summary>
-        public bool IsFaulted => this.InternalTask.IsFaulted;
+        public bool IsFaulted => InternalTask.IsFaulted;
 
         /// <summary>
         /// Gets the <see cref="AggregateException"/> that caused the task
         /// to end prematurely. If the task completed successfully or has not yet
         /// thrown any exceptions, this will return null.
         /// </summary>
-        public AggregateException Exception => this.InternalTask.Exception;
+        public AggregateException Exception => InternalTask.Exception;
 
         /// <summary>
         /// The status of this task.
         /// </summary>
-        public SystemTasks.TaskStatus Status => this.InternalTask.Status;
+        public SystemTasks.TaskStatus Status => InternalTask.Status;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Task"/> class.
@@ -91,8 +91,8 @@ namespace PChecker.Tasks
         [DebuggerStepThrough]
         internal Task(TaskController taskController, SystemTasks.Task task)
         {
-            this.TaskController = taskController;
-            this.InternalTask = task ?? throw new ArgumentNullException(nameof(task));
+            TaskController = taskController;
+            InternalTask = task ?? throw new ArgumentNullException(nameof(task));
         }
 
         /// <summary>
@@ -500,7 +500,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool WaitAll(Task[] tasks, TimeSpan timeout)
         {
-            long totalMilliseconds = (long)timeout.TotalMilliseconds;
+            var totalMilliseconds = (long)timeout.TotalMilliseconds;
             if (totalMilliseconds < -1 || totalMilliseconds > int.MaxValue)
             {
                 throw new ArgumentOutOfRangeException(nameof(timeout));
@@ -570,7 +570,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int WaitAny(Task[] tasks, TimeSpan timeout)
         {
-            long totalMilliseconds = (long)timeout.TotalMilliseconds;
+            var totalMilliseconds = (long)timeout.TotalMilliseconds;
             if (totalMilliseconds < -1 || totalMilliseconds > int.MaxValue)
             {
                 throw new ArgumentOutOfRangeException(nameof(timeout));
@@ -637,7 +637,7 @@ namespace PChecker.Tasks
         /// Waits for the task to complete execution.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Wait() => this.Wait(Timeout.Infinite, default);
+        public void Wait() => Wait(Timeout.Infinite, default);
 
         /// <summary>
         /// Waits for the task to complete execution within a specified time interval.
@@ -650,13 +650,13 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Wait(TimeSpan timeout)
         {
-            long totalMilliseconds = (long)timeout.TotalMilliseconds;
+            var totalMilliseconds = (long)timeout.TotalMilliseconds;
             if (totalMilliseconds < -1 || totalMilliseconds > int.MaxValue)
             {
                 throw new ArgumentOutOfRangeException(nameof(timeout));
             }
 
-            return this.Wait((int)totalMilliseconds, default);
+            return Wait((int)totalMilliseconds, default);
         }
 
         /// <summary>
@@ -665,7 +665,7 @@ namespace PChecker.Tasks
         /// <param name="millisecondsTimeout">The number of milliseconds to wait, or -1 to wait indefinitely.</param>
         /// <returns>True if the task completed execution within the allotted time; otherwise, false.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Wait(int millisecondsTimeout) => this.Wait(millisecondsTimeout, default);
+        public bool Wait(int millisecondsTimeout) => Wait(millisecondsTimeout, default);
 
         /// <summary>
         /// Waits for the task to complete execution. The wait terminates if
@@ -673,7 +673,7 @@ namespace PChecker.Tasks
         /// </summary>
         /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Wait(CancellationToken cancellationToken) => this.Wait(Timeout.Infinite, cancellationToken);
+        public void Wait(CancellationToken cancellationToken) => Wait(Timeout.Infinite, cancellationToken);
 
         /// <summary>
         /// Waits for the task to complete execution. The wait terminates if a timeout interval
@@ -685,12 +685,12 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Wait(int millisecondsTimeout, CancellationToken cancellationToken)
         {
-            if (this.TaskController is null)
+            if (TaskController is null)
             {
-                return this.InternalTask.Wait(millisecondsTimeout, cancellationToken);
+                return InternalTask.Wait(millisecondsTimeout, cancellationToken);
             }
 
-            return this.TaskController.WaitTaskCompletes(this);
+            return TaskController.WaitTaskCompletes(this);
         }
 
         /// <summary>
@@ -699,8 +699,8 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TaskAwaiter GetAwaiter()
         {
-            this.TaskController?.OnGetAwaiter();
-            return new TaskAwaiter(this.TaskController, this.InternalTask);
+            TaskController?.OnGetAwaiter();
+            return new TaskAwaiter(TaskController, InternalTask);
         }
 
         /// <summary>
@@ -710,7 +710,7 @@ namespace PChecker.Tasks
         /// True to attempt to marshal the continuation back to the original context captured; otherwise, false.
         /// </param>
         public ConfiguredTaskAwaitable ConfigureAwait(bool continueOnCapturedContext) =>
-            new ConfiguredTaskAwaitable(this.TaskController, this.InternalTask, continueOnCapturedContext);
+            new ConfiguredTaskAwaitable(TaskController, InternalTask, continueOnCapturedContext);
 
         /// <summary>
         /// Injects a context switch point that can be systematically explored during testing.
@@ -739,8 +739,8 @@ namespace PChecker.Tasks
         /// </remarks>
         public void Dispose()
         {
-            this.InternalTask.Dispose();
-            this.Dispose(true);
+            InternalTask.Dispose();
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
     }
@@ -759,7 +759,7 @@ namespace PChecker.Tasks
         /// The uncontrolled <see cref="SystemTasks.Task{TResult}"/> that is wrapped inside this
         /// controlled <see cref="Task{TResult}"/>.
         /// </summary>
-        internal new SystemTasks.Task<TResult> UncontrolledTask => this.InternalTask as SystemTasks.Task<TResult>;
+        internal new SystemTasks.Task<TResult> UncontrolledTask => InternalTask as SystemTasks.Task<TResult>;
 
         /// <summary>
         /// Gets the result value of this task.
@@ -769,12 +769,12 @@ namespace PChecker.Tasks
             get
             {
                 {
-                    if (this.TaskController is null)
+                    if (TaskController is null)
                     {
-                        return this.UncontrolledTask.Result;
+                        return UncontrolledTask.Result;
                     }
 
-                    return this.TaskController.WaitTaskCompletes(this);
+                    return TaskController.WaitTaskCompletes(this);
                 }
             }
         }
@@ -794,8 +794,8 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public new TaskAwaiter<TResult> GetAwaiter()
         {
-            this.TaskController?.OnGetAwaiter();
-            return new TaskAwaiter<TResult>(this.TaskController, this.UncontrolledTask);
+            TaskController?.OnGetAwaiter();
+            return new TaskAwaiter<TResult>(TaskController, UncontrolledTask);
         }
 
         /// <summary>
@@ -805,6 +805,6 @@ namespace PChecker.Tasks
         /// True to attempt to marshal the continuation back to the original context captured; otherwise, false.
         /// </param>
         public new ConfiguredTaskAwaitable<TResult> ConfigureAwait(bool continueOnCapturedContext) =>
-            new ConfiguredTaskAwaitable<TResult>(this.TaskController, this.UncontrolledTask, continueOnCapturedContext);
+            new ConfiguredTaskAwaitable<TResult>(TaskController, UncontrolledTask, continueOnCapturedContext);
     }
 }

@@ -17,8 +17,8 @@ namespace PChecker
         /// </summary>
         public void StartMeasuringExecutionTime()
         {
-            this.StopWatch = new Stopwatch();
-            this.StopWatch.Start();
+            StopWatch = new Stopwatch();
+            StopWatch.Start();
         }
 
         /// <summary>
@@ -26,9 +26,9 @@ namespace PChecker
         /// </summary>
         public void StopMeasuringExecutionTime()
         {
-            if (this.StopWatch != null)
+            if (StopWatch != null)
             {
-                this.StopWatch.Stop();
+                StopWatch.Stop();
             }
         }
 
@@ -36,6 +36,6 @@ namespace PChecker
         /// Returns profilling results.
         /// </summary>
         public double Results() =>
-            this.StopWatch != null ? this.StopWatch.Elapsed.TotalSeconds : 0;
+            StopWatch != null ? StopWatch.Elapsed.TotalSeconds : 0;
     }
 }

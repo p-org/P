@@ -62,19 +62,19 @@ namespace PChecker.SystematicTesting.Strategies
         /// </summary>
         public ReplayStrategy(CheckerConfiguration checkerConfiguration, ScheduleTrace trace, bool isFair, ISchedulingStrategy suffixStrategy)
         {
-            this._checkerConfiguration = checkerConfiguration;
-            this.ScheduleTrace = trace;
-            this.ScheduledSteps = 0;
-            this.IsSchedulerFair = isFair;
-            this.IsReplaying = true;
-            this.SuffixStrategy = suffixStrategy;
-            this.ErrorText = string.Empty;
+            _checkerConfiguration = checkerConfiguration;
+            ScheduleTrace = trace;
+            ScheduledSteps = 0;
+            IsSchedulerFair = isFair;
+            IsReplaying = true;
+            SuffixStrategy = suffixStrategy;
+            ErrorText = string.Empty;
         }
 
         /// <inheritdoc/>
         public bool GetNextOperation(IAsyncOperation current, IEnumerable<IAsyncOperation> ops, out IAsyncOperation next)
         {
-            if (this.IsReplaying)
+            if (IsReplaying)
             {
                 var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
                 if (enabledOperations.Count == 0)
@@ -85,31 +85,31 @@ namespace PChecker.SystematicTesting.Strategies
 
                 try
                 {
-                    if (this.ScheduledSteps >= this.ScheduleTrace.Count)
+                    if (ScheduledSteps >= ScheduleTrace.Count)
                     {
-                        this.ErrorText = "Trace is not reproducible: execution is longer than trace.";
-                        throw new InvalidOperationException(this.ErrorText);
+                        ErrorText = "Trace is not reproducible: execution is longer than trace.";
+                        throw new InvalidOperationException(ErrorText);
                     }
 
-                    ScheduleStep nextStep = this.ScheduleTrace[this.ScheduledSteps];
+                    var nextStep = ScheduleTrace[ScheduledSteps];
                     if (nextStep.Type != ScheduleStepType.SchedulingChoice)
                     {
-                        this.ErrorText = "Trace is not reproducible: next step is not a scheduling choice.";
-                        throw new InvalidOperationException(this.ErrorText);
+                        ErrorText = "Trace is not reproducible: next step is not a scheduling choice.";
+                        throw new InvalidOperationException(ErrorText);
                     }
 
                     next = enabledOperations.FirstOrDefault(op => op.Id == nextStep.ScheduledOperationId);
                     if (next is null)
                     {
-                        this.ErrorText = $"Trace is not reproducible: cannot detect id '{nextStep.ScheduledOperationId}'.";
-                        throw new InvalidOperationException(this.ErrorText);
+                        ErrorText = $"Trace is not reproducible: cannot detect id '{nextStep.ScheduledOperationId}'.";
+                        throw new InvalidOperationException(ErrorText);
                     }
                 }
                 catch (InvalidOperationException ex)
                 {
-                    if (this.SuffixStrategy is null)
+                    if (SuffixStrategy is null)
                     {
-                        if (!this._checkerConfiguration.DisableEnvironmentExit)
+                        if (!_checkerConfiguration.DisableEnvironmentExit)
                         {
                             Error.ReportAndExit(ex.Message);
                         }
@@ -119,51 +119,51 @@ namespace PChecker.SystematicTesting.Strategies
                     }
                     else
                     {
-                        this.IsReplaying = false;
-                        return this.SuffixStrategy.GetNextOperation(current, ops, out next);
+                        IsReplaying = false;
+                        return SuffixStrategy.GetNextOperation(current, ops, out next);
                     }
                 }
 
-                this.ScheduledSteps++;
+                ScheduledSteps++;
                 return true;
             }
 
-            return this.SuffixStrategy.GetNextOperation(current, ops, out next);
+            return SuffixStrategy.GetNextOperation(current, ops, out next);
         }
 
         /// <inheritdoc/>
         public bool GetNextBooleanChoice(IAsyncOperation current, int maxValue, out bool next)
         {
-            if (this.IsReplaying)
+            if (IsReplaying)
             {
                 ScheduleStep nextStep;
 
                 try
                 {
-                    if (this.ScheduledSteps >= this.ScheduleTrace.Count)
+                    if (ScheduledSteps >= ScheduleTrace.Count)
                     {
-                        this.ErrorText = "Trace is not reproducible: execution is longer than trace.";
-                        throw new InvalidOperationException(this.ErrorText);
+                        ErrorText = "Trace is not reproducible: execution is longer than trace.";
+                        throw new InvalidOperationException(ErrorText);
                     }
 
-                    nextStep = this.ScheduleTrace[this.ScheduledSteps];
+                    nextStep = ScheduleTrace[ScheduledSteps];
                     if (nextStep.Type != ScheduleStepType.NondeterministicChoice)
                     {
-                        this.ErrorText = "Trace is not reproducible: next step is not a nondeterministic choice.";
-                        throw new InvalidOperationException(this.ErrorText);
+                        ErrorText = "Trace is not reproducible: next step is not a nondeterministic choice.";
+                        throw new InvalidOperationException(ErrorText);
                     }
 
                     if (nextStep.BooleanChoice is null)
                     {
-                        this.ErrorText = "Trace is not reproducible: next step is not a nondeterministic boolean choice.";
-                        throw new InvalidOperationException(this.ErrorText);
+                        ErrorText = "Trace is not reproducible: next step is not a nondeterministic boolean choice.";
+                        throw new InvalidOperationException(ErrorText);
                     }
                 }
                 catch (InvalidOperationException ex)
                 {
-                    if (this.SuffixStrategy is null)
+                    if (SuffixStrategy is null)
                     {
-                        if (!this._checkerConfiguration.DisableEnvironmentExit)
+                        if (!_checkerConfiguration.DisableEnvironmentExit)
                         {
                             Error.ReportAndExit(ex.Message);
                         }
@@ -173,52 +173,52 @@ namespace PChecker.SystematicTesting.Strategies
                     }
                     else
                     {
-                        this.IsReplaying = false;
-                        return this.SuffixStrategy.GetNextBooleanChoice(current, maxValue, out next);
+                        IsReplaying = false;
+                        return SuffixStrategy.GetNextBooleanChoice(current, maxValue, out next);
                     }
                 }
 
                 next = nextStep.BooleanChoice.Value;
-                this.ScheduledSteps++;
+                ScheduledSteps++;
                 return true;
             }
 
-            return this.SuffixStrategy.GetNextBooleanChoice(current, maxValue, out next);
+            return SuffixStrategy.GetNextBooleanChoice(current, maxValue, out next);
         }
 
         /// <inheritdoc/>
         public bool GetNextIntegerChoice(IAsyncOperation current, int maxValue, out int next)
         {
-            if (this.IsReplaying)
+            if (IsReplaying)
             {
                 ScheduleStep nextStep;
 
                 try
                 {
-                    if (this.ScheduledSteps >= this.ScheduleTrace.Count)
+                    if (ScheduledSteps >= ScheduleTrace.Count)
                     {
-                        this.ErrorText = "Trace is not reproducible: execution is longer than trace.";
-                        throw new InvalidOperationException(this.ErrorText);
+                        ErrorText = "Trace is not reproducible: execution is longer than trace.";
+                        throw new InvalidOperationException(ErrorText);
                     }
 
-                    nextStep = this.ScheduleTrace[this.ScheduledSteps];
+                    nextStep = ScheduleTrace[ScheduledSteps];
                     if (nextStep.Type != ScheduleStepType.NondeterministicChoice)
                     {
-                        this.ErrorText = "Trace is not reproducible: next step is not a nondeterministic choice.";
-                        throw new InvalidOperationException(this.ErrorText);
+                        ErrorText = "Trace is not reproducible: next step is not a nondeterministic choice.";
+                        throw new InvalidOperationException(ErrorText);
                     }
 
                     if (nextStep.IntegerChoice is null)
                     {
-                        this.ErrorText = "Trace is not reproducible: next step is not a nondeterministic integer choice.";
-                        throw new InvalidOperationException(this.ErrorText);
+                        ErrorText = "Trace is not reproducible: next step is not a nondeterministic integer choice.";
+                        throw new InvalidOperationException(ErrorText);
                     }
                 }
                 catch (InvalidOperationException ex)
                 {
-                    if (this.SuffixStrategy is null)
+                    if (SuffixStrategy is null)
                     {
-                        if (!this._checkerConfiguration.DisableEnvironmentExit)
+                        if (!_checkerConfiguration.DisableEnvironmentExit)
                         {
                             Error.ReportAndExit(ex.Message);
                         }
@@ -228,26 +228,26 @@ namespace PChecker.SystematicTesting.Strategies
                     }
                     else
                     {
-                        this.IsReplaying = false;
-                        return this.SuffixStrategy.GetNextIntegerChoice(current, maxValue, out next);
+                        IsReplaying = false;
+                        return SuffixStrategy.GetNextIntegerChoice(current, maxValue, out next);
                     }
                 }
 
                 next = nextStep.IntegerChoice.Value;
-                this.ScheduledSteps++;
+                ScheduledSteps++;
                 return true;
             }
 
-            return this.SuffixStrategy.GetNextIntegerChoice(current, maxValue, out next);
+            return SuffixStrategy.GetNextIntegerChoice(current, maxValue, out next);
         }
 
         /// <inheritdoc/>
         public bool PrepareForNextIteration()
         {
-            this.ScheduledSteps = 0;
-            if (this.SuffixStrategy != null)
+            ScheduledSteps = 0;
+            if (SuffixStrategy != null)
             {
-                return this.SuffixStrategy.PrepareForNextIteration();
+                return SuffixStrategy.PrepareForNextIteration();
             }
             else
             {
@@ -258,22 +258,22 @@ namespace PChecker.SystematicTesting.Strategies
         /// <inheritdoc/>
         public int GetScheduledSteps()
         {
-            if (this.SuffixStrategy != null)
+            if (SuffixStrategy != null)
             {
-                return this.ScheduledSteps + this.SuffixStrategy.GetScheduledSteps();
+                return ScheduledSteps + SuffixStrategy.GetScheduledSteps();
             }
             else
             {
-                return this.ScheduledSteps;
+                return ScheduledSteps;
             }
         }
 
         /// <inheritdoc/>
         public bool HasReachedMaxSchedulingSteps()
         {
-            if (this.SuffixStrategy != null)
+            if (SuffixStrategy != null)
             {
-                return this.SuffixStrategy.HasReachedMaxSchedulingSteps();
+                return SuffixStrategy.HasReachedMaxSchedulingSteps();
             }
             else
             {
@@ -284,22 +284,22 @@ namespace PChecker.SystematicTesting.Strategies
         /// <inheritdoc/>
         public bool IsFair()
         {
-            if (this.SuffixStrategy != null)
+            if (SuffixStrategy != null)
             {
-                return this.SuffixStrategy.IsFair();
+                return SuffixStrategy.IsFair();
             }
             else
             {
-                return this.IsSchedulerFair;
+                return IsSchedulerFair;
             }
         }
 
         /// <inheritdoc/>
         public string GetDescription()
         {
-            if (this.SuffixStrategy != null)
+            if (SuffixStrategy != null)
             {
-                return "replay(" + this.SuffixStrategy.GetDescription() + ")";
+                return "replay(" + SuffixStrategy.GetDescription() + ")";
             }
             else
             {
@@ -310,8 +310,8 @@ namespace PChecker.SystematicTesting.Strategies
         /// <inheritdoc/>
         public void Reset()
         {
-            this.ScheduledSteps = 0;
-            this.SuffixStrategy?.Reset();
+            ScheduledSteps = 0;
+            SuffixStrategy?.Reset();
         }
     }
 }

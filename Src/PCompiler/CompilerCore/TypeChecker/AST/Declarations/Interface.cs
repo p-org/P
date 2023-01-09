@@ -54,7 +54,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public void AddInterfaces(IEnumerable<Interface> its)
         {
-            foreach (Interface @interface in its)
+            foreach (var @interface in its)
             {
                 interfaces.Add(@interface);
             }

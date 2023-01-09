@@ -58,7 +58,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteMonitorDecl()
         {
-            string cname = Names.GetNameForDecl(_currentMachine);
+            var cname = Names.GetNameForDecl(_currentMachine);
 
             WriteLine($"public static class {cname} extends prt.Monitor<{cname}.{Constants.StateEnumName}> {{");
 
@@ -69,8 +69,8 @@ namespace Plang.Compiler.Backend.Java {
             // monitor fields
             foreach (var field in _currentMachine.Fields)
             {
-                TypeManager.JType type = Types.JavaTypeFor(field.Type);
-                string name = Names.GetNameForDecl(field);
+                var type = Types.JavaTypeFor(field.Type);
+                var name = Names.GetNameForDecl(field);
 
                 WriteLine($"private {type.TypeName} {name} = {type.DefaultValue};");
                 WriteLine($"public {type.TypeName} get_{name}() {{ return this.{name}; }};");
@@ -82,7 +82,7 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine($"public enum {Constants.StateEnumName} {{");
             foreach (var (state, sep) in _currentMachine.States.WithPostfixSep(","))
             {
-                string name = Names.GetNameForDecl(state);
+                var name = Names.GetNameForDecl(state);
                 WriteLine($"{name}{sep}");
             }
             WriteLine("}");
@@ -137,7 +137,7 @@ namespace Plang.Compiler.Backend.Java {
             {
                 foreach (var decl in f.LocalVariables)
                 {
-                    TypeManager.JType t = Types.JavaTypeFor(decl.Type);
+                    var t = Types.JavaTypeFor(decl.Type);
 
                     if (decl.Role.HasFlag(VariableRole.Temp))
                     {
@@ -165,11 +165,11 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteFunctionSignature(Function f)
         {
-            string fname = Names.GetNameForDecl(f);
+            var fname = Names.GetNameForDecl(f);
 
             Write("private ");
 
-            bool isStatic = f.Owner == null;
+            var isStatic = f.Owner == null;
             if (isStatic)
             {
                 Write("static ");
@@ -185,14 +185,14 @@ namespace Plang.Compiler.Backend.Java {
                 }
                 else if (f.Signature.Parameters.Count == 1)
                 {
-                    TypeManager.JType t = Types.JavaTypeFor(f.Signature.ParameterTypes.First());
-                    string argname = Names.GetNameForDecl(f.Signature.Parameters.First());
+                    var t = Types.JavaTypeFor(f.Signature.ParameterTypes.First());
+                    var argname = Names.GetNameForDecl(f.Signature.Parameters.First());
                     args = $"{t.TypeName} {argname}";
                 }
                 else
                 {
-                    string file = f.SourceLocation.start.TokenSource.SourceName;
-                    int line = f.SourceLocation.start.Line;
+                    var file = f.SourceLocation.start.TokenSource.SourceName;
+                    var line = f.SourceLocation.start.Line;
                     throw new Exception(
                         $"Function beginning at {file}:{line} has unexpected number {f.Signature.Parameters.Count} of arguments");
                 }
@@ -205,13 +205,13 @@ namespace Plang.Compiler.Backend.Java {
                         $"{Types.JavaTypeFor(v.Type).TypeName} {Names.GetNameForDecl(v)}"));
             }
 
-            TypeManager.JType retType = Types.JavaTypeFor(f.Signature.ReturnType);
+            var retType = Types.JavaTypeFor(f.Signature.ReturnType);
 
             Write($"{retType.TypeName} {fname}({args})");
 
             // If this function has exceptional control flow (for raising events or state transition)
             // we need to annotate it appropriately.
-            List<string> throwables = new List<string>();
+            var throwables = new List<string>();
             if (f.CanChangeState == true)
             {
                 throwables.Add("prt.exceptions.TransitionException");
@@ -229,7 +229,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteMonitorCstr()
         {
-            string cname = Names.GetNameForDecl(_currentMachine);
+            var cname = Names.GetNameForDecl(_currentMachine);
 
             WriteLine($"public {cname}() {{");
             WriteLine("super();");
@@ -248,7 +248,7 @@ namespace Plang.Compiler.Backend.Java {
             Write("return java.util.Arrays.asList(");
             foreach (var (sep, ev) in _currentMachine.Observes.Events.WithPrefixSep(", "))
             {
-                string name = Names.GetNameForDecl(ev);
+                var name = Names.GetNameForDecl(ev);
                 Write($"{sep}{Constants.EventNamespaceName}.{name}.class");
             }
             WriteLine(");");
@@ -281,13 +281,13 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteStateBuilderEntryHandler(Function f)
         {
-            string fname = Names.GetNameForDecl(f);
+            var fname = Names.GetNameForDecl(f);
             WriteLine($".withEntry(this::{fname})");
         }
 
         private void WriteStateBuilderEventHandler(PEvent e, IStateAction a)
         {
-            string ename = $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(e)}";
+            var ename = $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(e)}";
 
             switch (a)
             {
@@ -296,27 +296,27 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 case EventDoAction da when da.Target.Signature.Parameters.Count == 0:
                 {
-                    string aname = Names.GetNameForDecl(da.Target);
+                    var aname = Names.GetNameForDecl(da.Target);
                     WriteLine($".withEvent({ename}.class, __ -> {aname}())");
                     break;
                 }
                 case EventDoAction da when da.Target.Signature.Parameters.Count > 0:
                 {
-                    string aname = Names.GetNameForDecl(da.Target);
+                    var aname = Names.GetNameForDecl(da.Target);
                     WriteLine($".withEvent({ename}.class, this::{aname})");
                     break;
                 }
                 case EventGotoState { TransitionFunction: null } gs:
                 {
-                    string sname = Names.IdentForState(gs.Target);
+                    var sname = Names.IdentForState(gs.Target);
                     WriteLine($".withEvent({ename}.class, __ -> gotoState({sname}))");
                     break;
                 }
                 case EventGotoState { TransitionFunction: { } } gs:
                 {
-                    string sname = Names.IdentForState(gs.Target);
-                    string tname = Names.GetNameForDecl(gs.TransitionFunction);
-                    int argcount = gs.TransitionFunction.Signature.ParameterTypes.Count();
+                    var sname = Names.IdentForState(gs.Target);
+                    var tname = Names.GetNameForDecl(gs.TransitionFunction);
+                    var argcount = gs.TransitionFunction.Signature.ParameterTypes.Count();
 
                     switch (argcount)
                     {
@@ -341,7 +341,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteStateBuilderExitHandler(Function f)
         {
-            string fname = Names.GetNameForDecl(f);
+            var fname = Names.GetNameForDecl(f);
             WriteLine($".withExit(this::{fname})");
         }
 
@@ -488,7 +488,7 @@ namespace Plang.Compiler.Backend.Java {
 
                 case ForeachStmt foreachStmt:
                 {
-                    string varname = Names.GetNameForDecl(foreachStmt.Item);
+                    var varname = Names.GetNameForDecl(foreachStmt.Item);
                     t = Types.JavaTypeFor(foreachStmt.Item.Type);
 
                     Write($"for ({t.TypeName} {varname} : ");
@@ -516,10 +516,10 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteAssignStatement(AssignStmt assignStmt)
         {
-            IPExpr lval = assignStmt.Location;
-            TypeManager.JType t = Types.JavaTypeForVarLocation(lval);
+            var lval = assignStmt.Location;
+            var t = Types.JavaTypeForVarLocation(lval);
 
-            IPExpr rval = assignStmt.Value;
+            var rval = assignStmt.Value;
 
             // In the case where the types of each side of the assignment differ due to subtyping, we need to ensure
             // that we cast the given rval to the lval's type.  For example, if we are assigning a `seq[int]` to a
@@ -587,25 +587,25 @@ namespace Plang.Compiler.Backend.Java {
             {
                 throw new NotImplementedException("Typecasting in MoveAssignStmt is not yet implemented.");
             }
-            IPExpr lval = moveAssignStmt.ToLocation;
+            var lval = moveAssignStmt.ToLocation;
             IPExpr rval = new VariableAccessExpr(moveAssignStmt.SourceLocation, moveAssignStmt.FromVariable);
 
-            AssignStmt assignStmt = new AssignStmt(moveAssignStmt.SourceLocation, lval, rval);
+            var assignStmt = new AssignStmt(moveAssignStmt.SourceLocation, lval, rval);
             WriteAssignStatement(assignStmt);
         }
 
         private void WriteFunctionCallExpr(Function f, IEnumerable<IPExpr> args)
         {
-            bool isStatic = f.Owner == null;
+            var isStatic = f.Owner == null;
             if (isStatic && !f.IsForeign)
             {
                 throw new NotImplementedException("StaticFunCallExpr is not implemented.");
             }
 
-            string fname = Names.GetNameForDecl(f);
+            var fname = Names.GetNameForDecl(f);
             if (f.IsForeign)
             {
-                string ffiBridge = Names.FFIBridgeForMachine(
+                var ffiBridge = Names.FFIBridgeForMachine(
                     isStatic
                     ? Constants.FFIGlobalScopeCname
                     : _currentMachine.Name);
@@ -672,8 +672,8 @@ namespace Plang.Compiler.Backend.Java {
                     Write(t.DefaultValue);
                     break;
                 case EnumElemRefExpr ee:
-                    string typeName = ee.Value.ParentEnum.Name;
-                    string valueName = ee.Value.Name;
+                    var typeName = ee.Value.ParentEnum.Name;
+                    var valueName = ee.Value.Name;
                     Write($"{Constants.TypesNamespaceName}.{typeName}.{valueName}");
                     break;
                 case EventRefExpr _:
@@ -729,7 +729,7 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 case StringExpr se:
                 {
-                    string fmtLit = TypeManager.JType.JString.ToJavaLiteral(se.BaseString);
+                    var fmtLit = TypeManager.JType.JString.ToJavaLiteral(se.BaseString);
                     if (se.Args.Count == 0)
                     {
                         Write(fmtLit);
@@ -819,8 +819,8 @@ namespace Plang.Compiler.Backend.Java {
                 WriteExpr(left); Write($" {op.JavaPrimitiveBinOp()} "); WriteExpr(right);
             }
 
-            TypeManager.JType lhsType = Types.JavaTypeFor(left.Type);
-            TypeManager.JType rhsType = Types.JavaTypeFor(right.Type);
+            var lhsType = Types.JavaTypeFor(left.Type);
+            var rhsType = Types.JavaTypeFor(right.Type);
 
             switch (op.GetKind())
             {
@@ -873,7 +873,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteStructureAccess(IPExpr e)
         {
-            TypeManager.JType t = Types.JavaTypeForVarLocation(e);
+            var t = Types.JavaTypeForVarLocation(e);
 
             // We have to explicitly cast accesses to collections since we might be upcasting (say,
             // if we're extracting an int out of a tuple (List<Object>).).  Use the reference

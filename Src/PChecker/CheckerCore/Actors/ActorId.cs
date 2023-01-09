@@ -59,40 +59,40 @@ namespace PChecker.Actors
         /// <summary>
         /// True if <see cref="NameValue"/> is used as the unique id, else false.
         /// </summary>
-        public bool IsNameUsedForHashing => this.NameValue.Length > 0;
+        public bool IsNameUsedForHashing => NameValue.Length > 0;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ActorId"/> class.
         /// </summary>
         internal ActorId(Type type, string name, ActorRuntime runtime, bool useNameForHashing = false)
         {
-            this.Runtime = runtime;
-            this.Endpoint = string.Empty;
+            Runtime = runtime;
+            Endpoint = string.Empty;
 
             if (useNameForHashing)
             {
-                this.Value = 0;
-                this.NameValue = name;
-                this.Runtime.Assert(!string.IsNullOrEmpty(this.NameValue), "The actor name cannot be null when used as id.");
+                Value = 0;
+                NameValue = name;
+                Runtime.Assert(!string.IsNullOrEmpty(NameValue), "The actor name cannot be null when used as id.");
             }
             else
             {
-                this.Value = runtime.GetNextOperationId();
-                this.NameValue = string.Empty;
+                Value = runtime.GetNextOperationId();
+                NameValue = string.Empty;
 
                 // Checks for overflow.
-                this.Runtime.Assert(this.Value != ulong.MaxValue, "Detected actor id overflow.");
+                Runtime.Assert(Value != ulong.MaxValue, "Detected actor id overflow.");
             }
 
-            this.Type = type.FullName;
-            if (this.IsNameUsedForHashing)
+            Type = type.FullName;
+            if (IsNameUsedForHashing)
             {
-                this.Name = this.NameValue;
+                Name = NameValue;
             }
             else
             {
-                this.Name = string.Format(CultureInfo.InvariantCulture, "{0}({1})",
-                    string.IsNullOrEmpty(name) ? this.Type : name, this.Value.ToString());
+                Name = string.Format(CultureInfo.InvariantCulture, "{0}({1})",
+                    string.IsNullOrEmpty(name) ? Type : name, Value.ToString());
             }
         }
 
@@ -101,7 +101,7 @@ namespace PChecker.Actors
         /// </summary>
         internal void Bind(ActorRuntime runtime)
         {
-            this.Runtime = runtime;
+            Runtime = runtime;
         }
 
         /// <summary>
@@ -112,14 +112,14 @@ namespace PChecker.Actors
             if (obj is ActorId id)
             {
                 // Use same machanism for hashing.
-                if (this.IsNameUsedForHashing != id.IsNameUsedForHashing)
+                if (IsNameUsedForHashing != id.IsNameUsedForHashing)
                 {
                     return false;
                 }
 
-                return this.IsNameUsedForHashing ?
-                    this.NameValue.Equals(id.NameValue) && this.Generation == id.Generation :
-                    this.Value == id.Value && this.Generation == id.Generation;
+                return IsNameUsedForHashing ?
+                    NameValue.Equals(id.NameValue) && Generation == id.Generation :
+                    Value == id.Value && Generation == id.Generation;
             }
 
             return false;
@@ -130,31 +130,31 @@ namespace PChecker.Actors
         /// </summary>
         public override int GetHashCode()
         {
-            int hash = 17;
-            hash = (hash * 23) + (this.IsNameUsedForHashing ? this.NameValue.GetHashCode() : this.Value.GetHashCode());
-            hash = (hash * 23) + this.Generation.GetHashCode();
+            var hash = 17;
+            hash = (hash * 23) + (IsNameUsedForHashing ? NameValue.GetHashCode() : Value.GetHashCode());
+            hash = (hash * 23) + Generation.GetHashCode();
             return hash;
         }
 
         /// <summary>
         /// Returns a string that represents the current actor id.
         /// </summary>
-        public override string ToString() => this.Name;
+        public override string ToString() => Name;
 
         /// <summary>
         /// Indicates whether the specified <see cref="ActorId"/> is equal
         /// to the current <see cref="ActorId"/>.
         /// </summary>
-        public bool Equals(ActorId other) => this.Equals((object)other);
+        public bool Equals(ActorId other) => Equals((object)other);
 
         /// <summary>
         /// Compares the specified <see cref="ActorId"/> with the current
         /// <see cref="ActorId"/> for ordering or sorting purposes.
         /// </summary>
-        public int CompareTo(ActorId other) => string.Compare(this.Name, other?.Name);
+        public int CompareTo(ActorId other) => string.Compare(Name, other?.Name);
 
-        bool IEquatable<ActorId>.Equals(ActorId other) => this.Equals(other);
+        bool IEquatable<ActorId>.Equals(ActorId other) => Equals(other);
 
-        int IComparable<ActorId>.CompareTo(ActorId other) => string.Compare(this.Name, other?.Name);
+        int IComparable<ActorId>.CompareTo(ActorId other) => string.Compare(Name, other?.Name);
     }
 }

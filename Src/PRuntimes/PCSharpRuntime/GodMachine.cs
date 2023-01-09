@@ -8,7 +8,7 @@ namespace Plang.CSharpRuntime
     {
         private void InitOnEntry(Event e)
         {
-            Type mainMachine = (e as Config).MainMachine;
+            var mainMachine = (e as Config).MainMachine;
             CreateActor(mainMachine,
                 new PMachine.InitializeParametersEvent(
                     new PMachine.InitializeParameters("I_" + mainMachine.Name, null)));

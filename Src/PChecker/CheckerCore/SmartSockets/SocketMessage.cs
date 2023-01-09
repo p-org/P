@@ -13,8 +13,8 @@ namespace PChecker.SmartSockets
     {
         public SocketMessage(string id, string sender)
         {
-            this.Id = id;
-            this.Sender = sender;
+            Id = id;
+            Sender = sender;
         }
 
         /// <summary>

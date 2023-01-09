@@ -57,13 +57,13 @@ namespace PChecker.SystematicTesting.Strategies
         /// </summary>
         public PCTStrategy(int maxSteps, int maxPrioritySwitchPoints, IRandomValueGenerator random)
         {
-            this.RandomValueGenerator = random;
-            this.MaxScheduledSteps = maxSteps;
-            this.ScheduledSteps = 0;
-            this.ScheduleLength = 0;
-            this.MaxPrioritySwitchPoints = maxPrioritySwitchPoints;
-            this.PrioritizedOperations = new List<IAsyncOperation>();
-            this.PriorityChangePoints = new SortedSet<int>();
+            RandomValueGenerator = random;
+            MaxScheduledSteps = maxSteps;
+            ScheduledSteps = 0;
+            ScheduleLength = 0;
+            MaxPrioritySwitchPoints = maxPrioritySwitchPoints;
+            PrioritizedOperations = new List<IAsyncOperation>();
+            PriorityChangePoints = new SortedSet<int>();
         }
 
         /// <inheritdoc/>
@@ -76,13 +76,13 @@ namespace PChecker.SystematicTesting.Strategies
                 return false;
             }
 
-            IAsyncOperation highestEnabledOp = this.GetPrioritizedOperation(enabledOperations, current);
+            var highestEnabledOp = GetPrioritizedOperation(enabledOperations, current);
             if (next is null)
             {
                 next = highestEnabledOp;
             }
 
-            this.ScheduledSteps++;
+            ScheduledSteps++;
 
             return true;
         }
@@ -91,12 +91,12 @@ namespace PChecker.SystematicTesting.Strategies
         public bool GetNextBooleanChoice(IAsyncOperation current, int maxValue, out bool next)
         {
             next = false;
-            if (this.RandomValueGenerator.Next(maxValue) == 0)
+            if (RandomValueGenerator.Next(maxValue) == 0)
             {
                 next = true;
             }
 
-            this.ScheduledSteps++;
+            ScheduledSteps++;
 
             return true;
         }
@@ -104,46 +104,46 @@ namespace PChecker.SystematicTesting.Strategies
         /// <inheritdoc/>
         public bool GetNextIntegerChoice(IAsyncOperation current, int maxValue, out int next)
         {
-            next = this.RandomValueGenerator.Next(maxValue);
-            this.ScheduledSteps++;
+            next = RandomValueGenerator.Next(maxValue);
+            ScheduledSteps++;
             return true;
         }
 
         /// <inheritdoc/>
         public bool PrepareForNextIteration()
         {
-            this.ScheduleLength = Math.Max(this.ScheduleLength, this.ScheduledSteps);
-            this.ScheduledSteps = 0;
+            ScheduleLength = Math.Max(ScheduleLength, ScheduledSteps);
+            ScheduledSteps = 0;
 
-            this.PrioritizedOperations.Clear();
-            this.PriorityChangePoints.Clear();
+            PrioritizedOperations.Clear();
+            PriorityChangePoints.Clear();
 
             var range = new List<int>();
-            for (int idx = 0; idx < this.ScheduleLength; idx++)
+            for (var idx = 0; idx < ScheduleLength; idx++)
             {
                 range.Add(idx);
             }
 
-            foreach (int point in this.Shuffle(range).Take(this.MaxPrioritySwitchPoints))
+            foreach (var point in Shuffle(range).Take(MaxPrioritySwitchPoints))
             {
-                this.PriorityChangePoints.Add(point);
+                PriorityChangePoints.Add(point);
             }
 
             return true;
         }
 
         /// <inheritdoc/>
-        public int GetScheduledSteps() => this.ScheduledSteps;
+        public int GetScheduledSteps() => ScheduledSteps;
 
         /// <inheritdoc/>
         public bool HasReachedMaxSchedulingSteps()
         {
-            if (this.MaxScheduledSteps == 0)
+            if (MaxScheduledSteps == 0)
             {
                 return false;
             }
 
-            return this.ScheduledSteps >= this.MaxScheduledSteps;
+            return ScheduledSteps >= MaxScheduledSteps;
         }
 
         /// <inheritdoc/>
@@ -152,9 +152,9 @@ namespace PChecker.SystematicTesting.Strategies
         /// <inheritdoc/>
         public string GetDescription()
         {
-            var text = $"pct[priority change points '{this.MaxPrioritySwitchPoints}' [" +
-                string.Join(", ", this.PriorityChangePoints.ToArray()) +
-                "], seed '" + this.RandomValueGenerator.Seed + "']";
+            var text = $"pct[priority change points '{MaxPrioritySwitchPoints}' [" +
+                string.Join(", ", PriorityChangePoints.ToArray()) +
+                "], seed '" + RandomValueGenerator.Seed + "']";
             return text;
         }
 
@@ -163,47 +163,47 @@ namespace PChecker.SystematicTesting.Strategies
         /// </summary>
         private IAsyncOperation GetPrioritizedOperation(List<IAsyncOperation> ops, IAsyncOperation current)
         {
-            if (this.PrioritizedOperations.Count == 0)
+            if (PrioritizedOperations.Count == 0)
             {
-                this.PrioritizedOperations.Add(current);
+                PrioritizedOperations.Add(current);
             }
 
-            foreach (var op in ops.Where(op => !this.PrioritizedOperations.Contains(op)))
+            foreach (var op in ops.Where(op => !PrioritizedOperations.Contains(op)))
             {
-                var mIndex = this.RandomValueGenerator.Next(this.PrioritizedOperations.Count) + 1;
-                this.PrioritizedOperations.Insert(mIndex, op);
+                var mIndex = RandomValueGenerator.Next(PrioritizedOperations.Count) + 1;
+                PrioritizedOperations.Insert(mIndex, op);
                 Debug.WriteLine("<PCTLog> Detected new operation '{0}' at index '{1}'.", op.Id, mIndex);
             }
 
-            if (this.PriorityChangePoints.Contains(this.ScheduledSteps))
+            if (PriorityChangePoints.Contains(ScheduledSteps))
             {
                 if (ops.Count == 1)
                 {
-                    this.MovePriorityChangePointForward();
+                    MovePriorityChangePointForward();
                 }
                 else
                 {
-                    var priority = this.GetHighestPriorityEnabledOperation(ops);
-                    this.PrioritizedOperations.Remove(priority);
-                    this.PrioritizedOperations.Add(priority);
+                    var priority = GetHighestPriorityEnabledOperation(ops);
+                    PrioritizedOperations.Remove(priority);
+                    PrioritizedOperations.Add(priority);
                     Debug.WriteLine("<PCTLog> Operation '{0}' changes to lowest priority.", priority);
                 }
             }
 
-            var prioritizedSchedulable = this.GetHighestPriorityEnabledOperation(ops);
+            var prioritizedSchedulable = GetHighestPriorityEnabledOperation(ops);
             if (Debug.IsEnabled)
             {
                 Debug.WriteLine("<PCTLog> Prioritized schedulable '{0}'.", prioritizedSchedulable);
                 Debug.Write("<PCTLog> Priority list: ");
-                for (int idx = 0; idx < this.PrioritizedOperations.Count; idx++)
+                for (var idx = 0; idx < PrioritizedOperations.Count; idx++)
                 {
-                    if (idx < this.PrioritizedOperations.Count - 1)
+                    if (idx < PrioritizedOperations.Count - 1)
                     {
-                        Debug.Write("'{0}', ", this.PrioritizedOperations[idx]);
+                        Debug.Write("'{0}', ", PrioritizedOperations[idx]);
                     }
                     else
                     {
-                        Debug.WriteLine("'{0}'.", this.PrioritizedOperations[idx]);
+                        Debug.WriteLine("'{0}'.", PrioritizedOperations[idx]);
                     }
                 }
             }
@@ -217,7 +217,7 @@ namespace PChecker.SystematicTesting.Strategies
         private IAsyncOperation GetHighestPriorityEnabledOperation(IEnumerable<IAsyncOperation> choices)
         {
             IAsyncOperation prioritizedOp = null;
-            foreach (var entity in this.PrioritizedOperations)
+            foreach (var entity in PrioritizedOperations)
             {
                 if (choices.Any(m => m == entity))
                 {
@@ -235,10 +235,10 @@ namespace PChecker.SystematicTesting.Strategies
         private IList<int> Shuffle(IList<int> list)
         {
             var result = new List<int>(list);
-            for (int idx = result.Count - 1; idx >= 1; idx--)
+            for (var idx = result.Count - 1; idx >= 1; idx--)
             {
-                int point = this.RandomValueGenerator.Next(this.ScheduleLength);
-                int temp = result[idx];
+                var point = RandomValueGenerator.Next(ScheduleLength);
+                var temp = result[idx];
                 result[idx] = result[point];
                 result[point] = temp;
             }
@@ -253,24 +253,24 @@ namespace PChecker.SystematicTesting.Strategies
         /// </summary>
         private void MovePriorityChangePointForward()
         {
-            this.PriorityChangePoints.Remove(this.ScheduledSteps);
-            var newPriorityChangePoint = this.ScheduledSteps + 1;
-            while (this.PriorityChangePoints.Contains(newPriorityChangePoint))
+            PriorityChangePoints.Remove(ScheduledSteps);
+            var newPriorityChangePoint = ScheduledSteps + 1;
+            while (PriorityChangePoints.Contains(newPriorityChangePoint))
             {
                 newPriorityChangePoint++;
             }
 
-            this.PriorityChangePoints.Add(newPriorityChangePoint);
+            PriorityChangePoints.Add(newPriorityChangePoint);
             Debug.WriteLine("<PCTLog> Moving priority change to '{0}'.", newPriorityChangePoint);
         }
 
         /// <inheritdoc/>
         public void Reset()
         {
-            this.ScheduleLength = 0;
-            this.ScheduledSteps = 0;
-            this.PrioritizedOperations.Clear();
-            this.PriorityChangePoints.Clear();
+            ScheduleLength = 0;
+            ScheduledSteps = 0;
+            PrioritizedOperations.Clear();
+            PriorityChangePoints.Clear();
         }
     }
 }

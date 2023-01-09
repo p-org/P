@@ -25,12 +25,12 @@ namespace PChecker
         /// </summary>
         public uint Seed
         {
-            get => this.RandomSeed;
+            get => RandomSeed;
 
             set
             {
-                this.RandomSeed = value;
-                this.Random = new System.Random((int)this.RandomSeed);
+                RandomSeed = value;
+                Random = new System.Random((int)RandomSeed);
             }
         }
 
@@ -39,25 +39,25 @@ namespace PChecker
         /// </summary>
         internal RandomValueGenerator(CheckerConfiguration checkerConfiguration)
         {
-            this.RandomSeed = checkerConfiguration.RandomGeneratorSeed ?? (uint)Guid.NewGuid().GetHashCode();
-            this.Random = new System.Random((int)this.RandomSeed);
+            RandomSeed = checkerConfiguration.RandomGeneratorSeed ?? (uint)Guid.NewGuid().GetHashCode();
+            Random = new System.Random((int)RandomSeed);
         }
 
         /// <summary>
         /// Returns a non-negative random number.
         /// </summary>
-        public int Next() => this.Random.Next();
+        public int Next() => Random.Next();
 
         /// <summary>
         /// Returns a non-negative random number less than the specified max value.
         /// </summary>
         /// <param name="maxValue">Exclusive upper bound.</param>
-        public int Next(int maxValue) => this.Random.Next(maxValue);
+        public int Next(int maxValue) => Random.Next(maxValue);
 
         /// <summary>
         /// Returns a random floating-point number that is greater
         /// than or equal to 0.0, and less than 1.0.
         /// </summary>
-        public double NextDouble() => this.Random.NextDouble();
+        public double NextDouble() => Random.NextDouble();
     }
 }

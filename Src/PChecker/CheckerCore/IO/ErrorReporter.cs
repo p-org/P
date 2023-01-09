@@ -26,8 +26,8 @@ namespace PChecker.IO
         /// </summary>
         internal ErrorReporter(CheckerConfiguration checkerConfiguration, TextWriter logger)
         {
-            this._checkerConfiguration = checkerConfiguration;
-            this.Logger = logger ?? new ConsoleLogger();
+            _checkerConfiguration = checkerConfiguration;
+            Logger = logger ?? new ConsoleLogger();
         }
 
         /// <summary>
@@ -35,9 +35,9 @@ namespace PChecker.IO
         /// </summary>
         public void WriteErrorLine(string value)
         {
-            this.Write("Error: ", ConsoleColor.Red);
-            this.Write(value, ConsoleColor.Yellow);
-            this.Logger.WriteLine(string.Empty);
+            Write("Error: ", ConsoleColor.Red);
+            Write(value, ConsoleColor.Yellow);
+            Logger.WriteLine(string.Empty);
         }
 
         /// <summary>
@@ -45,13 +45,13 @@ namespace PChecker.IO
         /// </summary>
         private void Write(string value, ConsoleColor color)
         {
-            if (this._checkerConfiguration.EnableColoredConsoleOutput)
+            if (_checkerConfiguration.EnableColoredConsoleOutput)
             {
-                Error.Write(this.Logger, color, value);
+                Error.Write(Logger, color, value);
             }
             else
             {
-                this.Logger.Write(value);
+                Logger.Write(value);
             }
         }
     }

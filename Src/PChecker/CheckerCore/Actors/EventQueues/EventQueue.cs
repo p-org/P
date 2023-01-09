@@ -46,46 +46,46 @@ namespace PChecker.Actors
         private bool IsClosed;
 
         /// <inheritdoc/>
-        public int Size => this.Queue.Count;
+        public int Size => Queue.Count;
 
         /// <inheritdoc/>
-        public bool IsEventRaised => this.RaisedEvent != default;
+        public bool IsEventRaised => RaisedEvent != default;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventQueue"/> class.
         /// </summary>
         internal EventQueue(IActorManager actorManager)
         {
-            this.ActorManager = actorManager;
-            this.Queue = new LinkedList<(Event, Guid)>();
-            this.EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
-            this.IsClosed = false;
+            ActorManager = actorManager;
+            Queue = new LinkedList<(Event, Guid)>();
+            EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
+            IsClosed = false;
         }
 
         /// <inheritdoc/>
         public EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
         {
-            EnqueueStatus enqueueStatus = EnqueueStatus.EventHandlerRunning;
-            lock (this.Queue)
+            var enqueueStatus = EnqueueStatus.EventHandlerRunning;
+            lock (Queue)
             {
-                if (this.IsClosed)
+                if (IsClosed)
                 {
                     return EnqueueStatus.Dropped;
                 }
 
-                if (this.EventWaitTypes != null &&
-                    this.EventWaitTypes.TryGetValue(e.GetType(), out Func<Event, bool> predicate) &&
+                if (EventWaitTypes != null &&
+                    EventWaitTypes.TryGetValue(e.GetType(), out var predicate) &&
                     (predicate is null || predicate(e)))
                 {
-                    this.EventWaitTypes = null;
+                    EventWaitTypes = null;
                     enqueueStatus = EnqueueStatus.Received;
                 }
                 else
                 {
-                    this.Queue.AddLast((e, opGroupId));
-                    if (!this.ActorManager.IsEventHandlerRunning)
+                    Queue.AddLast((e, opGroupId));
+                    if (!ActorManager.IsEventHandlerRunning)
                     {
-                        this.ActorManager.IsEventHandlerRunning = true;
+                        ActorManager.IsEventHandlerRunning = true;
                         enqueueStatus = EnqueueStatus.EventHandlerNotRunning;
                     }
                 }
@@ -93,13 +93,13 @@ namespace PChecker.Actors
 
             if (enqueueStatus is EnqueueStatus.Received)
             {
-                this.ActorManager.OnReceiveEvent(e, opGroupId, info);
-                this.ReceiveCompletionSource.SetResult(e);
+                ActorManager.OnReceiveEvent(e, opGroupId, info);
+                ReceiveCompletionSource.SetResult(e);
                 return enqueueStatus;
             }
             else
             {
-                this.ActorManager.OnEnqueueEvent(e, opGroupId, info);
+                ActorManager.OnEnqueueEvent(e, opGroupId, info);
             }
 
             return enqueueStatus;
@@ -110,38 +110,38 @@ namespace PChecker.Actors
         {
             // Try to get the raised event, if there is one. Raised events
             // have priority over the events in the inbox.
-            if (this.RaisedEvent != default)
+            if (RaisedEvent != default)
             {
-                if (this.ActorManager.IsEventIgnored(this.RaisedEvent.e, this.RaisedEvent.opGroupId, null))
+                if (ActorManager.IsEventIgnored(RaisedEvent.e, RaisedEvent.opGroupId, null))
                 {
                     // TODO: should the user be able to raise an ignored event?
                     // The raised event is ignored in the current state.
-                    this.RaisedEvent = default;
+                    RaisedEvent = default;
                 }
                 else
                 {
-                    (Event e, Guid opGroupId) = this.RaisedEvent;
-                    this.RaisedEvent = default;
+                    (var e, var opGroupId) = RaisedEvent;
+                    RaisedEvent = default;
                     return (DequeueStatus.Raised, e, opGroupId, null);
                 }
             }
 
-            lock (this.Queue)
+            lock (Queue)
             {
                 // Try to dequeue the next event, if there is one.
-                var node = this.Queue.First;
+                var node = Queue.First;
                 while (node != null)
                 {
                     // Iterates through the events in the inbox.
-                    if (this.ActorManager.IsEventIgnored(node.Value.e, node.Value.opGroupId, null))
+                    if (ActorManager.IsEventIgnored(node.Value.e, node.Value.opGroupId, null))
                     {
                         // Removes an ignored event.
                         var nextNode = node.Next;
-                        this.Queue.Remove(node);
+                        Queue.Remove(node);
                         node = nextNode;
                         continue;
                     }
-                    else if (this.ActorManager.IsEventDeferred(node.Value.e, node.Value.opGroupId, null))
+                    else if (ActorManager.IsEventDeferred(node.Value.e, node.Value.opGroupId, null))
                     {
                         // Skips a deferred event.
                         node = node.Next;
@@ -149,17 +149,17 @@ namespace PChecker.Actors
                     }
 
                     // Found next event that can be dequeued.
-                    this.Queue.Remove(node);
+                    Queue.Remove(node);
                     return (DequeueStatus.Success, node.Value.e, node.Value.opGroupId, null);
                 }
 
                 // No event can be dequeued, so check if there is a default event handler.
-                if (!this.ActorManager.IsDefaultHandlerAvailable())
+                if (!ActorManager.IsDefaultHandlerAvailable())
                 {
                     // There is no default event handler installed, so do not return an event.
                     // Setting IsEventHandlerRunning must happen inside the lock as it needs
                     // to be synchronized with the enqueue and starting a new event handler.
-                    this.ActorManager.IsEventHandlerRunning = false;
+                    ActorManager.IsEventHandlerRunning = false;
                     return (DequeueStatus.NotAvailable, null, Guid.Empty, null);
                 }
             }
@@ -172,8 +172,8 @@ namespace PChecker.Actors
         /// <inheritdoc/>
         public void RaiseEvent(Event e, Guid opGroupId)
         {
-            this.RaisedEvent = (e, opGroupId);
-            this.ActorManager.OnRaiseEvent(e, opGroupId, null);
+            RaisedEvent = (e, opGroupId);
+            ActorManager.OnRaiseEvent(e, opGroupId, null);
         }
 
         //// <inheritdoc/>
@@ -184,7 +184,7 @@ namespace PChecker.Actors
                 { eventType, predicate }
             };
 
-            return this.ReceiveEventAsync(eventWaitTypes);
+            return ReceiveEventAsync(eventWaitTypes);
         }
 
         /// <inheritdoc/>
@@ -196,7 +196,7 @@ namespace PChecker.Actors
                 eventWaitTypes.Add(type, null);
             }
 
-            return this.ReceiveEventAsync(eventWaitTypes);
+            return ReceiveEventAsync(eventWaitTypes);
         }
 
         /// <inheritdoc/>
@@ -208,7 +208,7 @@ namespace PChecker.Actors
                 eventWaitTypes.Add(e.Item1, e.Item2);
             }
 
-            return this.ReceiveEventAsync(eventWaitTypes);
+            return ReceiveEventAsync(eventWaitTypes);
         }
 
         /// <summary>
@@ -217,17 +217,17 @@ namespace PChecker.Actors
         private Task<Event> ReceiveEventAsync(Dictionary<Type, Func<Event, bool>> eventWaitTypes)
         {
             (Event e, Guid opGroupId) receivedEvent = default;
-            lock (this.Queue)
+            lock (Queue)
             {
-                var node = this.Queue.First;
+                var node = Queue.First;
                 while (node != null)
                 {
                     // Dequeue the first event that the caller waits to receive, if there is one in the queue.
-                    if (eventWaitTypes.TryGetValue(node.Value.e.GetType(), out Func<Event, bool> predicate) &&
+                    if (eventWaitTypes.TryGetValue(node.Value.e.GetType(), out var predicate) &&
                         (predicate is null || predicate(node.Value.e)))
                     {
                         receivedEvent = node.Value;
-                        this.Queue.Remove(node);
+                        Queue.Remove(node);
                         break;
                     }
 
@@ -236,8 +236,8 @@ namespace PChecker.Actors
 
                 if (receivedEvent == default)
                 {
-                    this.ReceiveCompletionSource = new TaskCompletionSource<Event>();
-                    this.EventWaitTypes = eventWaitTypes;
+                    ReceiveCompletionSource = new TaskCompletionSource<Event>();
+                    EventWaitTypes = eventWaitTypes;
                 }
             }
 
@@ -245,11 +245,11 @@ namespace PChecker.Actors
             {
                 // Note that EventWaitTypes is racy, so should not be accessed outside
                 // the lock, this is why we access eventWaitTypes instead.
-                this.ActorManager.OnWaitEvent(eventWaitTypes.Keys);
-                return this.ReceiveCompletionSource.Task;
+                ActorManager.OnWaitEvent(eventWaitTypes.Keys);
+                return ReceiveCompletionSource.Task;
             }
 
-            this.ActorManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.opGroupId, null);
+            ActorManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.opGroupId, null);
             return Task.FromResult(receivedEvent.e);
         }
 
@@ -259,9 +259,9 @@ namespace PChecker.Actors
         /// <inheritdoc/>
         public void Close()
         {
-            lock (this.Queue)
+            lock (Queue)
             {
-                this.IsClosed = true;
+                IsClosed = true;
             }
         }
 
@@ -275,18 +275,18 @@ namespace PChecker.Actors
                 return;
             }
 
-            foreach (var (e, opGroupId) in this.Queue)
+            foreach (var (e, opGroupId) in Queue)
             {
-                this.ActorManager.OnDropEvent(e, opGroupId, null);
+                ActorManager.OnDropEvent(e, opGroupId, null);
             }
 
-            this.Queue.Clear();
+            Queue.Clear();
         }
 
         /// <inheritdoc/>
         public void Dispose()
         {
-            this.Dispose(true);
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
     }

@@ -67,51 +67,51 @@ namespace PChecker.Tasks
             {
                 get
                 {
-                    if (this.ResultTask is null)
+                    if (ResultTask is null)
                     {
                         // Optimization: if the task completion source is already completed,
                         // just return a completed task, no need to run a new task.
-                        if (this.Status is TaskStatus.RanToCompletion)
+                        if (Status is TaskStatus.RanToCompletion)
                         {
-                            this.ResultTask = Tasks.Task.FromResult(this.Result);
+                            ResultTask = Tasks.Task.FromResult(Result);
                         }
-                        else if (this.Status is TaskStatus.Canceled)
+                        else if (Status is TaskStatus.Canceled)
                         {
-                            this.ResultTask = Tasks.Task.FromCanceled<TResult>(this.CancellationTokenSource.Token);
+                            ResultTask = Tasks.Task.FromCanceled<TResult>(CancellationTokenSource.Token);
                         }
-                        else if (this.Status is TaskStatus.Faulted)
+                        else if (Status is TaskStatus.Faulted)
                         {
-                            this.ResultTask = Tasks.Task.FromException<TResult>(this.Exception);
+                            ResultTask = Tasks.Task.FromException<TResult>(Exception);
                         }
                         else
                         {
                             // Else, return a task that will complete once the task completion source also completes.
-                            this.ResultTask = Tasks.Task.Run(() =>
+                            ResultTask = Tasks.Task.Run(() =>
                             {
-                                if (this.Status is TaskStatus.Created)
+                                if (Status is TaskStatus.Created)
                                 {
                                     // The resource is not available yet, notify the scheduler that the executing
                                     // asynchronous operation is blocked, so that it cannot be scheduled during
                                     // systematic testing exploration, which could deadlock.
-                                    this.Resource.NotifyWait();
-                                    this.Resource.Runtime.ScheduleNextOperation();
+                                    Resource.NotifyWait();
+                                    Resource.Runtime.ScheduleNextOperation();
                                 }
 
-                                if (this.Status is TaskStatus.Canceled)
+                                if (Status is TaskStatus.Canceled)
                                 {
-                                    this.CancellationTokenSource.Token.ThrowIfCancellationRequested();
+                                    CancellationTokenSource.Token.ThrowIfCancellationRequested();
                                 }
-                                else if (this.Status is TaskStatus.Faulted)
+                                else if (Status is TaskStatus.Faulted)
                                 {
-                                    throw this.Exception;
+                                    throw Exception;
                                 }
 
-                                return this.Result;
-                            }, this.CancellationTokenSource.Token);
+                                return Result;
+                            }, CancellationTokenSource.Token);
                         }
                     }
 
-                    return this.ResultTask;
+                    return ResultTask;
                 }
             }
 
@@ -121,43 +121,43 @@ namespace PChecker.Tasks
             internal Mock()
                 : base(default)
             {
-                this.Resource = new Resource();
-                this.Status = TaskStatus.Created;
-                this.CancellationTokenSource = new CancellationTokenSource();
+                Resource = new Resource();
+                Status = TaskStatus.Created;
+                CancellationTokenSource = new CancellationTokenSource();
             }
 
             /// <inheritdoc/>
             public override void SetResult(TResult result) =>
-                this.CompleteWithStatus(TaskStatus.RanToCompletion, result, default);
+                CompleteWithStatus(TaskStatus.RanToCompletion, result, default);
 
             /// <inheritdoc/>
             public override bool TrySetResult(TResult result) =>
-                this.TryCompleteWithStatus(TaskStatus.RanToCompletion, result, default);
+                TryCompleteWithStatus(TaskStatus.RanToCompletion, result, default);
 
             /// <summary>
             /// Transitions the underlying task into the <see cref="TaskStatus.Canceled"/> state.
             /// </summary>
             public override void SetCanceled() =>
-                this.CompleteWithStatus(TaskStatus.Canceled, default, default);
+                CompleteWithStatus(TaskStatus.Canceled, default, default);
 
             /// <inheritdoc/>
             public override bool TrySetCanceled() =>
-                this.TryCompleteWithStatus(TaskStatus.Canceled, default, default);
+                TryCompleteWithStatus(TaskStatus.Canceled, default, default);
 
             /// <inheritdoc/>
             public override void SetException(Exception exception) =>
-                this.CompleteWithStatus(TaskStatus.Faulted, default, exception);
+                CompleteWithStatus(TaskStatus.Faulted, default, exception);
 
             /// <inheritdoc/>
             public override bool TrySetException(Exception exception) =>
-                this.TryCompleteWithStatus(TaskStatus.Faulted, default, exception);
+                TryCompleteWithStatus(TaskStatus.Faulted, default, exception);
 
             /// <summary>
             /// Completes the task completion source with the specified status.
             /// </summary>
             private void CompleteWithStatus(TaskStatus status, TResult result, Exception exception)
             {
-                if (!this.TryCompleteWithStatus(status, result, exception))
+                if (!TryCompleteWithStatus(status, result, exception))
                 {
                     throw new InvalidOperationException("The underlying Task<TResult> is already in one " +
                         "of the three final states: RanToCompletion, Faulted, or Canceled.");
@@ -169,26 +169,26 @@ namespace PChecker.Tasks
             /// </summary>
             private bool TryCompleteWithStatus(TaskStatus status, TResult result, Exception exception)
             {
-                if (this.Status is TaskStatus.Created)
+                if (Status is TaskStatus.Created)
                 {
-                    this.Status = status;
+                    Status = status;
                     if (status is TaskStatus.RanToCompletion)
                     {
-                        this.Result = result;
+                        Result = result;
                     }
                     else if (status is TaskStatus.Canceled)
                     {
-                        this.CancellationTokenSource.Cancel();
-                        this.Exception = new TaskCanceledException();
+                        CancellationTokenSource.Cancel();
+                        Exception = new TaskCanceledException();
                     }
                     else if (status is TaskStatus.Faulted)
                     {
-                        this.Exception = exception;
+                        Exception = exception;
                     }
 
                     // Release the resource and notify any awaiting asynchronous operations.
-                    this.Resource.NotifyRelease();
-                    this.Resource.Runtime.ScheduleNextOperation();
+                    Resource.NotifyRelease();
+                    Resource.Runtime.ScheduleNextOperation();
 
                     return true;
                 }
@@ -213,14 +213,14 @@ namespace PChecker.Tasks
         /// <summary>
         /// Gets the task created by this task completion source.
         /// </summary>
-        public virtual Task<TResult> Task => this.Instance.Task.WrapInControlledTask();
+        public virtual Task<TResult> Task => Instance.Task.WrapInControlledTask();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TaskCompletionSource{TResult}"/> class.
         /// </summary>
         internal TaskCompletionSource(System.Threading.Tasks.TaskCompletionSource<TResult> tcs)
         {
-            this.Instance = tcs;
+            Instance = tcs;
         }
 
         /// <summary>
@@ -230,14 +230,14 @@ namespace PChecker.Tasks
         /// <exception cref="InvalidOperationException">The underlying <see cref="Task{TResult}"/>
         /// is already in one of the three final states: <see cref="TaskStatus.RanToCompletion"/>,
         /// <see cref="TaskStatus.Faulted"/>, or <see cref="TaskStatus.Canceled"/>.</exception>
-        public virtual void SetResult(TResult result) => this.Instance.SetResult(result);
+        public virtual void SetResult(TResult result) => Instance.SetResult(result);
 
         /// <summary>
         /// Attempts to transition the underlying task into the <see cref="TaskStatus.RanToCompletion"/> state.
         /// </summary>
         /// <param name="result">The result value to bind to this task.</param>
         /// <returns>True if the operation was successful; otherwise, false.</returns>
-        public virtual bool TrySetResult(TResult result) => this.Instance.TrySetResult(result);
+        public virtual bool TrySetResult(TResult result) => Instance.TrySetResult(result);
 
         /// <summary>
         /// Transitions the underlying task into the <see cref="TaskStatus.Canceled"/> state.
@@ -245,13 +245,13 @@ namespace PChecker.Tasks
         /// <exception cref="InvalidOperationException">The underlying <see cref="Task{TResult}"/>
         /// is already in one of the three final states: <see cref="TaskStatus.RanToCompletion"/>,
         /// <see cref="TaskStatus.Faulted"/>, or <see cref="TaskStatus.Canceled"/>.</exception>
-        public virtual void SetCanceled() => this.Instance.SetCanceled();
+        public virtual void SetCanceled() => Instance.SetCanceled();
 
         /// <summary>
         /// Attempts to transition the underlying task into the <see cref="TaskStatus.Canceled"/> state.
         /// </summary>
         /// <returns>True if the operation was successful; otherwise, false.</returns>
-        public virtual bool TrySetCanceled() => this.Instance.TrySetCanceled();
+        public virtual bool TrySetCanceled() => Instance.TrySetCanceled();
 
         /// <summary>
         /// Transitions the underlying task into the <see cref="TaskStatus.Faulted"/> state
@@ -261,7 +261,7 @@ namespace PChecker.Tasks
         /// <exception cref="InvalidOperationException">The underlying <see cref="Task{TResult}"/>
         /// is already in one of the three final states: <see cref="TaskStatus.RanToCompletion"/>,
         /// <see cref="TaskStatus.Faulted"/>, or <see cref="TaskStatus.Canceled"/>.</exception>
-        public virtual void SetException(Exception exception) => this.Instance.SetException(exception);
+        public virtual void SetException(Exception exception) => Instance.SetException(exception);
 
         /// <summary>
         /// Attempts to transition the underlying task into the <see cref="TaskStatus.Faulted"/> state
@@ -269,6 +269,6 @@ namespace PChecker.Tasks
         /// </summary>
         /// <param name="exception">The exception to bind to this task.</param>
         /// <returns>True if the operation was successful; otherwise, false.</returns>
-        public virtual bool TrySetException(Exception exception) => this.Instance.TrySetException(exception);
+        public virtual bool TrySetException(Exception exception) => Instance.TrySetException(exception);
     }
 }

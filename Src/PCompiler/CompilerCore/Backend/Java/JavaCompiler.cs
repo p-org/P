@@ -29,7 +29,7 @@ namespace Plang.Compiler.Backend.Java
         {
             GenerateBuildScript(job);
 
-            List<JavaSourceGenerator> generators = new List<JavaSourceGenerator>()
+            var generators = new List<JavaSourceGenerator>()
             {
                 new TypesGenerator(Constants.TypesDefnFileName),
                 new EventGenerator(Constants.EventDefnFileName),
@@ -37,7 +37,7 @@ namespace Plang.Compiler.Backend.Java
                 new FFIStubGenerator(Constants.FFIStubFileName)
             };
 
-            CompilationContext ctx = new CompilationContext(job);
+            var ctx = new CompilationContext(job);
             return generators.SelectMany(g => g.GenerateCode(ctx, scope));
         }
 
@@ -53,8 +53,8 @@ namespace Plang.Compiler.Backend.Java
         /// </summary>
         public void Compile(ICompilerConfiguration job)
         {
-            string stdout = "";
-            string stderr = "";
+            var stdout = "";
+            var stderr = "";
 
             string[] args = { "clean", "package"};
             if (Compiler.RunWithOutput(

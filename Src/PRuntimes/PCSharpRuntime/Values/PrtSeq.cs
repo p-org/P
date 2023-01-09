@@ -41,7 +41,7 @@ namespace Plang.CSharpRuntime.Values
 
         public void Freeze()
         {
-            foreach (IPrtValue value in values)
+            foreach (var value in values)
             {
                 MutabilityHelper.EnsureFrozen(value);
             }
@@ -133,10 +133,10 @@ namespace Plang.CSharpRuntime.Values
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append("(");
-            string sep = "";
-            foreach (IPrtValue value in values)
+            var sep = "";
+            foreach (var value in values)
             {
                 sb.Append(sep);
                 sb.Append(value);
@@ -149,12 +149,12 @@ namespace Plang.CSharpRuntime.Values
 
         public string ToEscapedString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append("(");
-            string sep = "";
-            foreach (IPrtValue value in values)
+            var sep = "";
+            foreach (var value in values)
             {
-                string v = value == null ? "null" : value.ToEscapedString();
+                var v = value == null ? "null" : value.ToEscapedString();
                 sb.Append(sep);
                 sb.Append(v);
                 sep = ", ";

@@ -21,7 +21,7 @@ namespace PChecker.Actors.SharedObjects
         /// </summary>
         protected override Task OnInitializeAsync(Event initialEvent)
         {
-            this.Counter = 0;
+            Counter = 0;
             return Task.CompletedTask;
         }
 
@@ -34,32 +34,32 @@ namespace PChecker.Actors.SharedObjects
             switch (opEvent.Operation)
             {
                 case SharedCounterEvent.OperationType.Set:
-                    this.SendEvent(opEvent.Sender, new SharedCounterResponseEvent(this.Counter));
-                    this.Counter = opEvent.Value;
+                    SendEvent(opEvent.Sender, new SharedCounterResponseEvent(Counter));
+                    Counter = opEvent.Value;
                     break;
 
                 case SharedCounterEvent.OperationType.Get:
-                    this.SendEvent(opEvent.Sender, new SharedCounterResponseEvent(this.Counter));
+                    SendEvent(opEvent.Sender, new SharedCounterResponseEvent(Counter));
                     break;
 
                 case SharedCounterEvent.OperationType.Increment:
-                    this.Counter++;
+                    Counter++;
                     break;
 
                 case SharedCounterEvent.OperationType.Decrement:
-                    this.Counter--;
+                    Counter--;
                     break;
 
                 case SharedCounterEvent.OperationType.Add:
-                    this.Counter += opEvent.Value;
-                    this.SendEvent(opEvent.Sender, new SharedCounterResponseEvent(this.Counter));
+                    Counter += opEvent.Value;
+                    SendEvent(opEvent.Sender, new SharedCounterResponseEvent(Counter));
                     break;
 
                 case SharedCounterEvent.OperationType.CompareExchange:
-                    this.SendEvent(opEvent.Sender, new SharedCounterResponseEvent(this.Counter));
-                    if (this.Counter == opEvent.Comparand)
+                    SendEvent(opEvent.Sender, new SharedCounterResponseEvent(Counter));
+                    if (Counter == opEvent.Comparand)
                     {
-                        this.Counter = opEvent.Value;
+                        Counter = opEvent.Value;
                     }
 
                     break;

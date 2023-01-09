@@ -17,7 +17,7 @@ namespace PChecker.Actors.Timers.Mocks
         /// <summary>
         /// Stores information about this timer.
         /// </summary>
-        TimerInfo IActorTimer.Info => this.TimerInfo;
+        TimerInfo IActorTimer.Info => TimerInfo;
 
         /// <summary>
         /// The actor that owns this timer.
@@ -46,17 +46,17 @@ namespace PChecker.Actors.Timers.Mocks
         /// </summary>
         private void Setup(Event e)
         {
-            this.TimerInfo = (e as TimerSetupEvent).Info;
-            this.Owner = (e as TimerSetupEvent).Owner;
-            this.Delay = (e as TimerSetupEvent).Delay;
-            this.TimeoutEvent = this.TimerInfo.CustomEvent;
-            if (this.TimeoutEvent is null)
+            TimerInfo = (e as TimerSetupEvent).Info;
+            Owner = (e as TimerSetupEvent).Owner;
+            Delay = (e as TimerSetupEvent).Delay;
+            TimeoutEvent = TimerInfo.CustomEvent;
+            if (TimeoutEvent is null)
             {
-                this.TimeoutEvent = new TimerElapsedEvent(this.TimerInfo);
+                TimeoutEvent = new TimerElapsedEvent(TimerInfo);
             }
             else
             {
-                this.TimeoutEvent.Info = this.TimerInfo;
+                TimeoutEvent.Info = TimerInfo;
             }
         }
 
@@ -66,22 +66,22 @@ namespace PChecker.Actors.Timers.Mocks
         private void HandleTimeout()
         {
             // Try to send the next timeout event.
-            bool isTimeoutSent = false;
-            int delay = (int)this.Delay > 0 ? (int)this.Delay : 1;
+            var isTimeoutSent = false;
+            var delay = (int)Delay > 0 ? (int)Delay : 1;
 
             // TODO: do we need some normalization of delay here ... ?
-            if ((this.RandomInteger(delay) == 0) && this.RandomBoolean())
+            if ((RandomInteger(delay) == 0) && RandomBoolean())
             {
                 // The probability of sending a timeout event is at most 1/N.
-                this.SendEvent(this.Owner.Id, this.TimeoutEvent);
+                SendEvent(Owner.Id, TimeoutEvent);
                 isTimeoutSent = true;
             }
 
             // If non-periodic, and a timeout was successfully sent, then become
             // inactive until disposal. Else retry.
-            if (isTimeoutSent && this.TimerInfo.Period.TotalMilliseconds < 0)
+            if (isTimeoutSent && TimerInfo.Period.TotalMilliseconds < 0)
             {
-                this.RaiseGotoStateEvent<Inactive>();
+                RaiseGotoStateEvent<Inactive>();
             }
         }
 
@@ -97,7 +97,7 @@ namespace PChecker.Actors.Timers.Mocks
         {
             if (obj is MockStateMachineTimer timer)
             {
-                return this.Id == timer.Id;
+                return Id == timer.Id;
             }
 
             return false;
@@ -106,12 +106,12 @@ namespace PChecker.Actors.Timers.Mocks
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
-        public override int GetHashCode() => this.Id.GetHashCode();
+        public override int GetHashCode() => Id.GetHashCode();
 
         /// <summary>
         /// Returns a string that represents the current instance.
         /// </summary>
-        public override string ToString() => this.Id.Name;
+        public override string ToString() => Id.Name;
 
         /// <summary>
         /// Indicates whether the specified <see cref="ActorId"/> is equal
@@ -121,7 +121,7 @@ namespace PChecker.Actors.Timers.Mocks
         /// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
         public bool Equals(ActorTimer other)
         {
-            return this.Equals((object)other);
+            return Equals((object)other);
         }
 
         /// <summary>
@@ -129,7 +129,7 @@ namespace PChecker.Actors.Timers.Mocks
         /// </summary>
         public void Dispose()
         {
-            this.Runtime.SendEvent(this.Id, HaltEvent.Instance);
+            Runtime.SendEvent(Id, HaltEvent.Instance);
         }
     }
 }

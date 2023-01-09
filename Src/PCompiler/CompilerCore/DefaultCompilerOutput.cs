@@ -15,7 +15,7 @@ namespace Plang.Compiler
 
         public void WriteMessage(string msg, SeverityKind severity)
         {
-            ConsoleColor defaultColor = Console.ForegroundColor;
+            var defaultColor = Console.ForegroundColor;
             switch (severity)
             {
                 case SeverityKind.Info:
@@ -41,13 +41,13 @@ namespace Plang.Compiler
 
         public void WriteFile(CompiledFile file)
         {
-            string outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
+            var outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
             File.WriteAllText(outputPath, file.Contents);
         }
 
         public void WriteError(string msg)
         {
-            ConsoleColor defaultColor = Console.ForegroundColor;
+            var defaultColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(msg);
             Console.ForegroundColor = defaultColor;
@@ -55,7 +55,7 @@ namespace Plang.Compiler
 
         public void WriteInfo(string msg)
         {
-            ConsoleColor defaultColor = Console.ForegroundColor;
+            var defaultColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(msg);
             Console.ForegroundColor = defaultColor;
@@ -63,7 +63,7 @@ namespace Plang.Compiler
 
         public void WriteWarning(string msg)
         {
-            ConsoleColor defaultColor = Console.ForegroundColor;
+            var defaultColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine(msg);
             Console.ForegroundColor = defaultColor;

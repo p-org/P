@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Plang.Compiler.Backend.C;
 using Plang.Compiler.Backend.CSharp;
 using Plang.Compiler.Backend.Java;
-using Plang.Compiler.Backend.Rvm;
 using Plang.Compiler.Backend.Symbolic;
 
 namespace Plang.Compiler.Backend

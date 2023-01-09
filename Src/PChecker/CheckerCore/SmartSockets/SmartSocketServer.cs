@@ -72,14 +72,14 @@ namespace PChecker.SmartSockets
         private SmartSocketServer(string name, SmartSocketTypeResolver resolver, string ipAddress = "127.0.0.1:0",
             string udpGroupAddress = "226.10.10.2", int udpGroupPort = 37992)
         {
-            this.ServiceName = name;
-            this.Resolver = resolver;
+            ServiceName = name;
+            Resolver = resolver;
             if (ipAddress.Contains(':'))
             {
-                string[] parts = ipAddress.Split(':');
-                if (parts.Length == 2 && int.TryParse(parts[1], out int port))
+                var parts = ipAddress.Split(':');
+                if (parts.Length == 2 && int.TryParse(parts[1], out var port))
                 {
-                    this.IpAddress = new IPEndPoint(IPAddress.Parse(parts[0]), port);
+                    IpAddress = new IPEndPoint(IPAddress.Parse(parts[0]), port);
                 }
                 else
                 {
@@ -88,13 +88,13 @@ namespace PChecker.SmartSockets
             }
             else
             {
-                this.IpAddress = new IPEndPoint(IPAddress.Parse(ipAddress), 0);
+                IpAddress = new IPEndPoint(IPAddress.Parse(ipAddress), 0);
             }
 
             if (!string.IsNullOrEmpty(udpGroupAddress))
             {
-                this.GroupAddress = IPAddress.Parse(udpGroupAddress);
-                this.GroupPort = udpGroupPort;
+                GroupAddress = IPAddress.Parse(udpGroupAddress);
+                GroupPort = udpGroupPort;
             }
         }
 
@@ -115,7 +115,7 @@ namespace PChecker.SmartSockets
                 ipAddress = "127.0.0.1:0";
             }
 
-            SmartSocketServer server = new SmartSocketServer(name, resolver, ipAddress, udpGroupAddress, udpGroupPort);
+            var server = new SmartSocketServer(name, resolver, ipAddress, udpGroupAddress, udpGroupPort);
             server.StartListening();
             return server;
         }
@@ -125,56 +125,56 @@ namespace PChecker.SmartSockets
         /// </summary>
         private void StartListening()
         {
-            this.Listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            IPEndPoint ep = this.IpAddress;
-            this.Listener.Bind(ep);
+            Listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            var ep = IpAddress;
+            Listener.Bind(ep);
 
-            IPEndPoint ip = this.Listener.LocalEndPoint as IPEndPoint;
-            this.EndPoint = ip;
-            this.Listener.Listen(10);
+            var ip = Listener.LocalEndPoint as IPEndPoint;
+            EndPoint = ip;
+            Listener.Listen(10);
 
             // now start a background thread to process incoming requests.
-            Task.Run(this.Run);
+            Task.Run(Run);
 
-            if (this.GroupAddress != null)
+            if (GroupAddress != null)
             {
                 // Start the UDP listener thread
-                Task.Run(this.UdpListenerThread);
+                Task.Run(UdpListenerThread);
             }
         }
 
         private void UdpListenerThread()
         {
             var localHost = SmartSocketClient.FindLocalHostName();
-            List<string> addresses = SmartSocketClient.FindLocalIpAddresses();
+            var addresses = SmartSocketClient.FindLocalIpAddresses();
             if (localHost == null || addresses.Count == 0)
             {
                 return; // no network.
             }
 
-            IPEndPoint remoteEP = new IPEndPoint(this.GroupAddress, this.GroupPort);
-            this.UdpListener = new UdpClient(this.GroupPort);
-            this.UdpListener.JoinMulticastGroup(this.GroupAddress);
+            var remoteEP = new IPEndPoint(GroupAddress, GroupPort);
+            UdpListener = new UdpClient(GroupPort);
+            UdpListener.JoinMulticastGroup(GroupAddress);
             while (true)
             {
-                byte[] data = this.UdpListener.Receive(ref remoteEP);
+                var data = UdpListener.Receive(ref remoteEP);
                 if (data != null)
                 {
-                    BinaryReader reader = new BinaryReader(new MemoryStream(data));
-                    int len = reader.ReadInt32();
-                    string msg = reader.ReadString();
-                    if (msg == this.ServiceName)
+                    var reader = new BinaryReader(new MemoryStream(data));
+                    var len = reader.ReadInt32();
+                    var msg = reader.ReadString();
+                    if (msg == ServiceName)
                     {
                         // send response back with info on how to connect to this server.
-                        IPEndPoint localEp = (IPEndPoint)this.Listener.LocalEndPoint;
-                        string addr = localEp.ToString();
-                        MemoryStream ms = new MemoryStream();
-                        BinaryWriter writer = new BinaryWriter(ms);
+                        var localEp = (IPEndPoint)Listener.LocalEndPoint;
+                        var addr = localEp.ToString();
+                        var ms = new MemoryStream();
+                        var writer = new BinaryWriter(ms);
                         writer.Write(addr.Length);
                         writer.Write(addr);
                         writer.Flush();
-                        byte[] buffer = ms.ToArray();
-                        this.UdpListener.Send(buffer, buffer.Length, remoteEP);
+                        var buffer = ms.ToArray();
+                        UdpListener.Send(buffer, buffer.Length, remoteEP);
                     }
                 }
             }
@@ -187,9 +187,9 @@ namespace PChecker.SmartSockets
         public async Task BroadcastAsync(SocketMessage message)
         {
             SmartSocketClient[] snapshot = null;
-            lock (this.Clients)
+            lock (Clients)
             {
-                snapshot = this.Clients.ToArray();
+                snapshot = Clients.ToArray();
             }
 
             foreach (var client in snapshot)
@@ -203,17 +203,17 @@ namespace PChecker.SmartSockets
         /// </summary>
         internal void Run()
         {
-            if (this.acceptArgs == null)
+            if (acceptArgs == null)
             {
-                this.acceptArgs = new SocketAsyncEventArgs();
-                this.acceptArgs.Completed += this.OnAcceptComplete;
+                acceptArgs = new SocketAsyncEventArgs();
+                acceptArgs.Completed += OnAcceptComplete;
             }
 
-            if (!this.Stopped)
+            if (!Stopped)
             {
                 try
                 {
-                    this.Listener.AcceptAsync(this.acceptArgs);
+                    Listener.AcceptAsync(acceptArgs);
                 }
                 catch (Exception)
                 {
@@ -225,72 +225,72 @@ namespace PChecker.SmartSockets
 
         private void OnAcceptComplete(object sender, SocketAsyncEventArgs e)
         {
-            if (this.acceptArgs == e)
+            if (acceptArgs == e)
             {
-                this.acceptArgs = null;
-                Socket client = e.AcceptSocket;
-                this.OnAccept(client);
-                this.Run();
+                acceptArgs = null;
+                var client = e.AcceptSocket;
+                OnAccept(client);
+                Run();
             }
         }
 
         private void OnAccept(Socket client)
         {
-            IPEndPoint ep1 = client.RemoteEndPoint as IPEndPoint;
-            SmartSocketClient proxy = new SmartSocketClient(this, client, this.Resolver)
+            var ep1 = client.RemoteEndPoint as IPEndPoint;
+            var proxy = new SmartSocketClient(this, client, Resolver)
             {
                 Name = ep1.ToString(),
                 ServerName = SmartSocketClient.FindLocalHostName()
             };
 
-            proxy.Disconnected += this.OnClientDisconnected;
+            proxy.Disconnected += OnClientDisconnected;
 
             SmartSocketClient[] snapshot = null;
 
-            lock (this.Clients)
+            lock (Clients)
             {
-                snapshot = this.Clients.ToArray();
+                snapshot = Clients.ToArray();
             }
 
-            foreach (SmartSocketClient s in snapshot)
+            foreach (var s in snapshot)
             {
-                IPEndPoint ep2 = s.Socket.RemoteEndPoint as IPEndPoint;
+                var ep2 = s.Socket.RemoteEndPoint as IPEndPoint;
                 if (ep1 == ep2)
                 {
                     // can only have one client using this end point.
-                    this.RemoveClient(s);
+                    RemoveClient(s);
                 }
             }
 
-            lock (this.Clients)
+            lock (Clients)
             {
-                this.Clients.Add(proxy);
+                Clients.Add(proxy);
             }
 
-            if (this.ClientConnected != null)
+            if (ClientConnected != null)
             {
-                this.ClientConnected(this, proxy);
+                ClientConnected(this, proxy);
             }
         }
 
         private void OnClientDisconnected(object sender, EventArgs e)
         {
-            SmartSocketClient client = (SmartSocketClient)sender;
-            this.RemoveClient(client);
+            var client = (SmartSocketClient)sender;
+            RemoveClient(client);
         }
 
         internal void RemoveClient(SmartSocketClient client)
         {
-            bool found = false;
-            lock (this.Clients)
+            var found = false;
+            lock (Clients)
             {
-                found = this.Clients.Contains(client);
-                this.Clients.Remove(client);
+                found = Clients.Contains(client);
+                Clients.Remove(client);
             }
 
-            if (found && this.ClientDisconnected != null)
+            if (found && ClientDisconnected != null)
             {
-                this.ClientDisconnected(this, client);
+                ClientDisconnected(this, client);
             }
         }
 
@@ -300,15 +300,15 @@ namespace PChecker.SmartSockets
         /// </summary>
         public void Stop()
         {
-            this.Stopped = true;
-            using (this.Listener)
+            Stopped = true;
+            using (Listener)
             {
                 try
                 {
-                    if (this.acceptArgs != null)
+                    if (acceptArgs != null)
                     {
-                        this.acceptArgs.Dispose();
-                        this.acceptArgs = null;
+                        acceptArgs.Dispose();
+                        acceptArgs = null;
                     }
                 }
                 catch (Exception)
@@ -316,34 +316,34 @@ namespace PChecker.SmartSockets
                 }
             }
 
-            this.Listener = null;
+            Listener = null;
 
             SmartSocketClient[] snapshot = null;
-            lock (this.Clients)
+            lock (Clients)
             {
-                snapshot = this.Clients.ToArray();
+                snapshot = Clients.ToArray();
             }
 
-            foreach (SmartSocketClient client in snapshot)
+            foreach (var client in snapshot)
             {
                 client.Close();
             }
 
-            lock (this.Clients)
+            lock (Clients)
             {
-                this.Clients.Clear();
+                Clients.Clear();
             }
         }
 
         internal async Task<bool> OpenBackChannel(SmartSocketClient client, int port)
         {
-            if (this.BackChannelOpened != null)
+            if (BackChannelOpened != null)
             {
-                IPEndPoint ipe = (IPEndPoint)client.Socket.RemoteEndPoint;
-                IPEndPoint endPoint = new IPEndPoint(ipe.Address, port);
-                SmartSocketClient channel = await SmartSocketClient.ConnectAsync(endPoint, this.ServiceName, this.Resolver);
+                var ipe = (IPEndPoint)client.Socket.RemoteEndPoint;
+                var endPoint = new IPEndPoint(ipe.Address, port);
+                var channel = await SmartSocketClient.ConnectAsync(endPoint, ServiceName, Resolver);
                 client.BackChannel = channel;
-                this.BackChannelOpened(this, client);
+                BackChannelOpened(this, client);
                 return true;
             }
             else

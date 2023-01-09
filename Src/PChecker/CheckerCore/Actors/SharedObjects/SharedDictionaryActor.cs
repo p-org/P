@@ -27,7 +27,7 @@ namespace PChecker.Actors.SharedObjects
             {
                 if (e.Operation == SharedDictionaryEvent.OperationType.Initialize && e.Comparer != null)
                 {
-                    this.Dictionary = new Dictionary<TKey, TValue>(e.Comparer as IEqualityComparer<TKey>);
+                    Dictionary = new Dictionary<TKey, TValue>(e.Comparer as IEqualityComparer<TKey>);
                 }
                 else
                 {
@@ -36,7 +36,7 @@ namespace PChecker.Actors.SharedObjects
             }
             else
             {
-                this.Dictionary = new Dictionary<TKey, TValue>();
+                Dictionary = new Dictionary<TKey, TValue>();
             }
 
             return Task.CompletedTask;
@@ -51,73 +51,73 @@ namespace PChecker.Actors.SharedObjects
             switch (opEvent.Operation)
             {
                 case SharedDictionaryEvent.OperationType.TryAdd:
-                    if (this.Dictionary.ContainsKey((TKey)opEvent.Key))
+                    if (Dictionary.ContainsKey((TKey)opEvent.Key))
                     {
-                        this.SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<bool>(false));
+                        SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<bool>(false));
                     }
                     else
                     {
-                        this.Dictionary[(TKey)opEvent.Key] = (TValue)opEvent.Value;
-                        this.SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<bool>(true));
+                        Dictionary[(TKey)opEvent.Key] = (TValue)opEvent.Value;
+                        SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<bool>(true));
                     }
 
                     break;
 
                 case SharedDictionaryEvent.OperationType.TryUpdate:
-                    if (!this.Dictionary.ContainsKey((TKey)opEvent.Key))
+                    if (!Dictionary.ContainsKey((TKey)opEvent.Key))
                     {
-                        this.SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<bool>(false));
+                        SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<bool>(false));
                     }
                     else
                     {
-                        var currentValue = this.Dictionary[(TKey)opEvent.Key];
+                        var currentValue = Dictionary[(TKey)opEvent.Key];
                         if (currentValue.Equals((TValue)opEvent.ComparisonValue))
                         {
-                            this.Dictionary[(TKey)opEvent.Key] = (TValue)opEvent.Value;
-                            this.SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<bool>(true));
+                            Dictionary[(TKey)opEvent.Key] = (TValue)opEvent.Value;
+                            SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<bool>(true));
                         }
                         else
                         {
-                            this.SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<bool>(false));
+                            SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<bool>(false));
                         }
                     }
 
                     break;
 
                 case SharedDictionaryEvent.OperationType.TryGet:
-                    if (!this.Dictionary.ContainsKey((TKey)opEvent.Key))
+                    if (!Dictionary.ContainsKey((TKey)opEvent.Key))
                     {
-                        this.SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<Tuple<bool, TValue>>(Tuple.Create(false, default(TValue))));
+                        SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<Tuple<bool, TValue>>(Tuple.Create(false, default(TValue))));
                     }
                     else
                     {
-                        this.SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<Tuple<bool, TValue>>(Tuple.Create(true, this.Dictionary[(TKey)opEvent.Key])));
+                        SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<Tuple<bool, TValue>>(Tuple.Create(true, Dictionary[(TKey)opEvent.Key])));
                     }
 
                     break;
 
                 case SharedDictionaryEvent.OperationType.Get:
-                    this.SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<TValue>(this.Dictionary[(TKey)opEvent.Key]));
+                    SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<TValue>(Dictionary[(TKey)opEvent.Key]));
                     break;
 
                 case SharedDictionaryEvent.OperationType.Set:
-                    this.Dictionary[(TKey)opEvent.Key] = (TValue)opEvent.Value;
+                    Dictionary[(TKey)opEvent.Key] = (TValue)opEvent.Value;
                     break;
 
                 case SharedDictionaryEvent.OperationType.Count:
-                    this.SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<int>(this.Dictionary.Count));
+                    SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<int>(Dictionary.Count));
                     break;
 
                 case SharedDictionaryEvent.OperationType.TryRemove:
-                    if (this.Dictionary.ContainsKey((TKey)opEvent.Key))
+                    if (Dictionary.ContainsKey((TKey)opEvent.Key))
                     {
-                        var value = this.Dictionary[(TKey)opEvent.Key];
-                        this.Dictionary.Remove((TKey)opEvent.Key);
-                        this.SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<Tuple<bool, TValue>>(Tuple.Create(true, value)));
+                        var value = Dictionary[(TKey)opEvent.Key];
+                        Dictionary.Remove((TKey)opEvent.Key);
+                        SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<Tuple<bool, TValue>>(Tuple.Create(true, value)));
                     }
                     else
                     {
-                        this.SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<Tuple<bool, TValue>>(Tuple.Create(false, default(TValue))));
+                        SendEvent(opEvent.Sender, new SharedDictionaryResponseEvent<Tuple<bool, TValue>>(Tuple.Create(false, default(TValue))));
                     }
 
                     break;

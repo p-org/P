@@ -25,8 +25,8 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal Resource()
         {
-            this.Runtime = ControlledRuntime.Current;
-            this.AwaitingOperations = new HashSet<AsyncOperation>();
+            Runtime = ControlledRuntime.Current;
+            AwaitingOperations = new HashSet<AsyncOperation>();
         }
 
         /// <summary>
@@ -35,9 +35,9 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal void NotifyWait()
         {
-            var op = this.Runtime.GetExecutingOperation<AsyncOperation>();
+            var op = Runtime.GetExecutingOperation<AsyncOperation>();
             op.Status = AsyncOperationStatus.BlockedOnResource;
-            this.AwaitingOperations.Add(op);
+            AwaitingOperations.Add(op);
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal void NotifyRelease()
         {
-            foreach (var op in this.AwaitingOperations)
+            foreach (var op in AwaitingOperations)
             {
                 op.Status = AsyncOperationStatus.Enabled;
             }
@@ -54,7 +54,7 @@ namespace PChecker.SystematicTesting
             // We need to clear the whole set, because we signal all awaiting asynchronous
             // operations to wake up, else we could set as enabled an operation that is not
             // any more waiting for this resource at a future point.
-            this.AwaitingOperations.Clear();
+            AwaitingOperations.Clear();
         }
     }
 }

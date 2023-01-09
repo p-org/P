@@ -50,19 +50,19 @@ namespace PChecker.Tasks
             [DebuggerHidden]
             get
             {
-                if (this.IsCompleted)
+                if (IsCompleted)
                 {
                     IO.Debug.WriteLine("<AsyncBuilder> Creating completed builder task '{0}' (isCompleted {1}) from task '{2}'.",
-                        this.MethodBuilder.Task.Id, this.MethodBuilder.Task.IsCompleted, Task.CurrentId);
+                        MethodBuilder.Task.Id, MethodBuilder.Task.IsCompleted, Task.CurrentId);
                     return Task.CompletedTask;
                 }
                 else
                 {
                     IO.Debug.WriteLine("<AsyncBuilder> Creating builder task '{0}' (isCompleted {1}) from task '{2}'.",
-                        this.MethodBuilder.Task.Id, this.MethodBuilder.Task.IsCompleted, Task.CurrentId);
-                    this.UseBuilder = true;
-                    this.TaskController?.OnAsyncTaskMethodBuilderTask();
-                    return new Task(this.TaskController, this.MethodBuilder.Task);
+                        MethodBuilder.Task.Id, MethodBuilder.Task.IsCompleted, Task.CurrentId);
+                    UseBuilder = true;
+                    TaskController?.OnAsyncTaskMethodBuilderTask();
+                    return new Task(TaskController, MethodBuilder.Task);
                 }
             }
         }
@@ -72,10 +72,10 @@ namespace PChecker.Tasks
         /// </summary>
         private AsyncTaskMethodBuilder(TaskController taskManager)
         {
-            this.TaskController = taskManager;
-            this.MethodBuilder = default;
-            this.IsCompleted = false;
-            this.UseBuilder = false;
+            TaskController = taskManager;
+            MethodBuilder = default;
+            IsCompleted = false;
+            UseBuilder = false;
         }
 
         /// <summary>
@@ -101,8 +101,8 @@ namespace PChecker.Tasks
             where TStateMachine : IAsyncStateMachine
         {
             IO.Debug.WriteLine("<AsyncBuilder> Start state machine from task '{0}'.", Task.CurrentId);
-            this.TaskController?.OnAsyncTaskMethodBuilderStart(stateMachine.GetType());
-            this.MethodBuilder.Start(ref stateMachine);
+            TaskController?.OnAsyncTaskMethodBuilderStart(stateMachine.GetType());
+            MethodBuilder.Start(ref stateMachine);
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace PChecker.Tasks
         /// </summary>
         [DebuggerHidden]
         public void SetStateMachine(IAsyncStateMachine stateMachine) =>
-            this.MethodBuilder.SetStateMachine(stateMachine);
+            MethodBuilder.SetStateMachine(stateMachine);
 
         /// <summary>
         /// Marks the task as successfully completed.
@@ -118,16 +118,16 @@ namespace PChecker.Tasks
         [DebuggerHidden]
         public void SetResult()
         {
-            if (this.UseBuilder)
+            if (UseBuilder)
             {
                 IO.Debug.WriteLine("<AsyncBuilder> Set result of task '{0}' from task '{1}'.",
-                    this.MethodBuilder.Task.Id, Task.CurrentId);
-                this.MethodBuilder.SetResult();
+                    MethodBuilder.Task.Id, Task.CurrentId);
+                MethodBuilder.SetResult();
             }
             else
             {
                 IO.Debug.WriteLine("<AsyncBuilder> Set result (completed) from task '{0}'.", Task.CurrentId);
-                this.IsCompleted = true;
+                IsCompleted = true;
             }
         }
 
@@ -135,7 +135,7 @@ namespace PChecker.Tasks
         /// Marks the task as failed and binds the specified exception to the task.
         /// </summary>
         [DebuggerHidden]
-        public void SetException(Exception exception) => this.MethodBuilder.SetException(exception);
+        public void SetException(Exception exception) => MethodBuilder.SetException(exception);
 
         /// <summary>
         /// Schedules the state machine to proceed to the next action when the specified awaiter completes.
@@ -145,9 +145,9 @@ namespace PChecker.Tasks
             where TAwaiter : INotifyCompletion
             where TStateMachine : IAsyncStateMachine
         {
-            this.UseBuilder = true;
-            this.TaskController?.OnAsyncTaskMethodBuilderAwaitCompleted(awaiter.GetType(), stateMachine.GetType());
-            this.MethodBuilder.AwaitOnCompleted(ref awaiter, ref stateMachine);
+            UseBuilder = true;
+            TaskController?.OnAsyncTaskMethodBuilderAwaitCompleted(awaiter.GetType(), stateMachine.GetType());
+            MethodBuilder.AwaitOnCompleted(ref awaiter, ref stateMachine);
         }
 
         /// <summary>
@@ -158,9 +158,9 @@ namespace PChecker.Tasks
             where TAwaiter : ICriticalNotifyCompletion
             where TStateMachine : IAsyncStateMachine
         {
-            this.UseBuilder = true;
-            this.TaskController?.OnAsyncTaskMethodBuilderAwaitCompleted(awaiter.GetType(), stateMachine.GetType());
-            this.MethodBuilder.AwaitUnsafeOnCompleted(ref awaiter, ref stateMachine);
+            UseBuilder = true;
+            TaskController?.OnAsyncTaskMethodBuilderAwaitCompleted(awaiter.GetType(), stateMachine.GetType());
+            MethodBuilder.AwaitUnsafeOnCompleted(ref awaiter, ref stateMachine);
         }
     }
 
@@ -208,19 +208,19 @@ namespace PChecker.Tasks
             [DebuggerHidden]
             get
             {
-                if (this.IsCompleted)
+                if (IsCompleted)
                 {
                     IO.Debug.WriteLine("<AsyncBuilder> Creating completed builder task '{0}' (isCompleted {1}) from task '{2}'.",
-                        this.MethodBuilder.Task.Id, this.MethodBuilder.Task.IsCompleted, Tasks.Task.CurrentId);
-                    return Tasks.Task.FromResult(this.Result);
+                        MethodBuilder.Task.Id, MethodBuilder.Task.IsCompleted, Tasks.Task.CurrentId);
+                    return Tasks.Task.FromResult(Result);
                 }
                 else
                 {
                     IO.Debug.WriteLine("<AsyncBuilder> Creating builder task '{0}' (isCompleted {1}) from task '{2}'.",
-                        this.MethodBuilder.Task.Id, this.MethodBuilder.Task.IsCompleted, Tasks.Task.CurrentId);
-                    this.UseBuilder = true;
-                    this.TaskController?.OnAsyncTaskMethodBuilderTask();
-                    return new Task<TResult>(this.TaskController, this.MethodBuilder.Task);
+                        MethodBuilder.Task.Id, MethodBuilder.Task.IsCompleted, Tasks.Task.CurrentId);
+                    UseBuilder = true;
+                    TaskController?.OnAsyncTaskMethodBuilderTask();
+                    return new Task<TResult>(TaskController, MethodBuilder.Task);
                 }
             }
         }
@@ -230,11 +230,11 @@ namespace PChecker.Tasks
         /// </summary>
         private AsyncTaskMethodBuilder(TaskController taskManager)
         {
-            this.TaskController = taskManager;
-            this.MethodBuilder = default;
-            this.Result = default;
-            this.IsCompleted = false;
-            this.UseBuilder = false;
+            TaskController = taskManager;
+            MethodBuilder = default;
+            Result = default;
+            IsCompleted = false;
+            UseBuilder = false;
         }
 
         /// <summary>
@@ -262,8 +262,8 @@ namespace PChecker.Tasks
             where TStateMachine : IAsyncStateMachine
         {
             IO.Debug.WriteLine("<AsyncBuilder> Start state machine from task '{0}'.", Tasks.Task.CurrentId);
-            this.TaskController?.OnAsyncTaskMethodBuilderStart(stateMachine.GetType());
-            this.MethodBuilder.Start(ref stateMachine);
+            TaskController?.OnAsyncTaskMethodBuilderStart(stateMachine.GetType());
+            MethodBuilder.Start(ref stateMachine);
         }
 
         /// <summary>
@@ -271,7 +271,7 @@ namespace PChecker.Tasks
         /// </summary>
         [DebuggerHidden]
         public void SetStateMachine(IAsyncStateMachine stateMachine) =>
-            this.MethodBuilder.SetStateMachine(stateMachine);
+            MethodBuilder.SetStateMachine(stateMachine);
 
         /// <summary>
         /// Marks the task as successfully completed.
@@ -280,17 +280,17 @@ namespace PChecker.Tasks
         [DebuggerHidden]
         public void SetResult(TResult result)
         {
-            if (this.UseBuilder)
+            if (UseBuilder)
             {
                 IO.Debug.WriteLine("<AsyncBuilder> Set result of task '{0}' from task '{1}'.",
-                    this.MethodBuilder.Task.Id, Tasks.Task.CurrentId);
-                this.MethodBuilder.SetResult(result);
+                    MethodBuilder.Task.Id, Tasks.Task.CurrentId);
+                MethodBuilder.SetResult(result);
             }
             else
             {
                 IO.Debug.WriteLine("<AsyncBuilder> Set result (completed) from task '{0}'.", Tasks.Task.CurrentId);
-                this.Result = result;
-                this.IsCompleted = true;
+                Result = result;
+                IsCompleted = true;
             }
         }
 
@@ -298,7 +298,7 @@ namespace PChecker.Tasks
         /// Marks the task as failed and binds the specified exception to the task.
         /// </summary>
         [DebuggerHidden]
-        public void SetException(Exception exception) => this.MethodBuilder.SetException(exception);
+        public void SetException(Exception exception) => MethodBuilder.SetException(exception);
 
         /// <summary>
         /// Schedules the state machine to proceed to the next action when the specified awaiter completes.
@@ -308,9 +308,9 @@ namespace PChecker.Tasks
             where TAwaiter : INotifyCompletion
             where TStateMachine : IAsyncStateMachine
         {
-            this.UseBuilder = true;
-            this.TaskController?.OnAsyncTaskMethodBuilderAwaitCompleted(awaiter.GetType(), stateMachine.GetType());
-            this.MethodBuilder.AwaitOnCompleted(ref awaiter, ref stateMachine);
+            UseBuilder = true;
+            TaskController?.OnAsyncTaskMethodBuilderAwaitCompleted(awaiter.GetType(), stateMachine.GetType());
+            MethodBuilder.AwaitOnCompleted(ref awaiter, ref stateMachine);
         }
 
         /// <summary>
@@ -321,9 +321,9 @@ namespace PChecker.Tasks
             where TAwaiter : ICriticalNotifyCompletion
             where TStateMachine : IAsyncStateMachine
         {
-            this.UseBuilder = true;
-            this.TaskController?.OnAsyncTaskMethodBuilderAwaitCompleted(awaiter.GetType(), stateMachine.GetType());
-            this.MethodBuilder.AwaitUnsafeOnCompleted(ref awaiter, ref stateMachine);
+            UseBuilder = true;
+            TaskController?.OnAsyncTaskMethodBuilderAwaitCompleted(awaiter.GetType(), stateMachine.GetType());
+            MethodBuilder.AwaitUnsafeOnCompleted(ref awaiter, ref stateMachine);
         }
     }
 }

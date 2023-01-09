@@ -89,10 +89,10 @@ namespace PChecker.Actors
         protected StateMachine()
             : base()
         {
-            this.StateStack = new Stack<State>();
-            this.InheritableEventHandlerMap = new Dictionary<Type, Stack<HandlerInfo>>();
-            this.EventHandlerMap = EmptyEventHandlerMap;
-            this.StateMachineActionMap = new Dictionary<string, CachedDelegate>();
+            StateStack = new Stack<State>();
+            InheritableEventHandlerMap = new Dictionary<Type, Stack<HandlerInfo>>();
+            EventHandlerMap = EmptyEventHandlerMap;
+            StateMachineActionMap = new Dictionary<string, CachedDelegate>();
         }
 
         /// <summary>
@@ -102,13 +102,13 @@ namespace PChecker.Actors
         internal override async Task InitializeAsync(Event initialEvent)
         {
             // Invoke the custom initializer, if there is one.
-            await this.InvokeUserCallbackAsync(UserCallbackType.OnInitialize, initialEvent);
+            await InvokeUserCallbackAsync(UserCallbackType.OnInitialize, initialEvent);
 
             // Execute the entry action of the start state, if there is one.
-            await this.ExecuteCurrentStateOnEntryAsync(initialEvent);
-            if (this.CurrentStatus is Status.Halting)
+            await ExecuteCurrentStateOnEntryAsync(initialEvent);
+            if (CurrentStatus is Status.Halting)
             {
-                await this.HaltAsync(initialEvent);
+                await HaltAsync(initialEvent);
             }
         }
 
@@ -126,10 +126,10 @@ namespace PChecker.Actors
         /// <param name="e">The event to raise.</param>
         protected void RaiseEvent(Event e)
         {
-            this.Assert(this.CurrentStatus is Status.Active, "{0} invoked RaiseEvent while halting.", this.Id);
-            this.Assert(e != null, "{0} is raising a null event.", this.Id);
-            this.CheckDanglingTransition();
-            this.PendingTransition = new Transition(Transition.Type.RaiseEvent, default, e);
+            Assert(CurrentStatus is Status.Active, "{0} invoked RaiseEvent while halting.", Id);
+            Assert(e != null, "{0} is raising a null event.", Id);
+            CheckDanglingTransition();
+            PendingTransition = new Transition(Transition.Type.RaiseEvent, default, e);
         }
 
         /// <summary>
@@ -153,7 +153,7 @@ namespace PChecker.Actors
         /// <typeparam name="S">Type of the state.</typeparam>
         protected void RaiseGotoStateEvent<S>()
             where S : State =>
-            this.RaiseGotoStateEvent(typeof(S));
+            RaiseGotoStateEvent(typeof(S));
 
         /// <summary>
         /// Raise a special event that performs a goto state operation at the end of the current action.
@@ -176,11 +176,11 @@ namespace PChecker.Actors
         /// <param name="state">Type of the state.</param>
         protected void RaiseGotoStateEvent(Type state)
         {
-            this.Assert(this.CurrentStatus is Status.Active, "{0} invoked GotoState while halting.", this.Id);
-            this.Assert(StateTypeCache[this.GetType()].Any(val => val.DeclaringType.Equals(state.DeclaringType) && val.Name.Equals(state.Name)),
-                "{0} is trying to transition to non-existing state '{1}'.", this.Id, state.Name);
-            this.CheckDanglingTransition();
-            this.PendingTransition = new Transition(Transition.Type.GotoState, state, default);
+            Assert(CurrentStatus is Status.Active, "{0} invoked GotoState while halting.", Id);
+            Assert(StateTypeCache[GetType()].Any(val => val.DeclaringType.Equals(state.DeclaringType) && val.Name.Equals(state.Name)),
+                "{0} is trying to transition to non-existing state '{1}'.", Id, state.Name);
+            CheckDanglingTransition();
+            PendingTransition = new Transition(Transition.Type.GotoState, state, default);
         }
 
         /// <summary>
@@ -205,7 +205,7 @@ namespace PChecker.Actors
         /// <typeparam name="S">Type of the state.</typeparam>
         protected void RaisePushStateEvent<S>()
             where S : State =>
-            this.RaisePushStateEvent(typeof(S));
+            RaisePushStateEvent(typeof(S));
 
         /// <summary>
         /// Raise a special event that performs a push state operation at the end of the current action.
@@ -229,11 +229,11 @@ namespace PChecker.Actors
         /// <param name="state">Type of the state.</param>
         protected void RaisePushStateEvent(Type state)
         {
-            this.Assert(this.CurrentStatus is Status.Active, "{0} invoked PushState while halting.", this.Id);
-            this.Assert(StateTypeCache[this.GetType()].Any(val => val.DeclaringType.Equals(state.DeclaringType) && val.Name.Equals(state.Name)),
-                "{0} is trying to transition to non-existing state '{1}'.", this.Id, state.Name);
-            this.CheckDanglingTransition();
-            this.PendingTransition = new Transition(Transition.Type.PushState, state, default);
+            Assert(CurrentStatus is Status.Active, "{0} invoked PushState while halting.", Id);
+            Assert(StateTypeCache[GetType()].Any(val => val.DeclaringType.Equals(state.DeclaringType) && val.Name.Equals(state.Name)),
+                "{0} is trying to transition to non-existing state '{1}'.", Id, state.Name);
+            CheckDanglingTransition();
+            PendingTransition = new Transition(Transition.Type.PushState, state, default);
         }
 
         /// <summary>
@@ -252,9 +252,9 @@ namespace PChecker.Actors
         /// </remarks>
         protected void RaisePopStateEvent()
         {
-            this.Assert(this.CurrentStatus is Status.Active, "{0} invoked PopState while halting.", this.Id);
-            this.CheckDanglingTransition();
-            this.PendingTransition = new Transition(Transition.Type.PopState, null, default);
+            Assert(CurrentStatus is Status.Active, "{0} invoked PopState while halting.", Id);
+            CheckDanglingTransition();
+            PendingTransition = new Transition(Transition.Type.PopState, null, default);
         }
 
         /// <summary>
@@ -272,8 +272,8 @@ namespace PChecker.Actors
         protected override void RaiseHaltEvent()
         {
             base.RaiseHaltEvent();
-            this.CheckDanglingTransition();
-            this.PendingTransition = new Transition(Transition.Type.Halt, null, default);
+            CheckDanglingTransition();
+            PendingTransition = new Transition(Transition.Type.Halt, null, default);
         }
 
         /// <summary>
@@ -290,29 +290,29 @@ namespace PChecker.Actors
         /// </summary>
         private protected override async Task HandleEventAsync(Event e)
         {
-            Type currentState = this.CurrentState;
+            var currentState = CurrentState;
 
             while (true)
             {
-                if (this.CurrentState is null)
+                if (CurrentState is null)
                 {
                     // If the stack of states is empty then halt or fail the state machine.
                     if (e is HaltEvent)
                     {
                         // If it is the halt event, then change the actor status to halting.
-                        this.CurrentStatus = Status.Halting;
+                        CurrentStatus = Status.Halting;
                         break;
                     }
 
-                    string currentStateName = NameResolver.GetQualifiedStateName(currentState);
-                    await this.InvokeUserCallbackAsync(UserCallbackType.OnEventUnhandled, e, currentStateName);
-                    if (this.CurrentStatus is Status.Active)
+                    var currentStateName = NameResolver.GetQualifiedStateName(currentState);
+                    await InvokeUserCallbackAsync(UserCallbackType.OnEventUnhandled, e, currentStateName);
+                    if (CurrentStatus is Status.Active)
                     {
                         // If the event cannot be handled then report an error, else halt gracefully.
                         var ex = new UnhandledEventException(e, currentStateName, "Unhandled Event");
-                        bool isHalting = this.OnUnhandledEventExceptionHandler(ex, e);
-                        this.Assert(isHalting, "{0} received event '{1}' that cannot be handled.",
-                            this.Id, e.GetType().FullName);
+                        var isHalting = OnUnhandledEventExceptionHandler(ex, e);
+                        Assert(isHalting, "{0} received event '{1}' that cannot be handled.",
+                            Id, e.GetType().FullName);
                     }
 
                     break;
@@ -320,55 +320,55 @@ namespace PChecker.Actors
 
                 if (e is GotoStateEvent gotoStateEvent)
                 {
-                    await this.GotoStateAsync(gotoStateEvent.State, null, e);
+                    await GotoStateAsync(gotoStateEvent.State, null, e);
                 }
                 else if (e is PushStateEvent pushStateEvent)
                 {
-                    await this.PushStateAsync(pushStateEvent.State, e);
+                    await PushStateAsync(pushStateEvent.State, e);
                 }
-                else if (this.EventHandlerMap.ContainsKey(e.GetType()))
+                else if (EventHandlerMap.ContainsKey(e.GetType()))
                 {
-                    await this.HandleEventAsync(e, this.StateStack.Peek(), this.EventHandlerMap[e.GetType()]);
+                    await HandleEventAsync(e, StateStack.Peek(), EventHandlerMap[e.GetType()]);
                 }
                 else
                 {
-                    bool hasWildCard = this.TryGetInheritedHandler(typeof(WildCardEvent), out HandlerInfo wildInfo);
-                    if (this.EventHandlerMap.ContainsKey(typeof(WildCardEvent)))
+                    var hasWildCard = TryGetInheritedHandler(typeof(WildCardEvent), out var wildInfo);
+                    if (EventHandlerMap.ContainsKey(typeof(WildCardEvent)))
                     {
                         // A non-inherited wildcard handler cannot beat a "specific" event handler if that
                         // "specific" event handler is also at the top of the stack.
-                        wildInfo = new HandlerInfo(this.StateStack.Peek(), this.StateStack.Count,
-                            this.EventHandlerMap[typeof(WildCardEvent)]);
+                        wildInfo = new HandlerInfo(StateStack.Peek(), StateStack.Count,
+                            EventHandlerMap[typeof(WildCardEvent)]);
                         hasWildCard = true;
                     }
 
-                    bool hasSpecific = this.TryGetInheritedHandler(e.GetType(), out HandlerInfo info);
+                    var hasSpecific = TryGetInheritedHandler(e.GetType(), out var info);
 
                     if ((hasWildCard && hasSpecific && wildInfo.StackDepth > info.StackDepth) ||
                         (!hasSpecific && hasWildCard))
                     {
                         // Then wild card takes precedence over earlier specific event handlers.
-                        await this.HandleEventAsync(e, wildInfo.State, wildInfo.Handler);
+                        await HandleEventAsync(e, wildInfo.State, wildInfo.Handler);
                     }
                     else if (hasSpecific)
                     {
                         // Then specific event is more recent than any wild card events.
-                        await this.HandleEventAsync(e, info.State, info.Handler);
+                        await HandleEventAsync(e, info.State, info.Handler);
                     }
-                    else if (this.ActionMap.TryGetValue(e.GetType(), out CachedDelegate handler))
+                    else if (ActionMap.TryGetValue(e.GetType(), out var handler))
                     {
                         // Allow StateMachine to have class level OnEventDoActions the same way Actor allows.
-                        this.Runtime.NotifyInvokedAction(this, handler.MethodInfo, this.CurrentStateName, this.CurrentStateName, e);
-                        await this.InvokeActionAsync(handler, e);
+                        Runtime.NotifyInvokedAction(this, handler.MethodInfo, CurrentStateName, CurrentStateName, e);
+                        await InvokeActionAsync(handler, e);
                     }
                     else
                     {
                         // If the current state cannot handle the event.
-                        await this.ExecuteCurrentStateOnExitAsync(null, e);
-                        if (this.CurrentStatus is Status.Active)
+                        await ExecuteCurrentStateOnExitAsync(null, e);
+                        if (CurrentStatus is Status.Active)
                         {
-                            this.Runtime.LogWriter.LogPopStateUnhandledEvent(this.Id, this.CurrentStateName, e);
-                            this.DoStatePop();
+                            Runtime.LogWriter.LogPopStateUnhandledEvent(Id, CurrentStateName, e);
+                            DoStatePop();
                             continue;
                         }
                     }
@@ -380,21 +380,21 @@ namespace PChecker.Actors
 
         private async Task HandleEventAsync(Event e, State declaringState, EventHandlerDeclaration eventHandler)
         {
-            string handlingStateName = NameResolver.GetQualifiedStateName(declaringState.GetType());
+            var handlingStateName = NameResolver.GetQualifiedStateName(declaringState.GetType());
             if (eventHandler is ActionEventHandlerDeclaration actionEventHandler)
             {
-                CachedDelegate cachedAction = this.StateMachineActionMap[actionEventHandler.Name];
-                this.Runtime.NotifyInvokedAction(this, cachedAction.MethodInfo, handlingStateName, this.CurrentStateName, e);
-                await this.InvokeActionAsync(cachedAction, e);
-                await this.ApplyEventHandlerTransitionAsync(this.PendingTransition, e);
+                var cachedAction = StateMachineActionMap[actionEventHandler.Name];
+                Runtime.NotifyInvokedAction(this, cachedAction.MethodInfo, handlingStateName, CurrentStateName, e);
+                await InvokeActionAsync(cachedAction, e);
+                await ApplyEventHandlerTransitionAsync(PendingTransition, e);
             }
             else if (eventHandler is GotoStateTransition gotoTransition)
             {
-                await this.GotoStateAsync(gotoTransition.TargetState, gotoTransition.Lambda, e);
+                await GotoStateAsync(gotoTransition.TargetState, gotoTransition.Lambda, e);
             }
             else if (eventHandler is PushStateTransition pushTransition)
             {
-                await this.PushStateAsync(pushTransition.TargetState, e);
+                await PushStateAsync(pushTransition.TargetState, e);
             }
         }
 
@@ -403,20 +403,20 @@ namespace PChecker.Actors
         /// </summary>
         private async Task ExecuteCurrentStateOnEntryAsync(Event e)
         {
-            this.Runtime.NotifyEnteredState(this);
+            Runtime.NotifyEnteredState(this);
 
             CachedDelegate entryAction = null;
-            if (this.StateStack.Peek().EntryAction != null)
+            if (StateStack.Peek().EntryAction != null)
             {
-                entryAction = this.StateMachineActionMap[this.StateStack.Peek().EntryAction];
+                entryAction = StateMachineActionMap[StateStack.Peek().EntryAction];
             }
 
             // Invokes the entry action of the new state, if there is one available.
             if (entryAction != null)
             {
-                this.Runtime.NotifyInvokedOnEntryAction(this, entryAction.MethodInfo, e);
-                await this.InvokeActionAsync(entryAction, e);
-                await this.ApplyEventHandlerTransitionAsync(this.PendingTransition, e);
+                Runtime.NotifyInvokedOnEntryAction(this, entryAction.MethodInfo, e);
+                await InvokeActionAsync(entryAction, e);
+                await ApplyEventHandlerTransitionAsync(PendingTransition, e);
             }
         }
 
@@ -425,41 +425,41 @@ namespace PChecker.Actors
         /// </summary>
         private async Task ExecuteCurrentStateOnExitAsync(string eventHandlerExitActionName, Event e)
         {
-            this.Runtime.NotifyExitedState(this);
+            Runtime.NotifyExitedState(this);
 
             CachedDelegate exitAction = null;
-            if (this.StateStack.Peek().ExitAction != null)
+            if (StateStack.Peek().ExitAction != null)
             {
-                exitAction = this.StateMachineActionMap[this.StateStack.Peek().ExitAction];
+                exitAction = StateMachineActionMap[StateStack.Peek().ExitAction];
             }
 
             // Invokes the exit action of the current state,
             // if there is one available.
             if (exitAction != null)
             {
-                this.Runtime.NotifyInvokedOnExitAction(this, exitAction.MethodInfo, e);
-                await this.InvokeActionAsync(exitAction, e);
-                Transition transition = this.PendingTransition;
-                this.Assert(transition.TypeValue is Transition.Type.None ||
+                Runtime.NotifyInvokedOnExitAction(this, exitAction.MethodInfo, e);
+                await InvokeActionAsync(exitAction, e);
+                var transition = PendingTransition;
+                Assert(transition.TypeValue is Transition.Type.None ||
                     transition.TypeValue is Transition.Type.Halt,
                     "{0} has performed a '{1}' transition from an OnExit action.",
-                    this.Id, transition.TypeValue);
-                await this.ApplyEventHandlerTransitionAsync(transition, e);
+                    Id, transition.TypeValue);
+                await ApplyEventHandlerTransitionAsync(transition, e);
             }
 
             // Invokes the exit action of the event handler,
             // if there is one available.
-            if (eventHandlerExitActionName != null && this.CurrentStatus is Status.Active)
+            if (eventHandlerExitActionName != null && CurrentStatus is Status.Active)
             {
-                CachedDelegate eventHandlerExitAction = this.StateMachineActionMap[eventHandlerExitActionName];
-                this.Runtime.NotifyInvokedOnExitAction(this, eventHandlerExitAction.MethodInfo, e);
-                await this.InvokeActionAsync(eventHandlerExitAction, e);
-                Transition transition = this.PendingTransition;
-                this.Assert(transition.TypeValue is Transition.Type.None ||
+                var eventHandlerExitAction = StateMachineActionMap[eventHandlerExitActionName];
+                Runtime.NotifyInvokedOnExitAction(this, eventHandlerExitAction.MethodInfo, e);
+                await InvokeActionAsync(eventHandlerExitAction, e);
+                var transition = PendingTransition;
+                Assert(transition.TypeValue is Transition.Type.None ||
                     transition.TypeValue is Transition.Type.Halt,
                     "{0} has performed a '{1}' transition from an OnExit action.",
-                    this.Id, transition.TypeValue);
-                await this.ApplyEventHandlerTransitionAsync(transition, e);
+                    Id, transition.TypeValue);
+                await ApplyEventHandlerTransitionAsync(transition, e);
             }
         }
 
@@ -468,49 +468,49 @@ namespace PChecker.Actors
         /// </summary>
         private async Task ApplyEventHandlerTransitionAsync(Transition transition, Event e)
         {
-            if (transition.TypeValue != this.PendingTransition.TypeValue && this.PendingTransition.TypeValue != Transition.Type.None)
+            if (transition.TypeValue != PendingTransition.TypeValue && PendingTransition.TypeValue != Transition.Type.None)
             {
-                this.CheckDanglingTransition();
+                CheckDanglingTransition();
             }
             else if (transition.TypeValue is Transition.Type.RaiseEvent)
             {
-                this.PendingTransition = default;
-                this.Inbox.RaiseEvent(transition.Event, this.OperationGroupId);
+                PendingTransition = default;
+                Inbox.RaiseEvent(transition.Event, OperationGroupId);
             }
             else if (transition.TypeValue is Transition.Type.GotoState)
             {
-                this.PendingTransition = default;
-                this.Inbox.RaiseEvent(new GotoStateEvent(transition.State), this.OperationGroupId);
+                PendingTransition = default;
+                Inbox.RaiseEvent(new GotoStateEvent(transition.State), OperationGroupId);
             }
             else if (transition.TypeValue is Transition.Type.PushState)
             {
-                this.PendingTransition = default;
-                this.Inbox.RaiseEvent(new PushStateEvent(transition.State), this.OperationGroupId);
+                PendingTransition = default;
+                Inbox.RaiseEvent(new PushStateEvent(transition.State), OperationGroupId);
             }
             else if (transition.TypeValue is Transition.Type.PopState)
             {
-                this.PendingTransition = default;
-                var prevStateName = this.CurrentStateName;
-                this.Runtime.NotifyPopState(this);
+                PendingTransition = default;
+                var prevStateName = CurrentStateName;
+                Runtime.NotifyPopState(this);
 
                 // The state machine performs the on exit action of the current state.
-                await this.ExecuteCurrentStateOnExitAsync(null, e);
-                if (this.CurrentStatus is Status.Active)
+                await ExecuteCurrentStateOnExitAsync(null, e);
+                if (CurrentStatus is Status.Active)
                 {
-                    this.DoStatePop();
-                    this.Runtime.LogWriter.LogPopState(this.Id, prevStateName, this.CurrentStateName);
-                    this.Assert(this.CurrentState != null, "{0} popped its state with no matching push state.", this.Id);
+                    DoStatePop();
+                    Runtime.LogWriter.LogPopState(Id, prevStateName, CurrentStateName);
+                    Assert(CurrentState != null, "{0} popped its state with no matching push state.", Id);
                 }
             }
             else if (transition.TypeValue is Transition.Type.Halt)
             {
                 // If it is the halt transition, then change the actor status to halting.
-                this.PendingTransition = default;
-                this.CurrentStatus = Status.Halting;
+                PendingTransition = default;
+                CurrentStatus = Status.Halting;
             }
             else
             {
-                this.PendingTransition = default;
+                PendingTransition = default;
             }
         }
 
@@ -519,13 +519,13 @@ namespace PChecker.Actors
         /// </summary>
         private void CheckDanglingTransition()
         {
-            var transition = this.PendingTransition;
-            this.PendingTransition = default;
+            var transition = PendingTransition;
+            PendingTransition = default;
 
             if (transition.TypeValue != Transition.Type.None)
             {
-                string prefix = string.Format("{0} transition created by {1} in state {2} was not processed",
-                    transition.TypeValue, this.GetType().FullName, this.CurrentStateName);
+                var prefix = string.Format("{0} transition created by {1} in state {2} was not processed",
+                    transition.TypeValue, GetType().FullName, CurrentStateName);
                 string suffix = null;
 
                 if (transition.State != null && transition.Event != null)
@@ -541,7 +541,7 @@ namespace PChecker.Actors
                     suffix = string.Format(", event {0}.", transition.Event);
                 }
 
-                this.Assert(false, prefix + suffix);
+                Assert(false, prefix + suffix);
             }
         }
 
@@ -550,21 +550,21 @@ namespace PChecker.Actors
         /// </summary>
         private async Task GotoStateAsync(Type s, string onExitActionName, Event e)
         {
-            this.Runtime.LogWriter.LogGotoState(this.Id, this.CurrentStateName,
+            Runtime.LogWriter.LogGotoState(Id, CurrentStateName,
                 $"{s.DeclaringType}.{NameResolver.GetStateNameForLogging(s)}");
 
             // The state machine performs the on exit action of the current state.
-            await this.ExecuteCurrentStateOnExitAsync(onExitActionName, e);
-            if (this.CurrentStatus is Status.Active)
+            await ExecuteCurrentStateOnExitAsync(onExitActionName, e);
+            if (CurrentStatus is Status.Active)
             {
-                this.DoStatePop();
+                DoStatePop();
 
                 // The state machine transitions to the new state.
-                var nextState = StateInstanceCache[this.GetType()].First(val => val.GetType().Equals(s));
-                this.DoStatePush(nextState);
+                var nextState = StateInstanceCache[GetType()].First(val => val.GetType().Equals(s));
+                DoStatePush(nextState);
 
                 // The state machine performs the on entry action of the new state.
-                await this.ExecuteCurrentStateOnEntryAsync(e);
+                await ExecuteCurrentStateOnEntryAsync(e);
             }
         }
 
@@ -573,32 +573,32 @@ namespace PChecker.Actors
         /// </summary>
         private async Task PushStateAsync(Type s, Event e)
         {
-            this.Runtime.LogWriter.LogPushState(this.Id, this.CurrentStateName, s.FullName);
+            Runtime.LogWriter.LogPushState(Id, CurrentStateName, s.FullName);
 
-            var nextState = StateInstanceCache[this.GetType()].First(val => val.GetType().Equals(s));
-            this.DoStatePush(nextState);
+            var nextState = StateInstanceCache[GetType()].First(val => val.GetType().Equals(s));
+            DoStatePush(nextState);
 
             // The state machine performs the on entry statements of the new state.
-            await this.ExecuteCurrentStateOnEntryAsync(e);
+            await ExecuteCurrentStateOnEntryAsync(e);
         }
 
         private void PushHandler(State state, Type eventType, EventHandlerDeclaration handler)
         {
             if (handler.Inheritable)
             {
-                if (!this.InheritableEventHandlerMap.TryGetValue(eventType, out Stack<HandlerInfo> stack))
+                if (!InheritableEventHandlerMap.TryGetValue(eventType, out var stack))
                 {
                     stack = new Stack<HandlerInfo>();
-                    this.InheritableEventHandlerMap[eventType] = stack;
+                    InheritableEventHandlerMap[eventType] = stack;
                 }
 
-                stack.Push(new HandlerInfo(state, this.StateStack.Count, handler));
+                stack.Push(new HandlerInfo(state, StateStack.Count, handler));
             }
         }
 
         private bool TryGetInheritedHandler(Type eventType, out HandlerInfo result)
         {
-            if (this.InheritableEventHandlerMap.TryGetValue(eventType, out Stack<HandlerInfo> stack) && stack.Count > 0)
+            if (InheritableEventHandlerMap.TryGetValue(eventType, out var stack) && stack.Count > 0)
             {
                 result = stack.Peek();
                 return true;
@@ -613,16 +613,16 @@ namespace PChecker.Actors
         /// </summary>
         private void DoStatePush(State state)
         {
-            this.EventHandlerMap = state.EventHandlers;  // non-inheritable handlers.
+            EventHandlerMap = state.EventHandlers;  // non-inheritable handlers.
 
-            this.StateStack.Push(state);
-            this.CurrentState = state.GetType();
-            this.CurrentStateName = NameResolver.GetQualifiedStateName(this.CurrentState);
+            StateStack.Push(state);
+            CurrentState = state.GetType();
+            CurrentStateName = NameResolver.GetQualifiedStateName(CurrentState);
 
             // Push the inheritable event handlers.
             foreach (var eventHandler in state.InheritableEventHandlers)
             {
-                this.PushHandler(state, eventHandler.Key, eventHandler.Value);
+                PushHandler(state, eventHandler.Key, eventHandler.Value);
             }
         }
 
@@ -632,8 +632,8 @@ namespace PChecker.Actors
         /// </summary>
         private void DoStatePop()
         {
-            State state = this.StateStack.Pop();
-            foreach (var item in this.InheritableEventHandlerMap)
+            var state = StateStack.Pop();
+            foreach (var item in InheritableEventHandlerMap)
             {
                 var stack = item.Value;
                 if (stack != null && stack.Count > 0 && stack.Peek().State == state)
@@ -642,19 +642,19 @@ namespace PChecker.Actors
                 }
             }
 
-            if (this.StateStack.Count > 0)
+            if (StateStack.Count > 0)
             {
                 // re-instate the non-inheritable handlers from previous state.
-                state = this.StateStack.Peek();
-                this.CurrentState = state.GetType();
-                this.CurrentStateName = NameResolver.GetQualifiedStateName(this.CurrentState);
-                this.EventHandlerMap = this.StateStack.Peek().EventHandlers;
+                state = StateStack.Peek();
+                CurrentState = state.GetType();
+                CurrentStateName = NameResolver.GetQualifiedStateName(CurrentState);
+                EventHandlerMap = StateStack.Peek().EventHandlers;
             }
             else
             {
-                this.EventHandlerMap = EmptyEventHandlerMap;
-                this.CurrentState = null;
-                this.CurrentStateName = string.Empty;
+                EventHandlerMap = EmptyEventHandlerMap;
+                CurrentState = null;
+                CurrentStateName = string.Empty;
             }
         }
 
@@ -666,20 +666,20 @@ namespace PChecker.Actors
         /// <returns>True if a handler is found, otherwise false</returns>
         private bool GetInheritedEventHandler(Event e, ref HandlerInfo info)
         {
-            Type eventType = e.GetType();
+            var eventType = e.GetType();
             // Wild card only takes precidence if it is higher on the state stack.
-            bool hasWildCard = this.TryGetInheritedHandler(typeof(WildCardEvent), out HandlerInfo wildInfo);
-            if (this.EventHandlerMap.ContainsKey(typeof(WildCardEvent)))
+            var hasWildCard = TryGetInheritedHandler(typeof(WildCardEvent), out var wildInfo);
+            if (EventHandlerMap.ContainsKey(typeof(WildCardEvent)))
             {
                 // a non-inherited wildcard handler cannot beat a "specific" IgnoreEvent instruction if that
                 // "specific" instruction is also at the top of the stack.
-                wildInfo.StackDepth = this.StateStack.Count;
-                wildInfo.State = this.StateStack.Peek();
-                wildInfo.Handler = this.EventHandlerMap[typeof(WildCardEvent)];
+                wildInfo.StackDepth = StateStack.Count;
+                wildInfo.State = StateStack.Peek();
+                wildInfo.Handler = EventHandlerMap[typeof(WildCardEvent)];
                 hasWildCard = true;
             }
 
-            bool hasSpecific = this.TryGetInheritedHandler(eventType, out info);
+            var hasSpecific = TryGetInheritedHandler(eventType, out info);
 
             if ((hasSpecific && hasWildCard && wildInfo.StackDepth > info.StackDepth) ||
                 (!hasSpecific && hasWildCard))
@@ -702,23 +702,23 @@ namespace PChecker.Actors
         /// </summary>
         internal bool IsEventIgnoredInCurrentState(Event e)
         {
-            if (e is TimerElapsedEvent timeoutEvent && !this.Timers.ContainsKey(timeoutEvent.Info))
+            if (e is TimerElapsedEvent timeoutEvent && !Timers.ContainsKey(timeoutEvent.Info))
             {
                 // The timer that created this timeout event is not active.
                 return true;
             }
 
-            Type eventType = e.GetType();
+            var eventType = e.GetType();
 
             // If a non-inheritable transition is defined, then the event is not ignored
             // because the non-inheritable operation takes precedent.
-            if (this.EventHandlerMap.ContainsKey(eventType))
+            if (EventHandlerMap.ContainsKey(eventType))
             {
                 return false;
             }
 
-            HandlerInfo info = new HandlerInfo(null, 0, null);
-            if (this.GetInheritedEventHandler(e, ref info))
+            var info = new HandlerInfo(null, 0, null);
+            if (GetInheritedEventHandler(e, ref info))
             {
                 return info.Handler is IgnoreEventHandlerDeclaration;
             }
@@ -731,16 +731,16 @@ namespace PChecker.Actors
         /// </summary>
         internal bool IsEventDeferredInCurrentState(Event e)
         {
-            Type eventType = e.GetType();
+            var eventType = e.GetType();
 
             // If a non-inheritable transition is defined, then the event is not deferred.
-            if (this.EventHandlerMap.ContainsKey(eventType))
+            if (EventHandlerMap.ContainsKey(eventType))
             {
                 return false;
             }
 
-            HandlerInfo info = new HandlerInfo(null, 0, null);
-            if (this.GetInheritedEventHandler(e, ref info))
+            var info = new HandlerInfo(null, 0, null);
+            if (GetInheritedEventHandler(e, ref info))
             {
                 return info.Handler is DeferEventHandlerDeclaration;
             }
@@ -752,8 +752,8 @@ namespace PChecker.Actors
         /// Checks if a default handler is installed in current state.
         /// </summary>
         internal bool IsDefaultHandlerInstalledInCurrentState() =>
-            this.EventHandlerMap.ContainsKey(typeof(DefaultEvent)) ||
-            this.TryGetInheritedHandler(typeof(DefaultEvent), out _);
+            EventHandlerMap.ContainsKey(typeof(DefaultEvent)) ||
+            TryGetInheritedHandler(typeof(DefaultEvent), out _);
 
         /// <summary>
         /// Returns the hashed state of this state machine.
@@ -763,21 +763,21 @@ namespace PChecker.Actors
             unchecked
             {
                 var hash = 19;
-                hash = (hash * 31) + this.GetType().GetHashCode();
-                hash = (hash * 31) + this.Id.Value.GetHashCode();
-                hash = (hash * 31) + this.IsHalted.GetHashCode();
+                hash = (hash * 31) + GetType().GetHashCode();
+                hash = (hash * 31) + Id.Value.GetHashCode();
+                hash = (hash * 31) + IsHalted.GetHashCode();
 
-                hash = (hash * 31) + this.Manager.GetCachedState();
+                hash = (hash * 31) + Manager.GetCachedState();
 
-                foreach (var state in this.StateStack)
+                foreach (var state in StateStack)
                 {
                     hash = (hash * 31) + state.GetType().GetHashCode();
                 }
 
-                hash = (hash * 31) + this.Inbox.GetCachedState();
+                hash = (hash * 31) + Inbox.GetCachedState();
 
                 // Adds the user-defined hashed state.
-                hash = (hash * 31) + this.HashedState;
+                hash = (hash * 31) + HashedState;
 
                 return hash;
             }
@@ -789,11 +789,11 @@ namespace PChecker.Actors
         internal override void SetupEventHandlers()
         {
             base.SetupEventHandlers();
-            Type stateMachineType = this.GetType();
+            var stateMachineType = GetType();
 
             // If this type has not already been setup in the ActionCache, then we need to try and grab the ActionCacheLock
             // for this type.  First make sure we have one and only one lockable object for this type.
-            object syncObject = ActionCacheLocks.GetOrAdd(stateMachineType, _ => new object());
+            var syncObject = ActionCacheLocks.GetOrAdd(stateMachineType, _ => new object());
 
             // Locking this syncObject ensures only one thread enters the initialization code to update
             // the ActionCache for this specific Actor type.
@@ -810,14 +810,14 @@ namespace PChecker.Actors
                     // Caches the available state types for this state machine type.
                     if (StateTypeCache.TryAdd(stateMachineType, new HashSet<Type>()))
                     {
-                        Type baseType = stateMachineType;
+                        var baseType = stateMachineType;
                         while (baseType != typeof(StateMachine))
                         {
                             foreach (var s in baseType.GetNestedTypes(BindingFlags.Instance |
                                 BindingFlags.NonPublic | BindingFlags.Public |
                                 BindingFlags.DeclaredOnly))
                             {
-                                this.ExtractStateTypes(s);
+                                ExtractStateTypes(s);
                             }
 
                             baseType = baseType.BaseType;
@@ -829,7 +829,7 @@ namespace PChecker.Actors
                     {
                         foreach (var type in StateTypeCache[stateMachineType])
                         {
-                            Type stateType = type;
+                            var stateType = type;
                             if (type.IsAbstract)
                             {
                                 continue;
@@ -841,7 +841,7 @@ namespace PChecker.Actors
                                 // machine declaration), then iterate through the base state machine classes to
                                 // identify the runtime generic type, and use it to instantiate the runtime state
                                 // type. This type can be then used to create the state constructor.
-                                Type declaringType = this.GetType();
+                                var declaringType = GetType();
                                 while (!declaringType.IsGenericType ||
                                     !type.DeclaringType.FullName.Equals(declaringType.FullName.Substring(
                                     0, declaringType.FullName.IndexOf('['))))
@@ -855,10 +855,10 @@ namespace PChecker.Actors
                                 }
                             }
 
-                            ConstructorInfo constructor = stateType.GetConstructor(Type.EmptyTypes);
+                            var constructor = stateType.GetConstructor(Type.EmptyTypes);
                             var lambda = Expression.Lambda<Func<State>>(
                                 Expression.New(constructor)).Compile();
-                            State state = lambda();
+                            var state = lambda();
 
                             try
                             {
@@ -866,7 +866,7 @@ namespace PChecker.Actors
                             }
                             catch (InvalidOperationException ex)
                             {
-                                this.Assert(false, "{0} {1} in state '{2}'.", this.Id, ex.Message, state);
+                                Assert(false, "{0} {1} in state '{2}'.", Id, ex.Message, state);
                             }
 
                             StateInstanceCache[stateMachineType].Add(state);
@@ -880,13 +880,13 @@ namespace PChecker.Actors
                         if (state.EntryAction != null &&
                             !map.ContainsKey(state.EntryAction))
                         {
-                            map.Add(state.EntryAction, this.GetActionWithName(state.EntryAction));
+                            map.Add(state.EntryAction, GetActionWithName(state.EntryAction));
                         }
 
                         if (state.ExitAction != null &&
                             !map.ContainsKey(state.ExitAction))
                         {
-                            map.Add(state.ExitAction, this.GetActionWithName(state.ExitAction));
+                            map.Add(state.ExitAction, GetActionWithName(state.ExitAction));
                         }
 
                         foreach (var handler in state.InheritableEventHandlers.Values)
@@ -895,7 +895,7 @@ namespace PChecker.Actors
                             {
                                 if (!map.ContainsKey(action.Name))
                                 {
-                                    map.Add(action.Name, this.GetActionWithName(action.Name));
+                                    map.Add(action.Name, GetActionWithName(action.Name));
                                 }
                             }
                         }
@@ -907,7 +907,7 @@ namespace PChecker.Actors
                                 if (transition.Lambda != null &&
                                     !map.ContainsKey(transition.Lambda))
                                 {
-                                    map.Add(transition.Lambda, this.GetActionWithName(transition.Lambda));
+                                    map.Add(transition.Lambda, GetActionWithName(transition.Lambda));
                                 }
                             }
                         }
@@ -920,15 +920,15 @@ namespace PChecker.Actors
             // Populates the map of event handlers for this state machine instance.
             foreach (var kvp in ActionCache[stateMachineType])
             {
-                this.StateMachineActionMap.Add(kvp.Key, new CachedDelegate(kvp.Value, this));
+                StateMachineActionMap.Add(kvp.Key, new CachedDelegate(kvp.Value, this));
             }
 
             var initialStates = StateInstanceCache[stateMachineType].Where(state => state.IsStart).ToList();
-            this.Assert(initialStates.Count != 0, "{0} must declare a start state.", this.Id);
-            this.Assert(initialStates.Count is 1, "{0} can not declare more than one start states.", this.Id);
+            Assert(initialStates.Count != 0, "{0} must declare a start state.", Id);
+            Assert(initialStates.Count is 1, "{0} can not declare more than one start states.", Id);
 
-            this.DoStatePush(initialStates[0]);
-            this.AssertStateValidity();
+            DoStatePush(initialStates[0]);
+            AssertStateValidity();
         }
 
         /// <summary>
@@ -937,7 +937,7 @@ namespace PChecker.Actors
         /// </summary>
         internal Type GetStateTypeAtStackIndex(int index)
         {
-            return this.StateStack.ElementAtOrDefault(index)?.GetType();
+            return StateStack.ElementAtOrDefault(index)?.GetType();
         }
 
         /// <summary>
@@ -945,16 +945,16 @@ namespace PChecker.Actors
         /// </summary>
         private void ExtractStateTypes(Type type)
         {
-            Stack<Type> stack = new Stack<Type>();
+            var stack = new Stack<Type>();
             stack.Push(type);
 
             while (stack.Count > 0)
             {
-                Type nextType = stack.Pop();
+                var nextType = stack.Pop();
 
                 if (nextType.IsClass && nextType.IsSubclassOf(typeof(State)))
                 {
-                    StateTypeCache[this.GetType()].Add(nextType);
+                    StateTypeCache[GetType()].Add(nextType);
                 }
                 else if (nextType.IsClass && nextType.IsSubclassOf(typeof(StateGroup)))
                 {
@@ -963,7 +963,7 @@ namespace PChecker.Actors
                         BindingFlags.NonPublic | BindingFlags.Public |
                         BindingFlags.DeclaredOnly))
                     {
-                        this.Assert(t.IsSubclassOf(typeof(StateGroup)) || t.IsSubclassOf(typeof(State)),
+                        Assert(t.IsSubclassOf(typeof(StateGroup)) || t.IsSubclassOf(typeof(State)),
                             "'{0}' is neither a group of states nor a state.", t.Name);
                         stack.Push(t);
                     }
@@ -976,10 +976,10 @@ namespace PChecker.Actors
         /// </summary>
         internal HashSet<string> GetAllStates()
         {
-            this.Assert(StateInstanceCache.ContainsKey(this.GetType()), "{0} has not populated its states yet.", this.Id);
+            Assert(StateInstanceCache.ContainsKey(GetType()), "{0} has not populated its states yet.", Id);
 
             var allStates = new HashSet<string>();
-            foreach (var state in StateInstanceCache[this.GetType()])
+            foreach (var state in StateInstanceCache[GetType()])
             {
                 allStates.Add(NameResolver.GetQualifiedStateName(state.GetType()));
             }
@@ -1003,10 +1003,10 @@ namespace PChecker.Actors
         /// </summary>
         internal HashSet<Tuple<string, string>> GetAllStateEventPairs()
         {
-            this.Assert(StateInstanceCache.ContainsKey(this.GetType()), "{0} has not populated its states yet.", this.Id);
+            Assert(StateInstanceCache.ContainsKey(GetType()), "{0} has not populated its states yet.", Id);
 
             var pairs = new HashSet<Tuple<string, string>>();
-            foreach (var state in StateInstanceCache[this.GetType()])
+            foreach (var state in StateInstanceCache[GetType()])
             {
                 foreach (var binding in from b in state.InheritableEventHandlers.Concat(state.EventHandlers)
                                         where IncludeInCoverage(b.Value)
@@ -1024,8 +1024,8 @@ namespace PChecker.Actors
         /// </summary>
         private void AssertStateValidity()
         {
-            this.Assert(StateTypeCache[this.GetType()].Count > 0, "{0} must have one or more states.", this.Id);
-            this.Assert(this.StateStack.Peek() != null, "{0} must not have a null current state.", this.Id);
+            Assert(StateTypeCache[GetType()].Count > 0, "{0} must have one or more states.", Id);
+            Assert(StateStack.Peek() != null, "{0} must not have a null current state.", Id);
         }
 
         /// <summary>
@@ -1033,7 +1033,7 @@ namespace PChecker.Actors
         /// </summary>
         private protected override string FormatFairRandom(string callerMemberName, string callerFilePath, int callerLineNumber) =>
             string.Format(CultureInfo.InvariantCulture, "{0}_{1}_{2}_{3}_{4}",
-                this.Id.Name, this.CurrentStateName, callerMemberName, callerFilePath, callerLineNumber.ToString());
+                Id.Name, CurrentStateName, callerMemberName, callerFilePath, callerLineNumber.ToString());
 
         /// <summary>
         /// Wraps the unhandled exception inside an <see cref="AssertionFailureException"/>
@@ -1041,8 +1041,8 @@ namespace PChecker.Actors
         /// </summary>
         private protected override void ReportUnhandledException(Exception ex, string actionName)
         {
-            var state = this.CurrentState is null ? "<unknown>" : this.CurrentStateName;
-            this.Runtime.WrapAndThrowException(ex, "{0} (state '{1}', action '{2}')", this.Id, state, actionName);
+            var state = CurrentState is null ? "<unknown>" : CurrentStateName;
+            Runtime.WrapAndThrowException(ex, "{0} (state '{1}', action '{2}')", Id, state, actionName);
         }
 
         /// <summary>
@@ -1089,9 +1089,9 @@ namespace PChecker.Actors
             /// <param name="e">The event participating in the transition, if there is one.</param>
             internal Transition(Type type, System.Type state, Event e)
             {
-                this.TypeValue = type;
-                this.State = state;
-                this.Event = e;
+                TypeValue = type;
+                State = state;
+                Event = e;
             }
 
             /// <summary>
@@ -1161,9 +1161,9 @@ namespace PChecker.Actors
 
             public HandlerInfo(State state, int depth, EventHandlerDeclaration handler)
             {
-                this.State = state;
-                this.StackDepth = depth;
-                this.Handler = handler;
+                State = state;
+                StackDepth = depth;
+                Handler = handler;
             }
         }
 
@@ -1212,35 +1212,35 @@ namespace PChecker.Actors
             /// </summary>
             internal void InitializeState()
             {
-                this.IsStart = false;
+                IsStart = false;
 
-                this.InheritableEventHandlers = new Dictionary<Type, EventHandlerDeclaration>();
-                this.EventHandlers = new Dictionary<Type, EventHandlerDeclaration>();
+                InheritableEventHandlers = new Dictionary<Type, EventHandlerDeclaration>();
+                EventHandlers = new Dictionary<Type, EventHandlerDeclaration>();
 
-                if (this.GetType().GetCustomAttribute(typeof(OnEntryAttribute), true) is OnEntryAttribute entryAttribute)
+                if (GetType().GetCustomAttribute(typeof(OnEntryAttribute), true) is OnEntryAttribute entryAttribute)
                 {
-                    this.EntryAction = entryAttribute.Action;
+                    EntryAction = entryAttribute.Action;
                 }
 
-                if (this.GetType().GetCustomAttribute(typeof(OnExitAttribute), true) is OnExitAttribute exitAttribute)
+                if (GetType().GetCustomAttribute(typeof(OnExitAttribute), true) is OnExitAttribute exitAttribute)
                 {
-                    this.ExitAction = exitAttribute.Action;
+                    ExitAction = exitAttribute.Action;
                 }
 
-                if (this.GetType().IsDefined(typeof(StartAttribute), false))
+                if (GetType().IsDefined(typeof(StartAttribute), false))
                 {
-                    this.IsStart = true;
+                    IsStart = true;
                 }
 
                 // Events with already declared handlers.
                 var handledEvents = new HashSet<Type>();
 
                 // Install event handlers.
-                this.InstallGotoTransitions(handledEvents);
-                this.InstallPushTransitions(handledEvents);
-                this.InstallActionBindings(handledEvents);
-                this.InstallIgnoreHandlers(handledEvents);
-                this.InstallDeferHandlers(handledEvents);
+                InstallGotoTransitions(handledEvents);
+                InstallPushTransitions(handledEvents);
+                InstallActionBindings(handledEvents);
+                InstallIgnoreHandlers(handledEvents);
+                InstallDeferHandlers(handledEvents);
             }
 
             /// <summary>
@@ -1248,7 +1248,7 @@ namespace PChecker.Actors
             /// </summary>
             private void InstallGotoTransitions(HashSet<Type> handledEvents)
             {
-                var gotoAttributes = this.GetType().GetCustomAttributes(typeof(OnEventGotoStateAttribute), false)
+                var gotoAttributes = GetType().GetCustomAttributes(typeof(OnEventGotoStateAttribute), false)
                     as OnEventGotoStateAttribute[];
 
                 foreach (var attr in gotoAttributes)
@@ -1257,17 +1257,17 @@ namespace PChecker.Actors
 
                     if (attr.Action is null)
                     {
-                        this.EventHandlers.Add(attr.Event, new GotoStateTransition(attr.State));
+                        EventHandlers.Add(attr.Event, new GotoStateTransition(attr.State));
                     }
                     else
                     {
-                        this.EventHandlers.Add(attr.Event, new GotoStateTransition(attr.State, attr.Action));
+                        EventHandlers.Add(attr.Event, new GotoStateTransition(attr.State, attr.Action));
                     }
 
                     handledEvents.Add(attr.Event);
                 }
 
-                this.InheritGotoTransitions(this.GetType().BaseType, handledEvents);
+                InheritGotoTransitions(GetType().BaseType, handledEvents);
             }
 
             /// <summary>
@@ -1286,7 +1286,7 @@ namespace PChecker.Actors
                 var gotoTransitionsInherited = new Dictionary<Type, GotoStateTransition>();
                 foreach (var attr in gotoAttributesInherited)
                 {
-                    if (this.EventHandlers.ContainsKey(attr.Event))
+                    if (EventHandlers.ContainsKey(attr.Event))
                     {
                         continue;
                     }
@@ -1307,10 +1307,10 @@ namespace PChecker.Actors
 
                 foreach (var kvp in gotoTransitionsInherited)
                 {
-                    this.EventHandlers.Add(kvp.Key, kvp.Value);
+                    EventHandlers.Add(kvp.Key, kvp.Value);
                 }
 
-                this.InheritGotoTransitions(baseState.BaseType, handledEvents);
+                InheritGotoTransitions(baseState.BaseType, handledEvents);
             }
 
             /// <summary>
@@ -1318,18 +1318,18 @@ namespace PChecker.Actors
             /// </summary>
             private void InstallPushTransitions(HashSet<Type> handledEvents)
             {
-                var pushAttributes = this.GetType().GetCustomAttributes(typeof(OnEventPushStateAttribute), false)
+                var pushAttributes = GetType().GetCustomAttributes(typeof(OnEventPushStateAttribute), false)
                     as OnEventPushStateAttribute[];
 
                 foreach (var attr in pushAttributes)
                 {
                     CheckEventHandlerAlreadyDeclared(attr.Event, handledEvents);
 
-                    this.EventHandlers.Add(attr.Event, new PushStateTransition(attr.State));
+                    EventHandlers.Add(attr.Event, new PushStateTransition(attr.State));
                     handledEvents.Add(attr.Event);
                 }
 
-                this.InheritPushTransitions(this.GetType().BaseType, handledEvents);
+                InheritPushTransitions(GetType().BaseType, handledEvents);
             }
 
             /// <summary>
@@ -1348,7 +1348,7 @@ namespace PChecker.Actors
                 var pushTransitionsInherited = new Dictionary<Type, PushStateTransition>();
                 foreach (var attr in pushAttributesInherited)
                 {
-                    if (this.EventHandlers.ContainsKey(attr.Event))
+                    if (EventHandlers.ContainsKey(attr.Event))
                     {
                         continue;
                     }
@@ -1361,10 +1361,10 @@ namespace PChecker.Actors
 
                 foreach (var kvp in pushTransitionsInherited)
                 {
-                    this.EventHandlers.Add(kvp.Key, kvp.Value);
+                    EventHandlers.Add(kvp.Key, kvp.Value);
                 }
 
-                this.InheritPushTransitions(baseState.BaseType, handledEvents);
+                InheritPushTransitions(baseState.BaseType, handledEvents);
             }
 
             /// <summary>
@@ -1372,18 +1372,18 @@ namespace PChecker.Actors
             /// </summary>
             private void InstallActionBindings(HashSet<Type> handledEvents)
             {
-                var doAttributes = this.GetType().GetCustomAttributes(typeof(OnEventDoActionAttribute), false)
+                var doAttributes = GetType().GetCustomAttributes(typeof(OnEventDoActionAttribute), false)
                     as OnEventDoActionAttribute[];
 
                 foreach (var attr in doAttributes)
                 {
                     CheckEventHandlerAlreadyDeclared(attr.Event, handledEvents);
 
-                    this.InheritableEventHandlers.Add(attr.Event, new ActionEventHandlerDeclaration(attr.Action));
+                    InheritableEventHandlers.Add(attr.Event, new ActionEventHandlerDeclaration(attr.Action));
                     handledEvents.Add(attr.Event);
                 }
 
-                this.InheritActionBindings(this.GetType().BaseType, handledEvents);
+                InheritActionBindings(GetType().BaseType, handledEvents);
             }
 
             /// <summary>
@@ -1402,7 +1402,7 @@ namespace PChecker.Actors
                 var actionBindingsInherited = new Dictionary<Type, ActionEventHandlerDeclaration>();
                 foreach (var attr in doAttributesInherited)
                 {
-                    if (this.InheritableEventHandlers.ContainsKey(attr.Event))
+                    if (InheritableEventHandlers.ContainsKey(attr.Event))
                     {
                         continue;
                     }
@@ -1415,10 +1415,10 @@ namespace PChecker.Actors
 
                 foreach (var kvp in actionBindingsInherited)
                 {
-                    this.InheritableEventHandlers.Add(kvp.Key, kvp.Value);
+                    InheritableEventHandlers.Add(kvp.Key, kvp.Value);
                 }
 
-                this.InheritActionBindings(baseState.BaseType, handledEvents);
+                InheritActionBindings(baseState.BaseType, handledEvents);
             }
 
             /// <summary>
@@ -1426,20 +1426,20 @@ namespace PChecker.Actors
             /// </summary>
             private void InstallIgnoreHandlers(HashSet<Type> handledEvents)
             {
-                HashSet<Type> ignoredEvents = new HashSet<Type>();
-                if (this.GetType().GetCustomAttribute(typeof(IgnoreEventsAttribute), false) is IgnoreEventsAttribute ignoreEventsAttribute)
+                var ignoredEvents = new HashSet<Type>();
+                if (GetType().GetCustomAttribute(typeof(IgnoreEventsAttribute), false) is IgnoreEventsAttribute ignoreEventsAttribute)
                 {
                     foreach (var e in ignoreEventsAttribute.Events)
                     {
                         CheckEventHandlerAlreadyDeclared(e, handledEvents);
 
-                        this.InheritableEventHandlers.Add(e, new IgnoreEventHandlerDeclaration());
+                        InheritableEventHandlers.Add(e, new IgnoreEventHandlerDeclaration());
                         ignoredEvents.Add(e);
                         handledEvents.Add(e);
                     }
                 }
 
-                this.InheritIgnoreHandlers(this.GetType().BaseType, handledEvents, ignoredEvents);
+                InheritIgnoreHandlers(GetType().BaseType, handledEvents, ignoredEvents);
             }
 
             /// <summary>
@@ -1463,13 +1463,13 @@ namespace PChecker.Actors
 
                         CheckEventHandlerAlreadyInherited(e, baseState, handledEvents);
 
-                        this.InheritableEventHandlers.Add(e, new IgnoreEventHandlerDeclaration());
+                        InheritableEventHandlers.Add(e, new IgnoreEventHandlerDeclaration());
                         ignoredEvents.Add(e);
                         handledEvents.Add(e);
                     }
                 }
 
-                this.InheritIgnoreHandlers(baseState.BaseType, handledEvents, ignoredEvents);
+                InheritIgnoreHandlers(baseState.BaseType, handledEvents, ignoredEvents);
             }
 
             /// <summary>
@@ -1477,19 +1477,19 @@ namespace PChecker.Actors
             /// </summary>
             private void InstallDeferHandlers(HashSet<Type> handledEvents)
             {
-                HashSet<Type> deferredEvents = new HashSet<Type>();
-                if (this.GetType().GetCustomAttribute(typeof(DeferEventsAttribute), false) is DeferEventsAttribute deferEventsAttribute)
+                var deferredEvents = new HashSet<Type>();
+                if (GetType().GetCustomAttribute(typeof(DeferEventsAttribute), false) is DeferEventsAttribute deferEventsAttribute)
                 {
                     foreach (var e in deferEventsAttribute.Events)
                     {
                         CheckEventHandlerAlreadyDeclared(e, handledEvents);
-                        this.InheritableEventHandlers.Add(e, new DeferEventHandlerDeclaration());
+                        InheritableEventHandlers.Add(e, new DeferEventHandlerDeclaration());
                         deferredEvents.Add(e);
                         handledEvents.Add(e);
                     }
                 }
 
-                this.InheritDeferHandlers(this.GetType().BaseType, handledEvents, deferredEvents);
+                InheritDeferHandlers(GetType().BaseType, handledEvents, deferredEvents);
             }
 
             /// <summary>
@@ -1512,13 +1512,13 @@ namespace PChecker.Actors
                         }
 
                         CheckEventHandlerAlreadyInherited(e, baseState, handledEvents);
-                        this.InheritableEventHandlers.Add(e, new DeferEventHandlerDeclaration());
+                        InheritableEventHandlers.Add(e, new DeferEventHandlerDeclaration());
                         deferredEvents.Add(e);
                         handledEvents.Add(e);
                     }
                 }
 
-                this.InheritDeferHandlers(baseState.BaseType, handledEvents, deferredEvents);
+                InheritDeferHandlers(baseState.BaseType, handledEvents, deferredEvents);
             }
 
             /// <summary>
@@ -1568,7 +1568,7 @@ namespace PChecker.Actors
                 /// <param name="actionName">The name of the action to execute.</param>
                 public OnEntryAttribute(string actionName)
                 {
-                    this.Action = actionName;
+                    Action = actionName;
                 }
             }
 
@@ -1589,7 +1589,7 @@ namespace PChecker.Actors
                 /// <param name="actionName">The name of the action to execute.</param>
                 public OnExitAttribute(string actionName)
                 {
-                    this.Action = actionName;
+                    Action = actionName;
                 }
             }
 
@@ -1622,8 +1622,8 @@ namespace PChecker.Actors
                 /// <param name="stateType">The type of the state.</param>
                 public OnEventGotoStateAttribute(Type eventType, Type stateType)
                 {
-                    this.Event = eventType;
-                    this.State = stateType;
+                    Event = eventType;
+                    State = stateType;
                 }
 
                 /// <summary>
@@ -1634,9 +1634,9 @@ namespace PChecker.Actors
                 /// <param name="actionName">Name of action to perform on exit.</param>
                 public OnEventGotoStateAttribute(Type eventType, Type stateType, string actionName)
                 {
-                    this.Event = eventType;
-                    this.State = stateType;
-                    this.Action = actionName;
+                    Event = eventType;
+                    State = stateType;
+                    Action = actionName;
                 }
             }
 
@@ -1664,8 +1664,8 @@ namespace PChecker.Actors
                 /// <param name="stateType">The type of the state.</param>
                 public OnEventPushStateAttribute(Type eventType, Type stateType)
                 {
-                    this.Event = eventType;
-                    this.State = stateType;
+                    Event = eventType;
+                    State = stateType;
                 }
             }
 
@@ -1693,8 +1693,8 @@ namespace PChecker.Actors
                 /// <param name="actionName">The name of the action to invoke.</param>
                 public OnEventDoActionAttribute(Type eventType, string actionName)
                 {
-                    this.Event = eventType;
-                    this.Action = actionName;
+                    Event = eventType;
+                    Action = actionName;
                 }
             }
 
@@ -1715,7 +1715,7 @@ namespace PChecker.Actors
                 /// <param name="eventTypes">Event types</param>
                 public DeferEventsAttribute(params Type[] eventTypes)
                 {
-                    this.Events = eventTypes;
+                    Events = eventTypes;
                 }
             }
 
@@ -1736,7 +1736,7 @@ namespace PChecker.Actors
                 /// <param name="eventTypes">Event types</param>
                 public IgnoreEventsAttribute(params Type[] eventTypes)
                 {
-                    this.Events = eventTypes;
+                    Events = eventTypes;
                 }
             }
         }

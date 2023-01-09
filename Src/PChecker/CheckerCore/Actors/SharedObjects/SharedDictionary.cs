@@ -69,16 +69,16 @@ namespace PChecker.Actors.SharedObjects
             internal Mock(ControlledRuntime runtime, IEqualityComparer<TKey> comparer)
                 : base(null)
             {
-                this.Runtime = runtime;
+                Runtime = runtime;
                 if (comparer != null)
                 {
-                    this.DictionaryActor = this.Runtime.CreateActor(
+                    DictionaryActor = Runtime.CreateActor(
                         typeof(SharedDictionaryActor<TKey, TValue>),
                         SharedDictionaryEvent.InitializeEvent(comparer));
                 }
                 else
                 {
-                    this.DictionaryActor = this.Runtime.CreateActor(typeof(SharedDictionaryActor<TKey, TValue>));
+                    DictionaryActor = Runtime.CreateActor(typeof(SharedDictionaryActor<TKey, TValue>));
                 }
             }
 
@@ -87,8 +87,8 @@ namespace PChecker.Actors.SharedObjects
             /// </summary>
             public override bool TryAdd(TKey key, TValue value)
             {
-                var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                this.Runtime.SendEvent(this.DictionaryActor, SharedDictionaryEvent.TryAddEvent(key, value, op.Actor.Id));
+                var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                Runtime.SendEvent(DictionaryActor, SharedDictionaryEvent.TryAddEvent(key, value, op.Actor.Id));
                 var e = op.Actor.ReceiveEventAsync(typeof(SharedDictionaryResponseEvent<bool>)).Result as SharedDictionaryResponseEvent<bool>;
                 return e.Value;
             }
@@ -98,8 +98,8 @@ namespace PChecker.Actors.SharedObjects
             /// </summary>
             public override bool TryUpdate(TKey key, TValue newValue, TValue comparisonValue)
             {
-                var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                this.Runtime.SendEvent(this.DictionaryActor, SharedDictionaryEvent.TryUpdateEvent(key, newValue, comparisonValue, op.Actor.Id));
+                var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                Runtime.SendEvent(DictionaryActor, SharedDictionaryEvent.TryUpdateEvent(key, newValue, comparisonValue, op.Actor.Id));
                 var e = op.Actor.ReceiveEventAsync(typeof(SharedDictionaryResponseEvent<bool>)).Result as SharedDictionaryResponseEvent<bool>;
                 return e.Value;
             }
@@ -109,8 +109,8 @@ namespace PChecker.Actors.SharedObjects
             /// </summary>
             public override bool TryGetValue(TKey key, out TValue value)
             {
-                var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                this.Runtime.SendEvent(this.DictionaryActor, SharedDictionaryEvent.TryGetEvent(key, op.Actor.Id));
+                var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                Runtime.SendEvent(DictionaryActor, SharedDictionaryEvent.TryGetEvent(key, op.Actor.Id));
                 var e = op.Actor.ReceiveEventAsync(typeof(SharedDictionaryResponseEvent<Tuple<bool, TValue>>)).Result
                     as SharedDictionaryResponseEvent<Tuple<bool, TValue>>;
                 value = e.Value.Item2;
@@ -124,15 +124,15 @@ namespace PChecker.Actors.SharedObjects
             {
                 get
                 {
-                    var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                    this.Runtime.SendEvent(this.DictionaryActor, SharedDictionaryEvent.GetEvent(key, op.Actor.Id));
+                    var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                    Runtime.SendEvent(DictionaryActor, SharedDictionaryEvent.GetEvent(key, op.Actor.Id));
                     var e = op.Actor.ReceiveEventAsync(typeof(SharedDictionaryResponseEvent<TValue>)).Result as SharedDictionaryResponseEvent<TValue>;
                     return e.Value;
                 }
 
                 set
                 {
-                    this.Runtime.SendEvent(this.DictionaryActor, SharedDictionaryEvent.SetEvent(key, value));
+                    Runtime.SendEvent(DictionaryActor, SharedDictionaryEvent.SetEvent(key, value));
                 }
             }
 
@@ -141,8 +141,8 @@ namespace PChecker.Actors.SharedObjects
             /// </summary>
             public override bool TryRemove(TKey key, out TValue value)
             {
-                var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                this.Runtime.SendEvent(this.DictionaryActor, SharedDictionaryEvent.TryRemoveEvent(key, op.Actor.Id));
+                var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                Runtime.SendEvent(DictionaryActor, SharedDictionaryEvent.TryRemoveEvent(key, op.Actor.Id));
                 var e = op.Actor.ReceiveEventAsync(typeof(SharedDictionaryResponseEvent<Tuple<bool, TValue>>)).Result
                     as SharedDictionaryResponseEvent<Tuple<bool, TValue>>;
                 value = e.Value.Item2;
@@ -156,8 +156,8 @@ namespace PChecker.Actors.SharedObjects
             {
                 get
                 {
-                    var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                    this.Runtime.SendEvent(this.DictionaryActor, SharedDictionaryEvent.CountEvent(op.Actor.Id));
+                    var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                    Runtime.SendEvent(DictionaryActor, SharedDictionaryEvent.CountEvent(op.Actor.Id));
                     var e = op.Actor.ReceiveEventAsync(typeof(SharedDictionaryResponseEvent<int>)).Result as SharedDictionaryResponseEvent<int>;
                     return e.Value;
                 }
@@ -182,49 +182,49 @@ namespace PChecker.Actors.SharedObjects
         /// </summary>
         internal SharedDictionary(ConcurrentDictionary<TKey, TValue> dictionary)
         {
-            this.Dictionary = dictionary;
+            Dictionary = dictionary;
         }
 
         /// <summary>
         /// Adds a new key to the dictionary, if it doesn't already exist in the dictionary.
         /// </summary>
-        public virtual bool TryAdd(TKey key, TValue value) => this.Dictionary.TryAdd(key, value);
+        public virtual bool TryAdd(TKey key, TValue value) => Dictionary.TryAdd(key, value);
 
         /// <summary>
         /// Updates the value for an existing key in the dictionary, if that key has a specific value.
         /// </summary>
         public virtual bool TryUpdate(TKey key, TValue newValue, TValue comparisonValue) =>
-            this.Dictionary.TryUpdate(key, newValue, comparisonValue);
+            Dictionary.TryUpdate(key, newValue, comparisonValue);
 
         /// <summary>
         /// Attempts to get the value associated with the specified key.
         /// </summary>
-        public virtual bool TryGetValue(TKey key, out TValue value) => this.Dictionary.TryGetValue(key, out value);
+        public virtual bool TryGetValue(TKey key, out TValue value) => Dictionary.TryGetValue(key, out value);
 
         /// <summary>
         /// Gets or sets the value associated with the specified key.
         /// </summary>
         public virtual TValue this[TKey key]
         {
-            get => this.Dictionary[key];
+            get => Dictionary[key];
 
             set
             {
-                this.Dictionary[key] = value;
+                Dictionary[key] = value;
             }
         }
 
         /// <summary>
         /// Removes the specified key from the dictionary.
         /// </summary>
-        public virtual bool TryRemove(TKey key, out TValue value) => this.Dictionary.TryRemove(key, out value);
+        public virtual bool TryRemove(TKey key, out TValue value) => Dictionary.TryRemove(key, out value);
 
         /// <summary>
         /// Gets the number of elements in the dictionary.
         /// </summary>
         public virtual int Count
         {
-            get => this.Dictionary.Count;
+            get => Dictionary.Count;
         }
     }
 }

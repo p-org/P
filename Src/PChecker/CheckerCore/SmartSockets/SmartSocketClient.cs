@@ -40,19 +40,19 @@ namespace PChecker.SmartSockets
 
         internal SmartSocketClient(SmartSocketServer server, Socket client, SmartSocketTypeResolver resolver)
         {
-            this.Client = client;
-            this.Stream = new NetworkStream(client);
-            this.Server = server;
-            this.Resolver = resolver;
+            Client = client;
+            Stream = new NetworkStream(client);
+            Server = server;
+            Resolver = resolver;
             client.NoDelay = true;
 
-            DataContractSerializerSettings settings = new DataContractSerializerSettings();
-            settings.DataContractResolver = this.Resolver;
+            var settings = new DataContractSerializerSettings();
+            settings.DataContractResolver = Resolver;
             settings.PreserveObjectReferences = true;
-            this.Serializer = new DataContractSerializer(typeof(MessageWrapper), settings);
+            Serializer = new DataContractSerializer(typeof(MessageWrapper), settings);
         }
 
-        internal Socket Socket => this.Client;
+        internal Socket Socket => Client;
 
         public string Name { get; set; }
 
@@ -66,7 +66,7 @@ namespace PChecker.SmartSockets
         {
             return await Task.Run(async () =>
             {
-                string localHost = FindLocalHostName();
+                var localHost = FindLocalHostName();
                 if (localHost == null)
                 {
                     return null;
@@ -76,30 +76,30 @@ namespace PChecker.SmartSockets
                     try
                     {
                         var groupAddr = IPAddress.Parse(udpGroupAddress);
-                        IPEndPoint remoteEP = new IPEndPoint(groupAddr, udpGroupPort);
-                        UdpClient udpClient = new UdpClient(0);
-                        MemoryStream ms = new MemoryStream();
-                        BinaryWriter writer = new BinaryWriter(ms);
+                        var remoteEP = new IPEndPoint(groupAddr, udpGroupPort);
+                        var udpClient = new UdpClient(0);
+                        var ms = new MemoryStream();
+                        var writer = new BinaryWriter(ms);
                         writer.Write(serviceName.Length);
                         writer.Write(serviceName);
-                        byte[] bytes = ms.ToArray();
+                        var bytes = ms.ToArray();
                         udpClient.Send(bytes, bytes.Length, remoteEP);
 
-                        CancellationTokenSource receiveTaskSource = new CancellationTokenSource();
-                        Task<UdpReceiveResult> receiveTask = udpClient.ReceiveAsync();
+                        var receiveTaskSource = new CancellationTokenSource();
+                        var receiveTask = udpClient.ReceiveAsync();
                         if (receiveTask.Wait(5000, receiveTaskSource.Token))
                         {
-                            UdpReceiveResult result = receiveTask.Result;
-                            IPEndPoint serverEP = result.RemoteEndPoint;
-                            byte[] buffer = result.Buffer;
-                            BinaryReader reader = new BinaryReader(new MemoryStream(buffer));
-                            int len = reader.ReadInt32();
-                            string addr = reader.ReadString();
-                            string[] parts = addr.Split(':');
+                            var result = receiveTask.Result;
+                            var serverEP = result.RemoteEndPoint;
+                            var buffer = result.Buffer;
+                            var reader = new BinaryReader(new MemoryStream(buffer));
+                            var len = reader.ReadInt32();
+                            var addr = reader.ReadString();
+                            var parts = addr.Split(':');
                             if (parts.Length == 2)
                             {
                                 var a = IPAddress.Parse(parts[0]);
-                                SmartSocketClient client = await ConnectAsync(new IPEndPoint(a, int.Parse(parts[1])), clientName, resolver);
+                                var client = await ConnectAsync(new IPEndPoint(a, int.Parse(parts[1])), clientName, resolver);
                                 if (client != null)
                                 {
                                     client.ServerName = serviceName;
@@ -131,13 +131,13 @@ namespace PChecker.SmartSockets
         /// <returns>New server object that will get one ClientConnected event when the remote server connects</returns>
         public async Task<SmartSocketServer> OpenBackChannel(EventHandler<SmartSocketClient> connectedHandler)
         {
-            IPEndPoint ipe = (IPEndPoint)this.Socket.LocalEndPoint;
+            var ipe = (IPEndPoint)Socket.LocalEndPoint;
             // start a new server that does not use UDP.
-            var server = SmartSocketServer.StartServer(this.Name, this.Resolver, ipe.Address.ToString(), null, 0);
+            var server = SmartSocketServer.StartServer(Name, Resolver, ipe.Address.ToString(), null, 0);
             server.ClientConnected += connectedHandler;
-            int port = server.EndPoint.Port;
+            var port = server.EndPoint.Port;
             // tell the server we've opened another channel and pass the "port" number
-            var response = await this.SendReceiveAsync(new SocketMessage(OpenBackChannelMessageId, this.Name + ":" + port));
+            var response = await SendReceiveAsync(new SocketMessage(OpenBackChannelMessageId, Name + ":" + port));
             if (response.Id == ErrorMessageId)
             {
                 throw new InvalidOperationException(response.Message);
@@ -148,12 +148,12 @@ namespace PChecker.SmartSockets
 
         internal static async Task<SmartSocketClient> ConnectAsync(IPEndPoint serverEP, string clientName, SmartSocketTypeResolver resolver)
         {
-            Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            bool connected = false;
-            CancellationTokenSource src = new CancellationTokenSource();
+            var client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            var connected = false;
+            var src = new CancellationTokenSource();
             try
             {
-                Task task = Task.Run(() =>
+                var task = Task.Run(() =>
                 {
                     try
                     {
@@ -184,7 +184,7 @@ namespace PChecker.SmartSockets
                     Name = clientName,
                     ServerName = GetHostName(serverEP.Address)
                 };
-                SocketMessage response = await result.SendReceiveAsync(new SocketMessage(ConnectedMessageId, clientName));
+                var response = await result.SendReceiveAsync(new SocketMessage(ConnectedMessageId, clientName));
                 return result;
             }
 
@@ -213,7 +213,7 @@ namespace PChecker.SmartSockets
         {
             try
             {
-                IPHostEntry e = Dns.GetHostEntry(IPAddress.Loopback);
+                var e = Dns.GetHostEntry(IPAddress.Loopback);
                 return e.HostName;
             }
             catch (Exception)
@@ -226,7 +226,7 @@ namespace PChecker.SmartSockets
 
         internal static List<string> FindLocalIpAddresses()
         {
-            foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+            foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (ni.OperationalStatus == OperationalStatus.Up &&
                     ni.SupportsMulticast && ni.NetworkInterfaceType != NetworkInterfaceType.Loopback
@@ -235,8 +235,8 @@ namespace PChecker.SmartSockets
                     var props = ni.GetIPProperties();
                     if (props.IsDnsEnabled || props.IsDynamicDnsEnabled)
                     {
-                        IPHostEntry e = Dns.GetHostEntry(IPAddress.Loopback);
-                        List<string> ipAddresses = new List<string>();
+                        var e = Dns.GetHostEntry(IPAddress.Loopback);
+                        var ipAddresses = new List<string>();
                         foreach (var addr in e.AddressList)
                         {
                             ipAddresses.Add(addr.ToString());
@@ -252,7 +252,7 @@ namespace PChecker.SmartSockets
 
         public string ServerName { get; set; }
 
-        public bool IsConnected => !this.Closed;
+        public bool IsConnected => !Closed;
 
         /// <summary>
         /// If OpenBackChannel is called, and the server supports it then this property will
@@ -272,20 +272,20 @@ namespace PChecker.SmartSockets
 
         internal async void Close()
         {
-            if (this.Closed)
+            if (Closed)
             {
                 return;
             }
 
             try
             {
-                await this.SendAsync(new SocketMessage(DisconnectMessageId, this.Name));
+                await SendAsync(new SocketMessage(DisconnectMessageId, Name));
 
-                this.Closed = true;
+                Closed = true;
 
-                using (this.Client)
+                using (Client)
                 {
-                    this.Client.Close();
+                    Client.Close();
                 }
             }
             catch (Exception)
@@ -296,32 +296,32 @@ namespace PChecker.SmartSockets
 
         private void OnError(Exception ex)
         {
-            Exception inner = ex;
+            var inner = ex;
             while (inner != null)
             {
-                SocketException se = inner as SocketException;
+                var se = inner as SocketException;
                 if (se != null && se.SocketErrorCode == SocketError.ConnectionReset)
                 {
                     // we're toast!
-                    if (this.Server != null)
+                    if (Server != null)
                     {
-                        this.Server.RemoveClient(this);
+                        Server.RemoveClient(this);
                     }
 
-                    this.Closed = true;
+                    Closed = true;
                 }
 
                 if (ex is ObjectDisposedException)
                 {
-                    this.Closed = true;
+                    Closed = true;
                 }
 
                 inner = inner.InnerException;
             }
 
-            if (this.Error != null)
+            if (Error != null)
             {
-                this.Error(this, ex);
+                Error(this, ex);
             }
         }
 
@@ -338,27 +338,27 @@ namespace PChecker.SmartSockets
         /// <returns>The response message</returns>
         public async Task<SocketMessage> SendReceiveAsync(SocketMessage msg)
         {
-            if (this.Closed)
+            if (Closed)
             {
                 throw new SocketException((int)SocketError.NotConnected);
             }
 
             // must serialize this send/response sequence, cannot interleave them!
-            using (await this.GetSendLock())
+            using (await GetSendLock())
             {
                 return await Task.Run(async () =>
                 {
                     try
                     {
-                        await this.InternalSendAsync(msg);
+                        await InternalSendAsync(msg);
 
-                        SocketMessage response = await this.InternalReceiveAsync();
+                        var response = await InternalReceiveAsync();
                         return response;
                     }
                     catch (Exception ex)
                     {
                         // is the socket dead?
-                        this.OnError(ex);
+                        OnError(ex);
                     }
                     return null;
                 });
@@ -372,15 +372,15 @@ namespace PChecker.SmartSockets
         public async Task SendAsync(SocketMessage msg)
         {
             // must serialize this send/response sequence, cannot interleave them!
-            using (await this.GetSendLock())
+            using (await GetSendLock())
             {
-                await this.InternalSendAsync(msg);
+                await InternalSendAsync(msg);
             }
         }
 
         public async Task InternalSendAsync(SocketMessage msg)
         {
-            if (this.Closed)
+            if (Closed)
             {
                 throw new SocketException((int)SocketError.NotConnected);
             }
@@ -391,29 +391,29 @@ namespace PChecker.SmartSockets
                 try
                 {
                     // Wrap the message in a MessageWrapper and send it
-                    MemoryStream ms = new MemoryStream();
-                    this.Serializer.WriteObject(ms, new MessageWrapper() { Message = msg });
+                    var ms = new MemoryStream();
+                    Serializer.WriteObject(ms, new MessageWrapper() { Message = msg });
 
-                    byte[] buffer = ms.ToArray();
+                    var buffer = ms.ToArray();
 
-                    BinaryWriter streamWriter = new BinaryWriter(this.Stream, Encoding.UTF8, true);
+                    var streamWriter = new BinaryWriter(Stream, Encoding.UTF8, true);
                     streamWriter.Write(buffer.Length);
                     streamWriter.Write(buffer, 0, buffer.Length);
                 }
                 catch (Exception ex)
                 {
                     // is the socket dead?
-                    this.OnError(ex);
+                    OnError(ex);
                 }
             });
         }
 
         private void OnClosed()
         {
-            this.Closed = true;
-            if (this.Disconnected != null)
+            Closed = true;
+            if (Disconnected != null)
             {
-                this.Disconnected(this, EventArgs.Empty);
+                Disconnected(this, EventArgs.Empty);
             }
         }
 
@@ -422,15 +422,15 @@ namespace PChecker.SmartSockets
         /// </summary>
         public async Task<SocketMessage> ReceiveAsync()
         {
-            using (await this.GetSendLock())
+            using (await GetSendLock())
             {
-                return await this.InternalReceiveAsync();
+                return await InternalReceiveAsync();
             }
         }
 
         private async Task<SocketMessage> InternalReceiveAsync()
         {
-            if (this.Closed)
+            if (Closed)
             {
                 throw new SocketException((int)SocketError.NotConnected);
             }
@@ -438,10 +438,10 @@ namespace PChecker.SmartSockets
             SocketMessage msg = null;
             try
             {
-                using (BinaryReader streamReader = new BinaryReader(this.Stream, Encoding.UTF8, true))
+                using (var streamReader = new BinaryReader(Stream, Encoding.UTF8, true))
                 {
-                    int len = streamReader.ReadInt32();
-                    byte[] block = streamReader.ReadBytes(len);
+                    var len = streamReader.ReadInt32();
+                    var block = streamReader.ReadBytes(len);
 
                     object result = null;
                     if (len != block.Length)
@@ -453,7 +453,7 @@ namespace PChecker.SmartSockets
                     {
                         try
                         {
-                            result = this.Serializer.ReadObject(new MemoryStream(block));
+                            result = Serializer.ReadObject(new MemoryStream(block));
                         }
                         catch (Exception)
                         {
@@ -470,37 +470,37 @@ namespace PChecker.SmartSockets
                         if (msg.Id == DisconnectMessageId)
                         {
                             // client is politely saying good bye...
-                            this.OnClosed();
+                            OnClosed();
                         }
                         else if (msg.Id == ConnectedMessageId)
                         {
                             // must send an acknowledgement of the connect message
-                            this.Name = msg.Sender;
-                            await this.SendAsync(new SocketMessage(MessageAck, this.Name));
+                            Name = msg.Sender;
+                            await SendAsync(new SocketMessage(MessageAck, Name));
                         }
-                        else if (msg.Id == OpenBackChannelMessageId && this.Server != null)
+                        else if (msg.Id == OpenBackChannelMessageId && Server != null)
                         {
                             // client is requesting a back channel.
-                            await this.HandleBackchannelRequest(msg);
+                            await HandleBackchannelRequest(msg);
                         }
                     }
                 }
             }
             catch (EndOfStreamException)
             {
-                this.OnClosed();
+                OnClosed();
             }
-            catch (System.IO.IOException ioe)
+            catch (IOException ioe)
             {
-                System.Net.Sockets.SocketException se = ioe.InnerException as System.Net.Sockets.SocketException;
+                var se = ioe.InnerException as SocketException;
                 if (se.SocketErrorCode == SocketError.ConnectionReset)
                 {
-                    this.OnClosed();
+                    OnClosed();
                 }
             }
             catch (Exception ex)
             {
-                this.OnError(ex);
+                OnError(ex);
             }
 
             return msg;
@@ -508,20 +508,20 @@ namespace PChecker.SmartSockets
 
         private async Task HandleBackchannelRequest(SocketMessage msg)
         {
-            string[] parts = msg.Sender.Split(':');
+            var parts = msg.Sender.Split(':');
             if (parts.Length == 2)
             {
-                if (int.TryParse(parts[1], out int port))
+                if (int.TryParse(parts[1], out var port))
                 {
-                    bool rc = await this.Server.OpenBackChannel(this, port);
+                    var rc = await Server.OpenBackChannel(this, port);
                     if (rc)
                     {
-                        await this.SendAsync(new SocketMessage(MessageAck, this.Name));
+                        await SendAsync(new SocketMessage(MessageAck, Name));
                         return;
                     }
                     else
                     {
-                        await this.SendAsync(new SocketMessage(ErrorMessageId, this.Name)
+                        await SendAsync(new SocketMessage(ErrorMessageId, Name)
                         {
                             Message = "Server is not expecting a back channel"
                         });
@@ -530,7 +530,7 @@ namespace PChecker.SmartSockets
                 }
             }
 
-            await this.SendAsync(new SocketMessage(ErrorMessageId, this.Name)
+            await SendAsync(new SocketMessage(ErrorMessageId, Name)
             {
                 Message = "Valid port number was not found in backchannel message"
             });
@@ -538,29 +538,29 @@ namespace PChecker.SmartSockets
 
         public void Dispose()
         {
-            this.Close();
+            Close();
 
             GC.SuppressFinalize(this);
         }
 
         ~SmartSocketClient()
         {
-            this.Close();
+            Close();
         }
 
         private readonly SendLock Lock = new SendLock();
 
         private async Task<IDisposable> GetSendLock()
         {
-            while (this.Lock.Locked)
+            while (Lock.Locked)
             {
                 await Task.Delay(100);
-                lock (this.Lock)
+                lock (Lock)
                 {
-                    if (!this.Lock.Locked)
+                    if (!Lock.Locked)
                     {
-                        this.Lock.Locked = true;
-                        return new ReleaseLock(this.Lock);
+                        Lock.Locked = true;
+                        return new ReleaseLock(Lock);
                     }
                 }
             }
@@ -579,14 +579,14 @@ namespace PChecker.SmartSockets
 
             public ReleaseLock(SendLock sendLock)
             {
-                this.Lock = sendLock;
+                Lock = sendLock;
             }
 
             public void Dispose()
             {
-                lock (this.Lock)
+                lock (Lock)
                 {
-                    this.Lock.Locked = false;
+                    Lock.Locked = false;
                 }
             }
         }

@@ -32,9 +32,9 @@ namespace PChecker.SystematicTesting.Strategies
         /// </summary>
         internal LivenessCheckingStrategy(CheckerConfiguration checkerConfiguration, List<Specifications.Monitor> monitors, ISchedulingStrategy strategy)
         {
-            this.CheckerConfiguration = checkerConfiguration;
-            this.Monitors = monitors;
-            this.SchedulingStrategy = strategy;
+            CheckerConfiguration = checkerConfiguration;
+            Monitors = monitors;
+            SchedulingStrategy = strategy;
         }
 
         /// <inheritdoc/>
@@ -49,37 +49,37 @@ namespace PChecker.SystematicTesting.Strategies
         /// <inheritdoc/>
         public virtual bool PrepareForNextIteration()
         {
-            return this.SchedulingStrategy.PrepareForNextIteration();
+            return SchedulingStrategy.PrepareForNextIteration();
         }
 
         /// <inheritdoc/>
         public virtual int GetScheduledSteps()
         {
-            return this.SchedulingStrategy.GetScheduledSteps();
+            return SchedulingStrategy.GetScheduledSteps();
         }
 
         /// <inheritdoc/>
         public virtual bool HasReachedMaxSchedulingSteps()
         {
-            return this.SchedulingStrategy.HasReachedMaxSchedulingSteps();
+            return SchedulingStrategy.HasReachedMaxSchedulingSteps();
         }
 
         /// <inheritdoc/>
         public virtual bool IsFair()
         {
-            return this.SchedulingStrategy.IsFair();
+            return SchedulingStrategy.IsFair();
         }
 
         /// <inheritdoc/>
         public virtual string GetDescription()
         {
-            return this.SchedulingStrategy.GetDescription();
+            return SchedulingStrategy.GetDescription();
         }
 
         /// <inheritdoc/>
         public virtual void Reset()
         {
-            this.SchedulingStrategy.Reset();
+            SchedulingStrategy.Reset();
         }
     }
 }

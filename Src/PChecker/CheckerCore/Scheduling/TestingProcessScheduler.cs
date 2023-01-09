@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using PChecker.Coverage;
 using PChecker.SystematicTesting;
 using PChecker.Interfaces;
 using PChecker.SmartSockets;
@@ -100,20 +99,20 @@ namespace PChecker.Scheduling
         /// </summary>
         private TestingProcessScheduler(CheckerConfiguration checkerConfiguration)
         {
-            this.TestingProcesses = new Dictionary<uint, Process>();
-            this.TestingProcessChannels = new Dictionary<string, SmartSocketClient>();
-            this.TestReports = new ConcurrentDictionary<uint, TestReport>();
-            this.traceFiles = new ConcurrentDictionary<uint, string>();
-            this.GlobalTestReport = new TestReport(checkerConfiguration);
-            this.Profiler = new Profiler();
-            this.SchedulerLock = new object();
-            this.BugFoundByProcess = null;
+            TestingProcesses = new Dictionary<uint, Process>();
+            TestingProcessChannels = new Dictionary<string, SmartSocketClient>();
+            TestReports = new ConcurrentDictionary<uint, TestReport>();
+            traceFiles = new ConcurrentDictionary<uint, string>();
+            GlobalTestReport = new TestReport(checkerConfiguration);
+            Profiler = new Profiler();
+            SchedulerLock = new object();
+            BugFoundByProcess = null;
             
-            this.IsVerbose = checkerConfiguration.IsVerbose;
+            IsVerbose = checkerConfiguration.IsVerbose;
 
             checkerConfiguration.EnableColoredConsoleOutput = true;
 
-            this._checkerConfiguration = checkerConfiguration;
+            _checkerConfiguration = checkerConfiguration;
         }
 
         /// <summary>
@@ -121,20 +120,20 @@ namespace PChecker.Scheduling
         /// </summary>
         private void NotifyBugFound(uint processId)
         {
-            string name = "PCheckerProcess." + processId;
-            lock (this.Terminating)
+            var name = "PCheckerProcess." + processId;
+            lock (Terminating)
             {
-                this.Terminating.Add(name);
+                Terminating.Add(name);
             }
 
-            lock (this.SchedulerLock)
+            lock (SchedulerLock)
             {
-                if (!this._checkerConfiguration.PerformFullExploration && this.BugFoundByProcess is null)
+                if (!_checkerConfiguration.PerformFullExploration && BugFoundByProcess is null)
                 {
                     Console.WriteLine($"... Process {processId} found a bug.");
-                    this.BugFoundByProcess = processId;
+                    BugFoundByProcess = processId;
                     // must be async relative to this NotifyBugFound handler.
-                    Task.Run(() => this.CleanupTestProcesses(processId));
+                    Task.Run(() => CleanupTestProcesses(processId));
                 }
             }
         }
@@ -143,26 +142,26 @@ namespace PChecker.Scheduling
         {
             try
             {
-                string serverName = this._checkerConfiguration.TestingSchedulerEndPoint;
+                var serverName = _checkerConfiguration.TestingSchedulerEndPoint;
                 var stopRequest = new TestServerMessage("TestServerMessage", serverName)
                 {
                     Stop = true
                 };
 
-                var snapshot = new Dictionary<uint, Process>(this.TestingProcesses);
+                var snapshot = new Dictionary<uint, Process>(TestingProcesses);
 
                 foreach (var testingProcess in snapshot)
                 {
                     if (testingProcess.Key != bugProcessId)
                     {
-                        string name = "PCheckerProcess." + testingProcess.Key;
+                        var name = "PCheckerProcess." + testingProcess.Key;
 
-                        lock (this.Terminating)
+                        lock (Terminating)
                         {
-                            this.Terminating.Add(name);
+                            Terminating.Add(name);
                         }
 
-                        if (this.TestingProcessChannels.TryGetValue(name, out SmartSocketClient client) && client.BackChannel != null)
+                        if (TestingProcessChannels.TryGetValue(name, out var client) && client.BackChannel != null)
                         {
                             // use the back channel to stop the client immediately, which will trigger client
                             // to also send us their TestReport (on the regular channel).
@@ -171,7 +170,7 @@ namespace PChecker.Scheduling
                     }
                 }
 
-                await this.WaitForParallelTestReports(maxWait);
+                await WaitForParallelTestReports(maxWait);
             }
             catch (Exception ex)
             {
@@ -181,27 +180,27 @@ namespace PChecker.Scheduling
 
         private void KillTestingProcesses()
         {
-            lock (this.SchedulerLock)
+            lock (SchedulerLock)
             {
-                foreach (var testingProcess in this.TestingProcesses)
+                foreach (var testingProcess in TestingProcesses)
                 {
                     try
                     {
                         var process = testingProcess.Value;
                         if (!process.HasExited)
                         {
-                            PChecker.IO.Debug.WriteLine("... Killing child process : " + process.Id);
+                            IO.Debug.WriteLine("... Killing child process : " + process.Id);
                             process.Kill();
                             process.Dispose();
                         }
                     }
                     catch (Exception e)
                     {
-                        PChecker.IO.Debug.WriteLine("... Unable to terminate testing process: " + e.Message);
+                        IO.Debug.WriteLine("... Unable to terminate testing process: " + e.Message);
                     }
                 }
 
-                this.TestingProcesses.Clear();
+                TestingProcesses.Clear();
             }
         }
 
@@ -210,9 +209,9 @@ namespace PChecker.Scheduling
         /// </summary>
         private void SetTestReport(TestReport testReport, uint processId)
         {
-            lock (this.SchedulerLock)
+            lock (SchedulerLock)
             {
-                this.MergeTestReport(testReport, processId);
+                MergeTestReport(testReport, processId);
             }
         }
 
@@ -232,57 +231,57 @@ namespace PChecker.Scheduling
             Console.WriteLine($"Starting TestingProcessScheduler in process Id {Process.GetCurrentProcess().Id}");
 
             // Start the local server.
-            this.StartServer();
+            StartServer();
 
-            this.Profiler.StartMeasuringExecutionTime();
+            Profiler.StartMeasuringExecutionTime();
 
-            this.CreateAndRunInMemoryTestingProcess();
+            CreateAndRunInMemoryTestingProcess();
             
-            this.Profiler.StopMeasuringExecutionTime();
+            Profiler.StopMeasuringExecutionTime();
 
             // Stop listening and close the server.
-            this.StopServer();
+            StopServer();
 
             if (!IsProcessCanceled)
             {
                 // Merges and emits the test report.
-                this.EmitTestReport();
+                EmitTestReport();
             }
         }
 
         private async Task WaitForParallelTestingProcesses()
         {
-            if (this.TestingProcesses.Count > 0)
+            if (TestingProcesses.Count > 0)
             {
                 Console.WriteLine($"... Waiting for testing processes to start. Use the following command line to launch each test");
-                Console.WriteLine($"... Make sure to change /testing-process-id:x so that x goes from 0 to {this.TestingProcesses.Count}");
-                Process p = this.TestingProcesses[0];
+                Console.WriteLine($"... Make sure to change /testing-process-id:x so that x goes from 0 to {TestingProcesses.Count}");
+                var p = TestingProcesses[0];
                 Console.WriteLine($"{p.StartInfo.FileName} {p.StartInfo.Arguments}");
             }
 
-            await this.WaitForParallelTestReports();
+            await WaitForParallelTestReports();
         }
 
         private async Task WaitForParallelTestReports(int maxWait = 60000)
         {
-            this.LastMessageTime = Environment.TickCount;
+            LastMessageTime = Environment.TickCount;
 
             // wait 60 seconds for tasks to call back with all their reports and disconnect.
             // and reset the click each time a message is received
-            while (this.TestingProcessChannels.Count > 0)
+            while (TestingProcessChannels.Count > 0)
             {
                 await Task.Delay(100);
-                this.AssertTestProcessActivity(maxWait);
+                AssertTestProcessActivity(maxWait);
             }
         }
 
         private void AssertTestProcessActivity(int maxWait)
         {
-            if (this.LastMessageTime + maxWait < Environment.TickCount)
+            if (LastMessageTime + maxWait < Environment.TickCount)
             {
                 // oh dear, haven't heard from anyone in 60 seconds, and they have not
                 // disconnected, so time to get out the sledge hammer and kill them!
-                this.KillTestingProcesses();
+                KillTestingProcesses();
                 throw new Exception("Terminating TestProcesses due to inactivity");
             }
         }
@@ -292,7 +291,7 @@ namespace PChecker.Scheduling
         /// </summary>
         private void CreateAndRunInMemoryTestingProcess()
         {
-            TestingProcess testingProcess = TestingProcess.Create(this._checkerConfiguration);
+            var testingProcess = TestingProcess.Create(_checkerConfiguration);
 
             Console.WriteLine($"... Created '1' testing task.");
 
@@ -300,10 +299,10 @@ namespace PChecker.Scheduling
             testingProcess.Run();
 
             // Get and merge the test report.
-            TestReport testReport = testingProcess.GetTestReport();
+            var testReport = testingProcess.GetTestReport();
             if (testReport != null)
             {
-                this.MergeTestReport(testReport, 0);
+                MergeTestReport(testReport, 0);
             }
         }
 
@@ -321,13 +320,13 @@ namespace PChecker.Scheduling
             // this is the socket we can use to communicate directly to the client... it will be
             // available as the "BackChannel" property on the associated client socket.
             // But if we've already asked this client to terminate then tell it to stop.
-            SocketMessage response = new TestServerMessage("ok", this._checkerConfiguration.TestingSchedulerEndPoint);
+            SocketMessage response = new TestServerMessage("ok", _checkerConfiguration.TestingSchedulerEndPoint);
             TestServerMessage message = null;
-            lock (this.Terminating)
+            lock (Terminating)
             {
-                if (this.Terminating.Contains(e.Name))
+                if (Terminating.Contains(e.Name))
                 {
-                    message = new TestServerMessage("ok", this._checkerConfiguration.TestingSchedulerEndPoint)
+                    message = new TestServerMessage("ok", _checkerConfiguration.TestingSchedulerEndPoint)
                     {
                         Stop = true
                     };
@@ -342,78 +341,78 @@ namespace PChecker.Scheduling
 
         private void OnClientDisconnected(object sender, SmartSocketClient e)
         {
-            lock (this.SchedulerLock)
+            lock (SchedulerLock)
             {
-                this.TestingProcessChannels.Remove(e.Name);
+                TestingProcessChannels.Remove(e.Name);
             }
         }
 
         private void OnClientConnected(object sender, SmartSocketClient e)
         {
-            e.Error += this.OnClientError;
+            e.Error += OnClientError;
 
-            if (this.IsVerbose)
+            if (IsVerbose)
             {
                 Console.WriteLine($"... TestProcess '{e.Name}' is connected");
             }
 
-            Task.Run(() => this.HandleClientAsync(e));
+            Task.Run(() => HandleClientAsync(e));
         }
 
         private async void HandleClientAsync(SmartSocketClient client)
         {
             while (client.IsConnected)
             {
-                SocketMessage e = await client.ReceiveAsync();
+                var e = await client.ReceiveAsync();
                 if (e != null)
                 {
-                    this.LastMessageTime = Environment.TickCount;
+                    LastMessageTime = Environment.TickCount;
                     uint processId = 0;
 
                     if (e.Id == SmartSocketClient.ConnectedMessageId)
                     {
-                        lock (this.SchedulerLock)
+                        lock (SchedulerLock)
                         {
-                            this.TestProcessesConnected++;
-                            this.TestingProcessChannels.Add(e.Sender, client);
+                            TestProcessesConnected++;
+                            TestingProcessChannels.Add(e.Sender, client);
                         }
                     }
                     else if (e is BugFoundMessage)
                     {
-                        BugFoundMessage bug = (BugFoundMessage)e;
+                        var bug = (BugFoundMessage)e;
                         processId = bug.ProcessId;
-                        await client.SendAsync(new SocketMessage("ok", this._checkerConfiguration.TestingSchedulerEndPoint));
-                        if (this.IsVerbose)
+                        await client.SendAsync(new SocketMessage("ok", _checkerConfiguration.TestingSchedulerEndPoint));
+                        if (IsVerbose)
                         {
                             Console.WriteLine($"... Bug report received from '{bug.Sender}'");
                         }
 
-                        this.NotifyBugFound(processId);
+                        NotifyBugFound(processId);
                     }
                     else if (e is TestReportMessage)
                     {
-                        TestReportMessage report = (TestReportMessage)e;
+                        var report = (TestReportMessage)e;
                         processId = report.ProcessId;
-                        await client.SendAsync(new SocketMessage("ok", this._checkerConfiguration.TestingSchedulerEndPoint));
-                        if (this.IsVerbose)
+                        await client.SendAsync(new SocketMessage("ok", _checkerConfiguration.TestingSchedulerEndPoint));
+                        if (IsVerbose)
                         {
                             Console.WriteLine($"... Test report received from '{report.Sender}'");
                         }
 
-                        this.SetTestReport(report.TestReport, report.ProcessId);
+                        SetTestReport(report.TestReport, report.ProcessId);
                     }
                     else if (e is TestTraceMessage)
                     {
-                        TestTraceMessage report = (TestTraceMessage)e;
+                        var report = (TestTraceMessage)e;
                         processId = report.ProcessId;
-                        await client.SendAsync(new SocketMessage("ok", this._checkerConfiguration.TestingSchedulerEndPoint));
-                        this.SaveTraceReport(report);
+                        await client.SendAsync(new SocketMessage("ok", _checkerConfiguration.TestingSchedulerEndPoint));
+                        SaveTraceReport(report);
                     }
                     else if (e is TestProgressMessage)
                     {
-                        TestProgressMessage progress = (TestProgressMessage)e;
+                        var progress = (TestProgressMessage)e;
                         processId = progress.ProcessId;
-                        await client.SendAsync(new SocketMessage("ok", this._checkerConfiguration.TestingSchedulerEndPoint));
+                        await client.SendAsync(new SocketMessage("ok", _checkerConfiguration.TestingSchedulerEndPoint));
                         // todo: do something fun with progress info.
                     }
                 }
@@ -424,11 +423,11 @@ namespace PChecker.Scheduling
         {
             if (report.Contents != null)
             {
-                string fileName = this._checkerConfiguration.AssemblyToBeAnalyzed;
-                string targetDir = Path.GetDirectoryName(fileName);
-                string outputDir = Path.Combine(targetDir, "Output", Path.GetFileName(fileName), "PCheckerOutput");
-                string remoteFileName = Path.GetFileName(report.FileName);
-                string localTraceFile = Path.Combine(outputDir, remoteFileName);
+                var fileName = _checkerConfiguration.AssemblyToBeAnalyzed;
+                var targetDir = Path.GetDirectoryName(fileName);
+                var outputDir = Path.Combine(targetDir, "Output", Path.GetFileName(fileName), "PCheckerOutput");
+                var remoteFileName = Path.GetFileName(report.FileName);
+                var localTraceFile = Path.Combine(outputDir, remoteFileName);
                 File.WriteAllText(localTraceFile, report.Contents);
                 Console.WriteLine($"... Saved trace report: {localTraceFile}");
             }
@@ -442,8 +441,8 @@ namespace PChecker.Scheduling
         private void OnClientError(object sender, Exception e)
         {
             // todo: handle client failures?  The client process died, etc...
-            SmartSocketClient client = (SmartSocketClient)sender;
-            if (!this.Terminating.Contains(client.Name))
+            var client = (SmartSocketClient)sender;
+            if (!Terminating.Contains(client.Name))
             {
                 Console.WriteLine($"### Error from client {client.Name}: {e.Message}");
             }
@@ -454,10 +453,10 @@ namespace PChecker.Scheduling
         /// </summary>
         private void StopServer()
         {
-            if (this.Server != null)
+            if (Server != null)
             {
-                this.Server.Stop();
-                this.Server = null;
+                Server.Stop();
+                Server = null;
             }
         }
 
@@ -466,15 +465,15 @@ namespace PChecker.Scheduling
         /// </summary>
         private void MergeTestReport(TestReport testReport, uint processId)
         {
-            if (this.TestReports.TryAdd(processId, testReport))
+            if (TestReports.TryAdd(processId, testReport))
             {
                 // Merges the test report into the global report.
-                PChecker.IO.Debug.WriteLine($"... Merging task {processId} test report.");
-                this.GlobalTestReport.Merge(testReport);
+                IO.Debug.WriteLine($"... Merging task {processId} test report.");
+                GlobalTestReport.Merge(testReport);
             }
             else
             {
-                PChecker.IO.Debug.WriteLine($"... Unable to merge test report from task '{processId}'. " +
+                IO.Debug.WriteLine($"... Unable to merge test report from task '{processId}'. " +
                                             " Report is already merged.");
             }
         }
@@ -484,44 +483,44 @@ namespace PChecker.Scheduling
         /// </summary>
         private void EmitTestReport()
         {
-            var testReports = new List<TestReport>(this.TestReports.Values);
-            foreach (var process in this.TestingProcesses)
+            var testReports = new List<TestReport>(TestReports.Values);
+            foreach (var process in TestingProcesses)
             {
-                if (!this.TestReports.ContainsKey(process.Key))
+                if (!TestReports.ContainsKey(process.Key))
                 {
                     Console.WriteLine($"... Task {process.Key} failed due to an internal error.");
                 }
             }
 
-            if (this.TestReports.Count == 0)
+            if (TestReports.Count == 0)
             {
                 Environment.ExitCode = (int)ExitCode.InternalError;
                 return;
             }
 
-            if (this._checkerConfiguration.ReportActivityCoverage)
+            if (_checkerConfiguration.ReportActivityCoverage)
             {
                 Console.WriteLine($"... Emitting coverage reports:");
-                Reporter.EmitTestingCoverageReport(this.GlobalTestReport);
+                Reporter.EmitTestingCoverageReport(GlobalTestReport);
             }
 
-            if (this._checkerConfiguration.DebugActivityCoverage)
+            if (_checkerConfiguration.DebugActivityCoverage)
             {
                 Console.WriteLine($"... Emitting debug coverage reports:");
-                foreach (var report in this.TestReports)
+                foreach (var report in TestReports)
                 {
                     Reporter.EmitTestingCoverageReport(report.Value, report.Key, isDebug: true);
                 }
             }
 
-            Console.WriteLine(this.GlobalTestReport.GetText(this._checkerConfiguration, "..."));
-            Console.WriteLine($"... Elapsed {this.Profiler.Results()} sec.");
+            Console.WriteLine(GlobalTestReport.GetText(_checkerConfiguration, "..."));
+            Console.WriteLine($"... Elapsed {Profiler.Results()} sec.");
 
-            if (this.GlobalTestReport.InternalErrors.Count > 0)
+            if (GlobalTestReport.InternalErrors.Count > 0)
             {
                 Environment.ExitCode = (int)ExitCode.InternalError;
             }
-            else if (this.GlobalTestReport.NumOfFoundBugs > 0)
+            else if (GlobalTestReport.NumOfFoundBugs > 0)
             {
                 Environment.ExitCode = (int)ExitCode.BugFound;
             }

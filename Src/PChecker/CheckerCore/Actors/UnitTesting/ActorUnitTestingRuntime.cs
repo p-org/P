@@ -41,34 +41,34 @@ namespace PChecker.Actors.UnitTesting
         {
             if (!actorType.IsSubclassOf(typeof(Actor)))
             {
-                this.Assert(false, "Type '{0}' is not an actor.", actorType.FullName);
+                Assert(false, "Type '{0}' is not an actor.", actorType.FullName);
             }
 
             var id = new ActorId(actorType, null, this);
-            this.Instance = ActorFactory.Create(actorType);
+            Instance = ActorFactory.Create(actorType);
             IActorManager actorManager;
-            if (this.Instance is StateMachine stateMachine)
+            if (Instance is StateMachine stateMachine)
             {
                 actorManager = new StateMachineManager(this, stateMachine, Guid.Empty);
             }
             else
             {
-                actorManager = new ActorManager(this, this.Instance, Guid.Empty);
+                actorManager = new ActorManager(this, Instance, Guid.Empty);
             }
 
-            this.ActorInbox = new EventQueue(actorManager);
-            this.Instance.Configure(this, id, actorManager, this.ActorInbox);
-            this.Instance.SetupEventHandlers();
-            if (this.Instance is StateMachine)
+            ActorInbox = new EventQueue(actorManager);
+            Instance.Configure(this, id, actorManager, ActorInbox);
+            Instance.SetupEventHandlers();
+            if (Instance is StateMachine)
             {
-                this.LogWriter.LogCreateStateMachine(this.Instance.Id, null, null);
+                LogWriter.LogCreateStateMachine(Instance.Id, null, null);
             }
             else
             {
-                this.LogWriter.LogCreateActor(this.Instance.Id, null, null);
+                LogWriter.LogCreateActor(Instance.Id, null, null);
             }
 
-            this.IsActorWaitingToReceiveEvent = false;
+            IsActorWaitingToReceiveEvent = false;
         }
 
         /// <summary>
@@ -77,8 +77,8 @@ namespace PChecker.Actors.UnitTesting
         /// </summary>
         internal Task StartAsync(Event initialEvent)
         {
-            this.RunActorEventHandlerAsync(this.Instance, initialEvent, true);
-            return this.QuiescenceCompletionSource.Task;
+            RunActorEventHandlerAsync(Instance, initialEvent, true);
+            return QuiescenceCompletionSource.Task;
         }
 
         /// <inheritdoc/>
@@ -128,11 +128,11 @@ namespace PChecker.Actors.UnitTesting
             id = id ?? new ActorId(type, null, this);
             if (typeof(StateMachine).IsAssignableFrom(type))
             {
-                this.LogWriter.LogCreateStateMachine(id, creator?.Id.Name, creator?.Id.Type);
+                LogWriter.LogCreateStateMachine(id, creator?.Id.Name, creator?.Id.Type);
             }
             else
             {
-                this.LogWriter.LogCreateActor(id, creator?.Id.Name, creator?.Id.Type);
+                LogWriter.LogCreateActor(id, creator?.Id.Name, creator?.Id.Type);
             }
 
             return id;
@@ -145,11 +145,11 @@ namespace PChecker.Actors.UnitTesting
             id = id ?? new ActorId(type, null, this);
             if (typeof(StateMachine).IsAssignableFrom(type))
             {
-                this.LogWriter.LogCreateStateMachine(id, creator?.Id.Name, creator?.Id.Type);
+                LogWriter.LogCreateStateMachine(id, creator?.Id.Name, creator?.Id.Type);
             }
             else
             {
-                this.LogWriter.LogCreateActor(id, creator?.Id.Name, creator?.Id.Type);
+                LogWriter.LogCreateActor(id, creator?.Id.Name, creator?.Id.Type);
             }
 
             return Task.FromResult(id);
@@ -158,10 +158,10 @@ namespace PChecker.Actors.UnitTesting
         /// <inheritdoc/>
         internal override void SendEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId, SendOptions options)
         {
-            this.Assert(sender is null || this.Instance.Id.Equals(sender.Id),
-                string.Format("Only {0} can send an event during this test.", this.Instance.Id.ToString()));
-            this.Assert(e != null, string.Format("{0} is sending a null event.", this.Instance.Id.ToString()));
-            this.Assert(targetId != null, string.Format("{0} is sending event {1} to a null actor.", this.Instance.Id.ToString(), e.ToString()));
+            Assert(sender is null || Instance.Id.Equals(sender.Id),
+                string.Format("Only {0} can send an event during this test.", Instance.Id.ToString()));
+            Assert(e != null, string.Format("{0} is sending a null event.", Instance.Id.ToString()));
+            Assert(targetId != null, string.Format("{0} is sending event {1} to a null actor.", Instance.Id.ToString(), e.ToString()));
 
             // The operation group id of this operation is set using the following precedence:
             // (1) To the specified send operation group id, if it is non-empty.
@@ -172,26 +172,26 @@ namespace PChecker.Actors.UnitTesting
                 opGroupId = sender.OperationGroupId;
             }
 
-            if (this.Instance.IsHalted)
+            if (Instance.IsHalted)
             {
-                this.LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
+                LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
                     (sender as StateMachine)?.CurrentStateName ?? string.Empty, e, opGroupId, isTargetHalted: true);
                 return;
             }
 
-            this.LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
+            LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
                 (sender as StateMachine)?.CurrentStateName ?? string.Empty, e, opGroupId, isTargetHalted: false);
 
-            if (!targetId.Equals(this.Instance.Id))
+            if (!targetId.Equals(Instance.Id))
             {
                 // Drop all events sent to an actor other than the actor-under-test.
                 return;
             }
 
-            EnqueueStatus enqueueStatus = this.Instance.Enqueue(e, opGroupId, null);
+            var enqueueStatus = Instance.Enqueue(e, opGroupId, null);
             if (enqueueStatus == EnqueueStatus.EventHandlerNotRunning)
             {
-                this.RunActorEventHandlerAsync(this.Instance, null, false);
+                RunActorEventHandlerAsync(Instance, null, false);
             }
         }
 
@@ -199,8 +199,8 @@ namespace PChecker.Actors.UnitTesting
         internal override Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Actor sender,
             Guid opGroupId, SendOptions options)
         {
-            this.SendEvent(targetId, e, sender, opGroupId, options);
-            return this.QuiescenceCompletionSource.Task;
+            SendEvent(targetId, e, sender, opGroupId, options);
+            return QuiescenceCompletionSource.Task;
         }
 
         /// <summary>
@@ -208,7 +208,7 @@ namespace PChecker.Actors.UnitTesting
         /// </summary>
         private Task RunActorEventHandlerAsync(Actor actor, Event initialEvent, bool isFresh)
         {
-            this.QuiescenceCompletionSource = new TaskCompletionSource<bool>();
+            QuiescenceCompletionSource = new TaskCompletionSource<bool>();
 
             return Task.Run(async () =>
             {
@@ -220,13 +220,13 @@ namespace PChecker.Actors.UnitTesting
                     }
 
                     await actor.RunEventHandlerAsync();
-                    this.QuiescenceCompletionSource.SetResult(true);
+                    QuiescenceCompletionSource.SetResult(true);
                 }
                 catch (Exception ex)
                 {
-                    this.IsRunning = false;
-                    this.RaiseOnFailureEvent(ex);
-                    this.QuiescenceCompletionSource.SetException(ex);
+                    IsRunning = false;
+                    RaiseOnFailureEvent(ex);
+                    QuiescenceCompletionSource.SetException(ex);
                 }
             });
         }
@@ -239,16 +239,16 @@ namespace PChecker.Actors.UnitTesting
         internal override void NotifyReceivedEvent(Actor actor, Event e, EventInfo eventInfo)
         {
             base.NotifyReceivedEvent(actor, e, eventInfo);
-            this.IsActorWaitingToReceiveEvent = false;
-            this.QuiescenceCompletionSource = new TaskCompletionSource<bool>();
+            IsActorWaitingToReceiveEvent = false;
+            QuiescenceCompletionSource = new TaskCompletionSource<bool>();
         }
 
         /// <inheritdoc/>
         internal override void NotifyWaitEvent(Actor actor, IEnumerable<Type> eventTypes)
         {
             base.NotifyWaitEvent(actor, eventTypes);
-            this.IsActorWaitingToReceiveEvent = true;
-            this.QuiescenceCompletionSource.SetResult(true);
+            IsActorWaitingToReceiveEvent = true;
+            QuiescenceCompletionSource.SetResult(true);
         }
     }
 }

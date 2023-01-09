@@ -31,10 +31,10 @@ namespace PChecker.Coverage
 
         internal void AddEventReceived(string stateId, string eventId)
         {
-            if (!this.EventsReceived.TryGetValue(stateId, out HashSet<string> set))
+            if (!EventsReceived.TryGetValue(stateId, out var set))
             {
                 set = new HashSet<string>();
-                this.EventsReceived[stateId] = set;
+                EventsReceived[stateId] = set;
             }
 
             set.Add(eventId);
@@ -46,7 +46,7 @@ namespace PChecker.Coverage
         /// <param name="stateId">The actor qualified state name</param>
         public IEnumerable<string> GetEventsReceived(string stateId)
         {
-            if (this.EventsReceived.TryGetValue(stateId, out HashSet<string> set))
+            if (EventsReceived.TryGetValue(stateId, out var set))
             {
                 return set;
             }
@@ -56,10 +56,10 @@ namespace PChecker.Coverage
 
         internal void AddEventSent(string stateId, string eventId)
         {
-            if (!this.EventsSent.TryGetValue(stateId, out HashSet<string> set))
+            if (!EventsSent.TryGetValue(stateId, out var set))
             {
                 set = new HashSet<string>();
-                this.EventsSent[stateId] = set;
+                EventsSent[stateId] = set;
             }
 
             set.Add(eventId);
@@ -71,7 +71,7 @@ namespace PChecker.Coverage
         /// <param name="stateId">The actor qualified state name</param>
         public IEnumerable<string> GetEventsSent(string stateId)
         {
-            if (this.EventsSent.TryGetValue(stateId, out HashSet<string> set))
+            if (EventsSent.TryGetValue(stateId, out var set))
             {
                 return set;
             }
@@ -81,8 +81,8 @@ namespace PChecker.Coverage
 
         internal void Merge(EventCoverage other)
         {
-            MergeHashSets(this.EventsReceived, other.EventsReceived);
-            MergeHashSets(this.EventsSent, other.EventsSent);
+            MergeHashSets(EventsReceived, other.EventsReceived);
+            MergeHashSets(EventsSent, other.EventsSent);
         }
 
         private static void MergeHashSets(Dictionary<string, HashSet<string>> ours, Dictionary<string, HashSet<string>> theirs)
@@ -90,7 +90,7 @@ namespace PChecker.Coverage
             foreach (var pair in theirs)
             {
                 var stateId = pair.Key;
-                if (!ours.TryGetValue(stateId, out HashSet<string> eventSet))
+                if (!ours.TryGetValue(stateId, out var eventSet))
                 {
                     eventSet = new HashSet<string>();
                     ours[stateId] = eventSet;
@@ -110,7 +110,7 @@ namespace PChecker.Coverage
         {
         }
 
-        public EventCoverage EventCoverage => this.InternalEventCoverage;
+        public EventCoverage EventCoverage => InternalEventCoverage;
 
         public void OnAssertionFailure(string error)
         {
@@ -138,12 +138,12 @@ namespace PChecker.Coverage
 
         public void OnDefaultEventHandler(ActorId id, string stateName)
         {
-            this.Dequeued = DefaultEvent.Instance;
+            Dequeued = DefaultEvent.Instance;
         }
 
         public void OnDequeueEvent(ActorId id, string stateName, Event e)
         {
-            this.Dequeued = e;
+            Dequeued = e;
         }
 
         public void OnEnqueueEvent(ActorId id, Event e)
@@ -160,21 +160,21 @@ namespace PChecker.Coverage
 
         public void OnExecuteAction(ActorId id, string handlingStateName, string currentStateName, string actionName)
         {
-            this.OnEventHandled(id, handlingStateName);
+            OnEventHandled(id, handlingStateName);
         }
 
         private void OnEventHandled(ActorId id, string stateName)
         {
-            if (this.Dequeued != null)
+            if (Dequeued != null)
             {
-                this.EventCoverage.AddEventReceived(GetStateId(id.Type, stateName), this.Dequeued.GetType().FullName);
-                this.Dequeued = null;
+                EventCoverage.AddEventReceived(GetStateId(id.Type, stateName), Dequeued.GetType().FullName);
+                Dequeued = null;
             }
         }
 
         public void OnGotoState(ActorId id, string currentStateName, string newStateName)
         {
-            this.OnEventHandled(id, currentStateName);
+            OnEventHandled(id, currentStateName);
         }
 
         public void OnHalt(ActorId id, int inboxSize)
@@ -183,7 +183,7 @@ namespace PChecker.Coverage
 
         public void OnHandleRaisedEvent(ActorId id, string stateName, Event e)
         {
-            this.Dequeued = e;
+            Dequeued = e;
         }
 
         public void OnMonitorExecuteAction(string monitorType, string stateName, string actionName)
@@ -193,14 +193,14 @@ namespace PChecker.Coverage
         public void OnMonitorProcessEvent(string monitorType, string stateName, string senderName,
             string senderType, string senderStateName, Event e)
         {
-            string eventName = e.GetType().FullName;
-            this.EventCoverage.AddEventReceived(GetStateId(monitorType, stateName), eventName);
+            var eventName = e.GetType().FullName;
+            EventCoverage.AddEventReceived(GetStateId(monitorType, stateName), eventName);
         }
 
         public void OnMonitorRaiseEvent(string monitorType, string stateName, Event e)
         {
-            string eventName = e.GetType().FullName;
-            this.EventCoverage.AddEventSent(GetStateId(monitorType, stateName), eventName);
+            var eventName = e.GetType().FullName;
+            EventCoverage.AddEventSent(GetStateId(monitorType, stateName), eventName);
         }
 
         public void OnMonitorStateTransition(string monitorType, string stateName, bool isEntry, bool? isInHotState)
@@ -225,26 +225,26 @@ namespace PChecker.Coverage
 
         public void OnPushState(ActorId id, string currentStateName, string newStateName)
         {
-            this.OnEventHandled(id, currentStateName);
+            OnEventHandled(id, currentStateName);
         }
 
         public void OnRaiseEvent(ActorId id, string stateName, Event e)
         {
-            string eventName = e.GetType().FullName;
-            this.EventCoverage.AddEventSent(GetStateId(id.Type, stateName), eventName);
+            var eventName = e.GetType().FullName;
+            EventCoverage.AddEventSent(GetStateId(id.Type, stateName), eventName);
         }
 
         public void OnReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)
         {
-            string eventName = e.GetType().FullName;
-            this.EventCoverage.AddEventReceived(GetStateId(id.Type, stateName), eventName);
+            var eventName = e.GetType().FullName;
+            EventCoverage.AddEventReceived(GetStateId(id.Type, stateName), eventName);
         }
 
         public void OnSendEvent(ActorId targetActorId, string senderName, string senderType, string senderStateName,
             Event e, Guid opGroupId, bool isTargetHalted)
         {
-            string eventName = e.GetType().FullName;
-            this.EventCoverage.AddEventSent(GetStateId(senderType, senderStateName), eventName);
+            var eventName = e.GetType().FullName;
+            EventCoverage.AddEventSent(GetStateId(senderType, senderStateName), eventName);
         }
 
         public void OnStateTransition(ActorId id, string stateName, bool isEntry)
@@ -269,7 +269,7 @@ namespace PChecker.Coverage
 
         private static string GetStateId(string actorType, string stateName)
         {
-            string id = ResolveActorTypeName(actorType);
+            var id = ResolveActorTypeName(actorType);
             if (string.IsNullOrEmpty(stateName))
             {
                 if (actorType == null)
@@ -302,7 +302,7 @@ namespace PChecker.Coverage
             {
                 // then this is probably an Actor, not a StateMachine.  For Actors we can invent a state
                 // name equal to the short name of the class, this then looks like a Constructor which is fine.
-                int pos = actorId.LastIndexOf(".");
+                var pos = actorId.LastIndexOf(".");
                 if (pos > 0)
                 {
                     return actorId.Substring(pos + 1);

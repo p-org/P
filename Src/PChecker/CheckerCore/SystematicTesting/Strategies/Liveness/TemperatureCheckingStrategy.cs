@@ -24,22 +24,22 @@ namespace PChecker.SystematicTesting.Strategies
         /// <inheritdoc/>
         public override bool GetNextOperation(IAsyncOperation current, IEnumerable<IAsyncOperation> ops, out IAsyncOperation next)
         {
-            this.CheckLivenessTemperature();
-            return this.SchedulingStrategy.GetNextOperation(current, ops, out next);
+            CheckLivenessTemperature();
+            return SchedulingStrategy.GetNextOperation(current, ops, out next);
         }
 
         /// <inheritdoc/>
         public override bool GetNextBooleanChoice(IAsyncOperation current, int maxValue, out bool next)
         {
-            this.CheckLivenessTemperature();
-            return this.SchedulingStrategy.GetNextBooleanChoice(current, maxValue, out next);
+            CheckLivenessTemperature();
+            return SchedulingStrategy.GetNextBooleanChoice(current, maxValue, out next);
         }
 
         /// <inheritdoc/>
         public override bool GetNextIntegerChoice(IAsyncOperation current, int maxValue, out int next)
         {
-            this.CheckLivenessTemperature();
-            return this.SchedulingStrategy.GetNextIntegerChoice(current, maxValue, out next);
+            CheckLivenessTemperature();
+            return SchedulingStrategy.GetNextIntegerChoice(current, maxValue, out next);
         }
 
         /// <summary>
@@ -49,9 +49,9 @@ namespace PChecker.SystematicTesting.Strategies
         /// </summary>
         private void CheckLivenessTemperature()
         {
-            if (this.IsFair())
+            if (IsFair())
             {
-                foreach (var monitor in this.Monitors)
+                foreach (var monitor in Monitors)
                 {
                     monitor.CheckLivenessTemperature();
                 }

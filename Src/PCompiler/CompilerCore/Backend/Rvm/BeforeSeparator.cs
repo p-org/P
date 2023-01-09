@@ -11,7 +11,7 @@ namespace Plang.Compiler.Backend.Rvm
 
         internal BeforeSeparator(SeparatorDelegate separator)
         {
-            this.Separator = separator;
+            Separator = separator;
         }
 
         public void beforeElement()

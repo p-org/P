@@ -47,11 +47,11 @@ namespace PChecker.Actors.Timers
         /// <param name="customEvent">Optional custom event to raise instead of a default TimerElapsedEvent.</param>
         internal TimerInfo(ActorId ownerId, TimeSpan dueTime, TimeSpan period, TimerElapsedEvent customEvent)
         {
-            this.Id = Guid.NewGuid();
-            this.OwnerId = ownerId;
-            this.DueTime = dueTime;
-            this.Period = period;
-            this.CustomEvent = customEvent;
+            Id = Guid.NewGuid();
+            OwnerId = ownerId;
+            DueTime = dueTime;
+            Period = period;
+            CustomEvent = customEvent;
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace PChecker.Actors.Timers
         {
             if (obj is TimerInfo timerInfo)
             {
-                return this.Id == timerInfo.Id;
+                return Id == timerInfo.Id;
             }
 
             return false;
@@ -70,12 +70,12 @@ namespace PChecker.Actors.Timers
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
-        public override int GetHashCode() => this.Id.GetHashCode();
+        public override int GetHashCode() => Id.GetHashCode();
 
         /// <summary>
         /// Returns a string that represents the current instance.
         /// </summary>
-        public override string ToString() => this.Id.ToString();
+        public override string ToString() => Id.ToString();
 
         /// <summary>
         /// Indicates whether the specified <see cref="TimerInfo"/> is equal
@@ -83,12 +83,12 @@ namespace PChecker.Actors.Timers
         /// </summary>
         public bool Equals(TimerInfo other)
         {
-            return this.Equals((object)other);
+            return Equals((object)other);
         }
 
         bool IEquatable<TimerInfo>.Equals(TimerInfo other)
         {
-            return this.Equals(other);
+            return Equals(other);
         }
     }
 }

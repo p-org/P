@@ -45,10 +45,10 @@ namespace PChecker.Actors
         /// </summary>
         internal EventInfo(Event e)
         {
-            this.EventName = e.GetType().FullName;
-            this.MustHandle = false;
-            this.Assert = -1;
-            this.HashedState = 0;
+            EventName = e.GetType().FullName;
+            MustHandle = false;
+            Assert = -1;
+            HashedState = 0;
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace PChecker.Actors
         internal EventInfo(Event e, EventOriginInfo originInfo)
             : this(e)
         {
-            this.OriginInfo = originInfo;
+            OriginInfo = originInfo;
         }
     }
 }

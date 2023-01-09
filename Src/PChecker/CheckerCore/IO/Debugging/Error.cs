@@ -23,7 +23,7 @@ namespace PChecker.IO
         /// </summary>
         public static void Report(string format, params object[] args)
         {
-            string message = string.Format(CultureInfo.InvariantCulture, format, args);
+            var message = string.Format(CultureInfo.InvariantCulture, format, args);
             Write(ConsoleColor.Red, "Error: ");
             Write(ConsoleColor.Yellow, message);
             Console.Error.WriteLine(string.Empty);
@@ -45,7 +45,7 @@ namespace PChecker.IO
         /// </summary>
         public static void ReportAndExit(string format, params object[] args)
         {
-            string message = string.Format(CultureInfo.InvariantCulture, format, args);
+            var message = string.Format(CultureInfo.InvariantCulture, format, args);
             Write(ConsoleColor.Red, "Error: ");
             Write(ConsoleColor.Yellow, message);
             Console.Error.WriteLine(string.Empty);

@@ -54,62 +54,62 @@ namespace PChecker.Actors.Mocks
         /// <summary>
         /// The size of the queue.
         /// </summary>
-        public int Size => this.Queue.Count;
+        public int Size => Queue.Count;
 
         /// <summary>
         /// Checks if an event has been raised.
         /// </summary>
-        public bool IsEventRaised => this.RaisedEvent != default;
+        public bool IsEventRaised => RaisedEvent != default;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MockEventQueue"/> class.
         /// </summary>
         internal MockEventQueue(IActorManager actorManager, Actor actor)
         {
-            this.ActorManager = actorManager;
-            this.Actor = actor;
-            this.Queue = new LinkedList<(Event, Guid, EventInfo)>();
-            this.EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
-            this.IsClosed = false;
+            ActorManager = actorManager;
+            Actor = actor;
+            Queue = new LinkedList<(Event, Guid, EventInfo)>();
+            EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
+            IsClosed = false;
         }
 
         /// <inheritdoc/>
         public EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
         {
-            if (this.IsClosed)
+            if (IsClosed)
             {
                 return EnqueueStatus.Dropped;
             }
 
-            if (this.EventWaitTypes.TryGetValue(e.GetType(), out Func<Event, bool> predicate) &&
+            if (EventWaitTypes.TryGetValue(e.GetType(), out var predicate) &&
                 (predicate is null || predicate(e)))
             {
-                this.EventWaitTypes.Clear();
-                this.ActorManager.OnReceiveEvent(e, opGroupId, info);
-                this.ReceiveCompletionSource.SetResult(e);
+                EventWaitTypes.Clear();
+                ActorManager.OnReceiveEvent(e, opGroupId, info);
+                ReceiveCompletionSource.SetResult(e);
                 return EnqueueStatus.EventHandlerRunning;
             }
 
-            this.ActorManager.OnEnqueueEvent(e, opGroupId, info);
-            this.Queue.AddLast((e, opGroupId, info));
+            ActorManager.OnEnqueueEvent(e, opGroupId, info);
+            Queue.AddLast((e, opGroupId, info));
 
             if (info.Assert >= 0)
             {
-                var eventCount = this.Queue.Count(val => val.e.GetType().Equals(e.GetType()));
-                this.ActorManager.Assert(eventCount <= info.Assert,
+                var eventCount = Queue.Count(val => val.e.GetType().Equals(e.GetType()));
+                ActorManager.Assert(eventCount <= info.Assert,
                     "There are more than {0} instances of '{1}' in the input queue of {2}.",
-                    info.Assert, info.EventName, this.Actor.Id);
+                    info.Assert, info.EventName, Actor.Id);
             }
 
-            if (!this.ActorManager.IsEventHandlerRunning)
+            if (!ActorManager.IsEventHandlerRunning)
             {
-                if (this.TryDequeueEvent(true).e is null)
+                if (TryDequeueEvent(true).e is null)
                 {
                     return EnqueueStatus.NextEventUnavailable;
                 }
                 else
                 {
-                    this.ActorManager.IsEventHandlerRunning = true;
+                    ActorManager.IsEventHandlerRunning = true;
                     return EnqueueStatus.EventHandlerNotRunning;
                 }
             }
@@ -122,30 +122,30 @@ namespace PChecker.Actors.Mocks
         {
             // Try to get the raised event, if there is one. Raised events
             // have priority over the events in the inbox.
-            if (this.RaisedEvent != default)
+            if (RaisedEvent != default)
             {
-                if (this.ActorManager.IsEventIgnored(this.RaisedEvent.e, this.RaisedEvent.opGroupId, this.RaisedEvent.info))
+                if (ActorManager.IsEventIgnored(RaisedEvent.e, RaisedEvent.opGroupId, RaisedEvent.info))
                 {
                     // TODO: should the user be able to raise an ignored event?
                     // The raised event is ignored in the current state.
-                    this.RaisedEvent = default;
+                    RaisedEvent = default;
                 }
                 else
                 {
-                    (Event e, Guid opGroupId, EventInfo info) raisedEvent = this.RaisedEvent;
-                    this.RaisedEvent = default;
+                    var raisedEvent = RaisedEvent;
+                    RaisedEvent = default;
                     return (DequeueStatus.Raised, raisedEvent.e, raisedEvent.opGroupId, raisedEvent.info);
                 }
             }
 
-            var hasDefaultHandler = this.ActorManager.IsDefaultHandlerAvailable();
+            var hasDefaultHandler = ActorManager.IsDefaultHandlerAvailable();
             if (hasDefaultHandler)
             {
-                this.Actor.Runtime.NotifyDefaultEventHandlerCheck(this.Actor);
+                Actor.Runtime.NotifyDefaultEventHandlerCheck(Actor);
             }
 
             // Try to dequeue the next event, if there is one.
-            var (e, opGroupId, info) = this.TryDequeueEvent();
+            var (e, opGroupId, info) = TryDequeueEvent();
             if (e != null)
             {
                 // Found next event that can be dequeued.
@@ -156,15 +156,15 @@ namespace PChecker.Actors.Mocks
             if (!hasDefaultHandler)
             {
                 // There is no default event handler installed, so do not return an event.
-                this.ActorManager.IsEventHandlerRunning = false;
+                ActorManager.IsEventHandlerRunning = false;
                 return (DequeueStatus.NotAvailable, null, Guid.Empty, null);
             }
 
             // TODO: check op-id of default event.
             // A default event handler exists.
-            string stateName = this.Actor is StateMachine stateMachine ?
+            var stateName = Actor is StateMachine stateMachine ?
                 NameResolver.GetStateNameForLogging(stateMachine.CurrentState) : string.Empty;
-            var eventOrigin = new EventOriginInfo(this.Actor.Id, this.Actor.GetType().FullName, stateName);
+            var eventOrigin = new EventOriginInfo(Actor.Id, Actor.GetType().FullName, stateName);
             return (DequeueStatus.Default, DefaultEvent.Instance, Guid.Empty, new EventInfo(DefaultEvent.Instance, eventOrigin));
         }
 
@@ -176,18 +176,18 @@ namespace PChecker.Actors.Mocks
             (Event, Guid, EventInfo) nextAvailableEvent = default;
 
             // Iterates through the events and metadata in the inbox.
-            var node = this.Queue.First;
+            var node = Queue.First;
             while (node != null)
             {
                 var nextNode = node.Next;
                 var currentEvent = node.Value;
 
-                if (this.ActorManager.IsEventIgnored(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
+                if (ActorManager.IsEventIgnored(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
                 {
                     if (!checkOnly)
                     {
                         // Removes an ignored event.
-                        this.Queue.Remove(node);
+                        Queue.Remove(node);
                     }
 
                     node = nextNode;
@@ -195,12 +195,12 @@ namespace PChecker.Actors.Mocks
                 }
 
                 // Skips a deferred event.
-                if (!this.ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
+                if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
                 {
                     nextAvailableEvent = currentEvent;
                     if (!checkOnly)
                     {
-                        this.Queue.Remove(node);
+                        Queue.Remove(node);
                     }
 
                     break;
@@ -215,12 +215,12 @@ namespace PChecker.Actors.Mocks
         /// <inheritdoc/>
         public void RaiseEvent(Event e, Guid opGroupId)
         {
-            string stateName = this.Actor is StateMachine stateMachine ?
+            var stateName = Actor is StateMachine stateMachine ?
                 NameResolver.GetStateNameForLogging(stateMachine.CurrentState) : string.Empty;
-            var eventOrigin = new EventOriginInfo(this.Actor.Id, this.Actor.GetType().FullName, stateName);
+            var eventOrigin = new EventOriginInfo(Actor.Id, Actor.GetType().FullName, stateName);
             var info = new EventInfo(e, eventOrigin);
-            this.RaisedEvent = (e, opGroupId, info);
-            this.ActorManager.OnRaiseEvent(e, opGroupId, info);
+            RaisedEvent = (e, opGroupId, info);
+            ActorManager.OnRaiseEvent(e, opGroupId, info);
         }
 
         /// <inheritdoc/>
@@ -231,7 +231,7 @@ namespace PChecker.Actors.Mocks
                 { eventType, predicate }
             };
 
-            return this.ReceiveEventAsync(eventWaitTypes);
+            return ReceiveEventAsync(eventWaitTypes);
         }
 
         /// <inheritdoc/>
@@ -243,7 +243,7 @@ namespace PChecker.Actors.Mocks
                 eventWaitTypes.Add(type, null);
             }
 
-            return this.ReceiveEventAsync(eventWaitTypes);
+            return ReceiveEventAsync(eventWaitTypes);
         }
 
         /// <inheritdoc/>
@@ -255,7 +255,7 @@ namespace PChecker.Actors.Mocks
                 eventWaitTypes.Add(e.Item1, e.Item2);
             }
 
-            return this.ReceiveEventAsync(eventWaitTypes);
+            return ReceiveEventAsync(eventWaitTypes);
         }
 
         /// <summary>
@@ -263,18 +263,18 @@ namespace PChecker.Actors.Mocks
         /// </summary>
         private Task<Event> ReceiveEventAsync(Dictionary<Type, Func<Event, bool>> eventWaitTypes)
         {
-            this.Actor.Runtime.NotifyReceiveCalled(this.Actor);
+            Actor.Runtime.NotifyReceiveCalled(Actor);
 
             (Event e, Guid opGroupId, EventInfo info) receivedEvent = default;
-            var node = this.Queue.First;
+            var node = Queue.First;
             while (node != null)
             {
                 // Dequeue the first event that the caller waits to receive, if there is one in the queue.
-                if (eventWaitTypes.TryGetValue(node.Value.e.GetType(), out Func<Event, bool> predicate) &&
+                if (eventWaitTypes.TryGetValue(node.Value.e.GetType(), out var predicate) &&
                     (predicate is null || predicate(node.Value.e)))
                 {
                     receivedEvent = node.Value;
-                    this.Queue.Remove(node);
+                    Queue.Remove(node);
                     break;
                 }
 
@@ -283,13 +283,13 @@ namespace PChecker.Actors.Mocks
 
             if (receivedEvent == default)
             {
-                this.ReceiveCompletionSource = new TaskCompletionSource<Event>();
-                this.EventWaitTypes = eventWaitTypes;
-                this.ActorManager.OnWaitEvent(this.EventWaitTypes.Keys);
-                return this.ReceiveCompletionSource.Task;
+                ReceiveCompletionSource = new TaskCompletionSource<Event>();
+                EventWaitTypes = eventWaitTypes;
+                ActorManager.OnWaitEvent(EventWaitTypes.Keys);
+                return ReceiveCompletionSource.Task;
             }
 
-            this.ActorManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.opGroupId, receivedEvent.info);
+            ActorManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.opGroupId, receivedEvent.info);
             return Task.FromResult(receivedEvent.e);
         }
 
@@ -299,7 +299,7 @@ namespace PChecker.Actors.Mocks
             unchecked
             {
                 var hash = 19;
-                foreach (var (_, _, info) in this.Queue)
+                foreach (var (_, _, info) in Queue)
                 {
                     hash = (hash * 31) + info.EventName.GetHashCode();
                     if (info.HashedState != 0)
@@ -316,7 +316,7 @@ namespace PChecker.Actors.Mocks
         /// <inheritdoc/>
         public void Close()
         {
-            this.IsClosed = true;
+            IsClosed = true;
         }
 
         /// <summary>
@@ -329,18 +329,18 @@ namespace PChecker.Actors.Mocks
                 return;
             }
 
-            foreach (var (e, opGroupId, info) in this.Queue)
+            foreach (var (e, opGroupId, info) in Queue)
             {
-                this.ActorManager.OnDropEvent(e, opGroupId, info);
+                ActorManager.OnDropEvent(e, opGroupId, info);
             }
 
-            this.Queue.Clear();
+            Queue.Clear();
         }
 
         /// <inheritdoc/>
         public void Dispose()
         {
-            this.Dispose(true);
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
     }

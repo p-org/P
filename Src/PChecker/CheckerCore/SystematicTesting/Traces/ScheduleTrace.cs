@@ -22,7 +22,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal int Count
         {
-            get { return this.Steps.Count; }
+            get { return Steps.Count; }
         }
 
         /// <summary>
@@ -30,8 +30,8 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal ScheduleStep this[int index]
         {
-            get { return this.Steps[index]; }
-            set { this.Steps[index] = value; }
+            get { return Steps[index]; }
+            set { Steps[index] = value; }
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal ScheduleTrace()
         {
-            this.Steps = new List<ScheduleStep>();
+            Steps = new List<ScheduleStep>();
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal ScheduleTrace(string[] traceDump)
         {
-            this.Steps = new List<ScheduleStep>();
+            Steps = new List<ScheduleStep>();
 
             foreach (var step in traceDump)
             {
@@ -57,20 +57,20 @@ namespace PChecker.SystematicTesting
                 }
                 else if (step.Equals("True"))
                 {
-                    this.AddNondeterministicBooleanChoice(true);
+                    AddNondeterministicBooleanChoice(true);
                 }
                 else if (step.Equals("False"))
                 {
-                    this.AddNondeterministicBooleanChoice(false);
+                    AddNondeterministicBooleanChoice(false);
                 }
-                else if (int.TryParse(step, out int intChoice))
+                else if (int.TryParse(step, out var intChoice))
                 {
-                    this.AddNondeterministicIntegerChoice(intChoice);
+                    AddNondeterministicIntegerChoice(intChoice);
                 }
                 else
                 {
-                    string id = step.TrimStart('(').TrimEnd(')');
-                    this.AddSchedulingChoice(ulong.Parse(id));
+                    var id = step.TrimStart('(').TrimEnd(')');
+                    AddSchedulingChoice(ulong.Parse(id));
                 }
             }
         }
@@ -80,8 +80,8 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal void AddSchedulingChoice(ulong scheduledActorId)
         {
-            var scheduleStep = ScheduleStep.CreateSchedulingChoice(this.Count, scheduledActorId);
-            this.Push(scheduleStep);
+            var scheduleStep = ScheduleStep.CreateSchedulingChoice(Count, scheduledActorId);
+            Push(scheduleStep);
         }
 
         /// <summary>
@@ -90,8 +90,8 @@ namespace PChecker.SystematicTesting
         internal void AddNondeterministicBooleanChoice(bool choice)
         {
             var scheduleStep = ScheduleStep.CreateNondeterministicBooleanChoice(
-                this.Count, choice);
-            this.Push(scheduleStep);
+                Count, choice);
+            Push(scheduleStep);
         }
 
         /// <summary>
@@ -100,8 +100,8 @@ namespace PChecker.SystematicTesting
         internal void AddNondeterministicIntegerChoice(int choice)
         {
             var scheduleStep = ScheduleStep.CreateNondeterministicIntegerChoice(
-                this.Count, choice);
-            this.Push(scheduleStep);
+                Count, choice);
+            Push(scheduleStep);
         }
 
         /// <summary>
@@ -110,13 +110,13 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal ScheduleStep Pop()
         {
-            if (this.Count > 0)
+            if (Count > 0)
             {
-                this.Steps[this.Count - 1].Next = null;
+                Steps[Count - 1].Next = null;
             }
 
-            var step = this.Steps[this.Count - 1];
-            this.Steps.RemoveAt(this.Count - 1);
+            var step = Steps[Count - 1];
+            Steps.RemoveAt(Count - 1);
 
             return step;
         }
@@ -128,9 +128,9 @@ namespace PChecker.SystematicTesting
         {
             ScheduleStep step = null;
 
-            if (this.Steps.Count > 0)
+            if (Steps.Count > 0)
             {
-                step = this.Steps[this.Count - 1];
+                step = Steps[Count - 1];
             }
 
             return step;
@@ -141,7 +141,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return this.Steps.GetEnumerator();
+            return Steps.GetEnumerator();
         }
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         IEnumerator<ScheduleStep> IEnumerable<ScheduleStep>.GetEnumerator()
         {
-            return this.Steps.GetEnumerator();
+            return Steps.GetEnumerator();
         }
 
         /// <summary>
@@ -157,13 +157,13 @@ namespace PChecker.SystematicTesting
         /// </summary>
         private void Push(ScheduleStep step)
         {
-            if (this.Count > 0)
+            if (Count > 0)
             {
-                this.Steps[this.Count - 1].Next = step;
-                step.Previous = this.Steps[this.Count - 1];
+                Steps[Count - 1].Next = step;
+                step.Previous = Steps[Count - 1];
             }
 
-            this.Steps.Add(step);
+            Steps.Add(step);
         }
     }
 }

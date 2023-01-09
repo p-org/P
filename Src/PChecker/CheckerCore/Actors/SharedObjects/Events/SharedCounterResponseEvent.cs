@@ -18,7 +18,7 @@ namespace PChecker.Actors.SharedObjects
         /// </summary>
         internal SharedCounterResponseEvent(int value)
         {
-            this.Value = value;
+            Value = value;
         }
     }
 }

@@ -15,8 +15,8 @@ namespace Plang.Compiler.TypeChecker
         private static HashSet<Function> _visitedFunctions;
         public static void Populate(Machine machine, ITranslationErrorHandler handler)
         {
-            InterfaceSet interfaces = new InterfaceSet();
-            foreach (Function function in machine.Methods)
+            var interfaces = new InterfaceSet();
+            foreach (var function in machine.Methods)
             {
                 _visitedFunctions = new HashSet<Function>();
                 interfaces.AddInterfaces(InferCreates(function, handler));
@@ -62,7 +62,7 @@ namespace Plang.Compiler.TypeChecker
                     return compoundStmt.Statements.SelectMany(tree1 => InferCreates(tree1, handler));
 
                 case CtorStmt ctorStmt:
-                    Interface[] res = new[] { ctorStmt.Interface };
+                    var res = new[] { ctorStmt.Interface };
                     return res.Union(ctorStmt.Arguments.SelectMany(expr => InferCreatesForExpr(expr, handler)));
 
                 case FunCallStmt funCallStmt:
@@ -152,7 +152,7 @@ namespace Plang.Compiler.TypeChecker
                     return InferCreatesForExpr(cloneExpr.Term, handler);
 
                 case CtorExpr ctorExpr:
-                    Interface[] res = new[] { ctorExpr.Interface };
+                    var res = new[] { ctorExpr.Interface };
                     return res.Union(ctorExpr.Arguments.SelectMany(expr1 => InferCreatesForExpr(expr1, handler)));
 
                 case FunCallExpr funCallExpr:

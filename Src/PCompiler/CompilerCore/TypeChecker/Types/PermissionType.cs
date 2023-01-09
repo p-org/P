@@ -37,8 +37,8 @@ namespace Plang.Compiler.TypeChecker.Types
         {
             if (otherType is PermissionType permission)
             {
-                EventSet eventSet1 = new EventSet();
-                EventSet eventSet2 = new EventSet();
+                var eventSet1 = new EventSet();
+                var eventSet2 = new EventSet();
                 eventSet1.AddEvents(otherType.AllowedPermissions.Value);
                 eventSet2.AddEvents(AllowedPermissions.Value);
                 return eventSet1.IsSame(eventSet2);

@@ -23,7 +23,7 @@ namespace PChecker.SystematicTesting.Strategies
         public ProbabilisticRandomStrategy(int maxSteps, int numberOfCoinFlips, IRandomValueGenerator random)
             : base(maxSteps, random)
         {
-            this.NumberOfCoinFlips = numberOfCoinFlips;
+            NumberOfCoinFlips = numberOfCoinFlips;
         }
 
         /// <inheritdoc/>
@@ -36,18 +36,18 @@ namespace PChecker.SystematicTesting.Strategies
                 return false;
             }
 
-            this.ScheduledSteps++;
+            ScheduledSteps++;
 
             if (enabledOperations.Count > 1)
             {
-                if (!this.ShouldCurrentMachineChange() && current.Status is AsyncOperationStatus.Enabled)
+                if (!ShouldCurrentMachineChange() && current.Status is AsyncOperationStatus.Enabled)
                 {
                     next = current;
                     return true;
                 }
             }
 
-            int idx = this.RandomValueGenerator.Next(enabledOperations.Count);
+            var idx = RandomValueGenerator.Next(enabledOperations.Count);
             next = enabledOperations[idx];
 
             return true;
@@ -55,16 +55,16 @@ namespace PChecker.SystematicTesting.Strategies
 
         /// <inheritdoc/>
         public override string GetDescription() =>
-            $"probabilistic[seed '{this.RandomValueGenerator.Seed}', coin flips '{this.NumberOfCoinFlips}']";
+            $"probabilistic[seed '{RandomValueGenerator.Seed}', coin flips '{NumberOfCoinFlips}']";
 
         /// <summary>
         /// Flip the coin a specified number of times.
         /// </summary>
         private bool ShouldCurrentMachineChange()
         {
-            for (int idx = 0; idx < this.NumberOfCoinFlips; idx++)
+            for (var idx = 0; idx < NumberOfCoinFlips; idx++)
             {
-                if (this.RandomValueGenerator.Next(2) == 1)
+                if (RandomValueGenerator.Next(2) == 1)
                 {
                     return false;
                 }

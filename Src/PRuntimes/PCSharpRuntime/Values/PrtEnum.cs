@@ -13,7 +13,7 @@ namespace Plang.CSharpRuntime.Values
 
         public static void AddEnumElements(string[] names, int[] values)
         {
-            for (int i = 0; i < names.Length; i++)
+            for (var i = 0; i < names.Length; i++)
             {
                 enumElements.Add(names[i], values[i]);
             }

@@ -15,25 +15,25 @@ namespace PChecker.SmartSockets
 
         public SmartSocketTypeResolver()
         {
-            this.AddBaseTypes();
+            AddBaseTypes();
         }
 
         public SmartSocketTypeResolver(params Type[] knownTypes)
         {
-            this.AddTypes(knownTypes);
+            AddTypes(knownTypes);
         }
 
         public SmartSocketTypeResolver(IEnumerable<Type> knownTypes)
         {
-            this.AddTypes(knownTypes);
+            AddTypes(knownTypes);
         }
 
         private void AddTypes(IEnumerable<Type> knownTypes)
         {
-            this.AddBaseTypes();
+            AddBaseTypes();
             foreach (var t in knownTypes)
             {
-                this.TypeMap[t.FullName] = t;
+                TypeMap[t.FullName] = t;
             }
         }
 
@@ -41,21 +41,21 @@ namespace PChecker.SmartSockets
         {
             foreach (var t in new Type[] { typeof(SocketMessage) })
             {
-                this.TypeMap[t.FullName] = t;
+                TypeMap[t.FullName] = t;
             }
         }
 
         public override Type ResolveName(string typeName, string typeNamespace, Type declaredType, DataContractResolver knownTypeResolver)
         {
-            string fullName = typeName;
+            var fullName = typeName;
             if (!string.IsNullOrEmpty(typeNamespace))
             {
-                Uri uri = new Uri(typeNamespace);
-                string clrNamespace = uri.Segments.Last();
+                var uri = new Uri(typeNamespace);
+                var clrNamespace = uri.Segments.Last();
                 fullName = clrNamespace + "." + typeName;
             }
 
-            if (!this.TypeMap.TryGetValue(fullName, out Type t))
+            if (!TypeMap.TryGetValue(fullName, out var t))
             {
                 t = knownTypeResolver.ResolveName(typeName, typeNamespace, declaredType, knownTypeResolver);
             }

@@ -43,10 +43,10 @@ namespace PChecker.Actors.SharedObjects
         /// </summary>
         private SharedRegisterEvent(OperationType op, object value, object func, ActorId sender)
         {
-            this.Operation = op;
-            this.Value = value;
-            this.Func = func;
-            this.Sender = sender;
+            Operation = op;
+            Value = value;
+            Func = func;
+            Sender = sender;
         }
 
         /// <summary>

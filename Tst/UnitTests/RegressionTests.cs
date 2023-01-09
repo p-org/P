@@ -13,7 +13,7 @@ namespace UnitTests
         [OneTimeTearDown]
         public void RemoveEmptyDirectories()
         {
-            DirectoryInfo baseDir = new DirectoryInfo(Constants.ScratchParentDirectory);
+            var baseDir = new DirectoryInfo(Constants.ScratchParentDirectory);
             if (baseDir.Exists)
             {
                 RecursiveRemoveEmptyDirectories(baseDir);
@@ -22,7 +22,7 @@ namespace UnitTests
 
         private static void RecursiveRemoveEmptyDirectories(DirectoryInfo dir)
         {
-            foreach (DirectoryInfo subdir in dir.EnumerateDirectories())
+            foreach (var subdir in dir.EnumerateDirectories())
             {
                 RecursiveRemoveEmptyDirectories(subdir);
             }
@@ -44,9 +44,9 @@ namespace UnitTests
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestRegressions(DirectoryInfo testDir)
         {
-            DirectoryInfo scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
-            TestCaseFactory factory = new TestCaseFactory(scratchDir);
-            CompilerTestCase testCaseC = factory.CreateTestCase(testDir);
+            var scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
+            var factory = new TestCaseFactory(scratchDir);
+            var testCaseC = factory.CreateTestCase(testDir);
             TestAssertions.AssertTestCase(testCaseC);
         }
     }
@@ -93,9 +93,9 @@ namespace UnitTests
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestRegressions(DirectoryInfo testDir)
         {
-            DirectoryInfo scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
-            TestCaseFactory factory = new TestCaseFactory(scratchDir);
-            CompilerTestCase testCasePChecker = factory.CreateTestCase(testDir, CompilerOutput.CSharp);
+            var scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
+            var factory = new TestCaseFactory(scratchDir);
+            var testCasePChecker = factory.CreateTestCase(testDir, CompilerOutput.CSharp);
             TestAssertions.AssertTestCase(testCasePChecker);
         }
     }

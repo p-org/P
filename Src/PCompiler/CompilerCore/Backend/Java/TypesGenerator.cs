@@ -10,7 +10,7 @@ namespace Plang.Compiler.Backend.Java
 
         private static HashSet<NamedTupleType> AllTuples(Scope scope)
         {
-            HashSet<NamedTupleType> ret = new HashSet<NamedTupleType>();
+            var ret = new HashSet<NamedTupleType>();
 
             foreach (var t in scope.Tuples)
             {
@@ -52,7 +52,7 @@ namespace Plang.Compiler.Backend.Java
                 WriteLine();
             }
 
-            HashSet<NamedTupleType> tuples = AllTuples(GlobalScope);
+            var tuples = AllTuples(GlobalScope);
             if (tuples.Any())
             {
                 WriteLine("/* Tuples */");
@@ -71,7 +71,7 @@ namespace Plang.Compiler.Backend.Java
         {
             WriteLine($"public enum {e.Name} {{");
 
-            int numFields = e.Values.Count();
+            var numFields = e.Values.Count();
             foreach (var (param, sep) in e.Values.Select((pair, i) => (pair, i < numFields - 1? "," : ";")))
             {
                 WriteLine($"{param.Name}({param.Value.ToString()}){sep}");
@@ -87,14 +87,14 @@ namespace Plang.Compiler.Backend.Java
         private void WriteNamedTupleDecl(NamedTupleType t)
         {
             // This is a sequence of <type, field name> pairs.
-            List<(TypeManager.JType, string)> fields =
+            var fields =
                 new List<(TypeManager.JType, string)>();
 
             // Build up our list of fields.
             foreach (var e in t.Fields)
             {
-                string name = e.Name;
-                PLanguageType type = e.Type;
+                var name = e.Name;
+                var type = e.Type;
 
                 // In the case where the field type is a typedef, follow
                 // the typename resolution until we've found the actual type.
@@ -103,12 +103,12 @@ namespace Plang.Compiler.Backend.Java
                     type = tdef.TypeDefDecl.Type;
                 }
 
-                TypeManager.JType jType = Types.JavaTypeFor(type);
+                var jType = Types.JavaTypeFor(type);
 
                 fields.Add((jType, name));
             }
 
-            string tname = Names.NameForNamedTuple(t);
+            var tname = Names.NameForNamedTuple(t);
             WriteLine($"public static class {tname} implements {Constants.PValueClass}<{tname}> {{");
             WriteLine($"// {t.CanonicalRepresentation}");
 

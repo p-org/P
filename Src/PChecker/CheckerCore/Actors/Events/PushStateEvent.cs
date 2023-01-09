@@ -24,7 +24,7 @@ namespace PChecker.Actors
         public PushStateEvent(Type s)
             : base()
         {
-            this.State = s;
+            State = s;
         }
     }
 }

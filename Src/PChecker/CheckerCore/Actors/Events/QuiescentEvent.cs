@@ -22,7 +22,7 @@ namespace PChecker.Actors
         /// <param name="id">The id of the actor that has reached quiescence.</param>
         public QuiescentEvent(ActorId id)
         {
-            this.ActorId = id;
+            ActorId = id;
         }
     }
 }

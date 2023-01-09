@@ -59,12 +59,12 @@ namespace PChecker.Actors.SharedObjects
         private SharedDictionaryEvent(OperationType op, object key, object value,
             object comparisonValue, ActorId sender, object comparer)
         {
-            this.Operation = op;
-            this.Key = key;
-            this.Value = value;
-            this.ComparisonValue = comparisonValue;
-            this.Sender = sender;
-            this.Comparer = comparer;
+            Operation = op;
+            Key = key;
+            Value = value;
+            ComparisonValue = comparisonValue;
+            Sender = sender;
+            Comparer = comparer;
         }
 
         /// <summary>

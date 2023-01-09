@@ -18,8 +18,8 @@ namespace PChecker.Interfaces
         public TestProgressMessage(string id, string name, uint processId, double progress)
             : base(id, name)
         {
-            this.ProcessId = processId;
-            this.Progress = progress;
+            ProcessId = processId;
+            Progress = progress;
         }
     }
 }

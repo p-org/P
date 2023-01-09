@@ -96,8 +96,8 @@ namespace PChecker
         {
             set
             {
-                this.MaxUnfairSchedulingSteps = value;
-                this.MaxFairSchedulingSteps = value;
+                MaxUnfairSchedulingSteps = value;
+                MaxFairSchedulingSteps = value;
             }
         }
 
@@ -235,43 +235,43 @@ namespace PChecker
         /// </summary>
         protected CheckerConfiguration()
         {
-            this.OutputFilePath = string.Empty;
+            OutputFilePath = string.Empty;
 
-            this.Timeout = 0;
+            Timeout = 0;
 
-            this.AssemblyToBeAnalyzed = string.Empty;
-            this.TestCaseName = string.Empty;
+            AssemblyToBeAnalyzed = string.Empty;
+            TestCaseName = string.Empty;
 
-            this.SchedulingStrategy = "random";
-            this.TestingIterations = 1;
-            this.RandomGeneratorSeed = null;
-            this.IncrementalSchedulingSeed = false;
-            this.PerformFullExploration = false;
-            this.MaxFairSchedulingSteps = 100000; // 10 times the unfair steps
-            this.MaxUnfairSchedulingSteps = 10000;
-            this.UserExplicitlySetMaxFairSchedulingSteps = false;
-            this.TestingSchedulerEndPoint = "CoyoteTestScheduler.4723bb92-c413-4ecb-8e8a-22eb2ba22234";
-            this.TestingProcessId = 0;
-            this.ConsiderDepthBoundHitAsBug = false;
-            this.StrategyBound = 0;
+            SchedulingStrategy = "random";
+            TestingIterations = 1;
+            RandomGeneratorSeed = null;
+            IncrementalSchedulingSeed = false;
+            PerformFullExploration = false;
+            MaxFairSchedulingSteps = 100000; // 10 times the unfair steps
+            MaxUnfairSchedulingSteps = 10000;
+            UserExplicitlySetMaxFairSchedulingSteps = false;
+            TestingSchedulerEndPoint = "CoyoteTestScheduler.4723bb92-c413-4ecb-8e8a-22eb2ba22234";
+            TestingProcessId = 0;
+            ConsiderDepthBoundHitAsBug = false;
+            StrategyBound = 0;
 
-            this.IsLivenessCheckingEnabled = true;
-            this.LivenessTemperatureThreshold = 0;
+            IsLivenessCheckingEnabled = true;
+            LivenessTemperatureThreshold = 0;
 
-            this.ScheduleFile = string.Empty;
-            this.ScheduleTrace = string.Empty;
+            ScheduleFile = string.Empty;
+            ScheduleTrace = string.Empty;
 
-            this.ReportCodeCoverage = false;
-            this.ReportActivityCoverage = true;
-            this.DebugActivityCoverage = false;
+            ReportCodeCoverage = false;
+            ReportActivityCoverage = true;
+            DebugActivityCoverage = false;
 
-            this.IsVerbose = false;
-            this.EnableDebugging = false;
+            IsVerbose = false;
+            EnableDebugging = false;
 
-            this.AdditionalCodeCoverageAssemblies = new Dictionary<string, bool>();
+            AdditionalCodeCoverageAssemblies = new Dictionary<string, bool>();
 
-            this.EnableColoredConsoleOutput = false;
-            this.DisableEnvironmentExit = true;
+            EnableColoredConsoleOutput = false;
+            DisableEnvironmentExit = true;
         }
 
         /// <summary>
@@ -287,7 +287,7 @@ namespace PChecker
         /// </summary>
         public CheckerConfiguration WithRandomStrategy()
         {
-            this.SchedulingStrategy = "random";
+            SchedulingStrategy = "random";
             return this;
         }
 
@@ -300,8 +300,8 @@ namespace PChecker
         /// <param name="probabilityLevel">The probability level.</param>
         public CheckerConfiguration WithProbabilisticStrategy(uint probabilityLevel = 3)
         {
-            this.SchedulingStrategy = "fairpct";
-            this.StrategyBound = (int)probabilityLevel;
+            SchedulingStrategy = "fairpct";
+            StrategyBound = (int)probabilityLevel;
             return this;
         }
 
@@ -313,8 +313,8 @@ namespace PChecker
         /// <param name="numPrioritySwitchPoints">The nunmber of priority switch points.</param>
         public CheckerConfiguration WithPCTStrategy(bool isFair, uint numPrioritySwitchPoints = 10)
         {
-            this.SchedulingStrategy = isFair ? "fairpct" : "pct";
-            this.StrategyBound = (int)numPrioritySwitchPoints;
+            SchedulingStrategy = isFair ? "fairpct" : "pct";
+            StrategyBound = (int)numPrioritySwitchPoints;
             return this;
         }
 
@@ -323,7 +323,7 @@ namespace PChecker
         /// </summary>
         public CheckerConfiguration WithDFSStrategy()
         {
-            this.SchedulingStrategy = "dfs";
+            SchedulingStrategy = "dfs";
             return this;
         }
 
@@ -334,8 +334,8 @@ namespace PChecker
         /// <param name="scheduleTrace">The schedule trace to be replayed.</param>
         public CheckerConfiguration WithReplayStrategy(string scheduleTrace)
         {
-            this.SchedulingStrategy = "replay";
-            this.ScheduleTrace = scheduleTrace;
+            SchedulingStrategy = "replay";
+            ScheduleTrace = scheduleTrace;
             return this;
         }
 
@@ -345,7 +345,7 @@ namespace PChecker
         /// <param name="iterations">The number of iterations to run.</param>
         public CheckerConfiguration WithTestingIterations(uint iterations)
         {
-            this.TestingIterations = (int)iterations;
+            TestingIterations = (int)iterations;
             return this;
         }
 
@@ -356,7 +356,7 @@ namespace PChecker
         /// <param name="maxSteps">The scheduling steps to explore per iteration.</param>
         public CheckerConfiguration WithMaxSchedulingSteps(uint maxSteps)
         {
-            this.MaxSchedulingSteps = (int)maxSteps;
+            MaxSchedulingSteps = (int)maxSteps;
             return this;
         }
 
@@ -367,7 +367,7 @@ namespace PChecker
         /// <param name="maxFairSteps">The scheduling steps to explore per iteration.</param>
         public CheckerConfiguration WithMaxFairSchedulingSteps(uint maxFairSteps)
         {
-            this.MaxFairSchedulingSteps = (int)maxFairSteps;
+            MaxFairSchedulingSteps = (int)maxFairSteps;
             return this;
         }
 
@@ -378,7 +378,7 @@ namespace PChecker
         /// <param name="maxUnfairSteps">The scheduling steps to explore per iteration.</param>
         public CheckerConfiguration WithMaxUnfairSchedulingSteps(uint maxUnfairSteps)
         {
-            this.MaxUnfairSchedulingSteps = (int)maxUnfairSteps;
+            MaxUnfairSchedulingSteps = (int)maxUnfairSteps;
             return this;
         }
 
@@ -389,7 +389,7 @@ namespace PChecker
         /// <param name="threshold">The liveness temperature threshold.</param>
         public CheckerConfiguration WithLivenessTemperatureThreshold(uint threshold)
         {
-            this.LivenessTemperatureThreshold = (int)threshold;
+            LivenessTemperatureThreshold = (int)threshold;
             return this;
         }
 
@@ -399,7 +399,7 @@ namespace PChecker
         /// <param name="seed">The seed used by the random value generator.</param>
         public CheckerConfiguration WithRandomGeneratorSeed(uint seed)
         {
-            this.RandomGeneratorSeed = seed;
+            RandomGeneratorSeed = seed;
             return this;
         }
 
@@ -409,7 +409,7 @@ namespace PChecker
         /// <param name="isVerbose">If true, then messages are logged.</param>
         public CheckerConfiguration WithVerbosityEnabled(bool isVerbose = true)
         {
-            this.IsVerbose = isVerbose;
+            IsVerbose = isVerbose;
             return this;
         }
 
@@ -419,7 +419,7 @@ namespace PChecker
         /// <param name="isEnabled">If true, then enables activity coverage.</param>
         public CheckerConfiguration WithActivityCoverageEnabled(bool isEnabled = true)
         {
-            this.ReportActivityCoverage = isEnabled;
+            ReportActivityCoverage = isEnabled;
             return this;
         }
 
@@ -429,7 +429,7 @@ namespace PChecker
         /// <param name="isEnabled">If true, then enables DGML graph generation.</param>
         public CheckerConfiguration WithDgmlGraphEnabled(bool isEnabled = true)
         {
-            this.IsDgmlGraphEnabled = isEnabled;
+            IsDgmlGraphEnabled = isEnabled;
             return this;
         }
 
@@ -439,7 +439,7 @@ namespace PChecker
         /// <param name="isEnabled">If true, then enables XML log generation.</param>
         public CheckerConfiguration WithXmlLogEnabled(bool isEnabled = true)
         {
-            this.IsXmlLogEnabled = isEnabled;
+            IsXmlLogEnabled = isEnabled;
             return this;
         }
     }

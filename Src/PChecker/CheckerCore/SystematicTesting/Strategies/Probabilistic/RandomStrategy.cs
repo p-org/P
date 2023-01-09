@@ -31,9 +31,9 @@ namespace PChecker.SystematicTesting.Strategies
         /// </summary>
         public RandomStrategy(int maxSteps, IRandomValueGenerator random)
         {
-            this.RandomValueGenerator = random;
-            this.MaxScheduledSteps = maxSteps;
-            this.ScheduledSteps = 0;
+            RandomValueGenerator = random;
+            MaxScheduledSteps = maxSteps;
+            ScheduledSteps = 0;
         }
 
         /// <inheritdoc/>
@@ -46,10 +46,10 @@ namespace PChecker.SystematicTesting.Strategies
                 return false;
             }
 
-            int idx = this.RandomValueGenerator.Next(enabledOperations.Count);
+            var idx = RandomValueGenerator.Next(enabledOperations.Count);
             next = enabledOperations[idx];
 
-            this.ScheduledSteps++;
+            ScheduledSteps++;
 
             return true;
         }
@@ -58,12 +58,12 @@ namespace PChecker.SystematicTesting.Strategies
         public virtual bool GetNextBooleanChoice(IAsyncOperation current, int maxValue, out bool next)
         {
             next = false;
-            if (this.RandomValueGenerator.Next(maxValue) == 0)
+            if (RandomValueGenerator.Next(maxValue) == 0)
             {
                 next = true;
             }
 
-            this.ScheduledSteps++;
+            ScheduledSteps++;
 
             return true;
         }
@@ -71,42 +71,42 @@ namespace PChecker.SystematicTesting.Strategies
         /// <inheritdoc/>
         public virtual bool GetNextIntegerChoice(IAsyncOperation current, int maxValue, out int next)
         {
-            next = this.RandomValueGenerator.Next(maxValue);
-            this.ScheduledSteps++;
+            next = RandomValueGenerator.Next(maxValue);
+            ScheduledSteps++;
             return true;
         }
 
         /// <inheritdoc/>
         public virtual bool PrepareForNextIteration()
         {
-            this.ScheduledSteps = 0;
+            ScheduledSteps = 0;
             return true;
         }
 
         /// <inheritdoc/>
-        public int GetScheduledSteps() => this.ScheduledSteps;
+        public int GetScheduledSteps() => ScheduledSteps;
 
         /// <inheritdoc/>
         public bool HasReachedMaxSchedulingSteps()
         {
-            if (this.MaxScheduledSteps == 0)
+            if (MaxScheduledSteps == 0)
             {
                 return false;
             }
 
-            return this.ScheduledSteps >= this.MaxScheduledSteps;
+            return ScheduledSteps >= MaxScheduledSteps;
         }
 
         /// <inheritdoc/>
         public bool IsFair() => true;
 
         /// <inheritdoc/>
-        public virtual string GetDescription() => $"random[seed '{this.RandomValueGenerator.Seed}']";
+        public virtual string GetDescription() => $"random[seed '{RandomValueGenerator.Seed}']";
 
         /// <inheritdoc/>
         public virtual void Reset()
         {
-            this.ScheduledSteps = 0;
+            ScheduledSteps = 0;
         }
     }
 }

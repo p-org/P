@@ -1,13 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using PChecker;
 using PChecker.IO;
 using PChecker.SystematicTesting;
 using PChecker.Instrumentation;
 using PChecker.Scheduling;
-using PChecker.Testing;
 using Plang.Compiler;
+using Plang.Options;
 
 namespace Plang
 {
@@ -75,7 +74,7 @@ namespace Plang
             {
                 CommandLineOutput.WriteInfo($"Replay option is used, checker is ignoring all other parameters and using the {configuration.ScheduleFile} to replay the schedule");
                 CommandLineOutput.WriteInfo($"... Replaying {configuration.ScheduleFile}");
-                TestingEngine engine = TestingEngine.Create(configuration);
+                var engine = TestingEngine.Create(configuration);
                 engine.Run();
                 CommandLineOutput.WriteInfo(engine.GetReport());
             }
@@ -155,7 +154,7 @@ namespace Plang
         
         public static void RunCompiler(string[] args)
         {
-            CompilerConfiguration configuration = new PCompilerOptions().Parse(args);
+            var configuration = new PCompilerOptions().Parse(args);
             ICompiler compiler = new Compiler.Compiler();
             compiler.Compile(configuration);
         }

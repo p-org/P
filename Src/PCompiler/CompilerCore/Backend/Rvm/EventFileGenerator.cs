@@ -3,7 +3,6 @@
 using System.Collections.Generic;
 using System.IO;
 using Plang.Compiler.TypeChecker;
-using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.Backend.Rvm
@@ -23,10 +22,10 @@ namespace Plang.Compiler.Backend.Rvm
 
         public IEnumerable<CompiledFile> GenerateSources(Scope globalScope)
         {
-            List<CompiledFile> sources = new List<CompiledFile>();
+            var sources = new List<CompiledFile>();
 
-            List<PEvent> events = new List<PEvent>();
-            foreach (IPDecl decl in globalScope.AllDecls)
+            var events = new List<PEvent>();
+            foreach (var decl in globalScope.AllDecls)
             {
                 switch (decl)
                 {
@@ -48,12 +47,12 @@ namespace Plang.Compiler.Backend.Rvm
 
         CompiledFile WriteEvents(List<PEvent> events)
         {
-            CompiledFile source = new CompiledFile(Context.Names.GetEventFileName());
+            var source = new CompiledFile(Context.Names.GetEventFileName());
 
             WriteSourcePrologue(source.Stream);
 
-            BeforeSeparator separator = new BeforeSeparator(() => Context.WriteLine(source.Stream));
-            foreach (PEvent pEvent in events)
+            var separator = new BeforeSeparator(() => Context.WriteLine(source.Stream));
+            foreach (var pEvent in events)
             {
                 separator.beforeElement();
                 WriteEventClass(source.Stream, pEvent);
@@ -65,7 +64,7 @@ namespace Plang.Compiler.Backend.Rvm
         }
 
         private void WriteSourcePrologue(StringWriter output) {
-            string eventsClass = Context.Names.GetEventsClassName();
+            var eventsClass = Context.Names.GetEventsClassName();
             Context.WriteLine(output, "package pcon;");
             Context.WriteLine(output);
             Context.WriteLine(output, "import java.util.Optional;");
@@ -85,28 +84,28 @@ namespace Plang.Compiler.Backend.Rvm
         // The handle function calls the correspondning event handler of the current state.
         private void WriteEventClass(StringWriter output, PEvent pEvent)
         {
-            string eventClassName = Context.Names.GetUnqualifiedEventClassName(pEvent);
-            string eventInterfaceName = Context.Names.GetEventInterfaceName();
-            string stateInterfaceName = Context.Names.GetStateInterfaceName();
-            string stateClassName = Context.Names.GetStateBaseClassName();
+            var eventClassName = Context.Names.GetUnqualifiedEventClassName(pEvent);
+            var eventInterfaceName = Context.Names.GetEventInterfaceName();
+            var stateInterfaceName = Context.Names.GetStateInterfaceName();
+            var stateClassName = Context.Names.GetStateBaseClassName();
             Context.WriteLine(output, $"static class {eventClassName} implements {eventInterfaceName} {{");
             // Override handle function
-            string handleFunctionName = Context.Names.GetEventHandleFunctionName();
-            string payloadType = Context.Names.GetDefaultPayloadTypeName();
-            string maybePayloadName = Context.Names.GetMaybePayloadArgumentName();
-            string throwsClause = Tools.GetThrowsClause();
-            string stateVariable = Context.Names.GetStateVariableName();
+            var handleFunctionName = Context.Names.GetEventHandleFunctionName();
+            var payloadType = Context.Names.GetDefaultPayloadTypeName();
+            var maybePayloadName = Context.Names.GetMaybePayloadArgumentName();
+            var throwsClause = Tools.GetThrowsClause();
+            var stateVariable = Context.Names.GetStateVariableName();
 
             Context.WriteLine(output, "@Override");
             Context.WriteLine(output, $"public void {handleFunctionName}({stateInterfaceName} {stateVariable}, Optional<{payloadType}> {maybePayloadName}) {throwsClause} {{");
-            string payloadName = "";
+            var payloadName = "";
             if (!Tools.isNullType(pEvent.PayloadType))
             {
-                string actualPayloadType = Context.Names.GetJavaTypeName(pEvent.PayloadType);
+                var actualPayloadType = Context.Names.GetJavaTypeName(pEvent.PayloadType);
                 payloadName = Context.Names.GetPayloadArgumentName();
                 Tools.InlineEventHandlerArguments(output, actualPayloadType, payloadName);
             }
-            string handlerName = Context.Names.GetStateEventHandlerName(pEvent);
+            var handlerName = Context.Names.GetStateEventHandlerName(pEvent);
             Context.WriteLine(output, $"(({stateClassName}){stateVariable}).{handlerName}({payloadName});");
             Context.WriteLine(output, "}");
             Context.WriteLine(output, "}");

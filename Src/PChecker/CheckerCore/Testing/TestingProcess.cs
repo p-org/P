@@ -12,7 +12,6 @@ using PChecker.SystematicTesting;
 using PChecker.Instrumentation;
 using PChecker.Interfaces;
 using PChecker.SmartSockets;
-using PChecker.Utilities;
 
 namespace PChecker.Testing
 {
@@ -65,7 +64,7 @@ namespace PChecker.Testing
         /// </summary>
         public TestReport GetTestReport()
         {
-            return this.TestingEngine.TestReport.Clone();
+            return TestingEngine.TestReport.Clone();
         }
 
         // Gets a handle to the standard output and error streams.
@@ -76,44 +75,44 @@ namespace PChecker.Testing
         /// </summary>
         public void Run()
         {
-            this.RunAsync().Wait();
+            RunAsync().Wait();
         }
 
         private async Task RunAsync()
         {
-            this.TestingEngine.Run();
+            TestingEngine.Run();
 
-            Console.SetOut(this.StdOut);
+            Console.SetOut(StdOut);
 
-            this.Terminating = true;
+            Terminating = true;
 
             // wait for any pending progress
-            var task = this.ProgressTask;
+            var task = ProgressTask;
             if (task != null)
             {
                 task.Wait(30000);
             }
 
-            if (!this._checkerConfiguration.PerformFullExploration &&
-                this.TestingEngine.TestReport.NumOfFoundBugs > 0)
+            if (!_checkerConfiguration.PerformFullExploration &&
+                TestingEngine.TestReport.NumOfFoundBugs > 0)
             {
-                Console.WriteLine($"... Process {this._checkerConfiguration.TestingProcessId} found a bug.");
+                Console.WriteLine($"... Process {_checkerConfiguration.TestingProcessId} found a bug.");
             }
 
             // we want the graph generation even if doing full exploration.
-            if ((!this._checkerConfiguration.PerformFullExploration && this.TestingEngine.TestReport.NumOfFoundBugs > 0) ||
-                (this._checkerConfiguration.IsDgmlGraphEnabled && !this._checkerConfiguration.IsDgmlBugGraph))
+            if ((!_checkerConfiguration.PerformFullExploration && TestingEngine.TestReport.NumOfFoundBugs > 0) ||
+                (_checkerConfiguration.IsDgmlGraphEnabled && !_checkerConfiguration.IsDgmlBugGraph))
             {
-                await this.EmitTraces();
+                await EmitTraces();
             }
 
             // Closes the remote notification listener.
-            if (this._checkerConfiguration.IsVerbose)
+            if (_checkerConfiguration.IsVerbose)
             {
-                Console.WriteLine($"... ### Process {this._checkerConfiguration.TestingProcessId} is terminating");
+                Console.WriteLine($"... ### Process {_checkerConfiguration.TestingProcessId} is terminating");
             }
 
-            this.Disconnect();
+            Disconnect();
         }
 
         /// <summary>
@@ -121,7 +120,7 @@ namespace PChecker.Testing
         /// </summary>
         private TestingProcess(CheckerConfiguration checkerConfiguration)
         {
-            this.Name = this.Name + "." + checkerConfiguration.TestingProcessId;
+            Name = Name + "." + checkerConfiguration.TestingProcessId;
 
             if (checkerConfiguration.SchedulingStrategy is "portfolio")
             {
@@ -136,13 +135,13 @@ namespace PChecker.Testing
 
             checkerConfiguration.EnableColoredConsoleOutput = true;
 
-            this._checkerConfiguration = checkerConfiguration;
-            this.TestingEngine = TestingEngine.Create(this._checkerConfiguration);
+            _checkerConfiguration = checkerConfiguration;
+            TestingEngine = TestingEngine.Create(_checkerConfiguration);
         }
 
         ~TestingProcess()
         {
-            this.Terminating = true;
+            Terminating = true;
         }
 
         /// <summary>
@@ -152,8 +151,8 @@ namespace PChecker.Testing
         /// </summary>
         private async Task ConnectToServer()
         {
-            string serviceName = this._checkerConfiguration.TestingSchedulerEndPoint;
-            var source = new System.Threading.CancellationTokenSource();
+            var serviceName = _checkerConfiguration.TestingSchedulerEndPoint;
+            var source = new CancellationTokenSource();
 
             var resolver = new SmartSocketTypeResolver(typeof(BugFoundMessage),
                                                        typeof(TestReportMessage),
@@ -165,7 +164,7 @@ namespace PChecker.Testing
                                                        typeof(CheckerConfiguration));
 
             SmartSocketClient client = null;
-            client = await SmartSocketClient.FindServerAsync(serviceName, this.Name, resolver, source.Token);
+            client = await SmartSocketClient.FindServerAsync(serviceName, Name, resolver, source.Token);
             
 
             if (client == null)
@@ -173,27 +172,27 @@ namespace PChecker.Testing
                 throw new Exception("Failed to connect to server");
             }
 
-            client.Error += this.OnClientError;
+            client.Error += OnClientError;
             client.ServerName = serviceName;
-            this.Server = client;
+            Server = client;
 
             // open back channel so server can also send messages to us any time.
-            await client.OpenBackChannel(this.OnBackChannelConnected);
+            await client.OpenBackChannel(OnBackChannelConnected);
         }
 
         private void OnBackChannelConnected(object sender, SmartSocketClient e)
         {
-            Task.Run(() => this.HandleBackChannel(e));
+            Task.Run(() => HandleBackChannel(e));
         }
 
         private async void HandleBackChannel(SmartSocketClient server)
         {
-            while (!this.Terminating && server.IsConnected)
+            while (!Terminating && server.IsConnected)
             {
                 var msg = await server.ReceiveAsync();
                 if (msg is TestServerMessage)
                 {
-                    this.HandleServerMessage((TestServerMessage)msg);
+                    HandleServerMessage((TestServerMessage)msg);
                 }
             }
         }
@@ -210,11 +209,11 @@ namespace PChecker.Testing
         /// </summary>
         private void Disconnect()
         {
-            using (this.Server)
+            using (Server)
             {
-                if (this.Server != null)
+                if (Server != null)
                 {
-                    this.Server.Close();
+                    Server.Close();
                 }
             }
         }
@@ -225,7 +224,7 @@ namespace PChecker.Testing
         /// </summary>
         private async Task NotifyBugFound()
         {
-            await this.Server.SendReceiveAsync(new BugFoundMessage("BugFoundMessage", this.Name, this._checkerConfiguration.TestingProcessId));
+            await Server.SendReceiveAsync(new BugFoundMessage("BugFoundMessage", Name, _checkerConfiguration.TestingProcessId));
         }
 
         /// <summary>
@@ -233,8 +232,8 @@ namespace PChecker.Testing
         /// </summary>
         private async Task SendTestReport()
         {
-            var report = this.TestingEngine.TestReport.Clone();
-            await this.Server.SendReceiveAsync(new TestReportMessage("TestReportMessage", this.Name, this._checkerConfiguration.TestingProcessId, report));
+            var report = TestingEngine.TestReport.Clone();
+            await Server.SendReceiveAsync(new TestReportMessage("TestReportMessage", Name, _checkerConfiguration.TestingProcessId, report));
         }
 
         /// <summary>
@@ -242,26 +241,26 @@ namespace PChecker.Testing
         /// </summary>
         private async Task EmitTraces()
         {
-            string file = Path.GetFileNameWithoutExtension(this._checkerConfiguration.AssemblyToBeAnalyzed);
-            file += "_" + this._checkerConfiguration.TestingProcessId;
+            var file = Path.GetFileNameWithoutExtension(_checkerConfiguration.AssemblyToBeAnalyzed);
+            file += "_" + _checkerConfiguration.TestingProcessId;
 
             // If this is a separate (sub-)process, CodeCoverageInstrumentation.OutputDirectory may not have been set up.
-            CodeCoverageInstrumentation.SetOutputDirectory(this._checkerConfiguration, makeHistory: false);
+            CodeCoverageInstrumentation.SetOutputDirectory(_checkerConfiguration, makeHistory: false);
 
-            Console.WriteLine($"... Emitting process {this._checkerConfiguration.TestingProcessId} traces:");
-            var traces = new List<string>(this.TestingEngine.TryEmitTraces(CodeCoverageInstrumentation.OutputDirectory, file));
+            Console.WriteLine($"... Emitting process {_checkerConfiguration.TestingProcessId} traces:");
+            var traces = new List<string>(TestingEngine.TryEmitTraces(CodeCoverageInstrumentation.OutputDirectory, file));
 
-            if (this.Server != null && this.Server.IsConnected)
+            if (Server != null && Server.IsConnected)
             {
-                await this.SendTraces(traces);
+                await SendTraces(traces);
             }
         }
 
         private async Task SendTraces(List<string> traces)
         {
-            IPEndPoint localEndPoint = (IPEndPoint)this.Server.Socket.LocalEndPoint;
-            IPEndPoint serverEndPoint = (IPEndPoint)this.Server.Socket.RemoteEndPoint;
-            bool differentMachine = localEndPoint.Address.ToString() != serverEndPoint.Address.ToString();
+            var localEndPoint = (IPEndPoint)Server.Socket.LocalEndPoint;
+            var serverEndPoint = (IPEndPoint)Server.Socket.RemoteEndPoint;
+            var differentMachine = localEndPoint.Address.ToString() != serverEndPoint.Address.ToString();
             foreach (var filename in traces)
             {
                 string contents = null;
@@ -271,7 +270,7 @@ namespace PChecker.Testing
                     contents = File.ReadAllText(filename);
                 }
 
-                await this.Server.SendReceiveAsync(new TestTraceMessage("TestTraceMessage", this.Name, this._checkerConfiguration.TestingProcessId, filename, contents));
+                await Server.SendReceiveAsync(new TestTraceMessage("TestTraceMessage", Name, _checkerConfiguration.TestingProcessId, filename, contents));
             }
         }
 
@@ -280,12 +279,12 @@ namespace PChecker.Testing
         /// </summary>
         private async void StartProgressMonitorTask()
         {
-            while (!this.Terminating)
+            while (!Terminating)
             {
                 await Task.Delay(100);
-                using (this.ProgressTask = new ProgressLock())
+                using (ProgressTask = new ProgressLock())
                 {
-                    await this.SendProgressMessage();
+                    await SendProgressMessage();
                 }
             }
         }
@@ -295,17 +294,17 @@ namespace PChecker.Testing
         /// </summary>
         private async Task SendProgressMessage()
         {
-            if (this.Server != null && !this.Terminating && this.Server.IsConnected)
+            if (Server != null && !Terminating && Server.IsConnected)
             {
-                double progress = 0.0; // todo: get this from the TestingEngine.
+                var progress = 0.0; // todo: get this from the TestingEngine.
                 try
                 {
-                    await this.Server.SendReceiveAsync(new TestProgressMessage("TestProgressMessage", this.Name, this._checkerConfiguration.TestingProcessId, progress));
+                    await Server.SendReceiveAsync(new TestProgressMessage("TestProgressMessage", Name, _checkerConfiguration.TestingProcessId, progress));
                 }
                 catch (Exception)
                 {
                     // can't contact the server, so perhaps it died, time to stop.
-                    this.TestingEngine.Stop();
+                    TestingEngine.Stop();
                 }
             }
         }
@@ -315,13 +314,13 @@ namespace PChecker.Testing
             if (tsr.Stop)
             {
                 // server wants us to stop!
-                if (this._checkerConfiguration.IsVerbose)
+                if (_checkerConfiguration.IsVerbose)
                 {
-                    this.StdOut.WriteLine($"... ### Client {this._checkerConfiguration.TestingProcessId} is being told to stop!");
+                    StdOut.WriteLine($"... ### Client {_checkerConfiguration.TestingProcessId} is being told to stop!");
                 }
 
-                this.TestingEngine.Stop();
-                this.Terminating = true;
+                TestingEngine.Stop();
+                Terminating = true;
             }
         }
 
@@ -338,37 +337,37 @@ namespace PChecker.Testing
 
             ~ProgressLock()
             {
-                this.Dispose();
+                Dispose();
             }
 
             public void Wait(int timeout = 10000)
             {
-                bool wait = false;
-                lock (this.SyncObject)
+                var wait = false;
+                lock (SyncObject)
                 {
-                    if (this.Disposed)
+                    if (Disposed)
                     {
                         return;
                     }
 
-                    this.WaitingOnProgress = true;
+                    WaitingOnProgress = true;
                     wait = true;
                 }
 
                 if (wait)
                 {
-                    this.ProgressEvent.WaitOne(timeout);
+                    ProgressEvent.WaitOne(timeout);
                 }
             }
 
             public void Dispose()
             {
-                lock (this.SyncObject)
+                lock (SyncObject)
                 {
-                    this.Disposed = true;
-                    if (this.WaitingOnProgress)
+                    Disposed = true;
+                    if (WaitingOnProgress)
                     {
-                        this.ProgressEvent.Set();
+                        ProgressEvent.Set();
                     }
                 }
 

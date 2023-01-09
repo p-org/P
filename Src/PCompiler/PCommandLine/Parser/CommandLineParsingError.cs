@@ -1,6 +1,6 @@
 using System;
 
-namespace Plang;
+namespace Plang.Parser;
 
 /// <summary>
 /// Exception to capture errors when parsing commandline arguments

@@ -6,7 +6,7 @@ using System.Xml.Linq;
 using PChecker.IO;
 using Plang.Compiler;
 
-namespace Plang
+namespace Plang.Parser
 {
     internal class ParsePProjectFile
     {
@@ -22,7 +22,7 @@ namespace Plang
             job = null;
             try
             {
-                if (!CheckFileValidity.IsLegalPProjFile(projectFile, out FileInfo projectFilePath))
+                if (!CheckFileValidity.IsLegalPProjFile(projectFile, out var projectFilePath))
                 {
                     throw new CommandlineParsingError($"Illegal P project file name {projectFile} or file {projectFilePath?.FullName} not found");
                 }
@@ -30,9 +30,9 @@ namespace Plang
                 CommandLineOutput.WriteInfo($"==== Loading project file: {projectFile}");
 
                 var outputLanguage = CompilerOutput.CSharp;
-                HashSet<string> inputFiles = new HashSet<string>();
-                bool generateSourceMaps = false;
-                HashSet<string> projectDependencies = new HashSet<string>();
+                var inputFiles = new HashSet<string>();
+                var generateSourceMaps = false;
+                var projectDependencies = new HashSet<string>();
 
                 // get all project dependencies and the input files
                 var (fileInfos, list) = GetAllProjectDependencies(projectFilePath, inputFiles, projectDependencies);
@@ -82,15 +82,15 @@ namespace Plang
         {
             var projectDependencies = new HashSet<string>(preProjectDependencies);
             var inputFiles = new HashSet<string>(preInputFiles);
-            XElement projectXml = XElement.Load(projectFilePath.FullName);
+            var projectXml = XElement.Load(projectFilePath.FullName);
             projectDependencies.Add(GetProjectName(projectFilePath));
             // add all input files from the current project
             inputFiles.UnionWith(ReadAllInputFiles(projectFilePath));
 
             // get recursive project dependencies
-            foreach (XElement projectDepen in projectXml.Elements("IncludeProject"))
+            foreach (var projectDepen in projectXml.Elements("IncludeProject"))
             {
-                if (!CheckFileValidity.IsLegalPProjFile(projectDepen.Value, out FileInfo fullProjectDepenPathName))
+                if (!CheckFileValidity.IsLegalPProjFile(projectDepen.Value, out var fullProjectDepenPathName))
                 {
                     throw new CommandlineParsingError($"Illegal P project file name {projectDepen.Value} or file {fullProjectDepenPathName?.FullName} not found");
                 }
@@ -114,7 +114,7 @@ namespace Plang
         private string GetProjectName(FileInfo projectFullPath)
         {
             string projectName;
-            XElement projectXml = XElement.Load(projectFullPath.FullName);
+            var projectXml = XElement.Load(projectFullPath.FullName);
             if (projectXml.Elements("ProjectName").Any())
             {
                 projectName = projectXml.Element("ProjectName")?.Value;
@@ -138,7 +138,7 @@ namespace Plang
         /// <returns>If present returns the passed directory path, else the current directory</returns>
         private DirectoryInfo GetOutputDirectory(FileInfo fullPathName)
         {
-            XElement projectXml = XElement.Load(fullPathName.FullName);
+            var projectXml = XElement.Load(fullPathName.FullName);
             if (projectXml.Elements("OutputDir").Any())
                 return Directory.CreateDirectory(projectXml.Element("OutputDir")?.Value);
             else
@@ -147,7 +147,7 @@ namespace Plang
 
         private void GetTargetLanguage(FileInfo fullPathName, ref CompilerOutput outputLanguage, ref bool generateSourceMaps)
         {
-            XElement projectXml = XElement.Load(fullPathName.FullName);
+            var projectXml = XElement.Load(fullPathName.FullName);
             if (!projectXml.Elements("Target").Any()) return;
             switch (projectXml.Element("Target")?.Value.ToLowerInvariant())
             {
@@ -191,13 +191,13 @@ namespace Plang
         /// <returns>List of the all the P files included in the project</returns>
         private HashSet<string> ReadAllInputFiles(FileInfo fullPathName)
         {
-            HashSet<string> inputFiles = new HashSet<string>();
-            XElement projectXml = XElement.Load(fullPathName.FullName);
+            var inputFiles = new HashSet<string>();
+            var projectXml = XElement.Load(fullPathName.FullName);
 
             // get all files to be compiled
-            foreach (XElement inputs in projectXml.Elements("InputFiles"))
+            foreach (var inputs in projectXml.Elements("InputFiles"))
             {
-                foreach (XElement inputFileName in inputs.Elements("PFile"))
+                foreach (var inputFileName in inputs.Elements("PFile"))
                 {
                     var pFiles = new List<string>();
                     var inputFileNameFull = Path.Combine(Path.GetDirectoryName(fullPathName.FullName) ?? throw new InvalidOperationException(), inputFileName.Value);
@@ -218,7 +218,7 @@ namespace Plang
 
                     foreach (var pFile in pFiles)
                     {
-                        if (CheckFileValidity.IsLegalPFile(pFile, out FileInfo pFilePathName))
+                        if (CheckFileValidity.IsLegalPFile(pFile, out var pFilePathName))
                         {
                             CommandLineOutput.WriteInfo($"....... includes p file: {pFilePathName.FullName}");
                             inputFiles.Add(pFilePathName.FullName);

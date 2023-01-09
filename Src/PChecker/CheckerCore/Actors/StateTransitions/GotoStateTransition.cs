@@ -28,8 +28,8 @@ namespace PChecker.Actors
         /// <param name="lambda">Lambda function that executes after the on-exit handler of the exiting state.</param>
         public GotoStateTransition(Type targetState, string lambda)
         {
-            this.TargetState = targetState;
-            this.Lambda = lambda;
+            TargetState = targetState;
+            Lambda = lambda;
         }
 
         /// <summary>
@@ -38,8 +38,8 @@ namespace PChecker.Actors
         /// <param name="targetState">The target state.</param>
         public GotoStateTransition(Type targetState)
         {
-            this.TargetState = targetState;
-            this.Lambda = null;
+            TargetState = targetState;
+            Lambda = null;
         }
 
         internal override bool Inheritable => false;

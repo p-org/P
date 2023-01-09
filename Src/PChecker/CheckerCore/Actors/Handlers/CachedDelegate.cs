@@ -18,33 +18,33 @@ namespace PChecker.Actors
 
         internal CachedDelegate(MethodInfo method, object caller)
         {
-            ParameterInfo[] parameters = method.GetParameters();
+            var parameters = method.GetParameters();
             if (parameters.Length == 1 && method.ReturnType == typeof(void))
             {
-                this.Handler = Delegate.CreateDelegate(typeof(Action<Event>), caller, method);
-                this.IsAsync = false;
+                Handler = Delegate.CreateDelegate(typeof(Action<Event>), caller, method);
+                IsAsync = false;
             }
             else if (method.ReturnType == typeof(void))
             {
-                this.Handler = Delegate.CreateDelegate(typeof(Action), caller, method);
-                this.IsAsync = false;
+                Handler = Delegate.CreateDelegate(typeof(Action), caller, method);
+                IsAsync = false;
             }
             else if (parameters.Length == 1 && method.ReturnType == typeof(Task))
             {
-                this.Handler = Delegate.CreateDelegate(typeof(Func<Event, Task>), caller, method);
-                this.IsAsync = true;
+                Handler = Delegate.CreateDelegate(typeof(Func<Event, Task>), caller, method);
+                IsAsync = true;
             }
             else if (method.ReturnType == typeof(Task))
             {
-                this.Handler = Delegate.CreateDelegate(typeof(Func<Task>), caller, method);
-                this.IsAsync = true;
+                Handler = Delegate.CreateDelegate(typeof(Func<Task>), caller, method);
+                IsAsync = true;
             }
             else
             {
                 throw new InvalidOperationException($"Trying to cache invalid action delegate '{method.Name}'.");
             }
 
-            this.MethodInfo = method;
+            MethodInfo = method;
         }
     }
 }

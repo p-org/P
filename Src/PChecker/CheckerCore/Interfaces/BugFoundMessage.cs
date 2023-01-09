@@ -15,7 +15,7 @@ namespace PChecker.Interfaces
         public BugFoundMessage(string id, string name, uint processId)
             : base(id, name)
         {
-            this.ProcessId = processId;
+            ProcessId = processId;
         }
     }
 }

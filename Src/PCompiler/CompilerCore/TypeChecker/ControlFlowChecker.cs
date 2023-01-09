@@ -18,8 +18,8 @@ namespace Plang.Compiler.TypeChecker
 
         public static void AnalyzeMethods(ITranslationErrorHandler handler, IEnumerable<Function> allFunctions)
         {
-            ControlFlowChecker checker = new ControlFlowChecker(handler);
-            foreach (Function function in allFunctions)
+            var checker = new ControlFlowChecker(handler);
+            foreach (var function in allFunctions)
             {
                 checker.CheckFunction(function);
             }
@@ -49,7 +49,7 @@ namespace Plang.Compiler.TypeChecker
                     throw handler.BareLoopControlFlow("continue", continueStmt.SourceLocation);
 
                 case CompoundStmt compoundStmt:
-                    foreach (IPStmt subStmt in compoundStmt.Statements)
+                    foreach (var subStmt in compoundStmt.Statements)
                     {
                         CheckStmt(subStmt);
                     }

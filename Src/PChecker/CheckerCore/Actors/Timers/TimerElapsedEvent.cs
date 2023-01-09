@@ -26,7 +26,7 @@ namespace PChecker.Actors.Timers
         /// <param name="info">Stores information about the timer.</param>
         internal TimerElapsedEvent(TimerInfo info)
         {
-            this.Info = info;
+            Info = info;
         }
     }
 }

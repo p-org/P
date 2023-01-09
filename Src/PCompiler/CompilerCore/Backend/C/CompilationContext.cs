@@ -82,7 +82,7 @@ namespace Plang.Compiler.Backend.C
 
         private static int GetOrAddNumber<T>(IDictionary<T, int> dict, T declaration)
         {
-            if (dict.TryGetValue(declaration, out int number))
+            if (dict.TryGetValue(declaration, out var number))
             {
                 return number;
             }
@@ -122,8 +122,8 @@ namespace Plang.Compiler.Backend.C
 
         public int GetDeclNumber(State state)
         {
-            Machine machine = state.OwningMachine;
-            if (!stateNumbering.TryGetValue(machine, out Dictionary<State, int> internalNumbering))
+            var machine = state.OwningMachine;
+            if (!stateNumbering.TryGetValue(machine, out var internalNumbering))
             {
                 internalNumbering = new Dictionary<State, int>();
                 stateNumbering.Add(machine, internalNumbering);

@@ -29,8 +29,8 @@ namespace PChecker.Actors
         internal UnhandledEventException(Event unhandledEvent, string currentStateName, string message)
             : base(message)
         {
-            this.CurrentStateName = currentStateName;
-            this.UnhandledEvent = unhandledEvent;
+            CurrentStateName = currentStateName;
+            UnhandledEvent = unhandledEvent;
         }
     }
 }

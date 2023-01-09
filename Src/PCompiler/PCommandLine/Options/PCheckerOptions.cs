@@ -2,14 +2,12 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using PChecker;
 using PChecker.IO;
-using PChecker.Utilities;
+using Plang.Parser;
 
-namespace Plang
+namespace Plang.Options
 {
     internal sealed class PCheckerOptions
     {
@@ -23,38 +21,38 @@ namespace Plang
         /// </summary>
         internal PCheckerOptions()
         {
-            this.Parser = new CommandLineArgumentParser("p check",
+            Parser = new CommandLineArgumentParser("p check",
                 "The P checker enables systematic exploration of a specified P test case, it generates " +
                 "a reproducible bug-trace if a bug is found, and also allows replaying a bug-trace.");
 
-            var basicOptions = this.Parser.GetOrCreateGroup("Basic", "Basic options");
+            var basicOptions = Parser.GetOrCreateGroup("Basic", "Basic options");
             basicOptions.AddPositionalArgument("path", "Path to the P program dll to check");
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
 
-            var basicGroup = this.Parser.GetOrCreateGroup("Basic", "Basic options");
+            var basicGroup = Parser.GetOrCreateGroup("Basic", "Basic options");
             basicGroup.AddArgument("timeout", "t", "Timeout in seconds (disabled by default)", typeof(uint));
             basicGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path");
             basicGroup.AddArgument("verbose", "v", "Enable verbose log output during exploration", typeof(bool));
             basicGroup.AddArgument("debug", "d", "Enable debugging", typeof(bool)).IsHidden = true;
             
-            var testingGroup = this.Parser.GetOrCreateGroup("testingGroup", "Systematic exploration options");
+            var testingGroup = Parser.GetOrCreateGroup("testingGroup", "Systematic exploration options");
             testingGroup.AddArgument("iterations", "i", "Number of schedules to explore", typeof(uint));
             testingGroup.AddArgument("max-steps", "ms", @"Max scheduling steps to be explored during systematic exploration (by default 10,000 unfair and 100,000 fair steps).
 You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue = true;
             testingGroup.AddArgument("fail-on-maxsteps", null, "Consider it a bug if the test hits the specified max-steps", typeof(bool));
             testingGroup.AddArgument("liveness-temperature-threshold", null, "Specify the liveness temperature threshold is the liveness temperature value that triggers a liveness bug", typeof(uint)).IsHidden = true;
             
-            var schedulingGroup = this.Parser.GetOrCreateGroup("schedulingGroup", "Search prioritization options");
+            var schedulingGroup = Parser.GetOrCreateGroup("schedulingGroup", "Search prioritization options");
             schedulingGroup.AddArgument("sch-random", null, "Choose the random scheduling strategy (this is the default)", typeof(bool));
             schedulingGroup.AddArgument("sch-probabilistic", "sp", "Choose the probabilistic scheduling strategy with given probability for each scheduling decision where the probability is " +
                                                                    "specified as the integer N in the equation 0.5 to the power of N.  So for N=1, the probability is 0.5, for N=2 the probability is 0.25, N=3 you get 0.125, etc.", typeof(uint));
             schedulingGroup.AddArgument("sch-pct", null, "Choose the PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
             schedulingGroup.AddArgument("sch-fairpct", null, "Choose the fair PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
 
-            var replayOptions = this.Parser.GetOrCreateGroup("replayOptions", "Replay and debug options");
+            var replayOptions = Parser.GetOrCreateGroup("replayOptions", "Replay and debug options");
             replayOptions.AddArgument("replay", "r", "Schedule file to replay");
             
-            var advancedGroup = this.Parser.GetOrCreateGroup("advancedGroup", "Advanced options");
+            var advancedGroup = Parser.GetOrCreateGroup("advancedGroup", "Advanced options");
             advancedGroup.AddArgument("explore", null, "Keep testing until the bound (e.g. iteration or time) is reached", typeof(bool));
             advancedGroup.AddArgument("seed", null, "Specify the random value generator seed", typeof(uint));
             advancedGroup.AddArgument("graph-bug", null, "Output a DGML graph of the iteration that found a bug", typeof(bool));
@@ -72,7 +70,7 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
             var configuration = CheckerConfiguration.Create();
             try
             {
-                var result = this.Parser.ParseArguments(args);
+                var result = Parser.ParseArguments(args);
                 foreach (var arg in result)
                 {
                     UpdateConfigurationWithParsedArgument(configuration, arg);
@@ -89,13 +87,13 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                 }
                 else
                 {
-                    this.Parser.PrintHelp(Console.Out);
+                    Parser.PrintHelp(Console.Out);
                     Error.ReportAndExit(ex.Message);
                 }
             }
             catch (Exception ex)
             {
-                this.Parser.PrintHelp(Console.Out);
+                Parser.PrintHelp(Console.Out);
                 Error.ReportAndExit(ex.Message);
             }
 
@@ -142,8 +140,8 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                     break;
                 case "replay":
                     {
-                        string filename = (string)option.Value;
-                        string extension = System.IO.Path.GetExtension(filename);
+                        var filename = (string)option.Value;
+                        var extension = System.IO.Path.GetExtension(filename);
                         if (!extension.Equals(".schedule"))
                         {
                             Error.ReportAndExit("Please give a valid schedule file " +
@@ -177,13 +175,13 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                     break;
                 case "max-steps":
                     {
-                        uint[] values = (uint[])option.Value;
+                        var values = (uint[])option.Value;
                         if (values.Length > 2)
                         {
                             Error.ReportAndExit("Invalid number of options supplied via '--max-steps'.");
                         }
 
-                        uint i = values[0];
+                        var i = values[0];
                         uint j;
                         if (values.Length == 2)
                         {

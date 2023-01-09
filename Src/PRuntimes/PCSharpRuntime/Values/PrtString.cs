@@ -184,7 +184,7 @@ namespace Plang.CSharpRuntime.Values
         /// <returns></returns>
         public string ToEscapedString()
         {
-            string v = value ?? "";
+            var v = value ?? "";
             return $"\"{v.Replace("\"", "\\\"")}\"";
         }
     }

@@ -13,7 +13,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using PChecker.Actors.Timers;
 using PChecker.IO;
-using PChecker.Runtime;
 
 namespace PChecker.Actors
 {
@@ -85,7 +84,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Checks if the actor is halted.
         /// </summary>
-        internal bool IsHalted => this.CurrentStatus is Status.Halted;
+        internal bool IsHalted => CurrentStatus is Status.Halted;
 
         /// <summary>
         /// Checks if a default handler is available.
@@ -101,18 +100,18 @@ namespace PChecker.Actors
         /// </summary>
         protected internal virtual Guid OperationGroupId
         {
-            get => this.Manager.OperationGroupId;
+            get => Manager.OperationGroupId;
 
             set
             {
-                this.Manager.OperationGroupId = value;
+                Manager.OperationGroupId = value;
             }
         }
 
         /// <summary>
         /// The installed runtime logger.
         /// </summary>
-        protected TextWriter Logger => this.Runtime.Logger;
+        protected TextWriter Logger => Runtime.Logger;
 
         /// <summary>
         /// User-defined hashed state of the actor. Override to improve the
@@ -125,11 +124,11 @@ namespace PChecker.Actors
         /// </summary>
         protected Actor()
         {
-            this.ActionMap = new Dictionary<Type, CachedDelegate>();
-            this.Timers = new Dictionary<TimerInfo, IActorTimer>();
-            this.CurrentStatus = Status.Active;
-            this.CurrentStateName = default;
-            this.IsDefaultHandlerAvailable = false;
+            ActionMap = new Dictionary<Type, CachedDelegate>();
+            Timers = new Dictionary<TimerInfo, IActorTimer>();
+            CurrentStatus = Status.Active;
+            CurrentStateName = default;
+            IsDefaultHandlerAvailable = false;
         }
 
         /// <summary>
@@ -137,10 +136,10 @@ namespace PChecker.Actors
         /// </summary>
         internal void Configure(ActorRuntime runtime, ActorId id, IActorManager manager, IEventQueue inbox)
         {
-            this.Runtime = runtime;
-            this.Id = id;
-            this.Manager = manager;
-            this.Inbox = inbox;
+            Runtime = runtime;
+            Id = id;
+            Manager = manager;
+            Inbox = inbox;
         }
 
         /// <summary>
@@ -150,10 +149,10 @@ namespace PChecker.Actors
         internal virtual async Task InitializeAsync(Event initialEvent)
         {
             // Invoke the custom initializer, if there is one.
-            await this.InvokeUserCallbackAsync(UserCallbackType.OnInitialize, initialEvent);
-            if (this.CurrentStatus is Status.Halting)
+            await InvokeUserCallbackAsync(UserCallbackType.OnInitialize, initialEvent);
+            if (CurrentStatus is Status.Halting)
             {
-                await this.HaltAsync(initialEvent);
+                await HaltAsync(initialEvent);
             }
         }
 
@@ -167,7 +166,7 @@ namespace PChecker.Actors
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
         /// <returns>The unique actor id.</returns>
         protected ActorId CreateActor(Type type, Event initialEvent = null, Guid opGroupId = default) =>
-            this.Runtime.CreateActor(null, type, null, initialEvent, this, opGroupId);
+            Runtime.CreateActor(null, type, null, initialEvent, this, opGroupId);
 
         /// <summary>
         /// Creates a new actor of the specified type and name, and with the specified
@@ -180,7 +179,7 @@ namespace PChecker.Actors
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
         /// <returns>The unique actor id.</returns>
         protected ActorId CreateActor(Type type, string name, Event initialEvent = null, Guid opGroupId = default) =>
-            this.Runtime.CreateActor(null, type, name, initialEvent, this, opGroupId);
+            Runtime.CreateActor(null, type, name, initialEvent, this, opGroupId);
 
         /// <summary>
         /// Creates a new actor of the specified <see cref="Type"/> and name, using the specified
@@ -193,7 +192,7 @@ namespace PChecker.Actors
         /// <param name="initialEvent">Optional initialization event.</param>
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
         protected void CreateActor(ActorId id, Type type, string name, Event initialEvent = null, Guid opGroupId = default) =>
-            this.Runtime.CreateActor(id, type, name, initialEvent, this, opGroupId);
+            Runtime.CreateActor(id, type, name, initialEvent, this, opGroupId);
 
         /// <summary>
         /// Sends an asynchronous <see cref="Event"/> to a target.
@@ -203,7 +202,7 @@ namespace PChecker.Actors
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
         /// <param name="options">Optional checkerConfiguration of a send operation.</param>
         protected void SendEvent(ActorId id, Event e, Guid opGroupId = default, SendOptions options = null) =>
-            this.Runtime.SendEvent(id, e, this, opGroupId, options);
+            Runtime.SendEvent(id, e, this, opGroupId, options);
 
         /// <summary>
         /// Waits to receive an <see cref="Event"/> of the specified type
@@ -214,9 +213,9 @@ namespace PChecker.Actors
         /// <returns>The received event.</returns>
         protected internal Task<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null)
         {
-            this.Assert(this.CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", this.Id);
-            this.Runtime.NotifyReceiveCalled(this);
-            return this.Inbox.ReceiveEventAsync(eventType, predicate);
+            Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
+            Runtime.NotifyReceiveCalled(this);
+            return Inbox.ReceiveEventAsync(eventType, predicate);
         }
 
         /// <summary>
@@ -226,9 +225,9 @@ namespace PChecker.Actors
         /// <returns>The received event.</returns>
         protected internal Task<Event> ReceiveEventAsync(params Type[] eventTypes)
         {
-            this.Assert(this.CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", this.Id);
-            this.Runtime.NotifyReceiveCalled(this);
-            return this.Inbox.ReceiveEventAsync(eventTypes);
+            Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
+            Runtime.NotifyReceiveCalled(this);
+            return Inbox.ReceiveEventAsync(eventTypes);
         }
 
         /// <summary>
@@ -239,9 +238,9 @@ namespace PChecker.Actors
         /// <returns>The received event.</returns>
         protected internal Task<Event> ReceiveEventAsync(params Tuple<Type, Func<Event, bool>>[] events)
         {
-            this.Assert(this.CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", this.Id);
-            this.Runtime.NotifyReceiveCalled(this);
-            return this.Inbox.ReceiveEventAsync(events);
+            Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
+            Runtime.NotifyReceiveCalled(this);
+            return Inbox.ReceiveEventAsync(events);
         }
 
         /// <summary>
@@ -256,8 +255,8 @@ namespace PChecker.Actors
         protected TimerInfo StartTimer(TimeSpan startDelay, TimerElapsedEvent customEvent = null)
         {
             // The specified due time and period must be valid.
-            this.Assert(startDelay.TotalMilliseconds >= 0, "{0} registered a timer with a negative due time.", this.Id);
-            return this.RegisterTimer(startDelay, Timeout.InfiniteTimeSpan, customEvent);
+            Assert(startDelay.TotalMilliseconds >= 0, "{0} registered a timer with a negative due time.", Id);
+            return RegisterTimer(startDelay, Timeout.InfiniteTimeSpan, customEvent);
         }
 
         /// <summary>
@@ -273,9 +272,9 @@ namespace PChecker.Actors
         protected TimerInfo StartPeriodicTimer(TimeSpan startDelay, TimeSpan period, TimerElapsedEvent customEvent = null)
         {
             // The specified due time and period must be valid.
-            this.Assert(startDelay.TotalMilliseconds >= 0, "{0} registered a periodic timer with a negative due time.", this.Id);
-            this.Assert(period.TotalMilliseconds >= 0, "{0} registered a periodic timer with a negative period.", this.Id);
-            return this.RegisterTimer(startDelay, period, customEvent);
+            Assert(startDelay.TotalMilliseconds >= 0, "{0} registered a periodic timer with a negative due time.", Id);
+            Assert(period.TotalMilliseconds >= 0, "{0} registered a periodic timer with a negative period.", Id);
+            return RegisterTimer(startDelay, period, customEvent);
         }
 
         /// <summary>
@@ -284,9 +283,9 @@ namespace PChecker.Actors
         /// <param name="info">Handle that contains information about the timer.</param>
         protected void StopTimer(TimerInfo info)
         {
-            this.Assert(info.OwnerId == this.Id, "{0} is not allowed to dispose timer '{1}', which is owned by {2}.",
-                this.Id, info, info.OwnerId);
-            this.UnregisterTimer(info);
+            Assert(info.OwnerId == Id, "{0} is not allowed to dispose timer '{1}', which is owned by {2}.",
+                Id, info, info.OwnerId);
+            UnregisterTimer(info);
         }
 
         /// <summary>
@@ -294,7 +293,7 @@ namespace PChecker.Actors
         /// controlled during analysis or testing.
         /// </summary>
         /// <returns>The controlled nondeterministic choice.</returns>
-        protected bool RandomBoolean() => this.Runtime.GetNondeterministicBooleanChoice(2, this.Id.Name, this.Id.Type);
+        protected bool RandomBoolean() => Runtime.GetNondeterministicBooleanChoice(2, Id.Name, Id.Type);
 
         /// <summary>
         /// Returns a nondeterministic boolean choice, that can be
@@ -305,7 +304,7 @@ namespace PChecker.Actors
         /// <param name="maxValue">The max value.</param>
         /// <returns>The controlled nondeterministic choice.</returns>
         protected bool RandomBoolean(int maxValue) =>
-            this.Runtime.GetNondeterministicBooleanChoice(maxValue, this.Id.Name, this.Id.Type);
+            Runtime.GetNondeterministicBooleanChoice(maxValue, Id.Name, Id.Type);
 
         /// <summary>
         /// Returns a nondeterministic integer, that can be controlled during
@@ -315,14 +314,14 @@ namespace PChecker.Actors
         /// <param name="maxValue">The max value.</param>
         /// <returns>The controlled nondeterministic integer.</returns>
         protected int RandomInteger(int maxValue) =>
-            this.Runtime.GetNondeterministicIntegerChoice(maxValue, this.Id.Name, this.Id.Type);
+            Runtime.GetNondeterministicIntegerChoice(maxValue, Id.Name, Id.Type);
 
         /// <summary>
         /// Invokes the specified monitor with the specified <see cref="Event"/>.
         /// </summary>
         /// <typeparam name="T">Type of the monitor.</typeparam>
         /// <param name="e">Event to send to the monitor.</param>
-        protected void Monitor<T>(Event e) => this.Monitor(typeof(T), e);
+        protected void Monitor<T>(Event e) => Monitor(typeof(T), e);
 
         /// <summary>
         /// Invokes the specified monitor with the specified event.
@@ -331,46 +330,46 @@ namespace PChecker.Actors
         /// <param name="e">The event to send.</param>
         protected void Monitor(Type type, Event e)
         {
-            this.Assert(e != null, "{0} is sending a null event.", this.Id);
-            this.Runtime.Monitor(type, e, this.Id.Name, this.Id.Type, this.CurrentStateName);
+            Assert(e != null, "{0} is sending a null event.", Id);
+            Runtime.Monitor(type, e, Id.Name, Id.Type, CurrentStateName);
         }
 
         /// <summary>
         /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
         /// </summary>
-        protected void Assert(bool predicate) => this.Runtime.Assert(predicate);
+        protected void Assert(bool predicate) => Runtime.Assert(predicate);
 
         /// <summary>
         /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
         /// </summary>
         protected void Assert(bool predicate, string s, object arg0) =>
-            this.Runtime.Assert(predicate, s, arg0);
+            Runtime.Assert(predicate, s, arg0);
 
         /// <summary>
         /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
         /// </summary>
         protected void Assert(bool predicate, string s, object arg0, object arg1) =>
-            this.Runtime.Assert(predicate, s, arg0, arg1);
+            Runtime.Assert(predicate, s, arg0, arg1);
 
         /// <summary>
         /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
         /// </summary>
         protected void Assert(bool predicate, string s, object arg0, object arg1, object arg2) =>
-            this.Runtime.Assert(predicate, s, arg0, arg1, arg2);
+            Runtime.Assert(predicate, s, arg0, arg1, arg2);
 
         /// <summary>
         /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
         /// </summary>
         protected void Assert(bool predicate, string s, params object[] args) =>
-            this.Runtime.Assert(predicate, s, args);
+            Runtime.Assert(predicate, s, args);
 
         /// <summary>
         /// Raises a <see cref='HaltEvent'/> to halt the actor at the end of the current action.
         /// </summary>
         protected virtual void RaiseHaltEvent()
         {
-            this.Assert(this.CurrentStatus is Status.Active, "{0} invoked Halt while halting.", this.Id);
-            this.CurrentStatus = Status.Halting;
+            Assert(CurrentStatus is Status.Active, "{0} invoked Halt while halting.", Id);
+            CurrentStatus = Status.Halting;
         }
 
         /// <summary>
@@ -426,12 +425,12 @@ namespace PChecker.Actors
         /// </summary>
         internal EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
         {
-            if (this.CurrentStatus is Status.Halted)
+            if (CurrentStatus is Status.Halted)
             {
                 return EnqueueStatus.Dropped;
             }
 
-            return this.Inbox.Enqueue(e, opGroupId, info);
+            return Inbox.Enqueue(e, opGroupId, info);
         }
 
         /// <summary>
@@ -441,13 +440,13 @@ namespace PChecker.Actors
         internal async Task RunEventHandlerAsync()
         {
             Event lastDequeuedEvent = null;
-            while (this.CurrentStatus != Status.Halted && this.Runtime.IsRunning)
+            while (CurrentStatus != Status.Halted && Runtime.IsRunning)
             {
-                (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) = this.Inbox.Dequeue();
+                (var status, var e, var opGroupId, var info) = Inbox.Dequeue();
                 if (opGroupId != Guid.Empty)
                 {
                     // Inherit the operation group id of the dequeued operation, if it is non-empty.
-                    this.Manager.OperationGroupId = opGroupId;
+                    Manager.OperationGroupId = opGroupId;
                 }
 
                 if (status is DequeueStatus.Success)
@@ -455,24 +454,24 @@ namespace PChecker.Actors
                     // Notify the runtime for a new event to handle. This is only used
                     // during bug-finding and operation bounding, because the runtime
                     // has to schedule an actor when a new operation is dequeued.
-                    this.Runtime.NotifyDequeuedEvent(this, e, info);
-                    await this.InvokeUserCallbackAsync(UserCallbackType.OnEventDequeued, e);
+                    Runtime.NotifyDequeuedEvent(this, e, info);
+                    await InvokeUserCallbackAsync(UserCallbackType.OnEventDequeued, e);
                     lastDequeuedEvent = e;
                 }
                 else if (status is DequeueStatus.Raised)
                 {
                     // Only supported by types (e.g. StateMachine) that allow
                     // the user to explicitly raise events.
-                    this.Runtime.NotifyHandleRaisedEvent(this, e);
+                    Runtime.NotifyHandleRaisedEvent(this, e);
                 }
                 else if (status is DequeueStatus.Default)
                 {
-                    this.Runtime.LogWriter.LogDefaultEventHandler(this.Id, this.CurrentStateName);
+                    Runtime.LogWriter.LogDefaultEventHandler(Id, CurrentStateName);
 
                     // If the default event was dequeued, then notify the runtime.
                     // This is only used during bug-finding, because the runtime must
                     // instrument a scheduling point between default event handlers.
-                    this.Runtime.NotifyDefaultEventDequeued(this);
+                    Runtime.NotifyDefaultEventDequeued(this);
                 }
                 else if (status is DequeueStatus.NotAvailable)
                 {
@@ -484,26 +483,26 @@ namespace PChecker.Actors
                     timeoutEvent.Info.Period.TotalMilliseconds < 0)
                 {
                     // If the timer is not periodic, then dispose it.
-                    this.UnregisterTimer(timeoutEvent.Info);
+                    UnregisterTimer(timeoutEvent.Info);
                 }
 
-                if (this.CurrentStatus is Status.Active)
+                if (CurrentStatus is Status.Active)
                 {
                     // Handles the next event, if the actor is not halted.
-                    await this.HandleEventAsync(e);
+                    await HandleEventAsync(e);
                 }
 
-                if (!this.Inbox.IsEventRaised && lastDequeuedEvent != null && this.CurrentStatus != Status.Halted)
+                if (!Inbox.IsEventRaised && lastDequeuedEvent != null && CurrentStatus != Status.Halted)
                 {
                     // Inform the user that the actor handled the dequeued event.
-                    await this.InvokeUserCallbackAsync(UserCallbackType.OnEventHandled, lastDequeuedEvent);
+                    await InvokeUserCallbackAsync(UserCallbackType.OnEventHandled, lastDequeuedEvent);
                     lastDequeuedEvent = null;
                 }
 
-                if (this.CurrentStatus is Status.Halting)
+                if (CurrentStatus is Status.Halting)
                 {
                     // If the current status is halting, then halt the actor.
-                    await this.HaltAsync(e);
+                    await HaltAsync(e);
                 }
             }
         }
@@ -513,27 +512,27 @@ namespace PChecker.Actors
         /// </summary>
         private protected virtual async Task HandleEventAsync(Event e)
         {
-            if (this.ActionMap.TryGetValue(e.GetType(), out CachedDelegate cachedAction) ||
-                this.ActionMap.TryGetValue(typeof(WildCardEvent), out cachedAction))
+            if (ActionMap.TryGetValue(e.GetType(), out var cachedAction) ||
+                ActionMap.TryGetValue(typeof(WildCardEvent), out cachedAction))
             {
-                this.Runtime.NotifyInvokedAction(this, cachedAction.MethodInfo, null, null, e);
-                await this.InvokeActionAsync(cachedAction, e);
+                Runtime.NotifyInvokedAction(this, cachedAction.MethodInfo, null, null, e);
+                await InvokeActionAsync(cachedAction, e);
             }
             else if (e is HaltEvent)
             {
                 // If it is the halt event, then change the actor status to halting.
-                this.CurrentStatus = Status.Halting;
+                CurrentStatus = Status.Halting;
             }
             else
             {
-                await this.InvokeUserCallbackAsync(UserCallbackType.OnEventUnhandled, e);
-                if (this.CurrentStatus is Status.Active)
+                await InvokeUserCallbackAsync(UserCallbackType.OnEventUnhandled, e);
+                if (CurrentStatus is Status.Active)
                 {
                     // If the event cannot be handled then report an error, else halt gracefully.
                     var ex = new UnhandledEventException(e, default, "Unhandled Event");
-                    bool isHalting = this.OnUnhandledEventExceptionHandler(ex, e);
-                    this.Assert(isHalting, "{0} received event '{1}' that cannot be handled.",
-                        this.Id, e.GetType().FullName);
+                    var isHalting = OnUnhandledEventExceptionHandler(ex, e);
+                    Assert(isHalting, "{0} received event '{1}' that cannot be handled.",
+                        Id, e.GetType().FullName);
                 }
             }
         }
@@ -557,7 +556,7 @@ namespace PChecker.Actors
                         task = taskFunc();
                     }
 
-                    this.Runtime.NotifyWaitTask(this, task);
+                    Runtime.NotifyWaitTask(this, task);
 
                     // We have no reliable stack for awaited operations.
                     await task;
@@ -571,12 +570,12 @@ namespace PChecker.Actors
                     action();
                 }
             }
-            catch (Exception ex) when (this.OnExceptionHandler(ex, cachedAction.MethodInfo.Name, e))
+            catch (Exception ex) when (OnExceptionHandler(ex, cachedAction.MethodInfo.Name, e))
             {
                 // User handled the exception.
-                await this.OnExceptionHandledAsync(ex, e);
+                await OnExceptionHandledAsync(ex, e);
             }
-            catch (Exception ex) when (!cachedAction.IsAsync && this.InvokeOnFailureExceptionFilter(cachedAction, ex))
+            catch (Exception ex) when (!cachedAction.IsAsync && InvokeOnFailureExceptionFilter(cachedAction, ex))
             {
                 // Use an exception filter to call OnFailure before the stack
                 // has been unwound. If the exception filter does not fail-fast,
@@ -584,7 +583,7 @@ namespace PChecker.Actors
             }
             catch (Exception ex)
             {
-                await this.TryHandleActionInvocationExceptionAsync(ex, cachedAction.MethodInfo.Name);
+                await TryHandleActionInvocationExceptionAsync(ex, cachedAction.MethodInfo.Name);
             }
         }
 
@@ -598,33 +597,33 @@ namespace PChecker.Actors
                 Task task = null;
                 if (callbackType is UserCallbackType.OnInitialize)
                 {
-                    task = this.OnInitializeAsync(e);
+                    task = OnInitializeAsync(e);
                 }
                 else if (callbackType is UserCallbackType.OnEventDequeued)
                 {
-                    task = this.OnEventDequeuedAsync(e);
+                    task = OnEventDequeuedAsync(e);
                 }
                 else if (callbackType is UserCallbackType.OnEventHandled)
                 {
-                    task = this.OnEventHandledAsync(e);
+                    task = OnEventHandledAsync(e);
                 }
                 else if (callbackType is UserCallbackType.OnEventUnhandled)
                 {
-                    task = this.OnEventUnhandledAsync(e, currentState);
+                    task = OnEventUnhandledAsync(e, currentState);
                 }
 
-                this.Runtime.NotifyWaitTask(this, task);
+                Runtime.NotifyWaitTask(this, task);
                 await task;
             }
-            catch (Exception ex) when (this.OnExceptionHandler(ex, callbackType, e))
+            catch (Exception ex) when (OnExceptionHandler(ex, callbackType, e))
             {
                 // User handled the exception.
-                await this.OnExceptionHandledAsync(ex, e);
+                await OnExceptionHandledAsync(ex, e);
             }
             catch (Exception ex)
             {
                 // Reports the unhandled exception.
-                await this.TryHandleActionInvocationExceptionAsync(ex, callbackType);
+                await TryHandleActionInvocationExceptionAsync(ex, callbackType);
             }
         }
 
@@ -638,7 +637,7 @@ namespace PChecker.Actors
         {
             // This is called within the exception filter so the stack has not yet been unwound.
             // If the call does not fail-fast, return false to process the exception normally.
-            this.Runtime.RaiseOnFailureEvent(new ActionExceptionFilterException(action.MethodInfo.Name, ex));
+            Runtime.RaiseOnFailureEvent(new ActionExceptionFilterException(action.MethodInfo.Name, ex));
             return false;
         }
 
@@ -647,7 +646,7 @@ namespace PChecker.Actors
         /// </summary>
         private protected Task TryHandleActionInvocationExceptionAsync(Exception ex, string actionName)
         {
-            Exception innerException = ex;
+            var innerException = ex;
             while (innerException is TargetInvocationException)
             {
                 innerException = innerException.InnerException;
@@ -660,13 +659,13 @@ namespace PChecker.Actors
 
             if (innerException is ExecutionCanceledException || innerException is TaskSchedulerException)
             {
-                this.CurrentStatus = Status.Halted;
-                Debug.WriteLine($"<Exception> {innerException.GetType().Name} was thrown from {this.Id}.");
+                CurrentStatus = Status.Halted;
+                Debug.WriteLine($"<Exception> {innerException.GetType().Name} was thrown from {Id}.");
             }
             else
             {
                 // Reports the unhandled exception.
-                this.ReportUnhandledException(innerException, actionName);
+                ReportUnhandledException(innerException, actionName);
             }
 
             return Task.CompletedTask;
@@ -677,7 +676,7 @@ namespace PChecker.Actors
         /// </summary>
         internal bool IsEventIgnored(Event e)
         {
-            if (e is TimerElapsedEvent timeoutEvent && !this.Timers.ContainsKey(timeoutEvent.Info))
+            if (e is TimerElapsedEvent timeoutEvent && !Timers.ContainsKey(timeoutEvent.Info))
             {
                 // The timer that created this timeout event is not active.
                 return true;
@@ -694,15 +693,15 @@ namespace PChecker.Actors
             unchecked
             {
                 var hash = 19;
-                hash = (hash * 31) + this.GetType().GetHashCode();
-                hash = (hash * 31) + this.Id.Value.GetHashCode();
-                hash = (hash * 31) + this.IsHalted.GetHashCode();
+                hash = (hash * 31) + GetType().GetHashCode();
+                hash = (hash * 31) + Id.Value.GetHashCode();
+                hash = (hash * 31) + IsHalted.GetHashCode();
 
-                hash = (hash * 31) + this.Manager.GetCachedState();
-                hash = (hash * 31) + this.Inbox.GetCachedState();
+                hash = (hash * 31) + Manager.GetCachedState();
+                hash = (hash * 31) + Inbox.GetCachedState();
 
                 // Adds the user-defined hashed state.
-                hash = (hash * 31) + this.HashedState;
+                hash = (hash * 31) + HashedState;
 
                 return hash;
             }
@@ -713,10 +712,10 @@ namespace PChecker.Actors
         /// </summary>
         private protected TimerInfo RegisterTimer(TimeSpan dueTime, TimeSpan period, TimerElapsedEvent customEvent)
         {
-            var info = new TimerInfo(this.Id, dueTime, period, customEvent);
-            var timer = this.Runtime.CreateActorTimer(info, this);
-            this.Runtime.LogWriter.LogCreateTimer(info);
-            this.Timers.Add(info, timer);
+            var info = new TimerInfo(Id, dueTime, period, customEvent);
+            var timer = Runtime.CreateActorTimer(info, this);
+            Runtime.LogWriter.LogCreateTimer(info);
+            Timers.Add(info, timer);
             return info;
         }
 
@@ -725,13 +724,13 @@ namespace PChecker.Actors
         /// </summary>
         private protected void UnregisterTimer(TimerInfo info)
         {
-            if (!this.Timers.TryGetValue(info, out IActorTimer timer))
+            if (!Timers.TryGetValue(info, out var timer))
             {
-                this.Assert(info.OwnerId == this.Id, "Timer '{0}' is already disposed.", info);
+                Assert(info.OwnerId == Id, "Timer '{0}' is already disposed.", info);
             }
 
-            this.Runtime.LogWriter.LogStopTimer(info);
-            this.Timers.Remove(info);
+            Runtime.LogWriter.LogStopTimer(info);
+            Timers.Remove(info);
             using (timer)
             {
                 // sometimes timer can be null.
@@ -743,10 +742,10 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void SetupEventHandlers()
         {
-            if (!ActionCache.ContainsKey(this.GetType()))
+            if (!ActionCache.ContainsKey(GetType()))
             {
-                Stack<Type> actorTypes = new Stack<Type>();
-                for (var actorType = this.GetType(); typeof(Actor).IsAssignableFrom(actorType); actorType = actorType.BaseType)
+                var actorTypes = new Stack<Type>();
+                for (var actorType = GetType(); typeof(Actor).IsAssignableFrom(actorType); actorType = actorType.BaseType)
                 {
                     actorTypes.Push(actorType);
                 }
@@ -754,23 +753,23 @@ namespace PChecker.Actors
                 // process base types in reverse order, so mosts derrived type is cached first.
                 while (actorTypes.Count > 0)
                 {
-                    this.SetupEventHandlers(actorTypes.Pop());
+                    SetupEventHandlers(actorTypes.Pop());
                 }
             }
 
             // Now we have all derrived types cached, we can build the combined action map for this type.
-            for (var actorType = this.GetType(); typeof(Actor).IsAssignableFrom(actorType); actorType = actorType.BaseType)
+            for (var actorType = GetType(); typeof(Actor).IsAssignableFrom(actorType); actorType = actorType.BaseType)
             {
                 // Populates the map of event handlers for this actor instance.
                 foreach (var kvp in ActionCache[actorType])
                 {
                     // use the most derrived action handler for a given event (ignoring any base handlers defined for the same event).
-                    if (!this.ActionMap.ContainsKey(kvp.Key))
+                    if (!ActionMap.ContainsKey(kvp.Key))
                     {
                         // MethodInfo.Invoke catches the exception to wrap it in a TargetInvocationException.
                         // This unwinds the stack before the ExecuteAction exception filter is invoked, so
                         // call through a delegate instead (which is also much faster than Invoke).
-                        this.ActionMap.Add(kvp.Key, new CachedDelegate(kvp.Value, this));
+                        ActionMap.Add(kvp.Key, new CachedDelegate(kvp.Value, this));
                     }
                 }
             }
@@ -780,7 +779,7 @@ namespace PChecker.Actors
         {
             // If this type has not already been setup in the ActionCache, then we need to try and grab the ActionCacheLock
             // for this type.  First make sure we have one and only one lockable object for this type.
-            object syncObject = ActionCacheLocks.GetOrAdd(actorType, _ => new object());
+            var syncObject = ActionCacheLocks.GetOrAdd(actorType, _ => new object());
 
             // Locking this syncObject ensures only one thread enters the initialization code to update
             // the ActionCache for this specific Actor type.
@@ -804,7 +803,7 @@ namespace PChecker.Actors
 
                     foreach (var attr in doAttributes)
                     {
-                        this.Assert(!handledEvents.Contains(attr.Event),
+                        Assert(!handledEvents.Contains(attr.Event),
                             "{0} declared multiple handlers for event '{1}'.",
                             actorType.FullName, attr.Event);
                         actionBindings.Add(attr.Event, new ActionEventHandlerDeclaration(attr.Action));
@@ -816,7 +815,7 @@ namespace PChecker.Actors
                     {
                         if (!map.ContainsKey(action.Key))
                         {
-                            map.Add(action.Key, this.GetActionWithName(action.Value.Name));
+                            map.Add(action.Key, GetActionWithName(action.Value.Name));
                         }
                     }
 
@@ -832,7 +831,7 @@ namespace PChecker.Actors
         /// </summary>
         internal HashSet<string> GetAllRegisteredEvents()
         {
-            return new HashSet<string>(from key in this.ActionMap.Keys select key.FullName);
+            return new HashSet<string>(from key in ActionMap.Keys select key.FullName);
         }
 
         /// <summary>
@@ -841,12 +840,12 @@ namespace PChecker.Actors
         private protected MethodInfo GetActionWithName(string actionName)
         {
             MethodInfo action;
-            Type actorType = this.GetType();
+            var actorType = GetType();
 
             do
             {
-                BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic |
-                    BindingFlags.Instance | BindingFlags.FlattenHierarchy;
+                var bindingFlags = BindingFlags.Public | BindingFlags.NonPublic |
+                                   BindingFlags.Instance | BindingFlags.FlattenHierarchy;
                 action = actorType.GetMethod(actionName, bindingFlags, Type.DefaultBinder, SingleEventTypeArray, null);
                 if (action is null)
                 {
@@ -857,8 +856,8 @@ namespace PChecker.Actors
             }
             while (action is null && actorType != typeof(StateMachine) && actorType != typeof(Actor));
 
-            this.Assert(action != null, "Cannot detect action declaration '{0}' in '{1}'.", actionName, this.GetType().FullName);
-            this.AssertActionValidity(action);
+            Assert(action != null, "Cannot detect action declaration '{0}' in '{1}'.", actionName, GetType().FullName);
+            AssertActionValidity(action);
             return action;
         }
 
@@ -867,9 +866,9 @@ namespace PChecker.Actors
         /// </summary>
         private void AssertActionValidity(MethodInfo action)
         {
-            Type actionType = action.DeclaringType;
-            ParameterInfo[] parameters = action.GetParameters();
-            this.Assert(parameters.Length is 0 ||
+            var actionType = action.DeclaringType;
+            var parameters = action.GetParameters();
+            Assert(parameters.Length is 0 ||
                 (parameters.Length is 1 && parameters[0].ParameterType == typeof(Event)),
                 "Action '{0}' in '{1}' must either accept no parameters or a single parameter of type 'Event'.",
                 action.Name, actionType.Name);
@@ -877,13 +876,13 @@ namespace PChecker.Actors
             // Check if the action is an 'async' method.
             if (action.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) != null)
             {
-                this.Assert(action.ReturnType == typeof(Task),
+                Assert(action.ReturnType == typeof(Task),
                     "Async action '{0}' in '{1}' must have 'Task' return type.",
                     action.Name, actionType.Name);
             }
             else
             {
-                this.Assert(action.ReturnType == typeof(void),
+                Assert(action.ReturnType == typeof(void),
                     "Action '{0}' in '{1}' must have 'void' return type.",
                     action.Name, actionType.Name);
             }
@@ -894,7 +893,7 @@ namespace PChecker.Actors
         /// </summary>
         private protected virtual string FormatFairRandom(string callerMemberName, string callerFilePath, int callerLineNumber) =>
             string.Format(CultureInfo.InvariantCulture, "{0}_{1}_{2}_{3}",
-                this.Id.Name, callerMemberName, callerFilePath, callerLineNumber.ToString());
+                Id.Name, callerMemberName, callerFilePath, callerLineNumber.ToString());
 
         /// <summary>
         /// Wraps the unhandled exception inside an <see cref="AssertionFailureException"/>
@@ -902,7 +901,7 @@ namespace PChecker.Actors
         /// </summary>
         private protected virtual void ReportUnhandledException(Exception ex, string actionName)
         {
-            this.Runtime.WrapAndThrowException(ex, $"{0} (action '{1}')", this.Id, actionName);
+            Runtime.WrapAndThrowException(ex, $"{0} (action '{1}')", Id, actionName);
         }
 
         /// <summary>
@@ -920,19 +919,19 @@ namespace PChecker.Actors
                 return false;
             }
 
-            this.Runtime.LogWriter.LogExceptionThrown(this.Id, this.CurrentStateName, methodName, ex);
+            Runtime.LogWriter.LogExceptionThrown(Id, CurrentStateName, methodName, ex);
 
-            OnExceptionOutcome outcome = this.OnException(ex, methodName, e);
+            var outcome = OnException(ex, methodName, e);
             if (outcome is OnExceptionOutcome.ThrowException)
             {
                 return false;
             }
             else if (outcome is OnExceptionOutcome.Halt)
             {
-                this.CurrentStatus = Status.Halting;
+                CurrentStatus = Status.Halting;
             }
 
-            this.Runtime.LogWriter.LogExceptionHandled(this.Id, this.CurrentStateName, methodName, ex);
+            Runtime.LogWriter.LogExceptionHandled(Id, CurrentStateName, methodName, ex);
             return true;
         }
 
@@ -945,16 +944,16 @@ namespace PChecker.Actors
         /// should continue to get thrown.</returns>
         private protected bool OnUnhandledEventExceptionHandler(UnhandledEventException ex, Event e)
         {
-            this.Runtime.LogWriter.LogExceptionThrown(this.Id, ex.CurrentStateName, string.Empty, ex);
+            Runtime.LogWriter.LogExceptionThrown(Id, ex.CurrentStateName, string.Empty, ex);
 
-            OnExceptionOutcome outcome = this.OnException(ex, string.Empty, e);
+            var outcome = OnException(ex, string.Empty, e);
             if (outcome is OnExceptionOutcome.ThrowException)
             {
                 return false;
             }
 
-            this.CurrentStatus = Status.Halting;
-            this.Runtime.LogWriter.LogExceptionHandled(this.Id, ex.CurrentStateName, string.Empty, ex);
+            CurrentStatus = Status.Halting;
+            Runtime.LogWriter.LogExceptionHandled(Id, ex.CurrentStateName, string.Empty, ex);
             return true;
         }
 
@@ -977,22 +976,22 @@ namespace PChecker.Actors
         /// <param name="e">The event being handled when the actor halts.</param>
         private protected Task HaltAsync(Event e)
         {
-            this.CurrentStatus = Status.Halted;
+            CurrentStatus = Status.Halted;
 
             // Close the inbox, which will stop any subsequent enqueues.
-            this.Inbox.Close();
+            Inbox.Close();
 
-            this.Runtime.LogWriter.LogHalt(this.Id, this.Inbox.Size);
+            Runtime.LogWriter.LogHalt(Id, Inbox.Size);
 
             // Dispose any held resources.
-            this.Inbox.Dispose();
-            foreach (var timer in this.Timers.Keys.ToList())
+            Inbox.Dispose();
+            foreach (var timer in Timers.Keys.ToList())
             {
-                this.UnregisterTimer(timer);
+                UnregisterTimer(timer);
             }
 
             // Invoke user callback.
-            return this.OnHaltAsync(e);
+            return OnHaltAsync(e);
         }
 
         /// <summary>
@@ -1001,9 +1000,9 @@ namespace PChecker.Actors
         public override bool Equals(object obj)
         {
             if (obj is Actor m &&
-                this.GetType() == m.GetType())
+                GetType() == m.GetType())
             {
-                return this.Id.Value == m.Id.Value;
+                return Id.Value == m.Id.Value;
             }
 
             return false;
@@ -1014,7 +1013,7 @@ namespace PChecker.Actors
         /// </summary>
         public override int GetHashCode()
         {
-            return this.Id.Value.GetHashCode();
+            return Id.Value.GetHashCode();
         }
 
         /// <summary>
@@ -1022,7 +1021,7 @@ namespace PChecker.Actors
         /// </summary>
         public override string ToString()
         {
-            return this.Id.Name;
+            return Id.Name;
         }
 
         /// <summary>
@@ -1051,12 +1050,12 @@ namespace PChecker.Actors
         /// </summary>
         private protected static class UserCallbackType
         {
-            internal const string OnInitialize = nameof(Actor.OnInitializeAsync);
-            internal const string OnEventDequeued = nameof(Actor.OnEventDequeuedAsync);
-            internal const string OnEventHandled = nameof(Actor.OnEventHandledAsync);
-            internal const string OnEventUnhandled = nameof(Actor.OnEventUnhandledAsync);
-            internal const string OnExceptionHandled = nameof(Actor.OnExceptionHandledAsync);
-            internal const string OnHalt = nameof(Actor.OnHaltAsync);
+            internal const string OnInitialize = nameof(OnInitializeAsync);
+            internal const string OnEventDequeued = nameof(OnEventDequeuedAsync);
+            internal const string OnEventHandled = nameof(OnEventHandledAsync);
+            internal const string OnEventUnhandled = nameof(OnEventUnhandledAsync);
+            internal const string OnExceptionHandled = nameof(OnExceptionHandledAsync);
+            internal const string OnHalt = nameof(OnHaltAsync);
         }
 
         /// <summary>
@@ -1083,8 +1082,8 @@ namespace PChecker.Actors
             /// <param name="actionName">The name of the action to invoke.</param>
             public OnEventDoActionAttribute(Type eventType, string actionName)
             {
-                this.Event = eventType;
-                this.Action = actionName;
+                Event = eventType;
+                Action = actionName;
             }
         }
     }

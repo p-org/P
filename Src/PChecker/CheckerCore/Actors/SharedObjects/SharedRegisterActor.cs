@@ -23,7 +23,7 @@ namespace PChecker.Actors.SharedObjects
         /// </summary>
         protected override Task OnInitializeAsync(Event initialEvent)
         {
-            this.Value = default;
+            Value = default;
             return Task.CompletedTask;
         }
 
@@ -36,17 +36,17 @@ namespace PChecker.Actors.SharedObjects
             switch (opEvent.Operation)
             {
                 case SharedRegisterEvent.OperationType.Set:
-                    this.Value = (T)opEvent.Value;
+                    Value = (T)opEvent.Value;
                     break;
 
                 case SharedRegisterEvent.OperationType.Get:
-                    this.SendEvent(opEvent.Sender, new SharedRegisterResponseEvent<T>(this.Value));
+                    SendEvent(opEvent.Sender, new SharedRegisterResponseEvent<T>(Value));
                     break;
 
                 case SharedRegisterEvent.OperationType.Update:
                     var func = (Func<T, T>)opEvent.Func;
-                    this.Value = func(this.Value);
-                    this.SendEvent(opEvent.Sender, new SharedRegisterResponseEvent<T>(this.Value));
+                    Value = func(Value);
+                    SendEvent(opEvent.Sender, new SharedRegisterResponseEvent<T>(Value));
                     break;
             }
         }

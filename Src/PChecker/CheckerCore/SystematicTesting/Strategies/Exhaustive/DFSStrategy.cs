@@ -52,13 +52,13 @@ namespace PChecker.SystematicTesting.Strategies
         /// </summary>
         public DFSStrategy(int maxSteps)
         {
-            this.MaxScheduledSteps = maxSteps;
-            this.ScheduledSteps = 0;
-            this.SchIndex = 0;
-            this.NondetIndex = 0;
-            this.ScheduleStack = new List<List<SChoice>>();
-            this.BoolNondetStack = new List<List<NondetBooleanChoice>>();
-            this.IntNondetStack = new List<List<NondetIntegerChoice>>();
+            MaxScheduledSteps = maxSteps;
+            ScheduledSteps = 0;
+            SchIndex = 0;
+            NondetIndex = 0;
+            ScheduleStack = new List<List<SChoice>>();
+            BoolNondetStack = new List<List<NondetBooleanChoice>>();
+            IntNondetStack = new List<List<NondetIntegerChoice>>();
         }
 
         /// <inheritdoc/>
@@ -74,9 +74,9 @@ namespace PChecker.SystematicTesting.Strategies
             SChoice nextChoice = null;
             List<SChoice> scs = null;
 
-            if (this.SchIndex < this.ScheduleStack.Count)
+            if (SchIndex < ScheduleStack.Count)
             {
-                scs = this.ScheduleStack[this.SchIndex];
+                scs = ScheduleStack[SchIndex];
             }
             else
             {
@@ -86,7 +86,7 @@ namespace PChecker.SystematicTesting.Strategies
                     scs.Add(new SChoice(task.Id));
                 }
 
-                this.ScheduleStack.Add(scs);
+                ScheduleStack.Add(scs);
             }
 
             nextChoice = scs.FirstOrDefault(val => !val.IsDone);
@@ -96,22 +96,22 @@ namespace PChecker.SystematicTesting.Strategies
                 return false;
             }
 
-            if (this.SchIndex > 0)
+            if (SchIndex > 0)
             {
-                var previousChoice = this.ScheduleStack[this.SchIndex - 1].Last(val => val.IsDone);
+                var previousChoice = ScheduleStack[SchIndex - 1].Last(val => val.IsDone);
                 previousChoice.IsDone = false;
             }
 
             next = enabledOperations.Find(task => task.Id == nextChoice.Id);
             nextChoice.IsDone = true;
-            this.SchIndex++;
+            SchIndex++;
 
             if (next is null)
             {
                 return false;
             }
 
-            this.ScheduledSteps++;
+            ScheduledSteps++;
 
             return true;
         }
@@ -122,9 +122,9 @@ namespace PChecker.SystematicTesting.Strategies
             NondetBooleanChoice nextChoice = null;
             List<NondetBooleanChoice> ncs = null;
 
-            if (this.NondetIndex < this.BoolNondetStack.Count)
+            if (NondetIndex < BoolNondetStack.Count)
             {
-                ncs = this.BoolNondetStack[this.NondetIndex];
+                ncs = BoolNondetStack[NondetIndex];
             }
             else
             {
@@ -134,7 +134,7 @@ namespace PChecker.SystematicTesting.Strategies
                     new NondetBooleanChoice(true)
                 };
 
-                this.BoolNondetStack.Add(ncs);
+                BoolNondetStack.Add(ncs);
             }
 
             nextChoice = ncs.FirstOrDefault(val => !val.IsDone);
@@ -144,17 +144,17 @@ namespace PChecker.SystematicTesting.Strategies
                 return false;
             }
 
-            if (this.NondetIndex > 0)
+            if (NondetIndex > 0)
             {
-                var previousChoice = this.BoolNondetStack[this.NondetIndex - 1].Last(val => val.IsDone);
+                var previousChoice = BoolNondetStack[NondetIndex - 1].Last(val => val.IsDone);
                 previousChoice.IsDone = false;
             }
 
             next = nextChoice.Value;
             nextChoice.IsDone = true;
-            this.NondetIndex++;
+            NondetIndex++;
 
-            this.ScheduledSteps++;
+            ScheduledSteps++;
 
             return true;
         }
@@ -165,19 +165,19 @@ namespace PChecker.SystematicTesting.Strategies
             NondetIntegerChoice nextChoice = null;
             List<NondetIntegerChoice> ncs = null;
 
-            if (this.NondetIndex < this.IntNondetStack.Count)
+            if (NondetIndex < IntNondetStack.Count)
             {
-                ncs = this.IntNondetStack[this.NondetIndex];
+                ncs = IntNondetStack[NondetIndex];
             }
             else
             {
                 ncs = new List<NondetIntegerChoice>();
-                for (int value = 0; value < maxValue; value++)
+                for (var value = 0; value < maxValue; value++)
                 {
                     ncs.Add(new NondetIntegerChoice(value));
                 }
 
-                this.IntNondetStack.Add(ncs);
+                IntNondetStack.Add(ncs);
             }
 
             nextChoice = ncs.FirstOrDefault(val => !val.IsDone);
@@ -187,17 +187,17 @@ namespace PChecker.SystematicTesting.Strategies
                 return false;
             }
 
-            if (this.NondetIndex > 0)
+            if (NondetIndex > 0)
             {
-                var previousChoice = this.IntNondetStack[this.NondetIndex - 1].Last(val => val.IsDone);
+                var previousChoice = IntNondetStack[NondetIndex - 1].Last(val => val.IsDone);
                 previousChoice.IsDone = false;
             }
 
             next = nextChoice.Value;
             nextChoice.IsDone = true;
-            this.NondetIndex++;
+            NondetIndex++;
 
-            this.ScheduledSteps++;
+            ScheduledSteps++;
 
             return true;
         }
@@ -205,74 +205,74 @@ namespace PChecker.SystematicTesting.Strategies
         /// <inheritdoc/>
         public virtual bool PrepareForNextIteration()
         {
-            if (this.ScheduleStack.All(scs => scs.All(val => val.IsDone)))
+            if (ScheduleStack.All(scs => scs.All(val => val.IsDone)))
             {
                 return false;
             }
 
             // PrintSchedule();
-            this.ScheduledSteps = 0;
+            ScheduledSteps = 0;
 
-            this.SchIndex = 0;
-            this.NondetIndex = 0;
+            SchIndex = 0;
+            NondetIndex = 0;
 
-            for (int idx = this.BoolNondetStack.Count - 1; idx > 0; idx--)
+            for (var idx = BoolNondetStack.Count - 1; idx > 0; idx--)
             {
-                if (!this.BoolNondetStack[idx].All(val => val.IsDone))
+                if (!BoolNondetStack[idx].All(val => val.IsDone))
                 {
                     break;
                 }
 
-                var previousChoice = this.BoolNondetStack[idx - 1].First(val => !val.IsDone);
+                var previousChoice = BoolNondetStack[idx - 1].First(val => !val.IsDone);
                 previousChoice.IsDone = true;
 
-                this.BoolNondetStack.RemoveAt(idx);
+                BoolNondetStack.RemoveAt(idx);
             }
 
-            for (int idx = this.IntNondetStack.Count - 1; idx > 0; idx--)
+            for (var idx = IntNondetStack.Count - 1; idx > 0; idx--)
             {
-                if (!this.IntNondetStack[idx].All(val => val.IsDone))
+                if (!IntNondetStack[idx].All(val => val.IsDone))
                 {
                     break;
                 }
 
-                var previousChoice = this.IntNondetStack[idx - 1].First(val => !val.IsDone);
+                var previousChoice = IntNondetStack[idx - 1].First(val => !val.IsDone);
                 previousChoice.IsDone = true;
 
-                this.IntNondetStack.RemoveAt(idx);
+                IntNondetStack.RemoveAt(idx);
             }
 
-            if (this.BoolNondetStack.Count > 0 &&
-                this.BoolNondetStack.All(ns => ns.All(nsc => nsc.IsDone)))
+            if (BoolNondetStack.Count > 0 &&
+                BoolNondetStack.All(ns => ns.All(nsc => nsc.IsDone)))
             {
-                this.BoolNondetStack.Clear();
+                BoolNondetStack.Clear();
             }
 
-            if (this.IntNondetStack.Count > 0 &&
-                this.IntNondetStack.All(ns => ns.All(nsc => nsc.IsDone)))
+            if (IntNondetStack.Count > 0 &&
+                IntNondetStack.All(ns => ns.All(nsc => nsc.IsDone)))
             {
-                this.IntNondetStack.Clear();
+                IntNondetStack.Clear();
             }
 
-            if (this.BoolNondetStack.Count == 0 &&
-                this.IntNondetStack.Count == 0)
+            if (BoolNondetStack.Count == 0 &&
+                IntNondetStack.Count == 0)
             {
-                for (int idx = this.ScheduleStack.Count - 1; idx > 0; idx--)
+                for (var idx = ScheduleStack.Count - 1; idx > 0; idx--)
                 {
-                    if (!this.ScheduleStack[idx].All(val => val.IsDone))
+                    if (!ScheduleStack[idx].All(val => val.IsDone))
                     {
                         break;
                     }
 
-                    var previousChoice = this.ScheduleStack[idx - 1].First(val => !val.IsDone);
+                    var previousChoice = ScheduleStack[idx - 1].First(val => !val.IsDone);
                     previousChoice.IsDone = true;
 
-                    this.ScheduleStack.RemoveAt(idx);
+                    ScheduleStack.RemoveAt(idx);
                 }
             }
             else
             {
-                var previousChoice = this.ScheduleStack.Last().LastOrDefault(val => val.IsDone);
+                var previousChoice = ScheduleStack.Last().LastOrDefault(val => val.IsDone);
                 if (previousChoice != null)
                 {
                     previousChoice.IsDone = false;
@@ -283,17 +283,17 @@ namespace PChecker.SystematicTesting.Strategies
         }
 
         /// <inheritdoc/>
-        public int GetScheduledSteps() => this.ScheduledSteps;
+        public int GetScheduledSteps() => ScheduledSteps;
 
         /// <inheritdoc/>
         public bool HasReachedMaxSchedulingSteps()
         {
-            if (this.MaxScheduledSteps == 0)
+            if (MaxScheduledSteps == 0)
             {
                 return false;
             }
 
-            return this.ScheduledSteps >= this.MaxScheduledSteps;
+            return ScheduledSteps >= MaxScheduledSteps;
         }
 
         /// <inheritdoc/>
@@ -308,11 +308,11 @@ namespace PChecker.SystematicTesting.Strategies
         private void PrintSchedule()
         {
             Debug.WriteLine("*******************");
-            Debug.WriteLine("Schedule stack size: " + this.ScheduleStack.Count);
-            for (int idx = 0; idx < this.ScheduleStack.Count; idx++)
+            Debug.WriteLine("Schedule stack size: " + ScheduleStack.Count);
+            for (var idx = 0; idx < ScheduleStack.Count; idx++)
             {
                 Debug.WriteLine("Index: " + idx);
-                foreach (var sc in this.ScheduleStack[idx])
+                foreach (var sc in ScheduleStack[idx])
                 {
                     Debug.Write(sc.Id + " [" + sc.IsDone + "], ");
                 }
@@ -321,11 +321,11 @@ namespace PChecker.SystematicTesting.Strategies
             }
 
             Debug.WriteLine("*******************");
-            Debug.WriteLine("Random bool stack size: " + this.BoolNondetStack.Count);
-            for (int idx = 0; idx < this.BoolNondetStack.Count; idx++)
+            Debug.WriteLine("Random bool stack size: " + BoolNondetStack.Count);
+            for (var idx = 0; idx < BoolNondetStack.Count; idx++)
             {
                 Debug.WriteLine("Index: " + idx);
-                foreach (var nc in this.BoolNondetStack[idx])
+                foreach (var nc in BoolNondetStack[idx])
                 {
                     Debug.Write(nc.Value + " [" + nc.IsDone + "], ");
                 }
@@ -334,11 +334,11 @@ namespace PChecker.SystematicTesting.Strategies
             }
 
             Debug.WriteLine("*******************");
-            Debug.WriteLine("Random int stack size: " + this.IntNondetStack.Count);
-            for (int idx = 0; idx < this.IntNondetStack.Count; idx++)
+            Debug.WriteLine("Random int stack size: " + IntNondetStack.Count);
+            for (var idx = 0; idx < IntNondetStack.Count; idx++)
             {
                 Debug.WriteLine("Index: " + idx);
-                foreach (var nc in this.IntNondetStack[idx])
+                foreach (var nc in IntNondetStack[idx])
                 {
                     Debug.Write(nc.Value + " [" + nc.IsDone + "], ");
                 }
@@ -352,12 +352,12 @@ namespace PChecker.SystematicTesting.Strategies
         /// <inheritdoc/>
         public void Reset()
         {
-            this.ScheduleStack.Clear();
-            this.BoolNondetStack.Clear();
-            this.IntNondetStack.Clear();
-            this.SchIndex = 0;
-            this.NondetIndex = 0;
-            this.ScheduledSteps = 0;
+            ScheduleStack.Clear();
+            BoolNondetStack.Clear();
+            IntNondetStack.Clear();
+            SchIndex = 0;
+            NondetIndex = 0;
+            ScheduledSteps = 0;
         }
 
         /// <summary>
@@ -374,8 +374,8 @@ namespace PChecker.SystematicTesting.Strategies
             /// </summary>
             internal SChoice(ulong id)
             {
-                this.Id = id;
-                this.IsDone = false;
+                Id = id;
+                IsDone = false;
             }
         }
 
@@ -394,8 +394,8 @@ namespace PChecker.SystematicTesting.Strategies
             /// </summary>
             internal NondetBooleanChoice(bool value)
             {
-                this.Value = value;
-                this.IsDone = false;
+                Value = value;
+                IsDone = false;
             }
         }
 
@@ -414,8 +414,8 @@ namespace PChecker.SystematicTesting.Strategies
             /// </summary>
             internal NondetIntegerChoice(int value)
             {
-                this.Value = value;
-                this.IsDone = false;
+                Value = value;
+                IsDone = false;
             }
         }
     }

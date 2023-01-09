@@ -9,8 +9,8 @@ namespace Plang.Compiler.Backend.Rvm
     {
         public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
         {
-            CompilationContext context = new CompilationContext(job);
-            List<CompiledFile> sources = new List<CompiledFile>();
+            var context = new CompilationContext(job);
+            var sources = new List<CompiledFile>();
             sources.AddRange(
                 new AjFileGenerator(context).GenerateSources(globalScope));
             sources.AddRange(

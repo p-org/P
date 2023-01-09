@@ -22,14 +22,14 @@ namespace PChecker.Tasks
         /// <summary>
         /// Number of remaining tasks that can enter the semaphore.
         /// </summary>
-        public virtual int CurrentCount => this.Instance.CurrentCount;
+        public virtual int CurrentCount => Instance.CurrentCount;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Semaphore"/> class.
         /// </summary>
         protected Semaphore(SemaphoreSlim semaphore)
         {
-            this.Instance = semaphore;
+            Instance = semaphore;
         }
 
         /// <summary>
@@ -42,17 +42,17 @@ namespace PChecker.Tasks
         /// <summary>
         /// Blocks the current task until it can enter the semaphore.
         /// </summary>
-        public virtual void Wait() => this.Instance.Wait();
+        public virtual void Wait() => Instance.Wait();
 
         /// <summary>
         /// Asynchronously waits to enter the semaphore.
         /// </summary>
-        public virtual Task WaitAsync() => this.Instance.WaitAsync().WrapInControlledTask();
+        public virtual Task WaitAsync() => Instance.WaitAsync().WrapInControlledTask();
 
         /// <summary>
         /// Releases the semaphore.
         /// </summary>
-        public virtual void Release() => this.Instance.Release();
+        public virtual void Release() => Instance.Release();
 
         /// <summary>
         /// Releases resources used by the semaphore.
@@ -64,7 +64,7 @@ namespace PChecker.Tasks
                 return;
             }
 
-            this.Instance?.Dispose();
+            Instance?.Dispose();
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace PChecker.Tasks
         /// </summary>
         public void Dispose()
         {
-            this.Dispose(true);
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
 
@@ -99,7 +99,7 @@ namespace PChecker.Tasks
             /// <summary>
             /// Number of remaining tasks that can enter the semaphore.
             /// </summary>
-            public override int CurrentCount => this.MaxCount - this.NumAcquired;
+            public override int CurrentCount => MaxCount - NumAcquired;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="Mock"/> class.
@@ -107,58 +107,58 @@ namespace PChecker.Tasks
             internal Mock(int initialCount, int maxCount)
                 : base(default)
             {
-                this.Resource = new Resource();
-                this.Resource.Runtime.Assert(initialCount >= 0,
+                Resource = new Resource();
+                Resource.Runtime.Assert(initialCount >= 0,
                     "Cannot create semaphore with initial count of {0}. The count must be equal or greater than 0.", initialCount);
-                this.Resource.Runtime.Assert(initialCount <= maxCount,
+                Resource.Runtime.Assert(initialCount <= maxCount,
                     "Cannot create semaphore with initial count of {0}. The count be equal or less than max count of {1}.",
                     initialCount, maxCount);
-                this.Resource.Runtime.Assert(maxCount > 0,
+                Resource.Runtime.Assert(maxCount > 0,
                     "Cannot create semaphore with max count of {0}. The count must be greater than 0.", maxCount);
-                this.MaxCount = maxCount;
-                this.NumAcquired = maxCount - initialCount;
+                MaxCount = maxCount;
+                NumAcquired = maxCount - initialCount;
             }
 
             /// <inheritdoc/>
             public override void Wait()
             {
-                this.Resource.Runtime.ScheduleNextOperation();
+                Resource.Runtime.ScheduleNextOperation();
 
                 // We need this loop, because when a resource gets released it notifies all asynchronous
                 // operations waiting to acquire it, even if such an operation is still blocked.
-                while (this.CurrentCount == 0)
+                while (CurrentCount == 0)
                 {
                     // The resource is not available yet, notify the scheduler that the executing
                     // asynchronous operation is blocked, so that it cannot be scheduled during
                     // systematic testing exploration, which could deadlock.
-                    this.Resource.NotifyWait();
-                    this.Resource.Runtime.ScheduleNextOperation();
+                    Resource.NotifyWait();
+                    Resource.Runtime.ScheduleNextOperation();
                 }
 
-                this.NumAcquired++;
+                NumAcquired++;
             }
 
             /// <inheritdoc/>
             public override Task WaitAsync()
             {
-                this.Wait();
+                Wait();
                 return Task.CompletedTask;
             }
 
             /// <inheritdoc/>
             public override void Release()
             {
-                this.NumAcquired--;
-                this.Resource.Runtime.Assert(this.NumAcquired >= 0,
-                    "Cannot release semaphore as it has reached max count of {0}.", this.MaxCount);
+                NumAcquired--;
+                Resource.Runtime.Assert(NumAcquired >= 0,
+                    "Cannot release semaphore as it has reached max count of {0}.", MaxCount);
 
                 // Release the semaphore and notify any awaiting asynchronous operations.
-                this.Resource.NotifyRelease();
+                Resource.NotifyRelease();
 
                 // This must be called outside the context of the semaphore, because it notifies
                 // the scheduler to try schedule another asynchronous operation that could in turn
                 // try to acquire this semaphore causing a deadlock.
-                this.Resource.Runtime.ScheduleNextOperation();
+                Resource.Runtime.ScheduleNextOperation();
             }
         }
     }

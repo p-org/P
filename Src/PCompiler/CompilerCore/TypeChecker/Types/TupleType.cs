@@ -22,9 +22,9 @@ namespace Plang.Compiler.TypeChecker.Types
         // starting from 0 (matching how non-NamedTuples are accessed in P and extracted code).
         public NamedTupleType ToNamedTuple()
         {
-            List<NamedTupleEntry> fields = Types.Select((t, i) =>
+            var fields = Types.Select((t, i) =>
             {
-                NamedTupleEntry e = new NamedTupleEntry();
+                var e = new NamedTupleEntry();
                 e.Name = Constants.UnnamedTupleFieldPrefix + i;
                 e.FieldNo = i;
                 e.Type = t;

@@ -19,8 +19,8 @@ namespace PChecker.Interfaces
         public TestReportMessage(string id, string name, uint processId, TestReport testReport)
             : base(id, name)
         {
-            this.ProcessId = processId;
-            this.TestReport = testReport;
+            ProcessId = processId;
+            TestReport = testReport;
         }
     }
 }

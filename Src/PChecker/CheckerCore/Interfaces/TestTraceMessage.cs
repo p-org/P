@@ -21,9 +21,9 @@ namespace PChecker.Interfaces
         public TestTraceMessage(string id, string name, uint processId, string fileName, string textContents)
             : base(id, name)
         {
-            this.ProcessId = processId;
-            this.FileName = fileName;
-            this.Contents = textContents;
+            ProcessId = processId;
+            FileName = fileName;
+            Contents = textContents;
         }
     }
 }

@@ -50,13 +50,13 @@ namespace PChecker.Actors.Mocks
         /// </summary>
         internal MockActorManager(ControlledRuntime runtime, Actor instance, Guid operationGroupId)
         {
-            this.Runtime = runtime;
-            this.Instance = instance;
-            this.IsEventHandlerRunning = true;
-            this.OperationGroupId = operationGroupId;
-            this.ProgramCounter = 0;
-            this.IsTransitionStatementCalledInCurrentAction = false;
-            this.IsInsideOnExit = false;
+            Runtime = runtime;
+            Instance = instance;
+            IsEventHandlerRunning = true;
+            OperationGroupId = operationGroupId;
+            ProgramCounter = 0;
+            IsTransitionStatementCalledInCurrentAction = false;
+            IsInsideOnExit = false;
         }
 
         /// <inheritdoc/>
@@ -65,15 +65,15 @@ namespace PChecker.Actors.Mocks
             unchecked
             {
                 var hash = 19;
-                hash = (hash * 31) + this.IsEventHandlerRunning.GetHashCode();
-                hash = (hash * 31) + this.ProgramCounter;
+                hash = (hash * 31) + IsEventHandlerRunning.GetHashCode();
+                hash = (hash * 31) + ProgramCounter;
                 return hash;
             }
         }
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsEventIgnored(Event e, Guid opGroupId, EventInfo eventInfo) => this.Instance.IsEventIgnored(e);
+        public bool IsEventIgnored(Event e, Guid opGroupId, EventInfo eventInfo) => Instance.IsEventIgnored(e);
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -81,22 +81,22 @@ namespace PChecker.Actors.Mocks
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsDefaultHandlerAvailable() => this.Instance.IsDefaultHandlerAvailable;
+        public bool IsDefaultHandlerAvailable() => Instance.IsDefaultHandlerAvailable;
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnEnqueueEvent(Event e, Guid opGroupId, EventInfo eventInfo) =>
-            this.Runtime.LogWriter.LogEnqueueEvent(this.Instance.Id, e);
+            Runtime.LogWriter.LogEnqueueEvent(Instance.Id, e);
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnRaiseEvent(Event e, Guid opGroupId, EventInfo eventInfo) =>
-            this.Runtime.LogWriter.LogRaiseEvent(this.Instance.Id, default, e);
+            Runtime.LogWriter.LogRaiseEvent(Instance.Id, default, e);
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnWaitEvent(IEnumerable<Type> eventTypes) =>
-            this.Runtime.NotifyWaitEvent(this.Instance, eventTypes);
+            Runtime.NotifyWaitEvent(Instance, eventTypes);
 
         /// <inheritdoc/>
         public void OnReceiveEvent(Event e, Guid opGroupId, EventInfo eventInfo)
@@ -104,10 +104,10 @@ namespace PChecker.Actors.Mocks
             if (opGroupId != Guid.Empty)
             {
                 // Inherit the operation group id of the receive operation, if it is non-empty.
-                this.OperationGroupId = opGroupId;
+                OperationGroupId = opGroupId;
             }
 
-            this.Runtime.NotifyReceivedEvent(this.Instance, e, eventInfo);
+            Runtime.NotifyReceivedEvent(Instance, e, eventInfo);
         }
 
         /// <inheritdoc/>
@@ -117,36 +117,36 @@ namespace PChecker.Actors.Mocks
             if (opGroupId != Guid.Empty)
             {
                 // Inherit the operation group id of the receive operation, if it is non-empty.
-                this.OperationGroupId = opGroupId;
+                OperationGroupId = opGroupId;
             }
 
-            this.Runtime.NotifyReceivedEventWithoutWaiting(this.Instance, e, eventInfo);
+            Runtime.NotifyReceivedEventWithoutWaiting(Instance, e, eventInfo);
         }
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnDropEvent(Event e, Guid opGroupId, EventInfo eventInfo)
         {
-            this.Runtime.Assert(!eventInfo.MustHandle, "{0} halted before dequeueing must-handle event '{1}'.",
-                this.Instance.Id, e.GetType().FullName);
-            this.Runtime.TryHandleDroppedEvent(e, this.Instance.Id);
+            Runtime.Assert(!eventInfo.MustHandle, "{0} halted before dequeueing must-handle event '{1}'.",
+                Instance.Id, e.GetType().FullName);
+            Runtime.TryHandleDroppedEvent(e, Instance.Id);
         }
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Assert(bool predicate, string s, object arg0) => this.Runtime.Assert(predicate, s, arg0);
+        public void Assert(bool predicate, string s, object arg0) => Runtime.Assert(predicate, s, arg0);
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Assert(bool predicate, string s, object arg0, object arg1) => this.Runtime.Assert(predicate, s, arg0, arg1);
+        public void Assert(bool predicate, string s, object arg0, object arg1) => Runtime.Assert(predicate, s, arg0, arg1);
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Assert(bool predicate, string s, object arg0, object arg1, object arg2) =>
-            this.Runtime.Assert(predicate, s, arg0, arg1, arg2);
+            Runtime.Assert(predicate, s, arg0, arg1, arg2);
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Assert(bool predicate, string s, params object[] args) => this.Runtime.Assert(predicate, s, args);
+        public void Assert(bool predicate, string s, params object[] args) => Runtime.Assert(predicate, s, args);
     }
 }

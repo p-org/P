@@ -36,8 +36,8 @@ namespace Plang.Compiler.TypeChecker.AST.States
         {
             get
             {
-                string name = Name;
-                IStateContainer parent = Container;
+                var name = Name;
+                var parent = Container;
                 while (parent != null)
                 {
                     name = parent.Name + "." + name;

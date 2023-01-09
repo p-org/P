@@ -18,7 +18,7 @@ namespace PChecker.Actors.SharedObjects
         /// </summary>
         internal SharedRegisterResponseEvent(T value)
         {
-            this.Value = value;
+            Value = value;
         }
     }
 }

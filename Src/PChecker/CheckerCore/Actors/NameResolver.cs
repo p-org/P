@@ -29,7 +29,7 @@ namespace PChecker.Actors
                 return string.Empty;
             }
 
-            if (!StateNamesCache.TryGetValue(state, out string name))
+            if (!StateNamesCache.TryGetValue(state, out var name))
             {
                 name = state.Name;
 

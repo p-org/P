@@ -33,8 +33,8 @@ namespace PChecker.Tasks
         internal ConfiguredTaskAwaitable(TaskController taskController, SystemTasks.Task awaitedTask,
             bool continueOnCapturedContext)
         {
-            this.TaskController = taskController;
-            this.Awaiter = new ConfiguredTaskAwaiter(taskController, awaitedTask, continueOnCapturedContext);
+            TaskController = taskController;
+            Awaiter = new ConfiguredTaskAwaiter(taskController, awaitedTask, continueOnCapturedContext);
         }
 
         /// <summary>
@@ -43,8 +43,8 @@ namespace PChecker.Tasks
         /// <returns>The awaiter.</returns>
         public ConfiguredTaskAwaiter GetAwaiter()
         {
-            this.TaskController?.OnGetAwaiter();
-            return this.Awaiter;
+            TaskController?.OnGetAwaiter();
+            return Awaiter;
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace PChecker.Tasks
             /// <summary>
             /// Gets a value that indicates whether the controlled task has completed.
             /// </summary>
-            public bool IsCompleted => this.AwaitedTask.IsCompleted;
+            public bool IsCompleted => AwaitedTask.IsCompleted;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="ConfiguredTaskAwaiter"/> struct.
@@ -79,9 +79,9 @@ namespace PChecker.Tasks
             internal ConfiguredTaskAwaiter(TaskController taskController, SystemTasks.Task awaitedTask,
                 bool continueOnCapturedContext)
             {
-                this.TaskController = taskController;
-                this.AwaitedTask = awaitedTask;
-                this.Awaiter = awaitedTask.ConfigureAwait(continueOnCapturedContext).GetAwaiter();
+                TaskController = taskController;
+                AwaitedTask = awaitedTask;
+                Awaiter = awaitedTask.ConfigureAwait(continueOnCapturedContext).GetAwaiter();
             }
 
             /// <summary>
@@ -89,8 +89,8 @@ namespace PChecker.Tasks
             /// </summary>
             public void GetResult()
             {
-                this.TaskController?.OnWaitTask(this.AwaitedTask);
-                this.Awaiter.GetResult();
+                TaskController?.OnWaitTask(AwaitedTask);
+                Awaiter.GetResult();
             }
 
             /// <summary>
@@ -99,13 +99,13 @@ namespace PChecker.Tasks
             /// <param name="continuation">The action to invoke when the await operation completes.</param>
             public void OnCompleted(Action continuation)
             {
-                if (this.TaskController is null)
+                if (TaskController is null)
                 {
-                    this.Awaiter.OnCompleted(continuation);
+                    Awaiter.OnCompleted(continuation);
                 }
                 else
                 {
-                    this.TaskController.ScheduleTaskAwaiterContinuation(this.AwaitedTask, continuation);
+                    TaskController.ScheduleTaskAwaiterContinuation(AwaitedTask, continuation);
                 }
             }
 
@@ -115,13 +115,13 @@ namespace PChecker.Tasks
             /// <param name="continuation">The action to invoke when the await operation completes.</param>
             public void UnsafeOnCompleted(Action continuation)
             {
-                if (this.TaskController is null)
+                if (TaskController is null)
                 {
-                    this.Awaiter.UnsafeOnCompleted(continuation);
+                    Awaiter.UnsafeOnCompleted(continuation);
                 }
                 else
                 {
-                    this.TaskController.ScheduleTaskAwaiterContinuation(this.AwaitedTask, continuation);
+                    TaskController.ScheduleTaskAwaiterContinuation(AwaitedTask, continuation);
                 }
             }
         }
@@ -151,8 +151,8 @@ namespace PChecker.Tasks
         internal ConfiguredTaskAwaitable(TaskController taskController, SystemTasks.Task<TResult> awaitedTask,
             bool continueOnCapturedContext)
         {
-            this.TaskController = taskController;
-            this.Awaiter = new ConfiguredTaskAwaiter(taskController, awaitedTask, continueOnCapturedContext);
+            TaskController = taskController;
+            Awaiter = new ConfiguredTaskAwaiter(taskController, awaitedTask, continueOnCapturedContext);
         }
 
         /// <summary>
@@ -161,8 +161,8 @@ namespace PChecker.Tasks
         /// <returns>The awaiter.</returns>
         public ConfiguredTaskAwaiter GetAwaiter()
         {
-            this.TaskController?.OnGetAwaiter();
-            return this.Awaiter;
+            TaskController?.OnGetAwaiter();
+            return Awaiter;
         }
 
         /// <summary>
@@ -189,7 +189,7 @@ namespace PChecker.Tasks
             /// <summary>
             /// Gets a value that indicates whether the controlled task has completed.
             /// </summary>
-            public bool IsCompleted => this.AwaitedTask.IsCompleted;
+            public bool IsCompleted => AwaitedTask.IsCompleted;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="ConfiguredTaskAwaiter"/> struct.
@@ -197,9 +197,9 @@ namespace PChecker.Tasks
             internal ConfiguredTaskAwaiter(TaskController taskController, SystemTasks.Task<TResult> awaitedTask,
                 bool continueOnCapturedContext)
             {
-                this.TaskController = taskController;
-                this.AwaitedTask = awaitedTask;
-                this.Awaiter = awaitedTask.ConfigureAwait(continueOnCapturedContext).GetAwaiter();
+                TaskController = taskController;
+                AwaitedTask = awaitedTask;
+                Awaiter = awaitedTask.ConfigureAwait(continueOnCapturedContext).GetAwaiter();
             }
 
             /// <summary>
@@ -207,8 +207,8 @@ namespace PChecker.Tasks
             /// </summary>
             public TResult GetResult()
             {
-                this.TaskController?.OnWaitTask(this.AwaitedTask);
-                return this.Awaiter.GetResult();
+                TaskController?.OnWaitTask(AwaitedTask);
+                return Awaiter.GetResult();
             }
 
             /// <summary>
@@ -217,13 +217,13 @@ namespace PChecker.Tasks
             /// <param name="continuation">The action to invoke when the await operation completes.</param>
             public void OnCompleted(Action continuation)
             {
-                if (this.TaskController is null)
+                if (TaskController is null)
                 {
-                    this.Awaiter.OnCompleted(continuation);
+                    Awaiter.OnCompleted(continuation);
                 }
                 else
                 {
-                    this.TaskController.ScheduleTaskAwaiterContinuation(this.AwaitedTask, continuation);
+                    TaskController.ScheduleTaskAwaiterContinuation(AwaitedTask, continuation);
                 }
             }
 
@@ -233,13 +233,13 @@ namespace PChecker.Tasks
             /// <param name="continuation">The action to invoke when the await operation completes.</param>
             public void UnsafeOnCompleted(Action continuation)
             {
-                if (this.TaskController is null)
+                if (TaskController is null)
                 {
-                    this.Awaiter.UnsafeOnCompleted(continuation);
+                    Awaiter.UnsafeOnCompleted(continuation);
                 }
                 else
                 {
-                    this.TaskController.ScheduleTaskAwaiterContinuation(this.AwaitedTask, continuation);
+                    TaskController.ScheduleTaskAwaiterContinuation(AwaitedTask, continuation);
                 }
             }
         }

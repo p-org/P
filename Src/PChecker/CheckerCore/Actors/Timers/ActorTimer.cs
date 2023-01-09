@@ -36,25 +36,25 @@ namespace PChecker.Actors.Timers
         /// <param name="owner">The actor that owns this timer.</param>
         public ActorTimer(TimerInfo info, Actor owner)
         {
-            this.Info = info;
-            this.Owner = owner;
+            Info = info;
+            Owner = owner;
 
-            this.TimeoutEvent = this.Info.CustomEvent;
-            if (this.TimeoutEvent is null)
+            TimeoutEvent = Info.CustomEvent;
+            if (TimeoutEvent is null)
             {
-                this.TimeoutEvent = new TimerElapsedEvent(this.Info);
+                TimeoutEvent = new TimerElapsedEvent(Info);
             }
             else
             {
-                this.TimeoutEvent.Info = this.Info;
+                TimeoutEvent.Info = Info;
             }
 
             // To avoid a race condition between assigning the field of the timer
             // and HandleTimeout accessing the field before the assignment happens,
             // we first create a timer that cannot get triggered, then assign it to
             // the field, and finally we start the timer.
-            this.InternalTimer = new Timer(this.HandleTimeout, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-            this.InternalTimer.Change(this.Info.DueTime, Timeout.InfiniteTimeSpan);
+            InternalTimer = new Timer(HandleTimeout, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+            InternalTimer.Change(Info.DueTime, Timeout.InfiniteTimeSpan);
         }
 
         /// <summary>
@@ -63,15 +63,15 @@ namespace PChecker.Actors.Timers
         private void HandleTimeout(object state)
         {
             // Send a timeout event.
-            this.Owner.Runtime.SendEvent(this.Owner.Id, this.TimeoutEvent);
+            Owner.Runtime.SendEvent(Owner.Id, TimeoutEvent);
 
-            if (this.Info.Period.TotalMilliseconds >= 0)
+            if (Info.Period.TotalMilliseconds >= 0)
             {
                 // The timer is periodic, so schedule the next timeout.
                 try
                 {
                     // Start the next timeout period.
-                    this.InternalTimer.Change(this.Info.Period, Timeout.InfiniteTimeSpan);
+                    InternalTimer.Change(Info.Period, Timeout.InfiniteTimeSpan);
                 }
                 catch (ObjectDisposedException)
                 {
@@ -88,7 +88,7 @@ namespace PChecker.Actors.Timers
         {
             if (obj is ActorTimer timer)
             {
-                return this.Info == timer.Info;
+                return Info == timer.Info;
             }
 
             return false;
@@ -97,12 +97,12 @@ namespace PChecker.Actors.Timers
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
-        public override int GetHashCode() => this.Info.GetHashCode();
+        public override int GetHashCode() => Info.GetHashCode();
 
         /// <summary>
         /// Returns a string that represents the current instance.
         /// </summary>
-        public override string ToString() => this.Info.ToString();
+        public override string ToString() => Info.ToString();
 
         /// <summary>
         /// Indicates whether the specified <see cref="ActorId"/> is equal
@@ -112,7 +112,7 @@ namespace PChecker.Actors.Timers
         /// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
         public bool Equals(ActorTimer other)
         {
-            return this.Equals((object)other);
+            return Equals((object)other);
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace PChecker.Actors.Timers
         /// </summary>
         public void Dispose()
         {
-            this.InternalTimer.Dispose();
+            InternalTimer.Dispose();
         }
     }
 }

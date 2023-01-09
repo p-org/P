@@ -31,8 +31,8 @@ namespace PChecker.Tasks
         /// </summary>
         protected AsyncLock()
         {
-            this.Awaiters = new Queue<TCS>();
-            this.IsAcquired = false;
+            Awaiters = new Queue<TCS>();
+            IsAcquired = false;
         }
 
         /// <summary>
@@ -49,16 +49,16 @@ namespace PChecker.Tasks
         public virtual async Task<Releaser> AcquireAsync()
         {
             TCS awaiter;
-            lock (this.Awaiters)
+            lock (Awaiters)
             {
-                if (this.IsAcquired)
+                if (IsAcquired)
                 {
                     awaiter = new TCS();
-                    this.Awaiters.Enqueue(awaiter);
+                    Awaiters.Enqueue(awaiter);
                 }
                 else
                 {
-                    this.IsAcquired = true;
+                    IsAcquired = true;
                     awaiter = null;
                 }
             }
@@ -77,15 +77,15 @@ namespace PChecker.Tasks
         protected virtual void Release()
         {
             TCS awaiter = null;
-            lock (this.Awaiters)
+            lock (Awaiters)
             {
-                if (this.Awaiters.Count > 0)
+                if (Awaiters.Count > 0)
                 {
-                    awaiter = this.Awaiters.Dequeue();
+                    awaiter = Awaiters.Dequeue();
                 }
                 else
                 {
-                    this.IsAcquired = false;
+                    IsAcquired = false;
                 }
             }
 
@@ -110,13 +110,13 @@ namespace PChecker.Tasks
             /// </summary>
             internal Releaser(AsyncLock asyncLock)
             {
-                this.AsyncLock = asyncLock;
+                AsyncLock = asyncLock;
             }
 
             /// <summary>
             /// Releases the acquired lock.
             /// </summary>
-            public void Dispose() => this.AsyncLock?.Release();
+            public void Dispose() => AsyncLock?.Release();
         }
 
         /// <summary>
@@ -135,19 +135,19 @@ namespace PChecker.Tasks
             internal Mock()
                 : base()
             {
-                this.Resource = new Resource();
+                Resource = new Resource();
             }
 
             /// <inheritdoc/>
             public override Task<Releaser> AcquireAsync()
             {
-                this.Resource.Runtime.ScheduleNextOperation();
+                Resource.Runtime.ScheduleNextOperation();
 
                 TCS awaiter;
-                if (this.IsAcquired)
+                if (IsAcquired)
                 {
                     awaiter = new TCS();
-                    this.Awaiters.Enqueue(awaiter);
+                    Awaiters.Enqueue(awaiter);
 
                     // We need this, because when a resource gets released it notifies all asynchronous
                     // operations waiting to acquire it, even if such an operation is still blocked.
@@ -156,13 +156,13 @@ namespace PChecker.Tasks
                         // The resource is not available yet, notify the scheduler that the executing
                         // asynchronous operation is blocked, so that it cannot be scheduled during
                         // systematic testing exploration, which could deadlock.
-                        this.Resource.NotifyWait();
-                        this.Resource.Runtime.ScheduleNextOperation();
+                        Resource.NotifyWait();
+                        Resource.Runtime.ScheduleNextOperation();
                     }
                 }
                 else
                 {
-                    this.IsAcquired = true;
+                    IsAcquired = true;
                 }
 
                 return Task.FromResult(new Releaser(this));
@@ -172,26 +172,26 @@ namespace PChecker.Tasks
             protected override void Release()
             {
                 TCS awaiter = null;
-                if (this.Awaiters.Count > 0)
+                if (Awaiters.Count > 0)
                 {
-                    awaiter = this.Awaiters.Dequeue();
+                    awaiter = Awaiters.Dequeue();
                 }
                 else
                 {
-                    this.IsAcquired = false;
+                    IsAcquired = false;
                 }
 
                 if (awaiter != null)
                 {
                     // Notifies any asynchronous operations that are awaiting to acquire the
                     // lock, that the lock has been released.
-                    this.Resource.NotifyRelease();
+                    Resource.NotifyRelease();
                     awaiter.SetResult(null);
 
                     // This must be called outside the context of the lock, because it notifies
                     // the scheduler to try schedule another asynchronous operation that could
                     // in turn try to acquire this lock causing a deadlock.
-                    this.Resource.Runtime.ScheduleNextOperation();
+                    Resource.Runtime.ScheduleNextOperation();
                 }
             }
         }

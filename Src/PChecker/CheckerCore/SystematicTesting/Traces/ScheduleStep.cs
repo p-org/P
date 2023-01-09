@@ -113,7 +113,7 @@ namespace PChecker.SystematicTesting
         {
             if (obj is ScheduleStep step)
             {
-                return this.Index == step.Index;
+                return Index == step.Index;
             }
 
             return false;
@@ -122,6 +122,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
-        public override int GetHashCode() => this.Index.GetHashCode();
+        public override int GetHashCode() => Index.GetHashCode();
     }
 }

@@ -28,7 +28,7 @@ namespace PChecker.Random
         /// </summary>
         private Generator()
         {
-            this.Runtime = CoyoteRuntime.Current;
+            Runtime = CoyoteRuntime.Current;
         }
 
         /// <summary>
@@ -41,18 +41,18 @@ namespace PChecker.Random
         /// Returns a random boolean, that can be controlled during testing.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool NextBoolean() => this.Runtime.GetNondeterministicBooleanChoice(2, null, null);
+        public bool NextBoolean() => Runtime.GetNondeterministicBooleanChoice(2, null, null);
 
         /// <summary>
         /// Returns a random boolean, that can be controlled during testing.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool NextBoolean(int maxValue) => this.Runtime.GetNondeterministicBooleanChoice(maxValue, null, null);
+        public bool NextBoolean(int maxValue) => Runtime.GetNondeterministicBooleanChoice(maxValue, null, null);
 
         /// <summary>
         /// Returns a random integer, that can be controlled during testing.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int NextInteger(int maxValue) => this.Runtime.GetNondeterministicIntegerChoice(maxValue, null, null);
+        public int NextInteger(int maxValue) => Runtime.GetNondeterministicIntegerChoice(maxValue, null, null);
     }
 }

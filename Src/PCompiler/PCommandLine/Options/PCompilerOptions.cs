@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using PChecker;
 using PChecker.IO;
-using PChecker.Utilities;
 using Plang.Compiler;
+using Plang.Parser;
 
-namespace Plang
+namespace Plang.Options
 {
     internal sealed class PCompilerOptions
     {
@@ -22,15 +20,15 @@ namespace Plang
         /// </summary>
         internal PCompilerOptions()
         {
-            this.Parser = new CommandLineArgumentParser("p compile",
+            Parser = new CommandLineArgumentParser("p compile",
                 "The P compiler compiles all the P files in the project together and generates the executable that can be checked for correctness by the P checker");
 
             
-            var projectGroup = this.Parser.GetOrCreateGroup("project", "P Project: Compiling using `.pproj` file");
+            var projectGroup = Parser.GetOrCreateGroup("project", "P Project: Compiling using `.pproj` file");
             projectGroup.AddArgument("pproj", "pp", "P project file to compile (*.pproj)." +
                                                     "If this option is not passed the compiler searches for a `*.pproj` in the current folder and compiles it");
 
-            var pfilesGroup = this.Parser.GetOrCreateGroup("commandline", "Compiling P files through commandline");
+            var pfilesGroup = Parser.GetOrCreateGroup("commandline", "Compiling P files through commandline");
             pfilesGroup.AddArgument("pfiles", "pf", "List of P files to compile").IsMultiValue = true;
             pfilesGroup.AddArgument("generate", "g",
                     "Generate output :: (csharp, symbolic, java, c). (default: csharp)").AllowedValues =
@@ -48,7 +46,7 @@ namespace Plang
             var compilerConfiguration = new CompilerConfiguration();
             try
             {
-                var result = this.Parser.ParseArguments(args);
+                var result = Parser.ParseArguments(args);
                 // if there are no arguments then search for a pproj file locally and load it
                 FindLocalPProject(result);
                 
@@ -68,13 +66,13 @@ namespace Plang
                 }
                 else
                 {
-                    this.Parser.PrintHelp(Console.Out);
+                    Parser.PrintHelp(Console.Out);
                     Error.ReportAndExit(ex.Message);
                 }
             }
             catch (Exception ex)
             {
-                this.Parser.PrintHelp(Console.Out);
+                Parser.PrintHelp(Console.Out);
                 Error.ReportAndExit(ex.Message);
             }
 
@@ -131,7 +129,7 @@ namespace Plang
                     break;
                 case "pfiles":
                     {
-                        string[] files = (string[])option.Value;
+                        var files = (string[])option.Value;
                         foreach (var file in files.Distinct())
                         {
                             compilerConfiguration.InputFiles.Add(file);
@@ -166,7 +164,7 @@ namespace Plang
 
             foreach (var pfile in compilerConfiguration.InputFiles)
             {
-                if (!CheckFileValidity.IsLegalPFile(pfile, out FileInfo fullPathName))
+                if (!CheckFileValidity.IsLegalPFile(pfile, out var fullPathName))
                 {
                     Error.ReportAndExit($"Illegal P file name {fullPathName.FullName} (file name cannot have special characters) or file not found.");
                 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -7,7 +6,6 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Plang.Compiler.Backend;
 using Plang.Compiler.TypeChecker;
-using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler
 {
@@ -49,15 +47,15 @@ namespace Plang.Compiler
             }
 
             // Convert functions to lowered SSA form with explicit cloning
-            foreach (Function fun in scope.GetAllMethods())
+            foreach (var fun in scope.GetAllMethods())
             {
                 IRTransformer.SimplifyMethod(fun);
             }
 
             job.Output.WriteInfo($"Code generation ...");
             // Run the selected backend on the project and write the files.
-            IEnumerable<CompiledFile> compiledFiles = job.Backend.GenerateCode(job, scope);
-            foreach (CompiledFile file in compiledFiles)
+            var compiledFiles = job.Backend.GenerateCode(job, scope);
+            foreach (var file in compiledFiles)
             {
                 job.Output.WriteInfo($"Generated {file.FileName}.");
                 job.Output.WriteFile(file);
@@ -86,11 +84,11 @@ namespace Plang.Compiler
 
         private static PParser.ProgramContext Parse(ICompilerConfiguration job, FileInfo inputFile)
         {
-            string fileText = File.ReadAllText(inputFile.FullName);
-            AntlrInputStream fileStream = new AntlrInputStream(fileText);
-            PLexer lexer = new PLexer(fileStream);
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            PParser parser = new PParser(tokens);
+            var fileText = File.ReadAllText(inputFile.FullName);
+            var fileStream = new AntlrInputStream(fileText);
+            var lexer = new PLexer(fileStream);
+            var tokens = new CommonTokenStream(lexer);
+            var parser = new PParser(tokens);
             parser.RemoveErrorListeners();
 
             // As currently implemented, P can be parsed by SLL. However, if extensions to the
@@ -144,7 +142,7 @@ namespace Plang.Compiler
             out string stderr, string exeName,
             params string[] argumentList)
         {
-            ProcessStartInfo psi = new ProcessStartInfo(exeName)
+            var psi = new ProcessStartInfo(exeName)
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
@@ -157,7 +155,7 @@ namespace Plang.Compiler
 
             string mStdout = "", mStderr = "";
 
-            Process proc = new Process { StartInfo = psi };
+            var proc = new Process { StartInfo = psi };
             proc.OutputDataReceived += (s, e) => { mStdout += $"{e.Data}\n"; };
             proc.ErrorDataReceived += (s, e) =>
             {

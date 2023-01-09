@@ -26,8 +26,8 @@ namespace PChecker.Tasks
         /// </summary>
         public YieldAwaiter GetAwaiter()
         {
-            this.TaskController?.OnGetAwaiter();
-            return new YieldAwaiter(this.TaskController, default);
+            TaskController?.OnGetAwaiter();
+            return new YieldAwaiter(TaskController, default);
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace PChecker.Tasks
         /// </summary>
         internal YieldAwaitable(TaskController taskController)
         {
-            this.TaskController = taskController;
+            TaskController = taskController;
         }
 
         /// <summary>
@@ -67,8 +67,8 @@ namespace PChecker.Tasks
             /// </summary>
             internal YieldAwaiter(TaskController taskController, SystemCompiler.YieldAwaitable.YieldAwaiter awaiter)
             {
-                this.TaskController = taskController;
-                this.Awaiter = awaiter;
+                TaskController = taskController;
+                Awaiter = awaiter;
             }
 
             /// <summary>
@@ -76,8 +76,8 @@ namespace PChecker.Tasks
             /// </summary>
             public void GetResult()
             {
-                this.TaskController?.OnYieldAwaiterGetResult();
-                this.Awaiter.GetResult();
+                TaskController?.OnYieldAwaiterGetResult();
+                Awaiter.GetResult();
             }
 
             /// <summary>
@@ -85,13 +85,13 @@ namespace PChecker.Tasks
             /// </summary>
             public void OnCompleted(Action continuation)
             {
-                if (this.TaskController is null)
+                if (TaskController is null)
                 {
-                    this.Awaiter.OnCompleted(continuation);
+                    Awaiter.OnCompleted(continuation);
                 }
                 else
                 {
-                    this.TaskController.ScheduleYieldAwaiterContinuation(continuation);
+                    TaskController.ScheduleYieldAwaiterContinuation(continuation);
                 }
             }
 
@@ -100,13 +100,13 @@ namespace PChecker.Tasks
             /// </summary>
             public void UnsafeOnCompleted(Action continuation)
             {
-                if (this.TaskController is null)
+                if (TaskController is null)
                 {
-                    this.Awaiter.UnsafeOnCompleted(continuation);
+                    Awaiter.UnsafeOnCompleted(continuation);
                 }
                 else
                 {
-                    this.TaskController.ScheduleYieldAwaiterContinuation(continuation);
+                    TaskController.ScheduleYieldAwaiterContinuation(continuation);
                 }
             }
         }

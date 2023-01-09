@@ -34,8 +34,8 @@ namespace PChecker.IO
         /// </summary>
         public InMemoryLogger()
         {
-            this.Builder = new StringBuilder();
-            this.Lock = new object();
+            Builder = new StringBuilder();
+            Lock = new object();
         }
 
         /// <summary>
@@ -46,9 +46,9 @@ namespace PChecker.IO
         {
             try
             {
-                lock (this.Lock)
+                lock (Lock)
                 {
-                    this.Builder.Append(value);
+                    Builder.Append(value);
                 }
             }
             catch (ObjectDisposedException)
@@ -64,9 +64,9 @@ namespace PChecker.IO
         {
             try
             {
-                lock (this.Lock)
+                lock (Lock)
                 {
-                    this.Builder.Append(value);
+                    Builder.Append(value);
                 }
             }
             catch (ObjectDisposedException)
@@ -83,9 +83,9 @@ namespace PChecker.IO
         {
             try
             {
-                lock (this.Lock)
+                lock (Lock)
                 {
-                    this.Builder.AppendLine(value);
+                    Builder.AppendLine(value);
                 }
             }
             catch (ObjectDisposedException)
@@ -99,9 +99,9 @@ namespace PChecker.IO
         /// </summary>
         public override string ToString()
         {
-            lock (this.Lock)
+            lock (Lock)
             {
-                return this.Builder.ToString();
+                return Builder.ToString();
             }
         }
     }

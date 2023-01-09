@@ -18,7 +18,7 @@ namespace PChecker.Actors
         /// </summary>
         public ActionEventHandlerDeclaration(string actionName)
         {
-            this.Name = actionName;
+            Name = actionName;
         }
 
         internal override bool Inheritable => true;

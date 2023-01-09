@@ -34,9 +34,9 @@ namespace PChecker.Actors
         /// </summary>
         internal EventOriginInfo(ActorId senderActorId, string senderMachineName, string senderStateName)
         {
-            this.SenderActorId = senderActorId;
-            this.SenderActorName = senderMachineName;
-            this.SenderStateName = senderStateName;
+            SenderActorId = senderActorId;
+            SenderActorName = senderMachineName;
+            SenderStateName = senderStateName;
         }
     }
 }

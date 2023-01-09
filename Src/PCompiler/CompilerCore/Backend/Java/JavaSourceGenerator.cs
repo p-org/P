@@ -163,7 +163,7 @@ namespace Plang.Compiler.Backend.Java
         /// <returns>A sequence of (T, string) pairs, where the string is either the empty string or the separator.</returns>
         internal static IEnumerable<(T, string)> WithPostfixSep<T>(this IEnumerable<T> it, string suffix)
         {
-            int len = it.Count();
+            var len = it.Count();
             return it.Select((val, i) => (val, i < len - 1 ? suffix : ""));
         }
     }

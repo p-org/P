@@ -29,7 +29,7 @@ namespace Plang.Compiler.Backend.CSharp
         public string GetTypeName(PLanguageType type)
         {
             type = type.Canonicalize();
-            if (typeNames.TryGetValue(type, out string name))
+            if (typeNames.TryGetValue(type, out var name))
             {
                 return name;
             }
@@ -42,7 +42,7 @@ namespace Plang.Compiler.Backend.CSharp
 
         protected override string ComputeNameForDecl(IPDecl decl)
         {
-            string name = decl.Name;
+            var name = decl.Name;
 
             //Handle null and halt events separately
 #pragma warning disable CCN0002 // Non exhaustive patterns in switch block

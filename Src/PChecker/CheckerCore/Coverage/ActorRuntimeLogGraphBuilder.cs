@@ -70,8 +70,8 @@ namespace PChecker.Coverage
         /// </summary>
         public ActorRuntimeLogGraphBuilder(bool mergeEventLinks)
         {
-            this.MergeEventLinks = mergeEventLinks;
-            this.CurrentGraph = new Graph();
+            MergeEventLinks = mergeEventLinks;
+            CurrentGraph = new Graph();
         }
 
         /// <summary>
@@ -95,22 +95,22 @@ namespace PChecker.Coverage
         {
             get
             {
-                if (this.CurrentGraph == null)
+                if (CurrentGraph == null)
                 {
-                    this.CurrentGraph = new Graph();
+                    CurrentGraph = new Graph();
                 }
 
-                return this.CurrentGraph;
+                return CurrentGraph;
             }
         }
 
         /// <inheritdoc/>
         public void OnCreateActor(ActorId id, string creatorName, string creatorType)
         {
-            lock (this.Inbox)
+            lock (Inbox)
             {
-                var resolvedId = this.GetResolveActorId(id?.Name, id?.Type);
-                GraphNode node = this.Graph.GetOrCreateNode(resolvedId);
+                var resolvedId = GetResolveActorId(id?.Name, id?.Type);
+                var node = Graph.GetOrCreateNode(resolvedId);
                 node.Category = ActorCategory;
             }
         }
@@ -118,10 +118,10 @@ namespace PChecker.Coverage
         /// <inheritdoc/>
         public void OnCreateStateMachine(ActorId id, string creatorName, string creatorType)
         {
-            lock (this.Inbox)
+            lock (Inbox)
             {
-                var resolvedId = this.GetResolveActorId(id?.Name, id?.Type);
-                GraphNode node = this.Graph.GetOrCreateNode(resolvedId);
+                var resolvedId = GetResolveActorId(id?.Name, id?.Type);
+                var node = Graph.GetOrCreateNode(resolvedId);
                 node.Category = StateMachineCategory;
             }
         }
@@ -130,16 +130,16 @@ namespace PChecker.Coverage
         public void OnSendEvent(ActorId targetActorId, string senderName, string senderType, string senderStateName,
             Event e, Guid opGroupId, bool isTargetHalted)
         {
-            string eventName = e.GetType().FullName;
-            this.AddEvent(targetActorId.Name, targetActorId.Type, senderName, senderType, senderStateName, eventName);
+            var eventName = e.GetType().FullName;
+            AddEvent(targetActorId.Name, targetActorId.Type, senderName, senderType, senderStateName, eventName);
         }
 
         /// <inheritdoc/>
         public void OnRaiseEvent(ActorId id, string stateName, Event e)
         {
-            string eventName = e.GetType().FullName;
+            var eventName = e.GetType().FullName;
             // Raising event to self.
-            this.AddEvent(id.Name, id.Type, id.Name, id.Type, stateName, eventName);
+            AddEvent(id.Name, id.Type, id.Name, id.Type, stateName, eventName);
         }
 
         /// <inheritdoc/>
@@ -150,14 +150,14 @@ namespace PChecker.Coverage
         /// <inheritdoc/>
         public void OnDequeueEvent(ActorId id, string stateName, Event e)
         {
-            lock (this.Inbox)
+            lock (Inbox)
             {
-                var resolvedId = this.GetResolveActorId(id?.Name, id?.Type);
-                string eventName = e.GetType().FullName;
-                EventInfo info = this.PopEvent(resolvedId, eventName);
+                var resolvedId = GetResolveActorId(id?.Name, id?.Type);
+                var eventName = e.GetType().FullName;
+                var info = PopEvent(resolvedId, eventName);
                 if (info != null)
                 {
-                    this.Dequeued[id] = info;
+                    Dequeued[id] = info;
                 }
             }
         }
@@ -165,11 +165,11 @@ namespace PChecker.Coverage
         private EventInfo PopEvent(string resolvedId, string eventName)
         {
             EventInfo result = null;
-            lock (this.Inbox)
+            lock (Inbox)
             {
-                if (this.Inbox.TryGetValue(resolvedId, out List<EventInfo> inbox))
+                if (Inbox.TryGetValue(resolvedId, out var inbox))
                 {
-                    for (int i = inbox.Count - 1; i >= 0; i--)
+                    for (var i = inbox.Count - 1; i >= 0; i--)
                     {
                         if (inbox[i].Event == eventName)
                         {
@@ -186,22 +186,22 @@ namespace PChecker.Coverage
         /// <inheritdoc/>
         public void OnReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)
         {
-            string resolvedId = this.GetResolveActorId(id?.Name, id?.Type);
-            lock (this.Inbox)
+            var resolvedId = GetResolveActorId(id?.Name, id?.Type);
+            lock (Inbox)
             {
-                if (this.Inbox.TryGetValue(resolvedId, out List<EventInfo> inbox))
+                if (Inbox.TryGetValue(resolvedId, out var inbox))
                 {
-                    string eventName = e.GetType().FullName;
-                    for (int i = inbox.Count - 1; i >= 0; i--)
+                    var eventName = e.GetType().FullName;
+                    for (var i = inbox.Count - 1; i >= 0; i--)
                     {
-                        EventInfo info = inbox[i];
+                        var info = inbox[i];
                         if (info.Event == eventName)
                         {
                             // Yay, found it so we can draw the complete link connecting the Sender state to this state!
-                            string category = string.IsNullOrEmpty(stateName) ? ActorCategory : StateMachineCategory;
-                            var source = this.GetOrCreateChild(info.Name, info.Type, info.State);
-                            var target = this.GetOrCreateChild(id?.Name, id?.Type, category, stateName);
-                            this.GetOrCreateEventLink(source, target, info);
+                            var category = string.IsNullOrEmpty(stateName) ? ActorCategory : StateMachineCategory;
+                            var source = GetOrCreateChild(info.Name, info.Type, info.State);
+                            var target = GetOrCreateChild(id?.Name, id?.Type, category, stateName);
+                            GetOrCreateEventLink(source, target, info);
                             inbox.RemoveAt(i);
                             break;
                         }
@@ -226,26 +226,26 @@ namespace PChecker.Coverage
             if (isEntry)
             {
                 // record the fact we have entered this state
-                this.GetOrCreateChild(id?.Name, id?.Type, stateName);
+                GetOrCreateChild(id?.Name, id?.Type, stateName);
             }
         }
 
         /// <inheritdoc/>
         public void OnExecuteAction(ActorId id, string handlingStateName, string currentStateName, string actionName)
         {
-            this.LinkTransition(typeof(DoActionEvent), id, handlingStateName, currentStateName, null);
+            LinkTransition(typeof(DoActionEvent), id, handlingStateName, currentStateName, null);
         }
 
         /// <inheritdoc/>
         public void OnGotoState(ActorId id, string currentStateName, string newStateName)
         {
-            this.LinkTransition(typeof(GotoStateEvent), id, currentStateName, currentStateName, newStateName);
+            LinkTransition(typeof(GotoStateEvent), id, currentStateName, currentStateName, newStateName);
         }
 
         /// <inheritdoc/>
         public void OnPushState(ActorId id, string currentStateName, string newStateName)
         {
-            this.LinkTransition(typeof(PushStateEvent), id, currentStateName, currentStateName, newStateName);
+            LinkTransition(typeof(PushStateEvent), id, currentStateName, currentStateName, newStateName);
         }
 
         /// <inheritdoc/>
@@ -253,7 +253,7 @@ namespace PChecker.Coverage
         {
             if (!string.IsNullOrEmpty(currentStateName))
             {
-                this.LinkTransition(typeof(PopStateEvent), id, currentStateName,
+                LinkTransition(typeof(PopStateEvent), id, currentStateName,
                     currentStateName, restoredStateName);
             }
         }
@@ -261,62 +261,62 @@ namespace PChecker.Coverage
         /// <inheritdoc/>
         public void OnHalt(ActorId id, int inboxSize)
         {
-            lock (this.Inbox)
+            lock (Inbox)
             {
-                this.HaltedStates.TryGetValue(id, out string stateName);
+                HaltedStates.TryGetValue(id, out var stateName);
                 if (string.IsNullOrEmpty(stateName))
                 {
                     stateName = "null";
                 }
 
                 // Transition to the Halt state.
-                var source = this.GetOrCreateChild(id?.Name, id?.Type, stateName);
-                var target = this.GetOrCreateChild(id?.Name, id?.Type, "Halt", "Halt");
-                this.GetOrCreateEventLink(source, target, new EventInfo() { Event = typeof(HaltEvent).FullName });
+                var source = GetOrCreateChild(id?.Name, id?.Type, stateName);
+                var target = GetOrCreateChild(id?.Name, id?.Type, "Halt", "Halt");
+                GetOrCreateEventLink(source, target, new EventInfo() { Event = typeof(HaltEvent).FullName });
             }
         }
 
         private int? GetLinkIndex(GraphNode source, GraphNode target, string id)
         {
-            if (this.MergeEventLinks)
+            if (MergeEventLinks)
             {
                 return null;
             }
 
-            return this.Graph.GetUniqueLinkIndex(source, target, id);
+            return Graph.GetUniqueLinkIndex(source, target, id);
         }
 
         /// <inheritdoc/>
         public void OnDefaultEventHandler(ActorId id, string stateName)
         {
-            lock (this.Inbox)
+            lock (Inbox)
             {
-                string resolvedId = this.GetResolveActorId(id?.Name, id?.Type);
-                string eventName = typeof(DefaultEvent).FullName;
-                this.AddEvent(id.Name, id.Type, id.Name, id.Type, stateName, eventName);
-                this.Dequeued[id] = this.PopEvent(resolvedId, eventName);
+                var resolvedId = GetResolveActorId(id?.Name, id?.Type);
+                var eventName = typeof(DefaultEvent).FullName;
+                AddEvent(id.Name, id.Type, id.Name, id.Type, stateName, eventName);
+                Dequeued[id] = PopEvent(resolvedId, eventName);
             }
         }
 
         /// <inheritdoc/>
         public void OnHandleRaisedEvent(ActorId id, string stateName, Event e)
         {
-            lock (this.Inbox)
+            lock (Inbox)
             {
                 // We used the inbox to store raised event, but it should be the first one handled since
                 // raised events are highest priority.
-                string resolvedId = this.GetResolveActorId(id?.Name, id?.Type);
-                lock (this.Inbox)
+                var resolvedId = GetResolveActorId(id?.Name, id?.Type);
+                lock (Inbox)
                 {
-                    if (this.Inbox.TryGetValue(resolvedId, out List<EventInfo> inbox))
+                    if (Inbox.TryGetValue(resolvedId, out var inbox))
                     {
-                        string eventName = e.GetType().FullName;
-                        for (int i = inbox.Count - 1; i >= 0; i--)
+                        var eventName = e.GetType().FullName;
+                        for (var i = inbox.Count - 1; i >= 0; i--)
                         {
-                            EventInfo info = inbox[i];
+                            var info = inbox[i];
                             if (info.Event == eventName)
                             {
-                                this.Dequeued[id] = info;
+                                Dequeued[id] = info;
                                 break;
                             }
                         }
@@ -330,7 +330,7 @@ namespace PChecker.Coverage
         {
             if (e is HaltEvent)
             {
-                this.HaltedStates[actorId] = currentStateName;
+                HaltedStates[actorId] = currentStateName;
             }
         }
 
@@ -358,9 +358,9 @@ namespace PChecker.Coverage
         /// <inheritdoc/>
         public void OnCreateMonitor(string monitorType)
         {
-            lock (this.Inbox)
+            lock (Inbox)
             {
-                GraphNode node = this.Graph.GetOrCreateNode(monitorType, monitorType);
+                var node = Graph.GetOrCreateNode(monitorType, monitorType);
                 node.Category = MonitorCategory;
             }
         }
@@ -369,16 +369,16 @@ namespace PChecker.Coverage
         public void OnMonitorExecuteAction(string monitorType, string stateName, string actionName)
         {
             // Monitors process actions immediately, so this state transition is a result of the only event in the inbox.
-            lock (this.Inbox)
+            lock (Inbox)
             {
-                if (this.Inbox.TryGetValue(monitorType, out List<EventInfo> inbox) && inbox.Count > 0)
+                if (Inbox.TryGetValue(monitorType, out var inbox) && inbox.Count > 0)
                 {
                     var e = inbox[inbox.Count - 1];
                     inbox.RemoveAt(inbox.Count - 1);
                     // Draw the link connecting the Sender state to this state!
-                    var source = this.GetOrCreateChild(e.Name, e.Type, e.State);
-                    var target = this.GetOrCreateChild(monitorType, monitorType, stateName);
-                    this.GetOrCreateEventLink(source, target, e);
+                    var source = GetOrCreateChild(e.Name, e.Type, e.State);
+                    var target = GetOrCreateChild(monitorType, monitorType, stateName);
+                    GetOrCreateEventLink(source, target, e);
                 }
             }
         }
@@ -387,18 +387,18 @@ namespace PChecker.Coverage
         public void OnMonitorProcessEvent(string monitorType, string stateName, string senderName, string senderType,
             string senderStateName, Event e)
         {
-            lock (this.Inbox)
+            lock (Inbox)
             {
-                string eventName = e.GetType().FullName;
+                var eventName = e.GetType().FullName;
 
                 // Now add a fake event for internal monitor state transition that might now happen as a result of this event,
                 // storing the monitor's current state in this event.
-                var info = this.AddEvent(monitorType, monitorType, monitorType, monitorType, stateName, eventName);
+                var info = AddEvent(monitorType, monitorType, monitorType, monitorType, stateName, eventName);
 
                 // Draw the link connecting the Sender state to this state!
-                var source = this.GetOrCreateChild(senderName, senderType, senderStateName);
-                var target = this.GetOrCreateChild(monitorType, monitorType, stateName);
-                this.GetOrCreateEventLink(source, target, info);
+                var source = GetOrCreateChild(senderName, senderType, senderStateName);
+                var target = GetOrCreateChild(monitorType, monitorType, stateName);
+                GetOrCreateEventLink(source, target, info);
             }
         }
 
@@ -406,8 +406,8 @@ namespace PChecker.Coverage
         public void OnMonitorRaiseEvent(string monitorType, string stateName, Event e)
         {
             // Raising event to self.
-            string eventName = e.GetType().FullName;
-            this.AddEvent(monitorType, monitorType, monitorType, monitorType, stateName, eventName);
+            var eventName = e.GetType().FullName;
+            AddEvent(monitorType, monitorType, monitorType, monitorType, stateName, eventName);
         }
 
         /// <inheritdoc/>
@@ -415,34 +415,34 @@ namespace PChecker.Coverage
         {
             if (isEntry)
             {
-                lock (this.Inbox)
+                lock (Inbox)
                 {
                     // Monitors process events immediately (and does not call OnDequeue), so this state transition is a result of
                     // the fake event we created in OnMonitorProcessEvent.
-                    if (this.Inbox.TryGetValue(monitorType, out List<EventInfo> inbox) && inbox.Count > 0)
+                    if (Inbox.TryGetValue(monitorType, out var inbox) && inbox.Count > 0)
                     {
                         var info = inbox[inbox.Count - 1];
                         inbox.RemoveAt(inbox.Count - 1);
 
                         // draw the link connecting the current state to this new state!
-                        var source = this.GetOrCreateChild(monitorType, monitorType, info.State);
+                        var source = GetOrCreateChild(monitorType, monitorType, info.State);
 
-                        var shortStateName = this.GetLabel(monitorType, monitorType, stateName);
-                        string suffix = string.Empty;
+                        var shortStateName = GetLabel(monitorType, monitorType, stateName);
+                        var suffix = string.Empty;
                         if (isInHotState.HasValue)
                         {
                             suffix = (isInHotState == true) ? "[hot]" : "[cold]";
                             shortStateName += suffix;
                         }
 
-                        string label = shortStateName;
-                        var target = this.GetOrCreateChild(monitorType, monitorType, shortStateName, label);
+                        var label = shortStateName;
+                        var target = GetOrCreateChild(monitorType, monitorType, shortStateName, label);
 
                         // In case this node was already created, we may need to override the label here now that
                         // we know this is a hot state. This is because, unfortunately, other OnMonitor* methods
                         // do not provide the isInHotState parameter.
                         target.Label = label;
-                        this.GetOrCreateEventLink(source, target, info);
+                        GetOrCreateEventLink(source, target, info);
                     }
                 }
             }
@@ -451,7 +451,7 @@ namespace PChecker.Coverage
         /// <inheritdoc/>
         public void OnMonitorError(string monitorType, string stateName, bool? isInHotState)
         {
-            var source = this.GetOrCreateChild(monitorType, monitorType, stateName);
+            var source = GetOrCreateChild(monitorType, monitorType, stateName);
             source.Category = "Error";
         }
 
@@ -482,11 +482,11 @@ namespace PChecker.Coverage
         /// <returns>The graph.</returns>
         public Graph SnapshotGraph(bool reset)
         {
-            Graph result = this.CurrentGraph;
+            var result = CurrentGraph;
             if (reset)
             {
                 // start fresh.
-                this.CurrentGraph = null;
+                CurrentGraph = null;
             }
 
             return result;
@@ -500,7 +500,7 @@ namespace PChecker.Coverage
                 return ExternalCodeName;
             }
 
-            if (this.CollapseMachineInstances)
+            if (CollapseMachineInstances)
             {
                 return type;
             }
@@ -511,14 +511,14 @@ namespace PChecker.Coverage
         private EventInfo AddEvent(string targetName, string targetType, string senderName, string senderType,
             string senderStateName, string eventName)
         {
-            string targetId = this.GetResolveActorId(targetName, targetType);
+            var targetId = GetResolveActorId(targetName, targetType);
             EventInfo info = null;
-            lock (this.Inbox)
+            lock (Inbox)
             {
-                if (!this.Inbox.TryGetValue(targetId, out List<EventInfo> inbox))
+                if (!Inbox.TryGetValue(targetId, out var inbox))
                 {
                     inbox = new List<EventInfo>();
-                    this.Inbox[targetId] = inbox;
+                    Inbox[targetId] = inbox;
                 }
 
                 info = new EventInfo()
@@ -538,53 +538,53 @@ namespace PChecker.Coverage
         private void LinkTransition(Type transitionType, ActorId id, string handlingStateName,
             string currentStateName, string newStateName)
         {
-            string name = id.Name;
-            string type = id.Type;
-            lock (this.Inbox)
+            var name = id.Name;
+            var type = id.Type;
+            lock (Inbox)
             {
-                if (this.Dequeued.TryGetValue(id, out EventInfo info))
+                if (Dequeued.TryGetValue(id, out var info))
                 {
                     // Event was dequeued, but now we know what state is handling this event, so connect the dots...
                     if (info.Type != type || info.Name != name || info.State != currentStateName)
                     {
-                        var source = this.GetOrCreateChild(info.Name, info.Type, info.State);
-                        var target = this.GetOrCreateChild(name, type, currentStateName);
+                        var source = GetOrCreateChild(info.Name, info.Type, info.State);
+                        var target = GetOrCreateChild(name, type, currentStateName);
                         info.HandlingState = handlingStateName;
-                        this.GetOrCreateEventLink(source, target, info);
+                        GetOrCreateEventLink(source, target, info);
                     }
                 }
 
                 if (newStateName != null)
                 {
                     // Then this is a goto or push and we can draw that link also.
-                    var source = this.GetOrCreateChild(name, type, currentStateName);
-                    var target = this.GetOrCreateChild(name, type, newStateName);
+                    var source = GetOrCreateChild(name, type, currentStateName);
+                    var target = GetOrCreateChild(name, type, newStateName);
                     if (info == null)
                     {
                         info = new EventInfo { Event = transitionType.FullName };
                     }
 
-                    this.GetOrCreateEventLink(source, target, info);
+                    GetOrCreateEventLink(source, target, info);
                 }
 
-                this.Dequeued.Remove(id);
+                Dequeued.Remove(id);
             }
         }
 
         private GraphNode GetOrCreateChild(string name, string type, string stateName, string label = null)
         {
             GraphNode child = null;
-            lock (this.Inbox)
+            lock (Inbox)
             {
-                this.AddNamespace(type);
+                AddNamespace(type);
 
                 var initalStateName = stateName;
 
                 // make label relative to fully qualified actor id (it's usually a nested class).
-                stateName = this.GetLabel(name, type, stateName);
+                stateName = GetLabel(name, type, stateName);
 
-                string id = this.GetResolveActorId(name, type);
-                GraphNode parent = this.Graph.GetOrCreateNode(id);
+                var id = GetResolveActorId(name, type);
+                var parent = Graph.GetOrCreateNode(id);
                 parent.AddAttribute("Group", "Expanded");
 
                 if (string.IsNullOrEmpty(label))
@@ -597,8 +597,8 @@ namespace PChecker.Coverage
                     id += "." + stateName;
                 }
 
-                child = this.Graph.GetOrCreateNode(id, label);
-                this.Graph.GetOrCreateLink(parent, child, null, null, "Contains");
+                child = Graph.GetOrCreateNode(id, label);
+                Graph.GetOrCreateLink(parent, child, null, null, "Contains");
             }
 
             return child;
@@ -607,13 +607,13 @@ namespace PChecker.Coverage
         private GraphLink GetOrCreateEventLink(GraphNode source, GraphNode target, EventInfo e)
         {
             GraphLink link = null;
-            lock (this.Inbox)
+            lock (Inbox)
             {
-                string label = this.GetEventLabel(e.Event);
-                var index = this.GetLinkIndex(source, target, label);
+                var label = GetEventLabel(e.Event);
+                var index = GetLinkIndex(source, target, label);
                 var category = GetEventCategory(e.Event);
-                link = this.Graph.GetOrCreateLink(source, target, index, label, category);
-                if (this.MergeEventLinks)
+                link = Graph.GetOrCreateLink(source, target, index, label, category);
+                if (MergeEventLinks)
                 {
                     if (link.AddListAttribute("EventIds", e.Event) > 1)
                     {
@@ -635,14 +635,14 @@ namespace PChecker.Coverage
 
         private void AddNamespace(string type)
         {
-            if (type != null && !this.Namespaces.Contains(type))
+            if (type != null && !Namespaces.Contains(type))
             {
-                string typeName = type;
-                int index = typeName.Length;
+                var typeName = type;
+                var index = typeName.Length;
                 do
                 {
                     typeName = typeName.Substring(0, index);
-                    this.Namespaces.Add(typeName);
+                    Namespaces.Add(typeName);
                     index = typeName.LastIndexOfAny(TypeSeparators);
                 }
                 while (index > 0);
@@ -657,12 +657,12 @@ namespace PChecker.Coverage
                 return fullyQualifiedName;
             }
 
-            this.AddNamespace(type);
+            AddNamespace(type);
             if (string.IsNullOrEmpty(fullyQualifiedName))
             {
                 // then this is probably an Actor, not a StateMachine.  For Actors we can invent a state
                 // name equal to the short name of the class, this then looks like a Constructor which is fine.
-                fullyQualifiedName = this.CollapseMachineInstances ? type : name;
+                fullyQualifiedName = CollapseMachineInstances ? type : name;
             }
 
             var len = fullyQualifiedName.Length;
@@ -677,16 +677,16 @@ namespace PChecker.Coverage
 
         private string GetEventLabel(string fullyQualifiedName)
         {
-            if (EventAliases.TryGetValue(fullyQualifiedName, out string label))
+            if (EventAliases.TryGetValue(fullyQualifiedName, out var label))
             {
                 return label;
             }
 
-            int i = fullyQualifiedName.LastIndexOfAny(TypeSeparators);
+            var i = fullyQualifiedName.LastIndexOfAny(TypeSeparators);
             if (i > 0)
             {
-                string ns = fullyQualifiedName.Substring(0, i);
-                if (this.Namespaces.Contains(ns))
+                var ns = fullyQualifiedName.Substring(0, i);
+                if (Namespaces.Contains(ns))
                 {
                     return fullyQualifiedName.Substring(i + 1);
                 }
@@ -697,7 +697,7 @@ namespace PChecker.Coverage
 
         private static string GetEventCategory(string fullyQualifiedName)
         {
-            if (EventAliases.TryGetValue(fullyQualifiedName, out string label))
+            if (EventAliases.TryGetValue(fullyQualifiedName, out var label))
             {
                 return label;
             }
@@ -736,7 +736,7 @@ namespace PChecker.Coverage
         /// </summary>
         public IEnumerable<GraphNode> Nodes
         {
-            get { return this.InternalNodes.Values; }
+            get { return InternalNodes.Values; }
         }
 
         /// <summary>
@@ -746,12 +746,12 @@ namespace PChecker.Coverage
         {
             get
             {
-                if (this.InternalLinks == null)
+                if (InternalLinks == null)
                 {
                     return Array.Empty<GraphLink>();
                 }
 
-                return this.InternalLinks.Values;
+                return InternalLinks.Values;
             }
         }
 
@@ -761,7 +761,7 @@ namespace PChecker.Coverage
         /// <param name="id">The id of the node.</param>
         public GraphNode GetNode(string id)
         {
-            this.InternalNodes.TryGetValue(id, out GraphNode node);
+            InternalNodes.TryGetValue(id, out var node);
             return node;
         }
 
@@ -771,10 +771,10 @@ namespace PChecker.Coverage
         /// <returns>Returns the new node or the existing node if it was already defined.</returns>
         public GraphNode GetOrCreateNode(string id, string label = null, string category = null)
         {
-            if (!this.InternalNodes.TryGetValue(id, out GraphNode node))
+            if (!InternalNodes.TryGetValue(id, out var node))
             {
                 node = new GraphNode(id, label, category);
-                this.InternalNodes.Add(id, node);
+                InternalNodes.Add(id, node);
             }
 
             return node;
@@ -786,9 +786,9 @@ namespace PChecker.Coverage
         /// <returns>Returns the new node or the existing node if it was already defined.</returns>
         private GraphNode GetOrCreateNode(GraphNode newNode)
         {
-            if (!this.InternalNodes.ContainsKey(newNode.Id))
+            if (!InternalNodes.ContainsKey(newNode.Id))
             {
-                this.InternalNodes.Add(newNode.Id, newNode);
+                InternalNodes.Add(newNode.Id, newNode);
             }
 
             return newNode;
@@ -800,13 +800,13 @@ namespace PChecker.Coverage
         /// <returns>The new link or the existing link if it was already defined.</returns>
         public GraphLink GetOrCreateLink(GraphNode source, GraphNode target, int? index = null, string linkLabel = null, string category = null)
         {
-            string key = source.Id + "->" + target.Id;
+            var key = source.Id + "->" + target.Id;
             if (index.HasValue)
             {
                 key += string.Format("({0})", index.Value);
             }
 
-            if (!this.InternalLinks.TryGetValue(key, out GraphLink link))
+            if (!InternalLinks.TryGetValue(key, out var link))
             {
                 link = new GraphLink(source, target, linkLabel, category);
                 if (index.HasValue)
@@ -814,7 +814,7 @@ namespace PChecker.Coverage
                     link.Index = index.Value;
                 }
 
-                this.InternalLinks.Add(key, link);
+                InternalLinks.Add(key, link);
             }
 
             return link;
@@ -823,27 +823,27 @@ namespace PChecker.Coverage
         internal int GetUniqueLinkIndex(GraphNode source, GraphNode target, string id)
         {
             // augmented key
-            string key = string.Format("{0}->{1}({2})", source.Id, target.Id, id);
-            if (this.InternalAllocatedLinkIndexes.TryGetValue(key, out int index))
+            var key = string.Format("{0}->{1}({2})", source.Id, target.Id, id);
+            if (InternalAllocatedLinkIndexes.TryGetValue(key, out var index))
             {
                 return index;
             }
 
             // allocate a new index for the simple key
             var simpleKey = string.Format("{0}->{1}", source.Id, target.Id);
-            if (this.InternalNextLinkIndex.TryGetValue(simpleKey, out index))
+            if (InternalNextLinkIndex.TryGetValue(simpleKey, out index))
             {
                 index++;
             }
 
-            this.InternalNextLinkIndex[simpleKey] = index;
+            InternalNextLinkIndex[simpleKey] = index;
 
             // remember this index has been allocated for this link id.
-            this.InternalAllocatedLinkIndexes[key] = index;
+            InternalAllocatedLinkIndexes[key] = index;
 
             // remember the original id associated with this link index.
             key = string.Format("{0}->{1}({2})", source.Id, target.Id, index);
-            this.InternalAllocatedLinkIds[key] = id;
+            InternalAllocatedLinkIds[key] = id;
 
             return index;
         }
@@ -855,16 +855,16 @@ namespace PChecker.Coverage
         {
             using (var writer = new StringWriter())
             {
-                this.WriteDgml(writer, false);
+                WriteDgml(writer, false);
                 return writer.ToString();
             }
         }
 
         internal void SaveDgml(string graphFilePath, bool includeDefaultStyles)
         {
-            using (StreamWriter writer = new StreamWriter(graphFilePath, false, Encoding.UTF8))
+            using (var writer = new StreamWriter(graphFilePath, false, Encoding.UTF8))
             {
-                this.WriteDgml(writer, includeDefaultStyles);
+                WriteDgml(writer, includeDefaultStyles);
             }
         }
 
@@ -876,13 +876,13 @@ namespace PChecker.Coverage
             writer.WriteLine("<DirectedGraph xmlns='{0}'>", DgmlNamespace);
             writer.WriteLine("  <Nodes>");
 
-            if (this.InternalNodes != null)
+            if (InternalNodes != null)
             {
-                List<string> nodes = new List<string>(this.InternalNodes.Keys);
+                var nodes = new List<string>(InternalNodes.Keys);
                 nodes.Sort();
                 foreach (var id in nodes)
                 {
-                    GraphNode node = this.InternalNodes[id];
+                    var node = InternalNodes[id];
                     writer.Write("    <Node Id='{0}'", node.Id);
 
                     if (!string.IsNullOrEmpty(node.Label))
@@ -903,13 +903,13 @@ namespace PChecker.Coverage
             writer.WriteLine("  </Nodes>");
             writer.WriteLine("  <Links>");
 
-            if (this.InternalLinks != null)
+            if (InternalLinks != null)
             {
-                List<string> links = new List<string>(this.InternalLinks.Keys);
+                var links = new List<string>(InternalLinks.Keys);
                 links.Sort();
                 foreach (var id in links)
                 {
-                    GraphLink link = this.InternalLinks[id];
+                    var link = InternalLinks[id];
                     writer.Write("    <Link Source='{0}' Target='{1}'", link.Source.Id, link.Target.Id);
                     if (!string.IsNullOrEmpty(link.Label))
                     {
@@ -976,8 +976,8 @@ namespace PChecker.Coverage
         /// <returns>The loaded Graph object.</returns>
         public static Graph LoadDgml(string graphFilePath)
         {
-            XDocument doc = XDocument.Load(graphFilePath);
-            Graph result = new Graph();
+            var doc = XDocument.Load(graphFilePath);
+            var result = new Graph();
             var ns = doc.Root.Name.Namespace;
             if (ns != DgmlNamespace)
             {
@@ -990,7 +990,7 @@ namespace PChecker.Coverage
                 var label = (string)e.Attribute("Label");
                 var category = (string)e.Attribute("Category");
 
-                GraphNode node = new GraphNode(id, label, category);
+                var node = new GraphNode(id, label, category);
                 node.AddDgmlProperties(e);
                 result.GetOrCreateNode(node);
             }
@@ -1003,7 +1003,7 @@ namespace PChecker.Coverage
                 var category = (string)e.Attribute("Category");
                 var srcNode = result.GetOrCreateNode(srcId);
                 var targetNode = result.GetOrCreateNode(targetId);
-                XAttribute indexAttr = e.Attribute("index");
+                var indexAttr = e.Attribute("index");
                 int? index = null;
                 if (indexAttr != null)
                 {
@@ -1025,24 +1025,24 @@ namespace PChecker.Coverage
         {
             foreach (var node in other.InternalNodes.Values)
             {
-                var newNode = this.GetOrCreateNode(node.Id, node.Label, node.Category);
+                var newNode = GetOrCreateNode(node.Id, node.Label, node.Category);
                 newNode.Merge(node);
             }
 
             foreach (var link in other.InternalLinks.Values)
             {
-                var source = this.GetOrCreateNode(link.Source.Id, link.Source.Label, link.Source.Category);
-                var target = this.GetOrCreateNode(link.Target.Id, link.Target.Label, link.Target.Category);
+                var source = GetOrCreateNode(link.Source.Id, link.Source.Label, link.Source.Category);
+                var target = GetOrCreateNode(link.Target.Id, link.Target.Label, link.Target.Category);
                 int? index = null;
                 if (link.Index.HasValue)
                 {
                     // ouch, link indexes cannot be compared across Graph instances, we need to assign a new index here.
-                    string key = string.Format("{0}->{1}({2})", source.Id, target.Id, link.Index.Value);
-                    string linkId = other.InternalAllocatedLinkIds[key];
-                    index = this.GetUniqueLinkIndex(source, target, linkId);
+                    var key = string.Format("{0}->{1}({2})", source.Id, target.Id, link.Index.Value);
+                    var linkId = other.InternalAllocatedLinkIds[key];
+                    index = GetUniqueLinkIndex(source, target, linkId);
                 }
 
-                var newLink = this.GetOrCreateLink(source, target, index, link.Label, link.Category);
+                var newLink = GetOrCreateLink(source, target, index, link.Label, link.Category);
                 newLink.Merge(link);
             }
         }
@@ -1071,12 +1071,12 @@ namespace PChecker.Coverage
         /// </summary>
         public void AddAttribute(string name, string value)
         {
-            if (this.Attributes == null)
+            if (Attributes == null)
             {
-                this.Attributes = new Dictionary<string, string>();
+                Attributes = new Dictionary<string, string>();
             }
 
-            this.Attributes[name] = value;
+            Attributes[name] = value;
         }
 
         /// <summary>
@@ -1086,15 +1086,15 @@ namespace PChecker.Coverage
         /// <param name="value">The new value to add to the unique list.</param>
         public int AddListAttribute(string key, string value)
         {
-            if (this.AttributeLists == null)
+            if (AttributeLists == null)
             {
-                this.AttributeLists = new Dictionary<string, HashSet<string>>();
+                AttributeLists = new Dictionary<string, HashSet<string>>();
             }
 
-            if (!this.AttributeLists.TryGetValue(key, out HashSet<string> list))
+            if (!AttributeLists.TryGetValue(key, out var list))
             {
                 list = new HashSet<string>();
-                this.AttributeLists[key] = list;
+                AttributeLists[key] = list;
             }
 
             list.Add(value);
@@ -1103,24 +1103,24 @@ namespace PChecker.Coverage
 
         internal void WriteAttributes(TextWriter writer)
         {
-            if (this.Attributes != null)
+            if (Attributes != null)
             {
-                List<string> names = new List<string>(this.Attributes.Keys);
+                var names = new List<string>(Attributes.Keys);
                 names.Sort();  // creates a more stable output file (can be handy for expected output during testing).
-                foreach (string name in names)
+                foreach (var name in names)
                 {
-                    var value = this.Attributes[name];
+                    var value = Attributes[name];
                     writer.Write(" {0}='{1}'", name, value);
                 }
             }
 
-            if (this.AttributeLists != null)
+            if (AttributeLists != null)
             {
-                List<string> names = new List<string>(this.AttributeLists.Keys);
+                var names = new List<string>(AttributeLists.Keys);
                 names.Sort();  // creates a more stable output file (can be handy for expected output during testing).
-                foreach (string name in names)
+                foreach (var name in names)
                 {
-                    var value = this.AttributeLists[name];
+                    var value = AttributeLists[name];
                     writer.Write(" {0}='{1}'", name, string.Join(",", value));
                 }
             }
@@ -1132,7 +1132,7 @@ namespace PChecker.Coverage
             {
                 foreach (var key in other.Attributes.Keys)
                 {
-                    this.AddAttribute(key, other.Attributes[key]);
+                    AddAttribute(key, other.Attributes[key]);
                 }
             }
 
@@ -1142,7 +1142,7 @@ namespace PChecker.Coverage
                 {
                     foreach (var value in other.AttributeLists[key])
                     {
-                        this.AddListAttribute(key, value);
+                        AddListAttribute(key, value);
                     }
                 }
             }
@@ -1178,9 +1178,9 @@ namespace PChecker.Coverage
         /// </summary>
         public GraphNode(string id, string label, string category)
         {
-            this.Id = id;
-            this.Label = label;
-            this.Category = category;
+            Id = id;
+            Label = label;
+            Category = category;
         }
 
         /// <summary>
@@ -1189,7 +1189,7 @@ namespace PChecker.Coverage
         /// <param name="e">An XML element representing the graph node in DGML format.</param>
         public void AddDgmlProperties(XElement e)
         {
-            foreach (XAttribute a in e.Attributes())
+            foreach (var a in e.Attributes())
             {
                 switch (a.Name.LocalName)
                 {
@@ -1198,7 +1198,7 @@ namespace PChecker.Coverage
                     case "Category":
                         break;
                     default:
-                        this.AddAttribute(a.Name.LocalName, a.Value);
+                        AddAttribute(a.Name.LocalName, a.Value);
                         break;
                 }
             }
@@ -1247,10 +1247,10 @@ namespace PChecker.Coverage
         /// </summary>
         public GraphLink(GraphNode source, GraphNode target, string label, string category)
         {
-            this.Source = source;
-            this.Target = target;
-            this.Label = label;
-            this.Category = category;
+            Source = source;
+            Target = target;
+            Label = label;
+            Category = category;
         }
 
         /// <summary>
@@ -1259,7 +1259,7 @@ namespace PChecker.Coverage
         /// <param name="e">An XML element representing the graph node in DGML format.</param>
         public void AddDgmlProperties(XElement e)
         {
-            foreach (XAttribute a in e.Attributes())
+            foreach (var a in e.Attributes())
             {
                 switch (a.Name.LocalName)
                 {
@@ -1269,7 +1269,7 @@ namespace PChecker.Coverage
                     case "Category":
                         break;
                     default:
-                        this.AddAttribute(a.Name.LocalName, a.Value);
+                        AddAttribute(a.Name.LocalName, a.Value);
                         break;
                 }
             }

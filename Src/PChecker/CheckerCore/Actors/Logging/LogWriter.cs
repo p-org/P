@@ -31,15 +31,15 @@ namespace PChecker.Actors
         /// </summary>
         internal LogWriter(CheckerConfiguration checkerConfiguration)
         {
-            this.Logs = new HashSet<IActorRuntimeLog>();
+            Logs = new HashSet<IActorRuntimeLog>();
 
             if (checkerConfiguration.IsVerbose)
             {
-                this.GetOrCreateTextLog();
+                GetOrCreateTextLog();
             }
             else
             {
-                this.Logger = TextWriter.Null;
+                Logger = TextWriter.Null;
             }
         }
 
@@ -51,9 +51,9 @@ namespace PChecker.Actors
         /// <param name="creatorType">The type of the creator, or null.</param>
         public void LogCreateActor(ActorId id, string creatorName, string creatorType)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnCreateActor(id, creatorName, creatorType);
                 }
@@ -68,9 +68,9 @@ namespace PChecker.Actors
         /// <param name="creatorType">The type of the creator, or null.</param>
         public void LogCreateStateMachine(ActorId id, string creatorName, string creatorType)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnCreateStateMachine(id, creatorName, creatorType);
                 }
@@ -86,9 +86,9 @@ namespace PChecker.Actors
         /// <param name="actionName">The name of the action being executed.</param>
         public void LogExecuteAction(ActorId id, string handlingStateName, string currentStateName, string actionName)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnExecuteAction(id, handlingStateName, currentStateName, actionName);
                 }
@@ -108,9 +108,9 @@ namespace PChecker.Actors
         public void LogSendEvent(ActorId targetActorId, string senderName, string senderType, string senderState,
             Event e, Guid opGroupId, bool isTargetHalted)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnSendEvent(targetActorId, senderName, senderType, senderState, e, opGroupId, isTargetHalted);
                 }
@@ -125,9 +125,9 @@ namespace PChecker.Actors
         /// <param name="e">The event being raised.</param>
         public void LogRaiseEvent(ActorId id, string stateName, Event e)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnRaiseEvent(id, stateName, e);
                 }
@@ -141,9 +141,9 @@ namespace PChecker.Actors
         /// <param name="e">The event being enqueued.</param>
         public void LogEnqueueEvent(ActorId id, Event e)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnEnqueueEvent(id, e);
                 }
@@ -158,9 +158,9 @@ namespace PChecker.Actors
         /// <param name="e">The event being dequeued.</param>
         public void LogDequeueEvent(ActorId id, string stateName, Event e)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnDequeueEvent(id, stateName, e);
                 }
@@ -177,9 +177,9 @@ namespace PChecker.Actors
         /// and <paramref name="e"/> was one of them.</param>
         public void LogReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnReceiveEvent(id, stateName, e, wasBlocked);
                 }
@@ -194,9 +194,9 @@ namespace PChecker.Actors
         /// <param name="eventType">The type of the event being waited for.</param>
         public void LogWaitEvent(ActorId id, string stateName, Type eventType)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnWaitEvent(id, stateName, eventType);
                 }
@@ -211,9 +211,9 @@ namespace PChecker.Actors
         /// <param name="eventTypes">The types of the events being waited for, if any.</param>
         public void LogWaitEvent(ActorId id, string stateName, params Type[] eventTypes)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnWaitEvent(id, stateName, eventTypes);
                 }
@@ -228,9 +228,9 @@ namespace PChecker.Actors
         /// <param name="callerType">The type of the caller, if any.</param>
         public void LogRandom(object result, string callerName, string callerType)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnRandom(result, callerName, callerType);
                 }
@@ -245,9 +245,9 @@ namespace PChecker.Actors
         /// <param name="isEntry">If true, this is called for a state entry; otherwise, exit.</param>
         public void LogStateTransition(ActorId id, string stateName, bool isEntry)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnStateTransition(id, stateName, isEntry);
                 }
@@ -262,9 +262,9 @@ namespace PChecker.Actors
         /// <param name="newStateName">The target state of the transition.</param>
         public void LogGotoState(ActorId id, string currentStateName, string newStateName)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnGotoState(id, currentStateName, newStateName);
                 }
@@ -279,9 +279,9 @@ namespace PChecker.Actors
         /// <param name="newStateName">The target state of the transition.</param>
         public void LogPushState(ActorId id, string currentStateName, string newStateName)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnPushState(id, currentStateName, newStateName);
                 }
@@ -296,9 +296,9 @@ namespace PChecker.Actors
         /// <param name="restoredStateName">The name of the state being re-entered, if any.</param>
         public void LogPopState(ActorId id, string currStateName, string restoredStateName)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnPopState(id, currStateName, restoredStateName);
                 }
@@ -312,9 +312,9 @@ namespace PChecker.Actors
         /// <param name="inboxSize">Approximate size of the inbox.</param>
         public void LogHalt(ActorId id, int inboxSize)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnHalt(id, inboxSize);
                 }
@@ -329,9 +329,9 @@ namespace PChecker.Actors
         /// <param name="stateName">The state name, if the actor is a state machine and a state exists, else null.</param>
         public void LogDefaultEventHandler(ActorId id, string stateName)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnDefaultEventHandler(id, stateName);
                 }
@@ -346,9 +346,9 @@ namespace PChecker.Actors
         /// <param name="e">The event being handled.</param>
         public void LogHandleRaisedEvent(ActorId id, string stateName, Event e)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnHandleRaisedEvent(id, stateName, e);
                 }
@@ -365,9 +365,9 @@ namespace PChecker.Actors
         /// <param name="e">The event that cannot be handled.</param>
         public void LogPopStateUnhandledEvent(ActorId id, string stateName, Event e)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnPopStateUnhandledEvent(id, stateName, e);
                 }
@@ -383,9 +383,9 @@ namespace PChecker.Actors
         /// <param name="ex">The exception.</param>
         public void LogExceptionThrown(ActorId id, string stateName, string actionName, Exception ex)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnExceptionThrown(id, stateName, actionName, ex);
                 }
@@ -401,9 +401,9 @@ namespace PChecker.Actors
         /// <param name="ex">The exception.</param>
         public void LogExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnExceptionHandled(id, stateName, actionName, ex);
                 }
@@ -416,9 +416,9 @@ namespace PChecker.Actors
         /// <param name="info">Handle that contains information about the timer.</param>
         public void LogCreateTimer(TimerInfo info)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnCreateTimer(info);
                 }
@@ -431,9 +431,9 @@ namespace PChecker.Actors
         /// <param name="info">Handle that contains information about the timer.</param>
         public void LogStopTimer(TimerInfo info)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnStopTimer(info);
                 }
@@ -446,9 +446,9 @@ namespace PChecker.Actors
         /// <param name="monitorType">The name of the type of the monitor that has been created.</param>
         public void LogCreateMonitor(string monitorType)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnCreateMonitor(monitorType);
                 }
@@ -463,9 +463,9 @@ namespace PChecker.Actors
         /// <param name="actionName">The name of the action being executed.</param>
         public void LogMonitorExecuteAction(string monitorType, string stateName, string actionName)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnMonitorExecuteAction(monitorType, stateName, actionName);
                 }
@@ -484,9 +484,9 @@ namespace PChecker.Actors
         public void LogMonitorProcessEvent(string monitorType, string stateName, string senderName,
             string senderType, string senderStateName, Event e)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnMonitorProcessEvent(monitorType, stateName, senderName, senderType, senderStateName, e);
                 }
@@ -501,9 +501,9 @@ namespace PChecker.Actors
         /// <param name="e">The event being raised.</param>
         public void LogMonitorRaiseEvent(string monitorType, string stateName, Event e)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnMonitorRaiseEvent(monitorType, stateName, e);
                 }
@@ -521,9 +521,9 @@ namespace PChecker.Actors
         /// else no liveness state is available.</param>
         public void LogMonitorStateTransition(string monitorType, string stateName, bool isEntry, bool? isInHotState)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnMonitorStateTransition(monitorType, stateName, isEntry, isInHotState);
                 }
@@ -539,9 +539,9 @@ namespace PChecker.Actors
         /// else no liveness state is available.</param>
         public void LogMonitorError(string monitorType, string stateName, bool? isInHotState)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnMonitorError(monitorType, stateName, isInHotState);
                 }
@@ -554,9 +554,9 @@ namespace PChecker.Actors
         /// <param name="error">The text of the error.</param>
         public void LogAssertionFailure(string error)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnAssertionFailure(error);
                 }
@@ -570,9 +570,9 @@ namespace PChecker.Actors
         /// <param name="description">More information about the scheduling strategy.</param>
         public void LogStrategyDescription(string strategyName, string description)
         {
-            if (this.Logs.Count > 0)
+            if (Logs.Count > 0)
             {
-                foreach (var log in this.Logs)
+                foreach (var log in Logs)
                 {
                     log.OnStrategyDescription(strategyName, description);
                 }
@@ -584,7 +584,7 @@ namespace PChecker.Actors
         /// </summary>
         internal void LogCompletion()
         {
-            foreach (var log in this.Logs)
+            foreach (var log in Logs)
             {
                 log.OnCompleted();
             }
@@ -596,31 +596,31 @@ namespace PChecker.Actors
         /// </summary>
         public IEnumerable<TActorRuntimeLog> GetLogsOfType<TActorRuntimeLog>()
             where TActorRuntimeLog : IActorRuntimeLog =>
-            this.Logs.OfType<TActorRuntimeLog>();
+            Logs.OfType<TActorRuntimeLog>();
 
         /// <summary>
         /// Use this method to override the default <see cref="TextWriter"/> for logging messages.
         /// </summary>
         internal TextWriter SetLogger(TextWriter logger)
         {
-            var prevLogger = this.Logger;
+            var prevLogger = Logger;
             if (logger == null)
             {
-                this.Logger = TextWriter.Null;
+                Logger = TextWriter.Null;
 
-                var textLog = this.GetLogsOfType<ActorRuntimeLogTextFormatter>().FirstOrDefault();
+                var textLog = GetLogsOfType<ActorRuntimeLogTextFormatter>().FirstOrDefault();
                 if (textLog != null)
                 {
-                    textLog.Logger = this.Logger;
+                    textLog.Logger = Logger;
                 }
             }
             else
             {
-                this.Logger = logger;
+                Logger = logger;
 
                 // This overrides the original IsVerbose flag and creates a text logger anyway!
-                var textLog = this.GetOrCreateTextLog();
-                textLog.Logger = this.Logger;
+                var textLog = GetOrCreateTextLog();
+                textLog.Logger = Logger;
             }
 
             return prevLogger;
@@ -628,20 +628,20 @@ namespace PChecker.Actors
 
         private ActorRuntimeLogTextFormatter GetOrCreateTextLog()
         {
-            var textLog = this.GetLogsOfType<ActorRuntimeLogTextFormatter>().FirstOrDefault();
+            var textLog = GetLogsOfType<ActorRuntimeLogTextFormatter>().FirstOrDefault();
             if (textLog == null)
             {
-                if (this.Logger == null)
+                if (Logger == null)
                 {
-                    this.Logger = new ConsoleLogger();
+                    Logger = new ConsoleLogger();
                 }
 
                 textLog = new ActorRuntimeLogTextFormatter
                 {
-                    Logger = this.Logger
+                    Logger = Logger
                 };
 
-                this.Logs.Add(textLog);
+                Logs.Add(textLog);
             }
 
             return textLog;
@@ -660,19 +660,19 @@ namespace PChecker.Actors
             // Make sure we only have one text logger
             if (log is ActorRuntimeLogTextFormatter a)
             {
-                var textLog = this.GetLogsOfType<ActorRuntimeLogTextFormatter>().FirstOrDefault();
+                var textLog = GetLogsOfType<ActorRuntimeLogTextFormatter>().FirstOrDefault();
                 if (textLog != null)
                 {
-                    this.Logs.Remove(textLog);
+                    Logs.Remove(textLog);
                 }
 
-                if (this.Logger != null)
+                if (Logger != null)
                 {
-                    a.Logger = this.Logger;
+                    a.Logger = Logger;
                 }
             }
 
-            this.Logs.Add(log);
+            Logs.Add(log);
         }
 
         /// <summary>
@@ -682,7 +682,7 @@ namespace PChecker.Actors
         {
             if (log != null)
             {
-                this.Logs.Remove(log);
+                Logs.Remove(log);
             }
         }
     }

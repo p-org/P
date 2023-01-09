@@ -46,10 +46,10 @@ namespace PChecker.Actors.SharedObjects
         /// </summary>
         private SharedCounterEvent(OperationType op, int value, int comparand, ActorId sender)
         {
-            this.Operation = op;
-            this.Value = value;
-            this.Comparand = comparand;
-            this.Sender = sender;
+            Operation = op;
+            Value = value;
+            Comparand = comparand;
+            Sender = sender;
         }
 
         /// <summary>

@@ -33,7 +33,7 @@ namespace PChecker.Actors
         /// Used to log text messages. Use <see cref="ICoyoteRuntime.SetLogger"/>
         /// to replace the logger with a custom one.
         /// </summary>
-        public override TextWriter Logger => this.LogWriter.Logger;
+        public override TextWriter Logger => LogWriter.Logger;
 
         /// <summary>
         /// Callback that is fired when a Coyote event is dropped.
@@ -46,8 +46,8 @@ namespace PChecker.Actors
         internal ActorRuntime(CheckerConfiguration checkerConfiguration, IRandomValueGenerator valueGenerator)
             : base(checkerConfiguration, valueGenerator)
         {
-            this.ActorMap = new ConcurrentDictionary<ActorId, Actor>();
-            this.LogWriter = new LogWriter(checkerConfiguration);
+            ActorMap = new ConcurrentDictionary<ActorId, Actor>();
+            LogWriter = new LogWriter(checkerConfiguration);
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace PChecker.Actors
         /// and cannot be handled.
         /// </summary>
         public virtual ActorId CreateActor(Type type, Event initialEvent = null, Guid opGroupId = default) =>
-            this.CreateActor(null, type, null, initialEvent, null, opGroupId);
+            CreateActor(null, type, null, initialEvent, null, opGroupId);
 
         /// <summary>
         /// Creates a new actor of the specified <see cref="Type"/> and name, and with the
@@ -77,7 +77,7 @@ namespace PChecker.Actors
         /// its payload, and cannot be handled.
         /// </summary>
         public virtual ActorId CreateActor(Type type, string name, Event initialEvent = null, Guid opGroupId = default) =>
-            this.CreateActor(null, type, name, initialEvent, null, opGroupId);
+            CreateActor(null, type, name, initialEvent, null, opGroupId);
 
         /// <summary>
         /// Creates a new actor of the specified type, using the specified <see cref="ActorId"/>.
@@ -85,7 +85,7 @@ namespace PChecker.Actors
         /// be used to access its payload, and cannot be handled.
         /// </summary>
         public virtual ActorId CreateActor(ActorId id, Type type, Event initialEvent = null, Guid opGroupId = default) =>
-            this.CreateActor(id, type, null, initialEvent, null, opGroupId);
+            CreateActor(id, type, null, initialEvent, null, opGroupId);
 
         /// <summary>
         /// Creates a new actor of the specified <see cref="Type"/> and with the specified
@@ -94,7 +94,7 @@ namespace PChecker.Actors
         /// the <see cref="Event"/> (if any) is handled.
         /// </summary>
         public virtual Task<ActorId> CreateActorAndExecuteAsync(Type type, Event initialEvent = null, Guid opGroupId = default) =>
-            this.CreateActorAndExecuteAsync(null, type, null, initialEvent, null, opGroupId);
+            CreateActorAndExecuteAsync(null, type, null, initialEvent, null, opGroupId);
 
         /// <summary>
         /// Creates a new actor of the specified <see cref="Type"/> and name, and with the
@@ -104,7 +104,7 @@ namespace PChecker.Actors
         /// </summary>
         public virtual Task<ActorId> CreateActorAndExecuteAsync(Type type, string name, Event initialEvent = null,
             Guid opGroupId = default) =>
-            this.CreateActorAndExecuteAsync(null, type, name, initialEvent, null, opGroupId);
+            CreateActorAndExecuteAsync(null, type, name, initialEvent, null, opGroupId);
 
         /// <summary>
         /// Creates a new actor of the specified <see cref="Type"/>, using the specified unbound
@@ -115,14 +115,14 @@ namespace PChecker.Actors
         /// </summary>
         public virtual Task<ActorId> CreateActorAndExecuteAsync(ActorId id, Type type, Event initialEvent = null,
             Guid opGroupId = default) =>
-            this.CreateActorAndExecuteAsync(id, type, null, initialEvent, null, opGroupId);
+            CreateActorAndExecuteAsync(id, type, null, initialEvent, null, opGroupId);
 
         /// <summary>
         /// Sends an asynchronous <see cref="Event"/> to an actor.
         /// </summary>
         public virtual void SendEvent(ActorId targetId, Event initialEvent, Guid opGroupId = default,
             SendOptions options = null) =>
-            this.SendEvent(targetId, initialEvent, null, opGroupId, options);
+            SendEvent(targetId, initialEvent, null, opGroupId, options);
 
         /// <summary>
         /// Sends an <see cref="Event"/> to an actor. Returns immediately if the target was already
@@ -130,7 +130,7 @@ namespace PChecker.Actors
         /// </summary>
         public virtual Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event initialEvent,
             Guid opGroupId = default, SendOptions options = null) =>
-            this.SendEventAndExecuteAsync(targetId, initialEvent, null, opGroupId, options);
+            SendEventAndExecuteAsync(targetId, initialEvent, null, opGroupId, options);
 
         /// <summary>
         /// Returns the operation group id of the actor with the specified id. Returns <see cref="Guid.Empty"/>
@@ -139,7 +139,7 @@ namespace PChecker.Actors
         /// </summary>
         public virtual Guid GetCurrentOperationGroupId(ActorId currentActorId)
         {
-            Actor actor = this.GetActorWithId<Actor>(currentActorId);
+            var actor = GetActorWithId<Actor>(currentActorId);
             return actor is null ? Guid.Empty : actor.OperationGroupId;
         }
 
@@ -149,17 +149,17 @@ namespace PChecker.Actors
         internal virtual ActorId CreateActor(ActorId id, Type type, string name, Event initialEvent,
             Actor creator, Guid opGroupId)
         {
-            Actor actor = this.CreateActor(id, type, name, creator, opGroupId);
+            var actor = CreateActor(id, type, name, creator, opGroupId);
             if (actor is StateMachine)
             {
-                this.LogWriter.LogCreateStateMachine(actor.Id, creator?.Id.Name, creator?.Id.Type);
+                LogWriter.LogCreateStateMachine(actor.Id, creator?.Id.Name, creator?.Id.Type);
             }
             else
             {
-                this.LogWriter.LogCreateActor(actor.Id, creator?.Id.Name, creator?.Id.Type);
+                LogWriter.LogCreateActor(actor.Id, creator?.Id.Name, creator?.Id.Type);
             }
 
-            this.RunActorEventHandler(actor, initialEvent, true);
+            RunActorEventHandler(actor, initialEvent, true);
             return actor.Id;
         }
 
@@ -171,17 +171,17 @@ namespace PChecker.Actors
         internal virtual async Task<ActorId> CreateActorAndExecuteAsync(ActorId id, Type type, string name,
             Event initialEvent, Actor creator, Guid opGroupId)
         {
-            Actor actor = this.CreateActor(id, type, name, creator, opGroupId);
+            var actor = CreateActor(id, type, name, creator, opGroupId);
             if (actor is StateMachine)
             {
-                this.LogWriter.LogCreateStateMachine(actor.Id, creator?.Id.Name, creator?.Id.Type);
+                LogWriter.LogCreateStateMachine(actor.Id, creator?.Id.Name, creator?.Id.Type);
             }
             else
             {
-                this.LogWriter.LogCreateActor(actor.Id, creator?.Id.Name, creator?.Id.Type);
+                LogWriter.LogCreateActor(actor.Id, creator?.Id.Name, creator?.Id.Type);
             }
 
-            await this.RunActorEventHandlerAsync(actor, initialEvent, true);
+            await RunActorEventHandlerAsync(actor, initialEvent, true);
             return actor.Id;
         }
 
@@ -192,7 +192,7 @@ namespace PChecker.Actors
         {
             if (!type.IsSubclassOf(typeof(Actor)))
             {
-                this.Assert(false, "Type '{0}' is not an actor.", type.FullName);
+                Assert(false, "Type '{0}' is not an actor.", type.FullName);
             }
 
             if (id is null)
@@ -201,11 +201,11 @@ namespace PChecker.Actors
             }
             else if (id.Runtime != null && id.Runtime != this)
             {
-                this.Assert(false, "Unbound actor id '{0}' was created by another runtime.", id.Value);
+                Assert(false, "Unbound actor id '{0}' was created by another runtime.", id.Value);
             }
             else if (id.Type != type.FullName)
             {
-                this.Assert(false, "Cannot bind actor id '{0}' of type '{1}' to an actor of type '{2}'.",
+                Assert(false, "Cannot bind actor id '{0}' of type '{1}' to an actor of type '{2}'.",
                     id.Value, id.Type, type.FullName);
             }
             else
@@ -222,7 +222,7 @@ namespace PChecker.Actors
                 opGroupId = creator.OperationGroupId;
             }
 
-            Actor actor = ActorFactory.Create(type);
+            var actor = ActorFactory.Create(type);
             IActorManager actorManager;
             if (actor is StateMachine stateMachine)
             {
@@ -237,12 +237,12 @@ namespace PChecker.Actors
             actor.Configure(this, id, actorManager, eventQueue);
             actor.SetupEventHandlers();
 
-            if (!this.ActorMap.TryAdd(id, actor))
+            if (!ActorMap.TryAdd(id, actor))
             {
-                string info = "This typically occurs if either the actor id was created by another runtime instance, " +
-                    "or if a actor id from a previous runtime generation was deserialized, but the current runtime " +
-                    "has not increased its generation value.";
-                this.Assert(false, "An actor with id '{0}' was already created in generation '{1}'. {2}", id.Value, id.Generation, info);
+                var info = "This typically occurs if either the actor id was created by another runtime instance, " +
+                           "or if a actor id from a previous runtime generation was deserialized, but the current runtime " +
+                           "has not increased its generation value.";
+                Assert(false, "An actor with id '{0}' was already created in generation '{1}'. {2}", id.Value, id.Generation, info);
             }
 
             return actor;
@@ -253,10 +253,10 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void SendEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId, SendOptions options)
         {
-            EnqueueStatus enqueueStatus = this.EnqueueEvent(targetId, e, sender, opGroupId, out Actor target);
+            var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {
-                this.RunActorEventHandler(target, null, false);
+                RunActorEventHandler(target, null, false);
             }
         }
 
@@ -267,10 +267,10 @@ namespace PChecker.Actors
         internal virtual async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Actor sender,
             Guid opGroupId, SendOptions options)
         {
-            EnqueueStatus enqueueStatus = this.EnqueueEvent(targetId, e, sender, opGroupId, out Actor target);
+            var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {
-                await this.RunActorEventHandlerAsync(target, null, false);
+                await RunActorEventHandlerAsync(target, null, false);
                 return true;
             }
 
@@ -284,18 +284,18 @@ namespace PChecker.Actors
         {
             if (e is null)
             {
-                string message = sender != null ?
+                var message = sender != null ?
                     string.Format("{0} is sending a null event.", sender.Id.ToString()) :
                     "Cannot send a null event.";
-                this.Assert(false, message);
+                Assert(false, message);
             }
 
             if (targetId is null)
             {
-                string message = (sender != null) ? $"{sender.Id.ToString()} is sending event {e.ToString()} to a null actor."
+                var message = (sender != null) ? $"{sender.Id.ToString()} is sending event {e.ToString()} to a null actor."
                     : $"Cannot send event {e.ToString()} to a null actor.";
 
-                this.Assert(false, message);
+                Assert(false, message);
             }
 
             // The operation group id of this operation is set using the following precedence:
@@ -307,22 +307,22 @@ namespace PChecker.Actors
                 opGroupId = sender.OperationGroupId;
             }
 
-            target = this.GetActorWithId<Actor>(targetId);
+            target = GetActorWithId<Actor>(targetId);
             if (target is null || target.IsHalted)
             {
-                this.LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
+                LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
                     (sender as StateMachine)?.CurrentStateName ?? string.Empty, e, opGroupId, isTargetHalted: true);
-                this.TryHandleDroppedEvent(e, targetId);
+                TryHandleDroppedEvent(e, targetId);
                 return EnqueueStatus.Dropped;
             }
 
-            this.LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
+            LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
                 (sender as StateMachine)?.CurrentStateName ?? string.Empty, e, opGroupId, isTargetHalted: false);
 
-            EnqueueStatus enqueueStatus = target.Enqueue(e, opGroupId, null);
+            var enqueueStatus = target.Enqueue(e, opGroupId, null);
             if (enqueueStatus == EnqueueStatus.Dropped)
             {
-                this.TryHandleDroppedEvent(e, targetId);
+                TryHandleDroppedEvent(e, targetId);
             }
 
             return enqueueStatus;
@@ -347,14 +347,14 @@ namespace PChecker.Actors
                 }
                 catch (Exception ex)
                 {
-                    this.IsRunning = false;
-                    this.RaiseOnFailureEvent(ex);
+                    IsRunning = false;
+                    RaiseOnFailureEvent(ex);
                 }
                 finally
                 {
                     if (actor.IsHalted)
                     {
-                        this.ActorMap.TryRemove(actor.Id, out Actor _);
+                        ActorMap.TryRemove(actor.Id, out var _);
                     }
                 }
             });
@@ -376,8 +376,8 @@ namespace PChecker.Actors
             }
             catch (Exception ex)
             {
-                this.IsRunning = false;
-                this.RaiseOnFailureEvent(ex);
+                IsRunning = false;
+                RaiseOnFailureEvent(ex);
                 return;
             }
         }
@@ -390,27 +390,27 @@ namespace PChecker.Actors
         /// <inheritdoc/>
         internal override void TryCreateMonitor(Type type)
         {
-            lock (this.Monitors)
+            lock (Monitors)
             {
-                if (this.Monitors.Any(m => m.GetType() == type))
+                if (Monitors.Any(m => m.GetType() == type))
                 {
                     // Idempotence: only one monitor per type can exist.
                     return;
                 }
             }
 
-            this.Assert(type.IsSubclassOf(typeof(Specifications.Monitor)), "Type '{0}' is not a subclass of Monitor.", type.FullName);
+            Assert(type.IsSubclassOf(typeof(Specifications.Monitor)), "Type '{0}' is not a subclass of Monitor.", type.FullName);
 
-            Specifications.Monitor monitor = (Specifications.Monitor)Activator.CreateInstance(type);
+            var monitor = (Specifications.Monitor)Activator.CreateInstance(type);
             monitor.Initialize(this);
             monitor.InitializeStateInformation();
 
-            lock (this.Monitors)
+            lock (Monitors)
             {
-                this.Monitors.Add(monitor);
+                Monitors.Add(monitor);
             }
 
-            this.LogWriter.LogCreateMonitor(type.FullName);
+            LogWriter.LogCreateMonitor(type.FullName);
 
             monitor.GotoStartState();
         }
@@ -418,21 +418,21 @@ namespace PChecker.Actors
         /// <inheritdoc/>
         internal override bool GetNondeterministicBooleanChoice(int maxValue, string callerName, string callerType)
         {
-            bool result = false;
-            if (this.ValueGenerator.Next(maxValue) == 0)
+            var result = false;
+            if (ValueGenerator.Next(maxValue) == 0)
             {
                 result = true;
             }
 
-            this.LogWriter.LogRandom(result, callerName, callerType);
+            LogWriter.LogRandom(result, callerName, callerType);
             return result;
         }
 
         /// <inheritdoc/>
         internal override int GetNondeterministicIntegerChoice(int maxValue, string callerName, string callerType)
         {
-            var result = this.ValueGenerator.Next(maxValue);
-            this.LogWriter.LogRandom(result, callerName, callerType);
+            var result = ValueGenerator.Next(maxValue);
+            LogWriter.LogRandom(result, callerName, callerType);
             return result;
         }
 
@@ -442,7 +442,7 @@ namespace PChecker.Actors
         /// </summary>
         private TActor GetActorWithId<TActor>(ActorId id)
             where TActor : Actor =>
-            id != null && this.ActorMap.TryGetValue(id, out Actor value) &&
+            id != null && ActorMap.TryGetValue(id, out var value) &&
             value is TActor actor ? actor : null;
 
         /// <summary>
@@ -451,9 +451,9 @@ namespace PChecker.Actors
         internal virtual void NotifyInvokedAction(Actor actor, MethodInfo action, string handlingStateName,
             string currentStateName, Event receivedEvent)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                this.LogWriter.LogExecuteAction(actor.Id, handlingStateName, currentStateName, action.Name);
+                LogWriter.LogExecuteAction(actor.Id, handlingStateName, currentStateName, action.Name);
             }
         }
 
@@ -462,10 +462,10 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyDequeuedEvent(Actor actor, Event e, EventInfo eventInfo)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
-                this.LogWriter.LogDequeueEvent(actor.Id, stateName, e);
+                var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
+                LogWriter.LogDequeueEvent(actor.Id, stateName, e);
             }
         }
 
@@ -491,10 +491,10 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyRaisedEvent(Actor actor, Event e, EventInfo eventInfo)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
-                this.LogWriter.LogRaiseEvent(actor.Id, stateName, e);
+                var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
+                LogWriter.LogRaiseEvent(actor.Id, stateName, e);
             }
         }
 
@@ -520,10 +520,10 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyReceivedEvent(Actor actor, Event e, EventInfo eventInfo)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
-                this.LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: true);
+                var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
+                LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: true);
             }
         }
 
@@ -533,10 +533,10 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyReceivedEventWithoutWaiting(Actor actor, Event e, EventInfo eventInfo)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
-                this.LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: false);
+                var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
+                LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: false);
             }
         }
 
@@ -553,17 +553,17 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyWaitEvent(Actor actor, IEnumerable<Type> eventTypes)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                string stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
+                var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
                 var eventWaitTypesArray = eventTypes.ToArray();
                 if (eventWaitTypesArray.Length == 1)
                 {
-                    this.LogWriter.LogWaitEvent(actor.Id, stateName, eventWaitTypesArray[0]);
+                    LogWriter.LogWaitEvent(actor.Id, stateName, eventWaitTypesArray[0]);
                 }
                 else
                 {
-                    this.LogWriter.LogWaitEvent(actor.Id, stateName, eventWaitTypesArray);
+                    LogWriter.LogWaitEvent(actor.Id, stateName, eventWaitTypesArray);
                 }
             }
         }
@@ -573,9 +573,9 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyEnteredState(StateMachine stateMachine)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                this.LogWriter.LogStateTransition(stateMachine.Id, stateMachine.CurrentStateName, isEntry: true);
+                LogWriter.LogStateTransition(stateMachine.Id, stateMachine.CurrentStateName, isEntry: true);
             }
         }
 
@@ -584,9 +584,9 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyExitedState(StateMachine stateMachine)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                this.LogWriter.LogStateTransition(stateMachine.Id, stateMachine.CurrentStateName, isEntry: false);
+                LogWriter.LogStateTransition(stateMachine.Id, stateMachine.CurrentStateName, isEntry: false);
             }
         }
 
@@ -603,9 +603,9 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyInvokedOnEntryAction(StateMachine stateMachine, MethodInfo action, Event receivedEvent)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                this.LogWriter.LogExecuteAction(stateMachine.Id, stateMachine.CurrentStateName,
+                LogWriter.LogExecuteAction(stateMachine.Id, stateMachine.CurrentStateName,
                     stateMachine.CurrentStateName, action.Name);
             }
         }
@@ -615,9 +615,9 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyInvokedOnExitAction(StateMachine stateMachine, MethodInfo action, Event receivedEvent)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                this.LogWriter.LogExecuteAction(stateMachine.Id, stateMachine.CurrentStateName,
+                LogWriter.LogExecuteAction(stateMachine.Id, stateMachine.CurrentStateName,
                     stateMachine.CurrentStateName, action.Name);
             }
         }
@@ -627,10 +627,10 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyEnteredState(Specifications.Monitor monitor)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                string monitorState = monitor.CurrentStateNameWithTemperature;
-                this.LogWriter.LogMonitorStateTransition(monitor.GetType().FullName, monitorState,
+                var monitorState = monitor.CurrentStateNameWithTemperature;
+                LogWriter.LogMonitorStateTransition(monitor.GetType().FullName, monitorState,
                     true, monitor.GetHotState());
             }
         }
@@ -640,10 +640,10 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyExitedState(Specifications.Monitor monitor)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                string monitorState = monitor.CurrentStateNameWithTemperature;
-                this.LogWriter.LogMonitorStateTransition(monitor.GetType().FullName, monitorState,
+                var monitorState = monitor.CurrentStateNameWithTemperature;
+                LogWriter.LogMonitorStateTransition(monitor.GetType().FullName, monitorState,
                     false, monitor.GetHotState());
             }
         }
@@ -653,9 +653,9 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyInvokedAction(Specifications.Monitor monitor, MethodInfo action, string stateName, Event receivedEvent)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                this.LogWriter.LogMonitorExecuteAction(monitor.GetType().FullName, action.Name, stateName);
+                LogWriter.LogMonitorExecuteAction(monitor.GetType().FullName, action.Name, stateName);
             }
         }
 
@@ -664,10 +664,10 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void NotifyRaisedEvent(Specifications.Monitor monitor, Event e)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                string monitorState = monitor.CurrentStateNameWithTemperature;
-                this.LogWriter.LogMonitorRaiseEvent(monitor.GetType().FullName, monitorState, e);
+                var monitorState = monitor.CurrentStateNameWithTemperature;
+                LogWriter.LogMonitorRaiseEvent(monitor.GetType().FullName, monitorState, e);
             }
         }
 
@@ -676,38 +676,38 @@ namespace PChecker.Actors
         /// </summary>
         internal void NotifyMonitorError(Specifications.Monitor monitor)
         {
-            if (this.CheckerConfiguration.IsVerbose)
+            if (CheckerConfiguration.IsVerbose)
             {
-                string monitorState = monitor.CurrentStateNameWithTemperature;
-                this.LogWriter.LogMonitorError(monitor.GetType().FullName, monitorState, monitor.GetHotState());
+                var monitorState = monitor.CurrentStateNameWithTemperature;
+                LogWriter.LogMonitorError(monitor.GetType().FullName, monitorState, monitor.GetHotState());
             }
         }
 
         /// <summary>
         /// Tries to handle the specified dropped <see cref="Event"/>.
         /// </summary>
-        internal void TryHandleDroppedEvent(Event e, ActorId id) => this.OnEventDropped?.Invoke(e, id);
+        internal void TryHandleDroppedEvent(Event e, ActorId id) => OnEventDropped?.Invoke(e, id);
 
         /// <inheritdoc/>
-        public override TextWriter SetLogger(TextWriter logger) => this.LogWriter.SetLogger(logger);
+        public override TextWriter SetLogger(TextWriter logger) => LogWriter.SetLogger(logger);
 
         /// <summary>
         /// Use this method to register an <see cref="IActorRuntimeLog"/>.
         /// </summary>
-        public void RegisterLog(IActorRuntimeLog log) => this.LogWriter.RegisterLog(log);
+        public void RegisterLog(IActorRuntimeLog log) => LogWriter.RegisterLog(log);
 
         /// <summary>
         /// Use this method to unregister a previously registered <see cref="IActorRuntimeLog"/>.
         /// </summary>
-        public void RemoveLog(IActorRuntimeLog log) => this.LogWriter.RemoveLog(log);
+        public void RemoveLog(IActorRuntimeLog log) => LogWriter.RemoveLog(log);
 
         /// <inheritdoc/>
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                this.Monitors.Clear();
-                this.ActorMap.Clear();
+                Monitors.Clear();
+                ActorMap.Clear();
             }
 
             base.Dispose(disposing);

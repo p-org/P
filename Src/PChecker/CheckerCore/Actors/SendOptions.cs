@@ -35,9 +35,9 @@ namespace PChecker.Actors
         /// </summary>
         public SendOptions(bool mustHandle = false, int assert = -1, int hashedState = 0)
         {
-            this.MustHandle = mustHandle;
-            this.Assert = assert;
-            this.HashedState = hashedState;
+            MustHandle = mustHandle;
+            Assert = assert;
+            HashedState = hashedState;
         }
 
         /// <summary>
@@ -45,6 +45,6 @@ namespace PChecker.Actors
         /// </summary>
         public override string ToString() =>
             string.Format("SendOptions[MustHandle='{0}', Assert='{1}', HashedState='{2}']",
-                this.MustHandle, this.Assert, this.HashedState);
+                MustHandle, Assert, HashedState);
     }
 }

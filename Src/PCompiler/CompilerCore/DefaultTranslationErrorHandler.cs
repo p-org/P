@@ -86,7 +86,7 @@ namespace Plang.Compiler
         
         public Exception IllegalInterfaceCoerce(ParserRuleContext context, PLanguageType oldType, PLanguageType newType)
         {
-            PEvent outlierEvent =
+            var outlierEvent =
                 newType.AllowedPermissions.Value.First(x => !oldType.AllowedPermissions.Value.Contains(x));
             return IssueError(context,
                 $"illegal Coerce, {oldType.OriginalRepresentation} permissions is not a superset of {newType.OriginalRepresentation} (e.g., event {outlierEvent.Name})");

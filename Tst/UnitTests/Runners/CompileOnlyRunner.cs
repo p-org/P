@@ -40,16 +40,16 @@ namespace UnitTests.Runners
         /// </returns>
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
-            Compiler compiler = new Compiler();
-            StringWriter stdoutWriter = new StringWriter();
-            StringWriter stderrWriter = new StringWriter();
-            TestCaseOutputStream outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);
+            var compiler = new Compiler();
+            var stdoutWriter = new StringWriter();
+            var stderrWriter = new StringWriter();
+            var outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);
 
-            CompilerConfiguration job = new CompilerConfiguration(outputStream, scratchDirectory, compilerOutput, inputFiles, Path.GetFileNameWithoutExtension(inputFiles.First()));
+            var job = new CompilerConfiguration(outputStream, scratchDirectory, compilerOutput, inputFiles, Path.GetFileNameWithoutExtension(inputFiles.First()));
 
             try
             {
-                int exitCode = compiler.Compile(job);
+                var exitCode = compiler.Compile(job);
                 stdout = stdoutWriter.ToString().Trim();
                 stderr = stderrWriter.ToString().Trim();
                 return exitCode;
@@ -92,12 +92,12 @@ namespace UnitTests.Runners
 
             public void WriteFile(CompiledFile file)
             {
-                int nameLength = file.FileName.Length;
-                int headerWidth = Math.Max(40, nameLength + 4);
-                string hdash = new string('=', headerWidth);
+                var nameLength = file.FileName.Length;
+                var headerWidth = Math.Max(40, nameLength + 4);
+                var hdash = new string('=', headerWidth);
                 stdout.WriteLine(hdash);
-                int prePadding = (headerWidth - nameLength) / 2 - 1;
-                int postPadding = headerWidth - prePadding - nameLength - 2;
+                var prePadding = (headerWidth - nameLength) / 2 - 1;
+                var postPadding = headerWidth - prePadding - nameLength - 2;
                 stdout.WriteLine($"={new string(' ', prePadding)}{file.FileName}{new string(' ', postPadding)}=");
                 stdout.WriteLine(hdash);
                 stdout.Write(file.Contents);

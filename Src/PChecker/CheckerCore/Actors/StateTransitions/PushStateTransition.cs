@@ -21,7 +21,7 @@ namespace PChecker.Actors
         /// <param name="targetState">The target state.</param>
         public PushStateTransition(Type targetState)
         {
-            this.TargetState = targetState;
+            TargetState = targetState;
         }
 
         internal override bool Inheritable => false;

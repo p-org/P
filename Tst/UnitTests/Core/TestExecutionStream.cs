@@ -30,7 +30,7 @@ namespace UnitTests.Core
 
         public void WriteFile(CompiledFile file)
         {
-            string fileName = Path.Combine(outputDirectory.FullName, file.FileName);
+            var fileName = Path.Combine(outputDirectory.FullName, file.FileName);
             File.WriteAllText(fileName, file.Contents);
             outputFiles.Add(new FileInfo(fileName));
         }

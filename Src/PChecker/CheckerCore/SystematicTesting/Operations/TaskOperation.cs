@@ -63,15 +63,15 @@ namespace PChecker.SystematicTesting
         internal TaskOperation(ulong operationId, OperationScheduler scheduler)
             : base()
         {
-            this.Scheduler = scheduler;
-            this.Id = operationId;
-            this.Name = $"Task({operationId})";
-            this.JoinDependencies = new HashSet<SystemTasks.Task>();
+            Scheduler = scheduler;
+            Id = operationId;
+            Name = $"Task({operationId})";
+            JoinDependencies = new HashSet<SystemTasks.Task>();
         }
 
         internal void OnGetAwaiter()
         {
-            this.IsAwaiterControlled = true;
+            IsAwaiterControlled = true;
         }
 
         /// <summary>
@@ -79,11 +79,11 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal void OnWaitTask(SystemTasks.Task task)
         {
-            IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for task '{1}'.", this.Id, task.Id);
-            this.JoinDependencies.Add(task);
-            this.Status = AsyncOperationStatus.BlockedOnWaitAll;
-            this.Scheduler.ScheduleNextEnabledOperation();
-            this.IsAwaiterControlled = false;
+            IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for task '{1}'.", Id, task.Id);
+            JoinDependencies.Add(task);
+            Status = AsyncOperationStatus.BlockedOnWaitAll;
+            Scheduler.ScheduleNextEnabledOperation();
+            IsAwaiterControlled = false;
         }
 
         /// <summary>
@@ -95,18 +95,18 @@ namespace PChecker.SystematicTesting
             {
                 if (!task.IsCompleted)
                 {
-                    IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for task '{1}'.", this.Id, task.Id);
-                    this.JoinDependencies.Add(task.UncontrolledTask);
+                    IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for task '{1}'.", Id, task.Id);
+                    JoinDependencies.Add(task.UncontrolledTask);
                 }
             }
 
-            if (this.JoinDependencies.Count > 0)
+            if (JoinDependencies.Count > 0)
             {
-                this.Status = waitAll ? AsyncOperationStatus.BlockedOnWaitAll : AsyncOperationStatus.BlockedOnWaitAny;
-                this.Scheduler.ScheduleNextEnabledOperation();
+                Status = waitAll ? AsyncOperationStatus.BlockedOnWaitAll : AsyncOperationStatus.BlockedOnWaitAny;
+                Scheduler.ScheduleNextEnabledOperation();
             }
 
-            this.IsAwaiterControlled = false;
+            IsAwaiterControlled = false;
         }
 
         /// <summary>
@@ -114,29 +114,29 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal override void TryEnable()
         {
-            if (this.Status == AsyncOperationStatus.BlockedOnWaitAll)
+            if (Status == AsyncOperationStatus.BlockedOnWaitAll)
             {
-                IO.Debug.WriteLine("<ScheduleDebug> Try enable operation '{0}'.", this.Id);
-                if (!this.JoinDependencies.All(task => task.IsCompleted))
+                IO.Debug.WriteLine("<ScheduleDebug> Try enable operation '{0}'.", Id);
+                if (!JoinDependencies.All(task => task.IsCompleted))
                 {
-                    IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for all join tasks to complete.", this.Id);
+                    IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for all join tasks to complete.", Id);
                     return;
                 }
 
-                this.JoinDependencies.Clear();
-                this.Status = AsyncOperationStatus.Enabled;
+                JoinDependencies.Clear();
+                Status = AsyncOperationStatus.Enabled;
             }
-            else if (this.Status == AsyncOperationStatus.BlockedOnWaitAny)
+            else if (Status == AsyncOperationStatus.BlockedOnWaitAny)
             {
-                IO.Debug.WriteLine("<ScheduleDebug> Try enable operation '{0}'.", this.Id);
-                if (!this.JoinDependencies.Any(task => task.IsCompleted))
+                IO.Debug.WriteLine("<ScheduleDebug> Try enable operation '{0}'.", Id);
+                if (!JoinDependencies.Any(task => task.IsCompleted))
                 {
-                    IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for any join task to complete.", this.Id);
+                    IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for any join task to complete.", Id);
                     return;
                 }
 
-                this.JoinDependencies.Clear();
-                this.Status = AsyncOperationStatus.Enabled;
+                JoinDependencies.Clear();
+                Status = AsyncOperationStatus.Enabled;
             }
         }
 
@@ -146,24 +146,24 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal void SetRootAsyncTaskStateMachine(Type stateMachineType)
         {
-            if (this.RootAsyncTaskMethod is null)
+            if (RootAsyncTaskMethod is null)
             {
                 // The call stack is empty, so traverse the stack trace to find the first
                 // user defined method to be executed by this operation and set it as root.
-                StackTrace st = new StackTrace(false);
-                for (int i = st.FrameCount - 1; i > 0; i--)
+                var st = new StackTrace(false);
+                for (var i = st.FrameCount - 1; i > 0; i--)
                 {
-                    StackFrame sf = st.GetFrame(i);
-                    if (TryGetUserDefinedAsyncMethodFromStackFrame(sf, stateMachineType, out MethodBase method))
+                    var sf = st.GetFrame(i);
+                    if (TryGetUserDefinedAsyncMethodFromStackFrame(sf, stateMachineType, out var method))
                     {
-                        this.RootAsyncTaskMethod = method;
+                        RootAsyncTaskMethod = method;
                         break;
                     }
                 }
 
-                if (this.RootAsyncTaskMethod is null)
+                if (RootAsyncTaskMethod is null)
                 {
-                    throw new RuntimeException($"Operation '{this.Id}' is unable to find and set a root asynchronous method.");
+                    throw new RuntimeException($"Operation '{Id}' is unable to find and set a root asynchronous method.");
                 }
             }
         }
@@ -173,13 +173,13 @@ namespace PChecker.SystematicTesting
         /// as the currently executed by this operation.
         /// </summary>
         internal void SetExecutingAsyncTaskStateMachineType(Type stateMachineType) =>
-            this.CurrAsyncTaskMethod = GetAsyncTaskMethodComponents(stateMachineType);
+            CurrAsyncTaskMethod = GetAsyncTaskMethodComponents(stateMachineType);
 
         /// <summary>
         /// Checks if the operation is currently executing the root asynchronous method.
         /// </summary>
         internal bool IsExecutingInRootAsyncMethod() =>
-            this.RootAsyncTaskMethod == this.CurrAsyncTaskMethod;
+            RootAsyncTaskMethod == CurrAsyncTaskMethod;
 
         /// <summary>
         /// Returns a tuple containing the name and declaring type of the asynchronous controlled
@@ -187,15 +187,15 @@ namespace PChecker.SystematicTesting
         /// </summary>
         private static MethodBase GetAsyncTaskMethodComponents(Type stateMachineType)
         {
-            if (!AsyncTaskMethodCache.TryGetValue(stateMachineType, out MethodBase method))
+            if (!AsyncTaskMethodCache.TryGetValue(stateMachineType, out var method))
             {
                 // Traverse the stack trace to identify and return the currently executing
                 // asynchronous controlled task method, and cache it for quick access later
                 // in the execution or future test iterations.
-                StackTrace st = new StackTrace(false);
-                for (int i = 0; i < st.FrameCount; i++)
+                var st = new StackTrace(false);
+                for (var i = 0; i < st.FrameCount; i++)
                 {
-                    StackFrame sf = st.GetFrame(i);
+                    var sf = st.GetFrame(i);
                     if (TryGetUserDefinedAsyncMethodFromStackFrame(sf, stateMachineType, out method))
                     {
                         AsyncTaskMethodCache.Add(stateMachineType, method);
@@ -214,9 +214,9 @@ namespace PChecker.SystematicTesting
         private static bool TryGetUserDefinedAsyncMethodFromStackFrame(StackFrame stackFrame, Type stateMachineType, out MethodBase method)
         {
             // TODO: explore optimizations for this logic.
-            MethodBase sfMethod = stackFrame.GetMethod();
+            var sfMethod = stackFrame.GetMethod();
 
-            string sfMethodModuleName = sfMethod.Module.Name;
+            var sfMethodModuleName = sfMethod.Module.Name;
             if (sfMethodModuleName == "mscorlib.dll" ||
                 sfMethodModuleName == "System.Private.CoreLib.dll" ||
                 sfMethodModuleName == "Microsoft.Coyote.dll")

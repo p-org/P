@@ -66,7 +66,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Number of scheduled steps.
         /// </summary>
-        internal int ScheduledSteps => this.Strategy.GetScheduledSteps();
+        internal int ScheduledSteps => Strategy.GetScheduledSteps();
 
         /// <summary>
         /// Checks if the schedule has been fully explored.
@@ -89,16 +89,16 @@ namespace PChecker.SystematicTesting
         internal OperationScheduler(ControlledRuntime runtime, ISchedulingStrategy strategy,
             ScheduleTrace trace, CheckerConfiguration checkerConfiguration)
         {
-            this.CheckerConfiguration = checkerConfiguration;
-            this.Runtime = runtime;
-            this.Strategy = strategy;
-            this.OperationMap = new ConcurrentDictionary<ulong, IAsyncOperation>();
-            this.ControlledTaskMap = new ConcurrentDictionary<int, AsyncOperation>();
-            this.ScheduleTrace = trace;
-            this.CompletionSource = new TaskCompletionSource<bool>();
-            this.IsRunning = true;
-            this.BugFound = false;
-            this.HasFullyExploredSchedule = false;
+            CheckerConfiguration = checkerConfiguration;
+            Runtime = runtime;
+            Strategy = strategy;
+            OperationMap = new ConcurrentDictionary<ulong, IAsyncOperation>();
+            ControlledTaskMap = new ConcurrentDictionary<int, AsyncOperation>();
+            ScheduleTrace = trace;
+            CompletionSource = new TaskCompletionSource<bool>();
+            IsRunning = true;
+            BugFound = false;
+            HasFullyExploredSchedule = false;
         }
 
         /// <summary>
@@ -106,20 +106,20 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal void ScheduleNextEnabledOperation()
         {
-            int? taskId = Task.CurrentId;
+            var taskId = Task.CurrentId;
 
             // TODO: figure out if this check is still needed.
             // If the caller is the root task, then return.
-            if (taskId != null && taskId == this.Runtime.RootTaskId)
+            if (taskId != null && taskId == Runtime.RootTaskId)
             {
                 return;
             }
 
-            AsyncOperation current = this.ScheduledOperation;
-            if (!this.IsRunning)
+            var current = ScheduledOperation;
+            if (!IsRunning)
             {
                 // TODO: check if this stop is needed.
-                this.Stop();
+                Stop();
 
                 if (current.Status != AsyncOperationStatus.Completed)
                 {
@@ -131,14 +131,14 @@ namespace PChecker.SystematicTesting
             if (current.Status != AsyncOperationStatus.Completed)
             {
                 // Checks if concurrency not controlled by the runtime was used.
-                this.CheckNoExternalConcurrencyUsed();
+                CheckNoExternalConcurrencyUsed();
             }
 
             // Checks if the scheduling steps bound has been reached.
-            this.CheckIfSchedulingStepsBoundIsReached();
+            CheckIfSchedulingStepsBoundIsReached();
 
             // Get and order the operations by their id.
-            var ops = this.OperationMap.Values.OrderBy(op => op.Id);
+            var ops = OperationMap.Values.OrderBy(op => op.Id);
 
             // Try enable any operation that is currently waiting, but has its dependencies already satisfied.
             foreach (var op in ops)
@@ -150,14 +150,14 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            if (!this.Strategy.GetNextOperation(current, ops, out IAsyncOperation next))
+            if (!Strategy.GetNextOperation(current, ops, out var next))
             {
                 // Checks if the program has deadlocked.
-                this.CheckIfProgramHasDeadlocked(ops.Select(op => op as AsyncOperation));
+                CheckIfProgramHasDeadlocked(ops.Select(op => op as AsyncOperation));
 
                 IO.Debug.WriteLine("<ScheduleDebug> Schedule explored.");
-                this.HasFullyExploredSchedule = true;
-                this.Stop();
+                HasFullyExploredSchedule = true;
+                Stop();
 
                 if (current.Status != AsyncOperationStatus.Completed)
                 {
@@ -166,8 +166,8 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            this.ScheduledOperation = next as AsyncOperation;
-            this.ScheduleTrace.AddSchedulingChoice(next.Id);
+            ScheduledOperation = next as AsyncOperation;
+            ScheduleTrace.AddSchedulingChoice(next.Id);
 
             IO.Debug.WriteLine($"<ScheduleDebug> Scheduling the next operation of '{next.Name}'.");
 
@@ -176,7 +176,7 @@ namespace PChecker.SystematicTesting
                 current.IsActive = false;
                 lock (next)
                 {
-                    this.ScheduledOperation.IsActive = true;
+                    ScheduledOperation.IsActive = true;
                     System.Threading.Monitor.PulseAll(next);
                 }
 
@@ -187,9 +187,9 @@ namespace PChecker.SystematicTesting
                         return;
                     }
 
-                    if (!this.ControlledTaskMap.ContainsKey(Task.CurrentId.Value))
+                    if (!ControlledTaskMap.ContainsKey(Task.CurrentId.Value))
                     {
-                        this.ControlledTaskMap.TryAdd(Task.CurrentId.Value, current);
+                        ControlledTaskMap.TryAdd(Task.CurrentId.Value, current);
                         IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is associated with task '{1}'.", current.Id, Task.CurrentId);
                     }
 
@@ -213,26 +213,26 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal bool GetNextNondeterministicBooleanChoice(int maxValue)
         {
-            if (!this.IsRunning)
+            if (!IsRunning)
             {
                 // If scheduler is not running, throw exception to force terminate the caller.
                 throw new ExecutionCanceledException();
             }
 
             // Checks if concurrency not controlled by the runtime was used.
-            this.CheckNoExternalConcurrencyUsed();
+            CheckNoExternalConcurrencyUsed();
 
             // Checks if the scheduling steps bound has been reached.
-            this.CheckIfSchedulingStepsBoundIsReached();
+            CheckIfSchedulingStepsBoundIsReached();
 
-            if (!this.Strategy.GetNextBooleanChoice(this.ScheduledOperation, maxValue, out bool choice))
+            if (!Strategy.GetNextBooleanChoice(ScheduledOperation, maxValue, out var choice))
             {
                 IO.Debug.WriteLine("<ScheduleDebug> Schedule explored.");
-                this.Stop();
+                Stop();
                 throw new ExecutionCanceledException();
             }
 
-            this.ScheduleTrace.AddNondeterministicBooleanChoice(choice);
+            ScheduleTrace.AddNondeterministicBooleanChoice(choice);
             return choice;
         }
 
@@ -241,26 +241,26 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal int GetNextNondeterministicIntegerChoice(int maxValue)
         {
-            if (!this.IsRunning)
+            if (!IsRunning)
             {
                 // If scheduler is not running, throw exception to force terminate the caller.
                 throw new ExecutionCanceledException();
             }
 
             // Checks if concurrency not controlled by the runtime was used.
-            this.CheckNoExternalConcurrencyUsed();
+            CheckNoExternalConcurrencyUsed();
 
             // Checks if the scheduling steps bound has been reached.
-            this.CheckIfSchedulingStepsBoundIsReached();
+            CheckIfSchedulingStepsBoundIsReached();
 
-            if (!this.Strategy.GetNextIntegerChoice(this.ScheduledOperation, maxValue, out int choice))
+            if (!Strategy.GetNextIntegerChoice(ScheduledOperation, maxValue, out var choice))
             {
                 IO.Debug.WriteLine("<ScheduleDebug> Schedule explored.");
-                this.Stop();
+                Stop();
                 throw new ExecutionCanceledException();
             }
 
-            this.ScheduleTrace.AddNondeterministicIntegerChoice(choice);
+            ScheduleTrace.AddNondeterministicIntegerChoice(choice);
             return choice;
         }
 
@@ -271,12 +271,12 @@ namespace PChecker.SystematicTesting
         /// <returns>True if the operation was successfully registered, else false if it already exists.</returns>
         internal bool RegisterOperation(AsyncOperation op)
         {
-            if (this.OperationMap.Count == 0)
+            if (OperationMap.Count == 0)
             {
-                this.ScheduledOperation = op;
+                ScheduledOperation = op;
             }
 
-            return this.OperationMap.TryAdd(op.Id, op);
+            return OperationMap.TryAdd(op.Id, op);
         }
 
         /// <summary>
@@ -287,7 +287,7 @@ namespace PChecker.SystematicTesting
         internal void ScheduleOperation(AsyncOperation op, int taskId)
         {
             IO.Debug.WriteLine($"<ScheduleDebug> Scheduling operation '{op.Name}' to execute on task '{taskId}'.");
-            this.ControlledTaskMap.TryAdd(taskId, op);
+            ControlledTaskMap.TryAdd(taskId, op);
         }
 
         /// <summary>
@@ -324,7 +324,7 @@ namespace PChecker.SystematicTesting
         {
             lock (op)
             {
-                if (this.OperationMap.Count == 1)
+                if (OperationMap.Count == 1)
                 {
                     op.IsActive = true;
                     System.Threading.Monitor.PulseAll(op);
@@ -347,7 +347,7 @@ namespace PChecker.SystematicTesting
         internal TAsyncOperation GetOperationWithId<TAsyncOperation>(ulong id)
             where TAsyncOperation : IAsyncOperation
         {
-            if (this.OperationMap.TryGetValue(id, out IAsyncOperation op) &&
+            if (OperationMap.TryGetValue(id, out var op) &&
                 op is TAsyncOperation expected)
             {
                 return expected;
@@ -365,7 +365,7 @@ namespace PChecker.SystematicTesting
             where TAsyncOperation : IAsyncOperation
         {
             if (Task.CurrentId.HasValue &&
-                this.ControlledTaskMap.TryGetValue(Task.CurrentId.Value, out AsyncOperation op) &&
+                ControlledTaskMap.TryGetValue(Task.CurrentId.Value, out var op) &&
                 op is TAsyncOperation expected)
             {
                 return expected;
@@ -381,7 +381,7 @@ namespace PChecker.SystematicTesting
         /// This operation is thread safe because the systematic testing
         /// runtime serializes the execution.
         /// </remarks>
-        internal IEnumerable<IAsyncOperation> GetRegisteredOperations() => this.OperationMap.Values;
+        internal IEnumerable<IAsyncOperation> GetRegisteredOperations() => OperationMap.Values;
 
         /// <summary>
         /// Returns the enabled operation ids.
@@ -389,7 +389,7 @@ namespace PChecker.SystematicTesting
         internal HashSet<ulong> GetEnabledOperationIds()
         {
             var enabledSchedulableIds = new HashSet<ulong>();
-            foreach (var machineInfo in this.OperationMap.Values)
+            foreach (var machineInfo in OperationMap.Values)
             {
                 if (machineInfo.Status is AsyncOperationStatus.Enabled)
                 {
@@ -405,36 +405,36 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal TestReport GetReport()
         {
-            TestReport report = new TestReport(this.CheckerConfiguration);
+            var report = new TestReport(CheckerConfiguration);
 
-            if (this.BugFound)
+            if (BugFound)
             {
                 report.NumOfFoundBugs++;
-                report.BugReports.Add(this.BugReport);
+                report.BugReports.Add(BugReport);
             }
 
-            if (this.Strategy.IsFair())
+            if (Strategy.IsFair())
             {
                 report.NumOfExploredFairSchedules++;
-                report.TotalExploredFairSteps += this.ScheduledSteps;
+                report.TotalExploredFairSteps += ScheduledSteps;
 
                 if (report.MinExploredFairSteps < 0 ||
-                    report.MinExploredFairSteps > this.ScheduledSteps)
+                    report.MinExploredFairSteps > ScheduledSteps)
                 {
-                    report.MinExploredFairSteps = this.ScheduledSteps;
+                    report.MinExploredFairSteps = ScheduledSteps;
                 }
 
-                if (report.MaxExploredFairSteps < this.ScheduledSteps)
+                if (report.MaxExploredFairSteps < ScheduledSteps)
                 {
-                    report.MaxExploredFairSteps = this.ScheduledSteps;
+                    report.MaxExploredFairSteps = ScheduledSteps;
                 }
 
-                if (this.Strategy.HasReachedMaxSchedulingSteps())
+                if (Strategy.HasReachedMaxSchedulingSteps())
                 {
                     report.MaxFairStepsHitInFairTests++;
                 }
 
-                if (this.ScheduledSteps >= report.CheckerConfiguration.MaxUnfairSchedulingSteps)
+                if (ScheduledSteps >= report.CheckerConfiguration.MaxUnfairSchedulingSteps)
                 {
                     report.MaxUnfairStepsHitInFairTests++;
                 }
@@ -443,7 +443,7 @@ namespace PChecker.SystematicTesting
             {
                 report.NumOfExploredUnfairSchedules++;
 
-                if (this.Strategy.HasReachedMaxSchedulingSteps())
+                if (Strategy.HasReachedMaxSchedulingSteps())
                 {
                     report.MaxUnfairStepsHitInUnfairTests++;
                 }
@@ -460,9 +460,9 @@ namespace PChecker.SystematicTesting
 #endif
         internal void CheckNoExternalConcurrencyUsed()
         {
-            if (!Task.CurrentId.HasValue || !this.ControlledTaskMap.ContainsKey(Task.CurrentId.Value))
+            if (!Task.CurrentId.HasValue || !ControlledTaskMap.ContainsKey(Task.CurrentId.Value))
             {
-                this.NotifyAssertionFailure(string.Format(CultureInfo.InvariantCulture,
+                NotifyAssertionFailure(string.Format(CultureInfo.InvariantCulture,
                     "Uncontrolled task '{0}' invoked a runtime method. Please make sure to avoid using concurrency APIs " +
                     "(e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from the 'System.Threading.Tasks' namespace) inside " +
                     "actor handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
@@ -492,10 +492,10 @@ namespace PChecker.SystematicTesting
                 return;
             }
 
-            string message = "Deadlock detected.";
+            var message = "Deadlock detected.";
             if (blockedOnReceiveOperations.Count > 0)
             {
-                for (int i = 0; i < blockedOnReceiveOperations.Count; i++)
+                for (var i = 0; i < blockedOnReceiveOperations.Count; i++)
                 {
                     message += string.Format(CultureInfo.InvariantCulture, " {0}", blockedOnReceiveOperations[i].Name);
                     if (i == blockedOnReceiveOperations.Count - 2)
@@ -514,7 +514,7 @@ namespace PChecker.SystematicTesting
 
             if (blockedOnWaitOperations.Count > 0)
             {
-                for (int i = 0; i < blockedOnWaitOperations.Count; i++)
+                for (var i = 0; i < blockedOnWaitOperations.Count; i++)
                 {
                     message += string.Format(CultureInfo.InvariantCulture, " {0}", blockedOnWaitOperations[i].Name);
                     if (i == blockedOnWaitOperations.Count - 2)
@@ -533,7 +533,7 @@ namespace PChecker.SystematicTesting
 
             if (blockedOnResourceSynchronization.Count > 0)
             {
-                for (int i = 0; i < blockedOnResourceSynchronization.Count; i++)
+                for (var i = 0; i < blockedOnResourceSynchronization.Count; i++)
                 {
                     message += string.Format(CultureInfo.InvariantCulture, " {0}", blockedOnResourceSynchronization[i].Name);
                     if (i == blockedOnResourceSynchronization.Count - 2)
@@ -551,7 +551,7 @@ namespace PChecker.SystematicTesting
                 message += "but no other controlled tasks are enabled.";
             }
 
-            this.NotifyAssertionFailure(message);
+            NotifyAssertionFailure(message);
         }
 
         /// <summary>
@@ -563,22 +563,22 @@ namespace PChecker.SystematicTesting
 #endif
         private void CheckIfSchedulingStepsBoundIsReached()
         {
-            if (this.Strategy.HasReachedMaxSchedulingSteps())
+            if (Strategy.HasReachedMaxSchedulingSteps())
             {
-                int bound = this.Strategy.IsFair() ? this.CheckerConfiguration.MaxFairSchedulingSteps :
-                    this.CheckerConfiguration.MaxUnfairSchedulingSteps;
-                string message = $"Scheduling steps bound of {bound} reached.";
+                var bound = Strategy.IsFair() ? CheckerConfiguration.MaxFairSchedulingSteps :
+                    CheckerConfiguration.MaxUnfairSchedulingSteps;
+                var message = $"Scheduling steps bound of {bound} reached.";
 
-                if (this.CheckerConfiguration.ConsiderDepthBoundHitAsBug)
+                if (CheckerConfiguration.ConsiderDepthBoundHitAsBug)
                 {
-                    this.NotifyAssertionFailure(message);
+                    NotifyAssertionFailure(message);
                 }
                 else
                 {
                     IO.Debug.WriteLine($"<ScheduleDebug> {message}");
-                    this.Stop();
+                    Stop();
 
-                    if (this.ScheduledOperation.Status != AsyncOperationStatus.Completed)
+                    if (ScheduledOperation.Status != AsyncOperationStatus.Completed)
                     {
                         // The schedule is explored so throw exception to force terminate the current operation.
                         throw new ExecutionCanceledException();
@@ -595,22 +595,22 @@ namespace PChecker.SystematicTesting
 #endif
         internal void NotifyAssertionFailure(string text, bool killTasks = true, bool cancelExecution = true)
         {
-            if (!this.BugFound)
+            if (!BugFound)
             {
-                this.BugReport = text;
+                BugReport = text;
 
-                this.Runtime.LogWriter.LogAssertionFailure($"<ErrorLog> {text}");
-                StackTrace trace = new StackTrace();
-                this.Runtime.RaiseOnFailureEvent(new AssertionFailureException(text));
-                this.Runtime.LogWriter.LogStrategyDescription(this.CheckerConfiguration.SchedulingStrategy,
-                    this.Strategy.GetDescription());
+                Runtime.LogWriter.LogAssertionFailure($"<ErrorLog> {text}");
+                var trace = new StackTrace();
+                Runtime.RaiseOnFailureEvent(new AssertionFailureException(text));
+                Runtime.LogWriter.LogStrategyDescription(CheckerConfiguration.SchedulingStrategy,
+                    Strategy.GetDescription());
 
-                this.BugFound = true;
+                BugFound = true;
             }
 
             if (killTasks)
             {
-                this.Stop();
+                Stop();
             }
 
             if (cancelExecution)
@@ -622,25 +622,25 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Waits until the scheduler terminates.
         /// </summary>
-        internal Task WaitAsync() => this.CompletionSource.Task;
+        internal Task WaitAsync() => CompletionSource.Task;
 
         /// <summary>
         /// Stops the scheduler.
         /// </summary>
         private void Stop()
         {
-            this.IsRunning = false;
-            this.KillRemainingOperations();
+            IsRunning = false;
+            KillRemainingOperations();
 
             // Check if the completion source is completed. If not synchronize on
             // it (as it can only be set once) and set its result.
-            if (!this.CompletionSource.Task.IsCompleted)
+            if (!CompletionSource.Task.IsCompleted)
             {
-                lock (this.CompletionSource)
+                lock (CompletionSource)
                 {
-                    if (!this.CompletionSource.Task.IsCompleted)
+                    if (!CompletionSource.Task.IsCompleted)
                     {
-                        this.CompletionSource.SetResult(true);
+                        CompletionSource.SetResult(true);
                     }
                 }
             }
@@ -651,7 +651,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         private void KillRemainingOperations()
         {
-            foreach (var operation in this.OperationMap.Values)
+            foreach (var operation in OperationMap.Values)
             {
                 // This casting is always safe.
                 var op = operation as AsyncOperation;

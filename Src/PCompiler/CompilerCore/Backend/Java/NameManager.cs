@@ -29,7 +29,7 @@ namespace Plang.Compiler.Backend.Java
         /// <returns>The identifier.</returns>
         public string IdentForState(State s)
         {
-            string name = GetNameForDecl(s);
+            var name = GetNameForDecl(s);
             return Constants.StateEnumName + "." + name;
         }
 
@@ -42,7 +42,7 @@ namespace Plang.Compiler.Backend.Java
         {
             if (!_namedTupleJTypes.TryGetValue(t, out var val))
             {
-                IEnumerable<string> names = t.Names;
+                var names = t.Names;
                 names = names.Select(AbbreviateTupleName);
                 val = UniquifyName("PTuple_" + string.Join("_", names));
                 _namedTupleJTypes.Add(t, val);
@@ -122,7 +122,7 @@ namespace Plang.Compiler.Backend.Java
             if (name == TopLevelCName || Constants.IsReserved(name))
             {
                 //No need to use the fully-qualified typename, just grab the innermost class name for this.
-                string tname = decl.GetType().ToString().Split(".").Last();
+                var tname = decl.GetType().ToString().Split(".").Last();
                 name = $"{name}_{tname}";
             }
 

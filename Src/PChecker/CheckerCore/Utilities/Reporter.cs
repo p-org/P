@@ -22,13 +22,13 @@ namespace PChecker.Utilities
         /// <param name="isDebug">Is a debug report</param>
         internal static void EmitTestingCoverageReport(TestReport report, uint? processId = null, bool isDebug = false)
         {
-            string file = Path.GetFileNameWithoutExtension(report.CheckerConfiguration.AssemblyToBeAnalyzed);
+            var file = Path.GetFileNameWithoutExtension(report.CheckerConfiguration.AssemblyToBeAnalyzed);
             if (isDebug && processId != null)
             {
                 file += "_" + processId;
             }
 
-            string directory = CodeCoverageInstrumentation.OutputDirectory;
+            var directory = CodeCoverageInstrumentation.OutputDirectory;
             if (isDebug)
             {
                 directory += $"Debug{Path.DirectorySeparatorChar}";
@@ -86,15 +86,15 @@ namespace PChecker.Utilities
             var codeCoverageReporter = new ActivityCoverageReporter(report.CoverageInfo);
             var filePath = $"{directory}{file}";
 
-            string graphFilePath = $"{filePath}.dgml";
+            var graphFilePath = $"{filePath}.dgml";
             Console.WriteLine($"..... Writing {graphFilePath}");
             codeCoverageReporter.EmitVisualizationGraph(graphFilePath);
 
-            string coverageFilePath = $"{filePath}.coverage.txt";
+            var coverageFilePath = $"{filePath}.coverage.txt";
             Console.WriteLine($"..... Writing {coverageFilePath}");
             codeCoverageReporter.EmitCoverageReport(coverageFilePath);
 
-            string serFilePath = $"{filePath}.sci";
+            var serFilePath = $"{filePath}.sci";
             Console.WriteLine($"..... Writing {serFilePath}");
             report.CoverageInfo.Save(serFilePath);
         }

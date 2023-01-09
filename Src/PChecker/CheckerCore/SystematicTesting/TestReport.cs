@@ -109,25 +109,25 @@ namespace PChecker.SystematicTesting
         /// </summary>
         public TestReport(CheckerConfiguration checkerConfiguration)
         {
-            this.CheckerConfiguration = checkerConfiguration;
+            CheckerConfiguration = checkerConfiguration;
 
-            this.CoverageInfo = new CoverageInfo();
+            CoverageInfo = new CoverageInfo();
 
-            this.NumOfExploredFairSchedules = 0;
-            this.NumOfExploredUnfairSchedules = 0;
-            this.NumOfFoundBugs = 0;
-            this.BugReports = new HashSet<string>();
+            NumOfExploredFairSchedules = 0;
+            NumOfExploredUnfairSchedules = 0;
+            NumOfFoundBugs = 0;
+            BugReports = new HashSet<string>();
 
-            this.MinExploredFairSteps = -1;
-            this.MaxExploredFairSteps = -1;
-            this.TotalExploredFairSteps = 0;
-            this.MaxFairStepsHitInFairTests = 0;
-            this.MaxUnfairStepsHitInFairTests = 0;
-            this.MaxUnfairStepsHitInUnfairTests = 0;
+            MinExploredFairSteps = -1;
+            MaxExploredFairSteps = -1;
+            TotalExploredFairSteps = 0;
+            MaxFairStepsHitInFairTests = 0;
+            MaxUnfairStepsHitInFairTests = 0;
+            MaxUnfairStepsHitInUnfairTests = 0;
 
-            this.InternalErrors = new HashSet<string>();
+            InternalErrors = new HashSet<string>();
 
-            this.Lock = new object();
+            Lock = new object();
         }
 
         /// <summary>
@@ -136,42 +136,42 @@ namespace PChecker.SystematicTesting
         /// <returns>True if merged successfully.</returns>
         public bool Merge(TestReport testReport)
         {
-            if (!this.CheckerConfiguration.AssemblyToBeAnalyzed.Equals(testReport.CheckerConfiguration.AssemblyToBeAnalyzed))
+            if (!CheckerConfiguration.AssemblyToBeAnalyzed.Equals(testReport.CheckerConfiguration.AssemblyToBeAnalyzed))
             {
                 // Only merge test reports that have the same program name.
                 return false;
             }
 
-            lock (this.Lock)
+            lock (Lock)
             {
-                this.CoverageInfo.Merge(testReport.CoverageInfo);
+                CoverageInfo.Merge(testReport.CoverageInfo);
 
-                this.NumOfFoundBugs += testReport.NumOfFoundBugs;
+                NumOfFoundBugs += testReport.NumOfFoundBugs;
 
-                this.BugReports.UnionWith(testReport.BugReports);
+                BugReports.UnionWith(testReport.BugReports);
 
-                this.NumOfExploredFairSchedules += testReport.NumOfExploredFairSchedules;
-                this.NumOfExploredUnfairSchedules += testReport.NumOfExploredUnfairSchedules;
+                NumOfExploredFairSchedules += testReport.NumOfExploredFairSchedules;
+                NumOfExploredUnfairSchedules += testReport.NumOfExploredUnfairSchedules;
 
                 if (testReport.MinExploredFairSteps >= 0 &&
-                    (this.MinExploredFairSteps < 0 ||
-                    this.MinExploredFairSteps > testReport.MinExploredFairSteps))
+                    (MinExploredFairSteps < 0 ||
+                    MinExploredFairSteps > testReport.MinExploredFairSteps))
                 {
-                    this.MinExploredFairSteps = testReport.MinExploredFairSteps;
+                    MinExploredFairSteps = testReport.MinExploredFairSteps;
                 }
 
-                if (this.MaxExploredFairSteps < testReport.MaxExploredFairSteps)
+                if (MaxExploredFairSteps < testReport.MaxExploredFairSteps)
                 {
-                    this.MaxExploredFairSteps = testReport.MaxExploredFairSteps;
+                    MaxExploredFairSteps = testReport.MaxExploredFairSteps;
                 }
 
-                this.TotalExploredFairSteps += testReport.TotalExploredFairSteps;
+                TotalExploredFairSteps += testReport.TotalExploredFairSteps;
 
-                this.MaxFairStepsHitInFairTests += testReport.MaxFairStepsHitInFairTests;
-                this.MaxUnfairStepsHitInFairTests += testReport.MaxUnfairStepsHitInFairTests;
-                this.MaxUnfairStepsHitInUnfairTests += testReport.MaxUnfairStepsHitInUnfairTests;
+                MaxFairStepsHitInFairTests += testReport.MaxFairStepsHitInFairTests;
+                MaxUnfairStepsHitInFairTests += testReport.MaxUnfairStepsHitInFairTests;
+                MaxUnfairStepsHitInUnfairTests += testReport.MaxUnfairStepsHitInUnfairTests;
 
-                this.InternalErrors.UnionWith(testReport.InternalErrors);
+                InternalErrors.UnionWith(testReport.InternalErrors);
             }
 
             return true;
@@ -182,7 +182,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         public string GetText(CheckerConfiguration checkerConfiguration, string prefix = "")
         {
-            StringBuilder report = new StringBuilder();
+            var report = new StringBuilder();
 
             report.AppendFormat("{0} Testing statistics:", prefix);
 
@@ -190,14 +190,14 @@ namespace PChecker.SystematicTesting
             report.AppendFormat(
                 "{0} Found {1} bug{2}.",
                 prefix.Equals("...") ? "....." : prefix,
-                this.NumOfFoundBugs,
-                this.NumOfFoundBugs == 1 ? string.Empty : "s");
+                NumOfFoundBugs,
+                NumOfFoundBugs == 1 ? string.Empty : "s");
 
             report.AppendLine();
             report.AppendFormat("{0} Scheduling statistics:", prefix);
 
-            int totalExploredSchedules = this.NumOfExploredFairSchedules +
-                this.NumOfExploredUnfairSchedules;
+            var totalExploredSchedules = NumOfExploredFairSchedules +
+                                         NumOfExploredUnfairSchedules;
 
             report.AppendLine();
             report.AppendFormat(
@@ -205,67 +205,67 @@ namespace PChecker.SystematicTesting
                 prefix.Equals("...") ? "....." : prefix,
                 totalExploredSchedules,
                 totalExploredSchedules == 1 ? string.Empty : "s",
-                this.NumOfExploredFairSchedules,
-                this.NumOfExploredUnfairSchedules);
+                NumOfExploredFairSchedules,
+                NumOfExploredUnfairSchedules);
 
             if (totalExploredSchedules > 0 &&
-                this.NumOfFoundBugs > 0)
+                NumOfFoundBugs > 0)
             {
                 report.AppendLine();
                 report.AppendFormat(
                     "{0} Found {1:F2}% buggy schedules.",
                     prefix.Equals("...") ? "....." : prefix,
-                    this.NumOfFoundBugs * 100.0 / totalExploredSchedules);
+                    NumOfFoundBugs * 100.0 / totalExploredSchedules);
             }
 
-            if (this.NumOfExploredFairSchedules > 0)
+            if (NumOfExploredFairSchedules > 0)
             {
-                int averageExploredFairSteps = this.TotalExploredFairSteps /
-                    this.NumOfExploredFairSchedules;
+                var averageExploredFairSteps = TotalExploredFairSteps /
+                                               NumOfExploredFairSchedules;
 
                 report.AppendLine();
                 report.AppendFormat(
                     "{0} Number of scheduling points in fair terminating schedules: {1} (min), {2} (avg), {3} (max).",
                     prefix.Equals("...") ? "....." : prefix,
-                    this.MinExploredFairSteps < 0 ? 0 : this.MinExploredFairSteps,
+                    MinExploredFairSteps < 0 ? 0 : MinExploredFairSteps,
                     averageExploredFairSteps,
-                    this.MaxExploredFairSteps < 0 ? 0 : this.MaxExploredFairSteps);
+                    MaxExploredFairSteps < 0 ? 0 : MaxExploredFairSteps);
 
                 if (checkerConfiguration.MaxUnfairSchedulingSteps > 0 &&
-                    this.MaxUnfairStepsHitInFairTests > 0)
+                    MaxUnfairStepsHitInFairTests > 0)
                 {
                     report.AppendLine();
                     report.AppendFormat(
                         "{0} Exceeded the max-steps bound of '{1}' in {2:F2}% of the fair schedules.",
                         prefix.Equals("...") ? "....." : prefix,
                         checkerConfiguration.MaxUnfairSchedulingSteps,
-                        (double)this.MaxUnfairStepsHitInFairTests / this.NumOfExploredFairSchedules * 100);
+                        (double)MaxUnfairStepsHitInFairTests / NumOfExploredFairSchedules * 100);
                 }
 
                 if (checkerConfiguration.UserExplicitlySetMaxFairSchedulingSteps &&
                     checkerConfiguration.MaxFairSchedulingSteps > 0 &&
-                    this.MaxFairStepsHitInFairTests > 0)
+                    MaxFairStepsHitInFairTests > 0)
                 {
                     report.AppendLine();
                     report.AppendFormat(
                         "{0} Hit the max-steps bound of '{1}' in {2:F2}% of the fair schedules.",
                         prefix.Equals("...") ? "....." : prefix,
                         checkerConfiguration.MaxFairSchedulingSteps,
-                        (double)this.MaxFairStepsHitInFairTests / this.NumOfExploredFairSchedules * 100);
+                        (double)MaxFairStepsHitInFairTests / NumOfExploredFairSchedules * 100);
                 }
             }
 
-            if (this.NumOfExploredUnfairSchedules > 0)
+            if (NumOfExploredUnfairSchedules > 0)
             {
                 if (checkerConfiguration.MaxUnfairSchedulingSteps > 0 &&
-                    this.MaxUnfairStepsHitInUnfairTests > 0)
+                    MaxUnfairStepsHitInUnfairTests > 0)
                 {
                     report.AppendLine();
                     report.AppendFormat(
                         "{0} Hit the max-steps bound of '{1}' in {2:F2}% of the unfair schedules.",
                         prefix.Equals("...") ? "....." : prefix,
                         checkerConfiguration.MaxUnfairSchedulingSteps,
-                        (double)this.MaxUnfairStepsHitInUnfairTests / this.NumOfExploredUnfairSchedules * 100);
+                        (double)MaxUnfairStepsHitInUnfairTests / NumOfExploredUnfairSchedules * 100);
                 }
             }
 
@@ -282,7 +282,7 @@ namespace PChecker.SystematicTesting
             var serializer = new DataContractSerializer(typeof(TestReport), serializerSettings);
             using (var ms = new System.IO.MemoryStream())
             {
-                lock (this.Lock)
+                lock (Lock)
                 {
                     serializer.WriteObject(ms, this);
                     ms.Position = 0;

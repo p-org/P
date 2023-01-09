@@ -50,10 +50,10 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal AsyncOperation()
         {
-            this.Status = AsyncOperationStatus.None;
-            this.IsActive = false;
-            this.IsHandlerRunning = false;
-            this.IsAwaiterControlled = false;
+            Status = AsyncOperationStatus.None;
+            IsActive = false;
+            IsHandlerRunning = false;
+            IsAwaiterControlled = false;
         }
 
         /// <summary>
@@ -61,9 +61,9 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal void OnEnabled()
         {
-            this.Status = AsyncOperationStatus.Enabled;
-            this.IsActive = false;
-            this.IsHandlerRunning = false;
+            Status = AsyncOperationStatus.Enabled;
+            IsActive = false;
+            IsHandlerRunning = false;
         }
 
         /// <summary>
@@ -71,8 +71,8 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal virtual void OnCompleted()
         {
-            this.Status = AsyncOperationStatus.Completed;
-            this.IsHandlerRunning = false;
+            Status = AsyncOperationStatus.Completed;
+            IsHandlerRunning = false;
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace PChecker.SystematicTesting
         {
             if (obj is AsyncOperation op)
             {
-                return this.Id == op.Id;
+                return Id == op.Id;
             }
 
             return false;
@@ -98,6 +98,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
-        public override int GetHashCode() => (int)this.Id;
+        public override int GetHashCode() => (int)Id;
     }
 }

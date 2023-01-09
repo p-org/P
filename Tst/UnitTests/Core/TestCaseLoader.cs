@@ -32,15 +32,15 @@ namespace UnitTests.Core
 
         private static TestCaseData DirectoryToTestCase(DirectoryInfo dir, DirectoryInfo testRoot)
         {
-            string category = testRoot.Name + Constants.CategorySeparator + GetCategory(dir, testRoot);
-            string testName = category + Constants.CategorySeparator + dir.Name;
+            var category = testRoot.Name + Constants.CategorySeparator + GetCategory(dir, testRoot);
+            var testName = category + Constants.CategorySeparator + dir.Name;
             return new TestCaseData(dir).SetName(testName).SetCategory(category);
         }
 
         private static string GetCategory(DirectoryInfo dir, DirectoryInfo baseDirectory)
         {
-            string category = "";
-            string sep = "";
+            var category = "";
+            var sep = "";
             dir = dir.Parent;
             while (dir != null && dir.FullName != baseDirectory.FullName)
             {

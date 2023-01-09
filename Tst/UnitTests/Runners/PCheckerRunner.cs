@@ -1,8 +1,6 @@
-﻿using PChecker.SystematicTesting;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Plang.Compiler;
 using UnitTests.Core;
 
@@ -28,7 +26,7 @@ namespace UnitTests.Runners
         private void FileCopy(string src, string target, bool overwrite)
         {
             // during parallel testing we might get "The process cannot access the file because it is being used by another process."
-            int retries = 5;
+            var retries = 5;
             while (retries-- > 0)
             {
                 try
@@ -36,7 +34,7 @@ namespace UnitTests.Runners
                     File.Copy(src, target, overwrite);
                     return;
                 }
-                catch (System.IO.IOException)
+                catch (IOException)
                 {
                     if (retries == 1)
                     {
@@ -56,17 +54,17 @@ namespace UnitTests.Runners
             // Do not want to use the auto-generated csproj file
             CreateCSProjFile(scratchDirectory);
             // copy the foreign code to the folder
-            foreach (FileInfo nativeFile in nativeSources)
+            foreach (var nativeFile in nativeSources)
             {
                 FileCopy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
             }
 
-            int exitCode = DoCompile(scratchDirectory);
+            var exitCode = DoCompile(scratchDirectory);
 
             if (exitCode == 0)
             {
                 exitCode = RunPChecker(scratchDirectory.FullName,
-                    Path.Combine(scratchDirectory.FullName, "./net6.0/Main.dll"), out string testStdout, out string testStderr);
+                    Path.Combine(scratchDirectory.FullName, "./net6.0/Main.dll"), out var testStdout, out var testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
             }
@@ -102,7 +100,7 @@ namespace UnitTests.Runners
 
         private void CreateFileWithMainFunction(DirectoryInfo dir)
         {
-            string testCode = @"
+            var testCode = @"
 using PChecker;
 using PChecker.SystematicTesting;
 using System;
@@ -142,7 +140,7 @@ namespace PImplementation
         }
     }
 }";
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.cs"), false))
+            using (var outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.cs"), false))
             {
                 outputFile.WriteLine(testCode);
             }
@@ -155,9 +153,9 @@ namespace PImplementation
 
         private int DoCompile(DirectoryInfo scratchDirectory)
         {
-            Compiler compiler = new Compiler();
-            TestExecutionStream outputStream = new TestExecutionStream(scratchDirectory);
-            CompilerConfiguration compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory, CompilerOutput.CSharp, sources.Select(x => x.FullName).ToList(), "Main", scratchDirectory);
+            var compiler = new Compiler();
+            var outputStream = new TestExecutionStream(scratchDirectory);
+            var compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory, CompilerOutput.CSharp, sources.Select(x => x.FullName).ToList(), "Main", scratchDirectory);
             try
             {
                 return compiler.Compile(compilerConfiguration);

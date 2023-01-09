@@ -13,8 +13,8 @@ namespace UnitTests
         [Test]
         public void TestCompileCoyoteTemp()
         {
-            DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPCheckerTemp"));
-            FileInfo tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "test.p"));
+            var tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPCheckerTemp"));
+            var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "test.p"));
             //var foreignFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "Foreign.cs"));
 
             if (!tempFilePath.Exists)
@@ -22,7 +22,7 @@ namespace UnitTests
                 return;
             }
 
-            CompilerTestCase testCase = new CompilerTestCase(
+            var testCase = new CompilerTestCase(
                 tempDir,
                 new PCheckerRunner(new[] { tempFilePath }),
                 new CompileSuccessValidator());

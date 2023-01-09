@@ -18,18 +18,18 @@ namespace PChecker.Testing
         /// </summary>
         public static Process Create(uint id, CheckerConfiguration checkerConfiguration)
         {
-            string assembly = Assembly.GetExecutingAssembly().Location;
+            var assembly = Assembly.GetExecutingAssembly().Location;
             Console.WriteLine("Launching " + assembly);
 #if NETFRAMEWORK
             ProcessStartInfo startInfo = new ProcessStartInfo(assembly,
                 CreateArgumentsFromConfiguration(id, checkerConfiguration));
 #else
-            ProcessStartInfo startInfo = new ProcessStartInfo("dotnet", assembly + " " +
-                CreateArgumentsFromConfiguration(id, checkerConfiguration));
+            var startInfo = new ProcessStartInfo("dotnet", assembly + " " +
+                                                           CreateArgumentsFromConfiguration(id, checkerConfiguration));
 #endif
             startInfo.UseShellExecute = false;
 
-            Process process = new Process();
+            var process = new Process();
             process.StartInfo = startInfo;
 
             return process;
@@ -40,7 +40,7 @@ namespace PChecker.Testing
         /// </summary>
         internal static string CreateArgumentsFromConfiguration(uint id, CheckerConfiguration checkerConfiguration)
         {
-            StringBuilder arguments = new StringBuilder();
+            var arguments = new StringBuilder();
 
             arguments.Append($"test {checkerConfiguration.AssemblyToBeAnalyzed} ");
 

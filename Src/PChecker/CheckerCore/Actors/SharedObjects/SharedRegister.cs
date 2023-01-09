@@ -52,9 +52,9 @@ namespace PChecker.Actors.SharedObjects
             internal Mock(ControlledRuntime runtime, T value)
                 : base(value)
             {
-                this.Runtime = runtime;
-                this.RegisterActor = this.Runtime.CreateActor(typeof(SharedRegisterActor<T>));
-                this.Runtime.SendEvent(this.RegisterActor, SharedRegisterEvent.SetEvent(value));
+                Runtime = runtime;
+                RegisterActor = Runtime.CreateActor(typeof(SharedRegisterActor<T>));
+                Runtime.SendEvent(RegisterActor, SharedRegisterEvent.SetEvent(value));
             }
 
             /// <summary>
@@ -62,8 +62,8 @@ namespace PChecker.Actors.SharedObjects
             /// </summary>
             public override T Update(Func<T, T> func)
             {
-                var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                this.Runtime.SendEvent(this.RegisterActor, SharedRegisterEvent.UpdateEvent(func, op.Actor.Id));
+                var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                Runtime.SendEvent(RegisterActor, SharedRegisterEvent.UpdateEvent(func, op.Actor.Id));
                 var e = op.Actor.ReceiveEventAsync(typeof(SharedRegisterResponseEvent<T>)).Result as SharedRegisterResponseEvent<T>;
                 return e.Value;
             }
@@ -73,8 +73,8 @@ namespace PChecker.Actors.SharedObjects
             /// </summary>
             public override T GetValue()
             {
-                var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                this.Runtime.SendEvent(this.RegisterActor, SharedRegisterEvent.GetEvent(op.Actor.Id));
+                var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                Runtime.SendEvent(RegisterActor, SharedRegisterEvent.GetEvent(op.Actor.Id));
                 var e = op.Actor.ReceiveEventAsync(typeof(SharedRegisterResponseEvent<T>)).Result as SharedRegisterResponseEvent<T>;
                 return e.Value;
             }
@@ -84,7 +84,7 @@ namespace PChecker.Actors.SharedObjects
             /// </summary>
             public override void SetValue(T value)
             {
-                this.Runtime.SendEvent(this.RegisterActor, SharedRegisterEvent.SetEvent(value));
+                Runtime.SendEvent(RegisterActor, SharedRegisterEvent.SetEvent(value));
             }
         }
     }
@@ -106,7 +106,7 @@ namespace PChecker.Actors.SharedObjects
         /// </summary>
         internal SharedRegister(T value)
         {
-            this.Value = value;
+            Value = value;
         }
 
         /// <summary>
@@ -115,18 +115,18 @@ namespace PChecker.Actors.SharedObjects
         public virtual T Update(Func<T, T> func)
         {
             T oldValue, newValue;
-            bool done = false;
+            var done = false;
 
             do
             {
-                oldValue = this.Value;
+                oldValue = Value;
                 newValue = func(oldValue);
 
                 lock (this)
                 {
-                    if (oldValue.Equals(this.Value))
+                    if (oldValue.Equals(Value))
                     {
-                        this.Value = newValue;
+                        Value = newValue;
                         done = true;
                     }
                 }
@@ -144,7 +144,7 @@ namespace PChecker.Actors.SharedObjects
             T currentValue;
             lock (this)
             {
-                currentValue = this.Value;
+                currentValue = Value;
             }
 
             return currentValue;
@@ -157,7 +157,7 @@ namespace PChecker.Actors.SharedObjects
         {
             lock (this)
             {
-                this.Value = value;
+                Value = value;
             }
         }
     }

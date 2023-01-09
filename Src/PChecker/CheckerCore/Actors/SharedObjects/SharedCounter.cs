@@ -21,7 +21,7 @@ namespace PChecker.Actors.SharedObjects
         /// </summary>
         private SharedCounter(int value)
         {
-            this.Counter = value;
+            Counter = value;
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace PChecker.Actors.SharedObjects
         /// </summary>
         public virtual void Increment()
         {
-            Interlocked.Increment(ref this.Counter);
+            Interlocked.Increment(ref Counter);
         }
 
         /// <summary>
@@ -52,29 +52,29 @@ namespace PChecker.Actors.SharedObjects
         /// </summary>
         public virtual void Decrement()
         {
-            Interlocked.Decrement(ref this.Counter);
+            Interlocked.Decrement(ref Counter);
         }
 
         /// <summary>
         /// Gets the current value of the shared counter.
         /// </summary>
-        public virtual int GetValue() => this.Counter;
+        public virtual int GetValue() => Counter;
 
         /// <summary>
         /// Adds a value to the counter atomically.
         /// </summary>
-        public virtual int Add(int value) => Interlocked.Add(ref this.Counter, value);
+        public virtual int Add(int value) => Interlocked.Add(ref Counter, value);
 
         /// <summary>
         /// Sets the counter to a value atomically.
         /// </summary>
-        public virtual int Exchange(int value) => Interlocked.Exchange(ref this.Counter, value);
+        public virtual int Exchange(int value) => Interlocked.Exchange(ref Counter, value);
 
         /// <summary>
         /// Sets the counter to a value atomically if it is equal to a given value.
         /// </summary>
         public virtual int CompareExchange(int value, int comparand) =>
-            Interlocked.CompareExchange(ref this.Counter, value, comparand);
+            Interlocked.CompareExchange(ref Counter, value, comparand);
 
         /// <summary>
         /// Mock implementation of <see cref="SharedCounter"/> that can be controlled during systematic testing.
@@ -99,10 +99,10 @@ namespace PChecker.Actors.SharedObjects
             internal Mock(int value, ControlledRuntime runtime)
                 : base(value)
             {
-                this.Runtime = runtime;
-                this.CounterActor = this.Runtime.CreateActor(typeof(SharedCounterActor));
-                var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                this.Runtime.SendEvent(this.CounterActor, SharedCounterEvent.SetEvent(op.Actor.Id, value));
+                Runtime = runtime;
+                CounterActor = Runtime.CreateActor(typeof(SharedCounterActor));
+                var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                Runtime.SendEvent(CounterActor, SharedCounterEvent.SetEvent(op.Actor.Id, value));
                 op.Actor.ReceiveEventAsync(typeof(SharedCounterResponseEvent)).Wait();
             }
 
@@ -110,21 +110,21 @@ namespace PChecker.Actors.SharedObjects
             /// Increments the shared counter.
             /// </summary>
             public override void Increment() =>
-                this.Runtime.SendEvent(this.CounterActor, SharedCounterEvent.IncrementEvent());
+                Runtime.SendEvent(CounterActor, SharedCounterEvent.IncrementEvent());
 
             /// <summary>
             /// Decrements the shared counter.
             /// </summary>
             public override void Decrement() =>
-                this.Runtime.SendEvent(this.CounterActor, SharedCounterEvent.DecrementEvent());
+                Runtime.SendEvent(CounterActor, SharedCounterEvent.DecrementEvent());
 
             /// <summary>
             /// Gets the current value of the shared counter.
             /// </summary>
             public override int GetValue()
             {
-                var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                this.Runtime.SendEvent(this.CounterActor, SharedCounterEvent.GetEvent(op.Actor.Id));
+                var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                Runtime.SendEvent(CounterActor, SharedCounterEvent.GetEvent(op.Actor.Id));
                 var response = op.Actor.ReceiveEventAsync(typeof(SharedCounterResponseEvent)).Result;
                 return (response as SharedCounterResponseEvent).Value;
             }
@@ -134,8 +134,8 @@ namespace PChecker.Actors.SharedObjects
             /// </summary>
             public override int Add(int value)
             {
-                var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                this.Runtime.SendEvent(this.CounterActor, SharedCounterEvent.AddEvent(op.Actor.Id, value));
+                var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                Runtime.SendEvent(CounterActor, SharedCounterEvent.AddEvent(op.Actor.Id, value));
                 var response = op.Actor.ReceiveEventAsync(typeof(SharedCounterResponseEvent)).Result;
                 return (response as SharedCounterResponseEvent).Value;
             }
@@ -145,8 +145,8 @@ namespace PChecker.Actors.SharedObjects
             /// </summary>
             public override int Exchange(int value)
             {
-                var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                this.Runtime.SendEvent(this.CounterActor, SharedCounterEvent.SetEvent(op.Actor.Id, value));
+                var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                Runtime.SendEvent(CounterActor, SharedCounterEvent.SetEvent(op.Actor.Id, value));
                 var response = op.Actor.ReceiveEventAsync(typeof(SharedCounterResponseEvent)).Result;
                 return (response as SharedCounterResponseEvent).Value;
             }
@@ -156,8 +156,8 @@ namespace PChecker.Actors.SharedObjects
             /// </summary>
             public override int CompareExchange(int value, int comparand)
             {
-                var op = this.Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
-                this.Runtime.SendEvent(this.CounterActor, SharedCounterEvent.CompareExchangeEvent(op.Actor.Id, value, comparand));
+                var op = Runtime.Scheduler.GetExecutingOperation<ActorOperation>();
+                Runtime.SendEvent(CounterActor, SharedCounterEvent.CompareExchangeEvent(op.Actor.Id, value, comparand));
                 var response = op.Actor.ReceiveEventAsync(typeof(SharedCounterResponseEvent)).Result;
                 return (response as SharedCounterResponseEvent).Value;
             }

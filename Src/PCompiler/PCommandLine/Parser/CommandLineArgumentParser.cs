@@ -7,7 +7,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 
-namespace PChecker.Utilities
+namespace Plang.Parser
 {
     /// <summary>
     /// Specifies a dependency between arguments.
@@ -33,7 +33,7 @@ namespace PChecker.Utilities
         public CommandLineException(string msg, List<CommandLineArgument> result)
             : base(msg)
         {
-            this.Result = result;
+            Result = result;
         }
 
         public List<CommandLineArgument> Result { get; set; }
@@ -115,12 +115,12 @@ namespace PChecker.Utilities
         {
             get
             {
-                if (this.IsPositional)
+                if (IsPositional)
                 {
-                    return this.LongName;
+                    return LongName;
                 }
 
-                return "--" + this.LongName;
+                return "--" + LongName;
             }
         }
 
@@ -128,10 +128,10 @@ namespace PChecker.Utilities
         {
             get
             {
-                string text = this.LongSyntax;
-                if (this.DataType != typeof(bool))
+                var text = LongSyntax;
+                if (DataType != typeof(bool))
                 {
-                    text += " " + this.DataTypeString;
+                    text += " " + DataTypeString;
                 }
 
                 return text;
@@ -142,7 +142,7 @@ namespace PChecker.Utilities
         {
             get
             {
-                return "-" + this.ShortName;
+                return "-" + ShortName;
             }
         }
 
@@ -151,29 +151,29 @@ namespace PChecker.Utilities
             get
             {
                 string type = null;
-                if (this.DataType == typeof(string))
+                if (DataType == typeof(string))
                 {
                     type = "string";
                 }
-                else if (this.DataType == typeof(int))
+                else if (DataType == typeof(int))
                 {
                     type = "int";
                 }
-                else if (this.DataType == typeof(uint))
+                else if (DataType == typeof(uint))
                 {
                     type = "uint";
                 }
-                else if (this.DataType == typeof(double))
+                else if (DataType == typeof(double))
                 {
                     type = "double";
                 }
-                else if (this.DataType == typeof(string))
+                else if (DataType == typeof(string))
                 {
                     type = "bool";
                 }
-                else if (this.DataType != null)
+                else if (DataType != null)
                 {
-                    throw new Exception(string.Format("Unsupported data type: {0}", this.DataType.Name));
+                    throw new Exception(string.Format("Unsupported data type: {0}", DataType.Name));
                 }
 
                 return type;
@@ -182,7 +182,7 @@ namespace PChecker.Utilities
 
         internal object ParseValue(string value)
         {
-            Type type = this.DataType;
+            var type = DataType;
             if (value == null)
             {
                 if (type == typeof(bool))
@@ -191,9 +191,9 @@ namespace PChecker.Utilities
                 }
                 else
                 {
-                    if (!this.AllowedValues.Contains(string.Empty))
+                    if (!AllowedValues.Contains(string.Empty))
                     {
-                        throw new Exception(string.Format("Argument: '{0}' missing a value", this.LongName));
+                        throw new Exception(string.Format("Argument: '{0}' missing a value", LongName));
                     }
                 }
             }
@@ -205,56 +205,56 @@ namespace PChecker.Utilities
             }
             else if (type == typeof(bool))
             {
-                if (!bool.TryParse(value, out bool x))
+                if (!bool.TryParse(value, out var x))
                 {
-                    throw new Exception(string.Format("Argument: '{0}' value is not a valid bool", this.LongName));
+                    throw new Exception(string.Format("Argument: '{0}' value is not a valid bool", LongName));
                 }
 
                 result = x;
             }
             else if (type == typeof(int))
             {
-                if (!int.TryParse(value, out int x))
+                if (!int.TryParse(value, out var x))
                 {
-                    throw new Exception(string.Format("Argument: '{0}' value is not a valid integer", this.LongName));
+                    throw new Exception(string.Format("Argument: '{0}' value is not a valid integer", LongName));
                 }
 
                 result = x;
             }
             else if (type == typeof(uint))
             {
-                if (!uint.TryParse(value, out uint x))
+                if (!uint.TryParse(value, out var x))
                 {
-                    throw new Exception(string.Format("Argument: '{0}' value is not a valid unsigned integer", this.LongName));
+                    throw new Exception(string.Format("Argument: '{0}' value is not a valid unsigned integer", LongName));
                 }
 
                 result = x;
             }
             else if (type == typeof(double))
             {
-                if (!double.TryParse(value, out double x))
+                if (!double.TryParse(value, out var x))
                 {
-                    throw new Exception(string.Format("Argument: '{0}' value is not a valid double", this.LongName));
+                    throw new Exception(string.Format("Argument: '{0}' value is not a valid double", LongName));
                 }
 
                 result = x;
             }
             else
             {
-                throw new Exception(string.Format("Argument: '{0}' type '{1}' is not supported, use bool, int, uint, double, string", this.LongName, type.Name));
+                throw new Exception(string.Format("Argument: '{0}' type '{1}' is not supported, use bool, int, uint, double, string", LongName, type.Name));
             }
 
-            if (this.AllowedValues.Count > 0)
+            if (AllowedValues.Count > 0)
             {
                 if (result == null)
                 {
                     result = string.Empty;
                 }
 
-                string s = result.ToString().ToLower();
-                if (!this.AllowedValues.Contains(s))
+                var s = result.ToString().ToLower();
+                if (!AllowedValues.Contains(s))
                 {
-                    throw new Exception(string.Format("Argument: '{0}' value '{1}' must be one of [{2}]", this.LongName, s, string.Join(", ", this.AllowedValues.ToArray())));
+                    throw new Exception(string.Format("Argument: '{0}' value '{1}' must be one of [{2}]", LongName, s, string.Join(", ", AllowedValues.ToArray())));
                 }
             }
 
@@ -265,61 +265,61 @@ namespace PChecker.Utilities
         {
             return new CommandLineArgument()
             {
-                LongName = this.LongName,
-                ShortName = this.ShortName,
-                DataType = this.DataType,
-                Description = this.Description,
-                IsRequired = this.IsRequired,
-                Group = this.Group,
-                IsHidden = this.IsHidden,
-                AllowedValues = this.AllowedValues,
-                IsMultiValue = this.IsMultiValue,
-                IsPositional = this.IsPositional,
-                DependsOn = this.DependsOn
+                LongName = LongName,
+                ShortName = ShortName,
+                DataType = DataType,
+                Description = Description,
+                IsRequired = IsRequired,
+                Group = Group,
+                IsHidden = IsHidden,
+                AllowedValues = AllowedValues,
+                IsMultiValue = IsMultiValue,
+                IsPositional = IsPositional,
+                DependsOn = DependsOn
             };
         }
 
         internal void AddParsedValue(string arg)
         {
-            if (!this.IsMultiValue)
+            if (!IsMultiValue)
             {
-                if (this.Value != null)
+                if (Value != null)
                 {
-                    throw new Exception(string.Format("Argument: '--{0}' has too many values", this.LongName));
+                    throw new Exception(string.Format("Argument: '--{0}' has too many values", LongName));
                 }
 
-                this.Value = this.ParseValue(arg);
+                Value = ParseValue(arg);
             }
             else
             {
-                var value = this.ParseValue(arg);
-                if (this.DataType == typeof(string))
+                var value = ParseValue(arg);
+                if (DataType == typeof(string))
                 {
-                    this.Value = this.Append<string>(this.Value, value);
+                    Value = Append<string>(Value, value);
                 }
-                else if (this.DataType == typeof(int))
+                else if (DataType == typeof(int))
                 {
-                    this.Value = this.Append<int>(this.Value, value);
+                    Value = Append<int>(Value, value);
                 }
-                else if (this.DataType == typeof(uint))
+                else if (DataType == typeof(uint))
                 {
-                    this.Value = this.Append<uint>(this.Value, value);
+                    Value = Append<uint>(Value, value);
                 }
-                else if (this.DataType == typeof(double))
+                else if (DataType == typeof(double))
                 {
-                    this.Value = this.Append<double>(this.Value, value);
+                    Value = Append<double>(Value, value);
                 }
-                else if (this.DataType == typeof(string))
+                else if (DataType == typeof(string))
                 {
-                    this.Value = this.Append<bool>(this.Value, value);
+                    Value = Append<bool>(Value, value);
                 }
-                else if (this.DataType != null)
+                else if (DataType != null)
                 {
-                    throw new Exception(string.Format("Unsupported data type: {0}", this.DataType.Name));
+                    throw new Exception(string.Format("Unsupported data type: {0}", DataType.Name));
                 }
                 else
                 {
-                    this.Value = value;
+                    Value = value;
                 }
             }
         }
@@ -328,12 +328,12 @@ namespace PChecker.Utilities
         {
             if (value1 == null)
             {
-                return new T[1] { (T)value2 };
+                return new T[] { (T)value2 };
             }
 
-            T[] existing = (T[])value1;
-            T[] newList = new T[existing.Length + 1];
-            int i = 0;
+            var existing = (T[])value1;
+            var newList = new T[existing.Length + 1];
+            var i = 0;
             while (i < existing.Length)
             {
                 newList[i] = existing[i];
@@ -355,8 +355,8 @@ namespace PChecker.Utilities
 
         internal CommandLineGroup(CommandLineArgumentParser parser, List<string> longNames)
         {
-            this.Parser = parser;
-            this.LongNames = longNames;
+            Parser = parser;
+            LongNames = longNames;
         }
 
         /// <summary>
@@ -392,10 +392,10 @@ namespace PChecker.Utilities
         /// <returns>The new option or throws <see cref="DuplicateNameException"/>.</returns>
         public CommandLineArgument AddPositionalArgument(string name, string description = null, Type dataType = null)
         {
-            var argument = this.Parser.AddPositionalArgument(name, description, dataType);
-            argument.IsHidden = this.IsHidden;
-            argument.Group = this.Name;
-            argument.DependsOn = this.DependsOn;
+            var argument = Parser.AddPositionalArgument(name, description, dataType);
+            argument.IsHidden = IsHidden;
+            argument.Group = Name;
+            argument.DependsOn = DependsOn;
             return argument;
         }
 
@@ -417,9 +417,9 @@ namespace PChecker.Utilities
                 dataType = typeof(string);
             }
 
-            var argument = this.Parser.AddArgument(longName, shortName, description, dataType, required);
-            argument.IsHidden = this.IsHidden;
-            argument.Group = this.Name;
+            var argument = Parser.AddArgument(longName, shortName, description, dataType, required);
+            argument.IsHidden = IsHidden;
+            argument.Group = Name;
             return argument;
         }
     }
@@ -464,9 +464,9 @@ namespace PChecker.Utilities
         /// <param name="appDescription">The overview help text for the application..</param>
         public CommandLineArgumentParser(string appName, string appDescription)
         {
-            this.AppName = appName;
-            this.AppDescription = appDescription;
-            this.AddArgument("?", "?", "Show this help menu", typeof(bool)).PrintHelp = true;
+            AppName = appName;
+            AppDescription = appDescription;
+            AddArgument("?", "?", "Show this help menu", typeof(bool)).PrintHelp = true;
         }
 
         /// <summary>
@@ -477,14 +477,14 @@ namespace PChecker.Utilities
         /// <returns>The new command line group.</returns>
         public CommandLineGroup GetOrCreateGroup(string name, string description)
         {
-            if (this.Groups.TryGetValue(name, out CommandLineGroup group))
+            if (Groups.TryGetValue(name, out var group))
             {
                 return group;
             }
 
-            group = new CommandLineGroup(this, this.LongNames) { Name = name, Description = description };
-            this.Groups.Add(name, group);
-            this.GroupNames.Add(name);
+            group = new CommandLineGroup(this, LongNames) { Name = name, Description = description };
+            Groups.Add(name, group);
+            GroupNames.Add(name);
             return group;
         }
 
@@ -500,12 +500,12 @@ namespace PChecker.Utilities
         /// <returns>The new option or throws <see cref="DuplicateNameException"/>.</returns>
         public CommandLineArgument AddPositionalArgument(string name, string description = null, Type dataType = null)
         {
-            if (this.Arguments.ContainsKey(name))
+            if (Arguments.ContainsKey(name))
             {
                 throw new DuplicateNameException(string.Format("Argument {0} already defined", name));
             }
 
-            CommandLineArgument argument = new CommandLineArgument()
+            var argument = new CommandLineArgument()
             {
                 LongName = name,
                 DataType = dataType,
@@ -514,8 +514,8 @@ namespace PChecker.Utilities
                 IsPositional = true
             };
 
-            this.Arguments[name] = argument;
-            this.PositionalNames.Add(name);
+            Arguments[name] = argument;
+            PositionalNames.Add(name);
             return argument;
         }
 
@@ -532,14 +532,14 @@ namespace PChecker.Utilities
         /// <returns>The new option or throws <see cref="System.Data.DuplicateNameException"/>.</returns>
         public CommandLineArgument AddArgument(string longName, string shortName, string description = null, Type dataType = null, bool required = false)
         {
-            if (this.Arguments.TryGetValue(longName, out CommandLineArgument argument))
+            if (Arguments.TryGetValue(longName, out var argument))
             {
                 throw new DuplicateNameException(string.Format("Argument {0} already defined", longName));
             }
 
             if (shortName != null)
             {
-                var existing = (from a in this.Arguments.Values where a.ShortName == shortName select a).FirstOrDefault();
+                var existing = (from a in Arguments.Values where a.ShortName == shortName select a).FirstOrDefault();
                 if (existing != null)
                 {
                     throw new DuplicateNameException(string.Format("Argument short name '{0}' is already being used by '{1}'", shortName, existing.LongName));
@@ -554,8 +554,8 @@ namespace PChecker.Utilities
                 Description = description,
                 IsRequired = required
             };
-            this.Arguments[longName] = argument;
-            this.LongNames.Add(longName);
+            Arguments[longName] = argument;
+            LongNames.Add(longName);
             return argument;
         }
 
@@ -569,50 +569,50 @@ namespace PChecker.Utilities
 
             internal WordWrapper(TextWriter output, int indent, int lineLength)
             {
-                this.Output = output;
-                this.Indent = indent;
-                this.LineLength = lineLength;
-                this.CurrentLineLength = indent;
-                this.IndentText = new string(' ', this.Indent);
+                Output = output;
+                Indent = indent;
+                LineLength = lineLength;
+                CurrentLineLength = indent;
+                IndentText = new string(' ', Indent);
             }
 
             internal void Write(string text)
             {
-                bool first = true;
-                foreach (string line in text.Split('\n'))
+                var first = true;
+                foreach (var line in text.Split('\n'))
                 {
                     if (!first)
                     {
-                        this.NewLine();
+                        NewLine();
                     }
 
                     first = false;
-                    foreach (string word in line.Split(' '))
+                    foreach (var word in line.Split(' '))
                     {
-                        this.WriteWord(word);
+                        WriteWord(word);
                     }
                 }
             }
 
             internal void WriteWord(string word)
             {
-                if (this.CurrentLineLength + word.Length > this.LineLength)
+                if (CurrentLineLength + word.Length > LineLength)
                 {
-                    this.NewLine();
+                    NewLine();
                 }
 
-                this.Output.Write(word);
-                this.Output.Write(" ");
-                this.CurrentLineLength += word.Length + 1;
+                Output.Write(word);
+                Output.Write(" ");
+                CurrentLineLength += word.Length + 1;
             }
 
             private void NewLine()
             {
-                this.Output.WriteLine();
-                this.CurrentLineLength = this.Indent;
-                if (this.Indent > 0)
+                Output.WriteLine();
+                CurrentLineLength = Indent;
+                if (Indent > 0)
                 {
-                    this.Output.Write(this.IndentText);
+                    Output.Write(IndentText);
                 }
             }
         }
@@ -624,13 +624,13 @@ namespace PChecker.Utilities
         /// <returns>The parsed arguments.</returns>
         public List<CommandLineArgument> ParseArguments(string[] args)
         {
-            List<CommandLineArgument> result = new List<CommandLineArgument>();
-            int position = 0; // For positional arguments.
+            var result = new List<CommandLineArgument>();
+            var position = 0; // For positional arguments.
             CommandLineArgument current = null;
 
-            for (int idx = 0; idx < args.Length; idx++)
+            for (var idx = 0; idx < args.Length; idx++)
             {
-                string arg = args[idx];
+                var arg = args[idx];
 
                 if (arg.StartsWith("-"))
                 {
@@ -638,14 +638,14 @@ namespace PChecker.Utilities
                     {
                         var name = arg.Substring(2);
                         current = null;
-                        this.Arguments.TryGetValue(name, out current);
+                        Arguments.TryGetValue(name, out current);
                     }
                     else if (arg.StartsWith("-"))
                     {
                         current = null;
                         var name = arg.Substring(1);
                         // Note that "/" is not supported as an argument delimiter because it conflicts with unix file paths.
-                        foreach (var s in this.Arguments.Values)
+                        foreach (var s in Arguments.Values)
                         {
                             if (s.ShortName == name)
                             {
@@ -657,7 +657,7 @@ namespace PChecker.Utilities
                         if (current == null)
                         {
                             // See if there's a matching long name with no short name defined.
-                            foreach (var s in this.Arguments.Values)
+                            foreach (var s in Arguments.Values)
                             {
                                 if (s.LongName == name)
                                 {
@@ -678,7 +678,7 @@ namespace PChecker.Utilities
 
                     if (current.PrintHelp)
                     {
-                        this.PrintHelp(Console.Out);
+                        PrintHelp(Console.Out);
                         Environment.Exit(1);
                     }
                 }
@@ -692,10 +692,10 @@ namespace PChecker.Utilities
                     // Positional arguments.
                     do
                     {
-                        if (position < this.PositionalNames.Count)
+                        if (position < PositionalNames.Count)
                         {
-                            var name = this.PositionalNames[position++];
-                            current = this.Arguments[name];
+                            var name = PositionalNames[position++];
+                            current = Arguments[name];
                         }
                         else
                         {
@@ -712,7 +712,7 @@ namespace PChecker.Utilities
                 }
             }
 
-            foreach (var arg in this.Arguments.Values)
+            foreach (var arg in Arguments.Values)
             {
                 if (IsRequired(arg, result) && !(from r in result where r.LongName == arg.LongName select r).Any())
                 {
@@ -767,15 +767,15 @@ namespace PChecker.Utilities
             const int ArgHelpLineLength = 100;
             const int ArgHelpIndent = 30;
 
-            string prefix = string.Format("usage: {0} ", this.AppName);
+            var prefix = string.Format("usage: {0} ", AppName);
             output.Write(prefix);
-            int indent = prefix.Length;
+            var indent = prefix.Length;
 
             var wrapper = new WordWrapper(output, indent, ArgHelpLineLength);
-            foreach (var name in this.PositionalNames)
+            foreach (var name in PositionalNames)
             {
-                var arg = this.Arguments[name];
-                string text = arg.LongSyntax;
+                var arg = Arguments[name];
+                var text = arg.LongSyntax;
                 if (arg.DependsOn != null)
                 {
                     text = "[" + text + "]";
@@ -784,15 +784,15 @@ namespace PChecker.Utilities
                 wrapper.WriteWord(text);
             }
 
-            foreach (var name in this.LongNames)
+            foreach (var name in LongNames)
             {
-                var arg = this.Arguments[name];
+                var arg = Arguments[name];
                 if (arg.IsHidden)
                 {
                     continue;
                 }
 
-                string text = arg.LongSyntaxAndDataType;
+                var text = arg.LongSyntaxAndDataType;
 
                 if (!arg.IsRequired)
                 {
@@ -805,14 +805,14 @@ namespace PChecker.Utilities
             output.WriteLine();
             output.WriteLine();
             wrapper = new WordWrapper(output, 0, ArgHelpLineLength);
-            wrapper.Write(this.AppDescription);
+            wrapper.Write(AppDescription);
             output.WriteLine();
             output.WriteLine();
             var visitedOptions = new HashSet<string>();
 
-            foreach (var name in this.GroupNames)
+            foreach (var name in GroupNames)
             {
-                CommandLineGroup g = this.Groups[name];
+                var g = Groups[name];
                 if (g.IsHidden)
                 {
                     continue;
@@ -821,9 +821,9 @@ namespace PChecker.Utilities
                 output.WriteLine(g.Description + ":");
                 output.WriteLine(new string('-', g.Description.Length + 1));
 
-                foreach (var option in this.PositionalNames.Concat(this.LongNames))
+                foreach (var option in PositionalNames.Concat(LongNames))
                 {
-                    var arg = this.Arguments[option];
+                    var arg = Arguments[option];
                     if (arg.IsHidden)
                     {
                         continue;
@@ -833,7 +833,7 @@ namespace PChecker.Utilities
                     {
                         visitedOptions.Add(option);
 
-                        string syntax = "  ";
+                        var syntax = "  ";
                         if (!string.IsNullOrEmpty(arg.ShortName))
                         {
                             syntax += string.Format("{0}, ", arg.ShortSyntax);
@@ -866,10 +866,10 @@ namespace PChecker.Utilities
                 output.WriteLine();
             }
 
-            bool optionalHeader = false;
-            foreach (var option in this.PositionalNames.Concat(this.LongNames))
+            var optionalHeader = false;
+            foreach (var option in PositionalNames.Concat(LongNames))
             {
-                var arg = this.Arguments[option];
+                var arg = Arguments[option];
                 if (arg.IsHidden)
                 {
                     continue;
@@ -885,7 +885,7 @@ namespace PChecker.Utilities
                         output.WriteLine(new string('-', optionalBanner.Length));
                     }
 
-                    string syntax = "  ";
+                    var syntax = "  ";
                     if (!string.IsNullOrEmpty(arg.ShortName))
                     {
                         syntax += string.Format("{0}, ", arg.ShortSyntax);

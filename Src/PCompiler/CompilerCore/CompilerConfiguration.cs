@@ -56,16 +56,16 @@ namespace Plang.Compiler
 
         public void Copy(CompilerConfiguration parsedConfig)
         {
-            this.Backend = parsedConfig.Backend;
-            this.InputFiles = parsedConfig.InputFiles;
-            this.OutputDirectory = parsedConfig.OutputDirectory;
-            this.Handler = parsedConfig.Handler;
-            this.Output = parsedConfig.Output;
-            this.LocationResolver = parsedConfig.LocationResolver;
-            this.ProjectDependencies = parsedConfig.ProjectDependencies;
-            this.ProjectName = parsedConfig.ProjectName;
-            this.OutputLanguage = parsedConfig.OutputLanguage;
-            this.ProjectRootPath = parsedConfig.ProjectRootPath;
+            Backend = parsedConfig.Backend;
+            InputFiles = parsedConfig.InputFiles;
+            OutputDirectory = parsedConfig.OutputDirectory;
+            Handler = parsedConfig.Handler;
+            Output = parsedConfig.Output;
+            LocationResolver = parsedConfig.LocationResolver;
+            ProjectDependencies = parsedConfig.ProjectDependencies;
+            ProjectName = parsedConfig.ProjectName;
+            OutputLanguage = parsedConfig.OutputLanguage;
+            ProjectRootPath = parsedConfig.ProjectRootPath;
         }
     }
 }

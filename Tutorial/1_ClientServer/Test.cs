@@ -1,23 +1,4 @@
-﻿namespace Plang.Compiler.Backend.CSharp
-{
-    internal class Constants
-    {
-        internal static readonly string csprojTemplate = @"
-<Project Sdk=""Microsoft.NET.Sdk"">
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ApplicationIcon />
-    <OutputType>Exe</OutputType>
-    <StartupObject />
-    <LangVersion>latest</LangVersion>
-    <OutputPath>POutput/</OutputPath>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include=""/Users/ankushpd/Workspace/github/P/Src/PRuntimes/PCSharpRuntime/CSharpRuntime.csproj"" />
-  </ItemGroup>
-</Project>";
 
-        internal static readonly string mainCode = @"
 using PChecker;
 using PChecker.SystematicTesting;
 using System;
@@ -32,7 +13,7 @@ namespace PImplementation
             Configuration configuration = Configuration.Create();
             configuration.WithVerbosityEnabled(true);
             // update the path to the schedule file.
-            string schedule = File.ReadAllText(""absolute path to *.schedule file"");
+            string schedule = File.ReadAllText("absolute path to *.schedule file");
             configuration.WithReplayStrategy(schedule);
             TestingEngine engine = TestingEngine.Create(configuration, (Action<IActorRuntime>)PImplementation.<Name of the test case>.Execute);
             engine.Run();
@@ -43,7 +24,5 @@ namespace PImplementation
             }
             */
         }
-    }
-}";
     }
 }

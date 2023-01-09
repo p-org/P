@@ -251,7 +251,7 @@ namespace PChecker.Utilities
                     result = string.Empty;
                 }
 
-                string s = result.ToString();
+                string s = result.ToString().ToLower();
                 if (!this.AllowedValues.Contains(s))
                 {
                     throw new Exception(string.Format("Argument: '{0}' value '{1}' must be one of [{2}]", this.LongName, s, string.Join(", ", this.AllowedValues.ToArray())));

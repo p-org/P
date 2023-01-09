@@ -21,12 +21,15 @@ echo -e "${ORANGE} ---- Building the PCompiler ----${NOCOLOR}"
 
 output=`dotnet build -c Release -v q 2>&1` || echo $output
 
-echo -e "${GREEN} ----------------------------------${NOCOLOR}"
-echo -e "${GREEN} P Compiler located in ${PWD}/Bld/Drops/Release/Binaries/net6.0/P.dll${NOCOLOR}"
-echo -e "${GREEN} ----------------------------------${NOCOLOR}"
-echo -e "${GREEN} ----------------------------------${NOCOLOR}"
-echo -e "${GREEN} Shortcuts:: (add the following lines (aliases) to your bash_profile) ${NOCOLOR}"
-echo -e "${ORANGE} alias pcl='dotnet ${PWD}/Bld/Drops/Release/Binaries/net6.0/P.dll'${NOCOLOR}"
-echo -e "${GREEN} ----------------------------------${NOCOLOR}"
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN} ----------------------------------${NOCOLOR}"
+    echo -e "${GREEN} P Compiler located in ${PWD}/Bld/Drops/Release/Binaries/net6.0/p.dll${NOCOLOR}"
+    echo -e "${GREEN} ----------------------------------${NOCOLOR}"
+    echo -e "${GREEN} ----------------------------------${NOCOLOR}"
+    echo -e "${GREEN} Shortcuts:: (add the following lines (aliases) to your bash_profile) ${NOCOLOR}"
+    echo -e "${ORANGE} alias pcl='dotnet ${PWD}/Bld/Drops/Release/Binaries/net6.0/p.dll'${NOCOLOR}"
+    echo -e "${GREEN} ----------------------------------${NOCOLOR}"
+fi
+
 popd
 

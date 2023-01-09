@@ -17,10 +17,6 @@ namespace PChecker.Actors
     /// Type that implements a state machine actor. Inherit from this class to declare
     /// a custom actor with states, state transitions and event handlers.
     /// </summary>
-    /// <remarks>
-    /// See <see href="/coyote/learn/programming-models/actors/state-machines">State machines</see>
-    /// for more information.
-    /// </remarks>
     public abstract class StateMachine : Actor
     {
         /// <summary>
@@ -121,7 +117,7 @@ namespace PChecker.Actors
         /// </summary>
         /// <remarks>
         /// This event is not handled until the action that calls this method returns control back
-        /// to the Coyote runtime.  It is handled before any other events are dequeued from the inbox.
+        /// to the runtime.  It is handled before any other events are dequeued from the inbox.
         /// Only one of the following can be called per action:
         /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
         /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
@@ -148,7 +144,7 @@ namespace PChecker.Actors
         /// this.RaiseEvent(new E());
         /// </code>
         /// This event is not handled until the action that calls this method returns control back
-        /// to the Coyote runtime.  It is handled before any other events are dequeued from the inbox.
+        /// to the runtime.  It is handled before any other events are dequeued from the inbox.
         /// Only one of the following can be called per action:
         /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
         /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
@@ -171,7 +167,7 @@ namespace PChecker.Actors
         /// this.RaiseEvent(new E());
         /// </code>
         /// This event is not handled until the action that calls this method returns control back
-        /// to the Coyote runtime.  It is handled before any other events are dequeued from the inbox.
+        /// to the runtime.  It is handled before any other events are dequeued from the inbox.
         /// Only one of the following can be called per action:
         /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
         /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
@@ -200,7 +196,7 @@ namespace PChecker.Actors
         /// this.RaiseEvent(new E());
         /// </code>
         /// This event is not handled until the action that calls this method returns control back
-        /// to the Coyote runtime.  It is handled before any other events are dequeued from the inbox.
+        /// to the runtime.  It is handled before any other events are dequeued from the inbox.
         /// Only one of the following can be called per action:
         /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
         /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
@@ -224,7 +220,7 @@ namespace PChecker.Actors
         /// this.RaiseEvent(new E());
         /// </code>
         /// This event is not handled until the action that calls this method returns control back
-        /// to the Coyote runtime.  It is handled before any other events are dequeued from the inbox.
+        /// to the runtime.  It is handled before any other events are dequeued from the inbox.
         /// Only one of the following can be called per action:
         /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
         /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
@@ -247,7 +243,7 @@ namespace PChecker.Actors
         /// Popping a state pops the current <see cref="State"/> that was pushed using <see cref='RaisePushStateEvent'/> or an OnEventPushStateAttribute.
         /// An assert is raised if there are no states left to pop.
         /// This event is not handled until the action that calls this method returns control back
-        /// to the Coyote runtime.  It is handled before any other events are dequeued from the inbox.
+        /// to the runtime.  It is handled before any other events are dequeued from the inbox.
         ///
         /// Only one of the following can be called per action:
         /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
@@ -266,7 +262,7 @@ namespace PChecker.Actors
         /// </summary>
         /// <remarks>
         /// This event is not handled until the action that calls this method returns control back
-        /// to the Coyote runtime.  It is handled before any other events are dequeued from the inbox.
+        /// to the runtime.  It is handled before any other events are dequeued from the inbox.
         ///
         /// Only one of the following can be called per action:
         /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or

@@ -116,7 +116,7 @@ namespace PChecker.SystematicTesting
             {
                 if (testMethods.Count > 0)
                 {
-                    var msg = "Cannot detect a Coyote test method with name " + methodName +
+                    var msg = "Cannot detect a P test case with name " + methodName +
                         ". Possible options are: " + Environment.NewLine;
                     foreach (var mi in testMethods)
                     {
@@ -127,13 +127,13 @@ namespace PChecker.SystematicTesting
                 }
                 else
                 {
-                    Error.ReportAndExit("Cannot detect a Coyote test method. Use the " +
+                    Error.ReportAndExit("Cannot detect a P test case. Use the " +
                         $"attribute '[{typeof(TestAttribute).FullName}]' to declare a test method.");
                 }
             }
             else if (filteredTestMethods.Count > 1)
             {
-                var msg = "Only one test method to the Coyote program can " +
+                var msg = "Only one test method to the P program can " +
                     $"be declared with the attribute '{typeof(TestAttribute).FullName}'. " +
                     $"'{testMethods.Count}' test methods were found instead. Provide " +
                     $"/method flag to qualify the test method name you wish to use. " +
@@ -229,7 +229,7 @@ namespace PChecker.SystematicTesting
             }
             else if (testMethods.Count > 1)
             {
-                Error.ReportAndExit("Only one test method to the Coyote program can " +
+                Error.ReportAndExit("Only one test case in the program can " +
                     $"be declared with the attribute '{attribute.FullName}'. " +
                     $"'{testMethods.Count}' test methods were found instead.");
             }

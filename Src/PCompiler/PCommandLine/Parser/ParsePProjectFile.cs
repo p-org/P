@@ -3,22 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using PChecker.IO;
 using Plang.Compiler;
 
 namespace Plang
 {
     internal class ParsePProjectFile
     {
-        /// <summary>
-        /// Check if the underlying file system is case insensitive
-        /// </summary>
-
-        private readonly DefaultCompilerOutput commandlineOutput;
-
-        public ParsePProjectFile(DefaultCompilerOutput output)
-        {
-            commandlineOutput = output;
-        }
 
         /// <summary>
         /// Parse the P Project file
@@ -26,7 +17,7 @@ namespace Plang
         /// <param name="projectFile">Path to the P project file</param>
         /// <param name="job">out parameter of P compilation job, after parsing the project file</param>
         /// <returns></returns>
-        public bool ParseProjectFile(string projectFile, out CompilerConfiguration job)
+        public void ParseProjectFile(string projectFile, out CompilerConfiguration job)
         {
             job = null;
             try
@@ -35,8 +26,8 @@ namespace Plang
                 {
                     throw new CommandlineParsingError($"Illegal P project file name {projectFile} or file {projectFilePath?.FullName} not found");
                 }
-                commandlineOutput.WriteInfo($"----------------------------------------");
-                commandlineOutput.WriteInfo($"==== Loading project file: {projectFile}");
+                CommandLineOutput.WriteInfo($"----------------------------------------");
+                CommandLineOutput.WriteInfo($"==== Loading project file: {projectFile}");
 
                 var outputLanguage = CompilerOutput.CSharp;
                 HashSet<string> inputFiles = new HashSet<string>();
@@ -51,7 +42,7 @@ namespace Plang
 
                 if (inputFiles.Count == 0)
                 {
-                    throw new CommandlineParsingError("At least one .p file must be provided as input files, no input files found after parsing the project file");
+                    Error.ReportAndExit("At least one .p file must be provided as input files, no input files found after parsing the project file");
                 }
 
                 // get project name
@@ -66,19 +57,15 @@ namespace Plang
                 job = new CompilerConfiguration(output: new DefaultCompilerOutput(outputDirectory), outputDir: outputDirectory,
                     outputLanguage: outputLanguage, inputFiles: inputFiles.ToList(), projectName: projectName, projectRoot: projectFilePath.Directory, projectDependencies: projectDependencies.ToList());
 
-                commandlineOutput.WriteInfo($"----------------------------------------");
-                return true;
+                CommandLineOutput.WriteInfo($"----------------------------------------");
             }
             catch (CommandlineParsingError ex)
             {
-                commandlineOutput.WriteError($"<Error parsing project file>:\n {ex.Message}");
-                return false;
+                Error.ReportAndExit($"<Error parsing project file>:\n {ex.Message}");
             }
             catch (Exception other)
             {
-                commandlineOutput.WriteError($"<Internal Error>:\n {other.Message}\n <Please report to the P team or create a issue on GitHub, Thanks!>");
-                commandlineOutput.WriteError($"{other.StackTrace}\n");
-                return false;
+                Error.ReportAndExit($"<Internal Error>:\n {other.Message}\n <Please report to the P team or create a issue on GitHub, Thanks!>");
             }
         }
 
@@ -108,7 +95,7 @@ namespace Plang
                     throw new CommandlineParsingError($"Illegal P project file name {projectDepen.Value} or file {fullProjectDepenPathName?.FullName} not found");
                 }
 
-                commandlineOutput.WriteInfo($"==== Loading project file: {fullProjectDepenPathName.FullName}");
+                CommandLineOutput.WriteInfo($"==== Loading project file: {fullProjectDepenPathName.FullName}");
 
                 if (projectDependencies.Contains(GetProjectName(fullProjectDepenPathName))) continue;
                 var inputsAndDependencies = GetAllProjectDependencies(fullProjectDepenPathName, inputFiles, projectDependencies);
@@ -193,7 +180,7 @@ namespace Plang
                     break;
 
                 default:
-                    throw new CommandlineParsingError($"Expected C, CSharp, Java, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
+                    throw new CommandlineParsingError($"Expected c, csharp, java, or symbolic as target, received {projectXml.Element("Target")?.Value}");
             }
         }
 
@@ -233,7 +220,7 @@ namespace Plang
                     {
                         if (CheckFileValidity.IsLegalPFile(pFile, out FileInfo pFilePathName))
                         {
-                            commandlineOutput.WriteInfo($"....... includes p file: {pFilePathName.FullName}");
+                            CommandLineOutput.WriteInfo($"....... includes p file: {pFilePathName.FullName}");
                             inputFiles.Add(pFilePathName.FullName);
                         }
                         else

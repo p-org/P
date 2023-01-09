@@ -7,7 +7,7 @@ using Plang.CSharpRuntime.Exceptions;
 namespace Plang.CSharpRuntime
 {
     /// <summary>
-    ///     Formatter for the Coyote runtime log.
+    ///     Formatter for the runtime log.
     /// </summary>
     public class PLogFormatter : ActorRuntimeLogTextFormatter
     {

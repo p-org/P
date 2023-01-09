@@ -24,7 +24,7 @@ namespace Plang.Compiler.Backend.CSharp
 
         public string FileName { get; }
 
-        public IReadOnlyList<string> ProjectDependencies { get; }
+        public IList<string> ProjectDependencies { get; }
 
         public string GetStaticMethodQualifiedName(Function function)
         {

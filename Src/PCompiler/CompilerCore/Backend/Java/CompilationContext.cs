@@ -21,7 +21,7 @@ namespace Plang.Compiler.Backend.Java
 
         public string FileName { get; }
 
-        public IReadOnlyList<string> ProjectDependencies { get; }
+        public IList<string> ProjectDependencies { get; }
 
     }
 }

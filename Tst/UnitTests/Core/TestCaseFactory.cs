@@ -62,7 +62,7 @@ namespace UnitTests.Core
             else if (output.Equals(CompilerOutput.CSharp))
             {
                 FileInfo[] nativeFiles = testDir.GetFiles("*.cs");
-                runner = new CoyoteRunner(inputFiles, nativeFiles);
+                runner = new PCheckerRunner(inputFiles, nativeFiles);
             }
             else
             {

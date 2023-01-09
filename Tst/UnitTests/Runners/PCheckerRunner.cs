@@ -8,21 +8,18 @@ using UnitTests.Core;
 
 namespace UnitTests.Runners
 {
-    internal class CoyoteRunner : ICompilerTestRunner
+    internal class PCheckerRunner : ICompilerTestRunner
     {
-        private static readonly string CoyoteAssemblyLocation =
-            Path.GetDirectoryName(typeof(TestingEngine).GetTypeInfo().Assembly.Location);
-
         private readonly FileInfo[] nativeSources;
         private readonly FileInfo[] sources;
 
-        public CoyoteRunner(FileInfo[] sources)
+        public PCheckerRunner(FileInfo[] sources)
         {
             this.sources = sources;
             nativeSources = new FileInfo[] { };
         }
 
-        public CoyoteRunner(FileInfo[] sources, FileInfo[] nativeSources)
+        public PCheckerRunner(FileInfo[] sources, FileInfo[] nativeSources)
         {
             this.sources = sources;
             this.nativeSources = nativeSources;
@@ -68,7 +65,7 @@ namespace UnitTests.Runners
 
             if (exitCode == 0)
             {
-                exitCode = RunCoyoteTester(scratchDirectory.FullName,
+                exitCode = RunPChecker(scratchDirectory.FullName,
                     Path.Combine(scratchDirectory.FullName, "./net6.0/Main.dll"), out string testStdout, out string testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
@@ -151,7 +148,7 @@ namespace PImplementation
             }
         }
 
-        private int RunCoyoteTester(string directory, string dllPath, out string stdout, out string stderr)
+        private int RunPChecker(string directory, string dllPath, out string stdout, out string stderr)
         {
             return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, "dotnet", dllPath);
         }

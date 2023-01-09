@@ -21,8 +21,8 @@ namespace Plang.Compiler
             Backend = TargetLanguage.GetCodeGenerator(OutputLanguage);
             ProjectDependencies = new List<string>();
         }
-        public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, CompilerOutput outputLanguage, IReadOnlyList<string> inputFiles,
-            string projectName, DirectoryInfo projectRoot = null, IReadOnlyList<string> projectDependencies = null)
+        public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, CompilerOutput outputLanguage, IList<string> inputFiles,
+            string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null)
         {
             if (!inputFiles.Any())
             {
@@ -47,10 +47,24 @@ namespace Plang.Compiler
         public string ProjectName { get; set; }
         public DirectoryInfo ProjectRootPath { get; set; }
         public ICodeGenerator Backend { get; set; }
-        public IReadOnlyList<string> InputFiles { get; }
-        public ILocationResolver LocationResolver { get; }
-        public ITranslationErrorHandler Handler { get; }
+        public IList<string> InputFiles { get; set; }
+        public ILocationResolver LocationResolver { get; set;  }
+        public ITranslationErrorHandler Handler { get; set; }
 
-        public IReadOnlyList<string> ProjectDependencies { get; }
+        public IList<string> ProjectDependencies { get; set;  }
+
+        public void Copy(CompilerConfiguration parsedConfig)
+        {
+            this.Backend = parsedConfig.Backend;
+            this.InputFiles = parsedConfig.InputFiles;
+            this.OutputDirectory = parsedConfig.OutputDirectory;
+            this.Handler = parsedConfig.Handler;
+            this.Output = parsedConfig.Output;
+            this.LocationResolver = parsedConfig.LocationResolver;
+            this.ProjectDependencies = parsedConfig.ProjectDependencies;
+            this.ProjectName = parsedConfig.ProjectName;
+            this.OutputLanguage = parsedConfig.OutputLanguage;
+            this.ProjectRootPath = parsedConfig.ProjectRootPath;
+        }
     }
 }

@@ -15,14 +15,14 @@ namespace UnitTests.Runners
     public class CompileOnlyRunner : ICompilerTestRunner
     {
         private readonly CompilerOutput compilerOutput;
-        private readonly IReadOnlyList<string> inputFiles;
+        private readonly IList<string> inputFiles;
 
         /// <summary>
         ///     Box a new compile runner
         /// </summary>
         /// <param name="compilerOutput"></param>
         /// <param name="inputFiles">The P source files to compile</param>
-        public CompileOnlyRunner(CompilerOutput compilerOutput, IReadOnlyList<string> inputFiles)
+        public CompileOnlyRunner(CompilerOutput compilerOutput, IList<string> inputFiles)
         {
             this.inputFiles = inputFiles;
             this.compilerOutput = compilerOutput;

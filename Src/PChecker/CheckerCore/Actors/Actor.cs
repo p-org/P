@@ -20,10 +20,6 @@ namespace PChecker.Actors
     /// <summary>
     /// Type that implements an actor. Inherit from this class to declare a custom actor.
     /// </summary>
-    /// <remarks>
-    /// See <see href="/coyote/learn/programming-models/actors/overview">Programming
-    /// model: asynchronous actors</see> for more information.
-    /// </remarks>
     public abstract class Actor
     {
         /// <summary>
@@ -116,9 +112,6 @@ namespace PChecker.Actors
         /// <summary>
         /// The installed runtime logger.
         /// </summary>
-        /// <remarks>
-        /// See <see href="/coyote/learn/core/logging" >Logging</see> for more information.
-        /// </remarks>
         protected TextWriter Logger => this.Runtime.Logger;
 
         /// <summary>
@@ -257,9 +250,6 @@ namespace PChecker.Actors
         /// The timer is automatically disposed after it timeouts. To manually stop and dispose
         /// the timer, invoke the <see cref="StopTimer"/> method.
         /// </summary>
-        /// <remarks>
-        /// See <see href="/coyote/learn/programming-models/actors/timers">Using timers in actors</see> for more information.
-        /// </remarks>
         /// <param name="startDelay">The amount of time to wait before sending the timeout event.</param>
         /// <param name="customEvent">Optional custom event to raise instead of the default TimerElapsedEvent.</param>
         /// <returns>Handle that contains information about the timer.</returns>
@@ -276,9 +266,6 @@ namespace PChecker.Actors
         /// an optional payload to be used during timeout. The timer can be stopped by invoking the
         /// <see cref="StopTimer"/> method.
         /// </summary>
-        /// <remarks>
-        /// See <see href="/coyote/learn/programming-models/actors/timers">Using timers in actors</see> for more information.
-        /// </remarks>
         /// <param name="startDelay">The amount of time to wait before sending the first timeout event.</param>
         /// <param name="period">The time interval between timeout events.</param>
         /// <param name="customEvent">Optional custom event to raise instead of the default TimerElapsedEvent.</param>
@@ -294,9 +281,6 @@ namespace PChecker.Actors
         /// <summary>
         /// Stops and disposes the specified timer.
         /// </summary>
-        /// <remarks>
-        /// See <see href="/coyote/learn/programming-models/actors/timers">Using timers in actors</see> for more information.
-        /// </remarks>
         /// <param name="info">Handle that contains information about the timer.</param>
         protected void StopTimer(TimerInfo info)
         {
@@ -645,7 +629,7 @@ namespace PChecker.Actors
         }
 
         /// <summary>
-        /// An exception filter that calls <see cref="CoyoteRuntime.OnFailure"/>,
+        /// An exception filter that calls,
         /// which can choose to fast-fail the app to get a full dump.
         /// </summary>
         /// <param name="action">The action being executed when the failure occurred.</param>

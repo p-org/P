@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using PChecker;
@@ -31,7 +32,9 @@ namespace Plang
 
             var pfilesGroup = this.Parser.GetOrCreateGroup("commandline", "Compiling P files through commandline");
             pfilesGroup.AddArgument("pfiles", "pf", "List of P files to compile").IsMultiValue = true;
-            pfilesGroup.AddArgument("generate", "g", "Generate output :: (csharp, symbolic, java, c). (default: csharp)");
+            pfilesGroup.AddArgument("generate", "g",
+                    "Generate output :: (csharp, symbolic, java, c). (default: csharp)").AllowedValues =
+                new List<string>() { "csharp", "symbolic", "c", "java" };
             pfilesGroup.AddArgument("target", "t", "Target or name of the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path");
         }
@@ -42,16 +45,16 @@ namespace Plang
         /// <returns>The CheckerConfiguration object populated with the parsed command line options.</returns>
         internal CompilerConfiguration Parse(string[] args)
         {
-            var compilationJob = new CompilerConfiguration();
+            var compilerConfiguration = new CompilerConfiguration();
             try
             {
                 var result = this.Parser.ParseArguments(args);
                 foreach (var arg in result)
                 {
-                    UpdateConfigurationWithParsedArgument(compilationJob, arg);
+                    UpdateConfigurationWithParsedArgument(compilerConfiguration, arg);
                 }
 
-                SanitizeConfiguration(compilationJob);
+                SanitizeConfiguration(compilerConfiguration);
             }
             catch (CommandLineException ex)
             {
@@ -72,7 +75,7 @@ namespace Plang
                 Error.ReportAndExit(ex.Message);
             }
 
-            return compilationJob;
+            return compilerConfiguration;
         }
 
         /// <summary>
@@ -83,8 +86,38 @@ namespace Plang
             switch (option.LongName)
             {
                 case "outdir":
+                    compilerConfiguration.OutputDirectory = Directory.CreateDirectory((string)option.Value);
                     break;
-                
+                case "target":
+                    compilerConfiguration.ProjectName = (string)option.Value;
+                    break;
+                case "generate":
+                    {
+                        compilerConfiguration.OutputLanguage = (string)option.Value switch
+                        {
+                            "csharp" => CompilerOutput.CSharp,
+                            "c" => CompilerOutput.C,
+                            "symbolic" => CompilerOutput.Symbolic,
+                            "java" => CompilerOutput.Java,
+                            _ => compilerConfiguration.OutputLanguage
+                        };
+                    }
+                    break;
+                case "pfiles":
+                    {
+                        string[] files = (string[])option.Value;
+                        foreach (var file in files.Distinct())
+                        {
+                            compilerConfiguration.InputFiles.Add(file);
+                        }
+                    }
+                    break;
+                case "pproj":
+                    {
+                        new ParsePProjectFile().ParseProjectFile((string)option.Value, out var parsedConfig);
+                        compilerConfiguration.Copy(parsedConfig);
+                    }
+                    break;
                 default:
                     throw new Exception(string.Format("Unhandled parsed argument: '{0}'", option.LongName));
             }
@@ -107,11 +140,7 @@ namespace Plang
 
             foreach (var pfile in compilerConfiguration.InputFiles)
             {
-                if (CheckFileValidity.IsLegalPFile(pfile, out FileInfo fullPathName))
-                {
-                    Console.Out.WriteLine($"....... includes p file: {fullPathName.FullName}");
-                }
-                else
+                if (!CheckFileValidity.IsLegalPFile(pfile, out FileInfo fullPathName))
                 {
                     Error.ReportAndExit($"Illegal P file name {fullPathName.FullName} (file name cannot have special characters) or file not found.");
                 }

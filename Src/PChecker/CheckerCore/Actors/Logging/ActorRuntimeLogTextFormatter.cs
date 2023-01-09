@@ -12,9 +12,6 @@ namespace PChecker.Actors
     /// <summary>
     /// This class implements IActorRuntimeLog and generates output in a a human readable text format.
     /// </summary>
-    /// <remarks>
-    /// See <see href="/coyote/learn/core/logging" >Logging</see> for more information.
-    /// </remarks>
     public class ActorRuntimeLogTextFormatter : IActorRuntimeLog
     {
         /// <summary>

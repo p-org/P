@@ -30,6 +30,6 @@ namespace Plang.Compiler.Backend.Rvm
             return $"{rvmSpecName}.rvm";
         }
 
-        public IReadOnlyList<string> ProjectDependencies { get; }
+        public IList<string> ProjectDependencies { get; }
     }
 }

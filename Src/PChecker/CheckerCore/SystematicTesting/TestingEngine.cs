@@ -226,8 +226,7 @@ namespace PChecker.SystematicTesting
             }
             else if (checkerConfiguration.SchedulingStrategy is "fairpct")
             {
-                var prefixLength = checkerConfiguration.SafetyPrefixBound == 0 ?
-                    checkerConfiguration.MaxUnfairSchedulingSteps : checkerConfiguration.SafetyPrefixBound;
+                var prefixLength = checkerConfiguration.MaxUnfairSchedulingSteps;
                 var prefixStrategy = new PCTStrategy(prefixLength, checkerConfiguration.StrategyBound, this.RandomValueGenerator);
                 var suffixStrategy = new RandomStrategy(checkerConfiguration.MaxFairSchedulingSteps, this.RandomValueGenerator);
                 this.Strategy = new ComboStrategy(prefixStrategy, suffixStrategy);
@@ -331,11 +330,6 @@ namespace PChecker.SystematicTesting
 
             return new Task(() =>
             {
-                if (this._checkerConfiguration.AttachDebugger)
-                {
-                    Debugger.Launch();
-                }
-
                 try
                 {
                     // Invokes the user-specified initialization method.
@@ -523,9 +517,8 @@ namespace PChecker.SystematicTesting
             {
                 StringBuilder report = new StringBuilder();
                 report.AppendFormat("... Reproduced {0} bug{1}{2}.", this.TestReport.NumOfFoundBugs,
-                    this.TestReport.NumOfFoundBugs == 1 ? string.Empty : "s",
-                    this._checkerConfiguration.AttachDebugger ? string.Empty : " (use --break to attach the debugger)");
-                report.AppendLine();
+                    this.TestReport.NumOfFoundBugs == 1 ? string.Empty : "s");
+                    report.AppendLine();
                 report.Append($"... Elapsed {this.Profiler.Results()} sec.");
                 return report.ToString();
             }

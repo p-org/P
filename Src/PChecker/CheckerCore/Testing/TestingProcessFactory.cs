@@ -89,8 +89,6 @@ namespace PChecker.Testing
                 arguments.Append("--explore ");
             }
 
-            arguments.Append($"--timeout-delay {checkerConfiguration.TimeoutDelay} ");
-
             if (checkerConfiguration.ReportCodeCoverage && checkerConfiguration.ReportActivityCoverage)
             {
                 arguments.Append("--coverage ");

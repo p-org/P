@@ -27,7 +27,7 @@ namespace Plang
 
             
             var projectGroup = this.Parser.GetOrCreateGroup("project", "P Project: Compiling using `.pproj` file");
-            projectGroup.AddArgument("pproj", "pp", "P project file to compile (*.pproj). + " +
+            projectGroup.AddArgument("pproj", "pp", "P project file to compile (*.pproj)." +
                                                     "If this option is not passed the compiler searches for a `*.pproj` in the current folder and compiles it");
 
             var pfilesGroup = this.Parser.GetOrCreateGroup("commandline", "Compiling P files through commandline");
@@ -49,6 +49,9 @@ namespace Plang
             try
             {
                 var result = this.Parser.ParseArguments(args);
+                // if there are no arguments then search for a pproj file locally and load it
+                FindLocalPProject(result);
+                
                 foreach (var arg in result)
                 {
                     UpdateConfigurationWithParsedArgument(compilerConfiguration, arg);
@@ -76,6 +79,29 @@ namespace Plang
             }
 
             return compilerConfiguration;
+        }
+
+        private static void FindLocalPProject(List<CommandLineArgument> result)
+        {
+            if (result.Count == 0)
+            {
+                CommandLineOutput.WriteInfo(".. Searching for a pproj file locally in the current folder");
+                var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj");
+                if (files.Length == 0)
+                {
+                    CommandLineOutput.WriteInfo(
+                        $".. Could not find any P project file in the current directory: {Directory.GetCurrentDirectory()}");
+                }
+                else
+                {
+                    var commandlineArg = new CommandLineArgument();
+                    commandlineArg.Value = files.First();
+                    commandlineArg.LongName = "pproj";
+                    commandlineArg.ShortName = "pp";
+                    CommandLineOutput.WriteInfo($"Compiling project: {commandlineArg.Value}");
+                    result.Add(commandlineArg);
+                }
+            }
         }
 
         /// <summary>
@@ -119,7 +145,7 @@ namespace Plang
                     }
                     break;
                 default:
-                    throw new Exception(string.Format("Unhandled parsed argument: '{0}'", option.LongName));
+                    throw new Exception($"Unhandled parsed argument: '{option.LongName}'");
             }
         }
 

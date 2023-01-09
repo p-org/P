@@ -15,11 +15,6 @@ namespace PChecker
     [Serializable]
     public class CheckerConfiguration
     {
-        /// <summary>
-        /// The user-specified command to perform by the Coyote tool.
-        /// </summary>
-        [DataMember]
-        public string ToolCommand;
 
         /// <summary>
         /// The output path.
@@ -32,12 +27,6 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public int Timeout;
-
-        /// <summary>
-        /// The current runtime generation.
-        /// </summary>
-        [DataMember]
-        public ulong RuntimeGeneration;
 
         /// <summary>
         /// The assembly to be analyzed for bugs.
@@ -133,22 +122,6 @@ namespace PChecker
         public int StrategyBound { get; set; }
 
         /// <summary>
-        /// Value that controls the probability of triggering a timeout each time a built-in timer
-        /// is scheduled during systematic testing. Decrease the value to increase the frequency of
-        /// timeouts (e.g. a value of 1 corresponds to a 50% probability), or increase the value to
-        /// decrease the frequency (e.g. a value of 10 corresponds to a 10% probability). By default
-        /// this value is 10.
-        /// </summary>
-        [DataMember]
-        public uint TimeoutDelay { get; set; }
-
-        /// <summary>
-        /// Safety prefix bound. By default it is 0.
-        /// </summary>
-        [DataMember]
-        public int SafetyPrefixBound;
-
-        /// <summary>
         /// If this option is enabled, liveness checking is enabled during bug-finding.
         /// </summary>
         [DataMember]
@@ -160,24 +133,6 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public int LivenessTemperatureThreshold { get; set; }
-
-        /// <summary>
-        /// If this option is enabled, the tester is hashing the program state.
-        /// </summary>
-        [DataMember]
-        public bool IsProgramStateHashingEnabled;
-
-        /// <summary>
-        /// If this option is enabled, (safety) monitors are used in the production runtime.
-        /// </summary>
-        [DataMember]
-        public bool IsMonitoringEnabledInInProduction;
-
-        /// <summary>
-        /// Attaches the debugger during trace replay.
-        /// </summary>
-        [DataMember]
-        public bool AttachDebugger;
 
         /// <summary>
         /// The schedule file to be replayed.
@@ -245,31 +200,6 @@ namespace PChecker
         [DataMember]
         public bool EnableDebugging;
 
-        /// <summary>
-        /// Number of parallel bug-finding tasks.
-        /// By default it is 1 task.
-        /// </summary>
-        [DataMember]
-        public uint ParallelBugFindingTasks;
-
-        /// <summary>
-        /// Specify ip address if you want to use something other than localhost.
-        /// </summary>
-        [DataMember]
-        public string TestingSchedulerIpAddress;
-
-        /// <summary>
-        /// Do not automatically launch the TestingProcesses in parallel mode, instead wait for them
-        /// to be launched independently.
-        /// </summary>
-        [DataMember]
-        public bool WaitForTestingProcesses;
-
-        /// <summary>
-        /// Runs this process as a parallel bug-finding task.
-        /// </summary>
-        [DataMember]
-        public bool RunAsParallelBugFindingTask;
 
         /// <summary>
         /// The testing scheduler unique endpoint.
@@ -308,7 +238,6 @@ namespace PChecker
             this.OutputFilePath = string.Empty;
 
             this.Timeout = 0;
-            this.RuntimeGeneration = 0;
 
             this.AssemblyToBeAnalyzed = string.Empty;
             this.TestCaseName = string.Empty;
@@ -321,21 +250,13 @@ namespace PChecker
             this.MaxFairSchedulingSteps = 100000; // 10 times the unfair steps
             this.MaxUnfairSchedulingSteps = 10000;
             this.UserExplicitlySetMaxFairSchedulingSteps = false;
-            this.ParallelBugFindingTasks = 0;
-            this.RunAsParallelBugFindingTask = false;
             this.TestingSchedulerEndPoint = "CoyoteTestScheduler.4723bb92-c413-4ecb-8e8a-22eb2ba22234";
-            this.TestingSchedulerIpAddress = null;
             this.TestingProcessId = 0;
             this.ConsiderDepthBoundHitAsBug = false;
             this.StrategyBound = 0;
-            this.TimeoutDelay = 10;
-            this.SafetyPrefixBound = 0;
 
             this.IsLivenessCheckingEnabled = true;
             this.LivenessTemperatureThreshold = 0;
-            this.IsProgramStateHashingEnabled = false;
-            this.IsMonitoringEnabledInInProduction = false;
-            this.AttachDebugger = false;
 
             this.ScheduleFile = string.Empty;
             this.ScheduleTrace = string.Empty;
@@ -469,18 +390,6 @@ namespace PChecker
         public CheckerConfiguration WithLivenessTemperatureThreshold(uint threshold)
         {
             this.LivenessTemperatureThreshold = (int)threshold;
-            return this;
-        }
-
-        /// <summary>
-        /// Updates the <see cref="TimeoutDelay"/> value that controls the probability of triggering
-        /// a timeout each time a built-in timer is scheduled during systematic testing. This value
-        /// is not a unit of time.
-        /// </summary>
-        /// <param name="timeoutDelay">The timeout delay during testing.</param>
-        public CheckerConfiguration WithTimeoutDelay(uint timeoutDelay)
-        {
-            this.TimeoutDelay = timeoutDelay;
             return this;
         }
 

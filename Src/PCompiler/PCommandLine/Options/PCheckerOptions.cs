@@ -238,13 +238,6 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
             {
                 Error.ReportAndExit("For the option '-max-steps N[,M]', please make sure that M >= N.");
             }
-
-            if (checkerConfiguration.SafetyPrefixBound > 0 &&
-                checkerConfiguration.SafetyPrefixBound >= checkerConfiguration.MaxUnfairSchedulingSteps)
-            {
-                Error.ReportAndExit("Please give a safety prefix bound that is less than the " +
-                    "max scheduling steps bound.");
-            }
         }
     }
 }

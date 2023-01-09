@@ -146,12 +146,6 @@ namespace PChecker.Runtime
         /// </summary>
         internal virtual void Monitor(Type type, Event e, string senderName, string senderType, string senderState)
         {
-            // Check if monitors are enabled in production.
-            if (!this.CheckerConfiguration.IsMonitoringEnabledInInProduction)
-            {
-                return;
-            }
-
             Specifications.Monitor monitor = null;
 
             lock (this.Monitors)
@@ -255,12 +249,6 @@ namespace PChecker.Runtime
         /// </summary>
         protected internal virtual void RaiseOnFailureEvent(Exception exception)
         {
-            if (this.CheckerConfiguration.AttachDebugger)
-            {
-                System.Diagnostics.Debugger.Break();
-                this.CheckerConfiguration.AttachDebugger = false;
-            }
-
             this.OnFailure?.Invoke(exception);
         }
 

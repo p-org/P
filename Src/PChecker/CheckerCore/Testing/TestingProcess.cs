@@ -81,14 +81,6 @@ namespace PChecker.Testing
 
         private async Task RunAsync()
         {
-            if (this._checkerConfiguration.RunAsParallelBugFindingTask)
-            {
-                // Opens the remote notification listener.
-                await this.ConnectToServer();
-
-                this.StartProgressMonitorTask();
-            }
-
             this.TestingEngine.Run();
 
             Console.SetOut(this.StdOut);
@@ -102,24 +94,8 @@ namespace PChecker.Testing
                 task.Wait(30000);
             }
 
-            if (this._checkerConfiguration.RunAsParallelBugFindingTask)
-            {
-                if (this.TestingEngine.TestReport.InternalErrors.Count > 0)
-                {
-                    Environment.ExitCode = (int)ExitCode.InternalError;
-                }
-                else if (this.TestingEngine.TestReport.NumOfFoundBugs > 0)
-                {
-                    Environment.ExitCode = (int)ExitCode.BugFound;
-                    await this.NotifyBugFound();
-                }
-
-                await this.SendTestReport();
-            }
-
             if (!this._checkerConfiguration.PerformFullExploration &&
-                this.TestingEngine.TestReport.NumOfFoundBugs > 0 &&
-                !this._checkerConfiguration.RunAsParallelBugFindingTask)
+                this.TestingEngine.TestReport.NumOfFoundBugs > 0)
             {
                 Console.WriteLine($"... Process {this._checkerConfiguration.TestingProcessId} found a bug.");
             }
@@ -189,22 +165,8 @@ namespace PChecker.Testing
                                                        typeof(CheckerConfiguration));
 
             SmartSocketClient client = null;
-            if (!string.IsNullOrEmpty(this._checkerConfiguration.TestingSchedulerIpAddress))
-            {
-                string[] parts = this._checkerConfiguration.TestingSchedulerIpAddress.Split(':');
-                if (parts.Length == 2)
-                {
-                    var endPoint = new IPEndPoint(IPAddress.Parse(parts[0]), int.Parse(parts[1]));
-                    while (!source.IsCancellationRequested && client == null)
-                    {
-                        client = await SmartSocketClient.ConnectAsync(endPoint, this.Name, resolver);
-                    }
-                }
-            }
-            else
-            {
-                client = await SmartSocketClient.FindServerAsync(serviceName, this.Name, resolver, source.Token);
-            }
+            client = await SmartSocketClient.FindServerAsync(serviceName, this.Name, resolver, source.Token);
+            
 
             if (client == null)
             {

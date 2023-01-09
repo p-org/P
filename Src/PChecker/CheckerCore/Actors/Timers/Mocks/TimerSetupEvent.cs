@@ -29,11 +29,11 @@ namespace PChecker.Actors.Timers.Mocks
         /// <param name="info">Stores information about the timer.</param>
         /// <param name="owner">The actor that owns the timer.</param>
         /// <param name="delay">Adjusts the probability of firing a timeout event.</param>
-        internal TimerSetupEvent(TimerInfo info, Actor owner, uint delay)
+        internal TimerSetupEvent(TimerInfo info, Actor owner)
         {
             this.Info = info;
             this.Owner = owner;
-            this.Delay = delay;
+            this.Delay = 0;
         }
     }
 }

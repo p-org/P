@@ -12,6 +12,7 @@ namespace Plang.Compiler
         public CompilerConfiguration()
         {
             OutputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
+            InputFiles = new List<string>();
             Output = new DefaultCompilerOutput(OutputDirectory);
             ProjectName = "generatedOutput";
             ProjectRootPath = null;

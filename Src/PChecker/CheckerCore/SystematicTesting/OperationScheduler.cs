@@ -137,12 +137,6 @@ namespace PChecker.SystematicTesting
             // Checks if the scheduling steps bound has been reached.
             this.CheckIfSchedulingStepsBoundIsReached();
 
-            if (this.CheckerConfiguration.IsProgramStateHashingEnabled)
-            {
-                // Update the current operation with the hashed program state.
-                current.HashedProgramState = this.Runtime.GetProgramState();
-            }
-
             // Get and order the operations by their id.
             var ops = this.OperationMap.Values.OrderBy(op => op.Id);
 
@@ -231,12 +225,6 @@ namespace PChecker.SystematicTesting
             // Checks if the scheduling steps bound has been reached.
             this.CheckIfSchedulingStepsBoundIsReached();
 
-            if (this.CheckerConfiguration.IsProgramStateHashingEnabled)
-            {
-                // Update the current operation with the hashed program state.
-                this.ScheduledOperation.HashedProgramState = this.Runtime.GetProgramState();
-            }
-
             if (!this.Strategy.GetNextBooleanChoice(this.ScheduledOperation, maxValue, out bool choice))
             {
                 IO.Debug.WriteLine("<ScheduleDebug> Schedule explored.");
@@ -264,12 +252,6 @@ namespace PChecker.SystematicTesting
 
             // Checks if the scheduling steps bound has been reached.
             this.CheckIfSchedulingStepsBoundIsReached();
-
-            if (this.CheckerConfiguration.IsProgramStateHashingEnabled)
-            {
-                // Update the current operation with the hashed program state.
-                this.ScheduledOperation.HashedProgramState = this.Runtime.GetProgramState();
-            }
 
             if (!this.Strategy.GetNextIntegerChoice(this.ScheduledOperation, maxValue, out int choice))
             {
@@ -624,11 +606,6 @@ namespace PChecker.SystematicTesting
                     this.Strategy.GetDescription());
 
                 this.BugFound = true;
-
-                if (this.CheckerConfiguration.AttachDebugger)
-                {
-                    Debugger.Break();
-                }
             }
 
             if (killTasks)

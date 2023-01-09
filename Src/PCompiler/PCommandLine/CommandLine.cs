@@ -79,12 +79,6 @@ namespace Plang
                 engine.Run();
                 CommandLineOutput.WriteInfo(engine.GetReport());
             }
-            if (configuration.RunAsParallelBugFindingTask)
-            {
-                TestingProcess testingProcess = TestingProcess.Create(configuration);
-                testingProcess.Run();
-                return;
-            }
 
             if (configuration.ReportCodeCoverage || configuration.ReportActivityCoverage)
             {
@@ -92,7 +86,7 @@ namespace Plang
                 CodeCoverageInstrumentation.SetOutputDirectory(configuration, makeHistory: true);
             }
 
-            CommandLineOutput.WriteInfo(". Testing " + configuration.AssemblyToBeAnalyzed);
+            CommandLineOutput.WriteInfo(". Testing file" + configuration.AssemblyToBeAnalyzed);
             if (!string.IsNullOrEmpty(configuration.TestCaseName))
             {
                 CommandLineOutput.WriteInfo($"... TestCase {configuration.TestCaseName}");

@@ -559,7 +559,7 @@ namespace PChecker.SystematicTesting
         internal override IActorTimer CreateActorTimer(TimerInfo info, Actor owner)
         {
             var id = this.CreateActorId(typeof(MockStateMachineTimer));
-            this.CreateActor(id, typeof(MockStateMachineTimer), new TimerSetupEvent(info, owner, this.CheckerConfiguration.TimeoutDelay));
+            this.CreateActor(id, typeof(MockStateMachineTimer), new TimerSetupEvent(info, owner));
             return this.Scheduler.GetOperationWithId<ActorOperation>(id.Value).Actor as MockStateMachineTimer;
         }
 

@@ -91,11 +91,6 @@ namespace PChecker.Scheduling
         public static bool IsProcessCanceled;
 
         /// <summary>
-        /// Set true if we have multiple parallel processes or are running code coverage.
-        /// </summary>
-        private readonly bool IsRunOutOfProcess;
-
-        /// <summary>
         /// Whether to write verbose output.
         /// </summary>
         private readonly bool IsVerbose;
@@ -113,17 +108,8 @@ namespace PChecker.Scheduling
             this.Profiler = new Profiler();
             this.SchedulerLock = new object();
             this.BugFoundByProcess = null;
-
-            // Code coverage should be run out-of-process; otherwise VSPerfMon won't shutdown correctly
-            // because an instrumented process (this one) is still running.
-            this.IsRunOutOfProcess = checkerConfiguration.ParallelBugFindingTasks > 0 || checkerConfiguration.ReportCodeCoverage;
-
+            
             this.IsVerbose = checkerConfiguration.IsVerbose;
-
-            if (checkerConfiguration.ParallelBugFindingTasks > 1)
-            {
-                checkerConfiguration.IsVerbose = false;
-            }
 
             checkerConfiguration.EnableColoredConsoleOutput = true;
 
@@ -243,30 +229,15 @@ namespace PChecker.Scheduling
         /// </summary>
         public void Run()
         {
-            Console.WriteLine($"Starting TestingProcessScheduler in process {Process.GetCurrentProcess().Id}");
+            Console.WriteLine($"Starting TestingProcessScheduler in process Id {Process.GetCurrentProcess().Id}");
 
             // Start the local server.
             this.StartServer();
 
             this.Profiler.StartMeasuringExecutionTime();
 
-            if (this.IsRunOutOfProcess)
-            {
-                this.CreateParallelTestingProcesses();
-                if (this._checkerConfiguration.WaitForTestingProcesses)
-                {
-                    this.WaitForParallelTestingProcesses().Wait();
-                }
-                else
-                {
-                    this.RunParallelTestingProcesses();
-                }
-            }
-            else
-            {
-                this.CreateAndRunInMemoryTestingProcess();
-            }
-
+            this.CreateAndRunInMemoryTestingProcess();
+            
             this.Profiler.StopMeasuringExecutionTime();
 
             // Stop listening and close the server.
@@ -277,21 +248,6 @@ namespace PChecker.Scheduling
                 // Merges and emits the test report.
                 this.EmitTestReport();
             }
-        }
-
-        /// <summary>
-        /// Creates the user specified number of parallel testing processes.
-        /// </summary>
-        private void CreateParallelTestingProcesses()
-        {
-            for (uint testId = 0; testId < this._checkerConfiguration.ParallelBugFindingTasks; testId++)
-            {
-                var process = TestingProcessFactory.Create(testId, this._checkerConfiguration);
-                this.TestingProcesses.Add(testId, process);
-            }
-
-            Console.WriteLine($"... Created '{this._checkerConfiguration.ParallelBugFindingTasks}' " +
-                "testing tasks.");
         }
 
         private async Task WaitForParallelTestingProcesses()
@@ -332,35 +288,6 @@ namespace PChecker.Scheduling
         }
 
         /// <summary>
-        /// Runs the parallel testing processes.
-        /// </summary>
-        private void RunParallelTestingProcesses()
-        {
-            // Starts the testing processes.
-            for (uint testId = 0; testId < this._checkerConfiguration.ParallelBugFindingTasks; testId++)
-            {
-                this.TestingProcesses[testId].Start();
-            }
-
-            // Waits the testing processes to exit.
-            for (uint testId = 0; testId < this._checkerConfiguration.ParallelBugFindingTasks; testId++)
-            {
-                try
-                {
-                    if (this.TestingProcesses.TryGetValue(testId, out Process p))
-                    {
-                        p.WaitForExit();
-                    }
-                }
-                catch (InvalidOperationException)
-                {
-                    PChecker.IO.Debug.WriteLine($"... Unable to wait for testing task '{testId}' to " +
-                                                "terminate. Task has already terminated.");
-                }
-            }
-        }
-
-        /// <summary>
         /// Creates and runs an in-memory testing process.
         /// </summary>
         private void CreateAndRunInMemoryTestingProcess()
@@ -386,30 +313,7 @@ namespace PChecker.Scheduling
         /// </summary>
         private void StartServer()
         {
-            if (!this.IsRunOutOfProcess)
-            {
-                return;
-            }
-
-            var resolver = new SmartSocketTypeResolver(typeof(BugFoundMessage),
-                                                       typeof(TestReportMessage),
-                                                       typeof(TestServerMessage),
-                                                       typeof(TestProgressMessage),
-                                                       typeof(TestTraceMessage),
-                                                       typeof(TestReport),
-                                                       typeof(CoverageInfo),
-                                                       typeof(CheckerConfiguration));
-            var server = SmartSocketServer.StartServer(this._checkerConfiguration.TestingSchedulerEndPoint, resolver, this._checkerConfiguration.TestingSchedulerIpAddress);
-            server.ClientConnected += this.OnClientConnected;
-            server.ClientDisconnected += this.OnClientDisconnected;
-            server.BackChannelOpened += this.OnBackChannelOpened;
-
-            // pass this along to the TestingProcesses.
-            this._checkerConfiguration.TestingSchedulerIpAddress = server.EndPoint.ToString();
-
-            PChecker.IO.Debug.WriteLine($"... Server listening on '{server.EndPoint}'");
-
-            this.Server = server;
+            return;
         }
 
         private async void OnBackChannelOpened(object sender, SmartSocketClient e)

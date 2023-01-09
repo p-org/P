@@ -292,9 +292,8 @@ namespace PChecker.Actors
 
             if (targetId is null)
             {
-                string message = (sender != null) ?
-                    string.Format("{0} is sending event {1} to a null actor.", sender.Id.ToString(), e.ToString())
-                    : string.Format("Cannot send event {0} to a null actor.", e.ToString());
+                string message = (sender != null) ? $"{sender.Id.ToString()} is sending event {e.ToString()} to a null actor."
+                    : $"Cannot send event {e.ToString()} to a null actor.";
 
                 this.Assert(false, message);
             }
@@ -391,12 +390,6 @@ namespace PChecker.Actors
         /// <inheritdoc/>
         internal override void TryCreateMonitor(Type type)
         {
-            // Check if monitors are enabled in production.
-            if (!this.CheckerConfiguration.IsMonitoringEnabledInInProduction)
-            {
-                return;
-            }
-
             lock (this.Monitors)
             {
                 if (this.Monitors.Any(m => m.GetType() == type))

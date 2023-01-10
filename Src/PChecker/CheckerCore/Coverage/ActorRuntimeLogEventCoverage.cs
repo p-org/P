@@ -191,9 +191,8 @@ namespace PChecker.Coverage
         }
 
         public void OnMonitorProcessEvent(string monitorType, string stateName, string senderName,
-            string senderType, string senderStateName, Event e)
+            string senderType, string senderStateName, string eventName)
         {
-            var eventName = e.GetType().FullName;
             EventCoverage.AddEventReceived(GetStateId(monitorType, stateName), eventName);
         }
 

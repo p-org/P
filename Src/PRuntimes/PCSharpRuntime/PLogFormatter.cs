@@ -29,7 +29,7 @@ namespace Plang.CSharpRuntime
             var pe = (PEvent)(e);
             var payload = pe.Payload == null ? "null" : pe.Payload.ToEscapedString();
             var msg = pe.Payload == null ? "" : $" with payload ({payload})";
-            return $"{e.GetType().Name}{msg}";
+            return $"{GetShortName(e.GetType().Name)}{msg}";
         }
 
         public override void OnStateTransition(ActorId id, string stateName, bool isEntry)
@@ -90,12 +90,18 @@ namespace Plang.CSharpRuntime
 
         public override void OnCreateActor(ActorId id, string creatorName, string creatorType)
         {
-            if (id.Name.Contains("GodMachine"))
+            if (id.Name.Contains("GodMachine") || creatorName.Contains("GodMachine"))
             {
                 return;
             }
 
-            base.OnCreateActor(id, creatorName, creatorType);
+            base.OnCreateActor(id, GetShortName(creatorName), creatorType);
+        }
+
+        public override void OnMonitorProcessEvent(string monitorType, string stateName, string senderName, string senderType,
+            string senderStateName, string eventPayload)
+        {
+            base.OnMonitorProcessEvent(GetShortName(monitorType), GetShortName(stateName), GetShortName(senderName), GetShortName(senderType), GetShortName(senderStateName), GetShortName(eventPayload));
         }
 
         public override void OnDequeueEvent(ActorId id, string stateName, Event e)

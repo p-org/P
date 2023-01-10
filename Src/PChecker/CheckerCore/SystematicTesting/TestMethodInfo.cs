@@ -110,38 +110,36 @@ namespace PChecker.SystematicTesting
             // Filter by test method name
             var filteredTestMethods = testMethods
                 .FindAll(mi => string.Format("{0}.{1}", mi.DeclaringType.FullName, mi.Name)
-                .EndsWith(methodName));
+                .Contains(methodName));
 
             if (filteredTestMethods.Count == 0)
             {
                 if (testMethods.Count > 0)
                 {
-                    var msg = "Cannot detect a P test case with name " + methodName +
+                    var msg = "Cannot find a P test case that contains " + methodName +
                         ". Possible options are: " + Environment.NewLine;
                     foreach (var mi in testMethods)
                     {
-                        msg += string.Format("{0}.{1}{2}", mi.DeclaringType.FullName, mi.Name, Environment.NewLine);
+                        msg += $"{mi.DeclaringType.Name}{Environment.NewLine}";
                     }
 
                     Error.ReportAndExit(msg);
                 }
                 else
                 {
-                    Error.ReportAndExit("Cannot detect a P test case. Use the " +
-                        $"attribute '[{typeof(TestAttribute).FullName}]' to declare a test method.");
+                    Error.ReportAndExit("Cannot detect a P test case. Please report this to the P team");
                 }
             }
             else if (filteredTestMethods.Count > 1)
             {
-                var msg = "Only one test method to the P program can " +
-                    $"be declared with the attribute '{typeof(TestAttribute).FullName}'. " +
-                    $"'{testMethods.Count}' test methods were found instead. Provide " +
-                    $"/method flag to qualify the test method name you wish to use. " +
+                var msg = $"Multiple P test cases contain the substring {methodName}. " +
+                    $"We found '{testMethods.Count}' test cases. Please provide " +
+                    $"a more precise name of the test case you wish to check.\n" +
                     "Possible options are: " + Environment.NewLine;
 
                 foreach (var mi in testMethods)
                 {
-                    msg += string.Format("{0}.{1}{2}", mi.DeclaringType.FullName, mi.Name, Environment.NewLine);
+                    msg += $"{mi.DeclaringType.Name}{Environment.NewLine}";
                 }
 
                 Error.ReportAndExit(msg);
@@ -211,7 +209,7 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            return (test, $"{testMethod.DeclaringType}.{testMethod.Name}");
+            return (test, $"{testMethod.DeclaringType.Name}");
         }
 
         /// <summary>

@@ -482,7 +482,7 @@ namespace PChecker.Actors
         /// <param name="senderStateName">The name of the state the sender is in.</param>
         /// <param name="e">The event being processed.</param>
         public void LogMonitorProcessEvent(string monitorType, string stateName, string senderName,
-            string senderType, string senderStateName, Event e)
+            string senderType, string senderStateName, string e)
         {
             if (Logs.Count > 0)
             {

@@ -195,10 +195,9 @@ namespace PChecker.Actors
 
         /// <inheritdoc/>
         public virtual void OnMonitorProcessEvent(string monitorType, string stateName, string senderName,
-            string senderType, string senderStateName, Event e)
+            string senderType, string senderStateName, string eventPayload)
         {
-            var eventName = e.GetType().FullName;
-            var text = $"<MonitorLog> {monitorType} is processing event '{eventName}' in state '{stateName}'.";
+            var text = $"<MonitorLog> {monitorType} is processing event '{eventPayload}' in state '{stateName}'.";
             Logger.WriteLine(text);
         }
 

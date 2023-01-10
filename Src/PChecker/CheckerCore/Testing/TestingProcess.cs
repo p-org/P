@@ -96,7 +96,7 @@ namespace PChecker.Testing
             if (!_checkerConfiguration.PerformFullExploration &&
                 TestingEngine.TestReport.NumOfFoundBugs > 0)
             {
-                Console.WriteLine($"... Process {_checkerConfiguration.TestingProcessId} found a bug.");
+                Console.WriteLine($"Checker found a bug.");
             }
 
             // we want the graph generation even if doing full exploration.
@@ -247,7 +247,7 @@ namespace PChecker.Testing
             // If this is a separate (sub-)process, CodeCoverageInstrumentation.OutputDirectory may not have been set up.
             CodeCoverageInstrumentation.SetOutputDirectory(_checkerConfiguration, makeHistory: false);
 
-            Console.WriteLine($"... Emitting process {_checkerConfiguration.TestingProcessId} traces:");
+            Console.WriteLine($"... Emitting traces:");
             var traces = new List<string>(TestingEngine.TryEmitTraces(CodeCoverageInstrumentation.OutputDirectory, file));
 
             if (Server != null && Server.IsConnected)

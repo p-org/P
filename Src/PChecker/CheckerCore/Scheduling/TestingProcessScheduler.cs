@@ -130,7 +130,7 @@ namespace PChecker.Scheduling
             {
                 if (!_checkerConfiguration.PerformFullExploration && BugFoundByProcess is null)
                 {
-                    Console.WriteLine($"... Process {processId} found a bug.");
+                    Console.WriteLine($"... Task {processId} found a bug.");
                     BugFoundByProcess = processId;
                     // must be async relative to this NotifyBugFound handler.
                     Task.Run(() => CleanupTestProcesses(processId));
@@ -228,38 +228,17 @@ namespace PChecker.Scheduling
         /// </summary>
         public void Run()
         {
-            Console.WriteLine($"Starting TestingProcessScheduler in process Id {Process.GetCurrentProcess().Id}");
-
-            // Start the local server.
-            StartServer();
-
             Profiler.StartMeasuringExecutionTime();
 
             CreateAndRunInMemoryTestingProcess();
             
             Profiler.StopMeasuringExecutionTime();
 
-            // Stop listening and close the server.
-            StopServer();
-
             if (!IsProcessCanceled)
             {
                 // Merges and emits the test report.
                 EmitTestReport();
             }
-        }
-
-        private async Task WaitForParallelTestingProcesses()
-        {
-            if (TestingProcesses.Count > 0)
-            {
-                Console.WriteLine($"... Waiting for testing processes to start. Use the following command line to launch each test");
-                Console.WriteLine($"... Make sure to change /testing-process-id:x so that x goes from 0 to {TestingProcesses.Count}");
-                var p = TestingProcesses[0];
-                Console.WriteLine($"{p.StartInfo.FileName} {p.StartInfo.Arguments}");
-            }
-
-            await WaitForParallelTestReports();
         }
 
         private async Task WaitForParallelTestReports(int maxWait = 60000)
@@ -292,8 +271,6 @@ namespace PChecker.Scheduling
         private void CreateAndRunInMemoryTestingProcess()
         {
             var testingProcess = TestingProcess.Create(_checkerConfiguration);
-
-            Console.WriteLine($"... Created '1' testing task.");
 
             // Runs the testing process.
             testingProcess.Run();
@@ -445,18 +422,6 @@ namespace PChecker.Scheduling
             if (!Terminating.Contains(client.Name))
             {
                 Console.WriteLine($"### Error from client {client.Name}: {e.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Closes the local server, if we have one.
-        /// </summary>
-        private void StopServer()
-        {
-            if (Server != null)
-            {
-                Server.Stop();
-                Server = null;
             }
         }
 

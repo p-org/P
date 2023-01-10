@@ -25,9 +25,6 @@ namespace PChecker.SystematicTesting
     /// Testing engine that can run a controlled concurrency test using
     /// a specified checkerConfiguration.
     /// </summary>
-#if !DEBUG
-    [DebuggerStepThrough]
-#endif
     public class TestingEngine
     {
         /// <summary>
@@ -131,6 +128,7 @@ namespace PChecker.SystematicTesting
             try
             {
                 testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, checkerConfiguration.TestCaseName);
+                Console.Out.WriteLine($"Test case :: {testMethodInfo.Name}");
             }
             catch
             {
@@ -279,7 +277,7 @@ namespace PChecker.SystematicTesting
             {
                 if (CancellationTokenSource.IsCancellationRequested)
                 {
-                    Logger.WriteLine($"... Task {_checkerConfiguration.TestingProcessId} timed out.");
+                    Logger.WriteLine($"... Checker timed out.");
                 }
             }
             catch (AggregateException aex)
@@ -301,7 +299,7 @@ namespace PChecker.SystematicTesting
             }
             catch (Exception ex)
             {
-                Logger.WriteLine($"... Task {_checkerConfiguration.TestingProcessId} failed due to an internal error: {ex}");
+                Logger.WriteLine($"... Checker failed due to an internal error: {ex}");
                 TestReport.InternalErrors.Add(ex.ToString());
             }
             finally
@@ -324,7 +322,7 @@ namespace PChecker.SystematicTesting
                 options = $" (seed:{RandomValueGenerator.Seed})";
             }
 
-            Logger.WriteLine($"... Task {_checkerConfiguration.TestingProcessId} is " +
+            Logger.WriteLine($"... Checker is " +
                 $"using '{_checkerConfiguration.SchedulingStrategy}' strategy{options}.");
 
             return new Task(() =>

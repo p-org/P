@@ -85,16 +85,12 @@ namespace Plang
                 CodeCoverageInstrumentation.SetOutputDirectory(configuration, makeHistory: true);
             }
 
-            CommandLineOutput.WriteInfo(". Testing file" + configuration.AssemblyToBeAnalyzed);
-            if (!string.IsNullOrEmpty(configuration.TestCaseName))
-            {
-                CommandLineOutput.WriteInfo($"... TestCase {configuration.TestCaseName}");
-            }
+            Console.WriteLine("Testing " + configuration.AssemblyToBeAnalyzed);
 
             // Creates and runs the testing process scheduler.
             TestingProcessScheduler.Create(configuration).Run();
 
-            CommandLineOutput.WriteInfo(". Done");
+            Console.WriteLine(". Done");
         }
 
         /// <summary>

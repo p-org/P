@@ -216,9 +216,9 @@ namespace PChecker.Actors
         /// <param name="senderName">The name of the sender, if any.</param>
         /// <param name="senderType">The type of the sender, if any.</param>
         /// <param name="senderStateName">The name of the state the sender is in.</param>
-        /// <param name="e">The event being processed.</param>
+        /// <param name="eventPayload">The event being processed.</param>
         void OnMonitorProcessEvent(string monitorType, string stateName, string senderName,
-            string senderType, string senderStateName, Event e);
+            string senderType, string senderStateName, string eventPayload);
 
         /// <summary>
         /// Invoked when the specified monitor raised an event.

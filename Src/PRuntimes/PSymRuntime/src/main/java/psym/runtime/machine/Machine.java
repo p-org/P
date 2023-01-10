@@ -18,7 +18,7 @@ import psym.valuesummary.util.SerializableBiFunction;
 import psym.valuesummary.util.SerializableFunction;
 import psym.valuesummary.util.SerializableRunnable;
 
-public abstract class Machine implements Serializable {
+public abstract class Machine implements Serializable, Comparable<Machine> {
     private static int numMachines = 0;
 
     private EventBufferSemantics semantics;
@@ -355,5 +355,10 @@ public abstract class Machine implements Serializable {
         if (name == null)
             return instanceId;
         return name.hashCode()^instanceId;
+    }
+
+    @Override
+    public int compareTo(Machine rhs) {
+        return instanceId - rhs.getInstanceId();
     }
 }

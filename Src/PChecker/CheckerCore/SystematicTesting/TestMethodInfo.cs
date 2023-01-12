@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using PChecker.Actors;
 using PChecker.IO;
+using PChecker.IO.Debugging;
 using PChecker.Runtime;
 using PChecker.Tasks;
 
@@ -132,9 +133,8 @@ namespace PChecker.SystematicTesting
             }
             else if (filteredTestMethods.Count > 1)
             {
-                var msg = $"Multiple P test cases contain the substring {methodName}. " +
-                    $"We found '{testMethods.Count}' test cases. Please provide " +
-                    $"a more precise name of the test case you wish to check.\n" +
+                var msg = $"We found '{testMethods.Count}' test cases. Please provide " +
+                    $"a more precise name of the test case you wish to check using (--testcase | -tc).\n" +
                     "Possible options are: " + Environment.NewLine;
 
                 foreach (var mi in testMethods)

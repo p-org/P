@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace PChecker.SystematicTesting
+namespace PChecker.SystematicTesting.Operations
 {
     /// <summary>
     /// The status of an asynchronous operation.

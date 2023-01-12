@@ -8,6 +8,8 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Xml.Linq;
 using PChecker.Actors;
+using PChecker.Actors.Events;
+using PChecker.Actors.Logging;
 using PChecker.Actors.Timers;
 using PChecker.Actors.Timers.Mocks;
 

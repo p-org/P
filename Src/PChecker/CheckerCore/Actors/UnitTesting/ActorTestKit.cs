@@ -5,6 +5,8 @@ using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using PChecker.Actors.Events;
+using PChecker.Random;
 
 namespace PChecker.Actors.UnitTesting
 {

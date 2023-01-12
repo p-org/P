@@ -3,7 +3,7 @@
 
 using System.Runtime.Serialization;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Events
 {
     /// <summary>
     /// Contains the origin information of an <see cref="Event"/>.

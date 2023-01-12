@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using PChecker.SystematicTesting.Operations;
 
-namespace PChecker.SystematicTesting
+namespace PChecker.SystematicTesting.Strategies
 {
     /// <summary>
     /// Interface of an exploration strategy used during controlled testing.

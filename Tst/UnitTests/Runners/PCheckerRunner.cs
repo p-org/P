@@ -91,7 +91,7 @@ namespace UnitTests.Runners
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include=""$(PFolder)/Src/PRuntimes/PCSharpRuntime/CSharpRuntime.csproj"" />
-    <ProjectReference Include=""$(PFolder)/Src/PChecker/Source/CheckerCore/CheckerCore.csproj"" />
+    <ProjectReference Include=""$(PFolder)/Src/PChecker/CheckerCore/CheckerCore.csproj"" />
   </ItemGroup>
 </Project>";
             using var outputFile = new StreamWriter(Path.Combine(scratchDirectory.FullName, "Main.csproj"), false);

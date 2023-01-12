@@ -6,7 +6,7 @@ using System.Threading;
 using PChecker.Runtime;
 using PChecker.SystematicTesting;
 
-namespace PChecker.Tasks
+namespace PChecker.Tasks.Locks
 {
     /// <summary>
     /// A semaphore that limits the number of tasks that can access a resource. During testing,

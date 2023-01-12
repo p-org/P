@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 using System;
+using PChecker.Exceptions;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Exceptions
 {
     /// <summary>
     /// Exception that is thrown by the runtime upon an <see cref="Actor"/> action failure.

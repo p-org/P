@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using PChecker.Random;
 using PChecker.Runtime;
 
 namespace PChecker.Actors

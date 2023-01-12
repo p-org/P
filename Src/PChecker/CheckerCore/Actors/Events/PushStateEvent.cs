@@ -4,7 +4,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Events
 {
     /// <summary>
     /// The push state event.

@@ -12,7 +12,6 @@ namespace PChecker.Actors
     /// Unique actor id.
     /// </summary>
     [DataContract]
-    [DebuggerStepThrough]
     public sealed class ActorId : IEquatable<ActorId>, IComparable<ActorId>
     {
         /// <summary>

@@ -3,8 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using PChecker.Actors.Events;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Managers
 {
     /// <summary>
     /// Interface for managing an actor.

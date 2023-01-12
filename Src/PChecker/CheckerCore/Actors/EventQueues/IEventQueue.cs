@@ -3,8 +3,9 @@
 
 using System;
 using System.Threading.Tasks;
+using PChecker.Actors.Events;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.EventQueues
 {
     /// <summary>
     /// Interface of a queue of events.

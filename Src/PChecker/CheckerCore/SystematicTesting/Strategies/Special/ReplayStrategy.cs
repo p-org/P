@@ -4,9 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PChecker.IO;
+using PChecker.IO.Debugging;
+using PChecker.SystematicTesting.Operations;
+using PChecker.SystematicTesting.Traces;
 
-namespace PChecker.SystematicTesting.Strategies
+namespace PChecker.SystematicTesting.Strategies.Special
 {
     /// <summary>
     /// Class representing a replaying scheduling strategy.
@@ -76,7 +78,8 @@ namespace PChecker.SystematicTesting.Strategies
         {
             if (IsReplaying)
             {
-                var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
+                var asyncOperations = ops.ToList();
+                var enabledOperations = asyncOperations.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
                 if (enabledOperations.Count == 0)
                 {
                     next = null;
@@ -120,7 +123,7 @@ namespace PChecker.SystematicTesting.Strategies
                     else
                     {
                         IsReplaying = false;
-                        return SuffixStrategy.GetNextOperation(current, ops, out next);
+                        return SuffixStrategy.GetNextOperation(current, asyncOperations, out next);
                     }
                 }
 

@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using PChecker.Actors.Events;
+
 namespace PChecker.Actors.Timers
 {
     /// <summary>

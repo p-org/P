@@ -3,7 +3,7 @@
 
 using System.Runtime.Serialization;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Events
 {
     /// <summary>
     /// Signals that an actor has reached quiescence.

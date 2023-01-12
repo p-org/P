@@ -4,9 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PChecker.IO;
+using PChecker.IO.Debugging;
+using PChecker.Random;
+using PChecker.SystematicTesting.Operations;
 
-namespace PChecker.SystematicTesting.Strategies
+namespace PChecker.SystematicTesting.Strategies.Probabilistic
 {
     /// <summary>
     /// A priority-based probabilistic scheduling strategy.

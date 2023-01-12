@@ -13,10 +13,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using PChecker.Actors;
+using PChecker.Actors.Logging;
 using PChecker.Coverage;
 using PChecker.IO;
+using PChecker.IO.Debugging;
+using PChecker.IO.Logging;
+using PChecker.Random;
 using PChecker.Runtime;
 using PChecker.SystematicTesting.Strategies;
+using PChecker.SystematicTesting.Strategies.Exhaustive;
+using PChecker.SystematicTesting.Strategies.Probabilistic;
+using PChecker.SystematicTesting.Strategies.Special;
+using PChecker.SystematicTesting.Traces;
+using PChecker.Utilities;
 using CoyoteTasks = PChecker.Tasks;
 
 namespace PChecker.SystematicTesting
@@ -603,9 +612,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Take care of handling the <see cref="_checkerConfiguration"/> settings for <see cref="_checkerConfiguration.CustomActorRuntimeLogType"/>,
-        /// <see cref="_checkerConfiguration.IsDgmlGraphEnabled"/>, and <see cref="_checkerConfiguration.ReportActivityCoverage"/> by setting up the
-        /// LogWriters on the given <see cref="ControlledRuntime"/> object.
+        /// LogWriters on the given object.
         /// </summary>
         private void InitializeCustomLogging(ControlledRuntime runtime)
         {

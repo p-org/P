@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using PChecker.Specifications.Monitors;
+using PChecker.SystematicTesting.Operations;
 
-namespace PChecker.SystematicTesting.Strategies
+namespace PChecker.SystematicTesting.Strategies.Liveness
 {
     /// <summary>
     /// Strategy for detecting liveness property violations using the "temperature"
@@ -16,7 +18,7 @@ namespace PChecker.SystematicTesting.Strategies
         /// <summary>
         /// Initializes a new instance of the <see cref="TemperatureCheckingStrategy"/> class.
         /// </summary>
-        internal TemperatureCheckingStrategy(CheckerConfiguration checkerConfiguration, List<Specifications.Monitor> monitors, ISchedulingStrategy strategy)
+        internal TemperatureCheckingStrategy(CheckerConfiguration checkerConfiguration, List<Monitor> monitors, ISchedulingStrategy strategy)
             : base(checkerConfiguration, monitors, strategy)
         {
         }

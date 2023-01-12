@@ -7,7 +7,7 @@ using PChecker.SmartSockets;
 namespace PChecker.Interfaces
 {
     [DataContract]
-    public class TestServerMessage : SocketMessage
+    internal class TestServerMessage : SocketMessage
     {
         [DataMember]
         public bool Stop { get; set; }

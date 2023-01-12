@@ -130,6 +130,7 @@ namespace Plang.Compiler.Backend.CSharp
         {
             context.WriteLine(output, "using PChecker;");
             context.WriteLine(output, "using PChecker.Actors;");
+            context.WriteLine(output, "using PChecker.Actors.Events;");
             context.WriteLine(output, "using PChecker.Runtime;");
             context.WriteLine(output, "using PChecker.Specifications;");
             context.WriteLine(output, "using System;");

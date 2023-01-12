@@ -69,6 +69,8 @@ namespace PChecker.SmartSockets
         /// <param name="name">The name the client will check in UDP broadcasts to make sure it is connecting to the right server</param>
         /// <param name="resolver">A way of providing custom Message types for serialization</param>
         /// <param name="ipAddress">An optional ipAddress so you can decide which network interface to use</param>
+        /// <param name="udpGroupAddress"></param>
+        /// <param name="udpGroupPort"></param>
         private SmartSocketServer(string name, SmartSocketTypeResolver resolver, string ipAddress = "127.0.0.1:0",
             string udpGroupAddress = "226.10.10.2", int udpGroupPort = 37992)
         {
@@ -107,7 +109,7 @@ namespace PChecker.SmartSockets
         /// <param name="udpGroupAddress">Optional request to setup UDP listener, pass null if you don't want that</param>
         /// <param name="udpGroupPort">Optional port required if you provide udpGroupAddress</param>
         /// <returns>Returns the new server object</returns>
-        public static SmartSocketServer StartServer(string name, SmartSocketTypeResolver resolver, string ipAddress,
+        internal static SmartSocketServer StartServer(string name, SmartSocketTypeResolver resolver, string ipAddress,
             string udpGroupAddress = "226.10.10.2", int udpGroupPort = 37992)
         {
             if (string.IsNullOrEmpty(ipAddress))
@@ -177,24 +179,6 @@ namespace PChecker.SmartSockets
                         UdpListener.Send(buffer, buffer.Length, remoteEP);
                     }
                 }
-            }
-        }
-
-        /// <summary>
-        /// Send a message to all connected clients.
-        /// </summary>
-        /// <param name="message">The message to send</param>
-        public async Task BroadcastAsync(SocketMessage message)
-        {
-            SmartSocketClient[] snapshot = null;
-            lock (Clients)
-            {
-                snapshot = Clients.ToArray();
-            }
-
-            foreach (var client in snapshot)
-            {
-                await client.SendAsync(message);
             }
         }
 

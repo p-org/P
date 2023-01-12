@@ -3,14 +3,14 @@
 
 using System.Diagnostics;
 
-namespace PChecker
+namespace PChecker.Utilities
 {
     /// <summary>
     /// The Coyote profiler.
     /// </summary>
     public class Profiler
     {
-        private Stopwatch StopWatch = null;
+        private Stopwatch StopWatch;
 
         /// <summary>
         /// Starts measuring execution time.

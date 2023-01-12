@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using PChecker.Actors;
+using PChecker.Actors.Events;
 
 namespace PChecker.Coverage
 {

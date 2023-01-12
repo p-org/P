@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using PChecker.Runtime;
 using PChecker.SystematicTesting;
+using Debug = PChecker.IO.Debugging.Debug;
 using SystemCompiler = System.Runtime.CompilerServices;
 
 namespace PChecker.Tasks
@@ -52,13 +53,13 @@ namespace PChecker.Tasks
             {
                 if (IsCompleted)
                 {
-                    IO.Debug.WriteLine("<AsyncBuilder> Creating completed builder task '{0}' (isCompleted {1}) from task '{2}'.",
+                    Debug.WriteLine("<AsyncBuilder> Creating completed builder task '{0}' (isCompleted {1}) from task '{2}'.",
                         MethodBuilder.Task.Id, MethodBuilder.Task.IsCompleted, Task.CurrentId);
                     return Task.CompletedTask;
                 }
                 else
                 {
-                    IO.Debug.WriteLine("<AsyncBuilder> Creating builder task '{0}' (isCompleted {1}) from task '{2}'.",
+                    Debug.WriteLine("<AsyncBuilder> Creating builder task '{0}' (isCompleted {1}) from task '{2}'.",
                         MethodBuilder.Task.Id, MethodBuilder.Task.IsCompleted, Task.CurrentId);
                     UseBuilder = true;
                     TaskController?.OnAsyncTaskMethodBuilderTask();
@@ -100,7 +101,7 @@ namespace PChecker.Tasks
         public void Start<TStateMachine>(ref TStateMachine stateMachine)
             where TStateMachine : IAsyncStateMachine
         {
-            IO.Debug.WriteLine("<AsyncBuilder> Start state machine from task '{0}'.", Task.CurrentId);
+            Debug.WriteLine("<AsyncBuilder> Start state machine from task '{0}'.", Task.CurrentId);
             TaskController?.OnAsyncTaskMethodBuilderStart(stateMachine.GetType());
             MethodBuilder.Start(ref stateMachine);
         }
@@ -120,13 +121,13 @@ namespace PChecker.Tasks
         {
             if (UseBuilder)
             {
-                IO.Debug.WriteLine("<AsyncBuilder> Set result of task '{0}' from task '{1}'.",
+                Debug.WriteLine("<AsyncBuilder> Set result of task '{0}' from task '{1}'.",
                     MethodBuilder.Task.Id, Task.CurrentId);
                 MethodBuilder.SetResult();
             }
             else
             {
-                IO.Debug.WriteLine("<AsyncBuilder> Set result (completed) from task '{0}'.", Task.CurrentId);
+                Debug.WriteLine("<AsyncBuilder> Set result (completed) from task '{0}'.", Task.CurrentId);
                 IsCompleted = true;
             }
         }
@@ -210,13 +211,13 @@ namespace PChecker.Tasks
             {
                 if (IsCompleted)
                 {
-                    IO.Debug.WriteLine("<AsyncBuilder> Creating completed builder task '{0}' (isCompleted {1}) from task '{2}'.",
+                    Debug.WriteLine("<AsyncBuilder> Creating completed builder task '{0}' (isCompleted {1}) from task '{2}'.",
                         MethodBuilder.Task.Id, MethodBuilder.Task.IsCompleted, Tasks.Task.CurrentId);
                     return Tasks.Task.FromResult(Result);
                 }
                 else
                 {
-                    IO.Debug.WriteLine("<AsyncBuilder> Creating builder task '{0}' (isCompleted {1}) from task '{2}'.",
+                    Debug.WriteLine("<AsyncBuilder> Creating builder task '{0}' (isCompleted {1}) from task '{2}'.",
                         MethodBuilder.Task.Id, MethodBuilder.Task.IsCompleted, Tasks.Task.CurrentId);
                     UseBuilder = true;
                     TaskController?.OnAsyncTaskMethodBuilderTask();
@@ -261,7 +262,7 @@ namespace PChecker.Tasks
         public void Start<TStateMachine>(ref TStateMachine stateMachine)
             where TStateMachine : IAsyncStateMachine
         {
-            IO.Debug.WriteLine("<AsyncBuilder> Start state machine from task '{0}'.", Tasks.Task.CurrentId);
+            Debug.WriteLine("<AsyncBuilder> Start state machine from task '{0}'.", Tasks.Task.CurrentId);
             TaskController?.OnAsyncTaskMethodBuilderStart(stateMachine.GetType());
             MethodBuilder.Start(ref stateMachine);
         }
@@ -282,13 +283,13 @@ namespace PChecker.Tasks
         {
             if (UseBuilder)
             {
-                IO.Debug.WriteLine("<AsyncBuilder> Set result of task '{0}' from task '{1}'.",
+                Debug.WriteLine("<AsyncBuilder> Set result of task '{0}' from task '{1}'.",
                     MethodBuilder.Task.Id, Tasks.Task.CurrentId);
                 MethodBuilder.SetResult(result);
             }
             else
             {
-                IO.Debug.WriteLine("<AsyncBuilder> Set result (completed) from task '{0}'.", Tasks.Task.CurrentId);
+                Debug.WriteLine("<AsyncBuilder> Set result (completed) from task '{0}'.", Tasks.Task.CurrentId);
                 Result = result;
                 IsCompleted = true;
             }

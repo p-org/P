@@ -1,7 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace PChecker.Actors
+using PChecker.Actors.Events;
+using PChecker.Exceptions;
+
+namespace PChecker.Actors.Exceptions
 {
     /// <summary>
     /// Signals that an <see cref="Actor"/> received an unhandled event.

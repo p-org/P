@@ -2,6 +2,8 @@
 using System.Linq;
 using PChecker;
 using PChecker.Actors;
+using PChecker.Actors.Events;
+using PChecker.Actors.Logging;
 using Plang.CSharpRuntime.Exceptions;
 
 namespace Plang.CSharpRuntime

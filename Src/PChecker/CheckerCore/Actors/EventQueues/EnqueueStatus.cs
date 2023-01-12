@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace PChecker.Actors
+namespace PChecker.Actors.EventQueues
 {
     /// <summary>
     /// The status returned as the result of an enqueue operation.

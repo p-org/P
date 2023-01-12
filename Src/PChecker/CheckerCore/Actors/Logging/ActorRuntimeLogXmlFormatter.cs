@@ -5,9 +5,10 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using PChecker.Actors.Events;
 using PChecker.Actors.Timers;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Logging
 {
     /// <summary>
     /// This class implements IActorRuntimeLog and generates log output in an XML format.

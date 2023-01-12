@@ -4,10 +4,12 @@
 using System.Runtime.Serialization;
 using PChecker.SmartSockets;
 
+#pragma warning disable CS1591
 namespace PChecker.Interfaces
 {
     [DataContract]
-    public class BugFoundMessage : SocketMessage
+
+    internal class BugFoundMessage : SocketMessage
     {
         [DataMember]
         public uint ProcessId { get; set; }

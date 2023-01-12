@@ -10,8 +10,12 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 using PChecker.Actors;
+using PChecker.Actors.Events;
+using PChecker.Actors.Handlers;
+using PChecker.Actors.StateTransitions;
+using PChecker.Exceptions;
 
-namespace PChecker.Specifications
+namespace PChecker.Specifications.Monitors
 {
     /// <summary>
     /// Abstract class representing a specification monitor.

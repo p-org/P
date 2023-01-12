@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace PChecker
+namespace PChecker.Random
 {
     /// <summary>
     /// Interface for random value generators.

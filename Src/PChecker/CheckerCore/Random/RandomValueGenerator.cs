@@ -3,7 +3,7 @@
 
 using System;
 
-namespace PChecker
+namespace PChecker.Random
 {
     /// <summary>
     /// Basic random value generator that uses the <see cref="System.Random"/> generator.

@@ -3,6 +3,9 @@
 
 using System;
 using System.Threading.Tasks;
+using PChecker.Actors.Events;
+using PChecker.Actors.Exceptions;
+using PChecker.Actors.Logging;
 using PChecker.Runtime;
 
 namespace PChecker.Actors

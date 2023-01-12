@@ -4,9 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using PChecker.Actors.Events;
 using PChecker.SystematicTesting;
 
-namespace PChecker.Actors.Mocks
+namespace PChecker.Actors.Managers.Mocks
 {
     /// <summary>
     /// Implements an actor manager that is used during testing.

@@ -9,7 +9,7 @@ using System.Xml;
 
 namespace PChecker.SmartSockets
 {
-    public class SmartSocketTypeResolver : DataContractResolver
+    internal class SmartSocketTypeResolver : DataContractResolver
     {
         private readonly Dictionary<string, Type> TypeMap = new Dictionary<string, Type>();
 

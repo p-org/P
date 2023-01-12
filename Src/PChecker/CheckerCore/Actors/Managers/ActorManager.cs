@@ -4,8 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using PChecker.Actors.Events;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Managers
 {
     /// <summary>
     /// Manages an actor in production.

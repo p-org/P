@@ -4,6 +4,7 @@ using System.Linq;
 using PChecker.IO;
 using PChecker.SystematicTesting;
 using PChecker.Instrumentation;
+using PChecker.IO.Debugging;
 using PChecker.Scheduling;
 using Plang.Compiler;
 using Plang.Options;

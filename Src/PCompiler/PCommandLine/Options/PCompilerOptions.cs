@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using PChecker.IO;
+using PChecker.IO.Debugging;
 using Plang.Compiler;
 using Plang.Parser;
 

@@ -7,21 +7,23 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using PChecker.Exceptions;
+using PChecker.SystematicTesting.Operations;
+using PChecker.SystematicTesting.Strategies;
+using PChecker.SystematicTesting.Traces;
+using Debug = PChecker.IO.Debugging.Debug;
 
 namespace PChecker.SystematicTesting
 {
     /// <summary>
     /// Implements a scheduler that serializes and schedules controlled operations.
     /// </summary>
-#if !DEBUG
-    [DebuggerStepThrough]
-#endif
     internal sealed class OperationScheduler
     {
         /// <summary>
         /// The checkerConfiguration used by the scheduler.
         /// </summary>
-        internal readonly CheckerConfiguration CheckerConfiguration;
+        private readonly CheckerConfiguration CheckerConfiguration;
 
         /// <summary>
         /// The controlled runtime.
@@ -146,7 +148,7 @@ namespace PChecker.SystematicTesting
                 if (op is AsyncOperation machineOp)
                 {
                     machineOp.TryEnable();
-                    IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' has status '{1}'.", op.Id, op.Status);
+                    Debug.WriteLine("<ScheduleDebug> Operation '{0}' has status '{1}'.", op.Id, op.Status);
                 }
             }
 
@@ -155,7 +157,7 @@ namespace PChecker.SystematicTesting
                 // Checks if the program has deadlocked.
                 CheckIfProgramHasDeadlocked(ops.Select(op => op as AsyncOperation));
 
-                IO.Debug.WriteLine("<ScheduleDebug> Schedule explored.");
+                Debug.WriteLine("<ScheduleDebug> Schedule explored.");
                 HasFullyExploredSchedule = true;
                 Stop();
 
@@ -169,7 +171,7 @@ namespace PChecker.SystematicTesting
             ScheduledOperation = next as AsyncOperation;
             ScheduleTrace.AddSchedulingChoice(next.Id);
 
-            IO.Debug.WriteLine($"<ScheduleDebug> Scheduling the next operation of '{next.Name}'.");
+            Debug.WriteLine($"<ScheduleDebug> Scheduling the next operation of '{next.Name}'.");
 
             if (current != next)
             {
@@ -190,14 +192,14 @@ namespace PChecker.SystematicTesting
                     if (!ControlledTaskMap.ContainsKey(Task.CurrentId.Value))
                     {
                         ControlledTaskMap.TryAdd(Task.CurrentId.Value, current);
-                        IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is associated with task '{1}'.", current.Id, Task.CurrentId);
+                        Debug.WriteLine("<ScheduleDebug> Operation '{0}' is associated with task '{1}'.", current.Id, Task.CurrentId);
                     }
 
                     while (!current.IsActive)
                     {
-                        IO.Debug.WriteLine("<ScheduleDebug> Sleeping the operation of '{0}' on task '{1}'.", current.Name, Task.CurrentId);
+                        Debug.WriteLine("<ScheduleDebug> Sleeping the operation of '{0}' on task '{1}'.", current.Name, Task.CurrentId);
                         System.Threading.Monitor.Wait(current);
-                        IO.Debug.WriteLine("<ScheduleDebug> Waking up the operation of '{0}' on task '{1}'.", current.Name, Task.CurrentId);
+                        Debug.WriteLine("<ScheduleDebug> Waking up the operation of '{0}' on task '{1}'.", current.Name, Task.CurrentId);
                     }
 
                     if (current.Status != AsyncOperationStatus.Enabled)
@@ -227,7 +229,7 @@ namespace PChecker.SystematicTesting
 
             if (!Strategy.GetNextBooleanChoice(ScheduledOperation, maxValue, out var choice))
             {
-                IO.Debug.WriteLine("<ScheduleDebug> Schedule explored.");
+                Debug.WriteLine("<ScheduleDebug> Schedule explored.");
                 Stop();
                 throw new ExecutionCanceledException();
             }
@@ -255,7 +257,7 @@ namespace PChecker.SystematicTesting
 
             if (!Strategy.GetNextIntegerChoice(ScheduledOperation, maxValue, out var choice))
             {
-                IO.Debug.WriteLine("<ScheduleDebug> Schedule explored.");
+                Debug.WriteLine("<ScheduleDebug> Schedule explored.");
                 Stop();
                 throw new ExecutionCanceledException();
             }
@@ -286,7 +288,7 @@ namespace PChecker.SystematicTesting
         /// <param name="taskId">The id of the task to be used to execute the operation.</param>
         internal void ScheduleOperation(AsyncOperation op, int taskId)
         {
-            IO.Debug.WriteLine($"<ScheduleDebug> Scheduling operation '{op.Name}' to execute on task '{taskId}'.");
+            Debug.WriteLine($"<ScheduleDebug> Scheduling operation '{op.Name}' to execute on task '{taskId}'.");
             ControlledTaskMap.TryAdd(taskId, op);
         }
 
@@ -296,7 +298,7 @@ namespace PChecker.SystematicTesting
         /// <param name="op">The operation to start executing.</param>
         internal static void StartOperation(AsyncOperation op)
         {
-            IO.Debug.WriteLine($"<ScheduleDebug> Starting the operation of '{op.Name}' on task '{Task.CurrentId}'.");
+            Debug.WriteLine($"<ScheduleDebug> Starting the operation of '{op.Name}' on task '{Task.CurrentId}'.");
 
             lock (op)
             {
@@ -304,9 +306,9 @@ namespace PChecker.SystematicTesting
                 System.Threading.Monitor.PulseAll(op);
                 while (!op.IsActive)
                 {
-                    IO.Debug.WriteLine($"<ScheduleDebug> Sleeping the operation of '{op.Name}' on task '{Task.CurrentId}'.");
+                    Debug.WriteLine($"<ScheduleDebug> Sleeping the operation of '{op.Name}' on task '{Task.CurrentId}'.");
                     System.Threading.Monitor.Wait(op);
-                    IO.Debug.WriteLine($"<ScheduleDebug> Waking up the operation of '{op.Name}' on task '{Task.CurrentId}'.");
+                    Debug.WriteLine($"<ScheduleDebug> Waking up the operation of '{op.Name}' on task '{Task.CurrentId}'.");
                 }
 
                 if (op.Status != AsyncOperationStatus.Enabled)
@@ -575,7 +577,7 @@ namespace PChecker.SystematicTesting
                 }
                 else
                 {
-                    IO.Debug.WriteLine($"<ScheduleDebug> {message}");
+                    Debug.WriteLine($"<ScheduleDebug> {message}");
                     Stop();
 
                     if (ScheduledOperation.Status != AsyncOperationStatus.Completed)

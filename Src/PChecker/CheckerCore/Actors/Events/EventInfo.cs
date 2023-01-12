@@ -3,7 +3,7 @@
 
 using System.Runtime.Serialization;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Events
 {
     /// <summary>
     /// Contains an <see cref="Event"/>, and its associated metadata.

@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using PChecker.SystematicTesting.Operations;
 
-namespace PChecker.SystematicTesting.Strategies
+namespace PChecker.SystematicTesting.Strategies.Special
 {
     /// <summary>
     /// This strategy combines two given strategies, using them to schedule

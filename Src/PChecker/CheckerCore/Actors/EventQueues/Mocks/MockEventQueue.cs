@@ -5,8 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using PChecker.Actors.Events;
+using PChecker.Actors.Managers;
 
-namespace PChecker.Actors.Mocks
+namespace PChecker.Actors.EventQueues.Mocks
 {
     /// <summary>
     /// Implements a queue of events that is used during testing.

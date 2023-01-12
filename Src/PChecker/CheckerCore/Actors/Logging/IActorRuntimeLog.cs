@@ -2,9 +2,10 @@
 // Licensed under the MIT License.
 
 using System;
+using PChecker.Actors.Events;
 using PChecker.Actors.Timers;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Logging
 {
     /// <summary>
     /// Interface that allows an external module to track what

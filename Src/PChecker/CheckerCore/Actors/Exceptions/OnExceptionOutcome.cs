@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Exceptions
 {
     /// <summary>
     /// The outcome when an <see cref="Actor"/> throws an exception.

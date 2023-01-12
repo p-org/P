@@ -4,7 +4,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using PChecker.Actors.SharedObjects.Events;
 using PChecker.SystematicTesting;
+using PChecker.SystematicTesting.Operations;
 
 namespace PChecker.Actors.SharedObjects
 {

@@ -4,8 +4,9 @@
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using PChecker.Actors.Events;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Handlers
 {
     /// <summary>
     /// An actor delegate that has been cached to optimize performance of invocations.

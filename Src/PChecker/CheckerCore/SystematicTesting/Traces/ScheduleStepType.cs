@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace PChecker.SystematicTesting
+namespace PChecker.SystematicTesting.Traces
 {
     /// <summary>
     /// The schedule step type.

@@ -139,6 +139,7 @@ namespace PChecker.Testing
             TestingEngine = TestingEngine.Create(_checkerConfiguration);
         }
 
+        /// <inheritdoc />
         ~TestingProcess()
         {
             Terminating = true;

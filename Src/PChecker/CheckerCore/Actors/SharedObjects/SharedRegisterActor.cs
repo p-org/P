@@ -3,6 +3,8 @@
 
 using System;
 using System.Threading.Tasks;
+using PChecker.Actors.Events;
+using PChecker.Actors.SharedObjects.Events;
 
 namespace PChecker.Actors.SharedObjects
 {

@@ -32,11 +32,11 @@ namespace PChecker.SmartSockets
         private readonly DataContractSerializer Serializer;
 
         // Some standard message ids used for socket bookkeeping.
-        public const string DisconnectMessageId = "DisconnectMessageId.3d9cd318-fcae-4a4f-ae63-34907be2700a";
-        public const string ConnectedMessageId = "ConnectedMessageId.822280ed-26f5-4cdd-b45c-412e05d1005a";
-        public const string MessageAck = "MessageAck.822280ed-26f5-4cdd-b45c-412e05d1005a";
-        public const string ErrorMessageId = "ErrorMessageId.385ff3c1-84d8-491a-a8b3-e2a9e8f0e256";
-        public const string OpenBackChannelMessageId = "OpenBackChannel.bd89da83-95c8-42e7-bf4e-6e7d0168754a";
+        private const string DisconnectMessageId = "DisconnectMessageId.3d9cd318-fcae-4a4f-ae63-34907be2700a";
+        private const string ConnectedMessageId = "ConnectedMessageId.822280ed-26f5-4cdd-b45c-412e05d1005a";
+        private const string MessageAck = "MessageAck.822280ed-26f5-4cdd-b45c-412e05d1005a";
+        private const string ErrorMessageId = "ErrorMessageId.385ff3c1-84d8-491a-a8b3-e2a9e8f0e256";
+        private const string OpenBackChannelMessageId = "OpenBackChannel.bd89da83-95c8-42e7-bf4e-6e7d0168754a";
 
         internal SmartSocketClient(SmartSocketServer server, Socket client, SmartSocketTypeResolver resolver)
         {
@@ -54,14 +54,14 @@ namespace PChecker.SmartSockets
 
         internal Socket Socket => Client;
 
-        public string Name { get; set; }
+        internal string Name { get; set; }
 
         /// <summary>
         /// Find a SmartSocketServer on the local network using UDP broadcast. This will block
         /// waiting for a server to respond or until you cancel using the CancellationToken.
         /// </summary>
         /// <returns>The connected client or null if task is cancelled.</returns>
-        public static async Task<SmartSocketClient> FindServerAsync(string serviceName, string clientName, SmartSocketTypeResolver resolver,
+        internal static async Task<SmartSocketClient> FindServerAsync(string serviceName, string clientName, SmartSocketTypeResolver resolver,
                                                                     CancellationToken token, string udpGroupAddress = "226.10.10.2", int udpGroupPort = 37992)
         {
             return await Task.Run(async () =>
@@ -250,9 +250,9 @@ namespace PChecker.SmartSockets
             return null;
         }
 
-        public string ServerName { get; set; }
+        internal string ServerName { get; set; }
 
-        public bool IsConnected => !Closed;
+        internal bool IsConnected => !Closed;
 
         /// <summary>
         /// If OpenBackChannel is called, and the server supports it then this property will
@@ -336,7 +336,7 @@ namespace PChecker.SmartSockets
         /// Send a message back to the client.
         /// </summary>
         /// <returns>The response message</returns>
-        public async Task<SocketMessage> SendReceiveAsync(SocketMessage msg)
+        internal async Task<SocketMessage> SendReceiveAsync(SocketMessage msg)
         {
             if (Closed)
             {
@@ -369,7 +369,7 @@ namespace PChecker.SmartSockets
         /// Send a message and do not wait for a response.
         /// </summary>
         /// <returns>The response message</returns>
-        public async Task SendAsync(SocketMessage msg)
+        internal async Task SendAsync(SocketMessage msg)
         {
             // must serialize this send/response sequence, cannot interleave them!
             using (await GetSendLock())
@@ -378,7 +378,7 @@ namespace PChecker.SmartSockets
             }
         }
 
-        public async Task InternalSendAsync(SocketMessage msg)
+        internal async Task InternalSendAsync(SocketMessage msg)
         {
             if (Closed)
             {
@@ -420,7 +420,7 @@ namespace PChecker.SmartSockets
         /// <summary>
         /// Receive one message from the socket. This call blocks until a message has arrived.
         /// </summary>
-        public async Task<SocketMessage> ReceiveAsync()
+        internal async Task<SocketMessage> ReceiveAsync()
         {
             using (await GetSendLock())
             {
@@ -536,6 +536,7 @@ namespace PChecker.SmartSockets
             });
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             Close();
@@ -543,6 +544,7 @@ namespace PChecker.SmartSockets
             GC.SuppressFinalize(this);
         }
 
+        /// <inheritdoc />
         ~SmartSocketClient()
         {
             Close();

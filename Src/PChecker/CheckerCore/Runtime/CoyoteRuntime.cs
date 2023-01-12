@@ -7,6 +7,11 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using PChecker.Actors.Events;
+using PChecker.Exceptions;
+using PChecker.Random;
+using PChecker.Specifications.Monitors;
+using Monitor = PChecker.Specifications.Monitors.Monitor;
 
 namespace PChecker.Runtime
 {
@@ -50,7 +55,7 @@ namespace PChecker.Runtime
         /// <summary>
         /// List of monitors in the program.
         /// </summary>
-        protected readonly List<Specifications.Monitor> Monitors;
+        protected readonly List<Monitor> Monitors;
 
         /// <summary>
         /// Responsible for generating random values.
@@ -84,7 +89,7 @@ namespace PChecker.Runtime
         protected CoyoteRuntime(CheckerConfiguration checkerConfiguration, IRandomValueGenerator valueGenerator)
         {
             CheckerConfiguration = checkerConfiguration;
-            Monitors = new List<Specifications.Monitor>();
+            Monitors = new List<Monitor>();
             ValueGenerator = valueGenerator;
             OperationIdCounter = 0;
             IsRunning = true;
@@ -94,14 +99,14 @@ namespace PChecker.Runtime
         /// Registers a new specification monitor of the specified <see cref="Type"/>.
         /// </summary>
         public void RegisterMonitor<T>()
-            where T : Specifications.Monitor =>
+            where T : Monitor =>
             TryCreateMonitor(typeof(T));
 
         /// <summary>
         /// Invokes the specified monitor with the specified <see cref="Event"/>.
         /// </summary>
         public void Monitor<T>(Event e)
-            where T : Specifications.Monitor
+            where T : Monitor
         {
             // If the event is null then report an error and exit.
             Assert(e != null, "Cannot monitor a null event.");
@@ -137,16 +142,16 @@ namespace PChecker.Runtime
             (ulong)Interlocked.Increment(ref OperationIdCounter) - 1;
 
         /// <summary>
-        /// Tries to create a new <see cref="Specifications.Monitor"/> of the specified <see cref="Type"/>.
+        /// Tries to create a new <see cref="Specifications.Monitors.Monitor"/> of the specified <see cref="Type"/>.
         /// </summary>
         internal abstract void TryCreateMonitor(Type type);
 
         /// <summary>
-        /// Invokes the specified <see cref="Specifications.Monitor"/> with the specified <see cref="Event"/>.
+        /// Invokes the specified <see cref="Specifications.Monitors.Monitor"/> with the specified <see cref="Event"/>.
         /// </summary>
         internal virtual void Monitor(Type type, Event e, string senderName, string senderType, string senderState)
         {
-            Specifications.Monitor monitor = null;
+            Monitor monitor = null;
 
             lock (Monitors)
             {

@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 using System;
+using PChecker.Actors.Handlers;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.StateTransitions
 {
     /// <summary>
     /// Defines a push state transition.

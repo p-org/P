@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using PChecker.Actors;
 
-namespace PChecker.SystematicTesting
+namespace PChecker.SystematicTesting.Operations
 {
     /// <summary>
     /// Contains information about an asynchronous actor operation

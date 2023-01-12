@@ -1,5 +1,5 @@
 ﻿using System;
-using PChecker;
+using PChecker.Actors.Events;
 using Plang.CSharpRuntime.Values;
 
 namespace Plang.CSharpRuntime

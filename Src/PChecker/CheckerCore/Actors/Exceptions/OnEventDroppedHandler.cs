@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace PChecker.Actors
+using PChecker.Actors.Events;
+
+namespace PChecker.Actors.Exceptions
 {
     /// <summary>
     /// Handles the <see cref="IActorRuntime.OnEventDropped"/> event.

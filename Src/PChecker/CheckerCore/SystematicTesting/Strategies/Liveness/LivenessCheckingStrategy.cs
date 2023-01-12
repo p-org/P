@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using PChecker.Specifications.Monitors;
+using PChecker.SystematicTesting.Operations;
 
-namespace PChecker.SystematicTesting.Strategies
+namespace PChecker.SystematicTesting.Strategies.Liveness
 {
     /// <summary>
     /// Abstract strategy for detecting liveness property violations. It
@@ -20,7 +22,7 @@ namespace PChecker.SystematicTesting.Strategies
         /// <summary>
         /// List of monitors in the program.
         /// </summary>
-        protected List<Specifications.Monitor> Monitors;
+        protected List<Monitor> Monitors;
 
         /// <summary>
         /// Strategy used for scheduling decisions.
@@ -30,7 +32,7 @@ namespace PChecker.SystematicTesting.Strategies
         /// <summary>
         /// Initializes a new instance of the <see cref="LivenessCheckingStrategy"/> class.
         /// </summary>
-        internal LivenessCheckingStrategy(CheckerConfiguration checkerConfiguration, List<Specifications.Monitor> monitors, ISchedulingStrategy strategy)
+        internal LivenessCheckingStrategy(CheckerConfiguration checkerConfiguration, List<Monitor> monitors, ISchedulingStrategy strategy)
         {
             CheckerConfiguration = checkerConfiguration;
             Monitors = monitors;

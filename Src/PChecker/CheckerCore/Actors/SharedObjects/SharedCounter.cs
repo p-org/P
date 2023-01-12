@@ -2,7 +2,9 @@
 // Licensed under the MIT License.
 
 using System.Threading;
+using PChecker.Actors.SharedObjects.Events;
 using PChecker.SystematicTesting;
+using PChecker.SystematicTesting.Operations;
 
 namespace PChecker.Actors.SharedObjects
 {

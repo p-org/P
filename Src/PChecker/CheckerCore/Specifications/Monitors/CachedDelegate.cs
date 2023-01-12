@@ -3,8 +3,9 @@
 
 using System;
 using System.Reflection;
+using PChecker.Actors.Events;
 
-namespace PChecker.Specifications
+namespace PChecker.Specifications.Monitors
 {
     /// <summary>
     /// A monitor delegate that has been cached to optimize performance of invocations.

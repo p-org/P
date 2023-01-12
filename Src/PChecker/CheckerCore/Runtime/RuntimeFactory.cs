@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using PChecker.Actors;
+using PChecker.Random;
 
 namespace PChecker.Runtime
 {

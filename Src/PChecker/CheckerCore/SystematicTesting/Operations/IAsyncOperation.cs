@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace PChecker.SystematicTesting
+namespace PChecker.SystematicTesting.Operations
 {
     /// <summary>
     /// Interface of an asynchronous operation that can be controlled during testing.

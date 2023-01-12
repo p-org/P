@@ -3,6 +3,8 @@
 
 using System;
 using System.IO;
+using PChecker.IO.Debugging;
+using PChecker.IO.Logging;
 
 namespace PChecker.IO
 {

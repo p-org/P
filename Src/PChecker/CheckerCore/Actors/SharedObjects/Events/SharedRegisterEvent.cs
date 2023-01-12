@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace PChecker.Actors.SharedObjects
+using PChecker.Actors.Events;
+
+namespace PChecker.Actors.SharedObjects.Events
 {
     /// <summary>
     /// Event used to communicate with a shared register actor.

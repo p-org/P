@@ -4,10 +4,11 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using PChecker.Actors.Events;
 using PChecker.Actors.Timers;
-using PChecker.IO;
+using PChecker.IO.Logging;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Logging
 {
     /// <summary>
     /// This class implements IActorRuntimeLog and generates output in a a human readable text format.

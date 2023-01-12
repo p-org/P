@@ -7,7 +7,7 @@ using PChecker.Runtime;
 using PChecker.SystematicTesting;
 using TCS = System.Threading.Tasks.TaskCompletionSource<object>;
 
-namespace PChecker.Tasks
+namespace PChecker.Tasks.Locks
 {
     /// <summary>
     /// A non-reentrant mutual exclusion lock that can be acquired asynchronously

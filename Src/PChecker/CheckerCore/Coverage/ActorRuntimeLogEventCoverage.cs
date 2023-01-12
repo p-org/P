@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using PChecker.Actors;
+using PChecker.Actors.Events;
+using PChecker.Actors.Logging;
 using PChecker.Actors.Timers;
 
 namespace PChecker.Coverage

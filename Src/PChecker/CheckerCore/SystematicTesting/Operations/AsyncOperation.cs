@@ -5,7 +5,7 @@
 using System.Diagnostics;
 #endif
 
-namespace PChecker.SystematicTesting
+namespace PChecker.SystematicTesting.Operations
 {
     /// <summary>
     /// An abstract asynchronous operation that can be controlled during testing.

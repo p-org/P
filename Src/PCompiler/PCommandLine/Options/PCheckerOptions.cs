@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using PChecker;
 using PChecker.IO;
+using PChecker.IO.Debugging;
 using Plang.Parser;
 
 namespace Plang.Options

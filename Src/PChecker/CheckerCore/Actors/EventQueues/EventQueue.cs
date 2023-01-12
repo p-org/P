@@ -4,8 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using PChecker.Actors.Events;
+using PChecker.Actors.Managers;
 
-namespace PChecker.Actors
+namespace PChecker.Actors.EventQueues
 {
     /// <summary>
     /// Implements a queue of events.

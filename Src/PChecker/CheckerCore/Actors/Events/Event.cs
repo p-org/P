@@ -3,7 +3,7 @@
 
 using System.Runtime.Serialization;
 
-namespace PChecker
+namespace PChecker.Actors.Events
 {
     /// <summary>
     /// Abstract class representing an event.

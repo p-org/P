@@ -7,10 +7,12 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using PChecker.Tasks;
+using PChecker.Exceptions;
+using Debug = PChecker.IO.Debugging.Debug;
 using SystemTasks = System.Threading.Tasks;
+using Task = PChecker.Tasks.Task;
 
-namespace PChecker.SystematicTesting
+namespace PChecker.SystematicTesting.Operations
 {
     /// <summary>
     /// Contains information about an asynchronous task operation
@@ -79,7 +81,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal void OnWaitTask(SystemTasks.Task task)
         {
-            IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for task '{1}'.", Id, task.Id);
+            Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for task '{1}'.", Id, task.Id);
             JoinDependencies.Add(task);
             Status = AsyncOperationStatus.BlockedOnWaitAll;
             Scheduler.ScheduleNextEnabledOperation();
@@ -95,7 +97,7 @@ namespace PChecker.SystematicTesting
             {
                 if (!task.IsCompleted)
                 {
-                    IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for task '{1}'.", Id, task.Id);
+                    Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for task '{1}'.", Id, task.Id);
                     JoinDependencies.Add(task.UncontrolledTask);
                 }
             }
@@ -116,10 +118,10 @@ namespace PChecker.SystematicTesting
         {
             if (Status == AsyncOperationStatus.BlockedOnWaitAll)
             {
-                IO.Debug.WriteLine("<ScheduleDebug> Try enable operation '{0}'.", Id);
+                Debug.WriteLine("<ScheduleDebug> Try enable operation '{0}'.", Id);
                 if (!JoinDependencies.All(task => task.IsCompleted))
                 {
-                    IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for all join tasks to complete.", Id);
+                    Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for all join tasks to complete.", Id);
                     return;
                 }
 
@@ -128,10 +130,10 @@ namespace PChecker.SystematicTesting
             }
             else if (Status == AsyncOperationStatus.BlockedOnWaitAny)
             {
-                IO.Debug.WriteLine("<ScheduleDebug> Try enable operation '{0}'.", Id);
+                Debug.WriteLine("<ScheduleDebug> Try enable operation '{0}'.", Id);
                 if (!JoinDependencies.Any(task => task.IsCompleted))
                 {
-                    IO.Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for any join task to complete.", Id);
+                    Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for any join task to complete.", Id);
                     return;
                 }
 

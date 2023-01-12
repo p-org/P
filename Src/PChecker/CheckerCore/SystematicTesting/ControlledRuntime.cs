@@ -10,13 +10,26 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using PChecker.Actors;
-using PChecker.Actors.Mocks;
+using PChecker.Actors.EventQueues;
+using PChecker.Actors.EventQueues.Mocks;
+using PChecker.Actors.Events;
+using PChecker.Actors.Exceptions;
+using PChecker.Actors.Managers;
+using PChecker.Actors.Managers.Mocks;
 using PChecker.Actors.Timers;
 using PChecker.Actors.Timers.Mocks;
 using PChecker.Coverage;
+using PChecker.Exceptions;
+using PChecker.Random;
 using PChecker.Runtime;
+using PChecker.Specifications.Monitors;
+using PChecker.SystematicTesting.Operations;
 using PChecker.SystematicTesting.Strategies;
+using PChecker.SystematicTesting.Strategies.Liveness;
+using PChecker.SystematicTesting.Traces;
 using CoyoteTasks = PChecker.Tasks;
+using Debug = PChecker.IO.Debugging.Debug;
+using EventInfo = PChecker.Actors.Events.EventInfo;
 
 namespace PChecker.SystematicTesting
 {
@@ -193,7 +206,7 @@ namespace PChecker.SystematicTesting
                         throw new InvalidOperationException($"Unsupported test delegate of type '{testMethod.GetType()}'.");
                     }
 
-                    IO.Debug.WriteLine("<ScheduleDebug> Completed operation {0} on task '{1}'.", op.Name, Task.CurrentId);
+                    Debug.WriteLine("<ScheduleDebug> Completed operation {0} on task '{1}'.", op.Name, Task.CurrentId);
                     op.OnCompleted();
 
                     // Task has completed, schedule the next enabled operation.
@@ -450,7 +463,7 @@ namespace PChecker.SystematicTesting
                 originInfo = new EventOriginInfo(null, "Env", "Env");
             }
 
-            var eventInfo = new Actors.EventInfo(e, originInfo)
+            var eventInfo = new EventInfo(e, originInfo)
             {
                 MustHandle = options?.MustHandle ?? false,
                 Assert = options?.Assert ?? -1
@@ -500,7 +513,7 @@ namespace PChecker.SystematicTesting
                         ResetProgramCounter(actor);
                     }
 
-                    IO.Debug.WriteLine("<ScheduleDebug> Completed operation {0} on task '{1}'.", actor.Id, Task.CurrentId);
+                    Debug.WriteLine("<ScheduleDebug> Completed operation {0} on task '{1}'.", actor.Id, Task.CurrentId);
                     op.OnCompleted();
 
                     // The actor is inactive or halted, schedule the next enabled operation.
@@ -535,12 +548,12 @@ namespace PChecker.SystematicTesting
 
             if (innerException is ExecutionCanceledException || innerException is TaskSchedulerException)
             {
-                IO.Debug.WriteLine("<Exception> {0} was thrown from operation '{1}'.",
+                Debug.WriteLine("<Exception> {0} was thrown from operation '{1}'.",
                     innerException.GetType().Name, op.Name);
             }
             else if (innerException is ObjectDisposedException)
             {
-                IO.Debug.WriteLine("<Exception> {0} was thrown from operation '{1}' with reason '{2}'.",
+                Debug.WriteLine("<Exception> {0} was thrown from operation '{1}' with reason '{2}'.",
                     innerException.GetType().Name, op.Name, ex.Message);
             }
             else
@@ -572,9 +585,9 @@ namespace PChecker.SystematicTesting
                 return;
             }
 
-            Assert(type.IsSubclassOf(typeof(Specifications.Monitor)), "Type '{0}' is not a subclass of Monitor.", type.FullName);
+            Assert(type.IsSubclassOf(typeof(Monitor)), "Type '{0}' is not a subclass of Monitor.", type.FullName);
 
-            var monitor = Activator.CreateInstance(type) as Specifications.Monitor;
+            var monitor = Activator.CreateInstance(type) as Monitor;
             monitor.Initialize(this);
             monitor.InitializeStateInformation();
 
@@ -783,7 +796,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyDequeuedEvent(Actor actor, Event e, Actors.EventInfo eventInfo)
+        internal override void NotifyDequeuedEvent(Actor actor, Event e, EventInfo eventInfo)
         {
             var op = Scheduler.GetOperationWithId<ActorOperation>(actor.Id.Value);
 
@@ -817,7 +830,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyRaisedEvent(Actor actor, Event e, Actors.EventInfo eventInfo)
+        internal override void NotifyRaisedEvent(Actor actor, Event e, EventInfo eventInfo)
         {
             var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : null;
             LogWriter.LogRaiseEvent(actor.Id, stateName, e);
@@ -837,7 +850,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyReceivedEvent(Actor actor, Event e, Actors.EventInfo eventInfo)
+        internal override void NotifyReceivedEvent(Actor actor, Event e, EventInfo eventInfo)
         {
             var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : null;
             LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: true);
@@ -846,7 +859,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyReceivedEventWithoutWaiting(Actor actor, Event e, Actors.EventInfo eventInfo)
+        internal override void NotifyReceivedEventWithoutWaiting(Actor actor, Event e, EventInfo eventInfo)
         {
             var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : null;
             LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: false);
@@ -927,27 +940,27 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyEnteredState(Specifications.Monitor monitor)
+        internal override void NotifyEnteredState(Monitor monitor)
         {
             var monitorState = monitor.CurrentStateName;
             LogWriter.LogMonitorStateTransition(monitor.GetType().FullName, monitorState, true, monitor.GetHotState());
         }
 
         /// <inheritdoc/>
-        internal override void NotifyExitedState(Specifications.Monitor monitor)
+        internal override void NotifyExitedState(Monitor monitor)
         {
             LogWriter.LogMonitorStateTransition(monitor.GetType().FullName,
                 monitor.CurrentStateName, false, monitor.GetHotState());
         }
 
         /// <inheritdoc/>
-        internal override void NotifyInvokedAction(Specifications.Monitor monitor, MethodInfo action, string stateName, Event receivedEvent)
+        internal override void NotifyInvokedAction(Monitor monitor, MethodInfo action, string stateName, Event receivedEvent)
         {
             LogWriter.LogMonitorExecuteAction(monitor.GetType().FullName, stateName, action.Name);
         }
 
         /// <inheritdoc/>
-        internal override void NotifyRaisedEvent(Specifications.Monitor monitor, Event e)
+        internal override void NotifyRaisedEvent(Monitor monitor, Event e)
         {
             var monitorState = monitor.CurrentStateName;
             LogWriter.LogMonitorRaiseEvent(monitor.GetType().FullName, monitorState, e);
@@ -1021,7 +1034,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Reports coverage for the specified monitor.
         /// </summary>
-        private void ReportActivityCoverageOfMonitor(Specifications.Monitor monitor)
+        private void ReportActivityCoverageOfMonitor(Monitor monitor)
         {
             var monitorName = monitor.GetType().FullName;
             if (CoverageInfo.IsMachineDeclared(monitorName))

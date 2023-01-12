@@ -9,7 +9,7 @@ namespace PChecker.SmartSockets
     /// This is the base class for messages send over SmartSockets.
     /// </summary>
     [DataContract]
-    public class SocketMessage
+    internal class SocketMessage
     {
         public SocketMessage(string id, string sender)
         {

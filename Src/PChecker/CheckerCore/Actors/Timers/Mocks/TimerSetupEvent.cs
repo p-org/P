@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using PChecker.Actors.Events;
+
 namespace PChecker.Actors.Timers.Mocks
 {
     /// <summary>
@@ -28,7 +30,6 @@ namespace PChecker.Actors.Timers.Mocks
         /// </summary>
         /// <param name="info">Stores information about the timer.</param>
         /// <param name="owner">The actor that owns the timer.</param>
-        /// <param name="delay">Adjusts the probability of firing a timeout event.</param>
         internal TimerSetupEvent(TimerInfo info, Actor owner)
         {
             Info = info;

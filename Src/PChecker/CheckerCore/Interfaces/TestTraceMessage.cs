@@ -7,7 +7,7 @@ using PChecker.SmartSockets;
 namespace PChecker.Interfaces
 {
     [DataContract]
-    public class TestTraceMessage : SocketMessage
+    internal class TestTraceMessage : SocketMessage
     {
         [DataMember]
         public uint ProcessId { get; set; }

@@ -4,7 +4,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace PChecker.SystematicTesting
+namespace PChecker.SystematicTesting.Traces
 {
     /// <summary>
     /// Class implementing a program schedule trace. A trace is a series

@@ -4,7 +4,7 @@
 using System;
 using System.Globalization;
 
-namespace PChecker.IO
+namespace PChecker.IO.Debugging
 {
     /// <summary>
     /// Static class implementing debug reporting methods.

@@ -3,14 +3,14 @@
 
 using System;
 using System.Collections.Generic;
-#if !DEBUG
-using System.Diagnostics;
-#endif
 using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using PChecker.Exceptions;
+using PChecker.IO.Debugging;
 using PChecker.Runtime;
+using PChecker.SystematicTesting.Operations;
 using CoyoteTasks = PChecker.Tasks;
 
 namespace PChecker.SystematicTesting
@@ -42,9 +42,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Schedules the specified action to be executed asynchronously.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public Tasks.Task ScheduleAction(Action action, Task predecessor, CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
@@ -85,7 +82,7 @@ namespace PChecker.SystematicTesting
                 }
                 finally
                 {
-                    IO.Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, Task.CurrentId);
+                    Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, Task.CurrentId);
                     op.OnCompleted();
                 }
             }, cancellationToken);
@@ -93,7 +90,7 @@ namespace PChecker.SystematicTesting
             // Schedule a task continuation that will schedule the next enabled operation upon completion.
             task.ContinueWith(t => Scheduler.ScheduleNextEnabledOperation(), TaskScheduler.Current);
 
-            IO.Debug.WriteLine("<CreateLog> Operation '{0}' was created to execute task '{1}'.", op.Name, task.Id);
+            Debug.WriteLine("<CreateLog> Operation '{0}' was created to execute task '{1}'.", op.Name, task.Id);
             Scheduler.ScheduleOperation(op, task.Id);
             task.Start();
             Scheduler.WaitOperationStart(op);
@@ -105,9 +102,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Schedules the specified function to be executed asynchronously.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public Tasks.Task ScheduleFunction(Func<Tasks.Task> function, Task predecessor, CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
@@ -144,7 +138,7 @@ namespace PChecker.SystematicTesting
                 }
                 finally
                 {
-                    IO.Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, Task.CurrentId);
+                    Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, Task.CurrentId);
                     op.OnCompleted();
                 }
             }, cancellationToken);
@@ -154,7 +148,7 @@ namespace PChecker.SystematicTesting
             // Schedule a task continuation that will schedule the next enabled operation upon completion.
             innerTask.ContinueWith(t => Scheduler.ScheduleNextEnabledOperation(), TaskScheduler.Current);
 
-            IO.Debug.WriteLine("<CreateLog> Operation '{0}' was created to execute task '{1}'.", op.Name, task.Id);
+            Debug.WriteLine("<CreateLog> Operation '{0}' was created to execute task '{1}'.", op.Name, task.Id);
             Scheduler.ScheduleOperation(op, task.Id);
             task.Start();
             Scheduler.WaitOperationStart(op);
@@ -166,9 +160,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Schedules the specified function to be executed asynchronously.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public Tasks.Task<TResult> ScheduleFunction<TResult>(Func<Tasks.Task<TResult>> function, Task predecessor,
             CancellationToken cancellationToken)
         {
@@ -206,7 +197,7 @@ namespace PChecker.SystematicTesting
                 }
                 finally
                 {
-                    IO.Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, Task.CurrentId);
+                    Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, Task.CurrentId);
                     op.OnCompleted();
                 }
             }, cancellationToken);
@@ -216,7 +207,7 @@ namespace PChecker.SystematicTesting
             // Schedule a task continuation that will schedule the next enabled operation upon completion.
             innerTask.ContinueWith(t => Scheduler.ScheduleNextEnabledOperation(), TaskScheduler.Current);
 
-            IO.Debug.WriteLine("<CreateLog> Operation '{0}' was created to execute task '{1}'.", op.Name, task.Id);
+            Debug.WriteLine("<CreateLog> Operation '{0}' was created to execute task '{1}'.", op.Name, task.Id);
             Scheduler.ScheduleOperation(op, task.Id);
             task.Start();
             Scheduler.WaitOperationStart(op);
@@ -228,9 +219,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Schedules the specified delegate to be executed asynchronously.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public Tasks.Task<TResult> ScheduleDelegate<TResult>(Delegate work, Task predecessor, CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
@@ -285,7 +273,7 @@ namespace PChecker.SystematicTesting
                 }
                 finally
                 {
-                    IO.Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, Task.CurrentId);
+                    Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, Task.CurrentId);
                     op.OnCompleted();
                 }
             }, cancellationToken);
@@ -293,7 +281,7 @@ namespace PChecker.SystematicTesting
             // Schedule a task continuation that will schedule the next enabled operation upon completion.
             task.ContinueWith(t => Scheduler.ScheduleNextEnabledOperation(), TaskScheduler.Current);
 
-            IO.Debug.WriteLine("<CreateLog> Operation '{0}' was created to execute task '{1}'.", op.Name, task.Id);
+            Debug.WriteLine("<CreateLog> Operation '{0}' was created to execute task '{1}'.", op.Name, task.Id);
             Scheduler.ScheduleOperation(op, task.Id);
             task.Start();
             Scheduler.WaitOperationStart(op);
@@ -305,9 +293,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Schedules the specified delay to be executed asynchronously.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public Tasks.Task ScheduleDelay(TimeSpan delay, CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
@@ -324,9 +309,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Schedules the specified task awaiter continuation to be executed asynchronously.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public void ScheduleTaskAwaiterContinuation(Task task, Action continuation)
         {
             try
@@ -338,31 +320,28 @@ namespace PChecker.SystematicTesting
 
                 if (callerOp.IsExecutingInRootAsyncMethod())
                 {
-                    IO.Debug.WriteLine("<Task> '{0}' is executing continuation of task '{1}' on task '{2}'.",
+                    Debug.WriteLine("<Task> '{0}' is executing continuation of task '{1}' on task '{2}'.",
                         callerOp.Name, task.Id, Task.CurrentId);
                     continuation();
-                    IO.Debug.WriteLine("<Task> '{0}' resumed after continuation of task '{1}' on task '{2}'.",
+                    Debug.WriteLine("<Task> '{0}' resumed after continuation of task '{1}' on task '{2}'.",
                         callerOp.Name, task.Id, Task.CurrentId);
                 }
                 else
                 {
-                    IO.Debug.WriteLine("<Task> '{0}' is dispatching continuation of task '{1}'.", callerOp.Name, task.Id);
+                    Debug.WriteLine("<Task> '{0}' is dispatching continuation of task '{1}'.", callerOp.Name, task.Id);
                     ScheduleAction(continuation, task, default);
-                    IO.Debug.WriteLine("<Task> '{0}' dispatched continuation of task '{1}'.", callerOp.Name, task.Id);
+                    Debug.WriteLine("<Task> '{0}' dispatched continuation of task '{1}'.", callerOp.Name, task.Id);
                 }
             }
             catch (ExecutionCanceledException)
             {
-                IO.Debug.WriteLine($"<Exception> ExecutionCanceledException was thrown from task '{Task.CurrentId}'.");
+                Debug.WriteLine($"<Exception> ExecutionCanceledException was thrown from task '{Task.CurrentId}'.");
             }
         }
 
         /// <summary>
         /// Schedules the specified yield awaiter continuation to be executed asynchronously.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public void ScheduleYieldAwaiterContinuation(Action continuation)
         {
             try
@@ -371,12 +350,12 @@ namespace PChecker.SystematicTesting
                 Assert(callerOp != null,
                     "Uncontrolled task '{0}' invoked a yield operation.",
                     Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>");
-                IO.Debug.WriteLine("<Task> '{0}' is executing a yield operation.", callerOp.Id);
+                Debug.WriteLine("<Task> '{0}' is executing a yield operation.", callerOp.Id);
                 ScheduleAction(continuation, null, default);
             }
             catch (ExecutionCanceledException)
             {
-                IO.Debug.WriteLine($"<Exception> ExecutionCanceledException was thrown from task '{Task.CurrentId}'.");
+                Debug.WriteLine($"<Exception> ExecutionCanceledException was thrown from task '{Task.CurrentId}'.");
             }
         }
 
@@ -384,9 +363,6 @@ namespace PChecker.SystematicTesting
         /// Creates a controlled task that will complete when all tasks
         /// in the specified enumerable collection have completed.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public Tasks.Task WhenAllTasksCompleteAsync(IEnumerable<Tasks.Task> tasks)
         {
             Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
@@ -426,9 +402,6 @@ namespace PChecker.SystematicTesting
         /// Creates a controlled task that will complete when all tasks
         /// in the specified enumerable collection have completed.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public Tasks.Task<TResult[]> WhenAllTasksCompleteAsync<TResult>(IEnumerable<Tasks.Task<TResult>> tasks)
         {
             Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
@@ -455,9 +428,6 @@ namespace PChecker.SystematicTesting
         /// Creates a controlled task that will complete when any task
         /// in the specified enumerable collection have completed.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public Tasks.Task<Tasks.Task> WhenAnyTaskCompletesAsync(IEnumerable<Tasks.Task> tasks)
         {
             Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
@@ -486,9 +456,6 @@ namespace PChecker.SystematicTesting
         /// Creates a controlled task that will complete when any task
         /// in the specified enumerable collection have completed.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public Tasks.Task<Tasks.Task<TResult>> WhenAnyTaskCompletesAsync<TResult>(IEnumerable<Tasks.Task<TResult>> tasks)
         {
             Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
@@ -537,9 +504,6 @@ namespace PChecker.SystematicTesting
         /// Waits for any of the provided controlled task objects to complete execution within
         /// a specified number of milliseconds or until a cancellation token is cancelled.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public int WaitAnyTaskCompletes(Tasks.Task[] tasks)
         {
             // TODO: support cancellations during testing.
@@ -575,7 +539,7 @@ namespace PChecker.SystematicTesting
             // TODO: return immediately if completed without errors.
             // TODO: support timeouts and cancellation tokens.
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
-            IO.Debug.WriteLine("<Task> '{0}' is waiting task '{1}' to complete from task '{2}'.",
+            Debug.WriteLine("<Task> '{0}' is waiting task '{1}' to complete from task '{2}'.",
                 callerOp.Name, task.Id, Task.CurrentId);
             callerOp.OnWaitTask(task.UncontrolledTask);
             return true;
@@ -588,7 +552,7 @@ namespace PChecker.SystematicTesting
         {
             // TODO: return immediately if completed without errors.
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
-            IO.Debug.WriteLine("<Task> '{0}' is waiting task '{1}' with result type '{2}' to complete from task '{3}'.",
+            Debug.WriteLine("<Task> '{0}' is waiting task '{1}' with result type '{2}' to complete from task '{3}'.",
                 callerOp.Name, task.Id, typeof(TResult), Task.CurrentId);
             callerOp.OnWaitTask(task.UncontrolledTask);
             return task.UncontrolledTask.Result;
@@ -597,9 +561,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Callback invoked when the <see cref="Tasks.AsyncTaskMethodBuilder.Start"/> is called.
         /// </summary>
-#if !DEBUG
-        [DebuggerHidden]
-#endif
         public void OnAsyncTaskMethodBuilderStart(Type stateMachineType)
         {
             try
@@ -616,9 +577,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Callback invoked when the <see cref="Tasks.AsyncTaskMethodBuilder.Task"/> is accessed.
         /// </summary>
-#if !DEBUG
-        [DebuggerHidden]
-#endif
         public void OnAsyncTaskMethodBuilderTask()
         {
             if (!Scheduler.IsRunning)
@@ -633,9 +591,6 @@ namespace PChecker.SystematicTesting
         /// Callback invoked when the <see cref="Tasks.AsyncTaskMethodBuilder.AwaitOnCompleted"/>
         /// or <see cref="Tasks.AsyncTaskMethodBuilder.AwaitUnsafeOnCompleted"/> is called.
         /// </summary>
-#if !DEBUG
-        [DebuggerHidden]
-#endif
         public void OnAsyncTaskMethodBuilderAwaitCompleted(Type awaiterType, Type stateMachineType)
         {
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
@@ -663,9 +618,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Callback invoked when the currently executing task operation gets a controlled awaiter.
         /// </summary>
-#if !DEBUG
-        [DebuggerHidden]
-#endif
         public void OnGetAwaiter()
         {
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
@@ -675,9 +627,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Callback invoked when the <see cref="Tasks.YieldAwaitable.YieldAwaiter.GetResult"/> is called.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public void OnYieldAwaiterGetResult()
         {
             Scheduler.ScheduleNextEnabledOperation();
@@ -686,9 +635,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Callback invoked when the executing operation is waiting for the specified task to complete.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         public void OnWaitTask(Task task)
         {
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
@@ -698,9 +644,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Callback invoked when the executing task is waiting for the task with the specified operation id to complete.
         /// </summary>
-#if !DEBUG
-        [DebuggerStepThrough]
-#endif
         internal void OnWaitTask(ulong operationId, Task task)
         {
             Assert(task != null, "Task '{0}' is waiting for a null task to complete.", Task.CurrentId);
@@ -721,15 +664,12 @@ namespace PChecker.SystematicTesting
                 $"'{ex.Source}':\n" +
                 $"   {ex.Message}\n" +
                 $"The stack trace is:\n{ex.StackTrace}");
-            IO.Debug.WriteLine($"<Exception> {message}");
+            Debug.WriteLine($"<Exception> {message}");
         }
 
         /// <summary>
         /// Checks if the assertion holds, and if not, triggers a failure.
         /// </summary>
-#if !DEBUG
-        [DebuggerHidden]
-#endif
         private void Assert(bool predicate, string s, params object[] args)
         {
             if (!predicate)

@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace PChecker.Actors
+namespace PChecker.Actors.Handlers
 {
     /// <summary>
     /// Defines a defer event handler declaration.

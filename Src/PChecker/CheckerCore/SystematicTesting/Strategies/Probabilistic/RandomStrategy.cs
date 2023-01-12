@@ -3,8 +3,10 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using PChecker.Random;
+using PChecker.SystematicTesting.Operations;
 
-namespace PChecker.SystematicTesting.Strategies
+namespace PChecker.SystematicTesting.Strategies.Probabilistic
 {
     /// <summary>
     /// A simple (but effective) randomized scheduling strategy.

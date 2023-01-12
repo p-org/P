@@ -9,8 +9,16 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using PChecker.Actors.EventQueues;
+using PChecker.Actors.Events;
+using PChecker.Actors.Exceptions;
+using PChecker.Actors.Logging;
+using PChecker.Actors.Managers;
 using PChecker.Actors.Timers;
+using PChecker.Random;
 using PChecker.Runtime;
+using PChecker.Specifications.Monitors;
+using EventInfo = PChecker.Actors.Events.EventInfo;
 
 namespace PChecker.Actors
 {
@@ -399,9 +407,9 @@ namespace PChecker.Actors
                 }
             }
 
-            Assert(type.IsSubclassOf(typeof(Specifications.Monitor)), "Type '{0}' is not a subclass of Monitor.", type.FullName);
+            Assert(type.IsSubclassOf(typeof(Monitor)), "Type '{0}' is not a subclass of Monitor.", type.FullName);
 
-            var monitor = (Specifications.Monitor)Activator.CreateInstance(type);
+            var monitor = (Monitor)Activator.CreateInstance(type);
             monitor.Initialize(this);
             monitor.InitializeStateInformation();
 
@@ -625,7 +633,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Notifies that a monitor entered a state.
         /// </summary>
-        internal virtual void NotifyEnteredState(Specifications.Monitor monitor)
+        internal virtual void NotifyEnteredState(Monitor monitor)
         {
             if (CheckerConfiguration.IsVerbose)
             {
@@ -638,7 +646,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Notifies that a monitor exited a state.
         /// </summary>
-        internal virtual void NotifyExitedState(Specifications.Monitor monitor)
+        internal virtual void NotifyExitedState(Monitor monitor)
         {
             if (CheckerConfiguration.IsVerbose)
             {
@@ -651,7 +659,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Notifies that a monitor invoked an action.
         /// </summary>
-        internal virtual void NotifyInvokedAction(Specifications.Monitor monitor, MethodInfo action, string stateName, Event receivedEvent)
+        internal virtual void NotifyInvokedAction(Monitor monitor, MethodInfo action, string stateName, Event receivedEvent)
         {
             if (CheckerConfiguration.IsVerbose)
             {
@@ -662,7 +670,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Notifies that a monitor raised an <see cref="Event"/>.
         /// </summary>
-        internal virtual void NotifyRaisedEvent(Specifications.Monitor monitor, Event e)
+        internal virtual void NotifyRaisedEvent(Monitor monitor, Event e)
         {
             if (CheckerConfiguration.IsVerbose)
             {
@@ -674,7 +682,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Notifies that a monitor found an error.
         /// </summary>
-        internal void NotifyMonitorError(Specifications.Monitor monitor)
+        internal void NotifyMonitorError(Monitor monitor)
         {
             if (CheckerConfiguration.IsVerbose)
             {

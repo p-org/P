@@ -202,7 +202,7 @@ namespace Plang.CSharpRuntime.Values
             foreach (KeyValuePair<IPrtValue, IPrtValue> value in map)
             {
                 string k = value.Key == null ? "null" : value.Key.ToEscapedString();
-                string v = value.Value == null ? "null" : value.Key.ToEscapedString();
+                string v = value.Value == null ? "null" : value.Value.ToEscapedString();
                 sb.Append(sep);
                 sb.Append("<");
                 sb.Append(k);

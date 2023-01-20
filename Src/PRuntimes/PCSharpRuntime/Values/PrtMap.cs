@@ -201,8 +201,8 @@ namespace Plang.CSharpRuntime.Values
             var sep = "";
             foreach (var value in map)
             {
-                var k = value.Key == null ? "null" : value.Key.ToEscapedString();
-                var v = value.Value == null ? "null" : value.Key.ToEscapedString();
+                string k = value.Key == null ? "null" : value.Key.ToEscapedString();
+                string v = value.Value == null ? "null" : value.Value.ToEscapedString();
                 sb.Append(sep);
                 sb.Append("<");
                 sb.Append(k);

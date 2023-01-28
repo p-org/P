@@ -7,7 +7,11 @@ In the first version, we are only supporting the P Checker with different search
 Let's get started with the Portfolio Runner. The portfolio runner runs the P checker in parallel.
 
 &nbsp;
-## Running Portfolio Checker
+## Prerequisites
+&nbsp;
+### Install P
+Follow the installation steps on https://p-org.github.io/P/getstarted/install/
+
 
 &nbsp;
 ### Portfolio Configuration File
@@ -34,7 +38,7 @@ The following parameters are currently supported in `portfolio-config.json`:
 
 
 &nbsp;
-### Running locally
+## Running Portfolio Checker
 
 Simply run the portfolio runner `pmc.py` script directly as:
 ```bash

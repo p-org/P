@@ -55,7 +55,7 @@ class Worker(object):
         self.strategy = ""
         self.status = None
         self.cmd = None
-        self.path = f"{outputPath}/{str(self)}_{self.category}_{self.strategy}_{method_pretty_name(method)}"
+        self.path = ""
 
     def __str__(self):
         return f"worker{self.id}"
@@ -63,8 +63,9 @@ class Worker(object):
     def __repr__(self):
         return self.__str__()
 
-    def set_strategy(self, strategy):
+    def set_path(self, strategy):
         self.strategy = strategy
+        self.path = f"{outputPath}/{str(self)}_{self.category}_{self.strategy}_{method_pretty_name(self.method)}"
 
     def get_id(self):
         return self.id
@@ -325,7 +326,7 @@ def initialize_coyote_worker(method):
 
     worker = Worker(method, "coyote")
     mode, schedule = choose_strategy(int(worker.get_id()))
-    worker.set_strategy(mode)
+    worker.set_path(mode)
     cmd = ["coyote test", dllFile, schedule, "--graph", "--coverage activity", f"--outdir {worker.get_path()}"]
     if method != "":
         cmd.append("-m " + method)
@@ -353,7 +354,7 @@ def initialize_psym_worker(method, mode):
     global psymJarFile
 
     worker = Worker(method, "psym")
-    worker.set_strategy(mode)
+    worker.set_path(mode)
     cmd = ["java -jar", psymJarFile, f"-p {worker}", f"--outdir {worker.get_path()}", f"--mode {mode}"]
     if method != "":
         cmd.append("-m " + f"{method_pretty_name(method)}")

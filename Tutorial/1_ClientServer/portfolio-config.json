@@ -55,6 +55,12 @@
         "help"    : "Verbose output",
         "default" : false,
         "action"  : "store_true"
+    },
+
+    "psym-jar": {
+        "help"    : "Path to generated PSym .jar file, relative to project directory",
+        "default" : "target/ClientServer-jar-with-dependencies.jar",
+        "metavar" : "F"
     }
 
 }

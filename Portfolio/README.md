@@ -2,8 +2,6 @@
 
 P Model Checker supports several backends and search strategies to explore the state space of the system. There is no one strategy that works best across -- bug-finding, or better coverage, or for proof (exhaustive search). Hence, the portfolio runner provides a simple script to run all the different search techniques to the best results for bug-finding, state-space coverage, and exhaustive search for proof.
 
-In the first version, we are only supporting the P Checker with different search strategies (best for bug finding). In the next version (to be released in Feb 2023), we will also add the symbolic engine that provides proofs for the P models.
-
 Let's get started with the Portfolio Runner. The portfolio runner runs the P checker in parallel.
 
 &nbsp;
@@ -24,17 +22,18 @@ Checkout an example `portfolio-config.json` file [here](../Tutorial/1_ClientServ
 
 The following parameters are currently supported in `portfolio-config.json`:
 
-|   **Parameter**    | **Description**                                                                    |              **Recommended**               |
-|:------------------:|------------------------------------------------------------------------------------|:------------------------------------------:|
-|      "pproj"       | Name of the `.pproj` file in the project directory                                 |           `<project-name>.pproj`           |
-|       "dll"        | Path to .dll file, relative to project directory                                   | `POutput/netcoreapp3.1/<project-name>.dll` |
-|    "partitions"    | Number of checker runs for parallel analysis, per method                           |                   `1000`                   |
-|     "timeout"      | Timeout in seconds, per method per partition                                       |                  `28800`                   |
-|    "iterations"    | Number of iterations, per method per partition                                     |                  `100000`                  |
-|    "max-steps"     | Number of scheduling points to explore in each model execution explored by checker |                  `10000`                   |
-|     "methods"      | Suffixes of test methods to execute                                                |  `[comma-separated list of method names]`  |
-| "polling-interval" | How frequently to check for job completion, in seconds                             |                    `10`                    |
-|     "verbose"      | Enable/disable verbose output                                                      |                  `false`                   |
+|   **Parameter**    | **Description**                                                                    |                  **Recommended**                  |
+|:------------------:|------------------------------------------------------------------------------------|:-------------------------------------------------:|
+|      "pproj"       | Name of the `.pproj` file in the project directory                                 |              `<project-name>.pproj`               |
+|       "dll"        | Path to .dll file, relative to project directory                                   |    `POutput/netcoreapp3.1/<project-name>.dll`     |
+|    "partitions"    | Number of checker runs for parallel analysis, per method                           |                      `1000`                       |
+|     "timeout"      | Timeout in seconds, per method per partition                                       |                      `28800`                      |
+|    "iterations"    | Number of iterations, per method per partition                                     |                     `100000`                      |
+|    "max-steps"     | Number of scheduling points to explore in each model execution explored by checker |                      `10000`                      |
+|     "methods"      | Suffixes of test methods to execute                                                |     `[comma-separated list of method names]`      |
+| "polling-interval" | How frequently to check for job completion, in seconds                             |                       `10`                        |
+|     "verbose"      | Enable/disable verbose output                                                      |                      `false`                      |
+|     "psym-jar"     | Path to PSym .jar file, relative to project directory                              | `target/<project-name>-jar-with-dependencies.jar` |
 
 
 &nbsp;

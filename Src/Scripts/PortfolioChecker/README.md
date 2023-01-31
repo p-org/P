@@ -18,7 +18,7 @@ First, you will need to add a configuration file named `portfolio-config.json` i
     
 Note that `portfolio-config.json` should be present at the top level of the P project directory, i.e., same directory as `<project-name>.pproj` file.
 
-Checkout an example `portfolio-config.json` file [here](../Tutorial/1_ClientServer/portfolio-config.json).
+Checkout an example `portfolio-config.json` file [here](../../../Tutorial/1_ClientServer/portfolio-config.json).
 
 The following parameters are currently supported in `portfolio-config.json`:
 

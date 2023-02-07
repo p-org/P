@@ -15,7 +15,7 @@ namespace Plang.Compiler
             InputFiles = new List<string>();
             Output = new DefaultCompilerOutput(OutputDirectory);
             ProjectName = "generatedOutput";
-            ProjectRootPath = null;
+            ProjectRootPath = OutputDirectory;
             LocationResolver = new DefaultLocationResolver();
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
             OutputLanguage = CompilerOutput.CSharp;

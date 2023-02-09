@@ -12,7 +12,7 @@ namespace Plang.Compiler.Backend.CSharp
         {
             Names = new CSharpNameManager("PGEN_");
 
-            FileName = Path.Combine(job.OutputDirectory.FullName, $"{ProjectName}.cs");
+            FileName = $"{ProjectName}.cs";
             ProjectDependencies = job.ProjectDependencies.Count == 0 ? new List<string>() { ProjectName } : job.ProjectDependencies;
             GlobalFunctionClassName = "GlobalFunctions";
         }

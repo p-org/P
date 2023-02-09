@@ -137,6 +137,7 @@ namespace Plang.Options
             {
                 case "outdir":
                     compilerConfiguration.OutputDirectory = Directory.CreateDirectory((string)option.Value);
+                    compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
                     break;
                 case "target":
                     compilerConfiguration.ProjectName = (string)option.Value;

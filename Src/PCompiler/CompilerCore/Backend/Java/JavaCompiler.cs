@@ -31,10 +31,10 @@ namespace Plang.Compiler.Backend.Java
 
             var generators = new List<JavaSourceGenerator>()
             {
-                new TypesGenerator(Path.Combine(job.OutputDirectory.FullName, Constants.TypesDefnFileName)),
-                new EventGenerator(Path.Combine(job.OutputDirectory.FullName, Constants.EventDefnFileName)),
-                new MachineGenerator(Path.Combine(job.OutputDirectory.FullName, Constants.MachineDefnFileName)),
-                new FFIStubGenerator(Path.Combine(job.OutputDirectory.FullName, Constants.FFIStubFileName))
+                new TypesGenerator(Constants.TypesDefnFileName),
+                new EventGenerator(Constants.EventDefnFileName),
+                new MachineGenerator(Constants.MachineDefnFileName),
+                new FFIStubGenerator(Constants.FFIStubFileName)
             };
 
             var ctx = new CompilationContext(job);

@@ -275,7 +275,8 @@ namespace Plang.Parser
                 AllowedValues = AllowedValues,
                 IsMultiValue = IsMultiValue,
                 IsPositional = IsPositional,
-                DependsOn = DependsOn
+                DependsOn = DependsOn,
+                PrintHelp = PrintHelp
             };
         }
 
@@ -466,7 +467,7 @@ namespace Plang.Parser
         {
             AppName = appName;
             AppDescription = appDescription;
-            AddArgument("?", "?", "Show this help menu", typeof(bool)).PrintHelp = true;
+            AddArgument("help", "h", "Show this help menu", typeof(bool), false, true);
         }
 
         /// <summary>
@@ -530,7 +531,7 @@ namespace Plang.Parser
         /// only (e.g. int, float, string, bool).</param>
         /// <param name="required">Whether argument is required.</param>
         /// <returns>The new option or throws <see cref="System.Data.DuplicateNameException"/>.</returns>
-        public CommandLineArgument AddArgument(string longName, string shortName, string description = null, Type dataType = null, bool required = false)
+        public CommandLineArgument AddArgument(string longName, string shortName, string description = null, Type dataType = null, bool required = false, bool help = false)
         {
             if (Arguments.TryGetValue(longName, out var argument))
             {
@@ -552,7 +553,8 @@ namespace Plang.Parser
                 ShortName = shortName,
                 DataType = dataType,
                 Description = description,
-                IsRequired = required
+                IsRequired = required,
+                PrintHelp = help
             };
             Arguments[longName] = argument;
             LongNames.Add(longName);
@@ -764,6 +766,9 @@ namespace Plang.Parser
         /// </summary>
         public void PrintHelp(TextWriter output)
         {
+            var defaultColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Cyan;
+
             const int ArgHelpLineLength = 100;
             const int ArgHelpIndent = 30;
 
@@ -912,6 +917,7 @@ namespace Plang.Parser
                     output.WriteLine();
                 }
             }
+            Console.ForegroundColor = defaultColor;
         }
     }
 }

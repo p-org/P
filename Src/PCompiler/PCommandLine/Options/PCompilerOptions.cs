@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PChecker.IO;
 using PChecker.IO.Debugging;
 using Plang.Compiler;
+using Plang.Compiler.Backend;
 using Plang.Parser;
 
 namespace Plang.Options
@@ -27,7 +27,7 @@ namespace Plang.Options
             
             var projectGroup = Parser.GetOrCreateGroup("project", "P Project: Compiling using `.pproj` file");
             projectGroup.AddArgument("pproj", "pp", "P project file to compile (*.pproj)." +
-                                                    "If this option is not passed the compiler searches for a `*.pproj` in the current folder and compiles it");
+                                                    " If this option is not passed, the compiler searches for a `*.pproj` in the current folder");
 
             var pfilesGroup = Parser.GetOrCreateGroup("commandline", "Compiling P files through commandline");
             pfilesGroup.AddArgument("pfiles", "pf", "List of P files to compile").IsMultiValue = true;
@@ -35,7 +35,7 @@ namespace Plang.Options
                     "Generate output :: (csharp, symbolic, java, c). (default: csharp)").AllowedValues =
                 new List<string>() { "csharp", "symbolic", "c", "java" };
             pfilesGroup.AddArgument("target", "t", "Target or name of the compiled output");
-            pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path");
+            pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
         }
 
         /// <summary>
@@ -50,7 +50,11 @@ namespace Plang.Options
                 var result = Parser.ParseArguments(args);
                 // if there are no arguments then search for a pproj file locally and load it
                 FindLocalPProject(result);
+
+                // load pproj file first
+                UpdateConfigurationWithPProjectFile(compilerConfiguration, result);
                 
+                // load parsed arguments that can override pproj configuration
                 foreach (var arg in result)
                 {
                     UpdateConfigurationWithParsedArgument(compilerConfiguration, arg);
@@ -104,6 +108,26 @@ namespace Plang.Options
         }
 
         /// <summary>
+        /// Updates the checkerConfiguration with the specified P project file.
+        /// </summary>
+        private static void UpdateConfigurationWithPProjectFile(CompilerConfiguration compilerConfiguration, List<CommandLineArgument> result)
+        {
+            foreach (var option in result)
+            {
+                switch (option.LongName)
+                {
+                    case "pproj":
+                    {
+                        new ParsePProjectFile().ParseProjectFile((string)option.Value, out var parsedConfig);
+                        compilerConfiguration.Copy(parsedConfig);
+                    }
+                        return;
+                }
+            }
+        }
+        
+        
+        /// <summary>
         /// Updates the checkerConfiguration with the specified parsed argument.
         /// </summary>
         private static void UpdateConfigurationWithParsedArgument(CompilerConfiguration compilerConfiguration, CommandLineArgument option)
@@ -112,6 +136,7 @@ namespace Plang.Options
             {
                 case "outdir":
                     compilerConfiguration.OutputDirectory = Directory.CreateDirectory((string)option.Value);
+                    compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
                     break;
                 case "target":
                     compilerConfiguration.ProjectName = (string)option.Value;
@@ -126,6 +151,7 @@ namespace Plang.Options
                             "java" => CompilerOutput.Java,
                             _ => compilerConfiguration.OutputLanguage
                         };
+                        compilerConfiguration.Backend = TargetLanguage.GetCodeGenerator(compilerConfiguration.OutputLanguage);
                     }
                     break;
                 case "pfiles":
@@ -139,8 +165,7 @@ namespace Plang.Options
                     break;
                 case "pproj":
                     {
-                        new ParsePProjectFile().ParseProjectFile((string)option.Value, out var parsedConfig);
-                        compilerConfiguration.Copy(parsedConfig);
+                        // do nothing, since already configured through UpdateConfigurationWithPProjectFile
                     }
                     break;
                 default:

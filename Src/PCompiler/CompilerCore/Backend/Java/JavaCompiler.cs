@@ -10,7 +10,7 @@ namespace Plang.Compiler.Backend.Java
     {
         public void GenerateBuildScript(ICompilerConfiguration job)
         {
-            var pomPath = Path.Combine(job.ProjectRootPath.FullName, Constants.BuildFileName);
+            var pomPath = Path.Combine(job.OutputDirectory.FullName, Constants.BuildFileName);
             if (File.Exists(pomPath))
             {
                 job.Output.WriteInfo("Reusing existing " + Constants.BuildFileName);
@@ -58,7 +58,7 @@ namespace Plang.Compiler.Backend.Java
 
             string[] args = { "clean", "package"};
             if (Compiler.RunWithOutput(
-                job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args) != 0)
+                job.OutputDirectory.FullName, out stdout, out stderr, "mvn", args) != 0)
             {
                 throw new TranslationException($"Java project compilation failed.\n" + $"{stdout}\n" + $"{stderr}\n");
             }

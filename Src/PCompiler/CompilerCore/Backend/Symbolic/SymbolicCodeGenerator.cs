@@ -31,7 +31,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         public void Compile(ICompilerConfiguration job)
         {
-            var pomPath = Path.Combine(job.ProjectRootPath.FullName, "pom.xml");
+            var pomPath = Path.Combine(job.OutputDirectory.FullName, "pom.xml");
             var stdout = "";
             var stderr = "";
             // if the file does not exist then create the file
@@ -44,7 +44,7 @@ namespace Plang.Compiler.Backend.Symbolic
             // compile the csproj file
             var args = new[] { "versions:use-latest-versions -DgenerateBackupPoms=false clean package -q"};
 
-            var exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args);
+            var exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "mvn", args);
             if (exitCode != 0)
             {
                 throw new TranslationException($"Compiling generated Symbolic Java code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
@@ -52,7 +52,7 @@ namespace Plang.Compiler.Backend.Symbolic
             else
             {
 //                job.Output.WriteInfo($"{stdout}");
-                job.Output.WriteInfo($"  {job.ProjectName} -> target/{job.ProjectName}-jar-with-dependencies.jar");
+                job.Output.WriteInfo($"  {job.ProjectName} -> {job.OutputDirectory}/target/{job.ProjectName}-jar-with-dependencies.jar");
                 job.Output.WriteInfo("Build succeeded.");
             }
 
@@ -60,7 +60,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             // create source folder
             args = new[] { $"-p {sourceDirectory}" };
-            exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mkdir", args);
+            exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "mkdir", args);
             if (exitCode != 0)
             {
                 throw new TranslationException($"Unable to create source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
@@ -68,9 +68,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
 
             // copy source files
-            var sourceFilePath = Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName);
-            args = new[] { $"{sourceFilePath}/{job.ProjectName}Program.java {sourceDirectory}" };
-            exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "cp", args);
+            args = new[] { $"{job.ProjectName}Program.java {sourceDirectory}" };
+            exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "cp", args);
             if (exitCode != 0)
             {
                 throw new TranslationException($"Unable to copy source file {job.ProjectName}Program.java to source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");

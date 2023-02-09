@@ -24,8 +24,8 @@ namespace Plang.Compiler.Backend.CSharp
         public void Compile(ICompilerConfiguration job)
         {
             var csprojName = $"{job.ProjectName}.csproj";
-            var csprojPath = Path.Combine(job.ProjectRootPath.FullName, csprojName);
-            var mainFilePath = Path.Combine(job.ProjectRootPath.FullName, "Test.cs");
+            var csprojPath = Path.Combine(job.OutputDirectory.FullName, csprojName);
+            var mainFilePath = Path.Combine(job.OutputDirectory.FullName, "Test.cs");
             var stdout = "";
             var stderr = "";
             // if the file does not exist then create the file
@@ -46,7 +46,7 @@ namespace Plang.Compiler.Backend.CSharp
             // compile the csproj file
             var args = new[] { "build -c Release", csprojName };
 
-            var exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "dotnet", args);
+            var exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "dotnet", args);
             if (exitCode != 0)
             {
                 throw new TranslationException($"Compiling generated C# code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");

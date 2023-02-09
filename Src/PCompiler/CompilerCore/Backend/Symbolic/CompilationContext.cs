@@ -45,7 +45,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         internal string MainClassName { get; }
 
-        internal string FileName => $"{MainClassName}.java";
+        internal string FileName => $"{Job.OutputDirectory.FullName}/{MainClassName}.java";
 
         internal static readonly string ReturnValue = "retval";
 

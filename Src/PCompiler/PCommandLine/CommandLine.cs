@@ -45,6 +45,11 @@ namespace Plang
                 case "check":
                     RunChecker(args.Skip(1).ToArray());
                     break;
+                case   "help":
+                case  "-h":
+                case "--help":
+                    PrintCommandHelp();
+                    break;
                 default:
                     CommandLineOutput.WriteError($"Expected (compile | check) as the command input but received `{args[0]}`");
                     PrintCommandHelp();
@@ -54,15 +59,17 @@ namespace Plang
 
         private static void PrintCommandHelp()
         {
-            CommandLineOutput.WriteInfo("=======================================================================");
+            CommandLineOutput.WriteInfo("================================================================================");
             CommandLineOutput.WriteInfo("The P commandline tool supports two commands (modes): compile or check.\n");
             CommandLineOutput.WriteInfo("usage:> p command command-options");
-            CommandLineOutput.WriteInfo("\t command :: compile | check           `compile` to run the P compiler and `check` to run the P checker on the compiled code");
-            CommandLineOutput.WriteInfo("\t command-options                      use `--help` or `-h` to learn more about the corresponding command options");
+            CommandLineOutput.WriteInfo("\t command :: compile | check           `compile` to run the P compiler and ");
+            CommandLineOutput.WriteInfo("\t                                      `check` to run the P checker on the compiled code");
+            CommandLineOutput.WriteInfo("\t command-options                      use `--help` or `-h` to learn more about the");
+            CommandLineOutput.WriteInfo("\t                                      corresponding command options");
             CommandLineOutput.WriteInfo("\t -----------------------------------------------------------------------");
             CommandLineOutput.WriteInfo("\t p compile --help                     for P compiler help");
             CommandLineOutput.WriteInfo("\t p check --help                       for P checker help");
-            CommandLineOutput.WriteInfo("=======================================================================");
+            CommandLineOutput.WriteInfo("================================================================================");
         }
 
         private static void RunChecker(string[] args)

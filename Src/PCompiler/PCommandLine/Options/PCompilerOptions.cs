@@ -121,7 +121,6 @@ namespace Plang.Options
                         new ParsePProjectFile().ParseProjectFile((string)option.Value, out var parsedConfig);
                         compilerConfiguration.Copy(parsedConfig);
                     }
-                        result.Remove(option);
                         return;
                 }
             }
@@ -162,6 +161,11 @@ namespace Plang.Options
                         {
                             compilerConfiguration.InputFiles.Add(file);
                         }
+                    }
+                    break;
+                case "pproj":
+                    {
+                        // do nothing, since already configured through UpdateConfigurationWithPProjectFile
                     }
                     break;
                 default:

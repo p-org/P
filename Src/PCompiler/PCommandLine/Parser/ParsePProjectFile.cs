@@ -52,9 +52,6 @@ namespace Plang.Parser
                 // get output directory
                 var outputDirectory = GetOutputDirectory(projectFilePath);
 
-                // get target language
-                GetTargetLanguage(projectFilePath, ref outputLanguage, ref generateSourceMaps);
-
                 job = new CompilerConfiguration(output: new DefaultCompilerOutput(outputDirectory), outputDir: outputDirectory,
                     outputLanguage: outputLanguage, inputFiles: inputFiles.ToList(), projectName: projectName, projectRoot: projectFilePath.Directory, projectDependencies: projectDependencies.ToList());
 

@@ -2,9 +2,10 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using PChecker;
-using PChecker.IO;
 using PChecker.IO.Debugging;
 using Plang.Parser;
 
@@ -27,7 +28,10 @@ namespace Plang.Options
                 "a reproducible bug-trace if a bug is found, and also allows replaying a bug-trace.");
 
             var basicOptions = Parser.GetOrCreateGroup("Basic", "Basic options");
-            basicOptions.AddPositionalArgument("path", "Path to the P program dll to check");
+            basicOptions.AddPositionalArgument("path", "Path to the compiled file to check (*.dll)."+
+                " If this option is not passed, the compiler searches for a *.dll in the current folder").IsRequired = false;
+            basicOptions.AddArgument("mode", "m", "Checker mode :: (bugfinding, pobserve). (default: bugfinding)").AllowedValues =
+                new List<string>() { "bugfinding", "verify", "cover", "pobserve" };
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
 
             var basicGroup = Parser.GetOrCreateGroup("Basic", "Basic options");
@@ -77,6 +81,9 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                     UpdateConfigurationWithParsedArgument(configuration, arg);
                 }
 
+                // if P compiled file is not set, then search for the compiled dll/jar file locally
+                FindLocalPCompiledFile(configuration);
+
                 SanitizeConfiguration(configuration);
             }
             catch (CommandLineException ex)
@@ -123,6 +130,9 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                     break;
                 case "path":
                     checkerConfiguration.AssemblyToBeAnalyzed = (string)option.Value;
+                    break;
+                case "mode":
+                    checkerConfiguration.CheckerMode = (string)option.Value;
                     break;
                 case "testcase":
                     checkerConfiguration.TestCaseName = (string)option.Value;
@@ -238,5 +248,40 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                 Error.ReportAndExit("For the option '-max-steps N[,M]', please make sure that M >= N.");
             }
         }
+        
+
+        private static void FindLocalPCompiledFile(CheckerConfiguration checkerConfiguration)
+        {
+            if (checkerConfiguration.AssemblyToBeAnalyzed == string.Empty)
+            {
+                CommandLineOutput.WriteInfo(".. Searching for a P compiled file locally in the current folder");
+                
+                string filePattern =  checkerConfiguration.CheckerMode switch
+                {
+                    "bugfinding" => "*.dll",
+                    "verify" => "*-jar-with-dependencies.jar",
+                    "cover" => "*-jar-with-dependencies.jar",
+                    "pobserve" => "*-jar-with-dependencies.jar",
+                    _ => "*.dll"
+                };
+                
+                var files = Directory.GetFiles(Directory.GetCurrentDirectory(), filePattern, SearchOption.AllDirectories);
+
+                foreach (var fileName in files)
+                {
+                    if (fileName.EndsWith("PCheckerCore.dll") || fileName.EndsWith("PCSharpRuntime.dll")) continue;
+                    checkerConfiguration.AssemblyToBeAnalyzed = fileName;
+                    CommandLineOutput.WriteInfo($".. Found a P compiled file: {checkerConfiguration.AssemblyToBeAnalyzed}");
+                    break;
+                }
+                
+                if (checkerConfiguration.AssemblyToBeAnalyzed == string.Empty)
+                {
+                    CommandLineOutput.WriteInfo(
+                        $".. Could not find any P project file {filePattern} in the current directory: {Directory.GetCurrentDirectory()}");
+                }
+            }
+        }
+        
     }
 }

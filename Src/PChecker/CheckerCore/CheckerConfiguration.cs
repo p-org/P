@@ -35,6 +35,12 @@ namespace PChecker
         public string AssemblyToBeAnalyzed;
 
         /// <summary>
+        /// Checking mode
+        /// </summary>
+        [DataMember]
+        public string CheckerMode;
+
+        /// <summary>
         /// Test case to be used.
         /// </summary>
         [DataMember]
@@ -240,6 +246,7 @@ namespace PChecker
             Timeout = 0;
 
             AssemblyToBeAnalyzed = string.Empty;
+            CheckerMode = "bugfinding";
             TestCaseName = string.Empty;
 
             SchedulingStrategy = "random";

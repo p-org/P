@@ -278,7 +278,8 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                 if (checkerConfiguration.AssemblyToBeAnalyzed == string.Empty)
                 {
                     CommandLineOutput.WriteInfo(
-                        $".. Could not find any P project file {filePattern} in the current directory: {Directory.GetCurrentDirectory()}");
+                        $".. Could not find any P compiled file {filePattern} in the current folder: {Directory.GetCurrentDirectory()}");
+                    Error.ReportAndExit($"Provide at least one P compiled file {filePattern}");
                 }
             }
         }

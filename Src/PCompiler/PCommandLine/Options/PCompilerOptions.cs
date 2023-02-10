@@ -88,12 +88,12 @@ namespace Plang.Options
         {
             if (result.Count == 0)
             {
-                CommandLineOutput.WriteInfo(".. Searching for a pproj file locally in the current folder");
+                CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
                 var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj");
                 if (files.Length == 0)
                 {
                     CommandLineOutput.WriteInfo(
-                        $".. Could not find any P project file in the current directory: {Directory.GetCurrentDirectory()}");
+                        $".. Could not find any P project file *.pproj in the current folder: {Directory.GetCurrentDirectory()}");
                 }
                 else
                 {
@@ -101,7 +101,7 @@ namespace Plang.Options
                     commandlineArg.Value = files.First();
                     commandlineArg.LongName = "pproj";
                     commandlineArg.ShortName = "pp";
-                    CommandLineOutput.WriteInfo($".. Found project file: {commandlineArg.Value}");
+                    CommandLineOutput.WriteInfo($".. Found P project file: {commandlineArg.Value}");
                     result.Add(commandlineArg);
                 }
             }
@@ -186,7 +186,7 @@ namespace Plang.Options
             FindLocalPFiles(compilerConfiguration);
             if (compilerConfiguration.InputFiles.Count == 0)
             {
-                Error.ReportAndExit("Provide at least one input p file");
+                Error.ReportAndExit("Provide at least one input *.p file in *.pproj file or through --pfiles option");
             }
 
             foreach (var pfile in compilerConfiguration.InputFiles)

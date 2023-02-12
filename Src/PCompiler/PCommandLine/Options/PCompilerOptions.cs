@@ -27,15 +27,15 @@ namespace Plang.Options
             
             var projectGroup = Parser.GetOrCreateGroup("project", "P Project: Compiling using `.pproj` file");
             projectGroup.AddArgument("pproj", "pp", "P project file to compile (*.pproj)." +
-                                                    " If this option is not passed, the compiler searches for a `*.pproj` in the current folder");
+                                                    " If this option is not passed, the compiler searches for a *.pproj in the current folder");
 
             var pfilesGroup = Parser.GetOrCreateGroup("commandline", "Compiling P files through commandline");
             pfilesGroup.AddArgument("pfiles", "pf", "List of P files to compile").IsMultiValue = true;
-            pfilesGroup.AddArgument("generate", "g",
-                    "Generate output :: (csharp, symbolic, java, c). (default: csharp)").AllowedValues =
-                new List<string>() { "csharp", "symbolic", "c", "java" };
-            pfilesGroup.AddArgument("target", "t", "Target or name of the compiled output");
+            pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
+
+            Parser.AddArgument("mode", "m", "Compilation mode :: (bugfinding, pobserve). (default: bugfinding)").AllowedValues =
+                new List<string>() { "bugfinding", "verify", "cover", "pobserve" };
         }
 
         /// <summary>
@@ -88,12 +88,12 @@ namespace Plang.Options
         {
             if (result.Count == 0)
             {
-                CommandLineOutput.WriteInfo(".. Searching for a pproj file locally in the current folder");
+                CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
                 var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj");
                 if (files.Length == 0)
                 {
                     CommandLineOutput.WriteInfo(
-                        $".. Could not find any P project file in the current directory: {Directory.GetCurrentDirectory()}");
+                        $".. Could not find any P project file *.pproj in the current folder: {Directory.GetCurrentDirectory()}");
                 }
                 else
                 {
@@ -101,7 +101,7 @@ namespace Plang.Options
                     commandlineArg.Value = files.First();
                     commandlineArg.LongName = "pproj";
                     commandlineArg.ShortName = "pp";
-                    CommandLineOutput.WriteInfo($"Compiling project: {commandlineArg.Value}");
+                    CommandLineOutput.WriteInfo($".. Found P project file: {commandlineArg.Value}");
                     result.Add(commandlineArg);
                 }
             }
@@ -138,17 +138,17 @@ namespace Plang.Options
                     compilerConfiguration.OutputDirectory = Directory.CreateDirectory((string)option.Value);
                     compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
                     break;
-                case "target":
+                case "projname":
                     compilerConfiguration.ProjectName = (string)option.Value;
                     break;
-                case "generate":
+                case "mode":
                     {
                         compilerConfiguration.OutputLanguage = (string)option.Value switch
                         {
-                            "csharp" => CompilerOutput.CSharp,
-                            "c" => CompilerOutput.C,
-                            "symbolic" => CompilerOutput.Symbolic,
-                            "java" => CompilerOutput.Java,
+                            "bugfinding" => CompilerOutput.CSharp,
+                            "verify" => CompilerOutput.Symbolic,
+                            "cover" => CompilerOutput.Symbolic,
+                            "pobserve" => CompilerOutput.Java,
                             _ => compilerConfiguration.OutputLanguage
                         };
                         compilerConfiguration.Backend = TargetLanguage.GetCodeGenerator(compilerConfiguration.OutputLanguage);
@@ -183,9 +183,10 @@ namespace Plang.Options
         /// </summary>
         private static void SanitizeConfiguration(CompilerConfiguration compilerConfiguration)
         {
+            FindLocalPFiles(compilerConfiguration);
             if (compilerConfiguration.InputFiles.Count == 0)
             {
-                Error.ReportAndExit("Provide at least one input p file");
+                Error.ReportAndExit("Provide at least one input *.p file in *.pproj file or through --pfiles option");
             }
 
             foreach (var pfile in compilerConfiguration.InputFiles)
@@ -201,5 +202,23 @@ namespace Plang.Options
                 Error.ReportAndExit($"{compilerConfiguration.ProjectName} is not a legal project name");
             }
         }
+        
+
+        private static void FindLocalPFiles(CompilerConfiguration compilerConfiguration)
+        {
+            if (compilerConfiguration.InputFiles.Count == 0)
+            {
+                CommandLineOutput.WriteInfo(".. Searching for P files locally in the current folder");
+                
+                var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.p", SearchOption.AllDirectories);
+
+                foreach (var fileName in files)
+                {
+                    CommandLineOutput.WriteInfo($".. Adding P file: {fileName}");
+                    compilerConfiguration.InputFiles.Add(fileName);
+                }
+            }
+        }
+        
     }
 }

@@ -704,7 +704,7 @@ namespace Plang.Parser
                             throw new CommandLineException(string.Format("Unexpected positional argument: '{0}'", arg), result);
                         }
                     }
-                    while (!IsRequired(current, result));
+                    while (!IsRequired(current, result) && (position < PositionalNames.Count));
 
                     // Positional arguments have no name so the arg is the value.
                     var temp = current.Clone();

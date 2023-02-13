@@ -13,7 +13,7 @@
     <OutputPath>POutput/</OutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include=""/Users/goelaman/work/ws/version/github/P/Src/PRuntimes/PCSharpRuntime/CSharpRuntime.csproj"" />
+    <PackageReference Include=""PCSharpRuntime"" Version=""*""/>
   </ItemGroup>
 </Project>";
 

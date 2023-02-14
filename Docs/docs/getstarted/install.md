@@ -13,34 +13,37 @@ To install .Net Core 6.0 SDK use:
 === "MacOS"
 
     Installing .Net SDK on MacOS using Homebrew ([details](https://formulae.brew.sh/cask/dotnet))
-    ```
+
+    ```shell
     brew tap isen-ng/dotnet-sdk-versions
     brew install --cask dotnet-sdk6-0-400
     ```
+
     Dont have Homebrew? :upside_down_face: Install directly using the installer for [x64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-macos-x64-installer) or [Arm64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-macos-arm64-installer).
 
 === "Ubuntu"
 
     Installing .Net SDK on Ubuntu ([details](https://docs.microsoft.com/en-us/dotnet/core/install/linux-ubuntu))
     
-    ```
+    ```shell
     wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
     sudo dpkg -i packages-microsoft-prod.deb
     rm packages-microsoft-prod.deb
     ```
 
-    ```
+    ```shell
     sudo apt-get update && sudo apt-get install -y dotnet-sdk-6.0
     ```
 
 === "Amazon Linux"
-Installing .Net SDK on Amazon Linux ([details](https://docs.servicestack.net/deploy-netcore-to-amazon-linux-2-ami))
+    
+    Installing .Net SDK on Amazon Linux ([details](https://docs.servicestack.net/deploy-netcore-to-amazon-linux-2-ami))
 
-    ```
+    ```shell
     sudo rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
     ```
 
-    ```
+    ```shell
     sudo yum install dotnet-sdk-6.0
     ```
 
@@ -49,7 +52,9 @@ Installing .Net SDK on Amazon Linux ([details](https://docs.servicestack.net/dep
     Installing .Net SDK on Windows using the installer for [x64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-windows-x64-installer) or [Arm64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-windows-arm64-installer)
 
 ??? hint "Troubleshoot: Confirm that dotnet is correctly installed on your machine."
-    `dotnet --list-sdks`
+    ```shell
+    dotnet --list-sdks
+    ```
 
     You must see an SDK with `6.0.*` dotnet version installed.
     If you get `dotnet` command not found error, mostly likely, you need to add the path to dotnet in your `PATH`.
@@ -66,7 +71,7 @@ To install Java use:
 === "MacOS"
 
     Installing Java on MacOS using Homebrew ([details](https://mkyong.com/java/how-to-install-java-on-mac-osx/))
-    ```
+    ```shell
     brew install java
     ```
     Dont have Homebrew? Directly use [installer](https://www.java.com/en/download/help/mac_install.html). 
@@ -75,7 +80,7 @@ To install Java use:
 
     Installing Java on Ubuntu ([details](https://ubuntu.com/tutorials/install-jre#2-installing-openjdk-jre))
     
-    ```
+    ```shell
     sudo apt install default-jre
     ```
 
@@ -83,7 +88,7 @@ To install Java use:
 
     Installing Java 11 on Amazon Linux (you can use any version of java >= 9)
 
-    ```
+    ```shell
     sudo yum install java-11-amazon-corretto-devel
     ```
 
@@ -92,7 +97,9 @@ To install Java use:
     Installing Java on Windows ([details](https://www.java.com/en/download/help/windows_manual_download.html))
 
 ??? hint "Troubleshoot: Confirm that java is correctly installed on your machine."
-    `java -version`
+    ```shell
+    java -version
+    ```
 
     If you get `java` command not found error, mostly likely, you need to add the path to `java` in your `PATH`.
 
@@ -101,7 +108,7 @@ To install Java use:
 
 Install the P compiler as a `dotnet tool` using the following command:
 
-```
+```shell
 dotnet tool install --global P
 ```
 
@@ -118,7 +125,9 @@ dotnet tool install --global P
 ??? help "Updating P Compiler"
     You can update the version of `P` compiler by running the following command:
 
-    `dotnet tool update --global P`
+    ```shell
+    dotnet tool update --global P
+    ```
 
 ### [Step 4] Recommended IDE (Optional)
 

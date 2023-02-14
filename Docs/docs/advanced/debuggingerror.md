@@ -2,12 +2,12 @@
 
 As described in the [using P compiler and checker](../getstarted/usingP.md) section, running the following command for the ClientServer example finds an error.
 
-```
+```shell
 p check -tc tcSingleClientAbstractServer -i 100
 ```
 
 ??? info "Expected Output"
-    ```shell hl_lines="9 11 13 20"
+    ```hl_lines="9 11 13 20"
     $ p check <Path>/ClientServer.dll -tc tcSingleClientAbstractServer -i 100
 
     .. Searching for a P compiled file locally in the current folder
@@ -57,13 +57,13 @@ In most cases, you can ignore the stack trace and information below the `ErrorLo
 
 One can also replay the error schedule using commandline and enabling verbose feature to dump out the error trace on the commandline.
 
-```
+```shell
 p check --replay <buggy>.schedule -tc <testcaseName> -v
 ```
 
 For example,
 
-```
+```shell
 p check --replay PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer_0_0.schedule \
  -tc tcSingleClientAbstractServer \
  -v

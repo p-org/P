@@ -38,7 +38,7 @@ There are two ways of compiling a P program:
 ??? help "P Compiler commandline options"
     The P compiler provides the following commandline options:
 
-    ```shell
+    ```
     ------------------------------------------ 
     usage: p compile [--pproj string] [--pfiles string] [--projname string] [--outdir string] [--mode ] [--help] 
 
@@ -72,7 +72,7 @@ There are two ways of compiling a P program:
     ```
 
     ??? info "Expected Output"
-        ```shell
+        ```
         $ p compile
 
         .. Searching for a P project file *.pproj locally in the current folder
@@ -146,7 +146,7 @@ There are two ways of compiling a P program:
     ```
     
     ??? info "Expected Output"
-        ```shell
+        ```
         $ p compile -pf PSpec/*.p PSrc/*.p PTst/*.p -pn ClientServer -o PGenerated
 
         ----------------------------------------
@@ -188,7 +188,7 @@ p check
 ```
 
 !!! info "Expected Output"
-    ```shell hl_lines="8 9 10"
+    ```hl_lines="8 9 10"
     $ p check
     
     .. Searching for a P compiled file locally in the current folder
@@ -213,12 +213,12 @@ running the checker on a distributed cluster to explore billions of schedules an
 
 So to run the `tcSingleClient` test case for 100 schedules, we can use the following command:
 
-```
+```shell
 p check -tc tcSingleClient -i 100
 ```
 
 ??? info "Expected Output"
-    ```shell
+    ```
     $ p check -tc tcSingleClient -i 100
 
     .. Searching for a P compiled file locally in the current folder
@@ -260,12 +260,12 @@ p check -tc tcSingleClient -i 100
 
 There is a known bug in the ClientServer example (explained in the Tutorials) which is caught by
 the `tcSingleClientAbstractServer` test case. Run command:
-```
+```shell
 p check -tc tcSingleClientAbstractServer -i 100
 ```
 
 ??? info "Expected Output"
-    ```shell hl_lines="9 11 13 20"
+    ```hl_lines="9 11 13 20"
     $ p check <Path>/ClientServer.dll -tc tcSingleClientAbstractServer -i 100
 
     .. Searching for a P compiled file locally in the current folder

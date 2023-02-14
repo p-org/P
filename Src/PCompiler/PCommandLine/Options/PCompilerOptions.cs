@@ -159,7 +159,14 @@ namespace Plang.Options
                         var files = (string[])option.Value;
                         foreach (var file in files.Distinct())
                         {
-                            compilerConfiguration.InputFiles.Add(file);
+                            if (file.EndsWith(".p"))
+                            {
+                                compilerConfiguration.InputPFiles.Add(file);
+                            }
+                            else
+                            {
+                                compilerConfiguration.InputForeignFiles.Add(file);
+                            }
                         }
                     }
                     break;
@@ -184,12 +191,12 @@ namespace Plang.Options
         private static void SanitizeConfiguration(CompilerConfiguration compilerConfiguration)
         {
             FindLocalPFiles(compilerConfiguration);
-            if (compilerConfiguration.InputFiles.Count == 0)
+            if (compilerConfiguration.InputPFiles.Count == 0)
             {
                 Error.ReportAndExit("Provide at least one input *.p file in *.pproj file or through --pfiles option");
             }
 
-            foreach (var pfile in compilerConfiguration.InputFiles)
+            foreach (var pfile in compilerConfiguration.InputPFiles)
             {
                 if (!CheckFileValidity.IsLegalPFile(pfile, out var fullPathName))
                 {
@@ -206,7 +213,7 @@ namespace Plang.Options
 
         private static void FindLocalPFiles(CompilerConfiguration compilerConfiguration)
         {
-            if (compilerConfiguration.InputFiles.Count == 0)
+            if (compilerConfiguration.InputPFiles.Count == 0)
             {
                 CommandLineOutput.WriteInfo(".. Searching for P files locally in the current folder");
                 
@@ -215,7 +222,7 @@ namespace Plang.Options
                 foreach (var fileName in files)
                 {
                     CommandLineOutput.WriteInfo($".. Adding P file: {fileName}");
-                    compilerConfiguration.InputFiles.Add(fileName);
+                    compilerConfiguration.InputPFiles.Add(fileName);
                 }
             }
         }

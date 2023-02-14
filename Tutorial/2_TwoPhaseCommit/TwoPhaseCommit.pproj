@@ -5,6 +5,7 @@
 	<PFile>./PSrc/</PFile>
 	<PFile>./PSpec/</PFile>
 	<PFile>./PTst/</PFile>
+	<PFile>./PForeign/</PFile>
 </InputFiles>
 <OutputDir>./PGenerated/</OutputDir>
 <!-- Add the dependencies for the Timer machine -->

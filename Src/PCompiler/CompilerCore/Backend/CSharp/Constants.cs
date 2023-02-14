@@ -12,6 +12,7 @@
     <LangVersion>latest</LangVersion>
     <OutputPath>POutput/</OutputPath>
   </PropertyGroup>
+-foreign-include-
   <ItemGroup>
     <PackageReference Include=""PCSharpRuntime"" Version=""*""/>
   </ItemGroup>

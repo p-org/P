@@ -204,7 +204,9 @@ namespace Plang.Parser
                     {
                         var enumerate = new EnumerationOptions();
                         enumerate.RecurseSubdirectories = true;
-                        foreach (var files in Directory.GetFiles(inputFileNameFull, "*.p", enumerate))
+                        var getFiles = Directory.GetFiles(inputFileNameFull, "*.*", enumerate)
+                            .Where(file => CheckFileValidity.IsPFile(file) || CheckFileValidity.IsForeignFile(file));
+                        foreach (var files in getFiles)
                         {
                             pFiles.Add(files);
                         }
@@ -221,9 +223,10 @@ namespace Plang.Parser
                             CommandLineOutput.WriteInfo($"....... includes p file: {pFilePathName.FullName}");
                             inputFiles.Add(pFilePathName.FullName);
                         }
-                        else
+                        else if (CheckFileValidity.IsLegalForeignFile(pFile, out var foreignFilePathName))
                         {
-                            throw new CommandlineParsingError($"Illegal P file name {pFile} or file {pFilePathName?.FullName} not found");
+                            CommandLineOutput.WriteInfo($"....... includes foreign file: {foreignFilePathName.FullName}");
+                            inputFiles.Add(foreignFilePathName.FullName);
                         }
                     }
                 }

@@ -2,7 +2,7 @@
 !!! tip "P Language Semantics"
     Before we get started with the tutorials, please read [{==this==}](advanced/psemantics.md) to get an informal overview of the P language semantics.
 
-In this tutorial, we use a series of examples along with excercise problems to help you get familiar with the P language and the associated tool chain.
+In this tutorial, we use a series of examples along with exercise problems to help you get familiar with the P language and the associated tool chain.
 
 !!! check "How to use this tutorial"
 

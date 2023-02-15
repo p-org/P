@@ -32,8 +32,9 @@ To install .Net Core 6.0 SDK use:
     ```
 
     ```shell
-    sudo apt-get update && sudo apt-get install -y dotnet-sdk-6.0
+    sudo apt update && sudo apt install -y dotnet-sdk-6.0
     ```
+
 
 === "Amazon Linux"
     
@@ -44,7 +45,7 @@ To install .Net Core 6.0 SDK use:
     ```
 
     ```shell
-    sudo yum install dotnet-sdk-6.0
+    sudo yum install -y dotnet-sdk-6.0
     ```
 
 === "Windows"
@@ -58,6 +59,10 @@ To install .Net Core 6.0 SDK use:
 
     You must see an SDK with `6.0.*` dotnet version installed.
     If you get `dotnet` command not found error, mostly likely, you need to add the path to dotnet in your `PATH`.
+    
+    Useful resources:
+
+    - Ubuntu: [../fxr\] does not exist](https://stackoverflow.com/questions/73753672/a-fatal-error-occurred-the-folder-usr-share-dotnet-host-fxr-does-not-exist) 
 
 
 
@@ -81,7 +86,7 @@ To install Java use:
     Installing Java on Ubuntu ([details](https://ubuntu.com/tutorials/install-jre#2-installing-openjdk-jre))
     
     ```shell
-    sudo apt install default-jre
+    sudo apt install -y default-jre
     ```
 
 === "Amazon Linux"
@@ -89,7 +94,7 @@ To install Java use:
     Installing Java 11 on Amazon Linux (you can use any version of java >= 9)
 
     ```shell
-    sudo yum install java-11-amazon-corretto-devel
+    sudo yum install -y java-11-amazon-corretto-devel
     ```
 
 === "Windows"

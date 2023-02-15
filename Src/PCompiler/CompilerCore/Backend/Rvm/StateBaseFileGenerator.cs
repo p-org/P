@@ -1,9 +1,9 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
-using Plang.Compiler.TypeChecker;
-using Plang.Compiler.TypeChecker.AST;
-using Plang.Compiler.TypeChecker.AST.Declarations;
+
 using System.Collections.Generic;
 using System.IO;
+using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.Backend.Rvm
 {
@@ -20,12 +20,12 @@ namespace Plang.Compiler.Backend.Rvm
 
         public CompiledFile GenerateSource(Scope globalScope)
         {
-            CompiledFile source = new CompiledFile(Context.Names.GetStateBaseFileName());
+            var source = new CompiledFile(Context.Names.GetStateBaseFileName());
 
             WriteSourcePrologue(source.Stream);
 
-            List<PEvent> events = new List<PEvent>();
-            foreach (IPDecl decl in globalScope.AllDecls)
+            var events = new List<PEvent>();
+            foreach (var decl in globalScope.AllDecls)
             {
                 switch (decl)
                 {
@@ -58,10 +58,10 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteStateBaseClass(StringWriter output, List<PEvent> events)
         {
-            string stateClassName = Context.Names.GetStateBaseClassName();
-            string stateInterfaceName = Context.Names.GetStateInterfaceName();
-            string throwsClause = Tools.GetThrowsClause();
-            string stateVariable = Context.Names.GetStateVariableName();
+            var stateClassName = Context.Names.GetStateBaseClassName();
+            var stateInterfaceName = Context.Names.GetStateInterfaceName();
+            var throwsClause = Tools.GetThrowsClause();
+            var stateVariable = Context.Names.GetStateVariableName();
 
             Context.WriteLine(
                 output,
@@ -71,9 +71,9 @@ namespace Plang.Compiler.Backend.Rvm
             Context.WriteLine(output);
             Tools.WriteTemplateExitHandler(output, (_) => {});
 
-            foreach (PEvent pEvent in events)
+            foreach (var pEvent in events)
             {
-                string eventName = Context.Names.GetRvmEventName(pEvent);
+                var eventName = Context.Names.GetRvmEventName(pEvent);
     
                 Context.WriteLine(output);
                 Tools.WriteTemplateEventHandler(

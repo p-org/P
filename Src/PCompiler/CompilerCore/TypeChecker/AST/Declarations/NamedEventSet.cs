@@ -1,7 +1,7 @@
-using Antlr4.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Antlr4.Runtime;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
@@ -40,7 +40,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public void AddEvents(IEnumerable<PEvent> evts)
         {
-            foreach (PEvent pEvent in evts)
+            foreach (var pEvent in evts)
             {
                 AddEvent(pEvent);
             }
@@ -108,7 +108,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public void AddEvents(IEnumerable<PEvent> evts)
         {
-            foreach (PEvent pEvent in evts)
+            foreach (var pEvent in evts)
             {
                 AddEvent(pEvent);
             }

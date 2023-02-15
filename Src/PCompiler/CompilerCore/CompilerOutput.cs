@@ -5,7 +5,6 @@ namespace Plang.Compiler
         C,
         Symbolic,
         CSharp,
-        Rvm,
         Java
     }
 }

@@ -1,23 +1,21 @@
-using Plang.Compiler.Backend;
 using System;
 using System.IO;
+using Plang.Compiler.Backend;
 
 namespace Plang.Compiler
 {
     public class DefaultCompilerOutput : ICompilerOutput
     {
         private readonly DirectoryInfo outputDirectory;
-        private readonly DirectoryInfo aspectjOutputDirectory;
 
-        public DefaultCompilerOutput(DirectoryInfo outputDirectory, DirectoryInfo aspectjOutputDirectory = null)
+        public DefaultCompilerOutput(DirectoryInfo outputDirectory)
         {
             this.outputDirectory = outputDirectory;
-            this.aspectjOutputDirectory = aspectjOutputDirectory;
         }
 
         public void WriteMessage(string msg, SeverityKind severity)
         {
-            ConsoleColor defaultColor = Console.ForegroundColor;
+            var defaultColor = Console.ForegroundColor;
             switch (severity)
             {
                 case SeverityKind.Info:
@@ -43,18 +41,13 @@ namespace Plang.Compiler
 
         public void WriteFile(CompiledFile file)
         {
-            if (Path.GetExtension(file.FileName) == ".aj"){
-                string outputPath = Path.Combine(aspectjOutputDirectory.FullName, file.FileName);
-                File.WriteAllText(outputPath, file.Contents);
-            } else {
-                string outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
-                File.WriteAllText(outputPath, file.Contents);
-            }
+            var outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
+            File.WriteAllText(outputPath, file.Contents);
         }
 
         public void WriteError(string msg)
         {
-            ConsoleColor defaultColor = Console.ForegroundColor;
+            var defaultColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(msg);
             Console.ForegroundColor = defaultColor;
@@ -62,7 +55,7 @@ namespace Plang.Compiler
 
         public void WriteInfo(string msg)
         {
-            ConsoleColor defaultColor = Console.ForegroundColor;
+            var defaultColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(msg);
             Console.ForegroundColor = defaultColor;
@@ -70,7 +63,7 @@ namespace Plang.Compiler
 
         public void WriteWarning(string msg)
         {
-            ConsoleColor defaultColor = Console.ForegroundColor;
+            var defaultColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine(msg);
             Console.ForegroundColor = defaultColor;

@@ -1,9 +1,9 @@
-using Antlr4.Runtime.Tree;
-using Plang.Compiler.TypeChecker.AST;
-using Plang.Compiler.TypeChecker.AST.Declarations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Antlr4.Runtime.Tree;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -13,24 +13,24 @@ namespace Plang.Compiler.TypeChecker
             params PParser.ProgramContext[] programUnits)
         {
             // Step 1: Build the global scope of declarations
-            Scope globalScope = BuildGlobalScope(handler, programUnits);
+            var globalScope = BuildGlobalScope(handler, programUnits);
 
             // Step 2: Validate machine specifications
-            foreach (Machine machine in globalScope.Machines)
+            foreach (var machine in globalScope.Machines)
             {
                 MachineChecker.Validate(handler, machine);
             }
 
             // Step 3: Fill function bodies
-            List<Function> allFunctions = globalScope.GetAllMethods().ToList();
-            foreach (Function machineFunction in allFunctions)
+            var allFunctions = globalScope.GetAllMethods().ToList();
+            foreach (var machineFunction in allFunctions)
             {
                 FunctionBodyVisitor.PopulateMethod(handler, machineFunction);
                 FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
             }
 
             // Step 2: Validate no static handlers
-            foreach (Machine machine in globalScope.Machines)
+            foreach (var machine in globalScope.Machines)
             {
                 MachineChecker.ValidateNoStaticHandlers(handler, machine);
             }
@@ -83,7 +83,7 @@ namespace Plang.Compiler.TypeChecker
             ControlFlowChecker.AnalyzeMethods(handler, allFunctions);
 
             // Step 7: Infer the creates set for each machine.
-            foreach (Machine machine in globalScope.Machines)
+            foreach (var machine in globalScope.Machines)
             {
                 InferMachineCreates.Populate(machine, handler);
             }
@@ -91,25 +91,25 @@ namespace Plang.Compiler.TypeChecker
             // Step 8: Fill the module expressions
             ModuleSystemDeclarations.PopulateAllModuleExprs(handler, globalScope);
 
-            ModuleSystemTypeChecker moduleTypeChecker = new ModuleSystemTypeChecker(handler, globalScope);
+            var moduleTypeChecker = new ModuleSystemTypeChecker(handler, globalScope);
             // Step 9: Check that all module expressions are well-formed
-            foreach (IPModuleExpr moduleExpr in AllModuleExprs(globalScope))
+            foreach (var moduleExpr in AllModuleExprs(globalScope))
             {
                 moduleTypeChecker.CheckWellFormedness(moduleExpr);
             }
 
             // Step 10: Check the test and implementation declarations
-            foreach (Implementation impl in globalScope.Implementations)
+            foreach (var impl in globalScope.Implementations)
             {
                 moduleTypeChecker.CheckImplementationDecl(impl);
             }
 
-            foreach (SafetyTest test in globalScope.SafetyTests)
+            foreach (var test in globalScope.SafetyTests)
             {
                 moduleTypeChecker.CheckSafetyTest(test);
             }
 
-            foreach (RefinementTest test in globalScope.RefinementTests)
+            foreach (var test in globalScope.RefinementTests)
             {
                 moduleTypeChecker.CheckRefinementTest(test);
             }
@@ -130,9 +130,9 @@ namespace Plang.Compiler.TypeChecker
 
         private static void ApplyPropagations<T>(IEnumerable<Function> functions, params Propagation<T>[] propagations)
         {
-            foreach (Function function in functions)
+            foreach (var function in functions)
             {
-                foreach (Propagation<T> propagation in propagations)
+                foreach (var propagation in propagations)
                 {
                     if (propagation.Getter(function).Equals(propagation.ActiveValue))
                     {
@@ -141,11 +141,11 @@ namespace Plang.Compiler.TypeChecker
                 }
             }
 
-            foreach (Propagation<T> propagation in propagations)
+            foreach (var propagation in propagations)
             {
                 while (propagation.PropertyStack.Any())
                 {
-                    foreach (Function caller in propagation.PropertyStack.Pop().Callers)
+                    foreach (var caller in propagation.PropertyStack.Pop().Callers)
                     {
                         if (!propagation.Getter(caller).Equals(propagation.ActiveValue))
                         {
@@ -159,21 +159,21 @@ namespace Plang.Compiler.TypeChecker
 
         private static Scope BuildGlobalScope(ITranslationErrorHandler handler, PParser.ProgramContext[] programUnits)
         {
-            Scope globalScope = Scope.CreateGlobalScope(handler);
-            ParseTreeProperty<IPDecl> nodesToDeclarations = new ParseTreeProperty<IPDecl>();
+            var globalScope = Scope.CreateGlobalScope(handler);
+            var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
 
             // Add built-in events to the table.
             globalScope.Put("null", (PParser.EventDeclContext)null);
             globalScope.Put("halt", (PParser.EventDeclContext)null);
 
             // Step 1: Create mapping of names to declaration stubs
-            foreach (PParser.ProgramContext programUnit in programUnits)
+            foreach (var programUnit in programUnits)
             {
                 DeclarationStubVisitor.PopulateStubs(globalScope, programUnit, nodesToDeclarations);
             }
 
             // Step 2: Validate declarations and fill with types
-            foreach (PParser.ProgramContext programUnit in programUnits)
+            foreach (var programUnit in programUnits)
             {
                 DeclarationVisitor.PopulateDeclarations(handler, globalScope, programUnit, nodesToDeclarations);
             }
@@ -184,29 +184,29 @@ namespace Plang.Compiler.TypeChecker
         private static IEnumerable<IPModuleExpr> AllModuleExprs(Scope globalScope)
         {
             // first do all the named modules
-            foreach (NamedModule mod in globalScope.NamedModules)
+            foreach (var mod in globalScope.NamedModules)
             {
                 yield return mod.ModExpr;
             }
 
             // all the test declarations
-            foreach (SafetyTest test in globalScope.SafetyTests)
+            foreach (var test in globalScope.SafetyTests)
             {
                 yield return test.ModExpr;
             }
 
-            foreach (RefinementTest test in globalScope.RefinementTests)
+            foreach (var test in globalScope.RefinementTests)
             {
                 yield return test.LeftModExpr;
             }
 
-            foreach (RefinementTest test in globalScope.RefinementTests)
+            foreach (var test in globalScope.RefinementTests)
             {
                 yield return test.RightModExpr;
             }
 
             // all the implementations
-            foreach (Implementation impl in globalScope.Implementations)
+            foreach (var impl in globalScope.Implementations)
             {
                 yield return impl.ModExpr;
             }

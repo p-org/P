@@ -1,10 +1,10 @@
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
@@ -39,7 +39,7 @@ namespace Plang.Compiler.TypeChecker
             Parent = parent;
             parent?.children.Add(this);
 
-            EventSet eventSetWithHalt = new EventSet();
+            var eventSetWithHalt = new EventSet();
             eventSetWithHalt.AddEvent(new PEvent("halt", null));
             UniversalEventSet = parent == null ? eventSetWithHalt : parent.UniversalEventSet;
         }
@@ -92,14 +92,14 @@ namespace Plang.Compiler.TypeChecker
 
         public IEnumerable<Function> GetAllMethods()
         {
-            foreach (Function fun in Functions)
+            foreach (var fun in Functions)
             {
                 yield return fun;
             }
 
-            foreach (Machine machine in Machines)
+            foreach (var machine in Machines)
             {
-                foreach (Function method in machine.Methods)
+                foreach (var method in machine.Methods)
                 {
                     yield return method;
                 }
@@ -210,7 +210,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out EnumElem tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -227,7 +227,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out PEnum tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -244,7 +244,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out PEvent tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -261,7 +261,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out NamedEventSet tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -278,7 +278,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out Function tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -295,7 +295,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out Interface tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -312,7 +312,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out Machine tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -329,7 +329,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out State tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -346,7 +346,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out TypeDef tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -363,7 +363,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out Variable tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -380,7 +380,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out SafetyTest tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -397,7 +397,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out RefinementTest tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -414,7 +414,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out Implementation tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -431,7 +431,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out NamedModule tree)
         {
-            Scope current = this;
+            var current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -452,7 +452,7 @@ namespace Plang.Compiler.TypeChecker
 
         public TypeDef Put(string name, PParser.PTypeDefContext tree)
         {
-            TypeDef typedef = new TypeDef(name, tree);
+            var typedef = new TypeDef(name, tree);
             CheckConflicts(typedef,
                 Namespace(typedefs),
                 Namespace(enums),
@@ -464,7 +464,7 @@ namespace Plang.Compiler.TypeChecker
 
         internal TypeDef Put(string name, PParser.ForeignTypeDefContext tree)
         {
-            TypeDef typedef = new TypeDef(name, tree);
+            var typedef = new TypeDef(name, tree);
             CheckConflicts(typedef,
                 Namespace(typedefs),
                 Namespace(enums),
@@ -476,7 +476,7 @@ namespace Plang.Compiler.TypeChecker
 
         public PEnum Put(string name, PParser.EnumTypeDefDeclContext tree)
         {
-            PEnum @enum = new PEnum(name, tree);
+            var @enum = new PEnum(name, tree);
             CheckConflicts(
                 @enum,
                 Namespace(enums),
@@ -489,7 +489,7 @@ namespace Plang.Compiler.TypeChecker
 
         public PEvent Put(string name, PParser.EventDeclContext tree)
         {
-            PEvent @event = new PEvent(name, tree);
+            var @event = new PEvent(name, tree);
             CheckConflicts(@event, Namespace(events), Namespace(enumElems));
             events.Add(name, @event);
             return @event;
@@ -497,7 +497,7 @@ namespace Plang.Compiler.TypeChecker
 
         public NamedEventSet Put(string name, PParser.EventSetDeclContext tree)
         {
-            NamedEventSet eventSet = new NamedEventSet(name, tree);
+            var eventSet = new NamedEventSet(name, tree);
             CheckConflicts(eventSet, Namespace(eventSets), Namespace(interfaces));
             eventSets.Add(name, eventSet);
             return eventSet;
@@ -505,7 +505,7 @@ namespace Plang.Compiler.TypeChecker
 
         public Interface Put(string name, PParser.InterfaceDeclContext tree)
         {
-            Interface machineInterface = new Interface(name, tree);
+            var machineInterface = new Interface(name, tree);
             CheckConflicts(
                 machineInterface,
                 Namespace(interfaces),
@@ -518,7 +518,7 @@ namespace Plang.Compiler.TypeChecker
 
         public Machine Put(string name, PParser.ImplMachineDeclContext tree)
         {
-            Machine machine = new Machine(name, tree);
+            var machine = new Machine(name, tree);
             CheckConflicts(machine, Namespace(machines), Namespace(interfaces), Namespace(enums), Namespace(typedefs));
             machines.Add(name, machine);
             interfaces.Add(name, new Interface(name, tree));
@@ -527,7 +527,7 @@ namespace Plang.Compiler.TypeChecker
 
         public Machine Put(string name, PParser.SpecMachineDeclContext tree)
         {
-            Machine specMachine = new Machine(name, tree);
+            var specMachine = new Machine(name, tree);
             CheckConflicts(
                 specMachine,
                 Namespace(machines),
@@ -540,7 +540,7 @@ namespace Plang.Compiler.TypeChecker
 
         public Function Put(string name, PParser.FunDeclContext tree)
         {
-            Function function = new Function(name, tree);
+            var function = new Function(name, tree);
             CheckConflicts(function, Namespace(functions));
             functions.Add(name, function);
             return function;
@@ -548,7 +548,7 @@ namespace Plang.Compiler.TypeChecker
 
         public EnumElem Put(string name, PParser.EnumElemContext tree)
         {
-            EnumElem enumElem = new EnumElem(name, tree);
+            var enumElem = new EnumElem(name, tree);
             CheckConflicts(enumElem, Namespace(enumElems), Namespace(events));
             enumElems.Add(name, enumElem);
             return enumElem;
@@ -556,7 +556,7 @@ namespace Plang.Compiler.TypeChecker
 
         public EnumElem Put(string name, PParser.NumberedEnumElemContext tree)
         {
-            EnumElem enumElem = new EnumElem(name, tree);
+            var enumElem = new EnumElem(name, tree);
             CheckConflicts(enumElem, Namespace(enumElems), Namespace(events));
             enumElems.Add(name, enumElem);
             return enumElem;
@@ -564,7 +564,7 @@ namespace Plang.Compiler.TypeChecker
 
         public Variable Put(string name, ParserRuleContext tree, VariableRole role)
         {
-            Variable variable = new Variable(name, tree, role);
+            var variable = new Variable(name, tree, role);
             CheckConflicts(variable, Namespace(variables));
             variables.Add(name, variable);
             return variable;
@@ -572,7 +572,7 @@ namespace Plang.Compiler.TypeChecker
 
         public State Put(string name, PParser.StateDeclContext tree)
         {
-            State state = new State(tree, name);
+            var state = new State(tree, name);
             CheckConflicts(state, Namespace(states));
             states.Add(name, state);
             return state;
@@ -580,7 +580,7 @@ namespace Plang.Compiler.TypeChecker
 
         public NamedModule Put(string name, PParser.NamedModuleDeclContext tree)
         {
-            NamedModule namedModule = new NamedModule(tree, name);
+            var namedModule = new NamedModule(tree, name);
             CheckConflicts(namedModule, Namespace(namedModules));
             namedModules.Add(name, namedModule);
             return namedModule;
@@ -588,7 +588,7 @@ namespace Plang.Compiler.TypeChecker
 
         public Implementation Put(string name, PParser.ImplementationDeclContext tree)
         {
-            Implementation impl = new Implementation(tree, name);
+            var impl = new Implementation(tree, name);
             CheckConflicts(impl,
                 Namespace(implementations),
                 Namespace(safetyTests),
@@ -599,7 +599,7 @@ namespace Plang.Compiler.TypeChecker
 
         public SafetyTest Put(string name, PParser.SafetyTestDeclContext tree)
         {
-            SafetyTest safetyTest = new SafetyTest(tree, name);
+            var safetyTest = new SafetyTest(tree, name);
             CheckConflicts(safetyTest,
                 Namespace(implementations),
                 Namespace(safetyTests),
@@ -610,7 +610,7 @@ namespace Plang.Compiler.TypeChecker
 
         public RefinementTest Put(string name, PParser.RefinementTestDeclContext tree)
         {
-            RefinementTest refineTest = new RefinementTest(tree, name);
+            var refineTest = new RefinementTest(tree, name);
             CheckConflicts(refineTest,
                 Namespace(implementations),
                 Namespace(safetyTests),
@@ -639,7 +639,7 @@ namespace Plang.Compiler.TypeChecker
         {
             return (string name, out IPDecl decl) =>
             {
-                bool success = table.TryGetValue(name, out T tDecl);
+                var success = table.TryGetValue(name, out var tDecl);
                 decl = tDecl;
                 return success;
             };

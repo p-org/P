@@ -1,14 +1,11 @@
-﻿using System.Diagnostics;
-using System.IO;
-
-namespace Plang.Compiler.Backend.CSharp
+﻿namespace Plang.Compiler.Backend.CSharp
 {
     internal class Constants
     {
         internal static readonly string csprojTemplate = @"
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject />
@@ -16,20 +13,17 @@ namespace Plang.Compiler.Backend.CSharp
     <OutputPath>POutput/</OutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Coyote"" Version=""1.0.5""/>
     <PackageReference Include=""PCSharpRuntime"" Version=""1.*""/>
   </ItemGroup>
 </Project>";
 
         internal static readonly string mainCode = @"
-using Microsoft.Coyote;
-using Microsoft.Coyote.SystematicTesting;
-using Microsoft.Coyote.Actors;
+using PChecker;
+using PChecker.SystematicTesting;
 using System;
 using System.Linq;
-using System.IO;
 
-namespace -projectName-
+namespace PImplementation
 {
     public class _TestRegression {
         public static void Main(string[] args)

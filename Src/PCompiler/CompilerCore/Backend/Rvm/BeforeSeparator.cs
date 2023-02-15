@@ -1,5 +1,4 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
-using System.IO;
 
 namespace Plang.Compiler.Backend.Rvm
 {
@@ -12,7 +11,7 @@ namespace Plang.Compiler.Backend.Rvm
 
         internal BeforeSeparator(SeparatorDelegate separator)
         {
-            this.Separator = separator;
+            Separator = separator;
         }
 
         public void beforeElement()

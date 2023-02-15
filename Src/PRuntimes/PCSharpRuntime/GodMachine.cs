@@ -1,6 +1,7 @@
-﻿using Microsoft.Coyote;
-using Microsoft.Coyote.Actors;
-using System;
+﻿using System;
+using PChecker;
+using PChecker.Actors;
+using PChecker.Actors.Events;
 
 namespace Plang.CSharpRuntime
 {
@@ -8,7 +9,7 @@ namespace Plang.CSharpRuntime
     {
         private void InitOnEntry(Event e)
         {
-            Type mainMachine = (e as Config).MainMachine;
+            var mainMachine = (e as Config).MainMachine;
             CreateActor(mainMachine,
                 new PMachine.InitializeParametersEvent(
                     new PMachine.InitializeParameters("I_" + mainMachine.Name, null)));

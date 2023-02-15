@@ -1,8 +1,10 @@
-﻿using Microsoft.Coyote;
-using Microsoft.Coyote.Actors;
-using Microsoft.Coyote.Specifications;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using PChecker;
+using PChecker.Actors;
+using PChecker.Actors.Events;
+using PChecker.Specifications;
+using PChecker.Specifications.Monitors;
 
 namespace Plang.CSharpRuntime
 {
@@ -15,25 +17,25 @@ namespace Plang.CSharpRuntime
         public void TryRaiseEvent(Event ev, object payload = null)
         {
             Assert(!(ev is DefaultEvent), "Monitor cannot raise a null event");
-            System.Reflection.ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            Event @event = (Event)oneArgConstructor.Invoke(new[] { payload });
-            base.RaiseEvent(@event);
+            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+            var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
+            RaiseEvent(@event);
         }
 
         public void TryGotoState<T>(object payload = null) where T : State
         {
             gotoPayload = payload;
-            base.RaiseGotoStateEvent<T>();
+            RaiseGotoStateEvent<T>();
         }
 
         public void TryAssert(bool predicate)
         {
-            base.Assert(predicate);
+            Assert(predicate);
         }
 
         public void TryAssert(bool predicate, string s, params object[] args)
         {
-            base.Assert(predicate, s, args);
+            Assert(predicate, s, args);
         }
         
         public void LogLine(string message)

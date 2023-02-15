@@ -1,9 +1,9 @@
-﻿using Plang.Compiler;
-using Plang.Compiler.Backend;
-using System;
+﻿using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using Plang.Compiler;
+using Plang.Compiler.Backend;
 using UnitTests.Core;
 
 namespace UnitTests.Runners
@@ -15,14 +15,14 @@ namespace UnitTests.Runners
     public class CompileOnlyRunner : ICompilerTestRunner
     {
         private readonly CompilerOutput compilerOutput;
-        private readonly IReadOnlyList<string> inputFiles;
+        private readonly IList<string> inputFiles;
 
         /// <summary>
         ///     Box a new compile runner
         /// </summary>
         /// <param name="compilerOutput"></param>
         /// <param name="inputFiles">The P source files to compile</param>
-        public CompileOnlyRunner(CompilerOutput compilerOutput, IReadOnlyList<string> inputFiles)
+        public CompileOnlyRunner(CompilerOutput compilerOutput, IList<string> inputFiles)
         {
             this.inputFiles = inputFiles;
             this.compilerOutput = compilerOutput;
@@ -40,31 +40,25 @@ namespace UnitTests.Runners
         /// </returns>
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
-            Compiler compiler = new Compiler();
-            StringWriter stdoutWriter = new StringWriter();
-            StringWriter stderrWriter = new StringWriter();
-            TestCaseOutputStream outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);
+            var compiler = new Compiler();
+            var stdoutWriter = new StringWriter();
+            var stderrWriter = new StringWriter();
+            var outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);
 
-            CompilationJob job = new CompilationJob(outputStream, scratchDirectory, compilerOutput, inputFiles, Path.GetFileNameWithoutExtension(inputFiles.First()));
+            var job = new CompilerConfiguration(outputStream, scratchDirectory, compilerOutput, inputFiles, Path.GetFileNameWithoutExtension(inputFiles.First()));
 
             try
             {
-                compiler.Compile(job);
-            }
-            catch (TranslationException)
-            {
+                var exitCode = compiler.Compile(job);
                 stdout = stdoutWriter.ToString().Trim();
                 stderr = stderrWriter.ToString().Trim();
-                return 1;
+                return exitCode;
             }
             catch (Exception exception)
             {
                 job.Output.WriteMessage(exception.Message, SeverityKind.Error);
                 throw new CompilerTestException(TestCaseError.TranslationFailed, exception.Message);
             }
-            stdout = stdoutWriter.ToString().Trim();
-            stderr = stderrWriter.ToString().Trim();
-            return 0;
         }
 
         private class TestCaseOutputStream : ICompilerOutput
@@ -98,12 +92,12 @@ namespace UnitTests.Runners
 
             public void WriteFile(CompiledFile file)
             {
-                int nameLength = file.FileName.Length;
-                int headerWidth = Math.Max(40, nameLength + 4);
-                string hdash = new string('=', headerWidth);
+                var nameLength = file.FileName.Length;
+                var headerWidth = Math.Max(40, nameLength + 4);
+                var hdash = new string('=', headerWidth);
                 stdout.WriteLine(hdash);
-                int prePadding = (headerWidth - nameLength) / 2 - 1;
-                int postPadding = headerWidth - prePadding - nameLength - 2;
+                var prePadding = (headerWidth - nameLength) / 2 - 1;
+                var postPadding = headerWidth - prePadding - nameLength - 2;
                 stdout.WriteLine($"={new string(' ', prePadding)}{file.FileName}{new string(' ', postPadding)}=");
                 stdout.WriteLine(hdash);
                 stdout.Write(file.Contents);

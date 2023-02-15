@@ -1,13 +1,13 @@
-﻿using Plang.Compiler.Backend.ASTExt;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.Types;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 
 namespace Plang.Compiler.Backend
 {
@@ -28,7 +28,7 @@ namespace Plang.Compiler.Backend
                 return;
             }
 
-            IRTransformer transformer = new IRTransformer(function);
+            var transformer = new IRTransformer(function);
             IPStmt functionBody = function.Body;
             function.Body = new CompoundStmt(functionBody.SourceLocation, transformer.SimplifyStatement(functionBody));
         }
@@ -40,47 +40,47 @@ namespace Plang.Compiler.Backend
 
         private (VariableAccessExpr, IPStmt) SaveInTemporary(IPExpr expr, PLanguageType tempType)
         {
-            Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
-            Variable temp = function.Scope.Put($"$tmp{numTemp++}", location, VariableRole.Local | VariableRole.Temp);
+            var location = expr.SourceLocation;
+            var temp = function.Scope.Put($"$tmp{numTemp++}", location, VariableRole.Local | VariableRole.Temp);
             Debug.Assert(tempType.IsAssignableFrom(expr.Type));
             temp.Type = tempType;
             function.AddLocalVariable(temp);
-            AssignStmt stmt = new AssignStmt(location, new VariableAccessExpr(location, temp), expr);
+            var stmt = new AssignStmt(location, new VariableAccessExpr(location, temp), expr);
             return (new VariableAccessExpr(location, temp), stmt);
         }
 
         private (IPExpr, List<IPStmt>) SimplifyLvalue(IPExpr expr)
         {
             // TODO: I am suspicious.
-            Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
-            PLanguageType type = expr.Type;
+            var location = expr.SourceLocation;
+            var type = expr.Type;
 #pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
                 case MapAccessExpr mapAccessExpr:
-                    (IPExpr mapExpr, List<IPStmt> mapExprDeps) = SimplifyLvalue(mapAccessExpr.MapExpr);
-                    (IExprTerm mapIndex, List<IPStmt> mapIndexDeps) = SimplifyExpression(mapAccessExpr.IndexExpr);
+                    (var mapExpr, var mapExprDeps) = SimplifyLvalue(mapAccessExpr.MapExpr);
+                    (var mapIndex, var mapIndexDeps) = SimplifyExpression(mapAccessExpr.IndexExpr);
                     return (new MapAccessExpr(location, mapExpr, mapIndex, type),
                         mapExprDeps.Concat(mapIndexDeps).ToList());
                 
                 case SetAccessExpr setAccessExpr:
-                    (IPExpr setExpr, List<IPStmt> setExprDeps) = SimplifyLvalue(setAccessExpr.SetExpr);
-                    (IExprTerm setIndex, List<IPStmt> setIndexDeps) = SimplifyExpression(setAccessExpr.IndexExpr);
+                    (var setExpr, var setExprDeps) = SimplifyLvalue(setAccessExpr.SetExpr);
+                    (var setIndex, var setIndexDeps) = SimplifyExpression(setAccessExpr.IndexExpr);
                     return (new SetAccessExpr(location, setExpr, setIndex, type),
                         setExprDeps.Concat(setIndexDeps).ToList());
                 
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    (IPExpr ntExpr, List<IPStmt> ntExprDeps) = SimplifyLvalue(namedTupleAccessExpr.SubExpr);
+                    (var ntExpr, var ntExprDeps) = SimplifyLvalue(namedTupleAccessExpr.SubExpr);
                     return (new NamedTupleAccessExpr(location, ntExpr, namedTupleAccessExpr.Entry), ntExprDeps);
 
                 case SeqAccessExpr seqAccessExpr:
-                    (IPExpr seqExpr, List<IPStmt> seqExprDeps) = SimplifyLvalue(seqAccessExpr.SeqExpr);
-                    (IExprTerm seqIndex, List<IPStmt> seqIndexDeps) = SimplifyExpression(seqAccessExpr.IndexExpr);
+                    (var seqExpr, var seqExprDeps) = SimplifyLvalue(seqAccessExpr.SeqExpr);
+                    (var seqIndex, var seqIndexDeps) = SimplifyExpression(seqAccessExpr.IndexExpr);
                     return (new SeqAccessExpr(location, seqExpr, seqIndex, type),
                         seqExprDeps.Concat(seqIndexDeps).ToList());
 
                 case TupleAccessExpr tupleAccessExpr:
-                    (IPExpr tupExpr, List<IPStmt> tupExprDeps) = SimplifyLvalue(tupleAccessExpr.SubExpr);
+                    (var tupExpr, var tupExprDeps) = SimplifyLvalue(tupleAccessExpr.SubExpr);
                     return (new TupleAccessExpr(location, tupExpr, tupleAccessExpr.FieldNo, type), tupExprDeps);
 
                 case VariableAccessExpr variableAccessExpr:
@@ -95,8 +95,8 @@ namespace Plang.Compiler.Backend
         private (IExprTerm, List<IPStmt>) SimplifyRvalue(IPExpr expr)
         {
             // TODO: I am suspicious.
-            Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
-            PLanguageType type = expr.Type;
+            var location = expr.SourceLocation;
+            var type = expr.Type;
 #pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
@@ -105,8 +105,8 @@ namespace Plang.Compiler.Backend
                 case SetAccessExpr _:
                 case TupleAccessExpr _:
                 case MapAccessExpr _:
-                    (IExprTerm dataTypeItem, List<IPStmt> dataTypeItemDeps) = SimplifyExpression(expr);
-                    (IExprTerm cloneddataTypeItem, IPStmt cloneddataTypeItemDeps) = SaveInTemporary(new CloneExpr(dataTypeItem));
+                    (var dataTypeItem, var dataTypeItemDeps) = SimplifyExpression(expr);
+                    (IExprTerm cloneddataTypeItem, var cloneddataTypeItemDeps) = SaveInTemporary(new CloneExpr(dataTypeItem));
                     return (cloneddataTypeItem, dataTypeItemDeps.Append(cloneddataTypeItemDeps).ToList());
 
                 default:
@@ -117,8 +117,8 @@ namespace Plang.Compiler.Backend
 
         private (IExprTerm, List<IPStmt>) SimplifyExpression(IPExpr expr)
         {
-            Antlr4.Runtime.ParserRuleContext location = expr.SourceLocation;
-            List<IPStmt> deps = new List<IPStmt>();
+            var location = expr.SourceLocation;
+            var deps = new List<IPStmt>();
 #pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (expr)
             {
@@ -126,16 +126,16 @@ namespace Plang.Compiler.Backend
                     return (term, deps);
 
                 case BinOpExpr binOpExpr:
-                    (IExprTerm lhsTemp, List<IPStmt> lhsDeps) = SimplifyExpression(binOpExpr.Lhs);
-                    (IExprTerm rhsTemp, List<IPStmt> rhsDeps) = SimplifyExpression(binOpExpr.Rhs);
+                    (var lhsTemp, var lhsDeps) = SimplifyExpression(binOpExpr.Lhs);
+                    (var rhsTemp, var rhsDeps) = SimplifyExpression(binOpExpr.Rhs);
 
                     if (binOpExpr.Operation == BinOpType.And)
                     {
                         // And is short-circuiting, so we need to treat it differently from other binary operators
                         deps.AddRange(lhsDeps);
-                        (VariableAccessExpr andTemp, IPStmt andInitialStore) = SaveInTemporary(new CloneExpr(lhsTemp));
+                        (var andTemp, var andInitialStore) = SaveInTemporary(new CloneExpr(lhsTemp));
                         deps.Add(andInitialStore);
-                        CompoundStmt reassignFromRhs = new CompoundStmt(location, rhsDeps.Append(new AssignStmt(location, andTemp, new CloneExpr(rhsTemp))));
+                        var reassignFromRhs = new CompoundStmt(location, rhsDeps.Append(new AssignStmt(location, andTemp, new CloneExpr(rhsTemp))));
                         deps.Add(new IfStmt(location, andTemp, reassignFromRhs, null));
                         return (andTemp, deps);
                     }
@@ -143,15 +143,15 @@ namespace Plang.Compiler.Backend
                     {
                         // Or is short-circuiting, so we need to treat it differently from other binary operators
                         deps.AddRange(lhsDeps);
-                        (VariableAccessExpr orTemp, IPStmt orInitialStore) = SaveInTemporary(new CloneExpr(lhsTemp));
+                        (var orTemp, var orInitialStore) = SaveInTemporary(new CloneExpr(lhsTemp));
                         deps.Add(orInitialStore);
-                        CompoundStmt reassignFromRhs = new CompoundStmt(location, rhsDeps.Append(new AssignStmt(location, orTemp, new CloneExpr(rhsTemp))));
+                        var reassignFromRhs = new CompoundStmt(location, rhsDeps.Append(new AssignStmt(location, orTemp, new CloneExpr(rhsTemp))));
                         deps.Add(new IfStmt(location, orTemp, new NoStmt(location), reassignFromRhs));
                         return (orTemp, deps);
                     }
                     else
                     {
-                        (VariableAccessExpr binOpTemp, IPStmt binOpStore) =
+                        (var binOpTemp, var binOpStore) =
                             SaveInTemporary(new BinOpExpr(location, binOpExpr.Operation, lhsTemp, rhsTemp));
                         deps.AddRange(lhsDeps.Concat(rhsDeps));
                         deps.Add(binOpStore);
@@ -159,8 +159,8 @@ namespace Plang.Compiler.Backend
                     }
 
                 case CastExpr castExpr:
-                    (IExprTerm castSubExpr, List<IPStmt> castDeps) = SimplifyExpression(castExpr.SubExpr);
-                    (VariableAccessExpr castTemp, IPStmt castStore) = SaveInTemporary(new CastExpr(location, new CloneExpr(castSubExpr), castExpr.Type));
+                    (var castSubExpr, var castDeps) = SimplifyExpression(castExpr.SubExpr);
+                    (var castTemp, var castStore) = SaveInTemporary(new CastExpr(location, new CloneExpr(castSubExpr), castExpr.Type));
                     deps.AddRange(castDeps);
                     deps.Add(castStore);
                     return (castTemp, deps);
@@ -168,126 +168,126 @@ namespace Plang.Compiler.Backend
                 case ChooseExpr chooseExpr:
                     if (chooseExpr.SubExpr != null)
                     {
-                        (IExprTerm chooseSubExpr, List<IPStmt> chooseDeps) = SimplifyExpression(chooseExpr.SubExpr);
-                        (VariableAccessExpr chooseTemp, IPStmt chooseStore) = SaveInTemporary(new ChooseExpr(location, chooseSubExpr, chooseExpr.Type));
+                        (var chooseSubExpr, var chooseDeps) = SimplifyExpression(chooseExpr.SubExpr);
+                        (var chooseTemp, var chooseStore) = SaveInTemporary(new ChooseExpr(location, chooseSubExpr, chooseExpr.Type));
                         deps.AddRange(chooseDeps);
                         deps.Add(chooseStore);
                         return (chooseTemp, deps);
                     }
                     else
                     {
-                        (VariableAccessExpr chooseTemp, IPStmt chooseStore) = SaveInTemporary(chooseExpr);
+                        (var chooseTemp, var chooseStore) = SaveInTemporary(chooseExpr);
                         deps.Add(chooseStore);
                         return (chooseTemp, deps);
                     }
 
                 case CoerceExpr coerceExpr:
-                    (IExprTerm coerceSubExpr, List<IPStmt> coerceDeps) = SimplifyExpression(coerceExpr.SubExpr);
-                    (VariableAccessExpr coerceTemp, IPStmt coerceStore) =
+                    (var coerceSubExpr, var coerceDeps) = SimplifyExpression(coerceExpr.SubExpr);
+                    (var coerceTemp, var coerceStore) =
                         SaveInTemporary(new CoerceExpr(location, coerceSubExpr, coerceExpr.NewType));
                     deps.AddRange(coerceDeps);
                     deps.Add(coerceStore);
                     return (coerceTemp, deps);
 
                 case ContainsExpr containsKeyExpr:
-                    (IExprTerm contKeyExpr, List<IPStmt> contKeyDeps) = SimplifyExpression(containsKeyExpr.Item);
-                    (IExprTerm contMapExpr, List<IPStmt> contMapDeps) = SimplifyExpression(containsKeyExpr.Collection);
-                    (VariableAccessExpr contTemp, IPStmt contStore) =
+                    (var contKeyExpr, var contKeyDeps) = SimplifyExpression(containsKeyExpr.Item);
+                    (var contMapExpr, var contMapDeps) = SimplifyExpression(containsKeyExpr.Collection);
+                    (var contTemp, var contStore) =
                         SaveInTemporary(new ContainsExpr(location, contKeyExpr, contMapExpr));
                     deps.AddRange(contKeyDeps.Concat(contMapDeps));
                     deps.Add(contStore);
                     return (contTemp, deps);
 
                 case CtorExpr ctorExpr:
-                    (IReadOnlyList<IVariableRef> ctorArgs, List<IPStmt> ctorArgDeps) = SimplifyArgPack(ctorExpr.Arguments);
+                    (var ctorArgs, var ctorArgDeps) = SimplifyArgPack(ctorExpr.Arguments);
                     deps.AddRange(ctorArgDeps);
-                    (VariableAccessExpr ctorTemp, IPStmt ctorStore) = SaveInTemporary(new CtorExpr(location, ctorExpr.Interface, ctorArgs));
+                    (var ctorTemp, var ctorStore) = SaveInTemporary(new CtorExpr(location, ctorExpr.Interface, ctorArgs));
                     deps.Add(ctorStore);
                     return (ctorTemp, deps);
 
                 case DefaultExpr defaultExpr:
-                    (VariableAccessExpr defTemp, IPStmt defStore) = SaveInTemporary(defaultExpr);
+                    (var defTemp, var defStore) = SaveInTemporary(defaultExpr);
                     deps.Add(defStore);
                     return (defTemp, deps);
 
                 case FairNondetExpr fairNondetExpr:
-                    (VariableAccessExpr fndTemp, IPStmt fndStore) = SaveInTemporary(fairNondetExpr);
+                    (var fndTemp, var fndStore) = SaveInTemporary(fairNondetExpr);
                     deps.Add(fndStore);
                     return (fndTemp, deps);
 
                 case FunCallExpr funCallExpr:
-                    (IVariableRef[] funArgs, List<IPStmt> funArgsDeps) = SimplifyFunArgs(funCallExpr.Arguments);
+                    (var funArgs, var funArgsDeps) = SimplifyFunArgs(funCallExpr.Arguments);
                     deps.AddRange(funArgsDeps);
-                    (VariableAccessExpr funTemp, IPStmt funStore) = SaveInTemporary(new FunCallExpr(location, funCallExpr.Function, funArgs));
+                    (var funTemp, var funStore) = SaveInTemporary(new FunCallExpr(location, funCallExpr.Function, funArgs));
                     deps.Add(funStore);
                     return (funTemp, deps);
 
                 case KeysExpr keysExpr:
-                    (IExprTerm keysColl, List<IPStmt> keysDeps) = SimplifyExpression(keysExpr.Expr);
-                    (VariableAccessExpr keysTemp, IPStmt keysStore) = SaveInTemporary(new KeysExpr(location, keysColl, keysExpr.Type));
+                    (var keysColl, var keysDeps) = SimplifyExpression(keysExpr.Expr);
+                    (var keysTemp, var keysStore) = SaveInTemporary(new KeysExpr(location, keysColl, keysExpr.Type));
                     deps.AddRange(keysDeps);
                     deps.Add(keysStore);
                     return (keysTemp, deps);
 
                 case MapAccessExpr mapAccessExpr:
-                    (IExprTerm mapExpr, List<IPStmt> mapDeps) = SimplifyExpression(mapAccessExpr.MapExpr);
-                    (IExprTerm mapIdxExpr, List<IPStmt> mapIdxDeps) = SimplifyExpression(mapAccessExpr.IndexExpr);
-                    (VariableAccessExpr mapItemTemp, IPStmt mapItemStore) =
+                    (var mapExpr, var mapDeps) = SimplifyExpression(mapAccessExpr.MapExpr);
+                    (var mapIdxExpr, var mapIdxDeps) = SimplifyExpression(mapAccessExpr.IndexExpr);
+                    (var mapItemTemp, var mapItemStore) =
                         SaveInTemporary(new MapAccessExpr(location, mapExpr, mapIdxExpr, mapAccessExpr.Type));
                     deps.AddRange(mapDeps.Concat(mapIdxDeps));
                     deps.Add(mapItemStore);
                     return (mapItemTemp, deps);
                 
                 case SetAccessExpr setAccessExpr:
-                    (IExprTerm setExpr, List<IPStmt> setDeps) = SimplifyExpression(setAccessExpr.SetExpr);
-                    (IExprTerm setIdxExpr, List<IPStmt> setIdxDeps) = SimplifyExpression(setAccessExpr.IndexExpr);
-                    (VariableAccessExpr setItemTemp, IPStmt setItemStore) =
+                    (var setExpr, var setDeps) = SimplifyExpression(setAccessExpr.SetExpr);
+                    (var setIdxExpr, var setIdxDeps) = SimplifyExpression(setAccessExpr.IndexExpr);
+                    (var setItemTemp, var setItemStore) =
                         SaveInTemporary(new SetAccessExpr(location, setExpr, setIdxExpr, setAccessExpr.Type));
                     deps.AddRange(setDeps.Concat(setIdxDeps));
                     deps.Add(setItemStore);
                     return (setItemTemp, deps);
 
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    (IExprTerm ntSubExpr, List<IPStmt> ntSubDeps) = SimplifyExpression(namedTupleAccessExpr.SubExpr);
-                    (VariableAccessExpr ntTemp, IPStmt ntStore) =
+                    (var ntSubExpr, var ntSubDeps) = SimplifyExpression(namedTupleAccessExpr.SubExpr);
+                    (var ntTemp, var ntStore) =
                         SaveInTemporary(new NamedTupleAccessExpr(location, ntSubExpr, namedTupleAccessExpr.Entry));
                     deps.AddRange(ntSubDeps);
                     deps.Add(ntStore);
                     return (ntTemp, deps);
 
                 case NamedTupleExpr namedTupleExpr:
-                    (IReadOnlyList<IVariableRef> args, List<IPStmt> argDeps) = SimplifyArgPack(namedTupleExpr.TupleFields);
+                    (var args, var argDeps) = SimplifyArgPack(namedTupleExpr.TupleFields);
                     deps.AddRange(argDeps);
 
-                    (VariableAccessExpr ntVal, IPStmt ntValStore) =
+                    (var ntVal, var ntValStore) =
                         SaveInTemporary(new NamedTupleExpr(location, args, namedTupleExpr.Type));
                     deps.Add(ntValStore);
                     return (ntVal, deps);
 
                 case NondetExpr nondetExpr:
-                    (VariableAccessExpr ndTemp, IPStmt ndStore) = SaveInTemporary(nondetExpr);
+                    (var ndTemp, var ndStore) = SaveInTemporary(nondetExpr);
                     deps.Add(ndStore);
                     return (ndTemp, deps);
 
                 case SeqAccessExpr seqAccessExpr:
-                    (IExprTerm seqExpr, List<IPStmt> seqDeps) = SimplifyExpression(seqAccessExpr.SeqExpr);
-                    (IExprTerm seqIdx, List<IPStmt> seqIdxDeps) = SimplifyExpression(seqAccessExpr.IndexExpr);
-                    (VariableAccessExpr seqElem, IPStmt seqElemStore) =
+                    (var seqExpr, var seqDeps) = SimplifyExpression(seqAccessExpr.SeqExpr);
+                    (var seqIdx, var seqIdxDeps) = SimplifyExpression(seqAccessExpr.IndexExpr);
+                    (var seqElem, var seqElemStore) =
                         SaveInTemporary(new SeqAccessExpr(location, seqExpr, seqIdx, seqAccessExpr.Type));
                     deps.AddRange(seqDeps.Concat(seqIdxDeps));
                     deps.Add(seqElemStore);
                     return (seqElem, deps);
 
                 case SizeofExpr sizeofExpr:
-                    (IExprTerm sizeExpr, List<IPStmt> sizeDeps) = SimplifyExpression(sizeofExpr.Expr);
-                    (VariableAccessExpr sizeTemp, IPStmt sizeStore) = SaveInTemporary(new SizeofExpr(location, sizeExpr));
+                    (var sizeExpr, var sizeDeps) = SimplifyExpression(sizeofExpr.Expr);
+                    (var sizeTemp, var sizeStore) = SaveInTemporary(new SizeofExpr(location, sizeExpr));
                     deps.AddRange(sizeDeps);
                     deps.Add(sizeStore);
                     return (sizeTemp, deps);
 
                 case TupleAccessExpr tupleAccessExpr:
-                    (IExprTerm tupItemExpr, List<IPStmt> tupAccessDeps) = SimplifyExpression(tupleAccessExpr.SubExpr);
-                    (VariableAccessExpr tupItemTemp, IPStmt tupItemStore) =
+                    (var tupItemExpr, var tupAccessDeps) = SimplifyExpression(tupleAccessExpr.SubExpr);
+                    (var tupItemTemp, var tupItemStore) =
                         SaveInTemporary(new TupleAccessExpr(location,
                             tupItemExpr,
                             tupleAccessExpr.FieldNo,
@@ -297,30 +297,30 @@ namespace Plang.Compiler.Backend
                     return (tupItemTemp, deps);
 
                 case UnaryOpExpr unaryOpExpr:
-                    (IExprTerm unExpr, List<IPStmt> unDeps) = SimplifyExpression(unaryOpExpr.SubExpr);
-                    (VariableAccessExpr unTemp, IPStmt unStore) = SaveInTemporary(new UnaryOpExpr(location, unaryOpExpr.Operation, unExpr));
+                    (var unExpr, var unDeps) = SimplifyExpression(unaryOpExpr.SubExpr);
+                    (var unTemp, var unStore) = SaveInTemporary(new UnaryOpExpr(location, unaryOpExpr.Operation, unExpr));
                     deps.AddRange(unDeps);
                     deps.Add(unStore);
                     return (unTemp, deps);
 
                 case UnnamedTupleExpr unnamedTupleExpr:
-                    (IReadOnlyList<IVariableRef> tupFields, List<IPStmt> tupFieldDeps) = SimplifyArgPack(unnamedTupleExpr.TupleFields);
+                    (var tupFields, var tupFieldDeps) = SimplifyArgPack(unnamedTupleExpr.TupleFields);
                     deps.AddRange(tupFieldDeps);
-                    (VariableAccessExpr tupVal, IPStmt tupStore) = SaveInTemporary(new UnnamedTupleExpr(location, tupFields));
+                    (var tupVal, var tupStore) = SaveInTemporary(new UnnamedTupleExpr(location, tupFields));
                     deps.Add(tupStore);
                     return (tupVal, deps);
 
                 case ValuesExpr valuesExpr:
-                    (IExprTerm valuesColl, List<IPStmt> valuesDeps) = SimplifyExpression(valuesExpr.Expr);
-                    (VariableAccessExpr valuesTemp, IPStmt valuesStore) =
+                    (var valuesColl, var valuesDeps) = SimplifyExpression(valuesExpr.Expr);
+                    (var valuesTemp, var valuesStore) =
                         SaveInTemporary(new ValuesExpr(location, valuesColl, valuesExpr.Type));
                     deps.AddRange(valuesDeps);
                     deps.Add(valuesStore);
                     return (valuesTemp, deps);
 
                 case StringExpr stringExpr:
-                    (IPExpr[] stringArgs, List<IPStmt> stringArgsDeps) = SimplifyFunArgs(stringExpr.Args);
-                    (VariableAccessExpr stringTemp, IPStmt stringStore) = SaveInTemporary(new StringExpr(location, stringExpr.BaseString, stringArgs.ToList()));
+                    (IPExpr[] stringArgs, var stringArgsDeps) = SimplifyFunArgs(stringExpr.Args);
+                    (var stringTemp, var stringStore) = SaveInTemporary(new StringExpr(location, stringExpr.BaseString, stringArgs.ToList()));
                     deps.AddRange(stringArgsDeps);
                     deps.Add(stringStore);
                     return (stringTemp, deps);
@@ -332,13 +332,13 @@ namespace Plang.Compiler.Backend
 
         private List<IPStmt> SimplifyStatement(IPStmt statement)
         {
-            Antlr4.Runtime.ParserRuleContext location = statement?.SourceLocation;
+            var location = statement?.SourceLocation;
             switch (statement)
             {
                 case null:
                     throw new ArgumentNullException(nameof(statement));
                 case AnnounceStmt announceStmt:
-                    (IExprTerm annEvt, List<IPStmt> annEvtDeps) = SimplifyExpression(announceStmt.PEvent);
+                    (var annEvt, var annEvtDeps) = SimplifyExpression(announceStmt.PEvent);
                     (IExprTerm annPayload, List<IPStmt> annPayloadDeps) = announceStmt.Payload == null
                         ? (null, new List<IPStmt>())
                         : SimplifyExpression(announceStmt.Payload);
@@ -350,8 +350,8 @@ namespace Plang.Compiler.Backend
                         .ToList();
 
                 case AssertStmt assertStmt:
-                    (IExprTerm assertExpr, List<IPStmt> assertDeps) = SimplifyExpression(assertStmt.Assertion);
-                    (IExprTerm messageExpr, List<IPStmt> messageDeps) = SimplifyExpression(assertStmt.Message);
+                    (var assertExpr, var assertDeps) = SimplifyExpression(assertStmt.Assertion);
+                    (var messageExpr, var messageDeps) = SimplifyExpression(assertStmt.Message);
 
                     return assertDeps.Concat(messageDeps).Concat(new[]
                         {
@@ -360,8 +360,8 @@ namespace Plang.Compiler.Backend
                         .ToList();
 
                 case AssignStmt assignStmt:
-                    (IPExpr assignLV, List<IPStmt> assignLVDeps) = SimplifyLvalue(assignStmt.Location);
-                    (IExprTerm assignRV, List<IPStmt> assignRVDeps) = SimplifyRvalue(assignStmt.Value);
+                    (var assignLV, var assignLVDeps) = SimplifyLvalue(assignStmt.Location);
+                    (var assignRV, var assignRVDeps) = SimplifyRvalue(assignStmt.Value);
                     IPStmt assignment;
                     // If temporary returned, then automatically move.
                     if (assignRV is VariableAccessExpr variableRef &&
@@ -377,8 +377,8 @@ namespace Plang.Compiler.Backend
                     return assignLVDeps.Concat(assignRVDeps).Concat(new[] { assignment }).ToList();
 
                 case CompoundStmt compoundStmt:
-                    List<IPStmt> newBlock = new List<IPStmt>();
-                    foreach (IPStmt step in compoundStmt.Statements)
+                    var newBlock = new List<IPStmt>();
+                    foreach (var step in compoundStmt.Statements)
                     {
                         newBlock.AddRange(SimplifyStatement(step));
                     }
@@ -386,7 +386,7 @@ namespace Plang.Compiler.Backend
                     return new List<IPStmt> { new CompoundStmt(location, newBlock) };
 
                 case CtorStmt ctorStmt:
-                    (IReadOnlyList<IVariableRef> ctorArgs, List<IPStmt> ctorArgDeps) = SimplifyArgPack(ctorStmt.Arguments);
+                    (var ctorArgs, var ctorArgDeps) = SimplifyArgPack(ctorStmt.Arguments);
                     return ctorArgDeps.Concat(new[]
                         {
                             new CtorStmt(location, ctorStmt.Interface, ctorArgs)
@@ -394,7 +394,7 @@ namespace Plang.Compiler.Backend
                         .ToList();
 
                 case FunCallStmt funCallStmt:
-                    (IVariableRef[] funCallArgs, List<IPStmt> funCallArgDeps) = SimplifyFunArgs(funCallStmt.ArgsList);
+                    (var funCallArgs, var funCallArgDeps) = SimplifyFunArgs(funCallStmt.ArgsList);
                     return funCallArgDeps.Concat(new[]
                         {
                             new FunCallStmt(location, funCallStmt.Function, funCallArgs)
@@ -407,8 +407,8 @@ namespace Plang.Compiler.Backend
                         return new List<IPStmt> { gotoStmt };
                     }
 
-                    (IExprTerm gotoPayload, List<IPStmt> gotoDeps) = SimplifyExpression(gotoStmt.Payload);
-                    (VariableAccessExpr gotoArgTmp, IPStmt gotoArgDep) = SaveInTemporary(new CloneExpr(gotoPayload));
+                    (var gotoPayload, var gotoDeps) = SimplifyExpression(gotoStmt.Payload);
+                    (var gotoArgTmp, var gotoArgDep) = SaveInTemporary(new CloneExpr(gotoPayload));
                     return gotoDeps.Concat(new[]
                         {
                             gotoArgDep,
@@ -417,9 +417,9 @@ namespace Plang.Compiler.Backend
                         .ToList();
 
                 case IfStmt ifStmt:
-                    (IExprTerm ifCond, List<IPStmt> ifCondDeps) = SimplifyExpression(ifStmt.Condition);
-                    List<IPStmt> thenBranch = SimplifyStatement(ifStmt.ThenBranch);
-                    List<IPStmt> elseBranch = SimplifyStatement(ifStmt.ElseBranch);
+                    (var ifCond, var ifCondDeps) = SimplifyExpression(ifStmt.Condition);
+                    var thenBranch = SimplifyStatement(ifStmt.ThenBranch);
+                    var elseBranch = SimplifyStatement(ifStmt.ElseBranch);
                     return ifCondDeps.Concat(new[]
                         {
                             new IfStmt(location,
@@ -441,9 +441,9 @@ namespace Plang.Compiler.Backend
                         .ToList();
 
                 case InsertStmt insertStmt:
-                    (IPExpr insVar, List<IPStmt> insVarDeps) = SimplifyLvalue(insertStmt.Variable);
-                    (IExprTerm insIdx, List<IPStmt> insIdxDeps) = SimplifyExpression(insertStmt.Index);
-                    (IReadOnlyList<IVariableRef> insVal, List<IPStmt> insValDeps) = SimplifyArgPack(new[] { insertStmt.Value });
+                    (var insVar, var insVarDeps) = SimplifyLvalue(insertStmt.Variable);
+                    (var insIdx, var insIdxDeps) = SimplifyExpression(insertStmt.Index);
+                    (var insVal, var insValDeps) = SimplifyArgPack(new[] { insertStmt.Value });
                     Debug.Assert(insVal.Count == 1);
                     return insVarDeps.Concat(insIdxDeps)
                         .Concat(insValDeps)
@@ -454,7 +454,7 @@ namespace Plang.Compiler.Backend
                         .ToList();
 
                 case MoveAssignStmt moveAssignStmt:
-                    (IPExpr moveDest, List<IPStmt> moveDestDeps) = SimplifyLvalue(moveAssignStmt.ToLocation);
+                    (var moveDest, var moveDestDeps) = SimplifyLvalue(moveAssignStmt.ToLocation);
                     return moveDestDeps.Concat(new[]
                         {
                             new MoveAssignStmt(moveAssignStmt.SourceLocation, moveDest, moveAssignStmt.FromVariable)
@@ -465,16 +465,16 @@ namespace Plang.Compiler.Backend
                     return new List<IPStmt>();
 
                 case PrintStmt printStmt:
-                    List<IPStmt> deps = new List<IPStmt>();
-                    (IExprTerm newMessage, List<IPStmt> printDeps) = SimplifyExpression(printStmt.Message);
+                    var deps = new List<IPStmt>();
+                    (var newMessage, var printDeps) = SimplifyExpression(printStmt.Message);
                     deps.AddRange(printDeps);
                     return deps.Concat(new[] { new PrintStmt(location, newMessage) }).ToList();
 
                 case RaiseStmt raiseStmt:
-                    (IExprTerm raiseEvent, List<IPStmt> raiseEventDeps) = SimplifyExpression(raiseStmt.PEvent);
-                    (VariableAccessExpr raiseEventTmp, IPStmt raiseEventTempDep) = SaveInTemporary(new CloneExpr(raiseEvent));
+                    (var raiseEvent, var raiseEventDeps) = SimplifyExpression(raiseStmt.PEvent);
+                    (var raiseEventTmp, var raiseEventTempDep) = SaveInTemporary(new CloneExpr(raiseEvent));
 
-                    (IReadOnlyList<IVariableRef> raiseArgs, List<IPStmt> raiseArgDeps) = SimplifyArgPack(raiseStmt.Payload);
+                    (var raiseArgs, var raiseArgDeps) = SimplifyArgPack(raiseStmt.Payload);
 
                     return raiseEventDeps.Concat(raiseEventDeps)
                         .Concat(raiseArgDeps)
@@ -486,7 +486,7 @@ namespace Plang.Compiler.Backend
                         .ToList();
 
                 case ReceiveStmt receiveStmt:
-                    foreach (Function recvCase in receiveStmt.Cases.Values)
+                    foreach (var recvCase in receiveStmt.Cases.Values)
                     {
                         IPStmt functionBody = recvCase.Body;
                         recvCase.Body = new CompoundStmt(functionBody.SourceLocation, SimplifyStatement(functionBody));
@@ -495,8 +495,8 @@ namespace Plang.Compiler.Backend
                     return new List<IPStmt> { receiveStmt };
 
                 case RemoveStmt removeStmt:
-                    (IPExpr removeVar, List<IPStmt> removeVarDeps) = SimplifyLvalue(removeStmt.Variable);
-                    (IExprTerm removeKey, List<IPStmt> removeKeyDeps) = SimplifyExpression(removeStmt.Value);
+                    (var removeVar, var removeVarDeps) = SimplifyLvalue(removeStmt.Variable);
+                    (var removeKey, var removeKeyDeps) = SimplifyExpression(removeStmt.Value);
                     return removeVarDeps.Concat(removeKeyDeps)
                         .Concat(new[]
                         {
@@ -510,7 +510,7 @@ namespace Plang.Compiler.Backend
                         return new List<IPStmt> { returnStmt };
                     }
 
-                    (IExprTerm returnValue, List<IPStmt> returnValueDeps) = SimplifyExpression(returnStmt.ReturnValue);
+                    (var returnValue, var returnValueDeps) = SimplifyExpression(returnStmt.ReturnValue);
                     return returnValueDeps.Concat(new[]
                         {
                             new ReturnStmt(location, new CloneExpr(returnValue))
@@ -524,13 +524,13 @@ namespace Plang.Compiler.Backend
                     return new List<IPStmt> { continueStmt };
 
                 case SendStmt sendStmt:
-                    (IExprTerm sendMachine, List<IPStmt> sendMachineDeps) = SimplifyExpression(sendStmt.MachineExpr);
-                    (VariableAccessExpr sendMachineAccessExpr, IPStmt sendMachineAssn) = SaveInTemporary(new CloneExpr(sendMachine));
+                    (var sendMachine, var sendMachineDeps) = SimplifyExpression(sendStmt.MachineExpr);
+                    (var sendMachineAccessExpr, var sendMachineAssn) = SaveInTemporary(new CloneExpr(sendMachine));
 
-                    (IExprTerm sendEvent, List<IPStmt> sendEventDeps) = SimplifyExpression(sendStmt.Evt);
-                    (VariableAccessExpr sendEventAccessExpr, IPStmt sendEventAssn) = SaveInTemporary(new CloneExpr(sendEvent));
+                    (var sendEvent, var sendEventDeps) = SimplifyExpression(sendStmt.Evt);
+                    (var sendEventAccessExpr, var sendEventAssn) = SaveInTemporary(new CloneExpr(sendEvent));
 
-                    (IReadOnlyList<IVariableRef> sendArgs, List<IPStmt> sendArgDeps) = SimplifyArgPack(sendStmt.Arguments);
+                    (var sendArgs, var sendArgDeps) = SimplifyArgPack(sendStmt.Arguments);
 
                     return sendMachineDeps
                         .Concat(new[] { sendMachineAssn })
@@ -547,16 +547,16 @@ namespace Plang.Compiler.Backend
                     return SimplifyStatement(SimplifyForeachStmt(foreachStmt));
 
                 case WhileStmt whileStmt:
-                    (IExprTerm condExpr, List<IPStmt> condDeps) = SimplifyExpression(whileStmt.Condition);
-                    (VariableAccessExpr condTemp, IPStmt condStore) = SaveInTemporary(new CloneExpr(condExpr));
-                    Antlr4.Runtime.ParserRuleContext condLocation = whileStmt.Condition.SourceLocation;
-                    List<IPStmt> condCheck =
+                    (var condExpr, var condDeps) = SimplifyExpression(whileStmt.Condition);
+                    (var condTemp, var condStore) = SaveInTemporary(new CloneExpr(condExpr));
+                    var condLocation = whileStmt.Condition.SourceLocation;
+                    var condCheck =
                         condDeps
                         .Append(condStore)
                         .Append(new IfStmt(condLocation, condTemp, new NoStmt(condLocation), new BreakStmt(condLocation)))
                         .ToList();
 
-                    CompoundStmt loopBody = new CompoundStmt(
+                    var loopBody = new CompoundStmt(
                         whileStmt.Body.SourceLocation,
                         condCheck.Concat(SimplifyStatement(whileStmt.Body)));
 
@@ -589,22 +589,22 @@ namespace Plang.Compiler.Backend
             //     i = i + 1;
             // }
 
-            Antlr4.Runtime.ParserRuleContext location = foreachStmt.SourceLocation;
-            Variable item = foreachStmt.Item;
-            IPExpr collection = foreachStmt.IterCollection;
-            (IPExpr collectionCopy, IPStmt collectionCopyStore) = SaveInTemporary(collection);
+            var location = foreachStmt.SourceLocation;
+            var item = foreachStmt.Item;
+            var collection = foreachStmt.IterCollection;
+            (IPExpr collectionCopy, var collectionCopyStore) = SaveInTemporary(collection);
             IPStmt body = foreachStmt.Body;
 
-            List<IPStmt> newBody = new List<IPStmt>();
+            var newBody = new List<IPStmt>();
             newBody.Add(collectionCopyStore);
 
             // var i: int;
-            Variable iVar = function.Scope.Put($"$i_{item.Name}_tmp{numTemp++}", location, VariableRole.Local);
+            var iVar = function.Scope.Put($"$i_{item.Name}_tmp{numTemp++}", location, VariableRole.Local);
             iVar.Type = PrimitiveType.Int;
             function.AddLocalVariable(iVar);
 
             // var sizeof: int;
-            Variable sizeVar = new Variable($"sizeof_{item.Name}_tmp{numTemp++}", location, VariableRole.Local);
+            var sizeVar = new Variable($"sizeof_{item.Name}_tmp{numTemp++}", location, VariableRole.Local);
             sizeVar.Type = PrimitiveType.Int;
             function.AddLocalVariable(sizeVar);
 
@@ -647,18 +647,18 @@ namespace Plang.Compiler.Backend
 
         private (IReadOnlyList<IVariableRef> args, List<IPStmt> deps) SimplifyArgPack(IEnumerable<IPExpr> argsPack)
         {
-            List<IPExpr> args = argsPack.ToList();
-            (IVariableRef[] refArgs, List<IPStmt> deps) = SimplifyFunArgs(args);
+            var args = argsPack.ToList();
+            (var refArgs, var deps) = SimplifyFunArgs(args);
             return (refArgs, deps);
         }
 
         private (IVariableRef[], List<IPStmt>) SimplifyFunArgs(IReadOnlyList<IPExpr> funCallArgs)
         {
-            IVariableRef[] funArgs = new IVariableRef[funCallArgs.Count];
-            List<IPStmt> deps = new List<IPStmt>();
-            for (int i = 0; i < funCallArgs.Count; i++)
+            var funArgs = new IVariableRef[funCallArgs.Count];
+            var deps = new List<IPStmt>();
+            for (var i = 0; i < funCallArgs.Count; i++)
             {
-                (IExprTerm argExpr, List<IPStmt> argDeps) = SimplifyExpression(funCallArgs[i]);
+                (var argExpr, var argDeps) = SimplifyExpression(funCallArgs[i]);
                 deps.AddRange(argDeps);
                 // My thoughts: if SimplifyExpression returns a temporary, there's no way that came from user code, thus
                 // it must be either an intermediate expression, or an explicit clone of another value. In either case, the
@@ -675,7 +675,7 @@ namespace Plang.Compiler.Backend
                         break;
                     // ...but clone literals and visible variables/fields.
                     default:
-                        (VariableAccessExpr temp, IPStmt tempDep) = SaveInTemporary(new CloneExpr(argExpr));
+                        (var temp, var tempDep) = SaveInTemporary(new CloneExpr(argExpr));
                         deps.Add(tempDep);
                         funArgs[i] = new VariableAccessExpr(temp.SourceLocation, temp.Variable);
                         break;

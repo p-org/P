@@ -1,10 +1,9 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
-using Plang.Compiler.TypeChecker;
-using Plang.Compiler.TypeChecker.AST;
-using Plang.Compiler.TypeChecker.AST.Declarations;
-using System;
+
 using System.Collections.Generic;
 using System.IO;
+using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.Backend.Rvm
 {
@@ -20,10 +19,10 @@ namespace Plang.Compiler.Backend.Rvm
 
         public IEnumerable<CompiledFile> GenerateSources(Scope globalScope)
         {
-            List<CompiledFile> sources = new List<CompiledFile>();
-            List<Machine> specMachines = new List<Machine>();
+            var sources = new List<CompiledFile>();
+            var specMachines = new List<Machine>();
 
-            foreach (Machine machine in globalScope.Machines)
+            foreach (var machine in globalScope.Machines)
             {
                 if (machine.IsSpec)
                 {
@@ -38,10 +37,10 @@ namespace Plang.Compiler.Backend.Rvm
         }
 
         private CompiledFile WriteMonitors(IEnumerable<Machine> specMachines) {
-            CompiledFile source = new CompiledFile(Context.GetAjFileName());
+            var source = new CompiledFile(Context.GetAjFileName());
 
             WriteSourcePrologue(source.Stream);
-            foreach (Machine machine in specMachines)
+            foreach (var machine in specMachines)
             {
                 WriteParentClass(source.Stream, machine);
             }
@@ -68,9 +67,9 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteParentClass(StringWriter output, Machine specMachine)
         {
-            string declName = Context.Names.GetAspectClassName();
-            string parentClass = Context.Names.GetParentClassName(specMachine);
-            string monitorClassName = Context.Names.GetJavaRuntimeMonitorName(specMachine);
+            var declName = Context.Names.GetAspectClassName();
+            var parentClass = Context.Names.GetParentClassName(specMachine);
+            var monitorClassName = Context.Names.GetJavaRuntimeMonitorName(specMachine);
 
             Context.WriteLine(output, $"class { parentClass } implements RVMObject {{");
             Context.WriteLine(output, $"public { parentClass }() {{ }}");
@@ -81,13 +80,13 @@ namespace Plang.Compiler.Backend.Rvm
             Context.WriteLine(output, $"}}");
             Context.WriteLine(output);
 
-            foreach (PEvent e in specMachine.Observes.Events)
+            foreach (var e in specMachine.Observes.Events)
             {
-                string handlerName = Context.Names.GetJavaEventHandlerName(specMachine, e);
-                string payloadType = Context.Names.GetJavaTypeName(e.PayloadType, true);
-                string eventAlias = Context.Names.GetEventAlias(specMachine, e);
-                string parameterTypeAndName = payloadType.Length > 0 ? $"{ payloadType } v" : "";
-                string parameterName = payloadType.Length > 0 ? "v" : "";
+                var handlerName = Context.Names.GetJavaEventHandlerName(specMachine, e);
+                var payloadType = Context.Names.GetJavaTypeName(e.PayloadType, true);
+                var eventAlias = Context.Names.GetEventAlias(specMachine, e);
+                var parameterTypeAndName = payloadType.Length > 0 ? $"{ payloadType } v" : "";
+                var parameterName = payloadType.Length > 0 ? "v" : "";
 
                 Context.WriteLine(output, $"void { eventAlias }({ parameterTypeAndName }){{");
                 Context.WriteLine(output, $"{ monitorClassName }.{ handlerName }({ parameterName });");
@@ -99,7 +98,7 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteBaseAspect(StringWriter output, IEnumerable<Machine> specMachines)
         {
-            string declName = Context.Names.GetAspectClassName();
+            var declName = Context.Names.GetAspectClassName();
 
             Context.WriteLine(output, $"public aspect { declName } implements RVMObject {{");
             Context.WriteLine(output, $"{declName}() {{ }}");
@@ -122,14 +121,14 @@ namespace Plang.Compiler.Backend.Rvm
             Context.WriteLine(output, "    !adviceexecution() &&");
             Context.WriteLine(output, "    notwithin();");
 
-            foreach (Machine machine in specMachines)
+            foreach (var machine in specMachines)
             {
-                string specName = Context.Names.GetRvmSpecName(machine);
-                string monitorOn = Context.Names.GetPointCutNameForMonitorOn(machine);
-                string monitorsOn = Context.Names.GetPointCutNameForMonitorsOn(machine);
-                string specPointcut = Context.Names.GetPointCutNameForEnabledTestcases(machine);
-                string aspectNameForSpec = Context.Names.GetAspectInputTemplateClassName(machine);
-                string parentClass = Context.Names.GetParentClassName(machine);
+                var specName = Context.Names.GetRvmSpecName(machine);
+                var monitorOn = Context.Names.GetPointCutNameForMonitorOn(machine);
+                var monitorsOn = Context.Names.GetPointCutNameForMonitorsOn(machine);
+                var specPointcut = Context.Names.GetPointCutNameForEnabledTestcases(machine);
+                var aspectNameForSpec = Context.Names.GetAspectInputTemplateClassName(machine);
+                var parentClass = Context.Names.GetParentClassName(machine);
 
                 Context.WriteLine(output);
                 Context.WriteLine(output, $"declare parents: { aspectNameForSpec } extends { parentClass };");
@@ -141,10 +140,10 @@ namespace Plang.Compiler.Backend.Rvm
             Context.WriteLine(output);
             Context.WriteLine(output, "before(MonitorOn monitorOn) : @annotation(monitorOn) {");
             Context.WriteLine(output, "System.out.println(\"[Start] monitoring \" + thisJoinPoint.getSignature().getName() + \" against \" + monitorOn.value());");
-            foreach (Machine machine in specMachines)
+            foreach (var machine in specMachines)
             {
-                string monitorName = Context.Names.GetJavaRuntimeMonitorName(machine);
-                string specName = Context.Names.GetRvmSpecName(machine);
+                var monitorName = Context.Names.GetJavaRuntimeMonitorName(machine);
+                var specName = Context.Names.GetRvmSpecName(machine);
 
                 Context.WriteLine(output, $"if (monitorOn.value().equalsIgnoreCase(\"{ specName }\")) {{");
                 Context.WriteLine(output, $"{ monitorName }.resetMonitor();");
@@ -156,10 +155,10 @@ namespace Plang.Compiler.Backend.Rvm
             Context.WriteLine(output, "String monitors = String.join(\",\", Arrays.stream(monitorsOn.value()).map(t -> (String)t.value()).toArray(String[]::new));");
             Context.WriteLine(output, "System.out.println(\"[Start] monitoring \" + thisJoinPoint.getSignature().getName() + \" against \" + monitors);");
             Context.WriteLine(output, "for (MonitorOn monitorOn : monitorsOn.value()) {");
-            foreach (Machine machine in specMachines)
+            foreach (var machine in specMachines)
             {
-                string monitorName = Context.Names.GetJavaRuntimeMonitorName(machine);
-                string specName = Context.Names.GetRvmSpecName(machine);
+                var monitorName = Context.Names.GetJavaRuntimeMonitorName(machine);
+                var specName = Context.Names.GetRvmSpecName(machine);
 
                 Context.WriteLine(output, $"if (monitorOn.value().equalsIgnoreCase(\"{ specName }\")) {{");
                 Context.WriteLine(output, $"{ monitorName }.resetMonitor();");
@@ -172,10 +171,10 @@ namespace Plang.Compiler.Backend.Rvm
 
             Context.WriteLine(output, "after(MonitorOn monitorOn) : @annotation(monitorOn) {");
             Context.WriteLine(output, "System.out.println(\"[End] monitoring \" + thisJoinPoint.getSignature().getName() + \" against \" + monitorOn.value());");
-            foreach (Machine machine in specMachines)
+            foreach (var machine in specMachines)
             {
-                string monitorName = Context.Names.GetJavaRuntimeMonitorName(machine);
-                string specName = Context.Names.GetRvmSpecName(machine);
+                var monitorName = Context.Names.GetJavaRuntimeMonitorName(machine);
+                var specName = Context.Names.GetRvmSpecName(machine);
 
                 Context.WriteLine(output, $"if (monitorOn.value().equalsIgnoreCase(\"{ specName }\")) {{");
                 Context.WriteLine(output, $"{ monitorName }.disable();");
@@ -186,10 +185,10 @@ namespace Plang.Compiler.Backend.Rvm
             Context.WriteLine(output, "String monitors = String.join(\",\", Arrays.stream(monitorsOn.value()).map(t -> (String)t.value()).toArray(String[]::new));");
             Context.WriteLine(output, "System.out.println(\"[End] monitoring \" + thisJoinPoint.getSignature().getName() + \" against \" + monitors);");
             Context.WriteLine(output, "for (MonitorOn monitorOn : monitorsOn.value()) {");
-            foreach (Machine machine in specMachines)
+            foreach (var machine in specMachines)
             {
-                string monitorName = Context.Names.GetJavaRuntimeMonitorName(machine);
-                string specName = Context.Names.GetRvmSpecName(machine);
+                var monitorName = Context.Names.GetJavaRuntimeMonitorName(machine);
+                var specName = Context.Names.GetRvmSpecName(machine);
 
                 Context.WriteLine(output, $"if (monitorOn.value().equalsIgnoreCase(\"{ specName }\")) {{");
                 Context.WriteLine(output, $"{ monitorName }.disable();");

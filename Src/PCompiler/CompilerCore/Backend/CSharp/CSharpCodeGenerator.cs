@@ -1,4 +1,8 @@
-﻿using Plang.Compiler.Backend.ASTExt;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -6,10 +10,6 @@ using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace Plang.Compiler.Backend.CSharp
 {
@@ -21,17 +21,17 @@ namespace Plang.Compiler.Backend.CSharp
         /// </summary>
         public bool HasCompilationStage => true;
 
-        public void Compile(ICompilationJob job)
+        public void Compile(ICompilerConfiguration job)
         {
             var csprojName = $"{job.ProjectName}.csproj";
-            var csprojPath = Path.Combine(job.ProjectRootPath.FullName, csprojName);
-            var mainFilePath = Path.Combine(job.ProjectRootPath.FullName, "Test.cs");
-            string stdout = "";
-            string stderr = "";
+            var csprojPath = Path.Combine(job.OutputDirectory.FullName, csprojName);
+            var mainFilePath = Path.Combine(job.OutputDirectory.FullName, "Test.cs");
+            var stdout = "";
+            var stderr = "";
             // if the file does not exist then create the file
             if (!File.Exists(csprojPath))
             {
-                string csprojTemplate = Constants.csprojTemplate.Replace("-directory-",
+                var csprojTemplate = Constants.csprojTemplate.Replace("-directory-",
                     Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName));
                 File.WriteAllText(csprojPath, csprojTemplate);
             }
@@ -39,14 +39,14 @@ namespace Plang.Compiler.Backend.CSharp
             // if the Main file does not exist then create the file
             if (!File.Exists(mainFilePath))
             {
-                string mainCode = Constants.mainCode.Replace("-projectName-", job.ProjectName);
+                var mainCode = Constants.mainCode.Replace("-projectName-", job.ProjectName);
                 File.WriteAllText(mainFilePath, mainCode);
             }
 
             // compile the csproj file
-            string[] args = new[] { "build -c Release", csprojName };
+            var args = new[] { "build -c Release", csprojName };
 
-            int exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "dotnet", args);
+            var exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "dotnet", args);
             if (exitCode != 0)
             {
                 throw new TranslationException($"Compiling generated C# code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
@@ -57,21 +57,21 @@ namespace Plang.Compiler.Backend.CSharp
             }
         }
 
-        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
+        public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
         {
-            CompilationContext context = new CompilationContext(job);
-            CompiledFile csharpSource = GenerateSource(context, globalScope);
+            var context = new CompilationContext(job);
+            var csharpSource = GenerateSource(context, globalScope);
             return new List<CompiledFile> { csharpSource };
         }
 
         private CompiledFile GenerateSource(CompilationContext context, Scope globalScope)
         {
-            CompiledFile source = new CompiledFile(context.FileName);
+            var source = new CompiledFile(context.FileName);
 
             WriteSourcePrologue(context, source.Stream);
 
             // write the top level declarations
-            foreach (IPDecl decl in globalScope.AllDecls)
+            foreach (var decl in globalScope.AllDecls)
             {
                 WriteDecl(context, source.Stream, decl);
             }
@@ -93,8 +93,8 @@ namespace Plang.Compiler.Backend.CSharp
             WriteNameSpacePrologue(context, output);
 
             //create the interface declarations
-            List<Interface> ifaces = interfaces.ToList();
-            foreach (Interface iface in ifaces)
+            var ifaces = interfaces.ToList();
+            foreach (var iface in ifaces)
             {
                 context.WriteLine(output, $"public class {context.Names.GetNameForDecl(iface)} : PMachineValue {{");
                 context.WriteLine(output,
@@ -107,10 +107,10 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "public partial class PHelper {");
             context.WriteLine(output, "public static void InitializeInterfaces() {");
             context.WriteLine(output, "PInterfaces.Clear();");
-            foreach (Interface iface in ifaces)
+            foreach (var iface in ifaces)
             {
                 context.Write(output, $"PInterfaces.AddInterface(nameof({context.Names.GetNameForDecl(iface)})");
-                foreach (PEvent ev in iface.ReceivableEvents.Events)
+                foreach (var ev in iface.ReceivableEvents.Events)
                 {
                     context.Write(output, ", ");
                     context.Write(output, $"nameof({context.Names.GetNameForDecl(ev)})");
@@ -128,10 +128,11 @@ namespace Plang.Compiler.Backend.CSharp
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
-            context.WriteLine(output, "using Microsoft.Coyote;");
-            context.WriteLine(output, "using Microsoft.Coyote.Actors;");
-            context.WriteLine(output, "using Microsoft.Coyote.Runtime;");
-            context.WriteLine(output, "using Microsoft.Coyote.Specifications;");
+            context.WriteLine(output, "using PChecker;");
+            context.WriteLine(output, "using PChecker.Actors;");
+            context.WriteLine(output, "using PChecker.Actors.Events;");
+            context.WriteLine(output, "using PChecker.Runtime;");
+            context.WriteLine(output, "using PChecker.Specifications;");
             context.WriteLine(output, "using System;");
             context.WriteLine(output, "using System.Runtime;");
             context.WriteLine(output, "using System.Collections.Generic;");
@@ -240,11 +241,11 @@ namespace Plang.Compiler.Backend.CSharp
         {
             WriteNameSpacePrologue(context, output);
 
-            string declName = context.Names.GetNameForDecl(machine);
+            var declName = context.Names.GetNameForDecl(machine);
             context.WriteLine(output, $"internal partial class {declName} : PMonitor");
             context.WriteLine(output, "{");
 
-            foreach (Variable field in machine.Fields)
+            foreach (var field in machine.Fields)
             {
                 context.WriteLine(output,
                     $"private {GetCSharpType(field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(field.Type)};");
@@ -252,12 +253,12 @@ namespace Plang.Compiler.Backend.CSharp
 
             WriteMonitorConstructor(context, output, machine);
 
-            foreach (Function method in machine.Methods)
+            foreach (var method in machine.Methods)
             {
                 WriteFunction(context, output, method);
             }
 
-            foreach (State state in machine.States)
+            foreach (var state in machine.States)
             {
                 WriteState(context, output, state);
             }
@@ -269,9 +270,9 @@ namespace Plang.Compiler.Backend.CSharp
 
         private void WriteMonitorConstructor(CompilationContext context, StringWriter output, Machine machine)
         {
-            string declName = context.Names.GetNameForDecl(machine);
+            var declName = context.Names.GetNameForDecl(machine);
             context.WriteLine(output, $"static {declName}() {{");
-            foreach (PEvent sEvent in machine.Observes.Events)
+            foreach (var sEvent in machine.Observes.Events)
             {
                 context.WriteLine(output, $"observes.Add(nameof({context.Names.GetNameForDecl(sEvent)}));");
             }
@@ -283,7 +284,7 @@ namespace Plang.Compiler.Backend.CSharp
         private static void WriteForeignType(CompilationContext context, StringWriter output, ForeignType foreignType)
         {
             // we do not generate code for foreign types
-            string declName = foreignType.CanonicalRepresentation;
+            var declName = foreignType.CanonicalRepresentation;
             context.WriteLine(output, $"// TODO: Implement the Foreign Type {declName}");
         }
 
@@ -322,11 +323,11 @@ namespace Plang.Compiler.Backend.CSharp
         {
             context.WriteLine(output, "public static void InitializeMonitorObserves() {");
             context.WriteLine(output, "PModule.monitorObserves.Clear();");
-            foreach (Machine monitor in monitors)
+            foreach (var monitor in monitors)
             {
                 context.WriteLine(output,
                     $"PModule.monitorObserves[nameof({context.Names.GetNameForDecl(monitor)})] = new List<string>();");
-                foreach (PEvent ev in monitor.Observes.Events)
+                foreach (var ev in monitor.Observes.Events)
                 {
                     context.WriteLine(output,
                         $"PModule.monitorObserves[nameof({context.Names.GetNameForDecl(monitor)})].Add(nameof({context.Names.GetNameForDecl(ev)}));");
@@ -344,11 +345,11 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "public partial class PHelper {");
             context.WriteLine(output, "public static void InitializeEnums() {");
             context.WriteLine(output, "PrtEnum.Clear();");
-            foreach (PEnum enumDecl in enums)
+            foreach (var enumDecl in enums)
             {
-                string enumElemNames =
+                var enumElemNames =
                     $"new [] {{{string.Join(",", enumDecl.Values.Select(e => $"\"{context.Names.GetNameForDecl(e)}\""))}}}";
-                string enumElemValues = $"new [] {{{string.Join(",", enumDecl.Values.Select(e => e.Value))}}}";
+                var enumElemValues = $"new [] {{{string.Join(",", enumDecl.Values.Select(e => e.Value))}}}";
                 context.WriteLine(output, $"PrtEnum.AddEnumElements({enumElemNames}, {enumElemValues});");
             }
 
@@ -362,7 +363,7 @@ namespace Plang.Compiler.Backend.CSharp
         private void WriteTestFunction(CompilationContext context, StringWriter output, string main)
         {
             context.WriteLine(output);
-            context.WriteLine(output, "[Microsoft.Coyote.SystematicTesting.Test]");
+            context.WriteLine(output, "[PChecker.SystematicTesting.Test]");
             context.WriteLine(output, "public static void Execute(IActorRuntime runtime) {");
             context.WriteLine(output, "runtime.RegisterLog(new PLogFormatter());");
             context.WriteLine(output, "PModule.runtime = runtime;");
@@ -381,10 +382,10 @@ namespace Plang.Compiler.Backend.CSharp
             IDictionary<Machine, IEnumerable<Interface>> monitorMap)
         {
             // compute the reverse map
-            Dictionary<Interface, List<Machine>> machineMap = new Dictionary<Interface, List<Machine>>();
-            foreach (KeyValuePair<Machine, IEnumerable<Interface>> monitorToInterface in monitorMap)
+            var machineMap = new Dictionary<Interface, List<Machine>>();
+            foreach (var monitorToInterface in monitorMap)
             {
-                foreach (Interface iface in monitorToInterface.Value)
+                foreach (var iface in monitorToInterface.Value)
                 {
                     if (!machineMap.ContainsKey(iface))
                     {
@@ -397,17 +398,17 @@ namespace Plang.Compiler.Backend.CSharp
 
             context.WriteLine(output, "public static void InitializeMonitorMap(IActorRuntime runtime) {");
             context.WriteLine(output, "PModule.monitorMap.Clear();");
-            foreach (KeyValuePair<Interface, List<Machine>> machine in machineMap)
+            foreach (var machine in machineMap)
             {
                 context.WriteLine(output, $"PModule.monitorMap[nameof({context.Names.GetNameForDecl(machine.Key)})] = new List<Type>();");
-                foreach (Machine monitor in machine.Value)
+                foreach (var monitor in machine.Value)
                 {
                     context.WriteLine(output,
                         $"PModule.monitorMap[nameof({context.Names.GetNameForDecl(machine.Key)})].Add(typeof({context.Names.GetNameForDecl(monitor)}));");
                 }
             }
 
-            foreach (Machine monitor in monitorMap.Keys)
+            foreach (var monitor in monitorMap.Keys)
             {
                 context.WriteLine(output, $"runtime.RegisterMonitor<{context.Names.GetNameForDecl(monitor)}>();");
             }
@@ -421,7 +422,7 @@ namespace Plang.Compiler.Backend.CSharp
         {
             context.WriteLine(output, "public static void InitializeInterfaceDefMap() {");
             context.WriteLine(output, "PModule.interfaceDefinitionMap.Clear();");
-            foreach (KeyValuePair<Interface, Machine> map in interfaceDef)
+            foreach (var map in interfaceDef)
             {
                 context.WriteLine(output,
                     $"PModule.interfaceDefinitionMap.Add(nameof({context.Names.GetNameForDecl(map.Key)}), typeof({context.Names.GetNameForDecl(map.Value)}));");
@@ -436,11 +437,11 @@ namespace Plang.Compiler.Backend.CSharp
         {
             context.WriteLine(output, "public static void InitializeLinkMap() {");
             context.WriteLine(output, "PModule.linkMap.Clear();");
-            foreach (KeyValuePair<Interface, IDictionary<Interface, Interface>> creatorInterface in linkMap)
+            foreach (var creatorInterface in linkMap)
             {
                 context.WriteLine(output,
                     $"PModule.linkMap[nameof({context.Names.GetNameForDecl(creatorInterface.Key)})] = new Dictionary<string, string>();");
-                foreach (KeyValuePair<Interface, Interface> clinkMap in creatorInterface.Value)
+                foreach (var clinkMap in creatorInterface.Value)
                 {
                     context.WriteLine(output,
                         $"PModule.linkMap[nameof({context.Names.GetNameForDecl(creatorInterface.Key)})].Add(nameof({context.Names.GetNameForDecl(clinkMap.Key)}), nameof({context.Names.GetNameForDecl(clinkMap.Value)}));");
@@ -455,10 +456,10 @@ namespace Plang.Compiler.Backend.CSharp
         {
             WriteNameSpacePrologue(context, output);
 
-            string declName = context.Names.GetNameForDecl(pEvent);
+            var declName = context.Names.GetNameForDecl(pEvent);
 
             // initialize the payload type
-            string payloadType = GetCSharpType(pEvent.PayloadType, true);
+            var payloadType = GetCSharpType(pEvent.PayloadType, true);
             context.WriteLine(output, $"internal partial class {declName} : PEvent");
             context.WriteLine(output, "{");
             context.WriteLine(output, $"public {declName}() : base() {{}}");
@@ -473,18 +474,18 @@ namespace Plang.Compiler.Backend.CSharp
         {
             WriteNameSpacePrologue(context, output);
 
-            string declName = context.Names.GetNameForDecl(machine);
+            var declName = context.Names.GetNameForDecl(machine);
             context.WriteLine(output, $"internal partial class {declName} : PMachine");
             context.WriteLine(output, "{");
 
-            foreach (Variable field in machine.Fields)
+            foreach (var field in machine.Fields)
             {
                 context.WriteLine(output,
                     $"private {GetCSharpType(field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(field.Type)};");
             }
 
             //create the constructor event
-            string cTorType = GetCSharpType(machine.PayloadType, true);
+            var cTorType = GetCSharpType(machine.PayloadType, true);
             context.Write(output, "public class ConstructorEvent : PEvent");
             context.Write(output, "{");
             context.Write(output, $"public ConstructorEvent({cTorType} val) : base(val) {{ }}");
@@ -497,12 +498,12 @@ namespace Plang.Compiler.Backend.CSharp
             // create the constructor to initialize the sends, creates and receives list
             WriteMachineConstructor(context, output, machine);
 
-            foreach (Function method in machine.Methods)
+            foreach (var method in machine.Methods)
             {
                 WriteFunction(context, output, method);
             }
 
-            foreach (State state in machine.States)
+            foreach (var state in machine.States)
             {
                 WriteState(context, output, state);
             }
@@ -514,19 +515,19 @@ namespace Plang.Compiler.Backend.CSharp
 
         private static void WriteMachineConstructor(CompilationContext context, StringWriter output, Machine machine)
         {
-            string declName = context.Names.GetNameForDecl(machine);
+            var declName = context.Names.GetNameForDecl(machine);
             context.WriteLine(output, $"public {declName}() {{");
-            foreach (PEvent sEvent in machine.Sends.Events)
+            foreach (var sEvent in machine.Sends.Events)
             {
                 context.WriteLine(output, $"this.sends.Add(nameof({context.Names.GetNameForDecl(sEvent)}));");
             }
 
-            foreach (PEvent rEvent in machine.Receives.Events)
+            foreach (var rEvent in machine.Receives.Events)
             {
                 context.WriteLine(output, $"this.receives.Add(nameof({context.Names.GetNameForDecl(rEvent)}));");
             }
 
-            foreach (Interface iCreate in machine.Creates.Interfaces)
+            foreach (var iCreate in machine.Creates.Interfaces)
             {
                 context.WriteLine(output, $"this.creates.Add(nameof({context.Names.GetNameForDecl(iCreate)}));");
             }
@@ -569,12 +570,12 @@ namespace Plang.Compiler.Backend.CSharp
                 context.WriteLine(output, $"[OnEntry(nameof({context.Names.GetNameForDecl(state.Entry)}))]");
             }
 
-            List<string> deferredEvents = new List<string>();
-            List<string> ignoredEvents = new List<string>();
-            foreach (KeyValuePair<PEvent, IStateAction> eventHandler in state.AllEventHandlers)
+            var deferredEvents = new List<string>();
+            var ignoredEvents = new List<string>();
+            foreach (var eventHandler in state.AllEventHandlers)
             {
-                PEvent pEvent = eventHandler.Key;
-                IStateAction stateAction = eventHandler.Value;
+                var pEvent = eventHandler.Key;
+                var stateAction = eventHandler.Value;
                 switch (stateAction)
                 {
                     case EventDefer _:
@@ -634,14 +635,14 @@ namespace Plang.Compiler.Backend.CSharp
             if (function.Role == FunctionRole.Method || function.Role == FunctionRole.Foreign)
                 return;
 
-            bool isAsync = function.CanReceive == true;
-            FunctionSignature signature = function.Signature;
+            var isAsync = function.CanReceive == true;
+            var signature = function.Signature;
 
-            string functionName = context.Names.GetNameForDecl(function);
-            string functionParameters = "Event currentMachine_dequeuedEvent";
-            string awaitMethod = isAsync ? "await " : "";
-            string asyncMethod = isAsync ? "async" : "";
-            string returnType = "void";
+            var functionName = context.Names.GetNameForDecl(function);
+            var functionParameters = "Event currentMachine_dequeuedEvent";
+            var awaitMethod = isAsync ? "await " : "";
+            var asyncMethod = isAsync ? "async" : "";
+            var returnType = "void";
 
             if (isAsync)
             {
@@ -671,27 +672,27 @@ namespace Plang.Compiler.Backend.CSharp
                 return;
             }
 
-            bool isStatic = function.Owner == null;
+            var isStatic = function.Owner == null;
 
             if (!function.IsAnon && !isStatic)
             {
                 WriteNamedFunctionWrapper(context, output, function);
             }
 
-            bool isAsync = function.CanReceive == true;
-            FunctionSignature signature = function.Signature;
+            var isAsync = function.CanReceive == true;
+            var signature = function.Signature;
 
-            string staticKeyword = isStatic ? "static " : "";
-            string asyncKeyword = isAsync ? "async " : "";
-            string returnType = GetCSharpType(signature.ReturnType);
+            var staticKeyword = isStatic ? "static " : "";
+            var asyncKeyword = isAsync ? "async " : "";
+            var returnType = GetCSharpType(signature.ReturnType);
 
             if (isAsync)
             {
                 returnType = returnType == "void" ? "Task" : $"Task<{returnType}>";
             }
 
-            string functionName = context.Names.GetNameForDecl(function);
-            string functionParameters = "";
+            var functionName = context.Names.GetNameForDecl(function);
+            var functionParameters = "";
             if (function.IsAnon)
             {
                 functionParameters = "Event currentMachine_dequeuedEvent";
@@ -707,7 +708,7 @@ namespace Plang.Compiler.Backend.CSharp
             if (isStatic) // then we need to generate two versions of the function
             {
                 // for machine
-                string seperator = functionParameters == "" ? "" : ", ";
+                var seperator = functionParameters == "" ? "" : ", ";
                 var functionParameters_machine = functionParameters + string.Concat(seperator, "PMachine currentMachine");
                 context.WriteLine(output,
                     $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_machine})");
@@ -746,21 +747,21 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 if (function.Signature.Parameters.Any())
                 {
-                    Variable param = function.Signature.Parameters.First();
+                    var param = function.Signature.Parameters.First();
                     context.WriteLine(output,
                         $"{GetCSharpType(param.Type)} {context.Names.GetNameForDecl(param)} = ({GetCSharpType(param.Type)})(gotoPayload ?? ((PEvent)currentMachine_dequeuedEvent).Payload);");
                     context.WriteLine(output, "this.gotoPayload = null;");
                 }
             }
 
-            foreach (Variable local in function.LocalVariables)
+            foreach (var local in function.LocalVariables)
             {
-                PLanguageType type = local.Type;
+                var type = local.Type;
                 context.WriteLine(output,
                     $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(type)};");
             }
 
-            foreach (IPStmt bodyStatement in function.Body.Statements)
+            foreach (var bodyStatement in function.Body.Statements)
             {
                 WriteStmt(context: context, output: output, function: function, stmt: bodyStatement);
             }
@@ -800,7 +801,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case AssignStmt assignStmt:
-                    bool needCtorAdapter = !assignStmt.Value.Type.IsSameTypeAs(assignStmt.Location.Type)
+                    var needCtorAdapter = !assignStmt.Value.Type.IsSameTypeAs(assignStmt.Location.Type)
                                           && !PrimitiveType.Null.IsSameTypeAs(assignStmt.Value.Type)
                                           && !PrimitiveType.Any.IsSameTypeAs(assignStmt.Location.Type);
                     WriteLValue(context, output, assignStmt.Location);
@@ -826,7 +827,7 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case CompoundStmt compoundStmt:
                     context.WriteLine(output, "{");
-                    foreach (IPStmt subStmt in compoundStmt.Statements)
+                    foreach (var subStmt in compoundStmt.Statements)
                     {
                         WriteStmt(context, output, function, subStmt);
                     }
@@ -845,8 +846,8 @@ namespace Plang.Compiler.Backend.CSharp
                         {
                             //create tuple from rvaluelist
                             context.Write(output, "new PrtTuple(");
-                            string septor = "";
-                            foreach (IPExpr ctorExprArgument in ctorStmt.Arguments)
+                            var septor = "";
+                            foreach (var ctorExprArgument in ctorStmt.Arguments)
                             {
                                 context.Write(output, septor);
                                 WriteExpr(context, output, ctorExprArgument);
@@ -865,14 +866,14 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case FunCallStmt funCallStmt:
-                    bool isStatic = funCallStmt.Function.Owner == null;
-                    string awaitMethod = funCallStmt.Function.CanReceive == true ? "await " : "";
-                    string globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
+                    var isStatic = funCallStmt.Function.Owner == null;
+                    var awaitMethod = funCallStmt.Function.CanReceive == true ? "await " : "";
+                    var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
                     context.Write(output,
                         $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallStmt.Function)}(");
-                    string separator = "";
+                    var separator = "";
 
-                    foreach (IPExpr param in funCallStmt.ArgsList)
+                    foreach (var param in funCallStmt.ArgsList)
                     {
                         context.Write(output, separator);
                         WriteExpr(context, output, param);
@@ -921,8 +922,8 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case InsertStmt insertStmt:
-                    bool isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
-                    string castOp = isMap ? "(PrtMap)" : "(PrtSeq)";
+                    var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
+                    var castOp = isMap ? "(PrtMap)" : "(PrtSeq)";
                     context.Write(output, $"({castOp}");
                     WriteExpr(context, output, insertStmt.Variable);
                     if (isMap)
@@ -941,7 +942,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case MoveAssignStmt moveAssignStmt:
-                    string upCast = "";
+                    var upCast = "";
                     if (!moveAssignStmt.FromVariable.Type.IsSameTypeAs(moveAssignStmt.ToLocation.Type))
                     {
                         upCast = $"({GetCSharpType(moveAssignStmt.ToLocation.Type)})";
@@ -980,11 +981,11 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case ReceiveStmt receiveStmt:
-                    string eventName = context.Names.GetTemporaryName("recvEvent");
-                    HashSet<string> eventTypeNames = receiveStmt.Cases.Keys.Select(evt => context.Names.GetNameForDecl(evt))
+                    var eventName = context.Names.GetTemporaryName("recvEvent");
+                    var eventTypeNames = receiveStmt.Cases.Keys.Select(evt => context.Names.GetNameForDecl(evt))
                         .ToHashSet();
                     eventTypeNames.Add("PHalt"); // halt as a special case for receive
-                    string recvArgs = string.Join(", ", eventTypeNames.Select(name => $"typeof({name})"));
+                    var recvArgs = string.Join(", ", eventTypeNames.Select(name => $"typeof({name})"));
                     context.WriteLine(output, $"var {eventName} = await currentMachine.TryReceiveEvent({recvArgs});");
                     context.WriteLine(output, $"switch ({eventName}) {{");
                     // add halt as a special case if doesnt exist
@@ -1004,14 +1005,14 @@ namespace Plang.Compiler.Backend.CSharp
                                 $"{GetCSharpType(caseArg.Type)} {context.Names.GetNameForDecl(caseArg)} = ({GetCSharpType(caseArg.Type)})({caseName}.Payload);");
                         }
 
-                        foreach (Variable local in value.LocalVariables)
+                        foreach (var local in value.LocalVariables)
                         {
-                            PLanguageType type = local.Type;
+                            var type = local.Type;
                             context.WriteLine(output,
                                 $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(type)};");
                         }
 
-                        foreach (IPStmt caseStmt in value.Body.Statements)
+                        foreach (var caseStmt in value.Body.Statements)
                         {
                             WriteStmt(context, output, function, caseStmt);
                         }
@@ -1024,7 +1025,7 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case RemoveStmt removeStmt:
                     {
-                        string castOperation = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map)
+                        var castOperation = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map)
                         ? "(PrtMap)"
                         : PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Sequence)
                         ? "(PrtSeq)"
@@ -1089,12 +1090,12 @@ namespace Plang.Compiler.Backend.CSharp
                         if (sendStmt.Arguments.Count > 1)
                         {
                             //create tuple from rvaluelist
-                            string argTypes = string.Join(",",
+                            var argTypes = string.Join(",",
                                 sendStmt.Arguments.Select(a => GetCSharpType(a.Type)));
-                            string tupleType = $"PrtTuple";
+                            var tupleType = $"PrtTuple";
                             context.Write(output, $"new {tupleType}(");
-                            string septor = "";
-                            foreach (IPExpr ctorExprArgument in sendStmt.Arguments)
+                            var septor = "";
+                            foreach (var ctorExprArgument in sendStmt.Arguments)
                             {
                                 context.Write(output, septor);
                                 WriteExpr(context, output, ctorExprArgument);
@@ -1198,7 +1199,7 @@ namespace Plang.Compiler.Backend.CSharp
                     //handle eq and noteq differently
                     if (binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq)
                     {
-                        string negate = binOpExpr.Operation == BinOpType.Neq ? "!" : "";
+                        var negate = binOpExpr.Operation == BinOpType.Neq ? "!" : "";
                         context.Write(output, $"({negate}PrtValues.SafeEquals(");
                         if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
                         {
@@ -1332,8 +1333,8 @@ namespace Plang.Compiler.Backend.CSharp
                         {
                             //create tuple from rvaluelist
                             context.Write(output, "new PrtTuple(");
-                            string septor = "";
-                            foreach (IPExpr ctorExprArgument in ctorExpr.Arguments)
+                            var septor = "";
+                            foreach (var ctorExprArgument in ctorExpr.Arguments)
                             {
                                 context.Write(output, septor);
                                 WriteExpr(context, output, ctorExprArgument);
@@ -1356,12 +1357,12 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case EnumElemRefExpr enumElemRefExpr:
-                    EnumElem enumElem = enumElemRefExpr.Value;
+                    var enumElem = enumElemRefExpr.Value;
                     context.Write(output, $"(PrtEnum.Get(\"{context.Names.GetNameForDecl(enumElem)}\"))");
                     break;
 
                 case EventRefExpr eventRefExpr:
-                    string eventName = context.Names.GetNameForDecl(eventRefExpr.Value);
+                    var eventName = context.Names.GetNameForDecl(eventRefExpr.Value);
                     switch (eventName)
                     {
                         case "Halt":
@@ -1373,7 +1374,7 @@ namespace Plang.Compiler.Backend.CSharp
                             break;
 
                         default:
-                            string payloadExpr = GetDefaultValue(eventRefExpr.Value.PayloadType);
+                            var payloadExpr = GetDefaultValue(eventRefExpr.Value.PayloadType);
                             context.Write(output, $"new {eventName}({payloadExpr})");
                             break;
                     }
@@ -1389,14 +1390,14 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case FunCallExpr funCallExpr:
-                    bool isStatic = funCallExpr.Function.Owner == null;
-                    string awaitMethod = funCallExpr.Function.CanReceive == true ? "await " : "";
-                    string globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
+                    var isStatic = funCallExpr.Function.Owner == null;
+                    var awaitMethod = funCallExpr.Function.CanReceive == true ? "await " : "";
+                    var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
                     context.Write(output,
                         $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallExpr.Function)}(");
-                    string separator = "";
+                    var separator = "";
 
-                    foreach (IPExpr param in funCallExpr.Arguments)
+                    foreach (var param in funCallExpr.Arguments)
                     {
                         context.Write(output, separator);
                         WriteExpr(context, output, param);
@@ -1422,11 +1423,11 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case NamedTupleExpr namedTupleExpr:
-                    string fieldNamesArray = string.Join(",",
+                    var fieldNamesArray = string.Join(",",
                         ((NamedTupleType)namedTupleExpr.Type).Names.Select(n => $"\"{n}\""));
                     fieldNamesArray = $"new string[]{{{fieldNamesArray}}}";
                     context.Write(output, $"(new {GetCSharpType(namedTupleExpr.Type)}({fieldNamesArray}, ");
-                    for (int i = 0; i < namedTupleExpr.TupleFields.Count; i++)
+                    for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
                     {
                         if (i > 0)
                         {
@@ -1476,8 +1477,8 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case UnnamedTupleExpr unnamedTupleExpr:
                     context.Write(output, $"new {GetCSharpType(unnamedTupleExpr.Type)}(");
-                    string sep = "";
-                    foreach (IPExpr field in unnamedTupleExpr.TupleFields)
+                    var sep = "";
+                    foreach (var field in unnamedTupleExpr.TupleFields)
                     {
                         context.Write(output, sep);
                         WriteExpr(context, output, field);
@@ -1516,7 +1517,7 @@ namespace Plang.Compiler.Backend.CSharp
                 return;
             }
 
-            string varName = context.Names.GetNameForDecl(variableRef.Variable);
+            var varName = context.Names.GetNameForDecl(variableRef.Variable);
             context.Write(output, $"(({GetCSharpType(variableRef.Type)})((IPrtValue){varName})?.Clone())");
         }
 
@@ -1597,14 +1598,14 @@ namespace Plang.Compiler.Backend.CSharp
                     return $"new {GetCSharpType(setType)}()";
 
                 case NamedTupleType namedTupleType:
-                    string fieldNamesArray = string.Join(",", namedTupleType.Names.Select(n => $"\"{n}\""));
+                    var fieldNamesArray = string.Join(",", namedTupleType.Names.Select(n => $"\"{n}\""));
                     fieldNamesArray = $"new string[]{{{fieldNamesArray}}}";
-                    string fieldDefaults =
+                    var fieldDefaults =
                         string.Join(", ", namedTupleType.Types.Select(t => GetDefaultValue(t)));
                     return $"(new {GetCSharpType(namedTupleType)}({fieldNamesArray},{fieldDefaults}))";
 
                 case TupleType tupleType:
-                    string defaultTupleValues =
+                    var defaultTupleValues =
                         string.Join(", ", tupleType.Types.Select(t => GetDefaultValue(t)));
                     return $"(new {GetCSharpType(tupleType)}({defaultTupleValues}))";
 

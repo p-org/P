@@ -62,12 +62,12 @@ namespace Plang.CSharpRuntime
         {
             name = typeName;
             enumConstants = new Dictionary<long, string>();
-            int i = 0;
-            while (i < args.Count())
+            var i = 0;
+            while (i < args.Length)
             {
-                string enumConstantName = (string)args[i];
+                var enumConstantName = (string)args[i];
                 i++;
-                int enumConstantValue = (int)args[i];
+                var enumConstantValue = (int)args[i];
                 i++;
                 enumConstants[enumConstantValue] = enumConstantName;
             }
@@ -185,7 +185,7 @@ namespace Plang.CSharpRuntime
         {
             Debug.Assert(fields.Any());
             fieldTypes = new List<PrtType>();
-            foreach (PrtType f in fields)
+            foreach (var f in fields)
             {
                 fieldTypes.Add(f);
             }
@@ -193,8 +193,8 @@ namespace Plang.CSharpRuntime
 
         public override string ToString()
         {
-            string retStr = "<";
-            foreach (PrtType f in fieldTypes)
+            var retStr = "<";
+            foreach (var f in fieldTypes)
             {
                 retStr += f + ", ";
             }
@@ -214,8 +214,8 @@ namespace Plang.CSharpRuntime
             fieldNames = new List<string>();
             fieldTypes = new List<PrtType>();
 
-            int index = 0;
-            while (index < args.Count())
+            var index = 0;
+            while (index < args.Length)
             {
                 fieldNames.Add((string)args[index]);
                 index++;
@@ -226,8 +226,8 @@ namespace Plang.CSharpRuntime
 
         public override string ToString()
         {
-            string retStr = "<";
-            int index = 0;
+            var retStr = "<";
+            var index = 0;
             while (index < fieldTypes.Count)
             {
                 retStr += fieldNames[index] + ":" + fieldTypes[index] + ", ";

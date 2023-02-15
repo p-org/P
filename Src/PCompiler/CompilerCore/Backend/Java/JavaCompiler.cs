@@ -8,9 +8,9 @@ namespace Plang.Compiler.Backend.Java
 
     public class JavaCompiler : ICodeGenerator
     {
-        public void GenerateBuildScript(ICompilationJob job)
+        public void GenerateBuildScript(ICompilerConfiguration job)
         {
-            var pomPath = Path.Combine(job.ProjectRootPath.FullName, Constants.BuildFileName);
+            var pomPath = Path.Combine(job.OutputDirectory.FullName, Constants.BuildFileName);
             if (File.Exists(pomPath))
             {
                 job.Output.WriteInfo("Reusing existing " + Constants.BuildFileName);
@@ -25,11 +25,11 @@ namespace Plang.Compiler.Backend.Java
         /// Generates all extracted Java code.  Later, this will also generate FFI stubs if they are
         /// absent.
         /// </summary>
-        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope scope)
+        public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope scope)
         {
             GenerateBuildScript(job);
 
-            List<JavaSourceGenerator> generators = new List<JavaSourceGenerator>()
+            var generators = new List<JavaSourceGenerator>()
             {
                 new TypesGenerator(Constants.TypesDefnFileName),
                 new EventGenerator(Constants.EventDefnFileName),
@@ -37,7 +37,7 @@ namespace Plang.Compiler.Backend.Java
                 new FFIStubGenerator(Constants.FFIStubFileName)
             };
 
-            CompilationContext ctx = new CompilationContext(job);
+            var ctx = new CompilationContext(job);
             return generators.SelectMany(g => g.GenerateCode(ctx, scope));
         }
 
@@ -51,14 +51,14 @@ namespace Plang.Compiler.Backend.Java
         /// <summary>
         /// Collates the previously-generated Java sources into a final JAR.
         /// </summary>
-        public void Compile(ICompilationJob job)
+        public void Compile(ICompilerConfiguration job)
         {
-            string stdout = "";
-            string stderr = "";
+            var stdout = "";
+            var stderr = "";
 
             string[] args = { "clean", "package"};
             if (Compiler.RunWithOutput(
-                job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args) != 0)
+                job.OutputDirectory.FullName, out stdout, out stderr, "mvn", args) != 0)
             {
                 throw new TranslationException($"Java project compilation failed.\n" + $"{stdout}\n" + $"{stderr}\n");
             }

@@ -1,11 +1,11 @@
-﻿using Antlr4.Runtime;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.ModuleExprs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -15,25 +15,25 @@ namespace Plang.Compiler.TypeChecker
             ITranslationErrorHandler handler,
             Scope globalScope)
         {
-            ModuleExprVisitor modExprVisitor = new ModuleExprVisitor(handler, globalScope);
+            var modExprVisitor = new ModuleExprVisitor(handler, globalScope);
 
             // first do all the named modules
-            foreach (NamedModule mod in globalScope.NamedModules)
+            foreach (var mod in globalScope.NamedModules)
             {
-                PParser.NamedModuleDeclContext context = (PParser.NamedModuleDeclContext)mod.SourceLocation;
+                var context = (PParser.NamedModuleDeclContext)mod.SourceLocation;
                 mod.ModExpr = modExprVisitor.Visit(context.modExpr());
             }
 
             // all the test declarations
-            foreach (SafetyTest test in globalScope.SafetyTests)
+            foreach (var test in globalScope.SafetyTests)
             {
-                PParser.SafetyTestDeclContext context = (PParser.SafetyTestDeclContext)test.SourceLocation;
+                var context = (PParser.SafetyTestDeclContext)test.SourceLocation;
                 test.ModExpr = modExprVisitor.Visit(context.modExpr());
             }
 
-            foreach (RefinementTest test in globalScope.RefinementTests)
+            foreach (var test in globalScope.RefinementTests)
             {
-                PParser.RefinementTestDeclContext context = (PParser.RefinementTestDeclContext)test.SourceLocation;
+                var context = (PParser.RefinementTestDeclContext)test.SourceLocation;
                 test.LeftModExpr = modExprVisitor.Visit(context.modExpr()[0]);
                 test.RightModExpr = modExprVisitor.Visit(context.modExpr()[1]);
             }
@@ -41,9 +41,9 @@ namespace Plang.Compiler.TypeChecker
             if (globalScope.Implementations.Any())
             {
                 // all user defind implementations
-                foreach (Implementation impl in globalScope.Implementations)
+                foreach (var impl in globalScope.Implementations)
                 {
-                    PParser.ImplementationDeclContext context = (PParser.ImplementationDeclContext)impl.SourceLocation;
+                    var context = (PParser.ImplementationDeclContext)impl.SourceLocation;
                     impl.ModExpr = modExprVisitor.Visit(context.modExpr());
                 }
             }
@@ -55,13 +55,13 @@ namespace Plang.Compiler.TypeChecker
                         $"No test case declared and no machine with name Main exists. Please define a test case.");*/
                 }
                 
-                Implementation defaultImplDecl = new Implementation(ParserRuleContext.EmptyContext, "DefaultImpl")
+                var defaultImplDecl = new Implementation(ParserRuleContext.EmptyContext, "DefaultImpl")
                 {
                     Main = "Main"
                 };
                 // create bindings from each machine to itself
-                List<Tuple<Interface, Machine>> defaultBindings = new List<Tuple<Interface, Machine>>();
-                foreach (Machine machine in globalScope.Machines.Where(m => !m.IsSpec))
+                var defaultBindings = new List<Tuple<Interface, Machine>>();
+                foreach (var machine in globalScope.Machines.Where(m => !m.IsSpec))
                 {
                     globalScope.Get(machine.Name, out Interface @interface);
                     defaultBindings.Add(new Tuple<Interface, Machine>(@interface, machine));
@@ -95,26 +95,26 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.MissingDeclaration(context, "module", context.GetText());
             }
 
-            PParser.NamedModuleDeclContext declContext = (PParser.NamedModuleDeclContext)mod.SourceLocation;
+            var declContext = (PParser.NamedModuleDeclContext)mod.SourceLocation;
             return Visit(declContext.modExpr());
         }
 
         public override IPModuleExpr VisitPrimitiveModuleExpr([NotNull] PParser.PrimitiveModuleExprContext context)
         {
-            List<Tuple<Interface, Machine>> bindings = context._bindslist.Select(VisitBindExpr).ToList();
+            var bindings = context._bindslist.Select(VisitBindExpr).ToList();
             return new BindModuleExpr(context, bindings);
         }
 
         public override IPModuleExpr VisitComposeModuleExpr([NotNull] PParser.ComposeModuleExprContext context)
         {
-            List<IPModuleExpr> moduleList = context._mexprs.Select(Visit).ToList();
+            var moduleList = context._mexprs.Select(Visit).ToList();
             return new UnionOrComposeModuleExpr(context, moduleList, true);
         }
 
         public override IPModuleExpr VisitHideEventsModuleExpr([NotNull] PParser.HideEventsModuleExprContext context)
         {
-            List<PEvent> eventList = new List<PEvent>();
-            foreach (PParser.NonDefaultEventContext eventName in context.nonDefaultEventList()._events)
+            var eventList = new List<PEvent>();
+            foreach (var eventName in context.nonDefaultEventList()._events)
             {
                 if (!globalScope.Get(eventName.GetText(), out PEvent @event))
                 {
@@ -130,8 +130,8 @@ namespace Plang.Compiler.TypeChecker
         public override IPModuleExpr VisitHideInterfacesModuleExpr(
             [NotNull] PParser.HideInterfacesModuleExprContext context)
         {
-            List<Interface> interfaceList = new List<Interface>();
-            foreach (PParser.IdenContext interfaceName in context.idenList()._names)
+            var interfaceList = new List<Interface>();
+            foreach (var interfaceName in context.idenList()._names)
             {
                 if (!globalScope.Get(interfaceName.GetText(), out Interface @interface))
                 {
@@ -161,14 +161,14 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPModuleExpr VisitUnionModuleExpr([NotNull] PParser.UnionModuleExprContext context)
         {
-            List<IPModuleExpr> moduleList = context._mexprs.Select(Visit).ToList();
+            var moduleList = context._mexprs.Select(Visit).ToList();
             return new UnionOrComposeModuleExpr(context, moduleList, false);
         }
 
         public override IPModuleExpr VisitAssertModuleExpr([NotNull] PParser.AssertModuleExprContext context)
         {
-            List<Machine> monList = new List<Machine>();
-            foreach (PParser.IdenContext monName in context.idenList()._names)
+            var monList = new List<Machine>();
+            foreach (var monName in context.idenList()._names)
             {
                 if (!globalScope.Get(monName.GetText(), out Machine monitor))
                 {
@@ -193,8 +193,8 @@ namespace Plang.Compiler.TypeChecker
 
         private new Tuple<Interface, Machine> VisitBindExpr([NotNull] PParser.BindExprContext context)
         {
-            string machine = context.mName.GetText();
-            string @interface = context.iName?.GetText() ?? machine;
+            var machine = context.mName.GetText();
+            var @interface = context.iName?.GetText() ?? machine;
 
             if (!globalScope.Get(@interface, out Interface i))
             {

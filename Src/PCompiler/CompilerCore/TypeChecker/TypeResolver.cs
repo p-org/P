@@ -1,9 +1,9 @@
-using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker.AST.Declarations;
-using Plang.Compiler.TypeChecker.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Antlr4.Runtime;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -41,7 +41,7 @@ namespace Plang.Compiler.TypeChecker
 
             public override PLanguageType VisitNamedType(PParser.NamedTypeContext context)
             {
-                string typeName = context.name.GetText();
+                var typeName = context.name.GetText();
                 if (scope.Lookup(typeName, out PEnum pEnum))
                 {
                     return new EnumType(pEnum);
@@ -100,21 +100,21 @@ namespace Plang.Compiler.TypeChecker
 
             public override PLanguageType VisitTupleType(PParser.TupleTypeContext context)
             {
-                TupleType ret = new TupleType(context._tupTypes.Select(Visit).ToArray());
+                var ret = new TupleType(context._tupTypes.Select(Visit).ToArray());
                 scope.AddTuple(ret);
                 return ret;
             }
 
             public override PLanguageType VisitNamedTupleType(PParser.NamedTupleTypeContext context)
             {
-                HashSet<string> names = new HashSet<string>();
-                PParser.IdenTypeContext[] namedTupleFields = context.idenTypeList().idenType();
+                var names = new HashSet<string>();
+                var namedTupleFields = context.idenTypeList().idenType();
 
-                NamedTupleEntry[] fields = new NamedTupleEntry[namedTupleFields.Length];
-                for (int i = 0; i < namedTupleFields.Length; i++)
+                var fields = new NamedTupleEntry[namedTupleFields.Length];
+                for (var i = 0; i < namedTupleFields.Length; i++)
                 {
-                    PParser.IdenTypeContext field = namedTupleFields[i];
-                    string fieldName = field.name.GetText();
+                    var field = namedTupleFields[i];
+                    var fieldName = field.name.GetText();
                     if (names.Contains(fieldName))
                     {
                         throw handler.DuplicateNamedTupleEntry(field.name, fieldName);
@@ -124,14 +124,14 @@ namespace Plang.Compiler.TypeChecker
                     fields[i] = new NamedTupleEntry { Name = fieldName, FieldNo = i, Type = Visit(field.type()) };
                 }
 
-                NamedTupleType ret = new NamedTupleType(fields);
+                var ret = new NamedTupleType(fields);
                 scope.AddTuple(ret);
                 return ret;
             }
 
             public override PLanguageType VisitPrimitiveType(PParser.PrimitiveTypeContext context)
             {
-                string name = context.GetText();
+                var name = context.GetText();
                 switch (name)
                 {
                     case "bool": return PrimitiveType.Bool;

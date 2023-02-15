@@ -1,18 +1,9 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
-using Plang.Compiler.Backend.ASTExt;
-using Plang.Compiler.TypeChecker;
-using Plang.Compiler.TypeChecker.AST;
-using Plang.Compiler.TypeChecker.AST.Declarations;
-using Plang.Compiler.TypeChecker.AST.Expressions;
-using Plang.Compiler.TypeChecker.AST.Statements;
-using Plang.Compiler.TypeChecker.AST.States;
-using Plang.Compiler.TypeChecker.Types;
-using System;
+
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Rvm
 {
@@ -28,7 +19,7 @@ namespace Plang.Compiler.Backend.Rvm
         // Checks the event payload exists and gets the actual value from the Java Optional class.
         internal void InlineEventHandlerArguments(StringWriter output, string argumentType, string argumentName)
         {
-            string maybePayload = Context.Names.GetMaybePayloadArgumentName();
+            var maybePayload = Context.Names.GetMaybePayloadArgumentName();
             Context.WriteLine(output, $"assert {maybePayload}.isPresent();");
             Context.WriteLine(output, $"{argumentType} {argumentName} = ({argumentType}){maybePayload}.get();");
             Context.WriteLine(output);
@@ -39,10 +30,10 @@ namespace Plang.Compiler.Backend.Rvm
         // Writes the state entry handler
         internal void WriteTemplateEntryHandler(StringWriter output, EventHandlerBodyDelegate writeBody)
         {
-            string entryHandlerName = Context.Names.GetEntryHandlerName();
-            string payloadType = Context.Names.GetDefaultPayloadTypeName();
-            string maybePayloadName = Context.Names.GetMaybePayloadArgumentName();
-            string throwsClause = GetThrowsClause();
+            var entryHandlerName = Context.Names.GetEntryHandlerName();
+            var payloadType = Context.Names.GetDefaultPayloadTypeName();
+            var maybePayloadName = Context.Names.GetMaybePayloadArgumentName();
+            var throwsClause = GetThrowsClause();
 
             Context.WriteLine(output, "@Override");
             Context.WriteLine(output, $"public void {entryHandlerName}(Optional<{payloadType}> {maybePayloadName}) {throwsClause} {{");
@@ -53,8 +44,8 @@ namespace Plang.Compiler.Backend.Rvm
         // Writes the state exit handler
         internal void WriteTemplateExitHandler(StringWriter output, EventHandlerBodyDelegate writeBody)
         {
-            string exitHandlerName =  Context.Names.GetExitHandlerName();
-            string throwsClause = GetThrowsClause();
+            var exitHandlerName =  Context.Names.GetExitHandlerName();
+            var throwsClause = GetThrowsClause();
 
             Context.WriteLine(output, "@Override");
             Context.WriteLine(output, $"public void {exitHandlerName}() {throwsClause} {{");
@@ -64,14 +55,14 @@ namespace Plang.Compiler.Backend.Rvm
 
         internal void WriteEventHandlerSignature(StringWriter output, PEvent pEvent)
         {
-            string throwsClause = GetThrowsClause();
-            string handlerName = Context.Names.GetStateEventHandlerName(pEvent);
+            var throwsClause = GetThrowsClause();
+            var handlerName = Context.Names.GetStateEventHandlerName(pEvent);
 
             Context.Write(output, $"public void {handlerName}(");
             if (!isNullType(pEvent.PayloadType))
             {
-                string payloadType = Context.Names.GetJavaTypeName(pEvent.PayloadType);
-                string payloadName = Context.Names.GetPayloadArgumentName();
+                var payloadType = Context.Names.GetJavaTypeName(pEvent.PayloadType);
+                var payloadName = Context.Names.GetPayloadArgumentName();
                 Context.Write(output, $"{payloadType} {payloadName}");
             }
             Context.Write(output, $") {throwsClause}");
@@ -79,8 +70,8 @@ namespace Plang.Compiler.Backend.Rvm
 
         // Writes the state event handler
         internal void WriteTemplateEventHandler(StringWriter output, PEvent pEvent, EventHandlerBodyDelegate writeBody) {
-            string throwsClause = GetThrowsClause();
-            string handlerName = Context.Names.GetStateEventHandlerName(pEvent);
+            var throwsClause = GetThrowsClause();
+            var handlerName = Context.Names.GetStateEventHandlerName(pEvent);
             WriteEventHandlerSignature(output, pEvent);
             Context.WriteLine(output, $" {{");
             writeBody(output);
@@ -89,7 +80,7 @@ namespace Plang.Compiler.Backend.Rvm
 
         internal string GetThrowsClause()
         {
-            List<string> exceptions = new List<string>();
+            var exceptions = new List<string>();
             exceptions.Add(Context.Names.GetGotoStmtExceptionName());
             exceptions.Add(Context.Names.GetRaiseStmtExceptionName());
             return $"throws {string.Join(", ", exceptions)}";

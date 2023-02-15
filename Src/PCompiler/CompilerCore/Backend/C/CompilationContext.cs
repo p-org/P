@@ -1,7 +1,7 @@
-﻿using Plang.Compiler.TypeChecker.AST.Declarations;
+﻿using System.Collections.Generic;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
-using System.Collections.Generic;
 
 namespace Plang.Compiler.Backend.C
 {
@@ -20,7 +20,7 @@ namespace Plang.Compiler.Backend.C
 
         private readonly Dictionary<PEvent, int> userEventNumbering = new Dictionary<PEvent, int>();
 
-        public CompilationContext(ICompilationJob job) : base(job)
+        public CompilationContext(ICompilerConfiguration job) : base(job)
         {
             Names = new CNameManager("P_");
             HeaderFileName = $"{job.ProjectName}.h";
@@ -82,7 +82,7 @@ namespace Plang.Compiler.Backend.C
 
         private static int GetOrAddNumber<T>(IDictionary<T, int> dict, T declaration)
         {
-            if (dict.TryGetValue(declaration, out int number))
+            if (dict.TryGetValue(declaration, out var number))
             {
                 return number;
             }
@@ -122,8 +122,8 @@ namespace Plang.Compiler.Backend.C
 
         public int GetDeclNumber(State state)
         {
-            Machine machine = state.OwningMachine;
-            if (!stateNumbering.TryGetValue(machine, out Dictionary<State, int> internalNumbering))
+            var machine = state.OwningMachine;
+            if (!stateNumbering.TryGetValue(machine, out var internalNumbering))
             {
                 internalNumbering = new Dictionary<State, int>();
                 stateNumbering.Add(machine, internalNumbering);

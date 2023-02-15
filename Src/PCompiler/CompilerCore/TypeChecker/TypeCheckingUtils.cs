@@ -1,10 +1,9 @@
-using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker.AST;
-using Plang.Compiler.TypeChecker.AST.Expressions;
-using Plang.Compiler.TypeChecker.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Antlr4.Runtime;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -29,7 +28,7 @@ namespace Plang.Compiler.TypeChecker
             }
             else if (payloadType.Canonicalize() is TupleType tuple)
             {
-                foreach (Tuple<PLanguageType, IPExpr> pair in tuple.Types.Zip(arguments, Tuple.Create))
+                foreach (var pair in tuple.Types.Zip(arguments, Tuple.Create))
                 {
                     CheckArgument(handler, context, pair.Item1, pair.Item2);
                 }
@@ -62,8 +61,8 @@ namespace Plang.Compiler.TypeChecker
             // Tried using regex for this and it became a hotspot.
             // There are specific unit tests for this method.
             // Do not modify without adding tests.
-            int max = 0;
-            for (int i = 0; i < message.Length; i++)
+            var max = 0;
+            for (var i = 0; i < message.Length; i++)
             {
                 if (message[i] == '{')
                 {
@@ -77,7 +76,7 @@ namespace Plang.Compiler.TypeChecker
                         continue;
                     }
 
-                    int cur = 0;
+                    var cur = 0;
                     do
                     {
                         if (!char.IsDigit(message[i]))

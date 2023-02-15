@@ -2,6 +2,6 @@ namespace Plang.Compiler
 {
     public interface ICompiler
     {
-        void Compile(ICompilationJob job);
+        int Compile(ICompilerConfiguration job);
     }
 }

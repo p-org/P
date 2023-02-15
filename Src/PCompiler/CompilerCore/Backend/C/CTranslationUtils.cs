@@ -1,9 +1,9 @@
-using Plang.Compiler.TypeChecker.AST.Declarations;
-using Plang.Compiler.TypeChecker.AST.States;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.States;
 
 namespace Plang.Compiler.Backend.C
 {
@@ -11,9 +11,9 @@ namespace Plang.Compiler.Backend.C
     {
         public static IList<T> ToOrderedListByPermutation<T>(IEnumerable<T> enumerable, Func<T, int> perm)
         {
-            List<T> items = enumerable.ToList();
+            var items = enumerable.ToList();
             IList<T> inOrder = new T[items.Count];
-            foreach (T item in items)
+            foreach (var item in items)
             {
                 inOrder[perm(item)] = item;
             }
@@ -23,16 +23,16 @@ namespace Plang.Compiler.Backend.C
 
         public static StateActionResults BuildActionSets(CompilationContext context, State state)
         {
-            NamedEventSet defersSet = new NamedEventSet(state.Name + "_DEFERS", state.SourceLocation);
-            NamedEventSet transSet = new NamedEventSet(state.Name + "_TRANS", state.SourceLocation);
-            NamedEventSet dosSet = new NamedEventSet(state.Name + "_DOS", state.SourceLocation);
+            var defersSet = new NamedEventSet(state.Name + "_DEFERS", state.SourceLocation);
+            var transSet = new NamedEventSet(state.Name + "_TRANS", state.SourceLocation);
+            var dosSet = new NamedEventSet(state.Name + "_DOS", state.SourceLocation);
 
-            List<(PEvent, Function)> dos = new List<(PEvent, Function)>();
-            List<(PEvent, int, string)> trans = new List<(PEvent, int, string)>();
+            var dos = new List<(PEvent, Function)>();
+            var trans = new List<(PEvent, int, string)>();
 
-            foreach (KeyValuePair<PEvent, TypeChecker.AST.IStateAction> eventActionPair in state.AllEventHandlers)
+            foreach (var eventActionPair in state.AllEventHandlers)
             {
-                PEvent pEvent = eventActionPair.Key;
+                var pEvent = eventActionPair.Key;
                 switch (eventActionPair.Value)
                 {
                     case EventDefer _:
@@ -46,7 +46,7 @@ namespace Plang.Compiler.Backend.C
 
                     case EventGotoState eventGotoState:
                         transSet.AddEvent(pEvent);
-                        string transFunName = eventGotoState.TransitionFunction == null
+                        var transFunName = eventGotoState.TransitionFunction == null
                             ? "_P_NO_OP"
                             : context.Names.GetNameForDecl(eventGotoState.TransitionFunction);
                         trans.Add((pEvent, context.GetDeclNumber(eventGotoState.Target), "&" + transFunName));
@@ -64,9 +64,9 @@ namespace Plang.Compiler.Backend.C
 
         public static object[] ParsePrintMessage(string message)
         {
-            List<object> parts = new List<object>();
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < message.Length; i++)
+            var parts = new List<object>();
+            var sb = new StringBuilder();
+            for (var i = 0; i < message.Length; i++)
             {
                 if (message[i] == '{')
                 {
@@ -85,7 +85,7 @@ namespace Plang.Compiler.Backend.C
                         parts.Add(sb.ToString());
                         sb.Clear();
 
-                        int position = 0;
+                        var position = 0;
                         while (++i < message.Length && '0' <= message[i] && message[i] <= '9')
                         {
                             position = 10 * position + (message[i] - '0');

@@ -26,10 +26,10 @@ namespace UnitTests.Core
         private static readonly Lazy<string> LazySolutionDirectory = new Lazy<string>(
             () =>
             {
-                string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string assemblyDirectory = Path.GetDirectoryName(assemblyPath);
+                var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                var assemblyDirectory = Path.GetDirectoryName(assemblyPath);
                 Debug.Assert(assemblyDirectory != null);
-                for (DirectoryInfo dir = new DirectoryInfo(assemblyDirectory); dir != null; dir = dir.Parent)
+                for (var dir = new DirectoryInfo(assemblyDirectory); dir != null; dir = dir.Parent)
                 {
                     if (File.Exists(Path.Combine(dir.FullName, PSolutionFileName)))
                     {

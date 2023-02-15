@@ -17,7 +17,7 @@ namespace Plang.Compiler.Backend.Symbolic
 {
     class SymbolicCodeGenerator : ICodeGenerator
     {
-        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
+        public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
         {
             var context = new CompilationContext(job);
             var javaSource = GenerateSource(context, globalScope);
@@ -29,22 +29,22 @@ namespace Plang.Compiler.Backend.Symbolic
         /// </summary>
         public bool HasCompilationStage => true;
 
-        public void Compile(ICompilationJob job)
+        public void Compile(ICompilerConfiguration job)
         {
-            var pomPath = Path.Combine(job.ProjectRootPath.FullName, "pom.xml");
-            string stdout = "";
-            string stderr = "";
+            var pomPath = Path.Combine(job.OutputDirectory.FullName, "pom.xml");
+            var stdout = "";
+            var stderr = "";
             // if the file does not exist then create the file
             if (!File.Exists(pomPath))
             {
-                string pomTemplate = Constants.pomTemplate.Replace("projectName",job.ProjectName);
+                var pomTemplate = Constants.pomTemplate.Replace("projectName",job.ProjectName);
                 File.WriteAllText(pomPath, pomTemplate);
             }
 
             // compile the csproj file
-            string[] args = new[] { "versions:use-latest-versions -DgenerateBackupPoms=false clean package -q"};
+            var args = new[] { "versions:use-latest-versions -DgenerateBackupPoms=false clean package -q"};
 
-            int exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mvn", args);
+            var exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "mvn", args);
             if (exitCode != 0)
             {
                 throw new TranslationException($"Compiling generated Symbolic Java code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
@@ -52,15 +52,15 @@ namespace Plang.Compiler.Backend.Symbolic
             else
             {
 //                job.Output.WriteInfo($"{stdout}");
-                job.Output.WriteInfo($"  {job.ProjectName} -> target/{job.ProjectName}-jar-with-dependencies.jar");
+                job.Output.WriteInfo($"  {job.ProjectName} -> {job.OutputDirectory}/target/{job.ProjectName}-jar-with-dependencies.jar");
                 job.Output.WriteInfo("Build succeeded.");
             }
 
-            string sourceDirectory = "target/sources/psym/model";
+            var sourceDirectory = "target/sources/psym/model";
 
             // create source folder
             args = new[] { $"-p {sourceDirectory}" };
-            exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "mkdir", args);
+            exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "mkdir", args);
             if (exitCode != 0)
             {
                 throw new TranslationException($"Unable to create source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
@@ -68,9 +68,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
 
             // copy source files
-            string sourceFilePath = Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName);
-            args = new[] { $"{sourceFilePath}/{job.ProjectName}Program.java {sourceDirectory}" };
-            exitCode = Compiler.RunWithOutput(job.ProjectRootPath.FullName, out stdout, out stderr, "cp", args);
+            args = new[] { $"{job.ProjectName}Program.java {sourceDirectory}" };
+            exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "cp", args);
             if (exitCode != 0)
             {
                 throw new TranslationException($"Unable to copy source file {job.ProjectName}Program.java to source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
@@ -167,7 +166,7 @@ namespace Plang.Compiler.Backend.Symbolic
             // TODO: Determine how main machine should be selected.  Should the 'main' method even
             // be generated from the P program, or should it be provided externally?
             Machine mainMachine = null;
-            foreach (Machine machine in globalScope.Machines)
+            foreach (var machine in globalScope.Machines)
             {
                 if (machine.Name == "Main")
                 {
@@ -237,7 +236,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
-            for (int i = 0; i < machine.States.Count(); i++)
+            for (var i = 0; i < machine.States.Count(); i++)
             {
                 var state = machine.States.ElementAt(i);
                 context.Write(output, $"static State {context.GetNameForDecl(state)} = ");
@@ -298,7 +297,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
-            for (int i = 0; i < machine.States.Count(); i++)
+            for (var i = 0; i < machine.States.Count(); i++)
             {
                 var state = machine.States.ElementAt(i);
                 context.Write(output, $"static State {context.GetNameForDecl(state)} = ");
@@ -375,7 +374,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 if (method is Continuation)
                 {
-                    Continuation cont = (Continuation) method;
+                    var cont = (Continuation) method;
                     context.Write(output, $"continuations.put(\"{context.GetContinuationName(cont)}\", ");
                     context.Write(output, $"(pc) -> ((continuation_outcome, msg) -> {context.GetContinuationName(cont)}(pc,");
                     context.Write(output, $"sendBuffer");
@@ -391,7 +390,7 @@ namespace Plang.Compiler.Backend.Symbolic
         private void WriteHandlerUpdate(CompilationContext context, StringWriter output, State state)
         {
             context.Write(output, $"{context.GetNameForDecl(state)}.addHandlers(");
-            bool first = true;
+            var first = true;
             foreach (var handler in state.AllEventHandlers)
             {
                 if (first)
@@ -409,7 +408,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteState(CompilationContext context, StringWriter output, State state, Machine machine)
         {
-            string temperature = Enum.GetName(state.Temperature.GetType(), state.Temperature);
+            var temperature = Enum.GetName(state.Temperature.GetType(), state.Temperature);
             context.Write(output, $"new State(\"{context.GetNameForDecl(state)}\", \"{context.GetNameForDecl(machine)}\", StateTemperature.{temperature}");
             /*
             foreach (var handler in state.AllEventHandlers)
@@ -576,8 +575,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private FunctionReturnConvention GetReturnConvention(Function function)
         {
-            bool mayExit = MayExitWithOutcome(function);
-            bool voidReturn = function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null);
+            var mayExit = MayExitWithOutcome(function);
+            var voidReturn = function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null);
             if (!voidReturn && !mayExit)
                 return FunctionReturnConvention.RETURN_VALUE;
             if (voidReturn && !mayExit)
@@ -601,7 +600,7 @@ namespace Plang.Compiler.Backend.Symbolic
             var rootPCScope = context.FreshPathConstraintScope();
 
             string returnType = null;
-            string returnStatement = "";
+            var returnStatement = "";
             switch (GetReturnConvention(function))
             {
                 case FunctionReturnConvention.RETURN_VALUE:
@@ -619,7 +618,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.Write(output, functionName);
             context.WriteLine(output, " (List<Object> args) { ");
             context.Write(output, $"    {returnStatement}GlobalFunctions.{context.GetNameForDecl(function)}(");
-            int i = 0;
+            var i = 0;
             foreach (var param in function.Signature.Parameters)
             {
                 if (i > 0)
@@ -912,13 +911,13 @@ namespace Plang.Compiler.Backend.Symbolic
                         false,
                         locationTemp =>
                         {
-                            IPExpr expr = UnnestCloneExpr(assignStmt.Value);
+                            var expr = UnnestCloneExpr(assignStmt.Value);
                             if (expr is NullLiteralExpr)
                             {
                                 context.WriteLine(output, $"{locationTemp} = {GetDefaultValueNoGuard(context, assignStmt.Location.Type)}.restrict(Guard.constFalse());");
                             } else
                             {
-                                string inlineCastPrefix = GetInlineCastPrefix(assignStmt.Value.Type, assignStmt.Location.Type, context, flowContext.pcScope);
+                                var inlineCastPrefix = GetInlineCastPrefix(assignStmt.Value.Type, assignStmt.Location.Type, context, flowContext.pcScope);
                                 context.Write(output, $"{locationTemp} = {inlineCastPrefix}");
                                 WriteExpr(context, output, flowContext.pcScope, expr);
                                 if (inlineCastPrefix != "") context.Write(output, ")");
@@ -940,7 +939,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         false,
                         locationTemp =>
                         {
-                            string inlineCastPrefix = GetInlineCastPrefix(moveStmt.FromVariable.Type, moveStmt.ToLocation.Type, context, flowContext.pcScope);
+                            var inlineCastPrefix = GetInlineCastPrefix(moveStmt.FromVariable.Type, moveStmt.ToLocation.Type, context, flowContext.pcScope);
                             context.Write(output, $"{locationTemp} = {inlineCastPrefix}");
                             WriteExpr(context, output, flowContext.pcScope, new VariableAccessExpr(moveStmt.FromVariable.SourceLocation, moveStmt.FromVariable));
                             if (inlineCastPrefix != "") context.Write(output, ")");
@@ -964,7 +963,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     if (!(returnStmt.ReturnValue is null))
                     {
                         context.Write(output, $"{CompilationContext.ReturnValue} = {CompilationContext.ReturnValue}.updateUnderGuard(");
-                        string inlineCastPrefix = GetInlineCastPrefix(returnStmt.ReturnValue.Type, context.ReturnType, context, flowContext.pcScope);
+                        var inlineCastPrefix = GetInlineCastPrefix(returnStmt.ReturnValue.Type, context.ReturnType, context, flowContext.pcScope);
                         context.Write(output, $"{flowContext.pcScope.PathConstraintVar}, {inlineCastPrefix}");
                         WriteExpr(context, output, flowContext.pcScope, returnStmt.ReturnValue);
                         if (inlineCastPrefix != "") context.Write(output, ")");
@@ -1063,7 +1062,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         throw new ArgumentOutOfRangeException("While statement condition should always be transformed to constant 'true' during IR simplification.");
                     }
 
-                    ControlFlowContext loopContext = ControlFlowContext.FreshLoopContext(context);
+                    var loopContext = ControlFlowContext.FreshLoopContext(context);
 
                     /* Prologue */
                     context.WriteLine(output, $"java.util.List<Guard> {loopContext.loopScope.Value.LoopExitsList} = new java.util.ArrayList<>();");
@@ -1095,8 +1094,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     WriteExpr(context, output, flowContext.pcScope, ifStmt.Condition);
                     context.WriteLine(output, ";");
 
-                    ControlFlowContext thenContext = flowContext.FreshBranchSubContext(context);
-                    ControlFlowContext elseContext = flowContext.FreshBranchSubContext(context);
+                    var thenContext = flowContext.FreshBranchSubContext(context);
+                    var elseContext = flowContext.FreshBranchSubContext(context);
 
                     context.WriteLine(output, $"Guard {thenContext.pcScope.PathConstraintVar} = BooleanVS.getTrueGuard({condTemp});");
                     context.WriteLine(output, $"Guard {elseContext.pcScope.PathConstraintVar} = BooleanVS.getFalseGuard({condTemp});");
@@ -1191,7 +1190,7 @@ namespace Plang.Compiler.Backend.Symbolic
                                 WriteExpr(context, output, flowContext.pcScope, insertStmt.Index);
                                 context.Write(output, ", ");
 
-                                string castPrefix = "";
+                                var castPrefix = "";
                                 if (elementType != null) {
                                     castPrefix = GetInlineCastPrefix(insertStmt.Value.Type, elementType, context, flowContext.pcScope);
                                 }
@@ -1267,7 +1266,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, ");");
                     break;
                 case ReceiveSplitStmt splitStmt:
-                    FunctionSignature signature = splitStmt.Cont.Signature;
+                    var signature = splitStmt.Cont.Signature;
                     context.WriteLine(output, $"this.receive(\"{context.GetContinuationName(splitStmt.Cont)}\", {flowContext.pcScope.PathConstraintVar});");
                     break;
                 default:
@@ -1277,7 +1276,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private void WriteContinuation(CompilationContext context, StringWriter output, Continuation continuation)
         {
-            bool voidReturn = continuation.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null);
+            var voidReturn = continuation.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null);
             if (!voidReturn)
             {
                 throw new NotImplementedException($"Receive statement in a function with non-void return type is not supported. Found in function named {continuation.ParentFunction.Name}.");
@@ -1303,7 +1302,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, ",");
             context.Write(output, "EventHandlerReturnReason outcome");
             context.WriteLine(output, ",");
-            string messageName = CompilationContext.GetVar("msg");
+            var messageName = CompilationContext.GetVar("msg");
             context.WriteLine(output, $"Message {messageName}");
             context.WriteLine(output);
             context.Write(output, ") ");
@@ -1318,11 +1317,11 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.Write(output, $"{GetSymbolicType(local.Type, true)} {CompilationContext.GetVar(local.Name)}");
                 context.WriteLine(output, $"= {CompilationContext.GetVar(continuation.StoreForLocal[local].Name)}.restrict({rootPCScope.PathConstraintVar});");
             }
-            int idx = 0;
+            var idx = 0;
             context.WriteLine(output, $"Guard deferGuard = {rootPCScope.PathConstraintVar};");
-            foreach (PEvent e in continuation.Cases.Keys)
+            foreach (var e in continuation.Cases.Keys)
             {
-                List<IPExpr> args = new List<IPExpr>();
+                var args = new List<IPExpr>();
                 context.WriteLine(output, $"Guard cond_{idx} = {messageName}.getEvent().getGuardFor({e.Name});");
                 context.WriteLine(output, $"Message {messageName}_{idx} = {messageName}.restrict(cond_{idx});");
                 context.WriteLine(output, $"if (!{messageName}_{idx}.isEmptyVS())");
@@ -1338,10 +1337,10 @@ namespace Plang.Compiler.Backend.Symbolic
                         throw new NotImplementedException($"Too many parameters ({continuation.Cases[e].Signature.Parameters.Count}) in receive case");
                     }
                     var arg = continuation.Cases[e].Signature.Parameters[0];
-                    Variable argValue = new Variable($"{arg.Name}_payload", continuation.SourceLocation, VariableRole.Param);
+                    var argValue = new Variable($"{arg.Name}_payload", continuation.SourceLocation, VariableRole.Param);
                     argValue.Type = PrimitiveType.Any;
                     context.WriteLine(output, $"UnionVS var_{arg.Name}_payload = {messageName}_{idx}.restrict({caseScope.PathConstraintVar}).getPayload();");
-                    AssignStmt assignMsg = new AssignStmt(continuation.SourceLocation, new VariableAccessExpr(continuation.SourceLocation, arg), new VariableAccessExpr(continuation.SourceLocation, argValue));
+                    var assignMsg = new AssignStmt(continuation.SourceLocation, new VariableAccessExpr(continuation.SourceLocation, arg), new VariableAccessExpr(continuation.SourceLocation, argValue));
                     context.WriteLine(output, $"{GetSymbolicType(arg.Type)} {CompilationContext.GetVar(arg.Name)} = {GetDefaultValue(context, caseScope, arg.Type)};");
                     WriteStmt(continuation, context, output, caseContext, assignMsg);
                 }
@@ -1397,15 +1396,15 @@ namespace Plang.Compiler.Backend.Symbolic
             locationType = locationType.Canonicalize();
             if ((valueType is NamedTupleType) && locationType is NamedTupleType)
             {
-                NamedTupleType valueTupleType = (NamedTupleType) valueType;
-                NamedTupleType locationTupleType = (NamedTupleType) locationType;
+                var valueTupleType = (NamedTupleType) valueType;
+                var locationTupleType = (NamedTupleType) locationType;
 
                 if (valueTupleType.Fields.Count != locationTupleType.Fields.Count)
                         throw new NotImplementedException(
                             $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
                             $"from value of type {valueType.CanonicalRepresentation}");
 
-                for(int i = 0; i < valueTupleType.Fields.Count; i++)
+                for(var i = 0; i < valueTupleType.Fields.Count; i++)
                 {
                     if (!valueTupleType.Fields[i].Name.Equals(locationTupleType.Fields[i].Name))
                     {
@@ -1420,15 +1419,15 @@ namespace Plang.Compiler.Backend.Symbolic
 
             if ((valueType is TupleType) && locationType is TupleType)
             {
-                TupleType valueTupleType = (TupleType) valueType;
-                TupleType locationTupleType = (TupleType) locationType;
+                var valueTupleType = (TupleType) valueType;
+                var locationTupleType = (TupleType) locationType;
 
                 if (valueTupleType.Types.Count != locationTupleType.Types.Count)
                         throw new NotImplementedException(
                             $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
                             $"from value of type {valueType.CanonicalRepresentation}");
 
-                for(int i = 0; i < valueTupleType.Types.Count; i++)
+                for(var i = 0; i < valueTupleType.Types.Count; i++)
                 {
                     CheckIsSupportedAssignment(valueTupleType.Types[i], locationTupleType.Types[i]);
                 }
@@ -1573,7 +1572,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     throw new NotImplementedException("Cannot handle foreign function calls that can exit or return BDDs");
             }
             // context.Write(output, $"({lambdaArgs}) -> wrapper__{context.GetNameForDecl(function)}({lambdaArgs})");
-            for (int i = 0; i < args.Count(); i++)
+            for (var i = 0; i < args.Count(); i++)
             {
                 var param = args.ElementAt(i);
                 context.Write(output, ", ");
@@ -1640,11 +1639,11 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.Write(output, ", outcome");
 
 
-            for (int i = 0; i < args.Count(); i++)
+            for (var i = 0; i < args.Count(); i++)
             {
                 var param = args.ElementAt(i);
-                bool castToAny = GetSymbolicType(function.Signature.Parameters.ElementAt(i).Type, true) == "UnionVS" &&
-                                                 GetSymbolicType(param.Type, true) != "UnionVS";
+                var castToAny = GetSymbolicType(function.Signature.Parameters.ElementAt(i).Type, true) == "UnionVS" &&
+                                GetSymbolicType(param.Type, true) != "UnionVS";
                 context.Write(output, ", ");
                 if (castToAny)
                 {
@@ -1706,9 +1705,9 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (lvalue)
             {
                 case MapAccessExpr mapAccessExpr:
-                    PLanguageType valueType = mapAccessExpr.Type;
-                    IPExpr indexExpr = mapAccessExpr.IndexExpr;
-                    PLanguageType indexType = indexExpr.Type;
+                    var valueType = mapAccessExpr.Type;
+                    var indexExpr = mapAccessExpr.IndexExpr;
+                    var indexType = indexExpr.Type;
 
                     WriteWithLValueMutationContext(
                         context,
@@ -1759,7 +1758,7 @@ namespace Plang.Compiler.Backend.Symbolic
                             if (needOrigValue)
                             {
                                 context.Write(output, $" = ({fieldType})");
-                                string namedPrefix = GetInlineCastPrefix(namedTupleAccessExpr.Entry.Type, namedTupleAccessExpr.Type, context, pcScope);
+                                var namedPrefix = GetInlineCastPrefix(namedTupleAccessExpr.Entry.Type, namedTupleAccessExpr.Type, context, pcScope);
                                 context.Write(output, namedPrefix);
                                 context.Write(output, $"{namedTupleTemp}.getField(\"{namedTupleAccessExpr.FieldName}\");");
                                 if (namedPrefix != "") context.Write(output, ")");
@@ -1796,7 +1795,7 @@ namespace Plang.Compiler.Backend.Symbolic
                             if (needOrigValue)
                             {
                                 context.Write(output, $" = ({fieldType})");
-                                string tuplePrefix = GetInlineCastPrefix((tupleAccessExpr.SubExpr.Type as TupleType).Types[tupleAccessExpr.FieldNo], tupleAccessExpr.Type, context, pcScope);
+                                var tuplePrefix = GetInlineCastPrefix((tupleAccessExpr.SubExpr.Type as TupleType).Types[tupleAccessExpr.FieldNo], tupleAccessExpr.Type, context, pcScope);
                                 context.Write(output, tuplePrefix);
                                 context.Write(output, $"{tupleTemp}.getField({tupleAccessExpr.FieldNo})");
                                 if (tuplePrefix != "") context.Write(output, ")");
@@ -1922,8 +1921,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private static string TransformPrintMessage(string message)
         {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < message.Length; i++)
+            var sb = new StringBuilder();
+            for (var i = 0; i < message.Length; i++)
             {
                 if (message[i] == '\'')
                 {
@@ -2003,7 +2002,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
                     if (!(isPrimitive || isEquality))
                     {
-                        string str = $"lhs type: {binOpExpr.Lhs}, rhs type: {binOpExpr.Rhs}" ;
+                        var str = $"lhs type: {binOpExpr.Lhs}, rhs type: {binOpExpr.Rhs}" ;
                         throw new NotImplementedException("Binary operations are currently only supported between primitive types and enums | " + str);
                     }
 
@@ -2017,7 +2016,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output, ".symbolicEquals(");
 
                         {
-                                string castPrefix = "";
+                                var castPrefix = "";
                                 castPrefix = GetInlineCastPrefix(binOpExpr.Rhs.Type, binOpExpr.Lhs.Type, context, pcScope);
                                 context.Write(output, castPrefix);
                                 WriteExpr(context, output, pcScope, binOpExpr.Rhs);
@@ -2065,7 +2064,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output,  GetDefaultValue(context, pcScope, castExpr.Type));
                     } else
                     {
-                        string castPrefix = GetInlineCastPrefix(castExpr.SubExpr.Type, castExpr.Type, context, pcScope);
+                        var castPrefix = GetInlineCastPrefix(castExpr.SubExpr.Type, castExpr.Type, context, pcScope);
                         context.Write(output, castPrefix);
                         WriteExpr(context, output, pcScope, castExpr.SubExpr);
                         if (castPrefix != "") context.Write(output, ")");
@@ -2107,7 +2106,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         break;
                     }
                 case KeysExpr keyExpr:
-                    MapType keyArgType = (MapType) keyExpr.Expr.Type.Canonicalize();
+                    var keyArgType = (MapType) keyExpr.Expr.Type.Canonicalize();
                     WriteExpr(context, output, pcScope, keyExpr.Expr);
                     context.Write(output, $".getKeys().restrict({pcScope.PathConstraintVar})");
                     break;
@@ -2138,7 +2137,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     context.Write(output, $"(({GetSymbolicType(namedTupleAccessExpr.Type)})(");
-                    string prefix = GetInlineCastPrefix(namedTupleAccessExpr.Entry.Type, namedTupleAccessExpr.Type, context, pcScope);
+                    var prefix = GetInlineCastPrefix(namedTupleAccessExpr.Entry.Type, namedTupleAccessExpr.Type, context, pcScope);
                     context.Write(output, prefix);
                     context.Write(output, "(");
                     WriteExpr(context, output, pcScope, namedTupleAccessExpr.SubExpr);
@@ -2154,7 +2153,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, $"({GetSymbolicType(tupleAccessExpr.Type)})(");
                     var tupleType = (tupleAccessExpr.SubExpr.Type.Canonicalize() as TupleType);
-                    string tuplePrefix = GetInlineCastPrefix(tupleType.Types[tupleAccessExpr.FieldNo], tupleAccessExpr.Type, context, pcScope);
+                    var tuplePrefix = GetInlineCastPrefix(tupleType.Types[tupleAccessExpr.FieldNo], tupleAccessExpr.Type, context, pcScope);
                     context.Write(output, "(");
                     context.Write(output, tuplePrefix);
                     WriteExpr(context, output, pcScope, tupleAccessExpr.SubExpr);
@@ -2164,13 +2163,13 @@ namespace Plang.Compiler.Backend.Symbolic
                 case NamedTupleExpr namedTupleExpr:
                     context.Write(output, "new NamedTupleVS(");
                     var fields = (namedTupleExpr.Type.Canonicalize() as NamedTupleType).Fields;
-                    NamedTupleType nttype = namedTupleExpr.Type as NamedTupleType;
-                    for (int i = 0; i < namedTupleExpr.TupleFields.Count; i++)
+                    var nttype = namedTupleExpr.Type as NamedTupleType;
+                    for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
                     {
                         var fieldName = fields[i].Name;
                         var field = namedTupleExpr.TupleFields[i];
                         context.Write(output, $"\"{fieldName}\", ");
-                        CastExpr castExpr = new CastExpr(field.SourceLocation, field, nttype.Types[i]);
+                        var castExpr = new CastExpr(field.SourceLocation, field, nttype.Types[i]);
                         WriteExpr(context, output, pcScope, castExpr);
                         if (i + 1 != namedTupleExpr.TupleFields.Count)
                             context.Write(output, ", ");
@@ -2179,10 +2178,10 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
                 case UnnamedTupleExpr unnamedTupleExpr:
                     context.Write(output, "new TupleVS(");
-                    TupleType ttype = (TupleType) unnamedTupleExpr.Type;
-                    for (int i = 0; i < unnamedTupleExpr.TupleFields.Count; i++)
+                    var ttype = (TupleType) unnamedTupleExpr.Type;
+                    for (var i = 0; i < unnamedTupleExpr.TupleFields.Count; i++)
                     {
-                        CastExpr castExpr = new CastExpr(unnamedTupleExpr.SourceLocation, unnamedTupleExpr.TupleFields[i], ttype.Types[i]);
+                        var castExpr = new CastExpr(unnamedTupleExpr.SourceLocation, unnamedTupleExpr.TupleFields[i], ttype.Types[i]);
                         WriteExpr(context, output, pcScope, castExpr);
                         if (i + 1 != unnamedTupleExpr.TupleFields.Count)
                             context.Write(output, ", ");
@@ -2229,7 +2228,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         context.Write(output, ".contains(");
 
                     {
-                        string castPrefix = "";
+                        var castPrefix = "";
                         if (elementType != null) {
                             castPrefix = GetInlineCastPrefix(containsExpr.Item.Type, elementType, context, pcScope);
                         }
@@ -2289,7 +2288,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     }
                     else
                     {
-                        string baseString = TransformPrintMessage(stringExpr.BaseString);
+                        var baseString = TransformPrintMessage(stringExpr.BaseString);
                         context.Write(output, $"new { GetSymbolicType(PrimitiveType.String) }(MessageFormat.format(\"{baseString}\"");
                     }
                     foreach(var arg in stringExpr.Args)
@@ -2330,7 +2329,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 context.Write(output, "new UnionVS (");
                 context.Write(output, "new TupleVS (");
-                for (int i = 0; i < ctorArguments.Count; i++)
+                for (var i = 0; i < ctorArguments.Count; i++)
                 {
                     WriteExpr(context, output, pcScope, ctorArguments[i]);
                     if (i != ctorArguments.Count - 1) {
@@ -2402,7 +2401,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
                     return expr;
                 default:
-                    List<IPExpr> newListArgs = new List<IPExpr>();
+                    var newListArgs = new List<IPExpr>();
                     newListArgs.Add(expr);
                     return new StringExpr(expr.SourceLocation, "{0}", newListArgs);
             }
@@ -2557,7 +2556,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         private string GetDefaultValue(CompilationContext context, PathConstraintScope pcScope, PLanguageType type)
         {
-            string unguarded = GetDefaultValueNoGuard(context, type);
+            var unguarded = GetDefaultValueNoGuard(context, type);
             var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
             return guarded;
         }

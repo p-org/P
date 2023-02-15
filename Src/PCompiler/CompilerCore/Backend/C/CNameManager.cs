@@ -1,11 +1,11 @@
-﻿using Plang.Compiler.TypeChecker.AST;
-using Plang.Compiler.TypeChecker.AST.Declarations;
-using Plang.Compiler.TypeChecker.AST.States;
-using Plang.Compiler.TypeChecker.Types;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.C
 {
@@ -49,7 +49,7 @@ namespace Plang.Compiler.Backend.C
 
         public string GetReturnLabel(Function function, string hint = "p_return")
         {
-            if (retLabels.TryGetValue(function, out string name))
+            if (retLabels.TryGetValue(function, out var name))
             {
                 return name;
             }
@@ -61,14 +61,14 @@ namespace Plang.Compiler.Backend.C
 
         public string GetNameForFunctionImpl(Function function)
         {
-            if (funcNames.TryGetValue(function, out string name))
+            if (funcNames.TryGetValue(function, out var name))
             {
                 return name;
             }
 
-            string namePrefix = NamePrefix;
-            string methodName = function.IsAnon ? "Anon" : function.Name;
-            string nameSuffix = "_IMPL";
+            var namePrefix = NamePrefix;
+            var methodName = function.IsAnon ? "Anon" : function.Name;
+            var nameSuffix = "_IMPL";
             name = UniquifyName(namePrefix + methodName + nameSuffix);
 
             funcNames.Add(function, name);
@@ -79,7 +79,7 @@ namespace Plang.Compiler.Backend.C
         {
             type = type.Canonicalize();
 
-            if (typeNames.TryGetValue(type, out string name))
+            if (typeNames.TryGetValue(type, out var name))
             {
                 return name;
             }
@@ -92,7 +92,7 @@ namespace Plang.Compiler.Backend.C
 
         public string GetNameForForeignTypeDecl(ForeignType foreignType)
         {
-            if (foreignTypeDeclNames.TryGetValue(foreignType, out string name))
+            if (foreignTypeDeclNames.TryGetValue(foreignType, out var name))
             {
                 return name;
             }
@@ -104,7 +104,7 @@ namespace Plang.Compiler.Backend.C
 
         protected override string ComputeNameForDecl(IPDecl decl)
         {
-            string enumName = "";
+            var enumName = "";
 #pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (decl)
             {
@@ -130,7 +130,7 @@ namespace Plang.Compiler.Backend.C
             }
 #pragma warning restore CCN0002 // Non exhaustive patterns in switch block
 
-            if (DeclNameParts.TryGetValue(decl.GetType(), out string declTypePart))
+            if (DeclNameParts.TryGetValue(decl.GetType(), out var declTypePart))
             {
                 declTypePart += "_";
             }
@@ -139,7 +139,7 @@ namespace Plang.Compiler.Backend.C
                 declTypePart = "";
             }
 
-            string name = decl.Name;
+            var name = decl.Name;
             if (decl is State state)
             {
                 name = state.QualifiedName;

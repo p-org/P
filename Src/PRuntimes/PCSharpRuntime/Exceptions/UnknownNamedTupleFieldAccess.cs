@@ -7,7 +7,7 @@ namespace Plang.CSharpRuntime.Exceptions
     {
         public static UnknownNamedTupleFieldAccess FromFields(string expectedField, IEnumerable<string> actualFields)
         {
-            string msg =
+            var msg =
                 "Field " + expectedField + " absent from NamedTuple with fields " + String.Join(",", actualFields);
             return new UnknownNamedTupleFieldAccess(msg);
         }

@@ -1,5 +1,5 @@
-﻿using Plang.Compiler.TypeChecker;
-using System.IO;
+﻿using System.IO;
+using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler.Backend
 {
@@ -7,7 +7,7 @@ namespace Plang.Compiler.Backend
     {
         private bool lineHasBeenIndented;
 
-        protected CompilationContextBase(ICompilationJob job)
+        protected CompilationContextBase(ICompilerConfiguration job)
         {
             Job = job;
             Handler = job.Handler;
@@ -15,7 +15,7 @@ namespace Plang.Compiler.Backend
             LocationResolver = job.LocationResolver;
         }
 
-        public ICompilationJob Job { get; }
+        public ICompilerConfiguration Job { get; }
         private int IndentationLevel { get; set; }
 
         public string ProjectName { get; }
@@ -48,7 +48,7 @@ namespace Plang.Compiler.Backend
             // Do not indent preprocessor lines.
             if (!(format.Length > 0 && format[0] == '#') && !lineHasBeenIndented)
             {
-                for (int j = 0; j < 4 * IndentationLevel; j++)
+                for (var j = 0; j < 4 * IndentationLevel; j++)
                 {
                     output.Write(' ');
                 }
@@ -83,7 +83,7 @@ namespace Plang.Compiler.Backend
             // Do not indent preprocessor lines.
             if (!format.StartsWith("#") && !lineHasBeenIndented)
             {
-                for (int j = 0; j < 4 * IndentationLevel; j++)
+                for (var j = 0; j < 4 * IndentationLevel; j++)
                 {
                     output.Write(' ');
                 }

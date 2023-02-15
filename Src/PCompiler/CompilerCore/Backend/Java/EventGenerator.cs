@@ -1,6 +1,6 @@
-using Plang.Compiler.TypeChecker.AST.Declarations;
 using System.Collections.Generic;
 using System.Linq;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.Backend.Java
 {
@@ -30,11 +30,11 @@ namespace Plang.Compiler.Backend.Java
 
         private IEnumerable<PEvent> monitoredEvents(IEnumerable<Machine> machines)
         {
-            HashSet<PEvent> events = new HashSet<PEvent>();
+            var events = new HashSet<PEvent>();
 
-            foreach (Machine m in machines.Where(m => m.IsSpec))
+            foreach (var m in machines.Where(m => m.IsSpec))
             {
-                foreach (PEvent e in m.Observes.Events)
+                foreach (var e in m.Observes.Events)
                 {
                     events.Add(e);
                 }
@@ -45,15 +45,15 @@ namespace Plang.Compiler.Backend.Java
 
         private void WriteEventDecl(PEvent e)
         {
-            string eventName = Names.GetNameForDecl(e);
-            TypeManager.JType argType = Types.JavaTypeFor(e.PayloadType);
+            var eventName = Names.GetNameForDecl(e);
+            var argType = Types.JavaTypeFor(e.PayloadType);
 
-            string payloadType = argType.TypeName;
-            string payloadRefType = argType.ReferenceTypeName;
+            var payloadType = argType.TypeName;
+            var payloadRefType = argType.ReferenceTypeName;
 
             WriteLine($"public static class {eventName} extends {Constants.PEventsClass}<{payloadRefType}> {{");
 
-            bool hasPayload = !(argType is TypeManager.JType.JVoid);
+            var hasPayload = !(argType is TypeManager.JType.JVoid);
             if (hasPayload)
             {
                 WriteLine($"public {eventName}({payloadType} p) {{ this.payload = p; }}");

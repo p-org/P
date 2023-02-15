@@ -1,6 +1,6 @@
+using System;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.Types;
-using System;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {

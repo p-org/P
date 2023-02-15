@@ -35,7 +35,7 @@ namespace Plang.Compiler.Backend.Java
         /// <returns></returns>
         internal static IEnumerable<string> ImportStatements()
         {
-            List<string> classes = JreDefaultImports.ToList();
+            var classes = JreDefaultImports.ToList();
             classes.Sort();
 
             return classes.Select(pkg => $"import {pkg};");
@@ -280,7 +280,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         /// </summary>
         private static HashSet<string> ExtractReservedWords()
         {
-            Type self = typeof(Constants);
+            var self = typeof(Constants);
             return self.GetFields()
                 .Where(f => f.IsStatic && f.FieldType == typeof(string))
                 .Select(f => (string)f.GetValue(null) /* passed null b/c all our fields are static */ )

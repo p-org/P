@@ -1,5 +1,5 @@
-using Antlr4.Runtime;
 using System.Collections.Generic;
+using Antlr4.Runtime;
 
 namespace Plang.Compiler.TypeChecker.AST.Statements
 {
@@ -11,7 +11,7 @@ namespace Plang.Compiler.TypeChecker.AST.Statements
         {
             SourceLocation = sourceLocation;
             this.statements = new List<IPStmt>();
-            foreach (IPStmt statement in statements)
+            foreach (var statement in statements)
             {
                 if (statement is CompoundStmt compound)
                 {

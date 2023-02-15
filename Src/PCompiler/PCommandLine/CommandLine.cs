@@ -86,19 +86,21 @@ namespace Plang
                 engine.Run();
                 CommandLineOutput.WriteInfo(engine.GetReport());
             }
-
-            if (configuration.ReportCodeCoverage || configuration.ReportActivityCoverage)
+            else
             {
-                // This has to be here because both forms of coverage require it.
-                CodeCoverageInstrumentation.SetOutputDirectory(configuration, makeHistory: true);
+                if (configuration.ReportCodeCoverage || configuration.ReportActivityCoverage)
+                {
+                    // This has to be here because both forms of coverage require it.
+                    CodeCoverageInstrumentation.SetOutputDirectory(configuration, makeHistory: true);
+                }
+
+                Console.WriteLine(".. Checking " + configuration.AssemblyToBeAnalyzed);
+
+                // Creates and runs the testing process scheduler.
+                TestingProcessScheduler.Create(configuration).Run();
+            
+                Console.WriteLine(". Done");
             }
-
-            Console.WriteLine("Testing " + configuration.AssemblyToBeAnalyzed);
-
-            // Creates and runs the testing process scheduler.
-            TestingProcessScheduler.Create(configuration).Run();
-
-            Console.WriteLine(". Done");
         }
 
         /// <summary>

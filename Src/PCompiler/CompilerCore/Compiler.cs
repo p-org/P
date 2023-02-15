@@ -20,7 +20,7 @@ namespace Plang.Compiler
             PParser.ProgramContext[] trees = null;
             try
             {
-                trees = job.InputFiles.Select(file =>
+                trees = job.InputPFiles.Select(file =>
                 {
                     var tree = Parse(job, new FileInfo(file));
                     job.LocationResolver.RegisterRoot(tree, new FileInfo(file));

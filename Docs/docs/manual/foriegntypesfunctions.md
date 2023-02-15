@@ -7,9 +7,9 @@
 
 
 !!! hint "Recommendation: Using Foreign Types and Functions"
-    Programmers can consider implementing a particular type as Foreign type in P if its a complicated data structure and implementing them using P types is either not possible or too cumbersome. For example, P does not support declaring recursive data types, and hence, implementing a linked-list or a tree like data-structure in P is hard. Hence, we recommend programmers to implement such types as foreign types.
+    Programmers can consider implementing a particular type as Foreign type in P if it's a complicated data structure and implementing them using P types is either not possible or too cumbersome. For example, P does not support declaring recursive data types, and hence, implementing a linked-list or a tree like data-structure in P is hard. Hence, we recommend programmers to implement such types as foreign types.
 
-    When modeling complex systems, many times programmers need to implement complicated logic/functions that manipulate or iterate over data-structures. Such functions can be easily implemented in foreign languages like Java and C# as compared to P. For example, iterating over collections and manipulating them is easier in Java and C#, and verbose in P as P only supports `while` loops and does not support iterators like `foreach`. Also, functions that manipulate foreign types are implemented as foreign functions.   
+    When modeling complex systems, many times programmers need to implement complicated logic/functions that manipulate or iterate over data-structures. Such functions can be easily implemented in foreign languages like Java and C# as compared to P. For example, sorting a list is easier in Java and C# through standard library functions and verbose in P. Also, functions that manipulate foreign types are implemented as foreign functions.   
 
 The [Two Phase Commit](../tutorial/twophasecommit.md) example had introduced the foreign function feature. We will now use a simple PriorityQueue example to go into the details of foreign interface in P.
 
@@ -21,10 +21,10 @@ The PriorityQueue [project](https://github.com/p-org/P/blob/master/Tutorial/Prio
 
 #### P Source
 
-The [PriorityQueue.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p) file declares (1) a foreign type [`tPriorityQueue`](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p#L3) and uses (2) [global foreign functions](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p#L7-L22) to operate or interact with the priority queue.
+The [PriorityQueue.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p) file declares (1) a foreign type [`tPriorityQueue`](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p#L2) and uses (2) [global foreign functions](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p#L7-L22) to operate or interact with the priority queue.
 
 !!! danger "P has Value Semantics (no Pass by Reference!!)"
-    Note that P does not support pass by references, everything in P is always pass by value. Hence the functions above must return a priority queue after adding the element into the queue (mutated queue).
+    Note that P does not support pass by references, everything in P is always pass by value. Hence, the functions above must return a priority queue after adding the element into the queue (mutated queue).
 
 
 
@@ -39,62 +39,76 @@ The implementation of the `tPriorityQueue` is available in [PriorityQueue.cs](ht
 !!! note ""
     If you want to pretty print the foreign type value, you can also override the ToString() function in their implementation.
 
-The implementation of the global functions in PriorityQueue.p is available in [PriorityQueueFunctions.cs](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PForeign/PriorityQueueFunctions.cs).
+The implementation of the global functions in [PriorityQueue.p](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PSrc/PriorityQueue.p) is available in [PriorityQueueFunctions.cs](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PForeign/PriorityQueueFunctions.cs).
 Finally, the implementation of the local function in the Client machine is available in [ClientFunctions.cs](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PForeign/ClientFunctions.cs).
 
-#### Compiling PriorityQueue project
+### Compiling PriorityQueue
 
-Run the following command:
+Navigate to the [PriorityQueue](https://github.com/p-org/P/tree/master/Tutorial/PriorityQueue) folder and run the following command to compile the PriorityQueue project:
 
-``` shell
-cd P/Tutorial/PriorityQueue
-pc -proj:PriorityQueue.pproj
+```shell
+p compile
 ```
 
 ??? note "Expected Output"
     ```
+    $ p compile
+
+    .. Searching for a P project file *.pproj locally in the current folder
+    .. Found P project file: P/Tutorial/PriorityQueue/PriorityQueue.pproj
     ----------------------------------------
-    ==== Loading project file: PriorityQueue.pproj
+    ==== Loading project file: P/Tutorial/PriorityQueue/PriorityQueue.pproj
     ....... includes p file: P/Tutorial/PriorityQueue/PSrc/PriorityQueue.p
     ....... includes p file: P/Tutorial/PriorityQueue/PTst/Client.p
     ....... includes p file: P/Tutorial/PriorityQueue/PTst/TestScripts.p
+    ....... includes foreign file: P/Tutorial/PriorityQueue/PForeign/PriorityQueue.cs
+    ....... includes foreign file: P/Tutorial/PriorityQueue/PForeign/PriorityQueueFunctions.cs
+    ....... includes foreign file: P/Tutorial/PriorityQueue/PForeign/ClientFunctions.cs
     ----------------------------------------
     ----------------------------------------
-    Parsing ..
+    Parsing ...
     Type checking ...
-    Code generation ....
-    Generated PriorityQueue.cs
+    Code generation ...
+    Generated PriorityQueue.cs.
     ----------------------------------------
-    Compiling PriorityQueue.csproj ..
-
-    Microsoft (R) Build Engine version 16.10.2+857e5a733 for .NET
-    Copyright (C) Microsoft Corporation. All rights reserved.
-
-      Determining projects to restore...
-      Restored P/Tutorial/PriorityQueue/PriorityQueue.csproj (in 757 ms).
-      PriorityQueue -> P/Tutorial/PriorityQueue/POutput/netcoreapp3.1/PriorityQueue.dll
-
+    Compiling PriorityQueue...
+    MSBuild version 17.3.1+2badb37d1 for .NET
+    Determining projects to restore...
+    Restored P/Tutorial/PriorityQueue/PGenerated/PriorityQueue.csproj (in 124 ms).
+    2 of 3 projects are up-to-date for restore.
+    CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
+    CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
+    PriorityQueue -> P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/PriorityQueue.dll
+    
     Build succeeded.
-        0 Warning(s)
-        0 Error(s)
+    0 Warning(s)
+    0 Error(s)
+    
+    Time Elapsed 00:00:02.54
+    
+    
+    ----------------------------------------
     ```
 
-#### Running PriorityQueue test case
+### Checking PriorityQueue
 
-Run the following command to run the test case [`tcCheckPriorityQueue`](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/TestScripts.p#L2):
+Run the following command to run the test case [`tcCheckPriorityQueue`](https://github.com/p-org/P/blob/master/Tutorial/PriorityQueue/PTst/TestScripts.p#L2) in verbose mode:
 
-```
-pmc <path>/PriorityQueue.dll -v
+```shell
+p check -v
 ```
 
 ??? note "Expected Output"
-    ```
-    . Testing P/Tutorial/PriorityQueue/POutput/netcoreapp3.1/PriorityQueue.dll
-    Starting TestingProcessScheduler in process 49983
-    ... Created '1' testing task.
-    ... Task 0 is using 'random' strategy (seed:3421113095).
+    ``` xml
+    $ p check -v
+
+    .. Searching for a P compiled file locally in the current folder
+    .. Found a P compiled file: P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/PriorityQueue.dll
+    .. Checking P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/PriorityQueue.dll
+    .. Test case :: tcCheckPriorityQueue
+    ... Checker is using 'random' strategy (seed:2071744918).
     ..... Iteration #1
-    <TestLog> Running test 'PImplementation.tcCheckPriorityQueue.Execute'.
+    <TestLog> Running test 'tcCheckPriorityQueue'.
     <CreateLog> Plang.CSharpRuntime._GodMachine(1) was created by task '2'.
     <CreateLog> PImplementation.Client(2) was created by Plang.CSharpRuntime._GodMachine(1).
     <StateLog> PImplementation.Client(2) enters state 'Init'.
@@ -102,14 +116,25 @@ pmc <path>/PriorityQueue.dll -v
     <PrintLog> Adding Element in the Priority Queue!
     <PrintLog> Adding Element in the Priority Queue!
     <PrintLog> Adding Element in the Priority Queue!
-    <PrintLog> Choosing element at location: 1
+    <PrintLog> Choosing element at location: 0
     <PrintLog> --------------
     <PrintLog> Hello
     <PrintLog> World
     <PrintLog> !!
     <PrintLog> 123
     <PrintLog> --------------
-
+    ... ### Process 0 is terminating
+    ... Emitting coverage reports:
+    ..... Writing P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/Output/PriorityQueue.dll/POutput/PriorityQueue.dgml
+    ..... Writing P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/Output/PriorityQueue.dll/POutput/PriorityQueue.coverage.txt
+    ..... Writing P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/Output/PriorityQueue.dll/POutput/PriorityQueue.sci
+    ... Checking statistics:
+    ..... Found 0 bugs.
+    ... Scheduling statistics:
+    ..... Explored 1 schedule: 1 fair and 0 unfair.
+    ..... Number of scheduling points in fair terminating schedules: 5 (min), 5 (avg), 5 (max).
+    ... Elapsed 0.2717673 sec.
+    . Done
     ```
 
-Hope you exploit the P Foreign interface to implement and test complex systems. If you have any questions, please feel free to post them in the discussions or issues.
+Hope you exploit the P Foreign interface to implement and check complex systems. If you have any questions, please feel free to post them in the discussions or issues.

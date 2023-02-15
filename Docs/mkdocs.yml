@@ -63,10 +63,10 @@ nav:
       - Structure of a P Program: advanced/structureOfPProgram.md
       - P Project File: advanced/PProject.md
       - Debugging Error Traces (counter examples): advanced/debuggingerror.md
-      - PSym:
-        - What is PSym?: advanced/psym/whatisPSym.md
-        - Installing PSym: advanced/psym/install.md
-        - Using PSym: advanced/psym/usingPSym.md
+#      - PSym:
+#        - What is PSym?: advanced/psym/whatisPSym.md
+#        - Installing PSym: advanced/psym/install.md
+#        - Using PSym: advanced/psym/usingPSym.md
   - Language Manual:
       - P Program (Outline): manualoutline.md
       - P DataTypes: manual/datatypes.md
@@ -121,4 +121,4 @@ extra:
     provider: google
     property: G-0WWG87T6BN
 
-copyright: Copyright &copy; 2022 P Developers
+copyright: Copyright &copy; 2023 P Developers

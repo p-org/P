@@ -238,7 +238,8 @@ You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue 
                 checkerConfiguration.SchedulingStrategy != "pct" &&
                 checkerConfiguration.SchedulingStrategy != "fairpct" &&
                 checkerConfiguration.SchedulingStrategy != "probabilistic" &&
-                checkerConfiguration.SchedulingStrategy != "dfs")
+                checkerConfiguration.SchedulingStrategy != "dfs" &&
+                checkerConfiguration.SchedulingStrategy != "replay")
             {
                 Error.ReportAndExit("Please provide a scheduling strategy (see --sch* options)");
             }

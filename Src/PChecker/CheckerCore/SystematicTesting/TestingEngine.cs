@@ -137,7 +137,7 @@ namespace PChecker.SystematicTesting
             try
             {
                 testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, checkerConfiguration.TestCaseName);
-                Console.Out.WriteLine($"Test case :: {testMethodInfo.Name}");
+                Console.Out.WriteLine($".. Test case :: {testMethodInfo.Name}");
             }
             catch
             {
@@ -522,7 +522,7 @@ namespace PChecker.SystematicTesting
             if (IsReplayModeEnabled)
             {
                 var report = new StringBuilder();
-                report.AppendFormat("... Reproduced {0} bug{1}{2}.", TestReport.NumOfFoundBugs,
+                report.AppendFormat("... Reproduced {0} bug{1}.", TestReport.NumOfFoundBugs,
                     TestReport.NumOfFoundBugs == 1 ? string.Empty : "s");
                     report.AppendLine();
                 report.Append($"... Elapsed {Profiler.Results()} sec.");

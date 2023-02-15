@@ -173,7 +173,7 @@ machine CoffeeMakerControlPanel
   state CoffeeMakerDoorOpened {
     on eCloseGroundsDoor do {
       assert cofferMakerState != NotWarmedUp;
-      assert CoffeeMakerReady == Ready;
+      assert cofferMakerState == Ready;
       goto CoffeeMakerReady;
     }
 

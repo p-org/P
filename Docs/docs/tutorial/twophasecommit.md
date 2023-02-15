@@ -162,8 +162,8 @@ p check
     $ p check
 
     .. Searching for a P compiled file locally in the current folder
-    .. Found a P compiled file: /Users/goelaman/work/ws/version/github/P/Tutorial/2_TwoPhaseCommit/PGenerated/POutput/net6.0/TwoPhaseCommit.dll
-    .. Checking /Users/goelaman/work/ws/version/github/P/Tutorial/2_TwoPhaseCommit/PGenerated/POutput/net6.0/TwoPhaseCommit.dll
+    .. Found a P compiled file: P/Tutorial/2_TwoPhaseCommit/PGenerated/POutput/net6.0/TwoPhaseCommit.dll
+    .. Checking P/Tutorial/2_TwoPhaseCommit/PGenerated/POutput/net6.0/TwoPhaseCommit.dll
     Error: We found '3' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
     Possible options are:
     tcSingleClientNoFailure

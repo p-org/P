@@ -78,21 +78,25 @@ The test scenarios folder for FailureDetector ([PTst](https://github.com/p-org/P
 
 Run the following command to compile the FailureDetector project:
 
-```
-pc -proj:FailureDetector.pproj
+```shell
+p compile
 ```
 
 ??? note "Expected Output"
     ```
+    $ p compile
+
+    .. Searching for a P project file *.pproj locally in the current folder
+    .. Found P project file: P/Tutorial/4_FailureDetector/FailureDetector.pproj
     ----------------------------------------
-    ==== Loading project file: FailureDetector.pproj
+    ==== Loading project file: P/Tutorial/4_FailureDetector/FailureDetector.pproj
     ....... includes p file: P/Tutorial/4_FailureDetector/PSrc/FailureDetectorModules.p
+    ....... includes p file: P/Tutorial/4_FailureDetector/PSrc/Client.p
     ....... includes p file: P/Tutorial/4_FailureDetector/PSrc/FailureDetector.p
     ....... includes p file: P/Tutorial/4_FailureDetector/PSrc/Node.p
     ....... includes p file: P/Tutorial/4_FailureDetector/PSpec/ReliableFailureDetector.p
     ....... includes p file: P/Tutorial/4_FailureDetector/PTst/TestDriver.p
     ....... includes p file: P/Tutorial/4_FailureDetector/PTst/TestScript.p
-    ....... includes p file: P/Tutorial/4_FailureDetector/PTst/Client.p
     ==== Loading project file: P/Tutorial/Common/Timer/Timer.pproj
     ....... includes p file: P/Tutorial/Common/Timer/PSrc/Timer.p
     ....... includes p file: P/Tutorial/Common/Timer/PSrc/TimerModules.p
@@ -101,32 +105,36 @@ pc -proj:FailureDetector.pproj
     ....... includes p file: P/Tutorial/Common/FailureInjector/PSrc/FailureInjector.p
     ----------------------------------------
     ----------------------------------------
-    Parsing ..
+    Parsing ...
     Type checking ...
-    Code generation ....
-    Generated FailureDetector.cs
+    Code generation ...
+    Generated FailureDetector.cs.
     ----------------------------------------
-    Compiling FailureDetector.csproj ..
-
-    Microsoft (R) Build Engine version 16.10.2+857e5a733 for .NET
-    Copyright (C) Microsoft Corporation. All rights reserved.
-
+    Compiling FailureDetector...
+    MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    Restored P/Tutorial/4_FailureDetector/FailureDetector.csproj (in 880 ms).
-    FailureDetector -> P/Tutorial/4_FailureDetector/POutput/netcoreapp3.1/FailureDetector.dll
-
+    Restored P/Tutorial/4_FailureDetector/PGenerated/FailureDetector.csproj (in 118 ms).
+    2 of 3 projects are up-to-date for restore.
+    CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
+    CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
+    FailureDetector -> P/Tutorial/4_FailureDetector/PGenerated/POutput/net6.0/FailureDetector.dll
+    
     Build succeeded.
-        0 Warning(s)
-        0 Error(s)
-
+    0 Warning(s)
+    0 Error(s)
+    
+    Time Elapsed 00:00:02.76
+    
+    
+    ----------------------------------------
     ```
 
-### Testing FailureDetector
+### Checking FailureDetector
 
-There is only a single test case in the FailureDetector program and we can directly run the test case for 10000 iterations:
+There is only a single test case in the FailureDetector project and we can directly run the test case for 10000 iterations:
 
 ```shell
-pmc <Path>/FailureDetector.dll -i 10000
+p check -i 10000
 ```
 
 ### Discussion: Modeling Message Reordering

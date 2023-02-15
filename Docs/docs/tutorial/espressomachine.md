@@ -122,7 +122,7 @@ p check
 
 ??? note "Expected Output"
 
-    ```hl_lines="5 6"
+    ```hl_lines="8 9"
     $ p check
 
     .. Searching for a P compiled file locally in the current folder
@@ -145,7 +145,7 @@ p check -tc tcSaneUserUsingCoffeeMachine -i 10000
 
 Check the `tcCrazyUserUsingCoffeeMachine` test case for 10000 schedules:
 
-```
+```shell
 p check -tc tcCrazyUserUsingCoffeeMachine -i 10000
 ```
 

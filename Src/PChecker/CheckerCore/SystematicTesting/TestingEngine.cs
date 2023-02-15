@@ -137,7 +137,7 @@ namespace PChecker.SystematicTesting
             try
             {
                 testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, checkerConfiguration.TestCaseName);
-                Console.Out.WriteLine($"Test case :: {testMethodInfo.Name}");
+                Console.Out.WriteLine($".. Test case :: {testMethodInfo.Name}");
             }
             catch
             {

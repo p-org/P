@@ -184,7 +184,7 @@ namespace PChecker.SystematicTesting
         {
             var report = new StringBuilder();
 
-            report.AppendFormat("{0} Testing statistics:", prefix);
+            report.AppendFormat("{0} Checking statistics:", prefix);
 
             report.AppendLine();
             report.AppendFormat(

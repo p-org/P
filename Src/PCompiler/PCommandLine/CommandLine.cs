@@ -94,7 +94,7 @@ namespace Plang
                     CodeCoverageInstrumentation.SetOutputDirectory(configuration, makeHistory: true);
                 }
 
-                Console.WriteLine("Testing " + configuration.AssemblyToBeAnalyzed);
+                Console.WriteLine(".. Checking " + configuration.AssemblyToBeAnalyzed);
 
                 // Creates and runs the testing process scheduler.
                 TestingProcessScheduler.Create(configuration).Run();

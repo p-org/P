@@ -96,6 +96,8 @@ There are two ways of compiling a P program:
         Compiling ClientServer...
         MSBuild version 17.3.1+2badb37d1 for .NET
         Determining projects to restore...
+        Restored P/Tutorial/1_ClientServer/PGenerated/ClientServer.csproj (in 126 ms).
+        2 of 3 projects are up-to-date for restore.
         CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
         CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
         ClientServer -> P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
@@ -104,7 +106,7 @@ There are two ways of compiling a P program:
         0 Warning(s)
         0 Error(s)
         
-        Time Elapsed 00:00:03.72
+        Time Elapsed 00:00:05.98
         
         
         ----------------------------------------
@@ -158,6 +160,8 @@ There are two ways of compiling a P program:
         Compiling ClientServer...
         MSBuild version 17.3.1+2badb37d1 for .NET
         Determining projects to restore...
+        Restored P/Tutorial/1_ClientServer/PGenerated/ClientServer.csproj (in 118 ms).
+        2 of 3 projects are up-to-date for restore.
         CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
         CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
         ClientServer -> P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
@@ -166,7 +170,7 @@ There are two ways of compiling a P program:
         0 Warning(s)
         0 Error(s)
         
-        Time Elapsed 00:00:02.63
+        Time Elapsed 00:00:02.81
         
         
         ----------------------------------------
@@ -193,9 +197,9 @@ p check
     
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
-    Testing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
+    .. Checking P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
     Error: We found '3' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
-    Possible options are: 
+    Possible options are:
     tcSingleClient
     tcMultipleClients
     tcSingleClientAbstractServer
@@ -223,9 +227,9 @@ p check -tc tcSingleClient -i 100
 
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
-    Testing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
-    Test case :: tcSingleClient
-    ... Checker is using 'random' strategy (seed:1712893354).
+    .. Checking P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
+    .. Test case :: tcSingleClient
+    ... Checker is using 'random' strategy (seed:4248833112).
     ..... Iteration #1
     ..... Iteration #2
     ..... Iteration #3
@@ -249,12 +253,12 @@ p check -tc tcSingleClient -i 100
     ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer.dgml
     ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer.coverage.txt
     ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer.sci
-    ... Testing statistics:
+    ... Checking statistics:
     ..... Found 0 bugs.
     ... Scheduling statistics:
     ..... Explored 100 schedules: 100 fair and 0 unfair.
-    ..... Number of scheduling points in fair terminating schedules: 22 (min), 148 (avg), 536 (max).
-    ... Elapsed 1.060579 sec.
+    ..... Number of scheduling points in fair terminating schedules: 22 (min), 144 (avg), 669 (max).
+    ... Elapsed 1.092744 sec.
     . Done
     ```
 
@@ -268,29 +272,27 @@ p check -tc tcSingleClientAbstractServer -i 100
     ```hl_lines="9 11 13 20"
     $ p check <Path>/ClientServer.dll -tc tcSingleClientAbstractServer -i 100
 
-    .. Searching for a P compiled file locally in the current folder
-    .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
-    Testing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
-    Test case :: tcSingleClientAbstractServer
-    ... Checker is using 'random' strategy (seed:1624438318).
+    .. Checking P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
+    .. Test case :: tcSingleClientAbstractServer
+    ... Checker is using 'random' strategy (seed:924874916).
     ..... Iteration #1
     Checker found a bug.
     ... Emitting traces:
     ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer_0_0.txt
     ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer_0_0.dgml
     ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer_0_0.schedule
-    ... Elapsed 0.1909048 sec.
+    ... Elapsed 0.2039679 sec.
     ... Emitting coverage reports:
     ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer.dgml
     ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer.coverage.txt
     ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer.sci
-    ... Testing statistics:
+    ... Checking statistics:
     ..... Found 1 bug.
     ... Scheduling statistics:
     ..... Explored 1 schedule: 1 fair and 0 unfair.
     ..... Found 100.00% buggy schedules.
-    ..... Number of scheduling points in fair terminating schedules: 77 (min), 77 (avg), 77 (max).
-    ... Elapsed 0.3328236 sec.
+    ..... Number of scheduling points in fair terminating schedules: 172 (min), 172 (avg), 172 (max).
+    ... Elapsed 0.3450022 sec.
     . Done
     ```
 

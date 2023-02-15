@@ -48,7 +48,7 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
     - ([L50 - L74](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p#L50-L74)) &rarr; Declares the `Database` machine. The Database machine acts as a helper service for the Bank server and stores the bank balance for
     each account. There are two API's or functions to interact with the Database: ReadBankBalance and UpdateBankBalance. These functions are implemented as global functions in P ([L76 - L92](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p#L76-L92)).
 
-- [AbstractBankServer.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/AbstractBankServer.p): Implements the AbstractBankServer state machine that provides a simplified abstraction that unifies the BankServer and Database machines. We will demonstrate how one can replace the complex bank service (consisting of two interacting components, the BankServer and the Database) by its abstraction when testing the client application.
+- [AbstractBankServer.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/AbstractBankServer.p): Implements the AbstractBankServer state machine that provides a simplified abstraction that unifies the BankServer and Database machines. We will demonstrate how one can replace the complex bank service (consisting of two interacting components, the BankServer and the Database) by its abstraction when checking the client application.
 
 ??? tip "[Expand]: Let's walk through AbstractBankServer.p"
     - ([L12 - L37](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/AbstractBankServer.p#L12-L37)) &rarr; Declares an abstraction of the BankServer machine. The `AbstractBankServer` provides an implementation of the Bank where
@@ -88,7 +88,7 @@ The test scenarios folder for ClientServer ([PTst](https://github.com/p-org/P/tr
 ??? tip "[Expand]: Let's walk through TestDriver.p"
     - ([L36 - L60](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L36-L60)) &rarr; Function `SetupClientServerSystem` takes as input the number of clients to be created and configures the ClientServer system by creating the `Client` and `BankServer` machines. The [`CreateRandomInitialAccounts`](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L25-L34) function uses the [`choose`](../manual/expressions.md#choose) primitive to randomly initialize the accounts map.
     The function also  [`announce` the event](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L49-L51) `eSpec_BankBalanceIsAlwaysCorrect_Init` to initialize the monitors with initial balance for all accounts (manual: [annouce statement](../manual/statements.md#announce)). 
-    - ([L3 - L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L3-L22)) &rarr; Machines `TestWithSingleClient` and `TestWithMultipleClients` are simple test driver machines that configure the system to be checked by the P checker for different scenarios. In this case, test the ClientServer system by first randomly initializing the accounts map and then testing it with either one `Client` or with multiple `Client`s (between 2 and 4)).
+    - ([L3 - L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L3-L22)) &rarr; Machines `TestWithSingleClient` and `TestWithMultipleClients` are simple test driver machines that configure the system to be checked by the P checker for different scenarios. In this case, test the ClientServer system by first randomly initializing the accounts map and then checking it with either one `Client` or with multiple `Client`s (between 2 and 4)).
 
 ??? tip "[Expand]: Let's walk through TestScript.p"
     P allows programmers to write different test cases. Each test case is checked separately and can use a different test driver. Using different test drivers triggers different behaviors in the system under test, as it implies different system configurations and input generators. To better understand the P test cases, please look at manual: [P test cases](../manual/testcases.md).
@@ -129,6 +129,8 @@ p compile
     Compiling ClientServer...
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
+    Restored P/Tutorial/1_ClientServer/PGenerated/ClientServer.csproj (in 126 ms).
+    2 of 3 projects are up-to-date for restore.
     CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
     CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
     ClientServer -> P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
@@ -137,15 +139,15 @@ p compile
     0 Warning(s)
     0 Error(s)
     
-    Time Elapsed 00:00:04.75
+    Time Elapsed 00:00:05.98
     
     
     ----------------------------------------
     ```
 
-### Testing ClientServer
+### Checking ClientServer
 
-You can get the list of test cases defined in the ClientServer program by running the P Checker:
+You can get the list of test cases defined in the ClientServer project by running the P Checker:
 
 ```shell
 p check
@@ -158,7 +160,7 @@ p check
 
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
-    Testing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
+    .. Checking P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
     Error: We found '3' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
     Possible options are:
     tcSingleClient

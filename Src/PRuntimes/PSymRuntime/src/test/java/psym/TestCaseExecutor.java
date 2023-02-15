@@ -50,7 +50,7 @@ public class TestCaseExecutor {
         // Invoke the P compiler to compile the test Case
         boolean isWindows = System.getProperty("os.name")
                 .toLowerCase().startsWith("windows");
-        String compilerDirectory = "../../../Bld/Drops/Release/Binaries/netcoreapp3.1/P.dll";
+        String compilerDirectory = "../../../Bld/Drops/Release/Binaries/net6.0/p.dll";
 
         String prefix = testCasePathPrefix;
         assert testCasePaths.stream().allMatch(p -> p.contains(prefix));
@@ -72,8 +72,8 @@ public class TestCaseExecutor {
 
         Process process;
         try {
-            String pCompileCommand = String.format("dotnet %s %s -generate:PSym -t:%s -outputDir:%s"
-                    , compilerDirectory, testCasePathsString, testName, outputDirectory);
+            String pCompileCommand = String.format("dotnet %s --mode verify --projname %s --outdir %s --pfiles %s"
+                    , compilerDirectory, testName, outputDirectory, testCasePathsString);
             PSymTestLogger.log(String.format("      compiling"));
             process = buildCompileProcess(pCompileCommand, outputDirectory);
 

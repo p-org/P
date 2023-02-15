@@ -72,7 +72,7 @@ public class TestCaseExecutor {
 
         Process process;
         try {
-            String pCompileCommand = String.format("dotnet %s --mode verify --projname %s --outdir %s --pfiles %s"
+            String pCompileCommand = String.format("dotnet %s compile --mode verify --projname %s --outdir %s --pfiles %s"
                     , compilerDirectory, testName, outputDirectory, testCasePathsString);
             PSymTestLogger.log(String.format("      compiling"));
             process = buildCompileProcess(pCompileCommand, outputDirectory);

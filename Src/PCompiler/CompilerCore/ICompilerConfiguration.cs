@@ -13,7 +13,8 @@ namespace Plang.Compiler
         ICompilerOutput Output { get; }
         DirectoryInfo OutputDirectory { get; }
         ICodeGenerator Backend { get; }
-        IList<string> InputFiles { get; }
+        IList<string> InputPFiles { get; }
+        IList<string> InputForeignFiles { get; }
         IList<string> ProjectDependencies { get; }
         ILocationResolver LocationResolver { get; }
         ITranslationErrorHandler Handler { get; }

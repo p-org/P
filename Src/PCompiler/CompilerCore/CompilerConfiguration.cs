@@ -12,7 +12,8 @@ namespace Plang.Compiler
         public CompilerConfiguration()
         {
             OutputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
-            InputFiles = new List<string>();
+            InputPFiles = new List<string>();
+            InputForeignFiles = new List<string>();
             Output = new DefaultCompilerOutput(OutputDirectory);
             ProjectName = "generatedOutput";
             ProjectRootPath = OutputDirectory;
@@ -32,7 +33,19 @@ namespace Plang.Compiler
 
             Output = output;
             OutputDirectory = outputDir;
-            InputFiles = inputFiles;
+            InputPFiles = new List<string>();
+            InputForeignFiles = new List<string>();
+            foreach (var fileName in inputFiles)
+            {
+                if (fileName.EndsWith(".p"))
+                {
+                    InputPFiles.Add(fileName);
+                }
+                else
+                {
+                    InputForeignFiles.Add(fileName);
+                }
+            }
             ProjectName = projectName ?? Path.GetFileNameWithoutExtension(inputFiles[0]);
             ProjectRootPath = projectRoot;
             LocationResolver = new DefaultLocationResolver();
@@ -48,7 +61,8 @@ namespace Plang.Compiler
         public string ProjectName { get; set; }
         public DirectoryInfo ProjectRootPath { get; set; }
         public ICodeGenerator Backend { get; set; }
-        public IList<string> InputFiles { get; set; }
+        public IList<string> InputPFiles { get; set; }
+        public IList<string> InputForeignFiles { get; set; }
         public ILocationResolver LocationResolver { get; set;  }
         public ITranslationErrorHandler Handler { get; set; }
 
@@ -57,7 +71,8 @@ namespace Plang.Compiler
         public void Copy(CompilerConfiguration parsedConfig)
         {
             Backend = parsedConfig.Backend;
-            InputFiles = parsedConfig.InputFiles;
+            InputPFiles = parsedConfig.InputPFiles;
+            InputForeignFiles = parsedConfig.InputForeignFiles;
             OutputDirectory = parsedConfig.OutputDirectory;
             Handler = parsedConfig.Handler;
             Output = parsedConfig.Output;

@@ -67,14 +67,18 @@ The test scenarios folder for EspressoMachine ([PTst](https://github.com/p-org/P
 
 Run the following command to compile the  project:
 
-```
-pc -proj:EspressoMachine.pproj
+```shell
+p compile
 ```
 
 ??? note "Expected Output"
     ```
+    $ p compile
+
+    .. Searching for a P project file *.pproj locally in the current folder
+    .. Found P project file: P/Tutorial/3_EspressoMachine/EspressoMachine.pproj
     ----------------------------------------
-    ==== Loading project file: EspressoMachine.pproj
+    ==== Loading project file: P/Tutorial/3_EspressoMachine/EspressoMachine.pproj
     ....... includes p file: P/Tutorial/3_EspressoMachine/PSrc/CoffeeMaker.p
     ....... includes p file: P/Tutorial/3_EspressoMachine/PSrc/CoffeeMakerControlPanel.p
     ....... includes p file: P/Tutorial/3_EspressoMachine/PSrc/EspressoMachineModules.p
@@ -84,63 +88,65 @@ pc -proj:EspressoMachine.pproj
     ....... includes p file: P/Tutorial/3_EspressoMachine/PTst/TestScripts.p
     ----------------------------------------
     ----------------------------------------
-    Parsing ..
+    Parsing ...
     Type checking ...
-    Code generation ....
-    Generated EspressoMachine.cs
+    Code generation ...
+    Generated EspressoMachine.cs.
     ----------------------------------------
-    Compiling EspressoMachine.csproj ..
-
-    Microsoft (R) Build Engine version 16.10.2+857e5a733 for .NET
-    Copyright (C) Microsoft Corporation. All rights reserved.
-
+    Compiling EspressoMachine...
+    MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    All projects are up-to-date for restore.
-    EspressoMachine -> P/Tutorial/3_EspressoMachine/POutput/netcoreapp3.1/EspressoMachine.dll
-
+    Restored P/Tutorial/3_EspressoMachine/PGenerated/EspressoMachine.csproj (in 116 ms).
+    2 of 3 projects are up-to-date for restore.
+    CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
+    CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
+    EspressoMachine -> P/Tutorial/3_EspressoMachine/PGenerated/POutput/net6.0/EspressoMachine.dll
+    
     Build succeeded.
-        0 Warning(s)
-        0 Error(s)
-
+    0 Warning(s)
+    0 Error(s)
+    
+    Time Elapsed 00:00:05.04
+    
+    
+    ----------------------------------------
     ```
 
-### Testing EspressoMachine
+### Checking EspressoMachine
 
-You can get the list of test cases defined in the EspressoMachine program by passing the generated `dll`
-to the P Checker:
+You can get the list of test cases defined in the EspressoMachine project by running the P Checker:
 
 ```shell
-pmc <Path>/EspressoMachine.dll
+p check
 ```
 
 ??? note "Expected Output"
 
-    ```shell hl_lines="5 6"
-    pmc <Path>/EspressoMachine.dll
+    ```hl_lines="8 9"
+    $ p check
 
-    Provide /method or -m flag to qualify the test method name you wish to use. 
-    Possible options are::
-    PImplementation.tcSaneUserUsingCoffeeMachine.Execute
-    PImplementation.tcCrazyUserUsingCoffeeMachine.Execute
+    .. Searching for a P compiled file locally in the current folder
+    .. Found a P compiled file: P/Tutorial/3_EspressoMachine/PGenerated/POutput/net6.0/EspressoMachine.dll
+    .. Checking P/Tutorial/3_EspressoMachine/PGenerated/POutput/net6.0/EspressoMachine.dll
+    Error: We found '2' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
+    Possible options are:
+    tcSaneUserUsingCoffeeMachine
+    tcCrazyUserUsingCoffeeMachine
     ```
 
 There are two test cases defined in the EspressoMachine project and you can specify which
-test case to run by using the `-m` parameter along with the `-i` parameter for the number of schedules to explore.
+test case to run by using the `-tc` parameter along with the `-i` parameter for the number of schedules to explore.
 
 Check the `tcSaneUserUsingCoffeeMachine` test case for 10000 schedules:
 
-```
-pmc <Path>/EspressoMachine.dll \
-    -m PImplementation.tcSaneUserUsingCoffeeMachine.Execute \
-    -i 10000
+```shell
+p check -tc tcSaneUserUsingCoffeeMachine -i 10000
 ```
 
 Check the `tcCrazyUserUsingCoffeeMachine` test case for 10000 schedules:
 
-```
-pmc <Path>/EspressoMachine.dll \
-    -m PImplementation.tcCrazyUserUsingCoffeeMachine.Execute \
-    -i 10000
+```shell
+p check -tc tcCrazyUserUsingCoffeeMachine -i 10000
 ```
 
 ### Exercise Problem

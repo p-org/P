@@ -18,7 +18,7 @@ Now that we understand the basic features of the P language, let's look at the m
 
 A two phase commit protocol consists of two phases :laughing: (figure above). On receiving a write transaction, the coordinator starts the first phase in which it sends a `prepare` request to all the participants and waits for a `prepare success` or `prepare failure` response. On receiving prepare responses from all the participants, the coordinator moves to the second phase where it sends a `commit` or `abort` message to the participants and also responds back to the client.
 
-**Assumptions:** Our transaction commit system is ridiculously simplified. To list a few: (1) our system does allow multiple concurrent clients to issue transactions in parallel, but the coordinator serializes these transactions and services them one-by-one; (2) our system is not fault tolerant to node failures, failure of either the coordinator or any of the participants will block the progress forever. Also, we rely on [P's reliable send semantics](../advanced/psemantics.md) to model the behavior of the underlying network, hence, our system models assume reliable delivery of messages.
+**Assumptions:** Our transaction commit system is ridiculously simplified. To list a few: (1) our system does allow multiple concurrent clients to issue transactions in parallel, but the coordinator serializes these transactions and services them one-by-one; (2) our system is not fault-tolerant to node failures, failure of either the coordinator or any of the participants will block the progress forever. Also, we rely on [P's reliable send semantics](../advanced/psemantics.md) to model the behavior of the underlying network, hence, our system models assume reliable delivery of messages.
 
 **Correctness Specification:** We would like our transaction commit service to provide atomicity guarantees for each transaction. That is, if the service responds to the client that a transaction was committed then that transaction must have been committed by each of its participants; and, if a transaction is aborted then at least one of the participants must have rejected it. We would also like to check that under the assumptions above (no node failures and reliable network), each transaction request is eventually responded by the transaction commit service.
 
@@ -94,88 +94,96 @@ The test scenarios folder for TwoPhaseCommit ([PTst](https://github.com/p-org/P/
   
 ### Compiling TwoPhaseCommit
 
-Run the following command to compile the TwoPhaseCommit project:
-
-```
-pc -proj:TwoPhaseCommit.pproj
-```
-
-??? note "Expected Output"
-    ```
-    ----------------------------------------
-    ==== Loading project file: TwoPhaseCommit.pproj
-    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PSrc/Coordinator.p
-    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PSrc/Participant.p
-    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PSrc/TwoPhaseCommitModules.p
-    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PSpec/Atomicity.p
-    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PTst/TestDriver.p
-    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PTst/Client.p
-    ....... includes p file:  P/Tutorial/2_TwoPhaseCommit/PTst/TestScripts.p
-    ==== Loading project file:  P/Tutorial/Common/Timer/Timer.pproj
-    ....... includes p file:  P/Tutorial/Common/Timer/PSrc/Timer.p
-    ....... includes p file:  P/Tutorial/Common/Timer/PSrc/TimerModules.p
-    ==== Loading project file:  P/Tutorial/Common/FailureInjector/FailureInjector.pproj
-    ....... includes p file:  P/Tutorial/Common/FailureInjector/PSrc/NetworkFunctions.p
-    ....... includes p file:  P/Tutorial/Common/FailureInjector/PSrc/FailureInjector.p
-    ----------------------------------------
-    ----------------------------------------
-    Parsing ..
-    Type checking ...
-    Code generation ....
-    Generated TwoPhaseCommit.cs
-    ----------------------------------------
-    Compiling TwoPhaseCommit.csproj ..
-
-    Microsoft (R) Build Engine version 16.10.2+857e5a733 for .NET
-    Copyright (C) Microsoft Corporation. All rights reserved.
-
-    Determining projects to restore...
-    All projects are up-to-date for restore.
-    TwoPhaseCommit ->  P/Tutorial/2_TwoPhaseCommit/POutput/netcoreapp3.1/TwoPhaseCommit.dll
-
-    Build succeeded.
-        0 Warning(s)
-        0 Error(s)
-    ```
-
-### Testing TwoPhaseCommit
-
-You can get the list of test cases defined in the TwoPhaseCommit program by passing the generated `dll`
-to the P Checker:
+Navigate to the [2_TwoPhaseCommit](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseCommit) folder and run the following command to compile the TwoPhaseCommit project:
 
 ```shell
-pmc <Path>/TwoPhaseCommit.dll
+p compile
+```
+
+??? note "Expected Output"
+    ```
+    $ p compile
+
+    .. Searching for a P project file *.pproj locally in the current folder
+    .. Found P project file: P/Tutorial/2_TwoPhaseCommit/TwoPhaseCommit.pproj
+    ----------------------------------------
+    ==== Loading project file: P/Tutorial/2_TwoPhaseCommit/TwoPhaseCommit.pproj
+    ....... includes p file: P/Tutorial/2_TwoPhaseCommit/PSrc/Coordinator.p
+    ....... includes p file: P/Tutorial/2_TwoPhaseCommit/PSrc/Participant.p
+    ....... includes p file: P/Tutorial/2_TwoPhaseCommit/PSrc/TwoPhaseCommitModules.p
+    ....... includes p file: P/Tutorial/2_TwoPhaseCommit/PSpec/Atomicity.p
+    ....... includes p file: P/Tutorial/2_TwoPhaseCommit/PTst/TestDriver.p
+    ....... includes p file: P/Tutorial/2_TwoPhaseCommit/PTst/Client.p
+    ....... includes p file: P/Tutorial/2_TwoPhaseCommit/PTst/TestScripts.p
+    ....... includes foreign file: P/Tutorial/2_TwoPhaseCommit/PForeign/ForeignCode.cs
+    ==== Loading project file: P/Tutorial/Common/Timer/Timer.pproj
+    ....... includes p file: P/Tutorial/Common/Timer/PSrc/Timer.p
+    ....... includes p file: P/Tutorial/Common/Timer/PSrc/TimerModules.p
+    ==== Loading project file: P/Tutorial/Common/FailureInjector/FailureInjector.pproj
+    ....... includes p file: P/Tutorial/Common/FailureInjector/PSrc/NetworkFunctions.p
+    ....... includes p file: P/Tutorial/Common/FailureInjector/PSrc/FailureInjector.p
+    ----------------------------------------
+    ----------------------------------------
+    Parsing ...
+    Type checking ...
+    Code generation ...
+    Generated TwoPhaseCommit.cs.
+    ----------------------------------------
+    Compiling TwoPhaseCommit...
+    MSBuild version 17.3.1+2badb37d1 for .NET
+    Determining projects to restore...
+    Restored P/Tutorial/2_TwoPhaseCommit/PGenerated/TwoPhaseCommit.csproj (in 113 ms).
+    2 of 3 projects are up-to-date for restore.
+    CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
+    CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
+    TwoPhaseCommit -> P/Tutorial/2_TwoPhaseCommit/PGenerated/POutput/net6.0/TwoPhaseCommit.dll
+    
+    Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+    
+    Time Elapsed 00:00:02.38
+    
+    
+    ----------------------------------------
+    ```
+
+### Checking TwoPhaseCommit
+
+You can get the list of test cases defined in the TwoPhaseCommit project by running the P Checker:
+
+```shell
+p check
 ```
 
 ??? note "Expected Output"
 
-    ```shell hl_lines="5 6 7"
-    pmc <Path>/TwoPhaseCommit.dll
+    ```hl_lines="8 9 10"
+    $ p check
 
-    Provide /method or -m flag to qualify the test method name you wish to use. 
-    Possible options are::
-    PImplementation.tcSingleClientNoFailure.Execute
-    PImplementation.tcMultipleClientsNoFailure.Execute
-    PImplementation.tcMultipleClientsWithFailure.Execute
+    .. Searching for a P compiled file locally in the current folder
+    .. Found a P compiled file: P/Tutorial/2_TwoPhaseCommit/PGenerated/POutput/net6.0/TwoPhaseCommit.dll
+    .. Checking P/Tutorial/2_TwoPhaseCommit/PGenerated/POutput/net6.0/TwoPhaseCommit.dll
+    Error: We found '3' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
+    Possible options are:
+    tcSingleClientNoFailure
+    tcMultipleClientsNoFailure
+    tcMultipleClientsWithFailure
     ```
 
 There are three test cases defined in the TwoPhaseCommit project and you can specify which
-test case to run by using the `-m` parameter along with the `-i` parameter for the number of schedules to explore.
+test case to run by using the `-tc` parameter along with the `-i` parameter for the number of schedules to explore.
 
 Check the `tcSingleClientNoFailure` test case for 10000 schedules:
 
-```
-pmc <Path>/TwoPhaseCommit.dll \
-    -m PImplementation.tcSingleClientNoFailure.Execute \
-    -i 10000
+```shell
+p check -tc tcSingleClientNoFailure -i 10000
 ```
 
 Check the `tcMultipleClientsNoFailure` test case for 10000 schedules:
 
 ```
-pmc <Path>/TwoPhaseCommit.dll \
-    -m PImplementation.tcMultipleClientsNoFailure.Execute \
-    -i 10000
+p check -tc tcMultipleClientsNoFailure -i 10000
 ```
 !!! danger "Error"
     `tcMultipleClientsNoFailure` triggers a very subtle concurrency bug in the assumption made by the client of the two phase commit protocol.
@@ -190,10 +198,8 @@ pmc <Path>/TwoPhaseCommit.dll \
 
 Check the `tcMultipleClientsWithFailure` test case for 10000 schedules:
 
-```
-pmc <Path>/TwoPhaseCommit.dll \
-    -m PImplementation.tcMultipleClientsWithFailure.Execute \
-    -i 10000
+```shell
+p check -tc tcMultipleClientsWithFailure -i 10000
 ```
 
 !!! danger "Error"

@@ -31,8 +31,23 @@ namespace Plang.Compiler.Backend.CSharp
             // if the file does not exist then create the file
             if (!File.Exists(csprojPath))
             {
-                var csprojTemplate = Constants.csprojTemplate.Replace("-directory-",
-                    Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName));
+                var csprojTemplate = Constants.csprojTemplate;
+                csprojTemplate = csprojTemplate.Replace("-directory-",
+                        Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName));
+
+                string foreignInclude = "";
+                var foreignFiles = job.InputForeignFiles.Where(x => x.EndsWith(".cs"));
+                if (foreignFiles.Any())
+                {
+                    foreignInclude += "  <ItemGroup>\n";
+                    foreach (var fileName in foreignFiles)
+                    {
+                        foreignInclude += $"    <Compile Include=\"{fileName}\"/>\n";
+                    }
+                    foreignInclude += "  </ItemGroup>";
+                }
+
+                csprojTemplate = csprojTemplate.Replace("-foreign-include-", foreignInclude);
                 File.WriteAllText(csprojPath, csprojTemplate);
             }
 

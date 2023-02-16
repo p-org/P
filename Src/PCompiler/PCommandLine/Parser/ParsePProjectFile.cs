@@ -32,7 +32,6 @@ namespace Plang.Parser
 
                 var outputLanguage = CompilerOutput.CSharp;
                 var inputFiles = new HashSet<string>();
-                var generateSourceMaps = false;
                 var projectDependencies = new HashSet<string>();
 
                 // get all project dependencies and the input files

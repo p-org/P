@@ -87,6 +87,13 @@ public class TestCaseExecutor {
             resultCode = -1;
         }
 
+        String pathToJar = outputDirectory + "/target/" + testName + "-jar-with-dependencies.jar";
+
+        File jarFile = new File(pathToJar);
+        if(!jarFile.exists() || jarFile.isDirectory()) {
+            resultCode = 1;
+        }
+
         if (resultCode != 0) {
             PSymTestLogger.log(String.format("      compile-fail"));
             if (resultCode != expected) {
@@ -96,8 +103,6 @@ public class TestCaseExecutor {
         }
 
         // Next, try to dynamically load and compile this file
-        String pathToJar = outputDirectory + "/target/" + testName + "-jar-with-dependencies.jar";
-
         try {
             String runJarCommand = String.format("java -ea -jar -Xms2G %s -p %s -o %s %s",
                     pathToJar, testName, outputDirectory+"/output", runArgs);

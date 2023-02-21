@@ -63,7 +63,7 @@ public class EntryPoint {
         PSymLogger.info(String.format("... Method " +  configuration.getTestDriver()));
         PSymLogger.info(String.format("... Project %s is using '%s' strategy (seed:%s)",
                                             configuration.getProjectName(),
-                                            configuration.getMode(),
+                                            configuration.getStrategy(),
                                             configuration.getRandomSeed()));
         PSymLogger.info("--------------------");
 

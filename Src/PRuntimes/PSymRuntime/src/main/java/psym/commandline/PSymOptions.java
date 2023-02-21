@@ -27,95 +27,84 @@ public class PSymOptions {
     static {
         options = new Options();
 
-        // psym configuration file
-        Option configFile = Option.builder("config")
-                .longOpt("config")
-                .desc("Name of the JSON configuration file")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("File Name (string)")
-                .build();
-        options.addOption(configFile);
+        // Basic options
+        OptionGroup basicOptions = new OptionGroup();
 
-        // mode of exploration
-        Option mode = Option.builder("mode")
-                .longOpt("mode")
-                .desc("Mode of exploration: default, bmc, random, fuzz, dfs, coverage, learn")
+        // strategy of exploration
+        Option strategy = Option.builder("s")
+                .longOpt("strategy")
+                .desc("Exploration strategy: random, dfs, learn, symex (default: learn)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Mode (string)")
                 .build();
-        options.addOption(mode);
+        basicOptions.addOption(strategy);
+
+        // test driver name
+        Option testName = Option.builder("tc")
+                .longOpt("testcase")
+                .desc("Test case to explore")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Test Case (string)")
+                .build();
+        basicOptions.addOption(testName);
 
         // time limit
-        Option timeLimit = Option.builder("tl")
-                .longOpt("time-limit")
-                .desc("Time limit in seconds (default: 60). Use 0 for no limit.")
+        Option timeLimit = Option.builder("t")
+                .longOpt("timeout")
+                .desc("Timeout in seconds (disabled by default)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Time Limit (seconds)")
                 .build();
-        options.addOption(timeLimit);
+        basicOptions.addOption(timeLimit);
 
         // memory limit
-        Option memLimit = Option.builder("ml")
-                .longOpt("memory-limit")
-                .desc("Memory limit in megabytes (MB). Use 0 for no limit.")
+        Option memLimit = Option.builder("m")
+                .longOpt("memout")
+                .desc("Memory limit in Giga bytes (auto-detect by default)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Memory Limit (MB)")
+                .argName("Memory Limit (GB)")
                 .build();
-        options.addOption(memLimit);
-
-        // random seed for the search
-        Option randomSeed = Option.builder("seed")
-                .longOpt("seed")
-                .desc("Random seed for the search (default: auto)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Random Seed (integer)")
-                .build();
-        options.addOption(randomSeed);
-
-        // test driver name
-        Option testName = Option.builder("m")
-                .longOpt("method")
-                .desc("Name of the test method from where the symbolic engine should start exploration")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Test Method (string)")
-                .build();
-        options.addOption(testName);
-
-        // project name
-        Option projectName = Option.builder("p")
-                .longOpt("project")
-                .desc("Name of the project (default: auto)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Project Name (string)")
-                .build();
-        options.addOption(projectName);
+        basicOptions.addOption(memLimit);
 
         // output folder
         Option outputDir = Option.builder("o")
                 .longOpt("outdir")
-                .desc("Name of the output directory (default: output)")
+                .desc("Dump output to directory (absolute or relative path)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Output Dir (string)")
                 .build();
-        options.addOption(outputDir);
+        basicOptions.addOption(outputDir);
 
-        // read replayer state from file
-        Option readReplayerFromFile = Option.builder("replay")
-                .longOpt("replay")
-                .desc("Name of the .schedule file with the counterexample")
+        // set the level of verbosity
+        Option verbosity = Option.builder("v")
+                .longOpt("verbose")
+                .desc("Level of verbose log output during exploration (default: 0)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("File Name (string)")
+                .argName("Log Verbosity (integer)")
                 .build();
-        options.addOption(readReplayerFromFile);
+        basicOptions.addOption(verbosity);
+
+        options.addOptionGroup(basicOptions);
+
+
+        // Systematic exploration options
+        OptionGroup exploreOptions = new OptionGroup();
+
+        // max number of executions for the search
+        Option maxExecutions = Option.builder("i")
+                .longOpt("iterations")
+                .desc("Number of schedules to explore (default: 1)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Iterations (integer)")
+                .build();
+        exploreOptions.addOption(maxExecutions);
 
         // max steps/depth bound for the search
         Option maxSteps = Option.builder("ms")
@@ -125,17 +114,49 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Max Steps (integer)")
                 .build();
-        options.addOption(maxSteps);
+        exploreOptions.addOption(maxSteps);
 
-        // max number of executions for the search
-        Option maxExecutions = Option.builder("i")
-                .longOpt("iterations")
-                .desc("Number of schedules/executions to explore (default: no-limit)")
+        // whether or not to fail on reaching max step bound
+        Option failOnMaxSteps = Option.builder("fms")
+                .longOpt("fail-on-maxsteps")
+                .desc("Consider it a bug if the test hits the specified max-steps")
+                .numberOfArgs(0)
+                .build();
+        exploreOptions.addOption(failOnMaxSteps);
+
+        options.addOptionGroup(exploreOptions);
+
+
+        // Search prioritization options
+        OptionGroup searchOptions = new OptionGroup();
+
+        // whether or not to disable state caching
+        Option noStateCaching = Option.builder("nsc")
+                .longOpt("no-state-caching")
+                .desc("Disable state caching")
+                .numberOfArgs(0)
+                .build();
+        searchOptions.addOption(noStateCaching);
+
+        // mode of choice orchestration
+        Option choiceOrch = Option.builder("corch")
+                .longOpt("choice-orch")
+                .desc("Choice orchestration options: random, learn (default: learn)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Max Executions (integer)")
+                .argName("Choice Orch. (string)")
                 .build();
-        options.addOption(maxExecutions);
+        searchOptions.addOption(choiceOrch);
+
+        // mode of task orchestration
+        Option taskOrch = Option.builder("torch")
+                .longOpt("task-orch")
+                .desc("Task orchestration options: astar, random, dfs, learn (default: learn)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Task Orch. (string)")
+                .build();
+        searchOptions.addOption(taskOrch);
 
         // max scheduling choice bound for the search
         Option maxSchedBound = Option.builder("sb")
@@ -145,7 +166,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Schedule Bound (integer)")
                 .build();
-        options.addOption(maxSchedBound);
+        searchOptions.addOption(maxSchedBound);
 
         // max data choice bound for the search
         Option dataChoiceBound = Option.builder("db")
@@ -155,147 +176,156 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Data Bound (integer)")
                 .build();
-        options.addOption(dataChoiceBound);
+        searchOptions.addOption(dataChoiceBound);
 
-        // whether or not to disable state caching
-        Option noStateCaching = Option.builder("nsc")
-                .longOpt("no-state-caching")
-                .desc("Disable state caching")
-                .numberOfArgs(0)
+        options.addOptionGroup(searchOptions);
+
+
+        // Replay and debug options
+        OptionGroup replayOptions = new OptionGroup();
+
+        // read replayer state from file
+        Option readReplayerFromFile = Option.builder("r")
+                .longOpt("replay")
+                .desc("Schedule file to replay")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("File Name (string)")
                 .build();
-        options.addOption(noStateCaching);
+        replayOptions.addOption(readReplayerFromFile);
+
+        options.addOptionGroup(replayOptions);
+
+
+        // Advanced options
+        OptionGroup advancedOptions = new OptionGroup();
+
+        // random seed for the search
+        Option randomSeed = Option.builder()
+                .longOpt("seed")
+                .desc("Specify the random value generator seed")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Random Seed (integer)")
+                .build();
+        advancedOptions.addOption(randomSeed);
 
         // whether or not to disable stateful backtracking
-        Option backtrack = Option.builder("nb")
+        Option backtrack = Option.builder()
                 .longOpt("no-backtrack")
                 .desc("Disable stateful backtracking")
                 .numberOfArgs(0)
                 .build();
-        options.addOption(backtrack);
-
-        // mode of choice orchestration
-        Option choiceOrch = Option.builder("corch")
-                .longOpt("choice-orch")
-                .desc("Choice orchestration options: random, learn (default: random)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Choice Orch. (string)")
-                .build();
-        options.addOption(choiceOrch);
-
-        // mode of task orchestration
-        Option taskOrch = Option.builder("torch")
-                .longOpt("task-orch")
-                .desc("Task orchestration options: astar, random, dfs, learn (default: astar)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Task Orch. (string)")
-                .build();
-        options.addOption(taskOrch);
+        advancedOptions.addOption(backtrack);
 
         // max number of backtrack tasks per execution
-        Option maxBacktrackTasksPerExecution = Option.builder("bpe")
+        Option maxBacktrackTasksPerExecution = Option.builder()
                 .longOpt("backtracks-per-exe")
                 .desc("Max number of backtracks to generate per execution (default: 2)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("(integer)")
                 .build();
-        options.addOption(maxBacktrackTasksPerExecution);
+        advancedOptions.addOption(maxBacktrackTasksPerExecution);
 
         // solver type
-        Option solverType = Option.builder("st")
+        Option solverType = Option.builder()
                 .longOpt("solver")
                 .desc("Solver type to use: bdd, yices2, z3, cvc5 (default: bdd)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Solver Type (string)")
                 .build();
-        options.addOption(solverType);
+        advancedOptions.addOption(solverType);
 
         // expression type
-        Option exprLibType = Option.builder("et")
+        Option exprLibType = Option.builder()
                 .longOpt("expr")
                 .desc("Expression type to use: bdd, fraig, aig, native (default: bdd)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Expression Type (string)")
                 .build();
-        options.addOption(exprLibType);
+        advancedOptions.addOption(exprLibType);
+
+        // whether or not to disable filter-based reductions
+        Option filters = Option.builder()
+                .longOpt("no-filters")
+                .desc("Disable filter-based reductions")
+                .numberOfArgs(0)
+                .build();
+        advancedOptions.addOption(filters);
+
+//        // whether or not to disable receiver queue semantics
+//        Option receiverQueue = Option.builder()
+//                .longOpt("receiver-queue")
+//                .desc("Disable sender queue reduction to get receiver queue semantics")
+//                .numberOfArgs(0)
+//                .build();
+//        advancedOptions.addOption(receiverQueue);
+//
+//        // whether or not to use symbolic exploration sleep sets
+//        Option sleep = Option.builder()
+//                .longOpt("sleep-sets")
+//                .desc("Enable frontier sleep sets")
+//                .numberOfArgs(0)
+//                .build();
+//        advancedOptions.addOption(sleep);
+//
+//        // whether or not to use DPOR
+//        Option dpor = Option.builder()
+//                .longOpt("use-dpor")
+//                .desc("Enable use of DPOR (not implemented)")
+//                .numberOfArgs(0)
+//                .build();
+//        advancedOptions.addOption(dpor);
 
         // read program state from file
-        Option readFromFile = Option.builder("r")
+        Option readFromFile = Option.builder()
                 .longOpt("read")
                 .desc("Name of the file with the program state")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("File Name (string)")
                 .build();
-        options.addOption(readFromFile);
+        advancedOptions.addOption(readFromFile);
 
         // Enable writing the program state to file
-        Option writeToFile = Option.builder("w")
+        Option writeToFile = Option.builder()
                 .longOpt("write")
                 .desc("Enable writing program state")
                 .numberOfArgs(0)
                 .build();
-        options.addOption(writeToFile);
-
-        // whether or not to disable filter-based reductions
-        Option filters = Option.builder("nf")
-                .longOpt("no-filters")
-                .desc("Disable filter-based reductions")
-                .numberOfArgs(0)
-                .build();
-        options.addOption(filters);
-
-//        // whether or not to disable receiver queue semantics
-//        Option receiverQueue = Option.builder("rq")
-//                .longOpt("receiver-queue")
-//                .desc("Disable sender queue reduction to get receiver queue semantics")
-//                .numberOfArgs(0)
-//                .build();
-//        options.addOption(receiverQueue);
-//
-//        // whether or not to use symbolic exploration sleep sets
-//        Option sleep = Option.builder("sl")
-//                .longOpt("sleep-sets")
-//                .desc("Enable frontier sleep sets")
-//                .numberOfArgs(0)
-//                .build();
-//        options.addOption(sleep);
-//
-//        // whether or not to use DPOR
-//        Option dpor = Option.builder("dpor")
-//                .longOpt("use-dpor")
-//                .desc("Enable use of DPOR (not implemented)")
-//                .numberOfArgs(0)
-//                .build();
-//        options.addOption(dpor);
+        advancedOptions.addOption(writeToFile);
 
         // whether or not to collect search stats
-        Option collectStats = Option.builder("s")
+        Option collectStats = Option.builder()
                 .longOpt("stats")
                 .desc("Level of stats collection/reporting during the search (default: 1)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Collection Level (integer)")
                 .build();
-        options.addOption(collectStats);
+        advancedOptions.addOption(collectStats);
 
-        // set the level of verbosity
-        Option verbosity = Option.builder("v")
-                .longOpt("verbose")
-                .desc("Level of verbosity in the log output (default: 0)")
+
+        // psym configuration file
+        Option configFile = Option.builder()
+                .longOpt("config")
+                .desc("Name of the JSON configuration file")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Log Verbosity (integer)")
+                .argName("File Name (string)")
                 .build();
-        options.addOption(verbosity);
+        advancedOptions.addOption(configFile);
 
+        options.addOptionGroup(advancedOptions);
+
+
+        // Help menu
         Option help = Option.builder("h")
                 .longOpt("help")
-                .desc("Print the help message")
+                .desc("Show this help menu")
                 .build();
         options.addOption(help);
     }
@@ -338,81 +368,77 @@ public class PSymOptions {
         // Populate the configuration based on the commandline arguments
         for (Option option : cmd.getOptions()) {
             switch (option.getOpt()) {
-                case "config":
-                    readConfigFile(config, option.getValue(), option);
-                    break;
-                case "mode":
+                // basic options
+                case "s":
+                case "strategy":
                     switch (option.getValue()) {
-                        case "default":
-                            config.setToDefault();
-                            break;
-                        case "bmc":
-                            config.setToBmc();
-                            break;
                         case "random":
                             config.setToRandom();
-                            break;
-                        case "fuzz":
-                            config.setToFuzz();
                             break;
                         case "dfs":
                             config.setToDfs();
                             break;
-                        case "coverage":
-                            config.setToCoverage();
-                            break;
                         case "learn":
                             config.setToLearn();
+                            break;
+                        case "bmc":
+                        case "sym":
+                        case "symex":
+                        case "symbolic":
+                            config.setToBmc();
+                            break;
+                        case "fuzz":
+                            config.setToFuzz();
+                            break;
+                        case "coverage":
+                            config.setToCoverage();
                             break;
                         case "debug":
                             config.setToDebug();
                             break;
                         default:
-                            optionError(option, String.format("Unrecognized mode of exploration, got %s", option.getValue()));
+                            optionError(option, String.format("Unrecognized strategy of exploration, got %s", option.getValue()));
                     }
                     break;
-                case "tl":
-                case "time-limit":
+                case "tc":
+                case "test-case":
+                    config.setTestDriver(option.getValue());
+                    break;
+                case "t":
+                case "timeout":
                     try {
                         config.setTimeLimit(Double.parseDouble(option.getValue()));
                     } catch (NumberFormatException ex) {
                         optionError(option, String.format("Expected a double value, got %s", option.getValue()));
                     }
                     break;
-                case "ml":
-                case "memory-limit":
+                case "m":
+                case "memout":
                     try {
-                        config.setMemLimit(Double.parseDouble(option.getValue()));
+                        config.setMemLimit(Double.parseDouble(option.getValue())*1024);
                     } catch (NumberFormatException ex) {
                         optionError(option, String.format("Expected a double value, got %s", option.getValue()));
                     }
-                    break;
-                case "seed":
-                    try {
-                        config.setRandomSeed(Long.parseLong(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
-                    break;
-                case "m":
-                case "method":
-                    config.setTestDriver(option.getValue());
-                    break;
-                case "p":
-                case "project":
-                    config.setProjectName(option.getValue());
                     break;
                 case "o":
                 case "outdir":
                     config.setOutputFolder(option.getValue());
                     break;
-                case "replay":
-                    config.setReadReplayerFromFile(option.getValue());
-                    File file = new File(config.getReadReplayerFromFile());
+                case "v":
+                case "verbose":
                     try {
-                        file.getCanonicalPath();
-                    } catch (IOException e) {
-                        optionError(option, String.format("File %s does not exist", config.getReadReplayerFromFile()));
+                        config.setVerbosity(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
+                // exploration options
+                case "i":
+                case "iterations":
+                    try {
+                        config.setMaxExecutions(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
                 case "ms":
@@ -423,37 +449,14 @@ public class PSymOptions {
                         optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
-                case "i":
-                case "iterations":
-                    try {
-                        config.setMaxExecutions(Integer.parseInt(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
+                case "fms":
+                case "fail-on-maxsteps":
+                    config.setFailOnMaxStepBound(true);
                     break;
-                case "sb":
-                case "sched-bound":
-                    try {
-                        config.setSchedChoiceBound(Integer.parseInt(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
-                    break;
-                case "db":
-                case "data-bound":
-                    try {
-                        config.setDataChoiceBound(Integer.parseInt(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
-                    break;
+                // search options
                 case "nsc":
                 case "no-state-caching":
                     config.setUseStateCaching(false);
-                    break;
-                case "nb":
-                case "no-backtrack":
-                    config.setUseBacktrack(false);
                     break;
                 case "corch":
                 case "choice-orch":
@@ -495,7 +498,44 @@ public class PSymOptions {
                             optionError(option, String.format("Unrecognized task orchestration mode, got %s", option.getValue()));
                     }
                     break;
-                case "bpe":
+                case "sb":
+                case "sched-bound":
+                    try {
+                        config.setSchedChoiceBound(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
+                case "db":
+                case "data-bound":
+                    try {
+                        config.setDataChoiceBound(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
+                // replay options
+                case "r":
+                case "replay":
+                    config.setReadReplayerFromFile(option.getValue());
+                    File file = new File(config.getReadReplayerFromFile());
+                    try {
+                        file.getCanonicalPath();
+                    } catch (IOException e) {
+                        optionError(option, String.format("File %s does not exist", config.getReadReplayerFromFile()));
+                    }
+                    break;
+                // advanced options
+                case "seed":
+                    try {
+                        config.setRandomSeed(Long.parseLong(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
+                case "no-backtrack":
+                    config.setUseBacktrack(false);
+                    break;
                 case "backtracks-per-exe":
                     try {
                         config.setMaxBacktrackTasksPerExecution(Integer.parseInt(option.getValue()));
@@ -503,7 +543,6 @@ public class PSymOptions {
                         optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
-                case "st":
                 case "solver":
                     switch (option.getValue()) {
                         case "abc":
@@ -543,7 +582,6 @@ public class PSymOptions {
                             optionError(option, String.format("Expected a solver type, got %s", option.getValue()));
                     }
                     break;
-                case "et":
                 case "expr":
                     switch (option.getValue()) {
                         case "aig":
@@ -568,21 +606,6 @@ public class PSymOptions {
                             optionError(option, String.format("Expected an expression type, got %s", option.getValue()));
                     }
                     break;
-                case "r":
-                case "read":
-                    config.setReadFromFile(option.getValue());
-                    File replayFile = new File(config.getReadFromFile());
-                    try {
-                        replayFile.getCanonicalPath();
-                    } catch (IOException e) {
-                        optionError(option, String.format("File %s does not exist", config.getReadFromFile()));
-                    }
-                    break;
-                case "w":
-                case "write":
-                    config.setWriteToFile(true);
-                    break;
-                case "nf":
                 case "no-filters":
                     config.setUseFilters(false);
                     break;
@@ -598,7 +621,18 @@ public class PSymOptions {
                 //                case "use-dpor":
                 //                    config.setDpor(true);
                 //                    break;
-                case "s":
+                case "read":
+                    config.setReadFromFile(option.getValue());
+                    File replayFile = new File(config.getReadFromFile());
+                    try {
+                        replayFile.getCanonicalPath();
+                    } catch (IOException e) {
+                        optionError(option, String.format("File %s does not exist", config.getReadFromFile()));
+                    }
+                    break;
+                case "write":
+                    config.setWriteToFile(true);
+                    break;
                 case "stats":
                     try {
                         config.setCollectStats(Integer.parseInt(option.getValue()));
@@ -606,18 +640,18 @@ public class PSymOptions {
                         optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
-                case "v":
-                case "verbose":
-                    try {
-                        config.setVerbosity(Integer.parseInt(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
+                case "config":
+                    readConfigFile(config, option.getValue(), option);
                     break;
                 case "h":
                 case "help":
                 default:
-                    formatter.printHelp(100, "-h or --help", "Commandline options for PSym", options, "");
+                    formatter.printHelp(
+                            100,
+                            "-h or --help",
+                            "----------------------------\nCommandline options for PSym\n----------------------------",
+                            options,
+                            "");
                     exit(0);
             }
         }

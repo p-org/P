@@ -6,6 +6,7 @@ projectName=${1}
 shift
 args=$@
 
+PBIN="../../../Bld/Drops/Release/Binaries/net6.0/p.dll"
 outPath="output/${projectName}"
 runPath=$(pwd)
 
@@ -14,31 +15,18 @@ echo -e "Project Name: ${projectName}"
 echo -e "Input Path  : ${projectPath}"
 echo -e "Output Path : ${outPath}"
 
+PBIN=$(realpath ${PBIN})
 projectPath=$(realpath ${projectPath})
+outPath=$(realpath ${outPath})
+
 if [ -d "${outPath}" ]; then rm -Rf ${outPath}; fi
 mkdir -p ${outPath}
 
 echo -e "--------------------"
 echo -e "Compiling P Model into PSym IR"
-count=`ls -1 ${projectPath}/*.pproj 2>/dev/null | wc -l`
-if [ $count != 0 ]
-then
-    echo -e "  Ignoring .pproj File"
-fi
-inputFiles=$(find ${projectPath} -not -path "*/.*" -not -name ".*" -type f -name "*.p")
-inputJavaFiles=$(find ${projectPath} -not -path "*/.*" -not -name ".*" -type f -name "*.java")
-if [[ ! -z "${inputJavaFiles}" ]]
-then
-    echo -e "  Found Java Foreign Functions"
-    cp ${inputJavaFiles} ${outPath}
-fi
-configFile="${projectPath}/psym-config.json"
-if test -f "${configFile}"; then
-    echo -e "  Found PSym config file"
-    cp ${configFile} ${outPath}
-fi
 
-dotnet ../../../Bld/Drops/Release/Binaries/netcoreapp3.1/P.dll -generate:PSym ${inputFiles} -t:${projectName} -outputDir:${outPath} > ${outPath}/compile.out
+cd ${projectPath}
+dotnet ${PBIN} compile --mode verify --projname ${projectName} --outdir ${outPath} > ${outPath}/compile.out
 if grep -q "Build succeeded." ${outPath}/compile.out; then
   echo -e "  Done"
 else
@@ -46,13 +34,13 @@ else
   tail -50 ${outPath}/compile.out
   exit
 fi
+cd -
 
 echo -e "--------------------"
 echo -e "Running PSym"
 cd ${outPath}
 java -ea -jar -Xms12G target/${projectName}-jar-with-dependencies.jar \
-    -p ${projectName} ${args} > >(tee -a run.out) 2>> >(tee -a run.err >&2)
-
+    ${args} > >(tee -a run.out) 2>> >(tee -a run.err >&2)
 cd ${runPath}
 
 #mkdir -p ${outPath}/output/plots

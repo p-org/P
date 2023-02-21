@@ -28,7 +28,6 @@ public class PSymOptions {
         options = new Options();
 
         // Basic options
-        OptionGroup basicOptions = new OptionGroup();
 
         // strategy of exploration
         Option strategy = Option.builder("s")
@@ -36,9 +35,9 @@ public class PSymOptions {
                 .desc("Exploration strategy: random, dfs, learn, symex (default: learn)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Mode (string)")
+                .argName("Strategy (string)")
                 .build();
-        basicOptions.addOption(strategy);
+        options.addOption(strategy);
 
         // test driver name
         Option testName = Option.builder("tc")
@@ -48,7 +47,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Test Case (string)")
                 .build();
-        basicOptions.addOption(testName);
+        options.addOption(testName);
 
         // time limit
         Option timeLimit = Option.builder("t")
@@ -58,7 +57,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Time Limit (seconds)")
                 .build();
-        basicOptions.addOption(timeLimit);
+        options.addOption(timeLimit);
 
         // memory limit
         Option memLimit = Option.builder("m")
@@ -68,7 +67,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Memory Limit (GB)")
                 .build();
-        basicOptions.addOption(memLimit);
+        options.addOption(memLimit);
 
         // output folder
         Option outputDir = Option.builder("o")
@@ -78,7 +77,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Output Dir (string)")
                 .build();
-        basicOptions.addOption(outputDir);
+        options.addOption(outputDir);
 
         // set the level of verbosity
         Option verbosity = Option.builder("v")
@@ -88,13 +87,10 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Log Verbosity (integer)")
                 .build();
-        basicOptions.addOption(verbosity);
-
-        options.addOptionGroup(basicOptions);
+        options.addOption(verbosity);
 
 
         // Systematic exploration options
-        OptionGroup exploreOptions = new OptionGroup();
 
         // max number of executions for the search
         Option maxExecutions = Option.builder("i")
@@ -104,7 +100,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Iterations (integer)")
                 .build();
-        exploreOptions.addOption(maxExecutions);
+        options.addOption(maxExecutions);
 
         // max steps/depth bound for the search
         Option maxSteps = Option.builder("ms")
@@ -114,7 +110,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Max Steps (integer)")
                 .build();
-        exploreOptions.addOption(maxSteps);
+        options.addOption(maxSteps);
 
         // whether or not to fail on reaching max step bound
         Option failOnMaxSteps = Option.builder("fms")
@@ -122,13 +118,10 @@ public class PSymOptions {
                 .desc("Consider it a bug if the test hits the specified max-steps")
                 .numberOfArgs(0)
                 .build();
-        exploreOptions.addOption(failOnMaxSteps);
-
-        options.addOptionGroup(exploreOptions);
+        options.addOption(failOnMaxSteps);
 
 
         // Search prioritization options
-        OptionGroup searchOptions = new OptionGroup();
 
         // whether or not to disable state caching
         Option noStateCaching = Option.builder("nsc")
@@ -136,7 +129,7 @@ public class PSymOptions {
                 .desc("Disable state caching")
                 .numberOfArgs(0)
                 .build();
-        searchOptions.addOption(noStateCaching);
+        options.addOption(noStateCaching);
 
         // mode of choice orchestration
         Option choiceOrch = Option.builder("corch")
@@ -146,7 +139,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Choice Orch. (string)")
                 .build();
-        searchOptions.addOption(choiceOrch);
+        options.addOption(choiceOrch);
 
         // mode of task orchestration
         Option taskOrch = Option.builder("torch")
@@ -156,7 +149,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Task Orch. (string)")
                 .build();
-        searchOptions.addOption(taskOrch);
+        options.addOption(taskOrch);
 
         // max scheduling choice bound for the search
         Option maxSchedBound = Option.builder("sb")
@@ -166,7 +159,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Schedule Bound (integer)")
                 .build();
-        searchOptions.addOption(maxSchedBound);
+        options.addOption(maxSchedBound);
 
         // max data choice bound for the search
         Option dataChoiceBound = Option.builder("db")
@@ -176,13 +169,10 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Data Bound (integer)")
                 .build();
-        searchOptions.addOption(dataChoiceBound);
-
-        options.addOptionGroup(searchOptions);
+        options.addOption(dataChoiceBound);
 
 
         // Replay and debug options
-        OptionGroup replayOptions = new OptionGroup();
 
         // read replayer state from file
         Option readReplayerFromFile = Option.builder("r")
@@ -192,13 +182,10 @@ public class PSymOptions {
                 .hasArg()
                 .argName("File Name (string)")
                 .build();
-        replayOptions.addOption(readReplayerFromFile);
-
-        options.addOptionGroup(replayOptions);
+        options.addOption(readReplayerFromFile);
 
 
         // Advanced options
-        OptionGroup advancedOptions = new OptionGroup();
 
         // random seed for the search
         Option randomSeed = Option.builder()
@@ -208,7 +195,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Random Seed (integer)")
                 .build();
-        advancedOptions.addOption(randomSeed);
+        options.addOption(randomSeed);
 
         // whether or not to disable stateful backtracking
         Option backtrack = Option.builder()
@@ -216,17 +203,17 @@ public class PSymOptions {
                 .desc("Disable stateful backtracking")
                 .numberOfArgs(0)
                 .build();
-        advancedOptions.addOption(backtrack);
+        options.addOption(backtrack);
 
         // max number of backtrack tasks per execution
         Option maxBacktrackTasksPerExecution = Option.builder()
-                .longOpt("backtracks-per-exe")
-                .desc("Max number of backtracks to generate per execution (default: 2)")
+                .longOpt("backtracks-per-iteration")
+                .desc("Max number of backtracks to generate per iteration (default: 2)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("(integer)")
                 .build();
-        advancedOptions.addOption(maxBacktrackTasksPerExecution);
+        options.addOption(maxBacktrackTasksPerExecution);
 
         // solver type
         Option solverType = Option.builder()
@@ -236,7 +223,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Solver Type (string)")
                 .build();
-        advancedOptions.addOption(solverType);
+        options.addOption(solverType);
 
         // expression type
         Option exprLibType = Option.builder()
@@ -246,7 +233,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Expression Type (string)")
                 .build();
-        advancedOptions.addOption(exprLibType);
+        options.addOption(exprLibType);
 
         // whether or not to disable filter-based reductions
         Option filters = Option.builder()
@@ -254,7 +241,7 @@ public class PSymOptions {
                 .desc("Disable filter-based reductions")
                 .numberOfArgs(0)
                 .build();
-        advancedOptions.addOption(filters);
+        options.addOption(filters);
 
 //        // whether or not to disable receiver queue semantics
 //        Option receiverQueue = Option.builder()
@@ -262,7 +249,7 @@ public class PSymOptions {
 //                .desc("Disable sender queue reduction to get receiver queue semantics")
 //                .numberOfArgs(0)
 //                .build();
-//        advancedOptions.addOption(receiverQueue);
+//        options.addOption(receiverQueue);
 //
 //        // whether or not to use symbolic exploration sleep sets
 //        Option sleep = Option.builder()
@@ -270,7 +257,7 @@ public class PSymOptions {
 //                .desc("Enable frontier sleep sets")
 //                .numberOfArgs(0)
 //                .build();
-//        advancedOptions.addOption(sleep);
+//        options.addOption(sleep);
 //
 //        // whether or not to use DPOR
 //        Option dpor = Option.builder()
@@ -278,7 +265,7 @@ public class PSymOptions {
 //                .desc("Enable use of DPOR (not implemented)")
 //                .numberOfArgs(0)
 //                .build();
-//        advancedOptions.addOption(dpor);
+//        options.addOption(dpor);
 
         // read program state from file
         Option readFromFile = Option.builder()
@@ -288,7 +275,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("File Name (string)")
                 .build();
-        advancedOptions.addOption(readFromFile);
+        options.addOption(readFromFile);
 
         // Enable writing the program state to file
         Option writeToFile = Option.builder()
@@ -296,7 +283,7 @@ public class PSymOptions {
                 .desc("Enable writing program state")
                 .numberOfArgs(0)
                 .build();
-        advancedOptions.addOption(writeToFile);
+        options.addOption(writeToFile);
 
         // whether or not to collect search stats
         Option collectStats = Option.builder()
@@ -306,7 +293,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Collection Level (integer)")
                 .build();
-        advancedOptions.addOption(collectStats);
+        options.addOption(collectStats);
 
 
         // psym configuration file
@@ -317,9 +304,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("File Name (string)")
                 .build();
-        advancedOptions.addOption(configFile);
-
-        options.addOptionGroup(advancedOptions);
+        options.addOption(configFile);
 
 
         // Help menu
@@ -335,7 +320,7 @@ public class PSymOptions {
         if (opt != null) {
             Options opts = new Options();
             opts.addOption(opt);
-            formatter.printHelp(writer, 100, opt.getOpt(), "", opts, 2, 2, "Try --help for details.");
+            formatter.printHelp(writer, 100, opt.getLongOpt(), "", opts, 2, 2, "Try --help for details.");
         }
         writer.flush();
         exit(10);
@@ -350,8 +335,9 @@ public class PSymOptions {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printUsage(writer, 100, "PSym", options);
+            formatter.printUsage(writer, 100, "java -jar <.jar-file>", options);
             writer.flush();
+            System.out.println("Try --help for details.");
             exit(10);
         }
 
@@ -536,7 +522,7 @@ public class PSymOptions {
                 case "no-backtrack":
                     config.setUseBacktrack(false);
                     break;
-                case "backtracks-per-exe":
+                case "backtracks-per-iteration":
                     try {
                         config.setMaxBacktrackTasksPerExecution(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
@@ -645,14 +631,16 @@ public class PSymOptions {
                     break;
                 case "h":
                 case "help":
-                default:
                     formatter.printHelp(
                             100,
-                            "-h or --help",
+                            "java -jar <.jar-file> [options]",
                             "----------------------------\nCommandline options for PSym\n----------------------------",
                             options,
-                            "");
+                            "See https://p-org.github.io/P/ for details.");
                     exit(0);
+                    break;
+                default:
+                    optionError(option, String.format("Unrecognized option %s", option));
             }
         }
         return config;

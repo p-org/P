@@ -5,10 +5,11 @@ PSym runtime provides a range of options to configure the model exploration.
 Here is a summary of these options:
 
 ````
+usage: java -jar <.jar-file> [options]
 ----------------------------
 Commandline options for PSym
 ----------------------------
- -s,--strategy <Mode (string)>                  Exploration strategy: random, dfs, learn, symex
+ -s,--strategy <Strategy (string)>              Exploration strategy: random, dfs, learn, symex
                                                 (default: learn)
  -tc,--testcase <Test Case (string)>            Test case to explore
  -t,--timeout <Time Limit (seconds)>            Timeout in seconds (disabled by default)
@@ -32,7 +33,7 @@ Commandline options for PSym
  -r,--replay <File Name (string)>               Schedule file to replay
     --seed <Random Seed (integer)>              Specify the random value generator seed
     --no-backtrack                              Disable stateful backtracking
-    --backtracks-per-exe <(integer)>            Max number of backtracks to generate per execution
+    --backtracks-per-iteration <(integer)>      Max number of backtracks to generate per iteration
                                                 (default: 2)
     --solver <Solver Type (string)>             Solver type to use: bdd, yices2, z3, cvc5 (default:
                                                 bdd)
@@ -45,6 +46,7 @@ Commandline options for PSym
                                                 search (default: 1)
     --config <File Name (string)>               Name of the JSON configuration file
  -h,--help                                      Show this help menu
+See https://p-org.github.io/P/ for details.
 ````
 
 For example, running:

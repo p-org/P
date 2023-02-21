@@ -104,8 +104,8 @@ public class TestCaseExecutor {
 
         // Next, try to dynamically load and compile this file
         try {
-            String runJarCommand = String.format("java -ea -jar -Xms2G %s -p %s -o %s %s",
-                    pathToJar, testName, outputDirectory+"/output", runArgs);
+            String runJarCommand = String.format("java -ea -jar -Xms2G %s --outdir %s %s",
+                    pathToJar, outputDirectory+"/output", runArgs);
             PSymTestLogger.log(String.format("      running"));
             process = buildRunProcess(runJarCommand, outputDirectory);
 

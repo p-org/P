@@ -1,0 +1,14 @@
+
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ApplicationIcon />
+    <OutputType>Exe</OutputType>
+    <StartupObject />
+    <LangVersion>latest</LangVersion>
+    <OutputPath>POutput/</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="/Users/ankushpd/Workspace/github/P/Src/PRuntimes/PCSharpRuntime/CSharpRuntime.csproj" />
+  </ItemGroup>
+</Project>

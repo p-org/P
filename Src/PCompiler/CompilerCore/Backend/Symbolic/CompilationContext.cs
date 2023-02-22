@@ -29,7 +29,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
         internal Dictionary<Function, int> anonFuncIds;
 
-        internal CompilationContext(ICompilationJob job)
+        internal CompilationContext(ICompilerConfiguration job)
             : base(job)
         {
             if (!IsSafeJavaIdentifier(job.ProjectName))
@@ -57,7 +57,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     {
                         if (!anonFuncIds.ContainsKey(func))
                         {
-                            int newId = anonFuncIds.Count;
+                            var newId = anonFuncIds.Count;
                             anonFuncIds.Add(func, newId);
                         }
                         return $"anonfun_{anonFuncIds[func]}";
@@ -153,7 +153,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             if (!IsAsciiAlphabetic(ident[0]))
             {
-                System.Console.WriteLine(ident[0]);
+                Console.WriteLine(ident[0]);
                 return false;
             }
 
@@ -163,7 +163,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 if (!(IsAsciiAlphabetic(ident[i]) || IsAsciiNumeric(ident[i])))
                 {
-                    System.Console.WriteLine(ident[i]);
+                    Console.WriteLine(ident[i]);
                     return false;
                 }
             }

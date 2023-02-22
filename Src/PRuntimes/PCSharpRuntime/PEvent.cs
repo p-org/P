@@ -1,6 +1,6 @@
-﻿using Microsoft.Coyote;
+﻿using System;
+using PChecker.Actors.Events;
 using Plang.CSharpRuntime.Values;
-using System;
 
 namespace Plang.CSharpRuntime
 {

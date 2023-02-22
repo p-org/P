@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
     <IsPackable>false</IsPackable>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -9,12 +9,12 @@
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Coyote" Version="1.0.5" />
-    <PackageReference Include="NUnit" Version="3.10.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.13.0" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.3.1" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Src\PChecker\CheckerCore\CheckerCore.csproj" />
     <ProjectReference Include="..\..\Src\PCompiler\CompilerCore\CompilerCore.csproj" />
     <ProjectReference Include="..\..\Src\PRuntimes\PCSharpRuntime\CSharpRuntime.csproj" />
   </ItemGroup>

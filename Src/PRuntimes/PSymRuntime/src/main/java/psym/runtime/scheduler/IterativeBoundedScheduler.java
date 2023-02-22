@@ -715,13 +715,18 @@ public class IterativeBoundedScheduler extends Scheduler {
         if (schedule.hasMachine(machineType, guardedCount, pc)) {
             assert (iter != 0);
             allocated = schedule.getMachine(machineType, guardedCount).restrict(pc);
-            assert(allocated.getValues().size() == 1);
-            Machine m = allocated.getValues().iterator().next();
-            TraceLogger.onCreateMachine(pc, m);
-            if (!machines.contains(m)) {
-                machines.add(m);
+            for (GuardedValue gv: allocated.getGuardedValues()) {
+                Guard g = gv.getGuard();
+                Machine m = (Machine) gv.getValue();
+                assert(!BooleanVS.isEverTrue(m.hasStarted().restrict(g)));
+                TraceLogger.onCreateMachine(pc.and(g), m);
+                if (!machines.contains(m)) {
+                    machines.add(m);
+                }
+                currentMachines.add(m);
+                assert(machines.size() >= currentMachines.size());
+                m.setScheduler(this);
             }
-            m.setScheduler(this);
         } else {
             Machine newMachine;
             newMachine = constructor.apply(IntegerVS.maxValue(guardedCount));
@@ -729,6 +734,8 @@ public class IterativeBoundedScheduler extends Scheduler {
             if (!machines.contains(newMachine)) {
                 machines.add(newMachine);
             }
+            currentMachines.add(newMachine);
+            assert(machines.size() >= currentMachines.size());
 
             TraceLogger.onCreateMachine(pc, newMachine);
             newMachine.setScheduler(this);

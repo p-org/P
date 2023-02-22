@@ -1,6 +1,6 @@
+using System.Diagnostics.Contracts;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Statements;
-using System.Diagnostics.Contracts;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -20,7 +20,7 @@ namespace Plang.Compiler.TypeChecker
         public static void PopulateMethod(ITranslationErrorHandler handler, Function fun)
         {
             Contract.Requires(fun.Body == null);
-            FunctionBodyVisitor visitor = new FunctionBodyVisitor(handler, fun.Owner, fun);
+            var visitor = new FunctionBodyVisitor(handler, fun.Owner, fun);
             visitor.Visit(fun.SourceLocation);
         }
 
@@ -49,22 +49,22 @@ namespace Plang.Compiler.TypeChecker
             // TODO: check that parameters have been added to internal scope?
 
             // Add all local variables to scope.
-            foreach (PParser.VarDeclContext varDeclContext in context.varDecl())
+            foreach (var varDeclContext in context.varDecl())
             {
                 Visit(varDeclContext);
             }
 
             // Build the statement trees
-            StatementVisitor statementVisitor = new StatementVisitor(handler, machine, method);
+            var statementVisitor = new StatementVisitor(handler, machine, method);
             method.Body = (CompoundStmt)statementVisitor.Visit(context);
             return null;
         }
 
         public override object VisitVarDecl(PParser.VarDeclContext context)
         {
-            foreach (PParser.IdenContext varName in context.idenList()._names)
+            foreach (var varName in context.idenList()._names)
             {
-                Variable variable = method.Scope.Put(varName.GetText(), varName, VariableRole.Local);
+                var variable = method.Scope.Put(varName.GetText(), varName, VariableRole.Local);
                 variable.Type = TypeResolver.ResolveType(context.type(), method.Scope, handler);
                 method.AddLocalVariable(variable);
             }

@@ -1,11 +1,11 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
+
+using System;
+using System.Linq;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
-
-using System;
-using System.Linq;
 
 namespace Plang.Compiler.Backend.Rvm
 {
@@ -17,7 +17,7 @@ namespace Plang.Compiler.Backend.Rvm
 
         protected override string ComputeNameForDecl(IPDecl decl)
         {
-            string name = decl.Name;
+            var name = decl.Name;
 
             switch (decl)
             {
@@ -54,31 +54,31 @@ namespace Plang.Compiler.Backend.Rvm
 
         public string GetParentClassName(Machine m)
         {
-            string specName = GetRvmSpecName(m);
+            var specName = GetRvmSpecName(m);
             return $"{specName}__Base";
         }
 
         public string GetEventAlias(Machine m, PEvent e)
         {
-            string eventName = GetRvmEventName(e);
+            var eventName = GetRvmEventName(e);
             return $"event_{ eventName }";
         }
 
         public string GetPointCutNameForMonitorOn(Machine m)
         {
-            string specName = GetRvmSpecName(m);
+            var specName = GetRvmSpecName(m);
             return $"MonitorOn_{specName}";
         }
 
         public string GetPointCutNameForMonitorsOn(Machine m)
         {
-            string specName = GetRvmSpecName(m);
+            var specName = GetRvmSpecName(m);
             return $"MonitorsOn_{specName}";
         }
 
         public string GetPointCutNameForEnabledTestcases(Machine m)
         {
-            string specName = GetRvmSpecName(m);
+            var specName = GetRvmSpecName(m);
             return $"{specName}Test";
         }
 
@@ -371,7 +371,7 @@ namespace Plang.Compiler.Backend.Rvm
 
         public string GetEnumFileName(PEnum e)
         {
-            string enumName = GetEnumTypeName(e);
+            var enumName = GetEnumTypeName(e);
             return $"{enumName}.java";
         }
 

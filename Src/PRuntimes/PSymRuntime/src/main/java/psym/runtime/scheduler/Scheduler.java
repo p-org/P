@@ -50,6 +50,8 @@ public class Scheduler implements SymbolicSearch {
     @Getter
     /** List of all machines along any path constraints */
     final List<Machine> machines;
+    /** Set of machines along current schedule */
+    final SortedSet<Machine> currentMachines;
     /** How many instances of each Machine there are */
     protected Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
     /** The machine to start with */
@@ -122,7 +124,8 @@ public class Scheduler implements SymbolicSearch {
         preChoiceDepth = Integer.MAX_VALUE;
         done = false;
         machineCounters.clear();
-        machines.clear();
+//        machines.clear();
+        currentMachines.clear();
         srcState.clear();
         schedule.setSchedulerDepth(getDepth());
         schedule.setSchedulerChoiceDepth(getChoiceDepth());
@@ -200,11 +203,13 @@ public class Scheduler implements SymbolicSearch {
         program = p;
         this.schedule = getNewSchedule();
         this.machines = new ArrayList<>();
+        this.currentMachines = new TreeSet<>();
         this.machineCounters = new HashMap<>();
         this.vcManager = new VectorClockManager(useReceiverSemantics() || configuration.isDpor() || useSleepSets());
 
         for (Machine machine : machines) {
             this.machines.add(machine);
+            this.currentMachines.add(machine);
             if (this.machineCounters.containsKey(machine.getClass())) {
                 this.machineCounters.put(machine.getClass(),
                         IntegerVS.add(this.machineCounters.get(machine.getClass()), 1));
@@ -329,6 +334,7 @@ public class Scheduler implements SymbolicSearch {
         }
 
         machines.add(machine);
+        currentMachines.add(machine);
         start = machine;
         TraceLogger.onCreateMachine(Guard.constTrue(), machine);
         machine.setScheduler(this);
@@ -385,27 +391,18 @@ public class Scheduler implements SymbolicSearch {
 
     public void restoreState(Schedule.ChoiceState state) {
         assert(state != null);
+        currentMachines.clear();
         for (Map.Entry<Machine, List<ValueSummary>> entry: state.getMachineStates().entrySet()) {
             entry.getKey().setLocalState(entry.getValue());
+            currentMachines.add(entry.getKey());
         }
         for (Machine m: machines) {
             if (!state.getMachineStates().containsKey(m)) {
                 m.reset();
             }
         }
+        assert(machines.size() >= currentMachines.size());
         machineCounters = state.getMachineCounters();
-    }
-
-    public void restoreStringState(List<List<String>> state) {
-        int idx = 0;
-        for (Machine machine : machines) {
-            List<String> machineStringState = state.get(idx++);
-            List<ValueSummary> machineLocalState = new ArrayList<>();
-            for (String s: machineStringState) {
-                machineLocalState.add((ValueSummary) SerializeObject.objectFromString(s));
-            }
-            machine.setLocalState(machineLocalState);
-        }
     }
 
     @Override
@@ -655,7 +652,7 @@ public class Scheduler implements SymbolicSearch {
         if (!srcState.isEmpty())
             return;
         srcState.clear();
-        for (Machine machine : machines) {
+        for (Machine machine : currentMachines) {
             List<ValueSummary> machineLocalState = machine.getLocalState();
             srcState.put(machine, machineLocalState);
         }
@@ -671,6 +668,21 @@ public class Scheduler implements SymbolicSearch {
                 out.append(String.format("    %s", vs.toStringDetailed())).append(System.lineSeparator());
             }
         }
+        return out.toString();
+    }
+
+    private String getConcreteStateString(List<Machine> concreteMachines, List<List<Object>> concreteState) {
+        StringBuilder out = new StringBuilder();
+        out.append(String.format("#%d[", concreteState.size()));
+//        out.append(System.lineSeparator());
+        for (int i=0; i<concreteMachines.size(); i++) {
+            out.append("  ");
+            out.append(concreteMachines.get(i).toString());
+            out.append(" -> ");
+            out.append(concreteState.get(i).toString());
+//            out.append(System.lineSeparator());
+        }
+        out.append("]");
         return out.toString();
     }
 
@@ -701,8 +713,9 @@ public class Scheduler implements SymbolicSearch {
         while (!iterPc.isFalse()) {
             Guard concreteStateGuard = Guard.constTrue();
             List<List<Object>> globalStateConcrete = new ArrayList<>();
+            List<Machine> globalStateMachines = new ArrayList<>();
             int i = 0;
-            for(Machine m: machines) {
+            for(Machine m: currentMachines) {
                 if (!symState.containsKey(m))
                     continue;
                 List<ValueSummary> machineStateSymbolic = symState.get(m);
@@ -722,6 +735,7 @@ public class Scheduler implements SymbolicSearch {
                 }
                 if (!machineStateConcrete.isEmpty()) {
                     globalStateConcrete.add(machineStateConcrete);
+                    globalStateMachines.add(m);
                 }
                 i++;
             }
@@ -733,7 +747,7 @@ public class Scheduler implements SymbolicSearch {
                     distinctStates.put(concreteState, distinctStates.get(concreteState) + 1);
                     totalStateCount += 1;
                     if (configuration.getVerbosity() > 5) {
-                        PSymLogger.info("Repeated State: " + concreteState);
+                        PSymLogger.info("Repeated State: " + getConcreteStateString(globalStateMachines, globalStateConcrete));
                     }
                 } else {
                     numDistinctConcreteStates += 1;
@@ -744,7 +758,7 @@ public class Scheduler implements SymbolicSearch {
                         distinctStateGuard = distinctStateGuard.or(concreteStateGuard);
                     }
                     if (configuration.getVerbosity() > 4) {
-                        PSymLogger.info("New State:      " + concreteState);
+                        PSymLogger.info("New State:      " + getConcreteStateString(globalStateMachines, globalStateConcrete));
                     }
                 }
             }
@@ -918,6 +932,8 @@ public class Scheduler implements SymbolicSearch {
             machines.add(newMachine);
             vcManager.addMachine(pc, newMachine);
         }
+        currentMachines.add(newMachine);
+        assert(machines.size() >= currentMachines.size());
 
         TraceLogger.onCreateMachine(pc, newMachine);
         newMachine.setScheduler(this);

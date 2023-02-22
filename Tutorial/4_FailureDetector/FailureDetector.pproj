@@ -6,7 +6,6 @@
 	<PFile>./PSpec/</PFile>
 	<PFile>./PTst/</PFile>
 </InputFiles>
-<Target>CSharp</Target>
 <OutputDir>./PGenerated/</OutputDir>
 <!-- Add the dependencies for the Timer machine -->
 <IncludeProject>../Common/Timer/Timer.pproj</IncludeProject>

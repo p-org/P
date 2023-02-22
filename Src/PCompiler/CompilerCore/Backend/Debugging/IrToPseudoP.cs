@@ -1,4 +1,8 @@
-﻿using Plang.Compiler.Backend.ASTExt;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -6,10 +10,6 @@ using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 
 namespace Plang.Compiler.Backend.Debugging
 {
@@ -21,7 +21,7 @@ namespace Plang.Compiler.Backend.Debugging
 
         public static string Dump(Scope scope)
         {
-            IrToPseudoP dumper = new IrToPseudoP();
+            var dumper = new IrToPseudoP();
             return dumper.Render(scope);
         }
 
@@ -37,7 +37,7 @@ namespace Plang.Compiler.Backend.Debugging
 
         protected override void WriteDeclRef(IPDecl decl)
         {
-            string name = decl.Name;
+            var name = decl.Name;
             if (decl is State state)
             {
                 name = state.QualifiedName;
@@ -76,7 +76,7 @@ namespace Plang.Compiler.Backend.Debugging
                         function.Signature.ReturnType);
                     WriteStmt("{");
                     Indent();
-                    foreach (Variable localVariable in function.LocalVariables)
+                    foreach (var localVariable in function.LocalVariables)
                     {
                         WriteTree(localVariable);
                     }
@@ -100,8 +100,8 @@ namespace Plang.Compiler.Backend.Debugging
                     WriteStmt(machine.IsSpec ? "spec " : "",
                         "machine ",
                         machine);
-                    string machineAssume = machine.Assume?.ToString() ?? "max";
-                    string machineAssert = machine.Assert?.ToString() ?? "max";
+                    var machineAssume = machine.Assume?.ToString() ?? "max";
+                    var machineAssert = machine.Assert?.ToString() ?? "max";
                     WriteStmt("  assert ", machineAssert, " assume ", machineAssume);
                     WriteStmt("  receives ", WriteEventSet(machine.Receives));
                     WriteStmt("  sends ", WriteEventSet(machine.Sends));
@@ -112,17 +112,17 @@ namespace Plang.Compiler.Backend.Debugging
 
                     WriteStmt("{");
                     Indent();
-                    foreach (Variable machineField in machine.Fields)
+                    foreach (var machineField in machine.Fields)
                     {
                         WriteTree(machineField);
                     }
 
-                    foreach (Function machineMethod in machine.Methods)
+                    foreach (var machineMethod in machine.Methods)
                     {
                         WriteTree(machineMethod);
                     }
 
-                    foreach (State machineState in machine.States)
+                    foreach (var machineState in machine.States)
                     {
                         WriteTree(machineState);
                     }
@@ -180,7 +180,7 @@ namespace Plang.Compiler.Backend.Debugging
                     break;
 
                 case CompoundStmt compoundStmt:
-                    foreach (IPStmt stmt in compoundStmt.Statements)
+                    foreach (var stmt in compoundStmt.Statements)
                     {
                         WriteTree(stmt);
                     }
@@ -241,7 +241,7 @@ namespace Plang.Compiler.Backend.Debugging
                 case ReceiveStmt receiveStmt:
                     WriteStmt("receive {");
                     Indent();
-                    foreach (KeyValuePair<PEvent, Function> recvCase in receiveStmt.Cases)
+                    foreach (var recvCase in receiveStmt.Cases)
                     {
                         WriteStmt("case ",
                             recvCase.Key,
@@ -306,8 +306,8 @@ namespace Plang.Compiler.Backend.Debugging
                     break;
 
                 case State state:
-                    string start = state.IsStart ? "start " : "";
-                    string temp = state.Temperature.Equals(StateTemperature.Cold) ? "cold " :
+                    var start = state.IsStart ? "start " : "";
+                    var temp = state.Temperature.Equals(StateTemperature.Cold) ? "cold " :
                         state.Temperature.Equals(StateTemperature.Hot) ? "hot " : "warm ";
                     WriteStmt(start, temp, "state ", state);
                     WriteStmt("{");
@@ -323,7 +323,7 @@ namespace Plang.Compiler.Backend.Debugging
                         Indent();
                         if (state.Entry is Function stateEntry)
                         {
-                            foreach (Variable localVariable in stateEntry.LocalVariables)
+                            foreach (var localVariable in stateEntry.LocalVariables)
                             {
                                 WriteTree(localVariable);
                             }
@@ -350,7 +350,7 @@ namespace Plang.Compiler.Backend.Debugging
                         Indent();
                         if (state.Exit is Function stateExit)
                         {
-                            foreach (Variable localVariable in stateExit.LocalVariables)
+                            foreach (var localVariable in stateExit.LocalVariables)
                             {
                                 WriteTree(localVariable);
                             }
@@ -366,7 +366,7 @@ namespace Plang.Compiler.Backend.Debugging
                         WriteStmt("}");
                     }
 
-                    foreach (KeyValuePair<PEvent, IStateAction> handler in state.AllEventHandlers)
+                    foreach (var handler in state.AllEventHandlers)
                     {
                         WriteTree(handler.Value);
                     }
@@ -413,8 +413,8 @@ namespace Plang.Compiler.Backend.Debugging
 
         private void JoinObjects(IEnumerable<object> items)
         {
-            string actualSep = "";
-            foreach (object item in items)
+            var actualSep = "";
+            foreach (var item in items)
             {
                 WriteParts(actualSep);
                 WriteParts(item);
@@ -429,8 +429,8 @@ namespace Plang.Compiler.Backend.Debugging
 
         protected override void WriteExprList(IEnumerable<IPExpr> items)
         {
-            string actualSep = "";
-            foreach (IPExpr item in items)
+            var actualSep = "";
+            foreach (var item in items)
             {
                 WriteParts(actualSep);
                 WriteExpr(item);
@@ -523,10 +523,10 @@ namespace Plang.Compiler.Backend.Debugging
                     break;
 
                 case NamedTupleExpr namedTupleExpr:
-                    NamedTupleType ntType = (NamedTupleType)namedTupleExpr.Type;
+                    var ntType = (NamedTupleType)namedTupleExpr.Type;
                     WriteParts("(");
-                    string ntSep = "";
-                    for (int i = 0; i < ntType.Fields.Count; i++)
+                    var ntSep = "";
+                    for (var i = 0; i < ntType.Fields.Count; i++)
                     {
                         WriteParts(ntSep, ntType.Fields[i].Name, " = ", namedTupleExpr.TupleFields[i]);
                         ntSep = ", ";

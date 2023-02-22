@@ -1,45 +1,61 @@
-﻿using Antlr4.Runtime;
-using Antlr4.Runtime.Atn;
-using Plang.Compiler.Backend;
-using Plang.Compiler.TypeChecker;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Plang.Compiler.TypeChecker.AST.Declarations;
+using Antlr4.Runtime;
+using Antlr4.Runtime.Atn;
+using Plang.Compiler.Backend;
+using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler
 {
     public class Compiler : ICompiler
     {
-        public void Compile(ICompilationJob job)
+        public int Compile(ICompilerConfiguration job)
         {
-
             job.Output.WriteInfo($"----------------------------------------");
             job.Output.WriteInfo($"Parsing ...");
+            
             // Run parser on every input file
-            PParser.ProgramContext[] trees = job.InputFiles.Select(file =>
+            PParser.ProgramContext[] trees = null;
+            try
             {
-                PParser.ProgramContext tree = Parse(job, new FileInfo(file));
-                job.LocationResolver.RegisterRoot(tree, new FileInfo(file));
-                return tree;
-            }).ToArray();
+                trees = job.InputPFiles.Select(file =>
+                {
+                    var tree = Parse(job, new FileInfo(file));
+                    job.LocationResolver.RegisterRoot(tree, new FileInfo(file));
+                    return tree;
+                }).ToArray();
+            }
+            catch (TranslationException e)
+            {
+                job.Output.WriteError("[Parser Error:]\n" + e.Message);
+                return 1;
+            }
 
             job.Output.WriteInfo($"Type checking ...");
-            // Run typechecker and produce AST
-            Scope scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
+            // Run type checker and produce AST
+            Scope scope = null;
+            try
+            {
+                scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
+            }
+            catch (TranslationException e)
+            {
+                job.Output.WriteError("[Error:]\n" + e.Message);
+                return 1;
+            }
 
             // Convert functions to lowered SSA form with explicit cloning
-            foreach (Function fun in scope.GetAllMethods())
+            foreach (var fun in scope.GetAllMethods())
             {
                 IRTransformer.SimplifyMethod(fun);
             }
 
             job.Output.WriteInfo($"Code generation ...");
             // Run the selected backend on the project and write the files.
-            IEnumerable<CompiledFile> compiledFiles = job.Backend.GenerateCode(job, scope);
-            foreach (CompiledFile file in compiledFiles)
+            var compiledFiles = job.Backend.GenerateCode(job, scope);
+            foreach (var file in compiledFiles)
             {
                 job.Output.WriteInfo($"Generated {file.FileName}.");
                 job.Output.WriteFile(file);
@@ -51,18 +67,28 @@ namespace Plang.Compiler
             {
                 job.Output.WriteInfo($"----------------------------------------");
                 job.Output.WriteInfo($"Compiling {job.ProjectName}...");
-                job.Backend.Compile(job);
+                try
+                {
+                    job.Backend.Compile(job);
+                }
+                catch (TranslationException e)
+                {
+                    job.Output.WriteError("[Compiling Generated Code:]\n" + e.Message);
+                    job.Output.WriteError("[THIS SHOULD NOT HAVE HAPPENED, please report it to the P team or create a GitHub issue]\n" + e.Message);
+                    return 1;
+                }
             }
             job.Output.WriteInfo($"----------------------------------------");
+            return 0;
         }
 
-        private static PParser.ProgramContext Parse(ICompilationJob job, FileInfo inputFile)
+        private static PParser.ProgramContext Parse(ICompilerConfiguration job, FileInfo inputFile)
         {
-            string fileText = File.ReadAllText(inputFile.FullName);
-            AntlrInputStream fileStream = new AntlrInputStream(fileText);
-            PLexer lexer = new PLexer(fileStream);
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            PParser parser = new PParser(tokens);
+            var fileText = File.ReadAllText(inputFile.FullName);
+            var fileStream = new AntlrInputStream(fileText);
+            var lexer = new PLexer(fileStream);
+            var tokens = new CommonTokenStream(lexer);
+            var parser = new PParser(tokens);
             parser.RemoveErrorListeners();
 
             // As currently implemented, P can be parsed by SLL. However, if extensions to the
@@ -116,7 +142,7 @@ namespace Plang.Compiler
             out string stderr, string exeName,
             params string[] argumentList)
         {
-            ProcessStartInfo psi = new ProcessStartInfo(exeName)
+            var psi = new ProcessStartInfo(exeName)
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
@@ -129,7 +155,7 @@ namespace Plang.Compiler
 
             string mStdout = "", mStderr = "";
 
-            Process proc = new Process { StartInfo = psi };
+            var proc = new Process { StartInfo = psi };
             proc.OutputDataReceived += (s, e) => { mStdout += $"{e.Data}\n"; };
             proc.ErrorDataReceived += (s, e) =>
             {

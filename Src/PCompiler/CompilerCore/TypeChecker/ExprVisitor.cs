@@ -1,12 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using Antlr4.Runtime.Misc;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.Types;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -45,14 +45,14 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitNamedTupleAccessExpr(PParser.NamedTupleAccessExprContext context)
         {
-            IPExpr subExpr = Visit(context.expr());
+            var subExpr = Visit(context.expr());
             if (!(subExpr.Type.Canonicalize() is NamedTupleType tuple))
             {
                 throw handler.TypeMismatch(subExpr, TypeKind.NamedTuple);
             }
 
-            string fieldName = context.field.GetText();
-            if (!tuple.LookupEntry(fieldName, out NamedTupleEntry entry))
+            var fieldName = context.field.GetText();
+            if (!tuple.LookupEntry(fieldName, out var entry))
             {
                 throw handler.MissingNamedTupleEntry(context.field, tuple);
             }
@@ -62,8 +62,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitTupleAccessExpr(PParser.TupleAccessExprContext context)
         {
-            IPExpr subExpr = Visit(context.expr());
-            int fieldNo = int.Parse(context.field.GetText());
+            var subExpr = Visit(context.expr());
+            var fieldNo = int.Parse(context.field.GetText());
             if (!(subExpr.Type.Canonicalize() is TupleType tuple))
             {
                 throw handler.TypeMismatch(subExpr, TypeKind.Tuple, TypeKind.NamedTuple);
@@ -79,8 +79,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitSeqAccessExpr(PParser.SeqAccessExprContext context)
         {
-            IPExpr seqOrMap = Visit(context.seq);
-            IPExpr indexExpr = Visit(context.index);
+            var seqOrMap = Visit(context.seq);
+            var indexExpr = Visit(context.index);
             switch (seqOrMap.Type.Canonicalize())
             {
                 case SequenceType seqType:
@@ -117,7 +117,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 case "keys":
                     {
-                        IPExpr expr = Visit(context.expr());
+                        var expr = Visit(context.expr());
                         if (!(expr.Type.Canonicalize() is MapType mapType))
                         {
                             throw handler.TypeMismatch(expr, TypeKind.Map);
@@ -127,7 +127,7 @@ namespace Plang.Compiler.TypeChecker
                     }
                 case "values":
                     {
-                        IPExpr expr = Visit(context.expr());
+                        var expr = Visit(context.expr());
                         if (!(expr.Type.Canonicalize() is MapType mapType))
                         {
                             throw handler.TypeMismatch(expr, TypeKind.Map);
@@ -146,7 +146,7 @@ namespace Plang.Compiler.TypeChecker
                     }
                 case "default":
                     {
-                        PLanguageType type = TypeResolver.ResolveType(context.type(), table, handler);
+                        var type = TypeResolver.ResolveType(context.type(), table, handler);
                         return new DefaultExpr(context, type.Canonicalize());
                     }
                 default:
@@ -159,7 +159,7 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitCtorExpr(PParser.CtorExprContext context)
         {
-            string interfaceName = context.interfaceName.GetText();
+            var interfaceName = context.interfaceName.GetText();
             if (!table.Lookup(interfaceName, out Interface @interface))
             {
                 throw handler.MissingDeclaration(context.interfaceName, "interface", interfaceName);
@@ -170,7 +170,7 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.IllegalMonitorOperation(context, context.NEW().Symbol, method.Owner);
             }
 
-            IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
+            var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, @interface.PayloadType, arguments);
             
             method.CanCreate = true;
@@ -180,14 +180,14 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitFunCallExpr(PParser.FunCallExprContext context)
         {
-            string funName = context.fun.GetText();
+            var funName = context.fun.GetText();
             if (!table.Lookup(funName, out Function function))
             {
                 throw handler.MissingDeclaration(context.fun, "function", funName);
             }
 
             // Check the arguments
-            IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
+            var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
             ISet<Variable> linearVariables = new HashSet<Variable>();
 
             if (function.Signature.Parameters.Count != arguments.Length)
@@ -195,10 +195,10 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.IncorrectArgumentCount(context, arguments.Length, function.Signature.Parameters.Count);
             }
 
-            for (int i = 0; i < arguments.Length; i++)
+            for (var i = 0; i < arguments.Length; i++)
             {
-                IPExpr argument = arguments[i];
-                PLanguageType paramType = function.Signature.Parameters[i].Type;
+                var argument = arguments[i];
+                var paramType = function.Signature.Parameters[i].Type;
                 if (!paramType.IsAssignableFrom(argument.Type))
                 {
                     throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
@@ -212,7 +212,7 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitUnaryExpr(PParser.UnaryExprContext context)
         {
-            IPExpr subExpr = Visit(context.expr());
+            var subExpr = Visit(context.expr());
             switch (context.op.Text)
             {
                 case "-":
@@ -243,11 +243,11 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitBinExpr(PParser.BinExprContext context)
         {
-            IPExpr lhs = Visit(context.lhs);
-            IPExpr rhs = Visit(context.rhs);
-            string op = context.op.Text;
+            var lhs = Visit(context.lhs);
+            var rhs = Visit(context.rhs);
+            var op = context.op.Text;
 
-            Dictionary<string, Func<IPExpr, IPExpr, IPExpr>> arithCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
+            var arithCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
             {
                 {"*", (elhs, erhs) => new BinOpExpr(context, BinOpType.Mul, elhs, erhs)},
                 {"/", (elhs, erhs) => new BinOpExpr(context, BinOpType.Div, elhs, erhs)},
@@ -260,13 +260,13 @@ namespace Plang.Compiler.TypeChecker
                 {">=", (elhs, erhs) => new BinOpExpr(context, BinOpType.Ge, elhs, erhs)}
             };
 
-            Dictionary<string, Func<IPExpr, IPExpr, IPExpr>> logicCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
+            var logicCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
             {
                 {"&&", (elhs, erhs) => new BinOpExpr(context, BinOpType.And, elhs, erhs)},
                 {"||", (elhs, erhs) => new BinOpExpr(context, BinOpType.Or, elhs, erhs)}
             };
 
-            Dictionary<string, Func<IPExpr, IPExpr, IPExpr>> compCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
+            var compCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
             {
                 {"==", (elhs, erhs) => new BinOpExpr(context, BinOpType.Eq, elhs, erhs)},
                 {"!=", (elhs, erhs) => new BinOpExpr(context, BinOpType.Neq, elhs, erhs)}
@@ -312,7 +312,7 @@ namespace Plang.Compiler.TypeChecker
                     }
                     throw handler.IncomparableTypes(context, lhs.Type, rhs.Type); 
                 case "in":
-                    PLanguageType rhsType = rhs.Type.Canonicalize();
+                    var rhsType = rhs.Type.Canonicalize();
                     if (rhsType is MapType rhsMap)
                     {
                         if (!rhsMap.KeyType.IsAssignableFrom(lhs.Type))
@@ -378,8 +378,8 @@ namespace Plang.Compiler.TypeChecker
                 return new ChooseExpr(context, null, PrimitiveType.Bool);
             }
 
-            IPExpr subExpr = Visit(context.expr());
-            PLanguageType subExprType = subExpr.Type;
+            var subExpr = Visit(context.expr());
+            var subExprType = subExpr.Type;
 
             switch (subExprType.Canonicalize())
             {
@@ -403,9 +403,9 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitCastExpr(PParser.CastExprContext context)
         {
-            IPExpr subExpr = Visit(context.expr());
-            PLanguageType oldType = subExpr.Type;
-            PLanguageType newType = TypeResolver.ResolveType(context.type(), table, handler);
+            var subExpr = Visit(context.expr());
+            var oldType = subExpr.Type;
+            var newType = TypeResolver.ResolveType(context.type(), table, handler);
             if (context.cast.Text.Equals("as"))
             {
                 if (!newType.IsAssignableFrom(oldType) && !oldType.IsAssignableFrom(newType))
@@ -498,7 +498,7 @@ namespace Plang.Compiler.TypeChecker
         {
             if (context.iden() != null)
             {
-                string symbolName = context.iden().GetText();
+                var symbolName = context.iden().GetText();
                 if (table.Lookup(symbolName, out Variable variable))
                 {
                     return new VariableAccessExpr(context, variable);
@@ -561,7 +561,7 @@ namespace Plang.Compiler.TypeChecker
 
             if (context.HALT() != null)
             {
-                bool success = table.Lookup("halt", out PEvent haltEvent);
+                var success = table.Lookup("halt", out PEvent haltEvent);
                 Debug.Assert(success);
                 return new EventRefExpr(context, haltEvent);
             }
@@ -586,19 +586,19 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitUnnamedTupleBody(PParser.UnnamedTupleBodyContext context)
         {
-            IPExpr[] fields = context._fields.Select(Visit).ToArray();
+            var fields = context._fields.Select(Visit).ToArray();
             return new UnnamedTupleExpr(context, fields);
         }
 
         public override IPExpr VisitNamedTupleBody(PParser.NamedTupleBodyContext context)
         {
-            IPExpr[] fields = context._values.Select(Visit).ToArray();
+            var fields = context._values.Select(Visit).ToArray();
 
-            NamedTupleEntry[] entries = new NamedTupleEntry[fields.Length];
-            HashSet<string> names = new HashSet<string>();
-            for (int i = 0; i < fields.Length; i++)
+            var entries = new NamedTupleEntry[fields.Length];
+            var names = new HashSet<string>();
+            for (var i = 0; i < fields.Length; i++)
             {
-                string entryName = context._names[i].GetText();
+                var entryName = context._names[i].GetText();
                 if (names.Contains(entryName))
                 {
                     throw handler.DuplicateNamedTupleEntry(context._names[i], entryName);
@@ -608,7 +608,7 @@ namespace Plang.Compiler.TypeChecker
                 entries[i] = new NamedTupleEntry { Name = entryName, FieldNo = i, Type = fields[i].Type };
             }
 
-            NamedTupleType type = new NamedTupleType(entries);
+            var type = new NamedTupleType(entries);
             return new NamedTupleExpr(context, fields, type);
         }
 
@@ -619,7 +619,7 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitDecimalFloat(PParser.DecimalFloatContext context)
         {
-            double value = double.Parse($"{context.pre?.Text ?? ""}.{context.post.Text}");
+            var value = double.Parse($"{context.pre?.Text ?? ""}.{context.post.Text}");
             return new FloatLiteralExpr(context, value);
         }
 
@@ -630,15 +630,15 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitFormatedString([NotNull] PParser.FormatedStringContext context)
         {
-            string baseString = context.StringLiteral().GetText();
+            var baseString = context.StringLiteral().GetText();
             baseString = baseString.Substring(1, baseString.Length - 2); // strip beginning / end double quote
-            int numNecessaryArgs = TypeCheckingUtils.PrintStmtNumArgs(baseString);
+            var numNecessaryArgs = TypeCheckingUtils.PrintStmtNumArgs(baseString);
             if (numNecessaryArgs == -1)
             {
                 throw handler.InvalidStringExprFormat(context, context.StringLiteral().Symbol);
             }
 
-            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToList();
+            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToList();
 
             if (args.Count != numNecessaryArgs)
             {
@@ -655,7 +655,7 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitVarLvalue(PParser.VarLvalueContext context)
         {
-            string varName = context.name.GetText();
+            var varName = context.name.GetText();
             if (!table.Lookup(varName, out Variable variable))
             {
                 throw handler.MissingDeclaration(context, "variable", varName);
@@ -666,14 +666,14 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitNamedTupleLvalue(PParser.NamedTupleLvalueContext context)
         {
-            IPExpr lvalue = Visit(context.lvalue());
+            var lvalue = Visit(context.lvalue());
             if (!(lvalue.Type.Canonicalize() is NamedTupleType type))
             {
                 throw handler.TypeMismatch(lvalue, TypeKind.NamedTuple);
             }
 
-            string field = context.field.GetText();
-            if (!type.LookupEntry(field, out NamedTupleEntry entry))
+            var field = context.field.GetText();
+            if (!type.LookupEntry(field, out var entry))
             {
                 throw handler.MissingNamedTupleEntry(context.field, type);
             }
@@ -683,13 +683,13 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitTupleLvalue(PParser.TupleLvalueContext context)
         {
-            IPExpr lvalue = Visit(context.lvalue());
+            var lvalue = Visit(context.lvalue());
             if (!(lvalue.Type.Canonicalize() is TupleType type))
             {
                 throw handler.TypeMismatch(lvalue, TypeKind.Tuple);
             }
 
-            int field = int.Parse(context.@int().GetText());
+            var field = int.Parse(context.@int().GetText());
             if (field >= type.Types.Count)
             {
                 throw handler.OutOfBoundsTupleAccess(context.@int(), type);
@@ -700,9 +700,9 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitMapOrSeqLvalue(PParser.MapOrSeqLvalueContext context)
         {
-            IPExpr lvalue = Visit(context.lvalue());
-            IPExpr index = Visit(context.expr());
-            PLanguageType indexType = index.Type;
+            var lvalue = Visit(context.lvalue());
+            var index = Visit(context.expr());
+            var indexType = index.Type;
             switch (lvalue.Type.Canonicalize())
             {
                 case MapType mapType:

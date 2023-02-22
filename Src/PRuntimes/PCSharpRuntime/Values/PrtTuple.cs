@@ -24,7 +24,7 @@ namespace Plang.CSharpRuntime.Values
             }
             else
             {
-                foreach (IPrtValue elem in elems)
+                foreach (var elem in elems)
                 {
                     fieldValues.Add(elem?.Clone());
                 }
@@ -39,8 +39,8 @@ namespace Plang.CSharpRuntime.Values
 
         public IPrtValue Clone()
         {
-            PrtTuple clone = new PrtTuple();
-            foreach (IPrtValue val in fieldValues)
+            var clone = new PrtTuple();
+            foreach (var val in fieldValues)
             {
                 clone.fieldValues.Add(val?.Clone());
             }
@@ -55,7 +55,7 @@ namespace Plang.CSharpRuntime.Values
                 return false;
             }
 
-            PrtTuple tupValue = val as PrtTuple;
+            var tupValue = val as PrtTuple;
             if (tupValue == null)
             {
                 return false;
@@ -66,7 +66,7 @@ namespace Plang.CSharpRuntime.Values
                 return false;
             }
 
-            for (int i = 0; i < fieldValues.Count; i++)
+            for (var i = 0; i < fieldValues.Count; i++)
             {
                 if (!PrtValues.SafeEquals(fieldValues[i], tupValue.fieldValues[i]))
                 {
@@ -84,14 +84,14 @@ namespace Plang.CSharpRuntime.Values
 
         public override int GetHashCode()
         {
-            int hashCode = HashHelper.ComputeHash<IPrtValue>(fieldValues);
+            var hashCode = HashHelper.ComputeHash(fieldValues);
             return hashCode;
         }
 
         public override string ToString()
         {
-            string retStr = "<";
-            foreach (IPrtValue field in fieldValues)
+            var retStr = "<";
+            foreach (var field in fieldValues)
             {
                 retStr = retStr + field + ",";
             }
@@ -115,7 +115,7 @@ namespace Plang.CSharpRuntime.Values
 
         public PrtNamedTuple(string[] _fieldNames, params IPrtValue[] _fieldValues)
         {
-            this.fieldNames = _fieldNames.ToList();
+            fieldNames = _fieldNames.ToList();
             if (_fieldValues == null || _fieldValues.Length == 1)
             {
                 fieldValues = new List<IPrtValue>();
@@ -124,7 +124,7 @@ namespace Plang.CSharpRuntime.Values
             }
             else
             {
-                this.fieldValues = _fieldValues.ToList();
+                fieldValues = _fieldValues.ToList();
             }
         }
 
@@ -132,7 +132,7 @@ namespace Plang.CSharpRuntime.Values
         {
             get
             {
-                int idx = fieldNames.IndexOf(name);
+                var idx = fieldNames.IndexOf(name);
                 if (idx == -1)
                 {
                     throw UnknownNamedTupleFieldAccess.FromFields(name, fieldNames);
@@ -141,7 +141,7 @@ namespace Plang.CSharpRuntime.Values
             }
             set
             {
-                int idx = fieldNames.IndexOf(name);
+                var idx = fieldNames.IndexOf(name);
                 if (idx == -1)
                 {
                     throw UnknownNamedTupleFieldAccess.FromFields(name, fieldNames);
@@ -152,13 +152,13 @@ namespace Plang.CSharpRuntime.Values
 
         public IPrtValue Clone()
         {
-            PrtNamedTuple clone = new PrtNamedTuple();
-            foreach (string name in fieldNames)
+            var clone = new PrtNamedTuple();
+            foreach (var name in fieldNames)
             {
                 clone.fieldNames.Add(name);
             }
 
-            foreach (IPrtValue val in fieldValues)
+            foreach (var val in fieldValues)
             {
                 clone.fieldValues.Add(val?.Clone());
             }
@@ -178,7 +178,7 @@ namespace Plang.CSharpRuntime.Values
                 return false;
             }
 
-            for (int i = 0; i < tup.fieldValues.Count; i++)
+            for (var i = 0; i < tup.fieldValues.Count; i++)
             {
                 if (fieldNames[i] != tup.fieldNames[i])
                 {
@@ -196,14 +196,14 @@ namespace Plang.CSharpRuntime.Values
 
         public override int GetHashCode()
         {
-            int hashCode = HashHelper.ComputeHash<IPrtValue>(fieldValues);
+            var hashCode = HashHelper.ComputeHash(fieldValues);
             return hashCode;
         }
 
         public override string ToString()
         {
-            string retStr = "<";
-            for (int i = 0; i < fieldValues.Count; i++)
+            var retStr = "<";
+            for (var i = 0; i < fieldValues.Count; i++)
             {
                 retStr += fieldNames[i] + ":" + fieldValues[i] + ", ";
             }
@@ -214,10 +214,10 @@ namespace Plang.CSharpRuntime.Values
 
         public string ToEscapedString()
         {
-            string retStr = "<";
-            for (int i = 0; i < fieldValues.Count; i++)
+            var retStr = "<";
+            for (var i = 0; i < fieldValues.Count; i++)
             {
-                string v = fieldValues[i] == null ? "null" : fieldValues[i].ToEscapedString();
+                var v = fieldValues[i] == null ? "null" : fieldValues[i].ToEscapedString();
                 retStr += fieldNames[i] + ":" + v + ", ";
             }
 

@@ -1,5 +1,5 @@
-using Plang.Compiler.TypeChecker.AST.States;
 using System.Collections.Generic;
+using Plang.Compiler.TypeChecker.AST.States;
 
 namespace Plang.Compiler.TypeChecker.AST
 {

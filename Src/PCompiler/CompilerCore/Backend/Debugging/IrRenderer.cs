@@ -1,8 +1,8 @@
-﻿using Plang.Compiler.TypeChecker;
+﻿using System.Collections.Generic;
+using System.Text;
+using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.Types;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Plang.Compiler.Backend.Debugging
 {
@@ -30,7 +30,7 @@ namespace Plang.Compiler.Backend.Debugging
 
         public string Render(Scope scope)
         {
-            foreach (IPDecl decl in scope.AllDecls)
+            foreach (var decl in scope.AllDecls)
             {
                 WriteDecl(decl);
             }
@@ -55,7 +55,7 @@ namespace Plang.Compiler.Backend.Debugging
 
         protected void WriteParts(params string[] parts)
         {
-            foreach (string part in parts)
+            foreach (var part in parts)
             {
                 writer.Append(part);
             }
@@ -63,7 +63,7 @@ namespace Plang.Compiler.Backend.Debugging
 
         protected void WriteParts(params object[] parts)
         {
-            foreach (object part in parts)
+            foreach (var part in parts)
             {
                 switch (part)
                 {

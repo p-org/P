@@ -1,6 +1,6 @@
 ﻿using System;
-using Plang.Compiler.TypeChecker;
 using System.Collections.Generic;
+using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler.Backend
 {
@@ -10,7 +10,7 @@ namespace Plang.Compiler.Backend
         /// Generate target language source files from a P project.
         /// </summary>
         /// <returns>All the source files geenrated</returns>
-        IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope);
+        IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope);
 
 
         /// <summary>
@@ -18,7 +18,7 @@ namespace Plang.Compiler.Backend
         /// as build scripts or project files, compile and assemble those files into a final target.
         /// </summary>
         /// <param name="job"></param>
-        public void Compile(ICompilationJob job)
+        public void Compile(ICompilerConfiguration job)
         {
             if (HasCompilationStage)
             {

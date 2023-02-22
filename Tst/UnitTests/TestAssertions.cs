@@ -9,7 +9,7 @@ namespace UnitTests
     {
         public static void AssertTestCase(CompilerTestCase testCase)
         {
-            if (!testCase.EvaluateTest(out string stdout, out string stderr, out int? exitCode))
+            if (!testCase.EvaluateTest(out var stdout, out var stderr, out var exitCode))
             {
                 Console.WriteLine("Test failed!\n");
                 WriteOutput(stdout, stderr, exitCode);
@@ -25,8 +25,8 @@ namespace UnitTests
 
         private static void SafeDeleteDirectory(DirectoryInfo toDelete)
         {
-            DirectoryInfo safeBase = new DirectoryInfo(Constants.SolutionDirectory);
-            for (DirectoryInfo scratch = toDelete; scratch.Parent != null; scratch = scratch.Parent)
+            var safeBase = new DirectoryInfo(Constants.SolutionDirectory);
+            for (var scratch = toDelete; scratch.Parent != null; scratch = scratch.Parent)
             {
                 if (string.Compare(scratch.FullName, safeBase.FullName, StringComparison.InvariantCultureIgnoreCase) ==
                     0)

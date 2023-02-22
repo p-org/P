@@ -1,8 +1,8 @@
-using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker.Types;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Antlr4.Runtime;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
@@ -54,7 +54,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public void AddInterfaces(IEnumerable<Interface> its)
         {
-            foreach (Interface @interface in its)
+            foreach (var @interface in its)
             {
                 interfaces.Add(@interface);
             }

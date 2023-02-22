@@ -1,10 +1,10 @@
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -12,8 +12,8 @@ namespace Plang.Compiler.TypeChecker
     {
         public static void Validate(ITranslationErrorHandler handler, Machine machine)
         {
-            State startState = FindStartState(machine, handler);
-            PLanguageType startStatePayloadType = GetStatePayload(startState);
+            var startState = FindStartState(machine, handler);
+            var startStatePayloadType = GetStatePayload(startState);
             Debug.Assert(startStatePayloadType.IsSameTypeAs(machine.PayloadType));
             ValidateHandlers(handler, machine);
             ValidateTransitions(handler, machine);
@@ -33,9 +33,9 @@ namespace Plang.Compiler.TypeChecker
                     throw handler.ExitFunctionCannotTakeParameters(state.SourceLocation, state.Exit.Signature.Parameters.Count);
                 }
 
-                foreach (KeyValuePair<PEvent, AST.IStateAction> pair in state.AllEventHandlers)
+                foreach (var pair in state.AllEventHandlers)
                 {
-                    PEvent handledEvent = pair.Key;
+                    var handledEvent = pair.Key;
                     switch (pair.Value)
                     {
                         case EventDoAction eventDoAction:
@@ -65,9 +65,9 @@ namespace Plang.Compiler.TypeChecker
 
         public static void ValidateNoStaticHandlers(ITranslationErrorHandler handler, Machine machine)
         {
-            foreach (State state in machine.AllStates())
+            foreach (var state in machine.AllStates())
             {
-                bool illegalUsage = state.Entry != null && IsStaticOrForeign(state.Entry);
+                var illegalUsage = state.Entry != null && IsStaticOrForeign(state.Entry);
                 if (illegalUsage)
                 {
                     throw handler.StaticFunctionNotAllowedAsHandler(state.SourceLocation,
@@ -81,7 +81,7 @@ namespace Plang.Compiler.TypeChecker
                         state.Exit.Name);
                 }
 
-                foreach (KeyValuePair<PEvent, AST.IStateAction> pair in state.AllEventHandlers)
+                foreach (var pair in state.AllEventHandlers)
                 {
                     switch (pair.Value)
                     {
@@ -123,11 +123,11 @@ namespace Plang.Compiler.TypeChecker
 
         private static void ValidateTransitions(ITranslationErrorHandler handler, Machine machine)
         {
-            foreach (State state in machine.AllStates())
+            foreach (var state in machine.AllStates())
             {
-                foreach (KeyValuePair<PEvent, AST.IStateAction> pair in state.AllEventHandlers)
+                foreach (var pair in state.AllEventHandlers)
                 {
-                    PEvent handledEvent = pair.Key;
+                    var handledEvent = pair.Key;
                     switch (pair.Value)
                     {
                         case EventDoAction eventDoAction:
@@ -217,8 +217,8 @@ namespace Plang.Compiler.TypeChecker
 
         private static State FindStartState(Machine machine, ITranslationErrorHandler handler)
         {
-            bool foundStartState = false;
-            foreach (State state in machine.AllStates())
+            var foundStartState = false;
+            foreach (var state in machine.AllStates())
             {
                 if (state == machine.StartState || state.IsStart)
                 {

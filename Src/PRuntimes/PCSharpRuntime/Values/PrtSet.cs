@@ -1,9 +1,9 @@
 using System;
-using Plang.CSharpRuntime.Exceptions;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Plang.CSharpRuntime.Exceptions;
 
 namespace Plang.CSharpRuntime.Values
 {
@@ -83,7 +83,7 @@ namespace Plang.CSharpRuntime.Values
 
         public IPrtValue Clone()
         {
-            PrtSet clone = new PrtSet(new HashSet<IPrtValue>());
+            var clone = new PrtSet(new HashSet<IPrtValue>());
             foreach (var item in set) clone.Add(item.Clone());
             return clone;
         }
@@ -124,7 +124,7 @@ namespace Plang.CSharpRuntime.Values
             var sep = "";
             foreach (var value in set)
             {
-                string v = value == null ? "null" : value.ToEscapedString();
+                var v = value == null ? "null" : value.ToEscapedString();
                 sb.Append(sep);
                 sb.Append("<");
                 sb.Append(v);

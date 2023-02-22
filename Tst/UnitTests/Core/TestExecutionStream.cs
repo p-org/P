@@ -1,8 +1,8 @@
-﻿using Plang.Compiler;
-using Plang.Compiler.Backend;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Plang.Compiler;
+using Plang.Compiler.Backend;
 
 namespace UnitTests.Core
 {
@@ -30,7 +30,7 @@ namespace UnitTests.Core
 
         public void WriteFile(CompiledFile file)
         {
-            string fileName = Path.Combine(outputDirectory.FullName, file.FileName);
+            var fileName = Path.Combine(outputDirectory.FullName, file.FileName);
             File.WriteAllText(fileName, file.Contents);
             outputFiles.Add(new FileInfo(fileName));
         }

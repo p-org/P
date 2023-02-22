@@ -1,8 +1,8 @@
-﻿using Plang.CSharpRuntime.Exceptions;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Plang.CSharpRuntime.Exceptions;
 
 namespace Plang.CSharpRuntime.Values
 {
@@ -69,7 +69,7 @@ namespace Plang.CSharpRuntime.Values
 
         public void CopyTo(KeyValuePair<IPrtValue, IPrtValue>[] array, int arrayIndex)
         {
-            foreach (KeyValuePair<IPrtValue, IPrtValue> kv in map)
+            foreach (var kv in map)
             {
                 array[arrayIndex++] = kv;
             }
@@ -77,7 +77,7 @@ namespace Plang.CSharpRuntime.Values
 
         public bool Remove(KeyValuePair<IPrtValue, IPrtValue> item)
         {
-            bool removed = map.Remove(item.Key);
+            var removed = map.Remove(item.Key);
             IsDirty = true;
             return removed;
         }
@@ -99,7 +99,7 @@ namespace Plang.CSharpRuntime.Values
 
         public bool Remove(IPrtValue key)
         {
-            bool removed = map.Remove(key);
+            var removed = map.Remove(key);
             IsDirty = true;
             return removed;
         }
@@ -140,7 +140,7 @@ namespace Plang.CSharpRuntime.Values
 
         public void Freeze()
         {
-            foreach (IPrtValue key in map.Keys)
+            foreach (var key in map.Keys)
             {
                 MutabilityHelper.EnsureFrozen(key);
             }
@@ -176,10 +176,10 @@ namespace Plang.CSharpRuntime.Values
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append("(");
-            string sep = "";
-            foreach (KeyValuePair<IPrtValue, IPrtValue> value in map)
+            var sep = "";
+            foreach (var value in map)
             {
                 sb.Append(sep);
                 sb.Append("<");
@@ -196,10 +196,10 @@ namespace Plang.CSharpRuntime.Values
 
         public string ToEscapedString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append("(");
-            string sep = "";
-            foreach (KeyValuePair<IPrtValue, IPrtValue> value in map)
+            var sep = "";
+            foreach (var value in map)
             {
                 string k = value.Key == null ? "null" : value.Key.ToEscapedString();
                 string v = value.Value == null ? "null" : value.Value.ToEscapedString();

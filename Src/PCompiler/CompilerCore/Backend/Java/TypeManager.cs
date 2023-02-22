@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.Types;
@@ -35,7 +33,7 @@ namespace Plang.Compiler.Backend.Java
                 {
                     if (_unboxedType == null)
                     {
-                        throw new Exception($"TypeName not implemented for {this.GetType()}");
+                        throw new Exception($"TypeName not implemented for {GetType()}");
                     }
 
                     return _unboxedType;
@@ -76,28 +74,28 @@ namespace Plang.Compiler.Backend.Java
             /// Throws for non-collection types!!
             /// </summary>
             internal virtual string AccessorMethodName =>
-                throw new Exception($"AccessorMethodName not implemented for {this.TypeName}");
+                throw new Exception($"AccessorMethodName not implemented for {TypeName}");
 
             /// <summary>
             /// The name of the method (K) -> bool that returns whether K is contained in an
             /// instance of this type.  Throws for non-collection types!!
             /// </summary>
             internal virtual string ContainsMethodName =>
-                throw new Exception($"ContainsMethodName not implemented for {this.TypeName}");
+                throw new Exception($"ContainsMethodName not implemented for {TypeName}");
 
             /// <summary>
             /// The name of the method (K, V) -> void that inserts V by key K.
             /// Throws for non-collection types!
             /// </summary>
             internal virtual string MutatorMethodName =>
-                throw new Exception($"MutatorMethodName not implemented for {this.TypeName}");
+                throw new Exception($"MutatorMethodName not implemented for {TypeName}");
 
             /// <summary>
             /// The name of the method K -> void that removes key K from the collection.  Throws for
             /// non-collection types!
             /// </summary>
             internal virtual string RemoveMethodName =>
-                throw new Exception($"RemoveMethodName not implemented for {this.TypeName}");
+                throw new Exception($"RemoveMethodName not implemented for {TypeName}");
 
             internal class JAny : JType
             {
@@ -178,7 +176,7 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JMachine : JType
             {
-                // Source/Core/Actors/ActorId.cs stores ActorID values as ulongs
+                // Source/CheckerCore/Actors/ActorId.cs stores ActorID values as ulongs
 
                 internal JMachine()
                 {
@@ -333,8 +331,8 @@ namespace Plang.Compiler.Backend.Java
 
                 case MapAccessExpr mapAccessExpr:
                 {
-                    JType k = JavaTypeFor(mapAccessExpr.IndexExpr.Type);
-                    JType v = JavaTypeFor(mapAccessExpr.Type);
+                    var k = JavaTypeFor(mapAccessExpr.IndexExpr.Type);
+                    var v = JavaTypeFor(mapAccessExpr.Type);
                     return new JType.JMap(k, v);
                 }
 
@@ -343,13 +341,13 @@ namespace Plang.Compiler.Backend.Java
 
                 case SetAccessExpr setAccessExpr:
                 {
-                    JType t = JavaTypeFor(setAccessExpr.SetExpr.Type);
+                    var t = JavaTypeFor(setAccessExpr.SetExpr.Type);
                     return new JType.JSet(t);
                 }
 
                 case SeqAccessExpr seqAccessExpr:
                 {
-                    JType t = JavaTypeFor(seqAccessExpr.SeqExpr.Type);
+                    var t = JavaTypeFor(seqAccessExpr.SeqExpr.Type);
                     return new JType.JList(t);
                 }
 

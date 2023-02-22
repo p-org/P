@@ -161,6 +161,7 @@ public class EntryPoint {
     private static void replay(ReplayScheduler replayScheduler) throws RuntimeException, InterruptedException, TimeoutException {
         try {
             replayScheduler.doSearch();
+            status = "error";
             throw new RuntimeException("ERROR: Failed to replay counterexample");
         } catch (BugFoundException bugFoundException) {
             bugFoundException.printStackTrace();

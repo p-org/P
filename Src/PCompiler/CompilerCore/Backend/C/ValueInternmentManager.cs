@@ -1,6 +1,6 @@
-﻿using Plang.Compiler.TypeChecker.AST.Declarations;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.Backend.C
 {
@@ -18,13 +18,13 @@ namespace Plang.Compiler.Backend.C
 
         public string RegisterValue(Function function, T value)
         {
-            if (!valueInternmentTable.TryGetValue(function, out IDictionary<T, string> funcTable))
+            if (!valueInternmentTable.TryGetValue(function, out var funcTable))
             {
                 funcTable = new Dictionary<T, string>();
                 valueInternmentTable.Add(function, funcTable);
             }
 
-            if (!funcTable.TryGetValue(value, out string literalName))
+            if (!funcTable.TryGetValue(value, out var literalName))
             {
                 literalName = nameManager.GetTemporaryName($"LIT_{typeName}");
                 funcTable.Add(value, literalName);
@@ -35,7 +35,7 @@ namespace Plang.Compiler.Backend.C
 
         public IEnumerable<KeyValuePair<T, string>> GetValues(Function function)
         {
-            if (valueInternmentTable.TryGetValue(function, out IDictionary<T, string> table))
+            if (valueInternmentTable.TryGetValue(function, out var table))
             {
                 return table.AsEnumerable();
             }

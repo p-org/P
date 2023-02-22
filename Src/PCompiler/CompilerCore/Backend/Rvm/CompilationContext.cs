@@ -1,13 +1,13 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
-using Plang.Compiler.TypeChecker.AST.Declarations;
+
 using System.Collections.Generic;
-using System.IO;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.Backend.Rvm
 {
     internal class CompilationContext : CompilationContextBase
     {
-        public CompilationContext(ICompilationJob job)
+        public CompilationContext(ICompilerConfiguration job)
             : base(job)
         {
             Names = new RvmNameManager("PGEN_");
@@ -20,16 +20,16 @@ namespace Plang.Compiler.Backend.Rvm
         public string GetAjFileName()
         {
             // AspectJ file name should match aspect class name
-            string aspectClassName = Names.GetAspectClassName();
+            var aspectClassName = Names.GetAspectClassName();
             return $"{aspectClassName}.aj";
         }
 
         public string GetRvmFileName(Machine machine)
         {
-            string rvmSpecName = Names.GetRvmSpecName(machine);
+            var rvmSpecName = Names.GetRvmSpecName(machine);
             return $"{rvmSpecName}.rvm";
         }
 
-        public IReadOnlyList<string> ProjectDependencies { get; }
+        public IList<string> ProjectDependencies { get; }
     }
 }

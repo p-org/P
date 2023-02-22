@@ -26,7 +26,7 @@ namespace Plang.Compiler.TypeChecker
             PParser.ProgramContext context,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
-            DeclarationStubVisitor visitor = new DeclarationStubVisitor(globalScope, nodesToDeclarations);
+            var visitor = new DeclarationStubVisitor(globalScope, nodesToDeclarations);
             visitor.Visit(context);
         }
 
@@ -34,8 +34,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitEventDecl(PParser.EventDeclContext context)
         {
-            string symbolName = context.name.GetText();
-            PEvent decl = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             CurrentScope.UniversalEventSet.AddEvent(decl);
             return null;
@@ -47,8 +47,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitEventSetDecl(PParser.EventSetDeclContext context)
         {
-            string symbolName = context.name.GetText();
-            NamedEventSet decl = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
@@ -59,8 +59,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitInterfaceDecl(PParser.InterfaceDeclContext context)
         {
-            string symbolName = context.name.GetText();
-            Interface decl = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
@@ -80,16 +80,16 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitPTypeDef(PParser.PTypeDefContext context)
         {
-            string symbolName = context.name.GetText();
-            TypeDef typeDef = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var typeDef = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, typeDef);
             return null;
         }
 
         public override object VisitForeignTypeDef(PParser.ForeignTypeDefContext context)
         {
-            string symbolName = context.name.GetText();
-            TypeDef typeDef = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var typeDef = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, typeDef);
             return null;
         }
@@ -100,24 +100,24 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
         {
-            string symbolName = context.name.GetText();
-            PEnum pEnum = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var pEnum = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, pEnum);
             return VisitChildren(context);
         }
 
         public override object VisitEnumElem(PParser.EnumElemContext context)
         {
-            string symbolName = context.name.GetText();
-            EnumElem elem = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var elem = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, elem);
             return null;
         }
 
         public override object VisitNumberedEnumElem(PParser.NumberedEnumElemContext context)
         {
-            string symbolName = context.name.GetText();
-            EnumElem elem = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var elem = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, elem);
             return null;
         }
@@ -128,25 +128,25 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitImplMachineDecl(PParser.ImplMachineDeclContext context)
         {
-            string symbolName = context.name.GetText();
-            Machine decl = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return VisitChildrenWithNewScope(decl, context);
         }
 
         public override object VisitSpecMachineDecl(PParser.SpecMachineDeclContext context)
         {
-            string symbolName = context.name.GetText();
-            Machine decl = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return VisitChildrenWithNewScope(decl, context);
         }
 
         public override object VisitVarDecl(PParser.VarDeclContext context)
         {
-            foreach (PParser.IdenContext varName in context.idenList()._names)
+            foreach (var varName in context.idenList()._names)
             {
-                Variable decl = CurrentScope.Put(varName.GetText(), varName, VariableRole.Field);
+                var decl = CurrentScope.Put(varName.GetText(), varName, VariableRole.Field);
                 nodesToDeclarations.Put(varName, decl);
             }
 
@@ -155,8 +155,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitStateDecl(PParser.StateDeclContext context)
         {
-            string symbolName = context.name.GetText();
-            AST.States.State decl = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
@@ -167,16 +167,16 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitPFunDecl(PParser.PFunDeclContext context)
         {
-            string symbolName = context.name.GetText();
-            Function decl = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return VisitChildrenWithNewScope(decl, context);
         }
 
         public override object VisitFunParam(PParser.FunParamContext context)
         {
-            string symbolName = context.name.GetText();
-            Variable decl = CurrentScope.Put(symbolName, context, VariableRole.Param);
+            var symbolName = context.name.GetText();
+            var decl = CurrentScope.Put(symbolName, context, VariableRole.Param);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
@@ -188,8 +188,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitForeignFunDecl(PParser.ForeignFunDeclContext context)
         {
-            string symbolName = context.name.GetText();
-            Function decl = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
             decl.Scope = CurrentScope.MakeChildScope();
             nodesToDeclarations.Put(context, decl);
             return VisitChildrenWithNewScope(decl, context);
@@ -201,16 +201,16 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitNamedModuleDecl([NotNull] PParser.NamedModuleDeclContext context)
         {
-            string symbolName = context.name.GetText();
-            NamedModule decl = CurrentScope.Put(symbolName, context);
+            var symbolName = context.name.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
 
         public override object VisitSafetyTestDecl([NotNull] PParser.SafetyTestDeclContext context)
         {
-            string symbolName = context.testName.GetText();
-            SafetyTest decl = CurrentScope.Put(symbolName, context);
+            var symbolName = context.testName.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
             decl.Main = context.mainMachine?.GetText();
             nodesToDeclarations.Put(context, decl);
             return null;
@@ -218,8 +218,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitRefinementTestDecl([NotNull] PParser.RefinementTestDeclContext context)
         {
-            string symbolName = context.testName.GetText();
-            RefinementTest decl = CurrentScope.Put(symbolName, context);
+            var symbolName = context.testName.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
             decl.Main = context.mainMachine?.GetText();
             nodesToDeclarations.Put(context, decl);
             return null;
@@ -227,8 +227,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitImplementationDecl([NotNull] PParser.ImplementationDeclContext context)
         {
-            string symbolName = context.implName.GetText();
-            Implementation decl = CurrentScope.Put(symbolName, context);
+            var symbolName = context.implName.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
             decl.Main = context.mainMachine?.GetText();
             nodesToDeclarations.Put(context, decl);
             return null;

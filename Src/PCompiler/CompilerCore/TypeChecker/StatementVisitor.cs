@@ -1,12 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -29,19 +29,19 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPStmt VisitFunctionBody(PParser.FunctionBodyContext context)
         {
-            List<IPStmt> statements = context.statement().Select(Visit).ToList();
+            var statements = context.statement().Select(Visit).ToList();
             return new CompoundStmt(context, statements);
         }
 
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
         {
-            List<IPStmt> statements = context.statement().Select(Visit).ToList();
+            var statements = context.statement().Select(Visit).ToList();
             return new CompoundStmt(context, statements);
         }
         
         public override IPStmt VisitAssertStmt(PParser.AssertStmtContext context)
         {
-            IPExpr assertion = exprVisitor.Visit(context.assertion);
+            var assertion = exprVisitor.Visit(context.assertion);
             if (!PrimitiveType.Bool.IsSameTypeAs(assertion.Type))
             {
                 throw handler.TypeMismatch(context.assertion, assertion.Type, PrimitiveType.Bool);
@@ -63,7 +63,7 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPStmt VisitPrintStmt(PParser.PrintStmtContext context)
         {
-            IPExpr message = exprVisitor.Visit(context.message);
+            var message = exprVisitor.Visit(context.message);
             if (!message.Type.IsSameTypeAs(PrimitiveType.String))
             {
                 throw handler.TypeMismatch(context.message, message.Type, PrimitiveType.String);
@@ -73,8 +73,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPStmt VisitReturnStmt(PParser.ReturnStmtContext context)
         {
-            IPExpr returnValue = context.expr() == null ? null : exprVisitor.Visit(context.expr());
-            PLanguageType returnType = returnValue?.Type ?? PrimitiveType.Null;
+            var returnValue = context.expr() == null ? null : exprVisitor.Visit(context.expr());
+            var returnType = returnValue?.Type ?? PrimitiveType.Null;
             if (!method.Signature.ReturnType.IsAssignableFrom(returnType))
             {
                 throw handler.TypeMismatch(context, returnType, method.Signature.ReturnType);
@@ -95,8 +95,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPStmt VisitAssignStmt(PParser.AssignStmtContext context)
         {
-            IPExpr variable = exprVisitor.Visit(context.lvalue());
-            IPExpr value = exprVisitor.Visit(context.rvalue());
+            var variable = exprVisitor.Visit(context.lvalue());
+            var value = exprVisitor.Visit(context.rvalue());
 
             // If this is a value assignment, we just need subtyping
             if (!variable.Type.IsAssignableFrom(value.Type))
@@ -136,13 +136,13 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPStmt VisitInsertStmt(PParser.InsertStmtContext context)
         {
-            IPExpr variable = exprVisitor.Visit(context.lvalue());
-            IPExpr index = exprVisitor.Visit(context.expr());
-            IPExpr value = exprVisitor.Visit(context.rvalue());
+            var variable = exprVisitor.Visit(context.lvalue());
+            var index = exprVisitor.Visit(context.expr());
+            var value = exprVisitor.Visit(context.rvalue());
 
             // Check subtyping
-            PLanguageType keyType = index.Type;
-            PLanguageType valueType = value.Type;
+            var keyType = index.Type;
+            var valueType = value.Type;
 
             PLanguageType expectedKeyType;
             PLanguageType expectedValueType;
@@ -178,8 +178,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPStmt VisitRemoveStmt(PParser.RemoveStmtContext context)
         {
-            IPExpr variable = exprVisitor.Visit(context.lvalue());
-            IPExpr value = exprVisitor.Visit(context.expr());
+            var variable = exprVisitor.Visit(context.lvalue());
+            var value = exprVisitor.Visit(context.expr());
 
             if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Sequence))
             {
@@ -190,7 +190,7 @@ namespace Plang.Compiler.TypeChecker
             }
             else if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Map))
             {
-                MapType map = (MapType)variable.Type.Canonicalize();
+                var map = (MapType)variable.Type.Canonicalize();
                 if (!map.KeyType.IsAssignableFrom(value.Type))
                 {
                     throw handler.TypeMismatch(context.expr(), value.Type, map.KeyType);
@@ -212,24 +212,24 @@ namespace Plang.Compiler.TypeChecker
     
         public override IPStmt VisitWhileStmt(PParser.WhileStmtContext context)
         {
-            IPExpr condition = exprVisitor.Visit(context.expr());
+            var condition = exprVisitor.Visit(context.expr());
             if (!Equals(condition.Type, PrimitiveType.Bool))
             {
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
 
-            IPStmt body = Visit(context.statement());
+            var body = Visit(context.statement());
             return new WhileStmt(context, condition, body);
         }
 
         public override IPStmt VisitForeachStmt(PParser.ForeachStmtContext context)
         {
-            string varName = context.item.GetText();
+            var varName = context.item.GetText();
             if (!table.Lookup(varName, out Variable var))
             {
                 throw handler.MissingDeclaration(context.item, "foreach iterator variable", varName);
             }
-            IPExpr collection = exprVisitor.Visit(context.collection);
+            var collection = exprVisitor.Visit(context.collection);
             
             // make sure that foreach is applied to either sequence or set type
             
@@ -254,32 +254,32 @@ namespace Plang.Compiler.TypeChecker
                 || !expectedItemType.IsAssignableFrom(itemType))
                 throw handler.TypeMismatch(context.item, itemType, expectedItemType);
 
-            IPStmt body = Visit(context.statement());
+            var body = Visit(context.statement());
             return new ForeachStmt(context, var, collection, body);
         }
 
         public override IPStmt VisitIfStmt(PParser.IfStmtContext context)
         {
-            IPExpr condition = exprVisitor.Visit(context.expr());
+            var condition = exprVisitor.Visit(context.expr());
             if (!Equals(condition.Type, PrimitiveType.Bool))
             {
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
 
-            IPStmt thenBody = Visit(context.thenBranch);
-            IPStmt elseBody = context.elseBranch == null ? new NoStmt(context) : Visit(context.elseBranch);
+            var thenBody = Visit(context.thenBranch);
+            var elseBody = context.elseBranch == null ? new NoStmt(context) : Visit(context.elseBranch);
             return new IfStmt(context, condition, thenBody, elseBody);
         }
 
         public override IPStmt VisitCtorStmt(PParser.CtorStmtContext context)
         {
-            string interfaceName = context.iden().GetText();
+            var interfaceName = context.iden().GetText();
             if (!table.Lookup(interfaceName, out Interface targetInterface))
             {
                 throw handler.MissingDeclaration(context.iden(), "interface", interfaceName);
             }
 
-            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetInterface.PayloadType, args);
             method.CanCreate = true;
             return new CtorStmt(context, targetInterface, args);
@@ -287,8 +287,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPStmt VisitFunCallStmt(PParser.FunCallStmtContext context)
         {
-            string funName = context.fun.GetText();
-            List<IPExpr> argsList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+            var funName = context.fun.GetText();
+            var argsList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             if (!table.Lookup(funName, out Function fun))
             {
                 throw handler.MissingDeclaration(context.fun, "function or function prototype", funName);
@@ -301,7 +301,7 @@ namespace Plang.Compiler.TypeChecker
                     fun.Signature.Parameters.Count);
             }
 
-            foreach (Tuple<Variable, IPExpr> pair in fun.Signature.Parameters.Zip(argsList, Tuple.Create))
+            foreach (var pair in fun.Signature.Parameters.Zip(argsList, Tuple.Create))
             {
                 TypeCheckingUtils.CheckArgument(handler, context, pair.Item1.Type, pair.Item2);
             }
@@ -317,7 +317,7 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.RaiseEventInNonVoidFunction(context);
             }
 
-            IPExpr evtExpr = exprVisitor.Visit(context.expr());
+            var evtExpr = exprVisitor.Visit(context.expr());
             if (IsDefinitelyNullEvent(evtExpr))
             {
                 throw handler.EmittedNullEvent(evtExpr);
@@ -330,7 +330,7 @@ namespace Plang.Compiler.TypeChecker
 
             method.CanRaiseEvent = true;
 
-            IPExpr[] args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
             if (evtExpr is EventRefExpr eventRef)
             {
                 TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.Value.PayloadType, args);
@@ -346,13 +346,13 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.IllegalMonitorOperation(context, context.SEND().Symbol, machine);
             }
 
-            IPExpr machineExpr = exprVisitor.Visit(context.machine);
+            var machineExpr = exprVisitor.Visit(context.machine);
             if (!PrimitiveType.Machine.IsAssignableFrom(machineExpr.Type))
             {
                 throw handler.TypeMismatch(context.machine, machineExpr.Type, PrimitiveType.Machine);
             }
 
-            IPExpr evtExpr = exprVisitor.Visit(context.@event);
+            var evtExpr = exprVisitor.Visit(context.@event);
             if (IsDefinitelyNullEvent(evtExpr))
             {
                 throw handler.EmittedNullEvent(evtExpr);
@@ -363,7 +363,7 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.TypeMismatch(context.@event, evtExpr.Type, PrimitiveType.Event);
             }
 
-            IPExpr[] args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
 
             if (evtExpr is EventRefExpr eventRef)
             {
@@ -387,7 +387,7 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.IllegalMonitorOperation(context, context.ANNOUNCE().Symbol, machine);
             }
 
-            IPExpr evtExpr = exprVisitor.Visit(context.expr());
+            var evtExpr = exprVisitor.Visit(context.expr());
             if (IsDefinitelyNullEvent(evtExpr))
             {
                 throw handler.EmittedNullEvent(evtExpr);
@@ -400,7 +400,7 @@ namespace Plang.Compiler.TypeChecker
 
             method.CanSend = true;
             
-            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             return new AnnounceStmt(context, evtExpr, args.Count == 0 ? null : args[0]);
         }
 
@@ -411,21 +411,21 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.ChangeStateInNonVoidFunction(context);
             }
 
-            PParser.StateNameContext stateNameContext = context.stateName();
-            string stateName = stateNameContext.state.GetText();
+            var stateNameContext = context.stateName();
+            var stateName = stateNameContext.state.GetText();
             IStateContainer current = machine;
 
-            AST.States.State state = current?.GetState(stateName);
+            var state = current?.GetState(stateName);
             if (state == null)
             {
                 throw handler.MissingDeclaration(stateNameContext.state, "state", stateName);
             }
 
-            PLanguageType expectedType =
+            var expectedType =
                 state.Entry?.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
-            IPExpr[] rvaluesList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+            var rvaluesList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
 
-            int expectedArgs = state.Entry?.Signature.Parameters.Count() ?? 0;
+            var expectedArgs = state.Entry?.Signature.Parameters.Count() ?? 0;
             if (rvaluesList.Length != expectedArgs)
             {
                 throw handler.IncorrectArgumentCount(context, rvaluesList.Length, expectedArgs);
@@ -445,7 +445,7 @@ namespace Plang.Compiler.TypeChecker
                 payload = new UnnamedTupleExpr(context, rvaluesList);
             }
 
-            PLanguageType payloadType = payload?.Type ?? PrimitiveType.Null;
+            var payloadType = payload?.Type ?? PrimitiveType.Null;
             if (!expectedType.IsAssignableFrom(payloadType))
             {
                 throw handler.TypeMismatch(context, payloadType, expectedType);
@@ -462,14 +462,14 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.IllegalMonitorOperation(context, context.RECEIVE().Symbol, machine);
             }
 
-            Dictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
-            foreach (PParser.RecvCaseContext caseContext in context.recvCase())
+            var cases = new Dictionary<PEvent, Function>();
+            foreach (var caseContext in context.recvCase())
             {
                 
 
-                foreach (PParser.EventIdContext eventIdContext in caseContext.eventList().eventId())
+                foreach (var eventIdContext in caseContext.eventList().eventId())
                 {
-                    Function recvHandler =
+                    var recvHandler =
                         new Function(caseContext.anonEventHandler())
                         {
                             Scope = table.MakeChildScope(),
@@ -481,7 +481,7 @@ namespace Plang.Compiler.TypeChecker
                     var param = caseContext.anonEventHandler().funParam();
                     if (param != null)
                     {
-                        Variable paramVar = recvHandler.Scope.Put(param.name.GetText(), param, VariableRole.Param);
+                        var paramVar = recvHandler.Scope.Put(param.name.GetText(), param, VariableRole.Param);
                         paramVar.Type = TypeResolver.ResolveType(param.type(), recvHandler.Scope, handler);
                         recvHandler.Signature.Parameters.Add(paramVar);
                     }
@@ -498,7 +498,7 @@ namespace Plang.Compiler.TypeChecker
                         throw handler.DuplicateReceiveCase(eventIdContext, pEvent);
                     }
 
-                    PLanguageType expectedType =
+                    var expectedType =
                         recvHandler.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
                     if (!expectedType.IsAssignableFrom(pEvent.PayloadType))
                     {

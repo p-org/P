@@ -1,4 +1,11 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. */
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
@@ -7,12 +14,6 @@ using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace Plang.Compiler.Backend.Rvm
 {
@@ -32,9 +33,9 @@ namespace Plang.Compiler.Backend.Rvm
 
         public IEnumerable<CompiledFile> GenerateSources(Scope globalScope)
         {
-            List<CompiledFile> sources = new List<CompiledFile>();
+            var sources = new List<CompiledFile>();
 
-            foreach (IPDecl decl in globalScope.AllDecls)
+            foreach (var decl in globalScope.AllDecls)
             {
                 switch (decl)
                 {
@@ -49,12 +50,12 @@ namespace Plang.Compiler.Backend.Rvm
                 }
             }
 
-            foreach (PEnum e in EnumDecls.Values)
+            foreach (var e in EnumDecls.Values)
             {
                 sources.Add(WriteEnumClass(e));
             }
 
-            foreach (Machine machine in globalScope.Machines)
+            foreach (var machine in globalScope.Machines)
             {
                 if (machine.IsSpec)
                 {
@@ -67,8 +68,8 @@ namespace Plang.Compiler.Backend.Rvm
 
         private CompiledFile WriteEnumClass(PEnum e)
         {
-            CompiledFile source = new CompiledFile(Context.Names.GetEnumFileName(e));
-            StringWriter output = source.Stream;
+            var source = new CompiledFile(Context.Names.GetEnumFileName(e));
+            var output = source.Stream;
 
             Context.WriteLine(output, "package pcon;");
             Context.WriteLine(output);
@@ -80,20 +81,20 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteEnum(StringWriter output, PEnum data)
         {
-            string enumName = Context.Names.GetEnumTypeName(data);
+            var enumName = Context.Names.GetEnumTypeName(data);
             Context.WriteLine(output, $"public enum {enumName} {{");
 
-            BeforeSeparator separator = new BeforeSeparator(() => Context.WriteLine(output, ","));
-            foreach (EnumElem elem in data.Values)
+            var separator = new BeforeSeparator(() => Context.WriteLine(output, ","));
+            foreach (var elem in data.Values)
             {
-                string elementName = Context.Names.GetEnumElementName(elem);
+                var elementName = Context.Names.GetEnumElementName(elem);
                 separator.beforeElement();
                 Context.Write(output, $"{elementName}({elem.Value})");
             }
             Context.WriteLine(output, ";");
 
-            string enumValue = Context.Names.GetEnumValueName();
-            string enumValueGetter = Context.Names.GetEnumValueGetterName();
+            var enumValue = Context.Names.GetEnumValueName();
+            var enumValueGetter = Context.Names.GetEnumValueGetterName();
             Context.WriteLine(output);
             Context.WriteLine(output, $"private int {enumValue};");
             Context.WriteLine(output);
@@ -108,7 +109,7 @@ namespace Plang.Compiler.Backend.Rvm
         }
 
         private CompiledFile WriteMonitor(Machine machine) {
-            CompiledFile source = new CompiledFile(Context.GetRvmFileName(machine));
+            var source = new CompiledFile(Context.GetRvmFileName(machine));
 
             WriteSourcePrologue(source.Stream);
 
@@ -136,9 +137,9 @@ namespace Plang.Compiler.Backend.Rvm
         {
             Context.WriteLine(output, $"{Context.Names.GetRvmSpecName(machine)} () {{");
             
-            BeforeSeparator separator = new BeforeSeparator(() => Context.WriteLine(output));
+            var separator = new BeforeSeparator(() => Context.WriteLine(output));
             
-            foreach (State s in machine.States)
+            foreach (var s in machine.States)
             {
                 separator.beforeElement();
                 WriteStateClass(output, s);
@@ -147,7 +148,7 @@ namespace Plang.Compiler.Backend.Rvm
 
             WriteHandlers(output, machine);
 
-            foreach (Function method in machine.Methods)
+            foreach (var method in machine.Methods)
             {
                 // P compiler will extract event handlers as anonymous functions.
                 // Since we extract the event handlers already, we can just skip the translation of anonymous functions.
@@ -168,7 +169,7 @@ namespace Plang.Compiler.Backend.Rvm
             WriteConstructor(output, machine);
 
             // TODO: Is this the right event set to iterate? Does it contain all events that have anything at all to do with the current machine?
-            foreach (PEvent e in machine.Observes.Events)
+            foreach (var e in machine.Observes.Events)
             {
                 Context.WriteLine(output);
                 WriteSpecEvent(output, machine, e);
@@ -179,10 +180,10 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteHandlers(StringWriter output, Machine machine)
         {
-            BeforeSeparator separator = new BeforeSeparator(() => Context.WriteLine(output));
-            foreach (State state in machine.States)
+            var separator = new BeforeSeparator(() => Context.WriteLine(output));
+            foreach (var state in machine.States)
             {
-                foreach (KeyValuePair<PEvent, IStateAction> eventHandler in state.AllEventHandlers)
+                foreach (var eventHandler in state.AllEventHandlers)
                 {
                     separator.beforeElement();
                     WriteEventHandler(output, state, eventHandler.Key, eventHandler.Value);
@@ -196,9 +197,9 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteStateClass(StringWriter output, State state)
         {
-            string stateClassName = Context.Names.GetStateClassName(state);
-            string stateBaseName = Context.Names.GetStateBaseClassName();
-            string stateName = Context.Names.GetStateName(state);
+            var stateClassName = Context.Names.GetStateClassName(state);
+            var stateBaseName = Context.Names.GetStateBaseClassName();
+            var stateName = Context.Names.GetStateName(state);
 
             Context.WriteLine(output, $"private class {stateClassName} extends {stateBaseName} {{");
             Context.WriteLine(output, "@Override");
@@ -213,11 +214,11 @@ namespace Plang.Compiler.Backend.Rvm
                 Context.WriteLine(output);
                 Tools.WriteTemplateExitHandler(output, (output) => WriteFunctionBody(output, state.Exit));
             }
-            foreach (KeyValuePair<PEvent, IStateAction> eventHandler in state.AllEventHandlers)
+            foreach (var eventHandler in state.AllEventHandlers)
             {
-                PEvent pEvent = eventHandler.Key;
+                var pEvent = eventHandler.Key;
 
-                IStateAction action = eventHandler.Value;
+                var action = eventHandler.Value;
     
                 Context.WriteLine(output);
                 Context.WriteLine(output, "@Override");
@@ -228,13 +229,13 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteEntryHandlerBody(StringWriter output, Function handler)
         {
-            List<Variable> parameters = handler.Signature.Parameters;
+            var parameters = handler.Signature.Parameters;
             if (parameters.Count > 0)
             {
                 Debug.Assert(parameters.Count == 1);
-                Variable argument = parameters[0];
-                string argumentType = Context.Names.GetJavaTypeName(argument.Type);
-                string argumentName = Context.Names.GetLocalVarName(argument);
+                var argument = parameters[0];
+                var argumentType = Context.Names.GetJavaTypeName(argument.Type);
+                var argumentName = Context.Names.GetLocalVarName(argument);
                 Tools.InlineEventHandlerArguments(output, argumentType, argumentName);
             }
             WriteFunctionBody(output, handler);
@@ -243,8 +244,8 @@ namespace Plang.Compiler.Backend.Rvm
         // Extracts each event action in a state as a function.
         private void WriteEventHandler(StringWriter output, State state, PEvent pEvent, IStateAction stateAction)
         {
-            string name = Context.Names.GetEventHandlerName(state, pEvent);
-            string stateExceptionClass = Context.Names.GetGotoStmtExceptionName();
+            var name = Context.Names.GetEventHandlerName(state, pEvent);
+            var stateExceptionClass = Context.Names.GetGotoStmtExceptionName();
 
             switch (stateAction)
             {
@@ -252,7 +253,7 @@ namespace Plang.Compiler.Backend.Rvm
                     throw new NotImplementedException("Event deferring is not implemented.");
 
                 case EventDoAction eventDoAction: {
-                    Function handler = eventDoAction.Target;
+                    var handler = eventDoAction.Target;
 
                     if (handler.IsAnon)
                     {
@@ -295,11 +296,11 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteMachineFields(StringWriter output, Machine machine)
         {
-            foreach (Variable field in machine.Fields)
+            foreach (var field in machine.Fields)
             {
-                string variableType = Context.Names.GetJavaTypeName(field.Type);
-                string variableName = Context.Names.GetNameForDecl(field);
-                string defaultValue = GetBoxedDefaultValue(field.Type);
+                var variableType = Context.Names.GetJavaTypeName(field.Type);
+                var variableName = Context.Names.GetNameForDecl(field);
+                var defaultValue = GetBoxedDefaultValue(field.Type);
                 Context.WriteLine(output,
                     $"private {variableType} {variableName} = {defaultValue};");
             }
@@ -307,17 +308,17 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteStateVariable(StringWriter output, Machine machine)
         {
-            string baseClass = Context.Names.GetStateBaseClassName();
-            string stateVariable = Context.Names.GetStateVariableName();
-            string initState = Context.Names.GetStateClassName(machine.StartState);
+            var baseClass = Context.Names.GetStateBaseClassName();
+            var stateVariable = Context.Names.GetStateVariableName();
+            var initState = Context.Names.GetStateClassName(machine.StartState);
             Context.WriteLine(output, $"{baseClass} {stateVariable} = new {initState}();");
         }
 
         private void WriteConstructor(StringWriter output, Machine machine)
         {
-            string constructorName = Context.Names.GetSpecConstructorName(machine);
-            string stateVariable = Context.Names.GetStateVariableName();
-            string entryHandler = Context.Names.GetEntryHandlerName();
+            var constructorName = Context.Names.GetSpecConstructorName(machine);
+            var stateVariable = Context.Names.GetStateVariableName();
+            var entryHandler = Context.Names.GetEntryHandlerName();
             // TODO: Also consider the case when the constructor has arguments.
             Context.WriteLine(output, $"public {constructorName}() {{");
             WrapInTryStmtException(
@@ -328,12 +329,12 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteSpecEvent(StringWriter output, Machine machine, PEvent pEvent)
         {
-            string eventName = Context.Names.GetRvmEventName(pEvent);
-            string stateVariable = Context.Names.GetStateVariableName();
+            var eventName = Context.Names.GetRvmEventName(pEvent);
+            var stateVariable = Context.Names.GetStateVariableName();
             Context.Write(output, $"event {eventName} (");
             string payloadName;
             if (!Tools.isNullType(pEvent.PayloadType)) {
-                string payloadType = Context.Names.GetJavaTypeName(pEvent.PayloadType);
+                var payloadType = Context.Names.GetJavaTypeName(pEvent.PayloadType);
                 payloadName = Context.Names.GetPayloadArgumentName();
                 Context.Write(output, $"{payloadType} {payloadName}");
             }
@@ -343,7 +344,7 @@ namespace Plang.Compiler.Backend.Rvm
             }
             Context.WriteLine(output, ") {");
 
-            string handlerName = Context.Names.GetStateEventHandlerName(pEvent);
+            var handlerName = Context.Names.GetStateEventHandlerName(pEvent);
             WrapInTryStmtException(
                 output,
                 (output) => Context.WriteLine(output, $"{stateVariable}.{handlerName}({payloadName});"));
@@ -353,9 +354,9 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteCallEventHandler(StringWriter output, State currentState, PEvent pEvent, IStateAction stateAction)
         {
-            string name = Context.Names.GetEventHandlerName(currentState, pEvent);
+            var name = Context.Names.GetEventHandlerName(currentState, pEvent);
 
-            string payloadName = "Optional.empty()";
+            var payloadName = "Optional.empty()";
             if (!Tools.isNullType(pEvent.PayloadType)) {
                 payloadName = $"Optional.of({Context.Names.GetPayloadArgumentName()})";
             }
@@ -371,8 +372,8 @@ namespace Plang.Compiler.Backend.Rvm
 
                 case EventGotoState eventGotoState when eventGotoState.TransitionFunction == null:
                 {
-                    string stateClass = Context.Names.GetStateClassName(eventGotoState.Target);
-                    string exceptionClass = Context.Names.GetGotoStmtExceptionName();
+                    var stateClass = Context.Names.GetStateClassName(eventGotoState.Target);
+                    var exceptionClass = Context.Names.GetGotoStmtExceptionName();
                     Context.WriteLine(output, $"throw new {exceptionClass}(new {stateClass}(), {payloadName});");
                     break;
                 }
@@ -383,8 +384,8 @@ namespace Plang.Compiler.Backend.Rvm
 
                     WriteCallEventFunction(output, name, pEvent, transitionFunc);
                     
-                    string stateClass = Context.Names.GetStateClassName(eventGotoState.Target);
-                    string exceptionClass = Context.Names.GetGotoStmtExceptionName();
+                    var stateClass = Context.Names.GetStateClassName(eventGotoState.Target);
+                    var exceptionClass = Context.Names.GetGotoStmtExceptionName();
                     Context.WriteLine(output, $"throw new {exceptionClass}(new {stateClass}(), {payloadName});");
 
                     break;
@@ -392,8 +393,8 @@ namespace Plang.Compiler.Backend.Rvm
 
                 case EventIgnore _:
                 {
-                    string eventName = Context.Names.GetNameForDecl(pEvent);
-                    string stateName = Context.Names.GetNameForDecl(currentState);
+                    var eventName = Context.Names.GetNameForDecl(pEvent);
+                    var stateName = Context.Names.GetNameForDecl(currentState);
                     Context.WriteLine(output, $"// Event {eventName} is ignored in the state {stateName} ");
                     break;
                 }
@@ -405,7 +406,7 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteCallEventFunction(StringWriter output, string name, PEvent pEvent, Function function)
         {
-            List<Variable> parameters = function.Signature.Parameters;
+            var parameters = function.Signature.Parameters;
             Debug.Assert(parameters.Count <= 1);
 
             if (function.IsAnon) 
@@ -415,14 +416,14 @@ namespace Plang.Compiler.Backend.Rvm
                 {
                     // TODO: Subtypes should also be fine. Is IsAssignableFrom the proper method to use?
                     Debug.Assert(parameters[0].Type.IsSameTypeAs(pEvent.PayloadType));
-                    string eventArg = Context.Names.GetPayloadArgumentName();
+                    var eventArg = Context.Names.GetPayloadArgumentName();
                     Context.Write(output, eventArg);
                 }
                 Context.WriteLine(output, ");");
             }
             else
             {
-                List<string> args = new List<string>();
+                var args = new List<string>();
                 if (parameters.Count == 1)
                 {
                     args.Add(Context.Names.GetPayloadArgumentName());
@@ -434,16 +435,16 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteFunction(StringWriter output, Function function)
         {
-            bool isStatic = function.Owner == null;
+            var isStatic = function.Owner == null;
 
             if (isStatic) {
                 throw new NotImplementedException("Static function is not implemented.");
             }
 
-            FunctionSignature signature = function.Signature;
-            string returnType = Context.Names.GetJavaTypeName(signature.ReturnType);
-            string functionName = Context.Names.GetNameForDecl(function);
-            string throwsClause = Tools.GetThrowsClause();
+            var signature = function.Signature;
+            var returnType = Context.Names.GetJavaTypeName(signature.ReturnType);
+            var functionName = Context.Names.GetNameForDecl(function);
+            var throwsClause = Tools.GetThrowsClause();
             Context.Write(output, $"public {returnType} {functionName}(");
             WriteFunctionArguments(output, function);
             Context.WriteLine(output, $") {throwsClause} {{");
@@ -462,16 +463,16 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteFunctionBody(StringWriter output, Function function)
         {
-            foreach (Variable local in function.LocalVariables)
+            foreach (var local in function.LocalVariables)
             {
-                string variableType = Context.Names.GetJavaTypeName(local.Type);
-                string variableName = Context.Names.GetNameForDecl(local);
-                string defaultValue = GetBoxedDefaultValue(local.Type);
+                var variableType = Context.Names.GetJavaTypeName(local.Type);
+                var variableName = Context.Names.GetNameForDecl(local);
+                var defaultValue = GetBoxedDefaultValue(local.Type);
                 Context.WriteLine(output,
                     $"{variableType} {variableName} = {defaultValue};");
             }
 
-            foreach (IPStmt bodyStatement in function.Body.Statements)
+            foreach (var bodyStatement in function.Body.Statements)
             {
                 WriteStmt(output: output, function: function, stmt: bodyStatement);
             }
@@ -499,7 +500,7 @@ namespace Plang.Compiler.Backend.Rvm
 
                 case CompoundStmt compoundStmt:
                     Context.WriteLine(output, "{");
-                    foreach (IPStmt subStmt in compoundStmt.Statements)
+                    foreach (var subStmt in compoundStmt.Statements)
                     {
                         WriteStmt(output, function, subStmt);
                     }
@@ -517,8 +518,8 @@ namespace Plang.Compiler.Backend.Rvm
 
                 case GotoStmt gotoStmt:
                     //last statement
-                    string stateClass = Context.Names.GetStateClassName(gotoStmt.State);
-                    string gotoExceptionClass = Context.Names.GetGotoStmtExceptionName();
+                    var stateClass = Context.Names.GetStateClassName(gotoStmt.State);
+                    var gotoExceptionClass = Context.Names.GetGotoStmtExceptionName();
                     Context.Write(output, $"throw new {gotoExceptionClass}(new {stateClass}(), ");
 
                     if (gotoStmt.Payload != null)
@@ -550,7 +551,7 @@ namespace Plang.Compiler.Backend.Rvm
                 case AddStmt addStmt:
                 {
                     WriteExpr(output, addStmt.Variable);
-                    string insertFuncName = Context.Names.GetInsertFunc();
+                    var insertFuncName = Context.Names.GetInsertFunc();
                     Context.Write(output, $".{insertFuncName}(");
                     WriteBoxedExpression(output, addStmt.Value);
                     Context.WriteLine(output, ");");
@@ -563,7 +564,7 @@ namespace Plang.Compiler.Backend.Rvm
                         case MapType _:
                         {
                             WriteExpr(output, insertStmt.Variable);
-                            string insertFuncName = Context.Names.GetInsertFunc();
+                            var insertFuncName = Context.Names.GetInsertFunc();
                             Context.Write(output, $".{insertFuncName}(");
                             WriteBoxedExpression(output, insertStmt.Index);
                             Context.Write(output, ", ");
@@ -575,7 +576,7 @@ namespace Plang.Compiler.Backend.Rvm
                         case SequenceType _:
                         {
                             WriteExpr(output, insertStmt.Variable);
-                            string insertFuncName = Context.Names.GetInsertFunc();
+                            var insertFuncName = Context.Names.GetInsertFunc();
                             Context.Write(output, $".{insertFuncName}((int)");
                             UnboxIfNeeded(
                                 output,
@@ -597,7 +598,7 @@ namespace Plang.Compiler.Backend.Rvm
                     {
                         throw new NotImplementedException("Typecasting in MoveAssignStmt is not implemented.");
                     }
-                    string fromVariableName = Context.Names.GetNameForDecl(moveAssignStmt.FromVariable);
+                    var fromVariableName = Context.Names.GetNameForDecl(moveAssignStmt.FromVariable);
                     WriteAssignStmt(
                         output,
                         moveAssignStmt.ToLocation,
@@ -615,7 +616,7 @@ namespace Plang.Compiler.Backend.Rvm
 
                 case RaiseStmt raiseStmt:
                     //last statement
-                    string raiseExceptionClass = Context.Names.GetRaiseStmtExceptionName();
+                    var raiseExceptionClass = Context.Names.GetRaiseStmtExceptionName();
                     Context.Write(output, $"throw new {raiseExceptionClass}(");
                     WriteExpr(output, raiseStmt.PEvent);
                     Context.Write(output, ", ");
@@ -640,7 +641,7 @@ namespace Plang.Compiler.Backend.Rvm
                         case SetType _:
                         {
                             WriteExpr(output, removeStmt.Variable);
-                            string removeFuncName = Context.Names.GetRemoveFunc();
+                            var removeFuncName = Context.Names.GetRemoveFunc();
                             Context.Write(output, $".{removeFuncName}(");
                             WriteBoxedExpression(output, removeStmt.Value);
                             Context.WriteLine(output, ");");
@@ -650,7 +651,7 @@ namespace Plang.Compiler.Backend.Rvm
                         case SequenceType _:
                         {
                             WriteExpr(output, removeStmt.Variable);
-                            string removeFuncName = Context.Names.GetRemoveFunc();
+                            var removeFuncName = Context.Names.GetRemoveFunc();
                             Context.Write(output, $".{removeFuncName}((int)");
                             UnboxIfNeeded(output, (output) => WriteExpr(output, removeStmt.Value));
                             Context.WriteLine(output, ");");
@@ -704,7 +705,7 @@ namespace Plang.Compiler.Backend.Rvm
                 case MapAccessExpr mapAccessExpr:
                 {
                     WriteExpr(output, mapAccessExpr.MapExpr);
-                    string putFuncName = Context.Names.GetMapPutFunc();
+                    var putFuncName = Context.Names.GetMapPutFunc();
                     Context.Write(output, $".{putFuncName}(");
                     WriteBoxedExpression(output, mapAccessExpr.IndexExpr);
                     Context.Write(output, ", ");
@@ -716,8 +717,8 @@ namespace Plang.Compiler.Backend.Rvm
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                 {
                     WriteExpr(output, namedTupleAccessExpr.SubExpr);
-                    string setterName = Context.Names.GetTupleFieldSetter();
-                    string fieldName = namedTupleAccessExpr.FieldName;
+                    var setterName = Context.Names.GetTupleFieldSetter();
+                    var fieldName = namedTupleAccessExpr.FieldName;
                     Context.Write(output, $".{setterName}(\"{fieldName}\", ");
                     BoxIfNeeded(output, lvalue.Type, (output) => writeRightValue(output));
                     Context.WriteLine(output, ");");
@@ -727,7 +728,7 @@ namespace Plang.Compiler.Backend.Rvm
                 case SeqAccessExpr seqAccessExpr:
                 {
                     WriteExpr(output, seqAccessExpr.SeqExpr);
-                    string setFuncName = Context.Names.GetSeqSetIndexFunc();
+                    var setFuncName = Context.Names.GetSeqSetIndexFunc();
                     Context.Write(output, $".{setFuncName}((int)");
                     UnboxIfNeeded(output, (output) => WriteExpr(output, seqAccessExpr.IndexExpr));
                     Context.Write(output, ", ");
@@ -739,8 +740,8 @@ namespace Plang.Compiler.Backend.Rvm
                 case TupleAccessExpr tupleAccessExpr:
                 {
                     WriteExpr(output, tupleAccessExpr.SubExpr);
-                    string setterName = Context.Names.GetTupleFieldSetter();
-                    int fieldNo = tupleAccessExpr.FieldNo;
+                    var setterName = Context.Names.GetTupleFieldSetter();
+                    var fieldNo = tupleAccessExpr.FieldNo;
                     Context.Write(output, $".{setterName}({fieldNo}, ");
                     BoxIfNeeded(output, lvalue.Type, (output) => writeRightValue(output));
                     Context.WriteLine(output, ");");
@@ -765,10 +766,10 @@ namespace Plang.Compiler.Backend.Rvm
             {
                 case MapAccessExpr mapAccessExpr:
                 {
-                    string resultType = Context.Names.GetJavaTypeName(mapAccessExpr.Type);
+                    var resultType = Context.Names.GetJavaTypeName(mapAccessExpr.Type);
                     Context.Write(output, $"(({resultType})");
                     WriteExpr(output, mapAccessExpr.MapExpr);
-                    string getFunc = Context.Names.GetCollectionGetFunc();
+                    var getFunc = Context.Names.GetCollectionGetFunc();
                     Context.Write(output, $".{getFunc}(");
                     WriteBoxedExpression(output, mapAccessExpr.IndexExpr);
                     Context.Write(output, "))"); 
@@ -777,11 +778,11 @@ namespace Plang.Compiler.Backend.Rvm
 
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                 {
-                    string resultType = Context.Names.GetJavaTypeName(namedTupleAccessExpr.Type);
+                    var resultType = Context.Names.GetJavaTypeName(namedTupleAccessExpr.Type);
                     Context.Write(output, $"(({resultType})");
                     WriteExpr(output, namedTupleAccessExpr.SubExpr);
-                    string getterName = Context.Names.GetTupleFieldGetter();
-                    string fieldName = namedTupleAccessExpr.FieldName;
+                    var getterName = Context.Names.GetTupleFieldGetter();
+                    var fieldName = namedTupleAccessExpr.FieldName;
                     Context.Write(output, $".{getterName}(\"{fieldName}\")");
                     Context.Write(output, ")");
                     return BoxedOrNotApplicable(namedTupleAccessExpr.Type);
@@ -789,10 +790,10 @@ namespace Plang.Compiler.Backend.Rvm
 
                 case SeqAccessExpr seqAccessExpr:
                 {
-                    string resultType = Context.Names.GetJavaTypeName(seqAccessExpr.Type);
+                    var resultType = Context.Names.GetJavaTypeName(seqAccessExpr.Type);
                     Context.Write(output, $"(({resultType})");
                     WriteExpr(output, seqAccessExpr.SeqExpr);
-                    string getFunc = Context.Names.GetCollectionGetFunc();
+                    var getFunc = Context.Names.GetCollectionGetFunc();
                     Context.Write(output, $".{getFunc}((int)");
                     UnboxIfNeeded(output, (output) => WriteExpr(output, seqAccessExpr.IndexExpr));
                     Context.Write(output, "))");
@@ -801,11 +802,11 @@ namespace Plang.Compiler.Backend.Rvm
 
                 case TupleAccessExpr tupleAccessExpr:
                 {
-                    string resultType = Context.Names.GetJavaTypeName(tupleAccessExpr.Type);
+                    var resultType = Context.Names.GetJavaTypeName(tupleAccessExpr.Type);
                     Context.Write(output, $"(({resultType})");
                     WriteExpr(output, tupleAccessExpr.SubExpr);
-                    string getterName = Context.Names.GetTupleFieldGetter();
-                    int fieldNo = tupleAccessExpr.FieldNo;
+                    var getterName = Context.Names.GetTupleFieldGetter();
+                    var fieldNo = tupleAccessExpr.FieldNo;
                     Context.Write(output, $".{getterName}({fieldNo})");
                     Context.Write(output, ")");
                     return BoxedOrNotApplicable(tupleAccessExpr.Type);
@@ -842,7 +843,7 @@ namespace Plang.Compiler.Backend.Rvm
                     return BoxingState.UNBOXED;
 
                 case CastExpr castExpr:
-                    string castTypeName = Context.Names.GetJavaTypeName(castExpr.Type); 
+                    var castTypeName = Context.Names.GetJavaTypeName(castExpr.Type); 
                     Context.Write(output, $"(({castTypeName})");
                     WriteBoxedExpression(output, castExpr.SubExpr);
                     Context.Write(output, ")");
@@ -858,7 +859,7 @@ namespace Plang.Compiler.Backend.Rvm
                     var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
                     Context.Write(output, $"(new BoolValue(");
                     WriteExpr(output, containsExpr.Collection);
-                    string containsFunc = Context.Names.GetContainsFunc(isMap);
+                    var containsFunc = Context.Names.GetContainsFunc(isMap);
                     Context.Write(output, $".{containsFunc}(");
                     WriteBoxedExpression(output, containsExpr.Item);
                     Context.Write(output, ")))");
@@ -876,13 +877,13 @@ namespace Plang.Compiler.Backend.Rvm
                     return BoxingState.NOT_APPLICABLE;
 
                 case EnumElemRefExpr enumElemRefExpr:
-                    string typeName = Context.Names.GetEnumTypeName(enumElemRefExpr.Value.ParentEnum);
-                    string valueName = Context.Names.GetEnumElementName(enumElemRefExpr.Value);
+                    var typeName = Context.Names.GetEnumTypeName(enumElemRefExpr.Value.ParentEnum);
+                    var valueName = Context.Names.GetEnumElementName(enumElemRefExpr.Value);
                     Context.Write(output, $"{typeName}.{valueName}");
                     return BoxingState.UNBOXED;
 
                 case EventRefExpr eventRefExpr:
-                    string eventClassName = Context.Names.GetQualifiedEventClassName(eventRefExpr.Value);
+                    var eventClassName = Context.Names.GetQualifiedEventClassName(eventRefExpr.Value);
                     switch (eventClassName)
                     {
                         case "Halt":
@@ -915,28 +916,28 @@ namespace Plang.Compiler.Backend.Rvm
                 case KeysExpr keysExpr:
                     Context.Write(output, "(");
                     WriteExpr(output, keysExpr.Expr);
-                    string cloneKeysFunc = Context.Names.GetMapCloneKeysFunc();
+                    var cloneKeysFunc = Context.Names.GetMapCloneKeysFunc();
                     Context.Write(output, $").{cloneKeysFunc}()");
                     return BoxingState.NOT_APPLICABLE;
 
                 case NamedTupleExpr namedTupleExpr:
                 {
-                    string namedTupleClass = Context.Names.GetNamedTupleTypeName();
-                    string valueInterface = Context.Names.GetValueInterfaceName();
+                    var namedTupleClass = Context.Names.GetNamedTupleTypeName();
+                    var valueInterface = Context.Names.GetValueInterfaceName();
 
-                    NamedTupleType ntType = (NamedTupleType)namedTupleExpr.Type;
+                    var ntType = (NamedTupleType)namedTupleExpr.Type;
 
                     Context.Write(output, $"new {namedTupleClass}(new String[]{{");
-                    BeforeSeparator namesSeparator = new BeforeSeparator(() => Context.Write(output, ", "));
-                    for (int i = 0; i < ntType.Fields.Count; i++)
+                    var namesSeparator = new BeforeSeparator(() => Context.Write(output, ", "));
+                    for (var i = 0; i < ntType.Fields.Count; i++)
                     {
                         namesSeparator.beforeElement();
                         Context.Write(output, $"\"{Context.Names.GetTupleFieldName(ntType.Fields[i].Name)}\"");
                     }
 
                     Context.Write(output, $"}}, new {valueInterface}<?>[]{{");
-                    BeforeSeparator valuesSeparator = new BeforeSeparator(() => Context.Write(output, ", "));
-                    for (int i = 0; i < ntType.Fields.Count; i++)
+                    var valuesSeparator = new BeforeSeparator(() => Context.Write(output, ", "));
+                    for (var i = 0; i < ntType.Fields.Count; i++)
                     {
                         valuesSeparator.beforeElement();
                         WriteBoxedExpression(output, namedTupleExpr.TupleFields[i]);
@@ -955,7 +956,7 @@ namespace Plang.Compiler.Backend.Rvm
 
                 case SizeofExpr sizeofExpr:
                     WriteExpr(output, sizeofExpr.Expr);
-                    string sizeFuncName = Context.Names.GetSizeFunc();
+                    var sizeFuncName = Context.Names.GetSizeFunc();
                     Context.Write(output, $".{sizeFuncName}()");
                     return BoxingState.UNBOXED;
 
@@ -966,7 +967,7 @@ namespace Plang.Compiler.Backend.Rvm
                     }
                     else
                     {
-                        string baseString = TransformPrintMessage(stringExpr.BaseString);
+                        var baseString = TransformPrintMessage(stringExpr.BaseString);
                         Context.Write(output, $"(MessageFormat.format(");
                         Context.Write(output,  $"\"{baseString}\"");
                         foreach (var arg in stringExpr.Args)
@@ -993,12 +994,12 @@ namespace Plang.Compiler.Backend.Rvm
 
                 case UnnamedTupleExpr unnamedTupleExpr:
                 {
-                    string tupleClass = Context.Names.GetTupleTypeName();
-                    string valueInterface = Context.Names.GetValueInterfaceName();
+                    var tupleClass = Context.Names.GetTupleTypeName();
+                    var valueInterface = Context.Names.GetValueInterfaceName();
 
                     Context.Write(output, $"new {tupleClass}(new {valueInterface}<?>[]{{");
-                    BeforeSeparator valuesSeparator = new BeforeSeparator(() => Context.Write(output, ", "));
-                    foreach (IPExpr field in unnamedTupleExpr.TupleFields)
+                    var valuesSeparator = new BeforeSeparator(() => Context.Write(output, ", "));
+                    foreach (var field in unnamedTupleExpr.TupleFields)
                     {
                         valuesSeparator.beforeElement();
                         WriteBoxedExpression(output, field);
@@ -1010,7 +1011,7 @@ namespace Plang.Compiler.Backend.Rvm
                 case ValuesExpr valuesExpr:
                     Context.Write(output, "(");
                     WriteExpr(output, valuesExpr.Expr);
-                    string cloneValuesFunc = Context.Names.GetMapCloneValuesFunc();
+                    var cloneValuesFunc = Context.Names.GetMapCloneValuesFunc();
                     Context.Write(output, $").{cloneValuesFunc}()");
                     return BoxingState.NOT_APPLICABLE;
 
@@ -1058,7 +1059,7 @@ namespace Plang.Compiler.Backend.Rvm
                     break;
 
                 case EnumType enumType:
-                    string valueGetter = Context.Names.GetEnumValueGetterName();
+                    var valueGetter = Context.Names.GetEnumValueGetterName();
                     Context.Write(output, "(");
                     UnboxIfNeeded(output, (output) => WriteExpr(output, expr));
                     Context.Write(output, $").{valueGetter}()");
@@ -1120,8 +1121,8 @@ namespace Plang.Compiler.Backend.Rvm
                     break;
 
                 case BinOpType.Eq: {
-                    string iValueClass = Context.Names.GetValueInterfaceName();
-                    string safeEquals = Context.Names.GetValueInterfaceSafeEqualsName();
+                    var iValueClass = Context.Names.GetValueInterfaceName();
+                    var safeEquals = Context.Names.GetValueInterfaceSafeEqualsName();
                     Context.Write(output, $"{iValueClass}.{safeEquals}(");
                     // TODO: If both subexpressions are unboxed, then we should
                     // use '==' directly.
@@ -1133,8 +1134,8 @@ namespace Plang.Compiler.Backend.Rvm
                 }
 
                 case BinOpType.Neq: {
-                    string iValueClass = Context.Names.GetValueInterfaceName();
-                    string safeEquals = Context.Names.GetValueInterfaceSafeEqualsName();
+                    var iValueClass = Context.Names.GetValueInterfaceName();
+                    var safeEquals = Context.Names.GetValueInterfaceSafeEqualsName();
                     Context.Write(output, $"(!{iValueClass}.{safeEquals}(");
                     // TODO: If both subexpressions are unboxed, then we should
                     // use '==' directly.
@@ -1166,7 +1167,7 @@ namespace Plang.Compiler.Backend.Rvm
             {
                 // TODO: This entire if branch should probably be replaced by one
                 // writeSimpleClone call.
-                PLanguageType type = variableRef.Type;
+                var type = variableRef.Type;
                 switch (type.Canonicalize())
                 {
                     case DataType _:
@@ -1224,9 +1225,9 @@ namespace Plang.Compiler.Backend.Rvm
 
         private BoxingState writeSimpleClone(StringWriter output, IExprTerm expr)
         {
-            StringWriter exprBuffer = new StringWriter();
-            BoxingState state = WriteExpr(exprBuffer, expr);
-            string exprString = exprBuffer.ToString();
+            var exprBuffer = new StringWriter();
+            var state = WriteExpr(exprBuffer, expr);
+            var exprString = exprBuffer.ToString();
             switch (state)
             {
                 case BoxingState.UNBOXED:
@@ -1234,8 +1235,8 @@ namespace Plang.Compiler.Backend.Rvm
                     return BoxingState.UNBOXED;
                 case BoxingState.BOXED:
                 case BoxingState.NOT_APPLICABLE:
-                    string iValueClass = Context.Names.GetValueInterfaceName();
-                    string safeClone = Context.Names.GetSafeCloneFunctionName();
+                    var iValueClass = Context.Names.GetValueInterfaceName();
+                    var safeClone = Context.Names.GetSafeCloneFunctionName();
                     Context.Write(output, $"{iValueClass}.{safeClone}(");
                     Context.Write(output, exprString);
                     Context.Write(output, ")");
@@ -1247,7 +1248,7 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteFunctionCall(StringWriter output, Function function, IEnumerable<IPExpr> arguments)
         {
-            bool isStatic = function.Owner == null;
+            var isStatic = function.Owner == null;
             if (isStatic)
             {
                 throw new NotImplementedException("StaticFunCallExpr is not implemented.");
@@ -1255,8 +1256,8 @@ namespace Plang.Compiler.Backend.Rvm
 
             Context.Write(output, $"{Context.Names.GetNameForDecl(function)}(");
 
-            BeforeSeparator separator = new BeforeSeparator(() => Context.Write(output, ", "));
-            foreach (IPExpr param in arguments)
+            var separator = new BeforeSeparator(() => Context.Write(output, ", "));
+            foreach (var param in arguments)
             {
                 separator.beforeElement();
                 WriteBoxedExpression(output, param);
@@ -1268,8 +1269,8 @@ namespace Plang.Compiler.Backend.Rvm
         private void WriteStringFunctionCall(StringWriter output, string functionName, List<string> arguments)
         {
             Context.Write(output, $"{functionName}(");
-            BeforeSeparator separator = new BeforeSeparator(() => Context.Write(output, ", "));
-            foreach (string argument in arguments)
+            var separator = new BeforeSeparator(() => Context.Write(output, ", "));
+            foreach (var argument in arguments)
             {
                 separator.beforeElement();
                 Context.Write(output, argument);
@@ -1288,18 +1289,18 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteCallStateEntryHandler(StringWriter output)
         {
-            string stateVariable = Context.Names.GetStateVariableName();
-            string handlerName = Context.Names.GetEntryHandlerName();
+            var stateVariable = Context.Names.GetStateVariableName();
+            var handlerName = Context.Names.GetEntryHandlerName();
 
-            List<string> arguments = new List<string>() { Context.Names.GetPayloadArgumentName() };
+            var arguments = new List<string>() { Context.Names.GetPayloadArgumentName() };
             WriteStringFunctionCall(output, $"{stateVariable}.{handlerName}", arguments);
             Context.WriteLine(output, ";");
         }
 
         private void WriteCallStateExitHandler(StringWriter output)
         {
-            string stateVariable = Context.Names.GetStateVariableName();
-            string handlerName = Context.Names.GetExitHandlerName();
+            var stateVariable = Context.Names.GetStateVariableName();
+            var handlerName = Context.Names.GetExitHandlerName();
 
             WriteStringFunctionCall(output, $"{stateVariable}.{handlerName}", new List<string>() { });
             Context.WriteLine(output, ";");
@@ -1317,18 +1318,18 @@ namespace Plang.Compiler.Backend.Rvm
         // Writes changeStateTo function which handles goto functionality.
         private void WriteStateChangeHandler(StringWriter output)
         {
-            string stateClass = Context.Names.GetStateBaseClassName();
-            string changeStateFunction = Context.Names.GetChangeStateFunctionName();
-            string stateName = Context.Names.GetNextStateArgumentName();
-            string payloadType = Context.Names.GetDefaultPayloadTypeName();
-            string payloadName = Context.Names.GetPayloadArgumentName();
+            var stateClass = Context.Names.GetStateBaseClassName();
+            var changeStateFunction = Context.Names.GetChangeStateFunctionName();
+            var stateName = Context.Names.GetNextStateArgumentName();
+            var payloadType = Context.Names.GetDefaultPayloadTypeName();
+            var payloadName = Context.Names.GetPayloadArgumentName();
             Context.WriteLine(
                 output,
                 $"private void {changeStateFunction}({stateClass} {stateName}, Optional<{payloadType}> {payloadName}) {{");
             WrapInTryStmtException(
                 output,
                 (output) => {
-                    string stateVariable = Context.Names.GetStateVariableName();
+                    var stateVariable = Context.Names.GetStateVariableName();
                     WriteCallStateExitHandler(output);
                     Context.WriteLine(output, $"{stateVariable} = {stateName};");
                     WriteCallStateEntryHandler(output);
@@ -1339,12 +1340,12 @@ namespace Plang.Compiler.Backend.Rvm
         // Writes handleRaisedEvent function which handles raise statement.
         private void WriteRaisedEventHandler(StringWriter output)
         {
-            string handleRaisedFunction = Context.Names.GetHandleRaisedEventFunctionName();
-            string eventInterfaceName = Context.Names.GetEventInterfaceName();
-            string eventArgName = Context.Names.GetEventArgumentName();
-            string payloadType = Context.Names.GetDefaultPayloadTypeName();
-            string payloadName = Context.Names.GetPayloadArgumentName();
-            string stateVariableName = Context.Names.GetStateVariableName();
+            var handleRaisedFunction = Context.Names.GetHandleRaisedEventFunctionName();
+            var eventInterfaceName = Context.Names.GetEventInterfaceName();
+            var eventArgName = Context.Names.GetEventArgumentName();
+            var payloadType = Context.Names.GetDefaultPayloadTypeName();
+            var payloadName = Context.Names.GetPayloadArgumentName();
+            var stateVariableName = Context.Names.GetStateVariableName();
             Context.WriteLine(
                 output,
                 $"private void {handleRaisedFunction}({eventInterfaceName} {eventArgName}, Optional<{payloadType}> {payloadName}) {{");
@@ -1356,23 +1357,23 @@ namespace Plang.Compiler.Backend.Rvm
 
         private void WriteFunctionArguments(StringWriter output, Function function)
         {
-            BeforeSeparator separator = new BeforeSeparator(() => Context.Write(output, ", "));
-            foreach (Variable argument in function.Signature.Parameters)
+            var separator = new BeforeSeparator(() => Context.Write(output, ", "));
+            foreach (var argument in function.Signature.Parameters)
             {
                 separator.beforeElement();
-                string argumentType = Context.Names.GetJavaTypeName(argument.Type);
-                string argumentName = Context.Names.GetLocalVarName(argument);
+                var argumentType = Context.Names.GetJavaTypeName(argument.Type);
+                var argumentName = Context.Names.GetLocalVarName(argument);
                 Context.Write(output, $"{argumentType} {argumentName}");
             }
         }
 
         private void WriteFunctionArgumentNames(StringWriter output, Function function)
         {
-            BeforeSeparator separator = new BeforeSeparator(() => Context.Write(output, ", "));
-            foreach (Variable argument in function.Signature.Parameters)
+            var separator = new BeforeSeparator(() => Context.Write(output, ", "));
+            foreach (var argument in function.Signature.Parameters)
             {
                 separator.beforeElement();
-                string argumentName = Context.Names.GetLocalVarName(argument);
+                var argumentName = Context.Names.GetLocalVarName(argument);
                 Context.Write(output, $"{argumentName}");
             }
         }
@@ -1385,12 +1386,12 @@ namespace Plang.Compiler.Backend.Rvm
 
             writeCode(output);
 
-            string exceptionVariable = Context.Names.GetExceptionVariableName();
-            string exceptionPayload = Context.Names.GetExceptionPayloadGetterName();
-            string stateValue = Context.Names.GetGotoStmtExceptionStateGetterName();
-            string eventValue = Context.Names.GetRaiseStmtExceptionEventGetterName();
-            string stateExceptionClass = Context.Names.GetGotoStmtExceptionName();
-            string eventExceptionClass = Context.Names.GetRaiseStmtExceptionName();
+            var exceptionVariable = Context.Names.GetExceptionVariableName();
+            var exceptionPayload = Context.Names.GetExceptionPayloadGetterName();
+            var stateValue = Context.Names.GetGotoStmtExceptionStateGetterName();
+            var eventValue = Context.Names.GetRaiseStmtExceptionEventGetterName();
+            var stateExceptionClass = Context.Names.GetGotoStmtExceptionName();
+            var eventExceptionClass = Context.Names.GetRaiseStmtExceptionName();
             Context.WriteLine(output, $"}} catch ({stateExceptionClass} {exceptionVariable}) {{");
             WriteCallChangeStateHandler(output,
                 $"(StateBase){exceptionVariable}.{stateValue}()", $"{exceptionVariable}.{exceptionPayload}()");
@@ -1408,7 +1409,7 @@ namespace Plang.Compiler.Backend.Rvm
                 case PrimitiveType primitiveType2 when primitiveType2.IsSameTypeAs(PrimitiveType.Float):
                 case PrimitiveType primitiveType3 when primitiveType3.IsSameTypeAs(PrimitiveType.String):
                 case EnumType enumType:
-                    string unboxedDefault = GetUnboxedDefaultValue(type);
+                    var unboxedDefault = GetUnboxedDefaultValue(type);
                     return $"new {Context.Names.GetJavaTypeName(type)}({unboxedDefault})";
 
                 case PrimitiveType eventType when eventType.IsSameTypeAs(PrimitiveType.Event):
@@ -1444,34 +1445,34 @@ namespace Plang.Compiler.Backend.Rvm
 
                 case EnumType enumType:
                 {
-                    string typeName = Context.Names.GetEnumTypeName(enumType.EnumDecl);
+                    var typeName = Context.Names.GetEnumTypeName(enumType.EnumDecl);
                     // TODO: Use something more reasonable here.
-                    string elementName = Context.Names.GetEnumElementName(enumType.EnumDecl.Values.First());
+                    var elementName = Context.Names.GetEnumElementName(enumType.EnumDecl.Values.First());
                     return $"{typeName}.{elementName}";
                 }
 
                 case NamedTupleType namedTuple:
                 {
-                    List<string> quotedNames = new List<string>();
-                    List<string> values = new List<string>();
-                    foreach (NamedTupleEntry entry in namedTuple.Fields)
+                    var quotedNames = new List<string>();
+                    var values = new List<string>();
+                    foreach (var entry in namedTuple.Fields)
                     {
                         quotedNames.Add($"\"{Context.Names.GetTupleFieldName(entry.Name)}\"");
                         values.Add(GetBoxedDefaultValue(entry.Type));
                     }
-                    string comma_names = string.Join(", ", quotedNames);
-                    string comma_values = string.Join(", ", values);
-                    string namedTupleClass = Context.Names.GetNamedTupleTypeName();
-                    string valueInterface = Context.Names.GetValueInterfaceName();
+                    var comma_names = string.Join(", ", quotedNames);
+                    var comma_values = string.Join(", ", values);
+                    var namedTupleClass = Context.Names.GetNamedTupleTypeName();
+                    var valueInterface = Context.Names.GetValueInterfaceName();
                     return $"new {namedTupleClass}(new String[]{{{comma_names}}}, new {valueInterface}<?>[]{{{comma_values}}})";
                 }
 
                 case TupleType tupleType:
                 {
-                    string comma_values =
+                    var comma_values =
                         string.Join(", ", tupleType.Types.Select(t => GetBoxedDefaultValue(t)));
-                    string tupleClass = Context.Names.GetTupleTypeName();
-                    string valueInterface = Context.Names.GetValueInterfaceName();
+                    var tupleClass = Context.Names.GetTupleTypeName();
+                    var valueInterface = Context.Names.GetValueInterfaceName();
                     return $"new {tupleClass}(new {valueInterface}<?>[]{{{comma_values}}})";
                 }
 
@@ -1519,11 +1520,11 @@ namespace Plang.Compiler.Backend.Rvm
         // Unboxes the IValue object to its actual value by calling the getter function.
         private BoxingState UnboxIfNeeded(StringWriter output, UnboxingDelegate expressionWriter)
         {
-            BoxingState state = expressionWriter(output);
+            var state = expressionWriter(output);
             switch (state)
             {
                 case BoxingState.BOXED:
-                    string getValueFunc = Context.Names.GetGetValueFunc();
+                    var getValueFunc = Context.Names.GetGetValueFunc();
                     Context.Write(output, $".{getValueFunc}()");
                     return BoxingState.UNBOXED;
                 default:
@@ -1534,9 +1535,9 @@ namespace Plang.Compiler.Backend.Rvm
         // Boxes the actual value to its corresponding IValue object.
         private BoxingState BoxIfNeeded(StringWriter output, PLanguageType type, UnboxingDelegate expressionWriter)
         {
-            StringWriter exprBuffer = new StringWriter();
-            BoxingState state = expressionWriter(exprBuffer);
-            string exprString = exprBuffer.ToString();
+            var exprBuffer = new StringWriter();
+            var state = expressionWriter(exprBuffer);
+            var exprString = exprBuffer.ToString();
             switch (state)
             {
                 case BoxingState.UNBOXED:
@@ -1617,8 +1618,8 @@ namespace Plang.Compiler.Backend.Rvm
  
         private static string TransformPrintMessage(string message)
         {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < message.Length; i++)
+            var sb = new StringBuilder();
+            for (var i = 0; i < message.Length; i++)
             {
                 if (message[i] == '\'')
                 {

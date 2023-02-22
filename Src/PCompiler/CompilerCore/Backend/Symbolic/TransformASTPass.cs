@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
+using Antlr4.Runtime;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
@@ -10,8 +9,6 @@ using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
-using Plang.Compiler.TypeChecker.Types;
-using Antlr4.Runtime;
 
 namespace Plang.Compiler.Backend.Symbolic
 {
@@ -26,11 +23,11 @@ namespace Plang.Compiler.Backend.Symbolic
          {
             continuationNumber = 0;
             callNum = 0;
-            List<IPDecl> decls = new List<IPDecl>();
+            var decls = new List<IPDecl>();
 
             foreach (var decl in globalScope.AllDecls)
             {
-                IPDecl result = TransformDecl(decl);
+                var result = TransformDecl(decl);
                 if (result != null)
                     decls.Add(result);
             }
@@ -67,15 +64,15 @@ namespace Plang.Compiler.Backend.Symbolic
 
         static private Machine TransformMachine(Machine machine)
         {
-            Machine transformedMachine = new Machine(machine.Name, machine.SourceLocation);
+            var transformedMachine = new Machine(machine.Name, machine.SourceLocation);
             transformedMachine.Assume = machine.Assume;
             transformedMachine.Assert = machine.Assert;
             transformedMachine.Receives = machine.Receives;
             transformedMachine.Sends = machine.Sends;
             transformedMachine.Creates = machine.Creates;
             foreach (var field in machine.Fields) transformedMachine.AddField(field);
-            Dictionary<Function, Function> functionMap = new Dictionary<Function, Function>();
-            HashSet<Function> requiredMethods = new HashSet<Function>();
+            var functionMap = new Dictionary<Function, Function>();
+            var requiredMethods = new HashSet<Function>();
             foreach (var method in machine.Methods)
             {
                 if (method.IsForeign || (method.Callers.Count() == 0))
@@ -99,7 +96,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 if (!requiredMethods.Contains(method))
                     continue;
 
-                Function transformedFunction = method;
+                var transformedFunction = method;
                 if (!method.IsForeign)
                 {
                     transformedFunction = TransformFunction(method, transformedMachine);
@@ -133,7 +130,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
          static private State TransformState(State state, IDictionary<Function, Function> functionMap)
          {
-             State transformedState = new State(state.SourceLocation, state.Name);
+             var transformedState = new State(state.SourceLocation, state.Name);
              transformedState.Temperature = state.Temperature;
              transformedState.IsStart = state.IsStart;
              if (state.Entry != null)
@@ -179,11 +176,11 @@ namespace Plang.Compiler.Backend.Symbolic
 
          static private void GenerateInline(Function caller, Function callee, IReadOnlyList<IPExpr> argsList, List<IPStmt> body, ParserRuleContext sourceLocation)
          {
-             Dictionary<Variable,Variable> newVarMap = new Dictionary<Variable,Variable>();
-             for (int i = 0; i < callee.Signature.Parameters.Count; i++)
+             var newVarMap = new Dictionary<Variable,Variable>();
+             for (var i = 0; i < callee.Signature.Parameters.Count; i++)
              {
-                 IPExpr expr = argsList[i];
-                 Variable newVar = new Variable($"inline_{callNum}_{callee.Signature.Parameters[i].Name}", sourceLocation, VariableRole.Temp);
+                 var expr = argsList[i];
+                 var newVar = new Variable($"inline_{callNum}_{callee.Signature.Parameters[i].Name}", sourceLocation, VariableRole.Temp);
                  newVar.Type = expr.Type;
                  body.Add(new AssignStmt(sourceLocation, new VariableAccessExpr(sourceLocation, newVar), expr));
                  newVarMap.Add(callee.Signature.Parameters[i], newVar);
@@ -191,7 +188,7 @@ namespace Plang.Compiler.Backend.Symbolic
              }
              foreach(var local in callee.LocalVariables)
              {
-                 Variable newVar = new Variable($"local_{callNum}_{local.Name}", sourceLocation, VariableRole.Temp);
+                 var newVar = new Variable($"local_{callNum}_{local.Name}", sourceLocation, VariableRole.Temp);
                  newVar.Type = local.Type;
                  newVarMap.Add(local, newVar);
                  caller.AddLocalVariable(newVar);
@@ -203,8 +200,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
          static private List<IPStmt> ReplaceReturn(IReadOnlyList<IPStmt> body, IPExpr location)
          {
-             List<IPStmt> newBody = new List<IPStmt>();
-             foreach (IPStmt stmt in body)
+             var newBody = new List<IPStmt>();
+             foreach (var stmt in body)
              {
                  switch (stmt)
                  {
@@ -212,26 +209,26 @@ namespace Plang.Compiler.Backend.Symbolic
                          newBody.Add(new AssignStmt(returnStmt.SourceLocation, location, returnStmt.ReturnValue)); 
                          break;
                      case CompoundStmt compoundStmt:
-                         List<IPStmt> replace = ReplaceReturn(compoundStmt.Statements, location); 
+                         var replace = ReplaceReturn(compoundStmt.Statements, location); 
                          foreach (var statement in replace) newBody.Add(statement);
                          break;
                      case IfStmt ifStmt:
                          IPStmt thenStmt = null;
                          if (ifStmt.ThenBranch != null)
                          {
-                             List<IPStmt> replaceThen = ReplaceReturn(ifStmt.ThenBranch.Statements, location);
+                             var replaceThen = ReplaceReturn(ifStmt.ThenBranch.Statements, location);
                              thenStmt =  new CompoundStmt(ifStmt.ThenBranch.SourceLocation, replaceThen);
                          }
                          IPStmt elseStmt = null;
                          if (ifStmt.ElseBranch != null)
                          {
-                             List<IPStmt> replaceElse = ReplaceReturn(ifStmt.ElseBranch.Statements, location); 
+                             var replaceElse = ReplaceReturn(ifStmt.ElseBranch.Statements, location); 
                              elseStmt =  new CompoundStmt(ifStmt.ElseBranch.SourceLocation, replaceElse);
                          }
                          newBody.Add(new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, thenStmt, elseStmt));
                          break;
                      case ReceiveStmt receiveStmt:
-                         foreach(KeyValuePair<PEvent, Function> entry in receiveStmt.Cases)
+                         foreach(var entry in receiveStmt.Cases)
                          {
                              entry.Value.Body = new CompoundStmt(entry.Value.Body.SourceLocation, ReplaceReturn(entry.Value.Body.Statements, location));
                              entry.Value.Signature.ReturnType = null;
@@ -239,9 +236,9 @@ namespace Plang.Compiler.Backend.Symbolic
                          newBody.Add(new ReceiveStmt(receiveStmt.SourceLocation, receiveStmt.Cases));
                          break;
                      case WhileStmt whileStmt:
-                         List<IPStmt> bodyList = new List<IPStmt>();
+                         var bodyList = new List<IPStmt>();
                          bodyList.Add(whileStmt.Body);
-                         List<IPStmt> replaceWhile = ReplaceReturn(bodyList, location); 
+                         var replaceWhile = ReplaceReturn(bodyList, location); 
                          newBody.Add(new WhileStmt(whileStmt.SourceLocation, whileStmt.Condition, new CompoundStmt(whileStmt.Body.SourceLocation, replaceWhile)));
                          break;
                      default: 
@@ -259,13 +256,13 @@ namespace Plang.Compiler.Backend.Symbolic
                  case AssignStmt assign:
                      if (assign.Value is FunCallExpr)
                      {
-                         FunCallExpr rhsExpr = ((FunCallExpr) assign.Value);
+                         var rhsExpr = ((FunCallExpr) assign.Value);
                          if (!rhsExpr.Function.IsForeign)
                          {
-                            bool inlined = InlineInFunction(rhsExpr.Function);
+                            var inlined = InlineInFunction(rhsExpr.Function);
                             if (inlined)
                                 function.RemoveCallee(rhsExpr.Function);
-                            List<IPStmt> appendToBody = new List<IPStmt>();
+                            var appendToBody = new List<IPStmt>();
                             GenerateInline(function, rhsExpr.Function, rhsExpr.Arguments, appendToBody, assign.SourceLocation);
                             appendToBody = ReplaceReturn(appendToBody, assign.Location);
                             foreach (var statement in appendToBody) body.Add(statement);
@@ -286,7 +283,7 @@ namespace Plang.Compiler.Backend.Symbolic
                  case FunCallStmt call:
                      if ((!call.Function.IsForeign) & (call.Function.CanReceive == true))
                      {
-                         bool inlined = InlineInFunction(call.Function);
+                         var inlined = InlineInFunction(call.Function);
                          if (inlined)
                             function.RemoveCallee(call.Function);
                          GenerateInline(function, call.Function, call.ArgsList, body, call.SourceLocation);
@@ -300,21 +297,21 @@ namespace Plang.Compiler.Backend.Symbolic
                      IPStmt thenStmt = null;
                      if (ifStmt.ThenBranch != null)
                      {
-                       List<IPStmt> thenBranch = new List<IPStmt>();
+                       var thenBranch = new List<IPStmt>();
                        InlineStmt(function, ifStmt.ThenBranch, thenBranch);
                        thenStmt = new CompoundStmt(ifStmt.ThenBranch.SourceLocation, thenBranch);
                      }
                      IPStmt elseStmt = null;
                      if (ifStmt.ElseBranch != null)
                      {
-                       List<IPStmt> elseBranch = new List<IPStmt>();
+                       var elseBranch = new List<IPStmt>();
                        InlineStmt(function, ifStmt.ElseBranch, elseBranch);
                        elseStmt = new CompoundStmt(ifStmt.ElseBranch.SourceLocation, elseBranch);
                      }
                      body.Add(new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, thenStmt, elseStmt));
                      break;
                  case WhileStmt whileStmt:
-                     List<IPStmt> bodyList = new List<IPStmt>();
+                     var bodyList = new List<IPStmt>();
                      InlineStmt(function, whileStmt.Body, bodyList);
                      body.Add(new WhileStmt(whileStmt.SourceLocation, whileStmt.Condition, new CompoundStmt(whileStmt.Body.SourceLocation, bodyList)));
                      break;
@@ -327,7 +324,7 @@ namespace Plang.Compiler.Backend.Symbolic
          static private bool InlineInFunction(Function function)
          {
             if (!function.Callees.Contains(function) && (function.CanReceive == true)) {
-                List<IPStmt> body = new List<IPStmt>();
+                var body = new List<IPStmt>();
                 foreach (var stmt in function.Body.Statements)
                 {
                     InlineStmt(function, stmt, body);
@@ -355,15 +352,15 @@ namespace Plang.Compiler.Backend.Symbolic
                  case AssignStmt assignStmt:
                      return new AssignStmt(assignStmt.SourceLocation, ReplaceVars(assignStmt.Location, varMap), ReplaceVars(assignStmt.Value, varMap));
                  case CompoundStmt compoundStmt:
-                     List<IPStmt> statements = new List<IPStmt>();
+                     var statements = new List<IPStmt>();
                      foreach (var inner in compoundStmt.Statements) statements.Add(ReplaceVars(inner, varMap));
                      return new CompoundStmt(compoundStmt.SourceLocation, statements);
                  case CtorStmt ctorStmt:
-                     List<IPExpr> arguments = new List<IPExpr>();
+                     var arguments = new List<IPExpr>();
                      foreach (var arg in ctorStmt.Arguments) arguments.Add(ReplaceVars(arg, varMap));
                      return new CtorStmt(ctorStmt.SourceLocation, ctorStmt.Interface, arguments);
                  case FunCallStmt funCallStmt:
-                     List<IPExpr> newArgs = new List<IPExpr>();
+                     var newArgs = new List<IPExpr>();
                      foreach (var arg in funCallStmt.ArgsList) newArgs.Add(ReplaceVars(arg, varMap));
                      return new FunCallStmt(funCallStmt.SourceLocation, funCallStmt.Function, new List<IPExpr>(newArgs));
                  case GotoStmt gotoStmt:
@@ -373,20 +370,20 @@ namespace Plang.Compiler.Backend.Symbolic
                  case InsertStmt insertStmt:
                      return new InsertStmt(insertStmt.SourceLocation, ReplaceVars(insertStmt.Variable, varMap), ReplaceVars(insertStmt.Index, varMap), ReplaceVars(insertStmt.Value, varMap));
                  case MoveAssignStmt moveAssignStmt:
-                     Variable fromVar = moveAssignStmt.FromVariable;
+                     var fromVar = moveAssignStmt.FromVariable;
                      if (varMap.ContainsKey(moveAssignStmt.FromVariable)) fromVar = varMap[moveAssignStmt.FromVariable];
                      return new MoveAssignStmt(moveAssignStmt.SourceLocation, ReplaceVars(moveAssignStmt.ToLocation, varMap), fromVar);
                  case PrintStmt printStmt:
                      return new PrintStmt(printStmt.SourceLocation, ReplaceVars(printStmt.Message, varMap));
                  case RaiseStmt raiseStmt:
-                     List<IPExpr> payload = new List<IPExpr>();
+                     var payload = new List<IPExpr>();
                      foreach(var p in raiseStmt.Payload) payload.Add(ReplaceVars(p, varMap));
                      return new RaiseStmt(raiseStmt.SourceLocation, ReplaceVars(raiseStmt.PEvent, varMap), payload);
                  case ReceiveStmt receiveStmt:
-                     Dictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
-                     foreach(KeyValuePair<PEvent, Function> entry in receiveStmt.Cases)
+                     var cases = new Dictionary<PEvent, Function>();
+                     foreach(var entry in receiveStmt.Cases)
                      {
-                         Function replacement = new Function(entry.Value.Name, entry.Value.SourceLocation);
+                         var replacement = new Function(entry.Value.Name, entry.Value.SourceLocation);
                          replacement.Owner = entry.Value.Owner;
                          replacement.ParentFunction = entry.Value.ParentFunction;
                          replacement.CanReceive = entry.Value.CanReceive;
@@ -406,7 +403,7 @@ namespace Plang.Compiler.Backend.Symbolic
                  case ReturnStmt returnStmt:
                      return new ReturnStmt(returnStmt.SourceLocation, ReplaceVars(returnStmt.ReturnValue, varMap));
                  case SendStmt sendStmt:
-                     List<IPExpr> sendArgs = new List<IPExpr>();
+                     var sendArgs = new List<IPExpr>();
                      foreach (var arg in sendStmt.Arguments) sendArgs.Add(ReplaceVars(arg, varMap));
                      return new SendStmt(sendStmt.SourceLocation, ReplaceVars(sendStmt.MachineExpr, varMap), ReplaceVars(sendStmt.Evt, varMap), sendArgs);
                  case WhileStmt whileStmt:
@@ -433,11 +430,11 @@ namespace Plang.Compiler.Backend.Symbolic
                  case ContainsExpr containsExpr:
                      return new ContainsExpr(containsExpr.SourceLocation, ReplaceVars(containsExpr.Item, varMap), ReplaceVars(containsExpr.Collection, varMap));
                  case CtorExpr ctorExpr:
-                     List<IPExpr> newArguments = new List<IPExpr>();
+                     var newArguments = new List<IPExpr>();
                      foreach (var arg in ctorExpr.Arguments) newArguments.Add(ReplaceVars(arg, varMap));
                      return new CtorExpr(ctorExpr.SourceLocation, ctorExpr.Interface, new List<IPExpr>(newArguments));
                  case FunCallExpr funCallExpr:
-                     List<IPExpr> newArgs = new List<IPExpr>();
+                     var newArgs = new List<IPExpr>();
                      foreach (var arg in funCallExpr.Arguments) newArgs.Add(ReplaceVars(arg, varMap));
                      return new FunCallExpr(funCallExpr.SourceLocation, funCallExpr.Function, new List<IPExpr>(newArgs));
                  case KeysExpr keysExpr:
@@ -447,7 +444,7 @@ namespace Plang.Compiler.Backend.Symbolic
                  case NamedTupleAccessExpr namedTupleAccessExpr:
                      return new NamedTupleAccessExpr(namedTupleAccessExpr.SourceLocation, ReplaceVars(namedTupleAccessExpr.SubExpr, varMap), namedTupleAccessExpr.Entry);
                  case NamedTupleExpr namedTupleExpr:
-                     List<IPExpr> newFields = new List<IPExpr>();
+                     var newFields = new List<IPExpr>();
                      foreach (var field in namedTupleExpr.TupleFields) newFields.Add(ReplaceVars(field, varMap));
                      return new NamedTupleExpr(namedTupleExpr.SourceLocation, new List<IPExpr>(newFields), namedTupleExpr.Type);
                  case SeqAccessExpr seqAccessExpr:
@@ -457,7 +454,7 @@ namespace Plang.Compiler.Backend.Symbolic
                  case SizeofExpr sizeofExpr:
                      return new SizeofExpr(sizeofExpr.SourceLocation, ReplaceVars(sizeofExpr.Expr, varMap));
                  case StringExpr stringExpr:
-                     List<IPExpr> newListArgs = new List<IPExpr>();
+                     var newListArgs = new List<IPExpr>();
                      foreach (var arg in stringExpr.Args) newListArgs.Add(ReplaceVars(arg, varMap));
                      return new StringExpr(stringExpr.SourceLocation, stringExpr.BaseString, newListArgs);
                  case TupleAccessExpr tupleAccessExpr:
@@ -465,7 +462,7 @@ namespace Plang.Compiler.Backend.Symbolic
                  case UnaryOpExpr unaryOpExpr:
                      return new UnaryOpExpr(unaryOpExpr.SourceLocation, unaryOpExpr.Operation, ReplaceVars(unaryOpExpr.SubExpr, varMap));
                  case UnnamedTupleExpr unnamedTupleExpr:
-                     List<IPExpr> newUnnamedFields = new List<IPExpr>();
+                     var newUnnamedFields = new List<IPExpr>();
                      foreach (var field in unnamedTupleExpr.TupleFields) newUnnamedFields.Add(ReplaceVars(field, varMap));
                      return new UnnamedTupleExpr(unnamedTupleExpr.SourceLocation, new List<IPExpr>(newUnnamedFields));
                  case ValuesExpr valuesExpr:
@@ -486,7 +483,7 @@ namespace Plang.Compiler.Backend.Symbolic
              }
              if (machine == null)
                 throw new NotImplementedException($"Async functions {function.Name} are not supported");
-             Function transformedFunction = new Function(function.Name, function.SourceLocation);
+             var transformedFunction = new Function(function.Name, function.SourceLocation);
              transformedFunction.Owner = function.Owner;
              transformedFunction.ParentFunction = function.ParentFunction;
              foreach (var local in function.LocalVariables) transformedFunction.AddLocalVariable(local);
@@ -506,7 +503,7 @@ namespace Plang.Compiler.Backend.Symbolic
          static private IPStmt ReplaceBreaks(IPStmt stmt, List<IPStmt> afterStmts)
          {
              if (stmt == null) return null;
-             List<IPStmt> statements = new List<IPStmt>();
+             var statements = new List<IPStmt>();
              switch(stmt)
              {
                  case CompoundStmt compoundStmt:
@@ -518,10 +515,10 @@ namespace Plang.Compiler.Backend.Symbolic
                  case IfStmt ifStmt:
                      return new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, ReplaceBreaks(ifStmt.ThenBranch, afterStmts), ReplaceBreaks(ifStmt.ElseBranch, afterStmts));
                  case ReceiveStmt receiveStmt:
-                     Dictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
-                     foreach(KeyValuePair<PEvent, Function> entry in receiveStmt.Cases)
+                     var cases = new Dictionary<PEvent, Function>();
+                     foreach(var entry in receiveStmt.Cases)
                      {
-                         Function replacement = new Function(entry.Value.Name, entry.Value.SourceLocation);
+                         var replacement = new Function(entry.Value.Name, entry.Value.SourceLocation);
                          replacement.Owner = entry.Value.Owner;
                          replacement.ParentFunction = entry.Value.ParentFunction;
                          replacement.CanReceive = entry.Value.CanReceive;
@@ -561,11 +558,11 @@ namespace Plang.Compiler.Backend.Symbolic
              switch (statement)
              {
                  case CompoundStmt compound:
-                     IEnumerator<IPStmt> enumerator = compound.Statements.GetEnumerator();
+                     var enumerator = compound.Statements.GetEnumerator();
                      if (enumerator.MoveNext())
                      {
-                         IPStmt first = enumerator.Current;
-                         List<IPStmt> afterStmts = new List<IPStmt>();
+                         var first = enumerator.Current;
+                         var afterStmts = new List<IPStmt>();
                          while (enumerator.MoveNext())
                          {
                              afterStmts.Add(enumerator.Current);
@@ -575,11 +572,11 @@ namespace Plang.Compiler.Backend.Symbolic
                          {
                              after = new CompoundStmt(afterStmts[0].SourceLocation, afterStmts);
                          }
-                         List<IPStmt> result = new List<IPStmt>();
+                         var result = new List<IPStmt>();
                          switch (first)
                          {
                               case CompoundStmt nestedCompound:
-                                  List<IPStmt> compoundStmts = new List<IPStmt>(nestedCompound.Statements);
+                                  var compoundStmts = new List<IPStmt>(nestedCompound.Statements);
                                   foreach (var stmt in afterStmts)
                                   {
                                       compoundStmts.Add(stmt);
@@ -587,8 +584,8 @@ namespace Plang.Compiler.Backend.Symbolic
                                   result.Add(HandleReceives(new CompoundStmt(nestedCompound.SourceLocation, compoundStmts), function, machine));
                                   break;
                               case IfStmt cond:
-                                  List<IPStmt> thenStmts = new List<IPStmt>();
-                                  List<IPStmt> elseStmts = new List<IPStmt>();
+                                  var thenStmts = new List<IPStmt>();
+                                  var elseStmts = new List<IPStmt>();
                                   if (cond.ThenBranch != null)
                                       thenStmts = new List<IPStmt>(cond.ThenBranch.Statements);
                                   if (cond.ElseBranch != null)
@@ -610,43 +607,43 @@ namespace Plang.Compiler.Backend.Symbolic
                                   break;
                              case ReceiveStmt recv:
                                  IDictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
-                                 bool canReceiveInCase = false;
-                                 foreach (KeyValuePair<PEvent, Function> c in recv.Cases)
+                                 var canReceiveInCase = false;
+                                 foreach (var c in recv.Cases)
                                  {
                                      if (c.Value.CanReceive == true)
                                      {
                                          canReceiveInCase = true;
                                          if (c.Value.LocalVariables.Count() != 0)
                                          {
-                                            Dictionary<Variable,Variable> caseVarMap = new Dictionary<Variable,Variable>();
+                                            var caseVarMap = new Dictionary<Variable,Variable>();
                                             foreach (var local in c.Value.LocalVariables)
                                             {
-                                                Variable caseVar = new Variable($"{c.Key.Name}_{local.Name}", local.SourceLocation, local.Role);
+                                                var caseVar = new Variable($"{c.Key.Name}_{local.Name}", local.SourceLocation, local.Role);
                                                 caseVar.Type = local.Type;
                                                 caseVarMap.Add(local, caseVar);
                                             }
-                                            foreach(KeyValuePair<Variable, Variable> entry in caseVarMap)
+                                            foreach(var entry in caseVarMap)
                                             {
                                                 c.Value.RemoveLocalVariable(entry.Key);
                                                 c.Value.AddLocalVariable(entry.Value);
                                             }
                                             if (c.Value.Body != null)
                                             {
-                                                List<IPStmt> newCaseBody = new List<IPStmt>();
+                                                var newCaseBody = new List<IPStmt>();
                                                 newCaseBody.Add(ReplaceVars(c.Value.Body, caseVarMap));
                                                 c.Value.Body = new CompoundStmt(c.Value.Body.SourceLocation, newCaseBody);
                                             }
                                          }
                                      }
                                  }
-                                 foreach (KeyValuePair<PEvent, Function> c in recv.Cases)
+                                 foreach (var c in recv.Cases)
                                  {
                                      c.Value.AddLocalVariables(function.Signature.Parameters);
                                      c.Value.AddLocalVariables(function.LocalVariables);
                                      if (canReceiveInCase == true && after != null)
                                      {
-                                        List<IPStmt> caseStmts = new List<IPStmt>();
-                                        CompoundStmt caseBody = c.Value.Body;
+                                        var caseStmts = new List<IPStmt>();
+                                        var caseBody = c.Value.Body;
                                         if (caseBody != null)
                                         {
                                             foreach (var stmt in caseBody.Statements)
@@ -670,17 +667,17 @@ namespace Plang.Compiler.Backend.Symbolic
                                  {
                                      after = (CompoundStmt) HandleReceives(after, function, machine);
                                  }
-                                 Continuation continuation = GetContinuation(function, cases, after, recv.SourceLocation);
+                                 var continuation = GetContinuation(function, cases, after, recv.SourceLocation);
                                  if (machine != null) machine.AddMethod(continuation);
-                                 foreach (Variable v in continuation.StoreParameters)
+                                 foreach (var v in continuation.StoreParameters)
                                  {
                                      machine.AddField(v);
                                  }
-                                 foreach (AssignStmt store in continuation.StoreStmts)
+                                 foreach (var store in continuation.StoreStmts)
                                  {
                                      result.Add(store);
                                  }
-                                 ReceiveSplitStmt split = new ReceiveSplitStmt(compound.SourceLocation, continuation);
+                                 var split = new ReceiveSplitStmt(compound.SourceLocation, continuation);
                                  result.Add(split);
                                  break;
                              case WhileStmt loop:
@@ -688,14 +685,14 @@ namespace Plang.Compiler.Backend.Symbolic
                                  // turn the while statement into a recursive function
                                  var whileName = $"while_{whileNumber}";
                                  whileNumber++;
-                                 WhileFunction rec = new WhileFunction(whileName, loop.SourceLocation);
+                                 var rec = new WhileFunction(whileName, loop.SourceLocation);
                                  rec.Owner = function.Owner;
                                  rec.ParentFunction = function;
                                  foreach (var param in function.Signature.Parameters) rec.AddParameter(param);
-                                 Dictionary<Variable,Variable> newVarMap = new Dictionary<Variable,Variable>();
+                                 var newVarMap = new Dictionary<Variable,Variable>();
                                  foreach (var local in function.LocalVariables)
                                  {
-                                     Variable machineVar = new Variable($"{whileName}_{local.Name}", local.SourceLocation, local.Role);
+                                     var machineVar = new Variable($"{whileName}_{local.Name}", local.SourceLocation, local.Role);
                                      machineVar.Type = local.Type;
                                      machine.AddField(machineVar);
                                      newVarMap.Add(local, machineVar);
@@ -706,23 +703,23 @@ namespace Plang.Compiler.Backend.Symbolic
                                  rec.CanReceive = function.CanReceive;
                                  rec.IsNondeterministic = function.IsNondeterministic;
                                  // make while loop body
-                                 List<IPStmt> loopBody = new List<IPStmt>();
-                                 IEnumerator<IPStmt> bodyEnumerator = loop.Body.Statements.GetEnumerator();
+                                 var loopBody = new List<IPStmt>();
+                                 var bodyEnumerator = loop.Body.Statements.GetEnumerator();
                                  while (bodyEnumerator.MoveNext())
                                  {   
-                                     IPStmt stmt = bodyEnumerator.Current;
-                                     IPStmt replaceBreak = ReplaceBreaks(stmt, afterStmts);
+                                     var stmt = bodyEnumerator.Current;
+                                     var replaceBreak = ReplaceBreaks(stmt, afterStmts);
                                      if (replaceBreak != null) {
                                          loopBody.Add(ReplaceVars(replaceBreak, newVarMap));
                                      }
                                  }
-                                 List<VariableAccessExpr> recArgs = new List<VariableAccessExpr>();
+                                 var recArgs = new List<VariableAccessExpr>();
                                  foreach (var param in rec.Signature.Parameters)
                                  {
                                      recArgs.Add(new VariableAccessExpr(rec.SourceLocation, param));
                                  }
                                  // call the function
-                                 FunCallStmt recCall = new FunCallStmt(loop.SourceLocation, rec, recArgs);
+                                 var recCall = new FunCallStmt(loop.SourceLocation, rec, recArgs);
                                  loopBody.Add(recCall);
                                  rec.AddCallee(rec);
                                  loopBody = new List<IPStmt>(((CompoundStmt) HandleReceives(new CompoundStmt(rec.SourceLocation, loopBody), rec, machine)).Statements);
@@ -763,21 +760,21 @@ namespace Plang.Compiler.Backend.Symbolic
          {
              var continuationName = $"continuation_{continuationNumber}";
              continuationNumber++;
-             Continuation continuation = new Continuation(continuationName, new Dictionary<PEvent, Function>(cases), after, location);
+             var continuation = new Continuation(continuationName, new Dictionary<PEvent, Function>(cases), after, location);
              continuation.ParentFunction = function;
              function.AddCallee(continuation);
              function.Role = FunctionRole.Method;
              foreach (var v in function.Signature.Parameters) {
-                 Variable local = new Variable(v.Name, v.SourceLocation, v.Role);
-                 Variable store = new Variable($"{continuationName}_{v.Name}", v.SourceLocation, v.Role);
+                 var local = new Variable(v.Name, v.SourceLocation, v.Role);
+                 var store = new Variable($"{continuationName}_{v.Name}", v.SourceLocation, v.Role);
                  local.Type = v.Type;
                  store.Type = v.Type;
                  continuation.AddParameter(local, store);
              }
              foreach (var v in function.LocalVariables)
              {
-                 Variable local = new Variable(v.Name, v.SourceLocation, v.Role);
-                 Variable store = new Variable($"{continuationName}_{v.Name}", v.SourceLocation, v.Role);
+                 var local = new Variable(v.Name, v.SourceLocation, v.Role);
+                 var store = new Variable($"{continuationName}_{v.Name}", v.SourceLocation, v.Role);
                  local.Type = v.Type;
                  store.Type = v.Type;
                  continuation.AddParameter(local, store);

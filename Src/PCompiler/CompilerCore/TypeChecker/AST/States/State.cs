@@ -1,7 +1,7 @@
-using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker.AST.Declarations;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Antlr4.Runtime;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.TypeChecker.AST.States
 {
@@ -36,8 +36,8 @@ namespace Plang.Compiler.TypeChecker.AST.States
         {
             get
             {
-                string name = Name;
-                IStateContainer parent = Container;
+                var name = Name;
+                var parent = Container;
                 while (parent != null)
                 {
                     name = parent.Name + "." + name;

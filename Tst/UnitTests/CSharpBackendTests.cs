@@ -13,8 +13,8 @@ namespace UnitTests
         [Test]
         public void TestCompileCoyoteTemp()
         {
-            DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestCoyoteTemp"));
-            FileInfo tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "test.p"));
+            var tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPCheckerTemp"));
+            var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "test.p"));
             //var foreignFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "Foreign.cs"));
 
             if (!tempFilePath.Exists)
@@ -22,9 +22,9 @@ namespace UnitTests
                 return;
             }
 
-            CompilerTestCase testCase = new CompilerTestCase(
+            var testCase = new CompilerTestCase(
                 tempDir,
-                new CoyoteRunner(new[] { tempFilePath }),
+                new PCheckerRunner(new[] { tempFilePath }),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);
@@ -48,7 +48,7 @@ namespace UnitTests
 
             var testCase = new CompilerTestCase(
                 tempDir,
-                new CoyoteRunner(allFiles),
+                new PCheckerRunner(allFiles),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);
@@ -76,7 +76,7 @@ namespace UnitTests
 
             var testCase = new CompilerTestCase(
                 tempDir,
-                new CoyoteRunner(allPFiles, foreignCode),
+                new PCheckerRunner(allPFiles, foreignCode),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);

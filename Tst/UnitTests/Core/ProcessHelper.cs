@@ -21,7 +21,7 @@ namespace UnitTests.Core
             out string stderr, string exeName,
             params string[] argumentList)
         {
-            ProcessStartInfo psi = new ProcessStartInfo(exeName)
+            var psi = new ProcessStartInfo(exeName)
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
@@ -34,7 +34,7 @@ namespace UnitTests.Core
 
             string mStdout = "", mStderr = "";
 
-            Process proc = new Process { StartInfo = psi };
+            var proc = new Process { StartInfo = psi };
             proc.OutputDataReceived += (s, e) => { mStdout += $"{e.Data}\n"; };
             proc.ErrorDataReceived += (s, e) =>
             {

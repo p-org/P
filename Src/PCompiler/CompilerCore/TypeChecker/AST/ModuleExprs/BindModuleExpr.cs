@@ -1,7 +1,7 @@
-﻿using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker.AST.Declarations;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Antlr4.Runtime;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler.TypeChecker.AST.ModuleExprs
 {

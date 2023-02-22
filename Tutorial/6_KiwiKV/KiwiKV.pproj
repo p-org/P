@@ -1,0 +1,10 @@
+<!-- P Project file for the KIwiKV example -->
+<Project>
+<ProjectName>KiwiKV</ProjectName>
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+	<PFile>./PSpec/</PFile>
+	<PFile>./PTst/</PFile>
+</InputFiles>
+<OutputDir>./PGenerated/</OutputDir>
+</Project>

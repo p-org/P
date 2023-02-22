@@ -1,13 +1,10 @@
-using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker.AST.Declarations;
 using System.Collections.Generic;
-using Plang.Compiler.TypeChecker.Types;
-using Plang.Compiler.TypeChecker.AST.Statements;
-using Plang.Compiler.TypeChecker.AST;
-using Plang.Compiler.TypeChecker.AST.Expressions;
-using System.IO;
-using System;
 using System.Linq;
+using Antlr4.Runtime;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
+using Plang.Compiler.TypeChecker.AST.Statements;
 
 namespace Plang.Compiler.Backend.Symbolic
 {
@@ -25,9 +22,9 @@ namespace Plang.Compiler.Backend.Symbolic
                 storeParameters.Add(store);
             if (!localParameters.Select(param => param.Name).Contains(local.Name))
                 localParameters.Add(local);
-            VariableAccessExpr localAccess = new VariableAccessExpr(SourceLocation, local);
-            VariableAccessExpr storeAccess = new VariableAccessExpr(SourceLocation, store);
-            AssignStmt storeStmt = new AssignStmt(SourceLocation, storeAccess, localAccess);
+            var localAccess = new VariableAccessExpr(SourceLocation, local);
+            var storeAccess = new VariableAccessExpr(SourceLocation, store);
+            var storeStmt = new AssignStmt(SourceLocation, storeAccess, localAccess);
             storeStmts.Add(storeStmt);
             storeForLocal.Add(local, store);
         }

@@ -353,7 +353,7 @@ public class PSymOptions {
 
         // Populate the configuration based on the commandline arguments
         for (Option option : cmd.getOptions()) {
-            switch (option.getOpt()) {
+            switch (option.getLongOpt()) {
                 // basic options
                 case "s":
                 case "strategy":

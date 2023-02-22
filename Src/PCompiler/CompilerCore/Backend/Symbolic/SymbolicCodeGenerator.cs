@@ -180,7 +180,7 @@ namespace Plang.Compiler.Backend.Symbolic
             if (mainMachine != null)
             {
                 context.WriteLine(output, "@Generated");
-                context.WriteLine(output, "public static class DefaultTestDriver extends PTestDriver {");
+                context.WriteLine(output, "public static class DefaultImpl extends PTestDriver {");
                 WriteDriver(context, output, mainMachine.Name, decls);
                 context.WriteLine(output, "}");
                 context.WriteLine(output);

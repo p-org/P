@@ -22,9 +22,13 @@ namespace Plang.Options
         internal PCompilerOptions()
         {
             Parser = new CommandLineArgumentParser("p compile",
-                "The P compiler compiles all the P files in the project together and generates the executable that can be checked for correctness by the P checker");
+                "The P compiler compiles all the P files in the project together and generates the executable that can be checked for correctness by the P checker\n\n" +
+                "Compiler modes :: (default: bugfinding)\n" +
+                "  --mode bugfinding  : for prioritized random search\n" +
+                "  --mode verify      : for exhaustive symbolic exploration\n" + 
+                "  --mode cover       : for exhaustive explicit-state search with state-space coverage reporting\n" +
+                "  --mode pobserve    : for runtime monitoring of P specs against implementation logs" );
 
-            
             var projectGroup = Parser.GetOrCreateGroup("project", "P Project: Compiling using `.pproj` file");
             projectGroup.AddArgument("pproj", "pp", "P project file to compile (*.pproj)." +
                                                     " If this option is not passed, the compiler searches for a *.pproj in the current folder");
@@ -34,7 +38,7 @@ namespace Plang.Options
             pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
 
-            Parser.AddArgument("mode", "m", "Compilation mode :: (bugfinding, pobserve). (default: bugfinding)").AllowedValues =
+            Parser.AddArgument("mode", "m", "Compilation mode :: (bugfinding, verify, cover, pobserve). (default: bugfinding)").AllowedValues =
                 new List<string>() { "bugfinding", "verify", "cover", "pobserve" };
         }
 
@@ -48,7 +52,7 @@ namespace Plang.Options
             try
             {
                 var result = Parser.ParseArguments(args);
-                // if there are no arguments then search for a pproj file locally and load it
+                // if there are no --pproj or --pfiles arguments, then search for a pproj file locally and load it
                 FindLocalPProject(result);
 
                 // load pproj file first
@@ -86,24 +90,27 @@ namespace Plang.Options
 
         private static void FindLocalPProject(List<CommandLineArgument> result)
         {
-            if (result.Count == 0)
+            foreach (var arg in result)
             {
-                CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
-                var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj");
-                if (files.Length == 0)
-                {
-                    CommandLineOutput.WriteInfo(
-                        $".. Could not find any P project file *.pproj in the current folder: {Directory.GetCurrentDirectory()}");
-                }
-                else
-                {
-                    var commandlineArg = new CommandLineArgument();
-                    commandlineArg.Value = files.First();
-                    commandlineArg.LongName = "pproj";
-                    commandlineArg.ShortName = "pp";
-                    CommandLineOutput.WriteInfo($".. Found P project file: {commandlineArg.Value}");
-                    result.Add(commandlineArg);
-                }
+                if (arg.LongName.Equals("pproj") || arg.LongName.Equals("pfiles"))
+                    return;
+            }
+
+            CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
+            var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj");
+            if (files.Length == 0)
+            {
+                CommandLineOutput.WriteInfo(
+                    $".. Could not find any P project file *.pproj in the current folder: {Directory.GetCurrentDirectory()}");
+            }
+            else
+            {
+                var commandlineArg = new CommandLineArgument();
+                commandlineArg.Value = files.First();
+                commandlineArg.LongName = "pproj";
+                commandlineArg.ShortName = "pp";
+                CommandLineOutput.WriteInfo($".. Found P project file: {commandlineArg.Value}");
+                result.Add(commandlineArg);
             }
         }
 

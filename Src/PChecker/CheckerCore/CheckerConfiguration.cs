@@ -29,6 +29,12 @@ namespace PChecker
         public int Timeout;
 
         /// <summary>
+        /// Memory limit in GB.
+        /// </summary>
+        [DataMember]
+        public double MemoryLimit;
+
+        /// <summary>
         /// The assembly to be analyzed for bugs.
         /// </summary>
         [DataMember]
@@ -38,7 +44,7 @@ namespace PChecker
         /// Checking mode
         /// </summary>
         [DataMember]
-        public string CheckerMode;
+        public CheckerMode Mode;
 
         /// <summary>
         /// Test case to be used.
@@ -244,9 +250,10 @@ namespace PChecker
             OutputFilePath = string.Empty;
 
             Timeout = 0;
+            MemoryLimit = 0;
 
             AssemblyToBeAnalyzed = string.Empty;
-            CheckerMode = "bugfinding";
+            Mode = CheckerMode.BugFinding;
             TestCaseName = string.Empty;
 
             SchedulingStrategy = "random";

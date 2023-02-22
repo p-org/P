@@ -18,7 +18,8 @@ Commandline options for PSym
  -v,--verbose <Log Verbosity (integer)>         Level of verbose log output during exploration
                                                 (default: 0)
  -i,--iterations <Iterations (integer)>         Number of schedules to explore (default: 1)
- -ms,--max-steps <Max Steps (integer)>          Max scheduling steps to be explored (default: 1000)
+ -ms,--max-steps <Max Steps (integer)>          Max scheduling steps to be explored (default:
+                                                10,000)
  -fms,--fail-on-maxsteps                        Consider it a bug if the test hits the specified
                                                 max-steps
  -nsc,--no-state-caching                        Disable state caching

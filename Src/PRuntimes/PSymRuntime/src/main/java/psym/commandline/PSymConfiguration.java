@@ -23,7 +23,7 @@ public class PSymConfiguration implements Serializable {
 
     // default name of the test driver
     @Getter
-    final String testDriverDefault = "DefaultTestDriver";
+    final String testDriverDefault = "DefaultImpl";
 
     // name of the test driver
     @Getter @Setter
@@ -47,7 +47,7 @@ public class PSymConfiguration implements Serializable {
 
     // max steps/depth bound provided by the user
     @Getter @Setter
-    int maxStepBound = 1000;
+    int maxStepBound = 10000;
 
     // fail on reaching the maximum scheduling step bound
     @Getter @Setter

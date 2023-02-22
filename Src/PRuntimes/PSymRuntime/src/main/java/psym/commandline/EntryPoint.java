@@ -60,9 +60,8 @@ public class EntryPoint {
     }
 
     private static void preprocess() {
-        PSymLogger.info(String.format("... Method " +  configuration.getTestDriver()));
-        PSymLogger.info(String.format("... Project %s is using '%s' strategy (seed:%s)",
-                                            configuration.getProjectName(),
+        PSymLogger.info(String.format(".. Test case :: " +  configuration.getTestDriver()));
+        PSymLogger.info(String.format("... Checker is using '%s' strategy (seed:%s)",
                                             configuration.getStrategy(),
                                             configuration.getRandomSeed()));
         PSymLogger.info("--------------------");
@@ -180,6 +179,10 @@ public class EntryPoint {
         config.setCollectStats(0);
         replayScheduler.setConfiguration(config);
         replayScheduler.getProgram().setProgramScheduler(replayScheduler);
+
+        PSymLogger.info(String.format(".. Test case :: " +  config.getTestDriver()));
+        PSymLogger.info(String.format("... Checker is using 'replay' strategy"));
+
         replay(replayScheduler);
     }
 

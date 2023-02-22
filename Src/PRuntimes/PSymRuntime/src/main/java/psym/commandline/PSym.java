@@ -140,15 +140,15 @@ public class PSym {
             if (!name.equals(defaultTestDriver)) {
                 PSymLogger.info("No test driver found named \"" + name + "\"");
             }
-            PSymLogger.info("Provide /method or -m flag to qualify the test method name you wish to use.");
-            PSymLogger.info("Possible options are::");
+            PSymLogger.info(String.format("Error: We found '%d' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).", subTypesDriver.size()));
+            PSymLogger.info("Possible options are:");
             for (Class<? extends PTestDriver> td: subTypesDriver) {
-                PSymLogger.info(String.format("  %s", td.getSimpleName()));
+                PSymLogger.info(String.format("%s", td.getSimpleName()));
             }
             if (!name.equals(defaultTestDriver)) {
                 throw new Exception("No test driver found named \"" + config.getTestDriver() + "\"");
             } else {
-                System.exit(5);
+                System.exit(6);
             }
         }
         assert(driver != null);

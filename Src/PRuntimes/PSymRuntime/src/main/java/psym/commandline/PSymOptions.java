@@ -105,7 +105,7 @@ public class PSymOptions {
         // max steps/depth bound for the search
         Option maxSteps = Option.builder("ms")
                 .longOpt("max-steps")
-                .desc("Max scheduling steps to be explored (default: 1000)")
+                .desc("Max scheduling steps to be explored (default: 10,000)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Max Steps (integer)")
@@ -387,7 +387,7 @@ public class PSymOptions {
                     }
                     break;
                 case "tc":
-                case "test-case":
+                case "testcase":
                     config.setTestDriver(option.getValue());
                     break;
                 case "t":

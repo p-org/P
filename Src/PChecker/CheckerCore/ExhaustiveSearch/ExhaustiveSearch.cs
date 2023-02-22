@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Diagnostics;
 using System.Text;
 using PChecker.IO.Debugging;
@@ -21,17 +19,8 @@ namespace PChecker.ExhaustiveSearch
         private readonly CheckerConfiguration _checkerConfiguration;
 
         /// <summary>
-        /// Set of callbacks to invoke at the end
-        /// of each iteration.
+        /// Logger.
         /// </summary>
-        private readonly ISet<Action<int>> PerIterationCallbacks;
-
-        /// <summary>
-        /// The installed logger.
-        /// </summary>
-        /// <remarks>
-        /// See <see href="/coyote/learn/core/logging" >Logging</see> for more information.
-        /// </remarks>
         private TextWriter Logger;
 
         /// <summary>

@@ -26,7 +26,7 @@ echo -e "--------------------"
 echo -e "Compiling P Model into PSym IR"
 
 cd ${projectPath}
-dotnet ${PBIN} compile --mode verify --projname ${projectName} --outdir ${outPath} > ${outPath}/compile.out
+dotnet ${PBIN} compile --mode verification --projname ${projectName} --outdir ${outPath} > ${outPath}/compile.out
 if grep -q "Build succeeded." ${outPath}/compile.out; then
   echo -e "  Done"
 else

@@ -39,7 +39,7 @@ namespace PChecker.Instrumentation
 
             // Do not create the output directory yet if we have to scroll back the history first.
             OutputDirectory = Reporter.GetOutputDirectory(checkerConfiguration.OutputFilePath, checkerConfiguration.AssemblyToBeAnalyzed,
-                "POutput", createDir: !makeHistory);
+                checkerConfiguration.Mode.ToString(), createDir: !makeHistory);
             if (!makeHistory)
             {
                 return;

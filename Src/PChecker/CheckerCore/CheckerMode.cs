@@ -12,9 +12,9 @@ public enum CheckerMode
     /// <summary>
     /// Mode for exhaustive symbolic exploration
     /// </summary>
-    Verify,
+    Verification,
     /// <summary>
     /// Mode for exhaustive explicit-state search with state-space coverage reporting
     /// </summary>
-    Cover
+    Coverage
 }

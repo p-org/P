@@ -93,8 +93,8 @@ namespace Plang
                         CommandLineOutput.WriteInfo(engine.GetReport());
                     }
                         break;
-                    case CheckerMode.Verify:
-                    case CheckerMode.Cover:
+                    case CheckerMode.Verification:
+                    case CheckerMode.Coverage:
                         ExhaustiveEngine.Create(configuration).Run();
                         break;
                     default:
@@ -104,11 +104,8 @@ namespace Plang
             }
             else
             {
-                if (configuration.ReportCodeCoverage || configuration.ReportActivityCoverage)
-                {
-                    // This has to be here because both forms of coverage require it.
-                    CodeCoverageInstrumentation.SetOutputDirectory(configuration, makeHistory: true);
-                }
+                // This has to be here because all checker modes now require this to set up output directory.
+                CodeCoverageInstrumentation.SetOutputDirectory(configuration, makeHistory: true);
 
                 Console.WriteLine(".. Checking " + configuration.AssemblyToBeAnalyzed);
 
@@ -118,8 +115,8 @@ namespace Plang
                     case CheckerMode.BugFinding:
                         TestingProcessScheduler.Create(configuration).Run();
                         break;
-                    case CheckerMode.Verify:
-                    case CheckerMode.Cover:
+                    case CheckerMode.Verification:
+                    case CheckerMode.Coverage:
                         ExhaustiveEngine.Create(configuration).Run();
                         break;
                     default:

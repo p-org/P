@@ -24,10 +24,10 @@ namespace Plang.Options
             Parser = new CommandLineArgumentParser("p compile",
                 "The P compiler compiles all the P files in the project together and generates the executable that can be checked for correctness by the P checker\n\n" +
                 "Compiler modes :: (default: bugfinding)\n" +
-                "  --mode bugfinding  : for prioritized random search\n" +
-                "  --mode verify      : for exhaustive symbolic exploration\n" + 
-                "  --mode cover       : for exhaustive explicit-state search with state-space coverage reporting\n" +
-                "  --mode pobserve    : for runtime monitoring of P specs against implementation logs" );
+                "  --mode bugfinding   : for bug finding through stratified random search\n" +
+                "  --mode verification : for verification through exhaustive symbolic exploration\n" + 
+                "  --mode coverage     : for achieving state-space coverage through exhaustive explicit-state search\n" +
+                "  --mode pobserve     : for runtime monitoring of P specs against implementation logs" );
 
             var projectGroup = Parser.GetOrCreateGroup("project", "P Project: Compiling using `.pproj` file");
             projectGroup.AddArgument("pproj", "pp", "P project file to compile (*.pproj)." +
@@ -38,8 +38,8 @@ namespace Plang.Options
             pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
 
-            Parser.AddArgument("mode", "m", "Compilation mode :: (bugfinding, verify, cover, pobserve). (default: bugfinding)").AllowedValues =
-                new List<string>() { "bugfinding", "verify", "cover", "pobserve" };
+            Parser.AddArgument("mode", "m", "Compilation mode :: (bugfinding, verification, coverage, pobserve). (default: bugfinding)").AllowedValues =
+                new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
         }
 
         /// <summary>
@@ -153,8 +153,8 @@ namespace Plang.Options
                         compilerConfiguration.OutputLanguage = (string)option.Value switch
                         {
                             "bugfinding" => CompilerOutput.CSharp,
-                            "verify" => CompilerOutput.Symbolic,
-                            "cover" => CompilerOutput.Symbolic,
+                            "verification" => CompilerOutput.Symbolic,
+                            "coverage" => CompilerOutput.Symbolic,
                             "pobserve" => CompilerOutput.Java,
                             _ => compilerConfiguration.OutputLanguage
                         };

@@ -70,10 +70,7 @@ namespace PChecker.ExhaustiveSearch
 
             arguments.Append($"-jar {_checkerConfiguration.AssemblyToBeAnalyzed} ");
 
-            if (!string.IsNullOrEmpty(_checkerConfiguration.OutputFilePath))
-            {
-                arguments.Append($"--outdir {_checkerConfiguration.OutputFilePath} ");
-            }
+            arguments.Append($"--outdir {_checkerConfiguration.OutputFilePath}/{_checkerConfiguration.Mode.ToString()} ");
 
             if (!string.IsNullOrEmpty(_checkerConfiguration.TestCaseName))
             {
@@ -88,10 +85,10 @@ namespace PChecker.ExhaustiveSearch
             {
                 switch (_checkerConfiguration.Mode)
                 {
-                    case CheckerMode.Verify:
+                    case CheckerMode.Verification:
                         arguments.Append("--strategy symex ");
                         break;
-                    case CheckerMode.Cover:
+                    case CheckerMode.Coverage:
                         arguments.Append($"--strategy {_checkerConfiguration.SchedulingStrategy} ");
                         break;
                     default:

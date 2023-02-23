@@ -27,15 +27,15 @@ namespace Plang.Options
                 "The P checker enables systematic exploration of a specified P test case, it generates " +
                 "a reproducible bug-trace if a bug is found, and also allows replaying a bug-trace.\n\n" +
                 "Checker modes :: (default: bugfinding)\n" +
-                "  --mode bugfinding  : for prioritized random search\n" +
-                "  --mode verify      : for exhaustive symbolic exploration\n" + 
-                "  --mode cover       : for exhaustive explicit-state search with state-space coverage reporting");
+                "  --mode bugfinding   : for bug finding through stratified random search\n" +
+                "  --mode verification : for verification through exhaustive symbolic exploration\n" + 
+                "  --mode coverage     : for achieving state-space coverage through exhaustive explicit-state search");
 
             var basicOptions = Parser.GetOrCreateGroup("Basic", "Basic options");
             basicOptions.AddPositionalArgument("path", "Path to the compiled file to check (*.dll for bugfinding or *.jar for other checker modes)."+
                 " If this option is not passed, the compiler searches for a *.dll/*.jar in the current folder").IsRequired = false;
-            basicOptions.AddArgument("mode", "m", "Choose a checker mode (options: bugfinding, verify, cover). (default: bugfinding)").AllowedValues =
-                new List<string>() { "bugfinding", "verify", "cover", "pobserve" };
+            basicOptions.AddArgument("mode", "m", "Choose a checker mode (options: bugfinding, verification, coverage). (default: bugfinding)").AllowedValues =
+                new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
 
             var basicGroup = Parser.GetOrCreateGroup("Basic", "Basic options");
@@ -57,7 +57,7 @@ namespace Plang.Options
                                                                    "specified as the integer N in the equation 0.5 to the power of N.  So for N=1, the probability is 0.5, for N=2 the probability is 0.25, N=3 you get 0.125, etc.", typeof(uint));
             schedulingGroup.AddArgument("sch-pct", null, "Choose the PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
             schedulingGroup.AddArgument("sch-fairpct", null, "Choose the fair PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
-            schedulingGroup.AddArgument("sch-cover", null, "Choose the scheduling strategy for explicit-state search in cover mode (options: random, dfs, learn). (default: learn)").AllowedValues =
+            schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for explicit-state search in coverage mode (options: random, dfs, learn). (default: learn)").AllowedValues =
             new List<string>() { "random", "dfs", "learn" };
 
             var replayOptions = Parser.GetOrCreateGroup("replayOptions", "Replay and debug options");
@@ -146,11 +146,11 @@ namespace Plang.Options
                         case "bugfinding":
                             checkerConfiguration.Mode = CheckerMode.BugFinding;
                             break;
-                        case "verify":
-                            checkerConfiguration.Mode = CheckerMode.Verify;
+                        case "verification":
+                            checkerConfiguration.Mode = CheckerMode.Verification;
                             break;
-                        case "cover":
-                            checkerConfiguration.Mode = CheckerMode.Cover;
+                        case "coverage":
+                            checkerConfiguration.Mode = CheckerMode.Coverage;
                             break;
                         default:
                             Error.ReportAndExit($"Invalid checker mode '{option.Value}'.");
@@ -172,7 +172,7 @@ namespace Plang.Options
                     checkerConfiguration.SchedulingStrategy = option.LongName.Substring(4);
                     checkerConfiguration.StrategyBound = (int)(uint)option.Value;
                     break;
-                case "sch-cover":
+                case "sch-coverage":
                     checkerConfiguration.SchedulingStrategy = (string)option.Value;
                     break;
                 case "replay":
@@ -265,7 +265,7 @@ namespace Plang.Options
                 checkerConfiguration.SchedulingStrategy != "probabilistic" &&
                 checkerConfiguration.SchedulingStrategy != "dfs" &&
                 checkerConfiguration.SchedulingStrategy != "replay" &&
-                !checkerConfiguration.SchedulingStrategy.StartsWith("cover-"))
+                !checkerConfiguration.SchedulingStrategy.StartsWith("coverage-"))
             {
                 Error.ReportAndExit("Please provide a scheduling strategy (see --sch* options)");
             }
@@ -286,8 +286,8 @@ namespace Plang.Options
                 string filePattern =  checkerConfiguration.Mode switch
                 {
                     CheckerMode.BugFinding => "*.dll",
-                    CheckerMode.Verify => "*-jar-with-dependencies.jar",
-                    CheckerMode.Cover => "*-jar-with-dependencies.jar",
+                    CheckerMode.Verification => "*-jar-with-dependencies.jar",
+                    CheckerMode.Coverage => "*-jar-with-dependencies.jar",
                     _ => "*.dll"
                 };
                 

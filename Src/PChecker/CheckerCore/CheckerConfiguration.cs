@@ -247,7 +247,7 @@ namespace PChecker
         /// </summary>
         protected CheckerConfiguration()
         {
-            OutputFilePath = string.Empty;
+            OutputFilePath = "PCheckerOutput";
 
             Timeout = 0;
             MemoryLimit = 0;

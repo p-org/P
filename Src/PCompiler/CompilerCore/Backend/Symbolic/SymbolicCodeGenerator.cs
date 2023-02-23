@@ -177,14 +177,20 @@ namespace Plang.Compiler.Backend.Symbolic
                 }
             }
 
-            if (mainMachine != null)
+            if (mainMachine == null)
+                return;
+
+            foreach (var decl in decls)
             {
-                context.WriteLine(output, "@Generated");
-                context.WriteLine(output, "public static class DefaultImpl extends PTestDriver {");
-                WriteDriver(context, output, mainMachine.Name, decls);
-                context.WriteLine(output, "}");
-                context.WriteLine(output);
+                if ((decl is SafetyTest) && (context.GetNameForDecl(decl) == "DefaultImpl"))
+                    return;
             }
+            
+            context.WriteLine(output, "@Generated");
+            context.WriteLine(output, "public static class DefaultImpl extends PTestDriver {");
+            WriteDriver(context, output, mainMachine.Name, decls);
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
         }
 
         private void WriteEvent(CompilationContext context, StringWriter output, PEvent ev)

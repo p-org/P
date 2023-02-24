@@ -17,53 +17,53 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     String configFile = "";
 
-    // mode of exploration
+    // strategy of exploration
     @Getter @Setter
-    String mode = "default";
-
-    // time limit in seconds (0 means infinite)
-    @Getter @Setter
-    double timeLimit = 60;
-
-    // memory limit in megabytes (0 means infinite)
-    @Getter @Setter
-    double memLimit = (Runtime.getRuntime().maxMemory() / 1000000);
-
-    // random seed
-    @Getter @Setter
-    long randomSeed = System.currentTimeMillis();
+    String strategy = "learn";
 
     // default name of the test driver
     @Getter
-    final String testDriverDefault = "DefaultTestDriver";
+    final String testDriverDefault = "DefaultImpl";
 
     // name of the test driver
     @Getter @Setter
     String testDriver = testDriverDefault;
 
-    // default name of the project
-    @Getter
-    final String projectNameDefault = "test";
-
-    // name of the project
+    // time limit in seconds (0 means infinite)
     @Getter @Setter
-    String projectName = projectNameDefault;
+    double timeLimit = 0;
+
+    // memory limit in megabytes (0 means infinite)
+    @Getter @Setter
+    double memLimit = (Runtime.getRuntime().maxMemory() / 1024 / 1024);
 
     // name of the output folder
     @Getter @Setter
     String outputFolder = "output";
 
-    // name of the cex file to read the replayer state
+    // max number of executions bound provided by the user
     @Getter @Setter
-    String readReplayerFromFile = "";
+    int maxExecutions = 1;
 
     // max steps/depth bound provided by the user
     @Getter @Setter
-    int maxStepBound = 1000;
+    int maxStepBound = 10000;
 
-    // max number of executions bound provided by the user
+    // fail on reaching the maximum scheduling step bound
     @Getter @Setter
-    int maxExecutions = 0;
+    boolean failOnMaxStepBound = false;
+
+    // random seed
+    @Getter @Setter
+    long randomSeed = System.currentTimeMillis();
+
+    // name of the project
+    @Getter @Setter
+    String projectName = "test";
+
+    // name of the cex file to read the replayer state
+    @Getter @Setter
+    String readReplayerFromFile = "";
 
     // max scheduling choice bound provided by the user
     @Getter @Setter
@@ -83,11 +83,11 @@ public class PSymConfiguration implements Serializable {
 
     // mode of choice orchestration
     @Getter @Setter
-    ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.Random;
+    ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.EpsilonGreedy;
 
     // mode of task orchestration
     @Getter @Setter
-    TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.Random;
+    TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.CoverageEpsilonGreedy;
 
     // max number of children tasks per execution
     @Getter @Setter
@@ -145,27 +145,39 @@ public class PSymConfiguration implements Serializable {
         return (getSchedChoiceBound() != 1 || getDataChoiceBound() != 1);
     }
 
-    public void setToDefault() {
-        this.setMode("default");
-    }
-
-    public void setToBmc() {
-        this.setMode("bmc");
-        this.setSchedChoiceBound(0);
-        this.setDataChoiceBound(0);
-        this.setUseStateCaching(false);
-    }
-
     public void setToRandom() {
-        this.setMode("random");
+        this.setStrategy("random");
         this.setSchedChoiceBound(1);
         this.setDataChoiceBound(1);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
         this.setTaskOrchestration(TaskOrchestrationMode.Random);
     }
 
+    public void setToDfs() {
+        this.setStrategy("dfs");
+        this.setSchedChoiceBound(1);
+        this.setDataChoiceBound(1);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
+        this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
+    }
+
+    public void setToLearn() {
+        this.setStrategy("learn");
+        this.setSchedChoiceBound(1);
+        this.setDataChoiceBound(1);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
+        this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
+    }
+
+    public void setToBmc() {
+        this.setStrategy("bmc");
+        this.setSchedChoiceBound(0);
+        this.setDataChoiceBound(0);
+        this.setUseStateCaching(false);
+    }
+
     public void setToFuzz() {
-        this.setMode("fuzz");
+        this.setStrategy("fuzz");
         this.setSchedChoiceBound(1);
         this.setDataChoiceBound(1);
         this.setUseStateCaching(false);
@@ -174,32 +186,16 @@ public class PSymConfiguration implements Serializable {
         this.setTaskOrchestration(TaskOrchestrationMode.Random);
     }
 
-    public void setToDfs() {
-        this.setMode("dfs");
-        this.setSchedChoiceBound(1);
-        this.setDataChoiceBound(1);
-        this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
-        this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
-    }
-
     public void setToCoverage() {
-        this.setMode("coverage");
+        this.setStrategy("coverage");
         this.setSchedChoiceBound(1);
         this.setDataChoiceBound(1);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
         this.setTaskOrchestration(TaskOrchestrationMode.CoverageAStar);
     }
 
-    public void setToLearn() {
-        this.setMode("learn");
-        this.setSchedChoiceBound(1);
-        this.setDataChoiceBound(1);
-        this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
-        this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
-    }
-
     public void setToDebug() {
-        this.setMode("debug");
+        this.setStrategy("debug");
     }
 
 

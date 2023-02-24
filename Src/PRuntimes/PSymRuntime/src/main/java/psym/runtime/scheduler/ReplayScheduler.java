@@ -78,17 +78,17 @@ public class ReplayScheduler extends Scheduler {
     public static ReplayScheduler readFromFile(String readFromFile) throws Exception {
         ReplayScheduler result;
         try {
-            PSymLogger.info("... Reading replayer state from file " + readFromFile);
+            PSymLogger.info(".. Reading replayer state from file " + readFromFile);
             FileInputStream fis;
             fis = new FileInputStream(readFromFile);
             ObjectInputStream ois = new ObjectInputStream(fis);
             result = (ReplayScheduler) ois.readObject();
             GlobalData.setInstance((GlobalData) ois.readObject());
             result.reinitialize();
-            PSymLogger.info("... Successfully read.");
+            PSymLogger.info(".. Successfully read.");
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
-            throw new Exception("... Failed to read replayer state from file " + readFromFile);
+            throw new Exception(".. Failed to read replayer state from file " + readFromFile);
         }
         return result;
     }

@@ -6,7 +6,7 @@ P is built to be cross-platform and can be used on MacOS, Linux, and Windows. We
     After each step, please use the troubleshooting check to ensure that each installation step succeeded.
 
 ### [Step 1] Install .Net Core SDK
-The P compiler and checker are implemented in C# and hence the tool chain requires `dotnet`.
+The P compiler is implemented in C# and hence the tool chain requires `dotnet`.
 P currently uses the specific version of [.Net SDK 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
 To install .Net Core 6.0 SDK use:
 
@@ -66,10 +66,9 @@ To install .Net Core 6.0 SDK use:
 
 
 
-
 ### [Step 2] Install Java Runtime
 
-The P compiler uses [ANTLR](https://www.antlr.org/) parser and hence requires `java`.
+The latest P checker is implemented in C# and Java (`java` version 11 or higher).
 If you already have Java installed :innocent:, ignore this step.
 To install Java use:
 
@@ -91,7 +90,7 @@ To install Java use:
 
 === "Amazon Linux"
 
-    Installing Java 11 on Amazon Linux (you can use any version of java >= 9)
+    Installing Java 11 on Amazon Linux (you can use any version of java >= 11)
 
     ```shell
     sudo yum install -y java-11-amazon-corretto-devel
@@ -109,7 +108,63 @@ To install Java use:
     If you get `java` command not found error, mostly likely, you need to add the path to `java` in your `PATH`.
 
 
-### [Step 3] Install P Compiler
+### [Step 3] Install Maven
+
+The latest P checker also needs Maven installed (`mvn` version 3.3 or higher).
+If you already have Maven installed :innocent:, ignore this step.
+To install Maven use:
+
+=== "MacOS"
+
+    Installing Maven on MacOS using Homebrew ([details](https://mkyong.com/maven/install-maven-on-mac-osx/))
+
+    ```
+    brew install maven
+    ```
+
+    Dont have Homebrew? Directly use [installer](https://maven.apache.org/install.html). 
+
+=== "Ubuntu"
+
+    Installing Maven on Ubuntu ([details](https://phoenixnap.com/kb/install-maven-on-ubuntu))
+    
+    ```
+    sudo apt install maven
+    ```
+
+=== "Amazon Linux"
+
+    Visit the [Maven releases](http://maven.apache.org/download.cgi) page and install any Maven 3.3+ release.
+
+    Steps for installing Maven 3.8.7 on Amazon Linux (you can use any version of Maven 3.3+):
+
+    ```
+    wget https://dlcdn.apache.org/maven/maven-3/3.8.7/binaries/apache-maven-3.8.7-bin.tar.gz
+    tar xfv apache-maven-3.8.7-bin.tar.gz
+    ```
+    
+    You might do this in your home directory, yielding a folder like `` /home/$USER/apache-maven-3.8.7 ``
+    
+    Next, install the software into your environment by adding it to your path, and by defining Maven's environment variables:
+    
+    ```
+    export M2_HOME=/home/$USER/apache-maven-3.8.7
+    export M2=$M2_HOME/bin
+    export PATH=$M2:$PATH
+    ```
+
+=== "Windows"
+
+    Installing Maven on Windows ([details](https://maven.apache.org/install.html))
+
+??? hint "Troubleshoot: Confirm that Maven is correctly installed on your machine."
+
+    `mvn -version`
+
+    If you get `mvn` command not found error, mostly likely, you need to add the path to `$M2_HOME/bin` in your `PATH`.
+
+
+### [Step 4] Install P Compiler
 
 Install the P compiler as a `dotnet tool` using the following command:
 
@@ -134,7 +189,7 @@ dotnet tool install --global P
     dotnet tool update --global P
     ```
 
-### [Step 4] Recommended IDE (Optional)
+### [Step 5] Recommended IDE (Optional)
 
 - For developing P programs, we recommend using [IntelliJ
   IDEA](https://www.jetbrains.com/idea/) as we support basic [P syntax

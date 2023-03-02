@@ -418,6 +418,7 @@ public class Scheduler implements SymbolicSearch {
             Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", schedule.getLengthCond(schedule.size()));
             step();
         }
+        Assert.prop(!configuration.isFailOnMaxStepBound() || (getDepth() < configuration.getMaxStepBound()), "Scheduling steps bound of " + configuration.getMaxStepBound() + " reached.", schedule.getLengthCond(schedule.size()));
         schedule.setNumBacktracksInSchedule();
         if (done) {
             searchStats.setIterationCompleted();

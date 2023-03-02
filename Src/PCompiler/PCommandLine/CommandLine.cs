@@ -1,7 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using PChecker.IO;
+using PChecker;
+using PChecker.ExhaustiveSearch;
 using PChecker.SystematicTesting;
 using PChecker.Instrumentation;
 using PChecker.IO.Debugging;
@@ -82,22 +83,46 @@ namespace Plang
             {
                 CommandLineOutput.WriteInfo($"Replay option is used, checker is ignoring all other parameters and using the {configuration.ScheduleFile} to replay the schedule");
                 CommandLineOutput.WriteInfo($"... Replaying {configuration.ScheduleFile}");
-                var engine = TestingEngine.Create(configuration);
-                engine.Run();
-                CommandLineOutput.WriteInfo(engine.GetReport());
+
+                switch (configuration.Mode)
+                {
+                    case CheckerMode.BugFinding:
+                    {
+                        var engine = TestingEngine.Create(configuration);
+                        engine.Run();
+                        CommandLineOutput.WriteInfo(engine.GetReport());
+                    }
+                        break;
+                    case CheckerMode.Verification:
+                    case CheckerMode.Coverage:
+                        ExhaustiveEngine.Create(configuration).Run();
+                        break;
+                    default:
+                        Error.Report($"[PTool] Checker with {configuration.Mode} mode is currently unsupported.");
+                        break;
+                }
             }
             else
             {
-                if (configuration.ReportCodeCoverage || configuration.ReportActivityCoverage)
-                {
-                    // This has to be here because both forms of coverage require it.
-                    CodeCoverageInstrumentation.SetOutputDirectory(configuration, makeHistory: true);
-                }
+                // This has to be here because all checker modes now require this to set up output directory.
+                CodeCoverageInstrumentation.SetOutputDirectory(configuration, makeHistory: true);
 
                 Console.WriteLine(".. Checking " + configuration.AssemblyToBeAnalyzed);
 
                 // Creates and runs the testing process scheduler.
-                TestingProcessScheduler.Create(configuration).Run();
+                switch (configuration.Mode)
+                {
+                    case CheckerMode.BugFinding:
+                        TestingProcessScheduler.Create(configuration).Run();
+                        break;
+                    case CheckerMode.Verification:
+                    case CheckerMode.Coverage:
+                        ExhaustiveEngine.Create(configuration).Run();
+                        break;
+                    default:
+                        Error.Report($"[PTool] Checker with {configuration.Mode} mode is currently unsupported.");
+                        break;
+                }
             
                 Console.WriteLine(". Done");
             }

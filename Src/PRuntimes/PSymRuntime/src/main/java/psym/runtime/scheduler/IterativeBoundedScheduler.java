@@ -546,6 +546,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", schedule.getLengthCond(schedule.size()));
             super.step();
         }
+        Assert.prop(!configuration.isFailOnMaxStepBound() || (getDepth() < configuration.getMaxStepBound()), "Scheduling steps bound of " + configuration.getMaxStepBound() + " reached.", schedule.getLengthCond(schedule.size()));
         schedule.setNumBacktracksInSchedule();
         if (done) {
             searchStats.setIterationCompleted();

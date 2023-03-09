@@ -6,6 +6,7 @@ and run the tests. Please make sure that you have followed the steps in the [ins
 Clone the [P repo](https://github.com/p-org/P) and run the following `build` script.
 
 === "on MacOS or Linux"
+
     ```shell
     cd Bld
     ./build.sh

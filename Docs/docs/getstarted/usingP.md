@@ -1,7 +1,7 @@
-!!! info "Check out the guide for P version 1.x.x [here](../old/getstarted/usingP.md)"
+!!! info "If you are using an older P version 1.x.x, please find the usage guide [here](../old/getstarted/usingP.md)"
 
 !!! check ""  
-    Before moving forward, we assume that you have successfully installed the
+    Before moving forward, we assume that you have successfully installed
     [P](install.md) and the [Syntax highlighting plugin](syntaxhighlight.md) :metal:.
 
 We introduce the P language syntax and semantics in details in the
@@ -39,19 +39,19 @@ There are two ways of compiling a P program:
     The P compiler provides the following commandline options:
 
     ```
-    ------------------------------------------ 
-    usage: p compile [--pproj string] [--pfiles string] [--projname string] [--outdir string] [--mode ] [--help] 
+    -----------------------------------------------
+    usage: p compile [--help] [--pproj string] [--pfiles string] [--projname string] [--outdir string] 
 
     The P compiler compiles all the P files in the project together and generates the executable that
-    can be checked for correctness by the P checker
+    can be checked for correctness by the P checker.
     
-    P Project: Compiling using `.pproj` file:
-    -----------------------------------------
+    Compiling using `.pproj` file:
+    ------------------------------
     -pp, --pproj string         : P project file to compile (*.pproj). If this option is not passed,
     the compiler searches for a *.pproj in the current folder
     
-    Compiling P files through commandline:
-    --------------------------------------
+    Compiling P files directly through commandline:
+    -----------------------------------------------
     -pf, --pfiles string        : List of P files to compile
     -pn, --projname string      : Project name for the compiled output
     -o, --outdir string         : Dump output to directory (absolute or relative path)
@@ -59,8 +59,7 @@ There are two ways of compiling a P program:
     Optional Arguments:
     -------------------
     -h, --help                  Show this help menu
-    -m, --mode                  Compilation mode :: (bugfinding, pobserve). (default: bugfinding)
-    ------------------------------------------ 
+    -----------------------------------------------
     ```
 
 === "Compile using the P Project"
@@ -96,7 +95,7 @@ There are two ways of compiling a P program:
         Compiling ClientServer...
         MSBuild version 17.3.1+2badb37d1 for .NET
         Determining projects to restore...
-        Restored P/Tutorial/1_ClientServer/PGenerated/ClientServer.csproj (in 126 ms).
+        Restored P/Tutorial/1_ClientServer/PGenerated/ClientServer.csproj (in 160 ms).
         2 of 3 projects are up-to-date for restore.
         CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
         CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
@@ -106,10 +105,11 @@ There are two ways of compiling a P program:
         0 Warning(s)
         0 Error(s)
         
-        Time Elapsed 00:00:05.98
+        Time Elapsed 00:00:04.39
         
         
         ----------------------------------------
+        [PTool]: Thanks for using P!
         ```
 
     `p compile` command searches for the `*.pproj` file in the current directory.
@@ -160,7 +160,7 @@ There are two ways of compiling a P program:
         Compiling ClientServer...
         MSBuild version 17.3.1+2badb37d1 for .NET
         Determining projects to restore...
-        Restored P/Tutorial/1_ClientServer/PGenerated/ClientServer.csproj (in 118 ms).
+        Restored P/Tutorial/1_ClientServer/PGenerated/ClientServer.csproj (in 145 ms).
         2 of 3 projects are up-to-date for restore.
         CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
         CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
@@ -170,10 +170,11 @@ There are two ways of compiling a P program:
         0 Warning(s)
         0 Error(s)
         
-        Time Elapsed 00:00:02.81
+        Time Elapsed 00:00:04.74
         
         
         ----------------------------------------
+        [PTool]: Thanks for using P!
         ```
 
 ### Checking a P program
@@ -203,6 +204,8 @@ p check
     tcSingleClient
     tcMultipleClients
     tcSingleClientAbstractServer
+    
+    [PTool]: Thanks for using P!
     ```
 
 `p check` command searches for the `*.dll` file in the current directory.
@@ -229,7 +232,7 @@ p check -tc tcSingleClient -i 100
     .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
     .. Checking P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
     .. Test case :: tcSingleClient
-    ... Checker is using 'random' strategy (seed:4248833112).
+    ... Checker is using 'random' strategy (seed:1914817066).
     ..... Iteration #1
     ..... Iteration #2
     ..... Iteration #3
@@ -250,16 +253,17 @@ p check -tc tcSingleClient -i 100
     ..... Iteration #90
     ..... Iteration #100
     ... Emitting coverage reports:
-    ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer.dgml
-    ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer.coverage.txt
-    ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer.sci
+    ..... Writing PCheckerOutput/BugFinding/ClientServer.dgml
+    ..... Writing PCheckerOutput/BugFinding/ClientServer.coverage.txt
+    ..... Writing PCheckerOutput/BugFinding/ClientServer.sci
     ... Checking statistics:
     ..... Found 0 bugs.
     ... Scheduling statistics:
     ..... Explored 100 schedules: 100 fair and 0 unfair.
-    ..... Number of scheduling points in fair terminating schedules: 22 (min), 144 (avg), 669 (max).
-    ... Elapsed 1.092744 sec.
+    ..... Number of scheduling points in fair terminating schedules: 22 (min), 157 (avg), 431 (max).
+    ... Elapsed 1.3911356 sec.
     . Done
+    [PTool]: Thanks for using P!
     ```
 
 There is a known bug in the ClientServer example (explained in the Tutorials) which is caught by
@@ -272,28 +276,31 @@ p check -tc tcSingleClientAbstractServer -i 100
     ```hl_lines="9 11 13 20"
     $ p check <Path>/ClientServer.dll -tc tcSingleClientAbstractServer -i 100
 
+    .. Searching for a P compiled file locally in the current folder
+    .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
     .. Checking P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
     .. Test case :: tcSingleClientAbstractServer
-    ... Checker is using 'random' strategy (seed:924874916).
+    ... Checker is using 'random' strategy (seed:2783951180).
     ..... Iteration #1
     Checker found a bug.
     ... Emitting traces:
-    ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer_0_0.txt
-    ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer_0_0.dgml
-    ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer_0_0.schedule
-    ... Elapsed 0.2039679 sec.
+    ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.txt
+    ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.dgml
+    ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.schedule
+    ... Elapsed 0.2447869 sec.
     ... Emitting coverage reports:
-    ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer.dgml
-    ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer.coverage.txt
-    ..... Writing P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/Output/ClientServer.dll/POutput/ClientServer.sci
+    ..... Writing PCheckerOutput/BugFinding/ClientServer.dgml
+    ..... Writing PCheckerOutput/BugFinding/ClientServer.coverage.txt
+    ..... Writing PCheckerOutput/BugFinding/ClientServer.sci
     ... Checking statistics:
     ..... Found 1 bug.
     ... Scheduling statistics:
     ..... Explored 1 schedule: 1 fair and 0 unfair.
     ..... Found 100.00% buggy schedules.
-    ..... Number of scheduling points in fair terminating schedules: 172 (min), 172 (avg), 172 (max).
-    ... Elapsed 0.3450022 sec.
+    ..... Number of scheduling points in fair terminating schedules: 87 (min), 87 (avg), 87 (max).
+    ... Elapsed 0.4132906 sec.
     . Done
+    [PTool]: Thanks for using P!
     ```
 
 The P checker on finding a bug generates two artifacts (highlighted in the expected output above):

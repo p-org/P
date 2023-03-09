@@ -74,7 +74,7 @@ p compile
     Compiling PriorityQueue...
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    Restored P/Tutorial/PriorityQueue/PGenerated/PriorityQueue.csproj (in 124 ms).
+    Restored P/Tutorial/PriorityQueue/PGenerated/PriorityQueue.csproj (in 131 ms).
     2 of 3 projects are up-to-date for restore.
     CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
     CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
@@ -84,10 +84,11 @@ p compile
     0 Warning(s)
     0 Error(s)
     
-    Time Elapsed 00:00:02.54
+    Time Elapsed 00:00:03.23
     
     
     ----------------------------------------
+    [PTool]: Thanks for using P!
     ```
 
 ### Checking PriorityQueue
@@ -106,7 +107,7 @@ p check -v
     .. Found a P compiled file: P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/PriorityQueue.dll
     .. Checking P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/PriorityQueue.dll
     .. Test case :: tcCheckPriorityQueue
-    ... Checker is using 'random' strategy (seed:2071744918).
+    ... Checker is using 'random' strategy (seed:3051611942).
     ..... Iteration #1
     <TestLog> Running test 'tcCheckPriorityQueue'.
     <CreateLog> Plang.CSharpRuntime._GodMachine(1) was created by task '2'.
@@ -116,7 +117,7 @@ p check -v
     <PrintLog> Adding Element in the Priority Queue!
     <PrintLog> Adding Element in the Priority Queue!
     <PrintLog> Adding Element in the Priority Queue!
-    <PrintLog> Choosing element at location: 0
+    <PrintLog> Choosing element at location: 2
     <PrintLog> --------------
     <PrintLog> Hello
     <PrintLog> World
@@ -125,16 +126,17 @@ p check -v
     <PrintLog> --------------
     ... ### Process 0 is terminating
     ... Emitting coverage reports:
-    ..... Writing P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/Output/PriorityQueue.dll/POutput/PriorityQueue.dgml
-    ..... Writing P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/Output/PriorityQueue.dll/POutput/PriorityQueue.coverage.txt
-    ..... Writing P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/Output/PriorityQueue.dll/POutput/PriorityQueue.sci
+    ..... Writing PCheckerOutput/BugFinding/PriorityQueue.dgml
+    ..... Writing PCheckerOutput/BugFinding/PriorityQueue.coverage.txt
+    ..... Writing PCheckerOutput/BugFinding/PriorityQueue.sci
     ... Checking statistics:
     ..... Found 0 bugs.
     ... Scheduling statistics:
     ..... Explored 1 schedule: 1 fair and 0 unfair.
     ..... Number of scheduling points in fair terminating schedules: 5 (min), 5 (avg), 5 (max).
-    ... Elapsed 0.2717673 sec.
+    ... Elapsed 0.3297297 sec.
     . Done
+    [PTool]: Thanks for using P!
     ```
 
 Hope you exploit the P Foreign interface to implement and check complex systems. If you have any questions, please feel free to post them in the discussions or issues.

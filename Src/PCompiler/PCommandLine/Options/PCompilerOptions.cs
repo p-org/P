@@ -22,24 +22,26 @@ namespace Plang.Options
         internal PCompilerOptions()
         {
             Parser = new CommandLineArgumentParser("p compile",
-                "The P compiler compiles all the P files in the project together and generates the executable that can be checked for correctness by the P checker\n\n" +
-                "Compiler modes :: (default: bugfinding)\n" +
-                "  --mode bugfinding   : for bug finding through stratified random search\n" +
-                "  --mode verification : for verification through exhaustive symbolic exploration\n" + 
-                "  --mode coverage     : for achieving state-space coverage through exhaustive explicit-state search\n" +
-                "  --mode pobserve     : for runtime monitoring of P specs against implementation logs" );
+                "The P compiler compiles all the P files in the project together and generates the executable that can be checked for correctness by the P checker."
+                // + "\n\nCompiler modes :: (default: bugfinding)\n" +
+                // "  --mode bugfinding   : for bug finding through stratified random search\n" +
+                // "  --mode verification : for verification through exhaustive symbolic exploration\n" + 
+                // "  --mode coverage     : for achieving state-space coverage through exhaustive explicit-state search\n" +
+                // "  --mode pobserve     : for runtime monitoring of P specs against implementation logs" 
+                );
 
-            var projectGroup = Parser.GetOrCreateGroup("project", "P Project: Compiling using `.pproj` file");
+            var projectGroup = Parser.GetOrCreateGroup("project", "Compiling using `.pproj` file");
             projectGroup.AddArgument("pproj", "pp", "P project file to compile (*.pproj)." +
                                                     " If this option is not passed, the compiler searches for a *.pproj in the current folder");
 
-            var pfilesGroup = Parser.GetOrCreateGroup("commandline", "Compiling P files through commandline");
+            var pfilesGroup = Parser.GetOrCreateGroup("commandline", "Compiling P files directly through commandline");
             pfilesGroup.AddArgument("pfiles", "pf", "List of P files to compile").IsMultiValue = true;
             pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
 
-            Parser.AddArgument("mode", "m", "Compilation mode :: (bugfinding, verification, coverage, pobserve). (default: bugfinding)").AllowedValues =
-                new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
+            var modes = Parser.AddArgument("mode", "m", "Compilation mode :: (bugfinding, verification, coverage, pobserve). (default: bugfinding)");
+            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
+            modes.IsHidden = true;
         }
 
         /// <summary>
@@ -101,7 +103,7 @@ namespace Plang.Options
             if (files.Length == 0)
             {
                 CommandLineOutput.WriteInfo(
-                    $".. Could not find any P project file *.pproj in the current folder: {Directory.GetCurrentDirectory()}");
+                    $".. No P project file *.pproj found in the current folder: {Directory.GetCurrentDirectory()}");
             }
             else
             {
@@ -200,20 +202,20 @@ namespace Plang.Options
             FindLocalPFiles(compilerConfiguration);
             if (compilerConfiguration.InputPFiles.Count == 0)
             {
-                Error.ReportAndExit("Provide at least one input *.p file in *.pproj file or through --pfiles option");
+                Error.CompilerReportAndExit("Could not find any *.p file.");
             }
 
             foreach (var pfile in compilerConfiguration.InputPFiles)
             {
                 if (!CheckFileValidity.IsLegalPFile(pfile, out var fullPathName))
                 {
-                    Error.ReportAndExit($"Illegal P file name {fullPathName.FullName} (file name cannot have special characters) or file not found.");
+                    Error.CompilerReportAndExit($"Illegal P file name {fullPathName.FullName} (file name cannot have special characters) or file not found.");
                 }
             }
             
             if (!CheckFileValidity.IsLegalProjectName(compilerConfiguration.ProjectName))
             {
-                Error.ReportAndExit($"{compilerConfiguration.ProjectName} is not a legal project name");
+                Error.CompilerReportAndExit($"{compilerConfiguration.ProjectName} is not a legal project name");
             }
         }
         
@@ -223,8 +225,12 @@ namespace Plang.Options
             if (compilerConfiguration.InputPFiles.Count == 0)
             {
                 CommandLineOutput.WriteInfo(".. Searching for P files locally in the current folder");
+
+                var enumerationOptions = new EnumerationOptions();
+                enumerationOptions.RecurseSubdirectories = true;
+                enumerationOptions.MaxRecursionDepth = 1;
                 
-                var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.p", SearchOption.AllDirectories);
+                var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.p", enumerationOptions);
 
                 foreach (var fileName in files)
                 {

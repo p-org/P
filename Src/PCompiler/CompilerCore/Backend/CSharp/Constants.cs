@@ -14,7 +14,7 @@
   </PropertyGroup>
 -foreign-include-
   <ItemGroup>
-    <PackageReference Include=""PCSharpRuntime"" Version=""1.*""/>
+    <PackageReference Include=""PCSharpRuntime"" Version=""2.*""/>
   </ItemGroup>
 </Project>";
 

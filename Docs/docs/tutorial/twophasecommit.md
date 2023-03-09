@@ -132,7 +132,7 @@ p compile
     Compiling TwoPhaseCommit...
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    Restored P/Tutorial/2_TwoPhaseCommit/PGenerated/TwoPhaseCommit.csproj (in 113 ms).
+    Restored P/Tutorial/2_TwoPhaseCommit/PGenerated/TwoPhaseCommit.csproj (in 132 ms).
     2 of 3 projects are up-to-date for restore.
     CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
     CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
@@ -142,10 +142,11 @@ p compile
     0 Warning(s)
     0 Error(s)
     
-    Time Elapsed 00:00:02.38
+    Time Elapsed 00:00:06.33
     
     
     ----------------------------------------
+    [PTool]: Thanks for using P!
     ```
 
 ### Checking TwoPhaseCommit
@@ -169,6 +170,8 @@ p check
     tcSingleClientNoFailure
     tcMultipleClientsNoFailure
     tcMultipleClientsWithFailure
+    
+    [PTool]: Thanks for using P!
     ```
 
 There are three test cases defined in the TwoPhaseCommit project and you can specify which

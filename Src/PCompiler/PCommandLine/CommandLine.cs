@@ -61,11 +61,11 @@ namespace Plang
         private static void PrintCommandHelp()
         {
             CommandLineOutput.WriteInfo("================================================================================");
-            CommandLineOutput.WriteInfo("The P commandline tool supports two commands (modes): compile or check.\n");
-            CommandLineOutput.WriteInfo("usage:> p command command-options");
-            CommandLineOutput.WriteInfo("\t command :: compile | check           `compile` to run the P compiler and ");
-            CommandLineOutput.WriteInfo("\t                                      `check` to run the P checker on the compiled code");
-            CommandLineOutput.WriteInfo("\t command-options                      use `--help` or `-h` to learn more about the");
+            CommandLineOutput.WriteInfo("The P commandline tool supports two commands (or modes): compile or check.\n");
+            CommandLineOutput.WriteInfo("usage:> p command options");
+            CommandLineOutput.WriteInfo("\t command : compile | check           'compile' to run the P compiler and ");
+            CommandLineOutput.WriteInfo("\t                                     'check' to run the P checker on the compiled code");
+            CommandLineOutput.WriteInfo("\t options:                             use `--help` or `-h` to learn more about the");
             CommandLineOutput.WriteInfo("\t                                      corresponding command options");
             CommandLineOutput.WriteInfo("\t -----------------------------------------------------------------------");
             CommandLineOutput.WriteInfo("\t p compile --help                     for P compiler help");
@@ -170,7 +170,7 @@ namespace Plang
         {
             lock (ConsoleLock)
             {
-                Error.Report($"<Internal Error>:\n {ex.Message}\n<Please report to the P team or create an issue on GitHub, Thanks!>");
+                Error.Report($"[Internal Error]:\n {ex.Message}\n<Please report to the P team or create an issue on GitHub, Thanks!>");
                 Error.Report("[PTool] unhandled exception: {0}: {1}", ex.GetType().ToString(), ex.Message);
             }
         }

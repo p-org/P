@@ -1,14 +1,13 @@
-??? info "Check out the guide for P version 1.x.x [here](../old/getstarted/install.md)"
+!!! info "If you want to use older P version 1.x.x. Please use the installation steps [here](../old/getstarted/install.md)"
 
-P is built to be cross-platform and can be used on MacOS, Linux, and Windows. We provide a step-by-step guide for installing P along with its required dependencies.
+P is built to be cross-platform and can be used on MacOS, Linux, and Windows. We provide a step-by-step guide for installing P along with the required dependencies.
 
-!!! info ""
+!!! success ""
     After each step, please use the troubleshooting check to ensure that each installation step succeeded.
 
 ### [Step 1] Install .Net Core SDK
 The P compiler is implemented in C# and hence the tool chain requires `dotnet`.
 P currently uses the specific version of [.Net SDK 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
-To install .Net Core 6.0 SDK use:
 
 === "MacOS"
 
@@ -19,7 +18,7 @@ To install .Net Core 6.0 SDK use:
     brew install --cask dotnet-sdk6-0-400
     ```
 
-    Dont have Homebrew? :upside_down_face: Install directly using the installer for [x64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-macos-x64-installer) or [Arm64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-macos-arm64-installer).
+    Dont have Homebrew? :upside_down_face: Install manually using the installer for [x64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-macos-x64-installer) or [Arm64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-macos-arm64-installer).
 
 === "Ubuntu"
 
@@ -62,15 +61,13 @@ To install .Net Core 6.0 SDK use:
     
     Useful resources:
 
-    - Ubuntu: [../fxr\] does not exist](https://stackoverflow.com/questions/73753672/a-fatal-error-occurred-the-folder-usr-share-dotnet-host-fxr-does-not-exist) 
+    - For Ubuntu: [fxr does not exist](https://stackoverflow.com/questions/73753672/a-fatal-error-occurred-the-folder-usr-share-dotnet-host-fxr-does-not-exist) 
 
 
 
 ### [Step 2] Install Java Runtime
 
-The latest P checker is implemented in C# and Java (`java` version 11 or higher).
-If you already have Java installed :innocent:, ignore this step.
-To install Java use:
+The P checker is implemented in C# and Java (`java` version 11 or higher).
 
 === "MacOS"
 
@@ -110,9 +107,7 @@ To install Java use:
 
 ### [Step 3] Install Maven
 
-The latest P checker also needs Maven installed (`mvn` version 3.3 or higher).
-If you already have Maven installed :innocent:, ignore this step.
-To install Maven use:
+For compiling the generated Java code, the P compiler using Maven (`mvn` version 3.3 or higher).
 
 === "MacOS"
 
@@ -164,9 +159,9 @@ To install Maven use:
     If you get `mvn` command not found error, mostly likely, you need to add the path to `$M2_HOME/bin` in your `PATH`.
 
 
-### [Step 4] Install P Compiler
+### [Step 4] Install P tool
 
-Install the P compiler as a `dotnet tool` using the following command:
+Finally, Lets install the P tool as a `dotnet tool` using the following command:
 
 ```shell
 dotnet tool install --global P

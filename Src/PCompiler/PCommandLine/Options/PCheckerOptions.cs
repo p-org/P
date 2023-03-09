@@ -25,17 +25,14 @@ namespace Plang.Options
         {
             Parser = new CommandLineArgumentParser("p check",
                 "The P checker enables systematic exploration of a specified P test case, it generates " +
-                "a reproducible bug-trace if a bug is found, and also allows replaying a bug-trace.\n\n" +
-                "Checker modes :: (default: bugfinding)\n" +
-                "  --mode bugfinding   : for bug finding through stratified random search\n" +
-                "  --mode verification : for verification through exhaustive symbolic exploration\n" + 
-                "  --mode coverage     : for achieving state-space coverage through exhaustive explicit-state search");
+                "a reproducible bug-trace if a bug is found, and also allows replaying a bug-trace.\n\n");
 
             var basicOptions = Parser.GetOrCreateGroup("Basic", "Basic options");
-            basicOptions.AddPositionalArgument("path", "Path to the compiled file to check (*.dll for bugfinding or *.jar for other checker modes)."+
+            basicOptions.AddPositionalArgument("path", "Path to the compiled file to check for correctness (*.dll)."+
                 " If this option is not passed, the compiler searches for a *.dll/*.jar in the current folder").IsRequired = false;
-            basicOptions.AddArgument("mode", "m", "Choose a checker mode (options: bugfinding, verification, coverage). (default: bugfinding)").AllowedValues =
-                new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
+            var modes = basicOptions.AddArgument("mode", "m", "Choose a checker mode (options: bugfinding, verification, coverage, pobserve). (default: bugfinding)");
+            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
+            modes.IsHidden = true;
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
 
             var basicGroup = Parser.GetOrCreateGroup("Basic", "Basic options");
@@ -45,13 +42,13 @@ namespace Plang.Options
             basicGroup.AddArgument("verbose", "v", "Enable verbose log output during exploration", typeof(bool));
             basicGroup.AddArgument("debug", "d", "Enable debugging", typeof(bool)).IsHidden = true;
             
-            var exploreGroup = Parser.GetOrCreateGroup("exploreGroup", "Systematic exploration options");
+            var exploreGroup = Parser.GetOrCreateGroup("explore", "Systematic exploration options");
             exploreGroup.AddArgument("iterations", "i", "Number of schedules to explore", typeof(uint));
             exploreGroup.AddArgument("max-steps", "ms", @"Max scheduling steps to be explored during systematic exploration (by default 10,000 unfair and 100,000 fair steps). You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue = true;
             exploreGroup.AddArgument("fail-on-maxsteps", null, "Consider it a bug if the test hits the specified max-steps", typeof(bool));
             exploreGroup.AddArgument("liveness-temperature-threshold", null, "Specify the liveness temperature threshold is the liveness temperature value that triggers a liveness bug", typeof(uint)).IsHidden = true;
             
-            var schedulingGroup = Parser.GetOrCreateGroup("schedulingGroup", "Search prioritization options");
+            var schedulingGroup = Parser.GetOrCreateGroup("scheduling", "Search prioritization options");
             schedulingGroup.AddArgument("sch-random", null, "Choose the random scheduling strategy (this is the default)", typeof(bool));
             schedulingGroup.AddArgument("sch-probabilistic", "sp", "Choose the probabilistic scheduling strategy with given probability for each scheduling decision where the probability is " +
                                                                    "specified as the integer N in the equation 0.5 to the power of N.  So for N=1, the probability is 0.5, for N=2 the probability is 0.25, N=3 you get 0.125, etc.", typeof(uint));
@@ -60,10 +57,10 @@ namespace Plang.Options
             schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for explicit-state search in coverage mode (options: random, dfs, learn). (default: learn)").AllowedValues =
             new List<string>() { "random", "dfs", "learn" };
 
-            var replayOptions = Parser.GetOrCreateGroup("replayOptions", "Replay and debug options");
+            var replayOptions = Parser.GetOrCreateGroup("replay", "Replay and debug options");
             replayOptions.AddArgument("replay", "r", "Schedule file to replay");
             
-            var advancedGroup = Parser.GetOrCreateGroup("advancedGroup", "Advanced options");
+            var advancedGroup = Parser.GetOrCreateGroup("advanced", "Advanced options");
             advancedGroup.AddArgument("explore", null, "Keep testing until the bound (e.g. iteration or time) is reached", typeof(bool));
             advancedGroup.AddArgument("seed", null, "Specify the random value generator seed", typeof(uint));
             advancedGroup.AddArgument("graph-bug", null, "Output a DGML graph of the iteration that found a bug", typeof(bool));

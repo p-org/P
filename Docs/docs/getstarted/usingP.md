@@ -1,7 +1,7 @@
-!!! info "Check out the guide for P version 1.x.x [here](../old/getstarted/usingP.md)"
+!!! info "If you are using an older P version 1.x.x. Please find the usage guide [here](../old/getstarted/usingP.md)"
 
 !!! check ""  
-    Before moving forward, we assume that you have successfully installed the
+    Before moving forward, we assume that you have successfully installed
     [P](install.md) and the [Syntax highlighting plugin](syntaxhighlight.md) :metal:.
 
 We introduce the P language syntax and semantics in details in the

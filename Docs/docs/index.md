@@ -28,6 +28,14 @@ communicating state machines. P supports several backend analysis engines
 checking and symbolic execution) to check that the distributed system modeled in P
 satisfy the desired correctness specifications.
 
+> The following talk provides an overview of P, its impact in academia and industry, and answers the main question that gets asked most by service teams and developers: **"why do formal modeling?"**:
+[(P @ StrangeLoop) Formal Modeling and Analysis of Distributed Systems (Finding Critical Bugs Early!!)](https://www.youtube.com/watch?v=5YjsSDDWFDY)
+
+<div align="center">
+      <a href="https://www.youtube.com/watch?v=5YjsSDDWFDY">
+         <img src="https://img.youtube.com/vi/5YjsSDDWFDY/0.jpg" style="width:40%;">
+      </a>
+</div>
 
 **Impact**: P is currently being used extensively inside Amazon (AWS) for analysis of complex distributed systems. For example, Amazon S3 used P to formally reason about the core distributed protocols involved in its strong consistency launch. Teams across AWS are now using P for thinking and reasoning about their systems formally. P is also being used for programming safe robotics systems in Academia. P was first used to implement and validate the USB device driver stack that ships with Microsoft Windows 8 and Windows Phone.
 

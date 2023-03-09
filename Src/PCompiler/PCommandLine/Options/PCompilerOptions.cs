@@ -30,11 +30,11 @@ namespace Plang.Options
                 // "  --mode pobserve     : for runtime monitoring of P specs against implementation logs" 
                 );
 
-            var projectGroup = Parser.GetOrCreateGroup("project", "P Project: Compiling using `.pproj` file");
+            var projectGroup = Parser.GetOrCreateGroup("project", "Compiling using `.pproj` file");
             projectGroup.AddArgument("pproj", "pp", "P project file to compile (*.pproj)." +
                                                     " If this option is not passed, the compiler searches for a *.pproj in the current folder");
 
-            var pfilesGroup = Parser.GetOrCreateGroup("commandline", "Compiling P files through commandline");
+            var pfilesGroup = Parser.GetOrCreateGroup("commandline", "Compiling P files directly through commandline");
             pfilesGroup.AddArgument("pfiles", "pf", "List of P files to compile").IsMultiValue = true;
             pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");

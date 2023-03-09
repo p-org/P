@@ -129,7 +129,7 @@ p compile
     Compiling ClientServer...
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    Restored P/Tutorial/1_ClientServer/PGenerated/ClientServer.csproj (in 126 ms).
+    Restored P/Tutorial/1_ClientServer/PGenerated/ClientServer.csproj (in 160 ms).
     2 of 3 projects are up-to-date for restore.
     CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
     CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
@@ -139,10 +139,11 @@ p compile
     0 Warning(s)
     0 Error(s)
     
-    Time Elapsed 00:00:05.98
+    Time Elapsed 00:00:04.39
     
     
     ----------------------------------------
+    [PTool]: Thanks for using P!
     ```
 
 ### Checking ClientServer
@@ -166,6 +167,8 @@ p check
     tcSingleClient
     tcMultipleClients
     tcSingleClientAbstractServer
+    
+    [PTool]: Thanks for using P!
     ```
 
 There are three test cases defined in the ClientServer project, and you can specify which

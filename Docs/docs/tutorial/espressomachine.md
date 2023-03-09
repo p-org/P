@@ -96,7 +96,7 @@ p compile
     Compiling EspressoMachine...
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    Restored P/Tutorial/3_EspressoMachine/PGenerated/EspressoMachine.csproj (in 116 ms).
+    Restored P/Tutorial/3_EspressoMachine/PGenerated/EspressoMachine.csproj (in 135 ms).
     2 of 3 projects are up-to-date for restore.
     CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
     CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
@@ -106,10 +106,11 @@ p compile
     0 Warning(s)
     0 Error(s)
     
-    Time Elapsed 00:00:05.04
+    Time Elapsed 00:00:03.81
     
     
     ----------------------------------------
+    [PTool]: Thanks for using P!
     ```
 
 ### Checking EspressoMachine
@@ -132,6 +133,8 @@ p check
     Possible options are:
     tcSaneUserUsingCoffeeMachine
     tcCrazyUserUsingCoffeeMachine
+    
+    [PTool]: Thanks for using P!
     ```
 
 There are two test cases defined in the EspressoMachine project and you can specify which

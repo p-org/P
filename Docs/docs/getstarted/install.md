@@ -1,4 +1,4 @@
-!!! info "If you want to use older P version 1.x.x. Please use the installation steps [here](../old/getstarted/install.md)"
+!!! info "If you want to use older P version 1.x.x, please use the installation steps [here](../old/getstarted/install.md)"
 
 P is built to be cross-platform and can be used on MacOS, Linux, and Windows. We provide a step-by-step guide for installing P along with the required dependencies.
 
@@ -67,7 +67,7 @@ P currently uses the specific version of [.Net SDK 6.0](https://dotnet.microsoft
 
 ### [Step 2] Install Java Runtime
 
-The P checker is implemented in C# and Java (`java` version 11 or higher).
+The P compiler also requires Java (`java` version 11 or higher).
 
 === "MacOS"
 
@@ -105,63 +105,94 @@ The P checker is implemented in C# and Java (`java` version 11 or higher).
     If you get `java` command not found error, mostly likely, you need to add the path to `java` in your `PATH`.
 
 
-### [Step 3] Install Maven
+[//]: # (### [Step 3] Install Maven)
 
-For compiling the generated Java code, the P compiler using Maven (`mvn` version 3.3 or higher).
+[//]: # ()
+[//]: # (For compiling the generated Java code, the P compiler using Maven &#40;`mvn` version 3.3 or higher&#41;.)
 
-=== "MacOS"
+[//]: # ()
+[//]: # (=== "MacOS")
 
-    Installing Maven on MacOS using Homebrew ([details](https://mkyong.com/maven/install-maven-on-mac-osx/))
+[//]: # ()
+[//]: # (    Installing Maven on MacOS using Homebrew &#40;[details]&#40;https://mkyong.com/maven/install-maven-on-mac-osx/&#41;&#41;)
 
-    ```
-    brew install maven
-    ```
+[//]: # ()
+[//]: # (    ```)
 
-    Dont have Homebrew? Directly use [installer](https://maven.apache.org/install.html). 
+[//]: # (    brew install maven)
 
-=== "Ubuntu"
+[//]: # (    ```)
 
-    Installing Maven on Ubuntu ([details](https://phoenixnap.com/kb/install-maven-on-ubuntu))
-    
-    ```
-    sudo apt install maven
-    ```
+[//]: # ()
+[//]: # (    Dont have Homebrew? Directly use [installer]&#40;https://maven.apache.org/install.html&#41;. )
 
-=== "Amazon Linux"
+[//]: # ()
+[//]: # (=== "Ubuntu")
 
-    Visit the [Maven releases](http://maven.apache.org/download.cgi) page and install any Maven 3.3+ release.
+[//]: # ()
+[//]: # (    Installing Maven on Ubuntu &#40;[details]&#40;https://phoenixnap.com/kb/install-maven-on-ubuntu&#41;&#41;)
 
-    Steps for installing Maven 3.8.7 on Amazon Linux (you can use any version of Maven 3.3+):
+[//]: # (    )
+[//]: # (    ```)
 
-    ```
-    wget https://dlcdn.apache.org/maven/maven-3/3.8.7/binaries/apache-maven-3.8.7-bin.tar.gz
-    tar xfv apache-maven-3.8.7-bin.tar.gz
-    ```
-    
-    You might do this in your home directory, yielding a folder like `` /home/$USER/apache-maven-3.8.7 ``
-    
-    Next, install the software into your environment by adding it to your path, and by defining Maven's environment variables:
-    
-    ```
-    export M2_HOME=/home/$USER/apache-maven-3.8.7
-    export M2=$M2_HOME/bin
-    export PATH=$M2:$PATH
-    ```
+[//]: # (    sudo apt install maven)
 
-=== "Windows"
+[//]: # (    ```)
 
-    Installing Maven on Windows ([details](https://maven.apache.org/install.html))
+[//]: # ()
+[//]: # (=== "Amazon Linux")
 
-??? hint "Troubleshoot: Confirm that Maven is correctly installed on your machine."
+[//]: # ()
+[//]: # (    Visit the [Maven releases]&#40;http://maven.apache.org/download.cgi&#41; page and install any Maven 3.3+ release.)
 
-    `mvn -version`
+[//]: # ()
+[//]: # (    Steps for installing Maven 3.8.7 on Amazon Linux &#40;you can use any version of Maven 3.3+&#41;:)
 
-    If you get `mvn` command not found error, mostly likely, you need to add the path to `$M2_HOME/bin` in your `PATH`.
+[//]: # ()
+[//]: # (    ```)
+
+[//]: # (    wget https://dlcdn.apache.org/maven/maven-3/3.8.7/binaries/apache-maven-3.8.7-bin.tar.gz)
+
+[//]: # (    tar xfv apache-maven-3.8.7-bin.tar.gz)
+
+[//]: # (    ```)
+
+[//]: # (    )
+[//]: # (    You might do this in your home directory, yielding a folder like `` /home/$USER/apache-maven-3.8.7 ``)
+
+[//]: # (    )
+[//]: # (    Next, install the software into your environment by adding it to your path, and by defining Maven's environment variables:)
+
+[//]: # (    )
+[//]: # (    ```)
+
+[//]: # (    export M2_HOME=/home/$USER/apache-maven-3.8.7)
+
+[//]: # (    export M2=$M2_HOME/bin)
+
+[//]: # (    export PATH=$M2:$PATH)
+
+[//]: # (    ```)
+
+[//]: # ()
+[//]: # (=== "Windows")
+
+[//]: # ()
+[//]: # (    Installing Maven on Windows &#40;[details]&#40;https://maven.apache.org/install.html&#41;&#41;)
+
+[//]: # ()
+[//]: # (??? hint "Troubleshoot: Confirm that Maven is correctly installed on your machine.")
+
+[//]: # ()
+[//]: # (    `mvn -version`)
+
+[//]: # ()
+[//]: # (    If you get `mvn` command not found error, mostly likely, you need to add the path to `$M2_HOME/bin` in your `PATH`.)
 
 
-### [Step 4] Install P tool
+### [Step 3] Install P tool
 
-Finally, Lets install the P tool as a `dotnet tool` using the following command:
+Finally, let's install the P tool as a `dotnet tool` using the following command:
 
 ```shell
 dotnet tool install --global P
@@ -184,7 +215,7 @@ dotnet tool install --global P
     dotnet tool update --global P
     ```
 
-### [Step 5] Recommended IDE (Optional)
+### [Step 4] Recommended IDE (Optional)
 
 - For developing P programs, we recommend using [IntelliJ
   IDEA](https://www.jetbrains.com/idea/) as we support basic [P syntax
@@ -199,4 +230,4 @@ dotnet tool install --global P
 
 ## Using P
 
- Great :smile:! You are all set to compile and test your first P program :mortar_board:!
+ Great :smile:! You are all set to compile and check your first P program :mortar_board:!

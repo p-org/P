@@ -41,6 +41,22 @@ namespace PChecker.IO.Debugging
         }
 
         /// <summary>
+        /// Reports a compiler error to the user and exits.
+        /// </summary>
+        public static void CompilerReportAndExit(string value)
+        {
+            ReportAndExit(value + " Run `p compile --help` for usage help.");
+        }
+
+        /// <summary>
+        /// Reports a checker error to the user and exits.
+        /// </summary>
+        public static void CheckerReportAndExit(string value)
+        {
+            ReportAndExit(value + " Run `p check --help` for usage help.");
+        }
+
+        /// <summary>
         /// Reports a generic error to the user and exits.
         /// </summary>
         public static void ReportAndExit(string format, params object[] args)

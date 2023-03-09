@@ -25,11 +25,11 @@ namespace Plang.Options
         {
             Parser = new CommandLineArgumentParser("p check",
                 "The P checker enables systematic exploration of a specified P test case, it generates " +
-                "a reproducible bug-trace if a bug is found, and also allows replaying a bug-trace.\n\n");
+                "a reproducible bug-trace if a bug is found, and also allows replaying a bug-trace.");
 
             var basicOptions = Parser.GetOrCreateGroup("Basic", "Basic options");
             basicOptions.AddPositionalArgument("path", "Path to the compiled file to check for correctness (*.dll)."+
-                " If this option is not passed, the compiler searches for a *.dll/*.jar in the current folder").IsRequired = false;
+                " If this option is not passed, the compiler searches for a *.dll file in the current folder").IsRequired = false;
             var modes = basicOptions.AddArgument("mode", "m", "Choose a checker mode (options: bugfinding, verification, coverage, pobserve). (default: bugfinding)");
             modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
             modes.IsHidden = true;
@@ -37,7 +37,7 @@ namespace Plang.Options
 
             var basicGroup = Parser.GetOrCreateGroup("Basic", "Basic options");
             basicGroup.AddArgument("timeout", "t", "Timeout in seconds (disabled by default)", typeof(uint));
-            basicGroup.AddArgument("memout", null, "Memory limit in Giga bytes (disabled by default)", typeof(double));
+            basicGroup.AddArgument("memout", null, "Memory limit in Giga bytes (disabled by default)", typeof(double)).IsHidden = true;
             basicGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
             basicGroup.AddArgument("verbose", "v", "Enable verbose log output during exploration", typeof(bool));
             basicGroup.AddArgument("debug", "d", "Enable debugging", typeof(bool)).IsHidden = true;
@@ -54,8 +54,9 @@ namespace Plang.Options
                                                                    "specified as the integer N in the equation 0.5 to the power of N.  So for N=1, the probability is 0.5, for N=2 the probability is 0.25, N=3 you get 0.125, etc.", typeof(uint));
             schedulingGroup.AddArgument("sch-pct", null, "Choose the PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
             schedulingGroup.AddArgument("sch-fairpct", null, "Choose the fair PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
-            schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for explicit-state search in coverage mode (options: random, dfs, learn). (default: learn)").AllowedValues =
-            new List<string>() { "random", "dfs", "learn" };
+            var schCoverage = schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for explicit-state search in coverage mode (options: random, dfs, learn). (default: learn)");
+            schCoverage.AllowedValues = new List<string>() { "random", "dfs", "learn" };
+            schCoverage.IsHidden = true;
 
             var replayOptions = Parser.GetOrCreateGroup("replay", "Replay and debug options");
             replayOptions.AddArgument("replay", "r", "Schedule file to replay");
@@ -150,7 +151,7 @@ namespace Plang.Options
                             checkerConfiguration.Mode = CheckerMode.Coverage;
                             break;
                         default:
-                            Error.ReportAndExit($"Invalid checker mode '{option.Value}'.");
+                            Error.CheckerReportAndExit($"Invalid checker mode '{option.Value}'.");
                             break;
                     }
                     break;
@@ -178,7 +179,7 @@ namespace Plang.Options
                         var extension = System.IO.Path.GetExtension(filename);
                         if (!extension.Equals(".schedule"))
                         {
-                            Error.ReportAndExit("Please give a valid schedule file " +
+                            Error.CheckerReportAndExit("Please give a valid schedule file " +
                                 "'--replay x', where 'x' has extension '.schedule'.");
                         }
 
@@ -211,7 +212,7 @@ namespace Plang.Options
                         var values = (uint[])option.Value;
                         if (values.Length > 2)
                         {
-                            Error.ReportAndExit("Invalid number of options supplied via '--max-steps'.");
+                            Error.CheckerReportAndExit("Invalid number of options supplied via '--max-steps'.");
                         }
 
                         var i = values[0];
@@ -264,12 +265,12 @@ namespace Plang.Options
                 checkerConfiguration.SchedulingStrategy != "replay" &&
                 !checkerConfiguration.SchedulingStrategy.StartsWith("coverage-"))
             {
-                Error.ReportAndExit("Please provide a scheduling strategy (see --sch* options)");
+                Error.CheckerReportAndExit("Please provide a scheduling strategy (see --sch* options)");
             }
 
             if (checkerConfiguration.MaxFairSchedulingSteps < checkerConfiguration.MaxUnfairSchedulingSteps)
             {
-                Error.ReportAndExit("For the option '-max-steps N[,M]', please make sure that M >= N.");
+                Error.CheckerReportAndExit("For the option '-max-steps N[,M]', please make sure that M >= N.");
             }
         }
         
@@ -288,11 +289,21 @@ namespace Plang.Options
                     _ => "*.dll"
                 };
                 
-                var files = Directory.GetFiles(Directory.GetCurrentDirectory(), filePattern, SearchOption.AllDirectories);
+                var enumerationOptions = new EnumerationOptions();
+                enumerationOptions.RecurseSubdirectories = true;
+                enumerationOptions.MaxRecursionDepth = 3;
+                
+                var files = Directory.GetFiles(Directory.GetCurrentDirectory(), filePattern, enumerationOptions);
 
                 foreach (var fileName in files)
                 {
-                    if (fileName.EndsWith("PCheckerCore.dll") || fileName.EndsWith("PCSharpRuntime.dll")) continue;
+                    if (!fileName.Contains("POutput/"))
+                        continue;
+                    if (fileName.EndsWith("PCheckerCore.dll") 
+                        || fileName.EndsWith("PCSharpRuntime.dll")
+                        || fileName.EndsWith("/P.dll")
+                        || fileName.EndsWith("/p.dll"))
+                        continue;
                     checkerConfiguration.AssemblyToBeAnalyzed = fileName;
                     CommandLineOutput.WriteInfo($".. Found a P compiled file: {checkerConfiguration.AssemblyToBeAnalyzed}");
                     break;
@@ -301,8 +312,8 @@ namespace Plang.Options
                 if (checkerConfiguration.AssemblyToBeAnalyzed == string.Empty)
                 {
                     CommandLineOutput.WriteInfo(
-                        $".. Could not find any P compiled file {filePattern} in the current folder: {Directory.GetCurrentDirectory()}");
-                    Error.ReportAndExit($"Provide at least one P compiled file {filePattern}");
+                        $".. No P compiled file {filePattern} found in the current folder: {Directory.GetCurrentDirectory()}");
+                    Error.CheckerReportAndExit($"Could not find any {filePattern} file.");
                 }
             }
         }

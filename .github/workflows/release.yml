@@ -5,7 +5,13 @@ on:
   push:
     tags:
       - p-*
-
+  workflow_dispatch:
+    inputs:
+      args:
+        description: Additional arguments
+        default: ""
+        required: false
+        
 jobs:
   Release:
     name: P release

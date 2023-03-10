@@ -44,5 +44,5 @@ jobs:
 
       - name: Push generated package to Nuget
         run: |
-          dotnet nuget push ./Bld/Drops/Release/Binaries/P.${VERSION}.nupkg -k ${{ secrets.NUGET_SECRET }} -s https://api.nuget.org/v3/index.json --no-symbols true --skip-duplicate
-          dotnet nuget push ./Bld/Drops/Release/Binaries/PCSharpRuntime.${VERSION}.nupkg -k ${{ secrets.NUGET_SECRET }} -s https://api.nuget.org/v3/index.json --no-symbols true --skip-duplicate
+          dotnet nuget push ./Bld/Drops/Release/Binaries/P.${VERSION}.nupkg -k ${{ secrets.NUGET_SECRET }} -s https://api.nuget.org/v3/index.json --no-symbols --skip-duplicate
+          dotnet nuget push ./Bld/Drops/Release/Binaries/PCSharpRuntime.${VERSION}.nupkg -k ${{ secrets.NUGET_SECRET }} -s https://api.nuget.org/v3/index.json --no-symbols --skip-duplicate

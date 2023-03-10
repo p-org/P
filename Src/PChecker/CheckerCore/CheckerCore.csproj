@@ -6,5 +6,20 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
         <TargetFramework>net6.0</TargetFramework>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Description>The P Checker</Description>
+        <PackageProjectUrl>https://github.com/p-org/P</PackageProjectUrl>
+        <Copyright>The P team</Copyright>
+        <PackageTags>P programming language;safe asynchrony;state machines;model checkers</PackageTags>
+        <PackageVersion>1.0.0</PackageVersion>
+        <Title>P Checker Core</Title>
+        <Authors>The P team</Authors>
+        <PackageIcon>icon.png</PackageIcon>
+        <RepositoryUrl>https://github.com/p-org/P</RepositoryUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
+    <ItemGroup>
+        <None Include="../../../Icon/icon.png" Pack="true" PackagePath="" />
+        <None Include="../../../README.md" Pack="true" PackagePath="" />
+    </ItemGroup>
 </Project>

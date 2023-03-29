@@ -39,6 +39,8 @@ namespace Plang.Options
             pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
 
+            Parser.AddArgument("debug", "d", "Enable debugging", typeof(bool)).IsHidden = true;
+
             var modes = Parser.AddArgument("mode", "m", "Compilation mode :: (bugfinding, verification, coverage, pobserve). (default: bugfinding)");
             modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
             modes.IsHidden = true;
@@ -65,7 +67,7 @@ namespace Plang.Options
                 {
                     UpdateConfigurationWithParsedArgument(compilerConfiguration, arg);
                 }
-
+                
                 SanitizeConfiguration(compilerConfiguration);
             }
             catch (CommandLineException ex)
@@ -150,6 +152,10 @@ namespace Plang.Options
                 case "projname":
                     compilerConfiguration.ProjectName = (string)option.Value;
                     break;
+                case "debug":
+                    compilerConfiguration.EnableDebugging = true;
+                    Debug.IsEnabled = true;
+                    break;
                 case "mode":
                     {
                         compilerConfiguration.OutputLanguage = (string)option.Value switch
@@ -199,6 +205,14 @@ namespace Plang.Options
         /// </summary>
         private static void SanitizeConfiguration(CompilerConfiguration compilerConfiguration)
         {
+            if (!Debug.IsEnabled)
+            {
+                if (compilerConfiguration.OutputLanguage != CompilerOutput.CSharp)
+                {
+                    Error.CompilerReportAndExit("Unhandled parsed argument: '--mode'.");
+                }
+            }
+            
             FindLocalPFiles(compilerConfiguration);
             if (compilerConfiguration.InputPFiles.Count == 0)
             {
@@ -217,6 +231,9 @@ namespace Plang.Options
             {
                 Error.CompilerReportAndExit($"{compilerConfiguration.ProjectName} is not a legal project name");
             }
+            
+            compilerConfiguration.OutputDirectory = Directory.CreateDirectory(Path.Combine(compilerConfiguration.OutputDirectory.FullName, compilerConfiguration.OutputLanguage.ToString()));
+            compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
         }
         
 

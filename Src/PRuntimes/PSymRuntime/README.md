@@ -29,12 +29,11 @@ PSym creates a directory `` output/<project-name> `` which contains results, sta
     output
     └── <project-name>
         ├── compile.out             [P compiler output log]
-        ├── compile.err             [P compiler error log]
         ├── run.out                 [PSym runtime output log]
         ├── run.err                 [PSym runtime error log]
-        ├── *.java                  [Auto-generated project symbolic IR]
-        ├── pom.xml                 [Auto-generated project POM file]
-        ├── target/*.jar            [Auto-generated project Jar file]
+        ├── Symbolic/*.java         [Auto-generated project symbolic IR]
+        ├── Symbolic/pom.xml        [Auto-generated project POM file]
+        ├── Symbolic/target/*.jar   [Auto-generated project Jar file]
         ├── output/stats*.log       [Statistics report]
         ├── output/coverage*.log    [Coverage report]
         └── plots/                  [Useful plots]

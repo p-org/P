@@ -250,6 +250,14 @@ namespace Plang.Options
         /// </summary>
         private static void SanitizeConfiguration(CheckerConfiguration checkerConfiguration)
         {
+            if (!Debug.IsEnabled)
+            {
+                if (checkerConfiguration.Mode != CheckerMode.BugFinding)
+                {
+                    Error.CheckerReportAndExit("Unhandled parsed argument: '--mode'.");
+                }
+            }
+            
             if (checkerConfiguration.LivenessTemperatureThreshold == 0 &&
                 checkerConfiguration.MaxFairSchedulingSteps > 0)
             {
@@ -263,7 +271,7 @@ namespace Plang.Options
                 checkerConfiguration.SchedulingStrategy != "probabilistic" &&
                 checkerConfiguration.SchedulingStrategy != "dfs" &&
                 checkerConfiguration.SchedulingStrategy != "replay" &&
-                !checkerConfiguration.SchedulingStrategy.StartsWith("coverage-"))
+                checkerConfiguration.SchedulingStrategy != "learn")
             {
                 Error.CheckerReportAndExit("Please provide a scheduling strategy (see --sch* options)");
             }
@@ -297,13 +305,16 @@ namespace Plang.Options
 
                 foreach (var fileName in files)
                 {
-                    if (!fileName.Contains("POutput/"))
-                        continue;
-                    if (fileName.EndsWith("PCheckerCore.dll") 
-                        || fileName.EndsWith("PCSharpRuntime.dll")
-                        || fileName.EndsWith("/P.dll")
-                        || fileName.EndsWith("/p.dll"))
-                        continue;
+                    if (checkerConfiguration.Mode == CheckerMode.BugFinding)
+                    {
+                        if (!fileName.Contains("CSharp/"))
+                            continue;
+                        if (fileName.EndsWith("PCheckerCore.dll") 
+                            || fileName.EndsWith("PCSharpRuntime.dll")
+                            || fileName.EndsWith("/P.dll")
+                            || fileName.EndsWith("/p.dll"))
+                            continue;
+                    }
                     checkerConfiguration.AssemblyToBeAnalyzed = fileName;
                     CommandLineOutput.WriteInfo($".. Found a P compiled file: {checkerConfiguration.AssemblyToBeAnalyzed}");
                     break;

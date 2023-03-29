@@ -4,6 +4,8 @@ projectPath=${1}
 shift
 projectName=${1}
 shift
+mode=${1}
+shift
 args=$@
 
 PBIN="../../../Bld/Drops/Release/Binaries/net6.0/p.dll"
@@ -23,10 +25,10 @@ if [ -d "${outPath}" ]; then rm -Rf ${outPath}; fi
 mkdir -p ${outPath}
 
 echo -e "--------------------"
-echo -e "Compiling P Model into PSym IR"
+echo -e "Compiling P Model for mode ${mode}"
 
 cd ${projectPath}
-dotnet ${PBIN} compile --debug --mode verification --projname ${projectName} --outdir ${outPath} > ${outPath}/compile.out
+dotnet ${PBIN} compile --debug --mode ${mode} --projname ${projectName} --outdir ${outPath} > ${outPath}/compile.out
 if grep -q "Build succeeded." ${outPath}/compile.out; then
   echo -e "  Done"
 else
@@ -37,11 +39,8 @@ fi
 cd -
 
 echo -e "--------------------"
-echo -e "Running PSym"
+echo -e "Running PChecker in mode ${mode}"
 cd ${outPath}
-java -ea -jar -Xms12G Symbolic/target/${projectName}-jar-with-dependencies.jar \
+dotnet ${PBIN} check --debug --mode ${mode} \
     ${args} > >(tee -a run.out) 2>> >(tee -a run.err >&2)
 cd ${runPath}
-
-#mkdir -p ${outPath}/output/plots
-#python3 scripts/psym_plots.py ${projectName} ${outPath}/output/scratch.log ${outPath}/output/plots

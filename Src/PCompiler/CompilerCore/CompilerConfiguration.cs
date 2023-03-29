@@ -22,6 +22,7 @@ namespace Plang.Compiler
             OutputLanguage = CompilerOutput.CSharp;
             Backend = TargetLanguage.GetCodeGenerator(OutputLanguage);
             ProjectDependencies = new List<string>();
+            EnableDebugging = false;
         }
         public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, CompilerOutput outputLanguage, IList<string> inputFiles,
             string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null)
@@ -53,6 +54,7 @@ namespace Plang.Compiler
             OutputLanguage = outputLanguage;
             Backend = TargetLanguage.GetCodeGenerator(outputLanguage);
             ProjectDependencies = projectDependencies ?? new List<string>();
+            EnableDebugging = false;
         }
         
         public ICompilerOutput Output { get; set; }
@@ -67,6 +69,7 @@ namespace Plang.Compiler
         public ITranslationErrorHandler Handler { get; set; }
 
         public IList<string> ProjectDependencies { get; set;  }
+        public bool EnableDebugging { get; set;  }
 
         public void Copy(CompilerConfiguration parsedConfig)
         {
@@ -81,6 +84,7 @@ namespace Plang.Compiler
             ProjectName = parsedConfig.ProjectName;
             OutputLanguage = parsedConfig.OutputLanguage;
             ProjectRootPath = parsedConfig.ProjectRootPath;
+            EnableDebugging = parsedConfig.EnableDebugging;
         }
     }
 }

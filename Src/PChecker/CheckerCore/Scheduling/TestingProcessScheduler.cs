@@ -4,12 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
 using PChecker.SystematicTesting;
-using PChecker.Interfaces;
-using PChecker.SmartSockets;
 using PChecker.Testing;
 using PChecker.Utilities;
 using Debug = PChecker.IO.Debugging.Debug;

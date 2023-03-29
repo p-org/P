@@ -132,17 +132,14 @@ p compile
     Compiling TwoPhaseCommit...
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    Restored P/Tutorial/2_TwoPhaseCommit/PGenerated/TwoPhaseCommit.csproj (in 132 ms).
-    2 of 3 projects are up-to-date for restore.
-    CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
-    CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
-    TwoPhaseCommit -> P/Tutorial/2_TwoPhaseCommit/PGenerated/POutput/net6.0/TwoPhaseCommit.dll
+    Restored P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/TwoPhaseCommit.csproj (in 392 ms).
+    TwoPhaseCommit -> P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/net6.0/TwoPhaseCommit.dll
     
     Build succeeded.
     0 Warning(s)
     0 Error(s)
     
-    Time Elapsed 00:00:06.33
+    Time Elapsed 00:00:04.87
     
     
     ----------------------------------------
@@ -163,8 +160,8 @@ p check
     $ p check
 
     .. Searching for a P compiled file locally in the current folder
-    .. Found a P compiled file: P/Tutorial/2_TwoPhaseCommit/PGenerated/POutput/net6.0/TwoPhaseCommit.dll
-    .. Checking P/Tutorial/2_TwoPhaseCommit/PGenerated/POutput/net6.0/TwoPhaseCommit.dll
+    .. Found a P compiled file: P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/net6.0/TwoPhaseCommit.dll
+    .. Checking P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/net6.0/TwoPhaseCommit.dll
     Error: We found '3' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
     Possible options are:
     tcSingleClientNoFailure

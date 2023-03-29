@@ -74,17 +74,14 @@ p compile
     Compiling PriorityQueue...
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    Restored P/Tutorial/PriorityQueue/PGenerated/PriorityQueue.csproj (in 131 ms).
-    2 of 3 projects are up-to-date for restore.
-    CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
-    CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
-    PriorityQueue -> P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/PriorityQueue.dll
+    Restored P/Tutorial/PriorityQueue/PGenerated/CSharp/PriorityQueue.csproj (in 392 ms).
+    PriorityQueue -> P/Tutorial/PriorityQueue/PGenerated/CSharp/net6.0/PriorityQueue.dll
     
     Build succeeded.
     0 Warning(s)
     0 Error(s)
     
-    Time Elapsed 00:00:03.23
+    Time Elapsed 00:00:04.08
     
     
     ----------------------------------------
@@ -104,10 +101,10 @@ p check -v
     $ p check -v
 
     .. Searching for a P compiled file locally in the current folder
-    .. Found a P compiled file: P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/PriorityQueue.dll
-    .. Checking P/Tutorial/PriorityQueue/PGenerated/POutput/net6.0/PriorityQueue.dll
+    .. Found a P compiled file: P/Tutorial/PriorityQueue/PGenerated/CSharp/net6.0/PriorityQueue.dll
+    .. Checking P/Tutorial/PriorityQueue/PGenerated/CSharp/net6.0/PriorityQueue.dll
     .. Test case :: tcCheckPriorityQueue
-    ... Checker is using 'random' strategy (seed:3051611942).
+    ... Checker is using 'random' strategy (seed:1636311106).
     ..... Iteration #1
     <TestLog> Running test 'tcCheckPriorityQueue'.
     <CreateLog> Plang.CSharpRuntime._GodMachine(1) was created by task '2'.
@@ -117,7 +114,7 @@ p check -v
     <PrintLog> Adding Element in the Priority Queue!
     <PrintLog> Adding Element in the Priority Queue!
     <PrintLog> Adding Element in the Priority Queue!
-    <PrintLog> Choosing element at location: 2
+    <PrintLog> Choosing element at location: 1
     <PrintLog> --------------
     <PrintLog> Hello
     <PrintLog> World
@@ -134,7 +131,7 @@ p check -v
     ... Scheduling statistics:
     ..... Explored 1 schedule: 1 fair and 0 unfair.
     ..... Number of scheduling points in fair terminating schedules: 5 (min), 5 (avg), 5 (max).
-    ... Elapsed 0.3297297 sec.
+    ... Elapsed 0.3070145 sec.
     . Done
     [PTool]: Thanks for using P!
     ```

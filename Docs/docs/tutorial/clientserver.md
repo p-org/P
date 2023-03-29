@@ -129,17 +129,14 @@ p compile
     Compiling ClientServer...
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    Restored P/Tutorial/1_ClientServer/PGenerated/ClientServer.csproj (in 160 ms).
-    2 of 3 projects are up-to-date for restore.
-    CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
-    CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
-    ClientServer -> P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
+    Restored P/Tutorial/1_ClientServer/PGenerated/CSharp/ClientServer.csproj (in 365 ms).
+    ClientServer -> P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     
     Build succeeded.
     0 Warning(s)
     0 Error(s)
     
-    Time Elapsed 00:00:04.39
+    Time Elapsed 00:00:02.34
     
     
     ----------------------------------------
@@ -160,8 +157,8 @@ p check
     $ p check
 
     .. Searching for a P compiled file locally in the current folder
-    .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
-    .. Checking P/Tutorial/1_ClientServer/PGenerated/POutput/net6.0/ClientServer.dll
+    .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
+    .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     Error: We found '3' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
     Possible options are:
     tcSingleClient

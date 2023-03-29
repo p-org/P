@@ -113,17 +113,14 @@ p compile
     Compiling FailureDetector...
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    Restored P/Tutorial/4_FailureDetector/PGenerated/FailureDetector.csproj (in 141 ms).
-    2 of 3 projects are up-to-date for restore.
-    CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
-    CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
-    FailureDetector -> P/Tutorial/4_FailureDetector/PGenerated/POutput/net6.0/FailureDetector.dll
+    Restored P/Tutorial/4_FailureDetector/PGenerated/CSharp/FailureDetector.csproj (in 386 ms).
+    FailureDetector -> P/Tutorial/4_FailureDetector/PGenerated/CSharp/net6.0/FailureDetector.dll
     
     Build succeeded.
     0 Warning(s)
     0 Error(s)
     
-    Time Elapsed 00:00:03.20
+    Time Elapsed 00:00:04.85
     
     
     ----------------------------------------

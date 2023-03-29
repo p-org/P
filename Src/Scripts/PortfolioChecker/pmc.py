@@ -14,12 +14,12 @@ import sys
 import time
 import logging
 
-version = 0.4
+version = 2.0
 start_time = time.time()
 DEFAULT_MAX_NUM_WORKERS = (multiprocessing.cpu_count() - 1)
-PC = "pc"
-if os.environ.get('PC') is not None:
-    PC = os.getenv('PC')
+PBIN = "p"
+if os.environ.get('PBIN') is not None:
+    PBIN = f"dotnet {os.getenv('PBIN')}"
 
 configArgs = None
 projectName = ""
@@ -40,7 +40,7 @@ provedWorkers = set()
 startTime = time.time()
 outFile = ""
 logger = None
-psymModes = [ "random", "dfs", "learn", "bmc" ]
+coverageStrategies = ["random", "dfs", "learn"]
 
 header = """-----------------------
 PMC -- Portfolio Runner
@@ -210,80 +210,75 @@ def setup():
 def run_compiler_csharp():
     global projectName
     global dllFile
-    global PC
+    global PBIN
 
     # change directory to input path
     os.chdir(projectPath)
 
-    # check if .pproj file exists
-    if not os.path.isfile(f"{configArgs.pproj}"):
-        raise FileNotFoundError(f"Compilation error: Unable to find .pproj file {configArgs.pproj}")
-
-    logger.info(f"Using P compiler: {PC}")
+    logger.info(f"Using P compiler from {PBIN}")
 
     # run p compiler for csharp
-    cmd = PC.split(" ")
-    cmd.append(f"-proj:{configArgs.pproj}")
-    cmd.append("-generate:CSharp")
+    cmd = PBIN.split(" ")
+    cmd.append("compile")
+    if os.path.isfile(f"{configArgs.pproj}"):
+        cmd.append("--pproj")
+        cmd.append(f"{configArgs.pproj}")
+    cmd.append("--mode")
+    cmd.append("bugfinding")
     cmd_str = " ".join(cmd)
-    logger.debug(f"Compiling P model for C# with command: {cmd_str}")
+    logger.debug(f"Compiling P model for mode bugfinding with command: {cmd_str}")
 
     try:
         subprocess.run(cmd, check=True)
     except subprocess.SubprocessError:
-        logger.error("Failed to compile pproj")
+        logger.error("Failed to compile project")
         raise
-
-    # set dll file
-    dllFile = f"{projectPath}/POutput/netcoreapp3.1/{projectName}.dll"
 
     # check if dll file exists
     if not os.path.isfile(dllFile):
         raise FileNotFoundError(f"Compilation error: Unable to find .dll file {dllFile}")
 
     logger.info("Compilation successful.")
-    logger.info(f"Generated C# target: {dllFile}")
+    logger.info(f"Generated target: {dllFile}")
 
 
 def run_compiler_psym():
     global projectName
     global psymJarFile
-    global PC
+    global PBIN
 
     # change directory to input path
     os.chdir(projectPath)
 
-    # check if .pproj file exists
-    if not os.path.isfile(f"{configArgs.pproj}"):
-        raise FileNotFoundError(f"Compilation error: Unable to find .pproj file {configArgs.pproj}")
-
-    logger.info(f"Using P compiler: {PC}")
+    logger.info(f"Using P compiler from {PBIN}")
 
     # run p compiler for psym
-    cmd = PC.split(" ")
-    cmd.append(f"-proj:{configArgs.pproj}")
-    cmd.append("-generate:PSym")
+    cmd = PBIN.split(" ")
+    cmd.append("compile")
+    if os.path.isfile(f"{configArgs.pproj}"):
+        cmd.append("--pproj")
+        cmd.append(f"{configArgs.pproj}")
+    cmd.append("--debug")
+    cmd.append("--mode")
+    cmd.append("verification")
     cmd_str = " ".join(cmd)
-    logger.debug(f"Compiling P model for PSym with command: {cmd_str}")
+    logger.debug(f"Compiling P model for mode verification/coverage with command: {cmd_str}")
 
     try:
         subprocess.run(cmd, check=True)
     except subprocess.SubprocessError:
-        logger.error("Failed to compile pproj")
+        logger.error("Failed to compile project")
         raise
-
-    # set psym jar file
-    psymJarFile = f"{projectPath}/target/{projectName}-jar-with-dependencies.jar"
 
     # check if psym jar file exists
     if not os.path.isfile(psymJarFile):
         raise FileNotFoundError(f"Compilation error: Unable to find PSym .jar file {psymJarFile}")
 
     logger.info("Compilation successful.")
-    logger.info(f"Generated PSym target: {psymJarFile}")
+    logger.info(f"Generated target: {psymJarFile}")
 
 
-def initialize_coyote_all():
+def initialize_bugfinding_all():
     # change directory to output path
     os.chdir(outputPath)
 
@@ -297,16 +292,15 @@ def initialize_coyote_all():
 
     for methodWorker in range(configArgs.partitions):
         for method in methods:
-            initialize_coyote_worker(method)
+            initialize_bugfinding_worker(method)
             num_initialized += 1
-    logger.info(f"Initialized {num_initialized} Coyote workers")
+    logger.info(f"Initialized {num_initialized} bug-finding workers")
 
 
 def initialize_psym_all():
     # change directory to output path
     os.chdir(outputPath)
 
-    num_initialized = 0
     methods = []
 
     if (not hasattr(configArgs, "methods")) or (not configArgs.methods):
@@ -314,26 +308,37 @@ def initialize_psym_all():
     else:
         methods = [method for method in configArgs.methods]
 
-    for mode in psymModes:
+    num_initialized = 0
+    for method in methods:
+        initialize_psym_worker(method, "verification", "")
+        num_initialized += 1
+
+    logger.info(f"Initialized {num_initialized} verification workers")
+
+    num_initialized = 0
+    for strategy in coverageStrategies:
         for method in methods:
-            initialize_psym_worker(method, mode)
+            initialize_psym_worker(method, "coverage", strategy)
             num_initialized += 1
-    logger.info(f"Initialized {num_initialized} PSym workers")
+
+    logger.info(f"Initialized {num_initialized} coverage workers")
 
 
-def initialize_coyote_worker(method):
+def initialize_bugfinding_worker(method):
     global dllFile
 
-    worker = Worker(method, "coyote")
+    worker = Worker(method, "bugfinding")
     mode, schedule = choose_strategy(int(worker.get_id()))
     worker.set_path(mode)
-    cmd = ["coyote test", dllFile, schedule, "--graph", "--coverage activity", f"--outdir {worker.get_path()}"]
+
+    logger.debug(f"Using P checker from {PBIN}")
+
+    # run p checker for bugfinding
+    cmd = [PBIN, "check", dllFile, "--mode bugfinding", f"--outdir {worker.get_path()}", schedule ]
     if method != "":
-        cmd.append("-m " + method)
+        cmd.append("-tc " + method)
     if hasattr(configArgs, "iterations"):
         cmd.append("-i " + str(configArgs.iterations))
-    elif hasattr(configArgs, "search_depth"):
-        cmd.append("-i " + str(configArgs.search_depth))
     if hasattr(configArgs, "max_steps"):
         cmd.append("--max-steps " + str(configArgs.max_steps))
     if hasattr(configArgs, "timeout"):
@@ -347,33 +352,39 @@ def initialize_coyote_worker(method):
     allWorkers.append(worker)
     pendingWorkers.append(worker)
 
-    logger.debug(f"Initialized Coyote {worker} with command: {cmd_str}")
+    logger.debug(f"Initialized bugfinding {worker} with command: {cmd_str}")
 
 
-def initialize_psym_worker(method, mode):
+def initialize_psym_worker(method, mode, strategy):
     global psymJarFile
 
-    worker = Worker(method, "psym")
-    worker.set_path(mode)
-    cmd = ["java -jar", psymJarFile, f"-p {worker}", f"--outdir {worker.get_path()}", f"--mode {mode}"]
+    worker = Worker(method, mode)
+    worker.set_path(strategy)
+
+    logger.debug(f"Using P checker from {PBIN}")
+
+    # run p checker for verification/coverage
+    cmd = [PBIN, "check", psymJarFile, "--debug", f"--mode {mode}", f"--outdir {worker.get_path()}"]
+    if mode == "coverage" and strategy != "":
+        cmd.append("--sch-coverage " + strategy)
     if method != "":
-        cmd.append("-m " + f"{method_pretty_name(method)}")
+        cmd.append("-tc " + method)
     if hasattr(configArgs, "iterations"):
         cmd.append("-i " + str(configArgs.iterations))
     if hasattr(configArgs, "max_steps"):
         cmd.append("--max-steps " + str(configArgs.max_steps))
     if hasattr(configArgs, "timeout"):
-        cmd.append("-tl " + str(configArgs.timeout))
+        cmd.append("--timeout " + str(configArgs.timeout))
     if hasattr(configArgs, "verbose"):
         if configArgs.verbose:
-            cmd.append("-v 1")
+            cmd.append("-v")
     cmd_str = " ".join(cmd)
     worker.set_cmd(cmd_str)
     worker.set_status("initialized")
     allWorkers.append(worker)
     pendingWorkers.insert(0, worker)
 
-    logger.debug(f"Initialized PSym {worker} with command: {cmd_str}")
+    logger.debug(f"Initialized {mode} {worker} with command: {cmd_str}")
 
 def spawn_worker(worker):
     assert(worker.get_status() == "initialized")
@@ -395,9 +406,11 @@ def check_workers_all():
     newly_completed_workers = []
     for worker in runningWorkers:
         assert(worker.get_status() == "running")
-        if worker.get_category() == "coyote":
-            check_coyote_worker(worker)
-        elif worker.get_category() == "psym":
+        if worker.get_category() == "bugfinding":
+            check_bugfinding_worker(worker)
+        elif worker.get_category() == "verification":
+            check_psym_worker(worker)
+        elif worker.get_category() == "coverage":
             check_psym_worker(worker)
         else:
             logger.error(f"Unrecognized worker of type: {worker.get_category()}")
@@ -410,7 +423,7 @@ def check_workers_all():
         completedWorkers.add(worker)
 
 
-def check_coyote_worker(worker):
+def check_bugfinding_worker(worker):
     proc = processes[worker]
     ret_code = proc.poll()
     if ret_code is not None:
@@ -529,7 +542,7 @@ def main():
         dllFile = f"{projectPath}/{configArgs.dll}"
         if not os.path.isfile(dllFile):
             logger.info(f"Unable to find DLL file {dllFile}")
-            logger.info("Recompiling for C#...")
+            logger.info("Recompiling for mode bugfinding...")
             run_compiler_csharp()
         logger.info(f"DLL file: {dllFile}")
 
@@ -538,12 +551,12 @@ def main():
         psymJarFile = f"{projectPath}/{configArgs.psym_jar}"
         if not os.path.isfile(psymJarFile):
             logger.info(f"Unable to find PSym JAR file {psymJarFile}")
-            logger.info("Recompiling for PSym...")
+            logger.info("Recompiling for mode verification/coverage...")
             run_compiler_psym()
         logger.info(f"PSym JAR file: {psymJarFile}")
 
     if dllFile != "":
-        initialize_coyote_all()
+        initialize_bugfinding_all()
 
     if psymJarFile != "":
         initialize_psym_all()

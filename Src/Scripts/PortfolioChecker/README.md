@@ -22,18 +22,18 @@ Checkout an example `portfolio-config.json` file [here](../../../Tutorial/1_Clie
 
 The following parameters are currently supported in `portfolio-config.json`:
 
-|   **Parameter**    | **Description**                                                                    |                  **Recommended**                  |
-|:------------------:|------------------------------------------------------------------------------------|:-------------------------------------------------:|
-|      "pproj"       | Name of the `.pproj` file in the project directory                                 |              `<project-name>.pproj`               |
-|       "dll"        | Path to .dll file, relative to project directory                                   |    `POutput/netcoreapp3.1/<project-name>.dll`     |
-|    "partitions"    | Number of checker runs for parallel analysis, per method                           |                      `1000`                       |
-|     "timeout"      | Timeout in seconds, per method per partition                                       |                      `28800`                      |
-|    "iterations"    | Number of iterations, per method per partition                                     |                     `100000`                      |
-|    "max-steps"     | Number of scheduling points to explore in each model execution explored by checker |                      `10000`                      |
-|     "methods"      | Suffixes of test methods to execute                                                |     `[comma-separated list of method names]`      |
-| "polling-interval" | How frequently to check for job completion, in seconds                             |                       `10`                        |
-|     "verbose"      | Enable/disable verbose output                                                      |                      `false`                      |
-|     "psym-jar"     | Path to PSym .jar file, relative to project directory                              | `target/<project-name>-jar-with-dependencies.jar` |
+|   **Parameter**    | **Description**                                                                    |                            **Recommended**                            |
+|:------------------:|------------------------------------------------------------------------------------|:---------------------------------------------------------------------:|
+|      "pproj"       | Name of the `.pproj` file in the project directory                                 |                        `<project-name>.pproj`                         |
+|       "dll"        | Path to .dll file, relative to project directory                                   |             `PGenerated/CSharp/net6.0/<project-name>.dll`             |
+|    "partitions"    | Number of checker runs for parallel analysis, per method                           |                                `1000`                                 |
+|     "timeout"      | Timeout in seconds, per method per partition                                       |                                `28800`                                |
+|    "iterations"    | Number of iterations, per method per partition                                     |                               `100000`                                |
+|    "max-steps"     | Number of scheduling points to explore in each model execution explored by checker |                                `10000`                                |
+|     "methods"      | Suffixes of test methods to execute                                                |               `[comma-separated list of method names]`                |
+| "polling-interval" | How frequently to check for job completion, in seconds                             |                                 `10`                                  |
+|     "verbose"      | Enable/disable verbose output                                                      |                                `false`                                |
+|     "psym-jar"     | Path to PSym .jar file, relative to project directory                              | `PGenerated/Symbolic/target/<project-name>-jar-with-dependencies.jar` |
 
 
 &nbsp;
@@ -49,5 +49,5 @@ Check the progress of the portfolio run in file `<local-project-path>/portfolio.
 
 Example:
 ```bash
-python3 pmc.py -p ../Tutorial/1_ClientServer/
+python3 pmc.py -p ../../../Tutorial/1_ClientServer/
 ```

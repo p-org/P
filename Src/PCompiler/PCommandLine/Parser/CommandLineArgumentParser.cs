@@ -254,7 +254,14 @@ namespace Plang.Parser
                 var s = result.ToString().ToLower();
                 if (!AllowedValues.Contains(s))
                 {
-                    throw new Exception(string.Format("Argument: '{0}' value '{1}' must be one of [{2}]", LongName, s, string.Join(", ", AllowedValues.ToArray())));
+                    if (IsHidden)
+                    {
+                        throw new Exception(string.Format("Argument: '{0}' value '{1}' is not valid", LongName, s));
+                    }
+                    else
+                    {
+                        throw new Exception(string.Format("Argument: '{0}' value '{1}' must be one of [{2}]", LongName, s, string.Join(", ", AllowedValues.ToArray())));
+                    }
                 }
             }
 

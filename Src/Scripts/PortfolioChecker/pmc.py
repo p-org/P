@@ -258,7 +258,6 @@ def run_compiler_psym():
     if os.path.isfile(f"{configArgs.pproj}"):
         cmd.append("--pproj")
         cmd.append(f"{configArgs.pproj}")
-    cmd.append("--debug")
     cmd.append("--mode")
     cmd.append("verification")
     cmd_str = " ".join(cmd)
@@ -364,7 +363,7 @@ def initialize_psym_worker(method, mode, strategy):
     logger.debug(f"Using P checker from {PBIN}")
 
     # run p checker for verification/coverage
-    cmd = [PBIN, "check", psymJarFile, "--debug", f"--mode {mode}", f"--outdir {worker.get_path()}"]
+    cmd = [PBIN, "check", psymJarFile, f"--mode {mode}", f"--outdir {worker.get_path()}"]
     if mode == "coverage" and strategy != "":
         cmd.append("--sch-coverage " + strategy)
     if method != "":

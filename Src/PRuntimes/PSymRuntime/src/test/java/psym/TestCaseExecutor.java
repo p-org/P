@@ -72,7 +72,7 @@ public class TestCaseExecutor {
 
         Process process;
         try {
-            String pCompileCommand = String.format("dotnet %s compile --debug --mode coverage --projname %s --outdir %s --pfiles %s"
+            String pCompileCommand = String.format("dotnet %s compile --mode coverage --projname %s --outdir %s --pfiles %s"
                     , compilerDirectory, testName, outputDirectory, testCasePathsString);
             PSymTestLogger.log(String.format("      compiling"));
             process = buildCompileProcess(pCompileCommand, outputDirectory);
@@ -104,7 +104,7 @@ public class TestCaseExecutor {
 
         // Next, try to dynamically load and compile this file
         try {
-            String runJarCommand = String.format("dotnet %s check %s --debug --mode coverage --outdir %s %s",
+            String runJarCommand = String.format("dotnet %s check %s --mode coverage --outdir %s %s",
                     compilerDirectory, pathToJar, outputDirectory, runArgs);
             PSymTestLogger.log(String.format("      running"));
             process = buildRunProcess(runJarCommand, outputDirectory);

@@ -127,7 +127,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <buildDirectory>${{project.basedir}}/POutput</buildDirectory>
+        <buildDirectory>${{project.basedir}}/PObserve</buildDirectory>
     </properties>
     <packaging>jar</packaging>
 

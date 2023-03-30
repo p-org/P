@@ -8,9 +8,10 @@ The P project file below is taken from the [TwoPhaseCommit](https://github.com/p
 <Project>
 <ProjectName>TwoPhaseCommit</ProjectName>
 <InputFiles>
- <PFile>./PSrc/</PFile>
- <PFile>./PSpec/</PFile>
- <PFile>./PTst/</PFile>
+	<PFile>./PSrc/</PFile>
+	<PFile>./PSpec/</PFile>
+	<PFile>./PTst/</PFile>
+	<PFile>./PForeign/</PFile>
 </InputFiles>
 <OutputDir>./PGenerated/</OutputDir>
 <!-- Add the dependencies for the Timer machine -->

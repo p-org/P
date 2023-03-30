@@ -18,7 +18,6 @@ using PChecker.Actors.Handlers;
 using PChecker.Actors.Managers;
 using PChecker.Actors.Timers;
 using PChecker.Exceptions;
-using PChecker.IO;
 using PChecker.IO.Debugging;
 using EventInfo = PChecker.Actors.Events.EventInfo;
 

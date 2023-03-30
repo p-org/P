@@ -10,7 +10,7 @@
     <OutputType>Exe</OutputType>
     <StartupObject />
     <LangVersion>latest</LangVersion>
-    <OutputPath>POutput/</OutputPath>
+    <OutputPath>./</OutputPath>
   </PropertyGroup>
 -foreign-include-
   <ItemGroup>

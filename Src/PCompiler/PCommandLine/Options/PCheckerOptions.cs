@@ -30,7 +30,7 @@ namespace Plang.Options
             var basicOptions = Parser.GetOrCreateGroup("Basic", "Basic options");
             basicOptions.AddPositionalArgument("path", "Path to the compiled file to check for correctness (*.dll)."+
                 " If this option is not passed, the compiler searches for a *.dll file in the current folder").IsRequired = false;
-            var modes = basicOptions.AddArgument("mode", "m", "Choose a checker mode (options: bugfinding, verification, coverage, pobserve). (default: bugfinding)");
+            var modes = basicOptions.AddArgument("mode", "md", "Choose a checker mode (options: bugfinding, verification, coverage, pobserve). (default: bugfinding)");
             modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
             modes.IsHidden = true;
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
@@ -263,7 +263,7 @@ namespace Plang.Options
                 checkerConfiguration.SchedulingStrategy != "probabilistic" &&
                 checkerConfiguration.SchedulingStrategy != "dfs" &&
                 checkerConfiguration.SchedulingStrategy != "replay" &&
-                !checkerConfiguration.SchedulingStrategy.StartsWith("coverage-"))
+                checkerConfiguration.SchedulingStrategy != "learn")
             {
                 Error.CheckerReportAndExit("Please provide a scheduling strategy (see --sch* options)");
             }
@@ -297,13 +297,16 @@ namespace Plang.Options
 
                 foreach (var fileName in files)
                 {
-                    if (!fileName.Contains("POutput/"))
-                        continue;
-                    if (fileName.EndsWith("PCheckerCore.dll") 
-                        || fileName.EndsWith("PCSharpRuntime.dll")
-                        || fileName.EndsWith("/P.dll")
-                        || fileName.EndsWith("/p.dll"))
-                        continue;
+                    if (checkerConfiguration.Mode == CheckerMode.BugFinding)
+                    {
+                        if (!fileName.Contains("CSharp/"))
+                            continue;
+                        if (fileName.EndsWith("PCheckerCore.dll") 
+                            || fileName.EndsWith("PCSharpRuntime.dll")
+                            || fileName.EndsWith("/P.dll")
+                            || fileName.EndsWith("/p.dll"))
+                            continue;
+                    }
                     checkerConfiguration.AssemblyToBeAnalyzed = fileName;
                     CommandLineOutput.WriteInfo($".. Found a P compiled file: {checkerConfiguration.AssemblyToBeAnalyzed}");
                     break;

@@ -96,17 +96,14 @@ p compile
     Compiling EspressoMachine...
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    Restored P/Tutorial/3_EspressoMachine/PGenerated/EspressoMachine.csproj (in 135 ms).
-    2 of 3 projects are up-to-date for restore.
-    CheckerCore -> P/Bld/Drops/Release/Binaries/net6.0/PCheckerCore.dll
-    CSharpRuntime -> P/Bld/Drops/Release/Binaries/net6.0/PCSharpRuntime.dll
-    EspressoMachine -> P/Tutorial/3_EspressoMachine/PGenerated/POutput/net6.0/EspressoMachine.dll
+    Restored P/Tutorial/3_EspressoMachine/PGenerated/CSharp/EspressoMachine.csproj (in 389 ms).
+    EspressoMachine -> P/Tutorial/3_EspressoMachine/PGenerated/CSharp/net6.0/EspressoMachine.dll
     
     Build succeeded.
     0 Warning(s)
     0 Error(s)
     
-    Time Elapsed 00:00:03.81
+    Time Elapsed 00:00:05.04
     
     
     ----------------------------------------
@@ -127,8 +124,8 @@ p check
     $ p check
 
     .. Searching for a P compiled file locally in the current folder
-    .. Found a P compiled file: P/Tutorial/3_EspressoMachine/PGenerated/POutput/net6.0/EspressoMachine.dll
-    .. Checking P/Tutorial/3_EspressoMachine/PGenerated/POutput/net6.0/EspressoMachine.dll
+    .. Found a P compiled file: P/Tutorial/3_EspressoMachine/PGenerated/CSharp/net6.0/EspressoMachine.dll
+    .. Checking P/Tutorial/3_EspressoMachine/PGenerated/CSharp/net6.0/EspressoMachine.dll
     Error: We found '2' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
     Possible options are:
     tcSaneUserUsingCoffeeMachine

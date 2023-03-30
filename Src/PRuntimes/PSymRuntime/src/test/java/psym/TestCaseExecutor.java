@@ -87,7 +87,7 @@ public class TestCaseExecutor {
             resultCode = -1;
         }
 
-        String pathToJar = outputDirectory + "/target/" + testName + "-jar-with-dependencies.jar";
+        String pathToJar = outputDirectory + "/Symbolic/target/" + testName + "-jar-with-dependencies.jar";
 
         File jarFile = new File(pathToJar);
         if(!jarFile.exists() || jarFile.isDirectory()) {

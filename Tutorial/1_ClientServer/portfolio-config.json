@@ -7,7 +7,7 @@
 
     "dll": {
         "help"    : "Path to generated .dll file, relative to project directory",
-        "default" : "POutput/netcoreapp3.1/ClientServer.dll",
+        "default" : "PGenerated/CSharp/net6.0/ClientServer.dll",
         "metavar" : "F"
     },
 
@@ -39,9 +39,9 @@
         "help"    : "Suffixes of test methods to execute",
         "metavar" : "M",
         "default" : [
-            "PImplementation.tcSingleClient.Execute",
-            "PImplementation.tcMultipleClients.Execute",
-            "PImplementation.tcSingleClientAbstractServer.Execute"
+            "tcSingleClient",
+            "tcMultipleClients",
+            "tcSingleClientAbstractServer"
         ]
     },
 
@@ -59,7 +59,7 @@
 
     "psym-jar": {
         "help"    : "Path to generated PSym .jar file, relative to project directory",
-        "default" : "target/ClientServer-jar-with-dependencies.jar",
+        "default" : "PGenerated/Symbolic/target/ClientServer-jar-with-dependencies.jar",
         "metavar" : "F"
     }
 

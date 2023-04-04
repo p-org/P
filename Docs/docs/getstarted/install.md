@@ -90,7 +90,7 @@ The P compiler also requires Java (`java` version 11 or higher).
     Installing Java 11 on Amazon Linux (you can use any version of java >= 11)
 
     ```shell
-    sudo yum install -y java-11-amazon-corretto-devel
+    sudo yum install -y java-11-amazon-corretto
     ```
 
 === "Windows"

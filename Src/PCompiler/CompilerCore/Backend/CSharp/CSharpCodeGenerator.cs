@@ -46,8 +46,16 @@ namespace Plang.Compiler.Backend.CSharp
                     }
                     foreignInclude += "  </ItemGroup>";
                 }
-
                 csprojTemplate = csprojTemplate.Replace("-foreign-include-", foreignInclude);
+
+                string versionString = "2.*";                
+                var version = typeof(CSharpCodeGenerator).Assembly.GetName().Version;
+                if (version is not null && version.Major > 1)
+                {
+                    versionString = version.ToString();
+                }
+                csprojTemplate = csprojTemplate.Replace("-version-", versionString);
+
                 File.WriteAllText(csprojPath, csprojTemplate);
             }
 

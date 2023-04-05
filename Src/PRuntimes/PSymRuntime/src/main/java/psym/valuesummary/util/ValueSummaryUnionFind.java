@@ -19,9 +19,9 @@ public class ValueSummaryUnionFind extends UnionFind<PrimitiveVS> {
                 Guard unionUniverse = universe.get(find(values.get(i)));
                 if (!eltUniverse.and(unionUniverse).isFalse()) {
                     union(elt, values.get(i));
-                    if (eltUniverse.implies(unionUniverse).isTrue()) {
-                        break;
-                    }
+//                    if (eltUniverse.implies(unionUniverse).isTrue()) {
+//                        break;
+//                    }
                 }
             }
         }
@@ -32,8 +32,29 @@ public class ValueSummaryUnionFind extends UnionFind<PrimitiveVS> {
         for (Set<PrimitiveVS> set : lastDisjointSet) {
             lastUniverseMap.put(set, universe.get(find(set.iterator().next())));
         }
+        assert(sanityCheck(lastUniverseMap));
         return lastUniverseMap;
     }
+
+    public boolean sanityCheck(Map<Set<PrimitiveVS>, Guard> universeMap) {
+        if (universeMap.size() > 1) {
+            for (Map.Entry<Set<PrimitiveVS>, Guard> entry1: universeMap.entrySet()) {
+                Set<PrimitiveVS> val1 = entry1.getKey();
+                Guard g1 = entry1.getValue();
+                for (Map.Entry<Set<PrimitiveVS>, Guard> entry2 : universeMap.entrySet()) {
+                    Set<PrimitiveVS> val2 = entry2.getKey();
+                    Guard g2 = entry2.getValue();
+                    if (val1 != val2) {
+                        if (!g1.and(g2).isFalse()) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
 
     public void addElement(PrimitiveVS elt) {
         super.addElement(elt);

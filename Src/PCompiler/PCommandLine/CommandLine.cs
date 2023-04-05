@@ -36,8 +36,7 @@ namespace Plang
                 PrintCommandHelp();
                 return;
             }
-            
-            
+
             switch (args[0].ToLower())
             {
                 case "compile":
@@ -45,6 +44,12 @@ namespace Plang
                     break;
                 case "check":
                     RunChecker(args.Skip(1).ToArray());
+                    break;
+                case   "version":
+                case  "-v":
+                case  "-version":
+                case "--version":
+                    CommandLineOutput.WriteInfo($"P version {typeof(CommandLine).Assembly.GetName().Version}");
                     break;
                 case   "help":
                 case  "-h":

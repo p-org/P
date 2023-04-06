@@ -15,7 +15,10 @@ public class PBool extends PValue<PBool>{
 
     public PBool(Object val)
     {
-        value = (boolean) val;
+        if (val instanceof PBool)
+            value = ((PBool) val).value;
+        else
+            value = (boolean) val;
     }
 
     public PBool(PBool val)

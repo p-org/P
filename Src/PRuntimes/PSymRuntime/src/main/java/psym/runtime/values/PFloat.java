@@ -15,7 +15,10 @@ public class PFloat extends PValue<PFloat> {
 
     public PFloat(Object val)
     {
-        value = (double) val;
+        if (val instanceof PFloat)
+            value = ((PFloat) val).value;
+        else
+            value = (double) val;
     }
 
     public PFloat(PFloat val)

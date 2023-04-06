@@ -15,7 +15,10 @@ public class PMachineValue extends PValue<PMachineValue> {
 
     public PMachineValue(Object val)
     {
-        value = (Machine) val;
+        if (val instanceof PMachineValue)
+            value = ((PMachineValue) val).value;
+        else
+            value = (Machine) val;
     }
 
     public PMachineValue(PMachineValue val)

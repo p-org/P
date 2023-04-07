@@ -13,7 +13,10 @@ public class PString extends PValue<PString> {
 
     public PString(Object val)
     {
-        value = (String) val;
+        if (val instanceof PString)
+            value = ((PString) val).value;
+        else
+            value = (String) val;
     }
 
     public PString(PString val)

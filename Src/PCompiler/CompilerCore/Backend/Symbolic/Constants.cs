@@ -11,12 +11,13 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>psym.model</groupId>
-    <artifactId>projectName</artifactId>
+    <artifactId>-project-name-</artifactId>
     <version>1.0</version>
 
     <build>
         <sourceDirectory>.</sourceDirectory>
         <plugins>
+            -foreign-include-
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>2.22.2</version>
@@ -42,7 +43,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
                     </execution>
                 </executions>
                 <configuration>
-                    <finalName>projectName</finalName>
+                    <finalName>-project-name-</finalName>
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
@@ -61,7 +62,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         <dependency>
             <groupId>io.github.p-org</groupId>
             <artifactId>psym</artifactId>
-            <version>[0.5.6,)</version>
+            <version>[1.0.0,)</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
@@ -80,6 +81,28 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         <java.version>16</java.version>
     </properties>
 </project>
+";
+        
+        internal static readonly string pomForeignTemplate =
+            @"
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+-foreign-source-include-                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 ";
     }
 }

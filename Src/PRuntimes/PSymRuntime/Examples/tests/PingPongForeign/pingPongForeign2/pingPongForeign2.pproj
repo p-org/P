@@ -1,7 +1,8 @@
 <Project>
 <ProjectName>pingPongForeign2</ProjectName>
 <InputFiles>
-	<PFile>./</PFile>
+	<PFile>./PSrc/</PFile>
+        <PFile>./PForeign/</PFile>
 </InputFiles>
-<Target>Symbolic</Target>
+<OutputDir>./PGenerated/</OutputDir>
 </Project>

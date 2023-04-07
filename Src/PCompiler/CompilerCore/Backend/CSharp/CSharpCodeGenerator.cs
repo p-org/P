@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
@@ -48,13 +49,8 @@ namespace Plang.Compiler.Backend.CSharp
                 }
                 csprojTemplate = csprojTemplate.Replace("-foreign-include-", foreignInclude);
 
-                string versionString = "2.*";                
-                var version = typeof(CSharpCodeGenerator).Assembly.GetName().Version;
-                if (version is not null && version.Major > 1)
-                {
-                    versionString = version.ToString();
-                }
-                csprojTemplate = csprojTemplate.Replace("-version-", versionString);
+                string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                csprojTemplate = csprojTemplate.Replace("-assembly-path-", assemblyPath);
 
                 File.WriteAllText(csprojPath, csprojTemplate);
             }

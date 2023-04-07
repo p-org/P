@@ -37,7 +37,33 @@ namespace Plang.Compiler.Backend.Symbolic
             // if the file does not exist then create the file
             if (!File.Exists(pomPath))
             {
-                var pomTemplate = Constants.pomTemplate.Replace("projectName",job.ProjectName);
+                var pomTemplate = Constants.pomTemplate;
+                pomTemplate = pomTemplate.Replace("-project-name-",job.ProjectName);
+                
+                string foreignInclude = "";
+                var foreignFiles = job.InputForeignFiles.Where(x => x.EndsWith(".java"));
+                if (foreignFiles.Any())
+                {
+                    foreignInclude = Constants.pomForeignTemplate;
+                    string foreignSourceInclude = "";
+                    SortedSet<string> foreignFolders = new SortedSet<string>();
+
+                    foreach (var fileName in foreignFiles)
+                    {
+                        var folderName = Path.GetDirectoryName(fileName);
+                        if (folderName is not null)
+                        {
+                            foreignFolders.Add(folderName);
+                        }
+                    }
+                    foreach (var folderName in foreignFolders)
+                    {
+                        foreignSourceInclude += $"                                <source>{folderName}</source>\n";
+                    }
+                    foreignInclude = foreignInclude.Replace("-foreign-source-include-", foreignSourceInclude);
+                }
+                pomTemplate = pomTemplate.Replace("-foreign-include-", foreignInclude);
+                
                 File.WriteAllText(pomPath, pomTemplate);
             }
 

@@ -13,7 +13,10 @@ public class PInt extends PValue<PInt> {
 
     public PInt(Object val)
     {
-        value = (int) val;
+        if (val instanceof PInt)
+            value = ((PInt) val).value;
+        else
+            value = (int) val;
     }
 
     public PInt(PInt val)

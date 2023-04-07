@@ -14,7 +14,12 @@
   </PropertyGroup>
 -foreign-include-
   <ItemGroup>
-    <PackageReference Include=""PCSharpRuntime"" Version=""-version-""/>
+    <Reference Include=""PCSharpRuntime"">
+        <HintPath>-assembly-path-/PCSharpRuntime.dll</HintPath>
+    </Reference>
+    <Reference Include=""PCheckerCore"">
+        <HintPath>-assembly-path-/PCheckerCore.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>";
 

@@ -371,7 +371,7 @@ public class PSymOptions {
                         case "sym":
                         case "symex":
                         case "symbolic":
-                            config.setToBmc();
+                            config.setToSymex();
                             break;
                         case "fuzz":
                             config.setToFuzz();

@@ -381,10 +381,12 @@ public class IterativeBoundedScheduler extends Scheduler {
         StringBuilder s = new StringBuilder(100);
         s.append(StringUtils.center("Time", 12));
         s.append(StringUtils.center("Memory", 12));
-        s.append(StringUtils.center("Coverage", 18));
-        s.append(StringUtils.center("Iteration", 12));
-        s.append(StringUtils.center("Remaining", 24));
         s.append(StringUtils.center("Depth", 10));
+        if (configuration.isIterative()) {
+            s.append(StringUtils.center("Iteration", 12));
+            s.append(StringUtils.center("Remaining", 24));
+            s.append(StringUtils.center("Coverage", 18));
+        }
         if (configuration.isUseStateCaching()) {
             s.append(StringUtils.center("States", 12));
         }
@@ -418,10 +420,12 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
         s.append(StringUtils.center(String.format("%s", runtimeHms), 12));
         s.append(StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 12));
-        s.append(StringUtils.center(String.format("%.10f %%", GlobalData.getCoverage().getEstimatedCoverage()), 18));
-        s.append(StringUtils.center(String.format("%d", (iter - start_iter)), 12));
-        s.append(StringUtils.center(String.format("%d (%.0f %% data)", getTotalNumBacktracks(), getTotalDataBacktracksPercent()), 24));
         s.append(StringUtils.center(String.format("%d", getDepth()), 10));
+        if (configuration.isIterative()) {
+            s.append(StringUtils.center(String.format("%d", (iter - start_iter)), 12));
+            s.append(StringUtils.center(String.format("%d (%.0f %% data)", getTotalNumBacktracks(), getTotalDataBacktracksPercent()), 24));
+            s.append(StringUtils.center(String.format("%.10f %%", GlobalData.getCoverage().getEstimatedCoverage()), 18));
+        }
         if (configuration.isUseStateCaching()) {
             s.append(StringUtils.center(String.format("%d", getTotalDistinctStates()), 12));
         }

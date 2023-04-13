@@ -321,7 +321,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         out.append("  keys: ");
         out.append(keys);
         out.append(",  values: ");
-        out.append(entries);
+        out.append(new TreeMap<>(entries));
         out.append("]");
         return out.toString();
     }

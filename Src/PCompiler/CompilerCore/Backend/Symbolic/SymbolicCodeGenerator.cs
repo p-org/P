@@ -2314,15 +2314,12 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, ".size()");
                     break;
                 case StringExpr stringExpr:
-                    if (stringExpr.Args.Count == 0)
+                    var baseString = stringExpr.BaseString;
+                    if (stringExpr.Args.Count != 0)
                     {
-                        context.Write(output, $"new { GetSymbolicType(PrimitiveType.String) }(String.format(\"{stringExpr.BaseString}\"");
+                        baseString = TransformPrintMessage(baseString);
                     }
-                    else
-                    {
-                        var baseString = TransformPrintMessage(stringExpr.BaseString);
-                        context.Write(output, $"new { GetSymbolicType(PrimitiveType.String) }(MessageFormat.format(\"{baseString}\"");
-                    }
+                    context.Write(output, $"new { GetSymbolicType(PrimitiveType.String) }(StringVS.formattedStringVS({pcScope.PathConstraintVar}, \"{baseString}\"");
                     foreach(var arg in stringExpr.Args)
                     {
                         context.Write(output, ", ");

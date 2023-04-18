@@ -104,11 +104,10 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void reportEstimatedCoverage() {
         GlobalData.getCoverage().reportChoiceCoverage();
 
-        SearchLogger.log("\n--------------------");
-        SearchLogger.log(String.format("Estimated Coverage:: %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
         if (configuration.isUseStateCaching()) {
             SearchLogger.log(String.format("Distinct States Explored:: %d", getTotalDistinctStates()));
         }
+        SearchLogger.log(String.format("Estimated Coverage:: %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
         StatWriter.log("coverage-%", String.format("%.20f", GlobalData.getCoverage().getEstimatedCoverage(20)));
     }
 

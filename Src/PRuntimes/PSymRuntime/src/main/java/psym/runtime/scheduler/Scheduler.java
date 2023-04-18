@@ -76,10 +76,8 @@ public class Scheduler implements SymbolicSearch {
     int preChoiceDepth = Integer.MAX_VALUE;
     /** Total number of states */
     private int totalStateCount = 0;
-    /** Flag whether current step is a create machine step */
-    private Boolean createStep = false;
-    /** Flag whether current step is a sync step */
-    private Boolean syncStep = false;
+    /** Flag whether current step is a create or sync machine step */
+    private Boolean stickyStep = false;
     /** Flag whether current execution finished */
     private Boolean executionFinished = false;
 
@@ -450,6 +448,7 @@ public class Scheduler implements SymbolicSearch {
 
     // print statistics
     public void print_stats() {
+        SearchLogger.log("\n--------------------");
         SearchStats.TotalStats totalStats = searchStats.getSearchTotal();
         Instant end = Instant.now();
         double timeUsed = (Duration.between(TimeMonitor.getInstance().getStart(), end).toMillis() / 1000.0);
@@ -461,6 +460,7 @@ public class Scheduler implements SymbolicSearch {
         StatWriter.log("memory-max-MB", String.format("%.1f", MemoryMonitor.getMaxMemSpent()));
         StatWriter.log("memory-current-MB", String.format("%.1f", memoryUsed));
         StatWriter.log("max-depth-explored", String.format("%d", totalStats.getDepthStats().getDepth()));
+        SearchLogger.log(String.format("Max Depth Explored:: %d", totalStats.getDepthStats().getDepth()));
 
         // print solver statistics
         StatWriter.log("time-create-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));
@@ -489,16 +489,12 @@ public class Scheduler implements SymbolicSearch {
     }
 
     public List<PrimitiveVS> getNextSenderChoices() {
-        createStep = false;
-        syncStep = false;
-
         // prioritize the create actions
         for (Machine machine : machines) {
             if (!machine.sendBuffer.isEmpty()) {
                 Guard initCond = machine.sendBuffer.hasCreateMachineUnderGuard().getGuardFor(true);
                 if (!initCond.isFalse()) {
                     PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(initCond);
-                    createStep = true;
                     return new ArrayList<>(Arrays.asList(ret));
                 }
             }
@@ -510,7 +506,6 @@ public class Scheduler implements SymbolicSearch {
                 Guard syncCond = machine.sendBuffer.hasSyncEventUnderGuard().getGuardFor(true);
                 if (!syncCond.isFalse()) {
                     PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(syncCond);
-                    syncStep = true;
                     return new ArrayList<>(Arrays.asList(ret));
                 }
             }
@@ -701,7 +696,7 @@ public class Scheduler implements SymbolicSearch {
 
         if (configuration.isUseStateCaching()) {
             distinctStateGuard = Guard.constFalse();
-            if (syncStep || createStep || (choiceDepth <= backtrackDepth)) {
+            if (stickyStep || (choiceDepth <= backtrackDepth)) {
                 distinctStateGuard = Guard.constTrue();
                 return new int[]{0, 0};
             }
@@ -861,6 +856,15 @@ public class Scheduler implements SymbolicSearch {
 
         assert effect != null;
         effect = effect.merge(effects);
+
+        stickyStep = false;
+        if (effects.isEmpty()) {
+            if (!effect.isCreateMachine().getGuardFor(true).isFalse() ||
+                !effect.isSyncEvent().getGuardFor(true).isFalse()) {
+                stickyStep = true;
+                depth--;
+            }
+        }
 
         TraceLogger.schedule(depth, effect, choices);
 

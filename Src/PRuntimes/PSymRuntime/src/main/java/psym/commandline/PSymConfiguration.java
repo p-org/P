@@ -145,6 +145,10 @@ public class PSymConfiguration implements Serializable {
         return (getSchedChoiceBound() != 1 || getDataChoiceBound() != 1);
     }
 
+    public boolean isIterative() {
+        return (getSchedChoiceBound() != 0 || getDataChoiceBound() != 0);
+    }
+
     public void setToRandom() {
         this.setStrategy("random");
         this.setSchedChoiceBound(1);
@@ -169,8 +173,8 @@ public class PSymConfiguration implements Serializable {
         this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
     }
 
-    public void setToBmc() {
-        this.setStrategy("bmc");
+    public void setToSymex() {
+        this.setStrategy("symex");
         this.setSchedChoiceBound(0);
         this.setDataChoiceBound(0);
         this.setUseStateCaching(false);

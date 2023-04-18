@@ -104,11 +104,10 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void reportEstimatedCoverage() {
         GlobalData.getCoverage().reportChoiceCoverage();
 
-        SearchLogger.log("\n--------------------");
-        SearchLogger.log(String.format("Estimated Coverage:: %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
         if (configuration.isUseStateCaching()) {
             SearchLogger.log(String.format("Distinct States Explored:: %d", getTotalDistinctStates()));
         }
+        SearchLogger.log(String.format("Estimated Coverage:: %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
         StatWriter.log("coverage-%", String.format("%.20f", GlobalData.getCoverage().getEstimatedCoverage(20)));
     }
 
@@ -381,10 +380,12 @@ public class IterativeBoundedScheduler extends Scheduler {
         StringBuilder s = new StringBuilder(100);
         s.append(StringUtils.center("Time", 12));
         s.append(StringUtils.center("Memory", 12));
-        s.append(StringUtils.center("Coverage", 18));
-        s.append(StringUtils.center("Iteration", 12));
-        s.append(StringUtils.center("Remaining", 24));
         s.append(StringUtils.center("Depth", 10));
+        if (configuration.isIterative()) {
+            s.append(StringUtils.center("Iteration", 12));
+            s.append(StringUtils.center("Remaining", 24));
+            s.append(StringUtils.center("Coverage", 18));
+        }
         if (configuration.isUseStateCaching()) {
             s.append(StringUtils.center("States", 12));
         }
@@ -418,10 +419,12 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
         s.append(StringUtils.center(String.format("%s", runtimeHms), 12));
         s.append(StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 12));
-        s.append(StringUtils.center(String.format("%.10f %%", GlobalData.getCoverage().getEstimatedCoverage()), 18));
-        s.append(StringUtils.center(String.format("%d", (iter - start_iter)), 12));
-        s.append(StringUtils.center(String.format("%d (%.0f %% data)", getTotalNumBacktracks(), getTotalDataBacktracksPercent()), 24));
         s.append(StringUtils.center(String.format("%d", getDepth()), 10));
+        if (configuration.isIterative()) {
+            s.append(StringUtils.center(String.format("%d", (iter - start_iter)), 12));
+            s.append(StringUtils.center(String.format("%d (%.0f %% data)", getTotalNumBacktracks(), getTotalDataBacktracksPercent()), 24));
+            s.append(StringUtils.center(String.format("%.10f %%", GlobalData.getCoverage().getEstimatedCoverage()), 18));
+        }
         if (configuration.isUseStateCaching()) {
             s.append(StringUtils.center(String.format("%d", getTotalDistinctStates()), 12));
         }

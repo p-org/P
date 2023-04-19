@@ -432,7 +432,16 @@ namespace Plang.Compiler.Backend.Java {
                 case InsertStmt insertStmt:
                     t = Types.JavaTypeFor(insertStmt.Variable.Type);
                     WriteExpr(insertStmt.Variable);
-                    Write($".{t.MutatorMethodName}(");
+                    if (PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Sequence))
+                    {
+                        Write($".{t.MutatorMethodName}((int)(");
+                    }
+                    else
+                    {
+                        Write($".{t.MutatorMethodName}((");
+                    }
+                    WriteExpr(insertStmt.Index);
+                    Write("), ");
                     WriteExpr(insertStmt.Value);
                     WriteLine(");");
                     break;

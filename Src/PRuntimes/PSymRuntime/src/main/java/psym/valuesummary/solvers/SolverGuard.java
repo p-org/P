@@ -183,9 +183,9 @@ public class SolverGuard implements Serializable {
                 return false;
             default:
                 checkInput(Arrays.asList(this));
-                Instant start = Instant.now();
+//                Instant start = Instant.now();
                 boolean isSatNeg = SolverEngine.getSolver().isSat(SolverEngine.getSolver().not(formula));
-                SolverStats.updateSolveGuardTime((Duration.between(start, Instant.now()).toMillis()));
+//                SolverStats.updateSolveGuardTime((Duration.between(start, Instant.now()).toMillis()));
                 if (!isSatNeg) {
                     statusTrue = SolverTrueStatus.True;
                     statusFalse = SolverFalseStatus.NotFalse;
@@ -210,9 +210,9 @@ public class SolverGuard implements Serializable {
                 return false;
             default:
                 checkInput(Arrays.asList(this));
-                Instant start = Instant.now();
+//                Instant start = Instant.now();
                 boolean isSat = SolverEngine.getSolver().isSat(formula);
-                SolverStats.updateSolveGuardTime((Duration.between(start, Instant.now()).toMillis()));
+//                SolverStats.updateSolveGuardTime((Duration.between(start, Instant.now()).toMillis()));
                 if (!isSat) {
                     statusTrue = SolverTrueStatus.NotTrue;
                     statusFalse = SolverFalseStatus.False;
@@ -333,12 +333,12 @@ public class SolverGuard implements Serializable {
     public SolverGuard not() {
         checkInput(Arrays.asList(this));
         SolverStats.notOperations++;
-        Instant start = Instant.now();
+//        Instant start = Instant.now();
         SolverGuard result = getSolverGuard(SolverEngine.getSolver().not(formula),
                                             SolverGuardType.NOT,
                                             "",
                                             ImmutableList.of(this));
-        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
+//        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
         return result;
     }
 
@@ -350,12 +350,12 @@ public class SolverGuard implements Serializable {
     public SolverGuard and(SolverGuard other) {
         checkInput(Arrays.asList(this, other));
     	SolverStats.andOperations++;
-        Instant start = Instant.now();
+//        Instant start = Instant.now();
         SolverGuard result = getSolverGuard(SolverEngine.getSolver().and(formula, other.formula),
                                             SolverGuardType.AND,
                                             "",
                                             ImmutableList.of(this, other));
-        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
+//        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
         return result;
     }
 
@@ -367,12 +367,12 @@ public class SolverGuard implements Serializable {
     public SolverGuard or(SolverGuard other) {
         checkInput(Arrays.asList(this, other));
     	SolverStats.orOperations++;
-        Instant start = Instant.now();
+//        Instant start = Instant.now();
         SolverGuard result = getSolverGuard(SolverEngine.getSolver().or(formula, other.formula),
                                             SolverGuardType.OR,
                                             "",
                                             ImmutableList.of(this, other));
-        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
+//        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
         return result;
     }
 

@@ -375,7 +375,9 @@ public class Scheduler implements SymbolicSearch {
     public void initializeSearch() {
         assert(getDepth() == 0);
 
-        GlobalData.getChoiceLearningStats().setProgramStateHash(this);
+        if (configuration.isChoiceOrchestrationLearning()) {
+            GlobalData.getChoiceLearningStats().setProgramStateHash(this);
+        }
         listeners = program.getListeners();
         monitors = new ArrayList<>(program.getMonitors());
         for (Machine m : program.getMonitors()) {
@@ -384,7 +386,6 @@ public class Scheduler implements SymbolicSearch {
         Machine target = program.getStart();
         startWith(target);
         start = target;
-        depth++;
     }
 
     public void restoreState(Schedule.ChoiceState state) {
@@ -447,9 +448,8 @@ public class Scheduler implements SymbolicSearch {
     }
 
     // print statistics
-    public void print_stats() {
+    public void print_stats(SearchStats.TotalStats totalStats) {
         SearchLogger.log("\n--------------------");
-        SearchStats.TotalStats totalStats = searchStats.getSearchTotal();
         Instant end = Instant.now();
         double timeUsed = (Duration.between(TimeMonitor.getInstance().getStart(), end).toMillis() / 1000.0);
         double memoryUsed = MemoryMonitor.getMemSpent();
@@ -485,7 +485,9 @@ public class Scheduler implements SymbolicSearch {
         distinctStatesList.clear();
         totalStateCount = 0;
         GlobalData.getCoverage().resetCoverage();
-        GlobalData.getChoiceLearningStats().setProgramStateHash(this);
+        if (configuration.isChoiceOrchestrationLearning()) {
+            GlobalData.getChoiceLearningStats().setProgramStateHash(this);
+        }
     }
 
     public List<PrimitiveVS> getNextSenderChoices() {
@@ -771,7 +773,9 @@ public class Scheduler implements SymbolicSearch {
 
     public void step() throws TimeoutException {
         srcState.clear();
-        GlobalData.getChoiceLearningStats().setProgramStateHash(this);
+        if (configuration.isChoiceOrchestrationLearning()) {
+            GlobalData.getChoiceLearningStats().setProgramStateHash(this);
+        }
 
         int numStates = 0;
         int numStatesDistinct = 0;
@@ -793,10 +797,12 @@ public class Scheduler implements SymbolicSearch {
             schedule.setSchedulerState(srcState, machineCounters);
         }
 
-        // reward previous choices
-        List<CoverageStats.CoverageChoiceDepthStats> coverageChoiceDepthStats = GlobalData.getCoverage().getPerChoiceDepthStats();
-        for(int i = preChoiceDepth; i< schedule.size() && i<choiceDepth; i++) {
-            GlobalData.getChoiceLearningStats().rewardStep(coverageChoiceDepthStats.get(i).getStateActions(), numStatesDistinct);
+        if (configuration.isChoiceOrchestrationLearning()) {
+            // reward previous choices
+            List<CoverageStats.CoverageChoiceDepthStats> coverageChoiceDepthStats = GlobalData.getCoverage().getPerChoiceDepthStats();
+            for (int i = preChoiceDepth; i < schedule.size() && i < choiceDepth; i++) {
+                GlobalData.getChoiceLearningStats().rewardStep(coverageChoiceDepthStats.get(i).getStateActions(), numStatesDistinct);
+            }
         }
         preChoiceDepth = choiceDepth;
 
@@ -862,8 +868,10 @@ public class Scheduler implements SymbolicSearch {
             if (!effect.isCreateMachine().getGuardFor(true).isFalse() ||
                 !effect.isSyncEvent().getGuardFor(true).isFalse()) {
                 stickyStep = true;
-                depth--;
             }
+        }
+        if (!stickyStep) {
+            depth++;
         }
 
         TraceLogger.schedule(depth, effect, choices);
@@ -919,8 +927,6 @@ public class Scheduler implements SymbolicSearch {
           System.out.println("Running Total Transitions:: " + searchStats.getSearchTotal().getDepthStats().getNumOfTransitions() + ", Running Total Merged Transitions:: " + searchStats.getSearchTotal().getDepthStats().getNumOfMergedTransitions() + ", Running Total Transitions Explored:: " + searchStats.getSearchTotal().getDepthStats().getNumOfTransitionsExplored());
           System.out.println("--------------------");
         }
-
-        depth++;
     }
 
     public PrimitiveVS<Machine> allocateMachine(Guard pc, Class<? extends Machine> machineType,

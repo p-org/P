@@ -314,7 +314,7 @@ namespace Plang.Options
                     }
                     else
                     {
-                        if (!fileName.Contains("java/"))
+                        if (!fileName.Contains("Java/"))
                             continue;
                     }
                     checkerConfiguration.AssemblyToBeAnalyzed = fileName;

@@ -401,6 +401,12 @@ namespace Plang.Compiler.TypeChecker
             method.CanSend = true;
             
             var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+
+            if (evtExpr is EventRefExpr eventRef)
+            {
+                TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.Value.PayloadType, args);
+            }
+            
             return new AnnounceStmt(context, evtExpr, args.Count == 0 ? null : args[0]);
         }
 

@@ -76,6 +76,11 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      */
     @Override
     public ListVS<T> restrict(Guard guard) {
+        if (guard.isTrue()) {
+            return this;
+        } else if (guard.isFalse()) {
+            return new ListVS<>(guard);
+        }
 
         // if the guard used for restriction is same as the universe then we can ignore this restrict operation as a no-op
         if(guard.equals(getUniverse()))

@@ -80,10 +80,15 @@ public class IterativeBoundedScheduler extends Scheduler {
         return allTasks.get(taskId);
     }
 
+    public void print_stats() {
+        SearchStats.TotalStats totalStats = searchStats.getSearchTotal();
+        print_stats(totalStats);
+    }
 
     @Override
-    public void print_stats() {
-        super.print_stats();
+    public void print_stats(SearchStats.TotalStats totalStats) {
+        recordResult(totalStats);
+        super.print_stats(totalStats);
 
         // print statistics
         StatWriter.log("#-tasks-finished", String.format("%d", finishedTasks.size()));
@@ -111,8 +116,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         StatWriter.log("coverage-%", String.format("%.20f", GlobalData.getCoverage().getEstimatedCoverage(20)));
     }
 
-    void recordResult() {
-        SearchStats.TotalStats totalStats = searchStats.getSearchTotal();
+    void recordResult(SearchStats.TotalStats totalStats) {
         result = "";
         if (start_iter != 0) {
             result += "(resumed run) ";
@@ -398,51 +402,50 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     private void printProgress(boolean forcePrint) {
-        boolean consolePrint = (configuration.getVerbosity() == 0);
-        if (!consolePrint) {
-            if (!forcePrint) {
-                return;
+        if (forcePrint || configuration.isSymbolic() || (configuration.getCollectStats() > 1)) {
+            double newRuntime = TimeMonitor.getInstance().getRuntime();
+            printCurrentStatus(newRuntime);
+            boolean consolePrint = (configuration.getVerbosity() == 0);
+            if (consolePrint || forcePrint) {
+                long runtime = (long)(newRuntime * 1000);
+                String runtimeHms =  String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(runtime),
+                        TimeUnit.MILLISECONDS.toMinutes(runtime) % TimeUnit.HOURS.toMinutes(1),
+                        TimeUnit.MILLISECONDS.toSeconds(runtime) % TimeUnit.MINUTES.toSeconds(1));
+
+                StringBuilder s = new StringBuilder(100);
+                if (consolePrint) {
+                    s.append('\r');
+                } else {
+                    PSymLogger.info("--------------------");
+                    printProgressHeader(false);
+                }
+                s.append(StringUtils.center(String.format("%s", runtimeHms), 12));
+                s.append(StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 12));
+                s.append(StringUtils.center(String.format("%d", getDepth()), 10));
+                if (configuration.isIterative()) {
+                    s.append(StringUtils.center(String.format("%d", (iter - start_iter)), 12));
+                    s.append(StringUtils.center(String.format("%d (%.0f %% data)", getTotalNumBacktracks(), getTotalDataBacktracksPercent()), 24));
+                    s.append(StringUtils.center(String.format("%.10f %%", GlobalData.getCoverage().getEstimatedCoverage()), 18));
+                }
+                if (configuration.isUseStateCaching()) {
+                    s.append(StringUtils.center(String.format("%d", getTotalDistinctStates()), 12));
+                }
+                if (consolePrint) {
+                    System.out.print(s);
+                } else {
+                    SearchLogger.log(s.toString());
+                }
             }
-        }
-
-        long runtime = (long) (TimeMonitor.getInstance().getRuntime() * 1000);
-        String runtimeHms =  String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(runtime),
-                TimeUnit.MILLISECONDS.toMinutes(runtime) % TimeUnit.HOURS.toMinutes(1),
-                TimeUnit.MILLISECONDS.toSeconds(runtime) % TimeUnit.MINUTES.toSeconds(1));
-
-        StringBuilder s = new StringBuilder(100);
-        if (consolePrint) {
-            s.append('\r');
-        } else {
-            PSymLogger.info("--------------------");
-            printProgressHeader(false);
-        }
-        s.append(StringUtils.center(String.format("%s", runtimeHms), 12));
-        s.append(StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 12));
-        s.append(StringUtils.center(String.format("%d", getDepth()), 10));
-        if (configuration.isIterative()) {
-            s.append(StringUtils.center(String.format("%d", (iter - start_iter)), 12));
-            s.append(StringUtils.center(String.format("%d (%.0f %% data)", getTotalNumBacktracks(), getTotalDataBacktracksPercent()), 24));
-            s.append(StringUtils.center(String.format("%.10f %%", GlobalData.getCoverage().getEstimatedCoverage()), 18));
-        }
-        if (configuration.isUseStateCaching()) {
-            s.append(StringUtils.center(String.format("%d", getTotalDistinctStates()), 12));
-        }
-
-        if (consolePrint) {
-            System.out.print(s);
-        } else {
-            SearchLogger.log(s.toString());
         }
     }
 
-    private void printCurrentStatus() {
+    private void printCurrentStatus(double newRuntime) {
         if (configuration.getCollectStats() == 0) {
             return;
         }
 
         ScratchLogger.log("--------------------");
-        ScratchLogger.log(String.format("    Status after %.2f seconds:", TimeMonitor.getInstance().getRuntime()));
+        ScratchLogger.log(String.format("    Status after %.2f seconds:", newRuntime));
         ScratchLogger.log(String.format("      Coverage:         %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
         ScratchLogger.log(String.format("      Iterations:       %d", (iter - start_iter)));
         ScratchLogger.log(String.format("      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
@@ -490,14 +493,13 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     private void summarizeIteration() throws InterruptedException {
-        recordResult();
         if (configuration.getVerbosity() > 3) {
             SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
         }
         if (configuration.getMaxExecutions() > 0) {
             isDoneIterating = ((iter - start_iter) >= configuration.getMaxExecutions());
         }
-        GlobalData.getCoverage().updateIterationCoverage(getChoiceDepth()-1);
+        GlobalData.getCoverage().updateIterationCoverage(getChoiceDepth()-1, configuration.isChoiceOrchestrationLearning());
 //        GlobalData.getChoiceLearningStats().printQTable();
         if (configuration.getTaskOrchestration() != TaskOrchestrationMode.DepthFirst) {
             setBacktrackTasks();
@@ -510,7 +512,6 @@ public class IterativeBoundedScheduler extends Scheduler {
             }
         }
         printProgress(true);
-        printCurrentStatus();
         if (!isDoneIterating) {
             postIterationCleanup();
 //            if ((iter % 100) == 0) {
@@ -543,7 +544,6 @@ public class IterativeBoundedScheduler extends Scheduler {
         schedule.setNumBacktracksInSchedule();
         while (!isDone()) {
             printProgress(false);
-            printCurrentStatus();
 
             // ScheduleLogger.log("step " + depth + ", true queries " + Guard.trueQueries + ", false queries " + Guard.falseQueries);
             Assert.prop(getDepth() < configuration.getMaxStepBound(), "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded", schedule.getLengthCond(schedule.size()));
@@ -656,7 +656,10 @@ public class IterativeBoundedScheduler extends Scheduler {
                 backtrack.add(choice);
             }
         }
-        ChoiceQTable.ChoiceQTableKey chosenActions = new ChoiceQTable.ChoiceQTableKey(GlobalData.getChoiceLearningStats().getProgramStateHash(), chosenQStateKey);
+        ChoiceQTable.ChoiceQTableKey chosenActions = null;
+        if (configuration.isChoiceOrchestrationLearning()) {
+            chosenActions = new ChoiceQTable.ChoiceQTableKey(GlobalData.getChoiceLearningStats().getProgramStateHash(), chosenQStateKey);
+        }
         GlobalData.getCoverage().updateDepthCoverage(getDepth(), getChoiceDepth(), chosen.size(), backtrack.size(), isData, isNewChoice, chosenActions);
 
         PrimitiveVS chosenVS = generateNext.apply(chosen);

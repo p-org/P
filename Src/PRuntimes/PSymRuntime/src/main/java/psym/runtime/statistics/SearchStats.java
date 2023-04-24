@@ -133,6 +133,7 @@ public class SearchStats implements Serializable {
     {
         if (iterationStats.containsKey(current_iter)) {
             iterationStats.get(current_iter).setCompleted(true);
+            lastCompletedIteration = current_iter;
         }
     }
 

@@ -149,6 +149,11 @@ public class PSymConfiguration implements Serializable {
         return (getSchedChoiceBound() != 0 || getDataChoiceBound() != 0);
     }
 
+    public boolean isChoiceOrchestrationLearning() {
+        return  (getChoiceOrchestration() == ChoiceOrchestrationMode.QLearning) ||
+                (getChoiceOrchestration() == ChoiceOrchestrationMode.EpsilonGreedy);
+    }
+
     public void setToRandom() {
         this.setStrategy("random");
         this.setSchedChoiceBound(1);

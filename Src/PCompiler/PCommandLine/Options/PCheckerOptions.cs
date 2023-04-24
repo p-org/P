@@ -307,6 +307,16 @@ namespace Plang.Options
                             || fileName.EndsWith("/p.dll"))
                             continue;
                     }
+                    else if (checkerConfiguration.Mode == CheckerMode.Verification || checkerConfiguration.Mode == CheckerMode.Coverage)
+                    {
+                        if (!fileName.Contains("Symbolic/"))
+                            continue;
+                    }
+                    else
+                    {
+                        if (!fileName.Contains("java/"))
+                            continue;
+                    }
                     checkerConfiguration.AssemblyToBeAnalyzed = fileName;
                     CommandLineOutput.WriteInfo($".. Found a P compiled file: {checkerConfiguration.AssemblyToBeAnalyzed}");
                     break;

@@ -28,7 +28,7 @@ event eCancelTimerFailed;
 event eCancelTimerSuccess;
 
 // events used for communication with the specification monitors
-event eMonitor_LocalCommit: (parcipant:machine, transId: int);
+event eMonitor_LocalCommit: (participant:machine, transId: int);
 event eMonitor_AtomicityInitialize: int;
 
 /* User defined types */

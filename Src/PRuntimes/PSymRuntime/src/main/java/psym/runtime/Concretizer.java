@@ -29,6 +29,7 @@ public class Concretizer {
         } else if (valueSummary instanceof ListVS<?>) {
             ListVS<?> listVS = (ListVS<?>) valueSummary;
             Guard pc = listVS.getUniverse();
+            if (pc.isFalse()) return null;
             List<Object> list = new ArrayList<>();
             List<GuardedValue<Integer>> guardedValues = listVS.size().getGuardedValues();
             if (guardedValues.size() > 0) {
@@ -48,6 +49,7 @@ public class Concretizer {
         } else if (valueSummary instanceof MapVS<?, ?, ?>) {
             MapVS<?, ?, ?> mapVS = (MapVS<?, ?, ?>) valueSummary;
             Guard pc = mapVS.getUniverse();
+            if (pc.isFalse()) return null;
             Map map = new HashMap<>();
             ListVS<?> keyList = mapVS.keys.getElements();
             List<GuardedValue<Integer>> guardedValues = keyList.size().getGuardedValues();
@@ -70,6 +72,7 @@ public class Concretizer {
         } else if (valueSummary instanceof SetVS<?>) {
             SetVS<?> setVS = (SetVS<?>) valueSummary;
             Guard pc = setVS.getUniverse();
+            if (pc.isFalse()) return null;
             List set = new ArrayList<>();
             ListVS<?> eltList = setVS.getElements();
             List<GuardedValue<Integer>> guardedValues = eltList.size().getGuardedValues();
@@ -169,6 +172,7 @@ public class Concretizer {
         } else if (valueSummary instanceof ListVS<?>) {
             ListVS<?> listVS = (ListVS<?>) valueSummary;
             Guard pc = listVS.getUniverse();
+            if (pc.isFalse()) return null;
             PSeq list = new PSeq(new ArrayList<>());
             List<GuardedValue<Integer>> guardedValues = listVS.size().getGuardedValues();
             if (guardedValues.size() > 0) {
@@ -185,6 +189,7 @@ public class Concretizer {
         } else if (valueSummary instanceof MapVS<?, ?, ?>) {
             MapVS<?, ?, ?> mapVS = (MapVS<?, ?, ?>) valueSummary;
             Guard pc = mapVS.getUniverse();
+            if (pc.isFalse()) return null;
             PMap map = new PMap(new HashMap<>());
             ListVS<?> keyList = mapVS.keys.getElements();
             List<GuardedValue<Integer>> guardedValues = keyList.size().getGuardedValues();
@@ -205,6 +210,7 @@ public class Concretizer {
         } else if (valueSummary instanceof SetVS<?>) {
             SetVS<?> setVS = (SetVS<?>) valueSummary;
             Guard pc = setVS.getUniverse();
+            if (pc.isFalse()) return null;
             PSet set = new PSet(new ArrayList<>());
             ListVS<?> eltList = setVS.getElements();
             List<GuardedValue<Integer>> guardedValues = eltList.size().getGuardedValues();

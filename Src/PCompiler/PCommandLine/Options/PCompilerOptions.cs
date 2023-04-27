@@ -99,7 +99,12 @@ namespace Plang.Options
             }
 
             CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
-            var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj");
+            var filtered = 
+                from file in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj")
+                    let info = new FileInfo(file)
+                    where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
+                    select file;
+            var files = filtered.ToArray();
             if (files.Length == 0)
             {
                 CommandLineOutput.WriteInfo(
@@ -233,9 +238,12 @@ namespace Plang.Options
                 enumerationOptions.RecurseSubdirectories = true;
                 enumerationOptions.MaxRecursionDepth = 1;
                 
-                var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.p", enumerationOptions);
-
-                foreach (var fileName in files)
+                var filtered = 
+                    from file in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.p", enumerationOptions)
+                    let info = new FileInfo(file)
+                    where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
+                    select file;
+                foreach (var fileName in filtered)
                 {
                     CommandLineOutput.WriteInfo($".. Adding P file: {fileName}");
                     compilerConfiguration.InputPFiles.Add(fileName);

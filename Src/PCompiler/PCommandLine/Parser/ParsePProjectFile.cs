@@ -202,8 +202,12 @@ namespace Plang.Parser
                     {
                         var enumerate = new EnumerationOptions();
                         enumerate.RecurseSubdirectories = true;
-                        var getFiles = Directory.GetFiles(inputFileNameFull, "*.*", enumerate)
-                            .Where(file => CheckFileValidity.IsPFile(file) || CheckFileValidity.IsForeignFile(file));
+                        var getFiles = 
+                            from file in Directory.GetFiles(inputFileNameFull, "*.*", enumerate)
+                            where ( CheckFileValidity.IsPFile(file) || CheckFileValidity.IsForeignFile(file))
+                            let info = new FileInfo(file)
+                            where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
+                            select file;
                         foreach (var files in getFiles)
                         {
                             pFiles.Add(files);

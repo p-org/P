@@ -293,7 +293,12 @@ namespace Plang.Options
                 enumerationOptions.RecurseSubdirectories = true;
                 enumerationOptions.MaxRecursionDepth = 3;
                 
-                var files = Directory.GetFiles(Directory.GetCurrentDirectory(), filePattern, enumerationOptions);
+                
+                var files = 
+                    from file in Directory.GetFiles(Directory.GetCurrentDirectory(), filePattern, enumerationOptions)
+                    let info = new FileInfo(file)
+                    where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
+                    select file;
 
                 foreach (var fileName in files)
                 {

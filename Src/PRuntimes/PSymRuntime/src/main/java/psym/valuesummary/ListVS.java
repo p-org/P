@@ -52,7 +52,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      * @return Whether the list is empty or not
      */
     public boolean isEmpty() {
-        return isEmptyVS() || IntegerVS.maxValue(size) <= 0;
+        return isEmptyVS() || !IntegerVS.hasPositiveValue(size);
     }
 
     /**
@@ -66,7 +66,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      */
     @Override
     public boolean isEmptyVS() {
-        return size.isEmptyVS();
+        return items.isEmpty() || size.isEmptyVS();
     }
 
     /**

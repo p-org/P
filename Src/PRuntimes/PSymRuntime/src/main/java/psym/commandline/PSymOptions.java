@@ -246,10 +246,10 @@ public class PSymOptions {
                 .build();
         options.addOption(exprLibType);
 
-        // whether or not to disable filter-based reductions
+        // whether or not to enable filter-based reductions
         Option filters = Option.builder()
-                .longOpt("no-filters")
-                .desc("Disable filter-based reductions")
+                .longOpt("use-filters")
+                .desc("Enable filter-based reductions")
                 .numberOfArgs(0)
                 .build();
         options.addOption(filters);
@@ -637,8 +637,8 @@ public class PSymOptions {
                             optionError(option, String.format("Expected an expression type, got %s", option.getValue()));
                     }
                     break;
-                case "no-filters":
-                    config.setUseFilters(false);
+                case "use-filters":
+                    config.setUseFilters(true);
                     break;
                 //                case "rq":
                 //                case "receiver-queue":

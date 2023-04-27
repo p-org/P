@@ -191,7 +191,7 @@ public class CoverageStats implements Serializable {
     public void updateIterationCoverage(int choiceDepth, boolean rewardEnabled, int startDepth) {
         BigDecimal iterationCoverage = getPathCoverageAtDepth(choiceDepth);
         estimatedCoverage = estimatedCoverage.add(iterationCoverage);
-        assert (estimatedCoverage.doubleValue() <= 1.0): "Error in path coverage estimation";
+        assert (estimatedCoverage.compareTo(BigDecimal.ONE) <= 0): "Error in path coverage estimation";
         if (rewardEnabled) {
             for (int i=startDepth; i<=choiceDepth; i++) {
                 CoverageChoiceDepthStats stats = perChoiceDepthStats.get(i);

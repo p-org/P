@@ -116,7 +116,7 @@ public class PSymConfiguration implements Serializable {
 
     // use filters
     @Getter @Setter
-    boolean useFilters = true;
+    boolean useFilters = false;
 
     // intersect with receiver queue semantics
     @Getter @Setter

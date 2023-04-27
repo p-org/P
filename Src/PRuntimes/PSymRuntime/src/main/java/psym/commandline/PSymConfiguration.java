@@ -60,7 +60,7 @@ public class PSymConfiguration implements Serializable {
 
     // name of the project
     @Getter @Setter
-    String projectName = "test";
+    String projectName = "default";
 
     // name of the cex file to read the replayer state
     @Getter @Setter

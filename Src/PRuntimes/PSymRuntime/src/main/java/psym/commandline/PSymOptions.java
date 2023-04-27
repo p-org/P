@@ -317,6 +317,16 @@ public class PSymOptions {
                 .build();
         options.addOption(configFile);
 
+        // project name
+        Option projName = Option.builder()
+                .longOpt("projname")
+                .desc("Project name")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Project Name (string)")
+                .build();
+        options.addOption(projName);
+
 
         // Help menu
         Option help = Option.builder("h")
@@ -673,6 +683,9 @@ public class PSymOptions {
                     break;
                 case "config":
                     readConfigFile(config, option.getValue(), option);
+                    break;
+                case "projname":
+                    config.setProjectName(option.getValue());
                     break;
                 case "h":
                 case "help":

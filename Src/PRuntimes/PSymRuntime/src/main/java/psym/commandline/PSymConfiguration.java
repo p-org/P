@@ -204,6 +204,8 @@ public class PSymConfiguration implements Serializable {
         this.setSchedChoiceBound(0);
         this.setDataChoiceBound(0);
         this.setUseStateCaching(false);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
+        this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
     }
 
     public void setToFuzz() {

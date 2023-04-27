@@ -65,6 +65,8 @@ public class Scheduler implements SymbolicSearch {
     private VectorClockManager vcManager;
     /** Result of the search */
     public String result;
+    /** Whether final result is set or not */
+    public boolean isFinalResult = false;
     /** Current depth of exploration */
     private int depth = 0;
     /** Whether or not search is done */

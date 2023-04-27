@@ -87,7 +87,9 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     @Override
     public void print_stats(SearchStats.TotalStats totalStats) {
-        recordResult(totalStats);
+        if (!isFinalResult) {
+            recordResult(totalStats);
+        }
         super.print_stats(totalStats);
 
         // print statistics

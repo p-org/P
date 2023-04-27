@@ -2,6 +2,7 @@ package psym.commandline;
 
 import lombok.Getter;
 import lombok.Setter;
+import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psym.valuesummary.solvers.SolverType;
@@ -84,6 +85,10 @@ public class PSymConfiguration implements Serializable {
     // mode of choice orchestration
     @Getter @Setter
     ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.EpsilonGreedy;
+
+    // mode of choice learning state mode
+    @Getter @Setter
+    ChoiceLearningStateMode choiceLearningStateMode = ChoiceLearningStateMode.LastStep;
 
     // mode of task orchestration
     @Getter @Setter
@@ -170,11 +175,27 @@ public class PSymConfiguration implements Serializable {
         this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
     }
 
-    public void setToLearn() {
+    public void setToAllLearn() {
         this.setStrategy("learn");
         this.setSchedChoiceBound(1);
         this.setDataChoiceBound(1);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
+        this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
+    }
+
+    public void setToChoiceLearn() {
+        this.setStrategy("learn");
+        this.setSchedChoiceBound(1);
+        this.setDataChoiceBound(1);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
+        this.setTaskOrchestration(TaskOrchestrationMode.Random);
+    }
+
+    public void setToBacktrackLearn() {
+        this.setStrategy("learn");
+        this.setSchedChoiceBound(1);
+        this.setDataChoiceBound(1);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
         this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
     }
 

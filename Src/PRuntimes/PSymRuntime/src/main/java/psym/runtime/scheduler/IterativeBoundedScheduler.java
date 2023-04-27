@@ -492,14 +492,17 @@ public class IterativeBoundedScheduler extends Scheduler {
         isDoneIterating = true;
     }
 
-    private void summarizeIteration() throws InterruptedException {
+    private void summarizeIteration(int startDepth) throws InterruptedException {
         if (configuration.getVerbosity() > 3) {
             SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
         }
         if (configuration.getMaxExecutions() > 0) {
             isDoneIterating = ((iter - start_iter) >= configuration.getMaxExecutions());
         }
-        GlobalData.getCoverage().updateIterationCoverage(getChoiceDepth()-1, configuration.isChoiceOrchestrationLearning());
+        GlobalData.getCoverage().updateIterationCoverage(
+                getChoiceDepth()-1,
+                configuration.isChoiceOrchestrationLearning(),
+                startDepth);
 //        GlobalData.getChoiceLearningStats().printQTable();
         if (configuration.getTaskOrchestration() != TaskOrchestrationMode.DepthFirst) {
             setBacktrackTasks();
@@ -579,7 +582,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             searchStats.startNewIteration(iter, backtrackDepth);
             performSearch();
             checkLiveness(false);
-            summarizeIteration();
+            summarizeIteration(backtrackDepth);
         }
     }
 
@@ -605,7 +608,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             searchStats.startNewIteration(iter, backtrackDepth);
             performSearch();
             checkLiveness(false);
-            summarizeIteration();
+            summarizeIteration(backtrackDepth);
             if (resetAfterInitial) {
                 resetAfterInitial = false;
                 GlobalData.getCoverage().resetCoverage();

@@ -14,6 +14,7 @@ import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
 import psym.runtime.machine.buffer.EventBufferSemantics;
+import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStats;
 import psym.runtime.statistics.CoverageStats;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
@@ -376,7 +377,7 @@ public class Scheduler implements SymbolicSearch {
         assert(getDepth() == 0);
 
         if (configuration.isChoiceOrchestrationLearning()) {
-            GlobalData.getChoiceLearningStats().setProgramStateHash(this);
+            GlobalData.getChoiceLearningStats().setProgramStateHash(this, configuration.getChoiceLearningStateMode(), null);
         }
         listeners = program.getListeners();
         monitors = new ArrayList<>(program.getMonitors());
@@ -477,6 +478,10 @@ public class Scheduler implements SymbolicSearch {
         StatWriter.log("#-events", String.format("%d", totalStats.getDepthStats().getNumOfTransitions()));
         StatWriter.log("#-events-merged", String.format("%d", totalStats.getDepthStats().getNumOfMergedTransitions()));
         StatWriter.log("#-events-explored", String.format("%d", totalStats.getDepthStats().getNumOfTransitionsExplored()));
+
+        // print learn statistics
+        StatWriter.log("learn-#-qstates", String.format("%d", GlobalData.getChoiceLearningStats().numQStates()));
+        StatWriter.log("learn-#-qvalues", String.format("%d", GlobalData.getChoiceLearningStats().numQValues()));
     }
 
     public void reset_stats() {
@@ -486,7 +491,7 @@ public class Scheduler implements SymbolicSearch {
         totalStateCount = 0;
         GlobalData.getCoverage().resetCoverage();
         if (configuration.isChoiceOrchestrationLearning()) {
-            GlobalData.getChoiceLearningStats().setProgramStateHash(this);
+            GlobalData.getChoiceLearningStats().setProgramStateHash(this, configuration.getChoiceLearningStateMode(), null);
         }
     }
 
@@ -773,9 +778,6 @@ public class Scheduler implements SymbolicSearch {
 
     public void step() throws TimeoutException {
         srcState.clear();
-        if (configuration.isChoiceOrchestrationLearning()) {
-            GlobalData.getChoiceLearningStats().setProgramStateHash(this);
-        }
 
         int numStates = 0;
         int numStatesDistinct = 0;
@@ -797,13 +799,13 @@ public class Scheduler implements SymbolicSearch {
             schedule.setSchedulerState(srcState, machineCounters);
         }
 
-        if (configuration.isChoiceOrchestrationLearning()) {
-            // reward previous choices
-            List<CoverageStats.CoverageChoiceDepthStats> coverageChoiceDepthStats = GlobalData.getCoverage().getPerChoiceDepthStats();
-            for (int i = preChoiceDepth; i < schedule.size() && i < choiceDepth; i++) {
-                GlobalData.getChoiceLearningStats().rewardStep(coverageChoiceDepthStats.get(i).getStateActions(), numStatesDistinct);
-            }
-        }
+//        if (configuration.isChoiceOrchestrationLearning()) {
+//            // reward previous choices
+//            List<CoverageStats.CoverageChoiceDepthStats> coverageChoiceDepthStats = GlobalData.getCoverage().getPerChoiceDepthStats();
+//            for (int i = preChoiceDepth; i < schedule.size() && i < choiceDepth; i++) {
+//                GlobalData.getChoiceLearningStats().rewardStep(coverageChoiceDepthStats.get(i).getStateActions(), numStatesDistinct);
+//            }
+//        }
         preChoiceDepth = choiceDepth;
 
 
@@ -831,6 +833,13 @@ public class Scheduler implements SymbolicSearch {
         }
 
         TimeMonitor.getInstance().checkTimeout();
+
+        if (configuration.isChoiceOrchestrationLearning()) {
+            GlobalData.getChoiceLearningStats().setProgramStateHash(
+                    this,
+                    configuration.getChoiceLearningStateMode(),
+                    choices);
+        }
 
         Message effect = null;
         List<Message> effects = new ArrayList<>();

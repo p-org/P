@@ -144,7 +144,9 @@ public class Concretizer {
                 return new GuardedValue(messageComponents, guardedEventValue.getGuard());
             }
             messageComponents.add(guardedPayloadValue.getValue());
-            messageComponents.add(guardedVectorClock.getValue());
+            if (guardedVectorClock != null) {
+                messageComponents.add(guardedVectorClock.getValue());
+            }
             return new GuardedValue(messageComponents, guardedPayloadValue.getGuard());
         }
         return null;

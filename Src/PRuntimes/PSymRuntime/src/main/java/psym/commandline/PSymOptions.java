@@ -4,6 +4,7 @@ import org.apache.commons.cli.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psym.utils.GlobalData;
@@ -215,6 +216,16 @@ public class PSymOptions {
                 .build();
         options.addOption(maxBacktrackTasksPerExecution);
 
+        // mode of choice learning state mode
+        Option choiceLearnMode = Option.builder()
+                .longOpt("learn-mode")
+                .desc("Learning state options: none, last, states, events, full (default: last)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Learn Mode (string)")
+                .build();
+        options.addOption(choiceLearnMode);
+
         // solver type
         Option solverType = Option.builder()
                 .longOpt("solver")
@@ -364,8 +375,15 @@ public class PSymOptions {
                         case "dfs":
                             config.setToDfs();
                             break;
+                        case "learn-backtrack":
+                            config.setToBacktrackLearn();
+                            break;
+                        case "learn-choice":
+                            config.setToChoiceLearn();
+                            break;
                         case "learn":
-                            config.setToLearn();
+                        case "learn-all":
+                            config.setToAllLearn();
                             break;
                         case "bmc":
                         case "sym":
@@ -462,6 +480,33 @@ public class PSymOptions {
                             break;
                         default:
                             optionError(option, String.format("Unrecognized choice orchestration mode, got %s", option.getValue()));
+                    }
+                    break;
+                case "learn-mode":
+                    switch (option.getValue()) {
+                        case "none":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.None);
+                            break;
+                        case "depth":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.SchedulerDepth);
+                            break;
+                        case "last":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.LastStep);
+                            break;
+                        case "states":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.MachineState);
+                            break;
+                        case "states+last":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.MachineStateAndLastStep);
+                            break;
+                        case "events":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.MachineStateAndEvents);
+                            break;
+                        case "full":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.FullState);
+                            break;
+                        default:
+                            optionError(option, String.format("Unrecognized choice learning state mode, got %s", option.getValue()));
                     }
                     break;
                 case "torch":

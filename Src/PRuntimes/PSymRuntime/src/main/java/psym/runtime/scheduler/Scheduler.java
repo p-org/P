@@ -899,6 +899,7 @@ public class Scheduler implements SymbolicSearch {
         if (memoryUsed > (0.8* SolverStats.memLimit)) {
             Scheduler.cleanup();
         }
+        SolverStats.checkResourceLimits();
 
         // record depth statistics
         SearchStats.DepthStats depthStats = new SearchStats.DepthStats(depth, numStates, numMessages, numMessagesMerged, numMessagesExplored);

@@ -37,9 +37,9 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             MaxScheduledSteps = maxSteps;
             ScheduledSteps = 0;
         }
-
+        
         /// <inheritdoc/>
-        public virtual bool GetNextOperation(IAsyncOperation current, IEnumerable<IAsyncOperation> ops, out IAsyncOperation next)
+        public virtual bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
         {
             var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
             if (enabledOperations.Count == 0)
@@ -57,7 +57,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         }
 
         /// <inheritdoc/>
-        public virtual bool GetNextBooleanChoice(IAsyncOperation current, int maxValue, out bool next)
+        public virtual bool GetNextBooleanChoice(AsyncOperation current, int maxValue, out bool next)
         {
             next = false;
             if (RandomValueGenerator.Next(maxValue) == 0)
@@ -71,7 +71,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         }
 
         /// <inheritdoc/>
-        public virtual bool GetNextIntegerChoice(IAsyncOperation current, int maxValue, out int next)
+        public virtual bool GetNextIntegerChoice(AsyncOperation current, int maxValue, out int next)
         {
             next = RandomValueGenerator.Next(maxValue);
             ScheduledSteps++;

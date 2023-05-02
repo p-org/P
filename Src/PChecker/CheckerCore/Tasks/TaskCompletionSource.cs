@@ -5,6 +5,7 @@ using System;
 using System.Threading;
 using PChecker.Runtime;
 using PChecker.SystematicTesting;
+using PChecker.SystematicTesting.Operations;
 using TaskCanceledException = System.Threading.Tasks.TaskCanceledException;
 using TaskStatus = System.Threading.Tasks.TaskStatus;
 
@@ -94,7 +95,7 @@ namespace PChecker.Tasks
                                     // asynchronous operation is blocked, so that it cannot be scheduled during
                                     // systematic testing exploration, which could deadlock.
                                     Resource.NotifyWait();
-                                    Resource.Runtime.ScheduleNextOperation();
+                                    Resource.Runtime.ScheduleNextOperation(AsyncOperationType.Join);
                                 }
 
                                 if (Status is TaskStatus.Canceled)
@@ -188,7 +189,7 @@ namespace PChecker.Tasks
 
                     // Release the resource and notify any awaiting asynchronous operations.
                     Resource.NotifyRelease();
-                    Resource.Runtime.ScheduleNextOperation();
+                    Resource.Runtime.ScheduleNextOperation(AsyncOperationType.Release);
 
                     return true;
                 }

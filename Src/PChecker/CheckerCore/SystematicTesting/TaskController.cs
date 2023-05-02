@@ -88,13 +88,13 @@ namespace PChecker.SystematicTesting
             }, cancellationToken);
 
             // Schedule a task continuation that will schedule the next enabled operation upon completion.
-            task.ContinueWith(t => Scheduler.ScheduleNextEnabledOperation(), TaskScheduler.Current);
+            task.ContinueWith(t => Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop), TaskScheduler.Current);
 
             Debug.WriteLine("<CreateLog> Operation '{0}' was created to execute task '{1}'.", op.Name, task.Id);
             Scheduler.ScheduleOperation(op, task.Id);
             task.Start();
             Scheduler.WaitOperationStart(op);
-            Scheduler.ScheduleNextEnabledOperation();
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Create);
 
             return new Tasks.Task(this, task);
         }
@@ -146,13 +146,13 @@ namespace PChecker.SystematicTesting
             var innerTask = task.Unwrap();
 
             // Schedule a task continuation that will schedule the next enabled operation upon completion.
-            innerTask.ContinueWith(t => Scheduler.ScheduleNextEnabledOperation(), TaskScheduler.Current);
+            innerTask.ContinueWith(t => Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop), TaskScheduler.Current);
 
             Debug.WriteLine("<CreateLog> Operation '{0}' was created to execute task '{1}'.", op.Name, task.Id);
             Scheduler.ScheduleOperation(op, task.Id);
             task.Start();
             Scheduler.WaitOperationStart(op);
-            Scheduler.ScheduleNextEnabledOperation();
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Create);
 
             return new Tasks.Task(this, innerTask);
         }
@@ -205,13 +205,13 @@ namespace PChecker.SystematicTesting
             var innerTask = task.Unwrap();
 
             // Schedule a task continuation that will schedule the next enabled operation upon completion.
-            innerTask.ContinueWith(t => Scheduler.ScheduleNextEnabledOperation(), TaskScheduler.Current);
+            innerTask.ContinueWith(t => Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop), TaskScheduler.Current);
 
             Debug.WriteLine("<CreateLog> Operation '{0}' was created to execute task '{1}'.", op.Name, task.Id);
             Scheduler.ScheduleOperation(op, task.Id);
             task.Start();
             Scheduler.WaitOperationStart(op);
-            Scheduler.ScheduleNextEnabledOperation();
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Create);
 
             return new Tasks.Task<TResult>(this, innerTask);
         }
@@ -279,13 +279,13 @@ namespace PChecker.SystematicTesting
             }, cancellationToken);
 
             // Schedule a task continuation that will schedule the next enabled operation upon completion.
-            task.ContinueWith(t => Scheduler.ScheduleNextEnabledOperation(), TaskScheduler.Current);
+            task.ContinueWith(t => Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop), TaskScheduler.Current);
 
             Debug.WriteLine("<CreateLog> Operation '{0}' was created to execute task '{1}'.", op.Name, task.Id);
             Scheduler.ScheduleOperation(op, task.Id);
             task.Start();
             Scheduler.WaitOperationStart(op);
-            Scheduler.ScheduleNextEnabledOperation();
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Create);
 
             return new Tasks.Task<TResult>(this, task);
         }
@@ -629,7 +629,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         public void OnYieldAwaiterGetResult()
         {
-            Scheduler.ScheduleNextEnabledOperation();
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Yield);
         }
 
         /// <summary>

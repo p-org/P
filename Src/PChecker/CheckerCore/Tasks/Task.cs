@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using PChecker.Runtime;
 using PChecker.SystematicTesting;
+using PChecker.SystematicTesting.Operations;
 using AsyncMethodBuilder = System.Runtime.CompilerServices.AsyncMethodBuilderAttribute;
 using MethodImpl = System.Runtime.CompilerServices.MethodImplAttribute;
 using MethodImplOptions = System.Runtime.CompilerServices.MethodImplOptions;
@@ -720,7 +721,7 @@ namespace PChecker.Tasks
         {
             if (CoyoteRuntime.IsExecutionControlled)
             {
-                ControlledRuntime.Current.ScheduleNextOperation();
+                ControlledRuntime.Current.ScheduleNextOperation(AsyncOperationType.Default);
             }
         }
 

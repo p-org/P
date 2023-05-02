@@ -29,7 +29,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         }
 
         /// <inheritdoc/>
-        public override bool GetNextOperation(IAsyncOperation current, IEnumerable<IAsyncOperation> ops, out IAsyncOperation next)
+        public override bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
         {
             var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
             if (enabledOperations.Count == 0)

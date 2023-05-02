@@ -147,6 +147,11 @@ namespace PChecker
         public int LivenessTemperatureThreshold { get; set; }
 
         /// <summary>
+        /// If this option is enabled, the tester is hashing the program state.
+        /// </summary>
+        [DataMember] public bool IsProgramStateHashingEnabled;
+        
+        /// <summary>
         /// The schedule file to be replayed.
         /// </summary>
         public string ScheduleFile;
@@ -272,6 +277,8 @@ namespace PChecker
             IsLivenessCheckingEnabled = true;
             LivenessTemperatureThreshold = 0;
 
+            IsProgramStateHashingEnabled = false;
+
             ScheduleFile = string.Empty;
             ScheduleTrace = string.Empty;
 
@@ -331,7 +338,18 @@ namespace PChecker
             StrategyBound = (int)numPrioritySwitchPoints;
             return this;
         }
-
+        
+        /// <summary>
+        /// Updates the configuration to use the reinforcement learning (RL) scheduling strategy
+        /// during systematic testing.
+        /// </summary>
+        public CheckerConfiguration WithRLStrategy()
+        {
+            this.SchedulingStrategy = "rl";
+            this.IsProgramStateHashingEnabled = true;
+            return this;
+        }
+        
         /// <summary>
         /// Updates the checkerConfiguration to use the dfs scheduling strategy during systematic testing.
         /// </summary>

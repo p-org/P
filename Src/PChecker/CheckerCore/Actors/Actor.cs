@@ -707,8 +707,11 @@ namespace PChecker.Actors
                 hash = (hash * 31) + Manager.GetCachedState();
                 hash = (hash * 31) + Inbox.GetCachedState();
 
-                // Adds the user-defined hashed state.
-                hash = (hash * 31) + HashedState;
+                if (this.HashedState != 0)
+                {
+                    // Adds the user-defined hashed state.
+                    hash = (hash * 31) + HashedState;
+                }
 
                 return hash;
             }

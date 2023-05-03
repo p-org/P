@@ -2,6 +2,7 @@ package psym.commandline;
 
 import lombok.Getter;
 import lombok.Setter;
+import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
@@ -89,6 +90,10 @@ public class PSymConfiguration implements Serializable {
     // mode of choice learning state mode
     @Getter @Setter
     ChoiceLearningStateMode choiceLearningStateMode = ChoiceLearningStateMode.LastStep;
+
+    // mode of choice learning reward mode
+    @Getter @Setter
+    ChoiceLearningRewardMode choiceLearningRewardMode = ChoiceLearningRewardMode.Coverage;
 
     // mode of task orchestration
     @Getter @Setter

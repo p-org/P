@@ -19,6 +19,8 @@ public class ChoiceLearningStats<S, A> implements Serializable {
     @Getter
     private static BigDecimal defaultQValue = BigDecimal.ZERO;
     @Getter
+    private static BigDecimal defaultReward = BigDecimal.valueOf(-1);
+    @Getter
     private static BigDecimal ALPHA = BigDecimal.valueOf(0.3);
     @Getter
     private static BigDecimal GAMMA = BigDecimal.valueOf(0.7);
@@ -46,8 +48,20 @@ public class ChoiceLearningStats<S, A> implements Serializable {
         qValues = new ChoiceQTable();
     }
 
-    public void rewardIteration(ChoiceQTable.ChoiceQTableKey<S, A> stateActions, BigDecimal reward) {
-        reward(stateActions, reward);
+    public void rewardIteration(ChoiceQTable.ChoiceQTableKey<S, A> stateActions, BigDecimal reward, ChoiceLearningRewardMode rewardMode) {
+        switch (rewardMode) {
+            case None:
+                // do nothing
+                break;
+            case Fixed:
+                reward(stateActions, defaultReward);
+                break;
+            case Coverage:
+                reward(stateActions, reward);
+                break;
+            default:
+                assert (false);
+        }
     }
 
     public void rewardStep(ChoiceQTable.ChoiceQTableKey<S, A> stateActions, int reward) {
@@ -145,7 +159,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
     public void setProgramStateHash(Scheduler sch, ChoiceLearningStateMode mode, PrimitiveVS<Machine> lastChoice) {
         switch (mode) {
             case None:
-                // do nothing
+                setProgramHashNone();
                 break;
             case SchedulerDepth:
                 setProgramHashDepth(sch.getDepth());
@@ -168,6 +182,10 @@ public class ChoiceLearningStats<S, A> implements Serializable {
             default:
                 assert (false);
         }
+    }
+
+    private void setProgramHashNone() {
+        programStateHash = 0;
     }
 
     private void setProgramHashDepth(int depth) {

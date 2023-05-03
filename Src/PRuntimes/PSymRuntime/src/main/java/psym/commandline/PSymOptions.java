@@ -4,6 +4,7 @@ import org.apache.commons.cli.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
@@ -217,14 +218,24 @@ public class PSymOptions {
         options.addOption(maxBacktrackTasksPerExecution);
 
         // mode of choice learning state mode
-        Option choiceLearnMode = Option.builder()
-                .longOpt("learn-mode")
+        Option choiceLearnState = Option.builder()
+                .longOpt("learn-state")
                 .desc("Learning state options: none, last, states, events, full (default: last)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Learn Mode (string)")
+                .argName("Learn State (string)")
                 .build();
-        options.addOption(choiceLearnMode);
+        options.addOption(choiceLearnState);
+
+        // mode of choice learning reward mode
+        Option choiceLearnReward = Option.builder()
+                .longOpt("learn-reward")
+                .desc("Learning reward options: coverage, fixed (default: coverage)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Learn Reward (string)")
+                .build();
+        options.addOption(choiceLearnReward);
 
         // solver type
         Option solverType = Option.builder()
@@ -493,6 +504,7 @@ public class PSymOptions {
                     }
                     break;
                 case "learn-mode":
+                case "learn-state":
                     switch (option.getValue()) {
                         case "none":
                             config.setChoiceLearningStateMode(ChoiceLearningStateMode.None);
@@ -517,6 +529,21 @@ public class PSymOptions {
                             break;
                         default:
                             optionError(option, String.format("Unrecognized choice learning state mode, got %s", option.getValue()));
+                    }
+                    break;
+                case "learn-reward":
+                    switch (option.getValue()) {
+                        case "none":
+                            config.setChoiceLearningRewardMode(ChoiceLearningRewardMode.None);
+                            break;
+                        case "fixed":
+                            config.setChoiceLearningRewardMode(ChoiceLearningRewardMode.Fixed);
+                            break;
+                        case "coverage":
+                            config.setChoiceLearningRewardMode(ChoiceLearningRewardMode.Coverage);
+                            break;
+                        default:
+                            optionError(option, String.format("Unrecognized choice learning reward mode, got %s", option.getValue()));
                     }
                     break;
                 case "torch":
@@ -700,6 +727,11 @@ public class PSymOptions {
                 default:
                     optionError(option, String.format("Unrecognized option %s", option));
             }
+        }
+
+        // post process
+        if (!config.isChoiceOrchestrationLearning()) {
+            config.setChoiceLearningRewardMode(ChoiceLearningRewardMode.None);
         }
         return config;
     }

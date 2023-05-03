@@ -5,8 +5,8 @@ import psym.utils.RandomNumberGenerator;
 
 public class TaskOrchestratorCoverageEpsilonGreedy implements TaskOrchestrator {
     private static double EPSILON_MAX = 1.0;
-    private static double EPSILON_MIN = 0.2;
-    private static double EPSILON_DECAY_FACTOR = 0.9999;
+    private static double EPSILON_MIN = 0.3;
+    private static double EPSILON_DECAY_FACTOR = 0.999;
     private static double epsilon = EPSILON_MAX;
     private TaskOrchestrator taskOrchestratorExplore;
     private TaskOrchestrator taskOrchestratorExploit;

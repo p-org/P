@@ -504,8 +504,8 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
         GlobalData.getCoverage().updateIterationCoverage(
                 getChoiceDepth()-1,
-                configuration.isChoiceOrchestrationLearning(),
-                startDepth);
+                startDepth,
+                configuration.getChoiceLearningRewardMode());
 //        GlobalData.getChoiceLearningStats().printQTable();
         if (configuration.getTaskOrchestration() != TaskOrchestrationMode.DepthFirst) {
             setBacktrackTasks();

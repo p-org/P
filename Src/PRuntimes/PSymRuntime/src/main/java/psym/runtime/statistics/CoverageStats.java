@@ -5,6 +5,7 @@ import lombok.Setter;
 import psym.commandline.PSymConfiguration;
 import psym.runtime.logger.CoverageWriter;
 import psym.runtime.logger.StatWriter;
+import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceQTable;
 import psym.utils.GlobalData;
 
@@ -188,15 +189,15 @@ public class CoverageStats implements Serializable {
      * Increment path coverage after an iteration has ended
      * @param choiceDepth Highest choice depth at which the last iteration ended
      */
-    public void updateIterationCoverage(int choiceDepth, boolean rewardEnabled, int startDepth) {
+    public void updateIterationCoverage(int choiceDepth, int startDepth, ChoiceLearningRewardMode rewardMode) {
         BigDecimal iterationCoverage = getPathCoverageAtDepth(choiceDepth);
         estimatedCoverage = estimatedCoverage.add(iterationCoverage);
         assert (estimatedCoverage.compareTo(BigDecimal.ONE) <= 0): "Error in path coverage estimation";
-        if (rewardEnabled) {
+        if (rewardMode != ChoiceLearningRewardMode.None) {
             for (int i=startDepth; i<=choiceDepth; i++) {
                 CoverageChoiceDepthStats stats = perChoiceDepthStats.get(i);
                 if (stats != null) {
-                    GlobalData.getChoiceLearningStats().rewardIteration(stats.getStateActions(), iterationCoverage);
+                    GlobalData.getChoiceLearningStats().rewardIteration(stats.getStateActions(), iterationCoverage, rewardMode);
                 }
             }
         }

@@ -19,9 +19,9 @@ public class ChoiceLearningStats<S, A> implements Serializable {
     @Getter
     private static BigDecimal defaultQValue = BigDecimal.ZERO;
     @Getter
-    private static BigDecimal ALPHA = BigDecimal.valueOf(0.5);
+    private static BigDecimal ALPHA = BigDecimal.valueOf(0.3);
     @Getter
-    private static BigDecimal GAMMA = BigDecimal.valueOf(0.5);
+    private static BigDecimal GAMMA = BigDecimal.valueOf(0.7);
 
 
     /** State hash corresponding to current environment state */

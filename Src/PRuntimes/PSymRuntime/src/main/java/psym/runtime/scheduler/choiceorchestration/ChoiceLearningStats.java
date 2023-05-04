@@ -57,7 +57,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
                 reward(stateActions, defaultReward);
                 break;
             case Coverage:
-                reward(stateActions, reward);
+                reward(stateActions, reward.subtract(defaultReward));
                 break;
             default:
                 assert (false);

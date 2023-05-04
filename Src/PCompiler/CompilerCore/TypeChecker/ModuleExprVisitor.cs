@@ -49,11 +49,7 @@ namespace Plang.Compiler.TypeChecker
             }
             else if (!globalScope.SafetyTests.Any())
             {
-                if (!globalScope.Machines.Where(m => m.Name == "Main").Any())
-                {
-                    /* throw handler.NoMainOrTestCase(
-                        $"No test case declared and no machine with name Main exists. Please define a test case.");*/
-                }
+                if (globalScope.Machines.All(m => m.Name != "Main")) return;
                 
                 var defaultImplDecl = new Implementation(ParserRuleContext.EmptyContext, "DefaultImpl")
                 {

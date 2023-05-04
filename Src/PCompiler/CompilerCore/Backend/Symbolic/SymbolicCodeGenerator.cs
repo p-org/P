@@ -455,7 +455,9 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 var entryPcScope = context.FreshPathConstraintScope();
 
-                context.WriteLine(output, $"@Override public void entry(Guard {entryPcScope.PathConstraintVar}, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {{");
+                context.WriteLine(output, "@Generated");
+                context.WriteLine(output, "@Override");
+                context.WriteLine(output, $"public void entry(Guard {entryPcScope.PathConstraintVar}, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {{");
 
                 var entryFunc = state.Entry;
                 entryFunc.Name = $"{context.GetNameForDecl(state)}_entry";

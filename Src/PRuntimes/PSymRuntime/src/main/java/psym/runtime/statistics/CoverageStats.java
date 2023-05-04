@@ -2,6 +2,7 @@ package psym.runtime.statistics;
 
 import lombok.Getter;
 import lombok.Setter;
+import psym.commandline.PSymConfiguration;
 import psym.runtime.logger.CoverageWriter;
 import psym.runtime.logger.StatWriter;
 import psym.runtime.scheduler.choiceorchestration.ChoiceQTable;
@@ -88,7 +89,9 @@ public class CoverageStats implements Serializable {
         public void reset() {
             pathCoverage = new BigDecimal(1);
             numTotal = 0;
-            stateActions.clear();
+            if (stateActions != null){
+                stateActions.clear();
+            }
         }
 
         public CoverageChoiceDepthStats getCopy() {
@@ -181,12 +184,14 @@ public class CoverageStats implements Serializable {
      * Increment path coverage after an iteration has ended
      * @param choiceDepth Highest choice depth at which the last iteration ended
      */
-    public void updateIterationCoverage(int choiceDepth) {
+    public void updateIterationCoverage(int choiceDepth, boolean rewardEnabled) {
         BigDecimal iterationCoverage = getPathCoverageAtDepth(choiceDepth);
         estimatedCoverage = estimatedCoverage.add(iterationCoverage);
         assert (estimatedCoverage.doubleValue() <= 1.0): "Error in path coverage estimation";
-        for (CoverageChoiceDepthStats stats: perChoiceDepthStats) {
-            GlobalData.getChoiceLearningStats().rewardIteration(stats.getStateActions(), iterationCoverage);
+        if (rewardEnabled) {
+            for (CoverageChoiceDepthStats stats : perChoiceDepthStats) {
+                GlobalData.getChoiceLearningStats().rewardIteration(stats.getStateActions(), iterationCoverage);
+            }
         }
     }
 

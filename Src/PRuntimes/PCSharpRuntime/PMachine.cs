@@ -178,6 +178,8 @@ namespace Plang.CSharpRuntime
 
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
+            var pText = payload == null ? "" : $" with payload {((IPrtValue)payload).ToEscapedString()}";
+            Log($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
             AnnounceInternal(@event);
         }
 
@@ -188,7 +190,7 @@ namespace Plang.CSharpRuntime
             {
                 return;
             }
-
+            
             foreach (var monitor in PModule.monitorMap[interfaceName])
             {
                 if (PModule.monitorObserves[monitor.Name].Contains(ev.GetType().Name))

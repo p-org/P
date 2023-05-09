@@ -460,7 +460,7 @@ namespace PChecker.Actors.Logging
         }
 
         public void OnMonitorProcessEvent(string monitorType, string stateName, string senderName,
-            string senderType, string senderStateName, string e)
+            string senderType, string senderStateName, Event e)
         {
             if (Closed)
             {
@@ -485,7 +485,7 @@ namespace PChecker.Actors.Logging
             // TODO: should this be guarded as above?
             Writer.WriteAttributeString("senderState", senderStateName);
 
-            Writer.WriteAttributeString("event", e);
+            Writer.WriteAttributeString("event", e.GetType().Name);
             Writer.WriteEndElement();
         }
 

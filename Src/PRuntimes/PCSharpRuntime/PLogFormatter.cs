@@ -49,27 +49,6 @@ namespace Plang.CSharpRuntime
             base.OnDefaultEventHandler(id, GetShortName(stateName));
         }
 
-        public override void OnPopState(ActorId id, string currStateName, string restoredStateName)
-        {
-            base.OnPopState(id, GetShortName(currStateName), GetShortName(restoredStateName));
-        }
-
-        public override void OnPopStateUnhandledEvent(ActorId id, string stateName, Event e)
-        {
-            stateName = GetShortName(stateName);
-            var eventName = GetEventNameWithPayload(e);
-            var reenteredStateName = string.IsNullOrEmpty(stateName)
-                ? string.Empty
-                : $" and reentered state '{stateName}";
-            var text = $"<PopLog> '{id}' popped with unhandled event '{eventName}'{reenteredStateName}.";
-            Logger.WriteLine(text);
-        }
-
-        public override void OnPushState(ActorId id, string currStateName, string newStateName)
-        {
-            base.OnPushState(id, GetShortName(currStateName), GetShortName(newStateName));
-        }
-
         public override void OnWaitEvent(ActorId id, string stateName, params Type[] eventTypes)
         {
             base.OnWaitEvent(id, GetShortName(stateName), eventTypes);
@@ -101,9 +80,10 @@ namespace Plang.CSharpRuntime
         }
 
         public override void OnMonitorProcessEvent(string monitorType, string stateName, string senderName, string senderType,
-            string senderStateName, string eventPayload)
+            string senderStateName, Event e)
         {
-            base.OnMonitorProcessEvent(GetShortName(monitorType), GetShortName(stateName), GetShortName(senderName), GetShortName(senderType), GetShortName(senderStateName), GetShortName(eventPayload));
+            var text = $"<MonitorLog> {monitorType} is processing event '{GetEventNameWithPayload(e)}' in state '{stateName}'.";
+            Logger.WriteLine(text);
         }
 
         public override void OnDequeueEvent(ActorId id, string stateName, Event e)

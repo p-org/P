@@ -37,6 +37,10 @@ namespace PChecker.Actors.Logging
         /// <inheritdoc/>
         public virtual void OnCreateActor(ActorId id, string creatorName, string creatorType)
         {
+            if (id.Name.Contains("GodMachine") || creatorName.Contains("GodMachine"))
+            {
+                return;
+            }
             var source = creatorName ?? $"task '{Task.CurrentId}'";
             var text = $"<CreateLog> {id} was created by {source}.";
             Logger.WriteLine(text);
@@ -45,6 +49,10 @@ namespace PChecker.Actors.Logging
         /// <inheritdoc/>
         public void OnCreateStateMachine(ActorId id, string creatorName, string creatorType)
         {
+            if (id.Name.Contains("GodMachine") || creatorName.Contains("GodMachine"))
+            {
+                return;
+            }
             var source = creatorName ?? $"task '{Task.CurrentId}'";
             var text = $"<CreateLog> {id} was created by {source}.";
             Logger.WriteLine(text);
@@ -346,25 +354,25 @@ namespace PChecker.Actors.Logging
             }
             else if (eventTypes.Length == 1)
             {
-                eventNames = "'" + eventTypes[0].FullName + "'";
+                eventNames = "'" + eventTypes[0].Name + "'";
             }
             else if (eventTypes.Length == 2)
             {
-                eventNames = "'" + eventTypes[0].FullName + "' or '" + eventTypes[1].FullName + "'";
+                eventNames = "'" + eventTypes[0].Name + "' or '" + eventTypes[1].Name + "'";
             }
             else if (eventTypes.Length == 3)
             {
-                eventNames = "'" + eventTypes[0].FullName + "', '" + eventTypes[1].FullName + "' or '" + eventTypes[2].FullName + "'";
+                eventNames = "'" + eventTypes[0].Name + "', '" + eventTypes[1].Name + "' or '" + eventTypes[2].Name + "'";
             }
             else
             {
                 var eventNameArray = new string[eventTypes.Length - 1];
                 for (var i = 0; i < eventTypes.Length - 2; i++)
                 {
-                    eventNameArray[i] = eventTypes[i].FullName;
+                    eventNameArray[i] = eventTypes[i].Name;
                 }
 
-                eventNames = "'" + string.Join("', '", eventNameArray) + "' or '" + eventTypes[eventTypes.Length - 1].FullName + "'";
+                eventNames = "'" + string.Join("', '", eventNameArray) + "' or '" + eventTypes[eventTypes.Length - 1].Name + "'";
             }
 
             if (stateName is null)

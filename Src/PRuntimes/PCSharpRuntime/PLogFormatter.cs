@@ -17,9 +17,9 @@ namespace Plang.CSharpRuntime
         {
         }
 
-        private string GetShortName(string stateName)
+        private string GetShortName(string name)
         {
-            return stateName.Split('.').Last();
+            return name.Split('.').Last();
         }
 
         private string GetEventNameWithPayload(Event e)

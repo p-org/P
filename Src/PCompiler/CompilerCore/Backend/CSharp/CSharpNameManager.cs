@@ -3,6 +3,7 @@ using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.Types;
 using System.Collections.Generic;
 using System;
+using Plang.Compiler.TypeChecker.AST.States;
 
 namespace Plang.Compiler.Backend.CSharp
 {
@@ -51,16 +52,13 @@ namespace Plang.Compiler.Backend.CSharp
                 case PEvent pEvent:
                     if (pEvent.IsNullEvent)
                     {
-                        name = "DefaultEvent";
+                        return "DefaultEvent";
                     }
+                    return pEvent.IsHaltEvent ? "PHalt" : name;
 
-                    if (pEvent.IsHaltEvent)
-                    {
-                        name = "PHalt";
-                    }
 
-                    return name;
-
+                case State pState:
+                    return pState.Name;
                 case Interface _:
                     return "I_" + name;
             }
@@ -69,7 +67,7 @@ namespace Plang.Compiler.Backend.CSharp
             name = string.IsNullOrEmpty(name) ? "Anon" : name;
             if (name.StartsWith("$"))
             {
-                name = "TMP_" + name.Substring(1);
+                name = string.Concat("TMP_", name.AsSpan(1));
             }
             else if (Array.BinarySearch(reservedKeywords, name) >= 0)
             {

@@ -7,7 +7,9 @@ import org.json.JSONTokener;
 import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
+import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestratorEpsilonGreedy;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
+import psym.runtime.scheduler.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
 import psym.utils.GlobalData;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
@@ -236,6 +238,16 @@ public class PSymOptions {
                 .argName("Learn Reward (string)")
                 .build();
         options.addOption(choiceLearnReward);
+
+        // epsilon-greedy decay rate
+        Option epsilonDecay = Option.builder()
+                .longOpt("learn-decay")
+                .desc("Decay rate for epsilon-greedy")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Decay Rate (double)")
+                .build();
+        options.addOption(epsilonDecay);
 
         // solver type
         Option solverType = Option.builder()
@@ -544,6 +556,14 @@ public class PSymOptions {
                             break;
                         default:
                             optionError(option, String.format("Unrecognized choice learning reward mode, got %s", option.getValue()));
+                    }
+                    break;
+                case "learn-decay":
+                    try {
+                        ChoiceOrchestratorEpsilonGreedy.setEPSILON_DECAY_FACTOR(Double.parseDouble(option.getValue()));
+                        TaskOrchestratorCoverageEpsilonGreedy.setEPSILON_DECAY_FACTOR(Double.parseDouble(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected a double value, got %s", option.getValue()));
                     }
                     break;
                 case "torch":

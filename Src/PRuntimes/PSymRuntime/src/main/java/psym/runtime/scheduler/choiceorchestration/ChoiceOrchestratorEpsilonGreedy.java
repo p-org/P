@@ -1,13 +1,16 @@
 package psym.runtime.scheduler.choiceorchestration;
 
+import lombok.Setter;
 import psym.utils.RandomNumberGenerator;
 import psym.valuesummary.ValueSummary;
 
 import java.util.List;
 
 public class ChoiceOrchestratorEpsilonGreedy implements ChoiceOrchestrator {
-    private static double EPSILON_MAX = 0.9;
-    private static double EPSILON_MIN = 0.1;
+    private static double EPSILON_MAX = 1.0;
+    private static double EPSILON_MIN = 0.3;
+
+    @Setter
     private static double EPSILON_DECAY_FACTOR = 0.9999;
     private static double epsilon = EPSILON_MAX;
     private ChoiceOrchestrator choiceOrchestratorExplore;

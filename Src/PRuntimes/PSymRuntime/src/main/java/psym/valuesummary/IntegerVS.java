@@ -95,6 +95,19 @@ public class IntegerVS {
         return a.getValues().stream().max(Integer::compare).orElse(null);
     }
 
+    /** Return true iff an Integer value summary may take a positive value
+     *
+     * @return The maximum possible value
+     */
+    public static Boolean hasPositiveValue(PrimitiveVS<Integer> a) {
+        for (Integer val: a.getValues()) {
+            if (val > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Get the minimum value that an Integer value summary may take on
      *
      * @return The minimum possible value

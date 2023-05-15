@@ -107,7 +107,9 @@ public class PSym {
      * @param config Input PSymConfiguration
      */
     private static void setProjectName(Program p, PSymConfiguration config) {
-        config.setProjectName(p.getClass().getSimpleName());
+        if (config.getProjectName() == "default") {
+            config.setProjectName(p.getClass().getSimpleName());
+        }
     }
 
     /**

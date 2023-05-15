@@ -68,6 +68,63 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal readonly int? RootTaskId;
 
+        
+        /// <summary>
+        /// Returns the current hashed state of the monitors.
+        /// </summary>
+        /// <remarks>
+        /// The hash is updated in each execution step.
+        /// </remarks>
+#if !DEBUG
+        [DebuggerStepThrough]
+#endif
+        private int GetHashedMonitorState()
+        {
+            unchecked
+            {
+                int hash = 19;
+
+                foreach (var monitor in Monitors)
+                {
+                    hash = (hash * 397) + monitor.GetHashedState();
+                }
+
+                return hash;
+            }
+        }
+        
+        /// <summary>
+        /// Returns the current hashed state of the execution.
+        /// </summary>
+        /// <remarks>
+        /// The hash is updated in each execution step.
+        /// </remarks>
+        [DebuggerStepThrough]
+        internal int GetHashedProgramState()
+        {
+            unchecked
+            {
+                int hash = 19;
+
+                foreach (var operation in Scheduler.GetRegisteredOperations().OrderBy(op => op.Id))
+                {
+                    if (operation is ActorOperation actorOperation)
+                    {
+                        int operationHash = 31 + actorOperation.Actor.GetHashedState();
+                        operationHash = (operationHash * 31) + actorOperation.Type.GetHashCode();
+                        hash *= operationHash;
+                    }
+                    else if (operation is TaskOperation taskOperation)
+                    {
+                        hash *= 31 + taskOperation.Type.GetHashCode();
+                    }
+                }
+
+                hash = (hash * 31) + GetHashedMonitorState();
+                return hash;
+            }
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ControlledRuntime"/> class.
         /// </summary>
@@ -210,7 +267,7 @@ namespace PChecker.SystematicTesting
                     op.OnCompleted();
 
                     // Task has completed, schedule the next enabled operation.
-                    Scheduler.ScheduleNextEnabledOperation();
+                    Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
                 }
                 catch (Exception ex)
                 {
@@ -284,7 +341,7 @@ namespace PChecker.SystematicTesting
 
             // Using ulong.MaxValue because a Create operation cannot specify
             // the id of its target, because the id does not exist yet.
-            Scheduler.ScheduleNextEnabledOperation();
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Create);
             ResetProgramCounter(creator);
 
             if (id is null)
@@ -408,7 +465,7 @@ namespace PChecker.SystematicTesting
                 "Cannot send event '{0}' to actor id '{1}' that is not bound to an actor instance.",
                 e.GetType().FullName, targetId.Value);
 
-            Scheduler.ScheduleNextEnabledOperation();
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Send);
             ResetProgramCounter(sender as StateMachine);
 
             // The operation group id of this operation is set using the following precedence:
@@ -517,7 +574,7 @@ namespace PChecker.SystematicTesting
                     op.OnCompleted();
 
                     // The actor is inactive or halted, schedule the next enabled operation.
-                    Scheduler.ScheduleNextEnabledOperation();
+                    Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
                 }
                 catch (Exception ex)
                 {
@@ -775,16 +832,27 @@ namespace PChecker.SystematicTesting
             where TAsyncOperation : IAsyncOperation =>
             Scheduler.GetExecutingOperation<TAsyncOperation>();
 
+
+        /// <summary>
+        /// Checks if the scheduling steps bound has been reached. If yes,
+        /// it stops the scheduler and kills all enabled machines.
+        /// </summary>
+        private void CheckIfSchedulingStepsBoundIsReached()
+        {
+            Scheduler.CheckIfSchedulingStepsBoundIsReached();
+        }
+        
         /// <summary>
         /// Schedules the next controlled asynchronous operation. This method
         /// is only used during testing.
         /// </summary>
-        internal void ScheduleNextOperation()
+        /// <param name="type">Type of the operation.</param>
+        internal void ScheduleNextOperation(AsyncOperationType type)
         {
             var callerOp = Scheduler.GetExecutingOperation<AsyncOperation>();
             if (callerOp != null)
             {
-                Scheduler.ScheduleNextEnabledOperation();
+                Scheduler.ScheduleNextEnabledOperation(type);
             }
         }
 
@@ -808,7 +876,7 @@ namespace PChecker.SystematicTesting
             }
             else
             {
-                Scheduler.ScheduleNextEnabledOperation();
+                Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
                 ResetProgramCounter(actor);
             }
 
@@ -819,14 +887,14 @@ namespace PChecker.SystematicTesting
         /// <inheritdoc/>
         internal override void NotifyDefaultEventDequeued(Actor actor)
         {
-            Scheduler.ScheduleNextEnabledOperation();
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
             ResetProgramCounter(actor);
         }
 
         /// <inheritdoc/>
         internal override void NotifyDefaultEventHandlerCheck(Actor actor)
         {
-            Scheduler.ScheduleNextEnabledOperation();
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Default);
         }
 
         /// <inheritdoc/>
@@ -863,7 +931,7 @@ namespace PChecker.SystematicTesting
         {
             var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : null;
             LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: false);
-            Scheduler.ScheduleNextEnabledOperation();
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
             ResetProgramCounter(actor);
         }
 
@@ -901,7 +969,7 @@ namespace PChecker.SystematicTesting
                 LogWriter.LogWaitEvent(actor.Id, stateName, eventWaitTypesArray);
             }
 
-            Scheduler.ScheduleNextEnabledOperation();
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Join);
             ResetProgramCounter(actor);
         }
 

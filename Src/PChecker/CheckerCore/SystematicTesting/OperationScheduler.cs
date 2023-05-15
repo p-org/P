@@ -38,7 +38,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Map from unique ids to asynchronous operations.
         /// </summary>
-        private readonly ConcurrentDictionary<ulong, IAsyncOperation> OperationMap;
+        private readonly ConcurrentDictionary<ulong, AsyncOperation> OperationMap;
 
         /// <summary>
         /// Map from ids of tasks that are controlled by the runtime to operations.
@@ -94,7 +94,7 @@ namespace PChecker.SystematicTesting
             CheckerConfiguration = checkerConfiguration;
             Runtime = runtime;
             Strategy = strategy;
-            OperationMap = new ConcurrentDictionary<ulong, IAsyncOperation>();
+            OperationMap = new ConcurrentDictionary<ulong, AsyncOperation>();
             ControlledTaskMap = new ConcurrentDictionary<int, AsyncOperation>();
             ScheduleTrace = trace;
             CompletionSource = new TaskCompletionSource<bool>();
@@ -106,7 +106,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Schedules the next enabled operation.
         /// </summary>
-        internal void ScheduleNextEnabledOperation()
+        internal void ScheduleNextEnabledOperation(AsyncOperationType type)
         {
             var taskId = Task.CurrentId;
 
@@ -117,7 +117,7 @@ namespace PChecker.SystematicTesting
                 return;
             }
 
-            var current = ScheduledOperation;
+            AsyncOperation current = ScheduledOperation;
             if (!IsRunning)
             {
                 // TODO: check if this stop is needed.
@@ -138,6 +138,15 @@ namespace PChecker.SystematicTesting
 
             // Checks if the scheduling steps bound has been reached.
             CheckIfSchedulingStepsBoundIsReached();
+            
+            // Update the operation type.
+            current.Type = type;
+            
+            if (CheckerConfiguration.IsProgramStateHashingEnabled)
+            {
+                // Update the current operation with the hashed program state.
+                current.HashedProgramState = Runtime.GetHashedProgramState();
+            }
 
             // Get and order the operations by their id.
             var ops = OperationMap.Values.OrderBy(op => op.Id);
@@ -563,7 +572,7 @@ namespace PChecker.SystematicTesting
 #if !DEBUG
         [DebuggerHidden]
 #endif
-        private void CheckIfSchedulingStepsBoundIsReached()
+        internal void CheckIfSchedulingStepsBoundIsReached()
         {
             if (Strategy.HasReachedMaxSchedulingSteps())
             {

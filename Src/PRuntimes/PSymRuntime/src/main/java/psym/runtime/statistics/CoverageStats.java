@@ -5,6 +5,7 @@ import lombok.Setter;
 import psym.commandline.PSymConfiguration;
 import psym.runtime.logger.CoverageWriter;
 import psym.runtime.logger.StatWriter;
+import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceQTable;
 import psym.utils.GlobalData;
 
@@ -67,6 +68,10 @@ public class CoverageStats implements Serializable {
             this(new BigDecimal(1), 0, new ChoiceQTable.ChoiceQTableKey());
         }
 
+        private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal) {
+            this(inputPathCoverage, inputNumTotal, new ChoiceQTable.ChoiceQTableKey());
+        }
+
         private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal, ChoiceQTable.ChoiceQTableKey inputStateActions) {
             this.pathCoverage = inputPathCoverage;
             this.numTotal = inputNumTotal;
@@ -95,7 +100,7 @@ public class CoverageStats implements Serializable {
         }
 
         public CoverageChoiceDepthStats getCopy() {
-            return new CoverageChoiceDepthStats(this.pathCoverage, this.numTotal, this.stateActions);
+            return new CoverageChoiceDepthStats(this.pathCoverage, this.numTotal);
         }
     }
 
@@ -184,13 +189,16 @@ public class CoverageStats implements Serializable {
      * Increment path coverage after an iteration has ended
      * @param choiceDepth Highest choice depth at which the last iteration ended
      */
-    public void updateIterationCoverage(int choiceDepth, boolean rewardEnabled) {
+    public void updateIterationCoverage(int choiceDepth, int startDepth, ChoiceLearningRewardMode rewardMode) {
         BigDecimal iterationCoverage = getPathCoverageAtDepth(choiceDepth);
         estimatedCoverage = estimatedCoverage.add(iterationCoverage);
-        assert (estimatedCoverage.doubleValue() <= 1.0): "Error in path coverage estimation";
-        if (rewardEnabled) {
-            for (CoverageChoiceDepthStats stats : perChoiceDepthStats) {
-                GlobalData.getChoiceLearningStats().rewardIteration(stats.getStateActions(), iterationCoverage);
+        assert (estimatedCoverage.compareTo(BigDecimal.ONE) <= 0): "Error in path coverage estimation";
+        if (rewardMode != ChoiceLearningRewardMode.None) {
+            for (int i=startDepth; i<=choiceDepth; i++) {
+                CoverageChoiceDepthStats stats = perChoiceDepthStats.get(i);
+                if (stats != null) {
+                    GlobalData.getChoiceLearningStats().rewardIteration(stats.getStateActions(), iterationCoverage, rewardMode);
+                }
             }
         }
     }

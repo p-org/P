@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using PChecker.Runtime;
 using PChecker.SystematicTesting;
+using PChecker.SystematicTesting.Operations;
 using TCS = System.Threading.Tasks.TaskCompletionSource<object>;
 
 namespace PChecker.Tasks.Locks
@@ -141,7 +142,7 @@ namespace PChecker.Tasks.Locks
             /// <inheritdoc/>
             public override Task<Releaser> AcquireAsync()
             {
-                Resource.Runtime.ScheduleNextOperation();
+                Resource.Runtime.ScheduleNextOperation(AsyncOperationType.Join);
 
                 TCS awaiter;
                 if (IsAcquired)
@@ -157,7 +158,7 @@ namespace PChecker.Tasks.Locks
                         // asynchronous operation is blocked, so that it cannot be scheduled during
                         // systematic testing exploration, which could deadlock.
                         Resource.NotifyWait();
-                        Resource.Runtime.ScheduleNextOperation();
+                        Resource.Runtime.ScheduleNextOperation(AsyncOperationType.Join);
                     }
                 }
                 else
@@ -191,7 +192,7 @@ namespace PChecker.Tasks.Locks
                     // This must be called outside the context of the lock, because it notifies
                     // the scheduler to try schedule another asynchronous operation that could
                     // in turn try to acquire this lock causing a deadlock.
-                    Resource.Runtime.ScheduleNextOperation();
+                    Resource.Runtime.ScheduleNextOperation(AsyncOperationType.Release);
                 }
             }
         }

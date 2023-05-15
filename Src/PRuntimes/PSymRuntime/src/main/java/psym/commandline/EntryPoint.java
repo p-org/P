@@ -106,6 +106,7 @@ public class EntryPoint {
         } catch (BugFoundException e) {
             status = "cex";
             scheduler.result = "found cex of length " + scheduler.getDepth();
+            scheduler.isFinalResult = true;
             postprocess();
 
             PSymLogger.setVerbosity(1);

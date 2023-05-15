@@ -47,7 +47,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// <summary>
         /// List of prioritized operations.
         /// </summary>
-        private readonly List<IAsyncOperation> PrioritizedOperations;
+        private readonly List<AsyncOperation> PrioritizedOperations;
 
         /// <summary>
         /// Set of priority change points.
@@ -64,12 +64,12 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             ScheduledSteps = 0;
             ScheduleLength = 0;
             MaxPrioritySwitchPoints = maxPrioritySwitchPoints;
-            PrioritizedOperations = new List<IAsyncOperation>();
+            PrioritizedOperations = new List<AsyncOperation>();
             PriorityChangePoints = new SortedSet<int>();
         }
 
         /// <inheritdoc/>
-        public bool GetNextOperation(IAsyncOperation current, IEnumerable<IAsyncOperation> ops, out IAsyncOperation next)
+        public bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
         {
             next = null;
             var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
@@ -90,7 +90,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         }
 
         /// <inheritdoc/>
-        public bool GetNextBooleanChoice(IAsyncOperation current, int maxValue, out bool next)
+        public bool GetNextBooleanChoice(AsyncOperation current, int maxValue, out bool next)
         {
             next = false;
             if (RandomValueGenerator.Next(maxValue) == 0)
@@ -104,7 +104,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         }
 
         /// <inheritdoc/>
-        public bool GetNextIntegerChoice(IAsyncOperation current, int maxValue, out int next)
+        public bool GetNextIntegerChoice(AsyncOperation current, int maxValue, out int next)
         {
             next = RandomValueGenerator.Next(maxValue);
             ScheduledSteps++;
@@ -163,7 +163,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// <summary>
         /// Returns the prioritized operation.
         /// </summary>
-        private IAsyncOperation GetPrioritizedOperation(List<IAsyncOperation> ops, IAsyncOperation current)
+        private AsyncOperation GetPrioritizedOperation(List<AsyncOperation> ops, AsyncOperation current)
         {
             if (PrioritizedOperations.Count == 0)
             {
@@ -216,9 +216,9 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// <summary>
         /// Returns the highest-priority enabled operation.
         /// </summary>
-        private IAsyncOperation GetHighestPriorityEnabledOperation(IEnumerable<IAsyncOperation> choices)
+        private AsyncOperation GetHighestPriorityEnabledOperation(IEnumerable<AsyncOperation> choices)
         {
-            IAsyncOperation prioritizedOp = null;
+            AsyncOperation prioritizedOp = null;
             foreach (var entity in PrioritizedOperations)
             {
                 if (choices.Any(m => m == entity))

@@ -87,7 +87,9 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     @Override
     public void print_stats(SearchStats.TotalStats totalStats) {
-        recordResult(totalStats);
+        if (!isFinalResult) {
+            recordResult(totalStats);
+        }
         super.print_stats(totalStats);
 
         // print statistics
@@ -444,16 +446,17 @@ public class IterativeBoundedScheduler extends Scheduler {
             return;
         }
 
-        ScratchLogger.log("--------------------");
-        ScratchLogger.log(String.format("    Status after %.2f seconds:", newRuntime));
-        ScratchLogger.log(String.format("      Coverage:         %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
-        ScratchLogger.log(String.format("      Iterations:       %d", (iter - start_iter)));
-        ScratchLogger.log(String.format("      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
-        ScratchLogger.log(String.format("      Finished:         %d", finishedTasks.size()));
-        ScratchLogger.log(String.format("      Remaining:        %d", getTotalNumBacktracks()));
-        ScratchLogger.log(String.format("      Depth:            %d", getDepth()));
-        ScratchLogger.log(String.format("      States:           %d", getTotalStates()));
-        ScratchLogger.log(String.format("      DistinctStates:   %d", getTotalDistinctStates()));
+        StringBuilder str = new StringBuilder("--------------------");
+        str.append(String.format("\n    Status after %.2f seconds:", newRuntime));
+        str.append(String.format("\n      Coverage:         %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
+        str.append(String.format("\n      Iterations:       %d", (iter - start_iter)));
+        str.append(String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
+        str.append(String.format("\n      Finished:         %d", finishedTasks.size()));
+        str.append(String.format("\n      Remaining:        %d", getTotalNumBacktracks()));
+        str.append(String.format("\n      Depth:            %d", getDepth()));
+        str.append(String.format("\n      States:           %d", getTotalStates()));
+        str.append(String.format("\n      DistinctStates:   %d", getTotalDistinctStates()));
+        ScratchLogger.log(str.toString());
     }
 
     public void postIterationCleanup() {
@@ -492,14 +495,17 @@ public class IterativeBoundedScheduler extends Scheduler {
         isDoneIterating = true;
     }
 
-    private void summarizeIteration() throws InterruptedException {
+    private void summarizeIteration(int startDepth) throws InterruptedException {
         if (configuration.getVerbosity() > 3) {
             SearchLogger.logIterationStats(searchStats.getIterationStats().get(iter));
         }
         if (configuration.getMaxExecutions() > 0) {
             isDoneIterating = ((iter - start_iter) >= configuration.getMaxExecutions());
         }
-        GlobalData.getCoverage().updateIterationCoverage(getChoiceDepth()-1, configuration.isChoiceOrchestrationLearning());
+        GlobalData.getCoverage().updateIterationCoverage(
+                getChoiceDepth()-1,
+                startDepth,
+                configuration.getChoiceLearningRewardMode());
 //        GlobalData.getChoiceLearningStats().printQTable();
         if (configuration.getTaskOrchestration() != TaskOrchestrationMode.DepthFirst) {
             setBacktrackTasks();
@@ -579,7 +585,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             searchStats.startNewIteration(iter, backtrackDepth);
             performSearch();
             checkLiveness(false);
-            summarizeIteration();
+            summarizeIteration(backtrackDepth);
         }
     }
 
@@ -605,7 +611,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             searchStats.startNewIteration(iter, backtrackDepth);
             performSearch();
             checkLiveness(false);
-            summarizeIteration();
+            summarizeIteration(backtrackDepth);
             if (resetAfterInitial) {
                 resetAfterInitial = false;
                 GlobalData.getCoverage().resetCoverage();

@@ -69,7 +69,8 @@ namespace PChecker.Testing
 
             if (checkerConfiguration.SchedulingStrategy is "pct" ||
                 checkerConfiguration.SchedulingStrategy is "fairpct" ||
-                checkerConfiguration.SchedulingStrategy is "probabilistic")
+                checkerConfiguration.SchedulingStrategy is "probabilistic" ||
+                checkerConfiguration.SchedulingStrategy is "rl")
             {
                 arguments.Append($"--sch-{checkerConfiguration.SchedulingStrategy} {checkerConfiguration.StrategyBound} ");
             }

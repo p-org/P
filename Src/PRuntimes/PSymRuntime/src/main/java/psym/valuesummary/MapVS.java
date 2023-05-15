@@ -82,18 +82,14 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
 
     @Override
     public MapVS<K, T, V> restrict(Guard guard) {
-        if (guard.isTrue()) {
-            return this;
-        } else if (guard.isFalse()) {
-            return new MapVS<>(guard);
-        }
-
         final SetVS<T> newKeys = keys.restrict(guard);
         final Map<K, V> newEntries = new HashMap<>();
 
-        for (Map.Entry<K, V> entry : entries.entrySet()) {
-            final V newValue = entry.getValue().restrict(guard);
-            newEntries.put(entry.getKey(), newValue);
+        if (!newKeys.isEmptyVS()) {
+            for (Map.Entry<K, V> entry : entries.entrySet()) {
+                final V newValue = entry.getValue().restrict(guard);
+                newEntries.put(entry.getKey(), newValue);
+            }
         }
         return new MapVS<>(newKeys, newEntries);
     }

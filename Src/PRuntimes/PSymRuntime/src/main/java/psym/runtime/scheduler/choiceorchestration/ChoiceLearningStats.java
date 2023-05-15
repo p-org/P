@@ -19,9 +19,11 @@ public class ChoiceLearningStats<S, A> implements Serializable {
     @Getter
     private static BigDecimal defaultQValue = BigDecimal.ZERO;
     @Getter
-    private static BigDecimal ALPHA = BigDecimal.valueOf(0.5);
+    private static BigDecimal defaultReward = BigDecimal.valueOf(-1);
     @Getter
-    private static BigDecimal GAMMA = BigDecimal.valueOf(0.5);
+    private static BigDecimal ALPHA = BigDecimal.valueOf(0.3);
+    @Getter
+    private static BigDecimal GAMMA = BigDecimal.valueOf(0.7);
 
 
     /** State hash corresponding to current environment state */
@@ -46,8 +48,20 @@ public class ChoiceLearningStats<S, A> implements Serializable {
         qValues = new ChoiceQTable();
     }
 
-    public void rewardIteration(ChoiceQTable.ChoiceQTableKey<S, A> stateActions, BigDecimal reward) {
-        reward(stateActions, reward);
+    public void rewardIteration(ChoiceQTable.ChoiceQTableKey<S, A> stateActions, BigDecimal reward, ChoiceLearningRewardMode rewardMode) {
+        switch (rewardMode) {
+            case None:
+                // do nothing
+                break;
+            case Fixed:
+                reward(stateActions, defaultReward);
+                break;
+            case Coverage:
+                reward(stateActions, reward.subtract(defaultReward));
+                break;
+            default:
+                assert (false);
+        }
     }
 
     public void rewardStep(ChoiceQTable.ChoiceQTableKey<S, A> stateActions, int reward) {
@@ -72,6 +86,21 @@ public class ChoiceLearningStats<S, A> implements Serializable {
                 classEntry.update(action, newVal);
             }
         }
+    }
+
+    public int numQStates() {
+        return qValues.size();
+    }
+
+    public int numQValues() {
+        int result = 0;
+        for (S state: qValues.getStates()) {
+            ChoiceQTable.ChoiceQStateEntry stateEntry = qValues.get(state);
+            for (Object cls: stateEntry.getClasses()) {
+                result += stateEntry.get((Class)cls).size();
+            }
+        }
+        return result;
     }
 
     public void printQTable() {
@@ -127,33 +156,133 @@ public class ChoiceLearningStats<S, A> implements Serializable {
         return action.toString();
     }
 
-    public void setProgramStateHash(Scheduler sch) {
-//        List<Object> features = new ArrayList<>();
-//        features.add(sch.getChoiceDepth());
-//        for (Machine m: sch.getMachines()) {
-//            features.add(addMachineFeatures(m));
-//        }
-//        programStateHash = features.toString();
-        programStateHash = sch.getDepth();
+    public void setProgramStateHash(Scheduler sch, ChoiceLearningStateMode mode, PrimitiveVS<Machine> lastChoice) {
+        switch (mode) {
+            case None:
+                setProgramHashNone();
+                break;
+            case SchedulerDepth:
+                setProgramHashDepth(sch.getDepth());
+                break;
+            case LastStep:
+                setProgramHashLastStep(lastChoice);
+                break;
+            case MachineState:
+                setProgramHashMachineState(sch);
+                break;
+            case MachineStateAndLastStep:
+                setProgramHashMachineStateAndLastStep(sch, lastChoice);
+                break;
+            case MachineStateAndEvents:
+                setProgramHashMachineStateEvents(sch);
+                break;
+            case FullState:
+                setProgramHashFullState(sch);
+                break;
+            default:
+                assert (false);
+        }
     }
 
-    private List<Object> addMachineFeatures(Machine source) {
-        List<Object> features = new ArrayList<>();
-        features.add(source);
-//        features.add(source.getLocalState());
-        for (State state: source.getCurrentState().getValues()) {
-            features.add(state);
-        }
-        if (!source.sendBuffer.isEmpty()) {
-            Message msg = source.sendBuffer.peek(Guard.constTrue());
-            for (Machine target: msg.getTarget().getValues()) {
-                features.add(target);
-            }
-            for (Event event: msg.getEvent().getValues()) {
-                features.add(event);
-                features.add(msg.getPayloadFor(event));
-            }
-        }
-        return features;
+    private void setProgramHashNone() {
+        programStateHash = 0;
     }
+
+    private void setProgramHashDepth(int depth) {
+        programStateHash = depth;
+    }
+
+    private void setProgramHashLastStep(PrimitiveVS<Machine> lastChoice) {
+        if (lastChoice != null) {
+            List<Object> features = new ArrayList<>();
+            for (Machine m : lastChoice.getValues()) {
+                features.add(m);
+                for (State state : m.getCurrentState().getValues()) {
+                    features.add(state);
+                }
+                if (!m.sendBuffer.isEmpty()) {
+                    Message msg = m.sendBuffer.peek(Guard.constTrue());
+                    for (Machine target : msg.getTarget().getValues()) {
+                        features.add(target);
+                    }
+                    for (Event event : msg.getEvent().getValues()) {
+                        features.add(event);
+//                        features.add(msg.getPayloadFor(event));
+                    }
+                }
+            }
+            programStateHash = features.toString();
+        }
+    }
+
+    private void setProgramHashMachineState(Scheduler sch) {
+        List<Object> features = new ArrayList<>();
+        for (Machine m: sch.getMachines()) {
+            features.add(m);
+            for (State state: m.getCurrentState().getValues()) {
+                features.add(state);
+            }
+        }
+        programStateHash = features.toString();
+    }
+
+    private void setProgramHashMachineStateAndLastStep(Scheduler sch, PrimitiveVS<Machine> lastChoice) {
+        List<Object> features = new ArrayList<>();
+        for (Machine m: sch.getMachines()) {
+            features.add(m);
+            for (State state: m.getCurrentState().getValues()) {
+                features.add(state);
+            }
+        }
+        if (lastChoice != null) {
+            for (Machine m : lastChoice.getValues()) {
+                features.add(m);
+                for (State state : m.getCurrentState().getValues()) {
+                    features.add(state);
+                }
+                if (!m.sendBuffer.isEmpty()) {
+                    Message msg = m.sendBuffer.peek(Guard.constTrue());
+                    for (Machine target : msg.getTarget().getValues()) {
+                        features.add(target);
+                    }
+                    for (Event event : msg.getEvent().getValues()) {
+                        features.add(event);
+//                        features.add(msg.getPayloadFor(event));
+                    }
+                }
+            }
+        }
+        programStateHash = features.toString();
+    }
+
+    private void setProgramHashMachineStateEvents(Scheduler sch) {
+        List<Object> features = new ArrayList<>();
+        for (Machine m: sch.getMachines()) {
+            features.add(m);
+            for (State state: m.getCurrentState().getValues()) {
+                features.add(state);
+            }
+            if (!m.sendBuffer.isEmpty()) {
+                Message msg = m.sendBuffer.peek(Guard.constTrue());
+                for (Machine target: msg.getTarget().getValues()) {
+                    features.add(target);
+                }
+                for (Event event: msg.getEvent().getValues()) {
+                    features.add(event);
+//                    features.add(msg.getPayloadFor(event));
+                }
+            }
+        }
+        programStateHash = features.toString();
+    }
+
+    private void setProgramHashFullState(Scheduler sch) {
+        List<Object> features = new ArrayList<>();
+        for (Machine m: sch.getMachines()) {
+            features.add(m);
+            features.add(m.getLocalState());
+        }
+        programStateHash = features.toString();
+    }
+
 }

@@ -659,8 +659,11 @@ namespace PChecker.Specifications.Monitors
                 hash = (hash * 31) + GetType().GetHashCode();
                 hash = (hash * 31) + CurrentState.GetHashCode();
 
-                // Adds the user-defined hashed state.
-                hash = (hash * 31) + HashedState;
+                if (HashedState != 0)
+                {
+                    // Adds the user-defined hashed state.
+                    hash = (hash * 31) + HashedState;
+                }
 
                 return hash;
             }

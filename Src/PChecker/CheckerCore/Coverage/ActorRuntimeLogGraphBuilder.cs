@@ -387,13 +387,13 @@ namespace PChecker.Coverage
 
         /// <inheritdoc/>
         public void OnMonitorProcessEvent(string monitorType, string stateName, string senderName, string senderType,
-            string senderStateName, string eventName)
+            string senderStateName, Event e)
         {
             lock (Inbox)
             {
                 // Now add a fake event for internal monitor state transition that might now happen as a result of this event,
                 // storing the monitor's current state in this event.
-                var info = AddEvent(monitorType, monitorType, monitorType, monitorType, stateName, eventName);
+                var info = AddEvent(monitorType, monitorType, monitorType, monitorType, stateName, e.GetType().Name);
 
                 // Draw the link connecting the Sender state to this state!
                 var source = GetOrCreateChild(senderName, senderType, senderStateName);

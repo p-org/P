@@ -129,7 +129,7 @@ namespace PChecker.SystematicTesting
                 }
                 else
                 {
-                    Error.ReportAndExit("Cannot detect a P test case. Please report this to the P team");
+                    Error.ReportAndExit("Cannot detect a P test case to check.\n -- If you have a test case specified and P checker is not finding it, please report this error to the P team --");
                 }
             }
             else if (filteredTestMethods.Count > 1)

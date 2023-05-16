@@ -17,6 +17,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -43,6 +44,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     private int numPendingDataBacktracks = 0;
     private boolean isDoneIterating = false;
     private final ChoiceOrchestrator choiceOrchestrator;
+    private transient Instant lastReportTime = Instant.now();
 
     public IterativeBoundedScheduler(PSymConfiguration config, Program p) {
         super(config, p);
@@ -81,6 +83,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     public void print_stats() {
+        printProgress(true);
         SearchStats.TotalStats totalStats = searchStats.getSearchTotal();
         print_stats(totalStats);
     }
@@ -112,10 +115,15 @@ public class IterativeBoundedScheduler extends Scheduler {
         GlobalData.getCoverage().reportChoiceCoverage();
 
         if (configuration.isUseStateCaching()) {
-            SearchLogger.log(String.format("Distinct States Explored:: %d", getTotalDistinctStates()));
+            SearchLogger.log(String.format("Distinct States Explored %d", getTotalDistinctStates()));
         }
-        SearchLogger.log(String.format("Estimated Coverage:: %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
-        StatWriter.log("coverage-%", String.format("%.20f", GlobalData.getCoverage().getEstimatedCoverage(20)));
+        BigDecimal coverage = GlobalData.getCoverage().getEstimatedCoverage(22);
+        SearchLogger.log(String.format("Progress Guarantee       %.12f", GlobalData.getCoverage().getEstimatedCoverage(12)));
+        StatWriter.log("progress", String.format("%.22f", coverage));
+
+        String coverageGoalAchieved = GlobalData.getCoverage().getCoverageGoalAchieved();
+        SearchLogger.log(String.format("Coverage Goal Achieved   %s", coverageGoalAchieved));
+        StatWriter.log("coverage-achieved", String.format("%s", coverageGoalAchieved));
     }
 
     void recordResult(SearchStats.TotalStats totalStats) {
@@ -384,13 +392,13 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     private void printProgressHeader(boolean consolePrint) {
         StringBuilder s = new StringBuilder(100);
-        s.append(StringUtils.center("Time", 12));
-        s.append(StringUtils.center("Memory", 12));
-        s.append(StringUtils.center("Depth", 10));
+        s.append(StringUtils.center("Time", 11));
+        s.append(StringUtils.center("Memory", 9));
+        s.append(StringUtils.center("Depth", 7));
         if (configuration.isIterative()) {
             s.append(StringUtils.center("Iteration", 12));
             s.append(StringUtils.center("Remaining", 24));
-            s.append(StringUtils.center("Coverage", 18));
+            s.append(StringUtils.center("Progress", 24));
         }
         if (configuration.isUseStateCaching()) {
             s.append(StringUtils.center("States", 12));
@@ -404,7 +412,11 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     private void printProgress(boolean forcePrint) {
-        if (forcePrint || configuration.isSymbolic() || (configuration.getCollectStats() > 1)) {
+        if (forcePrint
+                || configuration.isSymbolic()
+                || (configuration.getCollectStats() > 1)
+                || (TimeMonitor.getInstance().findInterval(lastReportTime) > 5)) {
+            lastReportTime = Instant.now();
             double newRuntime = TimeMonitor.getInstance().getRuntime();
             printCurrentStatus(newRuntime);
             boolean consolePrint = (configuration.getVerbosity() == 0);
@@ -421,13 +433,17 @@ public class IterativeBoundedScheduler extends Scheduler {
                     PSymLogger.info("--------------------");
                     printProgressHeader(false);
                 }
-                s.append(StringUtils.center(String.format("%s", runtimeHms), 12));
-                s.append(StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 12));
-                s.append(StringUtils.center(String.format("%d", getDepth()), 10));
+                s.append(StringUtils.center(String.format("%s", runtimeHms), 11));
+                s.append(StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 9));
+                s.append(StringUtils.center(String.format("%d", getDepth()), 7));
                 if (configuration.isIterative()) {
                     s.append(StringUtils.center(String.format("%d", (iter - start_iter)), 12));
                     s.append(StringUtils.center(String.format("%d (%.0f %% data)", getTotalNumBacktracks(), getTotalDataBacktracksPercent()), 24));
-                    s.append(StringUtils.center(String.format("%.10f %%", GlobalData.getCoverage().getEstimatedCoverage()), 18));
+                    s.append(StringUtils.center(
+                            String.format("%.12f (%s)",
+                                GlobalData.getCoverage().getEstimatedCoverage(12),
+                                GlobalData.getCoverage().getCoverageGoalAchieved()),
+                            24));
                 }
                 if (configuration.isUseStateCaching()) {
                     s.append(StringUtils.center(String.format("%d", getTotalDistinctStates()), 12));
@@ -448,7 +464,7 @@ public class IterativeBoundedScheduler extends Scheduler {
 
         StringBuilder str = new StringBuilder("--------------------");
         str.append(String.format("\n    Status after %.2f seconds:", newRuntime));
-        str.append(String.format("\n      Coverage:         %.10f %%", GlobalData.getCoverage().getEstimatedCoverage()));
+        str.append(String.format("\n      Progress:         %.12f", GlobalData.getCoverage().getEstimatedCoverage(12)));
         str.append(String.format("\n      Iterations:       %d", (iter - start_iter)));
         str.append(String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
         str.append(String.format("\n      Finished:         %d", finishedTasks.size()));
@@ -517,7 +533,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                 }
             }
         }
-        printProgress(true);
+        printProgress(false);
         if (!isDoneIterating) {
             postIterationCleanup();
 //            if ((iter % 100) == 0) {

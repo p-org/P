@@ -21,7 +21,6 @@ import java.util.List;
  * Class to track all coverage statistics
  */
 public class CoverageStats implements Serializable {
-    private static final BigDecimal hundred = BigDecimal.valueOf(100);
     /**
      * Estimated state-space coverage
      */
@@ -220,15 +219,33 @@ public class CoverageStats implements Serializable {
        }
    }
 
-    /**
-     * Return estimated state-space coverage between 0 - 100%
-     */
-    public BigDecimal getEstimatedCoverage() {
-        return getEstimatedCoverage(10);
+//    /**
+//     * Return estimated state-space coverage between 0 - 100%
+//     */
+//    public BigDecimal getEstimatedCoverage() {
+//        return getEstimatedCoverage(12);
+//    }
+
+    public String getCoverageGoalAchieved() {
+        String coverageString = String.format("%.22f", getEstimatedCoverage(22));
+        String coverageGoal = "?";
+        if (coverageString.startsWith("1.")) {
+            coverageGoal = "100%%";
+        } else if (coverageString.startsWith("0.")) {
+            int numNines = 0;
+            for (int i=2; i<coverageString.length(); i++) {
+                if (coverageString.charAt(i) != '9') {
+                    break;
+                }
+                numNines++;
+            }
+            coverageGoal = String.format("%d 9s", numNines);
+        }
+        return coverageGoal;
     }
 
     public BigDecimal getEstimatedCoverage(int scale) {
-        return estimatedCoverage.multiply(hundred).setScale(scale, RoundingMode.FLOOR);
+        return estimatedCoverage.setScale(scale, RoundingMode.FLOOR);
     }
 
     /**

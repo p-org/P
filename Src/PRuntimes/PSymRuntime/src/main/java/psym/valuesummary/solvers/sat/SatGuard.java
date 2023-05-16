@@ -33,14 +33,14 @@ public class SatGuard implements SolverLib<SatExpr> {
                 break;
             case MONOSAT:	            satImpl = new MonoSat();
                 break;
-            case JAVASMT_BOOLECTOR:
-            case JAVASMT_CVC4:
-            case JAVASMT_MATHSAT5:
-            case JAVASMT_PRINCESS:
-            case JAVASMT_SMTINTERPOL:
-            case JAVASMT_YICES2:
-            case JAVASMT_Z3:            satImpl = new JavaSmtImpl(type);
-                break;
+//            case JAVASMT_BOOLECTOR:
+//            case JAVASMT_CVC4:
+//            case JAVASMT_MATHSAT5:
+//            case JAVASMT_PRINCESS:
+//            case JAVASMT_SMTINTERPOL:
+//            case JAVASMT_YICES2:
+//            case JAVASMT_Z3:            satImpl = new JavaSmtImpl(type);
+//                break;
             default:
                 throw new RuntimeException("Unexpected solver configuration of type " + type);
         }

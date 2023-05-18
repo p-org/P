@@ -27,7 +27,9 @@
 using PChecker;
 using PChecker.SystematicTesting;
 using System;
+using System.IO;
 using System.Linq;
+using PChecker.Actors;
 
 namespace PImplementation
 {
@@ -35,7 +37,7 @@ namespace PImplementation
         public static void Main(string[] args)
         {
             /*
-            Configuration configuration = Configuration.Create();
+            CheckerConfiguration configuration = CheckerConfiguration.Create();
             configuration.WithVerbosityEnabled(true);
             // update the path to the schedule file.
             string schedule = File.ReadAllText(""absolute path to *.schedule file"");

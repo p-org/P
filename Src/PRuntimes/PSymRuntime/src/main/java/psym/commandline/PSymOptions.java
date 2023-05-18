@@ -252,7 +252,7 @@ public class PSymOptions {
         // solver type
         Option solverType = Option.builder()
                 .longOpt("solver")
-                .desc("Solver type to use: bdd, yices2, z3, cvc5 (default: bdd)")
+                .desc("Solver type to use: bdd, yices2, monosat, z3, cvc5 (default: bdd)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Solver Type (string)")
@@ -654,18 +654,18 @@ public class PSymOptions {
                         case "monosat":
                             config.setSolverType(SolverType.MONOSAT);
                             break;
-                        case "boolector":
-                            config.setSolverType(SolverType.JAVASMT_BOOLECTOR);
-                            break;
-                        case "mathsat5":
-                            config.setSolverType(SolverType.JAVASMT_MATHSAT5);
-                            break;
-                        case "princess":
-                            config.setSolverType(SolverType.JAVASMT_PRINCESS);
-                            break;
-                        case "smtinterpol":
-                            config.setSolverType(SolverType.JAVASMT_SMTINTERPOL);
-                            break;
+//                        case "boolector":
+//                            config.setSolverType(SolverType.JAVASMT_BOOLECTOR);
+//                            break;
+//                        case "mathsat5":
+//                            config.setSolverType(SolverType.JAVASMT_MATHSAT5);
+//                            break;
+//                        case "princess":
+//                            config.setSolverType(SolverType.JAVASMT_PRINCESS);
+//                            break;
+//                        case "smtinterpol":
+//                            config.setSolverType(SolverType.JAVASMT_SMTINTERPOL);
+//                            break;
                         default:
                             optionError(option, String.format("Expected a solver type, got %s", option.getValue()));
                     }

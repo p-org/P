@@ -43,7 +43,7 @@
       <version>${pjbdd.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.github.p-org.solvers</groupId>
+      <groupId>io.github.p-org</groupId>
       <artifactId>abc</artifactId>
       <version>${abc.version}</version>
     </dependency>
@@ -68,11 +68,6 @@
       <version>${cvc5.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sosy-lab</groupId>
-      <artifactId>java-smt</artifactId>
-      <version>3.14.3</version>
-    </dependency>
-    <dependency>
       <groupId>commons-cli</groupId>
       <artifactId>commons-cli</artifactId>
       <version>1.5.0</version>
@@ -86,12 +81,12 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
-      <version>5.9.1</version>
+      <version>[5.8.2,)</version>
     </dependency>
     <dependency>
       <groupId>org.jooq</groupId>
-      <artifactId>joor</artifactId>
-      <version>0.9.14</version>
+      <artifactId>joor-java-8</artifactId>
+      <version>[0.9.12,)</version>
     </dependency>
     <dependency>
       <groupId>org.jetbrains</groupId>
@@ -117,17 +112,17 @@
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-api</artifactId>
-      <version>2.19.0</version>
+      <version>[2.8.1,)</version>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
-      <version>2.19.0</version>
+      <version>[2.8.1,)</version>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j-impl</artifactId>
-      <version>2.19.0</version>
+      <version>[2.6.2,)</version>
     </dependency>
     <dependency>
       <groupId>backport-util-concurrent</groupId>
@@ -428,7 +423,7 @@
     <maven.compiler.target>11</maven.compiler.target>
     <log4j2.configurationFile>${project.basedir}/src/main/resources/log4j2.xml</log4j2.configurationFile>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <revision>1.0.2</revision>
+    <revision>1.0.4</revision>
 
     <deps.path>${project.basedir}/../../../Bld</deps.path>
 
@@ -437,7 +432,7 @@
     <pjbdd.jarpath>${pjbdd.path}/pjbdd-${pjbdd.version}.jar</pjbdd.jarpath>
     <pjbdd.pompath>${pjbdd.path}/pjbdd-${pjbdd.version}.pom</pjbdd.pompath>
 
-    <abc.version>1.0.1-v5</abc.version>
+    <abc.version>1.0.2</abc.version>
     <abc.path>${deps.path}/Deps/abc</abc.path>
     <abc.jarpath>${abc.path}/abc-${abc.version}.jar</abc.jarpath>
     <abc.pompath>${abc.path}/abc-${abc.version}.pom</abc.pompath>

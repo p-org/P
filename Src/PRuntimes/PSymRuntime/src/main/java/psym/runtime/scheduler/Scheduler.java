@@ -463,7 +463,7 @@ public class Scheduler implements SymbolicSearch {
         StatWriter.log("memory-max-MB", String.format("%.1f", MemoryMonitor.getMaxMemSpent()));
         StatWriter.log("memory-current-MB", String.format("%.1f", memoryUsed));
         StatWriter.log("max-depth-explored", String.format("%d", totalStats.getDepthStats().getDepth()));
-        SearchLogger.log(String.format("Max Depth Explored:: %d", totalStats.getDepthStats().getDepth()));
+        SearchLogger.log(String.format("Max Depth Explored       %d", totalStats.getDepthStats().getDepth()));
 
         // print solver statistics
         StatWriter.log("time-create-guards-%", String.format("%.1f", SolverStats.getDoublePercent(SolverStats.timeTotalCreateGuards/1000.0, timeUsed)));

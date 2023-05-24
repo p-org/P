@@ -118,12 +118,15 @@ public class IterativeBoundedScheduler extends Scheduler {
             SearchLogger.log(String.format("Distinct States Explored %d", getTotalDistinctStates()));
         }
         BigDecimal coverage = GlobalData.getCoverage().getEstimatedCoverage(22);
-        SearchLogger.log(String.format("Progress Guarantee       %.12f", GlobalData.getCoverage().getEstimatedCoverage(12)));
-        StatWriter.log("progress", String.format("%.22f", coverage));
-
         String coverageGoalAchieved = GlobalData.getCoverage().getCoverageGoalAchieved();
-        SearchLogger.log(String.format("Coverage Goal Achieved   %s", coverageGoalAchieved));
+
+        StatWriter.log("progress", String.format("%.22f", coverage));
         StatWriter.log("coverage-achieved", String.format("%s", coverageGoalAchieved));
+
+        if (configuration.isIterative()) {
+            SearchLogger.log(String.format("Progress Guarantee       %.12f", GlobalData.getCoverage().getEstimatedCoverage(12)));
+            SearchLogger.log(String.format("Coverage Goal Achieved   %s", coverageGoalAchieved));
+        }
     }
 
     void recordResult(SearchStats.TotalStats totalStats) {

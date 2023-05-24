@@ -6,6 +6,7 @@ import psym.runtime.scheduler.IterativeBoundedScheduler;
 import psym.runtime.scheduler.ReplayScheduler;
 import psym.utils.BugFoundException;
 import psym.utils.LivenessException;
+import psym.utils.MemoryMonitor;
 import psym.utils.TimeMonitor;
 import psym.valuesummary.Guard;
 import psym.valuesummary.solvers.SolverEngine;
@@ -33,6 +34,8 @@ public class EntryPoint {
             throw e;
         } catch (BugFoundException e) {
             throw e;
+        } catch (OutOfMemoryError e) {
+            throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent());
         } catch (ExecutionException e) {
             if (e.getCause() instanceof MemoutException) {
                 throw (MemoutException)e.getCause();
@@ -100,7 +103,7 @@ public class EntryPoint {
         } catch (TimeoutException e) {
             status = "timeout";
             throw new Exception("TIMEOUT");
-        } catch (MemoutException e) {
+        } catch (MemoutException | OutOfMemoryError e) {
             status = "memout";
             throw new Exception("MEMOUT");
         } catch (BugFoundException e) {

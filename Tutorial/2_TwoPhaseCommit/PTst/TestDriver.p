@@ -65,7 +65,7 @@ machine SingleClientNoFailure {
 }
 
 /*
-This machine creates the 3 participants, 1 coordinator, and 1 clients
+This machine creates the 3 participants, 1 coordinator, and 2 clients
 */
 machine MultipleClientsNoFailure {
   start state Init {

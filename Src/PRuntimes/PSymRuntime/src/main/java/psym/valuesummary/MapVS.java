@@ -317,6 +317,16 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
     }
 
     @Override
+    public int getConcreteHash() {
+        int hashCode = 1;
+        for (Map.Entry<K, V> entry : entries.entrySet()) {
+            hashCode = 31*hashCode + (entry.getKey()==null ? 0 : entry.getKey().hashCode());
+            hashCode = 31*hashCode + (entry.getValue()==null ? 0 : entry.getValue().getConcreteHash());
+        }
+        return hashCode;
+    }
+
+    @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
         out.append("Map[");

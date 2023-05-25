@@ -289,6 +289,19 @@ public class Message implements ValueSummary<Message> {
     }
 
     @Override
+    public int getConcreteHash() {
+        int hashCode = 1;
+        hashCode = 31*hashCode + (target==null ? 0 : target.getConcreteHash());
+        hashCode = 31*hashCode + (event==null ? 0 : event.getConcreteHash());
+        for (Map.Entry<Event, UnionVS> entry : payload.entrySet()) {
+            hashCode = 31*hashCode + (entry.getKey()==null ? 0 : entry.getKey().hashCode());
+            hashCode = 31*hashCode + (entry.getValue()==null ? 0 : entry.getValue().getConcreteHash());
+        }
+        hashCode = 31*hashCode + (clock==null ? 0 : clock.getConcreteHash());
+        return hashCode;
+    }
+
+    @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
         out.append("{");

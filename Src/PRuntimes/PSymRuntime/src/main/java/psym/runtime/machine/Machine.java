@@ -22,6 +22,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     private static int numMachines = 0;
 
     private EventBufferSemantics semantics;
+    @Getter
     private final String name;
     @Getter
     private final int instanceId;

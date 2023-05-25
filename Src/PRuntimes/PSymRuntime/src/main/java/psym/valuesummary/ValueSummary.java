@@ -283,4 +283,11 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
      * @return A string
      */
     String toStringDetailed();
+
+    /**
+     * Get a concrete hash code
+     *
+     * @return An int
+     */
+    int getConcreteHash();
 }

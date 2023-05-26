@@ -20,5 +20,5 @@ jobs:
         java-version: 11
     - name: Build
       run: dotnet build --configuration Release
-    - name: Test Tutorials
-      run: ./
+    - name: Compile Tutorials
+      run: ./Src/Scripts/TutorialsChecker/compile.sh ./Tutorial

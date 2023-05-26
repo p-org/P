@@ -18,7 +18,7 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
-    - name: Build
-      run: dotnet build --configuration Release
+    - name: Install P as a tool
+      run: dotnet tool install --global p 
     - name: Compile Tutorials
       run: ./Src/Scripts/TutorialsChecker/compile.sh ./Tutorial

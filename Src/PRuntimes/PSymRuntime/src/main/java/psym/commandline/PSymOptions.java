@@ -11,6 +11,7 @@ import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestratorEpsilonGreed
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
 import psym.utils.GlobalData;
+import psym.utils.StateHashingMode;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -128,12 +129,14 @@ public class PSymOptions {
         // Search prioritization options
 
         // whether or not to disable state caching
-        Option noStateCaching = Option.builder("nsc")
-                .longOpt("no-state-caching")
-                .desc("Disable state caching")
-                .numberOfArgs(0)
+        Option stateHashing = Option.builder("sh")
+                .longOpt("state-hashing")
+                .desc("State hashing mode: none, exact, fast (default: exact)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Hashing Mode (string)")
                 .build();
-        options.addOption(noStateCaching);
+        options.addOption(stateHashing);
 
         // mode of choice orchestration
         Option choiceOrch = Option.builder("corch")
@@ -491,9 +494,21 @@ public class PSymOptions {
                     config.setFailOnMaxStepBound(true);
                     break;
                 // search options
-                case "nsc":
-                case "no-state-caching":
-                    config.setUseStateCaching(false);
+                case "sh":
+                case "state-hashing":
+                    switch (option.getValue()) {
+                        case "none":
+                            config.setStateHashingMode(StateHashingMode.None);
+                            break;
+                        case "exact":
+                            config.setStateHashingMode(StateHashingMode.Exact);
+                            break;
+                        case "fast":
+                            config.setStateHashingMode(StateHashingMode.Fast);
+                            break;
+                        default:
+                            optionError(option, String.format("Unrecognized state hashing mode, got %s", option.getValue()));
+                    }
                     break;
                 case "corch":
                 case "choice-orch":

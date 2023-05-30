@@ -20,6 +20,7 @@ import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
 import psym.utils.GlobalData;
 import psym.utils.MemoryMonitor;
+import psym.utils.StateHashingMode;
 import psym.utils.TimeMonitor;
 import psym.valuesummary.*;
 import psym.valuesummary.solvers.SolverEngine;
@@ -548,7 +549,7 @@ public class Scheduler implements SymbolicSearch {
 //        executionFinished = guardedMachines.isEmpty();
         executionFinished = guardedMachines.stream().map(x -> x.getGuard().and(schedule.getFilter())).filter(x -> !(x.isFalse())).collect(Collectors.toList()).isEmpty();
 
-        if (configuration.isUseStateCaching()) {
+        if (configuration.getStateHashingMode() != StateHashingMode.None) {
             if (distinctStateGuard != null) {
                 guardedMachines = filterDistinct(guardedMachines);
             }
@@ -699,12 +700,12 @@ public class Scheduler implements SymbolicSearch {
      * Enumerate concrete states from explicit
      * @return number of concrete states represented by the symbolic state
      */
-    public int[] enumerateConcreteStatesFromExplicit() {
+    public int[] enumerateConcreteStatesFromExplicit(StateHashingMode mode) {
         if (configuration.getVerbosity() > 5) {
             PSymLogger.info(globalStateString());
         }
 
-        if (stickyStep || (choiceDepth <= backtrackDepth)) {
+        if (stickyStep || (choiceDepth <= backtrackDepth) || (mode == StateHashingMode.None)) {
             distinctStateGuard = Guard.constTrue();
             return new int[]{0, 0};
         }
@@ -715,12 +716,15 @@ public class Scheduler implements SymbolicSearch {
             List<ValueSummary> machineStateSymbolic = srcState.get(m);
             List<Object> machineStateConcrete = new ArrayList<>();
             for (int j = 0; j < machineStateSymbolic.size(); j++) {
-                int varValue = machineStateSymbolic.get(j).getConcreteHash();
-//                GuardedValue<?> guardedValue = Concretizer.concretize(machineStateSymbolic.get(j));
-//                Object varValue = null;
-//                if (guardedValue != null) {
-//                    varValue = guardedValue.getValue();
-//                }
+                Object varValue = null;
+                if (mode == StateHashingMode.Fast) {
+                    varValue = machineStateSymbolic.get(j).getConcreteHash();
+                } else {
+                    GuardedValue<?> guardedValue = Concretizer.concretize(machineStateSymbolic.get(j));
+                    if (guardedValue != null) {
+                        varValue = guardedValue.getValue();
+                    }
+                }
                 machineStateConcrete.add(varValue);
             }
             globalStateConcrete.add(machineStateConcrete);
@@ -806,7 +810,7 @@ public class Scheduler implements SymbolicSearch {
                     totalDistinctStateCount += 1;
                     numDistinctConcreteStates += 1;
                     distinctStates.add(concreteState);
-                    if (configuration.isUseStateCaching()) {
+                    if (configuration.getStateHashingMode() != StateHashingMode.None) {
                         distinctStateGuard = distinctStateGuard.or(concreteStateGuard);
                     }
                     if (configuration.getVerbosity() > 4) {
@@ -834,13 +838,13 @@ public class Scheduler implements SymbolicSearch {
         int numMessagesMerged = 0;
         int numMessagesExplored = 0;
 
-        if (configuration.getCollectStats() > 3 || configuration.isUseStateCaching()) {
+        if (configuration.getCollectStats() > 3 || (configuration.getStateHashingMode() != StateHashingMode.None)) {
             storeSrcState();
             int[] numConcrete;
             if (configuration.isSymbolic()) {
                 numConcrete = enumerateConcreteStatesFromSymbolic(Concretizer::concretize);
             } else {
-                numConcrete = enumerateConcreteStatesFromExplicit();
+                numConcrete = enumerateConcreteStatesFromExplicit(configuration.getStateHashingMode());
             }
             numStates = numConcrete[0];
             numStatesDistinct = numConcrete[1];

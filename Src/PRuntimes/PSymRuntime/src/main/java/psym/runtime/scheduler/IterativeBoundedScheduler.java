@@ -114,7 +114,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void reportEstimatedCoverage() {
         GlobalData.getCoverage().reportChoiceCoverage();
 
-        if (configuration.isUseStateCaching()) {
+        if (configuration.getStateHashingMode() != StateHashingMode.None) {
             SearchLogger.log(String.format("Distinct States Explored %d", getTotalDistinctStates()));
         }
 
@@ -406,7 +406,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             s.append(StringUtils.center("Remaining", 24));
             s.append(StringUtils.center("Progress", 24));
         }
-        if (configuration.isUseStateCaching()) {
+        if (configuration.getStateHashingMode() != StateHashingMode.None) {
             s.append(StringUtils.center("States", 12));
         }
 
@@ -451,7 +451,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                                 GlobalData.getCoverage().getCoverageGoalAchieved()),
                             24));
                 }
-                if (configuration.isUseStateCaching()) {
+                if (configuration.getStateHashingMode() != StateHashingMode.None) {
                     s.append(StringUtils.center(String.format("%d", getTotalDistinctStates()), 12));
                 }
                 if (consolePrint) {

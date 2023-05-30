@@ -6,6 +6,7 @@ import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
+import psym.utils.StateHashingMode;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -77,7 +78,7 @@ public class PSymConfiguration implements Serializable {
 
     // use state caching
     @Getter @Setter
-    boolean useStateCaching = true;
+    StateHashingMode stateHashingMode = StateHashingMode.Exact;
 
     // use backtracking
     @Getter @Setter
@@ -208,7 +209,7 @@ public class PSymConfiguration implements Serializable {
         this.setStrategy("symex");
         this.setSchedChoiceBound(0);
         this.setDataChoiceBound(0);
-        this.setUseStateCaching(false);
+        this.setStateHashingMode(StateHashingMode.None);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
         this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
     }
@@ -217,7 +218,7 @@ public class PSymConfiguration implements Serializable {
         this.setStrategy("fuzz");
         this.setSchedChoiceBound(1);
         this.setDataChoiceBound(1);
-        this.setUseStateCaching(false);
+        this.setStateHashingMode(StateHashingMode.None);
         this.setUseBacktrack(false);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
         this.setTaskOrchestration(TaskOrchestrationMode.Random);

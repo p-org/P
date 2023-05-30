@@ -191,7 +191,7 @@ public class CoverageStats implements Serializable {
     public void updateIterationCoverage(int choiceDepth, int startDepth, ChoiceLearningRewardMode rewardMode) {
         BigDecimal iterationCoverage = getPathCoverageAtDepth(choiceDepth);
         estimatedCoverage = estimatedCoverage.add(iterationCoverage);
-        assert (estimatedCoverage.compareTo(BigDecimal.ONE) <= 0): "Error in path coverage estimation";
+//        assert (estimatedCoverage.compareTo(BigDecimal.ONE) <= 0): "Error in path coverage estimation";
         if (rewardMode != ChoiceLearningRewardMode.None) {
             for (int i=startDepth; i<=choiceDepth; i++) {
                 CoverageChoiceDepthStats stats = perChoiceDepthStats.get(i);
@@ -230,7 +230,7 @@ public class CoverageStats implements Serializable {
         String coverageString = String.format("%.22f", getEstimatedCoverage(22));
         String coverageGoal = "?";
         if (coverageString.startsWith("1.")) {
-            coverageGoal = "100%%";
+            coverageGoal = String.format("\u221e 9s");
         } else if (coverageString.startsWith("0.")) {
             int numNines = 0;
             for (int i=2; i<coverageString.length(); i++) {

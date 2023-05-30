@@ -117,7 +117,10 @@ public class IterativeBoundedScheduler extends Scheduler {
         if (configuration.isUseStateCaching()) {
             SearchLogger.log(String.format("Distinct States Explored %d", getTotalDistinctStates()));
         }
+
         BigDecimal coverage = GlobalData.getCoverage().getEstimatedCoverage(22);
+        assert (coverage.compareTo(BigDecimal.ONE) <= 0): "Error in progress estimation";
+
         String coverageGoalAchieved = GlobalData.getCoverage().getCoverageGoalAchieved();
 
         StatWriter.log("progress", String.format("%.22f", coverage));

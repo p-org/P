@@ -3,7 +3,6 @@ package psym.runtime.scheduler.symmetry;
 import psym.runtime.machine.Machine;
 import psym.valuesummary.*;
 
-import javax.crypto.Mac;
 import java.util.*;
 
 public class SymmetryTracker {
@@ -14,14 +13,7 @@ public class SymmetryTracker {
     }
 
     public SymmetryTracker(SymmetryTracker rhs) {
-        typeToSymmetrySet = new HashMap<>();
-        for (Map.Entry<String, SetVS<PrimitiveVS<Machine>>> entry: rhs.typeToSymmetrySet.entrySet()) {
-            if (entry.getValue() == null) {
-                typeToSymmetrySet.put(entry.getKey(), null);
-            } else {
-                typeToSymmetrySet.put(entry.getKey(), entry.getValue().getCopy());
-            }
-        }
+        typeToSymmetrySet = new HashMap<>(rhs.typeToSymmetrySet);
     }
 
     public void reset() {

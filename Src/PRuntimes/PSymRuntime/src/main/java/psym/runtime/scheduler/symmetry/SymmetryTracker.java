@@ -3,6 +3,7 @@ package psym.runtime.scheduler.symmetry;
 import psym.runtime.machine.Machine;
 import psym.valuesummary.*;
 
+import javax.crypto.Mac;
 import java.util.*;
 
 public class SymmetryTracker {
@@ -10,6 +11,17 @@ public class SymmetryTracker {
 
     public SymmetryTracker() {
         typeToSymmetrySet = new HashMap<>();
+    }
+
+    public SymmetryTracker(SymmetryTracker rhs) {
+        typeToSymmetrySet = new HashMap<>();
+        for (Map.Entry<String, SetVS<PrimitiveVS<Machine>>> entry: rhs.typeToSymmetrySet.entrySet()) {
+            if (entry.getValue() == null) {
+                typeToSymmetrySet.put(entry.getKey(), null);
+            } else {
+                typeToSymmetrySet.put(entry.getKey(), entry.getValue().getCopy());
+            }
+        }
     }
 
     public void reset() {
@@ -34,8 +46,12 @@ public class SymmetryTracker {
     }
 
     public List<ValueSummary> getReducedChoices(List<ValueSummary> original) {
+        if (original.size() <= 1) {
+            return original;
+        }
+
         List<ValueSummary> reduced = new ArrayList<>();
-        Map<String, PrimitiveVS<Machine>> typeToSymmetryGuard = new HashMap<>();
+        Map<Machine, Guard> pendingSummaries = new HashMap<>();
 
         for (ValueSummary choice: original) {
             boolean added = false;
@@ -50,14 +66,31 @@ public class SymmetryTracker {
                     SetVS<PrimitiveVS<Machine>> symSet = typeToSymmetrySet.get(machine.getName());
                     if (symSet != null) {
                         Guard hasMachine = symSet.contains(primitiveVS).getGuardFor(true);
-                        Guard guard = guardedValues.get(0).getGuard().and(hasMachine);
-                        Guard typeGuard = Guard.constFalse();
-                        PrimitiveVS<Machine> representative = typeToSymmetryGuard.get(machine.getName());
-                        if (representative != null) {
-                            typeGuard = representative.getUniverse();
+                        Guard guard = guardedValues.get(0).getGuard();
+                        Guard typeGuard = guard.and(hasMachine);
+                        Guard remaining = guard.and(typeGuard.not());
+
+                        if (!typeGuard.isFalse()) {
+                            PrimitiveVS<Machine> representativeVS = symSet.get(new PrimitiveVS<>(Collections.singletonMap(0, typeGuard)));
+                            List<GuardedValue<Machine>> representativeGVs = representativeVS.getGuardedValues();
+                            for (GuardedValue<Machine> representativeGV: representativeGVs) {
+                                Machine m = representativeGV.getValue();
+                                Guard g = representativeGV.getGuard();
+                                if (m == machine) {
+                                    g = g.or(remaining);
+                                    remaining = Guard.constFalse();
+                                }
+                                Guard currentGuard = pendingSummaries.get(m);
+                                if (currentGuard == null) {
+                                    currentGuard = Guard.constFalse();
+                                }
+                                currentGuard = currentGuard.or(g);
+                                pendingSummaries.put(m, currentGuard);
+                            }
                         }
-                        representative = symSet.get(new PrimitiveVS<>(Collections.singletonMap(0, typeGuard.or(guard))));
-                        typeToSymmetryGuard.put(machine.getName(), representative);
+                        if (!remaining.isFalse()) {
+                            reduced.add(choice.restrict(remaining));
+                        }
                         added = true;
                     }
                 }
@@ -67,17 +100,15 @@ public class SymmetryTracker {
             }
         }
 
-        for (Map.Entry<String, PrimitiveVS<Machine>> entry: typeToSymmetryGuard.entrySet()) {
-            reduced.add(entry.getValue());
+        for (Map.Entry<Machine, Guard> entry: pendingSummaries.entrySet()) {
+            reduced.add(new PrimitiveVS(Collections.singletonMap(entry.getKey(), entry.getValue())));
         }
 
-        if (typeToSymmetryGuard.size() != 0) {
-            if (reduced.size() != original.size()){
-                System.out.println(String.format("Original: %s", original));
-                System.out.println(String.format("Reduced: %s", reduced));
-//                assert (false);
-            }
-        }
+//        if (pendingSummaries.size() != 0) {
+////            System.out.println(String.format("\t(symmetry-aware) %d -> %d", original.size(), reduced.size()));
+//            System.out.println(String.format("Original: %s", original));
+//            System.out.println(String.format("Reduced: %s", reduced));
+//        }
 
         return reduced;
     }

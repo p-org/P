@@ -499,6 +499,9 @@ public class IterativeBoundedScheduler extends Scheduler {
                 } else {
                     restoreState(choice.getChoiceState());
                     schedule.setFilter(choice.getFilter());
+                    if (configuration.isUseSymmetry()) {
+                        GlobalData.setSymmetryTracker(choice.getSymmetry());
+                    }
                 }
                 SearchLogger.logMessage("backtrack to " + d);
                 backtrackDepth = d;
@@ -698,12 +701,16 @@ public class IterativeBoundedScheduler extends Scheduler {
 
         PrimitiveVS chosenVS = generateNext.apply(chosen);
         if (configuration.isUseSymmetry()) {
-            GlobalData.getSymmetryTracker().updateSymmetrySet(chosenVS);
+            schedule.setSchedulerSymmetry();
         }
 
 //        addRepeat.accept(chosenVS, depth);
         addBacktrack.accept(backtrack, depth);
         schedule.restrictFilterForDepth(depth);
+
+        if (configuration.isUseSymmetry()) {
+            GlobalData.getSymmetryTracker().updateSymmetrySet(chosenVS);
+        }
         return chosenVS;
     }
 

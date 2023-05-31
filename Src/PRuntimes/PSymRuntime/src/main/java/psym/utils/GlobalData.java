@@ -87,4 +87,8 @@ public class GlobalData implements Serializable {
     public static SymmetryTracker getSymmetryTracker() {
         return getInstance().symmetryTracker;
     }
+
+    public static void setSymmetryTracker(SymmetryTracker rhs) {
+        getInstance().symmetryTracker = rhs;
+    }
 }

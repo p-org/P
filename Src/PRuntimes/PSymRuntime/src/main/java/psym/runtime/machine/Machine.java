@@ -7,6 +7,7 @@ import psym.runtime.machine.buffer.*;
 import psym.runtime.machine.eventhandlers.EventHandler;
 import psym.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psym.runtime.scheduler.Scheduler;
+import psym.utils.GlobalData;
 import psym.valuesummary.*;
 import psym.valuesummary.Guard;
 

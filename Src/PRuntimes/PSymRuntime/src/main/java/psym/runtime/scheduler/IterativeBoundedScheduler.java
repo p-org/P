@@ -114,16 +114,22 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void reportEstimatedCoverage() {
         GlobalData.getCoverage().reportChoiceCoverage();
 
-        if (configuration.isUseStateCaching()) {
+        if (configuration.getStateHashingMode() != StateHashingMode.None) {
             SearchLogger.log(String.format("Distinct States Explored %d", getTotalDistinctStates()));
         }
+
         BigDecimal coverage = GlobalData.getCoverage().getEstimatedCoverage(22);
-        SearchLogger.log(String.format("Progress Guarantee       %.12f", GlobalData.getCoverage().getEstimatedCoverage(12)));
-        StatWriter.log("progress", String.format("%.22f", coverage));
+        assert (coverage.compareTo(BigDecimal.ONE) <= 0): "Error in progress estimation";
 
         String coverageGoalAchieved = GlobalData.getCoverage().getCoverageGoalAchieved();
-        SearchLogger.log(String.format("Coverage Goal Achieved   %s", coverageGoalAchieved));
+
+        StatWriter.log("progress", String.format("%.22f", coverage));
         StatWriter.log("coverage-achieved", String.format("%s", coverageGoalAchieved));
+
+        if (configuration.isIterative()) {
+            SearchLogger.log(String.format("Progress Guarantee       %.12f", GlobalData.getCoverage().getEstimatedCoverage(12)));
+            SearchLogger.log(String.format("Coverage Goal Achieved   %s", coverageGoalAchieved));
+        }
     }
 
     void recordResult(SearchStats.TotalStats totalStats) {
@@ -400,7 +406,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             s.append(StringUtils.center("Remaining", 24));
             s.append(StringUtils.center("Progress", 24));
         }
-        if (configuration.isUseStateCaching()) {
+        if (configuration.getStateHashingMode() != StateHashingMode.None) {
             s.append(StringUtils.center("States", 12));
         }
 
@@ -445,7 +451,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                                 GlobalData.getCoverage().getCoverageGoalAchieved()),
                             24));
                 }
-                if (configuration.isUseStateCaching()) {
+                if (configuration.getStateHashingMode() != StateHashingMode.None) {
                     s.append(StringUtils.center(String.format("%d", getTotalDistinctStates()), 12));
                 }
                 if (consolePrint) {

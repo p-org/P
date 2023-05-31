@@ -68,6 +68,8 @@ namespace Plang.Options
             advancedGroup.AddArgument("graph-bug", null, "Output a DGML graph of the iteration that found a bug", typeof(bool));
             advancedGroup.AddArgument("graph", null, "Output a DGML graph of all test iterations whether a bug was found or not", typeof(bool));
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
+            advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
+            advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of PSym-specific JVM arguments to pass, each starting with a colon").IsHidden = true;
             
         }
 
@@ -239,6 +241,12 @@ namespace Plang.Options
                     break;
                 case "fail-on-maxsteps":
                     checkerConfiguration.ConsiderDepthBoundHitAsBug = true;
+                    break;
+                case "psym-args":
+                    checkerConfiguration.PSymArgs = ((string)option.Value).Replace(':', ' ');
+                    break;
+                case "jvm-args":
+                    checkerConfiguration.JvmArgs = ((string)option.Value).Replace(':', ' ');
                     break;
                 default:
                     throw new Exception(string.Format("Unhandled parsed argument: '{0}'", option.LongName));

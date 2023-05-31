@@ -168,18 +168,30 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
             if (pc.isFalse()) return guardedValueList;
             int length = tupleVS.getArity();
             if (length == 0) return guardedValueList;
-            for (GuardedValue<?> key : ValueSummary.getGuardedValues(tupleVS.getField(0))) {
-                Guard guard = key.getGuard();
+
+            Guard remaining = Guard.constTrue();
+            while (!remaining.isFalse()) {
+                Guard guard = remaining;
                 StringBuilder value = new StringBuilder();
+                boolean hasEmptyValue = false;
                 for (int i = 0; i < length; i++) {
                     List<GuardedValue<?>> elementGV = ValueSummary.getGuardedValues(tupleVS.getField(i).restrict(guard));
                     if (!elementGV.isEmpty()) {
-                        assert(elementGV.size() == 1);
+//                        if (elementGV.size() != 1) {
+//                            System.out.println(String.format("Multiple composite keys in tuple %s", tupleVS));
+//                        }
+                        guard = guard.and(elementGV.get(0).getGuard());
                         value.append(elementGV.get(0).getValue());
+                    } else {
+                        hasEmptyValue = true;
+                        break;
                     }
                     value.append(", ");
                 }
-                guardedValueList.add(new GuardedValue<>(value.toString(), guard));
+                if (!hasEmptyValue) {
+                    guardedValueList.add(new GuardedValue<>(value.toString(), guard));
+                }
+                remaining = remaining.and(guard.not());
             }
             return guardedValueList;
         } else if (valueSummary instanceof NamedTupleVS) {
@@ -271,4 +283,11 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
      * @return A string
      */
     String toStringDetailed();
+
+    /**
+     * Get a concrete hash code
+     *
+     * @return An int
+     */
+    int getConcreteHash();
 }

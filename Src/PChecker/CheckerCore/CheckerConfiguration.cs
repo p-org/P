@@ -248,6 +248,18 @@ namespace PChecker
         public bool DisableEnvironmentExit;
 
         /// <summary>
+        /// Additional arguments to pass to PSym.
+        /// </summary>
+        [DataMember]
+        public string PSymArgs;
+
+        /// <summary>
+        /// Additional arguments to pass to JVM-based checker.
+        /// </summary>
+        [DataMember]
+        public string JvmArgs;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="CheckerConfiguration"/> class.
         /// </summary>
         protected CheckerConfiguration()
@@ -293,6 +305,9 @@ namespace PChecker
 
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
+
+            PSymArgs = "";
+            JvmArgs = "";
         }
 
         /// <summary>

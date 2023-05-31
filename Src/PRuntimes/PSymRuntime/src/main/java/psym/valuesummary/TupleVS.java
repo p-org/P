@@ -2,6 +2,7 @@ package psym.valuesummary;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -160,6 +161,15 @@ public class TupleVS implements ValueSummary<TupleVS> {
         // Optimization: Tuples should always be nonempty,
         // and all fields should exist under the same conditions
         return fields[0].getUniverse();
+    }
+
+    @Override
+    public int getConcreteHash() {
+        int hashCode = 1;
+        for (int i = 0; i < classes.length; i++) {
+            hashCode = 31*hashCode + (fields[i]==null ? 0 : fields[i].getConcreteHash());
+        }
+        return hashCode;
     }
 
     @Override

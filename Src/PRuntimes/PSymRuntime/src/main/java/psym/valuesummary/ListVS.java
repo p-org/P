@@ -440,6 +440,15 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     }
 
     @Override
+    public int getConcreteHash() {
+        int hashCode = 1;
+        for (int i = 0; i < items.size(); i++) {
+            hashCode = 31*hashCode + (items.get(i)==null ? 0 : items.get(i).getConcreteHash());
+        }
+        return hashCode;
+    }
+
+    @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
         out.append("List[");

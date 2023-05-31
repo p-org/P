@@ -264,6 +264,16 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     }
 
     @Override
+    public int getConcreteHash() {
+        if (!guardedValues.isEmpty()) {
+            T key = guardedValues.entrySet().iterator().next().getKey();
+            return (key==null ? 0 : key.hashCode());
+        } else {
+            return 0;
+        }
+    }
+
+    @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
         Iterator itr = getValues().iterator();

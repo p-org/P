@@ -160,6 +160,11 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     }
 
     @Override
+    public int getConcreteHash() {
+        return elements.getConcreteHash();
+    }
+
+    @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
         out.append("Set[");

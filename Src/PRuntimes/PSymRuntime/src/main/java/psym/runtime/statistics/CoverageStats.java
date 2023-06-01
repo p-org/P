@@ -5,6 +5,7 @@ import lombok.Setter;
 import psym.commandline.PSymConfiguration;
 import psym.runtime.logger.CoverageWriter;
 import psym.runtime.logger.StatWriter;
+import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceQTable;
 import psym.utils.GlobalData;
 
@@ -20,7 +21,6 @@ import java.util.List;
  * Class to track all coverage statistics
  */
 public class CoverageStats implements Serializable {
-    private static final BigDecimal hundred = BigDecimal.valueOf(100);
     /**
      * Estimated state-space coverage
      */
@@ -67,6 +67,10 @@ public class CoverageStats implements Serializable {
             this(new BigDecimal(1), 0, new ChoiceQTable.ChoiceQTableKey());
         }
 
+        private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal) {
+            this(inputPathCoverage, inputNumTotal, new ChoiceQTable.ChoiceQTableKey());
+        }
+
         private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal, ChoiceQTable.ChoiceQTableKey inputStateActions) {
             this.pathCoverage = inputPathCoverage;
             this.numTotal = inputNumTotal;
@@ -95,7 +99,7 @@ public class CoverageStats implements Serializable {
         }
 
         public CoverageChoiceDepthStats getCopy() {
-            return new CoverageChoiceDepthStats(this.pathCoverage, this.numTotal, this.stateActions);
+            return new CoverageChoiceDepthStats(this.pathCoverage, this.numTotal);
         }
     }
 
@@ -184,13 +188,16 @@ public class CoverageStats implements Serializable {
      * Increment path coverage after an iteration has ended
      * @param choiceDepth Highest choice depth at which the last iteration ended
      */
-    public void updateIterationCoverage(int choiceDepth, boolean rewardEnabled) {
+    public void updateIterationCoverage(int choiceDepth, int startDepth, ChoiceLearningRewardMode rewardMode) {
         BigDecimal iterationCoverage = getPathCoverageAtDepth(choiceDepth);
         estimatedCoverage = estimatedCoverage.add(iterationCoverage);
-        assert (estimatedCoverage.doubleValue() <= 1.0): "Error in path coverage estimation";
-        if (rewardEnabled) {
-            for (CoverageChoiceDepthStats stats : perChoiceDepthStats) {
-                GlobalData.getChoiceLearningStats().rewardIteration(stats.getStateActions(), iterationCoverage);
+//        assert (estimatedCoverage.compareTo(BigDecimal.ONE) <= 0): "Error in path coverage estimation";
+        if (rewardMode != ChoiceLearningRewardMode.None) {
+            for (int i=startDepth; i<=choiceDepth; i++) {
+                CoverageChoiceDepthStats stats = perChoiceDepthStats.get(i);
+                if (stats != null) {
+                    GlobalData.getChoiceLearningStats().rewardIteration(stats.getStateActions(), iterationCoverage, rewardMode);
+                }
             }
         }
     }
@@ -212,15 +219,33 @@ public class CoverageStats implements Serializable {
        }
    }
 
-    /**
-     * Return estimated state-space coverage between 0 - 100%
-     */
-    public BigDecimal getEstimatedCoverage() {
-        return getEstimatedCoverage(10);
+//    /**
+//     * Return estimated state-space coverage between 0 - 100%
+//     */
+//    public BigDecimal getEstimatedCoverage() {
+//        return getEstimatedCoverage(12);
+//    }
+
+    public String getCoverageGoalAchieved() {
+        String coverageString = String.format("%.22f", getEstimatedCoverage(22));
+        String coverageGoal = "?";
+        if (coverageString.startsWith("1.")) {
+            coverageGoal = String.format("\u221e 9s");
+        } else if (coverageString.startsWith("0.")) {
+            int numNines = 0;
+            for (int i=2; i<coverageString.length(); i++) {
+                if (coverageString.charAt(i) != '9') {
+                    break;
+                }
+                numNines++;
+            }
+            coverageGoal = String.format("%d 9s", numNines);
+        }
+        return coverageGoal;
     }
 
     public BigDecimal getEstimatedCoverage(int scale) {
-        return estimatedCoverage.multiply(hundred).setScale(scale, RoundingMode.FLOOR);
+        return estimatedCoverage.setScale(scale, RoundingMode.FLOOR);
     }
 
     /**

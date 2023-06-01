@@ -68,6 +68,8 @@ namespace PChecker.ExhaustiveSearch
             // run the jar file
             var arguments = new StringBuilder();
 
+            arguments.Append($"{_checkerConfiguration.JvmArgs} ");
+
             arguments.Append($"-jar {_checkerConfiguration.AssemblyToBeAnalyzed} ");
 
             arguments.Append($"--outdir {_checkerConfiguration.OutputFilePath}/{_checkerConfiguration.Mode.ToString()} ");
@@ -124,7 +126,9 @@ namespace PChecker.ExhaustiveSearch
             {
                 Logger.WriteLine($"... Executing command: java {arguments}");
             }
-
+            
+            arguments.Append($"{_checkerConfiguration.PSymArgs} ");
+            
             int exitCode = -1;
             exitCode = RunCommand(Directory.GetCurrentDirectory(), "java", arguments.ToString());
             

@@ -40,13 +40,13 @@ namespace PChecker.SystematicTesting.Strategies.Liveness
         }
 
         /// <inheritdoc/>
-        public abstract bool GetNextOperation(IAsyncOperation current, IEnumerable<IAsyncOperation> ops, out IAsyncOperation next);
+        public abstract bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next);
 
         /// <inheritdoc/>
-        public abstract bool GetNextBooleanChoice(IAsyncOperation current, int maxValue, out bool next);
+        public abstract bool GetNextBooleanChoice(AsyncOperation current, int maxValue, out bool next);
 
         /// <inheritdoc/>
-        public abstract bool GetNextIntegerChoice(IAsyncOperation current, int maxValue, out int next);
+        public abstract bool GetNextIntegerChoice(AsyncOperation current, int maxValue, out int next);
 
         /// <inheritdoc/>
         public virtual bool PrepareForNextIteration()

@@ -6,6 +6,7 @@ import psym.runtime.scheduler.IterativeBoundedScheduler;
 import psym.runtime.scheduler.ReplayScheduler;
 import psym.utils.BugFoundException;
 import psym.utils.LivenessException;
+import psym.utils.MemoryMonitor;
 import psym.utils.TimeMonitor;
 import psym.valuesummary.Guard;
 import psym.valuesummary.solvers.SolverEngine;
@@ -33,6 +34,8 @@ public class EntryPoint {
             throw e;
         } catch (BugFoundException e) {
             throw e;
+        } catch (OutOfMemoryError e) {
+            throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent());
         } catch (ExecutionException e) {
             if (e.getCause() instanceof MemoutException) {
                 throw (MemoutException)e.getCause();
@@ -84,9 +87,11 @@ public class EntryPoint {
         Concretizer.print = (configuration.getVerbosity() > 8);
     }
 
-    private static void postprocess() {
+    private static void postprocess(boolean printStats) {
         Instant end = Instant.now();
-        print_stats();
+        if (printStats) {
+            print_stats();
+        }
         PSymLogger.finished(scheduler.getIter(), scheduler.getIter()- scheduler.getStart_iter(), Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(), scheduler.result, mode);
     }
 
@@ -100,13 +105,14 @@ public class EntryPoint {
         } catch (TimeoutException e) {
             status = "timeout";
             throw new Exception("TIMEOUT");
-        } catch (MemoutException e) {
+        } catch (MemoutException | OutOfMemoryError e) {
             status = "memout";
             throw new Exception("MEMOUT");
         } catch (BugFoundException e) {
             status = "cex";
             scheduler.result = "found cex of length " + scheduler.getDepth();
-            postprocess();
+            scheduler.isFinalResult = true;
+            postprocess(true);
 
             PSymLogger.setVerbosity(1);
             TraceLogger.setVerbosity(1);
@@ -131,7 +137,7 @@ public class EntryPoint {
             future.cancel(true);
             executor.shutdownNow();
             TraceLogger.setVerbosity(0);
-            postprocess();
+            postprocess(status != "cex");
         }
     }
 

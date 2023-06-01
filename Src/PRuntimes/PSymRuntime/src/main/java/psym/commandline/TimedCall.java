@@ -2,6 +2,7 @@ package psym.commandline;
 
 import psym.runtime.scheduler.IterativeBoundedScheduler;
 import psym.utils.BugFoundException;
+import psym.utils.MemoryMonitor;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
@@ -22,6 +23,8 @@ public class TimedCall implements Callable<Integer> {
                 this.scheduler.doSearch();
             else
                 this.scheduler.resumeSearch();
+        } catch (OutOfMemoryError e) {
+            throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent());
         } catch (MemoutException e) {
             throw e;
         } catch (BugFoundException e) {

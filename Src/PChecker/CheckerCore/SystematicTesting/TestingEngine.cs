@@ -242,6 +242,10 @@ namespace PChecker.SystematicTesting
                 Strategy = new ProbabilisticRandomStrategy(checkerConfiguration.MaxFairSchedulingSteps,
                     checkerConfiguration.StrategyBound, RandomValueGenerator);
             }
+            else if (checkerConfiguration.SchedulingStrategy is "rl")
+            {
+                Strategy = new QLearningStrategy(checkerConfiguration.MaxUnfairSchedulingSteps, RandomValueGenerator);
+            }
             else if (checkerConfiguration.SchedulingStrategy is "dfs")
             {
                 Strategy = new DFSStrategy(checkerConfiguration.MaxUnfairSchedulingSteps);
@@ -326,7 +330,8 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.SchedulingStrategy is "random" ||
                 _checkerConfiguration.SchedulingStrategy is "pct" ||
                 _checkerConfiguration.SchedulingStrategy is "fairpct" ||
-                _checkerConfiguration.SchedulingStrategy is "probabilistic")
+                _checkerConfiguration.SchedulingStrategy is "probabilistic" ||
+                _checkerConfiguration.SchedulingStrategy is "rl")
             {
                 options = $" (seed:{RandomValueGenerator.Seed})";
             }

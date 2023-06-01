@@ -5,6 +5,7 @@ using System;
 using System.Threading;
 using PChecker.Runtime;
 using PChecker.SystematicTesting;
+using PChecker.SystematicTesting.Operations;
 
 namespace PChecker.Tasks.Locks
 {
@@ -122,7 +123,7 @@ namespace PChecker.Tasks.Locks
             /// <inheritdoc/>
             public override void Wait()
             {
-                Resource.Runtime.ScheduleNextOperation();
+                Resource.Runtime.ScheduleNextOperation(AsyncOperationType.Join);
 
                 // We need this loop, because when a resource gets released it notifies all asynchronous
                 // operations waiting to acquire it, even if such an operation is still blocked.
@@ -132,7 +133,7 @@ namespace PChecker.Tasks.Locks
                     // asynchronous operation is blocked, so that it cannot be scheduled during
                     // systematic testing exploration, which could deadlock.
                     Resource.NotifyWait();
-                    Resource.Runtime.ScheduleNextOperation();
+                    Resource.Runtime.ScheduleNextOperation(AsyncOperationType.Join);
                 }
 
                 NumAcquired++;
@@ -158,7 +159,7 @@ namespace PChecker.Tasks.Locks
                 // This must be called outside the context of the semaphore, because it notifies
                 // the scheduler to try schedule another asynchronous operation that could in turn
                 // try to acquire this semaphore causing a deadlock.
-                Resource.Runtime.ScheduleNextOperation();
+                Resource.Runtime.ScheduleNextOperation(AsyncOperationType.Release);
             }
         }
     }

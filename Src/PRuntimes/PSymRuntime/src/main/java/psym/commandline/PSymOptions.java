@@ -4,9 +4,14 @@ import org.apache.commons.cli.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
+import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
+import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestratorEpsilonGreedy;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
+import psym.runtime.scheduler.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
 import psym.utils.GlobalData;
+import psym.utils.StateHashingMode;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -124,12 +129,14 @@ public class PSymOptions {
         // Search prioritization options
 
         // whether or not to disable state caching
-        Option noStateCaching = Option.builder("nsc")
-                .longOpt("no-state-caching")
-                .desc("Disable state caching")
-                .numberOfArgs(0)
+        Option stateHashing = Option.builder("sh")
+                .longOpt("state-hashing")
+                .desc("State hashing mode: none, exact, fast (default: exact)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Hashing Mode (string)")
                 .build();
-        options.addOption(noStateCaching);
+        options.addOption(stateHashing);
 
         // mode of choice orchestration
         Option choiceOrch = Option.builder("corch")
@@ -215,10 +222,40 @@ public class PSymOptions {
                 .build();
         options.addOption(maxBacktrackTasksPerExecution);
 
+        // mode of choice learning state mode
+        Option choiceLearnState = Option.builder()
+                .longOpt("learn-state")
+                .desc("Learning state options: none, last, states, events, full (default: last)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Learn State (string)")
+                .build();
+        options.addOption(choiceLearnState);
+
+        // mode of choice learning reward mode
+        Option choiceLearnReward = Option.builder()
+                .longOpt("learn-reward")
+                .desc("Learning reward options: coverage, fixed (default: coverage)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Learn Reward (string)")
+                .build();
+        options.addOption(choiceLearnReward);
+
+        // epsilon-greedy decay rate
+        Option epsilonDecay = Option.builder()
+                .longOpt("learn-decay")
+                .desc("Decay rate for epsilon-greedy")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Decay Rate (double)")
+                .build();
+        options.addOption(epsilonDecay);
+
         // solver type
         Option solverType = Option.builder()
                 .longOpt("solver")
-                .desc("Solver type to use: bdd, yices2, z3, cvc5 (default: bdd)")
+                .desc("Solver type to use: bdd, yices2, monosat, z3, cvc5 (default: bdd)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Solver Type (string)")
@@ -235,10 +272,10 @@ public class PSymOptions {
                 .build();
         options.addOption(exprLibType);
 
-        // whether or not to disable filter-based reductions
+        // whether or not to enable filter-based reductions
         Option filters = Option.builder()
-                .longOpt("no-filters")
-                .desc("Disable filter-based reductions")
+                .longOpt("use-filters")
+                .desc("Enable filter-based reductions")
                 .numberOfArgs(0)
                 .build();
         options.addOption(filters);
@@ -306,6 +343,16 @@ public class PSymOptions {
                 .build();
         options.addOption(configFile);
 
+        // project name
+        Option projName = Option.builder()
+                .longOpt("projname")
+                .desc("Project name")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Project Name (string)")
+                .build();
+        options.addOption(projName);
+
 
         // Help menu
         Option help = Option.builder("h")
@@ -364,8 +411,15 @@ public class PSymOptions {
                         case "dfs":
                             config.setToDfs();
                             break;
+                        case "learn-backtrack":
+                            config.setToBacktrackLearn();
+                            break;
+                        case "learn-choice":
+                            config.setToChoiceLearn();
+                            break;
                         case "learn":
-                            config.setToLearn();
+                        case "learn-all":
+                            config.setToAllLearn();
                             break;
                         case "bmc":
                         case "sym":
@@ -440,9 +494,21 @@ public class PSymOptions {
                     config.setFailOnMaxStepBound(true);
                     break;
                 // search options
-                case "nsc":
-                case "no-state-caching":
-                    config.setUseStateCaching(false);
+                case "sh":
+                case "state-hashing":
+                    switch (option.getValue()) {
+                        case "none":
+                            config.setStateHashingMode(StateHashingMode.None);
+                            break;
+                        case "exact":
+                            config.setStateHashingMode(StateHashingMode.Exact);
+                            break;
+                        case "fast":
+                            config.setStateHashingMode(StateHashingMode.Fast);
+                            break;
+                        default:
+                            optionError(option, String.format("Unrecognized state hashing mode, got %s", option.getValue()));
+                    }
                     break;
                 case "corch":
                 case "choice-orch":
@@ -462,6 +528,57 @@ public class PSymOptions {
                             break;
                         default:
                             optionError(option, String.format("Unrecognized choice orchestration mode, got %s", option.getValue()));
+                    }
+                    break;
+                case "learn-mode":
+                case "learn-state":
+                    switch (option.getValue()) {
+                        case "none":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.None);
+                            break;
+                        case "depth":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.SchedulerDepth);
+                            break;
+                        case "last":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.LastStep);
+                            break;
+                        case "states":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.MachineState);
+                            break;
+                        case "states+last":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.MachineStateAndLastStep);
+                            break;
+                        case "events":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.MachineStateAndEvents);
+                            break;
+                        case "full":
+                            config.setChoiceLearningStateMode(ChoiceLearningStateMode.FullState);
+                            break;
+                        default:
+                            optionError(option, String.format("Unrecognized choice learning state mode, got %s", option.getValue()));
+                    }
+                    break;
+                case "learn-reward":
+                    switch (option.getValue()) {
+                        case "none":
+                            config.setChoiceLearningRewardMode(ChoiceLearningRewardMode.None);
+                            break;
+                        case "fixed":
+                            config.setChoiceLearningRewardMode(ChoiceLearningRewardMode.Fixed);
+                            break;
+                        case "coverage":
+                            config.setChoiceLearningRewardMode(ChoiceLearningRewardMode.Coverage);
+                            break;
+                        default:
+                            optionError(option, String.format("Unrecognized choice learning reward mode, got %s", option.getValue()));
+                    }
+                    break;
+                case "learn-decay":
+                    try {
+                        ChoiceOrchestratorEpsilonGreedy.setEPSILON_DECAY_FACTOR(Double.parseDouble(option.getValue()));
+                        TaskOrchestratorCoverageEpsilonGreedy.setEPSILON_DECAY_FACTOR(Double.parseDouble(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected a double value, got %s", option.getValue()));
                     }
                     break;
                 case "torch":
@@ -552,18 +669,18 @@ public class PSymOptions {
                         case "monosat":
                             config.setSolverType(SolverType.MONOSAT);
                             break;
-                        case "boolector":
-                            config.setSolverType(SolverType.JAVASMT_BOOLECTOR);
-                            break;
-                        case "mathsat5":
-                            config.setSolverType(SolverType.JAVASMT_MATHSAT5);
-                            break;
-                        case "princess":
-                            config.setSolverType(SolverType.JAVASMT_PRINCESS);
-                            break;
-                        case "smtinterpol":
-                            config.setSolverType(SolverType.JAVASMT_SMTINTERPOL);
-                            break;
+//                        case "boolector":
+//                            config.setSolverType(SolverType.JAVASMT_BOOLECTOR);
+//                            break;
+//                        case "mathsat5":
+//                            config.setSolverType(SolverType.JAVASMT_MATHSAT5);
+//                            break;
+//                        case "princess":
+//                            config.setSolverType(SolverType.JAVASMT_PRINCESS);
+//                            break;
+//                        case "smtinterpol":
+//                            config.setSolverType(SolverType.JAVASMT_SMTINTERPOL);
+//                            break;
                         default:
                             optionError(option, String.format("Expected a solver type, got %s", option.getValue()));
                     }
@@ -592,8 +709,8 @@ public class PSymOptions {
                             optionError(option, String.format("Expected an expression type, got %s", option.getValue()));
                     }
                     break;
-                case "no-filters":
-                    config.setUseFilters(false);
+                case "use-filters":
+                    config.setUseFilters(true);
                     break;
                 //                case "rq":
                 //                case "receiver-queue":
@@ -629,6 +746,9 @@ public class PSymOptions {
                 case "config":
                     readConfigFile(config, option.getValue(), option);
                     break;
+                case "projname":
+                    config.setProjectName(option.getValue());
+                    break;
                 case "h":
                 case "help":
                     formatter.printHelp(
@@ -642,6 +762,11 @@ public class PSymOptions {
                 default:
                     optionError(option, String.format("Unrecognized option %s", option));
             }
+        }
+
+        // post process
+        if (!config.isChoiceOrchestrationLearning()) {
+            config.setChoiceLearningRewardMode(ChoiceLearningRewardMode.None);
         }
         return config;
     }

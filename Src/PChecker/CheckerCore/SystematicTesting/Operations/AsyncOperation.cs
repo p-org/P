@@ -23,6 +23,11 @@ namespace PChecker.SystematicTesting.Operations
 
         /// <inheritdoc/>
         public AsyncOperationStatus Status { get; internal set; }
+        
+        /// <summary>
+        /// The type of the operation.
+        /// </summary>
+        internal AsyncOperationType Type;
 
         /// <summary>
         /// A value that represents the hashed program state when
@@ -54,6 +59,7 @@ namespace PChecker.SystematicTesting.Operations
             IsActive = false;
             IsHandlerRunning = false;
             IsAwaiterControlled = false;
+            Type = AsyncOperationType.Start;
         }
 
         /// <summary>

@@ -52,7 +52,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      * @return Whether the list is empty or not
      */
     public boolean isEmpty() {
-        return isEmptyVS() || IntegerVS.maxValue(size) <= 0;
+        return isEmptyVS() || !IntegerVS.hasPositiveValue(size);
     }
 
     /**
@@ -66,7 +66,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      */
     @Override
     public boolean isEmptyVS() {
-        return size.isEmptyVS();
+        return items.isEmpty() || size.isEmptyVS();
     }
 
     /**
@@ -76,12 +76,6 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      */
     @Override
     public ListVS<T> restrict(Guard guard) {
-        if (guard.isTrue()) {
-            return this;
-        } else if (guard.isFalse()) {
-            return new ListVS<>(guard);
-        }
-
         // if the guard used for restriction is same as the universe then we can ignore this restrict operation as a no-op
         if(guard.equals(getUniverse()))
             return new ListVS<>(this);
@@ -443,6 +437,15 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
             }
         }
         return getUniverse().and(size.getGuardFor(0).not());
+    }
+
+    @Override
+    public int getConcreteHash() {
+        int hashCode = 1;
+        for (int i = 0; i < items.size(); i++) {
+            hashCode = 31*hashCode + (items.get(i)==null ? 0 : items.get(i).getConcreteHash());
+        }
+        return hashCode;
     }
 
     @Override

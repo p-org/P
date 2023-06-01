@@ -2,8 +2,11 @@ package psym.commandline;
 
 import lombok.Getter;
 import lombok.Setter;
+import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
+import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
+import psym.utils.StateHashingMode;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -59,7 +62,7 @@ public class PSymConfiguration implements Serializable {
 
     // name of the project
     @Getter @Setter
-    String projectName = "test";
+    String projectName = "default";
 
     // name of the cex file to read the replayer state
     @Getter @Setter
@@ -75,7 +78,7 @@ public class PSymConfiguration implements Serializable {
 
     // use state caching
     @Getter @Setter
-    boolean useStateCaching = true;
+    StateHashingMode stateHashingMode = StateHashingMode.Exact;
 
     // use backtracking
     @Getter @Setter
@@ -84,6 +87,14 @@ public class PSymConfiguration implements Serializable {
     // mode of choice orchestration
     @Getter @Setter
     ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.EpsilonGreedy;
+
+    // mode of choice learning state mode
+    @Getter @Setter
+    ChoiceLearningStateMode choiceLearningStateMode = ChoiceLearningStateMode.LastStep;
+
+    // mode of choice learning reward mode
+    @Getter @Setter
+    ChoiceLearningRewardMode choiceLearningRewardMode = ChoiceLearningRewardMode.Coverage;
 
     // mode of task orchestration
     @Getter @Setter
@@ -111,7 +122,7 @@ public class PSymConfiguration implements Serializable {
 
     // use filters
     @Getter @Setter
-    boolean useFilters = true;
+    boolean useFilters = false;
 
     // intersect with receiver queue semantics
     @Getter @Setter
@@ -170,7 +181,7 @@ public class PSymConfiguration implements Serializable {
         this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
     }
 
-    public void setToLearn() {
+    public void setToAllLearn() {
         this.setStrategy("learn");
         this.setSchedChoiceBound(1);
         this.setDataChoiceBound(1);
@@ -178,18 +189,36 @@ public class PSymConfiguration implements Serializable {
         this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
     }
 
+    public void setToChoiceLearn() {
+        this.setStrategy("learn");
+        this.setSchedChoiceBound(1);
+        this.setDataChoiceBound(1);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
+        this.setTaskOrchestration(TaskOrchestrationMode.Random);
+    }
+
+    public void setToBacktrackLearn() {
+        this.setStrategy("learn");
+        this.setSchedChoiceBound(1);
+        this.setDataChoiceBound(1);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
+        this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
+    }
+
     public void setToSymex() {
         this.setStrategy("symex");
         this.setSchedChoiceBound(0);
         this.setDataChoiceBound(0);
-        this.setUseStateCaching(false);
+        this.setStateHashingMode(StateHashingMode.None);
+        this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
+        this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
     }
 
     public void setToFuzz() {
         this.setStrategy("fuzz");
         this.setSchedChoiceBound(1);
         this.setDataChoiceBound(1);
-        this.setUseStateCaching(false);
+        this.setStateHashingMode(StateHashingMode.None);
         this.setUseBacktrack(false);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
         this.setTaskOrchestration(TaskOrchestrationMode.Random);

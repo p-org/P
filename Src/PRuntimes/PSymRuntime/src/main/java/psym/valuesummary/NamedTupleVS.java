@@ -140,6 +140,11 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     }
 
     @Override
+    public int getConcreteHash() {
+        return tuple.getConcreteHash();
+    }
+
+    @Override
     public String toString() {
         StringBuilder str = new StringBuilder("( ");
         for (int i = 0; i < names.size(); i++) {

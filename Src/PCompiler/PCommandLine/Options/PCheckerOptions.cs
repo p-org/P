@@ -56,6 +56,7 @@ namespace Plang.Options
                                                                    "specified as the integer N in the equation 0.5 to the power of N.  So for N=1, the probability is 0.5, for N=2 the probability is 0.25, N=3 you get 0.125, etc.", typeof(uint));
             schedulingGroup.AddArgument("sch-pct", null, "Choose the PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
             schedulingGroup.AddArgument("sch-fairpct", null, "Choose the fair PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
+            schedulingGroup.AddArgument("sch-rl", null, "Choose the reinforcement learning (RL) scheduling strategy", typeof(bool)).IsHidden = true;
             var schCoverage = schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for explicit-state search in coverage mode (options: random, dfs, learn). (default: learn)");
             schCoverage.AllowedValues = new List<string>() { "random", "dfs", "learn" };
             schCoverage.IsHidden = true;
@@ -69,6 +70,8 @@ namespace Plang.Options
             advancedGroup.AddArgument("graph-bug", null, "Output a DGML graph of the iteration that found a bug", typeof(bool));
             advancedGroup.AddArgument("graph", null, "Output a DGML graph of all test iterations whether a bug was found or not", typeof(bool));
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
+            advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
+            advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of PSym-specific JVM arguments to pass, each starting with a colon").IsHidden = true;
             
         }
 
@@ -172,6 +175,10 @@ namespace Plang.Options
                     checkerConfiguration.SchedulingStrategy = option.LongName.Substring(4);
                     checkerConfiguration.StrategyBound = (int)(uint)option.Value;
                     break;
+                case "sch-rl":
+                    checkerConfiguration.SchedulingStrategy = option.LongName.Substring(4);
+                    checkerConfiguration.IsProgramStateHashingEnabled = true;
+                    break;
                 case "sch-coverage":
                     checkerConfiguration.SchedulingStrategy = (string)option.Value;
                     break;
@@ -237,6 +244,12 @@ namespace Plang.Options
                 case "fail-on-maxsteps":
                     checkerConfiguration.ConsiderDepthBoundHitAsBug = true;
                     break;
+                case "psym-args":
+                    checkerConfiguration.PSymArgs = ((string)option.Value).Replace(':', ' ');
+                    break;
+                case "jvm-args":
+                    checkerConfiguration.JvmArgs = ((string)option.Value).Replace(':', ' ');
+                    break;
                 default:
                     throw new Exception(string.Format("Unhandled parsed argument: '{0}'", option.LongName));
             }
@@ -263,6 +276,7 @@ namespace Plang.Options
                 checkerConfiguration.SchedulingStrategy != "pct" &&
                 checkerConfiguration.SchedulingStrategy != "fairpct" &&
                 checkerConfiguration.SchedulingStrategy != "probabilistic" &&
+                checkerConfiguration.SchedulingStrategy != "rl" &&
                 checkerConfiguration.SchedulingStrategy != "dfs" &&
                 checkerConfiguration.SchedulingStrategy != "replay" &&
                 checkerConfiguration.SchedulingStrategy != "learn")
@@ -295,7 +309,12 @@ namespace Plang.Options
                 enumerationOptions.RecurseSubdirectories = true;
                 enumerationOptions.MaxRecursionDepth = 3;
                 
-                var files = Directory.GetFiles(Directory.GetCurrentDirectory(), filePattern, enumerationOptions);
+                
+                var files = 
+                    from file in Directory.GetFiles(Directory.GetCurrentDirectory(), filePattern, enumerationOptions)
+                    let info = new FileInfo(file)
+                    where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
+                    select file;
 
                 foreach (var fileName in files)
                 {

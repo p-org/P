@@ -84,7 +84,7 @@ namespace PChecker.SystematicTesting.Operations
             Debug.WriteLine("<ScheduleDebug> Operation '{0}' is waiting for task '{1}'.", Id, task.Id);
             JoinDependencies.Add(task);
             Status = AsyncOperationStatus.BlockedOnWaitAll;
-            Scheduler.ScheduleNextEnabledOperation();
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Join);
             IsAwaiterControlled = false;
         }
 
@@ -105,7 +105,7 @@ namespace PChecker.SystematicTesting.Operations
             if (JoinDependencies.Count > 0)
             {
                 Status = waitAll ? AsyncOperationStatus.BlockedOnWaitAll : AsyncOperationStatus.BlockedOnWaitAny;
-                Scheduler.ScheduleNextEnabledOperation();
+                Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Join);
             }
 
             IsAwaiterControlled = false;

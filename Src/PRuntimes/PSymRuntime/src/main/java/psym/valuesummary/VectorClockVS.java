@@ -2,6 +2,7 @@ package psym.valuesummary;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class VectorClockVS implements ValueSummary<VectorClockVS> {
 
@@ -165,6 +166,11 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
     @Override
     public Guard getUniverse() {
         return clock.getUniverse();
+    }
+
+    @Override
+    public int getConcreteHash() {
+        return clock.getConcreteHash();
     }
 
     @Override

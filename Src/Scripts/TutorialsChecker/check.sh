@@ -31,7 +31,7 @@ for folder in $folders; do
             break;
           fi
           echo "Smoke testing for test case ${firstWord}";
-          p check -i 1000 -tc ${firstWord}
+          p check -i 10000 -tc ${firstWord}
           if [ $? -ne 0 ]; then  
             let "errorCount=errorCount + 1"
           fi  
@@ -51,7 +51,7 @@ done
 
 echo "Error Count:" $errorCount
 
-if [[ "$errorCount" = 2 ]]; then
+if [[ "$errorCount" = 3 ]]; then
   exit 0
 else
   exit 1

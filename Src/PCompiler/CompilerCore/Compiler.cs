@@ -13,7 +13,6 @@ namespace Plang.Compiler
     {
         public int Compile(ICompilerConfiguration job)
         {
-            job.Output.WriteInfo($"----------------------------------------");
             job.Output.WriteInfo($"Parsing ...");
             
             // Run parser on every input file

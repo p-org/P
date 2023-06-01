@@ -11,7 +11,7 @@ test tcMultipleClients [main=TestWithMultipleClients]:
   (union Client, Bank, { TestWithMultipleClients });
 
 // assert the properties for the single client and single server scenario but with abstract server
- test tcSingleClientAbstractServer [main=TestWithSingleClient]:
+ test tcAbstractServer [main=TestWithSingleClient]:
   assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
   (union Client, AbstractBank, { TestWithSingleClient });
 

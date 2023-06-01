@@ -201,12 +201,10 @@ namespace PChecker.SystematicTesting
 
             report.AppendLine();
             report.AppendFormat(
-                "{0} Explored {1} schedule{2}: {3} fair and {4} unfair.",
+                "{0} Explored {1} schedule{2}",
                 prefix.Equals("...") ? "....." : prefix,
                 totalExploredSchedules,
-                totalExploredSchedules == 1 ? string.Empty : "s",
-                NumOfExploredFairSchedules,
-                NumOfExploredUnfairSchedules);
+                totalExploredSchedules == 1 ? string.Empty : "s");
 
             if (totalExploredSchedules > 0 &&
                 NumOfFoundBugs > 0)
@@ -225,7 +223,7 @@ namespace PChecker.SystematicTesting
 
                 report.AppendLine();
                 report.AppendFormat(
-                    "{0} Number of scheduling points in fair terminating schedules: {1} (min), {2} (avg), {3} (max).",
+                    "{0} Number of scheduling points in terminating schedules: {1} (min), {2} (avg), {3} (max).",
                     prefix.Equals("...") ? "....." : prefix,
                     MinExploredFairSteps < 0 ? 0 : MinExploredFairSteps,
                     averageExploredFairSteps,
@@ -248,7 +246,7 @@ namespace PChecker.SystematicTesting
                 {
                     report.AppendLine();
                     report.AppendFormat(
-                        "{0} Hit the max-steps bound of '{1}' in {2:F2}% of the fair schedules.",
+                        "{0} Hit the max-steps bound of '{1}' in {2:F2}% of schedules.",
                         prefix.Equals("...") ? "....." : prefix,
                         checkerConfiguration.MaxFairSchedulingSteps,
                         (double)MaxFairStepsHitInFairTests / NumOfExploredFairSchedules * 100);

@@ -22,3 +22,5 @@ jobs:
       run: dotnet tool install --global p 
     - name: Compile Tutorials
       run: ./Src/Scripts/TutorialsChecker/compile.sh ./Tutorial
+    - name: Check Tutorials
+      run: ./Src/Scripts/TutorialsChecker/check.sh ./Tutorial

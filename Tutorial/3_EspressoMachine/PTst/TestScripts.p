@@ -1,4 +1,4 @@
-test tcSaneUserUsingCoffeeMachine [main=TestWithSaneUser]:
+test tcSaneUser_UsingCoffeeMachine [main=TestWithSaneUser]:
   assert EspressoMachineModesOfOperation in (union { TestWithSaneUser }, EspressoMachine, Users);
 
 test tcCrazyUserUsingCoffeeMachine [main=TestWithCrazyUser]:

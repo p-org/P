@@ -82,55 +82,7 @@ namespace Plang
         {
             // Parses the command line options to get the checkerConfiguration.
             var configuration = new PCheckerOptions().Parse(args);
-            
-            // if the replay option is passed then we ignore all the other options and replay the schedule
-            if (configuration.SchedulingStrategy == "replay")
-            {
-                CommandLineOutput.WriteInfo($"Replay option is used, checker is ignoring all other parameters and using the {configuration.ScheduleFile} to replay the schedule");
-                CommandLineOutput.WriteInfo($"... Replaying {configuration.ScheduleFile}");
-
-                switch (configuration.Mode)
-                {
-                    case CheckerMode.BugFinding:
-                    {
-                        var engine = TestingEngine.Create(configuration);
-                        engine.Run();
-                        CommandLineOutput.WriteInfo(engine.GetReport());
-                    }
-                        break;
-                    case CheckerMode.Verification:
-                    case CheckerMode.Coverage:
-                        ExhaustiveEngine.Create(configuration).Run();
-                        break;
-                    default:
-                        Error.Report($"[PTool] Checker with {configuration.Mode} mode is currently unsupported.");
-                        break;
-                }
-            }
-            else
-            {
-                // This has to be here because all checker modes now require this to set up output directory.
-                CodeCoverageInstrumentation.SetOutputDirectory(configuration, makeHistory: true);
-
-                Console.WriteLine(".. Checking " + configuration.AssemblyToBeAnalyzed);
-
-                // Creates and runs the testing process scheduler.
-                switch (configuration.Mode)
-                {
-                    case CheckerMode.BugFinding:
-                        TestingProcessScheduler.Create(configuration).Run();
-                        break;
-                    case CheckerMode.Verification:
-                    case CheckerMode.Coverage:
-                        ExhaustiveEngine.Create(configuration).Run();
-                        break;
-                    default:
-                        Error.Report($"[PTool] Checker with {configuration.Mode} mode is currently unsupported.");
-                        break;
-                }
-            
-                Console.WriteLine(". Done");
-            }
+            Checker.Run(configuration);
         }
 
         /// <summary>
@@ -185,7 +137,7 @@ namespace Plang
         /// </summary>
         private static void Shutdown()
         {
-            CommandLineOutput.WriteInfo("[PTool]: Thanks for using P!");
+            CommandLineOutput.WriteInfo("~~ [PTool]: Thanks for using P! ~~");
         }
         
         public static void RunCompiler(string[] args)

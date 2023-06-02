@@ -1,0 +1,26 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: Tutorials
+
+on: [push, pull_request]
+
+jobs:
+  Build-MacOS:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+    - name: Set up JDK
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+    - name: Install P as a tool
+      run: dotnet tool install --global p 
+    - name: Compile Tutorials
+      run: ./Src/Scripts/TutorialsChecker/compile.sh ./Tutorial
+    - name: Check Tutorials
+      run: ./Src/Scripts/TutorialsChecker/check.sh ./Tutorial

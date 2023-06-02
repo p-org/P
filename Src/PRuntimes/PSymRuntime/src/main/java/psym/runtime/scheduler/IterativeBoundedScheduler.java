@@ -92,6 +92,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void print_stats(SearchStats.TotalStats totalStats) {
         if (!isFinalResult) {
             recordResult(totalStats);
+            isFinalResult = true;
         }
         super.print_stats(totalStats);
 
@@ -122,6 +123,9 @@ public class IterativeBoundedScheduler extends Scheduler {
         assert (coverage.compareTo(BigDecimal.ONE) <= 0): "Error in progress estimation";
 
         String coverageGoalAchieved = GlobalData.getCoverage().getCoverageGoalAchieved();
+        if (isFinalResult && result.endsWith("correct for any depth")) {
+            coverageGoalAchieved = GlobalData.getCoverage().getMaxCoverageGoal();
+        }
 
         StatWriter.log("progress", String.format("%.22f", coverage));
         StatWriter.log("coverage-achieved", String.format("%s", coverageGoalAchieved));

@@ -230,7 +230,7 @@ public class CoverageStats implements Serializable {
         String coverageString = String.format("%.22f", getEstimatedCoverage(22));
         String coverageGoal = "?";
         if (coverageString.startsWith("1.")) {
-            coverageGoal = String.format("\u221e 9s");
+            return getMaxCoverageGoal();
         } else if (coverageString.startsWith("0.")) {
             int numNines = 0;
             for (int i=2; i<coverageString.length(); i++) {
@@ -242,6 +242,10 @@ public class CoverageStats implements Serializable {
             coverageGoal = String.format("%d 9s", numNines);
         }
         return coverageGoal;
+    }
+
+    public String getMaxCoverageGoal() {
+       return String.format("\u221e 9s");
     }
 
     public BigDecimal getEstimatedCoverage(int scale) {

@@ -296,6 +296,7 @@ namespace Plang.Options
             if (checkerConfiguration.AssemblyToBeAnalyzed == string.Empty)
             {
                 CommandLineOutput.WriteInfo(".. Searching for a P compiled file locally in the current folder");
+                var pathSep = Path.DirectorySeparatorChar;
                 
                 string filePattern =  checkerConfiguration.Mode switch
                 {
@@ -320,22 +321,22 @@ namespace Plang.Options
                 {
                     if (checkerConfiguration.Mode == CheckerMode.BugFinding)
                     {
-                        if (!fileName.Contains("CSharp/"))
+                        if (!fileName.Contains($"CSharp{pathSep}"))
                             continue;
                         if (fileName.EndsWith("PCheckerCore.dll") 
                             || fileName.EndsWith("PCSharpRuntime.dll")
-                            || fileName.EndsWith("/P.dll")
-                            || fileName.EndsWith("/p.dll"))
+                            || fileName.EndsWith($"{pathSep}P.dll")
+                            || fileName.EndsWith($"{pathSep}p.dll"))
                             continue;
                     }
                     else if (checkerConfiguration.Mode == CheckerMode.Verification || checkerConfiguration.Mode == CheckerMode.Coverage)
                     {
-                        if (!fileName.Contains("Symbolic/"))
+                        if (!fileName.Contains($"Symbolic{pathSep}"))
                             continue;
                     }
                     else
                     {
-                        if (!fileName.Contains("Java/"))
+                        if (!fileName.Contains($"Java{pathSep}"))
                             continue;
                     }
                     checkerConfiguration.AssemblyToBeAnalyzed = fileName;

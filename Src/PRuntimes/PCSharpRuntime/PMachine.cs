@@ -179,7 +179,7 @@ namespace Plang.CSharpRuntime
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
             var pText = payload == null ? "" : $" with payload {((IPrtValue)payload).ToEscapedString()}";
-            Log($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
+            LogLine($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
             AnnounceInternal(@event);
         }
 

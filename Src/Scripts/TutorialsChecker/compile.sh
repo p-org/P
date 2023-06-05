@@ -1,6 +1,7 @@
 #!/bin/bash
 
-cd $1
+PBIN=$(realpath $1)
+cd $2
 
 # Get list of subfolders  
 folders=$(ls -d */)   
@@ -13,12 +14,13 @@ for folder in $folders; do
   # If so, change into folder and compile
   if [ -n "$pprojFiles" ]; then 
     cd $folder
+    rm -rf PGenerated
 
     echo "------------------------------------------------------"
     echo "Compiling $folder!"
     echo "------------------------------------------------------"
 
-    p compile  
+    dotnet ${PBIN} compile
     
     # Check and print any errors
     if [ $? -ne 0 ]; then  

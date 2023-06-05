@@ -2,6 +2,7 @@ package psym.utils;
 
 import psym.runtime.StateEvents;
 import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStats;
+import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.runtime.statistics.CoverageStats;
 
 import java.io.Serializable;
@@ -22,31 +23,32 @@ public class GlobalData implements Serializable {
     /**
      * Mapping of each machine's state with its corresponding event handlers
      */
-    public Map<String, StateEvents> allStateEvents;
+    private Map<String, StateEvents> allStateEvents = new HashMap<>();
 
     /**
      * Set of sync event names
      */
-    public Set<String> syncEvents = new HashSet<>();
+    private Set<String> syncEvents = new HashSet<>();
 
     /**
      * Global coverage statistics
      */
-    public CoverageStats coverageStats;
+    private CoverageStats coverageStats = new CoverageStats();
 
     /**
      * Global choice feature statistics
      */
-    public ChoiceLearningStats choiceLearningStats;
+    private ChoiceLearningStats choiceLearningStats = new ChoiceLearningStats();
+
+    /**
+     * Global symmetry tracker
+     */
+    private SymmetryTracker symmetryTracker = new SymmetryTracker();
 
     /**
      * Private constructor to enable singleton class object
      */
-    private GlobalData() {
-        allStateEvents = new HashMap<>();
-        coverageStats = new CoverageStats();
-        choiceLearningStats = new ChoiceLearningStats();
-    }
+    private GlobalData() {}
 
     /**
      * Get/create the singleton class object
@@ -59,22 +61,6 @@ public class GlobalData implements Serializable {
     }
 
     /**
-     * Get coverage statistics
-     * @return CoverageStats object
-     */
-    public static CoverageStats getCoverage() {
-        return getInstance().coverageStats;
-    }
-
-    /**
-     * Get choice feature statistics
-     * @return ChoiceFeatureStats object
-     */
-    public static ChoiceLearningStats getChoiceLearningStats() {
-        return getInstance().choiceLearningStats;
-    }
-
-    /**
      * Set the global data singleton object after resuming a run
      * @param rhs Singleton object to set to
      */
@@ -82,4 +68,27 @@ public class GlobalData implements Serializable {
         globalData = rhs;
     }
 
+    public static Map<String, StateEvents> getAllStateEvents() {
+        return getInstance().allStateEvents;
+    }
+
+    public static Set<String> getSyncEvents() {
+        return getInstance().syncEvents;
+    }
+
+    public static CoverageStats getCoverage() {
+        return getInstance().coverageStats;
+    }
+
+    public static ChoiceLearningStats getChoiceLearningStats() {
+        return getInstance().choiceLearningStats;
+    }
+
+    public static SymmetryTracker getSymmetryTracker() {
+        return getInstance().symmetryTracker;
+    }
+
+    public static void setSymmetryTracker(SymmetryTracker rhs) {
+        getInstance().symmetryTracker = rhs;
+    }
 }

@@ -76,9 +76,13 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     int dataChoiceBound = 1;
 
-    // use state caching
+    // mode of state hashing
     @Getter @Setter
     StateHashingMode stateHashingMode = StateHashingMode.Exact;
+
+    // use symmetry
+    @Getter @Setter
+    boolean useSymmetry = true;
 
     // use backtracking
     @Getter @Setter

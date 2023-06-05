@@ -92,6 +92,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     public void print_stats(SearchStats.TotalStats totalStats) {
         if (!isFinalResult) {
             recordResult(totalStats);
+            isFinalResult = true;
         }
         super.print_stats(totalStats);
 
@@ -122,6 +123,9 @@ public class IterativeBoundedScheduler extends Scheduler {
         assert (coverage.compareTo(BigDecimal.ONE) <= 0): "Error in progress estimation";
 
         String coverageGoalAchieved = GlobalData.getCoverage().getCoverageGoalAchieved();
+        if (isFinalResult && result.endsWith("correct for any depth")) {
+            coverageGoalAchieved = GlobalData.getCoverage().getMaxCoverageGoal();
+        }
 
         StatWriter.log("progress", String.format("%.22f", coverage));
         StatWriter.log("coverage-achieved", String.format("%s", coverageGoalAchieved));
@@ -499,6 +503,9 @@ public class IterativeBoundedScheduler extends Scheduler {
                 } else {
                     restoreState(choice.getChoiceState());
                     schedule.setFilter(choice.getFilter());
+                    if (configuration.isUseSymmetry()) {
+                        GlobalData.setSymmetryTracker(choice.getSymmetry());
+                    }
                 }
                 SearchLogger.logMessage("backtrack to " + d);
                 backtrackDepth = d;
@@ -652,6 +659,9 @@ public class IterativeBoundedScheduler extends Scheduler {
             PrimitiveVS repeat = getRepeat.apply(depth);
             if (!repeat.getUniverse().isFalse()) {
                 schedule.restrictFilterForDepth(depth);
+                if (configuration.isUseSymmetry()) {
+                    GlobalData.getSymmetryTracker().updateSymmetrySet(repeat);
+                }
                 return repeat;
             }
             // nothing to repeat, so look at backtrack set
@@ -664,6 +674,9 @@ public class IterativeBoundedScheduler extends Scheduler {
             if (iter > 0)
                 SearchLogger.logMessage("new choice at depth " + depth);
             choices = getChoices.get();
+            if (configuration.isUseSymmetry()) {
+                choices = GlobalData.getSymmetryTracker().getReducedChoices(choices);
+            }
             choices = choices.stream().map(x -> x.restrict(schedule.getFilter())).filter(x -> !(x.getUniverse().isFalse())).collect(Collectors.toList());
             isNewChoice = true;
         }
@@ -691,9 +704,17 @@ public class IterativeBoundedScheduler extends Scheduler {
         GlobalData.getCoverage().updateDepthCoverage(getDepth(), getChoiceDepth(), chosen.size(), backtrack.size(), isData, isNewChoice, chosenActions);
 
         PrimitiveVS chosenVS = generateNext.apply(chosen);
+        if (configuration.isUseSymmetry()) {
+            schedule.setSchedulerSymmetry();
+        }
+
 //        addRepeat.accept(chosenVS, depth);
         addBacktrack.accept(backtrack, depth);
         schedule.restrictFilterForDepth(depth);
+
+        if (configuration.isUseSymmetry()) {
+            GlobalData.getSymmetryTracker().updateSymmetrySet(chosenVS);
+        }
         return chosenVS;
     }
 
@@ -761,6 +782,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                 currentMachines.add(m);
                 assert(machines.size() >= currentMachines.size());
                 m.setScheduler(this);
+                GlobalData.getSymmetryTracker().createMachine(m, g);
             }
         } else {
             Machine newMachine;
@@ -783,6 +805,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             schedule.makeMachine(newMachine, pc);
             getVcManager().addMachine(pc, newMachine);
             allocated = new PrimitiveVS<>(newMachine).restrict(pc);
+            GlobalData.getSymmetryTracker().createMachine(newMachine, pc);
         }
 
         guardedCount = IntegerVS.add(guardedCount, 1);

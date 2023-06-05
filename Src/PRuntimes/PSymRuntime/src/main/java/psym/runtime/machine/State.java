@@ -38,9 +38,9 @@ public abstract class State implements Serializable {
 
     private StateEvents getStateEvents() {
         String key = getStateKey();
-        if (!GlobalData.getInstance().allStateEvents.containsKey(key))
-            GlobalData.getInstance().allStateEvents.put(key, new StateEvents());
-        return GlobalData.getInstance().allStateEvents.get(key);
+        if (!GlobalData.getAllStateEvents().containsKey(key))
+            GlobalData.getAllStateEvents().put(key, new StateEvents());
+        return GlobalData.getAllStateEvents().get(key);
     }
 
     public void addHandlers(EventHandler... eventHandlers) {

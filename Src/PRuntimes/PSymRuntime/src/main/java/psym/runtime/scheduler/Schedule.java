@@ -3,6 +3,8 @@ package psym.runtime.scheduler;
 import lombok.Getter;
 import lombok.Setter;
 import psym.runtime.machine.Machine;
+import psym.runtime.scheduler.symmetry.SymmetryTracker;
+import psym.utils.GlobalData;
 import psym.valuesummary.*;
 import psym.runtime.Concretizer;
 import psym.runtime.Message;
@@ -88,9 +90,14 @@ public class Schedule implements Serializable {
         }
     }
     private ChoiceState schedulerState = new ChoiceState();
+    private SymmetryTracker schedulerSymmetry = new SymmetryTracker();
 
     public void setSchedulerState(Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
         schedulerState.copy(ms, mc);
+    }
+
+    public void setSchedulerSymmetry() {
+        schedulerSymmetry = GlobalData.getSymmetryTracker();
     }
 
     public class Choice implements Serializable {
@@ -120,6 +127,8 @@ public class Schedule implements Serializable {
         ChoiceState choiceState = null;
         @Getter
         Guard filter = null;
+        @Getter
+        SymmetryTracker symmetry = null;
 
         public Choice() {
         }
@@ -141,6 +150,7 @@ public class Schedule implements Serializable {
             schedulerChoiceDepth = old.schedulerChoiceDepth;
             choiceState = old.choiceState;
             filter = old.filter;
+            symmetry = old.symmetry;
         }
 
         /**
@@ -158,11 +168,12 @@ public class Schedule implements Serializable {
             return new ChoiceState(state.getMachineStates(), state.getMachineCounters());
         }
 
-        public void storeState(int depth, int cdepth, ChoiceState state, Guard f) {
+        public void storeState(int depth, int cdepth, ChoiceState state, Guard f, SymmetryTracker sym) {
             schedulerDepth = depth;
             schedulerChoiceDepth = cdepth;
             choiceState = copyState(state);
             filter = f;
+            symmetry = new SymmetryTracker(sym);
         }
 
         public int getNumChoicesExplored() {
@@ -219,7 +230,7 @@ public class Schedule implements Serializable {
             c.backtrackBool = backtrackBool.stream().map(x -> x.restrict(pc)).filter(x -> !x.isEmptyVS()).collect(Collectors.toList());
             c.backtrackInt = backtrackInt.stream().map(x -> x.restrict(pc)).filter(x -> !x.isEmptyVS()).collect(Collectors.toList());
             c.backtrackElement = backtrackElement.stream().map(x -> x.restrict(pc)).filter(x -> !x.isEmptyVS()).collect(Collectors.toList());
-            c.storeState(this.schedulerDepth, this.schedulerChoiceDepth, this.choiceState, this.filter);
+            c.storeState(this.schedulerDepth, this.schedulerChoiceDepth, this.choiceState, this.filter, this.symmetry);
             return c;
         }
 
@@ -365,9 +376,9 @@ public class Schedule implements Serializable {
             choices.add(newChoice());
         }
         if (machines.isEmpty()) {
-            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter, schedulerSymmetry);
         } else {
-            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter, schedulerSymmetry);
             numBacktracks++;
         }
         for (PrimitiveVS<Machine> choice : machines) {
@@ -380,9 +391,9 @@ public class Schedule implements Serializable {
             choices.add(newChoice());
         }
         if (bools.isEmpty()) {
-            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter, schedulerSymmetry);
         } else {
-            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter, schedulerSymmetry);
             numBacktracks++;
             numDataBacktracks++;
         }
@@ -396,9 +407,9 @@ public class Schedule implements Serializable {
             choices.add(newChoice());
         }
         if (ints.isEmpty()) {
-            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter, schedulerSymmetry);
         } else {
-            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter, schedulerSymmetry);
             numBacktracks++;
             numDataBacktracks++;
         }
@@ -412,9 +423,9 @@ public class Schedule implements Serializable {
             choices.add(newChoice());
         }
         if (elements.isEmpty()) {
-            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter);
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, null, filter, schedulerSymmetry);
         } else {
-            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter);
+            choices.get(depth).storeState(schedulerDepth, schedulerChoiceDepth, schedulerState, filter, schedulerSymmetry);
             numBacktracks++;
             numDataBacktracks++;
         }

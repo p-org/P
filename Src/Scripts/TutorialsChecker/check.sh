@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PBIN=$(realpath $1)
+PBIN=$1
 ITERATIONS=10000
 
 cd $2

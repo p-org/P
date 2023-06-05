@@ -21,8 +21,8 @@ jobs:
     - name: Build P from source
       run: dotnet build --configuration Release
     - name: Compile Tutorials
-      run: ./Src/Scripts/TutorialsChecker/compile.sh ./Bld/Drops/Release/Binaries/net6.0/p.dll ./Tutorial
+      run: ./Src/Scripts/TutorialsChecker/compile.sh ${GITHUB_WORKSPACE}/Bld/Drops/Release/Binaries/net6.0/p.dll ./Tutorial
     - name: Check Tutorials
-      run: ./Src/Scripts/TutorialsChecker/check.sh ./Bld/Drops/Release/Binaries/net6.0/p.dll ./Tutorial
+      run: ./Src/Scripts/TutorialsChecker/check.sh ${GITHUB_WORKSPACE}/Bld/Drops/Release/Binaries/net6.0/p.dll ./Tutorial
 
 

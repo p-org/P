@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PBIN=$(realpath $1)
+PBIN=$1
 cd $2
 
 # Get list of subfolders  

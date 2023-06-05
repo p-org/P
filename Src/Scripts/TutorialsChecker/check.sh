@@ -27,7 +27,7 @@ for folder in $folders; do
         if  [[ "${beginFlag}" = false ]] && [[ ${firstWord} == "Possible" ]]; then
           beginFlag=true
         elif [[ "${beginFlag}" = true ]] && [[ ${firstWord} ]]; then
-          if [[ "${firstWord}" = "[PTool]:" ]]; then
+          if [[ "${firstWord}" = "~~" ]]; then
             break;
           fi
           echo "Smoke testing for test case ${firstWord}";

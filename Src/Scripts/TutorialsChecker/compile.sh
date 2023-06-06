@@ -1,7 +1,6 @@
 #!/bin/bash
 
-PBIN=$1
-cd $2
+cd $1
 
 # Get list of subfolders  
 folders=$(ls -d */)   
@@ -20,7 +19,7 @@ for folder in $folders; do
     echo "Compiling $folder!"
     echo "------------------------------------------------------"
 
-    dotnet ${PBIN} compile
+    p compile
     
     # Check and print any errors
     if [ $? -ne 0 ]; then  

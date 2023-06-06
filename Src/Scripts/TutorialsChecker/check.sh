@@ -1,9 +1,8 @@
 #!/bin/bash
 
-PBIN=$1
 ITERATIONS=10000
 
-cd $2
+cd $1
 
 # Get list of subfolders  
 folders=$(ls -d */)   
@@ -23,7 +22,7 @@ for folder in $folders; do
     echo "------------------------------------------------------"
 
     checkLog="check.log"
-    dotnet ${PBIN} check -i ${ITERATIONS} 2>&1 | tee ${checkLog}
+    p check -i ${ITERATIONS} 2>&1 | tee ${checkLog}
     if grep -q "Possible options are:" ${checkLog}; then
       beginFlag=false
       while IFS=" " read firstWord _; do
@@ -34,7 +33,7 @@ for folder in $folders; do
             break;
           fi
           echo "Smoke testing for test case ${firstWord}";
-          dotnet ${PBIN} check -i ${ITERATIONS} -tc ${firstWord}
+          p check -i ${ITERATIONS} -tc ${firstWord}
           if [ $? -ne 0 ]; then  
             let "errorCount=errorCount + 1"
           fi  

@@ -11,11 +11,6 @@ namespace Plang.Compiler.Backend.Java
         public void GenerateBuildScript(ICompilerConfiguration job)
         {
             var pomPath = Path.Combine(job.OutputDirectory.FullName, Constants.BuildFileName);
-            if (File.Exists(pomPath))
-            {
-                job.Output.WriteInfo("Reusing existing " + Constants.BuildFileName);
-                return;
-            }
 
             File.WriteAllText(pomPath, Constants.BuildFileTemplate(job.ProjectName));
             job.Output.WriteInfo("Generated " + Constants.BuildFileName);

@@ -41,7 +41,7 @@
         "default" : [
             "tcSingleClient",
             "tcMultipleClients",
-            "tcSingleClientAbstractServer"
+            "tcAbstractServer"
         ]
     },
 

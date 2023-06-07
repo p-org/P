@@ -197,7 +197,7 @@ p check
     Possible options are:
     tcSingleClient
     tcMultipleClients
-    tcSingleClientAbstractServer
+    tcAbstractServer
     
     [PTool]: Thanks for using P!
     ```
@@ -261,19 +261,19 @@ p check -tc tcSingleClient -i 100
     ```
 
 There is a known bug in the ClientServer example (explained in the Tutorials) which is caught by
-the `tcSingleClientAbstractServer` test case. Run command:
+the `tcAbstractServer` test case. Run command:
 ```shell
-p check -tc tcSingleClientAbstractServer -i 100
+p check -tc tcAbstractServer -i 100
 ```
 
 ??? info "Expected Output"
     ```hl_lines="9 11 13 20"
-    $ p check -tc tcSingleClientAbstractServer -i 100
+    $ p check -tc tcAbstractServer -i 100
 
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
-    .. Test case :: tcSingleClientAbstractServer
+    .. Test case :: tcAbstractServer
     ... Checker is using 'random' strategy (seed:1823819121).
     ..... Iteration #1
     Checker found a bug.

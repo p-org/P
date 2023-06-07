@@ -48,20 +48,20 @@ namespace Plang.Compiler.TypeChecker
             {
                 throw handler.TypeMismatch(context.assertion, assertion.Type, PrimitiveType.Bool);
             }
-            IPExpr message = new StringExpr(context, @$"{config.LocationResolver.GetLocation(context).ToString().Replace(@"\", @"\\")}",new List<IPExpr>());
+            IPExpr assertMessage = new StringExpr(context, @$"{config.LocationResolver.GetLocation(context).ToString().Replace(@"\", @"\\")}",new List<IPExpr>());
             if (context.message != null)
             {
-                message = exprVisitor.Visit(context.message);
+                var message = exprVisitor.Visit(context.message);
                 if (!message.Type.IsSameTypeAs(PrimitiveType.String))
                 {
                     throw handler.TypeMismatch(context.message, message.Type, PrimitiveType.String);
                 }
 
-                message = new StringExpr(message.SourceLocation, "{0} {1}",new List<IPExpr>() {position,
+                assertMessage = new StringExpr(message.SourceLocation, "{0} {1}",new List<IPExpr>() {assertMessage,
                     message});
             }
             
-            return new AssertStmt(context, assertion, message);
+            return new AssertStmt(context, assertion, assertMessage);
         }
 
         public override IPStmt VisitPrintStmt(PParser.PrintStmtContext context)

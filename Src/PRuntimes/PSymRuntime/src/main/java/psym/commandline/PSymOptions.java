@@ -204,10 +204,10 @@ public class PSymOptions {
                 .build();
         options.addOption(randomSeed);
 
-        // whether or not to disable symmetry
+        // whether or not to enable symmetry
         Option symmetry = Option.builder()
-                .longOpt("no-symmetry")
-                .desc("Disable symmetry-aware exploration")
+                .longOpt("use-symmetry")
+                .desc("Enable symmetry-aware exploration")
                 .numberOfArgs(0)
                 .build();
         options.addOption(symmetry);
@@ -644,8 +644,8 @@ public class PSymOptions {
                         optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
-                case "no-symmetry":
-                    config.setUseSymmetry(false);
+                case "use-symmetry":
+                    config.setUseSymmetry(true);
                     break;
                 case "no-backtrack":
                     config.setUseBacktrack(false);

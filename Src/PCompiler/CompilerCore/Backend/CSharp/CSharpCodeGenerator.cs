@@ -29,37 +29,39 @@ namespace Plang.Compiler.Backend.CSharp
             var mainFilePath = Path.Combine(job.OutputDirectory.FullName, "Test.cs");
             var stdout = "";
             var stderr = "";
-            // if the file does not exist then create the file
-            if (!File.Exists(csprojPath))
+            
+            // create the .csproj ile
+            var csprojTemplate = Constants.csprojTemplate;
+            csprojTemplate = csprojTemplate.Replace("-directory-",
+                    Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName));
+
+            string foreignInclude = "";
+            var foreignFiles = job.InputForeignFiles.Where(x => x.EndsWith(".cs"));
+            if (foreignFiles.Any())
             {
-                var csprojTemplate = Constants.csprojTemplate;
-                csprojTemplate = csprojTemplate.Replace("-directory-",
-                        Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName));
-
-                string foreignInclude = "";
-                var foreignFiles = job.InputForeignFiles.Where(x => x.EndsWith(".cs"));
-                if (foreignFiles.Any())
+                foreignInclude += "  <ItemGroup>\n";
+                foreach (var fileName in foreignFiles)
                 {
-                    foreignInclude += "  <ItemGroup>\n";
-                    foreach (var fileName in foreignFiles)
-                    {
-                        foreignInclude += $"    <Compile Include=\"{fileName}\"/>\n";
-                    }
-                    foreignInclude += "  </ItemGroup>";
+                    foreignInclude += $"    <Compile Include=\"{fileName}\"/>\n";
                 }
-                csprojTemplate = csprojTemplate.Replace("-foreign-include-", foreignInclude);
-
-                string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                csprojTemplate = csprojTemplate.Replace("-assembly-path-", assemblyPath);
-
-                File.WriteAllText(csprojPath, csprojTemplate);
+                foreignInclude += "  </ItemGroup>";
             }
+            csprojTemplate = csprojTemplate.Replace("-foreign-include-", foreignInclude);
+
+            string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            csprojTemplate = csprojTemplate.Replace("-assembly-path-", assemblyPath);
+
+            File.WriteAllText(csprojPath, csprojTemplate);
 
             // if the Main file does not exist then create the file
             if (!File.Exists(mainFilePath))
             {
                 var mainCode = Constants.mainCode.Replace("-projectName-", job.ProjectName);
                 File.WriteAllText(mainFilePath, mainCode);
+            }
+            else
+            {
+                job.Output.WriteInfo("Reusing existing " + mainFilePath);
             }
 
             // compile the csproj file

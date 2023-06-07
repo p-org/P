@@ -49,7 +49,7 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.TypeMismatch(context.assertion, assertion.Type, PrimitiveType.Bool);
             }
             IPExpr message;
-            string position = $"{config.LocationResolver.GetLocation(context)}\\n";
+            string position = @$"{config.LocationResolver.GetLocation(context)}\n";
             if (context.message == null)
                 message = new StringExpr(context, position, new List<IPExpr>());
             else

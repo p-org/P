@@ -71,7 +71,7 @@ public class Message implements ValueSummary<Message> {
         for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
             PrimitiveVS<Event> events = this.getEvent();
             for (GuardedValue<Event> event : events.getGuardedValues()) {
-                if (GlobalData.getInstance().syncEvents.contains(event.getValue().name)
+                if (GlobalData.getSyncEvents().contains(event.getValue().name)
                     || event.getValue().name.contains("sync")) {
                     cond = cond.or(event.getGuard());
                 }

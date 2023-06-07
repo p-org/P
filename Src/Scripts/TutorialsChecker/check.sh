@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ITERATIONS=10000
+
 cd $1
 
 # Get list of subfolders  
@@ -20,18 +22,18 @@ for folder in $folders; do
     echo "------------------------------------------------------"
 
     checkLog="check.log"
-    p check -i 100 2>&1 | tee ${checkLog}
+    p check -i ${ITERATIONS} 2>&1 | tee ${checkLog}
     if grep -q "Possible options are:" ${checkLog}; then
       beginFlag=false
       while IFS=" " read firstWord _; do
         if  [[ "${beginFlag}" = false ]] && [[ ${firstWord} == "Possible" ]]; then
           beginFlag=true
         elif [[ "${beginFlag}" = true ]] && [[ ${firstWord} ]]; then
-          if [[ "${firstWord}" = "[PTool]:" ]]; then
+          if [[ "${firstWord}" = "~~" ]]; then
             break;
           fi
           echo "Smoke testing for test case ${firstWord}";
-          p check -i 10000 -tc ${firstWord}
+          p check -i ${ITERATIONS} -tc ${firstWord}
           if [ $? -ne 0 ]; then  
             let "errorCount=errorCount + 1"
           fi  

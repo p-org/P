@@ -133,6 +133,7 @@ public class Scheduler implements SymbolicSearch {
         schedule.setSchedulerDepth(getDepth());
         schedule.setSchedulerChoiceDepth(getChoiceDepth());
         schedule.setSchedulerState(srcState, machineCounters);
+        GlobalData.getSymmetryTracker().reset();
     }
 
     /** Reinitialize scheduler */

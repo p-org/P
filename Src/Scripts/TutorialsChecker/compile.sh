@@ -13,12 +13,13 @@ for folder in $folders; do
   # If so, change into folder and compile
   if [ -n "$pprojFiles" ]; then 
     cd $folder
+    rm -rf PGenerated
 
     echo "------------------------------------------------------"
     echo "Compiling $folder!"
     echo "------------------------------------------------------"
 
-    p compile  
+    p compile
     
     # Check and print any errors
     if [ $? -ne 0 ]; then  

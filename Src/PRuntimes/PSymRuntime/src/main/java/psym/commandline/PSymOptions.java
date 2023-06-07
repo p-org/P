@@ -204,6 +204,14 @@ public class PSymOptions {
                 .build();
         options.addOption(randomSeed);
 
+        // whether or not to disable symmetry
+        Option symmetry = Option.builder()
+                .longOpt("no-symmetry")
+                .desc("Disable symmetry-aware exploration")
+                .numberOfArgs(0)
+                .build();
+        options.addOption(symmetry);
+
         // whether or not to disable stateful backtracking
         Option backtrack = Option.builder()
                 .longOpt("no-backtrack")
@@ -636,6 +644,9 @@ public class PSymOptions {
                         optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
+                case "no-symmetry":
+                    config.setUseSymmetry(false);
+                    break;
                 case "no-backtrack":
                     config.setUseBacktrack(false);
                     break;
@@ -797,11 +808,16 @@ public class PSymOptions {
                 switch (key) {
                     case "sync-events":
                         JSONArray syncEvents = value.getJSONArray("default");
-//                        System.out.println("Sync events:");
                         for (int i = 0; i < syncEvents.length(); i++) {
                             String syncEventName = syncEvents.getString(i);
-//                            System.out.println("  - "+syncEventName);
-                            GlobalData.getInstance().syncEvents.add(syncEventName);
+                            GlobalData.getSyncEvents().add(syncEventName);
+                        }
+                        break;
+                    case "symmetric-machines":
+                        JSONArray symMachineTypes = value.getJSONArray("default");
+                        for (int i = 0; i < symMachineTypes.length(); i++) {
+                            String symTypeName = symMachineTypes.getString(i);
+                            GlobalData.getInstance().getSymmetryTracker().addSymmetryType(symTypeName);
                         }
                         break;
                     default:

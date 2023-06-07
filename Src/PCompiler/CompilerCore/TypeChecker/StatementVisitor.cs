@@ -49,9 +49,9 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.TypeMismatch(context.assertion, assertion.Type, PrimitiveType.Bool);
             }
             IPExpr message;
-            string position = @$"{config.LocationResolver.GetLocation(context)}\n";
+            IPExpr position = new StringExpr(context, @$"{config.LocationResolver.GetLocation(context)}\n",new List<IPExpr>());
             if (context.message == null)
-                message = new StringExpr(context, position, new List<IPExpr>());
+                message = position;
             else
             {
                 message = exprVisitor.Visit(context.message);
@@ -60,8 +60,8 @@ namespace Plang.Compiler.TypeChecker
                     throw handler.TypeMismatch(context.message, message.Type, PrimitiveType.String);
                 }
 
-                message = new StringExpr(message.SourceLocation, position + ((StringExpr)message).BaseString,
-                    (message as StringExpr).Args);
+                message = new StringExpr(message.SourceLocation, "{0} {1}",new List<IPExpr>() {position,
+                    message});
             }
             
             return new AssertStmt(context, assertion, message);

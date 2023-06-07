@@ -30,7 +30,7 @@ namespace Plang.Compiler.Backend.CSharp
             var stdout = "";
             var stderr = "";
             
-            // create the .csproj ile
+            // create the .csproj file
             var csprojTemplate = Constants.csprojTemplate;
             csprojTemplate = csprojTemplate.Replace("-directory-",
                     Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName));

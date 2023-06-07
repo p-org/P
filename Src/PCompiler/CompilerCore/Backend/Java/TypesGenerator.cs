@@ -29,7 +29,7 @@ namespace Plang.Compiler.Backend.Java
             return ret;
         }
 
-        internal TypesGenerator(string filename) : base(filename)
+        internal TypesGenerator(ICompilerConfiguration job, string filename) : base(job, filename)
         {
         }
 

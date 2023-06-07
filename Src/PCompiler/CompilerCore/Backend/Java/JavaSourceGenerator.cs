@@ -9,17 +9,20 @@ namespace Plang.Compiler.Backend.Java
     {
         private CompilationContext _context;
         protected CompiledFile Source;
+        protected ICompilerConfiguration Job;
         protected Scope GlobalScope;
 
         internal NameManager Names => _context.Names;
         internal TypeManager Types => _context.Types;
+        internal String PackageName => $"{Job.ProjectName}.pobserve";
 
         /// <summary>
         /// Constructs a new Java source generator for a particular output file.
         /// </summary>
         /// <param name="filename"></param>
-        internal JavaSourceGenerator(string filename)
+        internal JavaSourceGenerator(ICompilerConfiguration job, string filename)
         {
+            Job = job;
             Source = new CompiledFile(filename);
         }
 
@@ -31,7 +34,7 @@ namespace Plang.Compiler.Backend.Java
 
         protected virtual void WriteFileHeader()
         {
-            WriteLine($"package {Constants.PGeneratedNamespaceName};");
+            WriteLine($"package {PackageName};");
 
             WriteLine(Constants.DoNotEditWarning);
             WriteLine();

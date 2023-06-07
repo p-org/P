@@ -13,18 +13,20 @@ namespace Plang.Compiler.TypeChecker
     public class StatementVisitor : PParserBaseVisitor<IPStmt>
     {
         private readonly ExprVisitor exprVisitor;
+        private readonly ICompilerConfiguration config;
         private readonly ITranslationErrorHandler handler;
         private readonly Machine machine;
         private readonly Function method;
         private readonly Scope table;
 
-        public StatementVisitor(ITranslationErrorHandler handler, Machine machine, Function method)
+        public StatementVisitor(ICompilerConfiguration config, Machine machine, Function method)
         {
-            this.handler = handler;
+            this.config = config;
+            this.handler = this.config.Handler;
             this.machine = machine;
             this.method = method;
             table = method.Scope;
-            exprVisitor = new ExprVisitor(method, handler);
+            exprVisitor = new ExprVisitor(method, config.Handler);
         }
 
         public override IPStmt VisitFunctionBody(PParser.FunctionBodyContext context)
@@ -47,8 +49,9 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.TypeMismatch(context.assertion, assertion.Type, PrimitiveType.Bool);
             }
             IPExpr message;
+            string position = $"{config.LocationResolver.GetLocation(context)}\\n";
             if (context.message == null)
-                message = new StringExpr(context, "", new List<IPExpr>());
+                message = new StringExpr(context, position, new List<IPExpr>());
             else
             {
                 message = exprVisitor.Visit(context.message);
@@ -56,8 +59,11 @@ namespace Plang.Compiler.TypeChecker
                 {
                     throw handler.TypeMismatch(context.message, message.Type, PrimitiveType.String);
                 }
-            }
 
+                message = new StringExpr(message.SourceLocation, position + ((StringExpr)message).BaseString,
+                    (message as StringExpr).Args);
+            }
+            
             return new AssertStmt(context, assertion, message);
         }
 
@@ -492,7 +498,7 @@ namespace Plang.Compiler.TypeChecker
                         recvHandler.Signature.Parameters.Add(paramVar);
                     }
 
-                    FunctionBodyVisitor.PopulateMethod(handler, recvHandler);
+                    FunctionBodyVisitor.PopulateMethod(config, recvHandler);
                     
                     if (!table.Lookup(eventIdContext.GetText(), out PEvent pEvent))
                     {

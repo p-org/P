@@ -48,11 +48,8 @@ namespace Plang.Compiler.TypeChecker
             {
                 throw handler.TypeMismatch(context.assertion, assertion.Type, PrimitiveType.Bool);
             }
-            IPExpr message;
-            IPExpr position = new StringExpr(context, @$"{config.LocationResolver.GetLocation(context)}\n",new List<IPExpr>());
-            if (context.message == null)
-                message = position;
-            else
+            IPExpr message = new StringExpr(context, @$"{config.LocationResolver.GetLocation(context).ToString().Replace(@"\", @"\\")}",new List<IPExpr>());
+            if (context.message != null)
             {
                 message = exprVisitor.Visit(context.message);
                 if (!message.Type.IsSameTypeAs(PrimitiveType.String))

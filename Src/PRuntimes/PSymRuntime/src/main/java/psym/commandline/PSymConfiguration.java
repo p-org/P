@@ -82,7 +82,7 @@ public class PSymConfiguration implements Serializable {
 
     // use symmetry
     @Getter @Setter
-    boolean useSymmetry = true;
+    boolean useSymmetry = false;
 
     // use backtracking
     @Getter @Setter

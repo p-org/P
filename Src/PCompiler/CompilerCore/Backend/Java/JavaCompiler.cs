@@ -11,13 +11,37 @@ namespace Plang.Compiler.Backend.Java
         public void GenerateBuildScript(ICompilerConfiguration job)
         {
             var pomPath = Path.Combine(job.OutputDirectory.FullName, Constants.BuildFileName);
-            if (File.Exists(pomPath))
-            {
-                job.Output.WriteInfo("Reusing existing " + Constants.BuildFileName);
-                return;
-            }
 
-            File.WriteAllText(pomPath, Constants.BuildFileTemplate(job.ProjectName));
+            // create the pom.xml file
+            var pomTemplate = Constants.pomTemplate;
+            pomTemplate = pomTemplate.Replace("-project-name-",job.ProjectName);
+            
+            string foreignInclude = "";
+            var foreignFiles = job.InputForeignFiles.Where(x => x.EndsWith(".java"));
+            if (foreignFiles.Any())
+            {
+                foreignInclude = Constants.pomForeignTemplate;
+                string foreignSourceInclude = "";
+                SortedSet<string> foreignFolders = new SortedSet<string>();
+
+                foreach (var fileName in foreignFiles)
+                {
+                    var folderName = Path.GetDirectoryName(fileName);
+                    if (folderName is not null)
+                    {
+                        foreignFolders.Add(folderName);
+                    }
+                }
+                foreach (var folderName in foreignFolders)
+                {
+                    foreignSourceInclude += $"                                <source>{folderName}</source>\n";
+                }
+                foreignInclude = foreignInclude.Replace("-foreign-source-include-", foreignSourceInclude);
+            }
+            pomTemplate = pomTemplate.Replace("-foreign-include-", foreignInclude);
+            
+            File.WriteAllText(pomPath, pomTemplate);
+
             job.Output.WriteInfo("Generated " + Constants.BuildFileName);
         }
 
@@ -31,10 +55,10 @@ namespace Plang.Compiler.Backend.Java
 
             var generators = new List<JavaSourceGenerator>()
             {
-                new TypesGenerator(Constants.TypesDefnFileName),
-                new EventGenerator(Constants.EventDefnFileName),
-                new MachineGenerator(Constants.MachineDefnFileName),
-                new FFIStubGenerator(Constants.FFIStubFileName)
+                new TypesGenerator(job, Constants.TypesDefnFileName),
+                new EventGenerator(job, Constants.EventDefnFileName),
+                new MachineGenerator(job, Constants.MachineDefnFileName),
+                new FFIStubGenerator(job, Constants.FFIStubFileName)
             };
 
             var ctx = new CompilationContext(job);

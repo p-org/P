@@ -34,38 +34,36 @@ namespace Plang.Compiler.Backend.Symbolic
             var pomPath = Path.Combine(job.OutputDirectory.FullName, "pom.xml");
             var stdout = "";
             var stderr = "";
-            // if the file does not exist then create the file
-            if (!File.Exists(pomPath))
+            
+            // create the pom.xml file
+            var pomTemplate = Constants.pomTemplate;
+            pomTemplate = pomTemplate.Replace("-project-name-",job.ProjectName);
+            
+            string foreignInclude = "";
+            var foreignFiles = job.InputForeignFiles.Where(x => x.EndsWith(".java"));
+            if (foreignFiles.Any())
             {
-                var pomTemplate = Constants.pomTemplate;
-                pomTemplate = pomTemplate.Replace("-project-name-",job.ProjectName);
-                
-                string foreignInclude = "";
-                var foreignFiles = job.InputForeignFiles.Where(x => x.EndsWith(".java"));
-                if (foreignFiles.Any())
-                {
-                    foreignInclude = Constants.pomForeignTemplate;
-                    string foreignSourceInclude = "";
-                    SortedSet<string> foreignFolders = new SortedSet<string>();
+                foreignInclude = Constants.pomForeignTemplate;
+                string foreignSourceInclude = "";
+                SortedSet<string> foreignFolders = new SortedSet<string>();
 
-                    foreach (var fileName in foreignFiles)
+                foreach (var fileName in foreignFiles)
+                {
+                    var folderName = Path.GetDirectoryName(fileName);
+                    if (folderName is not null)
                     {
-                        var folderName = Path.GetDirectoryName(fileName);
-                        if (folderName is not null)
-                        {
-                            foreignFolders.Add(folderName);
-                        }
+                        foreignFolders.Add(folderName);
                     }
-                    foreach (var folderName in foreignFolders)
-                    {
-                        foreignSourceInclude += $"                                <source>{folderName}</source>\n";
-                    }
-                    foreignInclude = foreignInclude.Replace("-foreign-source-include-", foreignSourceInclude);
                 }
-                pomTemplate = pomTemplate.Replace("-foreign-include-", foreignInclude);
-                
-                File.WriteAllText(pomPath, pomTemplate);
+                foreach (var folderName in foreignFolders)
+                {
+                    foreignSourceInclude += $"                                <source>{folderName}</source>\n";
+                }
+                foreignInclude = foreignInclude.Replace("-foreign-source-include-", foreignSourceInclude);
             }
+            pomTemplate = pomTemplate.Replace("-foreign-include-", foreignInclude);
+            
+            File.WriteAllText(pomPath, pomTemplate);
 
             // compile the csproj file
             var args = new[] { "versions:use-latest-versions -DgenerateBackupPoms=false clean package -q"};

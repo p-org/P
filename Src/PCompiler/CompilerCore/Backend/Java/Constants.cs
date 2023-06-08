@@ -41,8 +41,6 @@ namespace Plang.Compiler.Backend.Java
             return classes.Select(pkg => $"import {pkg};");
         }
 
-        public static readonly string PGeneratedNamespaceName = "PGenerated";
-
         public static readonly string MachineNamespaceName = "PMachines";
         public static readonly string MachineDefnFileName = $"{MachineNamespaceName}.java";
 
@@ -80,8 +78,7 @@ in the body of each function definition as necessary for your project's business
         public static readonly string FFIStubFileName = "FFIStubs.txt";
 
         public static readonly string FFIPackage = "PForeign";
-        internal static readonly string FFITypesPackage = $"{FFIPackage}.types";
-        public static readonly string FFIGlobalScopeCname = "P_TopScope";
+        public static readonly string FFIGlobalScopeCname = "PObserveGlobal";
 
 
         // Something that is clearly not valid Java.
@@ -111,18 +108,17 @@ in the body of each function definition as necessary for your project's business
 
         internal static string BuildFileName => "pom.xml";
 
-        internal static string BuildFileTemplate(string projectName)
-        {
-            return String.Format(@"
+        internal static readonly string pomTemplate =
+            @"
 <project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
 xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.amazon.p</groupId>
+    <artifactId>-project-name-</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <artifactId>{0}</artifactId>
 
-    <name>{0}</name>
+    <name>-project-name-</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
@@ -149,6 +145,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
 
     <build>
         <plugins>
+            -foreign-include-
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.3.0</version>
@@ -171,8 +168,29 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         <directory>${{buildDirectory}}</directory>
         <sourceDirectory>.</sourceDirectory>
     </build>
-</project>", projectName);
-        }
+</project>";
+        
+        internal static readonly string pomForeignTemplate =
+            @"
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+-foreign-source-include-                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+";
         #endregion
 
         #region P runtime identifiers

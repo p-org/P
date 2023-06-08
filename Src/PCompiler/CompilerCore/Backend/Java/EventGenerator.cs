@@ -6,7 +6,7 @@ namespace Plang.Compiler.Backend.Java
 {
     internal class EventGenerator : JavaSourceGenerator {
 
-        internal EventGenerator(string filename) : base(filename)
+        internal EventGenerator(ICompilerConfiguration job, string filename) : base(job, filename)
         {
         }
 

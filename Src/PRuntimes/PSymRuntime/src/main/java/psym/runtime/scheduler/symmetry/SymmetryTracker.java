@@ -38,7 +38,7 @@ public class SymmetryTracker {
     }
 
     public List<ValueSummary> getReducedChoices(List<ValueSummary> original) {
-        if (original.size() <= 1) {
+        if (original.size() <= 1 || typeToSymmetrySet.isEmpty()) {
             return original;
         }
 

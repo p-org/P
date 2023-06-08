@@ -328,6 +328,15 @@ namespace PChecker
         }
 
         /// <summary>
+        /// Updates the checkerConfiguration to use the statistical scheduling strategy during systematic testing.
+        /// </summary>
+        public CheckerConfiguration WithStatisticalStrategy()
+        {
+            SchedulingStrategy = "statistical";
+            return this;
+        }
+
+        /// <summary>
         /// Updates the checkerConfiguration to use the probabilistic scheduling strategy during systematic testing.
         /// You can specify a value controlling the probability of each scheduling decision. This value is
         /// specified as the integer N in the equation 0.5 to the power of N. So for N=1, the probability is

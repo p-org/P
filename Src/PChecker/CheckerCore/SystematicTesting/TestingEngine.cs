@@ -225,6 +225,10 @@ namespace PChecker.SystematicTesting
             {
                 Strategy = new RandomStrategy(checkerConfiguration.MaxFairSchedulingSteps, RandomValueGenerator);
             }
+            else if (checkerConfiguration.SchedulingStrategy is "statistical")
+            {
+                Strategy = new StatisticalStrategy(checkerConfiguration.MaxFairSchedulingSteps, RandomValueGenerator);
+            }
             else if (checkerConfiguration.SchedulingStrategy is "pct")
             {
                 Strategy = new PCTStrategy(checkerConfiguration.MaxUnfairSchedulingSteps, checkerConfiguration.StrategyBound,
@@ -328,6 +332,7 @@ namespace PChecker.SystematicTesting
         {
             var options = string.Empty;
             if (_checkerConfiguration.SchedulingStrategy is "random" ||
+                _checkerConfiguration.SchedulingStrategy is "statistical" ||
                 _checkerConfiguration.SchedulingStrategy is "pct" ||
                 _checkerConfiguration.SchedulingStrategy is "fairpct" ||
                 _checkerConfiguration.SchedulingStrategy is "probabilistic" ||

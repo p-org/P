@@ -9,11 +9,13 @@ namespace Plang.Compiler.TypeChecker
 {
     public static class Analyzer
     {
-        public static Scope AnalyzeCompilationUnit(ITranslationErrorHandler handler,
+        public static Scope AnalyzeCompilationUnit(ICompilerConfiguration config,
             params PParser.ProgramContext[] programUnits)
         {
+            var handler = config.Handler;
+            
             // Step 1: Build the global scope of declarations
-            var globalScope = BuildGlobalScope(handler, programUnits);
+            var globalScope = BuildGlobalScope(config, programUnits);
 
             // Step 2: Validate machine specifications
             foreach (var machine in globalScope.Machines)
@@ -25,7 +27,7 @@ namespace Plang.Compiler.TypeChecker
             var allFunctions = globalScope.GetAllMethods().ToList();
             foreach (var machineFunction in allFunctions)
             {
-                FunctionBodyVisitor.PopulateMethod(handler, machineFunction);
+                FunctionBodyVisitor.PopulateMethod(config, machineFunction);
                 FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
             }
 
@@ -157,9 +159,9 @@ namespace Plang.Compiler.TypeChecker
             }
         }
 
-        private static Scope BuildGlobalScope(ITranslationErrorHandler handler, PParser.ProgramContext[] programUnits)
+        private static Scope BuildGlobalScope(ICompilerConfiguration config, PParser.ProgramContext[] programUnits)
         {
-            var globalScope = Scope.CreateGlobalScope(handler);
+            var globalScope = Scope.CreateGlobalScope(config.Handler);
             var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
 
             // Add built-in events to the table.
@@ -175,7 +177,7 @@ namespace Plang.Compiler.TypeChecker
             // Step 2: Validate declarations and fill with types
             foreach (var programUnit in programUnits)
             {
-                DeclarationVisitor.PopulateDeclarations(handler, globalScope, programUnit, nodesToDeclarations);
+                DeclarationVisitor.PopulateDeclarations(config.Handler, globalScope, programUnit, nodesToDeclarations);
             }
 
             return globalScope;

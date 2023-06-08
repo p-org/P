@@ -82,7 +82,7 @@ namespace Plang.CSharpRuntime
         public override void OnMonitorProcessEvent(string monitorType, string stateName, string senderName, string senderType,
             string senderStateName, Event e)
         {
-            var text = $"<MonitorLog> {monitorType} is processing event '{GetEventNameWithPayload(e)}' in state '{stateName}'.";
+            var text = $"<MonitorLog> {GetShortName(monitorType)} is processing event '{GetEventNameWithPayload(e)}' in state '{stateName}'.";
             Logger.WriteLine(text);
         }
 

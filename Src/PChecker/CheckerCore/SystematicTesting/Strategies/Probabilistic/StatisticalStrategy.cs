@@ -25,6 +25,8 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// </summary>
         protected int ScheduledSteps;
 
+        private ulong? Time;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="StatisticalStrategy"/> class.
         /// </summary>
@@ -33,24 +35,61 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             RandomValueGenerator = random;
             MaxScheduledSteps = maxSteps;
             ScheduledSteps = 0;
+            Time = 0;
         }
         
         /// <inheritdoc/>
         public virtual bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
         {
-            var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
-            if (enabledOperations.Count == 0)
+            // Associate each event with a delay value. For now, set static values. Also for now, only send operations
+            // should have this delay value set. Keep a global time here. Exhaust all non-send operations. Then get the
+            // send with min delay, increment time by its delay value, and schedule it.
+            // Questions for next steps:
+            //      - How do we find the actual delays given in the program? For this, using a send operation, we should
+            //        be able to access its payload value or a specific field defined for delay.
+            //      - Also, although we delay the send operations, we should actually be delaying the enqueuing of the
+            //        message. But actually delaying a message requires us to modify parts of the code outside of the
+            //        strategy, which we do not want to do. This is tricky. Think about it!
+            foreach (var op in ops)
             {
-                next = null;
-                return false;
+                op.Delay ??= (ulong)(op.Type == AsyncOperationType.Send ? RandomValueGenerator.Next(1, 10) : 0);
+                op.Timestamp ??= Time + op.Delay;
+                // We need the following timestamp update because some operations are enabled after they are completed
+                // so their timestamps should be updated.
+                if (op.Timestamp < Time)
+                {
+                    op.Timestamp = Time;
+                }
             }
+            var enabledCurrentOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled && op.Timestamp == Time).ToList();
+            var enabledFutureOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled && op.Timestamp > Time).ToList();
+            if (enabledCurrentOperations.Count == 0)
+            {
+                if (enabledFutureOperations.Count == 0)
+                {
+                    next = null;
+                    return false;
+                }
 
-            var idx = RandomValueGenerator.Next(enabledOperations.Count);
-            next = enabledOperations[idx];
+                Time = enabledFutureOperations.Min(op => op.Timestamp);
+                var temp = enabledFutureOperations.Where(op => op.Timestamp == Time).ToList();
 
-            ScheduledSteps++;
+                var idx = RandomValueGenerator.Next(temp.Count);
+                next = temp[idx];
 
-            return true;
+                ScheduledSteps++;
+
+                return true;
+            }
+            else
+            {
+                var idx = RandomValueGenerator.Next(enabledCurrentOperations.Count);
+                next = enabledCurrentOperations[idx];
+
+                ScheduledSteps++;
+
+                return true;
+            }
         }
 
         /// <inheritdoc/>

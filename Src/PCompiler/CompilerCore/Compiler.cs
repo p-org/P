@@ -38,7 +38,7 @@ namespace Plang.Compiler
             Scope scope = null;
             try
             {
-                scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
+                scope = Analyzer.AnalyzeCompilationUnit(job, trees);
             }
             catch (TranslationException e)
             {

@@ -13,18 +13,20 @@ namespace Plang.Compiler.TypeChecker
     public class StatementVisitor : PParserBaseVisitor<IPStmt>
     {
         private readonly ExprVisitor exprVisitor;
+        private readonly ICompilerConfiguration config;
         private readonly ITranslationErrorHandler handler;
         private readonly Machine machine;
         private readonly Function method;
         private readonly Scope table;
 
-        public StatementVisitor(ITranslationErrorHandler handler, Machine machine, Function method)
+        public StatementVisitor(ICompilerConfiguration config, Machine machine, Function method)
         {
-            this.handler = handler;
+            this.config = config;
+            this.handler = this.config.Handler;
             this.machine = machine;
             this.method = method;
             table = method.Scope;
-            exprVisitor = new ExprVisitor(method, handler);
+            exprVisitor = new ExprVisitor(method, config.Handler);
         }
 
         public override IPStmt VisitFunctionBody(PParser.FunctionBodyContext context)
@@ -46,19 +48,20 @@ namespace Plang.Compiler.TypeChecker
             {
                 throw handler.TypeMismatch(context.assertion, assertion.Type, PrimitiveType.Bool);
             }
-            IPExpr message;
-            if (context.message == null)
-                message = new StringExpr(context, "", new List<IPExpr>());
-            else
+            IPExpr assertMessage = new StringExpr(context, @$"{config.LocationResolver.GetLocation(context).ToString().Replace(@"\", @"\\")}",new List<IPExpr>());
+            if (context.message != null)
             {
-                message = exprVisitor.Visit(context.message);
+                var message = exprVisitor.Visit(context.message);
                 if (!message.Type.IsSameTypeAs(PrimitiveType.String))
                 {
                     throw handler.TypeMismatch(context.message, message.Type, PrimitiveType.String);
                 }
-            }
 
-            return new AssertStmt(context, assertion, message);
+                assertMessage = new StringExpr(message.SourceLocation, "{0} {1}",new List<IPExpr>() {assertMessage,
+                    message});
+            }
+            
+            return new AssertStmt(context, assertion, assertMessage);
         }
 
         public override IPStmt VisitPrintStmt(PParser.PrintStmtContext context)
@@ -492,7 +495,7 @@ namespace Plang.Compiler.TypeChecker
                         recvHandler.Signature.Parameters.Add(paramVar);
                     }
 
-                    FunctionBodyVisitor.PopulateMethod(handler, recvHandler);
+                    FunctionBodyVisitor.PopulateMethod(config, recvHandler);
                     
                     if (!table.Lookup(eventIdContext.GetText(), out PEvent pEvent))
                     {

@@ -40,10 +40,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     private PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> receives = new PrimitiveVS<>();
     public final Map<String, SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> continuations = new HashMap<>();
     public final Set<SerializableRunnable> clearContinuationVars = new HashSet<>();
-    // the vector clock for the machine
-    private VectorClockVS clock = new VectorClockVS(Guard.constTrue());
-
-    public VectorClockVS getClock() { return clock; }
 
     public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
@@ -62,11 +58,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
         return halted;
     }
 
-    public void incrementClock(Guard pc) {
-        if (scheduler.getVcManager().isEnabled())
-            clock = clock.increment(scheduler.getVcManager().getIdx(new PrimitiveVS<>(this).restrict(pc)));
-    }
-
     public Guard getBlockedOnReceiveGuard() { return receives.getUniverse(); }
 
     public PrimitiveVS<State> getCurrentState() {
@@ -77,12 +68,9 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
         this.currentState = new PrimitiveVS<>(startState);
         if (semantics == EventBufferSemantics.bag) {
             this.sendBuffer = new EventBag(this);
-        } else if (semantics == EventBufferSemantics.receiver) {
-            this.sendBuffer = new ReceiveEventQueue(this);
         } else {
             this.sendBuffer = new EventQueue(this);
         }
-        this.clock = new VectorClockVS(Guard.constTrue());
         while (!deferredQueue.isEmpty()) {
             deferredQueue.dequeueEntry(deferredQueue.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
         }
@@ -99,8 +87,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
         this.semantics = semantics;
         if (semantics == EventBufferSemantics.bag) {
             this.sendBuffer = new EventBag(this);
-        } else if (semantics == EventBufferSemantics.receiver) {
-            this.sendBuffer = new ReceiveEventQueue(this);
         } else {
             this.sendBuffer = new EventQueue(this);
         }
@@ -110,7 +96,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
         List<ValueSummary> localState = new ArrayList<>();
         localState.add(this.currentState);
         localState.add(this.sendBuffer.getEvents());
-        localState.add(this.clock);
         localState.add(this.deferredQueue.getEvents());
         localState.add(this.receives);
         localState.add(this.started);
@@ -122,7 +107,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
         int idx = 0;
         this.currentState = (PrimitiveVS<State>) localState.get(idx++);
         this.sendBuffer.setEvents(localState.get(idx++));
-        this.clock = (VectorClockVS) localState.get(idx++);
         this.deferredQueue.setEvents(localState.get(idx++));
         this.receives = (PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>>) localState.get(idx++);
         this.started = (PrimitiveVS<Boolean>) localState.get(idx++);
@@ -321,10 +305,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     public void processEventToCompletion(Guard pc, Message message) {
         final EventHandlerReturnReason eventRaiseEventHandlerReturnReason = new EventHandlerReturnReason();
         eventRaiseEventHandlerReturnReason.raiseGuardedMessage(message);
-        if (scheduler.getVcManager().isEnabled()) {
-            this.incrementClock(pc);
-            clock = clock.update(message.getVectorClock());
-        }
 
         // Process events from the deferred queue first
         runDeferredEvents(pc.and(getBlockedOnReceiveGuard().not()));

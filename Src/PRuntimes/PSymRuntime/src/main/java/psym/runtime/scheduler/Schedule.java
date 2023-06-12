@@ -15,8 +15,6 @@ import java.util.stream.Collectors;
 
 public class Schedule implements Serializable {
 
-    private final boolean useSleepSets;
-
     private Guard filter = Guard.constTrue();
 
     @Setter
@@ -33,42 +31,6 @@ public class Schedule implements Serializable {
 
     public Choice newChoice() {
         return new Choice();
-    }
-
-    SetVS<VectorClockVS> sleepSet = new SetVS<>(Guard.constTrue());
-
-    private static List<VectorClockVS> fullUniverseClocks (VectorClockVS vc) {
-        List<GuardedValue<List<Object>>> concreteVals = Concretizer.getConcreteValues(vc.getUniverse(), x -> false, Concretizer::concretize, vc);
-        List<VectorClockVS> res = new ArrayList<>();
-        for (GuardedValue<List<Object>> gv : concreteVals) { 
-            if (gv.getValue().isEmpty()) continue;
-            List<Object> list = gv.getValue();
-            ListVS newList = new ListVS<>(Guard.constTrue());
-            for (Object i : list) {
-                newList = newList.add(new PrimitiveVS<>((Integer) i));
-            }
-            res.add(new VectorClockVS(newList));
-        }
-        return res;
-    }
-
-    private static VectorClockVS getVectorClockSent (PrimitiveVS<Machine> sender) {
-        Message m = new Message().restrict(Guard.constFalse());
-        for (GuardedValue<Machine> gv : sender.getGuardedValues()) {
-            m = m.merge(gv.getValue().sendBuffer.peek(gv.getGuard()));
-        }
-        return m.getVectorClock();
-    }
-
-    public List<PrimitiveVS> filterSleep (List<PrimitiveVS> candidates) {
-        if (!useSleepSets) return candidates;
-        List<PrimitiveVS> filtered = candidates.stream().map(x -> x.restrict(sleepSet.contains(getVectorClockSent(x)).getGuardFor(true).not())).collect(Collectors.toList());
-        return filtered;
-    }
-
-    public void unblock(VectorClockVS vc) {
-        VectorClockVS toRemove = vc.restrict(sleepSet.getUniverse());
-        sleepSet.remove(toRemove.restrict(sleepSet.contains(toRemove).getGuardFor(true)));
     }
 
     public class ChoiceState implements Serializable {
@@ -240,21 +202,6 @@ public class Schedule implements Serializable {
 
         public void addRepeatSender(PrimitiveVS<Machine> choice) {
             repeatSender = choice;
-            if (!useSleepSets) return;
-            Guard seen = Guard.constFalse();
-            Guard choiceUniverse = choice.getUniverse();
-            for (GuardedValue<Machine> gv : choice.getGuardedValues()) {
-                Guard initCond = gv.getValue().sendBuffer.hasCreateMachineUnderGuard().getGuardFor(true);
-                List<VectorClockVS> clks = fullUniverseClocks(gv.getValue().sendBuffer.peek(gv.getGuard().and(initCond.not())).getVectorClock());
-                seen = seen.or(gv.getGuard());
-                for (VectorClockVS clk : clks) {
-                    // remove from sleep set:
-                    Guard toRemoveGuard = sleepSet.contains(clk.restrict(sleepSet.getUniverse())).getGuardFor(true);
-                    sleepSet = sleepSet.remove(clk.restrict(toRemoveGuard));
-                    // add to sleep set:
-                    sleepSet = sleepSet.add(clk.restrict(seen.not().and(choiceUniverse)));
-                }
-            }
         }
 
         public void addRepeatBool(PrimitiveVS<Boolean> choice) {
@@ -490,22 +437,16 @@ public class Schedule implements Serializable {
 
     private Guard pc = Guard.constTrue();
 
-    public Schedule() { this.useSleepSets = false; }
-
-    public Schedule(boolean useSleepSets) {
-        this.useSleepSets = useSleepSets;
-    }
+    public Schedule() { }
 
     private Schedule(List<Choice> choices,
                      Map<Class<? extends Machine>, ListVS<PrimitiveVS<Machine>>> createdMachines,
                      Set<Machine> machines,
-                     Guard pc,
-                     boolean useSleepSets) {
+                     Guard pc) {
         this.choices = new ArrayList<>(choices);
         this.createdMachines = new HashMap<>(createdMachines);
         this.machines = new HashSet<>(machines);
         this.pc = pc;
-        this.useSleepSets = useSleepSets;
     }
 
     public Set<Machine> getMachines() {
@@ -517,7 +458,7 @@ public class Schedule implements Serializable {
         for (Choice c : choices) {
             newChoices.add(c.restrict(pc));
         }
-        return new Schedule(newChoices, createdMachines, machines, pc, useSleepSets);
+        return new Schedule(newChoices, createdMachines, machines, pc);
     }
 
     public Schedule removeEmptyRepeat() {
@@ -527,7 +468,7 @@ public class Schedule implements Serializable {
                 newChoices.add(choices.get(i));
             }
         }
-        return new Schedule(newChoices, createdMachines, machines, pc, useSleepSets);
+        return new Schedule(newChoices, createdMachines, machines, pc);
     }
 
     public void makeMachine(Machine m, Guard pc) {

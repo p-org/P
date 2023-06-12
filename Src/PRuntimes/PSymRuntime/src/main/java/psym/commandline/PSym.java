@@ -2,7 +2,6 @@ package psym.commandline;
 
 import org.reflections.Reflections;
 import psym.runtime.logger.*;
-import psym.runtime.scheduler.DPORScheduler;
 import psym.runtime.scheduler.IterativeBoundedScheduler;
 import psym.runtime.scheduler.ReplayScheduler;
 import psym.runtime.statistics.SolverStats;
@@ -63,7 +62,6 @@ public class PSym {
                 assert(p != null);
                 setTestDriver(p, config, reflections);
                 scheduler = new IterativeBoundedScheduler(config, p);
-                if (config.isDpor()) scheduler = new DPORScheduler(config, p);
                 EntryPoint.run(scheduler, config);
             } else {
                 scheduler = IterativeBoundedScheduler.readFromFile(config.getReadFromFile());

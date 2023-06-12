@@ -28,9 +28,7 @@ public class EventBag extends SymbolicBag<Message> implements EventBuffer, Seria
             throw new RuntimeException("Not Implemented");
         }
         TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
-        if (sender != null)
-            sender.incrementClock(pc);
-        Message event = new Message(eventName, dest, payload, sender.getClock()).restrict(pc);
+        Message event = new Message(eventName, dest, payload).restrict(pc);
         add(event);
         sender.getScheduler().runMonitors(event);
     }
@@ -39,9 +37,7 @@ public class EventBag extends SymbolicBag<Message> implements EventBuffer, Seria
     public PrimitiveVS<Machine> create(Guard pc, Scheduler scheduler, Class<? extends Machine> machineType, UnionVS payload, Function<Integer, ? extends Machine> constructor) {
         PrimitiveVS<Machine> machine = scheduler.allocateMachine(pc, machineType, constructor);
         if (payload != null) payload = payload.restrict(pc);
-        if (sender != null)
-            sender.incrementClock(pc);
-        add(new Message(Event.createMachine, machine, payload, sender.getClock()).restrict(pc));
+        add(new Message(Event.createMachine, machine, payload).restrict(pc));
         return machine;
     }
 

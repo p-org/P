@@ -43,9 +43,6 @@ public class Concretizer {
                 }
             }
             return new GuardedValue<>(list, pc);
-        } else if (valueSummary instanceof VectorClockVS) {
-            VectorClockVS clkVS = (VectorClockVS) valueSummary;
-            return concretize(clkVS.asListVS());
         } else if (valueSummary instanceof MapVS<?, ?, ?>) {
             MapVS<?, ?, ?> mapVS = (MapVS<?, ?, ?>) valueSummary;
             Guard pc = mapVS.getUniverse();
@@ -134,7 +131,6 @@ public class Concretizer {
             Event e = guardedEventValue.getValue();
             messageVS = messageVS.restrict(guardedEventValue.getGuard());
             GuardedValue guardedPayloadValue = concretize(messageVS.getPayload());
-            GuardedValue guardedVectorClock = concretize(messageVS.getVectorClock());
             List<Object> messageComponents = new ArrayList<>();
             if (m != null) {
                 messageComponents.add(m);
@@ -144,9 +140,6 @@ public class Concretizer {
                 return new GuardedValue(messageComponents, guardedEventValue.getGuard());
             }
             messageComponents.add(guardedPayloadValue.getValue());
-            if (guardedVectorClock != null) {
-                messageComponents.add(guardedVectorClock.getValue());
-            }
             return new GuardedValue(messageComponents, guardedPayloadValue.getGuard());
         }
         return null;

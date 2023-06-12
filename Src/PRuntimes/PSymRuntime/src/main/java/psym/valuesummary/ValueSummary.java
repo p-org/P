@@ -197,7 +197,6 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
         } else if (valueSummary instanceof NamedTupleVS) {
             return ValueSummary.getGuardedValues(((NamedTupleVS) valueSummary).getTuple());
         } else if (valueSummary instanceof ListVS<?>) {
-        } else if (valueSummary instanceof VectorClockVS) {
         } else if (valueSummary instanceof MapVS<?, ?, ?>) {
         } else if (valueSummary instanceof SetVS<?>) {
         } else if (valueSummary instanceof UnionVS) {

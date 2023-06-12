@@ -128,21 +128,9 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     boolean useFilters = false;
 
-    // intersect with receiver queue semantics
-    @Getter @Setter
-    boolean useReceiverQueueSemantics = false;
-
-    // use symbolic sleep sets
-    @Getter @Setter
-    boolean useSleepSets = false;
-
     // turn all sender queues into bags -- currently not implemented
     @Getter @Setter
     boolean useBagSemantics = false;
-
-    // apply DPOR
-    @Getter @Setter
-    boolean dpor = false;
 
     // level of stats collection
     @Getter @Setter

@@ -18,12 +18,6 @@ public class Message implements ValueSummary<Message> {
     private final PrimitiveVS<Event> event;
     // the payload associated with the event
     private final Map<Event, UnionVS> payload;
-    // the vector clock for the event
-    private final VectorClockVS clock;
-
-    public VectorClockVS getVectorClock() {
-        return this.clock;
-    }
 
     public PrimitiveVS<Boolean> canRun() {
         Guard cond = Guard.constFalse();
@@ -105,47 +99,34 @@ public class Message implements ValueSummary<Message> {
         return this.restrict(cond);
     }
 
-    private Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, Map<Event, UnionVS> map, VectorClockVS clock) {
+    private Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, Map<Event, UnionVS> map) {
         assert(!machine.getValues().contains(null));
         this.event = names;
         this.target = machine;
         this.payload = new HashMap<>(map);
-        this.clock = clock;
-    }
-
-    private Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, Map<Event, UnionVS> map) {
-        this(names, machine, map, new VectorClockVS(Guard.constFalse()));
     }
 
     public Message(Event name, PrimitiveVS<Machine> machine) {
-        this(new PrimitiveVS<>(name), machine, new HashMap<>(), new VectorClockVS(Guard.constFalse()));
+        this(new PrimitiveVS<>(name), machine, new HashMap<>());
     }
 
     public Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine) {
-        this(names, machine, new HashMap<>(), new VectorClockVS(Guard.constFalse()));
+        this(names, machine, new HashMap<>());
     }
 
     public Message() {
         this(new PrimitiveVS<>(), new PrimitiveVS<>());
     }
 
-    public Message(Event name, PrimitiveVS<Machine> machine, UnionVS payload, VectorClockVS clock) {
-        this(new PrimitiveVS<>(name), machine, payload, clock);
-    }
-
     public Message(Event name, PrimitiveVS<Machine> machine, UnionVS payload) {
         this(new PrimitiveVS<>(name), machine, payload);
-    }
-
-    public Message(PrimitiveVS<Event> events, PrimitiveVS<Machine> machine, UnionVS payload) {
-        this(events, machine, payload, new VectorClockVS(Guard.constFalse()));
     }
 
     private Guard getNullMachineGuard(PrimitiveVS<Machine> machine) {
         return machine.getGuardFor((Machine) null);
     }
 
-    public Message(PrimitiveVS<Event> events, PrimitiveVS<Machine> machine, UnionVS payload, VectorClockVS clock) {
+    public Message(PrimitiveVS<Event> events, PrimitiveVS<Machine> machine, UnionVS payload) {
         if (!getNullMachineGuard(machine).isFalse()) {
             throw new RuntimeException(
                     String.format("Object reference not set to an instance of an object, in event %s",
@@ -161,14 +142,13 @@ public class Message implements ValueSummary<Message> {
                 this.payload.put(event.getValue(), payload.restrict(event.getGuard()));
             }
         }
-        this.clock = clock;
     }
 
     /** Copy-constructor for Message
      * @param old The Message to copy
      */
     public Message (Message old) {
-        this(new PrimitiveVS<>(old.event), new PrimitiveVS<>(old.target), old.payload, new VectorClockVS(old.clock));
+        this(new PrimitiveVS<>(old.event), new PrimitiveVS<>(old.target), old.payload);
     }
 
     /**
@@ -216,14 +196,13 @@ public class Message implements ValueSummary<Message> {
                 newPayload.put(entry.getKey(), entry.getValue().restrict(guard));
             }
         }
-        return new Message(newEvent, target.restrict(guard), newPayload, clock.restrict(guard));
+        return new Message(newEvent, target.restrict(guard), newPayload);
     }
 
     @Override
     public Message merge(Iterable<Message> summaries) {
         List<PrimitiveVS<Event>> eventsToMerge = new ArrayList<>();
         List<PrimitiveVS<Machine>> targetsToMerge = new ArrayList<>();
-        List<VectorClockVS> clocksToMerge = new ArrayList<>();
         Map<Event, UnionVS> newPayload = new HashMap<>();
 
         for (Map.Entry<Event, UnionVS> entry : this.payload.entrySet()) {
@@ -235,7 +214,6 @@ public class Message implements ValueSummary<Message> {
         for (Message summary : summaries) {
             eventsToMerge.add(summary.event);
             targetsToMerge.add(summary.target);
-            clocksToMerge.add(summary.clock);
             for (Map.Entry<Event, UnionVS> entry : summary.payload.entrySet()) {
                 newPayload.computeIfPresent(entry.getKey(), (key, value) -> value.merge(summary.payload.get(key)));
                 if (entry.getValue() != null)
@@ -246,7 +224,7 @@ public class Message implements ValueSummary<Message> {
             }
         }
 
-        return new Message(event.merge(eventsToMerge), target.merge(targetsToMerge), newPayload, clock.merge(clocksToMerge));
+        return new Message(event.merge(eventsToMerge), target.merge(targetsToMerge), newPayload);
     }
 
     @Override
@@ -297,7 +275,6 @@ public class Message implements ValueSummary<Message> {
             hashCode = 31*hashCode + (entry.getKey()==null ? 0 : entry.getKey().hashCode());
             hashCode = 31*hashCode + (entry.getValue()==null ? 0 : entry.getValue().getConcreteHash());
         }
-        hashCode = 31*hashCode + (clock==null ? 0 : clock.getConcreteHash());
         return hashCode;
     }
 
@@ -338,8 +315,6 @@ public class Message implements ValueSummary<Message> {
         }
         out.append("}, target: ");
         out.append(target.toStringDetailed());
-        out.append(", clock: ");
-        out.append(clock.toStringDetailed());
         out.append("]");
         return out.toString();
     }

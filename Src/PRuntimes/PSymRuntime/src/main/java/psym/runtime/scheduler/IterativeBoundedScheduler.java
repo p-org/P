@@ -799,11 +799,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             if (useBagSemantics()) {
                 newMachine.setSemantics(EventBufferSemantics.bag);
             }
-            if (useReceiverSemantics()) {
-                newMachine.setSemantics(EventBufferSemantics.receiver);
-            }
             schedule.makeMachine(newMachine, pc);
-            getVcManager().addMachine(pc, newMachine);
             allocated = new PrimitiveVS<>(newMachine).restrict(pc);
             GlobalData.getSymmetryTracker().createMachine(newMachine, pc);
         }

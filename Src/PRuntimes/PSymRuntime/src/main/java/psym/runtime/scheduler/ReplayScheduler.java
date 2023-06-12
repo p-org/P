@@ -40,9 +40,7 @@ public class ReplayScheduler extends Scheduler {
         for (Machine machine : schedule.getMachines()) {
             machine.reset();
         }
-        configuration.setUseReceiverQueueSemantics(false);
         configuration.setCollectStats(0);
-        getVcManager().disable();
         cexLength = length;
         pathConstraint = pc;
         isLivenessBug = livenessBug;

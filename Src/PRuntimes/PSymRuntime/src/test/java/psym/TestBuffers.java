@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import psym.commandline.PSym;
 import psym.runtime.*;
 import psym.runtime.Message;
-import psym.runtime.machine.buffer.EventBag;
 import psym.runtime.machine.buffer.EventBuffer;
 import psym.runtime.machine.buffer.EventQueue;
 import psym.valuesummary.Guard;
@@ -48,11 +47,5 @@ public class TestBuffers {
     public void testQueue() {
         PSym.initializeDefault("output/testCases/testQueue");
         testBuffer(new EventQueue(null));
-    }
-
-    @Test
-    public void testBag() {
-        PSym.initializeDefault("output/testCases/testBag");
-        testBuffer(new EventBag((null)));
     }
 }

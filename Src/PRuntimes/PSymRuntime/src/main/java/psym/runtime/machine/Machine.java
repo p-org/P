@@ -22,7 +22,6 @@ import psym.valuesummary.util.SerializableRunnable;
 public abstract class Machine implements Serializable, Comparable<Machine> {
     private static int numMachines = 0;
 
-    private EventBufferSemantics semantics;
     @Getter
     private final String name;
     @Getter
@@ -66,11 +65,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
 
     public void reset() {
         this.currentState = new PrimitiveVS<>(startState);
-        if (semantics == EventBufferSemantics.bag) {
-            this.sendBuffer = new EventBag(this);
-        } else {
-            this.sendBuffer = new EventQueue(this);
-        }
+        this.sendBuffer = new EventQueue(this);
         while (!deferredQueue.isEmpty()) {
             deferredQueue.dequeueEntry(deferredQueue.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
         }
@@ -78,18 +73,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
         for (Runnable r : clearContinuationVars) { r.run(); }
         this.started = new PrimitiveVS<>(false);
         this.halted = new PrimitiveVS<>(false);
-    }
-
-    public void setSemantics(EventBufferSemantics semantics) {
-        if (this.sendBuffer != null && !this.sendBuffer.isEmpty() && this.semantics != semantics) {
-            throw new RuntimeException("Cannot change buffer semantics when buffer not empty");
-        }
-        this.semantics = semantics;
-        if (semantics == EventBufferSemantics.bag) {
-            this.sendBuffer = new EventBag(this);
-        } else {
-            this.sendBuffer = new EventQueue(this);
-        }
     }
 
     public List<ValueSummary> getLocalState() {
@@ -114,18 +97,13 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
         return idx;
     }
 
-    public Machine(String name, int id, EventBufferSemantics semantics, State startState, State... states) {
+    public Machine(String name, int id, State startState, State... states) {
         this.name = name;
 //        this.instanceId = id;
         this.instanceId = numMachines++;
 
-        this.semantics = semantics;
         EventBuffer buffer;
-        if (semantics == EventBufferSemantics.bag) {
-            buffer = new EventBag(this);
-        } else {
-            buffer = new EventQueue(this);
-        }
+        buffer = new EventQueue(this);
 
         this.startState = startState;
         this.sendBuffer = buffer;

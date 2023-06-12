@@ -385,7 +385,7 @@ namespace Plang.Compiler.Backend.Symbolic
         {
             var declName = context.GetNameForDecl(machine);
             context.WriteLine(output, $"public {declName}(int id) {{");
-            context.Write(output, $"super(\"{context.GetMachineName(machine)}\", id, EventBufferSemantics.queue, {context.GetNameForDecl(machine.StartState)}");
+            context.Write(output, $"super(\"{context.GetMachineName(machine)}\", id, {context.GetNameForDecl(machine.StartState)}");
 
             foreach (var state in machine.States)
             {

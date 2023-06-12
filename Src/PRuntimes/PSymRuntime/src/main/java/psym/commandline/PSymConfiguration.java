@@ -128,10 +128,6 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     boolean useFilters = false;
 
-    // turn all sender queues into bags -- currently not implemented
-    @Getter @Setter
-    boolean useBagSemantics = false;
-
     // level of stats collection
     @Getter @Setter
     int collectStats = 1;

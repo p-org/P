@@ -13,9 +13,6 @@ import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
-import psym.runtime.machine.buffer.EventBufferSemantics;
-import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStats;
-import psym.runtime.statistics.CoverageStats;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
 import psym.utils.GlobalData;
@@ -94,11 +91,6 @@ public class Scheduler implements SymbolicSearch {
     private int totalDistinctStateCount = 0;
 
     private boolean useFilters() { return configuration.isUseFilters(); }
-
-    /** Get whether to use bag semantics
-     * @return whether to use bag semantics
-     */
-    public boolean useBagSemantics() { return configuration.isUseBagSemantics(); }
 
     public int getTotalStates() {
         return totalStateCount;
@@ -989,9 +981,6 @@ public class Scheduler implements SymbolicSearch {
 
         TraceLogger.onCreateMachine(pc, newMachine);
         newMachine.setScheduler(this);
-        if (useBagSemantics()) {
-            newMachine.setSemantics(EventBufferSemantics.bag);
-        }
         schedule.makeMachine(newMachine, pc);
 
         guardedCount = IntegerVS.add(guardedCount, 1);

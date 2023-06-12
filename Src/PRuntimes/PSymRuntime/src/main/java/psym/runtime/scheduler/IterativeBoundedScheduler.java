@@ -796,9 +796,6 @@ public class IterativeBoundedScheduler extends Scheduler {
 
             TraceLogger.onCreateMachine(pc, newMachine);
             newMachine.setScheduler(this);
-            if (useBagSemantics()) {
-                newMachine.setSemantics(EventBufferSemantics.bag);
-            }
             schedule.makeMachine(newMachine, pc);
             allocated = new PrimitiveVS<>(newMachine).restrict(pc);
             GlobalData.getSymmetryTracker().createMachine(newMachine, pc);

@@ -68,14 +68,6 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     String readReplayerFromFile = "";
 
-    // max scheduling choice bound provided by the user
-    @Getter @Setter
-    int schedChoiceBound = 1;
-
-    // max data choice bound provided by the user
-    @Getter @Setter
-    int dataChoiceBound = 1;
-
     // mode of state hashing
     @Getter @Setter
     StateHashingMode stateHashingMode = StateHashingMode.Exact;
@@ -141,11 +133,11 @@ public class PSymConfiguration implements Serializable {
     final int maxInternalSteps = 1000;
 
     public boolean isSymbolic() {
-        return (getSchedChoiceBound() != 1 || getDataChoiceBound() != 1);
+        return (strategy == "symex");
     }
 
     public boolean isIterative() {
-        return (getSchedChoiceBound() != 0 || getDataChoiceBound() != 0);
+        return !isSymbolic();
     }
 
     public boolean isChoiceOrchestrationLearning() {
@@ -155,48 +147,36 @@ public class PSymConfiguration implements Serializable {
 
     public void setToRandom() {
         this.setStrategy("random");
-        this.setSchedChoiceBound(1);
-        this.setDataChoiceBound(1);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
         this.setTaskOrchestration(TaskOrchestrationMode.Random);
     }
 
     public void setToDfs() {
         this.setStrategy("dfs");
-        this.setSchedChoiceBound(1);
-        this.setDataChoiceBound(1);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
         this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
     }
 
     public void setToAllLearn() {
         this.setStrategy("learn");
-        this.setSchedChoiceBound(1);
-        this.setDataChoiceBound(1);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
         this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
     }
 
     public void setToChoiceLearn() {
         this.setStrategy("learn");
-        this.setSchedChoiceBound(1);
-        this.setDataChoiceBound(1);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
         this.setTaskOrchestration(TaskOrchestrationMode.Random);
     }
 
     public void setToBacktrackLearn() {
         this.setStrategy("learn");
-        this.setSchedChoiceBound(1);
-        this.setDataChoiceBound(1);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
         this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
     }
 
     public void setToSymex() {
         this.setStrategy("symex");
-        this.setSchedChoiceBound(0);
-        this.setDataChoiceBound(0);
         this.setStateHashingMode(StateHashingMode.None);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
         this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
@@ -204,8 +184,6 @@ public class PSymConfiguration implements Serializable {
 
     public void setToFuzz() {
         this.setStrategy("fuzz");
-        this.setSchedChoiceBound(1);
-        this.setDataChoiceBound(1);
         this.setStateHashingMode(StateHashingMode.None);
         this.setUseBacktrack(false);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
@@ -214,8 +192,6 @@ public class PSymConfiguration implements Serializable {
 
     public void setToCoverage() {
         this.setStrategy("coverage");
-        this.setSchedChoiceBound(1);
-        this.setDataChoiceBound(1);
         this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
         this.setTaskOrchestration(TaskOrchestrationMode.CoverageAStar);
     }

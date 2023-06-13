@@ -21,15 +21,15 @@ public class ChoiceOrchestratorEpsilonGreedy implements ChoiceOrchestrator {
         choiceOrchestratorExploit = new ChoiceOrchestratorQLearning();
     }
 
-    public void reorderChoices(List<ValueSummary> choices, int bound, boolean isData) {
+    public void reorderChoices(List<ValueSummary> choices, boolean isData) {
         decayEpsilon();
         double randNum = RandomNumberGenerator.getInstance().getRandomDouble();
         if (randNum <= epsilon) {
             // explore
-            choiceOrchestratorExplore.reorderChoices(choices, bound, isData);
+            choiceOrchestratorExplore.reorderChoices(choices, isData);
         } else {
             // exploit
-            choiceOrchestratorExploit.reorderChoices(choices, bound, isData);
+            choiceOrchestratorExploit.reorderChoices(choices, isData);
         }
     }
 

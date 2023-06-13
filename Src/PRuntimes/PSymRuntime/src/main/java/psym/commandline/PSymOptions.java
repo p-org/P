@@ -158,27 +158,6 @@ public class PSymOptions {
                 .build();
         options.addOption(taskOrch);
 
-        // max scheduling choice bound for the search
-        Option maxSchedBound = Option.builder("sb")
-                .longOpt("sched-bound")
-                .desc("Max scheduling choice bound at each step during the search (default: 1)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Schedule Bound (integer)")
-                .build();
-        options.addOption(maxSchedBound);
-
-        // max data choice bound for the search
-        Option dataChoiceBound = Option.builder("db")
-                .longOpt("data-bound")
-                .desc("Max data choice bound at each step during the search (default: 1)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Data Bound (integer)")
-                .build();
-        options.addOption(dataChoiceBound);
-
-
         // Replay and debug options
 
         // read replayer state from file
@@ -583,22 +562,6 @@ public class PSymOptions {
                             break;
                         default:
                             optionError(option, String.format("Unrecognized task orchestration mode, got %s", option.getValue()));
-                    }
-                    break;
-                case "sb":
-                case "sched-bound":
-                    try {
-                        config.setSchedChoiceBound(Integer.parseInt(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
-                    break;
-                case "db":
-                case "data-bound":
-                    try {
-                        config.setDataChoiceBound(Integer.parseInt(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
                 // replay options

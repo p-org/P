@@ -648,7 +648,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
     }
 
-    private PrimitiveVS getNext(int depth, int bound, Function<Integer, PrimitiveVS> getRepeat, Function<Integer, List> getBacktrack,
+    private PrimitiveVS getNext(int depth, Function<Integer, PrimitiveVS> getRepeat, Function<Integer, List> getBacktrack,
                            Consumer<Integer> clearBacktrack, BiConsumer<PrimitiveVS, Integer> addRepeat,
                            BiConsumer<List, Integer> addBacktrack, Supplier<List> getChoices,
                            Function<List, PrimitiveVS> generateNext, boolean isData) {
@@ -681,8 +681,8 @@ public class IterativeBoundedScheduler extends Scheduler {
             isNewChoice = true;
         }
 
-        if (choices.size() > 1) {
-            choiceOrchestrator.reorderChoices(choices, bound, isData);
+        if (choices.size() > 1 && configuration.isIterative()) {
+            choiceOrchestrator.reorderChoices(choices, isData);
         }
 
         List<ValueSummary> chosen = new ArrayList();
@@ -690,7 +690,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         List<ValueSummary> backtrack = new ArrayList();
         for (int i = 0; i < choices.size(); i++) {
             ValueSummary choice = choices.get(i);
-            if ((bound <= 0) || (i < bound)) {
+            if (configuration.isSymbolic() || i == 0) {
                 chosen.add(choice);
                 chosenQStateKey.add(choice);
             } else {
@@ -721,7 +721,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     @Override
     public PrimitiveVS<Machine> getNextSender() {
         int depth = choiceDepth;
-        PrimitiveVS<Machine> res = getNext(depth, configuration.getSchedChoiceBound(), schedule::getRepeatSender, schedule::getBacktrackSender,
+        PrimitiveVS<Machine> res = getNext(depth, schedule::getRepeatSender, schedule::getBacktrackSender,
                 schedule::clearBacktrack, schedule::addRepeatSender, schedule::addBacktrackSender, super::getNextSenderChoices,
                 super::getNextSender, false);
 
@@ -732,7 +732,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     @Override
     public PrimitiveVS<Boolean> getNextBoolean(Guard pc) {
         int depth = choiceDepth;
-        PrimitiveVS<Boolean> res = getNext(depth, configuration.getDataChoiceBound(), schedule::getRepeatBool, schedule::getBacktrackBool,
+        PrimitiveVS<Boolean> res = getNext(depth, schedule::getRepeatBool, schedule::getBacktrackBool,
                 schedule::clearBacktrack, schedule::addRepeatBool, schedule::addBacktrackBool,
                 () -> super.getNextBooleanChoices(pc), super::getNextBoolean, true);
         choiceDepth = depth + 1;
@@ -742,7 +742,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     @Override
     public PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc) {
         int depth = choiceDepth;
-        PrimitiveVS<Integer> res = getNext(depth, configuration.getDataChoiceBound(), schedule::getRepeatInt, schedule::getBacktrackInt,
+        PrimitiveVS<Integer> res = getNext(depth, schedule::getRepeatInt, schedule::getBacktrackInt,
                 schedule::clearBacktrack, schedule::addRepeatInt, schedule::addBacktrackInt,
                 () -> super.getNextIntegerChoices(bound, pc), super::getNextInteger, true);
         choiceDepth = depth + 1;
@@ -752,7 +752,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     @Override
     public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
         int depth = choiceDepth;
-        PrimitiveVS<ValueSummary> res = getNext(depth, configuration.getDataChoiceBound(), schedule::getRepeatElement, schedule::getBacktrackElement,
+        PrimitiveVS<ValueSummary> res = getNext(depth, schedule::getRepeatElement, schedule::getBacktrackElement,
                 schedule::clearBacktrack, schedule::addRepeatElement, schedule::addBacktrackElement,
                 () -> super.getNextElementChoices(candidates, pc), super::getNextElementHelper, true);
         choiceDepth = depth + 1;

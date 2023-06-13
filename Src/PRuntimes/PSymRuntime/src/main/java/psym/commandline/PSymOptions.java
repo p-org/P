@@ -273,26 +273,6 @@ public class PSymOptions {
                 .build();
         addHiddenOption(epsilonDecay);
 
-        // solver type
-        Option solverType = Option.builder()
-                .longOpt("solver")
-                .desc("Solver type to use: bdd, yices2, monosat, z3, cvc5 (default: bdd)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Solver Type (string)")
-                .build();
-        addHiddenOption(solverType);
-
-        // expression type
-        Option exprLibType = Option.builder()
-                .longOpt("expr")
-                .desc("Expression type to use: bdd, fraig, aig, native (default: bdd)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Expression Type (string)")
-                .build();
-        addHiddenOption(exprLibType);
-
         // read program state from file
         Option readFromFile = Option.builder()
                 .longOpt("read")
@@ -604,69 +584,6 @@ public class PSymOptions {
                             break;
                         default:
                             optionError(option, String.format("Unrecognized task orchestration mode, got %s", option.getValue()));
-                    }
-                    break;
-                case "solver":
-                    switch (option.getValue()) {
-                        case "abc":
-                            config.setSolverType(SolverType.ABC);
-                            break;
-                        case "bdd":
-                            config.setSolverType(SolverType.BDD);
-                            break;
-                        case "cbdd":
-                            config.setSolverType(SolverType.CBDD);
-                            break;
-                        case "cvc5":
-                            config.setSolverType(SolverType.CVC5);
-                            break;
-                        case "yices2":
-                            config.setSolverType(SolverType.YICES2);
-                            break;
-                        case "z3":
-                            config.setSolverType(SolverType.Z3);
-                            break;
-                        case "monosat":
-                            config.setSolverType(SolverType.MONOSAT);
-                            break;
-//                        case "boolector":
-//                            config.setSolverType(SolverType.JAVASMT_BOOLECTOR);
-//                            break;
-//                        case "mathsat5":
-//                            config.setSolverType(SolverType.JAVASMT_MATHSAT5);
-//                            break;
-//                        case "princess":
-//                            config.setSolverType(SolverType.JAVASMT_PRINCESS);
-//                            break;
-//                        case "smtinterpol":
-//                            config.setSolverType(SolverType.JAVASMT_SMTINTERPOL);
-//                            break;
-                        default:
-                            optionError(option, String.format("Expected a solver type, got %s", option.getValue()));
-                    }
-                    break;
-                case "expr":
-                    switch (option.getValue()) {
-                        case "aig":
-                            config.setExprLibType(ExprLibType.Aig);
-                            break;
-                        case "auto":
-                            config.setExprLibType(ExprLibType.Auto);
-                            break;
-                        case "bdd":
-                            config.setExprLibType(ExprLibType.Bdd);
-                            break;
-                        case "fraig":
-                            config.setExprLibType(ExprLibType.Fraig);
-                            break;
-                        case "iaig":
-                            config.setExprLibType(ExprLibType.Iaig);
-                            break;
-                        case "native":
-                            config.setExprLibType(ExprLibType.NativeExpr);
-                            break;
-                        default:
-                            optionError(option, String.format("Expected an expression type, got %s", option.getValue()));
                     }
                     break;
                 case "read":

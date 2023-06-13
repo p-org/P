@@ -43,31 +43,6 @@
       <version>${pjbdd.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.github.p-org</groupId>
-      <artifactId>abc</artifactId>
-      <version>${abc.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.github.p-org.solvers</groupId>
-      <artifactId>monosat</artifactId>
-      <version>${monosat.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.github.p-org.solvers</groupId>
-      <artifactId>yices</artifactId>
-      <version>${yices.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.github.p-org.solvers</groupId>
-      <artifactId>z3</artifactId>
-      <version>${z3.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.github.p-org.solvers</groupId>
-      <artifactId>cvc5</artifactId>
-      <version>${cvc5.version}</version>
-    </dependency>
-    <dependency>
       <groupId>commons-cli</groupId>
       <artifactId>commons-cli</artifactId>
       <version>1.5.0</version>
@@ -206,91 +181,6 @@
               <file>${pjbdd.jarpath}</file>
             </configuration>
           </execution>
-          <execution>
-            <id>install-abc</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <groupId>io.github.p-org.solvers</groupId>
-              <artifactId>abc</artifactId>
-              <version>${abc.version}</version>
-              <sources>${abc.jarpath}</sources>
-              <javadoc>${abc.jarpath}</javadoc>
-              <pomFile>${abc.pompath}</pomFile>
-              <packaging>jar</packaging>
-              <file>${abc.jarpath}</file>
-            </configuration>
-          </execution>
-          <execution>
-            <id>install-monosat</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <groupId>io.github.p-org.solvers</groupId>
-              <artifactId>monosat</artifactId>
-              <version>${monosat.version}</version>
-              <sources>${monosat.jarpath}</sources>
-              <javadoc>${monosat.jarpath}</javadoc>
-              <pomFile>${monosat.pompath}</pomFile>
-              <packaging>jar</packaging>
-              <file>${monosat.jarpath}</file>
-            </configuration>
-          </execution>
-          <execution>
-            <id>install-yices</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <groupId>io.github.p-org.solvers</groupId>
-              <artifactId>yices</artifactId>
-              <version>${yices.version}</version>
-              <sources>${yices.jarpath}</sources>
-              <javadoc>${yices.jarpath}</javadoc>
-              <pomFile>${yices.pompath}</pomFile>
-              <packaging>jar</packaging>
-              <file>${yices.jarpath}</file>
-            </configuration>
-          </execution>
-          <execution>
-            <id>install-z3</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <groupId>io.github.p-org.solvers</groupId>
-              <artifactId>z3</artifactId>
-              <version>${z3.version}</version>
-              <sources>${z3.jarpath}</sources>
-              <javadoc>${z3.jarpath}</javadoc>
-              <pomFile>${z3.pompath}</pomFile>
-              <packaging>jar</packaging>
-              <file>${z3.jarpath}</file>
-            </configuration>
-          </execution>
-          <execution>
-            <id>install-cvc5</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <groupId>io.github.p-org.solvers</groupId>
-              <artifactId>cvc5</artifactId>
-              <version>${cvc5.version}</version>
-              <sources>${cvc5.jarpath}</sources>
-              <javadoc>${cvc5.jarpath}</javadoc>
-              <pomFile>${cvc5.pompath}</pomFile>
-              <packaging>jar</packaging>
-              <file>${cvc5.jarpath}</file>
-            </configuration>
-          </execution>
         </executions>
       </plugin>
       <plugin>
@@ -300,7 +190,6 @@
         <configuration>
           <systemPropertyVariables>
             <propertyName>java.library.path</propertyName>
-            <buildDirectory>${abc.libpath}:${monosat.libpath}:${yices.libpath}:${z3.libpath}:${cvc5.libpath}</buildDirectory>
           </systemPropertyVariables>
         </configuration>
       </plugin>
@@ -431,36 +320,6 @@
     <pjbdd.path>${deps.path}/Deps/pjbdd</pjbdd.path>
     <pjbdd.jarpath>${pjbdd.path}/pjbdd-${pjbdd.version}.jar</pjbdd.jarpath>
     <pjbdd.pompath>${pjbdd.path}/pjbdd-${pjbdd.version}.pom</pjbdd.pompath>
-
-    <abc.version>1.0.2</abc.version>
-    <abc.path>${deps.path}/Deps/abc</abc.path>
-    <abc.jarpath>${abc.path}/abc-${abc.version}.jar</abc.jarpath>
-    <abc.pompath>${abc.path}/abc-${abc.version}.pom</abc.pompath>
-    <abc.libpath>${deps.path}/Deps/abc_java_bindings/dist/lib</abc.libpath>
-
-    <monosat.version>1.6.0-v5</monosat.version>
-    <monosat.path>${deps.path}/Deps/monosat</monosat.path>
-    <monosat.jarpath>${monosat.path}/monosat-${monosat.version}.jar</monosat.jarpath>
-    <monosat.pompath>${monosat.path}/monosat-${monosat.version}.pom</monosat.pompath>
-    <monosat.libpath>${deps.path}/Deps/monosat</monosat.libpath>
-
-    <yices.version>1.0-v5</yices.version>
-    <yices.path>${deps.path}/Deps/yices</yices.path>
-    <yices.jarpath>${yices.path}/yices-${yices.version}.jar</yices.jarpath>
-    <yices.pompath>${yices.path}/yices-${yices.version}.pom</yices.pompath>
-    <yices.libpath>${deps.path}/Deps/yices2_java_bindings/dist/lib</yices.libpath>
-
-    <z3.version>4.8.14-v5</z3.version>
-    <z3.path>${deps.path}/Deps/z3</z3.path>
-    <z3.jarpath>${z3.path}/z3-${z3.version}.jar</z3.jarpath>
-    <z3.pompath>${z3.path}/z3-${z3.version}.pom</z3.pompath>
-    <z3.libpath>${deps.path}/Deps/z3/build</z3.libpath>
-
-    <cvc5.version>0.0.7-v5</cvc5.version>
-    <cvc5.path>${deps.path}/Deps/cvc5</cvc5.path>
-    <cvc5.jarpath>${cvc5.path}/cvc5-${cvc5.version}.jar</cvc5.jarpath>
-    <cvc5.pompath>${cvc5.path}/cvc5-${cvc5.version}.pom</cvc5.pompath>
-    <cvc5.libpath>${deps.path}/Deps/cvc5/build/install/lib</cvc5.libpath>
   </properties>
 
 </project>

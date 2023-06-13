@@ -24,12 +24,7 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
             throw new RuntimeException(String.format("Handling multiple events together is not supported, in ", eventName));
         }
         TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
-        if (sender != null)
-            sender.incrementClock(pc);
-        if (sender.getScheduler().useSleepSets()) {
-            sender.getScheduler().getSchedule().unblock(sender.getClock());
-        }
-        Message event = new Message(eventName, dest, payload, sender.getClock()).restrict(pc);
+        Message event = new Message(eventName, dest, payload).restrict(pc);
         enqueue(event);
         sender.getScheduler().runMonitors(event);
     }
@@ -43,9 +38,7 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
     ) {
         PrimitiveVS<Machine> machine = scheduler.allocateMachine(pc, machineType, constructor);
         if (payload != null) payload = payload.restrict(pc);
-        if (sender != null)
-            sender.incrementClock(pc);
-        Message event = new Message(Event.createMachine, machine, payload, sender.getClock()).restrict(pc);
+        Message event = new Message(Event.createMachine, machine, payload).restrict(pc);
         enqueue(event);
 //        scheduler.performEffect(event);
         return machine;

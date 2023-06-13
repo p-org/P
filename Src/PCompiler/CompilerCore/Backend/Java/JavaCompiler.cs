@@ -86,6 +86,10 @@ namespace Plang.Compiler.Backend.Java
             {
                 throw new TranslationException($"Java project compilation failed.\n" + $"{stdout}\n" + $"{stderr}\n");
             }
+            else
+            {
+                job.Output.WriteInfo("Build succeeded.");
+            }
         }
     }
 }

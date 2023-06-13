@@ -13,9 +13,6 @@ import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
-import psym.runtime.machine.buffer.EventBufferSemantics;
-import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStats;
-import psym.runtime.statistics.CoverageStats;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
 import psym.utils.GlobalData;
@@ -62,8 +59,6 @@ public class Scheduler implements SymbolicSearch {
     private Map<Event, List<Monitor>> listeners;
     /** List of monitors instances */
     List<Monitor> monitors;
-    /** Vector clock manager */
-    private VectorClockManager vcManager;
     /** Result of the search */
     public String result;
     /** Whether final result is set or not */
@@ -96,20 +91,6 @@ public class Scheduler implements SymbolicSearch {
     private int totalDistinctStateCount = 0;
 
     private boolean useFilters() { return configuration.isUseFilters(); }
-    /** Get whether to intersect with receiver queue semantics
-     * @return whether to intersect with receiver queue semantics
-     */
-    public boolean useReceiverSemantics() { return configuration.isUseReceiverQueueSemantics(); }
-
-    /** Get whether to use bag semantics
-     * @return whether to use bag semantics
-     */
-    public boolean useBagSemantics() { return configuration.isUseBagSemantics(); }
-
-    /** Get whether to use sleep sets
-     * @return whether to use sleep sets
-     */
-    public boolean useSleepSets() { return configuration.isUseSleepSets(); }
 
     public int getTotalStates() {
         return totalStateCount;
@@ -156,13 +137,6 @@ public class Scheduler implements SymbolicSearch {
         done = false;
     }
 
-    /** Return scheduler's VC manager
-        @return the scheduler's current vector clock manager
-     */
-    public VectorClockManager getVcManager() {
-        return vcManager;
-    }
-
     /** Find out whether symbolic execution is done
      * @return Whether or not there are more steps to run
      */
@@ -190,7 +164,7 @@ public class Scheduler implements SymbolicSearch {
     /** Make new schedule
      * @return A new Schedule instance */
     public Schedule getNewSchedule() {
-        return new Schedule(this.useSleepSets());
+        return new Schedule();
     }
 
     /** Get the schedule
@@ -208,7 +182,6 @@ public class Scheduler implements SymbolicSearch {
         this.machines = new ArrayList<>();
         this.currentMachines = new TreeSet<>();
         this.machineCounters = new HashMap<>();
-        this.vcManager = new VectorClockManager(useReceiverSemantics() || configuration.isDpor() || useSleepSets());
 
         for (Machine machine : machines) {
             this.machines.add(machine);
@@ -222,7 +195,6 @@ public class Scheduler implements SymbolicSearch {
             TraceLogger.onCreateMachine(Guard.constTrue(), machine);
             machine.setScheduler(this);
             schedule.makeMachine(machine, Guard.constTrue());
-            vcManager.addMachine(Guard.constTrue(), machine);
         }
     }
 
@@ -342,8 +314,6 @@ public class Scheduler implements SymbolicSearch {
         TraceLogger.onCreateMachine(Guard.constTrue(), machine);
         machine.setScheduler(this);
         schedule.makeMachine(machine, Guard.constTrue());
-        if (vcManager.hasIdx(new PrimitiveVS<>(machine)).isFalse())
-            vcManager.addMachine(Guard.constTrue(), machine);
 
         performEffect(
                 new Message(
@@ -539,10 +509,6 @@ public class Scheduler implements SymbolicSearch {
         }
   //      return candidateSenders;
 
-        if (useReceiverSemantics()) {
-            guardedMachines = filter(guardedMachines, ReceiverQueueOrder.getInstance());
-        }
-
         if (useFilters()) {
             guardedMachines = filter(guardedMachines, InterleaveOrder.getInstance());
         }
@@ -560,7 +526,6 @@ public class Scheduler implements SymbolicSearch {
         for (GuardedValue<Machine> guardedValue : guardedMachines) {
             candidateSenders.add(new PrimitiveVS<>(guardedValue.getValue()).restrict(guardedValue.getGuard()));
         }
-        candidateSenders = getSchedule().filterSleep(candidateSenders);
         return candidateSenders;
     }
 
@@ -1010,19 +975,12 @@ public class Scheduler implements SymbolicSearch {
 
         if (!machines.contains(newMachine)) {
             machines.add(newMachine);
-            vcManager.addMachine(pc, newMachine);
         }
         currentMachines.add(newMachine);
         assert(machines.size() >= currentMachines.size());
 
         TraceLogger.onCreateMachine(pc, newMachine);
         newMachine.setScheduler(this);
-        if (useBagSemantics()) {
-            newMachine.setSemantics(EventBufferSemantics.bag);
-        }
-        else if (useReceiverSemantics()) {
-            newMachine.setSemantics(EventBufferSemantics.receiver);
-        }
         schedule.makeMachine(newMachine, pc);
 
         guardedCount = IntegerVS.add(guardedCount, 1);

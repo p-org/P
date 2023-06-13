@@ -288,30 +288,6 @@ public class PSymOptions {
                 .build();
         options.addOption(filters);
 
-//        // whether or not to disable receiver queue semantics
-//        Option receiverQueue = Option.builder()
-//                .longOpt("receiver-queue")
-//                .desc("Disable sender queue reduction to get receiver queue semantics")
-//                .numberOfArgs(0)
-//                .build();
-//        options.addOption(receiverQueue);
-//
-//        // whether or not to use symbolic exploration sleep sets
-//        Option sleep = Option.builder()
-//                .longOpt("sleep-sets")
-//                .desc("Enable frontier sleep sets")
-//                .numberOfArgs(0)
-//                .build();
-//        options.addOption(sleep);
-//
-//        // whether or not to use DPOR
-//        Option dpor = Option.builder()
-//                .longOpt("use-dpor")
-//                .desc("Enable use of DPOR (not implemented)")
-//                .numberOfArgs(0)
-//                .build();
-//        options.addOption(dpor);
-
         // read program state from file
         Option readFromFile = Option.builder()
                 .longOpt("read")
@@ -723,18 +699,6 @@ public class PSymOptions {
                 case "use-filters":
                     config.setUseFilters(true);
                     break;
-                //                case "rq":
-                //                case "receiver-queue":
-                //                    config.setUseReceiverQueueSemantics(true);
-                //                    break;
-                //                case "sl":
-                //                case "sleep-sets":
-                //                    config.setUseSleepSets(true);
-                //                    break;
-                //                case "dpor":
-                //                case "use-dpor":
-                //                    config.setDpor(true);
-                //                    break;
                 case "read":
                     config.setReadFromFile(option.getValue());
                     File replayFile = new File(config.getReadFromFile());

@@ -90,8 +90,6 @@ public class Scheduler implements SymbolicSearch {
     /** Total number of distinct states */
     private int totalDistinctStateCount = 0;
 
-    private boolean useFilters() { return configuration.isUseFilters(); }
-
     public int getTotalStates() {
         return totalStateCount;
     }
@@ -509,10 +507,6 @@ public class Scheduler implements SymbolicSearch {
         }
   //      return candidateSenders;
 
-        if (useFilters()) {
-            guardedMachines = filter(guardedMachines, InterleaveOrder.getInstance());
-        }
-
 //        executionFinished = guardedMachines.isEmpty();
         executionFinished = guardedMachines.stream().map(x -> x.getGuard().and(schedule.getFilter())).filter(x -> !(x.isFalse())).collect(Collectors.toList()).isEmpty();
 
@@ -535,37 +529,6 @@ public class Scheduler implements SymbolicSearch {
 
     private Message rmBuffer(Machine m, Guard g) {
         return m.sendBuffer.remove(g);
-    }
-
-    private List<GuardedValue<Machine>> filter(List<GuardedValue<Machine>> choices, MessageOrder order) {
-        Map<Machine, Guard> filteredMap = new HashMap<>();
-        Map<Machine, Message> firstElement = new HashMap<>();
-        for (GuardedValue<Machine> choice : choices) {
-            Machine currentMachine = choice.getValue();
-            Message current = peekBuffer(currentMachine, choice.getGuard());
-            Guard add = choice.getGuard();
-            List<Message> remove = new ArrayList<>();
-            Map<Machine, Guard> newFilteredMap = new HashMap<>();
-            for (Machine oldMachine : filteredMap.keySet()) {
-                Message old = firstElement.get(oldMachine);
-                add = add.and(order.lessThan(old, current).not());
-            }
-            for (Machine oldMachine : filteredMap.keySet()) {
-                Message old = firstElement.get(oldMachine);
-                Guard remCond = order.lessThan(current, old).and(add);
-                newFilteredMap.put(oldMachine, filteredMap.get(oldMachine).and(remCond.not()));
-                firstElement.put(oldMachine, firstElement.get(oldMachine).restrict(remCond.not()));
-            }
-            newFilteredMap.put(currentMachine, add);
-            firstElement.put(currentMachine, current.restrict(add));
-            filteredMap = newFilteredMap;
-        }
-        List<GuardedValue<Machine>> filtered = new ArrayList<>();
-        for (Map.Entry<Machine,Guard> entry : filteredMap.entrySet()) {
-            if (!entry.getValue().isFalse())
-                filtered.add(new GuardedValue(entry.getKey(), entry.getValue()));
-        }
-        return filtered;
     }
 
     private List<GuardedValue<Machine>> filterDistinct(List<GuardedValue<Machine>> choices) {

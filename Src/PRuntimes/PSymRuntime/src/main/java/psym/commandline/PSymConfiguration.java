@@ -16,13 +16,6 @@ import java.io.Serializable;
  * Represents the configuration of the P Symbolic tool
  */
 public class PSymConfiguration implements Serializable {
-    // name of the psym configuration file
-    @Getter @Setter
-    String configFile = "";
-
-    // strategy of exploration
-    @Getter @Setter
-    String strategy = "learn";
 
     // default name of the test driver
     @Getter
@@ -32,6 +25,14 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     String testDriver = testDriverDefault;
 
+    // name of the project
+    @Getter @Setter
+    String projectName = "default";
+
+    // name of the output folder
+    @Getter @Setter
+    String outputFolder = "output";
+
     // time limit in seconds (0 means infinite)
     @Getter @Setter
     double timeLimit = 0;
@@ -40,9 +41,13 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     double memLimit = (Runtime.getRuntime().maxMemory() / 1024 / 1024);
 
-    // name of the output folder
+    // level of verbosity for the logging
     @Getter @Setter
-    String outputFolder = "output";
+    int verbosity = 0;
+
+    // strategy of exploration
+    @Getter @Setter
+    String strategy = "learn";
 
     // max number of executions bound provided by the user
     @Getter @Setter
@@ -56,17 +61,17 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     boolean failOnMaxStepBound = false;
 
+    // name of the cex file to read the replayer state
+    @Getter @Setter
+    String readReplayerFromFile = "";
+
     // random seed
     @Getter @Setter
     long randomSeed = System.currentTimeMillis();
 
-    // name of the project
+    // name of the psym configuration file
     @Getter @Setter
-    String projectName = "default";
-
-    // name of the cex file to read the replayer state
-    @Getter @Setter
-    String readReplayerFromFile = "";
+    String configFile = "";
 
     // mode of state hashing
     @Getter @Setter
@@ -79,6 +84,10 @@ public class PSymConfiguration implements Serializable {
     // use backtracking
     @Getter @Setter
     boolean useBacktrack = true;
+
+    // max number of children tasks per execution
+    @Getter @Setter
+    int maxBacktrackTasksPerExecution = 2;
 
     // mode of choice orchestration
     @Getter @Setter
@@ -96,10 +105,6 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.CoverageEpsilonGreedy;
 
-    // max number of children tasks per execution
-    @Getter @Setter
-    int maxBacktrackTasksPerExecution = 2;
-
     // type of solver engine
     @Getter @Setter
     SolverType solverType = SolverType.BDD;
@@ -116,17 +121,9 @@ public class PSymConfiguration implements Serializable {
     @Getter @Setter
     boolean writeToFile = false;
 
-    // use filters
-    @Getter @Setter
-    boolean useFilters = false;
-
     // level of stats collection
     @Getter @Setter
     int collectStats = 1;
-
-    // level of verbosity for the logging
-    @Getter @Setter
-    int verbosity = 0;
 
     // max internal steps before throwing an exception
     @Getter

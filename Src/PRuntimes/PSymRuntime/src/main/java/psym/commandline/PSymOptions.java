@@ -293,14 +293,6 @@ public class PSymOptions {
                 .build();
         addHiddenOption(exprLibType);
 
-        // whether or not to enable filter-based reductions
-        Option filters = Option.builder()
-                .longOpt("use-filters")
-                .desc("Enable filter-based reductions")
-                .numberOfArgs(0)
-                .build();
-        addHiddenOption(filters);
-
         // read program state from file
         Option readFromFile = Option.builder()
                 .longOpt("read")
@@ -676,9 +668,6 @@ public class PSymOptions {
                         default:
                             optionError(option, String.format("Expected an expression type, got %s", option.getValue()));
                     }
-                    break;
-                case "use-filters":
-                    config.setUseFilters(true);
                     break;
                 case "read":
                     config.setReadFromFile(option.getValue());

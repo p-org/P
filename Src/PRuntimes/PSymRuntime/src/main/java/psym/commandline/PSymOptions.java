@@ -11,7 +11,7 @@ import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestratorEpsilonGreed
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
 import psym.utils.GlobalData;
-import psym.utils.StateHashingMode;
+import psym.utils.StateCachingMode;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -25,24 +25,25 @@ import static java.lang.System.exit;
  */
 public class PSymOptions {
 
-    private static final Options options;
+    private static final Options allOptions;
+    private static final Options visibleOptions;
     private static HelpFormatter formatter = new HelpFormatter();
     private static final PrintWriter writer = new PrintWriter(System.out);
 
+    private static void addHiddenOption(Option opt) {
+        allOptions.addOption(opt);
+    }
+
+    private static void addOption(Option opt) {
+        allOptions.addOption(opt);
+        visibleOptions.addOption(opt);
+    }
+
     static {
-        options = new Options();
+        allOptions = new Options();
+        visibleOptions = new Options();
 
         // Basic options
-
-        // strategy of exploration
-        Option strategy = Option.builder("s")
-                .longOpt("strategy")
-                .desc("Exploration strategy: random, dfs, learn, symex (default: learn)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Strategy (string)")
-                .build();
-        options.addOption(strategy);
 
         // test driver name
         Option testName = Option.builder("tc")
@@ -52,27 +53,17 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Test Case (string)")
                 .build();
-        options.addOption(testName);
+        addOption(testName);
 
-        // time limit
-        Option timeLimit = Option.builder("t")
-                .longOpt("timeout")
-                .desc("Timeout in seconds (disabled by default)")
+        // project name
+        Option projName = Option.builder("pn")
+                .longOpt("projname")
+                .desc("Project name")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Time Limit (seconds)")
+                .argName("Project Name (string)")
                 .build();
-        options.addOption(timeLimit);
-
-        // memory limit
-        Option memLimit = Option.builder("m")
-                .longOpt("memout")
-                .desc("Memory limit in Giga bytes (auto-detect by default)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Memory Limit (GB)")
-                .build();
-        options.addOption(memLimit);
+        addOption(projName);
 
         // output folder
         Option outputDir = Option.builder("o")
@@ -82,7 +73,27 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Output Dir (string)")
                 .build();
-        options.addOption(outputDir);
+        addOption(outputDir);
+
+        // time limit
+        Option timeLimit = Option.builder("t")
+                .longOpt("timeout")
+                .desc("Timeout in seconds (disabled by default)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Time Limit (seconds)")
+                .build();
+        addOption(timeLimit);
+
+        // memory limit
+        Option memLimit = Option.builder("m")
+                .longOpt("memout")
+                .desc("Memory limit in Giga bytes (auto-detect by default)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Memory Limit (GB)")
+                .build();
+        addOption(memLimit);
 
         // set the level of verbosity
         Option verbosity = Option.builder("v")
@@ -92,8 +103,20 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Log Verbosity (integer)")
                 .build();
-        options.addOption(verbosity);
+        addOption(verbosity);
 
+
+        // Explore options
+
+        // strategy of exploration
+        Option strategy = Option.builder("s")
+                .longOpt("strategy")
+                .desc("Exploration strategy: random, dfs, learn, symex (default: learn)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Strategy (string)")
+                .build();
+        addOption(strategy);
 
         // Systematic exploration options
 
@@ -105,7 +128,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Iterations (integer)")
                 .build();
-        options.addOption(maxExecutions);
+        addOption(maxExecutions);
 
         // max steps/depth bound for the search
         Option maxSteps = Option.builder("ms")
@@ -115,7 +138,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Max Steps (integer)")
                 .build();
-        options.addOption(maxSteps);
+        addOption(maxSteps);
 
         // whether or not to fail on reaching max step bound
         Option failOnMaxSteps = Option.builder("fms")
@@ -123,60 +146,7 @@ public class PSymOptions {
                 .desc("Consider it a bug if the test hits the specified max-steps")
                 .numberOfArgs(0)
                 .build();
-        options.addOption(failOnMaxSteps);
-
-
-        // Search prioritization options
-
-        // whether or not to disable state caching
-        Option stateHashing = Option.builder("sh")
-                .longOpt("state-hashing")
-                .desc("State hashing mode: none, exact, fast (default: exact)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Hashing Mode (string)")
-                .build();
-        options.addOption(stateHashing);
-
-        // mode of choice orchestration
-        Option choiceOrch = Option.builder("corch")
-                .longOpt("choice-orch")
-                .desc("Choice orchestration options: random, learn (default: learn)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Choice Orch. (string)")
-                .build();
-        options.addOption(choiceOrch);
-
-        // mode of task orchestration
-        Option taskOrch = Option.builder("torch")
-                .longOpt("task-orch")
-                .desc("Task orchestration options: astar, random, dfs, learn (default: learn)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Task Orch. (string)")
-                .build();
-        options.addOption(taskOrch);
-
-        // max scheduling choice bound for the search
-        Option maxSchedBound = Option.builder("sb")
-                .longOpt("sched-bound")
-                .desc("Max scheduling choice bound at each step during the search (default: 1)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Schedule Bound (integer)")
-                .build();
-        options.addOption(maxSchedBound);
-
-        // max data choice bound for the search
-        Option dataChoiceBound = Option.builder("db")
-                .longOpt("data-bound")
-                .desc("Max data choice bound at each step during the search (default: 1)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Data Bound (integer)")
-                .build();
-        options.addOption(dataChoiceBound);
+        addOption(failOnMaxSteps);
 
 
         // Replay and debug options
@@ -189,7 +159,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("File Name (string)")
                 .build();
-        options.addOption(readReplayerFromFile);
+        addOption(readReplayerFromFile);
 
 
         // Advanced options
@@ -202,120 +172,7 @@ public class PSymOptions {
                 .hasArg()
                 .argName("Random Seed (integer)")
                 .build();
-        options.addOption(randomSeed);
-
-        // whether or not to enable symmetry
-        Option symmetry = Option.builder()
-                .longOpt("use-symmetry")
-                .desc("Enable symmetry-aware exploration")
-                .numberOfArgs(0)
-                .build();
-        options.addOption(symmetry);
-
-        // whether or not to disable stateful backtracking
-        Option backtrack = Option.builder()
-                .longOpt("no-backtrack")
-                .desc("Disable stateful backtracking")
-                .numberOfArgs(0)
-                .build();
-        options.addOption(backtrack);
-
-        // max number of backtrack tasks per execution
-        Option maxBacktrackTasksPerExecution = Option.builder()
-                .longOpt("backtracks-per-iteration")
-                .desc("Max number of backtracks to generate per iteration (default: 2)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("(integer)")
-                .build();
-        options.addOption(maxBacktrackTasksPerExecution);
-
-        // mode of choice learning state mode
-        Option choiceLearnState = Option.builder()
-                .longOpt("learn-state")
-                .desc("Learning state options: none, last, states, events, full (default: last)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Learn State (string)")
-                .build();
-        options.addOption(choiceLearnState);
-
-        // mode of choice learning reward mode
-        Option choiceLearnReward = Option.builder()
-                .longOpt("learn-reward")
-                .desc("Learning reward options: coverage, fixed (default: coverage)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Learn Reward (string)")
-                .build();
-        options.addOption(choiceLearnReward);
-
-        // epsilon-greedy decay rate
-        Option epsilonDecay = Option.builder()
-                .longOpt("learn-decay")
-                .desc("Decay rate for epsilon-greedy")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Decay Rate (double)")
-                .build();
-        options.addOption(epsilonDecay);
-
-        // solver type
-        Option solverType = Option.builder()
-                .longOpt("solver")
-                .desc("Solver type to use: bdd, yices2, monosat, z3, cvc5 (default: bdd)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Solver Type (string)")
-                .build();
-        options.addOption(solverType);
-
-        // expression type
-        Option exprLibType = Option.builder()
-                .longOpt("expr")
-                .desc("Expression type to use: bdd, fraig, aig, native (default: bdd)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Expression Type (string)")
-                .build();
-        options.addOption(exprLibType);
-
-        // whether or not to enable filter-based reductions
-        Option filters = Option.builder()
-                .longOpt("use-filters")
-                .desc("Enable filter-based reductions")
-                .numberOfArgs(0)
-                .build();
-        options.addOption(filters);
-
-        // read program state from file
-        Option readFromFile = Option.builder()
-                .longOpt("read")
-                .desc("Name of the file with the program state")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("File Name (string)")
-                .build();
-        options.addOption(readFromFile);
-
-        // Enable writing the program state to file
-        Option writeToFile = Option.builder()
-                .longOpt("write")
-                .desc("Enable writing program state")
-                .numberOfArgs(0)
-                .build();
-        options.addOption(writeToFile);
-
-        // whether or not to collect search stats
-        Option collectStats = Option.builder()
-                .longOpt("stats")
-                .desc("Level of stats collection/reporting during the search (default: 1)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Collection Level (integer)")
-                .build();
-        options.addOption(collectStats);
-
+        addOption(randomSeed);
 
         // psym configuration file
         Option configFile = Option.builder()
@@ -325,17 +182,124 @@ public class PSymOptions {
                 .hasArg()
                 .argName("File Name (string)")
                 .build();
-        options.addOption(configFile);
+        addOption(configFile);
 
-        // project name
-        Option projName = Option.builder()
-                .longOpt("projname")
-                .desc("Project name")
+
+        // Invisible/expert options
+
+        // whether or not to disable state caching
+        Option stateCaching = Option.builder()
+                .longOpt("state-caching")
+                .desc("State caching mode: none, exact, fast (default: exact)")
                 .numberOfArgs(1)
                 .hasArg()
-                .argName("Project Name (string)")
+                .argName("Caching Mode (string)")
                 .build();
-        options.addOption(projName);
+        addHiddenOption(stateCaching);
+
+        // whether or not to enable symmetry
+        Option symmetry = Option.builder()
+                .longOpt("use-symmetry")
+                .desc("Enable symmetry-aware exploration")
+                .numberOfArgs(0)
+                .build();
+        addHiddenOption(symmetry);
+
+        // whether or not to disable stateful backtracking
+        Option backtrack = Option.builder()
+                .longOpt("no-backtrack")
+                .desc("Disable stateful backtracking")
+                .numberOfArgs(0)
+                .build();
+        addHiddenOption(backtrack);
+
+        // max number of backtrack tasks per execution
+        Option maxBacktrackTasksPerExecution = Option.builder()
+                .longOpt("backtracks-per-iteration")
+                .desc("Max number of backtracks to generate per iteration (default: 2)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("(integer)")
+                .build();
+        addHiddenOption(maxBacktrackTasksPerExecution);
+
+        // mode of choice orchestration
+        Option choiceOrch = Option.builder("corch")
+                .longOpt("choice-orch")
+                .desc("Choice orchestration options: random, learn (default: learn)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Choice Orch. (string)")
+                .build();
+        addHiddenOption(choiceOrch);
+
+        // mode of task orchestration
+        Option taskOrch = Option.builder("torch")
+                .longOpt("task-orch")
+                .desc("Task orchestration options: astar, random, dfs, learn (default: learn)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Task Orch. (string)")
+                .build();
+        addHiddenOption(taskOrch);
+
+        // mode of choice learning state mode
+        Option choiceLearnState = Option.builder()
+                .longOpt("learn-state")
+                .desc("Learning state options: none, last, states, events, full (default: last)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Learn State (string)")
+                .build();
+        addHiddenOption(choiceLearnState);
+
+        // mode of choice learning reward mode
+        Option choiceLearnReward = Option.builder()
+                .longOpt("learn-reward")
+                .desc("Learning reward options: coverage, fixed (default: coverage)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Learn Reward (string)")
+                .build();
+        addHiddenOption(choiceLearnReward);
+
+        // epsilon-greedy decay rate
+        Option epsilonDecay = Option.builder()
+                .longOpt("learn-decay")
+                .desc("Decay rate for epsilon-greedy")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Decay Rate (double)")
+                .build();
+        addHiddenOption(epsilonDecay);
+
+        // read program state from file
+        Option readFromFile = Option.builder()
+                .longOpt("read")
+                .desc("Name of the file with the program state")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("File Name (string)")
+                .build();
+        addHiddenOption(readFromFile);
+
+        // Enable writing the program state to file
+        Option writeToFile = Option.builder()
+                .longOpt("write")
+                .desc("Enable writing program state")
+                .numberOfArgs(0)
+                .build();
+        addHiddenOption(writeToFile);
+
+        // whether or not to collect search stats
+        Option collectStats = Option.builder()
+                .longOpt("stats")
+                .desc("Level of stats collection/reporting during the search (default: 1)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Collection Level (integer)")
+                .build();
+        addHiddenOption(collectStats);
 
 
         // Help menu
@@ -343,7 +307,7 @@ public class PSymOptions {
                 .longOpt("help")
                 .desc("Show this help menu")
                 .build();
-        options.addOption(help);
+        addOption(help);
     }
 
     private static void optionError(Option opt, String msg) {
@@ -363,10 +327,10 @@ public class PSymOptions {
         formatter.setOptionComparator(null);
         CommandLine cmd = null;
         try {
-            cmd = parser.parse(options, args);
+            cmd = parser.parse(allOptions, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printUsage(writer, 100, "java -jar <.jar-file>", options);
+            formatter.printUsage(writer, 100, "java -jar <.jar-file>", allOptions);
             writer.flush();
             System.out.println("Try --help for details.");
             exit(10);
@@ -386,6 +350,41 @@ public class PSymOptions {
         for (Option option : cmd.getOptions()) {
             switch (option.getLongOpt()) {
                 // basic options
+                case "tc":
+                case "testcase":
+                    config.setTestDriver(option.getValue());
+                    break;
+                case "projname":
+                    config.setProjectName(option.getValue());
+                    break;
+                case "o":
+                case "outdir":
+                    config.setOutputFolder(option.getValue());
+                    break;
+                case "t":
+                case "timeout":
+                    try {
+                        config.setTimeLimit(Double.parseDouble(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected a double value, got %s", option.getValue()));
+                    }
+                    break;
+                case "m":
+                case "memout":
+                    try {
+                        config.setMemLimit(Double.parseDouble(option.getValue())*1024);
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected a double value, got %s", option.getValue()));
+                    }
+                    break;
+                case "v":
+                case "verbose":
+                    try {
+                        config.setVerbosity(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
                 case "s":
                 case "strategy":
                     switch (option.getValue()) {
@@ -424,38 +423,6 @@ public class PSymOptions {
                             optionError(option, String.format("Unrecognized strategy of exploration, got %s", option.getValue()));
                     }
                     break;
-                case "tc":
-                case "testcase":
-                    config.setTestDriver(option.getValue());
-                    break;
-                case "t":
-                case "timeout":
-                    try {
-                        config.setTimeLimit(Double.parseDouble(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected a double value, got %s", option.getValue()));
-                    }
-                    break;
-                case "m":
-                case "memout":
-                    try {
-                        config.setMemLimit(Double.parseDouble(option.getValue())*1024);
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected a double value, got %s", option.getValue()));
-                    }
-                    break;
-                case "o":
-                case "outdir":
-                    config.setOutputFolder(option.getValue());
-                    break;
-                case "v":
-                case "verbose":
-                    try {
-                        config.setVerbosity(Integer.parseInt(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
-                    break;
                 // exploration options
                 case "i":
                 case "iterations":
@@ -477,21 +444,55 @@ public class PSymOptions {
                 case "fail-on-maxsteps":
                     config.setFailOnMaxStepBound(true);
                     break;
-                // search options
-                case "sh":
-                case "state-hashing":
+                // replay options
+                case "r":
+                case "replay":
+                    config.setReadReplayerFromFile(option.getValue());
+                    File file = new File(config.getReadReplayerFromFile());
+                    try {
+                        file.getCanonicalPath();
+                    } catch (IOException e) {
+                        optionError(option, String.format("File %s does not exist", config.getReadReplayerFromFile()));
+                    }
+                    break;
+                // advanced options
+                case "seed":
+                    try {
+                        config.setRandomSeed(Long.parseLong(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
+                case "config":
+                    readConfigFile(config, option.getValue(), option);
+                    break;
+                // expert options
+                case "state-caching":
                     switch (option.getValue()) {
                         case "none":
-                            config.setStateHashingMode(StateHashingMode.None);
+                            config.setStateCachingMode(StateCachingMode.None);
                             break;
                         case "exact":
-                            config.setStateHashingMode(StateHashingMode.Exact);
+                            config.setStateCachingMode(StateCachingMode.Exact);
                             break;
                         case "fast":
-                            config.setStateHashingMode(StateHashingMode.Fast);
+                            config.setStateCachingMode(StateCachingMode.Fast);
                             break;
                         default:
                             optionError(option, String.format("Unrecognized state hashing mode, got %s", option.getValue()));
+                    }
+                    break;
+                case "use-symmetry":
+                    config.setUseSymmetry(true);
+                    break;
+                case "no-backtrack":
+                    config.setUseBacktrack(false);
+                    break;
+                case "backtracks-per-iteration":
+                    try {
+                        config.setMaxBacktrackTasksPerExecution(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
                 case "corch":
@@ -585,120 +586,6 @@ public class PSymOptions {
                             optionError(option, String.format("Unrecognized task orchestration mode, got %s", option.getValue()));
                     }
                     break;
-                case "sb":
-                case "sched-bound":
-                    try {
-                        config.setSchedChoiceBound(Integer.parseInt(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
-                    break;
-                case "db":
-                case "data-bound":
-                    try {
-                        config.setDataChoiceBound(Integer.parseInt(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
-                    break;
-                // replay options
-                case "r":
-                case "replay":
-                    config.setReadReplayerFromFile(option.getValue());
-                    File file = new File(config.getReadReplayerFromFile());
-                    try {
-                        file.getCanonicalPath();
-                    } catch (IOException e) {
-                        optionError(option, String.format("File %s does not exist", config.getReadReplayerFromFile()));
-                    }
-                    break;
-                // advanced options
-                case "seed":
-                    try {
-                        config.setRandomSeed(Long.parseLong(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
-                    break;
-                case "use-symmetry":
-                    config.setUseSymmetry(true);
-                    break;
-                case "no-backtrack":
-                    config.setUseBacktrack(false);
-                    break;
-                case "backtracks-per-iteration":
-                    try {
-                        config.setMaxBacktrackTasksPerExecution(Integer.parseInt(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
-                    break;
-                case "solver":
-                    switch (option.getValue()) {
-                        case "abc":
-                            config.setSolverType(SolverType.ABC);
-                            break;
-                        case "bdd":
-                            config.setSolverType(SolverType.BDD);
-                            break;
-                        case "cbdd":
-                            config.setSolverType(SolverType.CBDD);
-                            break;
-                        case "cvc5":
-                            config.setSolverType(SolverType.CVC5);
-                            break;
-                        case "yices2":
-                            config.setSolverType(SolverType.YICES2);
-                            break;
-                        case "z3":
-                            config.setSolverType(SolverType.Z3);
-                            break;
-                        case "monosat":
-                            config.setSolverType(SolverType.MONOSAT);
-                            break;
-//                        case "boolector":
-//                            config.setSolverType(SolverType.JAVASMT_BOOLECTOR);
-//                            break;
-//                        case "mathsat5":
-//                            config.setSolverType(SolverType.JAVASMT_MATHSAT5);
-//                            break;
-//                        case "princess":
-//                            config.setSolverType(SolverType.JAVASMT_PRINCESS);
-//                            break;
-//                        case "smtinterpol":
-//                            config.setSolverType(SolverType.JAVASMT_SMTINTERPOL);
-//                            break;
-                        default:
-                            optionError(option, String.format("Expected a solver type, got %s", option.getValue()));
-                    }
-                    break;
-                case "expr":
-                    switch (option.getValue()) {
-                        case "aig":
-                            config.setExprLibType(ExprLibType.Aig);
-                            break;
-                        case "auto":
-                            config.setExprLibType(ExprLibType.Auto);
-                            break;
-                        case "bdd":
-                            config.setExprLibType(ExprLibType.Bdd);
-                            break;
-                        case "fraig":
-                            config.setExprLibType(ExprLibType.Fraig);
-                            break;
-                        case "iaig":
-                            config.setExprLibType(ExprLibType.Iaig);
-                            break;
-                        case "native":
-                            config.setExprLibType(ExprLibType.NativeExpr);
-                            break;
-                        default:
-                            optionError(option, String.format("Expected an expression type, got %s", option.getValue()));
-                    }
-                    break;
-                case "use-filters":
-                    config.setUseFilters(true);
-                    break;
                 case "read":
                     config.setReadFromFile(option.getValue());
                     File replayFile = new File(config.getReadFromFile());
@@ -718,19 +605,13 @@ public class PSymOptions {
                         optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
-                case "config":
-                    readConfigFile(config, option.getValue(), option);
-                    break;
-                case "projname":
-                    config.setProjectName(option.getValue());
-                    break;
                 case "h":
                 case "help":
                     formatter.printHelp(
                             100,
                             "java -jar <.jar-file> [options]",
                             "----------------------------\nCommandline options for PSym\n----------------------------",
-                            options,
+                            visibleOptions,
                             "See https://p-org.github.io/P/ for details.");
                     exit(0);
                     break;

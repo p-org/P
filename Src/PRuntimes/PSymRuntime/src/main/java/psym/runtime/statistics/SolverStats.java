@@ -5,7 +5,6 @@ import psym.commandline.MemoutException;
 import psym.runtime.logger.SearchLogger;
 import psym.utils.MemoryMonitor;
 import psym.valuesummary.solvers.SolverEngine;
-import psym.valuesummary.solvers.sat.expr.Fraig;
 
 public class SolverStats {
     public static int andOperations = 0;
@@ -28,8 +27,6 @@ public class SolverStats {
         if (timeMaxCreateGuards < timeSpent)
             timeMaxCreateGuards = timeSpent;
 
-        // switch engine
-        SolverEngine.switchEngineAuto();
         // check if reached time or memory limit
         checkResourceLimits();
     }
@@ -67,9 +64,6 @@ public class SolverStats {
         SearchLogger.log("#-and-ops", String.format("%d", andOperations));
         SearchLogger.log("#-or-ops", String.format("%d", orOperations));
         SearchLogger.log("#-not-ops", String.format("%d", notOperations));
-        SearchLogger.log("aig-#-sat-ops", String.format("%d", Fraig.isSatOperations));
-        SearchLogger.log("aig-#-sat-ops-sat", String.format("%d", Fraig.isSatResult));
-        SearchLogger.log("aig-%-sat-ops-sat", String.format("%.1f", isSatPercent(Fraig.isSatOperations, Fraig.isSatResult)));
         SearchLogger.log("solver-#-nodes", String.format("%d", SolverEngine.getSolver().getNodeCount()));
         SearchLogger.log("solver-#-sat-ops", String.format("%d", isSatOperations));
         SearchLogger.log("solver-#-sat-ops-sat", String.format("%d", isSatResult));

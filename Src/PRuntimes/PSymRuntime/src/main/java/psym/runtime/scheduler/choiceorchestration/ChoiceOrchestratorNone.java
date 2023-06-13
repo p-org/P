@@ -8,7 +8,7 @@ public class ChoiceOrchestratorNone implements ChoiceOrchestrator {
 
     public ChoiceOrchestratorNone() {}
 
-    public void reorderChoices(List<ValueSummary> choices, int bound, boolean isData) {
+    public void reorderChoices(List<ValueSummary> choices, boolean isData) {
         // do nothing
     }
 }

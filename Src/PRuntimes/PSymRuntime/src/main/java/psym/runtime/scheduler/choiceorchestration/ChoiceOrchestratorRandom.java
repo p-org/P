@@ -11,10 +11,7 @@ public class ChoiceOrchestratorRandom implements ChoiceOrchestrator {
 
     public ChoiceOrchestratorRandom() {}
 
-    public void reorderChoices(List<ValueSummary> choices, int bound, boolean isData) {
-        if ((bound <= 0) || choices.size() <= bound) {
-            return;
-        }
+    public void reorderChoices(List<ValueSummary> choices, boolean isData) {
         Collections.shuffle(choices, new Random(RandomNumberGenerator.getInstance().getRandomLong()));
     }
 }

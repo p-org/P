@@ -1,6 +1,6 @@
 package psym.utils;
 
-public enum StateHashingMode {
+public enum StateCachingMode {
     None,
     Exact,
     Fast

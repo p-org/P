@@ -17,7 +17,7 @@ import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
 import psym.utils.GlobalData;
 import psym.utils.MemoryMonitor;
-import psym.utils.StateHashingMode;
+import psym.utils.StateCachingMode;
 import psym.utils.TimeMonitor;
 import psym.valuesummary.*;
 import psym.valuesummary.solvers.SolverEngine;
@@ -516,7 +516,7 @@ public class Scheduler implements SymbolicSearch {
 //        executionFinished = guardedMachines.isEmpty();
         executionFinished = guardedMachines.stream().map(x -> x.getGuard().and(schedule.getFilter())).filter(x -> !(x.isFalse())).collect(Collectors.toList()).isEmpty();
 
-        if (configuration.getStateHashingMode() != StateHashingMode.None) {
+        if (configuration.getStateCachingMode() != StateCachingMode.None) {
             if (distinctStateGuard != null) {
                 guardedMachines = filterDistinct(guardedMachines);
             }
@@ -666,12 +666,12 @@ public class Scheduler implements SymbolicSearch {
      * Enumerate concrete states from explicit
      * @return number of concrete states represented by the symbolic state
      */
-    public int[] enumerateConcreteStatesFromExplicit(StateHashingMode mode) {
+    public int[] enumerateConcreteStatesFromExplicit(StateCachingMode mode) {
         if (configuration.getVerbosity() > 5) {
             PSymLogger.info(globalStateString());
         }
 
-        if (stickyStep || (choiceDepth <= backtrackDepth) || (mode == StateHashingMode.None)) {
+        if (stickyStep || (choiceDepth <= backtrackDepth) || (mode == StateCachingMode.None)) {
             distinctStateGuard = Guard.constTrue();
             return new int[]{0, 0};
         }
@@ -683,7 +683,7 @@ public class Scheduler implements SymbolicSearch {
             List<Object> machineStateConcrete = new ArrayList<>();
             for (int j = 0; j < machineStateSymbolic.size(); j++) {
                 Object varValue = null;
-                if (mode == StateHashingMode.Fast) {
+                if (mode == StateCachingMode.Fast) {
                     varValue = machineStateSymbolic.get(j).getConcreteHash();
                 } else {
                     GuardedValue<?> guardedValue = Concretizer.concretize(machineStateSymbolic.get(j));
@@ -776,7 +776,7 @@ public class Scheduler implements SymbolicSearch {
                     totalDistinctStateCount += 1;
                     numDistinctConcreteStates += 1;
                     distinctStates.add(concreteState);
-                    if (configuration.getStateHashingMode() != StateHashingMode.None) {
+                    if (configuration.getStateCachingMode() != StateCachingMode.None) {
                         distinctStateGuard = distinctStateGuard.or(concreteStateGuard);
                     }
                     if (configuration.getVerbosity() > 4) {
@@ -804,13 +804,13 @@ public class Scheduler implements SymbolicSearch {
         int numMessagesMerged = 0;
         int numMessagesExplored = 0;
 
-        if (configuration.getCollectStats() > 3 || (configuration.getStateHashingMode() != StateHashingMode.None)) {
+        if (configuration.getCollectStats() > 3 || (configuration.getStateCachingMode() != StateCachingMode.None)) {
             storeSrcState();
             int[] numConcrete;
             if (configuration.isSymbolic()) {
                 numConcrete = enumerateConcreteStatesFromSymbolic(Concretizer::concretize);
             } else {
-                numConcrete = enumerateConcreteStatesFromExplicit(configuration.getStateHashingMode());
+                numConcrete = enumerateConcreteStatesFromExplicit(configuration.getStateCachingMode());
             }
             numStates = numConcrete[0];
             numStatesDistinct = numConcrete[1];

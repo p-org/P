@@ -98,6 +98,8 @@ namespace PChecker.Actors
         /// </summary>
         internal bool IsDefaultHandlerAvailable { get; private set; }
 
+        internal bool IsDelayed;
+
         /// <summary>
         /// Id used to identify subsequent operations performed by this actor. This value
         /// is initially either <see cref="Guid.Empty"/> or the <see cref="Guid"/> specified
@@ -136,6 +138,7 @@ namespace PChecker.Actors
             CurrentStatus = Status.Active;
             CurrentStateName = default;
             IsDefaultHandlerAvailable = false;
+            IsDelayed = false;
         }
 
         /// <summary>
@@ -436,7 +439,6 @@ namespace PChecker.Actors
             {
                 return EnqueueStatus.Dropped;
             }
-
             return Inbox.Enqueue(e, opGroupId, info);
         }
 
@@ -449,6 +451,7 @@ namespace PChecker.Actors
             Event lastDequeuedEvent = null;
             while (CurrentStatus != Status.Halted && Runtime.IsRunning)
             {
+                IsDelayed = false;
                 (var status, var e, var opGroupId, var info) = Inbox.Dequeue();
                 if (opGroupId != Guid.Empty)
                 {
@@ -485,6 +488,13 @@ namespace PChecker.Actors
                     // Terminate the handler as there is no event available.
                     break;
                 }
+                else if (status is DequeueStatus.Delayed)
+                {
+                    // Set the flag and terminate.
+                    IsDelayed = true;
+                    break;
+                }
+
 
                 if (e is TimerElapsedEvent timeoutEvent &&
                     timeoutEvent.Info.Period.TotalMilliseconds < 0)

@@ -560,6 +560,13 @@ namespace PChecker.SystematicTesting
                     }
 
                     await actor.RunEventHandlerAsync();
+
+                    while (actor.IsDelayed)
+                    {
+                        op.Status = AsyncOperationStatus.Delayed;
+                        Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
+                        await actor.RunEventHandlerAsync();
+                    }
                     if (syncCaller != null)
                     {
                         EnqueueEvent(syncCaller, new QuiescentEvent(actor.Id), actor, actor.OperationGroupId, null);

@@ -63,6 +63,8 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// </summary>
         public bool IsEventRaised => RaisedEvent != default;
 
+        public static ulong Time = 0;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MockEventQueue"/> class.
         /// </summary>
@@ -78,11 +80,11 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <inheritdoc/>
         public EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
         {
+            e.Timestamp ??= Time + e.Delay;
             if (IsClosed)
             {
                 return EnqueueStatus.Dropped;
             }
-
             if (EventWaitTypes.TryGetValue(e.GetType(), out var predicate) &&
                 (predicate is null || predicate(e)))
             {
@@ -105,7 +107,7 @@ namespace PChecker.Actors.EventQueues.Mocks
 
             if (!ActorManager.IsEventHandlerRunning)
             {
-                if (TryDequeueEvent(true).e is null)
+                if (TryDequeueEvent(true).Item1.e is null)
                 {
                     return EnqueueStatus.NextEventUnavailable;
                 }
@@ -147,7 +149,12 @@ namespace PChecker.Actors.EventQueues.Mocks
             }
 
             // Try to dequeue the next event, if there is one.
-            var (e, opGroupId, info) = TryDequeueEvent();
+            var ((e, opGroupId, info), isDelayed) = TryDequeueEvent();
+            if (isDelayed)
+            {
+                return (DequeueStatus.Delayed, null, Guid.Empty, null);
+            }
+
             if (e != null)
             {
                 // Found next event that can be dequeued.
@@ -173,9 +180,10 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <summary>
         /// Dequeues the next event and its metadata, if there is one available, else returns null.
         /// </summary>
-        private (Event e, Guid opGroupId, EventInfo info) TryDequeueEvent(bool checkOnly = false)
+        private ((Event e, Guid opGroupId, EventInfo info), bool isDelayed) TryDequeueEvent(bool checkOnly = false)
         {
             (Event, Guid, EventInfo) nextAvailableEvent = default;
+            bool isDelayed = false;
 
             // Iterates through the events and metadata in the inbox.
             var node = Queue.First;
@@ -200,18 +208,24 @@ namespace PChecker.Actors.EventQueues.Mocks
                 if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
                 {
                     nextAvailableEvent = currentEvent;
+                    isDelayed = false;
+                    if (nextAvailableEvent.Item1.Timestamp > Time)
+                    {
+                        isDelayed = true;
+                        node = nextNode;
+                        continue;
+                    }
+                    
                     if (!checkOnly)
                     {
                         Queue.Remove(node);
                     }
-
                     break;
                 }
 
                 node = nextNode;
             }
-
-            return nextAvailableEvent;
+            return (nextAvailableEvent, isDelayed);
         }
 
         /// <inheritdoc/>

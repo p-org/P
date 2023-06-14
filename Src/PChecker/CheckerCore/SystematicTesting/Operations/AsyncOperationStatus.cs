@@ -46,6 +46,11 @@ namespace PChecker.SystematicTesting.Operations
         /// <summary>
         /// The operation is canceled.
         /// </summary>
-        Canceled
+        Canceled,
+        
+        /// <summary>
+        /// The operation is delayed.
+        /// </summary>
+        Delayed
     }
 }

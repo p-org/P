@@ -1,12 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using PChecker.Actors.EventQueues.Mocks;
 using PChecker.Exceptions;
 using PChecker.SystematicTesting.Operations;
 using PChecker.SystematicTesting.Strategies;
@@ -163,6 +165,17 @@ namespace PChecker.SystematicTesting
                     Debug.WriteLine("<ScheduleDebug> Operation '{0}' has status '{1}'.", op.Id, op.Status);
                 }
             }
+            
+            if (!ops.Any(op => op.Status is AsyncOperationStatus.Enabled))
+            {
+                MockEventQueue.Time++;
+                foreach (var op in ops.Where(op => op.Status is AsyncOperationStatus.Delayed))
+                {
+                    op.OnEnabled();
+                }
+            }
+            Console.WriteLine("MockEventQueue.Time");
+            Console.WriteLine(MockEventQueue.Time);
 
             if (!Strategy.GetNextOperation(current, ops, out var next))
             {

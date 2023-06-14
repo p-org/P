@@ -3,9 +3,10 @@ package psym.runtime.scheduler.symmetry;
 import psym.runtime.machine.Machine;
 import psym.valuesummary.*;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class SymmetryTracker {
+public class SymmetryTracker implements Serializable {
     Map<String, SetVS<PrimitiveVS<Machine>>> typeToSymmetrySet;
 
     public SymmetryTracker() {

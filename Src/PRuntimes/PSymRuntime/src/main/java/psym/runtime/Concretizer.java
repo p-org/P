@@ -336,8 +336,6 @@ public class Concretizer {
                 GuardedValue<?> guardedValue = concretizer.apply(args[j].restrict(iterPc));
                 if (guardedValue == null) {
                     if (j == 0) done = true;
-//                    skip = true;
-//                    break;
                 } else {
                     iterPc = iterPc.and(guardedValue.getGuard());
                 }

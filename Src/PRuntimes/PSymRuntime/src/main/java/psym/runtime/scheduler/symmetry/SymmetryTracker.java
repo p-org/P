@@ -97,12 +97,6 @@ public class SymmetryTracker implements Serializable {
             reduced.add(new PrimitiveVS(Collections.singletonMap(entry.getKey(), entry.getValue())));
         }
 
-//        if (pendingSummaries.size() != 0) {
-////            System.out.println(String.format("\t(symmetry-aware) %d -> %d", original.size(), reduced.size()));
-//            System.out.println(String.format("Original: %s", original));
-//            System.out.println(String.format("Reduced: %s", reduced));
-//        }
-
         return reduced;
     }
 

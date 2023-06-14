@@ -565,11 +565,6 @@ public class IterativeBoundedScheduler extends Scheduler {
         printProgress(false);
         if (!isDoneIterating) {
             postIterationCleanup();
-//            if ((iter % 100) == 0) {
-//                if (configuration.isSymbolic() && SolverEngine.getSolverType() == SolverType.BDD) {
-//                    SolverEngine.resumeEngine();
-//                }
-//            }
         }
     }
 
@@ -581,13 +576,6 @@ public class IterativeBoundedScheduler extends Scheduler {
     @Override
     public void startWith(Machine machine) {
         super.startWith(machine);
-        /*
-        if (iter == 0) {
-            super.startWith(machine);
-        } else {
-            super.replayStartWith(machine);
-        }
-         */
     }
 
     @Override

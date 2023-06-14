@@ -38,8 +38,6 @@ public class StatWriter {
         log("solver-#-sat-ops", String.format("%d", SolverStats.isSatOperations));
         log("solver-#-sat-ops-sat", String.format("%d", SolverStats.isSatResult));
         log("solver-%-sat-ops-sat", String.format("%.1f", SolverStats.isSatPercent(SolverStats.isSatOperations, SolverStats.isSatResult)));
-//        log("aig-#-sat-ops", String.format("%d", Fraig.isSatOperations));
-//        log("aig-%-sat-ops-sat", String.format("%.1f", SolverStats.isSatPercent(Fraig.isSatOperations, Fraig.isSatResult)));
     }
 
 }

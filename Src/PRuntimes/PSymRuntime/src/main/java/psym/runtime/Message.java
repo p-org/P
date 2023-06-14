@@ -75,11 +75,6 @@ public class Message implements ValueSummary<Message> {
             Machine m = machine.getValue();
             Guard g = machine.getGuard();
             cond = cond.or(g.and(m.hasStarted().getGuardFor(true)).and(m.hasHalted().getGuardFor(false)));
-
-//            Assert.prop(!BooleanVS.isEverFalse(machine.getValue().hasStarted()), "Internal Error: All Machines must be runnable at this point!! Check event " + getEvent().getValues() + " in machine " + machine.getValue(), machine.getValue().getScheduler(), BooleanVS.getFalseGuard(machine.getValue().hasStarted()));
-//            if (BooleanVS.isEverFalse(machine.getValue().hasStarted())) {
-//                throw new RuntimeException("Internal Error: All Machines must be runnable at this point!! Check machine " + machine.getValue());
-//            }
         }
         return BooleanVS.trueUnderGuard(cond);
     }
@@ -235,10 +230,6 @@ public class Message implements ValueSummary<Message> {
 
     @Override
     public Message updateUnderGuard(Guard guard, Message update) {
-        /*
-        if (guard.isConstTrue()) {
-            assert (this.guard(guard.not()).merge(update.guard(guard)).symbolicEquals(update, guard).getGuard(true).isConstTrue());
-        }*/
         return this.restrict(guard.not()).merge(update.restrict(guard));
     }
 

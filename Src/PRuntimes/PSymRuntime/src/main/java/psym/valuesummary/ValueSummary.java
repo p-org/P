@@ -50,11 +50,6 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
         }
         if (anyVal == null) {
             return def.restrict(pc);
-//             if (def instanceof PrimitiveVS) {
-//                 return new PrimitiveVS<>((Machine)null);
-//             } else {
-//                 return def.restrict(pc);
-//             }
         }
         if (anyVal.isEmptyVS()) {
             return def.getCopy();
@@ -82,55 +77,6 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
                     anyVal));
         }
         result = anyVal.getValue(type).restrict(pc);
-/*
-         if (!pcNotDefined.isFalse()) {
-             if (type.equals(PrimitiveVS.class)) {
-                 return new PrimitiveVS<>(pc);
-             }
-             System.out.println(anyVal.restrict(typeGuard));
-             throw new ClassCastException(String.format("Casting to %s under path constraint %s is not defined",
-                     type,
-                     pcNotDefined));
-         }
-         result = anyVal.getValue(type).restrict(pc);
-*/
-         /*
-         if (type.equals(NamedTupleVS.class)) {
-             NamedTupleVS namedTupleDefault = (NamedTupleVS) def.restrict(pc);
-             NamedTupleVS namedTupleResult = (NamedTupleVS) result;
-             namedTupleResult.getNames();
-             String[] defaultNames = namedTupleDefault.getNames();
-             String[] resultNames = namedTupleResult.getNames();
-             for (int i = 0; i < defaultNames.length; i++) {
-                 String name = defaultNames[i];
-                 if (!resultNames[i].equals(defaultNames[i])) {
-                     throw new ClassCastException(
-                             String.format("Casting to %s under path constraint %s is not defined." +
-                                             "Named tuple field names do not match.",
-                             type,
-                             pcNotDefined));
-                 }
-                 ValueSummary<?> defaultField = namedTupleResult.getField(name);
-                 ValueSummary<?> resultField = namedTupleResult.getField(name);
-                 Class<?> defaultFieldType = defaultField.getClass();
-                 System.out.println("Field " + name + " has default type " + defaultFieldType.getCanonicalName());
-                 if (!resultField.getClass().equals(defaultFieldType)) {
-                     if (resultField instanceof UnionVS) {
-                         System.out.println("need to cast nested");
-                         namedTupleResult = namedTupleResult.setField(name,
-                                 castFromAny(pc, defaultField, (UnionVS) resultField));
-                     } else {
-                         throw new ClassCastException(
-                                 String.format("Casting to %s under path constraint %s is not defined." +
-                                                 " Named tuple field types do not match.",
-                                         type,
-                                         pcNotDefined));
-                     }
-                 }
-             }
-             result = namedTupleResult;
-         }
-          */
         return result;
     }
 
@@ -179,9 +125,6 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
                 for (int i = 0; i < length; i++) {
                     List<GuardedValue<?>> elementGV = ValueSummary.getGuardedValues(tupleVS.getField(i).restrict(guard));
                     if (!elementGV.isEmpty()) {
-//                        if (elementGV.size() != 1) {
-//                            System.out.println(String.format("Multiple composite keys in tuple %s", tupleVS));
-//                        }
                         guard = guard.and(elementGV.get(0).getGuard());
                         value.append(elementGV.get(0).getValue());
                     } else {

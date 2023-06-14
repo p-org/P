@@ -77,9 +77,6 @@ public abstract class State implements Serializable {
             Guard handledPc = Guard.constFalse();
             for (GuardedValue<State> guardedValue : current.getGuardedValues()) {
                 if (guardedValue.getValue().getStateEvents().eventHandlers.containsKey(event)) {
-                    //System.out.println("payload: " + event.guard(guardedValue.guard).getPayload());
-                    //if (event.guard(guardedValue.guard).getPayload() != null)
-                    //System.out.println("payload class: " + event.guard(guardedValue.guard).getPayload().getClass());
                     guardedValue.getValue().getStateEvents().eventHandlers.get(event).handleEvent(
                             eventPc.and(guardedValue.getGuard()),
                             machine,

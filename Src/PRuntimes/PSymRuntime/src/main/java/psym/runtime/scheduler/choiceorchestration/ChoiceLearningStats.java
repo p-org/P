@@ -187,20 +187,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
         if (lastChoice != null) {
             List<Object> features = new ArrayList<>();
             for (Machine m : lastChoice.getValues()) {
-                features.add(m);
-                for (State state : m.getCurrentState().getValues()) {
-                    features.add(state);
-                }
-                if (!m.sendBuffer.isEmpty()) {
-                    Message msg = m.sendBuffer.peek(Guard.constTrue());
-                    for (Machine target : msg.getTarget().getValues()) {
-                        features.add(target);
-                    }
-                    for (Event event : msg.getEvent().getValues()) {
-                        features.add(event);
-//                        features.add(msg.getPayloadFor(event));
-                    }
-                }
+                addMachineFeatures(features, m);
             }
             programStateHash = features.toString();
         }
@@ -227,20 +214,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
         }
         if (lastChoice != null) {
             for (Machine m : lastChoice.getValues()) {
-                features.add(m);
-                for (State state : m.getCurrentState().getValues()) {
-                    features.add(state);
-                }
-                if (!m.sendBuffer.isEmpty()) {
-                    Message msg = m.sendBuffer.peek(Guard.constTrue());
-                    for (Machine target : msg.getTarget().getValues()) {
-                        features.add(target);
-                    }
-                    for (Event event : msg.getEvent().getValues()) {
-                        features.add(event);
-//                        features.add(msg.getPayloadFor(event));
-                    }
-                }
+                addMachineFeatures(features, m);
             }
         }
         programStateHash = features.toString();
@@ -249,22 +223,26 @@ public class ChoiceLearningStats<S, A> implements Serializable {
     private void setProgramHashMachineStateEvents(Scheduler sch) {
         List<Object> features = new ArrayList<>();
         for (Machine m : sch.getMachines()) {
-            features.add(m);
-            for (State state : m.getCurrentState().getValues()) {
-                features.add(state);
-            }
-            if (!m.sendBuffer.isEmpty()) {
-                Message msg = m.sendBuffer.peek(Guard.constTrue());
-                for (Machine target : msg.getTarget().getValues()) {
-                    features.add(target);
-                }
-                for (Event event : msg.getEvent().getValues()) {
-                    features.add(event);
-//                    features.add(msg.getPayloadFor(event));
-                }
-            }
+            addMachineFeatures(features, m);
         }
         programStateHash = features.toString();
+    }
+
+    private void addMachineFeatures(List<Object> features, Machine m) {
+        features.add(m);
+        for (State state : m.getCurrentState().getValues()) {
+            features.add(state);
+        }
+        if (!m.sendBuffer.isEmpty()) {
+            Message msg = m.sendBuffer.peek(Guard.constTrue());
+            for (Machine target : msg.getTarget().getValues()) {
+                features.add(target);
+            }
+            for (Event event : msg.getEvent().getValues()) {
+                features.add(event);
+//                    features.add(msg.getPayloadFor(event));
+            }
+        }
     }
 
     private void setProgramHashFullState(Scheduler sch) {

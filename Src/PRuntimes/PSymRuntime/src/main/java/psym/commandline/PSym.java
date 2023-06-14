@@ -26,15 +26,14 @@ public class PSym {
         PSymLogger.Initialize(config.getVerbosity());
 
         try {
-            if (config.getReadFromFile() == "" && config.getReadReplayerFromFile() == "") {
+            if (config.getReadFromFile().equals("") && config.getReadReplayerFromFile().equals("")) {
                 Set<Class<? extends Program>> subTypesProgram = reflections.getSubTypesOf(Program.class);
-                if (subTypesProgram.stream().count() == 0) {
+                if (subTypesProgram.size() == 0) {
                     throw new Exception("No program found.");
                 }
 
                 Optional<Class<? extends Program>> program = subTypesProgram.stream().findFirst();
-                Object instance = program.get().getDeclaredConstructor().newInstance();
-                p = (Program) instance;
+                p = program.get().getDeclaredConstructor().newInstance();
                 setProjectName(p, config);
             }
         } catch (Exception ex) {
@@ -46,7 +45,7 @@ public class PSym {
 
         int exit_code = 0;
         try {
-            if (config.getReadReplayerFromFile() != "") {
+            if (!config.getReadReplayerFromFile().equals("")) {
                 ReplayScheduler replayScheduler = ReplayScheduler.readFromFile(config.getReadReplayerFromFile());
                 EntryPoint.replayBug(replayScheduler, config);
                 throw new Exception("ERROR");
@@ -58,7 +57,7 @@ public class PSym {
                 BacktrackWriter.Initialize(config.getProjectName(), config.getOutputFolder());
             }
 
-            if (config.getReadFromFile() == "") {
+            if (config.getReadFromFile().equals("")) {
                 assert (p != null);
                 setTestDriver(p, config, reflections);
                 scheduler = new IterativeBoundedScheduler(config, p);
@@ -75,9 +74,9 @@ public class PSym {
             exit_code = 2;
         } catch (Exception ex) {
             ex.printStackTrace();
-            if (ex.getMessage() == "TIMEOUT") {
+            if (ex.getMessage().equals("TIMEOUT")) {
                 exit_code = 3;
-            } else if (ex.getMessage() == "MEMOUT") {
+            } else if (ex.getMessage().equals("MEMOUT")) {
                 exit_code = 4;
             } else {
                 exit_code = 5;
@@ -106,7 +105,7 @@ public class PSym {
      * @param config Input PSymConfiguration
      */
     private static void setProjectName(Program p, PSymConfiguration config) {
-        if (config.getProjectName() == "default") {
+        if (config.getProjectName().equals("default")) {
             config.setProjectName(p.getClass().getSimpleName());
         }
     }
@@ -153,7 +152,6 @@ public class PSym {
                 System.exit(6);
             }
         }
-        assert (driver != null);
         config.setTestDriver(driver.getClass().getSimpleName());
         p.setTestDriver(driver);
     }

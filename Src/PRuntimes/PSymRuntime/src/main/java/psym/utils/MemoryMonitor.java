@@ -28,11 +28,6 @@ public class MemoryMonitor {
                     memSpent = (runtime.totalMemory() - runtime.freeMemory()) / 1000000.0;
                     if (maxMemSpent < memSpent)
                         maxMemSpent = memSpent;
-//                    System.out.println(String.format("GC: %.1f MB", memSpent));
-
-//                    // extract garbage collection information from notification.
-//                    GarbageCollectionNotificationInfo gcInfo = GarbageCollectionNotificationInfo.from((CompositeData) notification.getUserData());
-//                    // access garbage collection information...
                 }
             }
         };

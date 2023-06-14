@@ -19,9 +19,6 @@ public class ValueSummaryUnionFind extends UnionFind<PrimitiveVS> {
                 Guard unionUniverse = universe.get(find(values.get(i)));
                 if (!eltUniverse.and(unionUniverse).isFalse()) {
                     union(elt, values.get(i));
-//                    if (eltUniverse.implies(unionUniverse).isTrue()) {
-//                        break;
-//                    }
                 }
             }
         }

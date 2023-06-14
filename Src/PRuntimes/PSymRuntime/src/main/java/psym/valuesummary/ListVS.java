@@ -272,9 +272,6 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      * @return The resultant ListVS
      */
     public ListVS<T> set(PrimitiveVS<Integer> indexSummary, T itemToSet) {
-        // if (Checks.sameUniverse(indexSummary.getUniverse(), getUniverse()))
-        //    setHelper(indexSummary, itemToSet);
-        //assert (Checks.includedIn(indexSummary.getUniverse(), getUniverse()));
         ListVS<T> restrictedList = this.restrict(indexSummary.getUniverse());
         if (restrictedList.getUniverse().isFalse()) return this;
         return updateUnderGuard(indexSummary.getUniverse(), restrictedList.setHelper(indexSummary, itemToSet));
@@ -288,11 +285,6 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      * @return The result of setting the ListVS
      */
     private ListVS<T> setHelper(PrimitiveVS<Integer> indexSummary, T itemToSet) {
-        /*
-        assert(Checks.sameUniverse(indexSummary.getUniverse(), getUniverse()));
-        assert(Checks.sameUniverse(itemToSet.getUniverse(), getUniverse()));
-         */
-
         final PrimitiveVS<Boolean> inRange = inRange(indexSummary);
         // make sure it is always in range
         if (!inRange.getGuardFor(false).isFalse()) {
@@ -337,12 +329,6 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
      * @return The result of inserting into the ListVS
      */
     public ListVS<T> insert(PrimitiveVS<Integer> indexSummary, T itemToInsert) {
-        /*
-        assert(Checks.includedIn(indexSummary.getUniverse(), getUniverse()));
-        assert(Checks.includedIn(itemToInsert.getUniverse(), getUniverse()));
-        assert(Checks.sameUniverse(itemToInsert.getUniverse(), indexSummary.getUniverse()));
-         */
-
         if (indexSummary.getUniverse().isFalse()) return this;
 
         Guard addUniverse = IntegerVS.equalTo(indexSummary, size()).getGuardFor(true);

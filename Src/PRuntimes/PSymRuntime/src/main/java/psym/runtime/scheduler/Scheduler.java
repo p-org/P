@@ -574,17 +574,12 @@ public class Scheduler implements SymbolicSearch {
         for (Machine machine : machines) {
             if (!machine.sendBuffer.isEmpty()) {
                 Guard canRun = machine.sendBuffer.satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true);
-//                Guard canRun = machine.hasHalted().getGuardFor(true).not();
-//                canRun = canRun.and(machine.sendBuffer.satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true));
                 if (!canRun.isFalse()) {
                     guardedMachines.add(new GuardedValue(machine, canRun));
-                    //                   candidateSenders.add(new PrimitiveVS<>(machine).restrict(canRun));
                 }
             }
         }
-        //      return candidateSenders;
 
-//        executionFinished = guardedMachines.isEmpty();
         executionFinished = guardedMachines.stream().map(x -> x.getGuard().and(schedule.getFilter())).filter(x -> !(x.isFalse())).collect(Collectors.toList()).isEmpty();
 
         if (configuration.getStateCachingMode() != StateCachingMode.None) {
@@ -607,35 +602,6 @@ public class Scheduler implements SymbolicSearch {
     private Message rmBuffer(Machine m, Guard g) {
         return m.sendBuffer.remove(g);
     }
-
-/*
-    private PrimitiveVS<Boolean> shouldInterleave(List<Message> candidateMessages, Message m) {
-        if (alwaysInterleaveNonAsync) return new PrimitiveVS<>(true);
-        PrimitiveVS<Event> event = m.getEvent();
-        PrimitiveVS<Set<Event>> doNotInterleave = new PrimitiveVS<>();
-        List<PrimitiveVS<Set<Event>>> toMerge = new ArrayList<>();
-        for (GuardedValue<Event> e : event.getGuardedValues()) {
-            if (interleaveMap.containsKey(e.getValue())) {
-                toMerge.add(new PrimitiveVS<>(interleaveMap.get(e.getValue())));
-            }
-        }
-        doNotInterleave = doNotInterleave.merge(toMerge);
-
-        Guard equal = Guard.constFalse();
-        for (Message other : candidateMessages) {
-            for (GuardedValue<Event> e : other.getEvent().getGuardedValues()) {
-                for (GuardedValue<Set<Event>> notToInterleave : doNotInterleave.getGuardedValues()) {
-                    for (Event replacement : notToInterleave.getValue()) {
-                        if (e.getValue().equals(replacement)) {
-                            equal = equal.or(e.getGuard().and(notToInterleave.getGuard()));
-                        }
-                    }
-                }
-            }
-        }
-        return new PrimitiveVS<>(true).restrict(equal.not());
-    }
-*/
 
     private List<GuardedValue<Machine>> filterDistinct(List<GuardedValue<Machine>> choices) {
         assert (distinctStateGuard != null);
@@ -858,13 +824,6 @@ public class Scheduler implements SymbolicSearch {
             schedule.setSchedulerState(srcState, machineCounters);
         }
 
-//        if (configuration.isChoiceOrchestrationLearning()) {
-//            // reward previous choices
-//            List<CoverageStats.CoverageChoiceDepthStats> coverageChoiceDepthStats = GlobalData.getCoverage().getPerChoiceDepthStats();
-//            for (int i = preChoiceDepth; i < schedule.size() && i < choiceDepth; i++) {
-//                GlobalData.getChoiceLearningStats().rewardStep(coverageChoiceDepthStats.get(i).getStateActions(), numStatesDistinct);
-//            }
-//        }
         preChoiceDepth = choiceDepth;
 
 

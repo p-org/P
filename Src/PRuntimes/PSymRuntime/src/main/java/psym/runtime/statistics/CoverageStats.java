@@ -182,13 +182,6 @@ public class CoverageStats implements Serializable {
         return "\u221e 9s";
     }
 
-//    /**
-//     * Return estimated state-space coverage between 0 - 100%
-//     */
-//    public BigDecimal getEstimatedCoverage() {
-//        return getEstimatedCoverage(12);
-//    }
-
     public BigDecimal getEstimatedCoverage(int scale) {
         return estimatedCoverage.setScale(scale, RoundingMode.FLOOR);
     }

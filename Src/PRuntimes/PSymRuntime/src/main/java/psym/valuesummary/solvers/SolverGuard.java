@@ -42,8 +42,6 @@ public class SolverGuard implements Serializable {
         this.id = guardList.size();
         table.put(formula, this);
         guardList.add(this);
-//        System.out.println("Created solver guard: " + this);
-//        System.out.println("\thashcode: " + SolverEngine.getSolver().hashCode(this.formula));
     }
 
     /**

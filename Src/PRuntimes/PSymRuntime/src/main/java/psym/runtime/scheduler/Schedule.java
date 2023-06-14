@@ -289,8 +289,6 @@ public class Schedule implements Serializable {
     public boolean hasMachine(Class<? extends Machine> type, PrimitiveVS<Integer> idx, Guard otherPc) {
         if (!createdMachines.containsKey(type)) return false;
         // TODO: may need fixing
-        //ScheduleLogger.log("has machine of type");
-        //ScheduleLogger.log(idx + " in range? " + createdMachines.get(type).inRange(idx).getGuard(false));
         if (!createdMachines.get(type).inRange(idx).getGuardFor(false).isFalse()) return false;
         PrimitiveVS<Machine> machines = createdMachines.get(type).get(idx);
         return !machines.restrict(pc).restrict(otherPc).getUniverse().isFalse();

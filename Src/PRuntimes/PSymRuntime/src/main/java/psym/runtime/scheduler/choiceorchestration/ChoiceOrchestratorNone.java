@@ -6,7 +6,8 @@ import java.util.List;
 
 public class ChoiceOrchestratorNone implements ChoiceOrchestrator {
 
-    public ChoiceOrchestratorNone() {}
+    public ChoiceOrchestratorNone() {
+    }
 
     public void reorderChoices(List<ValueSummary> choices, boolean isData) {
         // do nothing

@@ -43,7 +43,7 @@ public class SearchLogger {
             file.createNewFile();
 
             //Define new file printer
-            FileOutputStream fout = new FileOutputStream(fileName,false);
+            FileOutputStream fout = new FileOutputStream(fileName, false);
 
             Configuration config = Log4JConfig.getContext().getConfiguration();
             PatternLayout layout = PatternLayout.createDefaultLayout(config);
@@ -54,9 +54,7 @@ public class SearchLogger {
 
             context.getConfiguration().addLoggerAppender(coreLogger, fileAppender);
             context.getConfiguration().addLoggerAppender(coreLogger, consoleAppender);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             System.out.println("Failed to set printer to the SearchLogger!!");
         }
     }
@@ -70,7 +68,7 @@ public class SearchLogger {
     }
 
     public static void logMessage(String str) {
-        if(verbosity > 3) {
+        if (verbosity > 3) {
             log.info(str);
         }
     }
@@ -80,7 +78,7 @@ public class SearchLogger {
     }
 
     public static void log(String key, String value) {
-        log(String.format("%-40s%s", key+":", value));
+        log(String.format("%-40s%s", key + ":", value));
     }
 
     public static void finishedExecution(int depth) {
@@ -111,5 +109,5 @@ public class SearchLogger {
         log.info(String.format("Finished Iteration: %d: Max Depth: %d, TotalStates = %d, TotalTransitions = %d, ReducedTransitionsExplored = %d",
                 iterStats.getIteration(), iterStats.getIterationTotal().getDepth(), iterStats.getIterationTotal().getNumOfStates(), iterStats.getIterationTotal().getNumOfTransitions(), iterStats.getIterationTotal().getNumOfTransitionsExplored()));
     }
-    
+
 }

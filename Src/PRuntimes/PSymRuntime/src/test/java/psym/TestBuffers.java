@@ -2,13 +2,12 @@ package psym;
 
 import org.junit.jupiter.api.Test;
 import psym.commandline.PSym;
-import psym.runtime.*;
+import psym.runtime.Event;
 import psym.runtime.Message;
 import psym.runtime.machine.buffer.EventBuffer;
 import psym.runtime.machine.buffer.EventQueue;
 import psym.valuesummary.Guard;
 import psym.valuesummary.PrimitiveVS;
-
 
 import java.util.Random;
 
@@ -24,11 +23,16 @@ public class TestBuffers {
 
     public Event randomEvent() {
         switch (random.nextInt(5)) {
-            case 0: return Event0;
-            case 1: return Event1;
-            case 2: return Event2;
-            case 3: return Event3;
-            default: return Event.createMachine;
+            case 0:
+                return Event0;
+            case 1:
+                return Event1;
+            case 2:
+                return Event2;
+            case 3:
+                return Event3;
+            default:
+                return Event.createMachine;
         }
     }
 
@@ -40,7 +44,7 @@ public class TestBuffers {
         for (int i = 0; i < 10; i++) {
             buffer.remove(Guard.constTrue());
         }
-        assert(buffer.isEmpty());
+        assert (buffer.isEmpty());
     }
 
     @Test

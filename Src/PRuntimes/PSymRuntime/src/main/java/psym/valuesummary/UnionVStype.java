@@ -4,10 +4,15 @@ import java.io.Serializable;
 import java.util.HashMap;
 
 public class UnionVStype implements Serializable {
-    private static HashMap<String, UnionVStype> allTypes = new HashMap<>();
+    private static final HashMap<String, UnionVStype> allTypes = new HashMap<>();
 
     Class<? extends ValueSummary> typeClass;
     String[] names;
+
+    private UnionVStype(Class<? extends ValueSummary> tc, String[] n) {
+        typeClass = tc;
+        names = n;
+    }
 
     public static UnionVStype getUnionVStype(Class<? extends ValueSummary> tc, String[] n) {
         UnionVStype result;
@@ -25,11 +30,6 @@ public class UnionVStype implements Serializable {
         }
 
         return result;
-    }
-
-    private UnionVStype(Class<? extends ValueSummary> tc, String[] n) {
-        typeClass = tc;
-        names = n;
     }
 
     @Override

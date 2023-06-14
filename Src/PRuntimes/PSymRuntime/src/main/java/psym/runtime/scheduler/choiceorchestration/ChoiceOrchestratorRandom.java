@@ -9,7 +9,8 @@ import java.util.Random;
 
 public class ChoiceOrchestratorRandom implements ChoiceOrchestrator {
 
-    public ChoiceOrchestratorRandom() {}
+    public ChoiceOrchestratorRandom() {
+    }
 
     public void reorderChoices(List<ValueSummary> choices, boolean isData) {
         Collections.shuffle(choices, new Random(RandomNumberGenerator.getInstance().getRandomLong()));

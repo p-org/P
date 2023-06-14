@@ -18,7 +18,7 @@ public class SymmetryTracker implements Serializable {
     }
 
     public void reset() {
-        for (String type: typeToSymmetrySet.keySet()) {
+        for (String type : typeToSymmetrySet.keySet()) {
             typeToSymmetrySet.put(type, null);
         }
     }
@@ -46,7 +46,7 @@ public class SymmetryTracker implements Serializable {
         List<ValueSummary> reduced = new ArrayList<>();
         Map<Machine, Guard> pendingSummaries = new HashMap<>();
 
-        for (ValueSummary choice: original) {
+        for (ValueSummary choice : original) {
             boolean added = false;
             if (choice instanceof PrimitiveVS) {
                 PrimitiveVS primitiveVS = (PrimitiveVS) choice;
@@ -66,7 +66,7 @@ public class SymmetryTracker implements Serializable {
                         if (!typeGuard.isFalse()) {
                             PrimitiveVS<Machine> representativeVS = symSet.get(new PrimitiveVS<>(Collections.singletonMap(0, typeGuard)));
                             List<GuardedValue<Machine>> representativeGVs = representativeVS.getGuardedValues();
-                            for (GuardedValue<Machine> representativeGV: representativeGVs) {
+                            for (GuardedValue<Machine> representativeGV : representativeGVs) {
                                 Machine m = representativeGV.getValue();
                                 Guard g = representativeGV.getGuard();
                                 if (m == machine) {
@@ -93,7 +93,7 @@ public class SymmetryTracker implements Serializable {
             }
         }
 
-        for (Map.Entry<Machine, Guard> entry: pendingSummaries.entrySet()) {
+        for (Map.Entry<Machine, Guard> entry : pendingSummaries.entrySet()) {
             reduced.add(new PrimitiveVS(Collections.singletonMap(entry.getKey(), entry.getValue())));
         }
 
@@ -108,7 +108,7 @@ public class SymmetryTracker implements Serializable {
 
     public void updateSymmetrySet(PrimitiveVS chosenVS) {
         List<? extends GuardedValue<?>> choices = ((PrimitiveVS<?>) chosenVS).getGuardedValues();
-        for (GuardedValue<?> choice: choices) {
+        for (GuardedValue<?> choice : choices) {
             Object value = choice.getValue();
             if (value instanceof Machine) {
                 Machine machine = ((Machine) value);

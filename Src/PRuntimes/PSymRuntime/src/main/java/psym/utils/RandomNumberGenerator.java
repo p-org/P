@@ -4,7 +4,7 @@ import java.util.Random;
 
 public class RandomNumberGenerator {
     private static RandomNumberGenerator randomNumberGenerator;
-    private Random rand;
+    private final Random rand;
 
     private RandomNumberGenerator(long seed) {
         rand = new Random(seed);
@@ -15,15 +15,18 @@ public class RandomNumberGenerator {
     }
 
     public static RandomNumberGenerator getInstance() {
-        assert(randomNumberGenerator != null);
+        assert (randomNumberGenerator != null);
         return randomNumberGenerator;
     }
+
     public int getRandomInt(int bound) {
         return rand.nextInt(bound);
     }
+
     public long getRandomLong() {
         return rand.nextLong();
     }
+
     public double getRandomDouble() {
         return rand.nextDouble();
     }

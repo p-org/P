@@ -1,4 +1,4 @@
-package psym.valuesummary.util;
+package psym.utils;
 
 import java.io.Serializable;
 import java.util.function.Function;

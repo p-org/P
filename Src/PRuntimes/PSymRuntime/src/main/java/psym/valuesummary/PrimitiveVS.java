@@ -10,61 +10,35 @@ import java.util.stream.Collectors;
 
 /**
  * Represents a primitive value summary (Boolean, Integer, Float, String)
+ *
  * @param <T> Type of value stored in the primitive value summary
  */
 public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     /**
      * A primitive value is a collection of guarded values
-     *
+     * <p>
      * The guards on these values *must* be mutually exclusive.
      * In other words, for any two 'value1', 'value2' of type T, the following must be identically false:
-     *
-     *      and(guardedValues.get(value1), guardedValues.get(value2))
-     *
-     *  The map 'guardedValues' should never be modified.
+     * <p>
+     * and(guardedValues.get(value1), guardedValues.get(value2))
+     * <p>
+     * The map 'guardedValues' should never be modified.
      */
     private final Map<T, Guard> guardedValues;
 
-    /** Cached list of guarded values */
+    /**
+     * Cached list of guarded values
+     */
     private List<GuardedValue<T>> guardedValuesList;
-    /** Cached set of values */
+    /**
+     * Cached set of values
+     */
     private Set<T> values = null;
 
-    /** Cached universe */
+    /**
+     * Cached universe
+     */
     private Guard universe = null;
-
-    /** Get all the different possible guarded values */
-    public List<GuardedValue<T>> getGuardedValues() {
-        if (guardedValuesList == null)
-            guardedValuesList = guardedValues.entrySet().stream()
-                    .map(x -> new GuardedValue<T>(x.getKey(), x.getValue())).collect(Collectors.toList());
-        return guardedValuesList;
-    }
-
-    @Override
-    public Guard getUniverse() {
-        if(universe == null)
-            universe = Guard.orMany(new ArrayList<>(guardedValues.values()));
-        return universe;
-    }
-
-    public Set<T> getValues() {
-        if(values == null)
-            values = new HashSet(guardedValues.keySet());
-        return values;
-    }
-
-    public Class getValueClass() {
-        for (T val: getValues()) {
-            if (val instanceof Machine) {
-                return Machine.class;
-            } else {
-                return val.getClass();
-            }
-        }
-        return this.getClass();
-    }
-
 
     /**
      * Create a PrimitiveVS with the largest possible universe (restrict = true) containing only the specified value
@@ -88,7 +62,8 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
         }
     }
 
-    /** Copy constructor for PrimitiveVS
+    /**
+     * Copy constructor for PrimitiveVS
      *
      * @param old The PrimitiveVS to copy
      */
@@ -96,8 +71,46 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
         this(old.guardedValues);
     }
 
-    /** Make an empty PrimVS */
-    public PrimitiveVS() { this(new HashMap<>()); }
+    /**
+     * Make an empty PrimVS
+     */
+    public PrimitiveVS() {
+        this(new HashMap<>());
+    }
+
+    /**
+     * Get all the different possible guarded values
+     */
+    public List<GuardedValue<T>> getGuardedValues() {
+        if (guardedValuesList == null)
+            guardedValuesList = guardedValues.entrySet().stream()
+                    .map(x -> new GuardedValue<T>(x.getKey(), x.getValue())).collect(Collectors.toList());
+        return guardedValuesList;
+    }
+
+    @Override
+    public Guard getUniverse() {
+        if (universe == null)
+            universe = Guard.orMany(new ArrayList<>(guardedValues.values()));
+        return universe;
+    }
+
+    public Set<T> getValues() {
+        if (values == null)
+            values = new HashSet(guardedValues.keySet());
+        return values;
+    }
+
+    public Class getValueClass() {
+        for (T val : getValues()) {
+            if (val instanceof Machine) {
+                return Machine.class;
+            } else {
+                return val.getClass();
+            }
+        }
+        return this.getClass();
+    }
 
     /**
      * Copy the value summary
@@ -108,7 +121,8 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
         return new PrimitiveVS(this);
     }
 
-    /** Check if the provided value is a possibility
+    /**
+     * Check if the provided value is a possibility
      *
      * @param value The provided value
      * @return Whether or not the provided value is a possibility
@@ -129,8 +143,9 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
     /**
      * Apply the function `func` to each guarded value of type T in the Value Summary and return a primitive value summary with values of type U
+     *
      * @param func Function to be applied
-     * @param <U> Type of the values in the resultant primitive value summary
+     * @param <U>  Type of the values in the resultant primitive value summary
      * @return A primitive value summary with values of type U
      */
     public <U> PrimitiveVS<U> apply(Function<T, U> func) {
@@ -164,7 +179,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
         final Map<V, Guard> results = new HashMap<>();
 
         for (GuardedValue<T> val1 : this.getGuardedValues()) {
-            for (GuardedValue<U> val2: summary2.getGuardedValues()) {
+            for (GuardedValue<U> val2 : summary2.getGuardedValues()) {
                 final Guard combinedGuard = val1.getGuard().and(val2.getGuard());
                 if (combinedGuard.isFalse()) {
                     continue;
@@ -179,8 +194,8 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
 
     public <Target> PrimitiveVS<Target> apply(
-        PrimitiveVS<Target> mergeWith,
-        Function<T, Target> function
+            PrimitiveVS<Target> mergeWith,
+            Function<T, Target> function
     ) {
         final List<PrimitiveVS<Target>> toMerge = new ArrayList<>();
 
@@ -199,7 +214,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
     @Override
     public PrimitiveVS<T> restrict(Guard guard) {
-        if(guard.equals(getUniverse()))
+        if (guard.equals(getUniverse()))
             return new PrimitiveVS<>(this);
 
         final Map<T, Guard> result = new HashMap<>();
@@ -267,7 +282,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     public int getConcreteHash() {
         if (!guardedValues.isEmpty()) {
             T key = guardedValues.entrySet().iterator().next().getKey();
-            return (key==null ? 0 : key.hashCode());
+            return (key == null ? 0 : key.hashCode());
         } else {
             return 0;
         }

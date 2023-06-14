@@ -21,6 +21,7 @@ public class Guard implements Serializable {
 
     /**
      * Create a constant false restrict
+     *
      * @return Guard representing constant false
      */
     public static Guard constFalse() {
@@ -29,13 +30,29 @@ public class Guard implements Serializable {
 
     /**
      * Create a constant true restrict
+     *
      * @return Guard representing constant true
      */
     public static Guard constTrue() {
         return new Guard(SolverGuard.constTrue());
     }
 
-    /** ValueSummaryChecks whether the logical restrict evaluates to true
+    /**
+     * Perform `or` of a list of Guards
+     *
+     * @param bddGuards all the Guards to be `OR`ed
+     * @return `OR`ed Guard
+     */
+    public static Guard orMany(List<Guard> bddGuards) {
+        return bddGuards.stream().reduce(Guard.constFalse(), Guard::or);
+    }
+
+    public static Guard newVar() {
+        return new Guard(SolverGuard.newVar());
+    }
+
+    /**
+     * ValueSummaryChecks whether the logical restrict evaluates to true
      *
      * @return True iff the restrict evaluates to true
      */
@@ -43,7 +60,8 @@ public class Guard implements Serializable {
         return guard.isTrue();
     }
 
-    /** ValueSummaryChecks whether the logical restrict evaluates to false
+    /**
+     * ValueSummaryChecks whether the logical restrict evaluates to false
      *
      * @return True iff the restrict evaluates to false
      */
@@ -53,6 +71,7 @@ public class Guard implements Serializable {
 
     /**
      * Performs logical `and` of two guards
+     *
      * @param other the other restrict
      * @return restrict that is the `and` of two guards
      */
@@ -62,6 +81,7 @@ public class Guard implements Serializable {
 
     /**
      * Performs logical `or` of two guards
+     *
      * @param other the other restrict
      * @return restrict that is the `or` of two guards
      */
@@ -71,6 +91,7 @@ public class Guard implements Serializable {
 
     /**
      * Performs the logical `implies` this -> other
+     *
      * @param other the other restrict
      * @return
      */
@@ -80,6 +101,7 @@ public class Guard implements Serializable {
 
     /**
      * Perform logical `negation` of the restrict
+     *
      * @return negated restrict `not`
      */
     public Guard not() {
@@ -87,26 +109,14 @@ public class Guard implements Serializable {
     }
 
     /**
-     * Perform `or` of a list of Guards
-     * @param bddGuards all the Guards to be `OR`ed
-     * @return `OR`ed Guard
-     */
-    public static Guard orMany(List<Guard> bddGuards) {
-        return bddGuards.stream().reduce(Guard.constFalse(), Guard::or);
-    }
-
-    /**
      * Perform ITE of the given Guard `cond`
+     *
      * @param thenCase then Guard
      * @param elseCase else Guard
      * @return resultant ITE Guard
      */
     public Guard ifThenElse(Guard thenCase, Guard elseCase) {
         return new Guard(guard.ifThenElse(thenCase.guard, elseCase.guard));
-    }
-
-    public static Guard newVar() {
-        return new Guard(SolverGuard.newVar());
     }
 
     @Override

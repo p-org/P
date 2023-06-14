@@ -16,14 +16,14 @@ public class TimeMonitor {
      * Stores the start time to track total runtime
      */
     @Getter
-    private Instant start;
+    private final Instant start;
 
     /**
      * Stores the beginning time to track when a time interval begins
      */
     private Instant begin;
     // time limit in seconds (0 means infinite)
-    private double timeLimit;
+    private final double timeLimit;
 
     private TimeMonitor(double tl) {
         this.start = Instant.now();
@@ -32,7 +32,7 @@ public class TimeMonitor {
     }
 
     public static TimeMonitor getInstance() {
-        assert(timeMonitorObject != null);
+        assert (timeMonitorObject != null);
 
         // returns the singleton object
         return timeMonitorObject;

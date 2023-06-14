@@ -12,8 +12,6 @@ import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
 import psym.utils.GlobalData;
 import psym.utils.StateCachingMode;
-import psym.valuesummary.solvers.SolverType;
-import psym.valuesummary.solvers.sat.expr.ExprLibType;
 
 import java.io.*;
 import java.util.Iterator;
@@ -27,17 +25,8 @@ public class PSymOptions {
 
     private static final Options allOptions;
     private static final Options visibleOptions;
-    private static HelpFormatter formatter = new HelpFormatter();
     private static final PrintWriter writer = new PrintWriter(System.out);
-
-    private static void addHiddenOption(Option opt) {
-        allOptions.addOption(opt);
-    }
-
-    private static void addOption(Option opt) {
-        allOptions.addOption(opt);
-        visibleOptions.addOption(opt);
-    }
+    private static final HelpFormatter formatter = new HelpFormatter();
 
     static {
         allOptions = new Options();
@@ -310,6 +299,15 @@ public class PSymOptions {
         addOption(help);
     }
 
+    private static void addHiddenOption(Option opt) {
+        allOptions.addOption(opt);
+    }
+
+    private static void addOption(Option opt) {
+        allOptions.addOption(opt);
+        visibleOptions.addOption(opt);
+    }
+
     private static void optionError(Option opt, String msg) {
         writer.println(msg);
         if (opt != null) {
@@ -372,7 +370,7 @@ public class PSymOptions {
                 case "m":
                 case "memout":
                     try {
-                        config.setMemLimit(Double.parseDouble(option.getValue())*1024);
+                        config.setMemLimit(Double.parseDouble(option.getValue()) * 1024);
                     } catch (NumberFormatException ex) {
                         optionError(option, String.format("Expected a double value, got %s", option.getValue()));
                     }
@@ -640,13 +638,13 @@ public class PSymOptions {
 
     private static void ParseConfigFile(PSymConfiguration config, File configFile) throws FileNotFoundException {
         InputStream configStream = new FileInputStream(configFile);
-        assert(configStream != null);
+        assert (configStream != null);
         JSONTokener jsonTokener = new JSONTokener(configStream);
         JSONObject jsonObject = new JSONObject(jsonTokener);
 
         Iterator<String> keys = jsonObject.keys();
 
-        while(keys.hasNext()) {
+        while (keys.hasNext()) {
             String key = keys.next();
             if (jsonObject.get(key) instanceof JSONObject) {
                 JSONObject value = (JSONObject) jsonObject.get(key);

@@ -5,12 +5,14 @@ import java.util.Map;
 
 /**
  * Class containing static methods that are useful for Boolean primitive value summaries
- * */
+ */
 public final class BooleanVS {
-    private BooleanVS() {}
+    private BooleanVS() {
+    }
 
     /**
      * Create a PrimitiveVS representing boolean `true` under the `guard`
+     *
      * @param guard the guard under which the Boolean VS should be true
      * @return Primitive Boolean VS
      */
@@ -61,7 +63,8 @@ public final class BooleanVS {
         return a.apply(b, (x, y) -> x && y);
     }
 
-    /** Get the conjunction of a Boolean value summary and a boolean value
+    /**
+     * Get the conjunction of a Boolean value summary and a boolean value
      *
      * @param a The first conjunct's Boolean value summary
      * @param b The second boolean's value
@@ -71,7 +74,8 @@ public final class BooleanVS {
         return a.apply(x -> x && b);
     }
 
-    /** Get the conjunction of a boolean and a Boolean value summary
+    /**
+     * Get the conjunction of a boolean and a Boolean value summary
      *
      * @param a The first boolean's value
      * @param b The second conjunct's Boolean value summary
@@ -81,7 +85,8 @@ public final class BooleanVS {
         return and(b, a);
     }
 
-    /** Get the disjunction of two Boolean value summaries
+    /**
+     * Get the disjunction of two Boolean value summaries
      *
      * @param a The first Boolean value summary
      * @param b The second Boolean value summary
@@ -91,7 +96,8 @@ public final class BooleanVS {
         return a.apply(b, (x, y) -> x || y);
     }
 
-    /** Get whether a Boolean value summary is always false
+    /**
+     * Get whether a Boolean value summary is always false
      *
      * @param b The Boolean value summary
      * @return Whether the provided value summary is always false
@@ -100,7 +106,8 @@ public final class BooleanVS {
         return getFalseGuard(b).isTrue();
     }
 
-    /** Get whether a Boolean value summary is ever true
+    /**
+     * Get whether a Boolean value summary is ever true
      *
      * @param b The Boolean value summary
      * @return Whether the provided value summary can be true
@@ -109,10 +116,13 @@ public final class BooleanVS {
         return !getTrueGuard(b).isFalse();
     }
 
-    /** Get whether a Boolean value summary is ever false
+    /**
+     * Get whether a Boolean value summary is ever false
      *
      * @param b The Boolean value summary
      * @return Whether or not the provided value summary can be false
      */
-    public static boolean isEverFalse(PrimitiveVS<Boolean> b) { return !getFalseGuard(b).isFalse(); }
+    public static boolean isEverFalse(PrimitiveVS<Boolean> b) {
+        return !getFalseGuard(b).isFalse();
+    }
 }

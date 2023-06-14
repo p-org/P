@@ -5,13 +5,14 @@ import psym.runtime.scheduler.BacktrackTask;
 import psym.utils.RandomNumberGenerator;
 
 public class TaskOrchestratorCoverageEpsilonGreedy implements TaskOrchestrator {
-    private static double EPSILON_MAX = 1.0;
-    private static double EPSILON_MIN = 0.3;
+    private static final double EPSILON_MAX = 1.0;
+    private static final double EPSILON_MIN = 0.3;
     @Setter
     private static double EPSILON_DECAY_FACTOR = 0.999;
     private static double epsilon = EPSILON_MAX;
-    private TaskOrchestrator taskOrchestratorExplore;
-    private TaskOrchestrator taskOrchestratorExploit;
+    private final TaskOrchestrator taskOrchestratorExplore;
+    private final TaskOrchestrator taskOrchestratorExploit;
+
     public TaskOrchestratorCoverageEpsilonGreedy() {
         taskOrchestratorExplore = new TaskOrchestratorRandom();
         taskOrchestratorExploit = new TaskOrchestratorCoverageAStar();

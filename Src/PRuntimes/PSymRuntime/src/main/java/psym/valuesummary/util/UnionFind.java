@@ -8,9 +8,10 @@ public class UnionFind<T> implements Serializable {
     Map<T, Integer> rank = new HashMap<>();
     Collection<Set<T>> lastDisjointSet = null;
 
-    public UnionFind () {}
+    public UnionFind() {
+    }
 
-    public UnionFind (Collection<T> c) {
+    public UnionFind(Collection<T> c) {
         c.forEach(this::addElement);
     }
 

@@ -22,14 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 /**
  * Runner for Symbolic P Regressions.
  * Pre-requisites:
- *  Run from P repository as a submodule
- *  Build the symbolic compiler to ../Bld/Drops/Release/Binaries/Pc.dll
- *  Place test cases as source P files at ../Tst/SymbolicRegressionTests/
+ * Run from P repository as a submodule
+ * Build the symbolic compiler to ../Bld/Drops/Release/Binaries/Pc.dll
+ * Place test cases as source P files at ../Tst/SymbolicRegressionTests/
  */
 public class TestSymbolicRegression {
-    private static String runArgs = "--iterations 20 --seed 0";
-    private static String outputDirectory = "output/testCases";
-    private static List<String> excluded = new ArrayList<>();
+    private static final String runArgs = "--iterations 20 --seed 0";
+    private static final String outputDirectory = "output/testCases";
+    private static final List<String> excluded = new ArrayList<>();
 
     private static boolean initialized = false;
 
@@ -120,6 +120,7 @@ public class TestSymbolicRegression {
         excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive11");
         excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive11_1");
     }
+
     private static void initialize() {
         Log4JConfig.configureLog4J();
         PSymTestLogger.Initialize(outputDirectory);
@@ -198,46 +199,47 @@ public class TestSymbolicRegression {
     }
 
     @Test
-    void Dummy() {}
+    void Dummy() {
+    }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadSymbolicRegressionsTests() {
+    Collection<DynamicTest> loadSymbolicRegressionsTests() {
         return loadTests("./SymbolicRegressionTests/Integration");
     }
 
     @TestFactory
     //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    public Collection<DynamicTest>  loadIntegrationTests() {
+    public Collection<DynamicTest> loadIntegrationTests() {
         return loadTests("../../../Tst/RegressionTests/Integration");
     }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadCombinedTests() {
+    Collection<DynamicTest> loadCombinedTests() {
         return loadTests("../../../Tst/RegressionTests/Combined");
     }
 
     @TestFactory
-    Collection<DynamicTest>  loadSMLevelDeclsTests() {
+    Collection<DynamicTest> loadSMLevelDeclsTests() {
         return loadTests("../../../Tst/RegressionTests/Feature1SMLevelDecls");
     }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadStmtsTests() {
+    Collection<DynamicTest> loadStmtsTests() {
         return loadTests("../../../Tst/RegressionTests/Feature2Stmts");
     }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadExpressionTests() {
+    Collection<DynamicTest> loadExpressionTests() {
         return loadTests("../../../Tst/RegressionTests/Feature3Exprs");
     }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadDataTypeTests() {
+    Collection<DynamicTest> loadDataTypeTests() {
         return loadTests("../../../Tst/RegressionTests/Feature4DataTypes");
     }
 

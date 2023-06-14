@@ -59,7 +59,7 @@ public class PSym {
             }
 
             if (config.getReadFromFile() == "") {
-                assert(p != null);
+                assert (p != null);
                 setTestDriver(p, config, reflections);
                 scheduler = new IterativeBoundedScheduler(config, p);
                 EntryPoint.run(scheduler, config);
@@ -101,7 +101,8 @@ public class PSym {
 
     /**
      * Set the project name
-     * @param p Input program instance
+     *
+     * @param p      Input program instance
      * @param config Input PSymConfiguration
      */
     private static void setProjectName(Program p, PSymConfiguration config) {
@@ -112,7 +113,8 @@ public class PSym {
 
     /**
      * Set the test driver for the program
-     * @param p Input program instance
+     *
+     * @param p      Input program instance
      * @param config Input PSymConfiguration
      * @throws Exception Throws exception if test driver is not found
      */
@@ -122,27 +124,27 @@ public class PSym {
 
         Set<Class<? extends PTestDriver>> subTypesDriver = reflections.getSubTypesOf(PTestDriver.class);
         PTestDriver driver = null;
-        for (Class<? extends PTestDriver> td: subTypesDriver) {
+        for (Class<? extends PTestDriver> td : subTypesDriver) {
             if (sanitizeTestName(td.getSimpleName()).equals(name)) {
                 driver = td.getDeclaredConstructor().newInstance();
                 break;
             }
         }
-        if(driver == null
-           && name.equals(defaultTestDriver)
-           && subTypesDriver.size() == 1) {
-            for (Class<? extends PTestDriver> td: subTypesDriver) {
+        if (driver == null
+                && name.equals(defaultTestDriver)
+                && subTypesDriver.size() == 1) {
+            for (Class<? extends PTestDriver> td : subTypesDriver) {
                 driver = td.getDeclaredConstructor().newInstance();
                 break;
             }
         }
-        if(driver == null) {
+        if (driver == null) {
             if (!name.equals(defaultTestDriver)) {
                 PSymLogger.info("No test driver found named \"" + name + "\"");
             }
             PSymLogger.info(String.format("Error: We found '%d' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).", subTypesDriver.size()));
             PSymLogger.info("Possible options are:");
-            for (Class<? extends PTestDriver> td: subTypesDriver) {
+            for (Class<? extends PTestDriver> td : subTypesDriver) {
                 PSymLogger.info(String.format("%s", td.getSimpleName()));
             }
             if (!name.equals(defaultTestDriver)) {
@@ -151,7 +153,7 @@ public class PSym {
                 System.exit(6);
             }
         }
-        assert(driver != null);
+        assert (driver != null);
         config.setTestDriver(driver.getClass().getSimpleName());
         p.setTestDriver(driver);
     }

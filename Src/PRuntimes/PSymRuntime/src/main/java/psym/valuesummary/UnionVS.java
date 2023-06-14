@@ -7,7 +7,7 @@ import java.util.*;
 /**
  * Represents a value of "any" type
  * It stores a pair (type T, value of type T)
- * */
+ */
 @SuppressWarnings("ALL")
 public class UnionVS implements ValueSummary<UnionVS> {
     /* Type of value stored in the any type variable */
@@ -25,7 +25,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
         this.value = new HashMap<>();
         // TODO: why are we not restricting the values?
         this.value.put(type, values);
-        assert(this.type != null);
+        assert (this.type != null);
     }
 
     public UnionVS() {
@@ -33,7 +33,9 @@ public class UnionVS implements ValueSummary<UnionVS> {
         this.value = new HashMap<>();
     }
 
-    /** Copy-constructor for UnionVS
+    /**
+     * Copy-constructor for UnionVS
+     *
      * @param old The UnionVS to copy
      */
     public UnionVS(UnionVS old) {
@@ -73,6 +75,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
 
     /**
      * Does the any type variable store a value of a particular type
+     *
      * @param queryType type to be checked
      * @return true if the variable stores a value of "queryType" under some path constrain
      */
@@ -82,6 +85,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
 
     /**
      * Get the types of value stored in the "any" type variable
+     *
      * @return type of the variable
      */
     public PrimitiveVS<UnionVStype> getType() {
@@ -90,6 +94,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
 
     /**
      * Get the value in the of a particular type
+     *
      * @param type type of value
      * @return value
      */
@@ -116,7 +121,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
     @Override
     public UnionVS restrict(Guard guard) {
 
-        if(guard.equals(getUniverse()))
+        if (guard.equals(getUniverse()))
             return new UnionVS(this);
 
         final PrimitiveVS<UnionVStype> restrictedType = type.restrict(guard);
@@ -133,7 +138,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
 
     @Override
     public UnionVS merge(Iterable<UnionVS> summaries) {
-        assert(type != null);
+        assert (type != null);
         final List<PrimitiveVS<UnionVStype>> typesToMerge = new ArrayList<>();
         final Map<UnionVStype, List<ValueSummary>> valuesToMerge = new HashMap<>();
         for (UnionVS union : summaries) {
@@ -179,7 +184,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
 
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(UnionVS cmp, Guard pc) {
-        assert(type != null);
+        assert (type != null);
         if (cmp == null) {
             return BooleanVS.trueUnderGuard(pc.and(getUniverse().not()));
         }
@@ -203,14 +208,16 @@ public class UnionVS implements ValueSummary<UnionVS> {
         return type.getUniverse();
     }
 
-    public Guard getUniverse(UnionVStype type) { return this.type.getGuardFor(type); }
+    public Guard getUniverse(UnionVStype type) {
+        return this.type.getGuardFor(type);
+    }
 
     @Override
     public int getConcreteHash() {
         int hashCode = 1;
         for (Map.Entry<UnionVStype, ValueSummary> entry : value.entrySet()) {
-            hashCode = 31*hashCode + (entry.getKey()==null ? 0 : entry.getKey().hashCode());
-            hashCode = 31*hashCode + (entry.getValue()==null ? 0 : entry.getValue().getConcreteHash());
+            hashCode = 31 * hashCode + (entry.getKey() == null ? 0 : entry.getKey().hashCode());
+            hashCode = 31 * hashCode + (entry.getValue() == null ? 0 : entry.getValue().getConcreteHash());
         }
         return hashCode;
     }

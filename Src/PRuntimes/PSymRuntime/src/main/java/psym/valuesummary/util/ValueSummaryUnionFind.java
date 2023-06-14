@@ -15,7 +15,7 @@ public class ValueSummaryUnionFind extends UnionFind<PrimitiveVS> {
             List<PrimitiveVS> values = new ArrayList<>(new HashSet<>(parents.values()));
             addElement(elt);
             Guard eltUniverse = elt.getUniverse();
-            for (int i = 0; i < values.size(); i ++) {
+            for (int i = 0; i < values.size(); i++) {
                 Guard unionUniverse = universe.get(find(values.get(i)));
                 if (!eltUniverse.and(unionUniverse).isFalse()) {
                     union(elt, values.get(i));
@@ -32,13 +32,13 @@ public class ValueSummaryUnionFind extends UnionFind<PrimitiveVS> {
         for (Set<PrimitiveVS> set : lastDisjointSet) {
             lastUniverseMap.put(set, universe.get(find(set.iterator().next())));
         }
-        assert(sanityCheck(lastUniverseMap));
+        assert (sanityCheck(lastUniverseMap));
         return lastUniverseMap;
     }
 
     public boolean sanityCheck(Map<Set<PrimitiveVS>, Guard> universeMap) {
         if (universeMap.size() > 1) {
-            for (Map.Entry<Set<PrimitiveVS>, Guard> entry1: universeMap.entrySet()) {
+            for (Map.Entry<Set<PrimitiveVS>, Guard> entry1 : universeMap.entrySet()) {
                 Set<PrimitiveVS> val1 = entry1.getKey();
                 Guard g1 = entry1.getValue();
                 for (Map.Entry<Set<PrimitiveVS>, Guard> entry2 : universeMap.entrySet()) {

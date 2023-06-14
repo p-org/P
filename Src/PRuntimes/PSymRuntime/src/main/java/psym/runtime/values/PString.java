@@ -4,24 +4,23 @@ public class PString extends PValue<PString> {
     // stores the int value
     private final String value;
 
-    public String getValue() { return value; }
-
-    public PString(String val)
-    {
+    public PString(String val) {
         value = val;
     }
 
-    public PString(Object val)
-    {
+    public PString(Object val) {
         if (val instanceof PString)
             value = ((PString) val).value;
         else
             value = (String) val;
     }
 
-    public PString(PString val)
-    {
+    public PString(PString val) {
         value = val.value;
+    }
+
+    public String getValue() {
+        return value;
     }
 
     @Override
@@ -41,7 +40,7 @@ public class PString extends PValue<PString> {
         else if (!(obj instanceof PString)) {
             return false;
         }
-        return this.value.equals(((PString)obj).value);
+        return this.value.equals(((PString) obj).value);
     }
 
     @Override

@@ -1,29 +1,26 @@
 package psym.runtime.values;
 
-public class PBool extends PValue<PBool>{
+public class PBool extends PValue<PBool> {
     // stores the int value
     private final boolean value;
 
-    public boolean getValue() {
-        return value;
-    }
-
-    public PBool(boolean val)
-    {
+    public PBool(boolean val) {
         value = val;
     }
 
-    public PBool(Object val)
-    {
+    public PBool(Object val) {
         if (val instanceof PBool)
             value = ((PBool) val).value;
         else
             value = (boolean) val;
     }
 
-    public PBool(PBool val)
-    {
+    public PBool(PBool val) {
         value = val.value;
+    }
+
+    public boolean getValue() {
+        return value;
     }
 
     @Override
@@ -43,7 +40,7 @@ public class PBool extends PValue<PBool>{
         else if (!(obj instanceof PBool)) {
             return false;
         }
-        return this.value == ((PBool)obj).value;
+        return this.value == ((PBool) obj).value;
     }
 
     @Override

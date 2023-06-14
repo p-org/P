@@ -48,15 +48,14 @@ public class SolverStats {
     }
 
 
-
     public static double getDoublePercent(double spent, double total) {
         return (spent == 0 ? 0.0 : (spent * 100.0 / total));
     }
 
     public static double isSatPercent(int isSatOps, int isSatRes) {
-    	return (isSatOps == 0 ? 0.0 : (isSatRes * 100.0 / isSatOps));
+        return (isSatOps == 0 ? 0.0 : (isSatRes * 100.0 / isSatOps));
     }
-    
+
     public static void logSolverStats() {
         SearchLogger.log("#-vars", String.format("%d", SolverEngine.getVarCount()));
         SearchLogger.log("#-guards", String.format("%d", SolverEngine.getGuardCount()));

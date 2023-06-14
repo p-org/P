@@ -17,14 +17,12 @@ public class TaskOrchestratorCoverageAStar implements TaskOrchestrator {
     }
 
     public void addPriority(BacktrackTask task) {
-        if (elements.contains(task)) {
-            elements.remove(task);
-        }
+        elements.remove(task);
         elements.add(task);
     }
 
     public BacktrackTask getNext() {
-        assert(!elements.isEmpty());
+        assert (!elements.isEmpty());
         return elements.peek();
     }
 

@@ -27,17 +27,16 @@ public class PTuple extends PValue<PTuple> {
     }
 
     public PValue<?> getField(int index) throws TupleInvalidIndexException {
-        if(index >= fields.length)
+        if (index >= fields.length)
             throw new TupleInvalidIndexException(this, index);
         return fields[index];
     }
 
     public void setField(int index, PValue<?> val) throws TupleInvalidIndexException {
-        if(index >= fields.length)
+        if (index >= fields.length)
             throw new TupleInvalidIndexException(this, index);
         fields[index] = val;
     }
-
 
 
     @Override
@@ -64,7 +63,7 @@ public class PTuple extends PValue<PTuple> {
             return false;
         }
 
-        for (int i = 0 ; i < fields.length; i++) {
+        for (int i = 0; i < fields.length; i++) {
             if (!PValue.equals(fields[i], other.fields[i])) {
                 return false;
             }

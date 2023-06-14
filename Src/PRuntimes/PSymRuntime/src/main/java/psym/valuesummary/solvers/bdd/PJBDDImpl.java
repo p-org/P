@@ -21,8 +21,8 @@ public class PJBDDImpl implements SolverLib<DD> {
 
     // configurable parameters for PJBDD
     // TODO: Explore different options for these parameters
-    private int numThreads = Runtime.getRuntime().availableProcessors();
-    private int cacheSize = 100000;
+    private final int numThreads = Runtime.getRuntime().availableProcessors();
+    private final int cacheSize = 100000;
 
     public PJBDDImpl(boolean cbdd) {
         CreatorBuilder creatorBuilder = Builders.cbddBuilder();

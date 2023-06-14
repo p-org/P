@@ -24,7 +24,7 @@ public class TaskOrchestratorRandom implements TaskOrchestrator {
     }
 
     public BacktrackTask getNext() {
-        assert(!elementList.isEmpty());
+        assert (!elementList.isEmpty());
         Collections.shuffle(elementList, new Random(RandomNumberGenerator.getInstance().getRandomLong()));
         return elementList.get(RandomNumberGenerator.getInstance().getRandomInt(elementList.size()));
     }

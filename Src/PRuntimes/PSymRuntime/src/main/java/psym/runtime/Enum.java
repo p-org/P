@@ -4,18 +4,26 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Represent a P enum type */
+/**
+ * Represent a P enum type
+ */
 public class Enum implements Serializable {
-    /** Name of the enum type */
+    /**
+     * Name of the enum type
+     */
     private final String name;
-    /** Map from enum values to Integers */
+    /**
+     * Map from enum values to Integers
+     */
     private final Map<String, Integer> stringToName;
 
-    /** Make a new Enum type
-     * @param name Name of the enum
+    /**
+     * Make a new Enum type
+     *
+     * @param name  Name of the enum
      * @param enums Possible enum values
      */
-    public Enum(String name, String ... enums) {
+    public Enum(String name, String... enums) {
         this.name = name;
         this.stringToName = new HashMap<>();
         for (int i = 0; i < enums.length; i++) {
@@ -23,7 +31,9 @@ public class Enum implements Serializable {
         }
     }
 
-    /** Convert enum value to int
+    /**
+     * Convert enum value to int
+     *
      * @param name enum value
      * @return enum value integer
      */

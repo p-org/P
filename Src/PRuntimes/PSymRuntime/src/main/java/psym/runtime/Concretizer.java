@@ -1,25 +1,26 @@
 package psym.runtime;
 
+import psym.runtime.machine.Machine;
 import psym.runtime.values.*;
 import psym.valuesummary.*;
-import psym.runtime.machine.Machine;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
-public class Concretizer { 
+public class Concretizer {
     public static boolean print = false;
 
     /**
      * Get a concrete value for a value summary
+     *
      * @param valueSummary value summary to concretize
      * @return a concrete value represented by the value summary
-     */ 
-    public static GuardedValue concretize (Object valueSummary) {
+     */
+    public static GuardedValue concretize(Object valueSummary) {
         if (valueSummary instanceof PrimitiveVS<?>) {
             List<? extends GuardedValue<?>> list = ((PrimitiveVS<?>) valueSummary).getGuardedValues();
             if (list.size() > 0) {
@@ -147,20 +148,21 @@ public class Concretizer {
 
     /**
      * Get a concrete P value for a value summary
+     *
      * @param valueSummary value summary to concretize
      * @return a concrete value represented by the value summary
-     */ 
-    public static GuardedValue<? extends PValue<?>> concretizePType (Object valueSummary) {
+     */
+    public static GuardedValue<? extends PValue<?>> concretizePType(Object valueSummary) {
         if (valueSummary instanceof PrimitiveVS<?>) {
             List<? extends GuardedValue<?>> list = ((PrimitiveVS<?>) valueSummary).getGuardedValues();
             if (list.size() > 0) {
                 GuardedValue<?> item = list.get(0);
                 if (item.getValue() instanceof Integer) {
-                    return new GuardedValue(new PInt((Integer) item.getValue()), item.getGuard());
+                    return new GuardedValue(new PInt(item.getValue()), item.getGuard());
                 } else if (item.getValue() instanceof Boolean) {
-                    return new GuardedValue(new PBool((Boolean) item.getValue()), item.getGuard());
+                    return new GuardedValue(new PBool(item.getValue()), item.getGuard());
                 } else if (item.getValue() instanceof Float) {
-                    return new GuardedValue(new PFloat((Float) item.getValue()), item.getGuard());
+                    return new GuardedValue(new PFloat(item.getValue()), item.getGuard());
                 }
                 return new GuardedValue(item.getValue(), item.getGuard());
             }
@@ -258,12 +260,13 @@ public class Concretizer {
 
     /**
      * Get a list of concrete values for the arguments
-     * @param pc Guard under which to concretize values
+     *
+     * @param pc   Guard under which to concretize values
      * @param stop specifies when to stop getting more concrete values
      * @param args arguments
      * @return list of concrete values for arguments
-     */ 
-    public static List<GuardedValue<List<Object>>> getConcreteValues(Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary ... args) {
+     */
+    public static List<GuardedValue<List<Object>>> getConcreteValues(Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary... args) {
         Guard iterPc = Guard.constFalse();
         Guard alreadySeen = Guard.constFalse();
         boolean skip = false;
@@ -314,12 +317,13 @@ public class Concretizer {
 
     /**
      * Get the number of concrete values for the arguments
-     * @param pc Guard under which to concretize values
+     *
+     * @param pc   Guard under which to concretize values
      * @param stop specifies when to stop getting more concrete values
      * @param args arguments
      * @return number of concrete values for arguments
      */
-    public static int countConcreteValues(Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary ... args) {
+    public static int countConcreteValues(Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary... args) {
         Guard iterPc = Guard.constFalse();
         Guard alreadySeen = Guard.constFalse();
         boolean skip = false;
@@ -354,22 +358,23 @@ public class Concretizer {
 
     /**
      * Count the number of concrete values for arguments
-     * @param pc Guard under which to concretize values
+     *
+     * @param pc   Guard under which to concretize values
      * @param args arguments
      * @return number of concrete values
-     */ 
-    public static int getNumConcreteValues(Guard pc, ValueSummary ... args) {
-    	int i = 0;
-    	try {
+     */
+    public static int getNumConcreteValues(Guard pc, ValueSummary... args) {
+        int i = 0;
+        try {
             if (print) {
                 i = getConcreteValues(pc, x -> false, Concretizer::concretize, args).size();
             } else {
                 i = countConcreteValues(pc, x -> false, Concretizer::concretize, args);
             }
-    	} catch (NullPointerException e) {
+        } catch (NullPointerException e) {
             throw new RuntimeException("Counting concrete values failed.");
-    	}
-    	return i;
+        }
+        return i;
     }
 
 }

@@ -4,10 +4,10 @@ import lombok.Getter;
 import psym.commandline.PSymConfiguration;
 import psym.commandline.Program;
 import psym.runtime.Event;
+import psym.runtime.Message;
 import psym.runtime.logger.PSymLogger;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
-import psym.runtime.Message;
 import psym.utils.GlobalData;
 import psym.valuesummary.*;
 
@@ -18,22 +18,24 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 public class ReplayScheduler extends Scheduler {
-    /** Counterexample length */
+    /**
+     * Counterexample length
+     */
     private int cexLength = 0;
 
     @Getter
     /** Path constraint */
-    private Guard pathConstraint;
+    private final Guard pathConstraint;
 
     @Getter
     /** Flag for liveness bug */
-    private boolean isLivenessBug;
+    private final boolean isLivenessBug;
 
-    public ReplayScheduler (PSymConfiguration config, Program p, Schedule schedule, int length, boolean livenessBug) {
+    public ReplayScheduler(PSymConfiguration config, Program p, Schedule schedule, int length, boolean livenessBug) {
         this(config, p, schedule, Guard.constTrue(), length, livenessBug);
     }
 
-    public ReplayScheduler (PSymConfiguration config, Program p, Schedule schedule, Guard pc, int length, boolean livenessBug) {
+    public ReplayScheduler(PSymConfiguration config, Program p, Schedule schedule, Guard pc, int length, boolean livenessBug) {
         super(config, p);
         TraceLogger.enable();
         this.schedule = schedule.guard(pc).getSingleSchedule();
@@ -47,28 +49,8 @@ public class ReplayScheduler extends Scheduler {
     }
 
     /**
-     * Write scheduler state to a file
-     * @param writeFileName Output file name
-     * @throws Exception Throw error if writing fails
-     */
-    public void writeToFile(String writeFileName) throws RuntimeException {
-        try {
-            FileOutputStream fos = new FileOutputStream(writeFileName);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(this);
-            oos.writeObject(GlobalData.getInstance());
-            if (configuration.getVerbosity() > 0) {
-                long szBytes = Files.size(Paths.get(writeFileName));
-                PSymLogger.info(String.format("  %,.1f MB  written in %s", (szBytes / 1024.0 / 1024.0), writeFileName));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to write replayer in file " + writeFileName);
-        }
-    }
-
-    /**
      * Read scheduler state from a file
+     *
      * @param readFromFile Name of the input file containing the scheduler state
      * @return A scheduler object
      * @throws Exception Throw error if reading fails
@@ -89,6 +71,28 @@ public class ReplayScheduler extends Scheduler {
             throw new Exception(".. Failed to read replayer state from file " + readFromFile);
         }
         return result;
+    }
+
+    /**
+     * Write scheduler state to a file
+     *
+     * @param writeFileName Output file name
+     * @throws Exception Throw error if writing fails
+     */
+    public void writeToFile(String writeFileName) throws RuntimeException {
+        try {
+            FileOutputStream fos = new FileOutputStream(writeFileName);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(this);
+            oos.writeObject(GlobalData.getInstance());
+            if (configuration.getVerbosity() > 0) {
+                long szBytes = Files.size(Paths.get(writeFileName));
+                PSymLogger.info(String.format("  %,.1f MB  written in %s", (szBytes / 1024.0 / 1024.0), writeFileName));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to write replayer in file " + writeFileName);
+        }
     }
 
     @Override

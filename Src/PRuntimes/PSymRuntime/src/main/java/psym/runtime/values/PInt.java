@@ -4,24 +4,23 @@ public class PInt extends PValue<PInt> {
     // stores the int value
     private final int value;
 
-    public int getValue() { return value; }
-
-    public PInt(int val)
-    {
+    public PInt(int val) {
         value = val;
     }
 
-    public PInt(Object val)
-    {
+    public PInt(Object val) {
         if (val instanceof PInt)
             value = ((PInt) val).value;
         else
             value = (int) val;
     }
 
-    public PInt(PInt val)
-    {
+    public PInt(PInt val) {
         value = val.value;
+    }
+
+    public int getValue() {
+        return value;
     }
 
     @Override
@@ -41,7 +40,7 @@ public class PInt extends PValue<PInt> {
         else if (!(obj instanceof PInt)) {
             return false;
         }
-        return this.value == ((PInt)obj).value;
+        return this.value == ((PInt) obj).value;
     }
 
     @Override

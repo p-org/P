@@ -1,44 +1,70 @@
 package psym.runtime.machine;
 
+import lombok.Getter;
 import psym.commandline.Assert;
-import psym.runtime.*;
+import psym.runtime.Event;
+import psym.runtime.Message;
 import psym.runtime.logger.TraceLogger;
-import psym.runtime.machine.buffer.*;
+import psym.runtime.machine.buffer.DeferQueue;
+import psym.runtime.machine.buffer.EventBuffer;
+import psym.runtime.machine.buffer.EventQueue;
 import psym.runtime.machine.eventhandlers.EventHandler;
 import psym.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psym.runtime.scheduler.Scheduler;
-import psym.utils.GlobalData;
+import psym.utils.SerializableBiFunction;
+import psym.utils.SerializableFunction;
+import psym.utils.SerializableRunnable;
 import psym.valuesummary.*;
-import psym.valuesummary.Guard;
 
 import java.io.Serializable;
 import java.util.*;
 
-import lombok.Getter;
-import psym.valuesummary.util.SerializableBiFunction;
-import psym.valuesummary.util.SerializableFunction;
-import psym.valuesummary.util.SerializableRunnable;
-
 public abstract class Machine implements Serializable, Comparable<Machine> {
     private static int numMachines = 0;
-
+    public final DeferQueue deferredQueue;
+    public final Map<String, SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> continuations = new HashMap<>();
+    public final Set<SerializableRunnable> clearContinuationVars = new HashSet<>();
     @Getter
     private final String name;
     @Getter
     private final int instanceId;
-    @Getter
-    transient private Scheduler scheduler;
     private final State startState;
     private final Set<State> states;
+    public EventBuffer sendBuffer;
+    @Getter
+    transient private Scheduler scheduler;
     private PrimitiveVS<Boolean> started = new PrimitiveVS<>(false);
     private PrimitiveVS<Boolean> halted = new PrimitiveVS<>(false);
     private PrimitiveVS<State> currentState;
-    public EventBuffer sendBuffer;
-    public final DeferQueue deferredQueue;
     // note: will not work for receives in functions outside the machine
     private PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> receives = new PrimitiveVS<>();
-    public final Map<String, SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> continuations = new HashMap<>();
-    public final Set<SerializableRunnable> clearContinuationVars = new HashSet<>();
+
+    public Machine(String name, int id, State startState, State... states) {
+        this.name = name;
+//        this.instanceId = id;
+        this.instanceId = numMachines++;
+
+        EventBuffer buffer;
+        buffer = new EventQueue(this);
+
+        this.startState = startState;
+        this.sendBuffer = buffer;
+        this.deferredQueue = new DeferQueue();
+        this.currentState = new PrimitiveVS<>(startState);
+
+        startState.addHandlers(
+                new EventHandler(Event.createMachine) {
+                    @Override
+                    public void handleEvent(Guard pc, Machine target, UnionVS payload, EventHandlerReturnReason eventHandlerReturnReason) {
+                        assert (!BooleanVS.isEverTrue(target.hasStarted().restrict(pc)));
+                        target.start(pc, payload);
+                    }
+                }
+        );
+
+        this.states = new HashSet<>();
+        Collections.addAll(this.states, states);
+    }
 
     public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
@@ -57,7 +83,9 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
         return halted;
     }
 
-    public Guard getBlockedOnReceiveGuard() { return receives.getUniverse(); }
+    public Guard getBlockedOnReceiveGuard() {
+        return receives.getUniverse();
+    }
 
     public PrimitiveVS<State> getCurrentState() {
         return currentState;
@@ -70,7 +98,9 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
             deferredQueue.dequeueEntry(deferredQueue.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
         }
         this.receives = new PrimitiveVS<>();
-        for (Runnable r : clearContinuationVars) { r.run(); }
+        for (Runnable r : clearContinuationVars) {
+            r.run();
+        }
         this.started = new PrimitiveVS<>(false);
         this.halted = new PrimitiveVS<>(false);
     }
@@ -95,33 +125,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
         this.started = (PrimitiveVS<Boolean>) localState.get(idx++);
         this.halted = (PrimitiveVS<Boolean>) localState.get(idx++);
         return idx;
-    }
-
-    public Machine(String name, int id, State startState, State... states) {
-        this.name = name;
-//        this.instanceId = id;
-        this.instanceId = numMachines++;
-
-        EventBuffer buffer;
-        buffer = new EventQueue(this);
-
-        this.startState = startState;
-        this.sendBuffer = buffer;
-        this.deferredQueue = new DeferQueue();
-        this.currentState = new PrimitiveVS<>(startState);
-
-        startState.addHandlers(
-                new EventHandler(Event.createMachine) {
-                    @Override
-                    public void handleEvent(Guard pc, Machine target, UnionVS payload, EventHandlerReturnReason eventHandlerReturnReason) {
-                        assert(!BooleanVS.isEverTrue(target.hasStarted().restrict(pc)));
-                        target.start(pc, payload);
-                    }
-                }
-        );
-
-        this.states = new HashSet<>();
-        Collections.addAll(this.states, states);
     }
 
     public void start(Guard pc, UnionVS payload) {
@@ -151,34 +154,36 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
             boolean runDeferred = false;
             Guard deferred = Guard.constFalse();
             if (!eventHandlerReturnReason.getRaiseCond().isFalse()) {
-              Message m = eventHandlerReturnReason.getMessageSummary();
-              Guard haltGuard = m.getHaltEventGuard().and(pc);
-              if (!haltGuard.isFalse()) {
-                  EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
-                  nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(haltGuard.not()));
-                  processEvent(haltGuard, nextEventHandlerReturnReason, m.restrict(haltGuard));
-                  eventHandlerReturnReason = nextEventHandlerReturnReason;
-                  receives = receives.restrict(haltGuard.not());
-                  continue;
-              }
-              Guard receiveGuard = getBlockedOnReceiveGuard().and(pc).and(this.currentState.apply(m.getEvent(), (x, msg) -> x.isIgnored(msg)).getGuardFor(false));
-              if (!receiveGuard.isFalse()) {
-                  PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> runNow = receives.restrict(receiveGuard);
-                  EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
-                  nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not()));
-                  PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> oldReceives = new PrimitiveVS<>(receives);
-                  receives = receives.restrict(receiveGuard.not());
-                  for (GuardedValue<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> receiver : runNow.getGuardedValues()) {
-                      deferred = deferred.or(receiver.getValue().apply(receiver.getGuard()).apply(nextEventHandlerReturnReason, m.restrict(receiver.getGuard())));
-                  }
-                  oldReceives = oldReceives.restrict(receiveGuard.not().or(deferred));
-                  receives = receives.merge(oldReceives);
-                  eventHandlerReturnReason = nextEventHandlerReturnReason;
-                  runDeferred = true;
-              } else {
-                  // clean up receives
-                  for (Runnable r : clearContinuationVars) { r.run(); }
-              }
+                Message m = eventHandlerReturnReason.getMessageSummary();
+                Guard haltGuard = m.getHaltEventGuard().and(pc);
+                if (!haltGuard.isFalse()) {
+                    EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
+                    nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(haltGuard.not()));
+                    processEvent(haltGuard, nextEventHandlerReturnReason, m.restrict(haltGuard));
+                    eventHandlerReturnReason = nextEventHandlerReturnReason;
+                    receives = receives.restrict(haltGuard.not());
+                    continue;
+                }
+                Guard receiveGuard = getBlockedOnReceiveGuard().and(pc).and(this.currentState.apply(m.getEvent(), (x, msg) -> x.isIgnored(msg)).getGuardFor(false));
+                if (!receiveGuard.isFalse()) {
+                    PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> runNow = receives.restrict(receiveGuard);
+                    EventHandlerReturnReason nextEventHandlerReturnReason = new EventHandlerReturnReason();
+                    nextEventHandlerReturnReason.raiseGuardedMessage(m.restrict(receiveGuard.not()));
+                    PrimitiveVS<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> oldReceives = new PrimitiveVS<>(receives);
+                    receives = receives.restrict(receiveGuard.not());
+                    for (GuardedValue<SerializableFunction<Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>> receiver : runNow.getGuardedValues()) {
+                        deferred = deferred.or(receiver.getValue().apply(receiver.getGuard()).apply(nextEventHandlerReturnReason, m.restrict(receiver.getGuard())));
+                    }
+                    oldReceives = oldReceives.restrict(receiveGuard.not().or(deferred));
+                    receives = receives.merge(oldReceives);
+                    eventHandlerReturnReason = nextEventHandlerReturnReason;
+                    runDeferred = true;
+                } else {
+                    // clean up receives
+                    for (Runnable r : clearContinuationVars) {
+                        r.run();
+                    }
+                }
             }
 
             // Inner loop: process sequences of 'goto's and 'raise's.
@@ -255,6 +260,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
 
     /**
      * Run events from the deferred queue
+     *
      * @param pc Guard under which to run
      */
     void runDeferredEvents(Guard pc) {
@@ -314,7 +320,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     public int hashCode() {
         if (name == null)
             return instanceId;
-        return name.hashCode()^instanceId;
+        return name.hashCode() ^ instanceId;
     }
 
     @Override

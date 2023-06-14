@@ -6,24 +6,23 @@ public class PMachineValue extends PValue<PMachineValue> {
     // stores the int value
     private final Machine value;
 
-    public Machine getValue() { return value; }
-
-    public PMachineValue(Machine val)
-    {
+    public PMachineValue(Machine val) {
         value = val;
     }
 
-    public PMachineValue(Object val)
-    {
+    public PMachineValue(Object val) {
         if (val instanceof PMachineValue)
             value = ((PMachineValue) val).value;
         else
             value = (Machine) val;
     }
 
-    public PMachineValue(PMachineValue val)
-    {
+    public PMachineValue(PMachineValue val) {
         value = val.value;
+    }
+
+    public Machine getValue() {
+        return value;
     }
 
     public int getId() {
@@ -47,7 +46,7 @@ public class PMachineValue extends PValue<PMachineValue> {
         else if (!(obj instanceof PMachineValue)) {
             return false;
         }
-        return this.value.equals(((PMachineValue)obj).value);
+        return this.value.equals(((PMachineValue) obj).value);
     }
 
     @Override

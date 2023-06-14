@@ -2,19 +2,27 @@ package psym.valuesummary;
 
 import psym.commandline.Assert;
 import psym.valuesummary.util.ValueSummaryChecks;
+
 import java.util.*;
 
-/** Class for map value summaries */
+/**
+ * Class for map value summaries
+ */
 public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> implements ValueSummary<MapVS<K, T, V>> {
-    /** The set of keys */
+    /**
+     * The set of keys
+     */
     public final SetVS<T> keys;
     /** The mapping from all possible keys to values */
-    /** The mapping from all possible keys to values */
+    /**
+     * The mapping from all possible keys to values
+     */
     public final Map<K, V> entries;
 
-    /** Make a new MapVS with the specified set of keys and mapping
+    /**
+     * Make a new MapVS with the specified set of keys and mapping
      *
-     * @param keys The set of keys
+     * @param keys    The set of keys
      * @param entries The mapping from all possible keys to value summaries
      */
     public MapVS(SetVS<T> keys, Map<K, V> entries) {
@@ -22,7 +30,8 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         this.entries = entries;
     }
 
-    /** Make a new MapVS with the specified universe
+    /**
+     * Make a new MapVS with the specified universe
      *
      * @param universe The universe for the new MapVS
      */
@@ -31,7 +40,9 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         this.entries = new HashMap<>();
     }
 
-    /** Copy-constructor for MapVS
+    /**
+     * Copy-constructor for MapVS
+     *
      * @param old The MapVS to copy
      */
     public MapVS(MapVS<K, T, V> old) {
@@ -47,15 +58,17 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         return new MapVS(this);
     }
 
-    /** Get the number of entries in the MapVS
+    /**
+     * Get the number of entries in the MapVS
      *
      * @return The size of the MapVS
-     * */
+     */
     public PrimitiveVS<Integer> size() {
         return keys.size();
     }
 
-    /** Get the keys in the MapVS as a ListVS
+    /**
+     * Get the keys in the MapVS as a ListVS
      *
      * @return The keys of the MapVS in a ListVS
      */
@@ -63,13 +76,14 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         return this.keys.getElements();
     }
 
-    /** Get the values in the MapVS as a ListVS
+    /**
+     * Get the values in the MapVS as a ListVS
      *
      * @return The values of the MapVS in a ListVS
      */
     public ListVS<V> getValues() {
         ListVS<V> result = new ListVS<V>(getUniverse());
-        for (V value: this.entries.values()) {
+        for (V value : this.entries.values()) {
             result = result.add(value);
         }
         return result;
@@ -150,12 +164,13 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         ListVS<T> thisSet = this.restrict(guard).getKeys();
         ListVS<T> cmpSet = cmp.restrict(guard).getKeys();
 
-        if (thisSet.isEmpty() && cmpSet.isEmpty()) return BooleanVS.trueUnderGuard(pc.and(guard)).restrict(getUniverse().and(cmp.getUniverse()));
+        if (thisSet.isEmpty() && cmpSet.isEmpty())
+            return BooleanVS.trueUnderGuard(pc.and(guard)).restrict(getUniverse().and(cmp.getUniverse()));
 
         while (!thisSet.isEmpty()) {
             T thisVal = thisSet.get(new PrimitiveVS<>(0).restrict(guard));
             T cmpVal = cmpSet.get(new PrimitiveVS<>(0).restrict(guard));
-            assert(ValueSummaryChecks.equalUnder(thisVal, cmpVal, guard));
+            assert (ValueSummaryChecks.equalUnder(thisVal, cmpVal, guard));
             for (GuardedValue<?> key : ValueSummary.getGuardedValues(thisVal)) {
                 PrimitiveVS<Boolean> compareVals = entries.get(key.getValue()).restrict(key.getGuard())
                         .symbolicEquals(cmp.entries.get(key.getValue()).restrict(key.getGuard()), guard);
@@ -173,7 +188,8 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         return keys.getUniverse();
     }
 
-    /** Put a key-value pair into the MapVS
+    /**
+     * Put a key-value pair into the MapVS
      *
      * @param keySummary The key VS
      * @param valSummary The value VS
@@ -194,7 +210,8 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         return new MapVS<>(newKeys, newEntries);
     }
 
-    /** Add a key-value pair into the MapVS
+    /**
+     * Add a key-value pair into the MapVS
      *
      * @param keySummary The key value summary
      * @param valSummary The value value summary
@@ -222,7 +239,8 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         return put(keySummary, valSummary);
     }
 
-    /** Remove a key-value pair from the MapVS
+    /**
+     * Remove a key-value pair from the MapVS
      *
      * @param keySummary The key value summary
      * @return The updated MapVS
@@ -248,7 +266,8 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         return new MapVS<>(newKeys, newEntries);
     }
 
-    /** Get a value from from the MapVS
+    /**
+     * Get a value from from the MapVS
      *
      * @param keySummary The key value summary.
      * @return The option containing value corresponding to the key or an empty option if no such value
@@ -279,9 +298,10 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         return merger.merge(toMerge);
     }
 
-    /** Get a value from the MapVS or return default value if key does not exist
+    /**
+     * Get a value from the MapVS or return default value if key does not exist
      *
-     * @param keySummary The key value summary.
+     * @param keySummary   The key value summary.
      * @param defaultValue The default value.
      * @return The option containing value corresponding to the key or default option if no such value
      */
@@ -307,7 +327,8 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         return merger.merge(toMerge);
     }
 
-    /** Get whether the MapVS contains a
+    /**
+     * Get whether the MapVS contains a
      *
      * @param keySummary The key ValueSummary
      * @return Whether or not the MapVS contains a key
@@ -320,22 +341,21 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
     public int getConcreteHash() {
         int hashCode = 1;
         for (Map.Entry<K, V> entry : entries.entrySet()) {
-            hashCode = 31*hashCode + (entry.getKey()==null ? 0 : entry.getKey().hashCode());
-            hashCode = 31*hashCode + (entry.getValue()==null ? 0 : entry.getValue().getConcreteHash());
+            hashCode = 31 * hashCode + (entry.getKey() == null ? 0 : entry.getKey().hashCode());
+            hashCode = 31 * hashCode + (entry.getValue() == null ? 0 : entry.getValue().getConcreteHash());
         }
         return hashCode;
     }
 
     @Override
     public String toString() {
-        StringBuilder out = new StringBuilder();
-        out.append("Map[");
-        out.append("  keys: ");
-        out.append(keys);
-        out.append(",  values: ");
-        out.append(new TreeMap<>(entries));
-        out.append("]");
-        return out.toString();
+        String out = "Map[" +
+                "  keys: " +
+                keys +
+                ",  values: " +
+                new TreeMap<>(entries) +
+                "]";
+        return out;
     }
 
     public String toStringDetailed() {

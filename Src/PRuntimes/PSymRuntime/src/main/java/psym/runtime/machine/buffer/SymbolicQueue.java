@@ -9,6 +9,7 @@ import java.io.Serializable;
 
 /**
  * Represents a event-queue implementation using value summaries
+ *
  * @param <T>
  */
 public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
@@ -19,16 +20,20 @@ public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
 
     public SymbolicQueue() {
         this.elements = new ListVS<>(Guard.constTrue());
-        assert(elements.getUniverse().isTrue());
+        assert (elements.getUniverse().isTrue());
     }
 
     public void resetPeek() {
         peek = null;
     }
 
-    public PrimitiveVS<Integer> size() { return elements.size(); }
+    public PrimitiveVS<Integer> size() {
+        return elements.size();
+    }
 
-    public PrimitiveVS<Integer> size(Guard pc) { return elements.restrict(pc).size(); }
+    public PrimitiveVS<Integer> size(Guard pc) {
+        return elements.restrict(pc).size();
+    }
 
     public void enqueue(T entry) {
         elements = elements.add(entry);
@@ -56,7 +61,7 @@ public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
         if (!dequeue && !updatePeek) {
             return peek.restrict(pc);
         }
-        assert(elements.getUniverse().isTrue());
+        assert (elements.getUniverse().isTrue());
         ListVS<T> filtered = elements.restrict(pc);
         if (updatePeek) {
             peek = filtered.get(new PrimitiveVS<>(0).restrict(pc));
@@ -66,7 +71,7 @@ public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
             elements = elements.removeAt(new PrimitiveVS<>(0).restrict(pc));
             resetPeek();
         }
-        assert(!pc.isFalse());
+        assert (!pc.isFalse());
         return ret;
     }
 

@@ -8,17 +8,15 @@ import java.util.List;
 import java.util.Map;
 
 import static psym.runtime.Concretizer.getConcreteValues;
-import static psym.valuesummary.ValueSummary.getGuardedValues;
 
 public class StringVS {
 
-    public static PrimitiveVS<String> formattedStringVS(Guard pc, String baseString, ValueSummary ... args) {
+    public static PrimitiveVS<String> formattedStringVS(Guard pc, String baseString, ValueSummary... args) {
         final Map<String, Guard> results = new HashMap<>();
         if (args.length == 0) {
             results.merge(baseString, pc, Guard::or);
         } else {
-            if (baseString.contains(" "))
-            {
+            if (baseString.contains(" ")) {
                 final String mapped = messageFormatter(baseString, args);
                 return new PrimitiveVS<String>(mapped).restrict(pc);
             } else {
@@ -34,7 +32,7 @@ public class StringVS {
         return new PrimitiveVS<String>(results);
     }
 
-    public static String messageFormatter(String baseString, Object ... args) {
+    public static String messageFormatter(String baseString, Object... args) {
         assert (args.length != 0);
         return MessageFormat.format(baseString, args);
     }

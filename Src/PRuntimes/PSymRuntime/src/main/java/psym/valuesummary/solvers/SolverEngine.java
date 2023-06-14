@@ -6,15 +6,20 @@ import psym.runtime.logger.SearchLogger;
 import psym.valuesummary.solvers.bdd.PJBDDImpl;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 
+import java.util.Objects;
+
 /**
  * Represents the generic backend engine
  */
 public class SolverEngine {
-    @Getter @Setter
+    @Getter
+    @Setter
     private static SolverLib solver;
-    @Getter @Setter
+    @Getter
+    @Setter
     private static SolverType solverType = SolverType.BDD;
-    @Getter @Setter
+    @Getter
+    @Setter
     private static ExprLibType exprLibType = ExprLibType.Bdd;
 
     public static void resumeEngine() {
@@ -32,26 +37,24 @@ public class SolverEngine {
                     + type.toString() + " + "
                     + etype.toString());
         }
-    	setSolver(type, etype);
+        setSolver(type, etype);
         SolverGuard.reset();
     }
 
     public static void cleanupEngine() {
         solver.cleanup();
     }
-    
+
     public static void setSolver(SolverType type, ExprLibType etype) {
-    	setSolverType(type);
+        setSolverType(type);
         setExprLibType(etype);
-    	switch(type) {
-    	case BDD:		solver = new PJBDDImpl(false);
-    		break;
-        default:
+        if (Objects.requireNonNull(type) == SolverType.BDD) {
+            solver = new PJBDDImpl(false);
+        } else {
             assert false :
                     String.format("Unrecognized solver or expression type: solver type %s with expression type %s",
                             type, etype);
-
-    	}
+        }
     }
 
     public static int getVarCount() {

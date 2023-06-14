@@ -22,6 +22,8 @@ public class BacktrackTask implements Serializable {
     @Getter
     private final int id;
     @Getter
+    private final List<BacktrackTask> children = new ArrayList<>();
+    @Getter
     private BigDecimal coverage = new BigDecimal(0);
     @Getter
     @Setter
@@ -41,8 +43,6 @@ public class BacktrackTask implements Serializable {
     @Getter
     @Setter
     private BacktrackTask parentTask = null;
-    @Getter
-    private final List<BacktrackTask> children = new ArrayList<>();
     @Getter
     private boolean completed = false;
 

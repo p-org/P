@@ -5,9 +5,7 @@ name: PSym on Ubuntu
 
 on:
   push:
-    branches: [ "master", "**psym**", "develop**" ]
   pull_request:
-    branches: [ "master", "**psym**", "develop**" ]
   workflow_dispatch:
     inputs:
       args:

@@ -16,15 +16,14 @@ import java.util.stream.Collectors;
 
 public class Schedule implements Serializable {
 
+    private final ChoiceState schedulerState = new ChoiceState();
     private Guard filter = Guard.constTrue();
-
     @Setter
     private int schedulerDepth = 0;
     @Setter
     private int schedulerChoiceDepth = 0;
     private int numBacktracks = 0;
     private int numDataBacktracks = 0;
-    private final ChoiceState schedulerState = new ChoiceState();
     private SymmetryTracker schedulerSymmetry = new SymmetryTracker();
     private List<Choice> choices = new ArrayList<>();
     private Map<Class<? extends Machine>, ListVS<PrimitiveVS<Machine>>> createdMachines = new HashMap<>();
@@ -33,6 +32,7 @@ public class Schedule implements Serializable {
 
     public Schedule() {
     }
+
     private Schedule(List<Choice> choices,
                      Map<Class<? extends Machine>, ListVS<PrimitiveVS<Machine>>> createdMachines,
                      Set<Machine> machines,

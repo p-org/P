@@ -21,13 +21,13 @@ import java.util.List;
  */
 public class CoverageStats implements Serializable {
     /**
-     * Estimated state-space coverage
-     */
-    private BigDecimal estimatedCoverage = new BigDecimal(0);
-    /**
      * Track of number of choices explored versus remaining in aggregate at each depth
      */
     private final List<CoverageDepthStats> perDepthStats = new ArrayList<>();
+    /**
+     * Estimated state-space coverage
+     */
+    private BigDecimal estimatedCoverage = new BigDecimal(0);
     @Getter
     @Setter
     /**

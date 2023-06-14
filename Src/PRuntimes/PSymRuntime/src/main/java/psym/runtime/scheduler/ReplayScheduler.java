@@ -18,18 +18,16 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 public class ReplayScheduler extends Scheduler {
+    @Getter
+    /** Path constraint */
+    private final Guard pathConstraint;
+    @Getter
+    /** Flag for liveness bug */
+    private final boolean isLivenessBug;
     /**
      * Counterexample length
      */
     private int cexLength = 0;
-
-    @Getter
-    /** Path constraint */
-    private final Guard pathConstraint;
-
-    @Getter
-    /** Flag for liveness bug */
-    private final boolean isLivenessBug;
 
     public ReplayScheduler(PSymConfiguration config, Program p, Schedule schedule, int length, boolean livenessBug) {
         this(config, p, schedule, Guard.constTrue(), length, livenessBug);

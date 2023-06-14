@@ -19,9 +19,9 @@ import java.util.Map;
  */
 public class EventHandlerReturnReason implements Serializable {
 
-    private UnionVS outcome = new UnionVS();
     @Getter
     private final Map<State, UnionVS> payloads = new HashMap<>();
+    private UnionVS outcome = new UnionVS();
     @Getter
     private Guard gotoCond = Guard.constFalse();
     @Getter

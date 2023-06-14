@@ -124,14 +124,12 @@ public class SearchStats implements Serializable {
         // iteration number
         @Getter
         private final int startDepth;
-
+        // per depth statistics during this iteration
+        private final HashMap<Integer, DepthStats> perDepthStats;
         // has the iteration completed for any depth
         @Getter
         @Setter
         private boolean completed;
-
-        // per depth statistics during this iteration
-        private final HashMap<Integer, DepthStats> perDepthStats;
 
         public IterationStats(int iterationNumber, int startDepth) {
             iteration = iterationNumber;

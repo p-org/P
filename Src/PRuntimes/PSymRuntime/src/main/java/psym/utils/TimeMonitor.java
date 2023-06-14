@@ -17,13 +17,12 @@ public class TimeMonitor {
      */
     @Getter
     private final Instant start;
-
+    // time limit in seconds (0 means infinite)
+    private final double timeLimit;
     /**
      * Stores the beginning time to track when a time interval begins
      */
     private Instant begin;
-    // time limit in seconds (0 means infinite)
-    private final double timeLimit;
 
     private TimeMonitor(double tl) {
         this.start = Instant.now();

@@ -26,17 +26,14 @@ public class ChoiceLearningStats<S, A> implements Serializable {
     private static final BigDecimal ALPHA = BigDecimal.valueOf(0.3);
     @Getter
     private static final BigDecimal GAMMA = BigDecimal.valueOf(0.7);
-
-
+    @Getter
+    private final ChoiceComparator choiceComparator = new ChoiceComparator();
+    private final ChoiceQTable<S, A> qValues;
     /**
      * State hash corresponding to current environment state
      */
     @Getter
     private Object programStateHash = null;
-
-    @Getter
-    private final ChoiceComparator choiceComparator = new ChoiceComparator();
-    private final ChoiceQTable<S, A> qValues;
 
     public ChoiceLearningStats() {
         qValues = new ChoiceQTable();

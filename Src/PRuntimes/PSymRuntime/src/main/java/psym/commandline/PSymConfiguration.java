@@ -192,6 +192,14 @@ public class PSymConfiguration implements Serializable {
         this.setTaskOrchestration(TaskOrchestrationMode.CoverageAStar);
     }
 
+    public void setToReplay() {
+        this.setStrategy("replay");
+        this.setCollectStats(0);
+        this.setStateCachingMode(StateCachingMode.None);
+        this.setUseBacktrack(false);
+        this.setUseSymmetry(false);
+    }
+
     public void setToDebug() {
         this.setStrategy("debug");
     }

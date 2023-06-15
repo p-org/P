@@ -1,8 +1,8 @@
 package psym.valuesummary;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import psym.runtime.machine.Machine;
+
+import java.util.*;
 
 /**
  * Class for set value summaries
@@ -45,6 +45,17 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
      */
     public SetVS<T> getCopy() {
         return new SetVS(this);
+    }
+
+    /**
+     * Permute the value summary
+     *
+     * @param m1 first machine
+     * @param m2 second machine
+     * @return A new cloned copy of the value summary with m1 and m2 swapped
+     */
+    public SetVS<T> swap(Machine m1, Machine m2) {
+        return new SetVS<T>(this.elements.swap(m1, m2));
     }
 
     public PrimitiveVS<Integer> size() {

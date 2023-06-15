@@ -1,6 +1,7 @@
 package psym.valuesummary;
 
 import psym.runtime.Message;
+import psym.runtime.machine.Machine;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -212,6 +213,15 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
      * @return A new cloned copy of the value summary
      */
     T getCopy();
+
+    /**
+    * Permute the value summary
+    *
+    * @param m1 first machine
+    * @param m2 second machine
+    * @return A new cloned copy of the value summary with m1 and m2 swapped
+    */
+    T swap(Machine m1, Machine m2);
 
     /**
      * String representation of the value summary

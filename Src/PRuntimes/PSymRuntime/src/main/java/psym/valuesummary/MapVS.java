@@ -1,6 +1,7 @@
 package psym.valuesummary;
 
 import psym.commandline.Assert;
+import psym.runtime.machine.Machine;
 import psym.valuesummary.util.ValueSummaryChecks;
 
 import java.util.*;
@@ -56,6 +57,19 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
      */
     public MapVS<K, T, V> getCopy() {
         return new MapVS(this);
+    }
+
+    /**
+     * Permute the value summary
+     *
+     * @param m1 first machine
+     * @param m2 second machine
+     * @return A new cloned copy of the value summary with m1 and m2 swapped
+     */
+    public MapVS<K, T, V> swap(Machine m1, Machine m2) {
+        Map<K, V> newEntries = new HashMap<>(this.entries);
+        newEntries.replaceAll((k,v) -> v.swap(m1, m2));
+        return new MapVS(this.keys.swap(m1, m2), newEntries);
     }
 
     /**

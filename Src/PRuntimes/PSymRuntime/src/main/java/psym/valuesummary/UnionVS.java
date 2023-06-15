@@ -1,8 +1,10 @@
 package psym.valuesummary;
 
 import org.jetbrains.annotations.NotNull;
+import psym.runtime.machine.Machine;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Represents a value of "any" type
@@ -13,7 +15,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
     /* Type of value stored in the any type variable */
     private final PrimitiveVS<UnionVStype> type;
     /* Map from the type of variable to the value summary representing the value of that type */
-    private Map<UnionVStype, ValueSummary> value;
+    private final Map<UnionVStype, ValueSummary> value;
 
     public UnionVS(@NotNull PrimitiveVS<UnionVStype> type, @NotNull Map<UnionVStype, ValueSummary> values) {
         this.type = type;
@@ -71,6 +73,19 @@ public class UnionVS implements ValueSummary<UnionVS> {
      */
     public UnionVS getCopy() {
         return new UnionVS(this);
+    }
+
+    /**
+     * Permute the value summary
+     *
+     * @param m1 first machine
+     * @param m2 second machine
+     * @return A new cloned copy of the value summary with m1 and m2 swapped
+     */
+    public UnionVS swap(Machine m1, Machine m2) {
+        Map<UnionVStype, ValueSummary> newValues = new HashMap<>(this.value);
+        newValues.replaceAll((k,v) -> v.swap(m1, m2));
+        return new UnionVS(this.type.getCopy(), newValues);
     }
 
     /**

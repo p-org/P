@@ -1,6 +1,7 @@
 package psym.valuesummary;
 
 import lombok.Getter;
+import psym.runtime.machine.Machine;
 import psym.runtime.values.PString;
 
 import java.util.ArrayList;
@@ -59,6 +60,17 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
      */
     public NamedTupleVS getCopy() {
         return new NamedTupleVS(this);
+    }
+
+    /**
+     * Permute the value summary
+     *
+     * @param m1 first machine
+     * @param m2 second machine
+     * @return A new cloned copy of the value summary with m1 and m2 swapped
+     */
+    public NamedTupleVS swap(Machine m1, Machine m2) {
+        return new NamedTupleVS(new ArrayList<>(this.names), this.tuple.swap(m1, m2));
     }
 
     /**

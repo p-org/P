@@ -33,7 +33,7 @@ public class SymmetryTracker implements Serializable {
             if (symSet == null) {
                 symSet = new SetVS<>(Guard.constTrue());
             }
-            symSet = symSet.add(new PrimitiveVS<>(Collections.singletonMap(machine, guard)));
+            symSet = symSet.add(new PrimitiveVS<>(machine, guard));
             typeToSymmetrySet.put(machine.getName(), symSet);
         }
     }
@@ -64,7 +64,7 @@ public class SymmetryTracker implements Serializable {
                         Guard remaining = guard.and(typeGuard.not());
 
                         if (!typeGuard.isFalse()) {
-                            PrimitiveVS<Machine> representativeVS = symSet.get(new PrimitiveVS<>(Collections.singletonMap(0, typeGuard)));
+                            PrimitiveVS<Machine> representativeVS = symSet.get(new PrimitiveVS<>(0, typeGuard));
                             List<GuardedValue<Machine>> representativeGVs = representativeVS.getGuardedValues();
                             for (GuardedValue<Machine> representativeGV : representativeGVs) {
                                 Machine m = representativeGV.getValue();
@@ -108,11 +108,15 @@ public class SymmetryTracker implements Serializable {
                 Machine machine = ((Machine) value);
                 SetVS<PrimitiveVS<Machine>> symSet = typeToSymmetrySet.get(machine.getName());
                 if (symSet != null) {
-                    PrimitiveVS<Machine> primitiveVS = new PrimitiveVS<>(Collections.singletonMap(machine, choice.getGuard()));
+                    PrimitiveVS<Machine> primitiveVS = new PrimitiveVS<>(machine, choice.getGuard());
                     symSet = symSet.remove(primitiveVS);
                     typeToSymmetrySet.put(machine.getName(), symSet);
                 }
             }
         }
+    }
+
+    public void mergeSymmetrySet() {
+        // TODO
     }
 }

@@ -41,12 +41,21 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     private Guard universe = null;
 
     /**
+     * Create a PrimitiveVS with a single guarded value
+     *
+     * @param value A primitive value summary containing the passed value under the guard restrict
+     */
+    public PrimitiveVS(T value, Guard guard) {
+        this.guardedValues = Collections.singletonMap(value, guard);
+    }
+
+    /**
      * Create a PrimitiveVS with the largest possible universe (restrict = true) containing only the specified value
      *
      * @param value A primitive value summary containing the passed value under the `true` restrict
      */
     public PrimitiveVS(T value) {
-        this.guardedValues = Collections.singletonMap(value, Guard.constTrue());
+        this(value, Guard.constTrue());
     }
 
     /**
@@ -54,10 +63,19 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
      * Caution: The caller must take care to ensure that the guards on the provided values are mutually exclusive.
      */
     public PrimitiveVS(Map<T, Guard> guardedValues) {
+        this.guardedValues = guardedValues;
+    }
+
+    /**
+     * Create a value summary with the given guarded values
+     * Caution: The caller must take care to ensure that the guards on the provided values are mutually exclusive.
+     */
+    public PrimitiveVS(Map<T, Guard> guardedValues, boolean cleanup) {
+        assert (cleanup == true);
         this.guardedValues = new HashMap<>();
-        for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
+            for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
             if (!entry.getValue().isFalse()) {
-                this.guardedValues.put(entry.getKey(), entry.getValue());
+              this.guardedValues.put(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -68,7 +86,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
      * @param old The PrimitiveVS to copy
      */
     public PrimitiveVS(PrimitiveVS<T> old) {
-        this(old.guardedValues);
+        this(new HashMap<>(old.guardedValues));
     }
 
     /**
@@ -119,6 +137,37 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
      */
     public PrimitiveVS<T> getCopy() {
         return new PrimitiveVS(this);
+    }
+
+    /**
+     * Permute the value summary
+     *
+     * @param m1 first machine
+     * @param m2 second machine
+     * @return A new cloned copy of the value summary with m1 and m2 swapped
+     */
+    public PrimitiveVS<T> swap(Machine m1, Machine m2) {
+        boolean swapped = false;
+        Map<T, Guard> newGuardedValues = new HashMap<>();
+        for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
+            T key = entry.getKey();
+            if (key instanceof Machine) {
+                Machine machineKey = (Machine) key;
+                if (key.equals(m1)) {
+                    key = (T) m2;
+                    swapped = true;
+                } else if (key.equals(m2)) {
+                    key = (T) m1;
+                    swapped = true;
+                }
+            }
+            newGuardedValues.put(key, entry.getValue());
+        }
+        if (swapped) {
+            return new PrimitiveVS<>(newGuardedValues);
+        } else {
+            return this;
+        }
     }
 
     /**

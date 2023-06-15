@@ -816,11 +816,18 @@ public class Scheduler implements SymbolicSearch {
             numStatesDistinct = numConcrete[1];
         }
 
+        if (configuration.isUseSymmetry()) {
+            GlobalData.getSymmetryTracker().mergeSymmetrySet();
+        }
+
         if (configuration.isUseBacktrack()) {
             storeSrcState();
             schedule.setSchedulerDepth(getDepth());
             schedule.setSchedulerChoiceDepth(getChoiceDepth());
             schedule.setSchedulerState(srcState, machineCounters);
+            if (configuration.isUseSymmetry()) {
+                schedule.setSchedulerSymmetry();
+            }
         }
 
         preChoiceDepth = choiceDepth;

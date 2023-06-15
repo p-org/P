@@ -696,8 +696,10 @@ public class IterativeBoundedScheduler extends Scheduler {
         GlobalData.getCoverage().updateDepthCoverage(getDepth(), getChoiceDepth(), chosen.size(), backtrack.size(), isData, isNewChoice, chosenActions);
 
         PrimitiveVS chosenVS = generateNext.apply(chosen);
-        if (configuration.isUseSymmetry()) {
-            schedule.setSchedulerSymmetry();
+        if (configuration.isUseBacktrack()) {
+            if (configuration.isUseSymmetry()) {
+                schedule.setSchedulerSymmetry();
+            }
         }
 
 //        addRepeat.accept(chosenVS, depth);

@@ -2,10 +2,12 @@ package psym.valuesummary;
 
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
+import psym.runtime.machine.Machine;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -54,6 +56,19 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     public ListVS<T> getCopy() {
         return new ListVS(this);
     }
+
+    /**
+     * Permute the value summary
+     *
+     * @param m1 first machine
+     * @param m2 second machine
+     * @return A new cloned copy of the value summary with m1 and m2 swapped
+     */
+    public ListVS<T> swap(Machine m1, Machine m2) {
+        return new ListVS(new PrimitiveVS<>(this.size),
+                          this.items.stream().map(i -> i.swap(m1, m2)).collect(Collectors.toList()));
+    }
+
 
     /**
      * Is the list empty?

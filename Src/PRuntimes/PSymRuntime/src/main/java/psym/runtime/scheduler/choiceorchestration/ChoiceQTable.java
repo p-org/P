@@ -51,7 +51,7 @@ public class ChoiceQTable<S, A> implements Serializable {
         @Getter
         S state;
         @Getter
-        ChoiceQTable.ChoiceQStateKey<A> actions;
+        final ChoiceQTable.ChoiceQStateKey<A> actions;
 
         public ChoiceQTableKey() {
             this(null, new ChoiceQTable.ChoiceQStateKey());
@@ -78,7 +78,7 @@ public class ChoiceQTable<S, A> implements Serializable {
     }
 
     public static class ChoiceQStateKey<A> implements Serializable {
-        Map<Class, List<A>> table = new HashMap<>();
+        final Map<Class, List<A>> table = new HashMap<>();
 
         public void add(ValueSummary action) {
             Class cls = ChoiceLearningStats.getActionClass(action);

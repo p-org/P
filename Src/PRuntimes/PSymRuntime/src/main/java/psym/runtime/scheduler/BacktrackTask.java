@@ -102,9 +102,9 @@ public class BacktrackTask implements Serializable {
         assert (choices.isEmpty());
         for (Schedule.Choice choice : inputChoices) {
             choices.add(choice.getCopy());
-            if (!choice.isBacktrackEmpty()) {
+            if (choice.isBacktrackNonEmpty()) {
                 numBacktracks++;
-                if (!choice.isDataBacktrackEmpty()) {
+                if (choice.isDataBacktrackNonEmpty()) {
                     numDataBacktracks++;
                 }
             }

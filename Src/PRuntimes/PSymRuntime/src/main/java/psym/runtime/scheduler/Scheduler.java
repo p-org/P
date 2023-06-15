@@ -58,7 +58,7 @@ public class Scheduler implements SymbolicSearch {
     /**
      * Search statistics
      */
-    protected SearchStats searchStats = new SearchStats();
+    protected final SearchStats searchStats = new SearchStats();
     /**
      * How many instances of each Machine there are
      */

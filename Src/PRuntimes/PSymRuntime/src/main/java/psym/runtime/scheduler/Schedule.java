@@ -95,9 +95,9 @@ public class Schedule implements Serializable {
         numBacktracks = 0;
         numDataBacktracks = 0;
         for (Choice backtrack : choices) {
-            if (!backtrack.isBacktrackEmpty()) {
+            if (backtrack.isBacktrackNonEmpty()) {
                 numBacktracks++;
-                if (!backtrack.isDataBacktrackEmpty()) {
+                if (backtrack.isDataBacktrackNonEmpty()) {
                     numDataBacktracks++;
                 }
             }
@@ -463,16 +463,16 @@ public class Schedule implements Serializable {
             return getRepeatUniverse().isFalse();
         }
 
-        public boolean isBacktrackEmpty() {
-            return isScheduleBacktrackEmpty() && isDataBacktrackEmpty();
+        public boolean isBacktrackNonEmpty() {
+            return isScheduleBacktrackNonEmpty() || isDataBacktrackNonEmpty();
         }
 
-        public boolean isScheduleBacktrackEmpty() {
-            return getBacktrackSender().isEmpty();
+        public boolean isScheduleBacktrackNonEmpty() {
+            return !getBacktrackSender().isEmpty();
         }
 
-        public boolean isDataBacktrackEmpty() {
-            return getBacktrackBool().isEmpty() && getBacktrackInt().isEmpty() && getBacktrackElement().isEmpty();
+        public boolean isDataBacktrackNonEmpty() {
+            return !getBacktrackBool().isEmpty() || !getBacktrackInt().isEmpty() || !getBacktrackElement().isEmpty();
         }
 
         public Choice restrict(Guard pc) {

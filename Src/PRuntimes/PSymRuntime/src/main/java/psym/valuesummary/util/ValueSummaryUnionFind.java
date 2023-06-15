@@ -7,7 +7,7 @@ import java.util.*;
 
 public class ValueSummaryUnionFind extends UnionFind<PrimitiveVS> {
 
-    Map<PrimitiveVS, Guard> universe = new HashMap<>();
+    final Map<PrimitiveVS, Guard> universe = new HashMap<>();
 
     public ValueSummaryUnionFind(Collection<PrimitiveVS> c) {
         super();

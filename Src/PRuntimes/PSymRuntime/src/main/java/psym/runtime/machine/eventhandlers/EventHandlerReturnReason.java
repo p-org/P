@@ -32,8 +32,8 @@ public class EventHandlerReturnReason implements Serializable {
      *
      * @return true if it was a normal return, false otherwise
      */
-    public boolean isNormalReturn() {
-        return gotoCond.or(raiseCond).isFalse();
+    public boolean isAbnormalReturn() {
+        return !gotoCond.or(raiseCond).isFalse();
     }
 
 

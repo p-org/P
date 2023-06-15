@@ -12,7 +12,7 @@ import java.util.function.Function;
 public class ForeignFunctionInvoker {
 
     /* Maximum number of times to invoke the foreign function on different values */
-    public static int times = 100;
+    public static final int times = 100;
 
     public static List<GuardedValue<List<Object>>> getConcreteValues(Guard pc, ValueSummary... args) {
         return Concretizer.getConcreteValues(pc, x -> x >= times, Concretizer::concretizePType, args);

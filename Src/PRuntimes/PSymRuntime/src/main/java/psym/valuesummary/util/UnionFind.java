@@ -4,8 +4,8 @@ import java.io.Serializable;
 import java.util.*;
 
 public class UnionFind<T> implements Serializable {
-    Map<T, T> parents = new HashMap<>();
-    Map<T, Integer> rank = new HashMap<>();
+    final Map<T, T> parents = new HashMap<>();
+    final Map<T, Integer> rank = new HashMap<>();
     Collection<Set<T>> lastDisjointSet = null;
 
     public UnionFind() {

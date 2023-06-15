@@ -7,8 +7,8 @@ import java.util.HashMap;
 public class UnionVStype implements Serializable {
     private static final HashMap<String, UnionVStype> allTypes = new HashMap<>();
 
-    Class<? extends ValueSummary> typeClass;
-    String[] names;
+    final Class<? extends ValueSummary> typeClass;
+    final String[] names;
 
     private UnionVStype(Class<? extends ValueSummary> tc, String[] n) {
         typeClass = tc;

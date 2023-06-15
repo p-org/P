@@ -178,7 +178,7 @@ public class CoverageStats implements Serializable {
         return coverageGoal;
     }
 
-    public String getMaxCoverageGoal() {
+    public static String getMaxCoverageGoal() {
         return "∞ 9s";
     }
 
@@ -202,7 +202,7 @@ public class CoverageStats implements Serializable {
     public void logPerDepthCoverage() {
         for (int d = 0; d < perDepthStats.size(); d++) {
             CoverageDepthStats val = perDepthStats.get(d);
-            if (!val.isEmpty())
+            if (val.isNotEmpty())
                 CoverageWriter.log(d, val);
         }
     }
@@ -231,7 +231,7 @@ public class CoverageStats implements Serializable {
         CoverageWriter.info("\t-------------------------------------");
         for (int d = 0; d < perDepthStats.size(); d++) {
             CoverageDepthStats val = perDepthStats.get(d);
-            if (!val.isEmpty()) {
+            if (val.isNotEmpty()) {
                 s = "";
                 s += String.format("\t%5s ", d);
                 s += String.format(" %5s   %5s  ",
@@ -309,8 +309,8 @@ public class CoverageStats implements Serializable {
             numDataRemaining = 0;
         }
 
-        boolean isEmpty() {
-            return (numScheduleExplored + numDataExplored + numScheduleRemaining + numDataRemaining) == 0;
+        boolean isNotEmpty() {
+            return (numScheduleExplored + numDataExplored + numScheduleRemaining + numDataRemaining) != 0;
         }
 
     }

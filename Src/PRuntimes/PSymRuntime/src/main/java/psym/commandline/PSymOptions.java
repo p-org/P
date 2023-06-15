@@ -660,7 +660,7 @@ public class PSymOptions {
                         JSONArray symMachineTypes = value.getJSONArray("default");
                         for (int i = 0; i < symMachineTypes.length(); i++) {
                             String symTypeName = symMachineTypes.getString(i);
-                            GlobalData.getInstance().getSymmetryTracker().addSymmetryType(symTypeName);
+                            GlobalData.getSymmetryTracker().addSymmetryType(symTypeName);
                         }
                         break;
                     default:

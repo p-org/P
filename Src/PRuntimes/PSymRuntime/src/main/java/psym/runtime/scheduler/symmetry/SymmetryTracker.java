@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.*;
 
 public class SymmetryTracker implements Serializable {
-    Map<String, SetVS<PrimitiveVS<Machine>>> typeToSymmetrySet;
+    final Map<String, SetVS<PrimitiveVS<Machine>>> typeToSymmetrySet;
 
     public SymmetryTracker() {
         typeToSymmetrySet = new HashMap<>();

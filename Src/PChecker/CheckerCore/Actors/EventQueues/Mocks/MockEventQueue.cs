@@ -68,9 +68,9 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <summary>
         /// Global time.
         /// </summary>
-        public static ulong Time = 0;
+        public static double Time = 0;
 
-        public static readonly ConcurrentBag<ulong> ScheduledTimestamps = new();
+        public static readonly ConcurrentBag<double> ScheduledTimestamps = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MockEventQueue"/> class.
@@ -88,10 +88,10 @@ namespace PChecker.Actors.EventQueues.Mocks
         public EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
         {
             e.Timestamp = Time;
-            if (TestingEngine.Strategy.GetSampleFromDistribution("Uniform(1, 20)", out var delay))
+            if (TestingEngine.Strategy.GetSampleFromDistribution("ContinuousUniform(1, 20)", out var delay))
             {
-                e.Timestamp += (ulong)delay;
-                ScheduledTimestamps.Add((ulong)e.Timestamp);
+                e.Timestamp += delay;
+                ScheduledTimestamps.Add(e.Timestamp);
             }
             if (IsClosed)
             {

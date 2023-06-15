@@ -44,7 +44,7 @@ namespace PChecker.SystematicTesting.Strategies
         /// <param name="dist">The string value defining the distribution to sample from.</param>
         /// <param name="sample">The sampled value.</param>
         /// <returns>True if the sampling is successful, else false.</returns>
-        bool GetSampleFromDistribution(string dist, out int sample)
+        bool GetSampleFromDistribution(string dist, out double sample)
         {
             sample = 0;
             return false;

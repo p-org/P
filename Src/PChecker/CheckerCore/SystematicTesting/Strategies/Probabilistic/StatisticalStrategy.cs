@@ -77,34 +77,26 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         }
         
         /// <inheritdoc/>
-        public bool GetSampleFromDistribution(string dist, out int sample)
+        public bool GetSampleFromDistribution(string dist, out double sample)
         {
-            // dist should be of the following form:
-            //      - Uniform(lowerBound, upperBound)
-            //      - Normal(lowerBound, upperBound)
-            sample = RandomValueGenerator.Next(1, 10);
-            if (dist.Contains("Uniform"))
+            if (dist.Contains("DiscreteUniform"))
             {
-                var bounds = dist.Replace(" ", "").Replace("(", "").Replace(")", "").Substring(7).Split(",");
+                var bounds = dist.Replace(" ", "").Replace("(", "").Replace(")", "").Substring(15).Split(",");
                 if (int.TryParse(bounds[0], out var lowerBound) && int.TryParse(bounds[1], out var upperBound))
                 {
                     sample = RandomValueGenerator.Next(lowerBound, upperBound);
                     return true;
                 }
-            } else if (dist.Contains("Normal"))
+            } else if (dist.Contains("ContinuousUniform"))
             {
-                var bounds = dist.Replace(" ", "").Replace("(", "").Replace(")", "").Substring(6).Split(",");
-                if (int.TryParse(bounds[0], out var mean) && int.TryParse(bounds[1], out var variance))
+                var bounds = dist.Replace(" ", "").Replace("(", "").Replace(")", "").Substring(17).Split(",");
+                if (int.TryParse(bounds[0], out var lowerBound) && int.TryParse(bounds[1], out var upperBound))
                 {
-                    double u1 = 1.0 - RandomValueGenerator.NextDouble();
-                    double u2 = 1.0 - RandomValueGenerator.NextDouble();
-                    double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
-                    double randNormal = mean + Math.Sqrt(variance) * randStdNormal; //random normal(mean,stdDev^2)
-                    sample = (int)randNormal;
+                    sample = RandomValueGenerator.NextDouble() * (upperBound - lowerBound) + lowerBound;
                     return true;
-                }   
+                }
             }
-
+            sample = 0;
             return false;
         }
 

@@ -11,6 +11,6 @@ namespace PChecker.Actors.Events
     [DataContract]
     public abstract class Event
     {
-        public ulong? Timestamp = null;
+        public double Timestamp = 0;
     }
 }

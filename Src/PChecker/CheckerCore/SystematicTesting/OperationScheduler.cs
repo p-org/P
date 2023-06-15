@@ -165,10 +165,14 @@ namespace PChecker.SystematicTesting
             
             if (!ops.Any(op => op.Status is AsyncOperationStatus.Enabled))
             {
-                MockEventQueue.Time++;
-                foreach (var op in ops.Where(op => op.Status is AsyncOperationStatus.Delayed))
+                var futureScheduledTimestamps = MockEventQueue.ScheduledTimestamps.Where(t => t > MockEventQueue.Time).ToList();
+                if (futureScheduledTimestamps.Any())
                 {
-                    op.OnEnabled();
+                    MockEventQueue.Time = futureScheduledTimestamps.Min();
+                    foreach (var op in ops.Where(op => op.Status is AsyncOperationStatus.Delayed))
+                    {
+                        op.OnEnabled();
+                    }
                 }
             }
             Console.WriteLine("MockEventQueue.Time");

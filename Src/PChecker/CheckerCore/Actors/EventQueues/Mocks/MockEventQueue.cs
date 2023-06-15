@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -64,7 +65,12 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// </summary>
         public bool IsEventRaised => RaisedEvent != default;
 
+        /// <summary>
+        /// Global time.
+        /// </summary>
         public static ulong Time = 0;
+
+        public static readonly ConcurrentBag<ulong> ScheduledTimestamps = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MockEventQueue"/> class.
@@ -85,6 +91,7 @@ namespace PChecker.Actors.EventQueues.Mocks
             if (TestingEngine.Strategy.GetSampleFromDistribution("Uniform(1, 20)", out var delay))
             {
                 e.Timestamp += (ulong)delay;
+                ScheduledTimestamps.Add((ulong)e.Timestamp);
             }
             if (IsClosed)
             {

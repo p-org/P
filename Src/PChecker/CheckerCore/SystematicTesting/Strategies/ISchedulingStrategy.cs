@@ -39,6 +39,18 @@ namespace PChecker.SystematicTesting.Strategies
         bool GetNextIntegerChoice(AsyncOperation current, int maxValue, out int next);
 
         /// <summary>
+        /// Returns a sample from the given distribution.
+        /// </summary>
+        /// <param name="dist">The string value defining the distribution to sample from.</param>
+        /// <param name="sample">The sampled value.</param>
+        /// <returns>True if the sampling is successful, else false.</returns>
+        bool GetSampleFromDistribution(string dist, out int sample)
+        {
+            sample = 0;
+            return false;
+        }
+
+        /// <summary>
         /// Prepares for the next scheduling iteration. This is invoked
         /// at the end of a scheduling iteration. It must return false
         /// if the scheduling strategy should stop exploring.

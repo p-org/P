@@ -143,9 +143,6 @@ namespace PChecker.SystematicTesting
             
             // Update the operation type.
             current.Type = type;
-            // Since this is a new operation, we need to update delay and timestamp.
-            current.Delay = null;
-            current.Timestamp = null;
 
             if (CheckerConfiguration.IsProgramStateHashingEnabled)
             {

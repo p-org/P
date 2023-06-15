@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using PChecker.Random;
@@ -25,8 +26,6 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// </summary>
         protected int ScheduledSteps;
 
-        private ulong? Time;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="StatisticalStrategy"/> class.
         /// </summary>
@@ -35,61 +34,24 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             RandomValueGenerator = random;
             MaxScheduledSteps = maxSteps;
             ScheduledSteps = 0;
-            Time = 0;
         }
         
         /// <inheritdoc/>
         public virtual bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
         {
-            // Associate each event with a delay value. For now, set static values. Also for now, only send operations
-            // should have this delay value set. Keep a global time here. Exhaust all non-send operations. Then get the
-            // send with min delay, increment time by its delay value, and schedule it.
-            // Questions for next steps:
-            //      - How do we find the actual delays given in the program? For this, using a send operation, we should
-            //        be able to access its payload value or a specific field defined for delay.
-            //      - Also, although we delay the send operations, we should actually be delaying the enqueuing of the
-            //        message. But actually delaying a message requires us to modify parts of the code outside of the
-            //        strategy, which we do not want to do. This is tricky. Think about it!
-            foreach (var op in ops)
+            var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
+            if (enabledOperations.Count == 0)
             {
-                op.Delay ??= (ulong)(op.Type == AsyncOperationType.Send ? RandomValueGenerator.Next(1, 10) : 0);
-                op.Timestamp ??= Time + op.Delay;
-                // We need the following timestamp update because some operations are enabled after they are completed
-                // so their timestamps should be updated.
-                if (op.Timestamp < Time)
-                {
-                    op.Timestamp = Time;
-                }
+                next = null;
+                return false;
             }
-            var enabledCurrentOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled && op.Timestamp == Time).ToList();
-            var enabledFutureOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled && op.Timestamp > Time).ToList();
-            if (enabledCurrentOperations.Count == 0)
-            {
-                if (enabledFutureOperations.Count == 0)
-                {
-                    next = null;
-                    return false;
-                }
 
-                Time = enabledFutureOperations.Min(op => op.Timestamp);
-                var temp = enabledFutureOperations.Where(op => op.Timestamp == Time).ToList();
+            var idx = RandomValueGenerator.Next(enabledOperations.Count);
+            next = enabledOperations[idx];
 
-                var idx = RandomValueGenerator.Next(temp.Count);
-                next = temp[idx];
+            ScheduledSteps++;
 
-                ScheduledSteps++;
-
-                return true;
-            }
-            else
-            {
-                var idx = RandomValueGenerator.Next(enabledCurrentOperations.Count);
-                next = enabledCurrentOperations[idx];
-
-                ScheduledSteps++;
-
-                return true;
-            }
+            return true;
         }
 
         /// <inheritdoc/>
@@ -112,6 +74,38 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             next = RandomValueGenerator.Next(maxValue);
             ScheduledSteps++;
             return true;
+        }
+        
+        /// <inheritdoc/>
+        public bool GetSampleFromDistribution(string dist, out int sample)
+        {
+            // dist should be of the following form:
+            //      - Uniform(lowerBound, upperBound)
+            //      - Normal(lowerBound, upperBound)
+            sample = RandomValueGenerator.Next(1, 10);
+            if (dist.Contains("Uniform"))
+            {
+                var bounds = dist.Replace(" ", "").Replace("(", "").Replace(")", "").Substring(7).Split(",");
+                if (int.TryParse(bounds[0], out var lowerBound) && int.TryParse(bounds[1], out var upperBound))
+                {
+                    sample = RandomValueGenerator.Next(lowerBound, upperBound);
+                    return true;
+                }
+            } else if (dist.Contains("Normal"))
+            {
+                var bounds = dist.Replace(" ", "").Replace("(", "").Replace(")", "").Substring(6).Split(",");
+                if (int.TryParse(bounds[0], out var mean) && int.TryParse(bounds[1], out var variance))
+                {
+                    double u1 = 1.0 - RandomValueGenerator.NextDouble();
+                    double u2 = 1.0 - RandomValueGenerator.NextDouble();
+                    double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
+                    double randNormal = mean + Math.Sqrt(variance) * randStdNormal; //random normal(mean,stdDev^2)
+                    sample = (int)randNormal;
+                    return true;
+                }   
+            }
+
+            return false;
         }
 
         /// <inheritdoc/>

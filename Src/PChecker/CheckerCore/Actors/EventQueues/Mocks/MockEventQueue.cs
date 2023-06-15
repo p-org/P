@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using PChecker.Actors.Events;
 using PChecker.Actors.Managers;
+using PChecker.SystematicTesting;
 
 namespace PChecker.Actors.EventQueues.Mocks
 {
@@ -80,7 +81,11 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <inheritdoc/>
         public EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
         {
-            e.Timestamp ??= Time + e.Delay;
+            e.Timestamp = Time;
+            if (TestingEngine.Strategy.GetSampleFromDistribution("Uniform(1, 20)", out var delay))
+            {
+                e.Timestamp += (ulong)delay;
+            }
             if (IsClosed)
             {
                 return EnqueueStatus.Dropped;

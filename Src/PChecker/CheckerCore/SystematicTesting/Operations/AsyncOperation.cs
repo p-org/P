@@ -36,16 +36,6 @@ namespace PChecker.SystematicTesting.Operations
         public int HashedProgramState { get; internal set; }
 
         /// <summary>
-        /// A value that represents the delay value of the operation.
-        /// </summary>
-        public ulong? Delay { get; internal set; }
-
-        /// <summary>
-        /// A value that represents the timestamp of the operation for its execution.
-        /// </summary>
-        public ulong? Timestamp { get; internal set; }
-
-        /// <summary>
         /// Is the source of the operation active.
         /// </summary>
         internal bool IsActive; // TODO: figure out if this can be replaced by status.
@@ -70,8 +60,6 @@ namespace PChecker.SystematicTesting.Operations
             IsHandlerRunning = false;
             IsAwaiterControlled = false;
             Type = AsyncOperationType.Start;
-            Delay = null;
-            Timestamp = null;
         }
 
         /// <summary>

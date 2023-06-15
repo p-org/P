@@ -332,7 +332,7 @@ public class Schedule implements Serializable {
         return choices.get(size - 1).getRepeatUniverse();
     }
 
-    public class ChoiceState implements Serializable {
+    public static class ChoiceState implements Serializable {
         @Getter
         private Map<Machine, List<ValueSummary>> machineStates;
         @Getter

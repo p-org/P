@@ -21,7 +21,7 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
 
     public void send(Guard pc, PrimitiveVS<Machine> dest, PrimitiveVS<Event> eventName, UnionVS payload) {
         if (eventName.getGuardedValues().size() > 1) {
-            throw new RuntimeException(String.format("Handling multiple events together is not supported, in ", eventName));
+            throw new RuntimeException(String.format("Handling multiple events together is not supported, in %s", eventName));
         }
         TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
         Message event = new Message(eventName, dest, payload).restrict(pc);

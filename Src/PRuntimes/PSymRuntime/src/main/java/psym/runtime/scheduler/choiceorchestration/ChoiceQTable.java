@@ -69,12 +69,11 @@ public class ChoiceQTable<S, A> implements Serializable {
 
         @Override
         public String toString() {
-            String out = "{ " +
+            return "{ " +
                     state.toString() +
                     " -> " +
                     actions.toString() +
                     " }";
-            return out;
         }
     }
 
@@ -116,7 +115,7 @@ public class ChoiceQTable<S, A> implements Serializable {
         }
     }
 
-    public class ChoiceQStateEntry<A> implements Serializable {
+    public static class ChoiceQStateEntry<A> implements Serializable {
         private final Map<Class, ChoiceQTable.ChoiceQClassEntry> table = new HashMap<>();
 
         public BigDecimal get(Class cls, A action) {
@@ -152,7 +151,7 @@ public class ChoiceQTable<S, A> implements Serializable {
         }
     }
 
-    public class ChoiceQClassEntry<A> implements Serializable {
+    public static class ChoiceQClassEntry<A> implements Serializable {
         private final Map<A, BigDecimal> table = new HashMap<>();
 
         public BigDecimal get(A action) {
@@ -179,7 +178,7 @@ public class ChoiceQTable<S, A> implements Serializable {
             if (!table.isEmpty()) {
                 BigDecimal maxQ = getMaxQ();
                 for (A action : table.keySet()) {
-                    if (get(action) == maxQ) {
+                    if (get(action).equals(maxQ)) {
                         return action;
                     }
                 }

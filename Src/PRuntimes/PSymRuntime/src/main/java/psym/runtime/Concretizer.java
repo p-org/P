@@ -267,7 +267,7 @@ public class Concretizer {
      * @return list of concrete values for arguments
      */
     public static List<GuardedValue<List<Object>>> getConcreteValues(Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary... args) {
-        Guard iterPc = Guard.constFalse();
+        Guard iterPc;
         Guard alreadySeen = Guard.constFalse();
         boolean skip = false;
         boolean done = false;
@@ -280,7 +280,7 @@ public class Concretizer {
         while (!stop.test(i)) {
             iterPc = pc.and(alreadySeen.not());
             List<Object> concreteArgs = new ArrayList<>();
-            for (int j = 0; j < args.length && !done; j++) {
+            for (int j = 0; j < args.length; j++) {
                 GuardedValue<?> guardedValue = concretizer.apply(args[j].restrict(iterPc));
                 if (guardedValue == null) {
                     if (j == 0) {
@@ -324,7 +324,7 @@ public class Concretizer {
      * @return number of concrete values for arguments
      */
     public static int countConcreteValues(Guard pc, Predicate<Integer> stop, Function<ValueSummary, GuardedValue<?>> concretizer, ValueSummary... args) {
-        Guard iterPc = Guard.constFalse();
+        Guard iterPc;
         Guard alreadySeen = Guard.constFalse();
         boolean skip = false;
         boolean done = false;
@@ -344,10 +344,6 @@ public class Concretizer {
             if (done) {
                 break;
             }
-            if (skip) {
-                i--;
-                continue;
-            }
             result++;
             i++;
         }
@@ -362,7 +358,7 @@ public class Concretizer {
      * @return number of concrete values
      */
     public static int getNumConcreteValues(Guard pc, ValueSummary... args) {
-        int i = 0;
+        int i;
         try {
             if (print) {
                 i = getConcreteValues(pc, x -> false, Concretizer::concretize, args).size();

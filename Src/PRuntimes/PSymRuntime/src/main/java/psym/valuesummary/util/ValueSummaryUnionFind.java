@@ -64,6 +64,6 @@ public class ValueSummaryUnionFind extends UnionFind<PrimitiveVS> {
         boolean res = super.union(e1, e2);
         if (!res) return false;
         universe.put(find(e1), universe1.or(universe2));
-        return res;
+        return true;
     }
 }

@@ -580,7 +580,7 @@ public class Scheduler implements SymbolicSearch {
             }
         }
 
-        executionFinished = guardedMachines.stream().map(x -> x.getGuard().and(schedule.getFilter())).filter(x -> !(x.isFalse())).collect(Collectors.toList()).isEmpty();
+        executionFinished = guardedMachines.stream().map(x -> x.getGuard().and(schedule.getFilter())).allMatch(x -> x.isFalse());
 
         if (configuration.getStateCachingMode() != StateCachingMode.None) {
             if (distinctStateGuard != null) {
@@ -630,7 +630,6 @@ public class Scheduler implements SymbolicSearch {
     private void storeSrcState() {
         if (!srcState.isEmpty())
             return;
-        srcState.clear();
         for (Machine machine : currentMachines) {
             List<ValueSummary> machineLocalState = machine.getLocalState();
             srcState.put(machine, machineLocalState);
@@ -957,15 +956,8 @@ public class Scheduler implements SymbolicSearch {
         }
     }
 
-    public PrimitiveVS<Machine> allocateMachine(Guard pc, Class<? extends Machine> machineType,
-                                                Function<Integer, ? extends Machine> constructor) {
-        if (!machineCounters.containsKey(machineType)) {
-            machineCounters.put(machineType, new PrimitiveVS<>(0));
-        }
-        PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).restrict(pc);
-
-        Machine newMachine;
-        newMachine = constructor.apply(IntegerVS.maxValue(guardedCount));
+    public Machine setupNewMachine(Guard pc, PrimitiveVS<Integer> guardedCount, Function<Integer, ? extends Machine> constructor) {
+        Machine newMachine = constructor.apply(IntegerVS.maxValue(guardedCount));
 
         if (!machines.contains(newMachine)) {
             machines.add(newMachine);
@@ -976,6 +968,16 @@ public class Scheduler implements SymbolicSearch {
         TraceLogger.onCreateMachine(pc, newMachine);
         newMachine.setScheduler(this);
         schedule.makeMachine(newMachine, pc);
+        return newMachine;
+    }
+
+    public PrimitiveVS<Machine> allocateMachine(Guard pc, Class<? extends Machine> machineType,
+                                                Function<Integer, ? extends Machine> constructor) {
+        if (!machineCounters.containsKey(machineType)) {
+            machineCounters.put(machineType, new PrimitiveVS<>(0));
+        }
+        PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).restrict(pc);
+        Machine newMachine = setupNewMachine(pc, guardedCount, constructor);
 
         guardedCount = IntegerVS.add(guardedCount, 1);
         PrimitiveVS<Integer> mergedCount = machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);

@@ -39,7 +39,7 @@ public class UnionFind<T> implements Serializable {
             parents.put(root2, root1);
         } else {
             parents.put(root1, root2);
-            if (rank1 == rank2) {
+            if (rank1.equals(rank2)) {
                 rank.put(root2, rank2 + 1);
             }
         }

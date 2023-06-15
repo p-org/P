@@ -142,11 +142,6 @@ public class IterativeBoundedScheduler extends Scheduler {
         StatWriter.log("#-executions", String.format("%d", (iter - start_iter)));
     }
 
-    @Override
-    public void reset_stats() {
-        super.reset_stats();
-    }
-
     /**
      * Estimates and prints a coverage percentage based on number of choices explored versus remaining at each depth
      */
@@ -254,15 +249,7 @@ public class IterativeBoundedScheduler extends Scheduler {
      */
     public void writeBacktrackToFile(String prefix, int choiceDepth) throws Exception {
         // create a copy of original choices
-        List<Schedule.Choice> originalChoices = new ArrayList<>();
-        for (int i = 0; i < schedule.size(); i++) {
-            originalChoices.add(schedule.getChoice(i).getCopy());
-        }
-
-        // clear backtracks at all predecessor depths
-        for (int i = 0; i < choiceDepth; i++) {
-            schedule.getChoice(i).clearBacktrack();
-        }
+        List<Schedule.Choice> originalChoices = clearAndReturnOriginalTask();
         // clear the complete choice information (including repeats and backtracks) at all successor depths
         for (int i = choiceDepth + 1; i < schedule.size(); i++) {
             schedule.clearChoice(i);
@@ -332,7 +319,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         setBacktrackTaskAtDepth(parentTask, choiceDepth, false);
     }
 
-    private void setBacktrackTaskAtDepth(BacktrackTask parentTask, int choiceDepth, boolean isExact) {
+    private List<Schedule.Choice> clearAndReturnOriginalTask() {
         // create a copy of original choices
         List<Schedule.Choice> originalChoices = new ArrayList<>();
         for (int i = 0; i < schedule.size(); i++) {
@@ -343,6 +330,12 @@ public class IterativeBoundedScheduler extends Scheduler {
         for (int i = 0; i < choiceDepth; i++) {
             schedule.getChoice(i).clearBacktrack();
         }
+        return originalChoices;
+    }
+
+    private void setBacktrackTaskAtDepth(BacktrackTask parentTask, int choiceDepth, boolean isExact) {
+        // create a copy of original choices
+        List<Schedule.Choice> originalChoices = clearAndReturnOriginalTask();
         if (isExact) {
             // clear the complete choice information (including repeats and backtracks) at all successor depths
             for (int i = choiceDepth + 1; i < schedule.size(); i++) {
@@ -569,11 +562,6 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     @Override
-    public void reinitialize() {
-        super.reinitialize();
-    }
-
-    @Override
     public void startWith(Machine machine) {
         super.startWith(machine);
     }
@@ -789,18 +777,8 @@ public class IterativeBoundedScheduler extends Scheduler {
                 GlobalData.getSymmetryTracker().createMachine(m, g);
             }
         } else {
-            Machine newMachine;
-            newMachine = constructor.apply(IntegerVS.maxValue(guardedCount));
+            Machine newMachine = setupNewMachine(pc, guardedCount, constructor);
 
-            if (!machines.contains(newMachine)) {
-                machines.add(newMachine);
-            }
-            currentMachines.add(newMachine);
-            assert (machines.size() >= currentMachines.size());
-
-            TraceLogger.onCreateMachine(pc, newMachine);
-            newMachine.setScheduler(this);
-            schedule.makeMachine(newMachine, pc);
             allocated = new PrimitiveVS<>(newMachine).restrict(pc);
             GlobalData.getSymmetryTracker().createMachine(newMachine, pc);
         }

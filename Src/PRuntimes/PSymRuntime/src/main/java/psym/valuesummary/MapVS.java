@@ -349,13 +349,12 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
 
     @Override
     public String toString() {
-        String out = "Map[" +
+        return "Map[" +
                 "  keys: " +
                 keys +
                 ",  values: " +
                 new TreeMap<>(entries) +
                 "]";
-        return out;
     }
 
     public String toStringDetailed() {

@@ -312,7 +312,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
             return false;
         }
         if (this.name == null)
-            return (this.name == ((Machine) obj).name) && this.instanceId == (((Machine) obj).instanceId);
+            return (((Machine) obj).name == null) && this.instanceId == (((Machine) obj).instanceId);
         return this.name.equals(((Machine) obj).name) && this.instanceId == (((Machine) obj).instanceId);
     }
 

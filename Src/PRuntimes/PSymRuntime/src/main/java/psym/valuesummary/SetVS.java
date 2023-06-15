@@ -187,7 +187,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
         List<GuardedValue<Integer>> guardedSizeList = elements.size().getGuardedValues();
         for (int j = 0; j < guardedSizeList.size(); j++) {
             GuardedValue<Integer> guardedSize = guardedSizeList.get(j);
-            out.append("  #" + guardedSize.getValue() + ": [");
+            out.append("  #").append(guardedSize.getValue()).append(": [");
             for (int i = 0; i < guardedSize.getValue(); i++) {
                 out.append(this.elements.getItems().get(i).restrict(guardedSize.getGuard()));
                 if (i < guardedSize.getValue() - 1) {
@@ -204,9 +204,8 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     }
 
     public String toStringDetailed() {
-        String out = "Set[" +
+        return "Set[" +
                 elements.toStringDetailed() +
                 "]";
-        return out;
     }
 }

@@ -116,7 +116,7 @@ public class SearchStats implements Serializable {
      * Represents the search statistics for one iteration
      */
     @Getter
-    public class IterationStats implements Serializable {
+    public static class IterationStats implements Serializable {
 
         // iteration number
         private final int iteration;

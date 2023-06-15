@@ -137,7 +137,7 @@ public class EntryPoint {
             future.cancel(true);
             executor.shutdownNow();
             TraceLogger.setVerbosity(0);
-            postprocess(status != "cex");
+            postprocess(!status.equals("cex"));
         }
     }
 

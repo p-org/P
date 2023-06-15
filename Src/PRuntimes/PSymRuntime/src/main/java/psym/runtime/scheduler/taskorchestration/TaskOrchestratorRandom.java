@@ -6,8 +6,8 @@ import psym.utils.RandomNumberGenerator;
 import java.util.*;
 
 public class TaskOrchestratorRandom implements TaskOrchestrator {
-    private List<BacktrackTask> elementList = null;
-    private Set<BacktrackTask> elementSet = null;
+    private final List<BacktrackTask> elementList;
+    private final Set<BacktrackTask> elementSet;
 
     public TaskOrchestratorRandom() {
         elementList = new ArrayList<>();
@@ -29,7 +29,7 @@ public class TaskOrchestratorRandom implements TaskOrchestrator {
         return elementList.get(RandomNumberGenerator.getInstance().getRandomInt(elementList.size()));
     }
 
-    public void remove(BacktrackTask task) throws InterruptedException {
+    public void remove(BacktrackTask task) {
         elementList.remove(task);
         elementSet.remove(task);
     }

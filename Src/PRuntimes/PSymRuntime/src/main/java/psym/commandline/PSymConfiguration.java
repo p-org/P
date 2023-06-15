@@ -129,7 +129,7 @@ public class PSymConfiguration implements Serializable {
     int collectStats = 1;
 
     public boolean isSymbolic() {
-        return (strategy == "symex");
+        return (strategy.equals("symex"));
     }
 
     public boolean isIterative() {

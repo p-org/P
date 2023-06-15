@@ -14,6 +14,7 @@ import psym.utils.GlobalData;
 import psym.utils.StateCachingMode;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.Iterator;
 
 import static java.lang.System.exit;
@@ -636,9 +637,8 @@ public class PSymOptions {
         }
     }
 
-    private static void ParseConfigFile(PSymConfiguration config, File configFile) throws FileNotFoundException {
-        InputStream configStream = new FileInputStream(configFile);
-        assert (configStream != null);
+    private static void ParseConfigFile(PSymConfiguration config, File configFile) throws IOException {
+        InputStream configStream = Files.newInputStream(configFile.toPath());
         JSONTokener jsonTokener = new JSONTokener(configStream);
         JSONObject jsonObject = new JSONObject(jsonTokener);
 

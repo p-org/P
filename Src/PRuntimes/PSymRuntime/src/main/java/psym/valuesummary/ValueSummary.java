@@ -93,7 +93,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
             ListVS elements = toCastVs.getElements();
             return new SetVS<>((ListVS) ValueSummary.castFromAnyCollection(pc, def, elements));
         } else {
-            throw new ClassCastException(String.format("Casting elements in %s to %s is unsupported", def.getCopy()));
+            throw new ClassCastException(String.format("Casting elements in %s to %s is unsupported", anyVal, def));
         }
     }
 
@@ -106,9 +106,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
     static List<GuardedValue<?>> getGuardedValues(ValueSummary<?> valueSummary) {
         List<GuardedValue<?>> guardedValueList = new ArrayList<>();
         if (valueSummary instanceof PrimitiveVS<?>) {
-            for (GuardedValue<?> entry : ((PrimitiveVS<?>) valueSummary).getGuardedValues()) {
-                guardedValueList.add(entry);
-            }
+            guardedValueList.addAll(((PrimitiveVS<?>) valueSummary).getGuardedValues());
             return guardedValueList;
         } else if (valueSummary instanceof TupleVS) {
             TupleVS tupleVS = (TupleVS) valueSummary;

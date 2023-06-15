@@ -44,7 +44,7 @@ public class TestCaseExecutor {
      * @return 0 = successful, 1 = compile error, 2 = dynamic error
      */
     static int runTestCase(List<String> testCasePaths, String testCasePathPrefix, String runArgs, String mainOutputDirectory, int expected) {
-        int resultCode = 0;
+        int resultCode;
 
         testCounter++;
 
@@ -53,11 +53,10 @@ public class TestCaseExecutor {
                 .toLowerCase().startsWith("windows");
         String compilerDirectory = "../../../Bld/Drops/Release/Binaries/net6.0/p.dll";
 
-        String prefix = testCasePathPrefix;
-        assert testCasePaths.stream().allMatch(p -> p.contains(prefix));
+        assert testCasePaths.stream().allMatch(p -> p.contains(testCasePathPrefix));
         String testName = testCasePathPrefix.substring(testCasePathPrefix.lastIndexOf("/") + 1);
         if (testName.isEmpty()) {
-            List<String> testCaseRelPaths = testCasePaths.stream().map(p -> p.substring(p.indexOf(prefix) + prefix.length()))
+            List<String> testCaseRelPaths = testCasePaths.stream().map(p -> p.substring(p.indexOf(testCasePathPrefix) + testCasePathPrefix.length()))
                     .collect(Collectors.toList());
             testName = Paths.get(testCaseRelPaths.get(0)).getFileName().toString();
         }
@@ -98,7 +97,7 @@ public class TestCaseExecutor {
         if (resultCode != 0) {
             PSymTestLogger.log("      compile-fail");
             if (resultCode != expected) {
-                PSymTestLogger.log(String.format("      unexpected result for %s (expected: %d, got: %d)", prefix, expected, resultCode));
+                PSymTestLogger.log(String.format("      unexpected result for %s (expected: %d, got: %d)", testCasePathPrefix, expected, resultCode));
             }
             return resultCode;
         }
@@ -138,7 +137,7 @@ public class TestCaseExecutor {
             resultCode = -1;
         }
         if (resultCode != expected) {
-            PSymTestLogger.log(String.format("      unexpected result for %s (expected: %d, got: %d)", prefix, expected, resultCode));
+            PSymTestLogger.log(String.format("      unexpected result for %s (expected: %d, got: %d)", testCasePathPrefix, expected, resultCode));
         }
         return resultCode;
     }

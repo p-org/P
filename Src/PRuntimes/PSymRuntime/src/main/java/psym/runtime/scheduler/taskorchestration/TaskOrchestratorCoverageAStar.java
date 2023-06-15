@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class TaskOrchestratorCoverageAStar implements TaskOrchestrator {
-    private PriorityBlockingQueue<BacktrackTask> elements = null;
+    private final PriorityBlockingQueue<BacktrackTask> elements;
 
     public TaskOrchestratorCoverageAStar() {
         elements = new PriorityBlockingQueue<BacktrackTask>(100, new Comparator<BacktrackTask>() {
@@ -26,7 +26,7 @@ public class TaskOrchestratorCoverageAStar implements TaskOrchestrator {
         return elements.peek();
     }
 
-    public void remove(BacktrackTask task) throws InterruptedException {
+    public void remove(BacktrackTask task) {
         elements.remove(task);
     }
 

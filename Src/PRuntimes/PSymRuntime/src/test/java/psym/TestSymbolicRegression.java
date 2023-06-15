@@ -2,7 +2,6 @@ package psym;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.function.Executable;
 import psym.runtime.logger.Log4JConfig;
@@ -132,17 +131,13 @@ public class TestSymbolicRegression {
         Map<String, List<String>> result = new HashMap<>();
         File[] directories = new File(testDirPath).listFiles(File::isDirectory);
         for (File dir : directories) {
-            if (excluded != null) {
-                if (excluded.stream().anyMatch(dir.toString()::equals)) {
-                    continue;
-                }
+            if (excluded.stream().anyMatch(dir.toString()::equals)) {
+                continue;
             }
             try (Stream<Path> walk = Files.walk(Paths.get(dir.toURI()))) {
                 Stream<String> projectFilesStream = walk.map(Path::toString)
                         .filter(f -> f.endsWith(".java") || f.endsWith(".p"));
-                if (excluded != null) {
-                    projectFilesStream = projectFilesStream.filter(f -> excluded.stream().noneMatch(f::contains));
-                }
+                projectFilesStream = projectFilesStream.filter(f -> excluded.stream().noneMatch(f::contains));
                 List<String> projectFiles = projectFilesStream.collect(Collectors.toList());
                 if (!projectFiles.isEmpty())
                     result.put(dir.toString(), projectFiles);
@@ -154,8 +149,8 @@ public class TestSymbolicRegression {
         return result;
     }
 
-    void runDynamicTest(int expected, List<String> testCasePaths, String testCasePath, String runArgs, Collection<DynamicTest> dynamicTests) {
-        Executable exec = () -> Assertions.assertEquals(expected, TestCaseExecutor.runTestCase(testCasePaths, testCasePath, runArgs, outputDirectory, expected));
+    void runDynamicTest(int expected, List<String> testCasePaths, String testCasePath, Collection<DynamicTest> dynamicTests) {
+        Executable exec = () -> Assertions.assertEquals(expected, TestCaseExecutor.runTestCase(testCasePaths, testCasePath, TestSymbolicRegression.runArgs, outputDirectory, expected));
         DynamicTest dynamicTest = DynamicTest.dynamicTest(testCasePath, () -> assertTimeoutPreemptively(Duration.ofMinutes(60), exec));
         dynamicTests.add(dynamicTest);
     }
@@ -183,23 +178,19 @@ public class TestSymbolicRegression {
 
             if (testDir.contains("Correct")) {
                 for (String key : pathKeys) {
-                    runDynamicTest(0, paths.get(key), key, runArgs, dynamicTests);
+                    runDynamicTest(0, paths.get(key), key, dynamicTests);
                 }
             } else if (testDir.contains("DynamicError")) {
                 for (String key : pathKeys) {
-                    runDynamicTest(2, paths.get(key), key, runArgs, dynamicTests);
+                    runDynamicTest(2, paths.get(key), key, dynamicTests);
                 }
             } else if (testDir.contains("StaticError")) {
                 for (String key : pathKeys) {
-                    runDynamicTest(1, paths.get(key), key, runArgs, dynamicTests);
+                    runDynamicTest(1, paths.get(key), key, dynamicTests);
                 }
             }
         }
         return dynamicTests;
-    }
-
-    @Test
-    void Dummy() {
     }
 
     @TestFactory

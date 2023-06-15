@@ -180,10 +180,9 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     }
 
     public String toStringDetailed() {
-        String out = "NamedTuple[ names: " +
+        return "NamedTuple[ names: " +
                 names + ", tuple: " +
                 tuple.toStringDetailed() +
                 "]";
-        return out;
     }
 }

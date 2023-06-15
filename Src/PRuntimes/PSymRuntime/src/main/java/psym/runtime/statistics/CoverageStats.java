@@ -179,7 +179,7 @@ public class CoverageStats implements Serializable {
     }
 
     public String getMaxCoverageGoal() {
-        return "\u221e 9s";
+        return "∞ 9s";
     }
 
     public BigDecimal getEstimatedCoverage(int scale) {
@@ -292,8 +292,7 @@ public class CoverageStats implements Serializable {
             estimatedRemaining = estimatedRemaining.add(perDepthRemaining[d]);
         }
 
-        BigDecimal estimatedCoverage = estimatedExplored.multiply(BigDecimal.valueOf(100.0)).divide(estimatedExplored.add(estimatedRemaining), 2, RoundingMode.FLOOR);
-        return estimatedCoverage;
+        return estimatedExplored.multiply(BigDecimal.valueOf(100.0)).divide(estimatedExplored.add(estimatedRemaining), 2, RoundingMode.FLOOR);
     }
 
     @Getter

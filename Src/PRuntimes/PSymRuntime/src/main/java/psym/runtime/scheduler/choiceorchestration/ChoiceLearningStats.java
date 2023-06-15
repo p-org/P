@@ -1,11 +1,9 @@
 package psym.runtime.scheduler.choiceorchestration;
 
 import lombok.Getter;
-import psym.runtime.Event;
 import psym.runtime.Message;
 import psym.runtime.logger.PSymLogger;
 import psym.runtime.machine.Machine;
-import psym.runtime.machine.State;
 import psym.runtime.scheduler.Scheduler;
 import psym.valuesummary.Guard;
 import psym.valuesummary.PrimitiveVS;
@@ -197,9 +195,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
         List<Object> features = new ArrayList<>();
         for (Machine m : sch.getMachines()) {
             features.add(m);
-            for (State state : m.getCurrentState().getValues()) {
-                features.add(state);
-            }
+            features.addAll(m.getCurrentState().getValues());
         }
         programStateHash = features.toString();
     }
@@ -208,9 +204,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
         List<Object> features = new ArrayList<>();
         for (Machine m : sch.getMachines()) {
             features.add(m);
-            for (State state : m.getCurrentState().getValues()) {
-                features.add(state);
-            }
+            features.addAll(m.getCurrentState().getValues());
         }
         if (lastChoice != null) {
             for (Machine m : lastChoice.getValues()) {
@@ -230,18 +224,12 @@ public class ChoiceLearningStats<S, A> implements Serializable {
 
     private void addMachineFeatures(List<Object> features, Machine m) {
         features.add(m);
-        for (State state : m.getCurrentState().getValues()) {
-            features.add(state);
-        }
+        features.addAll(m.getCurrentState().getValues());
         if (!m.sendBuffer.isEmpty()) {
             Message msg = m.sendBuffer.peek(Guard.constTrue());
-            for (Machine target : msg.getTarget().getValues()) {
-                features.add(target);
-            }
-            for (Event event : msg.getEvent().getValues()) {
-                features.add(event);
-//                    features.add(msg.getPayloadFor(event));
-            }
+            features.addAll(msg.getTarget().getValues());
+            //                    features.add(msg.getPayloadFor(event));
+            features.addAll(msg.getEvent().getValues());
         }
     }
 

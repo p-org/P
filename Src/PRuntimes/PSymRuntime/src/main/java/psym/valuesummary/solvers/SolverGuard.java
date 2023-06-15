@@ -185,8 +185,7 @@ public class SolverGuard implements Serializable {
         if (table.containsKey(formula)) {
             return table.get(formula);
         }
-        SolverGuard newGuard = new SolverGuard(formula, type, name, children);
-        return newGuard;
+        return new SolverGuard(formula, type, name, children);
     }
 
     /**
@@ -430,7 +429,7 @@ public class SolverGuard implements Serializable {
      */
     @Override
     public String toString() {
-        String result = "";
+        StringBuilder result = new StringBuilder();
         switch (this.type) {
             case TRUE:
                 return "true";
@@ -439,26 +438,26 @@ public class SolverGuard implements Serializable {
             case VARIABLE:
                 return name;
             case NOT:
-                result += "(not ";
+                result.append("(not ");
                 break;
             case AND:
-                result += "(and ";
+                result.append("(and ");
                 break;
             case OR:
-                result += "(or ";
+                result.append("(or ");
                 break;
         }
         for (int i = 0; i < children.size(); i++) {
-            result += children.get(i).toString();
+            result.append(children.get(i).toString());
             if (i != children.size() - 1) {
-                result += " ";
+                result.append(" ");
                 if (result.length() > 80) {
                     return result.substring(0, 80) + "...)";
                 }
             }
         }
-        result += ")";
-        return result;
+        result.append(")");
+        return result.toString();
     }
 
     /**

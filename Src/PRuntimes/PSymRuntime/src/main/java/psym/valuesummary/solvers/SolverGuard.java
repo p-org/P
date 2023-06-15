@@ -4,30 +4,32 @@ import com.google.common.collect.ImmutableList;
 import psym.runtime.statistics.SolverStats;
 
 import java.io.Serializable;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 /**
-    Represents the generic solver based implementation of Guard
+ * Represents the generic solver based implementation of Guard
  */
 public class SolverGuard implements Serializable {
-    private transient Object formula;
+    private static final List<SolverGuard> varList = new ArrayList<>();
+    private static final List<SolverGuard> guardList = new ArrayList<>();
+    private static final HashMap<Object, SolverGuard> table = new HashMap<Object, SolverGuard>();
+    private static boolean resume = false;
     private final SolverGuardType type;
     private final String name;
     private final ImmutableList<SolverGuard> children;
     private final int id;
+    private transient Object formula;
     private SolverTrueStatus statusTrue;
     private SolverFalseStatus statusFalse;
-    private static List<SolverGuard> varList = new ArrayList<>();
-    private static List<SolverGuard> guardList = new ArrayList<>();
-    private static HashMap<Object, SolverGuard> table = new HashMap<Object, SolverGuard>();
-    private static boolean resume = false;
 
     /**
      * Creates a new solver guard
-     * @param formula formula represented in solver backend
-     * @param type type of the solver guard
+     *
+     * @param formula  formula represented in solver backend
+     * @param type     type of the solver guard
      * @param children list of children
      */
     public SolverGuard(Object formula, SolverGuardType type, String name, ImmutableList<SolverGuard> children) {
@@ -40,8 +42,6 @@ public class SolverGuard implements Serializable {
         this.id = guardList.size();
         table.put(formula, this);
         guardList.add(this);
-//        System.out.println("Created solver guard: " + this);
-//        System.out.println("\thashcode: " + SolverEngine.getSolver().hashCode(this.formula));
     }
 
     /**
@@ -86,6 +86,7 @@ public class SolverGuard implements Serializable {
 
     /**
      * (Experimental) Simplify a solver guard by calling simplify in the solver backend
+     *
      * @param original the original solver guard
      */
     private static void simplifySolverGuard(SolverGuard original) {
@@ -121,6 +122,7 @@ public class SolverGuard implements Serializable {
 
     /**
      * Port a solver guard to the new solver backend
+     *
      * @param original original solver guard
      */
     private static void recreateSolverGuard(SolverGuard original) {
@@ -131,12 +133,12 @@ public class SolverGuard implements Serializable {
         }
 
         // process children first
-        for (SolverGuard child: original.children) {
+        for (SolverGuard child : original.children) {
             recreateSolverGuard(child);
         }
 
         // recreate new solver object
-        switch(original.type) {
+        switch (original.type) {
             case TRUE:
                 original.formula = SolverEngine.getSolver().constTrue();
                 break;
@@ -153,12 +155,12 @@ public class SolverGuard implements Serializable {
             case AND:
                 assert (original.children.size() == 2);
                 original.formula = SolverEngine.getSolver().and(original.children.get(0).formula,
-                                                                original.children.get(1).formula);
+                        original.children.get(1).formula);
                 break;
             case OR:
                 assert (original.children.size() == 2);
-                original.formula = SolverEngine.getSolver().or( original.children.get(0).formula,
-                                                                original.children.get(1).formula);
+                original.formula = SolverEngine.getSolver().or(original.children.get(0).formula,
+                        original.children.get(1).formula);
                 break;
             default:
                 throw new RuntimeException("Unexpected solver guard of type " + original.type + " : " + original);
@@ -172,63 +174,10 @@ public class SolverGuard implements Serializable {
     }
 
     /**
-     * Check if the solver guard is logical `true`
-     * @return true iff solver guard logically evaluates to `true`
-     */
-    public boolean isTrue() {
-        switch (statusTrue) {
-            case True:
-                return true;
-            case NotTrue:
-                return false;
-            default:
-                checkInput(Arrays.asList(this));
-//                Instant start = Instant.now();
-                boolean isSatNeg = SolverEngine.getSolver().isSat(SolverEngine.getSolver().not(formula));
-//                SolverStats.updateSolveGuardTime((Duration.between(start, Instant.now()).toMillis()));
-                if (!isSatNeg) {
-                    statusTrue = SolverTrueStatus.True;
-                    statusFalse = SolverFalseStatus.NotFalse;
-                    formula = SolverEngine.getSolver().constTrue();
-                    return true;
-                } else {
-                    statusTrue = SolverTrueStatus.NotTrue;
-                    return false;
-                }
-        }
-    }
-
-    /**
-     * Check if the solver guard is logical `false`
-     * @return true iff solver guard logically evaluates to `false`
-     */
-    public boolean isFalse() {
-        switch (statusFalse) {
-            case False:
-                return true;
-            case NotFalse:
-                return false;
-            default:
-                checkInput(Arrays.asList(this));
-//                Instant start = Instant.now();
-                boolean isSat = SolverEngine.getSolver().isSat(formula);
-//                SolverStats.updateSolveGuardTime((Duration.between(start, Instant.now()).toMillis()));
-                if (!isSat) {
-                    statusTrue = SolverTrueStatus.NotTrue;
-                    statusFalse = SolverFalseStatus.False;
-                    formula = SolverEngine.getSolver().constFalse();
-                    return true;
-                } else {
-                    statusFalse = SolverFalseStatus.NotFalse;
-                    return false;
-                }
-        }
-    }
-
-    /**
      * Get the solver guard
-     * @param formula formula in solver backend
-     * @param type type of solver guard
+     *
+     * @param formula  formula in solver backend
+     * @param type     type of solver guard
      * @param children solver guard children
      * @return a cached solver guard or create a new one
      */
@@ -236,12 +185,12 @@ public class SolverGuard implements Serializable {
         if (table.containsKey(formula)) {
             return table.get(formula);
         }
-        SolverGuard newGuard = new SolverGuard(formula, type, name, children);
-        return newGuard;
+        return new SolverGuard(formula, type, name, children);
     }
 
     /**
      * Total number of solver guards stored
+     *
      * @return the number of solver guards
      */
     public static int getGuardCount() {
@@ -250,13 +199,14 @@ public class SolverGuard implements Serializable {
 
     /**
      * Get solver guard representing logical `true`
+     *
      * @return solver guard representing logical `true`
      */
     private static SolverGuard createTrue() {
-        SolverGuard g = getSolverGuard( SolverEngine.getSolver().constTrue(),
-                                        SolverGuardType.TRUE,
-                                        "true",
-                                        ImmutableList.of());
+        SolverGuard g = getSolverGuard(SolverEngine.getSolver().constTrue(),
+                SolverGuardType.TRUE,
+                "true",
+                ImmutableList.of());
         g.statusTrue = SolverTrueStatus.True;
         g.statusFalse = SolverFalseStatus.NotFalse;
         return g;
@@ -264,13 +214,14 @@ public class SolverGuard implements Serializable {
 
     /**
      * Get solver guard representing logical `false`
+     *
      * @return solver guard representing logical `false`
      */
     private static SolverGuard createFalse() {
-        SolverGuard g = getSolverGuard( SolverEngine.getSolver().constFalse(),
-                                        SolverGuardType.FALSE,
-                                        "false",
-                                        ImmutableList.of());
+        SolverGuard g = getSolverGuard(SolverEngine.getSolver().constFalse(),
+                SolverGuardType.FALSE,
+                "false",
+                ImmutableList.of());
         g.statusTrue = SolverTrueStatus.NotTrue;
         g.statusFalse = SolverFalseStatus.False;
         return g;
@@ -278,6 +229,7 @@ public class SolverGuard implements Serializable {
 
     /**
      * Get solver guard representing logical `true`
+     *
      * @return solver guard representing logical `true`
      */
     public static SolverGuard constTrue() {
@@ -286,6 +238,7 @@ public class SolverGuard implements Serializable {
 
     /**
      * Get solver guard representing logical `false`
+     *
      * @return solver guard representing logical `false`
      */
     public static SolverGuard constFalse() {
@@ -294,14 +247,15 @@ public class SolverGuard implements Serializable {
 
     /**
      * Get solver guard representing a new Boolean variable
+     *
      * @return solver guard representing a new Boolean variable
      */
     public static SolverGuard newVar() {
         String name = "x" + varList.size();
-        SolverGuard g = getSolverGuard( SolverEngine.getSolver().newVar(name),
-                                        SolverGuardType.VARIABLE,
-                                        name,
-                                        ImmutableList.of());
+        SolverGuard g = getSolverGuard(SolverEngine.getSolver().newVar(name),
+                SolverGuardType.VARIABLE,
+                name,
+                ImmutableList.of());
         g.statusTrue = SolverTrueStatus.NotTrue;
         g.statusFalse = SolverFalseStatus.NotFalse;
         varList.add(g);
@@ -327,57 +281,8 @@ public class SolverGuard implements Serializable {
     }
 
     /**
-     * Get solver guard representing logical `not` on this
-     * @return solver guard representing logical `not` on this
-     */
-    public SolverGuard not() {
-        checkInput(Arrays.asList(this));
-        SolverStats.notOperations++;
-//        Instant start = Instant.now();
-        SolverGuard result = getSolverGuard(SolverEngine.getSolver().not(formula),
-                                            SolverGuardType.NOT,
-                                            "",
-                                            ImmutableList.of(this));
-//        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
-        return result;
-    }
-
-    /**
-     * Get solver guard representing logical `and` on this and other
-     * @param other solver guard to `and` this with
-     * @return solver guard representing logical `and` on this and other
-     */
-    public SolverGuard and(SolverGuard other) {
-        checkInput(Arrays.asList(this, other));
-    	SolverStats.andOperations++;
-//        Instant start = Instant.now();
-        SolverGuard result = getSolverGuard(SolverEngine.getSolver().and(formula, other.formula),
-                                            SolverGuardType.AND,
-                                            "",
-                                            ImmutableList.of(this, other));
-//        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
-        return result;
-    }
-
-    /**
-     * Get solver guard representing logical `or` on this and other
-     * @param other solver guard to `or` this with
-     * @return solver guard representing logical `or` on this and other
-     */
-    public SolverGuard or(SolverGuard other) {
-        checkInput(Arrays.asList(this, other));
-    	SolverStats.orOperations++;
-//        Instant start = Instant.now();
-        SolverGuard result = getSolverGuard(SolverEngine.getSolver().or(formula, other.formula),
-                                            SolverGuardType.OR,
-                                            "",
-                                            ImmutableList.of(this, other));
-//        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
-        return result;
-    }
-
-    /**
      * Get solver guard representing logical `or` on this and a list of solver guards
+     *
      * @param others list of solver guards to `or` this with
      * @return solver guard representing logical `or` on this and a list of solver guards
      */
@@ -386,7 +291,117 @@ public class SolverGuard implements Serializable {
     }
 
     /**
+     * Check if the solver guard is logical `true`
+     *
+     * @return true iff solver guard logically evaluates to `true`
+     */
+    public boolean isTrue() {
+        switch (statusTrue) {
+            case True:
+                return true;
+            case NotTrue:
+                return false;
+            default:
+                checkInput(List.of(this));
+//                Instant start = Instant.now();
+                boolean isSatNeg = SolverEngine.getSolver().isSat(SolverEngine.getSolver().not(formula));
+//                SolverStats.updateSolveGuardTime((Duration.between(start, Instant.now()).toMillis()));
+                if (!isSatNeg) {
+                    statusTrue = SolverTrueStatus.True;
+                    statusFalse = SolverFalseStatus.NotFalse;
+                    formula = SolverEngine.getSolver().constTrue();
+                    return true;
+                } else {
+                    statusTrue = SolverTrueStatus.NotTrue;
+                    return false;
+                }
+        }
+    }
+
+    /**
+     * Check if the solver guard is logical `false`
+     *
+     * @return true iff solver guard logically evaluates to `false`
+     */
+    public boolean isFalse() {
+        switch (statusFalse) {
+            case False:
+                return true;
+            case NotFalse:
+                return false;
+            default:
+                checkInput(List.of(this));
+//                Instant start = Instant.now();
+                boolean isSat = SolverEngine.getSolver().isSat(formula);
+//                SolverStats.updateSolveGuardTime((Duration.between(start, Instant.now()).toMillis()));
+                if (!isSat) {
+                    statusTrue = SolverTrueStatus.NotTrue;
+                    statusFalse = SolverFalseStatus.False;
+                    formula = SolverEngine.getSolver().constFalse();
+                    return true;
+                } else {
+                    statusFalse = SolverFalseStatus.NotFalse;
+                    return false;
+                }
+        }
+    }
+
+    /**
+     * Get solver guard representing logical `not` on this
+     *
+     * @return solver guard representing logical `not` on this
+     */
+    public SolverGuard not() {
+        checkInput(List.of(this));
+        SolverStats.notOperations++;
+//        Instant start = Instant.now();
+        SolverGuard result = getSolverGuard(SolverEngine.getSolver().not(formula),
+                SolverGuardType.NOT,
+                "",
+                ImmutableList.of(this));
+//        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
+        return result;
+    }
+
+    /**
+     * Get solver guard representing logical `and` on this and other
+     *
+     * @param other solver guard to `and` this with
+     * @return solver guard representing logical `and` on this and other
+     */
+    public SolverGuard and(SolverGuard other) {
+        checkInput(Arrays.asList(this, other));
+        SolverStats.andOperations++;
+//        Instant start = Instant.now();
+        SolverGuard result = getSolverGuard(SolverEngine.getSolver().and(formula, other.formula),
+                SolverGuardType.AND,
+                "",
+                ImmutableList.of(this, other));
+//        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
+        return result;
+    }
+
+    /**
+     * Get solver guard representing logical `or` on this and other
+     *
+     * @param other solver guard to `or` this with
+     * @return solver guard representing logical `or` on this and other
+     */
+    public SolverGuard or(SolverGuard other) {
+        checkInput(Arrays.asList(this, other));
+        SolverStats.orOperations++;
+//        Instant start = Instant.now();
+        SolverGuard result = getSolverGuard(SolverEngine.getSolver().or(formula, other.formula),
+                SolverGuardType.OR,
+                "",
+                ImmutableList.of(this, other));
+//        SolverStats.updateCreateGuardTime((Duration.between(start, Instant.now()).toMillis()));
+        return result;
+    }
+
+    /**
      * Get solver guard representing logical implication
+     *
      * @param other right-hand side of the implication
      * @return solver guard representing logical implication (this => other)
      */
@@ -397,6 +412,7 @@ public class SolverGuard implements Serializable {
 
     /**
      * Get solver guard representing if-then-else
+     *
      * @param thenCase solver guard for then case
      * @param elseCase solver guard for else case
      * @return solver guard representing if (this) then thenCase else elseCase
@@ -408,12 +424,13 @@ public class SolverGuard implements Serializable {
 
     /**
      * Pretty print the solver guard
+     *
      * @return a string
      */
     @Override
     public String toString() {
-        String result = "";
-        switch(this.type) {
+        StringBuilder result = new StringBuilder();
+        switch (this.type) {
             case TRUE:
                 return "true";
             case FALSE:
@@ -421,30 +438,31 @@ public class SolverGuard implements Serializable {
             case VARIABLE:
                 return name;
             case NOT:
-                result += "(not ";
+                result.append("(not ");
                 break;
             case AND:
-                result += "(and ";
+                result.append("(and ");
                 break;
             case OR:
-                result += "(or ";
+                result.append("(or ");
                 break;
         }
-        for (int i=0; i< children.size(); i++) {
-            result += children.get(i).toString();
+        for (int i = 0; i < children.size(); i++) {
+            result.append(children.get(i).toString());
             if (i != children.size() - 1) {
-                result += " ";
+                result.append(" ");
                 if (result.length() > 80) {
                     return result.substring(0, 80) + "...)";
                 }
             }
         }
-        result += ")";
-        return result;
+        result.append(")");
+        return result.toString();
     }
 
     /**
      * Pretty print the solver guard formula
+     *
      * @return a string
      */
     public String toSolverString() {
@@ -453,6 +471,7 @@ public class SolverGuard implements Serializable {
 
     /**
      * Check if this equals o
+     *
      * @param o right-hand side of the equality
      * @return true iff this and o are equal
      */
@@ -470,6 +489,7 @@ public class SolverGuard implements Serializable {
 
     /**
      * Hash code of the solver guard
+     *
      * @return integer representing the hash of solver guard
      */
     @Override

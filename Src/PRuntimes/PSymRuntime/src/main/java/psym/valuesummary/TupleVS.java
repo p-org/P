@@ -2,22 +2,27 @@ package psym.valuesummary;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
  * Represents a tuple value summaries
- * */
+ */
 @SuppressWarnings("unchecked")
 public class TupleVS implements ValueSummary<TupleVS> {
-    /** The fields of the tuple */
+    /**
+     * The fields of the tuple
+     */
     private final ValueSummary[] fields;
-    /** The types of the fields of the tuple */
+    /**
+     * The types of the fields of the tuple
+     */
     private final Class[] classes;
 
-    /** Copy-constructor for TupleVS
+    /**
+     * Copy-constructor for TupleVS
+     *
      * @param old The TupleVS to copy
      */
     public TupleVS(TupleVS old) {
@@ -25,7 +30,9 @@ public class TupleVS implements ValueSummary<TupleVS> {
         this.classes = Arrays.copyOf(old.classes, old.classes.length);
     }
 
-    /** Make a new TupleVS from the provided items */
+    /**
+     * Make a new TupleVS from the provided items
+     */
     public TupleVS(ValueSummary<?>... items) {
         Guard commonGuard = Guard.constTrue();
         for (ValueSummary<?> vs : items) {
@@ -47,40 +54,55 @@ public class TupleVS implements ValueSummary<TupleVS> {
         return new TupleVS(this);
     }
 
-    /** Get the names of the TupleVS fields
-     * @return Array containing the names of the TupleVS fields */
+    /**
+     * Get the names of the TupleVS fields
+     *
+     * @return Array containing the names of the TupleVS fields
+     */
     public String[] getNames() {
-        String [] result = new String[classes.length];
-        for (int i=0; i<classes.length; i++) {
+        String[] result = new String[classes.length];
+        for (int i = 0; i < classes.length; i++) {
             result[i] = classes[i].toString();
         }
         return result;
     }
 
-    /** Get the arity of the TupleVS
-     * @return The arity of the TupleVS */
+    /**
+     * Get the arity of the TupleVS
+     *
+     * @return The arity of the TupleVS
+     */
     public int getArity() {
         return fields.length;
     }
 
-    /** Get the i-th value in the TupleVS
+    /**
+     * Get the i-th value in the TupleVS
+     *
      * @param i The index to get from the TupleVS
-     * @return The value at index i */
+     * @return The value at index i
+     */
     public ValueSummary getField(int i) {
         return fields[i];
     }
 
-    /** Get the i-th class in the TupleVS
+    /**
+     * Get the i-th class in the TupleVS
+     *
      * @param i The index to get from the TupleVS
-     * @return The class at index i */
+     * @return The class at index i
+     */
     public Class getClass(int i) {
         return classes[i];
     }
 
-    /** Set the i-th value in the TupleVS to the provided value
-     * @param i The index to set in the TupleVS
+    /**
+     * Set the i-th value in the TupleVS to the provided value
+     *
+     * @param i   The index to set in the TupleVS
      * @param val The value to set in the TupleVS
-     * @return The result after updating the TupleVS */
+     * @return The result after updating the TupleVS
+     */
     public TupleVS setField(int i, ValueSummary val) {
         final ValueSummary[] newItems = new ValueSummary[fields.length];
         System.arraycopy(fields, 0, newItems, 0, fields.length);
@@ -98,7 +120,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
 
     @Override
     public TupleVS restrict(Guard guard) {
-        if(guard.equals(getUniverse()))
+        if (guard.equals(getUniverse()))
             return new TupleVS(this);
 
         ValueSummary<?>[] resultFields = new ValueSummary[fields.length];
@@ -167,7 +189,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
     public int getConcreteHash() {
         int hashCode = 1;
         for (int i = 0; i < classes.length; i++) {
-            hashCode = 31*hashCode + (fields[i]==null ? 0 : fields[i].getConcreteHash());
+            hashCode = 31 * hashCode + (fields[i] == null ? 0 : fields[i].getConcreteHash());
         }
         return hashCode;
     }

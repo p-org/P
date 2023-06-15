@@ -9,7 +9,9 @@ import java.util.List;
 public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
 
     static UnionVS castToAny(Guard pc, ValueSummary<?> toCast) {
-        if (toCast instanceof UnionVS) { return (UnionVS) toCast.restrict(pc); }
+        if (toCast instanceof UnionVS) {
+            return (UnionVS) toCast.restrict(pc);
+        }
         return new UnionVS(toCast).restrict(pc);
     }
 
@@ -17,7 +19,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
         if (toCast instanceof ListVS) {
             List<UnionVS> items = new ArrayList<>();
             ListVS toCastVs = (ListVS) toCast;
-            for (Object item: toCastVs.getItems()) {
+            for (Object item : toCastVs.getItems()) {
                 items.add(ValueSummary.castToAny(pc, (ValueSummary<?>) item));
             }
             return new ListVS<>(toCastVs.size(), items);
@@ -36,107 +38,53 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
      * corresponding to the specified type, the function throws a ClassCastException.
      * If the ValueSummary type is also a UnionVS, returns the provided UnionVS.
      *
-     * @param pc The path constraint guard to cast under
-     * @param def The default value of the ValueSummary type to cast to
+     * @param pc     The path constraint guard to cast under
+     * @param def    The default value of the ValueSummary type to cast to
      * @param anyVal The UnionVS to cast from
      * @return A ValueSummary that can be casted into the provided type
      */
-     static ValueSummary<?> castFromAny(Guard pc, ValueSummary<?> def, UnionVS anyVal) {
-         ValueSummary<?> result;
-         if (def instanceof UnionVS) {
-             return anyVal;
-         }
-         if (anyVal == null) {
-             return def.restrict(pc);
-//             if (def instanceof PrimitiveVS) {
-//                 return new PrimitiveVS<>((Machine)null);
-//             } else {
-//                 return def.restrict(pc);
-//             }
-         }
-         if (anyVal.isEmptyVS()) {
-             return def.getCopy();
-         }
+    static ValueSummary<?> castFromAny(Guard pc, ValueSummary<?> def, UnionVS anyVal) {
+        ValueSummary<?> result;
+        if (def instanceof UnionVS) {
+            return anyVal;
+        }
+        if (anyVal == null) {
+            return def.restrict(pc);
+        }
+        if (anyVal.isEmptyVS()) {
+            return def.getCopy();
+        }
 
-         UnionVStype type;
-         if (def instanceof NamedTupleVS) {
-             type = UnionVStype.getUnionVStype(def.getClass(), ((NamedTupleVS) def).getNames());
-         } else if (def instanceof TupleVS) {
-             type = UnionVStype.getUnionVStype(def.getClass(), ((TupleVS) def).getNames());
-         } else {
-             type = UnionVStype.getUnionVStype(def.getClass(), null);
-         }
-         Guard typeGuard = anyVal.getGuardFor(type);
-         Guard pcNotDefined = pc.and(typeGuard.not());
-         Guard pcDefined = pc.and(typeGuard);
-         if (pcDefined.isFalse()) {
-             if (type.equals(UnionVStype.getUnionVStype(PrimitiveVS.class, null))) {
-                 return new PrimitiveVS<>(pc);
-             }
-             System.out.println(anyVal.restrict(typeGuard));
-             throw new ClassCastException(String.format("Casting to %s under path constraint %s is not defined for %s",
-                     type,
-                     pcNotDefined,
-                     anyVal));
-         }
-         result = anyVal.getValue(type).restrict(pc);
-/*
-         if (!pcNotDefined.isFalse()) {
-             if (type.equals(PrimitiveVS.class)) {
-                 return new PrimitiveVS<>(pc);
-             }
-             System.out.println(anyVal.restrict(typeGuard));
-             throw new ClassCastException(String.format("Casting to %s under path constraint %s is not defined",
-                     type,
-                     pcNotDefined));
-         }
-         result = anyVal.getValue(type).restrict(pc);
-*/
-         /*
-         if (type.equals(NamedTupleVS.class)) {
-             NamedTupleVS namedTupleDefault = (NamedTupleVS) def.restrict(pc);
-             NamedTupleVS namedTupleResult = (NamedTupleVS) result;
-             namedTupleResult.getNames();
-             String[] defaultNames = namedTupleDefault.getNames();
-             String[] resultNames = namedTupleResult.getNames();
-             for (int i = 0; i < defaultNames.length; i++) {
-                 String name = defaultNames[i];
-                 if (!resultNames[i].equals(defaultNames[i])) {
-                     throw new ClassCastException(
-                             String.format("Casting to %s under path constraint %s is not defined." +
-                                             "Named tuple field names do not match.",
-                             type,
-                             pcNotDefined));
-                 }
-                 ValueSummary<?> defaultField = namedTupleResult.getField(name);
-                 ValueSummary<?> resultField = namedTupleResult.getField(name);
-                 Class<?> defaultFieldType = defaultField.getClass();
-                 System.out.println("Field " + name + " has default type " + defaultFieldType.getCanonicalName());
-                 if (!resultField.getClass().equals(defaultFieldType)) {
-                     if (resultField instanceof UnionVS) {
-                         System.out.println("need to cast nested");
-                         namedTupleResult = namedTupleResult.setField(name,
-                                 castFromAny(pc, defaultField, (UnionVS) resultField));
-                     } else {
-                         throw new ClassCastException(
-                                 String.format("Casting to %s under path constraint %s is not defined." +
-                                                 " Named tuple field types do not match.",
-                                         type,
-                                         pcNotDefined));
-                     }
-                 }
-             }
-             result = namedTupleResult;
-         }
-          */
-         return result;
-     }
+        UnionVStype type;
+        if (def instanceof NamedTupleVS) {
+            type = UnionVStype.getUnionVStype(def.getClass(), ((NamedTupleVS) def).getNames());
+        } else if (def instanceof TupleVS) {
+            type = UnionVStype.getUnionVStype(def.getClass(), ((TupleVS) def).getNames());
+        } else {
+            type = UnionVStype.getUnionVStype(def.getClass(), null);
+        }
+        Guard typeGuard = anyVal.getGuardFor(type);
+        Guard pcNotDefined = pc.and(typeGuard.not());
+        Guard pcDefined = pc.and(typeGuard);
+        if (pcDefined.isFalse()) {
+            if (type.equals(UnionVStype.getUnionVStype(PrimitiveVS.class, null))) {
+                return new PrimitiveVS<>(pc);
+            }
+            System.out.println(anyVal.restrict(typeGuard));
+            throw new ClassCastException(String.format("Casting to %s under path constraint %s is not defined for %s",
+                    type,
+                    pcNotDefined,
+                    anyVal));
+        }
+        result = anyVal.getValue(type).restrict(pc);
+        return result;
+    }
 
     static ValueSummary<?> castFromAnyCollection(Guard pc, ValueSummary<?> def, ValueSummary<?> anyVal) {
         if (anyVal instanceof ListVS) {
             List<ValueSummary> items = new ArrayList<>();
             ListVS toCastVs = (ListVS) anyVal;
-            for (Object item: toCastVs.getItems()) {
+            for (Object item : toCastVs.getItems()) {
                 items.add(ValueSummary.castFromAny(pc, def, (UnionVS) item));
             }
             return new ListVS<>(toCastVs.size(), items);
@@ -145,7 +93,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
             ListVS elements = toCastVs.getElements();
             return new SetVS<>((ListVS) ValueSummary.castFromAnyCollection(pc, def, elements));
         } else {
-            throw new ClassCastException(String.format("Casting elements in %s to %s is unsupported", def.getCopy()));
+            throw new ClassCastException(String.format("Casting elements in %s to %s is unsupported", anyVal, def));
         }
     }
 
@@ -158,9 +106,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
     static List<GuardedValue<?>> getGuardedValues(ValueSummary<?> valueSummary) {
         List<GuardedValue<?>> guardedValueList = new ArrayList<>();
         if (valueSummary instanceof PrimitiveVS<?>) {
-            for (GuardedValue<?> entry: ((PrimitiveVS<?>) valueSummary).getGuardedValues()) {
-                guardedValueList.add(entry);
-            }
+            guardedValueList.addAll(((PrimitiveVS<?>) valueSummary).getGuardedValues());
             return guardedValueList;
         } else if (valueSummary instanceof TupleVS) {
             TupleVS tupleVS = (TupleVS) valueSummary;
@@ -177,9 +123,6 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
                 for (int i = 0; i < length; i++) {
                     List<GuardedValue<?>> elementGV = ValueSummary.getGuardedValues(tupleVS.getField(i).restrict(guard));
                     if (!elementGV.isEmpty()) {
-//                        if (elementGV.size() != 1) {
-//                            System.out.println(String.format("Multiple composite keys in tuple %s", tupleVS));
-//                        }
                         guard = guard.and(elementGV.get(0).getGuard());
                         value.append(elementGV.get(0).getValue());
                     } else {
@@ -240,7 +183,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
      * Create a new value summary that is equal to the `update` value under the given `guard`
      * and same as the old value otherwise `!guard`
      *
-     * @param guard The condition under which the value summary should be updated
+     * @param guard     The condition under which the value summary should be updated
      * @param updateVal The value to update the value summary to
      * @return The result of the update
      */
@@ -249,7 +192,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
     /**
      * Check whether the value summary is equal to another value summary
      *
-     * @param cmp The other value summary
+     * @param cmp   The other value summary
      * @param guard The guard for the universe of the equality result
      * @return Boolean VS representing the guard under which the two value summaries are equal
      */
@@ -258,6 +201,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
     /**
      * Get the Guard that represents the universe of the value summary
      * Disjunction of the guards of all the guarded values
+     *
      * @return The universe of the value summary
      */
     Guard getUniverse();

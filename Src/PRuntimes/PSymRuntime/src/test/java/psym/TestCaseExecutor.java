@@ -38,12 +38,13 @@ public class TestCaseExecutor {
             throw new RuntimeException(exception);
         }
     }
+
     /**
      * @param testCasePaths paths to test case; only accepts list of p files
      * @return 0 = successful, 1 = compile error, 2 = dynamic error
      */
     static int runTestCase(List<String> testCasePaths, String testCasePathPrefix, String runArgs, String mainOutputDirectory, int expected) {
-        int resultCode = 0;
+        int resultCode;
 
         testCounter++;
 
@@ -52,11 +53,10 @@ public class TestCaseExecutor {
                 .toLowerCase().startsWith("windows");
         String compilerDirectory = "../../../Bld/Drops/Release/Binaries/net6.0/p.dll";
 
-        String prefix = testCasePathPrefix;
-        assert testCasePaths.stream().allMatch(p -> p.contains(prefix));
-        String testName = testCasePathPrefix.substring(testCasePathPrefix.lastIndexOf("/")+1);
+        assert testCasePaths.stream().allMatch(p -> p.contains(testCasePathPrefix));
+        String testName = testCasePathPrefix.substring(testCasePathPrefix.lastIndexOf("/") + 1);
         if (testName.isEmpty()) {
-            List<String> testCaseRelPaths = testCasePaths.stream().map(p -> p.substring(p.indexOf(prefix) + prefix.length()))
+            List<String> testCaseRelPaths = testCasePaths.stream().map(p -> p.substring(p.indexOf(testCasePathPrefix) + testCasePathPrefix.length()))
                     .collect(Collectors.toList());
             testName = Paths.get(testCaseRelPaths.get(0)).getFileName().toString();
         }
@@ -74,7 +74,7 @@ public class TestCaseExecutor {
         try {
             String pCompileCommand = String.format("dotnet %s compile --mode coverage --projname %s --outdir %s --pfiles %s"
                     , compilerDirectory, testName, outputDirectory, testCasePathsString);
-            PSymTestLogger.log(String.format("      compiling"));
+            PSymTestLogger.log("      compiling");
             process = buildCompileProcess(pCompileCommand, outputDirectory);
 
             StreamGobbler errorStreamGobbler = new StreamGobbler(process.getErrorStream(), System.out::println);
@@ -90,14 +90,14 @@ public class TestCaseExecutor {
         String pathToJar = outputDirectory + "/Symbolic/target/" + testName + "-jar-with-dependencies.jar";
 
         File jarFile = new File(pathToJar);
-        if(!jarFile.exists() || jarFile.isDirectory()) {
+        if (!jarFile.exists() || jarFile.isDirectory()) {
             resultCode = 1;
         }
 
         if (resultCode != 0) {
-            PSymTestLogger.log(String.format("      compile-fail"));
+            PSymTestLogger.log("      compile-fail");
             if (resultCode != expected) {
-                PSymTestLogger.log(String.format("      unexpected result for %s (expected: %d, got: %d)", prefix, expected, resultCode));
+                PSymTestLogger.log(String.format("      unexpected result for %s (expected: %d, got: %d)", testCasePathPrefix, expected, resultCode));
             }
             return resultCode;
         }
@@ -106,7 +106,7 @@ public class TestCaseExecutor {
         try {
             String runJarCommand = String.format("dotnet %s check %s --mode coverage --outdir %s %s",
                     compilerDirectory, pathToJar, outputDirectory, runArgs);
-            PSymTestLogger.log(String.format("      running"));
+            PSymTestLogger.log("      running");
             process = buildRunProcess(runJarCommand, outputDirectory);
 
             StreamGobbler streamGobbler = new StreamGobbler(process.getErrorStream(), System.out::println);
@@ -116,35 +116,36 @@ public class TestCaseExecutor {
             int exitCode = process.waitFor();
 
             if (exitCode == 0) {
-                PSymTestLogger.log(String.format("      ok"));
+                PSymTestLogger.log("      ok");
                 resultCode = 0;
             } else if (exitCode == 2) {
-                PSymTestLogger.log(String.format("      bug"));
+                PSymTestLogger.log("      bug");
                 resultCode = 2;
             } else if (exitCode == 3) {
-                PSymTestLogger.log(String.format("      timeout"));
+                PSymTestLogger.log("      timeout");
                 resultCode = 2;
             } else if (exitCode == 4) {
-                PSymTestLogger.log(String.format("      memout"));
+                PSymTestLogger.log("      memout");
                 resultCode = 2;
             } else {
-                PSymTestLogger.log(String.format("      error"));
+                PSymTestLogger.log("      error");
                 resultCode = 2;
             }
         } catch (IOException | InterruptedException e) {
-            PSymTestLogger.error(String.format("      fail"));
+            PSymTestLogger.error("      fail");
             e.printStackTrace();
             resultCode = -1;
         }
         if (resultCode != expected) {
-            PSymTestLogger.log(String.format("      unexpected result for %s (expected: %d, got: %d)", prefix, expected, resultCode));
+            PSymTestLogger.log(String.format("      unexpected result for %s (expected: %d, got: %d)", testCasePathPrefix, expected, resultCode));
         }
         return resultCode;
     }
 
     /**
      * A method to build a new Process object for given compile command.
-     * @param cmd Jar command as string
+     *
+     * @param cmd       Jar command as string
      * @param outFolder output folder
      * @return A new process for the given task
      * @throws IOException
@@ -165,7 +166,8 @@ public class TestCaseExecutor {
 
     /**
      * A method to build a new Process object for given run command.
-     * @param cmd Jar command as string
+     *
+     * @param cmd       Jar command as string
      * @param outFolder output folder
      * @return A new process for the given task
      * @throws IOException
@@ -198,10 +200,9 @@ public class TestCaseExecutor {
     }
 
 
-
     private static class StreamGobbler implements Runnable {
-        private InputStream inputStream;
-        private Consumer<String> consumer;
+        private final InputStream inputStream;
+        private final Consumer<String> consumer;
 
         StreamGobbler(InputStream inputStream, Consumer<String> consumer) {
             this.inputStream = inputStream;

@@ -26,15 +26,14 @@ public class PSym {
         PSymLogger.Initialize(config.getVerbosity());
 
         try {
-            if (config.getReadFromFile() == "" && config.getReadReplayerFromFile() == "") {
+            if (config.getReadFromFile().equals("") && config.getReadReplayerFromFile().equals("")) {
                 Set<Class<? extends Program>> subTypesProgram = reflections.getSubTypesOf(Program.class);
-                if (subTypesProgram.stream().count() == 0) {
+                if (subTypesProgram.size() == 0) {
                     throw new Exception("No program found.");
                 }
 
                 Optional<Class<? extends Program>> program = subTypesProgram.stream().findFirst();
-                Object instance = program.get().getDeclaredConstructor().newInstance();
-                p = (Program) instance;
+                p = program.get().getDeclaredConstructor().newInstance();
                 setProjectName(p, config);
             }
         } catch (Exception ex) {
@@ -46,7 +45,7 @@ public class PSym {
 
         int exit_code = 0;
         try {
-            if (config.getReadReplayerFromFile() != "") {
+            if (!config.getReadReplayerFromFile().equals("")) {
                 ReplayScheduler replayScheduler = ReplayScheduler.readFromFile(config.getReadReplayerFromFile());
                 EntryPoint.replayBug(replayScheduler, config);
                 throw new Exception("ERROR");
@@ -58,8 +57,8 @@ public class PSym {
                 BacktrackWriter.Initialize(config.getProjectName(), config.getOutputFolder());
             }
 
-            if (config.getReadFromFile() == "") {
-                assert(p != null);
+            if (config.getReadFromFile().equals("")) {
+                assert (p != null);
                 setTestDriver(p, config, reflections);
                 scheduler = new IterativeBoundedScheduler(config, p);
                 EntryPoint.run(scheduler, config);
@@ -75,9 +74,9 @@ public class PSym {
             exit_code = 2;
         } catch (Exception ex) {
             ex.printStackTrace();
-            if (ex.getMessage() == "TIMEOUT") {
+            if (ex.getMessage().equals("TIMEOUT")) {
                 exit_code = 3;
-            } else if (ex.getMessage() == "MEMOUT") {
+            } else if (ex.getMessage().equals("MEMOUT")) {
                 exit_code = 4;
             } else {
                 exit_code = 5;
@@ -101,18 +100,20 @@ public class PSym {
 
     /**
      * Set the project name
-     * @param p Input program instance
+     *
+     * @param p      Input program instance
      * @param config Input PSymConfiguration
      */
     private static void setProjectName(Program p, PSymConfiguration config) {
-        if (config.getProjectName() == "default") {
+        if (config.getProjectName().equals("default")) {
             config.setProjectName(p.getClass().getSimpleName());
         }
     }
 
     /**
      * Set the test driver for the program
-     * @param p Input program instance
+     *
+     * @param p      Input program instance
      * @param config Input PSymConfiguration
      * @throws Exception Throws exception if test driver is not found
      */
@@ -122,27 +123,27 @@ public class PSym {
 
         Set<Class<? extends PTestDriver>> subTypesDriver = reflections.getSubTypesOf(PTestDriver.class);
         PTestDriver driver = null;
-        for (Class<? extends PTestDriver> td: subTypesDriver) {
+        for (Class<? extends PTestDriver> td : subTypesDriver) {
             if (sanitizeTestName(td.getSimpleName()).equals(name)) {
                 driver = td.getDeclaredConstructor().newInstance();
                 break;
             }
         }
-        if(driver == null
-           && name.equals(defaultTestDriver)
-           && subTypesDriver.size() == 1) {
-            for (Class<? extends PTestDriver> td: subTypesDriver) {
+        if (driver == null
+                && name.equals(defaultTestDriver)
+                && subTypesDriver.size() == 1) {
+            for (Class<? extends PTestDriver> td : subTypesDriver) {
                 driver = td.getDeclaredConstructor().newInstance();
                 break;
             }
         }
-        if(driver == null) {
+        if (driver == null) {
             if (!name.equals(defaultTestDriver)) {
                 PSymLogger.info("No test driver found named \"" + name + "\"");
             }
             PSymLogger.info(String.format("Error: We found '%d' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).", subTypesDriver.size()));
             PSymLogger.info("Possible options are:");
-            for (Class<? extends PTestDriver> td: subTypesDriver) {
+            for (Class<? extends PTestDriver> td : subTypesDriver) {
                 PSymLogger.info(String.format("%s", td.getSimpleName()));
             }
             if (!name.equals(defaultTestDriver)) {
@@ -151,7 +152,6 @@ public class PSym {
                 System.exit(6);
             }
         }
-        assert(driver != null);
         config.setTestDriver(driver.getClass().getSimpleName());
         p.setTestDriver(driver);
     }

@@ -1,18 +1,16 @@
 package psym.runtime.machine;
 
 import psym.commandline.Assert;
-import psym.utils.BugFoundException;
 import psym.runtime.Event;
 import psym.runtime.Message;
 import psym.runtime.StateEvents;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.eventhandlers.EventHandler;
-import psym.runtime.machine.eventhandlers.IgnoreEventHandler;
 import psym.runtime.machine.eventhandlers.EventHandlerReturnReason;
+import psym.runtime.machine.eventhandlers.IgnoreEventHandler;
 import psym.utils.GlobalData;
 import psym.utils.StateTemperature;
 import psym.valuesummary.*;
-import psym.valuesummary.Guard;
 import psym.valuesummary.util.ValueSummaryChecks;
 
 import java.io.Serializable;
@@ -23,13 +21,16 @@ public abstract class State implements Serializable {
     public final String machineName;
     public final StateTemperature temperature;
 
-    public void entry(Guard pc, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {}
-    public void exit(Guard pc, Machine machine) {}
-
     public State(String name, String machineName, StateTemperature temperature, EventHandler... eventHandlers) {
         this.name = name;
         this.machineName = machineName;
         this.temperature = temperature;
+    }
+
+    public void entry(Guard pc, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {
+    }
+
+    public void exit(Guard pc, Machine machine) {
     }
 
     private String getStateKey() {
@@ -76,9 +77,6 @@ public abstract class State implements Serializable {
             Guard handledPc = Guard.constFalse();
             for (GuardedValue<State> guardedValue : current.getGuardedValues()) {
                 if (guardedValue.getValue().getStateEvents().eventHandlers.containsKey(event)) {
-                    //System.out.println("payload: " + event.guard(guardedValue.guard).getPayload());
-                    //if (event.guard(guardedValue.guard).getPayload() != null)
-                    //System.out.println("payload class: " + event.guard(guardedValue.guard).getPayload().getClass());
                     guardedValue.getValue().getStateEvents().eventHandlers.get(event).handleEvent(
                             eventPc.and(guardedValue.getGuard()),
                             machine,
@@ -90,8 +88,7 @@ public abstract class State implements Serializable {
             }
             if (event.equals(Event.haltEvent)) {
                 machine.halt(eventPc.and(handledPc.not()));
-            }
-            else if (!ValueSummaryChecks.hasSameUniverse(handledPc, eventPc)) {
+            } else if (!ValueSummaryChecks.hasSameUniverse(handledPc, eventPc)) {
                 Assert.prop(false,
                         String.format("%s received event %s that cannot be handled in state %s",
                                 machine, event, this.name),
@@ -111,7 +108,7 @@ public abstract class State implements Serializable {
         else if (!(obj instanceof State)) {
             return false;
         }
-        return  this.name.equals(((State) obj).name) &&
+        return this.name.equals(((State) obj).name) &&
                 this.machineName.equals(((State) obj).machineName) &&
                 this.temperature.equals(((State) obj).temperature);
     }

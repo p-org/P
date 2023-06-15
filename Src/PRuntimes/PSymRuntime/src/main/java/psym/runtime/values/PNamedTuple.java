@@ -1,23 +1,23 @@
 package psym.runtime.values;
-import psym.runtime.values.exceptions.*;
 
-import java.util.Map;
+import psym.runtime.values.exceptions.ComparingPValuesException;
+import psym.runtime.values.exceptions.NamedTupleFieldNameException;
+
 import java.util.HashMap;
+import java.util.Map;
 
 public class PNamedTuple extends PValue<PNamedTuple> {
     // stores the mapping from field name to field value
     private final Map<String, PValue<?>> fields;
 
-    public PNamedTuple(Map<String, PValue<?>> input_fields)
-    {
+    public PNamedTuple(Map<String, PValue<?>> input_fields) {
         fields = new HashMap<>();
         for (Map.Entry<String, PValue<?>> entry : input_fields.entrySet()) {
             fields.put(entry.getKey(), PValue.clone(entry.getValue()));
         }
     }
 
-    public PNamedTuple(PNamedTuple other)
-    {
+    public PNamedTuple(PNamedTuple other) {
         fields = new HashMap<>();
         for (Map.Entry<String, PValue<?>> entry : other.fields.entrySet()) {
             fields.put(entry.getKey(), PValue.clone(entry.getValue()));
@@ -29,13 +29,13 @@ public class PNamedTuple extends PValue<PNamedTuple> {
     }
 
     public PValue<?> getField(String name) throws NamedTupleFieldNameException {
-        if(!fields.containsKey(name))
+        if (!fields.containsKey(name))
             throw new NamedTupleFieldNameException(this, name);
         return fields.get(name);
     }
 
     public void setField(String name, PValue<?> val) throws NamedTupleFieldNameException {
-        if(!fields.containsKey(name))
+        if (!fields.containsKey(name))
             throw new NamedTupleFieldNameException(this, name);
         fields.put(name, val);
     }

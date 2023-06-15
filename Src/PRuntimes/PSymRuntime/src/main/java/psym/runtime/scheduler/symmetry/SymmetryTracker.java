@@ -3,10 +3,11 @@ package psym.runtime.scheduler.symmetry;
 import psym.runtime.machine.Machine;
 import psym.valuesummary.*;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class SymmetryTracker {
-    Map<String, SetVS<PrimitiveVS<Machine>>> typeToSymmetrySet;
+public class SymmetryTracker implements Serializable {
+    final Map<String, SetVS<PrimitiveVS<Machine>>> typeToSymmetrySet;
 
     public SymmetryTracker() {
         typeToSymmetrySet = new HashMap<>();
@@ -17,7 +18,7 @@ public class SymmetryTracker {
     }
 
     public void reset() {
-        for (String type: typeToSymmetrySet.keySet()) {
+        for (String type : typeToSymmetrySet.keySet()) {
             typeToSymmetrySet.put(type, null);
         }
     }
@@ -45,7 +46,7 @@ public class SymmetryTracker {
         List<ValueSummary> reduced = new ArrayList<>();
         Map<Machine, Guard> pendingSummaries = new HashMap<>();
 
-        for (ValueSummary choice: original) {
+        for (ValueSummary choice : original) {
             boolean added = false;
             if (choice instanceof PrimitiveVS) {
                 PrimitiveVS primitiveVS = (PrimitiveVS) choice;
@@ -65,7 +66,7 @@ public class SymmetryTracker {
                         if (!typeGuard.isFalse()) {
                             PrimitiveVS<Machine> representativeVS = symSet.get(new PrimitiveVS<>(Collections.singletonMap(0, typeGuard)));
                             List<GuardedValue<Machine>> representativeGVs = representativeVS.getGuardedValues();
-                            for (GuardedValue<Machine> representativeGV: representativeGVs) {
+                            for (GuardedValue<Machine> representativeGV : representativeGVs) {
                                 Machine m = representativeGV.getValue();
                                 Guard g = representativeGV.getGuard();
                                 if (m == machine) {
@@ -92,22 +93,16 @@ public class SymmetryTracker {
             }
         }
 
-        for (Map.Entry<Machine, Guard> entry: pendingSummaries.entrySet()) {
+        for (Map.Entry<Machine, Guard> entry : pendingSummaries.entrySet()) {
             reduced.add(new PrimitiveVS(Collections.singletonMap(entry.getKey(), entry.getValue())));
         }
-
-//        if (pendingSummaries.size() != 0) {
-////            System.out.println(String.format("\t(symmetry-aware) %d -> %d", original.size(), reduced.size()));
-//            System.out.println(String.format("Original: %s", original));
-//            System.out.println(String.format("Reduced: %s", reduced));
-//        }
 
         return reduced;
     }
 
     public void updateSymmetrySet(PrimitiveVS chosenVS) {
         List<? extends GuardedValue<?>> choices = ((PrimitiveVS<?>) chosenVS).getGuardedValues();
-        for (GuardedValue<?> choice: choices) {
+        for (GuardedValue<?> choice : choices) {
             Object value = choice.getValue();
             if (value instanceof Machine) {
                 Machine machine = ((Machine) value);

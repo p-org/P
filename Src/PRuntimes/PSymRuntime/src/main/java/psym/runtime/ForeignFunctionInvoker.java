@@ -12,20 +12,21 @@ import java.util.function.Function;
 public class ForeignFunctionInvoker {
 
     /* Maximum number of times to invoke the foreign function on different values */
-    public static int times = 100;
+    public static final int times = 100;
 
-    public static List<GuardedValue<List<Object>>> getConcreteValues (Guard pc, ValueSummary ... args) {
-       return Concretizer.getConcreteValues(pc, x -> x >= times, Concretizer::concretizePType, args);
+    public static List<GuardedValue<List<Object>>> getConcreteValues(Guard pc, ValueSummary... args) {
+        return Concretizer.getConcreteValues(pc, x -> x >= times, Concretizer::concretizePType, args);
     }
 
     /**
      * Invoke a foreign function with a void return type
-     * @param pc Guard under which to invoke the function on the provided arguments
-     * @param fn function to invoke
+     *
+     * @param pc   Guard under which to invoke the function on the provided arguments
+     * @param fn   function to invoke
      * @param args arguments
-     */ 
-    public static void invoke(Guard pc, Consumer<List<Object>> fn, ValueSummary ... args) {
-        List<GuardedValue<List<Object>>> concreteArgs = getConcreteValues(pc, args);  
+     */
+    public static void invoke(Guard pc, Consumer<List<Object>> fn, ValueSummary... args) {
+        List<GuardedValue<List<Object>>> concreteArgs = getConcreteValues(pc, args);
         for (int i = 0; i < concreteArgs.size(); i++) {
             GuardedValue<List<Object>> guardedArgs = concreteArgs.get(i);
             fn.accept(guardedArgs.getValue());
@@ -34,14 +35,15 @@ public class ForeignFunctionInvoker {
 
     /**
      * Invoke a foreign function with a non-void return type
-     * @param pc Guard under which to invoke the function on the provided arguments
-     * @param def instance of the return type
-     * @param fn function to invoke
+     *
+     * @param pc   Guard under which to invoke the function on the provided arguments
+     * @param def  instance of the return type
+     * @param fn   function to invoke
      * @param args arguments
      * @return the return value of the function
-     */ 
-    public static ValueSummary invoke(Guard pc, ValueSummary<?> def, Function<List<Object>, Object> fn, ValueSummary ... args) {
-        List<GuardedValue<List<Object>>> concreteArgs = getConcreteValues(pc, args);  
+     */
+    public static ValueSummary invoke(Guard pc, ValueSummary<?> def, Function<List<Object>, Object> fn, ValueSummary... args) {
+        List<GuardedValue<List<Object>>> concreteArgs = getConcreteValues(pc, args);
         UnionVS ret = new UnionVS();
         for (int i = 0; i < concreteArgs.size(); i++) {
             GuardedValue<List<Object>> guardedArgs = concreteArgs.get(i);
@@ -56,10 +58,11 @@ public class ForeignFunctionInvoker {
 
     /**
      * Convert concrete value into a value summary
+     *
      * @param pc Guard under for the value summary
-     * @param o concrete value
+     * @param o  concrete value
      * @return the value summary for the concrete value
-     */ 
+     */
     public static ValueSummary<?> convertConcrete(Guard pc, Object o) {
         if (o instanceof PSeq) {
             PSeq list = (PSeq) o;
@@ -103,15 +106,15 @@ public class ForeignFunctionInvoker {
                 namesAndFields[i + 1] = convertConcrete(pc, namedTuple.getField(fields[j]));
             }
             return new NamedTupleVS(namesAndFields);
-        } else if (o instanceof PBool){
-           return new PrimitiveVS<>(((PBool) o).getValue()).restrict(pc);
-        } else if (o instanceof PInt){
+        } else if (o instanceof PBool) {
+            return new PrimitiveVS<>(((PBool) o).getValue()).restrict(pc);
+        } else if (o instanceof PInt) {
             return new PrimitiveVS<>(((PInt) o).getValue()).restrict(pc);
-        } else if (o instanceof PFloat){
+        } else if (o instanceof PFloat) {
             return new PrimitiveVS<>(((PFloat) o).getValue()).restrict(pc);
-        } else if (o instanceof PString){
+        } else if (o instanceof PString) {
             return new PrimitiveVS<>(((PString) o).getValue()).restrict(pc);
-        } else if (o instanceof PEnum){
+        } else if (o instanceof PEnum) {
             return new PrimitiveVS<>(((PEnum) o).getValue()).restrict(pc);
         } else {
             return new PrimitiveVS(o).restrict(pc);

@@ -10,16 +10,14 @@ public class PMap extends PCollection {
     // stores the map
     private final Map<PValue<?>, PValue<?>> map;
 
-    public PMap(Map<PValue<?>, PValue<?>> input_map)
-    {
+    public PMap(Map<PValue<?>, PValue<?>> input_map) {
         map = new HashMap<>();
         for (Map.Entry<PValue<?>, PValue<?>> entry : input_map.entrySet()) {
             map.put(PValue.clone(entry.getKey()), PValue.clone(entry.getValue()));
         }
     }
 
-    public PMap(PMap other)
-    {
+    public PMap(PMap other) {
         map = new HashMap<>();
         for (Map.Entry<PValue<?>, PValue<?>> entry : other.map.entrySet()) {
             map.put(PValue.clone(entry.getKey()), PValue.clone(entry.getValue()));
@@ -27,7 +25,7 @@ public class PMap extends PCollection {
     }
 
     public PValue<?> getValue(PValue<?> key) throws KeyNotFoundException {
-        if(!map.containsKey(key))
+        if (!map.containsKey(key))
             throw new KeyNotFoundException(key, map);
         return map.get(key);
     }
@@ -58,7 +56,7 @@ public class PMap extends PCollection {
 
         if (!(obj instanceof PMap)) return false;
 
-        PMap other = (PMap)obj;
+        PMap other = (PMap) obj;
         if (map.size() != other.map.size()) {
             return false;
         }

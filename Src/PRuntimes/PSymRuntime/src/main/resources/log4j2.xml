@@ -4,12 +4,12 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{1} - %marker: %msg%n"/>
         </Console>
-        <File name="LogFile" fileName="all.log" immediateFlush="false" append="false" >
+        <File name="LogFile" fileName="all.log" immediateFlush="false" append="false">
             <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json">
-            <EventTemplateAdditionalField
-                    key="marker"
-                    format="JSON"
-                    value='{"$resolver": "marker", "field": "name"}'/>
+                <EventTemplateAdditionalField
+                        key="marker"
+                        format="JSON"
+                        value='{"$resolver": "marker", "field": "name"}'/>
             </JsonTemplateLayout>
         </File>
     </Appenders>

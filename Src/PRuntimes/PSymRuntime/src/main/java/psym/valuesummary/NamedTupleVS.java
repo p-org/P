@@ -3,13 +3,22 @@ package psym.valuesummary;
 import lombok.Getter;
 import psym.runtime.values.PString;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-/** Class for named tuple value summaries */
+/**
+ * Class for named tuple value summaries
+ */
 public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
-    /** List of names of the fields in the declared order*/
+    /**
+     * List of names of the fields in the declared order
+     */
     private final List<String> names;
-    /** Underlying representation as a TupleVS */
+    /**
+     * Underlying representation as a TupleVS
+     */
     @Getter
     private final TupleVS tuple;
 
@@ -18,12 +27,29 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
         this.tuple = tuple;
     }
 
-    /** Copy-constructor for NamedTupleVS
+    /**
+     * Copy-constructor for NamedTupleVS
+     *
      * @param old The NamedTupleVS to copy
      */
-    public NamedTupleVS (NamedTupleVS old) {
+    public NamedTupleVS(NamedTupleVS old) {
         this.names = new ArrayList<>(old.names);
         this.tuple = new TupleVS(old.tuple);
+    }
+
+    /**
+     * Make a new NamedTupleVS with the provided names and fields
+     *
+     * @param namesAndFields Alternating String and ValueSummary values where the Strings give the field names
+     */
+    public NamedTupleVS(Object... namesAndFields) {
+        names = new ArrayList<>();
+        ValueSummary<?>[] vs = new ValueSummary[namesAndFields.length / 2];
+        for (int i = 0; i < namesAndFields.length; i += 2) {
+            vs[i / 2] = (ValueSummary<?>) namesAndFields[i + 1];
+            names.add((String) namesAndFields[i]);
+        }
+        tuple = new TupleVS(vs);
     }
 
     /**
@@ -35,26 +61,18 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
         return new NamedTupleVS(this);
     }
 
-    /** Get the names of the NamedTupleVS fields
-     * @return Array containing the names of the NamedTupleVS fields */
+    /**
+     * Get the names of the NamedTupleVS fields
+     *
+     * @return Array containing the names of the NamedTupleVS fields
+     */
     public String[] getNames() {
         return names.toArray(new String[names.size()]);
     }
 
-    /** Make a new NamedTupleVS with the provided names and fields
-     * @param namesAndFields Alternating String and ValueSummary values where the Strings give the field names
-     */
-    public NamedTupleVS(Object... namesAndFields) {
-        names = new ArrayList<>();
-        ValueSummary<?>[] vs = new ValueSummary[namesAndFields.length/ 2];
-        for (int i = 0; i < namesAndFields.length; i += 2) {
-            vs[i / 2] = (ValueSummary<?>)namesAndFields[i + 1];
-            names.add((String)namesAndFields[i]);
-        }
-        tuple = new TupleVS(vs);
-    }
-
-    /** Get the value for a particular field
+    /**
+     * Get the value for a particular field
+     *
      * @param name The name of the field
      * @return The value
      */
@@ -62,7 +80,9 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
         return tuple.getField(names.indexOf(name));
     }
 
-    /** Get the value for a particular field
+    /**
+     * Get the value for a particular field
+     *
      * @param name The name of the field
      * @return The value
      */
@@ -70,18 +90,22 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
         return tuple.getField(names.indexOf(name.getValue()));
     }
 
-    /** Set the value for a particular field
+    /**
+     * Set the value for a particular field
+     *
      * @param name The field name
-     * @param val The value to set the specified field to
+     * @param val  The value to set the specified field to
      * @return The result of updating the field
      */
     public NamedTupleVS setField(String name, ValueSummary<?> val) {
         return new NamedTupleVS(names, tuple.setField(names.indexOf(name), val));
     }
 
-    /** Set the value for a particular field
+    /**
+     * Set the value for a particular field
+     *
      * @param name The field name
-     * @param val The value to set the specified field to
+     * @param val  The value to set the specified field to
      * @return The result of updating the field
      */
     public NamedTupleVS setField(PString name, ValueSummary<?> val) {
@@ -156,11 +180,9 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     }
 
     public String toStringDetailed() {
-        StringBuilder out = new StringBuilder();
-        out.append("NamedTuple[ names: ");
-        out.append(names).append(", tuple: ");
-        out.append(tuple.toStringDetailed());
-        out.append("]");
-        return out.toString();
+        return "NamedTuple[ names: " +
+                names + ", tuple: " +
+                tuple.toStringDetailed() +
+                "]";
     }
 }

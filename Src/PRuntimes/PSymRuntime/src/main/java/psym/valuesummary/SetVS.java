@@ -4,16 +4,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Class for set value summaries */
+/**
+ * Class for set value summaries
+ */
 public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> {
 
-    /** The underlying set */
+    /**
+     * The underlying set
+     */
     private final ListVS<T> elements;
-
-    /** Get all the different possible guarded values */
-    public ListVS<T> getElements() {
-        return elements;
-    }
 
     public SetVS(ListVS<T> elements) {
         this.elements = elements;
@@ -23,11 +22,20 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
         this.elements = new ListVS<>(universe);
     }
 
-    /** Copy-constructor for SetVS
+    /**
+     * Copy-constructor for SetVS
+     *
      * @param old The SetVS to copy
      */
     public SetVS(SetVS<T> old) {
         this.elements = new ListVS<>(old.elements);
+    }
+
+    /**
+     * Get all the different possible guarded values
+     */
+    public ListVS<T> getElements() {
+        return elements;
     }
 
     /**
@@ -54,7 +62,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
 
     @Override
     public SetVS<T> restrict(Guard guard) {
-        if(guard.equals(getUniverse()))
+        if (guard.equals(getUniverse()))
             return new SetVS<T>(new ListVS<>(elements));
 
         return new SetVS<>(new ListVS<>(elements.restrict(guard)));
@@ -98,10 +106,10 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
 
         // check if each item in the set is symbolically equal
         Guard equalCond = Guard.constTrue();
-        for (T lhs: this.elements.getItems()) {
+        for (T lhs : this.elements.getItems()) {
             equalCond = equalCond.and(cmp.contains(lhs).getGuardFor(true));
         }
-        for (T rhs: cmp.elements.getItems()) {
+        for (T rhs : cmp.elements.getItems()) {
             equalCond = equalCond.and(this.contains(rhs).getGuardFor(true));
         }
 
@@ -113,7 +121,8 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
         return elements.getUniverse();
     }
 
-    /** Check whether the SetVS contains an element
+    /**
+     * Check whether the SetVS contains an element
      *
      * @param itemSummary The element to check for. Should be possible under a subset of the SetVS's conditions.
      * @return Whether or not the SetVS contains an element
@@ -122,10 +131,14 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
         return elements.contains(itemSummary);
     }
 
-    /** Get the universe under which the data structure is nonempty
+    /**
+     * Get the universe under which the data structure is nonempty
      *
-     * @return The universe under which the data structure is nonempty */
-    public Guard getNonEmptyUniverse() { return elements.getNonEmptyUniverse(); }
+     * @return The universe under which the data structure is nonempty
+     */
+    public Guard getNonEmptyUniverse() {
+        return elements.getNonEmptyUniverse();
+    }
 
     /**
      * Add an item to the SetVS.
@@ -141,6 +154,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
 
     /**
      * Remove an item from the SetVS if present (otherwise no op)
+     *
      * @param itemSummary The element to remove. Should be possible under a subset of the SetVS's conditions.
      * @return The SetVS with the element removed.
      */
@@ -152,7 +166,9 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
         return new SetVS<>(newElements);
     }
 
-    /** Get an item from the SetVS
+    /**
+     * Get an item from the SetVS
+     *
      * @param indexSummary The index to take from the SetVS. Should be possible under a subset of the SetVS's conditions.
      */
     public T get(PrimitiveVS<Integer> indexSummary) {
@@ -171,7 +187,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
         List<GuardedValue<Integer>> guardedSizeList = elements.size().getGuardedValues();
         for (int j = 0; j < guardedSizeList.size(); j++) {
             GuardedValue<Integer> guardedSize = guardedSizeList.get(j);
-            out.append("  #" + guardedSize.getValue() + ": [");
+            out.append("  #").append(guardedSize.getValue()).append(": [");
             for (int i = 0; i < guardedSize.getValue(); i++) {
                 out.append(this.elements.getItems().get(i).restrict(guardedSize.getGuard()));
                 if (i < guardedSize.getValue() - 1) {
@@ -188,10 +204,8 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     }
 
     public String toStringDetailed() {
-        StringBuilder out = new StringBuilder();
-        out.append("Set[");
-        out.append(elements.toStringDetailed());
-        out.append("]");
-        return out.toString();
+        return "Set[" +
+                elements.toStringDetailed() +
+                "]";
     }
 }

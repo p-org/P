@@ -12,8 +12,8 @@ import org.apache.logging.log4j.core.appender.OutputStreamAppender;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import psym.runtime.machine.Machine;
 import psym.runtime.Message;
+import psym.runtime.machine.Machine;
 import psym.runtime.machine.State;
 import psym.valuesummary.Guard;
 import psym.valuesummary.PrimitiveVS;
@@ -50,7 +50,7 @@ public class TraceLogger {
             file.createNewFile();
 
             //Define new file printer
-            FileOutputStream fout = new FileOutputStream(fileName,false);
+            FileOutputStream fout = new FileOutputStream(fileName, false);
 
             Configuration config = Log4JConfig.getContext().getConfiguration();
             PatternLayout layout = PatternLayout.createDefaultLayout(config);
@@ -61,9 +61,7 @@ public class TraceLogger {
 
             context.getConfiguration().addLoggerAppender(coreLogger, fileAppender);
             context.getConfiguration().addLoggerAppender(coreLogger, consoleAppender);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             System.out.println("Failed to set printer to the TraceLogger!!");
         }
     }
@@ -76,57 +74,56 @@ public class TraceLogger {
         Configurator.setLevel(TraceLogger.class.getName(), Level.INFO);
     }
 
-    public static void onProcessEvent(Guard pc, Machine machine, Message message)
-    {
-        if(verbosity > 3) {
+    public static void onProcessEvent(Guard pc, Machine machine, Message message) {
+        if (verbosity > 3) {
             String msg = String.format("Machine %s is processing event %s in state %s", machine, message.getEvent(), machine.getCurrentState().restrict(pc));
             log.info(msg);
         }
     }
 
     public static void onProcessStateTransition(Guard pc, Machine machine, PrimitiveVS<State> newState) {
-        if(verbosity > 3) {
+        if (verbosity > 3) {
             String msg = String.format("Machine %s transitioning to state %s", machine.toString(), newState);
             log.info(msg);
         }
     }
 
     public static void onCreateMachine(Guard pc, Machine machine) {
-        if(verbosity > 3) {
+        if (verbosity > 3) {
             String msg = "Machine " + machine + " was created";
             log.info(msg);
         }
     }
 
     public static void onMachineStart(Guard pc, Machine machine) {
-        if(verbosity > 3) {
+        if (verbosity > 3) {
             String msg = String.format("Machine %s starting", machine.toString());
             log.info(msg);
         }
     }
 
     public static void machineState(Guard pc, Machine machine) {
-        if(verbosity > 3) {
+        if (verbosity > 3) {
             String msg = String.format("Machine %s in state %s", machine, machine.getCurrentState().restrict(pc));
             log.info(msg);
         }
     }
 
     public static void handle(Machine m, State st, Message event) {
-        if(verbosity > 3) {
+        if (verbosity > 3) {
             log.info("Machine " + m + " handling event " + event.getEvent() + " in state " + st);
         }
     }
 
     public static void send(Message effect) {
-        if(verbosity > 3) {
+        if (verbosity > 3) {
             String msg = "Send effect [" + effect.getEvent() + "] to [" + effect.getTarget() + "]";
             log.info(msg);
         }
     }
 
     public static void schedule(int depth, Message effect, PrimitiveVS<Machine> src) {
-        if(verbosity > 0) {
+        if (verbosity > 0) {
             String msg = String.format("  Depth %d: scheduled event[%s] from [%s] sent to [%s]",
                     depth, effect.getEvent().toString(), src, effect.getTarget());
             log.info(msg);
@@ -134,7 +131,7 @@ public class TraceLogger {
     }
 
     public static void logMessage(String str) {
-        if(verbosity > 3) {
+        if (verbosity > 3) {
             log.info(str);
         }
     }
@@ -143,8 +140,7 @@ public class TraceLogger {
         log.info(str);
     }
 
-    public static void logStartReplayCex(int length)
-    {
+    public static void logStartReplayCex(int length) {
         log.info("Replaying Counterexample of Length " + length);
         log.info("--------------------");
     }

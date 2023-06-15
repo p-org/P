@@ -4,13 +4,14 @@ import java.io.Serializable;
 import java.util.*;
 
 public class UnionFind<T> implements Serializable {
-    Map<T, T> parents = new HashMap<>();
-    Map<T, Integer> rank = new HashMap<>();
+    final Map<T, T> parents = new HashMap<>();
+    final Map<T, Integer> rank = new HashMap<>();
     Collection<Set<T>> lastDisjointSet = null;
 
-    public UnionFind () {}
+    public UnionFind() {
+    }
 
-    public UnionFind (Collection<T> c) {
+    public UnionFind(Collection<T> c) {
         c.forEach(this::addElement);
     }
 
@@ -38,7 +39,7 @@ public class UnionFind<T> implements Serializable {
             parents.put(root2, root1);
         } else {
             parents.put(root1, root2);
-            if (rank1 == rank2) {
+            if (rank1.equals(rank2)) {
                 rank.put(root2, rank2 + 1);
             }
         }

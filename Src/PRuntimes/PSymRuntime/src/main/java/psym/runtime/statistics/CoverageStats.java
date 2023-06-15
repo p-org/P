@@ -2,7 +2,6 @@ package psym.runtime.statistics;
 
 import lombok.Getter;
 import lombok.Setter;
-import psym.commandline.PSymConfiguration;
 import psym.runtime.logger.CoverageWriter;
 import psym.runtime.logger.StatWriter;
 import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
@@ -22,111 +21,50 @@ import java.util.List;
  */
 public class CoverageStats implements Serializable {
     /**
+     * Track of number of choices explored versus remaining in aggregate at each depth
+     */
+    private final List<CoverageDepthStats> perDepthStats = new ArrayList<>();
+    /**
      * Estimated state-space coverage
      */
     private BigDecimal estimatedCoverage = new BigDecimal(0);
-    /**
-     * Track of number of choices explored versus remaining in aggregate at each depth
-     */
-    private List<CoverageDepthStats> perDepthStats = new ArrayList<>();
-    @Getter @Setter
+    @Getter
+    @Setter
     /**
      * Track of path coverage during depth-first iterative search
      */
     private List<CoverageChoiceDepthStats> perChoiceDepthStats = new ArrayList<>();
 
-    public CoverageStats() {}
-
-    @Getter
-    public static class CoverageDepthStats implements Serializable {
-        int numScheduleExplored;
-        int numDataExplored;
-        int numScheduleRemaining;
-        int numDataRemaining;
-
-        CoverageDepthStats() {
-            numScheduleExplored = 0;
-            numDataExplored = 0;
-            numScheduleRemaining = 0;
-            numDataRemaining = 0;
-        }
-
-        boolean isEmpty() {
-            return (numScheduleExplored+numDataExplored+numScheduleRemaining+numDataRemaining) == 0;
-        }
-
-    }
-
-    public static class CoverageChoiceDepthStats implements Serializable {
-        BigDecimal pathCoverage;
-        int numTotal;
-        @Getter
-        ChoiceQTable.ChoiceQTableKey stateActions;
-
-        CoverageChoiceDepthStats() {
-            this(new BigDecimal(1), 0, new ChoiceQTable.ChoiceQTableKey());
-        }
-
-        private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal) {
-            this(inputPathCoverage, inputNumTotal, new ChoiceQTable.ChoiceQTableKey());
-        }
-
-        private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal, ChoiceQTable.ChoiceQTableKey inputStateActions) {
-            this.pathCoverage = inputPathCoverage;
-            this.numTotal = inputNumTotal;
-            this.stateActions = inputStateActions;
-        }
-
-        void update(CoverageChoiceDepthStats prefix, int numExplored, int numRemaining, boolean isNewChoice, ChoiceQTable.ChoiceQTableKey chosenActions) {
-            pathCoverage = prefix.pathCoverage;
-            if (isNewChoice) {
-                assert(numRemaining >= 0);
-                numTotal = numExplored + numRemaining;
-            }
-            if (numTotal != 0) {
-                assert(numExplored <= numTotal);
-                pathCoverage = prefix.pathCoverage.multiply(BigDecimal.valueOf(numExplored).divide(BigDecimal.valueOf(numTotal), 20, RoundingMode.FLOOR));
-            }
-            this.stateActions = chosenActions;
-        }
-
-        public void reset() {
-            pathCoverage = new BigDecimal(1);
-            numTotal = 0;
-            if (stateActions != null){
-                stateActions.clear();
-            }
-        }
-
-        public CoverageChoiceDepthStats getCopy() {
-            return new CoverageChoiceDepthStats(this.pathCoverage, this.numTotal);
-        }
+    public CoverageStats() {
     }
 
     public int getNumScheduleChoicesExplored() {
         int res = 0;
-        for (CoverageDepthStats val: perDepthStats) {
+        for (CoverageDepthStats val : perDepthStats) {
             res += val.numScheduleExplored;
         }
         return res;
     }
+
     public int getNumDataChoicesExplored() {
         int res = 0;
-        for (CoverageDepthStats val: perDepthStats) {
+        for (CoverageDepthStats val : perDepthStats) {
             res += val.numDataExplored;
         }
         return res;
     }
+
     public int getNumScheduleChoicesRemaining() {
         int res = 0;
-        for (CoverageDepthStats val: perDepthStats) {
+        for (CoverageDepthStats val : perDepthStats) {
             res += val.numScheduleRemaining;
         }
         return res;
     }
+
     public int getNumDataChoicesRemaining() {
         int res = 0;
-        for (CoverageDepthStats val: perDepthStats) {
+        for (CoverageDepthStats val : perDepthStats) {
             res += val.numDataRemaining;
         }
         return res;
@@ -134,28 +72,30 @@ public class CoverageStats implements Serializable {
 
     /**
      * Update running path coverage at a given choice depth
-     * @param choiceDepth Choice depth to update at
-     * @param numExplored Number of choices explored in current iteration at choiceDepth
+     *
+     * @param choiceDepth  Choice depth to update at
+     * @param numExplored  Number of choices explored in current iteration at choiceDepth
      * @param numRemaining Number of choices remaining in current iteration at choiceDepth
-     * @param isNewChoice Whether or not this is a new choice
+     * @param isNewChoice  Whether or not this is a new choice
      */
     public void updatePathCoverage(int choiceDepth, int numExplored, int numRemaining, boolean isNewChoice, ChoiceQTable.ChoiceQTableKey chosenActions) {
         CoverageChoiceDepthStats prefix;
         if (choiceDepth == 0)
             prefix = new CoverageChoiceDepthStats();
         else
-            prefix = perChoiceDepthStats.get(choiceDepth-1);
+            prefix = perChoiceDepthStats.get(choiceDepth - 1);
         perChoiceDepthStats.get(choiceDepth).update(prefix, numExplored, numRemaining, isNewChoice, chosenActions);
     }
 
     /**
      * Update all coverage statistics at the current step
-     * @param depth Scheduler depth/step
-     * @param choiceDepth Current choice depth
-     * @param numExplored Number of choices explored in current iteration at choiceDepth
+     *
+     * @param depth        Scheduler depth/step
+     * @param choiceDepth  Current choice depth
+     * @param numExplored  Number of choices explored in current iteration at choiceDepth
      * @param numRemaining Number of choices remaining in current iteration at choiceDepth
-     * @param isData Is true if the choice is a data choice
-     * @param isNewChoice Whether or not this is a new choice
+     * @param isData       Is true if the choice is a data choice
+     * @param isNewChoice  Whether or not this is a new choice
      */
     public void updateDepthCoverage(int depth, int choiceDepth, int numExplored, int numRemaining, boolean isData, boolean isNewChoice, ChoiceQTable.ChoiceQTableKey chosenActions) {
         // TODO: add synchronized to avoid race conditions when developing multi-threaded version
@@ -186,6 +126,7 @@ public class CoverageStats implements Serializable {
 
     /**
      * Increment path coverage after an iteration has ended
+     *
      * @param choiceDepth Highest choice depth at which the last iteration ended
      */
     public void updateIterationCoverage(int choiceDepth, int startDepth, ChoiceLearningRewardMode rewardMode) {
@@ -193,7 +134,7 @@ public class CoverageStats implements Serializable {
         estimatedCoverage = estimatedCoverage.add(iterationCoverage);
 //        assert (estimatedCoverage.compareTo(BigDecimal.ONE) <= 0): "Error in path coverage estimation";
         if (rewardMode != ChoiceLearningRewardMode.None) {
-            for (int i=startDepth; i<=choiceDepth; i++) {
+            for (int i = startDepth; i <= choiceDepth; i++) {
                 CoverageChoiceDepthStats stats = perChoiceDepthStats.get(i);
                 if (stats != null) {
                     GlobalData.getChoiceLearningStats().rewardIteration(stats.getStateActions(), iterationCoverage, rewardMode);
@@ -213,18 +154,11 @@ public class CoverageStats implements Serializable {
     /**
      * Reset running path coverage at a given choice depth
      */
-   public void resetPathCoverage(int choiceDepth) {
-       if (choiceDepth < perChoiceDepthStats.size()) {
-           perChoiceDepthStats.get(choiceDepth).reset();
-       }
-   }
-
-//    /**
-//     * Return estimated state-space coverage between 0 - 100%
-//     */
-//    public BigDecimal getEstimatedCoverage() {
-//        return getEstimatedCoverage(12);
-//    }
+    public void resetPathCoverage(int choiceDepth) {
+        if (choiceDepth < perChoiceDepthStats.size()) {
+            perChoiceDepthStats.get(choiceDepth).reset();
+        }
+    }
 
     public String getCoverageGoalAchieved() {
         String coverageString = String.format("%.22f", getEstimatedCoverage(22));
@@ -233,7 +167,7 @@ public class CoverageStats implements Serializable {
             return getMaxCoverageGoal();
         } else if (coverageString.startsWith("0.")) {
             int numNines = 0;
-            for (int i=2; i<coverageString.length(); i++) {
+            for (int i = 2; i < coverageString.length(); i++) {
                 if (coverageString.charAt(i) != '9') {
                     break;
                 }
@@ -244,8 +178,8 @@ public class CoverageStats implements Serializable {
         return coverageGoal;
     }
 
-    public String getMaxCoverageGoal() {
-       return String.format("\u221e 9s");
+    public static String getMaxCoverageGoal() {
+        return "∞ 9s";
     }
 
     public BigDecimal getEstimatedCoverage(int scale) {
@@ -254,10 +188,11 @@ public class CoverageStats implements Serializable {
 
     /**
      * Get path coverage of an interation after an iteration has ended
+     *
      * @param choiceDepth Highest choice depth at which the last iteration ended
      */
     public BigDecimal getPathCoverageAtDepth(int choiceDepth) {
-        assert(choiceDepth < perChoiceDepthStats.size());
+        assert (choiceDepth < perChoiceDepthStats.size());
         return perChoiceDepthStats.get(choiceDepth).pathCoverage;
     }
 
@@ -267,7 +202,7 @@ public class CoverageStats implements Serializable {
     public void logPerDepthCoverage() {
         for (int d = 0; d < perDepthStats.size(); d++) {
             CoverageDepthStats val = perDepthStats.get(d);
-            if (!val.isEmpty())
+            if (val.isNotEmpty())
                 CoverageWriter.log(d, val);
         }
     }
@@ -284,19 +219,19 @@ public class CoverageStats implements Serializable {
                 getNumDataChoicesExplored()));
         CoverageWriter.info(String.format("  Remaining choices: %5s scheduling, %5s data",
                 getNumScheduleChoicesRemaining(),
-                getNumDataChoicesRemaining() ));
+                getNumDataChoicesRemaining()));
 
         String s = "";
         CoverageWriter.info("\t-------------------------------------");
-        s += String.format("\t  Depth  ");
-        s += String.format("  Covered        Remaining");
+        s += "\t  Depth  ";
+        s += "  Covered        Remaining";
         s += String.format("\n\t%5s  %5s   %5s  ", "", "sch", "data");
         s += String.format(" %5s   %5s ", "sch", "data");
         CoverageWriter.info(s);
         CoverageWriter.info("\t-------------------------------------");
-        for (int d = 0; d< perDepthStats.size(); d++) {
+        for (int d = 0; d < perDepthStats.size(); d++) {
             CoverageDepthStats val = perDepthStats.get(d);
-            if (!val.isEmpty()) {
+            if (val.isNotEmpty()) {
                 s = "";
                 s += String.format("\t%5s ", d);
                 s += String.format(" %5s   %5s  ",
@@ -328,37 +263,102 @@ public class CoverageStats implements Serializable {
             return new BigDecimal(0);
         }
 
-        BigDecimal depthMultiplier[] = new BigDecimal[perDepthStats.size()];
-        for (int d = perDepthStats.size()-1; d>=0; d--) {
+        BigDecimal[] depthMultiplier = new BigDecimal[perDepthStats.size()];
+        for (int d = perDepthStats.size() - 1; d >= 0; d--) {
             CoverageDepthStats val = perDepthStats.get(d);
             int numScheduleExplored = val.numScheduleExplored;
             int numDataExplored = val.numDataExplored;
-            int numExplored = Collections.max(Arrays.asList(1, numScheduleExplored, numDataExplored, numScheduleExplored*numDataExplored));
+            int numExplored = Collections.max(Arrays.asList(1, numScheduleExplored, numDataExplored, numScheduleExplored * numDataExplored));
             depthMultiplier[d] = BigDecimal.valueOf(numExplored);
-            if (d != (perDepthStats.size()-1))
-                depthMultiplier[d] = depthMultiplier[d].add(depthMultiplier[d+1]);
+            if (d != (perDepthStats.size() - 1))
+                depthMultiplier[d] = depthMultiplier[d].add(depthMultiplier[d + 1]);
         }
 
-        BigDecimal perDepthRemaining[] = new BigDecimal[perDepthStats.size()];
-        for (int d = perDepthStats.size()-1; d>=0; d--) {
+        BigDecimal[] perDepthRemaining = new BigDecimal[perDepthStats.size()];
+        for (int d = perDepthStats.size() - 1; d >= 0; d--) {
             CoverageDepthStats val = perDepthStats.get(d);
             int numScheduleExplored = val.numScheduleExplored;
             int numDataExplored = val.numDataExplored;
             int numScheduleRemaining = val.numScheduleRemaining;
             int numDataRemaining = val.numDataRemaining;
-            int numExplored = Collections.max(Arrays.asList(1, numScheduleExplored, numDataExplored, numScheduleExplored*numDataExplored));
-            int numRemaining = Collections.max(Arrays.asList(numScheduleRemaining, numDataRemaining, numScheduleRemaining*numDataRemaining));
+            int numExplored = Collections.max(Arrays.asList(1, numScheduleExplored, numDataExplored, numScheduleExplored * numDataExplored));
+            int numRemaining = Collections.max(Arrays.asList(numScheduleRemaining, numDataRemaining, numScheduleRemaining * numDataRemaining));
             perDepthRemaining[d] = depthMultiplier[d].multiply(BigDecimal.valueOf(numRemaining)).divide(BigDecimal.valueOf(numExplored), 2, RoundingMode.CEILING);
         }
 
         BigDecimal estimatedExplored = depthMultiplier[0];
         BigDecimal estimatedRemaining = BigDecimal.valueOf(0);
-        for (int d = perDepthStats.size()-1; d>=0; d--) {
+        for (int d = perDepthStats.size() - 1; d >= 0; d--) {
             estimatedRemaining = estimatedRemaining.add(perDepthRemaining[d]);
         }
 
-        BigDecimal estimatedCoverage = estimatedExplored.multiply(BigDecimal.valueOf(100.0)).divide(estimatedExplored.add(estimatedRemaining), 2, RoundingMode.FLOOR);
-        return estimatedCoverage;
+        return estimatedExplored.multiply(BigDecimal.valueOf(100.0)).divide(estimatedExplored.add(estimatedRemaining), 2, RoundingMode.FLOOR);
+    }
+
+    @Getter
+    public static class CoverageDepthStats implements Serializable {
+        int numScheduleExplored;
+        int numDataExplored;
+        int numScheduleRemaining;
+        int numDataRemaining;
+
+        CoverageDepthStats() {
+            numScheduleExplored = 0;
+            numDataExplored = 0;
+            numScheduleRemaining = 0;
+            numDataRemaining = 0;
+        }
+
+        boolean isNotEmpty() {
+            return (numScheduleExplored + numDataExplored + numScheduleRemaining + numDataRemaining) != 0;
+        }
+
+    }
+
+    public static class CoverageChoiceDepthStats implements Serializable {
+        BigDecimal pathCoverage;
+        int numTotal;
+        @Getter
+        ChoiceQTable.ChoiceQTableKey stateActions;
+
+        CoverageChoiceDepthStats() {
+            this(new BigDecimal(1), 0, new ChoiceQTable.ChoiceQTableKey());
+        }
+
+        private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal) {
+            this(inputPathCoverage, inputNumTotal, new ChoiceQTable.ChoiceQTableKey());
+        }
+
+        private CoverageChoiceDepthStats(BigDecimal inputPathCoverage, int inputNumTotal, ChoiceQTable.ChoiceQTableKey inputStateActions) {
+            this.pathCoverage = inputPathCoverage;
+            this.numTotal = inputNumTotal;
+            this.stateActions = inputStateActions;
+        }
+
+        void update(CoverageChoiceDepthStats prefix, int numExplored, int numRemaining, boolean isNewChoice, ChoiceQTable.ChoiceQTableKey chosenActions) {
+            pathCoverage = prefix.pathCoverage;
+            if (isNewChoice) {
+                assert (numRemaining >= 0);
+                numTotal = numExplored + numRemaining;
+            }
+            if (numTotal != 0) {
+                assert (numExplored <= numTotal);
+                pathCoverage = prefix.pathCoverage.multiply(BigDecimal.valueOf(numExplored).divide(BigDecimal.valueOf(numTotal), 20, RoundingMode.FLOOR));
+            }
+            this.stateActions = chosenActions;
+        }
+
+        public void reset() {
+            pathCoverage = new BigDecimal(1);
+            numTotal = 0;
+            if (stateActions != null) {
+                stateActions.clear();
+            }
+        }
+
+        public CoverageChoiceDepthStats getCopy() {
+            return new CoverageChoiceDepthStats(this.pathCoverage, this.numTotal);
+        }
     }
 
 }

@@ -16,36 +16,79 @@ public class BacktrackTask implements Serializable {
     private static TaskOrchestrationMode orchestration;
     private static TaskOrchestrator taskOrchestrator = null;
     @Getter
-    private int id;
+    final private List<Schedule.Choice> choices = new ArrayList<>();
+    @Getter
+    final private List<CoverageStats.CoverageChoiceDepthStats> perChoiceDepthStats = new ArrayList<>();
+    @Getter
+    private final int id;
+    @Getter
+    private final List<BacktrackTask> children = new ArrayList<>();
     @Getter
     private BigDecimal coverage = new BigDecimal(0);
-    @Getter @Setter
+    @Getter
+    @Setter
     private BigDecimal prefixCoverage = new BigDecimal(0);
-
     @Getter
     private BigDecimal estimatedCoverage = new BigDecimal(0);
-    @Getter @Setter
-    private int depth = -1;
-    @Getter @Setter
-    private int choiceDepth = -1;
     @Getter
-    final private List<Schedule.Choice> choices = new ArrayList<>();
+    @Setter
+    private int depth = -1;
+    @Getter
+    @Setter
+    private int choiceDepth = -1;
     @Getter
     private int numBacktracks = 0;
     @Getter
     private int numDataBacktracks = 0;
-    @Getter @Setter
-    private BacktrackTask parentTask = null;
     @Getter
-    private List<BacktrackTask> children = new ArrayList<>();
+    @Setter
+    private BacktrackTask parentTask = null;
     @Getter
     private boolean completed = false;
 
-    @Getter
-    final private List<CoverageStats.CoverageChoiceDepthStats> perChoiceDepthStats = new ArrayList<>();
-
     public BacktrackTask(int id) {
         this.id = id;
+    }
+
+    public static void initialize(TaskOrchestrationMode orch) {
+        orchestration = orch;
+        switch (orchestration) {
+            case DepthFirst:
+                // do nothing
+                break;
+            case Random:
+                taskOrchestrator = new TaskOrchestratorRandom();
+                break;
+            case CoverageAStar:
+                taskOrchestrator = new TaskOrchestratorCoverageAStar();
+                break;
+            case CoverageEstimate:
+                taskOrchestrator = new TaskOrchestratorCoverageEstimate();
+                break;
+            case CoverageEpsilonGreedy:
+                taskOrchestrator = new TaskOrchestratorCoverageEpsilonGreedy();
+                break;
+            default:
+                throw new RuntimeException("Unrecognized orchestration mode: " + orchestration);
+        }
+    }
+
+    public static BacktrackTask getNextTask() throws InterruptedException {
+        BacktrackTask result;
+        switch (orchestration) {
+            case DepthFirst:
+                throw new RuntimeException("Unexpected orchestration mode: " + orchestration);
+            case Random:
+            case CoverageAStar:
+            case CoverageEstimate:
+            case CoverageEpsilonGreedy:
+                result = taskOrchestrator.getNext();
+                break;
+            default:
+                throw new RuntimeException("Unrecognized orchestration mode: " + orchestration);
+        }
+        taskOrchestrator.remove(result);
+        return result;
     }
 
     public void cleanup() {
@@ -56,12 +99,12 @@ public class BacktrackTask implements Serializable {
     }
 
     public void setChoices(List<Schedule.Choice> inputChoices) {
-        assert(choices.isEmpty());
-        for (Schedule.Choice choice: inputChoices) {
+        assert (choices.isEmpty());
+        for (Schedule.Choice choice : inputChoices) {
             choices.add(choice.getCopy());
-            if (!choice.isBacktrackEmpty()) {
+            if (choice.isBacktrackNonEmpty()) {
                 numBacktracks++;
-                if (!choice.isDataBacktrackEmpty()) {
+                if (choice.isDataBacktrackNonEmpty()) {
                     numDataBacktracks++;
                 }
             }
@@ -69,8 +112,8 @@ public class BacktrackTask implements Serializable {
     }
 
     public void setPerChoiceDepthStats(List<CoverageStats.CoverageChoiceDepthStats> inputStats) {
-        assert(perChoiceDepthStats.isEmpty());
-        for (CoverageStats.CoverageChoiceDepthStats stat: inputStats) {
+        assert (perChoiceDepthStats.isEmpty());
+        for (CoverageStats.CoverageChoiceDepthStats stat : inputStats) {
             perChoiceDepthStats.add(stat.getCopy());
         }
     }
@@ -144,7 +187,7 @@ public class BacktrackTask implements Serializable {
     }
 
     public void postProcess(BigDecimal inputCoverage) {
-        assert(inputCoverage.doubleValue() <= prefixCoverage.doubleValue()):
+        assert (inputCoverage.doubleValue() <= prefixCoverage.doubleValue()) :
                 String.format("Error in coverage estimation: path coverage (%.5f) should be <= prefix coverage (%.5f)",
                         inputCoverage, prefixCoverage);
         coverage = inputCoverage;
@@ -161,8 +204,8 @@ public class BacktrackTask implements Serializable {
                 break;
             case CoverageEstimate:
                 if (!isInitialTask()) {
-                    assert(parentTask != null);
-                    for (BacktrackTask t: parentTask.getChildren()) {
+                    assert (parentTask != null);
+                    for (BacktrackTask t : parentTask.getChildren()) {
                         if (!t.completed) {
                             t.setCoverageEstimate();
                             taskOrchestrator.addPriority(t);
@@ -173,47 +216,6 @@ public class BacktrackTask implements Serializable {
             default:
                 throw new RuntimeException("Unrecognized orchestration mode: " + orchestration);
         }
-    }
-
-    public static void initialize(TaskOrchestrationMode orch) {
-        orchestration = orch;
-        switch (orchestration) {
-            case DepthFirst:
-                // do nothing
-                break;
-            case Random:
-                taskOrchestrator = new TaskOrchestratorRandom();
-                break;
-            case CoverageAStar:
-                taskOrchestrator = new TaskOrchestratorCoverageAStar();
-                break;
-            case CoverageEstimate:
-                taskOrchestrator = new TaskOrchestratorCoverageEstimate();
-                break;
-            case CoverageEpsilonGreedy:
-                taskOrchestrator = new TaskOrchestratorCoverageEpsilonGreedy();
-                break;
-            default:
-                throw new RuntimeException("Unrecognized orchestration mode: " + orchestration);
-        }
-    }
-
-    public static BacktrackTask getNextTask() throws InterruptedException {
-        BacktrackTask result;
-        switch (orchestration) {
-            case DepthFirst:
-                throw new RuntimeException("Unexpected orchestration mode: " + orchestration);
-            case Random:
-            case CoverageAStar:
-            case CoverageEstimate:
-            case CoverageEpsilonGreedy:
-                result = taskOrchestrator.getNext();
-                break;
-            default:
-                throw new RuntimeException("Unrecognized orchestration mode: " + orchestration);
-        }
-        taskOrchestrator.remove(result);
-        return result;
     }
 
 }

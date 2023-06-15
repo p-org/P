@@ -9,16 +9,14 @@ public class PSeq extends PCollection {
     // stores the map
     private final List<PValue<?>> seq;
 
-    public PSeq(List<PValue<?>> input_seq)
-    {
+    public PSeq(List<PValue<?>> input_seq) {
         seq = new ArrayList<>();
         for (PValue<?> entry : input_seq) {
             seq.add(PValue.clone(entry));
         }
     }
 
-    public PSeq(PSeq other)
-    {
+    public PSeq(PSeq other) {
         seq = new ArrayList<>();
         for (PValue<?> entry : other.seq) {
             seq.add(PValue.clone(entry));
@@ -26,19 +24,19 @@ public class PSeq extends PCollection {
     }
 
     public PValue<?> getValue(int index) throws InvalidIndexException {
-        if(index >= seq.size() || index < 0)
+        if (index >= seq.size() || index < 0)
             throw new InvalidIndexException(index, this);
         return seq.get(index);
     }
 
     public void setValue(int index, PValue<?> val) throws InvalidIndexException {
-        if(index >= seq.size() || index < 0)
+        if (index >= seq.size() || index < 0)
             throw new InvalidIndexException(index, this);
         seq.set(index, val);
     }
 
     public void insertValue(int index, PValue<?> val) throws InvalidIndexException {
-        if(index > seq.size() || index < 0)
+        if (index > seq.size() || index < 0)
             throw new InvalidIndexException(index, this);
         seq.add(index, val);
     }
@@ -67,7 +65,7 @@ public class PSeq extends PCollection {
             return false;
         }
 
-        for (int i = 0; i<seq.size(); i++) {
+        for (int i = 0; i < seq.size(); i++) {
             if (!PValue.equals(other.seq.get(i), this.seq.get(i))) {
                 return false;
             }

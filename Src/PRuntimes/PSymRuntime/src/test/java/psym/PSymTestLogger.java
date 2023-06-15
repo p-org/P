@@ -39,7 +39,7 @@ public class PSymTestLogger {
             file.createNewFile();
 
             //Define new file printer
-            FileOutputStream fout = new FileOutputStream(fileName,false);
+            FileOutputStream fout = new FileOutputStream(fileName, false);
 
             Configuration config = Log4JConfig.getContext().getConfiguration();
             PatternLayout layout = PatternLayout.createDefaultLayout(config);

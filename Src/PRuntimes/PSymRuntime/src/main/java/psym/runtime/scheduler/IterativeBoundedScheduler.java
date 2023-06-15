@@ -7,9 +7,12 @@ import psym.commandline.Program;
 import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
 import psym.runtime.scheduler.choiceorchestration.*;
-import psym.runtime.scheduler.taskorchestration.*;
+import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psym.runtime.statistics.SearchStats;
-import psym.utils.*;
+import psym.utils.GlobalData;
+import psym.utils.MemoryMonitor;
+import psym.utils.StateCachingMode;
+import psym.utils.TimeMonitor;
 import psym.valuesummary.*;
 
 import java.io.*;
@@ -17,7 +20,10 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
@@ -31,18 +37,26 @@ import java.util.stream.Collectors;
  */
 public class IterativeBoundedScheduler extends Scheduler {
 
-    /** List of all backtrack tasks */
+    /**
+     * List of all backtrack tasks
+     */
     private final List<BacktrackTask> allTasks = new ArrayList<>();
-    /** Priority queue of all backtrack tasks that are pending */
+    /**
+     * Priority queue of all backtrack tasks that are pending
+     */
     private final Set<Integer> pendingTasks = new HashSet<>();
-    /** List of all backtrack tasks that finished */
+    /**
+     * List of all backtrack tasks that finished
+     */
     private final List<Integer> finishedTasks = new ArrayList<>();
-    /** Task id of the latest backtrack task */
+    private final ChoiceOrchestrator choiceOrchestrator;
+    /**
+     * Task id of the latest backtrack task
+     */
     private int latestTaskId = 0;
     private int numPendingBacktracks = 0;
     private int numPendingDataBacktracks = 0;
     private boolean isDoneIterating = false;
-    private final ChoiceOrchestrator choiceOrchestrator;
     private transient Instant lastReportTime = Instant.now();
 
     public IterativeBoundedScheduler(PSymConfiguration config, Program p) {
@@ -65,6 +79,31 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
     }
 
+    /**
+     * Read scheduler state from a file
+     *
+     * @param readFromFile Name of the input file containing the scheduler state
+     * @return A scheduler object
+     * @throws Exception Throw error if reading fails
+     */
+    public static IterativeBoundedScheduler readFromFile(String readFromFile) throws Exception {
+        IterativeBoundedScheduler result;
+        try {
+            PSymLogger.info("... Reading program state from file " + readFromFile);
+            FileInputStream fis;
+            fis = new FileInputStream(readFromFile);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            result = (IterativeBoundedScheduler) ois.readObject();
+            GlobalData.setInstance((GlobalData) ois.readObject());
+            result.reinitialize();
+            PSymLogger.info("... Successfully read.");
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            throw new Exception("... Failed to read program state from file " + readFromFile);
+        }
+        return result;
+    }
+
     private void resetBacktrackTasks() {
         pendingTasks.clear();
         numPendingBacktracks = 0;
@@ -73,7 +112,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     private void isValidTaskId(int taskId) {
-        assert(taskId < allTasks.size());
+        assert (taskId < allTasks.size());
     }
 
     private BacktrackTask getTask(int taskId) {
@@ -97,15 +136,10 @@ public class IterativeBoundedScheduler extends Scheduler {
 
         // print statistics
         StatWriter.log("#-tasks-finished", String.format("%d", finishedTasks.size()));
-        StatWriter.log("#-tasks-remaining", String.format("%d",  (allTasks.size() - finishedTasks.size())));
+        StatWriter.log("#-tasks-remaining", String.format("%d", (allTasks.size() - finishedTasks.size())));
         StatWriter.log("#-backtracks", String.format("%d", getTotalNumBacktracks()));
         StatWriter.log("%-backtracks-data", String.format("%.2f", getTotalDataBacktracksPercent()));
         StatWriter.log("#-executions", String.format("%d", (iter - start_iter)));
-    }
-
-    @Override
-    public void reset_stats() {
-        super.reset_stats();
     }
 
     /**
@@ -119,7 +153,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
 
         BigDecimal coverage = GlobalData.getCoverage().getEstimatedCoverage(22);
-        assert (coverage.compareTo(BigDecimal.ONE) <= 0): "Error in progress estimation";
+        assert (coverage.compareTo(BigDecimal.ONE) <= 0) : "Error in progress estimation";
 
         String coverageGoalAchieved = GlobalData.getCoverage().getCoverageGoalAchieved();
         if (isFinalResult && result.endsWith("correct for any depth")) {
@@ -154,13 +188,14 @@ public class IterativeBoundedScheduler extends Scheduler {
             if (getTotalNumBacktracks() == 0) {
                 result += "correct up to step " + safeDepth;
             } else {
-                result += "partially correct up to step " + (configuration.getMaxStepBound()-1) + " with " + getTotalNumBacktracks() + " backtracks remaining";
+                result += "partially correct up to step " + (configuration.getMaxStepBound() - 1) + " with " + getTotalNumBacktracks() + " backtracks remaining";
             }
         }
     }
 
     /**
      * Write scheduler state to a file
+     *
      * @param writeFileName Output file name
      * @throws Exception Throw error if writing fails
      */
@@ -182,6 +217,7 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     /**
      * Write each backtracking point state individually
+     *
      * @param prefix Output file name prefix
      * @throws Exception Throw error if writing fails
      */
@@ -189,7 +225,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         for (int i = 0; i < schedule.size(); i++) {
             Schedule.Choice choice = schedule.getChoice(i);
             // if choice at this depth is non-empty
-            if (!choice.isBacktrackEmpty()) {
+            if (choice.isBacktrackNonEmpty()) {
                 writeBacktrackToFile(prefix, i);
             }
         }
@@ -197,7 +233,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             for (int i = 0; i < schedule.size(); i++) {
                 Schedule.Choice choice = schedule.getChoice(i);
                 // if choice at this depth is non-empty
-                if (!choice.isBacktrackEmpty()) {
+                if (choice.isBacktrackNonEmpty()) {
                     writeBacktrackToFile(prefix, i);
                 }
             }
@@ -206,64 +242,33 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     /**
      * Write backtracking point state individually at a given depth
-     * @param prefix Output file name prefix
-     * @param choiceDepth Backtracking point choice depth
+     *
+     * @param prefix      Output file name prefix
+     * @param backtrackChoiceDepth Backtracking point choice depth
      * @throws Exception Throw error if writing fails
      */
-    public void writeBacktrackToFile(String prefix, int choiceDepth) throws Exception {
+    public void writeBacktrackToFile(String prefix, int backtrackChoiceDepth) throws Exception {
         // create a copy of original choices
-        List<Schedule.Choice> originalChoices = new ArrayList<>();
-        for (int i = 0; i < schedule.size(); i++) {
-            originalChoices.add(schedule.getChoice(i).getCopy());
-        }
-
-        // clear backtracks at all predecessor depths
-        for (int i = 0; i < choiceDepth; i++) {
-            schedule.getChoice(i).clearBacktrack();
-        }
+        List<Schedule.Choice> originalChoices = clearAndReturnOriginalTask(backtrackChoiceDepth);
         // clear the complete choice information (including repeats and backtracks) at all successor depths
-        for (int i = choiceDepth+1; i < schedule.size(); i++) {
+        for (int i = backtrackChoiceDepth + 1; i < schedule.size(); i++) {
             schedule.clearChoice(i);
         }
-        int depth = schedule.getChoice(choiceDepth).getSchedulerDepth();
+        int depth = schedule.getChoice(backtrackChoiceDepth).getSchedulerDepth();
         long pid = ProcessHandle.current().pid();
-        String writeFileName = prefix + "_d" + depth + "_cd" + choiceDepth + "_task" + latestTaskId + "_pid" + pid + ".out";
+        String writeFileName = prefix + "_d" + depth + "_cd" + backtrackChoiceDepth + "_task" + latestTaskId + "_pid" + pid + ".out";
         // write to file
         writeToFile(writeFileName);
-        BacktrackWriter.log(writeFileName, GlobalData.getCoverage().getPathCoverageAtDepth(choiceDepth), depth, choiceDepth);
+        BacktrackWriter.log(writeFileName, GlobalData.getCoverage().getPathCoverageAtDepth(backtrackChoiceDepth), depth, backtrackChoiceDepth);
 
         // restore schedule to original choices
         schedule.setChoices(originalChoices);
     }
 
-    /**
-     * Read scheduler state from a file
-     * @param readFromFile Name of the input file containing the scheduler state
-     * @return A scheduler object
-     * @throws Exception Throw error if reading fails
-     */
-    public static IterativeBoundedScheduler readFromFile(String readFromFile) throws Exception {
-        IterativeBoundedScheduler result;
-        try {
-            PSymLogger.info("... Reading program state from file " + readFromFile);
-            FileInputStream fis;
-            fis = new FileInputStream(readFromFile);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            result = (IterativeBoundedScheduler) ois.readObject();
-            GlobalData.setInstance((GlobalData) ois.readObject());
-            result.reinitialize();
-            PSymLogger.info("... Successfully read.");
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            throw new Exception("... Failed to read program state from file " + readFromFile);
-        }
-        return result;
-    }
-
     private void setBacktrackTasks() {
         BacktrackTask parentTask;
         if (latestTaskId == 0) {
-            assert(allTasks.isEmpty());
+            assert (allTasks.isEmpty());
             BacktrackTask.setOrchestration(configuration.getTaskOrchestration());
             parentTask = new BacktrackTask(0);
             parentTask.setPrefixCoverage(new BigDecimal(1));
@@ -271,7 +276,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         } else {
             parentTask = getTask(latestTaskId);
         }
-        parentTask.postProcess(GlobalData.getCoverage().getPathCoverageAtDepth(getChoiceDepth()-1));
+        parentTask.postProcess(GlobalData.getCoverage().getPathCoverageAtDepth(getChoiceDepth() - 1));
         finishedTasks.add(parentTask.getId());
         if (configuration.getVerbosity() > 1) {
             PSymLogger.info(String.format("  Finished %s [depth: %d, parent: %s]",
@@ -282,9 +287,9 @@ public class IterativeBoundedScheduler extends Scheduler {
         for (int i = 0; i < schedule.size(); i++) {
             Schedule.Choice choice = schedule.getChoice(i);
             // if choice at this depth is non-empty
-            if (!choice.isBacktrackEmpty()) {
+            if (choice.isBacktrackNonEmpty()) {
                 if (configuration.getMaxBacktrackTasksPerExecution() > 0 &&
-                        numBacktracksAdded == (configuration.getMaxBacktrackTasksPerExecution()-1)) {
+                        numBacktracksAdded == (configuration.getMaxBacktrackTasksPerExecution() - 1)) {
                     setBacktrackTaskAtDepthCombined(parentTask, i);
                     numBacktracksAdded++;
                     break;
@@ -306,15 +311,15 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
     }
 
-    private void setBacktrackTaskAtDepthExact(BacktrackTask parentTask, int choiceDepth) {
-        setBacktrackTaskAtDepth(parentTask, choiceDepth, true);
+    private void setBacktrackTaskAtDepthExact(BacktrackTask parentTask, int backtrackChoiceDepth) {
+        setBacktrackTaskAtDepth(parentTask, backtrackChoiceDepth, true);
     }
 
-    private void setBacktrackTaskAtDepthCombined(BacktrackTask parentTask, int choiceDepth) {
-        setBacktrackTaskAtDepth(parentTask, choiceDepth, false);
+    private void setBacktrackTaskAtDepthCombined(BacktrackTask parentTask, int backtrackChoiceDepth) {
+        setBacktrackTaskAtDepth(parentTask, backtrackChoiceDepth, false);
     }
 
-    private void setBacktrackTaskAtDepth(BacktrackTask parentTask, int choiceDepth, boolean isExact) {
+    private List<Schedule.Choice> clearAndReturnOriginalTask(int backtrackChoiceDepth) {
         // create a copy of original choices
         List<Schedule.Choice> originalChoices = new ArrayList<>();
         for (int i = 0; i < schedule.size(); i++) {
@@ -322,22 +327,28 @@ public class IterativeBoundedScheduler extends Scheduler {
         }
 
         // clear backtracks at all predecessor depths
-        for (int i = 0; i < choiceDepth; i++) {
+        for (int i = 0; i < backtrackChoiceDepth; i++) {
             schedule.getChoice(i).clearBacktrack();
         }
+        return originalChoices;
+    }
+
+    private void setBacktrackTaskAtDepth(BacktrackTask parentTask, int backtrackChoiceDepth, boolean isExact) {
+        // create a copy of original choices
+        List<Schedule.Choice> originalChoices = clearAndReturnOriginalTask(backtrackChoiceDepth);
         if (isExact) {
             // clear the complete choice information (including repeats and backtracks) at all successor depths
-            for (int i = choiceDepth + 1; i < schedule.size(); i++) {
+            for (int i = backtrackChoiceDepth + 1; i < schedule.size(); i++) {
                 schedule.clearChoice(i);
             }
         }
 
-        BigDecimal prefixCoverage = GlobalData.getCoverage().getPathCoverageAtDepth(choiceDepth);
+        BigDecimal prefixCoverage = GlobalData.getCoverage().getPathCoverageAtDepth(backtrackChoiceDepth);
 
         BacktrackTask newTask = new BacktrackTask(allTasks.size());
         newTask.setPrefixCoverage(prefixCoverage);
-        newTask.setDepth(schedule.getChoice(choiceDepth).getSchedulerDepth());
-        newTask.setChoiceDepth(choiceDepth);
+        newTask.setDepth(schedule.getChoice(backtrackChoiceDepth).getSchedulerDepth());
+        newTask.setChoiceDepth(backtrackChoiceDepth);
         newTask.setChoices(schedule.getChoices());
         newTask.setPerChoiceDepthStats(GlobalData.getCoverage().getPerChoiceDepthStats());
         newTask.setParentTask(parentTask);
@@ -370,12 +381,12 @@ public class IterativeBoundedScheduler extends Scheduler {
             return null;
         BacktrackTask latestTask = BacktrackTask.getNextTask();
         latestTaskId = latestTask.getId();
-        assert(!latestTask.isCompleted());
+        assert (!latestTask.isCompleted());
         removePendingTask(latestTask);
 
         schedule.getChoices().clear();
         GlobalData.getCoverage().getPerChoiceDepthStats().clear();
-        assert(!latestTask.isInitialTask());
+        assert (!latestTask.isInitialTask());
         latestTask.getParentTask().cleanup();
 
         schedule.setChoices(latestTask.getChoices());
@@ -430,8 +441,8 @@ public class IterativeBoundedScheduler extends Scheduler {
             printCurrentStatus(newRuntime);
             boolean consolePrint = (configuration.getVerbosity() == 0);
             if (consolePrint || forcePrint) {
-                long runtime = (long)(newRuntime * 1000);
-                String runtimeHms =  String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(runtime),
+                long runtime = (long) (newRuntime * 1000);
+                String runtimeHms = String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(runtime),
                         TimeUnit.MILLISECONDS.toMinutes(runtime) % TimeUnit.HOURS.toMinutes(1),
                         TimeUnit.MILLISECONDS.toSeconds(runtime) % TimeUnit.MINUTES.toSeconds(1));
 
@@ -450,8 +461,8 @@ public class IterativeBoundedScheduler extends Scheduler {
                     s.append(StringUtils.center(String.format("%d (%.0f %% data)", getTotalNumBacktracks(), getTotalDataBacktracksPercent()), 24));
                     s.append(StringUtils.center(
                             String.format("%.12f (%s)",
-                                GlobalData.getCoverage().getEstimatedCoverage(12),
-                                GlobalData.getCoverage().getCoverageGoalAchieved()),
+                                    GlobalData.getCoverage().getEstimatedCoverage(12),
+                                    GlobalData.getCoverage().getCoverageGoalAchieved()),
                             24));
                 }
                 if (configuration.getStateCachingMode() != StateCachingMode.None) {
@@ -471,17 +482,16 @@ public class IterativeBoundedScheduler extends Scheduler {
             return;
         }
 
-        StringBuilder str = new StringBuilder("--------------------");
-        str.append(String.format("\n    Status after %.2f seconds:", newRuntime));
-        str.append(String.format("\n      Progress:         %.12f", GlobalData.getCoverage().getEstimatedCoverage(12)));
-        str.append(String.format("\n      Iterations:       %d", (iter - start_iter)));
-        str.append(String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
-        str.append(String.format("\n      Finished:         %d", finishedTasks.size()));
-        str.append(String.format("\n      Remaining:        %d", getTotalNumBacktracks()));
-        str.append(String.format("\n      Depth:            %d", getDepth()));
-        str.append(String.format("\n      States:           %d", getTotalStates()));
-        str.append(String.format("\n      DistinctStates:   %d", getTotalDistinctStates()));
-        ScratchLogger.log(str.toString());
+        String str = "--------------------" + String.format("\n    Status after %.2f seconds:", newRuntime) +
+                String.format("\n      Progress:         %.12f", GlobalData.getCoverage().getEstimatedCoverage(12)) +
+                String.format("\n      Iterations:       %d", (iter - start_iter)) +
+                String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()) +
+                String.format("\n      Finished:         %d", finishedTasks.size()) +
+                String.format("\n      Remaining:        %d", getTotalNumBacktracks()) +
+                String.format("\n      Depth:            %d", getDepth()) +
+                String.format("\n      States:           %d", getTotalStates()) +
+                String.format("\n      DistinctStates:   %d", getTotalDistinctStates());
+        ScratchLogger.log(str);
     }
 
     public void postIterationCleanup() {
@@ -490,7 +500,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             Schedule.Choice choice = schedule.getChoice(d);
             choice.updateHandledUniverse(choice.getRepeatUniverse());
             schedule.clearRepeat(d);
-            if (!choice.isBacktrackEmpty()) {
+            if (choice.isBacktrackNonEmpty()) {
                 int newDepth = 0;
                 if (configuration.isUseBacktrack()) {
                     newDepth = choice.getSchedulerDepth();
@@ -531,7 +541,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             isDoneIterating = ((iter - start_iter) >= configuration.getMaxExecutions());
         }
         GlobalData.getCoverage().updateIterationCoverage(
-                getChoiceDepth()-1,
+                getChoiceDepth() - 1,
                 startDepth,
                 configuration.getChoiceLearningRewardMode());
 //        GlobalData.getChoiceLearningStats().printQTable();
@@ -548,29 +558,12 @@ public class IterativeBoundedScheduler extends Scheduler {
         printProgress(false);
         if (!isDoneIterating) {
             postIterationCleanup();
-//            if ((iter % 100) == 0) {
-//                if (configuration.isSymbolic() && SolverEngine.getSolverType() == SolverType.BDD) {
-//                    SolverEngine.resumeEngine();
-//                }
-//            }
         }
-    }
-
-    @Override
-    public void reinitialize() {
-        super.reinitialize();
     }
 
     @Override
     public void startWith(Machine machine) {
         super.startWith(machine);
-        /*
-        if (iter == 0) {
-            super.startWith(machine);
-        } else {
-            super.replayStartWith(machine);
-        }
-         */
     }
 
     @Override
@@ -648,9 +641,9 @@ public class IterativeBoundedScheduler extends Scheduler {
     }
 
     private PrimitiveVS getNext(int depth, Function<Integer, PrimitiveVS> getRepeat, Function<Integer, List> getBacktrack,
-                           Consumer<Integer> clearBacktrack, BiConsumer<PrimitiveVS, Integer> addRepeat,
-                           BiConsumer<List, Integer> addBacktrack, Supplier<List> getChoices,
-                           Function<List, PrimitiveVS> generateNext, boolean isData) {
+                                Consumer<Integer> clearBacktrack, BiConsumer<PrimitiveVS, Integer> addRepeat,
+                                BiConsumer<List, Integer> addBacktrack, Supplier<List> getChoices,
+                                Function<List, PrimitiveVS> generateNext, boolean isData) {
         List<ValueSummary> choices = new ArrayList();
         boolean isNewChoice = false;
 
@@ -760,7 +753,7 @@ public class IterativeBoundedScheduler extends Scheduler {
 
     @Override
     public PrimitiveVS<Machine> allocateMachine(Guard pc, Class<? extends Machine> machineType,
-                                           Function<Integer, ? extends Machine> constructor) {
+                                                Function<Integer, ? extends Machine> constructor) {
         if (!machineCounters.containsKey(machineType)) {
             machineCounters.put(machineType, new PrimitiveVS<>(0));
         }
@@ -770,32 +763,22 @@ public class IterativeBoundedScheduler extends Scheduler {
         if (schedule.hasMachine(machineType, guardedCount, pc)) {
             assert (iter != 0);
             allocated = schedule.getMachine(machineType, guardedCount).restrict(pc);
-            for (GuardedValue gv: allocated.getGuardedValues()) {
+            for (GuardedValue gv : allocated.getGuardedValues()) {
                 Guard g = gv.getGuard();
                 Machine m = (Machine) gv.getValue();
-                assert(!BooleanVS.isEverTrue(m.hasStarted().restrict(g)));
+                assert (!BooleanVS.isEverTrue(m.hasStarted().restrict(g)));
                 TraceLogger.onCreateMachine(pc.and(g), m);
                 if (!machines.contains(m)) {
                     machines.add(m);
                 }
                 currentMachines.add(m);
-                assert(machines.size() >= currentMachines.size());
+                assert (machines.size() >= currentMachines.size());
                 m.setScheduler(this);
                 GlobalData.getSymmetryTracker().createMachine(m, g);
             }
         } else {
-            Machine newMachine;
-            newMachine = constructor.apply(IntegerVS.maxValue(guardedCount));
+            Machine newMachine = setupNewMachine(pc, guardedCount, constructor);
 
-            if (!machines.contains(newMachine)) {
-                machines.add(newMachine);
-            }
-            currentMachines.add(newMachine);
-            assert(machines.size() >= currentMachines.size());
-
-            TraceLogger.onCreateMachine(pc, newMachine);
-            newMachine.setScheduler(this);
-            schedule.makeMachine(newMachine, pc);
             allocated = new PrimitiveVS<>(newMachine).restrict(pc);
             GlobalData.getSymmetryTracker().createMachine(newMachine, pc);
         }

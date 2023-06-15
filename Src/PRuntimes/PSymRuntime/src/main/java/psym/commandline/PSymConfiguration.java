@@ -20,117 +20,116 @@ public class PSymConfiguration implements Serializable {
     // default name of the test driver
     @Getter
     final String testDriverDefault = "DefaultImpl";
-
-    // name of the test driver
-    @Getter @Setter
-    String testDriver = testDriverDefault;
-
-    // name of the project
-    @Getter @Setter
-    String projectName = "default";
-
-    // name of the output folder
-    @Getter @Setter
-    String outputFolder = "output";
-
-    // time limit in seconds (0 means infinite)
-    @Getter @Setter
-    double timeLimit = 0;
-
-    // memory limit in megabytes (0 means infinite)
-    @Getter @Setter
-    double memLimit = (Runtime.getRuntime().maxMemory() / 1024 / 1024);
-
-    // level of verbosity for the logging
-    @Getter @Setter
-    int verbosity = 0;
-
-    // strategy of exploration
-    @Getter @Setter
-    String strategy = "learn";
-
-    // max number of executions bound provided by the user
-    @Getter @Setter
-    int maxExecutions = 1;
-
-    // max steps/depth bound provided by the user
-    @Getter @Setter
-    int maxStepBound = 10000;
-
-    // fail on reaching the maximum scheduling step bound
-    @Getter @Setter
-    boolean failOnMaxStepBound = false;
-
-    // name of the cex file to read the replayer state
-    @Getter @Setter
-    String readReplayerFromFile = "";
-
-    // random seed
-    @Getter @Setter
-    long randomSeed = System.currentTimeMillis();
-
-    // name of the psym configuration file
-    @Getter @Setter
-    String configFile = "";
-
-    // mode of state hashing
-    @Getter @Setter
-    StateCachingMode stateCachingMode = StateCachingMode.Exact;
-
-    // use symmetry
-    @Getter @Setter
-    boolean useSymmetry = false;
-
-    // use backtracking
-    @Getter @Setter
-    boolean useBacktrack = true;
-
-    // max number of children tasks per execution
-    @Getter @Setter
-    int maxBacktrackTasksPerExecution = 2;
-
-    // mode of choice orchestration
-    @Getter @Setter
-    ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.EpsilonGreedy;
-
-    // mode of choice learning state mode
-    @Getter @Setter
-    ChoiceLearningStateMode choiceLearningStateMode = ChoiceLearningStateMode.LastStep;
-
-    // mode of choice learning reward mode
-    @Getter @Setter
-    ChoiceLearningRewardMode choiceLearningRewardMode = ChoiceLearningRewardMode.Coverage;
-
-    // mode of task orchestration
-    @Getter @Setter
-    TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.CoverageEpsilonGreedy;
-
-    // type of solver engine
-    @Getter @Setter
-    SolverType solverType = SolverType.BDD;
-
-    // type of expression engine
-    @Getter @Setter
-    ExprLibType exprLibType = ExprLibType.Bdd;
-
-    // name of the file to read the program state
-    @Getter @Setter
-    String readFromFile = "";
-
-    // whether or not to write the program state(s) to file
-    @Getter @Setter
-    boolean writeToFile = false;
-
-    // level of stats collection
-    @Getter @Setter
-    int collectStats = 1;
-
     // max internal steps before throwing an exception
     @Getter
     final int maxInternalSteps = 1000;
+    // name of the test driver
+    @Getter
+    @Setter
+    String testDriver = testDriverDefault;
+    // name of the project
+    @Getter
+    @Setter
+    String projectName = "default";
+    // name of the output folder
+    @Getter
+    @Setter
+    String outputFolder = "output";
+    // time limit in seconds (0 means infinite)
+    @Getter
+    @Setter
+    double timeLimit = 0;
+    // memory limit in megabytes (0 means infinite)
+    @Getter
+    @Setter
+    double memLimit = (Runtime.getRuntime().maxMemory() / 1024 / 1024);
+    // level of verbosity for the logging
+    @Getter
+    @Setter
+    int verbosity = 0;
+    // strategy of exploration
+    @Getter
+    @Setter
+    String strategy = "learn";
+    // max number of executions bound provided by the user
+    @Getter
+    @Setter
+    int maxExecutions = 1;
+    // max steps/depth bound provided by the user
+    @Getter
+    @Setter
+    int maxStepBound = 10000;
+    // fail on reaching the maximum scheduling step bound
+    @Getter
+    @Setter
+    boolean failOnMaxStepBound = false;
+    // name of the cex file to read the replayer state
+    @Getter
+    @Setter
+    String readReplayerFromFile = "";
+    // random seed
+    @Getter
+    @Setter
+    long randomSeed = System.currentTimeMillis();
+    // name of the psym configuration file
+    @Getter
+    @Setter
+    String configFile = "";
+    // mode of state hashing
+    @Getter
+    @Setter
+    StateCachingMode stateCachingMode = StateCachingMode.Exact;
+    // use symmetry
+    @Getter
+    @Setter
+    boolean useSymmetry = false;
+    // use backtracking
+    @Getter
+    @Setter
+    boolean useBacktrack = true;
+    // max number of children tasks per execution
+    @Getter
+    @Setter
+    int maxBacktrackTasksPerExecution = 2;
+    // mode of choice orchestration
+    @Getter
+    @Setter
+    ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.EpsilonGreedy;
+    // mode of choice learning state mode
+    @Getter
+    @Setter
+    ChoiceLearningStateMode choiceLearningStateMode = ChoiceLearningStateMode.LastStep;
+    // mode of choice learning reward mode
+    @Getter
+    @Setter
+    ChoiceLearningRewardMode choiceLearningRewardMode = ChoiceLearningRewardMode.Coverage;
+    // mode of task orchestration
+    @Getter
+    @Setter
+    TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.CoverageEpsilonGreedy;
+    // type of solver engine
+    @Getter
+    @Setter
+    SolverType solverType = SolverType.BDD;
+    // type of expression engine
+    @Getter
+    @Setter
+    ExprLibType exprLibType = ExprLibType.Bdd;
+    // name of the file to read the program state
+    @Getter
+    @Setter
+    String readFromFile = "";
+    // whether or not to write the program state(s) to file
+    @Getter
+    @Setter
+    boolean writeToFile = false;
+    // level of stats collection
+    @Getter
+    @Setter
+    int collectStats = 1;
 
     public boolean isSymbolic() {
-        return (strategy == "symex");
+        return (strategy.equals("symex"));
     }
 
     public boolean isIterative() {
@@ -138,7 +137,7 @@ public class PSymConfiguration implements Serializable {
     }
 
     public boolean isChoiceOrchestrationLearning() {
-        return  (getChoiceOrchestration() == ChoiceOrchestrationMode.QLearning) ||
+        return (getChoiceOrchestration() == ChoiceOrchestrationMode.QLearning) ||
                 (getChoiceOrchestration() == ChoiceOrchestrationMode.EpsilonGreedy);
     }
 

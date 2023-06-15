@@ -8,10 +8,8 @@ import java.math.BigDecimal;
 public class BacktrackWriter {
     static PrintWriter log = null;
 
-    public static void Initialize(String projectName, String outputFolder)
-    {
-        try
-        {
+    public static void Initialize(String projectName, String outputFolder) {
+        try {
             // get new file name
             String fileName = outputFolder + "/backtrack-" + projectName + ".log";
             //Define new file printer
@@ -19,9 +17,7 @@ public class BacktrackWriter {
             statFile.getParentFile().mkdirs();
             statFile.createNewFile();
             log = new PrintWriter(statFile);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             System.out.println("Failed to set printer to the StatLogger!!");
         }
     }

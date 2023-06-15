@@ -38,11 +38,11 @@ public class EntryPoint {
             throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent());
         } catch (ExecutionException e) {
             if (e.getCause() instanceof MemoutException) {
-                throw (MemoutException)e.getCause();
+                throw (MemoutException) e.getCause();
             } else if (e.getCause() instanceof BugFoundException) {
-                throw (BugFoundException)e.getCause();
+                throw (BugFoundException) e.getCause();
             } else if (e.getCause() instanceof TimeoutException) {
-                throw (TimeoutException)e.getCause();
+                throw (TimeoutException) e.getCause();
             } else {
                 e.getCause().printStackTrace();
                 e.printStackTrace();
@@ -63,10 +63,10 @@ public class EntryPoint {
     }
 
     private static void preprocess() {
-        PSymLogger.info(String.format(".. Test case :: " +  configuration.getTestDriver()));
+        PSymLogger.info(String.format(".. Test case :: " + configuration.getTestDriver()));
         PSymLogger.info(String.format("... Checker is using '%s' strategy (seed:%s)",
-                                            configuration.getStrategy(),
-                                            configuration.getRandomSeed()));
+                configuration.getStrategy(),
+                configuration.getRandomSeed()));
         PSymLogger.info("--------------------");
 
         executor = Executors.newSingleThreadExecutor();
@@ -92,7 +92,7 @@ public class EntryPoint {
         if (printStats) {
             print_stats();
         }
-        PSymLogger.finished(scheduler.getIter(), scheduler.getIter()- scheduler.getStart_iter(), Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(), scheduler.result, mode);
+        PSymLogger.finished(scheduler.getIter(), scheduler.getIter() - scheduler.getStart_iter(), Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(), scheduler.result, mode);
     }
 
     private static void process(boolean resume) throws Exception {
@@ -100,7 +100,7 @@ public class EntryPoint {
             TimedCall timedCall = new TimedCall(scheduler, resume);
             future = executor.submit(timedCall);
             TimeMonitor.getInstance().startInterval();
-            runWithTimeout((long)configuration.getTimeLimit());
+            runWithTimeout((long) configuration.getTimeLimit());
             status = "success";
         } catch (TimeoutException e) {
             status = "timeout";
@@ -137,7 +137,7 @@ public class EntryPoint {
             future.cancel(true);
             executor.shutdownNow();
             TraceLogger.setVerbosity(0);
-            postprocess(status != "cex");
+            postprocess(!status.equals("cex"));
         }
     }
 
@@ -185,8 +185,8 @@ public class EntryPoint {
         replayScheduler.setConfiguration(config);
         replayScheduler.getProgram().setProgramScheduler(replayScheduler);
 
-        PSymLogger.info(String.format(".. Test case :: " +  config.getTestDriver()));
-        PSymLogger.info(String.format("... Checker is using 'replay' strategy"));
+        PSymLogger.info(String.format(".. Test case :: " + config.getTestDriver()));
+        PSymLogger.info("... Checker is using 'replay' strategy");
 
         replay(replayScheduler);
     }

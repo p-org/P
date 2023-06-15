@@ -44,11 +44,11 @@ public class PSymLogger {
     }
 
     public static void finished(int totalIter, int newIter, long timeSpent, String result, String mode) {
-        log.info(String.format("--------------------"));
-        log.info(String.format("Explored %d %s executions%s", totalIter, mode, ((totalIter==newIter)?"":String.format(" (%d new)", newIter))));
-        log.info(String.format("Took %d seconds and %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent()/1000.0));
+        log.info("--------------------");
+        log.info(String.format("Explored %d %s executions%s", totalIter, mode, ((totalIter == newIter) ? "" : String.format(" (%d new)", newIter))));
+        log.info(String.format("Took %d seconds and %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
         log.info(String.format("Result: " + result));
-        log.info(String.format("--------------------"));
+        log.info("--------------------");
     }
 
     public static void log(String message) {
@@ -69,8 +69,7 @@ public class PSymLogger {
         log.error(message);
     }
 
-    public static void ResetAllConfigurations(int verbosity, String projectName, String outputFolder)
-    {
+    public static void ResetAllConfigurations(int verbosity, String projectName, String outputFolder) {
         SearchLogger.Initialize(verbosity, outputFolder);
         TraceLogger.Initialize(verbosity, outputFolder);
         StatWriter.Initialize(projectName, outputFolder);

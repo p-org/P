@@ -1,11 +1,9 @@
 package psym.runtime.scheduler.choiceorchestration;
 
 import lombok.Getter;
-import psym.runtime.Event;
 import psym.runtime.Message;
 import psym.runtime.logger.PSymLogger;
 import psym.runtime.machine.Machine;
-import psym.runtime.machine.State;
 import psym.runtime.scheduler.Scheduler;
 import psym.valuesummary.Guard;
 import psym.valuesummary.PrimitiveVS;
@@ -13,39 +11,38 @@ import psym.valuesummary.ValueSummary;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class ChoiceLearningStats<S, A> implements Serializable {
     @Getter
-    private static BigDecimal defaultQValue = BigDecimal.ZERO;
+    private static final BigDecimal defaultQValue = BigDecimal.ZERO;
     @Getter
-    private static BigDecimal defaultReward = BigDecimal.valueOf(-1);
+    private static final BigDecimal defaultReward = BigDecimal.valueOf(-1);
     @Getter
-    private static BigDecimal ALPHA = BigDecimal.valueOf(0.3);
+    private static final BigDecimal ALPHA = BigDecimal.valueOf(0.3);
     @Getter
-    private static BigDecimal GAMMA = BigDecimal.valueOf(0.7);
-
-
-    /** State hash corresponding to current environment state */
+    private static final BigDecimal GAMMA = BigDecimal.valueOf(0.7);
+    @Getter
+    private final ChoiceComparator choiceComparator = new ChoiceComparator();
+    private final ChoiceQTable<S, A> qValues;
+    /**
+     * State hash corresponding to current environment state
+     */
     @Getter
     private Object programStateHash = null;
 
-    @Getter
-    private ChoiceComparator choiceComparator = new ChoiceComparator();
-    private ChoiceQTable<S, A> qValues;
-
-    private class ChoiceComparator implements Comparator<ValueSummary>, Serializable {
-        public ChoiceComparator() {}
-
-        @Override
-        public int compare(ValueSummary lhs, ValueSummary rhs) {
-            return getCurrentQvalue(rhs).compareTo(getCurrentQvalue(lhs));
-        }
-    }
-
-
     public ChoiceLearningStats() {
         qValues = new ChoiceQTable();
+    }
+
+    public static Class getActionClass(ValueSummary action) {
+        if (action instanceof PrimitiveVS) {
+            PrimitiveVS pv = (PrimitiveVS) action;
+            return pv.getValueClass();
+        }
+        return action.getClass();
     }
 
     public void rewardIteration(ChoiceQTable.ChoiceQTableKey<S, A> stateActions, BigDecimal reward, ChoiceLearningRewardMode rewardMode) {
@@ -75,14 +72,14 @@ public class ChoiceLearningStats<S, A> implements Serializable {
         S state = stateActions.getState();
         ChoiceQTable.ChoiceQStateEntry stateEntry = qValues.get(state);
 
-        for (Class cls: stateActions.getActions().getClasses()) {
+        for (Class cls : stateActions.getActions().getClasses()) {
             ChoiceQTable.ChoiceQClassEntry classEntry = stateEntry.get(cls);
             BigDecimal maxQ = classEntry.getMaxQ();
 
-            for (A action: stateActions.getActions().get(cls)) {
+            for (A action : stateActions.getActions().get(cls)) {
                 BigDecimal oldVal = classEntry.get(action);
                 BigDecimal newVal = BigDecimal.valueOf(1).subtract(ALPHA).multiply(oldVal)
-                                    .add(ALPHA.multiply(reward.add(GAMMA.multiply(maxQ))));
+                        .add(ALPHA.multiply(reward.add(GAMMA.multiply(maxQ))));
                 classEntry.update(action, newVal);
             }
         }
@@ -94,10 +91,10 @@ public class ChoiceLearningStats<S, A> implements Serializable {
 
     public int numQValues() {
         int result = 0;
-        for (S state: qValues.getStates()) {
+        for (S state : qValues.getStates()) {
             ChoiceQTable.ChoiceQStateEntry stateEntry = qValues.get(state);
-            for (Object cls: stateEntry.getClasses()) {
-                result += stateEntry.get((Class)cls).size();
+            for (Object cls : stateEntry.getClasses()) {
+                result += stateEntry.get((Class) cls).size();
             }
         }
         return result;
@@ -108,14 +105,14 @@ public class ChoiceLearningStats<S, A> implements Serializable {
         PSymLogger.info("Q Table");
         PSymLogger.log("--------------------");
         PSymLogger.info(String.format("  #QStates = %d", qValues.size()));
-        for (S state: qValues.getStates()) {
+        for (S state : qValues.getStates()) {
             ChoiceQTable.ChoiceQStateEntry stateEntry = qValues.get(state);
             String stateStr = String.valueOf(state);
             if (stateStr.length() > 10) {
                 stateStr = stateStr.substring(0, 5).concat("...");
             }
 
-            for (Object obj: stateEntry.getClasses()) {
+            for (Object obj : stateEntry.getClasses()) {
                 Class cls = (Class) obj;
                 ChoiceQTable.ChoiceQClassEntry classEntry = stateEntry.get(cls);
                 if (classEntry.size() <= 1) {
@@ -142,14 +139,6 @@ public class ChoiceLearningStats<S, A> implements Serializable {
 
     public int getNumQStates() {
         return qValues.size();
-    }
-
-    public static Class getActionClass(ValueSummary action) {
-        if (action instanceof PrimitiveVS) {
-            PrimitiveVS pv = (PrimitiveVS) action;
-            return pv.getValueClass();
-        }
-        return action.getClass();
     }
 
     public Object getActionHash(Class cls, ValueSummary action) {
@@ -196,20 +185,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
         if (lastChoice != null) {
             List<Object> features = new ArrayList<>();
             for (Machine m : lastChoice.getValues()) {
-                features.add(m);
-                for (State state : m.getCurrentState().getValues()) {
-                    features.add(state);
-                }
-                if (!m.sendBuffer.isEmpty()) {
-                    Message msg = m.sendBuffer.peek(Guard.constTrue());
-                    for (Machine target : msg.getTarget().getValues()) {
-                        features.add(target);
-                    }
-                    for (Event event : msg.getEvent().getValues()) {
-                        features.add(event);
-//                        features.add(msg.getPayloadFor(event));
-                    }
-                }
+                addMachineFeatures(features, m);
             }
             programStateHash = features.toString();
         }
@@ -217,39 +193,22 @@ public class ChoiceLearningStats<S, A> implements Serializable {
 
     private void setProgramHashMachineState(Scheduler sch) {
         List<Object> features = new ArrayList<>();
-        for (Machine m: sch.getMachines()) {
+        for (Machine m : sch.getMachines()) {
             features.add(m);
-            for (State state: m.getCurrentState().getValues()) {
-                features.add(state);
-            }
+            features.addAll(m.getCurrentState().getValues());
         }
         programStateHash = features.toString();
     }
 
     private void setProgramHashMachineStateAndLastStep(Scheduler sch, PrimitiveVS<Machine> lastChoice) {
         List<Object> features = new ArrayList<>();
-        for (Machine m: sch.getMachines()) {
+        for (Machine m : sch.getMachines()) {
             features.add(m);
-            for (State state: m.getCurrentState().getValues()) {
-                features.add(state);
-            }
+            features.addAll(m.getCurrentState().getValues());
         }
         if (lastChoice != null) {
             for (Machine m : lastChoice.getValues()) {
-                features.add(m);
-                for (State state : m.getCurrentState().getValues()) {
-                    features.add(state);
-                }
-                if (!m.sendBuffer.isEmpty()) {
-                    Message msg = m.sendBuffer.peek(Guard.constTrue());
-                    for (Machine target : msg.getTarget().getValues()) {
-                        features.add(target);
-                    }
-                    for (Event event : msg.getEvent().getValues()) {
-                        features.add(event);
-//                        features.add(msg.getPayloadFor(event));
-                    }
-                }
+                addMachineFeatures(features, m);
             }
         }
         programStateHash = features.toString();
@@ -257,32 +216,40 @@ public class ChoiceLearningStats<S, A> implements Serializable {
 
     private void setProgramHashMachineStateEvents(Scheduler sch) {
         List<Object> features = new ArrayList<>();
-        for (Machine m: sch.getMachines()) {
-            features.add(m);
-            for (State state: m.getCurrentState().getValues()) {
-                features.add(state);
-            }
-            if (!m.sendBuffer.isEmpty()) {
-                Message msg = m.sendBuffer.peek(Guard.constTrue());
-                for (Machine target: msg.getTarget().getValues()) {
-                    features.add(target);
-                }
-                for (Event event: msg.getEvent().getValues()) {
-                    features.add(event);
-//                    features.add(msg.getPayloadFor(event));
-                }
-            }
+        for (Machine m : sch.getMachines()) {
+            addMachineFeatures(features, m);
         }
         programStateHash = features.toString();
     }
 
+    private void addMachineFeatures(List<Object> features, Machine m) {
+        features.add(m);
+        features.addAll(m.getCurrentState().getValues());
+        if (!m.sendBuffer.isEmpty()) {
+            Message msg = m.sendBuffer.peek(Guard.constTrue());
+            features.addAll(msg.getTarget().getValues());
+            //                    features.add(msg.getPayloadFor(event));
+            features.addAll(msg.getEvent().getValues());
+        }
+    }
+
     private void setProgramHashFullState(Scheduler sch) {
         List<Object> features = new ArrayList<>();
-        for (Machine m: sch.getMachines()) {
+        for (Machine m : sch.getMachines()) {
             features.add(m);
             features.add(m.getLocalState());
         }
         programStateHash = features.toString();
+    }
+
+    private class ChoiceComparator implements Comparator<ValueSummary>, Serializable {
+        public ChoiceComparator() {
+        }
+
+        @Override
+        public int compare(ValueSummary lhs, ValueSummary rhs) {
+            return getCurrentQvalue(rhs).compareTo(getCurrentQvalue(lhs));
+        }
     }
 
 }

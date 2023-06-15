@@ -1,10 +1,10 @@
 package psym.runtime.machine.buffer;
 
 import psym.runtime.Event;
-import psym.runtime.scheduler.Scheduler;
+import psym.runtime.Message;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
-import psym.runtime.Message;
+import psym.runtime.scheduler.Scheduler;
 import psym.valuesummary.*;
 
 import java.io.Serializable;
@@ -21,7 +21,7 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
 
     public void send(Guard pc, PrimitiveVS<Machine> dest, PrimitiveVS<Event> eventName, UnionVS payload) {
         if (eventName.getGuardedValues().size() > 1) {
-            throw new RuntimeException(String.format("Handling multiple events together is not supported, in ", eventName));
+            throw new RuntimeException(String.format("Handling multiple events together is not supported, in %s", eventName));
         }
         TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
         Message event = new Message(eventName, dest, payload).restrict(pc);
@@ -52,7 +52,7 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
     @Override
     public PrimitiveVS<Boolean> satisfiesPredUnderGuard(Function<Message, PrimitiveVS<Boolean>> pred) {
         Guard cond = isEnabledUnderGuard();
-        assert(!cond.isFalse());
+        assert (!cond.isFalse());
         Message top = peek(cond);
         return pred.apply(top).restrict(top.getUniverse());
     }

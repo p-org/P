@@ -2,7 +2,6 @@ package psym;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.function.Executable;
 import psym.runtime.logger.Log4JConfig;
@@ -22,14 +21,14 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 /**
  * Runner for Symbolic P Regressions.
  * Pre-requisites:
- *  Run from P repository as a submodule
- *  Build the symbolic compiler to ../Bld/Drops/Release/Binaries/Pc.dll
- *  Place test cases as source P files at ../Tst/SymbolicRegressionTests/
+ * Run from P repository as a submodule
+ * Build the symbolic compiler to ../Bld/Drops/Release/Binaries/Pc.dll
+ * Place test cases as source P files at ../Tst/SymbolicRegressionTests/
  */
 public class TestSymbolicRegression {
-    private static String runArgs = "--iterations 20 --seed 0";
-    private static String outputDirectory = "output/testCases";
-    private static List<String> excluded = new ArrayList<>();
+    private static final String runArgs = "--iterations 20 --seed 0";
+    private static final String outputDirectory = "output/testCases";
+    private static final List<String> excluded = new ArrayList<>();
 
     private static boolean initialized = false;
 
@@ -120,6 +119,7 @@ public class TestSymbolicRegression {
         excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive11");
         excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive11_1");
     }
+
     private static void initialize() {
         Log4JConfig.configureLog4J();
         PSymTestLogger.Initialize(outputDirectory);
@@ -131,17 +131,13 @@ public class TestSymbolicRegression {
         Map<String, List<String>> result = new HashMap<>();
         File[] directories = new File(testDirPath).listFiles(File::isDirectory);
         for (File dir : directories) {
-            if (excluded != null) {
-                if (excluded.stream().anyMatch(dir.toString()::equals)) {
-                    continue;
-                }
+            if (excluded.stream().anyMatch(dir.toString()::equals)) {
+                continue;
             }
             try (Stream<Path> walk = Files.walk(Paths.get(dir.toURI()))) {
                 Stream<String> projectFilesStream = walk.map(Path::toString)
                         .filter(f -> f.endsWith(".java") || f.endsWith(".p"));
-                if (excluded != null) {
-                    projectFilesStream = projectFilesStream.filter(f -> excluded.stream().noneMatch(f::contains));
-                }
+                projectFilesStream = projectFilesStream.filter(f -> excluded.stream().noneMatch(f::contains));
                 List<String> projectFiles = projectFilesStream.collect(Collectors.toList());
                 if (!projectFiles.isEmpty())
                     result.put(dir.toString(), projectFiles);
@@ -153,8 +149,8 @@ public class TestSymbolicRegression {
         return result;
     }
 
-    void runDynamicTest(int expected, List<String> testCasePaths, String testCasePath, String runArgs, Collection<DynamicTest> dynamicTests) {
-        Executable exec = () -> Assertions.assertEquals(expected, TestCaseExecutor.runTestCase(testCasePaths, testCasePath, runArgs, outputDirectory, expected));
+    void runDynamicTest(int expected, List<String> testCasePaths, String testCasePath, Collection<DynamicTest> dynamicTests) {
+        Executable exec = () -> Assertions.assertEquals(expected, TestCaseExecutor.runTestCase(testCasePaths, testCasePath, TestSymbolicRegression.runArgs, outputDirectory, expected));
         DynamicTest dynamicTest = DynamicTest.dynamicTest(testCasePath, () -> assertTimeoutPreemptively(Duration.ofMinutes(60), exec));
         dynamicTests.add(dynamicTest);
     }
@@ -182,62 +178,59 @@ public class TestSymbolicRegression {
 
             if (testDir.contains("Correct")) {
                 for (String key : pathKeys) {
-                    runDynamicTest(0, paths.get(key), key, runArgs, dynamicTests);
+                    runDynamicTest(0, paths.get(key), key, dynamicTests);
                 }
             } else if (testDir.contains("DynamicError")) {
                 for (String key : pathKeys) {
-                    runDynamicTest(2, paths.get(key), key, runArgs, dynamicTests);
+                    runDynamicTest(2, paths.get(key), key, dynamicTests);
                 }
             } else if (testDir.contains("StaticError")) {
                 for (String key : pathKeys) {
-                    runDynamicTest(1, paths.get(key), key, runArgs, dynamicTests);
+                    runDynamicTest(1, paths.get(key), key, dynamicTests);
                 }
             }
         }
         return dynamicTests;
     }
 
-    @Test
-    void Dummy() {}
-
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadSymbolicRegressionsTests() {
+    Collection<DynamicTest> loadSymbolicRegressionsTests() {
         return loadTests("./SymbolicRegressionTests/Integration");
     }
 
     @TestFactory
     //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    public Collection<DynamicTest>  loadIntegrationTests() {
+    public Collection<DynamicTest> loadIntegrationTests() {
         return loadTests("../../../Tst/RegressionTests/Integration");
     }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadCombinedTests() {
+    Collection<DynamicTest> loadCombinedTests() {
         return loadTests("../../../Tst/RegressionTests/Combined");
     }
 
     @TestFactory
-    Collection<DynamicTest>  loadSMLevelDeclsTests() {
+    Collection<DynamicTest> loadSMLevelDeclsTests() {
         return loadTests("../../../Tst/RegressionTests/Feature1SMLevelDecls");
     }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadStmtsTests() {
+    Collection<DynamicTest> loadStmtsTests() {
         return loadTests("../../../Tst/RegressionTests/Feature2Stmts");
     }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadExpressionTests() {
+    Collection<DynamicTest> loadExpressionTests() {
         return loadTests("../../../Tst/RegressionTests/Feature3Exprs");
     }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest>  loadDataTypeTests() {
+    Collection<DynamicTest> loadDataTypeTests() {
         return loadTests("../../../Tst/RegressionTests/Feature4DataTypes");
     }
 

@@ -19,17 +19,62 @@ public class Message implements ValueSummary<Message> {
     // the payload associated with the event
     private final Map<Event, UnionVS> payload;
 
+    private Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, Map<Event, UnionVS> map) {
+        assert (!machine.getValues().contains(null));
+        this.event = names;
+        this.target = machine;
+        this.payload = new HashMap<>(map);
+    }
+
+    public Message(Event name, PrimitiveVS<Machine> machine) {
+        this(new PrimitiveVS<>(name), machine, new HashMap<>());
+    }
+
+    public Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine) {
+        this(names, machine, new HashMap<>());
+    }
+
+    public Message() {
+        this(new PrimitiveVS<>(), new PrimitiveVS<>());
+    }
+
+    public Message(Event name, PrimitiveVS<Machine> machine, UnionVS payload) {
+        this(new PrimitiveVS<>(name), machine, payload);
+    }
+
+    public Message(PrimitiveVS<Event> events, PrimitiveVS<Machine> machine, UnionVS payload) {
+        if (!getNullMachineGuard(machine).isFalse()) {
+            throw new RuntimeException(
+                    String.format("Object reference not set to an instance of an object, in event %s",
+                            events.restrict(getNullMachineGuard(machine))));
+        }
+        assert (!machine.getValues().contains(null));
+        this.event = events;
+        this.target = machine;
+        this.payload = new HashMap<>();
+        for (GuardedValue<Event> event : events.getGuardedValues()) {
+            assert (!this.payload.containsKey(event.getValue()));
+            if (payload != null) {
+                this.payload.put(event.getValue(), payload.restrict(event.getGuard()));
+            }
+        }
+    }
+
+    /**
+     * Copy-constructor for Message
+     *
+     * @param old The Message to copy
+     */
+    public Message(Message old) {
+        this(new PrimitiveVS<>(old.event), new PrimitiveVS<>(old.target), old.payload);
+    }
+
     public PrimitiveVS<Boolean> canRun() {
         Guard cond = Guard.constFalse();
         for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
             Machine m = machine.getValue();
             Guard g = machine.getGuard();
             cond = cond.or(g.and(m.hasStarted().getGuardFor(true)).and(m.hasHalted().getGuardFor(false)));
-
-//            Assert.prop(!BooleanVS.isEverFalse(machine.getValue().hasStarted()), "Internal Error: All Machines must be runnable at this point!! Check event " + getEvent().getValues() + " in machine " + machine.getValue(), machine.getValue().getScheduler(), BooleanVS.getFalseGuard(machine.getValue().hasStarted()));
-//            if (BooleanVS.isEverFalse(machine.getValue().hasStarted())) {
-//                throw new RuntimeException("Internal Error: All Machines must be runnable at this point!! Check machine " + machine.getValue());
-//            }
         }
         return BooleanVS.trueUnderGuard(cond);
     }
@@ -66,7 +111,7 @@ public class Message implements ValueSummary<Message> {
             PrimitiveVS<Event> events = this.getEvent();
             for (GuardedValue<Event> event : events.getGuardedValues()) {
                 if (GlobalData.getSyncEvents().contains(event.getValue().name)
-                    || event.getValue().name.contains("sync")) {
+                        || event.getValue().name.contains("sync")) {
                     cond = cond.or(event.getGuard());
                 }
             }
@@ -99,56 +144,8 @@ public class Message implements ValueSummary<Message> {
         return this.restrict(cond);
     }
 
-    private Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, Map<Event, UnionVS> map) {
-        assert(!machine.getValues().contains(null));
-        this.event = names;
-        this.target = machine;
-        this.payload = new HashMap<>(map);
-    }
-
-    public Message(Event name, PrimitiveVS<Machine> machine) {
-        this(new PrimitiveVS<>(name), machine, new HashMap<>());
-    }
-
-    public Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine) {
-        this(names, machine, new HashMap<>());
-    }
-
-    public Message() {
-        this(new PrimitiveVS<>(), new PrimitiveVS<>());
-    }
-
-    public Message(Event name, PrimitiveVS<Machine> machine, UnionVS payload) {
-        this(new PrimitiveVS<>(name), machine, payload);
-    }
-
     private Guard getNullMachineGuard(PrimitiveVS<Machine> machine) {
-        return machine.getGuardFor((Machine) null);
-    }
-
-    public Message(PrimitiveVS<Event> events, PrimitiveVS<Machine> machine, UnionVS payload) {
-        if (!getNullMachineGuard(machine).isFalse()) {
-            throw new RuntimeException(
-                    String.format("Object reference not set to an instance of an object, in event %s",
-                            events.restrict(getNullMachineGuard(machine))));
-        }
-        assert(!machine.getValues().contains(null));
-        this.event = events;
-        this.target = machine;
-        this.payload = new HashMap<>();
-        for (GuardedValue<Event> event : events.getGuardedValues()) {
-            assert(!this.payload.containsKey(event.getValue()));
-            if (payload != null) {
-                this.payload.put(event.getValue(), payload.restrict(event.getGuard()));
-            }
-        }
-    }
-
-    /** Copy-constructor for Message
-     * @param old The Message to copy
-     */
-    public Message (Message old) {
-        this(new PrimitiveVS<>(old.event), new PrimitiveVS<>(old.target), old.payload);
+        return machine.getGuardFor(null);
     }
 
     /**
@@ -170,7 +167,7 @@ public class Message implements ValueSummary<Message> {
 
     public UnionVS getPayload() {
         List<GuardedValue<Event>> names = this.event.getGuardedValues();
-        assert(names.size() <= 1);
+        assert (names.size() <= 1);
         if (names.size() == 0) {
             return null;
         } else {
@@ -218,9 +215,7 @@ public class Message implements ValueSummary<Message> {
                 newPayload.computeIfPresent(entry.getKey(), (key, value) -> value.merge(summary.payload.get(key)));
                 if (entry.getValue() != null)
                     newPayload.putIfAbsent(entry.getKey(), entry.getValue());
-                if (newPayload.containsKey(entry.getKey()) && newPayload.get(entry.getKey()) == null) {
-                    assert(false);
-                }
+                assert !newPayload.containsKey(entry.getKey()) || newPayload.get(entry.getKey()) != null;
             }
         }
 
@@ -235,24 +230,20 @@ public class Message implements ValueSummary<Message> {
 
     @Override
     public Message updateUnderGuard(Guard guard, Message update) {
-        /*
-        if (guard.isConstTrue()) {
-            assert (this.guard(guard.not()).merge(update.guard(guard)).symbolicEquals(update, guard).getGuard(true).isConstTrue());
-        }*/
         return this.restrict(guard.not()).merge(update.restrict(guard));
     }
 
     @Override
     public PrimitiveVS<Boolean> symbolicEquals(Message cmp, Guard pc) {
         Guard nameAndTarget = this.event.symbolicEquals(cmp.event, Guard.constTrue()).getGuardFor(true).and(
-                                this.target.symbolicEquals(cmp.target, Guard.constTrue()).getGuardFor(true));
+                this.target.symbolicEquals(cmp.target, Guard.constTrue()).getGuardFor(true));
         Guard mapping = Guard.constFalse();
         for (GuardedValue<Event> event : event.getGuardedValues()) {
             if (this.payload.containsKey(event.getValue())) {
                 if (cmp.payload.containsKey(event.getValue())) {
                     mapping = mapping.or(this.payload.get(event.getValue())
-                                                  .symbolicEquals(cmp.payload.get(event.getValue()), Guard.constTrue())
-                                                  .getGuardFor(true));
+                            .symbolicEquals(cmp.payload.get(event.getValue()), Guard.constTrue())
+                            .getGuardFor(true));
                 }
             } else if (!cmp.payload.containsKey(event.getValue())) {
                 mapping = mapping.or(event.getGuard());
@@ -269,11 +260,11 @@ public class Message implements ValueSummary<Message> {
     @Override
     public int getConcreteHash() {
         int hashCode = 1;
-        hashCode = 31*hashCode + (target==null ? 0 : target.getConcreteHash());
-        hashCode = 31*hashCode + (event==null ? 0 : event.getConcreteHash());
+        hashCode = 31 * hashCode + (target == null ? 0 : target.getConcreteHash());
+        hashCode = 31 * hashCode + (event == null ? 0 : event.getConcreteHash());
         for (Map.Entry<Event, UnionVS> entry : payload.entrySet()) {
-            hashCode = 31*hashCode + (entry.getKey()==null ? 0 : entry.getKey().hashCode());
-            hashCode = 31*hashCode + (entry.getValue()==null ? 0 : entry.getValue().getConcreteHash());
+            hashCode = 31 * hashCode + (entry.getKey() == null ? 0 : entry.getKey().hashCode());
+            hashCode = 31 * hashCode + (entry.getValue() == null ? 0 : entry.getValue().getConcreteHash());
         }
         return hashCode;
     }

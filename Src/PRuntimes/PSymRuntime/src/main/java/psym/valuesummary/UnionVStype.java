@@ -1,13 +1,19 @@
 package psym.valuesummary;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class UnionVStype implements Serializable {
-    private static HashMap<String, UnionVStype> allTypes = new HashMap<>();
+    private static final HashMap<String, UnionVStype> allTypes = new HashMap<>();
 
-    Class<? extends ValueSummary> typeClass;
-    String[] names;
+    final Class<? extends ValueSummary> typeClass;
+    final String[] names;
+
+    private UnionVStype(Class<? extends ValueSummary> tc, String[] n) {
+        typeClass = tc;
+        names = n;
+    }
 
     public static UnionVStype getUnionVStype(Class<? extends ValueSummary> tc, String[] n) {
         UnionVStype result;
@@ -27,11 +33,6 @@ public class UnionVStype implements Serializable {
         return result;
     }
 
-    private UnionVStype(Class<? extends ValueSummary> tc, String[] n) {
-        typeClass = tc;
-        names = n;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -40,9 +41,9 @@ public class UnionVStype implements Serializable {
         if (names == null) {
             return (rhs.names == null) && typeClass.equals(rhs.typeClass);
         } else if (rhs.names == null) {
-            return (names == null) && typeClass.equals(rhs.typeClass);
+            return false;
         } else {
-            return typeClass.equals(rhs.typeClass) && (names.equals(rhs.names));
+            return typeClass.equals(rhs.typeClass) && (Arrays.equals(names, rhs.names));
         }
     }
 
@@ -51,7 +52,7 @@ public class UnionVStype implements Serializable {
         if (names == null) {
             return typeClass.hashCode();
         } else {
-            return 31 * typeClass.hashCode() + names.hashCode();
+            return 31 * typeClass.hashCode() + Arrays.hashCode(names);
         }
     }
 

@@ -23,22 +23,22 @@ public class GlobalData implements Serializable {
     /**
      * Mapping of each machine's state with its corresponding event handlers
      */
-    private Map<String, StateEvents> allStateEvents = new HashMap<>();
+    private final Map<String, StateEvents> allStateEvents = new HashMap<>();
 
     /**
      * Set of sync event names
      */
-    private Set<String> syncEvents = new HashSet<>();
+    private final Set<String> syncEvents = new HashSet<>();
 
     /**
      * Global coverage statistics
      */
-    private CoverageStats coverageStats = new CoverageStats();
+    private final CoverageStats coverageStats = new CoverageStats();
 
     /**
      * Global choice feature statistics
      */
-    private ChoiceLearningStats choiceLearningStats = new ChoiceLearningStats();
+    private final ChoiceLearningStats choiceLearningStats = new ChoiceLearningStats();
 
     /**
      * Global symmetry tracker
@@ -48,7 +48,8 @@ public class GlobalData implements Serializable {
     /**
      * Private constructor to enable singleton class object
      */
-    private GlobalData() {}
+    private GlobalData() {
+    }
 
     /**
      * Get/create the singleton class object
@@ -62,6 +63,7 @@ public class GlobalData implements Serializable {
 
     /**
      * Set the global data singleton object after resuming a run
+     *
      * @param rhs Singleton object to set to
      */
     public static void setInstance(GlobalData rhs) {

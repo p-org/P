@@ -4,9 +4,9 @@ import lombok.Getter;
 import psym.runtime.Event;
 import psym.runtime.Message;
 import psym.runtime.machine.State;
+import psym.valuesummary.Guard;
 import psym.valuesummary.PrimitiveVS;
 import psym.valuesummary.UnionVS;
-import psym.valuesummary.Guard;
 import psym.valuesummary.UnionVStype;
 
 import java.io.Serializable;
@@ -14,14 +14,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Represent the outcome of executing an event handler 
+ * Represent the outcome of executing an event handler
  * Either a normal return, or goto, or raise.
  */
 public class EventHandlerReturnReason implements Serializable {
 
-    private UnionVS outcome = new UnionVS();
     @Getter
-    private Map<State, UnionVS> payloads = new HashMap<>();
+    private final Map<State, UnionVS> payloads = new HashMap<>();
+    private UnionVS outcome = new UnionVS();
     @Getter
     private Guard gotoCond = Guard.constFalse();
     @Getter
@@ -29,18 +29,22 @@ public class EventHandlerReturnReason implements Serializable {
 
     /**
      * Did the event handler terminated on a normal return without raise or goto statement
+     *
      * @return true if it was a normal return, false otherwise
      */
-    public boolean isNormalReturn() {
-        return gotoCond.or(raiseCond).isFalse();
+    public boolean isAbnormalReturn() {
+        return !gotoCond.or(raiseCond).isFalse();
     }
 
 
     /**
      * Condition under which the event handler did a goto
+     *
      * @return condition for goto
      */
-    public Message getMessageSummary() { return (Message) outcome.getValue(UnionVStype.getUnionVStype(Message.class, null)).restrict(getRaiseCond()); }
+    public Message getMessageSummary() {
+        return (Message) outcome.getValue(UnionVStype.getUnionVStype(Message.class, null)).restrict(getRaiseCond());
+    }
 
     public void raiseGuardedMessage(Message newMessage) {
         outcome = outcome.merge(new UnionVS(newMessage));
@@ -63,7 +67,9 @@ public class EventHandlerReturnReason implements Serializable {
         raiseGuardedEvent(pc, eventName, null);
     }
 
-    public PrimitiveVS<State> getGotoStateSummary() { return (PrimitiveVS<State>) outcome.getValue(UnionVStype.getUnionVStype(PrimitiveVS.class, null)).restrict(getGotoCond()); }
+    public PrimitiveVS<State> getGotoStateSummary() {
+        return (PrimitiveVS<State>) outcome.getValue(UnionVStype.getUnionVStype(PrimitiveVS.class, null)).restrict(getGotoCond());
+    }
 
     public void addGuardedGoto(Guard pc, State newDest, UnionVS newPayload) {
         outcome = outcome.merge(new UnionVS(new PrimitiveVS<>(newDest).restrict(pc)));

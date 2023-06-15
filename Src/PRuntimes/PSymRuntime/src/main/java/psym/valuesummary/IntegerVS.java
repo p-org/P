@@ -2,9 +2,10 @@ package psym.valuesummary;
 
 /**
  * Class containing static methods that are useful for Integer primitive value summaries
- * */
+ */
 public class IntegerVS {
-    /** Add two Integer primitive value summaries
+    /**
+     * Add two Integer primitive value summaries
      *
      * @param a First value summary
      * @param b Second value summary
@@ -36,7 +37,8 @@ public class IntegerVS {
         return a.apply(b, (x, y) -> x - y);
     }
 
-    /** Subtract a concrete int from an Integer primitive value summary
+    /**
+     * Subtract a concrete int from an Integer primitive value summary
      *
      * @param a Value summary of first Integer
      * @param i Value of int to be subtracted
@@ -46,7 +48,8 @@ public class IntegerVS {
         return a.apply(x -> x - i);
     }
 
-    /** Detect whether one Integer value summary is less than another
+    /**
+     * Detect whether one Integer value summary is less than another
      *
      * @param a Value summary of first Integer
      * @param b Value summary of second Integer
@@ -56,7 +59,8 @@ public class IntegerVS {
         return a.apply(b, (x, y) -> x < y);
     }
 
-    /** Detect whether an int is less than an Integer value summary
+    /**
+     * Detect whether an int is less than an Integer value summary
      *
      * @param a Value of the int
      * @param b Value summary of second Integer
@@ -66,7 +70,8 @@ public class IntegerVS {
         return b.apply(x -> a < x);
     }
 
-    /** Detect whether an Integer value summary is less than an int
+    /**
+     * Detect whether an Integer value summary is less than an int
      *
      * @param a Value summary of first Integer
      * @param b Value of the int
@@ -76,18 +81,20 @@ public class IntegerVS {
         return a.apply(x -> x < b);
     }
 
-    /** Compare two Integer value summaries
+    /**
+     * Compare two Integer value summaries
      *
      * @param a Value summary of first Integer
      * @param b Value summary of second Integer
      * @return The value summary representing the comparison result, with negative indicating a < b,
-     *         positive indicating b < a, and 0 indicating a = b.
+     * positive indicating b < a, and 0 indicating a = b.
      */
     public static PrimitiveVS<Integer> compare(PrimitiveVS<Integer> a, PrimitiveVS<Integer> b) {
         return a.apply(b, Integer::compareTo);
     }
 
-    /** Get the maximum value that an Integer value summary may take on
+    /**
+     * Get the maximum value that an Integer value summary may take on
      *
      * @return The maximum possible value
      */
@@ -95,12 +102,13 @@ public class IntegerVS {
         return a.getValues().stream().max(Integer::compare).orElse(null);
     }
 
-    /** Return true iff an Integer value summary may take a positive value
+    /**
+     * Return true iff an Integer value summary may take a positive value
      *
      * @return The maximum possible value
      */
     public static Boolean hasPositiveValue(PrimitiveVS<Integer> a) {
-        for (Integer val: a.getValues()) {
+        for (Integer val : a.getValues()) {
             if (val > 0) {
                 return true;
             }
@@ -108,7 +116,8 @@ public class IntegerVS {
         return false;
     }
 
-    /** Get the minimum value that an Integer value summary may take on
+    /**
+     * Get the minimum value that an Integer value summary may take on
      *
      * @return The minimum possible value
      */
@@ -116,7 +125,8 @@ public class IntegerVS {
         return a.getValues().stream().min(Integer::compare).orElse(null);
     }
 
-    /** Detect whether one Integer value summary is equal to another
+    /**
+     * Detect whether one Integer value summary is equal to another
      *
      * @param a Value summary of first Integer
      * @param b Value summary of second Integer

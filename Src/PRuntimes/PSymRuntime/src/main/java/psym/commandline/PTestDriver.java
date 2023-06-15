@@ -15,6 +15,13 @@ public abstract class PTestDriver implements Serializable {
     public List<Monitor> monitorList;
     public Map<Event, List<Monitor>> observerMap;
 
+    public PTestDriver() {
+        this.mainMachine = null;
+        this.monitorList = new ArrayList<>();
+        this.observerMap = new HashMap<>();
+        this.configure();
+    }
+
     public Machine getStart() {
         return mainMachine;
     }
@@ -28,11 +35,4 @@ public abstract class PTestDriver implements Serializable {
     }
 
     public abstract void configure();
-
-    public PTestDriver() {
-        this.mainMachine = null;
-        this.monitorList = new ArrayList<>();
-        this.observerMap = new HashMap<>();
-        this.configure();
-    }
 }

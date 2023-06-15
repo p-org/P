@@ -10,9 +10,8 @@ import java.util.stream.Collectors;
 
 public class NondetUtil {
 
-    private static int log2(int bits)
-    {
-        if( bits == 0 )
+    private static int log2(int bits) {
+        if (bits == 0)
             return 0; // or throw exception
         return 31 - Integer.numberOfLeadingZeros(bits);
     }

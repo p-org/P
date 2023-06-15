@@ -1,7 +1,7 @@
 package psym.runtime.values;
 
-import psym.runtime.values.exceptions.PRuntimeException;
 import psym.runtime.values.exceptions.InvalidIndexException;
+import psym.runtime.values.exceptions.PRuntimeException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -12,15 +12,7 @@ public class PSet extends PCollection {
     // stores the map
     private final List<PValue<?>> set;
 
-    private static class SortPValue implements Comparator<PValue<?>>
-    {
-        @Override
-        public int compare(PValue<?> o1, PValue<?> o2) {
-            return o1.hashCode() - o2.hashCode();
-        }
-    }
-    public PSet(List<PValue<?>> input_set)
-    {
+    public PSet(List<PValue<?>> input_set) {
         set = new ArrayList<>();
         for (PValue<?> entry : input_set) {
             set.add(PValue.clone(entry));
@@ -28,8 +20,7 @@ public class PSet extends PCollection {
         set.sort(new SortPValue());
     }
 
-    public PSet(PSet other)
-    {
+    public PSet(PSet other) {
         set = new ArrayList<>();
         for (PValue<?> entry : other.set) {
             set.add(PValue.clone(entry));
@@ -38,7 +29,7 @@ public class PSet extends PCollection {
     }
 
     public PValue<?> getValue(int index) throws InvalidIndexException {
-        if(index >= set.size() || index < 0)
+        if (index >= set.size() || index < 0)
             throw new InvalidIndexException(index, this);
         return set.get(index);
     }
@@ -103,5 +94,12 @@ public class PSet extends PCollection {
     @Override
     public boolean contains(PValue<?> item) {
         return set.contains(item);
+    }
+
+    private static class SortPValue implements Comparator<PValue<?>> {
+        @Override
+        public int compare(PValue<?> o1, PValue<?> o2) {
+            return o1.hashCode() - o2.hashCode();
+        }
     }
 }

@@ -11,19 +11,16 @@ public class CoverageWriter {
     static boolean enabled = true;
 
     public static void Initialize(String projectName, String outputFolder) {
-        try
-        {
+        try {
             // get new file name
-            String fileName = outputFolder + "/coverage-"+projectName + ".log";
+            String fileName = outputFolder + "/coverage-" + projectName + ".log";
             //Define new file printer
             File statFile = new File(fileName);
             statFile.getParentFile().mkdirs();
             statFile.createNewFile();
             log = new PrintWriter(statFile);
 //            info(String.format("%15s%15s%15s%15s%15s", "Depth", "CoveredSch", "CoveredData", "RemainingSch", "RemainingData"));
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             System.out.println("Failed to add appender to the CoverageLogger!!");
         }
     }

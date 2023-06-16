@@ -776,13 +776,17 @@ public class IterativeBoundedScheduler extends Scheduler {
                 currentMachines.add(m);
                 assert (machines.size() >= currentMachines.size());
                 m.setScheduler(this);
-                GlobalData.getSymmetryTracker().createMachine(m, g);
+                if (configuration.isUseSymmetry()) {
+                    GlobalData.getSymmetryTracker().createMachine(m, g);
+                }
             }
         } else {
             Machine newMachine = setupNewMachine(pc, guardedCount, constructor);
 
             allocated = new PrimitiveVS<>(newMachine).restrict(pc);
-            GlobalData.getSymmetryTracker().createMachine(newMachine, pc);
+            if (configuration.isUseSymmetry()) {
+                GlobalData.getSymmetryTracker().createMachine(newMachine, pc);
+            }
         }
 
         guardedCount = IntegerVS.add(guardedCount, 1);

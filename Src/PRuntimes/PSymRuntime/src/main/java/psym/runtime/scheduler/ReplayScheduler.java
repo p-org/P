@@ -10,6 +10,7 @@ import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
 import psym.utils.GlobalData;
 import psym.valuesummary.*;
+import psym.valuesummary.solvers.SolverEngine;
 
 import java.io.*;
 import java.nio.file.Files;

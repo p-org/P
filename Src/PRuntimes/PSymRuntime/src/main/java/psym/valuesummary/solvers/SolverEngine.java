@@ -41,7 +41,7 @@ public class SolverEngine {
         SolverGuard.reset();
     }
 
-    public static void cleanupEngine() {
+        public static void cleanupEngine() {
         solver.cleanup();
     }
 

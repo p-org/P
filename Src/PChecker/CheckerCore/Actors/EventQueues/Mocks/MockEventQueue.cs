@@ -68,7 +68,12 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <summary>
         /// Global time.
         /// </summary>
-        public static double Time = 0;
+        private static double Time;
+
+        /// <summary>
+        /// Lock for global time.
+        /// </summary>
+        private static readonly object TimeLock = new();
 
         public static readonly ConcurrentBag<double> ScheduledTimestamps = new();
 
@@ -338,6 +343,24 @@ namespace PChecker.Actors.EventQueues.Mocks
                 }
 
                 return hash;
+            }
+        }
+
+        public static double GetTime()
+        {
+            double time;
+            lock (TimeLock)
+            {
+                time = Time;
+            }
+            return time;
+        }
+
+        public static void SetTime(double time)
+        {
+            lock (TimeLock)
+            {
+                Time = time;
             }
         }
 

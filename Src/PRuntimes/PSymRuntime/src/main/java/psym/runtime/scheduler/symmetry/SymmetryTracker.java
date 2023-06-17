@@ -1,6 +1,8 @@
 package psym.runtime.scheduler.symmetry;
 
+import lombok.Setter;
 import psym.runtime.machine.Machine;
+import psym.runtime.scheduler.Scheduler;
 import psym.valuesummary.*;
 
 import java.io.Serializable;
@@ -8,6 +10,10 @@ import java.util.*;
 
 public class SymmetryTracker implements Serializable {
     public static final Map<String, Set<Machine>> typeToAllSymmetricMachines = new HashMap<>();
+
+    @Setter
+    private static Scheduler scheduler;
+
     final Map<String, List<SetVS<PrimitiveVS<Machine>>>> typeToSymmetryClasses;
 
     public SymmetryTracker() {
@@ -171,7 +177,144 @@ public class SymmetryTracker implements Serializable {
         }
     }
 
-    public void mergeSymmetrySet() {
-        // TODO
+    public void mergeAllSymmetryClasses() {
+        for (String type: typeToSymmetryClasses.keySet()) {
+            mergeSymmetryClassesForType(type);
+        }
+    }
+
+    private void mergeSymmetryClassesForType(String type) {
+        List<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(type);
+        List<SetVS<PrimitiveVS<Machine>>> newClasses = new ArrayList<>();
+
+        for (int i = 0; i < symClasses.size() - 1; i++) {
+            for (int j = i + 1; j < symClasses.size(); j++) {
+                SetVS<PrimitiveVS<Machine>>[] mergedClasses = mergeSymmetryClassPair(symClasses.get(i), symClasses.get(j));
+                assert (mergedClasses.length == 2);
+                symClasses.set(i, mergedClasses[0]);
+                symClasses.set(j, mergedClasses[1]);
+            }
+        }
+
+        for (SetVS<PrimitiveVS<Machine>> symSet: symClasses) {
+            // if class not empty, add to new classes
+            if (!symSet.isEmpty()) {
+                newClasses.add(symSet);
+            }
+        }
+
+        // update symmetry classes map
+        typeToSymmetryClasses.put(type, newClasses);
+    }
+
+    private SetVS<PrimitiveVS<Machine>>[] mergeSymmetryClassPair(SetVS<PrimitiveVS<Machine>> lhs, SetVS<PrimitiveVS<Machine>> rhs) {
+        if (lhs.isEmpty() || rhs.isEmpty()) {
+            return new SetVS[]{lhs, rhs};
+        } else {
+            // get representative of lhs class
+            PrimitiveVS<Machine> lhsRep = lhs.get(new PrimitiveVS<>(0, lhs.getUniverse()));
+
+            Guard symEqGuard = Guard.constFalse();
+
+            List<GuardedValue<Machine>> lhsRepGVs = lhsRep.getGuardedValues();
+            for (GuardedValue<Machine> lhsRepGV : lhsRepGVs) {
+                Machine lhsRepMachine = lhsRepGV.getValue();
+                Guard lhsRepGuard = lhsRepGV.getGuard();
+
+                // get representative of rhs class
+                PrimitiveVS<Machine> rhsRep = rhs.get(new PrimitiveVS<>(0, rhs.getUniverse().and(lhsRepGuard)));
+
+                List<GuardedValue<Machine>> rhsRepGVs = rhsRep.getGuardedValues();
+                for (GuardedValue<Machine> rhsRepGV : rhsRepGVs) {
+                    Machine rhsRepMachine = rhsRepGV.getValue();
+                    Guard guard = rhsRepGV.getGuard();
+
+                    if (lhsRepMachine == rhsRepMachine) {
+                        symEqGuard = symEqGuard.or(guard);
+                    } else {
+                        symEqGuard = symEqGuard.or(getSymEquivGuard(lhsRepMachine, rhsRepMachine, guard));
+                    }
+                }
+            }
+
+            if (!symEqGuard.isFalse()) {
+                ListVS<PrimitiveVS<Machine>> rhsToMerge = rhs.getElements().restrict(symEqGuard);
+
+                PrimitiveVS<Integer> size = rhsToMerge.restrict(symEqGuard).size();
+                PrimitiveVS<Integer> index = new PrimitiveVS<>(0).restrict(size.getUniverse());
+                List<PrimitiveVS<Machine>> list = new ArrayList<>();
+                while (BooleanVS.isEverTrue(IntegerVS.lessThan(index, size))) {
+                    Guard cond = BooleanVS.getTrueGuard(IntegerVS.lessThan(index, size));
+                    if (cond.isTrue()) {
+                        list.add(rhsToMerge.get(index));
+                    } else {
+                        list.add(rhsToMerge.restrict(cond).get(index));
+                    }
+                    index = IntegerVS.add(index, 1);
+                }
+
+                for (PrimitiveVS<Machine> vs: list) {
+                    lhs = lhs.add(vs);
+                }
+
+                rhs = rhs.restrict(symEqGuard.not());
+            }
+
+            return new SetVS[]{lhs, rhs};
+        }
+    }
+
+    private Guard haveSymEqLocalState(Machine m1, Machine m2, Guard pc) {
+        assert (m1 != m2);
+
+        List<ValueSummary> m1State = m1.getLocalState();
+        List<ValueSummary> m2State = m2.getLocalState();
+        assert (m1State.size() == m2State.size());
+
+        Guard result = Guard.constTrue();
+
+        for (int i = 0; i < m1State.size(); i++) {
+            ValueSummary original = m1State.get(i).restrict(pc);
+            ValueSummary permuted = m2State.get(i).restrict(pc).swap(m1, m2);
+            if (original.isEmptyVS() && permuted.isEmptyVS()) {
+                continue;
+            }
+            result = result.and(original.symbolicEquals(permuted, Guard.constTrue()).getGuardFor(true));
+            if (result.isFalse()) {
+                return result;
+            }
+        }
+        return result;
+    }
+
+    private Guard getSymEquivGuard(Machine m1, Machine m2, Guard pc) {
+        assert (m1 != m2);
+
+        Guard result = haveSymEqLocalState(m1, m2, pc);
+        if (result.isFalse()) {
+            return result;
+        }
+
+        for (Machine other: scheduler.getMachines()) {
+            if (other == m1 || other == m2) {
+                continue;
+            }
+            for (ValueSummary original: other.getLocalState()) {
+                ValueSummary permuted = original.restrict(result).swap(m1, m2);
+                if (original.isEmptyVS() && permuted.isEmptyVS()) {
+                    continue;
+                }
+
+                result = result.and(original.symbolicEquals(permuted, Guard.constTrue()).getGuardFor(true));
+                if (result.isFalse()) {
+                    return result;
+                }
+            }
+            if (result.isFalse()) {
+                return result;
+            }
+        }
+
+        return result;
     }
 }

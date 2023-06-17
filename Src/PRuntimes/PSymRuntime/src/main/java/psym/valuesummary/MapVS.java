@@ -67,8 +67,20 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
      * @return A new cloned copy of the value summary with m1 and m2 swapped
      */
     public MapVS<K, T, V> swap(Machine m1, Machine m2) {
-        Map<K, V> newEntries = new HashMap<>(this.entries);
-        newEntries.replaceAll((k,v) -> v.swap(m1, m2));
+        Map<K, V> newEntries = new HashMap<>();
+        for (Map.Entry<K, V> kv: this.entries.entrySet()) {
+            K key = kv.getKey();
+            if (key instanceof Machine) {
+                Machine machineKey = (Machine) key;
+                if (key.equals(m1)) {
+                    key = (K) m2;
+                } else if (key.equals(m2)) {
+                    key = (K) m1;
+                }
+            }
+            V val = kv.getValue().swap(m1, m2);
+            newEntries.put(key, val);
+        }
         return new MapVS(this.keys.swap(m1, m2), newEntries);
     }
 
@@ -173,7 +185,6 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
             return BooleanVS.trueUnderGuard(Guard.constFalse());
         }
 
-        Guard equalCond = Guard.constFalse();
         Guard guard = BooleanVS.getTrueGuard(this.keys.symbolicEquals(cmp.keys, Guard.constTrue()));
         ListVS<T> thisSet = this.restrict(guard).getKeys();
         ListVS<T> cmpSet = cmp.restrict(guard).getKeys();
@@ -181,17 +192,15 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>> impl
         if (thisSet.isEmpty() && cmpSet.isEmpty())
             return BooleanVS.trueUnderGuard(pc.and(guard)).restrict(getUniverse().and(cmp.getUniverse()));
 
+        Guard equalCond = Guard.constTrue();
         while (!thisSet.isEmpty()) {
             T thisVal = thisSet.get(new PrimitiveVS<>(0).restrict(guard));
-            T cmpVal = cmpSet.get(new PrimitiveVS<>(0).restrict(guard));
-            assert (ValueSummaryChecks.equalUnder(thisVal, cmpVal, guard));
             for (GuardedValue<?> key : ValueSummary.getGuardedValues(thisVal)) {
                 PrimitiveVS<Boolean> compareVals = entries.get(key.getValue()).restrict(key.getGuard())
                         .symbolicEquals(cmp.entries.get(key.getValue()).restrict(key.getGuard()), guard);
-                equalCond = equalCond.or(BooleanVS.getTrueGuard(compareVals));
+                equalCond = equalCond.and(BooleanVS.getTrueGuard(compareVals));
             }
             thisSet = thisSet.removeAt(new PrimitiveVS<>(0).restrict(thisVal.getUniverse()));
-            cmpSet = cmpSet.removeAt(new PrimitiveVS<>(0).restrict(thisVal.getUniverse()));
         }
 
         return BooleanVS.trueUnderGuard(pc.and(equalCond)).restrict(getUniverse().and(cmp.getUniverse()));

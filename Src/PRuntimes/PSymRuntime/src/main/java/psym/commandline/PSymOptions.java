@@ -8,6 +8,7 @@ import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestratorEpsilonGreedy;
+import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
 import psym.utils.GlobalData;
@@ -189,9 +190,11 @@ public class PSymOptions {
 
         // whether or not to enable symmetry
         Option symmetry = Option.builder()
-                .longOpt("use-symmetry")
-                .desc("Enable symmetry-aware exploration")
-                .numberOfArgs(0)
+                .longOpt("symmetry")
+                .desc("Symmetry-aware exploration mode: none, simple, full (default: none)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Symmetry Mode (string)")
                 .build();
         addHiddenOption(symmetry);
 
@@ -481,8 +484,20 @@ public class PSymOptions {
                             optionError(option, String.format("Unrecognized state hashing mode, got %s", option.getValue()));
                     }
                     break;
-                case "use-symmetry":
-                    config.setUseSymmetry(true);
+                case "symmetry":
+                    switch (option.getValue()) {
+                        case "none":
+                            config.setSymmetryMode(SymmetryMode.None);
+                            break;
+                        case "simple":
+                            config.setSymmetryMode(SymmetryMode.Simple);
+                            break;
+                        case "full":
+                            config.setSymmetryMode(SymmetryMode.Full);
+                            break;
+                        default:
+                            optionError(option, String.format("Unrecognized symmetry mode, got %s", option.getValue()));
+                    }
                     break;
                 case "no-backtrack":
                     config.setUseBacktrack(false);

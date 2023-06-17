@@ -171,6 +171,37 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     }
 
     /**
+     * Permute the value summary
+     *
+     * @param m1 first machine
+     * @param m2 second machine
+     * @return A new cloned copy of the value summary with m1 and m2 swapped
+     */
+    public PrimitiveVS<T> swap(PrimitiveVS<Machine> m1, PrimitiveVS<Machine> m2) {
+        PrimitiveVS<T> result = this;
+        boolean isMachineType = false;
+
+        for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
+            T key = entry.getKey();
+            if (key instanceof Machine) {
+                isMachineType = true;
+                break;
+            }
+        }
+
+        if (isMachineType) {
+            Guard swapGuard = getUniverse().and(m1.getUniverse().and(m2.getUniverse()));
+            if (!swapGuard.isFalse()) {
+                Guard equalsM1 = this.symbolicEquals((PrimitiveVS<T>) m1, swapGuard).getGuardFor(true);
+                if (!equalsM1.isFalse()) {
+                    result = result.updateUnderGuard(equalsM1, (PrimitiveVS<T>) m2);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * Check if the provided value is a possibility
      *
      * @param value The provided value

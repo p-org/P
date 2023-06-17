@@ -13,6 +13,7 @@ import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
+import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
 import psym.utils.GlobalData;
@@ -816,8 +817,8 @@ public class Scheduler implements SymbolicSearch {
             numStatesDistinct = numConcrete[1];
         }
 
-        if (configuration.isUseSymmetry()) {
-            GlobalData.getSymmetryTracker().mergeSymmetrySet();
+        if (configuration.getSymmetryMode() == SymmetryMode.Full) {
+            GlobalData.getSymmetryTracker().mergeAllSymmetryClasses();
         }
 
         if (configuration.isUseBacktrack()) {
@@ -825,7 +826,7 @@ public class Scheduler implements SymbolicSearch {
             schedule.setSchedulerDepth(getDepth());
             schedule.setSchedulerChoiceDepth(getChoiceDepth());
             schedule.setSchedulerState(srcState, machineCounters);
-            if (configuration.isUseSymmetry()) {
+            if (configuration.getSymmetryMode() != SymmetryMode.None) {
                 schedule.setSchedulerSymmetry();
             }
         }

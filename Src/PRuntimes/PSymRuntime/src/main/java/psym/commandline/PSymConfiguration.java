@@ -5,6 +5,7 @@ import lombok.Setter;
 import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
 import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
+import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psym.utils.StateCachingMode;
 import psym.valuesummary.solvers.SolverType;
@@ -79,10 +80,10 @@ public class PSymConfiguration implements Serializable {
     @Getter
     @Setter
     StateCachingMode stateCachingMode = StateCachingMode.Exact;
-    // use symmetry
+    // symmetry mode
     @Getter
     @Setter
-    boolean useSymmetry = false;
+    SymmetryMode symmetryMode = SymmetryMode.None;
     // use backtracking
     @Getter
     @Setter
@@ -197,7 +198,7 @@ public class PSymConfiguration implements Serializable {
         this.setCollectStats(0);
         this.setStateCachingMode(StateCachingMode.None);
         this.setUseBacktrack(false);
-        this.setUseSymmetry(false);
+        this.setSymmetryMode(SymmetryMode.None);
     }
 
     public void setToDebug() {

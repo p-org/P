@@ -4,10 +4,9 @@ import psym.runtime.Concretizer;
 import psym.runtime.logger.*;
 import psym.runtime.scheduler.IterativeBoundedScheduler;
 import psym.runtime.scheduler.ReplayScheduler;
-import psym.utils.BugFoundException;
-import psym.utils.LivenessException;
-import psym.utils.MemoryMonitor;
-import psym.utils.TimeMonitor;
+import psym.runtime.scheduler.symmetry.SymmetryMode;
+import psym.runtime.scheduler.symmetry.SymmetryTracker;
+import psym.utils.*;
 import psym.valuesummary.Guard;
 import psym.valuesummary.solvers.SolverEngine;
 
@@ -76,6 +75,10 @@ public class EntryPoint {
         } else {
             mode = "single";
         }
+        if (configuration.getSymmetryMode() != SymmetryMode.None) {
+            SymmetryTracker.setScheduler(scheduler);
+        }
+
         double preSearchTime = TimeMonitor.getInstance().findInterval(TimeMonitor.getInstance().getStart());
         StatWriter.log("project-name", String.format("%s", configuration.getProjectName()));
         StatWriter.log("mode", String.format("%s", mode));

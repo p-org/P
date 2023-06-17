@@ -7,6 +7,7 @@ import psym.commandline.Program;
 import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
 import psym.runtime.scheduler.choiceorchestration.*;
+import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
 import psym.runtime.statistics.SearchStats;
 import psym.utils.GlobalData;
@@ -512,7 +513,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                 } else {
                     restoreState(choice.getChoiceState());
                     schedule.setFilter(choice.getFilter());
-                    if (configuration.isUseSymmetry()) {
+                    if (configuration.getSymmetryMode() != SymmetryMode.None) {
                         GlobalData.setSymmetryTracker(choice.getSymmetry());
                     }
                 }
@@ -651,7 +652,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             PrimitiveVS repeat = getRepeat.apply(depth);
             if (!repeat.getUniverse().isFalse()) {
                 schedule.restrictFilterForDepth(depth);
-                if (configuration.isUseSymmetry()) {
+                if (configuration.getSymmetryMode() != SymmetryMode.None) {
                     GlobalData.getSymmetryTracker().updateSymmetrySet(repeat);
                 }
                 return repeat;
@@ -666,7 +667,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             if (iter > 0)
                 SearchLogger.logMessage("new choice at depth " + depth);
             choices = getChoices.get();
-            if (configuration.isUseSymmetry()) {
+            if (configuration.getSymmetryMode() != SymmetryMode.None) {
                 choices = GlobalData.getSymmetryTracker().getReducedChoices(choices);
             }
             choices = choices.stream().map(x -> x.restrict(schedule.getFilter())).filter(x -> !(x.getUniverse().isFalse())).collect(Collectors.toList());
@@ -697,7 +698,7 @@ public class IterativeBoundedScheduler extends Scheduler {
 
         PrimitiveVS chosenVS = generateNext.apply(chosen);
         if (configuration.isUseBacktrack()) {
-            if (configuration.isUseSymmetry()) {
+            if (configuration.getSymmetryMode() != SymmetryMode.None) {
                 schedule.setSchedulerSymmetry();
             }
         }
@@ -706,7 +707,7 @@ public class IterativeBoundedScheduler extends Scheduler {
         addBacktrack.accept(backtrack, depth);
         schedule.restrictFilterForDepth(depth);
 
-        if (configuration.isUseSymmetry()) {
+        if (configuration.getSymmetryMode() != SymmetryMode.None) {
             GlobalData.getSymmetryTracker().updateSymmetrySet(chosenVS);
         }
         return chosenVS;
@@ -776,7 +777,7 @@ public class IterativeBoundedScheduler extends Scheduler {
                 currentMachines.add(m);
                 assert (machines.size() >= currentMachines.size());
                 m.setScheduler(this);
-                if (configuration.isUseSymmetry()) {
+                if (configuration.getSymmetryMode() != SymmetryMode.None) {
                     GlobalData.getSymmetryTracker().createMachine(m, g);
                 }
             }
@@ -784,7 +785,7 @@ public class IterativeBoundedScheduler extends Scheduler {
             Machine newMachine = setupNewMachine(pc, guardedCount, constructor);
 
             allocated = new PrimitiveVS<>(newMachine).restrict(pc);
-            if (configuration.isUseSymmetry()) {
+            if (configuration.getSymmetryMode() != SymmetryMode.None) {
                 GlobalData.getSymmetryTracker().createMachine(newMachine, pc);
             }
         }

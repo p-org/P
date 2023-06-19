@@ -182,16 +182,19 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
         }
 
         // check if each item in the list is symbolically equal
-        Guard equalCond = Guard.constFalse();
+        Guard equalCond = Guard.constTrue();
         for (GuardedValue<Integer> size : this.size.getGuardedValues()) {
             if (cmp.size.hasValue(size.getValue())) {
                 Guard listEqual = IntStream.range(0, size.getValue())
                         .mapToObj((i) -> this.items.get(i).symbolicEquals(cmp.items.get(i), pc).getGuardFor(Boolean.TRUE))
                         .reduce(Guard::and)
                         .orElse(Guard.constTrue());
-                equalCond = equalCond.or(listEqual);
+                equalCond = equalCond.and(listEqual);
+            } else {
+                equalCond = equalCond.and(size.getGuard().not());
             }
         }
+
         return BooleanVS.trueUnderGuard(pc.and(equalCond)).restrict(getUniverse().and(cmp.getUniverse()));
     }
 

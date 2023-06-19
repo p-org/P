@@ -869,10 +869,19 @@ public class Scheduler implements SymbolicSearch {
         Message effect = null;
         List<Message> effects = new ArrayList<>();
 
+//        if (configuration.getSymmetryMode() != SymmetryMode.None) {
+//            GlobalData.getSymmetryTracker().updateSymmetrySet(choices);
+//        }
+
         for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
             Message removed = rmBuffer(machine, guard);
+
+//            if (configuration.getSymmetryMode() != SymmetryMode.None) {
+//                GlobalData.getSymmetryTracker().updateSymmetrySet(removed.getTarget());
+//            }
+
             if (configuration.getVerbosity() > 5) {
                 System.out.println("  Machine " + machine);
                 System.out.println("    state   " + machine.getCurrentState().toStringDetailed());

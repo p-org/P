@@ -14,7 +14,7 @@ public class SymmetryTracker implements Serializable {
     @Setter
     private static Scheduler scheduler;
 
-    final Map<String, List<SetVS<PrimitiveVS<Machine>>>> typeToSymmetryClasses;
+    final Map<String, ListVS<SetVS<PrimitiveVS<Machine>>>> typeToSymmetryClasses;
 
     public SymmetryTracker() {
         typeToSymmetryClasses = new HashMap<>();
@@ -28,14 +28,12 @@ public class SymmetryTracker implements Serializable {
         for (Set<Machine> symMachines : typeToAllSymmetricMachines.values()) {
             symMachines.clear();
         }
-        for (String type : typeToSymmetryClasses.keySet()) {
-            typeToSymmetryClasses.put(type, new ArrayList<>());
-        }
+        typeToSymmetryClasses.replaceAll((t, v) -> null);
     }
 
     public void addSymmetryType(String type) {
         typeToAllSymmetricMachines.put(type, new TreeSet<>());
-        typeToSymmetryClasses.put(type, new ArrayList<>());
+        typeToSymmetryClasses.put(type, null);
     }
 
     public void createMachine(Machine machine, Guard guard) {
@@ -45,18 +43,27 @@ public class SymmetryTracker implements Serializable {
         if (symMachines != null) {
             symMachines.add(machine);
         }
-        List<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(machine.getName());
-        if (symClasses != null) {
+        if (typeToSymmetryClasses.containsKey(machine.getName())) {
+            ListVS<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(machine.getName());
+            // initialize list summary if null
+            if (symClasses == null) {
+                symClasses =  new ListVS<>(Guard.constTrue());
+            }
+            assert (symClasses != null);
+
             // if empty, create an empty class
             if (symClasses.isEmpty()) {
-                symClasses.add(new SetVS<>(Guard.constTrue()));
+                symClasses = symClasses.add(new SetVS<>(guard));
             }
+            PrimitiveVS<Integer> indexVS = new PrimitiveVS<>(0, guard);
             // get the first class
-            SetVS<PrimitiveVS<Machine>> symSet = symClasses.get(0);
+            SetVS<PrimitiveVS<Machine>> symSet = symClasses.get(indexVS);
             // add machine to the first class
             symSet = symSet.add(new PrimitiveVS<>(machine, guard));
             // add updated first class to all class list
-            symClasses.set(0, symSet);
+            symClasses = symClasses.set(indexVS, symSet);
+            // add to map
+            typeToSymmetryClasses.put(machine.getName(), symClasses);
         }
     }
 
@@ -87,7 +94,7 @@ public class SymmetryTracker implements Serializable {
                     Machine machine = ((Machine) value);
 
                     // check if symmetric machine
-                    List<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(machine.getName());
+                    ListVS<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(machine.getName());
                     if (symClasses != null) {
                         Guard guard = guardedValues.get(0).getGuard();
 
@@ -95,7 +102,7 @@ public class SymmetryTracker implements Serializable {
                         Guard remaining = guard;
 
                         // check each symmetry class
-                        for (SetVS<PrimitiveVS<Machine>> symSet: symClasses) {
+                        for (SetVS<PrimitiveVS<Machine>> symSet: symClasses.getItems()) {
                             Guard hasMachine = symSet.contains(primitiveVS).getGuardFor(true);
                             Guard classGuard = guard.and(hasMachine);
 
@@ -115,6 +122,8 @@ public class SymmetryTracker implements Serializable {
                                         currentGuard = Guard.constFalse();
                                     }
                                     currentGuard = currentGuard.or(g);
+
+                                    assert (!BooleanVS.isEverTrue(IntegerVS.lessThan(m.sendBuffer.size().restrict(currentGuard), 1)));
                                     pendingSummaries.put(m, currentGuard);
                                 }
 
@@ -136,6 +145,7 @@ public class SymmetryTracker implements Serializable {
         }
 
         for (Map.Entry<Machine, Guard> entry : pendingSummaries.entrySet()) {
+            assert (!BooleanVS.isEverTrue(IntegerVS.lessThan(entry.getKey().sendBuffer.size().restrict(entry.getValue()), 1)));
             reduced.add(new PrimitiveVS(Collections.singletonMap(entry.getKey(), entry.getValue())));
         }
 
@@ -148,30 +158,47 @@ public class SymmetryTracker implements Serializable {
             Object value = choice.getValue();
             if (value instanceof Machine) {
                 Machine machine = ((Machine) value);
+                String type = machine.getName();
+                Guard guard = choice.getGuard();
 
-                List<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(machine.getName());
+                ListVS<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(type);
                 if (symClasses != null) {
-                    PrimitiveVS<Machine> primitiveVS = new PrimitiveVS<>(machine, choice.getGuard());
-                    List<SetVS<PrimitiveVS<Machine>>> newClasses = new ArrayList<>();
+                    PrimitiveVS<Machine> primitiveVS = new PrimitiveVS<>(machine, guard);
+                    ListVS<SetVS<PrimitiveVS<Machine>>> newClasses = new ListVS<>(Guard.constTrue());
 
-                    // check each symmetry class
-                    for (SetVS<PrimitiveVS<Machine>> symSet: symClasses) {
-                        // remove chosen from each class
-                        symSet = symSet.remove(primitiveVS);
+                    // iterate over each symmetry class
+                    PrimitiveVS<Integer> size = symClasses.size();
+                    PrimitiveVS<Integer> zero = new PrimitiveVS<>(0);
+                    PrimitiveVS<Integer> indexI = new PrimitiveVS<>(0, size.getUniverse());
+                    while (BooleanVS.isEverTrue(IntegerVS.lessThan(indexI, size))) {
+                        Guard condI = BooleanVS.getTrueGuard(IntegerVS.lessThan(indexI, size));
 
-                        // if class not empty, add to new classes
-                        if (!symSet.isEmpty()) {
-                            newClasses.add(symSet);
+                        if (!condI.isFalse()) {
+                            PrimitiveVS<Integer> condIndexI = indexI.restrict(condI);
+                            SetVS<PrimitiveVS<Machine>> symClassI = symClasses.get(condIndexI);
+
+                            // remove chosen from the ith class
+                            symClassI = symClassI.remove(primitiveVS);
+
+                            // if class not empty, add to new classes
+                            Guard isNonEmpty = BooleanVS.getFalseGuard(IntegerVS.equalTo(symClassI.size(), zero));
+                            if (!isNonEmpty.isFalse()) {
+                                assert (!BooleanVS.isEverTrue(IntegerVS.lessThan(typeToAllSymmetricMachines.get(type).size(), symClassI.size())));
+                                newClasses = newClasses.add(symClassI.restrict(isNonEmpty));
+                            }
                         }
+                        indexI = IntegerVS.add(indexI, 1);
                     }
 
                     // add self as a single-element class
-                    SetVS<PrimitiveVS<Machine>> selfSet = new SetVS<>(Guard.constTrue());
+                    SetVS<PrimitiveVS<Machine>> selfSet = new SetVS<>(guard);
                     selfSet = selfSet.add(primitiveVS);
-                    newClasses.add(selfSet);
+                    newClasses = newClasses.add(selfSet);
 
                     // update symmetry classes map
-                    typeToSymmetryClasses.put(machine.getName(), newClasses);
+                    assert (!BooleanVS.isEverTrue(IntegerVS.lessThan(typeToAllSymmetricMachines.get(type).size(), newClasses.size())));
+                    typeToSymmetryClasses.put(type, newClasses);
+//                    checkAllSymmetryClasses();
                 }
             }
         }
@@ -184,27 +211,53 @@ public class SymmetryTracker implements Serializable {
     }
 
     private void mergeSymmetryClassesForType(String type) {
-        List<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(type);
-        List<SetVS<PrimitiveVS<Machine>>> newClasses = new ArrayList<>();
+        ListVS<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(type);
 
-        for (int i = 0; i < symClasses.size() - 1; i++) {
-            for (int j = i + 1; j < symClasses.size(); j++) {
-                SetVS<PrimitiveVS<Machine>>[] mergedClasses = mergeSymmetryClassPair(symClasses.get(i), symClasses.get(j));
-                assert (mergedClasses.length == 2);
-                symClasses.set(i, mergedClasses[0]);
-                symClasses.set(j, mergedClasses[1]);
+        PrimitiveVS<Integer> size = symClasses.size();
+        PrimitiveVS<Integer> sizeMinusOne = IntegerVS.subtract(size, 1);
+
+        PrimitiveVS<Integer> indexI = new PrimitiveVS<>(0, sizeMinusOne.getUniverse());
+        while (BooleanVS.isEverTrue(IntegerVS.lessThan(indexI, sizeMinusOne))) {
+            Guard condI = BooleanVS.getTrueGuard(IntegerVS.lessThan(indexI, sizeMinusOne));
+
+            PrimitiveVS<Integer> indexJ = IntegerVS.add(indexI.restrict(condI), 1);
+            while (BooleanVS.isEverTrue(IntegerVS.lessThan(indexJ, size))) {
+                Guard condJ = BooleanVS.getTrueGuard(IntegerVS.lessThan(indexJ, size));
+
+                if (!condJ.isFalse()) {
+                    PrimitiveVS<Integer> condIndexI = indexI.restrict(condJ);
+                    PrimitiveVS<Integer> condIndexJ = indexJ.restrict(condJ);
+
+                    SetVS<PrimitiveVS<Machine>> lhs = symClasses.get(condIndexI);
+                    SetVS<PrimitiveVS<Machine>> rhs = symClasses.get(condIndexJ);
+                    Guard g = lhs.getUniverse().and(rhs.getUniverse());
+
+                    SetVS<PrimitiveVS<Machine>>[] mergedClasses = mergeSymmetryClassPair(lhs.restrict(g), rhs.restrict(g));
+                    assert (mergedClasses.length == 2);
+                    symClasses = symClasses.set(condIndexI.restrict(g), mergedClasses[0]);
+                    symClasses = symClasses.set(condIndexJ.restrict(g), mergedClasses[1]);
+                }
+
+                indexJ = IntegerVS.add(indexJ, 1);
             }
+            indexI = IntegerVS.add(indexI, 1);
         }
 
-        for (SetVS<PrimitiveVS<Machine>> symSet: symClasses) {
+        ListVS<SetVS<PrimitiveVS<Machine>>> newClasses = new ListVS<>(Guard.constTrue());
+        PrimitiveVS<Integer> zero = new PrimitiveVS<>(0);
+        for (SetVS<PrimitiveVS<Machine>> symClass: symClasses.getItems()) {
             // if class not empty, add to new classes
-            if (!symSet.isEmpty()) {
-                newClasses.add(symSet);
+            Guard isNonEmpty = BooleanVS.getFalseGuard(IntegerVS.equalTo(symClass.size(), zero));
+            if (!isNonEmpty.isFalse()) {
+                assert (!BooleanVS.isEverTrue(IntegerVS.lessThan(typeToAllSymmetricMachines.get(type).size(), symClass.size())));
+                newClasses = newClasses.add(symClass.restrict(isNonEmpty));
             }
         }
 
         // update symmetry classes map
+        assert (!BooleanVS.isEverTrue(IntegerVS.lessThan(typeToAllSymmetricMachines.get(type).size(), newClasses.size())));
         typeToSymmetryClasses.put(type, newClasses);
+//        checkAllSymmetryClasses();
     }
 
     private SetVS<PrimitiveVS<Machine>>[] mergeSymmetryClassPair(SetVS<PrimitiveVS<Machine>> lhs, SetVS<PrimitiveVS<Machine>> rhs) {
@@ -258,6 +311,9 @@ public class SymmetryTracker implements Serializable {
                 }
 
                 rhs = rhs.restrict(symEqGuard.not());
+
+//                checkSymmetryClass(lhs);
+//                checkSymmetryClass(rhs);
             }
 
             return new SetVS[]{lhs, rhs};
@@ -300,7 +356,8 @@ public class SymmetryTracker implements Serializable {
                 continue;
             }
             for (ValueSummary original: other.getLocalState()) {
-                ValueSummary permuted = original.restrict(result).swap(m1, m2);
+                original = original.restrict(pc);
+                ValueSummary permuted = original.swap(m1, m2);
                 if (original.isEmptyVS() && permuted.isEmptyVS()) {
                     continue;
                 }
@@ -316,5 +373,63 @@ public class SymmetryTracker implements Serializable {
         }
 
         return result;
+    }
+
+    public void resetAllSymmetryClasses() {
+        for (String type: typeToSymmetryClasses.keySet()) {
+            ListVS<SetVS<PrimitiveVS<Machine>>> lvs = typeToSymmetryClasses.get(type);
+            for (SetVS<PrimitiveVS<Machine>> svs: lvs.getItems()) {
+                for (PrimitiveVS<Machine> mvs : svs.getElements().getItems()) {
+                    updateSymmetrySet(mvs);
+                }
+            }
+            assert (!BooleanVS.isEverFalse(IntegerVS.equalTo(typeToSymmetryClasses.get(type).size(), new PrimitiveVS<>(typeToAllSymmetricMachines.get(type).size()))));
+        }
+    }
+
+    public void checkAllSymmetryClasses() {
+        for (String type: typeToSymmetryClasses.keySet()) {
+            checkSymmetryClassesForType(type);
+        }
+    }
+
+    private void checkSymmetryClassesForType(String type) {
+        ListVS<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(type);
+
+        for (SetVS<PrimitiveVS<Machine>> symSet: symClasses.getItems()) {
+            checkSymmetryClass(symSet);
+        }
+    }
+
+    private void checkSymmetryClass(SetVS<PrimitiveVS<Machine>> symSet) {
+        // get representative of lhs class
+        PrimitiveVS<Integer> zero = new PrimitiveVS<>(0);
+        // if class not empty, add to new classes
+        Guard isNonEmpty = BooleanVS.getFalseGuard(IntegerVS.equalTo(symSet.size(), zero));
+        if (isNonEmpty.isFalse()) {
+            return;
+        }
+
+        PrimitiveVS<Machine> lhsRep = symSet.get(new PrimitiveVS<>(0, isNonEmpty));
+        for (GuardedValue<Machine> lhsRepGV : lhsRep.getGuardedValues()) {
+            Machine lhsRepMachine = lhsRepGV.getValue();
+            Guard lhsRepGuard = lhsRepGV.getGuard();
+
+            for (PrimitiveVS<Machine> rhsRep: symSet.getElements().getItems()) {
+                rhsRep = rhsRep.restrict(lhsRepGuard);
+                for (GuardedValue<Machine> rhsRepGV : rhsRep.getGuardedValues()) {
+                    Machine rhsRepMachine = rhsRepGV.getValue();
+                    Guard rhsRepGuard = rhsRepGV.getGuard();
+
+                    if (lhsRepMachine != rhsRepMachine) {
+                        Guard areSymEq = haveSymEqLocalState(lhsRepMachine, rhsRepMachine, rhsRepGuard);
+                        if (!areSymEq.equals(rhsRepGuard)) {
+                            haveSymEqLocalState(lhsRepMachine, rhsRepMachine, rhsRepGuard);
+                        }
+                        assert (areSymEq.equals(rhsRepGuard));
+                    }
+                }
+            }
+        }
     }
 }

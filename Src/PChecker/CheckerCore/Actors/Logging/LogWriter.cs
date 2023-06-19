@@ -30,7 +30,7 @@ namespace PChecker.Actors.Logging
         /// <summary>
         /// Used to log latencies.
         /// </summary>
-        private readonly LatencyLogger LatencyLogger;
+        private readonly TimedLogger TimedLogger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LogWriter"/> class.
@@ -50,11 +50,11 @@ namespace PChecker.Actors.Logging
 
             if (checkerConfiguration.SchedulingStrategy.Equals("statistical"))
             {
-                LatencyLogger = new LatencyLogger(checkerConfiguration);
+                TimedLogger = new TimedLogger(checkerConfiguration);
             }
             else
             {
-                LatencyLogger = null;
+                TimedLogger = null;
             }
         }
 
@@ -131,7 +131,7 @@ namespace PChecker.Actors.Logging
                 }
             }
 
-            LatencyLogger?.OnSendEvent(targetActorId, senderName, senderState, e);
+            TimedLogger?.OnSendEvent(targetActorId, senderName, senderState, e);
         }
 
         /// <summary>
@@ -183,7 +183,7 @@ namespace PChecker.Actors.Logging
                 }
             }
 
-            LatencyLogger?.OnDequeueEvent(id, stateName, e);
+            TimedLogger?.OnDequeueEvent(id, stateName, e);
         }
 
         /// <summary>
@@ -608,7 +608,7 @@ namespace PChecker.Actors.Logging
                 log.OnCompleted();
             }
 
-            LatencyLogger?.OnCompleted();
+            TimedLogger?.OnCompleted();
         }
 
         /// <summary>

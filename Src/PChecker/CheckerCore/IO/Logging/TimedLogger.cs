@@ -8,7 +8,7 @@ namespace PChecker.IO.Logging
     /// <summary>
     /// Logger that writes latencies.
     /// </summary>
-    public sealed class LatencyLogger
+    public sealed class TimedLogger
     {
         /// <summary>
         /// Underlying thread-safe in-memory logger.
@@ -21,13 +21,13 @@ namespace PChecker.IO.Logging
         private string LogFilePath;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LatencyLogger"/> class.
+        /// Initializes a new instance of the <see cref="TimedLogger"/> class.
         /// </summary>
         /// /// <param name="checkerConfiguration">Checker configuration.</param>
-        public LatencyLogger(CheckerConfiguration checkerConfiguration)
+        public TimedLogger(CheckerConfiguration checkerConfiguration)
         {
-            Directory.CreateDirectory(checkerConfiguration.OutputFilePath + "/Latency");
-            LogFilePath = checkerConfiguration.OutputFilePath + "/Latency/Log" + checkerConfiguration.CurrentIteration + ".csv";
+            Directory.CreateDirectory(checkerConfiguration.OutputFilePath + "/TimedLogs");
+            LogFilePath = checkerConfiguration.OutputFilePath + "/TimedLogs/Log" + checkerConfiguration.CurrentIteration + ".csv";
             InMemoryLogger = new InMemoryLogger();
             InMemoryLogger.WriteLine("Time,Operation,Event,Source,State,Target");
         }

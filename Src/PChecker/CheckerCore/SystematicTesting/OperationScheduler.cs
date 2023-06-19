@@ -176,8 +176,6 @@ namespace PChecker.SystematicTesting
                     }
                 }
             }
-            Console.WriteLine("MockEventQueue.Time");
-            Console.WriteLine(MockEventQueue.GetTime());
 
             if (!Strategy.GetNextOperation(current, ops, out var next))
             {

@@ -440,6 +440,7 @@ namespace PChecker.SystematicTesting
             try
             {
                 // Creates a new instance of the controlled runtime.
+                _checkerConfiguration.CurrentIteration = iteration + 1;
                 runtime = new ControlledRuntime(_checkerConfiguration, Strategy, RandomValueGenerator);
 
                 // If verbosity is turned off, then intercept the program log, and also redirect

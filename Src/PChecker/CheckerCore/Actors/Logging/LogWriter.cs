@@ -28,6 +28,11 @@ namespace PChecker.Actors.Logging
         internal TextWriter Logger { get; private set; }
 
         /// <summary>
+        /// Used to log latencies.
+        /// </summary>
+        private readonly LatencyLogger LatencyLogger;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="LogWriter"/> class.
         /// </summary>
         internal LogWriter(CheckerConfiguration checkerConfiguration)
@@ -41,6 +46,15 @@ namespace PChecker.Actors.Logging
             else
             {
                 Logger = TextWriter.Null;
+            }
+
+            if (checkerConfiguration.SchedulingStrategy.Equals("statistical"))
+            {
+                LatencyLogger = new LatencyLogger(checkerConfiguration);
+            }
+            else
+            {
+                LatencyLogger = null;
             }
         }
 
@@ -116,6 +130,8 @@ namespace PChecker.Actors.Logging
                     log.OnSendEvent(targetActorId, senderName, senderType, senderState, e, opGroupId, isTargetHalted);
                 }
             }
+
+            LatencyLogger?.OnSendEvent(targetActorId, senderName, senderState, e);
         }
 
         /// <summary>
@@ -166,6 +182,8 @@ namespace PChecker.Actors.Logging
                     log.OnDequeueEvent(id, stateName, e);
                 }
             }
+
+            LatencyLogger?.OnDequeueEvent(id, stateName, e);
         }
 
         /// <summary>
@@ -589,6 +607,8 @@ namespace PChecker.Actors.Logging
             {
                 log.OnCompleted();
             }
+
+            LatencyLogger?.OnCompleted();
         }
 
         /// <summary>

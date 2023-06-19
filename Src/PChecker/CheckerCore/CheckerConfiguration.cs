@@ -260,6 +260,11 @@ namespace PChecker
         public string JvmArgs;
 
         /// <summary>
+        /// Current iteration number.
+        /// </summary>
+        public int CurrentIteration;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="CheckerConfiguration"/> class.
         /// </summary>
         protected CheckerConfiguration()
@@ -285,6 +290,7 @@ namespace PChecker
             TestingProcessId = 0;
             ConsiderDepthBoundHitAsBug = false;
             StrategyBound = 0;
+            CurrentIteration = 0;
 
             IsLivenessCheckingEnabled = true;
             LivenessTemperatureThreshold = 0;

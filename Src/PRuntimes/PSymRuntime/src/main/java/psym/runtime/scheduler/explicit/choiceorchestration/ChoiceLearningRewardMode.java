@@ -1,4 +1,4 @@
-package psym.runtime.scheduler.choiceorchestration;
+package psym.runtime.scheduler.explicit.choiceorchestration;
 
 public enum ChoiceLearningRewardMode {
     None,

@@ -2,11 +2,11 @@ package psym.commandline;
 
 import lombok.Getter;
 import lombok.Setter;
-import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
-import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
-import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceOrchestrationMode;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
-import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
+import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestrationMode;
 import psym.utils.StateCachingMode;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;

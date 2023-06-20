@@ -4,8 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import psym.runtime.logger.CoverageWriter;
 import psym.runtime.logger.StatWriter;
-import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
-import psym.runtime.scheduler.choiceorchestration.ChoiceQTable;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceQTable;
 import psym.utils.GlobalData;
 
 import java.io.Serializable;

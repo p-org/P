@@ -1,17 +1,17 @@
-package psym.runtime.scheduler.taskorchestration;
+package psym.runtime.scheduler.explicit.taskorchestration;
 
-import psym.runtime.scheduler.BacktrackTask;
+import psym.runtime.scheduler.explicit.BacktrackTask;
 
 import java.util.Comparator;
 import java.util.concurrent.PriorityBlockingQueue;
 
-public class TaskOrchestratorCoverageAStar implements TaskOrchestrator {
+public class TaskOrchestratorCoverageEstimate implements TaskOrchestrator {
     private final PriorityBlockingQueue<BacktrackTask> elements;
 
-    public TaskOrchestratorCoverageAStar() {
+    public TaskOrchestratorCoverageEstimate() {
         elements = new PriorityBlockingQueue<BacktrackTask>(100, new Comparator<BacktrackTask>() {
             public int compare(BacktrackTask a, BacktrackTask b) {
-                return b.getPrefixCoverage().compareTo(a.getPrefixCoverage());
+                return b.getEstimatedCoverage().compareTo(a.getEstimatedCoverage());
             }
         });
     }
@@ -29,5 +29,4 @@ public class TaskOrchestratorCoverageAStar implements TaskOrchestrator {
     public void remove(BacktrackTask task) {
         elements.remove(task);
     }
-
 }

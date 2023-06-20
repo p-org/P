@@ -1,8 +1,9 @@
-package psym.runtime.scheduler;
+package psym.runtime.scheduler.explicit;
 
 import lombok.Getter;
 import lombok.Setter;
-import psym.runtime.scheduler.taskorchestration.*;
+import psym.runtime.scheduler.Schedule;
+import psym.runtime.scheduler.explicit.taskorchestration.*;
 import psym.runtime.statistics.CoverageStats;
 
 import java.io.Serializable;

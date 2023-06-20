@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 /**
  * Represents the iterative bounded scheduler
  */
-public class IterativeBoundedScheduler extends Scheduler {
+public class SearchScheduler extends Scheduler {
 
     /**
      * List of all backtrack tasks
@@ -61,7 +61,7 @@ public class IterativeBoundedScheduler extends Scheduler {
     private boolean isDoneIterating = false;
     private transient Instant lastReportTime = Instant.now();
 
-    public IterativeBoundedScheduler(PSymConfiguration config, Program p) {
+    public SearchScheduler(PSymConfiguration config, Program p) {
         super(config, p);
         switch (config.getChoiceOrchestration()) {
             case None:
@@ -88,14 +88,14 @@ public class IterativeBoundedScheduler extends Scheduler {
      * @return A scheduler object
      * @throws Exception Throw error if reading fails
      */
-    public static IterativeBoundedScheduler readFromFile(String readFromFile) throws Exception {
-        IterativeBoundedScheduler result;
+    public static SearchScheduler readFromFile(String readFromFile) throws Exception {
+        SearchScheduler result;
         try {
             PSymLogger.info("... Reading program state from file " + readFromFile);
             FileInputStream fis;
             fis = new FileInputStream(readFromFile);
             ObjectInputStream ois = new ObjectInputStream(fis);
-            result = (IterativeBoundedScheduler) ois.readObject();
+            result = (SearchScheduler) ois.readObject();
             GlobalData.setInstance((GlobalData) ois.readObject());
             result.reinitialize();
             PSymLogger.info("... Successfully read.");

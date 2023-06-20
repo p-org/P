@@ -2,7 +2,7 @@ package psym.commandline;
 
 import org.reflections.Reflections;
 import psym.runtime.logger.*;
-import psym.runtime.scheduler.IterativeBoundedScheduler;
+import psym.runtime.scheduler.SearchScheduler;
 import psym.runtime.scheduler.ReplayScheduler;
 import psym.runtime.statistics.SolverStats;
 import psym.utils.BugFoundException;
@@ -51,7 +51,7 @@ public class PSym {
                 throw new Exception("ERROR");
             }
 
-            IterativeBoundedScheduler scheduler;
+            SearchScheduler scheduler;
 
             if (config.isWriteToFile()) {
                 BacktrackWriter.Initialize(config.getProjectName(), config.getOutputFolder());
@@ -60,10 +60,10 @@ public class PSym {
             if (config.getReadFromFile().equals("")) {
                 assert (p != null);
                 setTestDriver(p, config, reflections);
-                scheduler = new IterativeBoundedScheduler(config, p);
+                scheduler = new SearchScheduler(config, p);
                 EntryPoint.run(scheduler, config);
             } else {
-                scheduler = IterativeBoundedScheduler.readFromFile(config.getReadFromFile());
+                scheduler = SearchScheduler.readFromFile(config.getReadFromFile());
                 EntryPoint.resume(scheduler, config);
             }
 

@@ -2,7 +2,7 @@ package psym.commandline;
 
 import psym.runtime.Concretizer;
 import psym.runtime.logger.*;
-import psym.runtime.scheduler.IterativeBoundedScheduler;
+import psym.runtime.scheduler.SearchScheduler;
 import psym.runtime.scheduler.ReplayScheduler;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
@@ -19,7 +19,7 @@ public class EntryPoint {
     private static Future<Integer> future;
     private static String status;
     private static PSymConfiguration configuration;
-    private static IterativeBoundedScheduler scheduler;
+    private static SearchScheduler scheduler;
     private static String mode;
 
     private static void runWithTimeout(long timeLimit) throws TimeoutException, MemoutException, BugFoundException, InterruptedException {
@@ -144,7 +144,7 @@ public class EntryPoint {
         }
     }
 
-    public static void run(IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
+    public static void run(SearchScheduler sch, PSymConfiguration config) throws Exception {
         scheduler = sch;
         configuration = config;
         scheduler.getProgram().setProgramScheduler(scheduler);
@@ -153,7 +153,7 @@ public class EntryPoint {
         process(false);
     }
 
-    public static void resume(IterativeBoundedScheduler sch, PSymConfiguration config) throws Exception {
+    public static void resume(SearchScheduler sch, PSymConfiguration config) throws Exception {
         scheduler = sch;
         configuration = config;
         scheduler.getProgram().setProgramScheduler(scheduler);

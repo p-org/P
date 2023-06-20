@@ -1,6 +1,6 @@
 package psym.commandline;
 
-import psym.runtime.scheduler.IterativeBoundedScheduler;
+import psym.runtime.scheduler.SearchScheduler;
 import psym.utils.BugFoundException;
 import psym.utils.MemoryMonitor;
 
@@ -8,10 +8,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
 
 public class TimedCall implements Callable<Integer> {
-    private final IterativeBoundedScheduler scheduler;
+    private final SearchScheduler scheduler;
     private final boolean resume;
 
-    public TimedCall(IterativeBoundedScheduler scheduler, boolean resume) {
+    public TimedCall(SearchScheduler scheduler, boolean resume) {
         this.scheduler = scheduler;
         this.resume = resume;
     }

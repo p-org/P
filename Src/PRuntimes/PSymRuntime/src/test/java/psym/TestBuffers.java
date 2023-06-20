@@ -1,9 +1,8 @@
 package psym;
 
 import org.junit.jupiter.api.Test;
-import psym.commandline.PSym;
-import psym.runtime.Event;
-import psym.runtime.Message;
+import psym.runtime.machine.events.Event;
+import psym.runtime.machine.events.Message;
 import psym.runtime.machine.buffer.EventBuffer;
 import psym.runtime.machine.buffer.EventQueue;
 import psym.valuesummary.Guard;

@@ -1,8 +1,8 @@
-package psym.runtime;
+package psym.runtime.machine.events;
 
 
 import psym.runtime.machine.Machine;
-import psym.utils.GlobalData;
+import psym.runtime.GlobalData;
 import psym.valuesummary.*;
 
 import java.util.*;

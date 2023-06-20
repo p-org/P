@@ -1,6 +1,6 @@
 package psym.valuesummary;
 
-import psym.runtime.Event;
+import psym.runtime.machine.events.Event;
 import psym.runtime.machine.Machine;
 
 import java.util.*;

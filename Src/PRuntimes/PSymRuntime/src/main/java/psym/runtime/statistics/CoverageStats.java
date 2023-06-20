@@ -6,7 +6,7 @@ import psym.runtime.logger.CoverageWriter;
 import psym.runtime.logger.StatWriter;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceQTable;
-import psym.utils.GlobalData;
+import psym.runtime.GlobalData;
 
 import java.io.Serializable;
 import java.math.BigDecimal;

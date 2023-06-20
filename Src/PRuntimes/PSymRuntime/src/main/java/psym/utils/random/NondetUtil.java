@@ -1,4 +1,4 @@
-package psym.runtime;
+package psym.utils.random;
 
 import psym.valuesummary.Guard;
 import psym.valuesummary.GuardedValue;

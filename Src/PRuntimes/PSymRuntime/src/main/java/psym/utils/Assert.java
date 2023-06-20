@@ -1,7 +1,7 @@
-package psym.commandline;
+package psym.utils;
 
-import psym.utils.BugFoundException;
-import psym.utils.LivenessException;
+import psym.utils.exception.BugFoundException;
+import psym.utils.exception.LivenessException;
 import psym.valuesummary.Guard;
 import psym.valuesummary.GuardedValue;
 import psym.valuesummary.PrimitiveVS;

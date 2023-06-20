@@ -1,6 +1,6 @@
-package psym.utils;
+package psym.runtime;
 
-import psym.runtime.StateEvents;
+import psym.runtime.machine.events.StateEvents;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStats;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.runtime.statistics.CoverageStats;

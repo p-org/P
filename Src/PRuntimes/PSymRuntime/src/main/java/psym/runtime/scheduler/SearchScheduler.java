@@ -1,9 +1,9 @@
 package psym.runtime.scheduler;
 
 import org.apache.commons.lang3.StringUtils;
-import psym.commandline.Assert;
+import psym.utils.Assert;
 import psym.commandline.PSymConfiguration;
-import psym.commandline.Program;
+import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
 import psym.runtime.scheduler.explicit.BacktrackTask;
@@ -11,10 +11,10 @@ import psym.runtime.scheduler.explicit.choiceorchestration.*;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestrationMode;
 import psym.runtime.statistics.SearchStats;
-import psym.utils.GlobalData;
-import psym.utils.MemoryMonitor;
-import psym.utils.StateCachingMode;
-import psym.utils.TimeMonitor;
+import psym.runtime.GlobalData;
+import psym.utils.monitor.MemoryMonitor;
+import psym.runtime.scheduler.explicit.StateCachingMode;
+import psym.utils.monitor.TimeMonitor;
 import psym.valuesummary.*;
 
 import java.io.*;

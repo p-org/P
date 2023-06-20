@@ -1,7 +1,7 @@
 package psym.runtime.scheduler.explicit.taskorchestration;
 
 import psym.runtime.scheduler.explicit.BacktrackTask;
-import psym.utils.RandomNumberGenerator;
+import psym.utils.random.RandomNumberGenerator;
 
 import java.util.*;
 

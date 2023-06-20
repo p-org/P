@@ -1,4 +1,4 @@
-package psym.runtime;
+package psym.runtime.machine.events;
 
 import psym.runtime.machine.eventhandlers.EventHandler;
 

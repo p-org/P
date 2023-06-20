@@ -1,7 +1,7 @@
 package psym.runtime.scheduler.explicit.choiceorchestration;
 
-import psym.utils.GlobalData;
-import psym.utils.RandomNumberGenerator;
+import psym.runtime.GlobalData;
+import psym.utils.random.RandomNumberGenerator;
 import psym.valuesummary.ValueSummary;
 
 import java.util.Collections;

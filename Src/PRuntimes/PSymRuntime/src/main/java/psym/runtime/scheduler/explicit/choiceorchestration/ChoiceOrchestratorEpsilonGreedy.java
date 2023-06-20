@@ -1,7 +1,7 @@
 package psym.runtime.scheduler.explicit.choiceorchestration;
 
 import lombok.Setter;
-import psym.utils.RandomNumberGenerator;
+import psym.utils.random.RandomNumberGenerator;
 import psym.valuesummary.ValueSummary;
 
 import java.util.List;

@@ -1,8 +1,8 @@
 package psym.runtime.machine.eventhandlers;
 
 import lombok.Getter;
-import psym.runtime.Event;
-import psym.runtime.Message;
+import psym.runtime.machine.events.Event;
+import psym.runtime.machine.events.Message;
 import psym.runtime.machine.State;
 import psym.valuesummary.Guard;
 import psym.valuesummary.PrimitiveVS;

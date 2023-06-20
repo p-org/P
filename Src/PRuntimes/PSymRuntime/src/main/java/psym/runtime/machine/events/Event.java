@@ -1,4 +1,4 @@
-package psym.runtime;
+package psym.runtime.machine.events;
 
 import java.io.Serializable;
 import java.util.Objects;

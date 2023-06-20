@@ -1,4 +1,4 @@
-package psym.commandline;
+package psym.utils.exception;
 
 public class MemoutException extends RuntimeException {
     public final double memSpent;

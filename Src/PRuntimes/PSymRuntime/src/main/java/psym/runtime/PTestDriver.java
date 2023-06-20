@@ -1,6 +1,6 @@
-package psym.commandline;
+package psym.runtime;
 
-import psym.runtime.Event;
+import psym.runtime.machine.events.Event;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
 

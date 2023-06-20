@@ -1,6 +1,6 @@
 package psym.runtime.machine.buffer;
 
-import psym.runtime.Message;
+import psym.runtime.machine.events.Message;
 import psym.valuesummary.Guard;
 import psym.valuesummary.ListVS;
 import psym.valuesummary.PrimitiveVS;

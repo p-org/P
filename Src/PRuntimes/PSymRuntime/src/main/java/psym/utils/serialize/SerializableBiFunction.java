@@ -1,4 +1,4 @@
-package psym.utils;
+package psym.utils.serialize;
 
 import java.io.Serializable;
 import java.util.function.BiFunction;

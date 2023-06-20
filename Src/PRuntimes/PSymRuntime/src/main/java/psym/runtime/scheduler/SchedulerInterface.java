@@ -1,4 +1,4 @@
-package psym.runtime;
+package psym.runtime.scheduler;
 
 import psym.valuesummary.*;
 
@@ -6,9 +6,9 @@ import java.io.Serializable;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Search interface for exploring different schedules
+ * Scheduler interface for exploring different schedules
  */
-public interface SymbolicSearch extends Serializable {
+public interface SchedulerInterface extends Serializable {
 
     /**
      * Perform the Search

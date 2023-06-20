@@ -7,7 +7,7 @@ import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMo
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceOrchestrationMode;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestrationMode;
-import psym.utils.StateCachingMode;
+import psym.runtime.scheduler.explicit.StateCachingMode;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 

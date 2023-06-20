@@ -1,8 +1,7 @@
 package psym.valuesummary;
 
-import psym.commandline.Assert;
+import psym.utils.Assert;
 import psym.runtime.machine.Machine;
-import psym.valuesummary.util.ValueSummaryChecks;
 
 import java.util.*;
 

@@ -1,6 +1,6 @@
 package psym.valuesummary;
 
-import psym.runtime.Message;
+import psym.runtime.machine.events.Message;
 import psym.runtime.machine.Machine;
 
 import java.io.Serializable;

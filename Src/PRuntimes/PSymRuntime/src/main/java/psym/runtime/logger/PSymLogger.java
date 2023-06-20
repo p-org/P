@@ -9,7 +9,7 @@ import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import psym.utils.MemoryMonitor;
+import psym.utils.monitor.MemoryMonitor;
 
 /**
  * Represents the P Symbolic logger configuration

@@ -2,15 +2,14 @@ package psym.runtime.scheduler;
 
 import lombok.Getter;
 import psym.commandline.PSymConfiguration;
-import psym.commandline.Program;
-import psym.runtime.Event;
-import psym.runtime.Message;
+import psym.runtime.Program;
+import psym.runtime.machine.events.Event;
+import psym.runtime.machine.events.Message;
 import psym.runtime.logger.PSymLogger;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
-import psym.utils.GlobalData;
+import psym.runtime.GlobalData;
 import psym.valuesummary.*;
-import psym.valuesummary.solvers.SolverEngine;
 
 import java.io.*;
 import java.nio.file.Files;

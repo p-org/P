@@ -1,15 +1,14 @@
 package psym.runtime.machine;
 
-import psym.commandline.Assert;
-import psym.runtime.Event;
-import psym.runtime.Message;
-import psym.runtime.StateEvents;
+import psym.utils.Assert;
+import psym.runtime.machine.events.Event;
+import psym.runtime.machine.events.Message;
+import psym.runtime.machine.events.StateEvents;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.eventhandlers.EventHandler;
 import psym.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psym.runtime.machine.eventhandlers.IgnoreEventHandler;
-import psym.utils.GlobalData;
-import psym.utils.StateTemperature;
+import psym.runtime.GlobalData;
 import psym.valuesummary.*;
 import psym.valuesummary.util.ValueSummaryChecks;
 

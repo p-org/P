@@ -1,2 +1,2 @@
 Manifest-Version: 0.1
-Main-Class: psym.commandline.PSym
+Main-Class: psym.PSym

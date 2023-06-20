@@ -1,4 +1,4 @@
-package psym.utils;
+package psym.utils.exception;
 
 import psym.valuesummary.Guard;
 

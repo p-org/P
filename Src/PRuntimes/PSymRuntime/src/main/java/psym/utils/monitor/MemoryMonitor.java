@@ -1,4 +1,4 @@
-package psym.utils;
+package psym.utils.monitor;
 
 import com.sun.management.GarbageCollectionNotificationInfo;
 import lombok.Getter;

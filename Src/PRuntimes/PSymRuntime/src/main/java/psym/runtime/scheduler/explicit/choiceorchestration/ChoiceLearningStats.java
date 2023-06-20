@@ -1,7 +1,7 @@
 package psym.runtime.scheduler.explicit.choiceorchestration;
 
 import lombok.Getter;
-import psym.runtime.Message;
+import psym.runtime.machine.events.Message;
 import psym.runtime.logger.PSymLogger;
 import psym.runtime.machine.Machine;
 import psym.runtime.scheduler.Scheduler;

@@ -1,7 +1,7 @@
 package psym.runtime.scheduler.explicit.choiceorchestration;
 
 import lombok.Getter;
-import psym.utils.GlobalData;
+import psym.runtime.GlobalData;
 import psym.valuesummary.ValueSummary;
 
 import java.io.Serializable;

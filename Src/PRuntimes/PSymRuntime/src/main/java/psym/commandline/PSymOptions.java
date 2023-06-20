@@ -11,8 +11,8 @@ import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceOrchestratorEps
 import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestrationMode;
 import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
-import psym.utils.GlobalData;
-import psym.utils.StateCachingMode;
+import psym.runtime.GlobalData;
+import psym.runtime.scheduler.explicit.StateCachingMode;
 
 import java.io.*;
 import java.nio.file.Files;

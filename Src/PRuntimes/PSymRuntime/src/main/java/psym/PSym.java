@@ -1,14 +1,18 @@
-package psym.commandline;
+package psym;
 
 import org.reflections.Reflections;
+import psym.commandline.PSymConfiguration;
+import psym.commandline.PSymOptions;
+import psym.runtime.PTestDriver;
+import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.scheduler.SearchScheduler;
 import psym.runtime.scheduler.ReplayScheduler;
 import psym.runtime.statistics.SolverStats;
-import psym.utils.BugFoundException;
-import psym.utils.MemoryMonitor;
-import psym.utils.RandomNumberGenerator;
-import psym.utils.TimeMonitor;
+import psym.utils.exception.BugFoundException;
+import psym.utils.monitor.MemoryMonitor;
+import psym.utils.random.RandomNumberGenerator;
+import psym.utils.monitor.TimeMonitor;
 import psym.valuesummary.solvers.SolverEngine;
 
 import java.util.Optional;

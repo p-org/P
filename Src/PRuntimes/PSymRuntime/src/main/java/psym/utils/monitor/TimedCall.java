@@ -1,8 +1,9 @@
-package psym.commandline;
+package psym.utils.monitor;
 
 import psym.runtime.scheduler.SearchScheduler;
-import psym.utils.BugFoundException;
-import psym.utils.MemoryMonitor;
+import psym.utils.exception.BugFoundException;
+import psym.utils.exception.MemoutException;
+import psym.utils.monitor.MemoryMonitor;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;

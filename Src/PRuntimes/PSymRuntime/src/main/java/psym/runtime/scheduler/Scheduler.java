@@ -2,10 +2,12 @@ package psym.runtime.scheduler;
 
 import lombok.Getter;
 import lombok.Setter;
-import psym.commandline.Assert;
+import psym.utils.Assert;
 import psym.commandline.PSymConfiguration;
-import psym.commandline.Program;
+import psym.runtime.Program;
 import psym.runtime.*;
+import psym.runtime.machine.events.Event;
+import psym.runtime.machine.events.Message;
 import psym.runtime.logger.PSymLogger;
 import psym.runtime.logger.SearchLogger;
 import psym.runtime.logger.StatWriter;
@@ -13,13 +15,13 @@ import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
+import psym.runtime.scheduler.explicit.StateCachingMode;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
-import psym.utils.GlobalData;
-import psym.utils.MemoryMonitor;
-import psym.utils.StateCachingMode;
-import psym.utils.TimeMonitor;
+import psym.utils.monitor.MemoryMonitor;
+import psym.utils.monitor.TimeMonitor;
+import psym.utils.random.NondetUtil;
 import psym.valuesummary.*;
 import psym.valuesummary.solvers.SolverEngine;
 
@@ -31,7 +33,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
-public class Scheduler implements SymbolicSearch {
+public class Scheduler implements SchedulerInterface {
     @Getter
     /** List of all machines along any path constraints */
     final List<Machine> machines;

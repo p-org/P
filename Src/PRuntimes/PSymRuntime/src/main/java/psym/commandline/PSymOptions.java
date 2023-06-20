@@ -181,7 +181,7 @@ public class PSymOptions {
         // whether or not to disable state caching
         Option stateCaching = Option.builder()
                 .longOpt("state-caching")
-                .desc("State caching mode: none, exact, fast (default: exact)")
+                .desc("State caching mode: none, exact, fast (default: fast)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Caching Mode (string)")

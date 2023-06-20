@@ -79,7 +79,7 @@ public class PSymConfiguration implements Serializable {
     // mode of state hashing
     @Getter
     @Setter
-    StateCachingMode stateCachingMode = StateCachingMode.Exact;
+    StateCachingMode stateCachingMode = StateCachingMode.Fast;
     // symmetry mode
     @Getter
     @Setter

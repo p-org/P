@@ -137,7 +137,7 @@ public class CoverageStats implements Serializable {
             for (int i = startDepth; i <= choiceDepth; i++) {
                 CoverageChoiceDepthStats stats = perChoiceDepthStats.get(i);
                 if (stats != null) {
-                    GlobalData.getChoiceLearningStats().rewardIteration(stats.getStateActions(), iterationCoverage, rewardMode);
+                    GlobalData.getChoiceLearningStats().rewardIteration(stats.getStateActions(), iterationCoverage.doubleValue(), rewardMode);
                 }
             }
         }

@@ -10,20 +10,19 @@ import psym.valuesummary.PrimitiveVS;
 import psym.valuesummary.ValueSummary;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 public class ChoiceLearningStats<S, A> implements Serializable {
     @Getter
-    private static final BigDecimal defaultQValue = BigDecimal.ZERO;
+    private static final double defaultQValue = 0;
     @Getter
-    private static final BigDecimal defaultReward = BigDecimal.valueOf(-1);
+    private static final double defaultReward = -1;
     @Getter
-    private static final BigDecimal ALPHA = BigDecimal.valueOf(0.3);
+    private static final double ALPHA = 0.3;
     @Getter
-    private static final BigDecimal GAMMA = BigDecimal.valueOf(0.7);
+    private static final double GAMMA = 0.7;
     @Getter
     private final ChoiceComparator choiceComparator = new ChoiceComparator();
     private final ChoiceQTable<S, A> qValues;
@@ -45,7 +44,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
         return action.getClass();
     }
 
-    public void rewardIteration(ChoiceQTable.ChoiceQTableKey<S, A> stateActions, BigDecimal reward, ChoiceLearningRewardMode rewardMode) {
+    public void rewardIteration(ChoiceQTable.ChoiceQTableKey<S, A> stateActions, double reward, ChoiceLearningRewardMode rewardMode) {
         switch (rewardMode) {
             case None:
                 // do nothing
@@ -54,7 +53,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
                 reward(stateActions, defaultReward);
                 break;
             case Coverage:
-                reward(stateActions, reward.subtract(defaultReward));
+                reward(stateActions, (reward - defaultReward));
                 break;
             default:
                 assert (false);
@@ -65,8 +64,8 @@ public class ChoiceLearningStats<S, A> implements Serializable {
 //        reward(stateActions, BigDecimal.valueOf(reward));
     }
 
-    private void reward(ChoiceQTable.ChoiceQTableKey<S, A> stateActions, BigDecimal reward) {
-        if (reward.equals(getDefaultQValue())) {
+    private void reward(ChoiceQTable.ChoiceQTableKey<S, A> stateActions, double reward) {
+        if (reward == getDefaultQValue()) {
             return;
         }
         S state = stateActions.getState();
@@ -74,12 +73,11 @@ public class ChoiceLearningStats<S, A> implements Serializable {
 
         for (Class cls : stateActions.getActions().getClasses()) {
             ChoiceQTable.ChoiceQClassEntry classEntry = stateEntry.get(cls);
-            BigDecimal maxQ = classEntry.getMaxQ();
+            double maxQ = classEntry.getMaxQ();
 
             for (A action : stateActions.getActions().get(cls)) {
-                BigDecimal oldVal = classEntry.get(action);
-                BigDecimal newVal = BigDecimal.valueOf(1).subtract(ALPHA).multiply(oldVal)
-                        .add(ALPHA.multiply(reward.add(GAMMA.multiply(maxQ))));
+                double oldVal = classEntry.get(action);
+                double newVal = (1 - ALPHA)*oldVal + ALPHA*(reward + GAMMA*maxQ);
                 classEntry.update(action, newVal);
             }
         }
@@ -121,18 +119,18 @@ public class ChoiceLearningStats<S, A> implements Serializable {
 //                PSymLogger.info(String.format("  %s [%s] -> %s", stateStr, cls.getSimpleName(), classEntry));
                 Object bestAction = classEntry.getBestAction();
                 if (bestAction != null) {
-                    BigDecimal maxQ = classEntry.get(bestAction);
+                    double maxQ = classEntry.get(bestAction);
                     PSymLogger.info(String.format("  %s [%s] -> %s -> %.10f\t%s", stateStr, cls.getSimpleName(), bestAction, maxQ, classEntry));
                 }
             }
         }
     }
 
-    public BigDecimal getQvalue(S state, Class cls, A action) {
+    public double getQvalue(S state, Class cls, A action) {
         return qValues.get(state, cls, action);
     }
 
-    public BigDecimal getCurrentQvalue(ValueSummary action) {
+    public double getCurrentQvalue(ValueSummary action) {
         Class cls = getActionClass(action);
         return getQvalue((S) programStateHash, cls, (A) getActionHash(cls, action));
     }
@@ -248,7 +246,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
 
         @Override
         public int compare(ValueSummary lhs, ValueSummary rhs) {
-            return getCurrentQvalue(rhs).compareTo(getCurrentQvalue(lhs));
+            return Double.compare(getCurrentQvalue(rhs), getCurrentQvalue(lhs));
         }
     }
 

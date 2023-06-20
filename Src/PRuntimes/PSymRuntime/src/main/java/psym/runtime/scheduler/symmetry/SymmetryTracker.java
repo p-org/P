@@ -2,6 +2,7 @@ package psym.runtime.scheduler.symmetry;
 
 import lombok.Setter;
 import psym.runtime.machine.Machine;
+import psym.runtime.machine.Monitor;
 import psym.runtime.scheduler.Scheduler;
 import psym.valuesummary.*;
 
@@ -15,13 +16,16 @@ public class SymmetryTracker implements Serializable {
     private static Scheduler scheduler;
 
     final Map<String, ListVS<SetVS<PrimitiveVS<Machine>>>> typeToSymmetryClasses;
+    final Map<String, SymmetryPendingMerges> typeToPendingMerges;
 
     public SymmetryTracker() {
         typeToSymmetryClasses = new HashMap<>();
+        typeToPendingMerges = new HashMap<>();
     }
 
     public SymmetryTracker(SymmetryTracker rhs) {
         typeToSymmetryClasses = new HashMap<>(rhs.typeToSymmetryClasses);
+        typeToPendingMerges = new HashMap<>(rhs.typeToPendingMerges);
     }
 
     public void reset() {
@@ -29,6 +33,7 @@ public class SymmetryTracker implements Serializable {
             symMachines.clear();
         }
         typeToSymmetryClasses.replaceAll((t, v) -> null);
+        typeToPendingMerges.clear();
     }
 
     public void addSymmetryType(String type) {
@@ -198,22 +203,30 @@ public class SymmetryTracker implements Serializable {
                     // update symmetry classes map
                     assert (!BooleanVS.isEverTrue(IntegerVS.lessThan(typeToAllSymmetricMachines.get(type).size(), newClasses.size())));
                     typeToSymmetryClasses.put(type, newClasses);
-//                    checkAllSymmetryClasses();
+//                    checkSymmetryClassesForType(type);
+
+                    SymmetryPendingMerges pendingMerges = typeToPendingMerges.get(type);
+                    if (pendingMerges == null) {
+                        pendingMerges = new SymmetryPendingMerges();
+                    };
+                    pendingMerges.add(primitiveVS);
+                    typeToPendingMerges.put(type, pendingMerges);
                 }
             }
         }
     }
 
     public void mergeAllSymmetryClasses() {
-        for (String type: typeToSymmetryClasses.keySet()) {
-            mergeSymmetryClassesForType(type);
+        for (Map.Entry<String, SymmetryPendingMerges> entry: typeToPendingMerges.entrySet()) {
+            mergeSymmetryClassesForType(entry.getKey(), entry.getValue());
         }
+        typeToPendingMerges.clear();
     }
 
-    private void mergeSymmetryClassesForType(String type) {
+    private void mergeSymmetryClassesForType(String type, SymmetryPendingMerges pendingMerges) {
         ListVS<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(type);
 
-        PrimitiveVS<Integer> size = symClasses.size();
+        PrimitiveVS<Integer> size = symClasses.size().restrict(pendingMerges.getUniverse());
         PrimitiveVS<Integer> sizeMinusOne = IntegerVS.subtract(size, 1);
 
         PrimitiveVS<Integer> indexI = new PrimitiveVS<>(0, sizeMinusOne.getUniverse());
@@ -231,6 +244,12 @@ public class SymmetryTracker implements Serializable {
                     SetVS<PrimitiveVS<Machine>> lhs = symClasses.get(condIndexI);
                     SetVS<PrimitiveVS<Machine>> rhs = symClasses.get(condIndexJ);
                     Guard g = lhs.getUniverse().and(rhs.getUniverse());
+
+                    // restrict (i, j) to class pairs containing a pending merge
+                    Guard condContains = BooleanVS.getTrueGuard(lhs.contains(pendingMerges.getPendingMachines()));
+                    condContains = condContains.or(BooleanVS.getTrueGuard(rhs.contains(pendingMerges.getPendingMachines())));
+                    g = g.and(condContains);
+
 
                     SetVS<PrimitiveVS<Machine>>[] mergedClasses = mergeSymmetryClassPair(lhs.restrict(g), rhs.restrict(g));
                     assert (mergedClasses.length == 2);
@@ -257,7 +276,7 @@ public class SymmetryTracker implements Serializable {
         // update symmetry classes map
         assert (!BooleanVS.isEverTrue(IntegerVS.lessThan(typeToAllSymmetricMachines.get(type).size(), newClasses.size())));
         typeToSymmetryClasses.put(type, newClasses);
-//        checkAllSymmetryClasses();
+//        checkSymmetryClassesForType(type);
     }
 
     private SetVS<PrimitiveVS<Machine>>[] mergeSymmetryClassPair(SetVS<PrimitiveVS<Machine>> lhs, SetVS<PrimitiveVS<Machine>> rhs) {
@@ -352,7 +371,7 @@ public class SymmetryTracker implements Serializable {
         }
 
         for (Machine other: scheduler.getMachines()) {
-            if (other == m1 || other == m2) {
+            if (other == m1 || other == m2 || other instanceof Monitor) {
                 continue;
             }
             for (ValueSummary original: other.getLocalState()) {

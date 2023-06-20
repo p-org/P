@@ -652,9 +652,6 @@ public class IterativeBoundedScheduler extends Scheduler {
             PrimitiveVS repeat = getRepeat.apply(depth);
             if (!repeat.getUniverse().isFalse()) {
                 schedule.restrictFilterForDepth(depth);
-                if (configuration.getSymmetryMode() != SymmetryMode.None) {
-                    GlobalData.getSymmetryTracker().updateSymmetrySet(repeat);
-                }
                 return repeat;
             }
             // nothing to repeat, so look at backtrack set
@@ -707,9 +704,6 @@ public class IterativeBoundedScheduler extends Scheduler {
         addBacktrack.accept(backtrack, depth);
         schedule.restrictFilterForDepth(depth);
 
-        if (configuration.getSymmetryMode() != SymmetryMode.None) {
-            GlobalData.getSymmetryTracker().updateSymmetrySet(chosenVS);
-        }
         return chosenVS;
     }
 

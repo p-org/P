@@ -807,7 +807,7 @@ public class Scheduler implements SchedulerInterface {
         int numMessagesMerged = 0;
         int numMessagesExplored = 0;
 
-        if (configuration.getCollectStats() > 3 || (configuration.getStateCachingMode() != StateCachingMode.None)) {
+        if (configuration.getStateCachingMode() != StateCachingMode.None) {
             storeSrcState();
             int[] numConcrete;
             if (configuration.isSymbolic()) {
@@ -890,19 +890,11 @@ public class Scheduler implements SchedulerInterface {
                 System.out.println("    message " + removed.toString());
                 System.out.println("    target " + removed.getTarget().toString());
             }
-            if (configuration.getCollectStats() > 3) {
-                numMessages += Concretizer.getNumConcreteValues(Guard.constTrue(), removed);
-            }
             if (effect == null) {
                 effect = removed;
             } else {
                 effects.add(removed);
             }
-        }
-
-        if (configuration.getCollectStats() > 3) {
-            numMessagesMerged = Concretizer.getNumConcreteValues(Guard.constTrue(), effect);
-            numMessagesExplored = Concretizer.getNumConcreteValues(Guard.constTrue(), effect.getTarget(), effect.getEvent());
         }
 
         assert effect != null;

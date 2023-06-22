@@ -436,7 +436,6 @@ public class SearchScheduler extends Scheduler {
     private void printProgress(boolean forcePrint) {
         if (forcePrint
                 || configuration.isSymbolic()
-                || (configuration.getCollectStats() > 1)
                 || (TimeMonitor.getInstance().findInterval(lastReportTime) > 5)) {
             lastReportTime = Instant.now();
             double newRuntime = TimeMonitor.getInstance().getRuntime();
@@ -480,20 +479,17 @@ public class SearchScheduler extends Scheduler {
     }
 
     private void printCurrentStatus(double newRuntime) {
-        if (configuration.getCollectStats() == 0) {
-            return;
-        }
-
-        String str = "--------------------" + String.format("\n    Status after %.2f seconds:", newRuntime) +
-                String.format("\n      Progress:         %.12f", GlobalData.getCoverage().getEstimatedCoverage(12)) +
-                String.format("\n      Iterations:       %d", (iter - start_iter)) +
-                String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()) +
-                String.format("\n      Finished:         %d", finishedTasks.size()) +
-                String.format("\n      Remaining:        %d", getTotalNumBacktracks()) +
-                String.format("\n      Depth:            %d", getDepth()) +
-                String.format("\n      States:           %d", getTotalStates()) +
-                String.format("\n      DistinctStates:   %d", getTotalDistinctStates());
-        ScratchLogger.log(str);
+        StringBuilder str = new StringBuilder(100);
+        str.append("--------------------").append(String.format("\n    Status after %.2f seconds:", newRuntime));
+        str.append(String.format("\n      Progress:         %.12f", GlobalData.getCoverage().getEstimatedCoverage(12)));
+        str.append(String.format("\n      Iterations:       %d", (iter - start_iter)));
+        str.append(String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
+        str.append(String.format("\n      Finished:         %d", finishedTasks.size()));
+        str.append(String.format("\n      Remaining:        %d", getTotalNumBacktracks()));
+        str.append(String.format("\n      Depth:            %d", getDepth()));
+        str.append(String.format("\n      States:           %d", getTotalStates()));
+        str.append(String.format("\n      DistinctStates:   %d", getTotalDistinctStates()));
+        ScratchLogger.log(str.toString());
     }
 
     public void postIterationCleanup() {

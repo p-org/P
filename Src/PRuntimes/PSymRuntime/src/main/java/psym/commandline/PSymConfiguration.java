@@ -124,10 +124,6 @@ public class PSymConfiguration implements Serializable {
     @Getter
     @Setter
     boolean writeToFile = false;
-    // level of stats collection
-    @Getter
-    @Setter
-    int collectStats = 1;
 
     public boolean isSymbolic() {
         return (strategy.equals("symex"));
@@ -195,7 +191,6 @@ public class PSymConfiguration implements Serializable {
 
     public void setToReplay() {
         this.setStrategy("replay");
-        this.setCollectStats(0);
         this.setStateCachingMode(StateCachingMode.None);
         this.setUseBacktrack(false);
         this.setSymmetryMode(SymmetryMode.None);

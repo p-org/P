@@ -284,16 +284,6 @@ public class PSymOptions {
                 .build();
         addHiddenOption(writeToFile);
 
-        // whether or not to collect search stats
-        Option collectStats = Option.builder()
-                .longOpt("stats")
-                .desc("Level of stats collection/reporting during the search (default: 1)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Collection Level (integer)")
-                .build();
-        addHiddenOption(collectStats);
-
 
         // Help menu
         Option help = Option.builder("h")
@@ -611,13 +601,6 @@ public class PSymOptions {
                     break;
                 case "write":
                     config.setWriteToFile(true);
-                    break;
-                case "stats":
-                    try {
-                        config.setCollectStats(Integer.parseInt(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
                     break;
                 case "h":
                 case "help":

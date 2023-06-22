@@ -190,7 +190,6 @@ public class EntryPoint {
             TraceLogger.setVerbosity(1);
         }
         TraceLogger.enable();
-        config.setCollectStats(0);
         replayScheduler.setConfiguration(config);
         replayScheduler.getProgram().setProgramScheduler(replayScheduler);
 

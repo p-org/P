@@ -16,6 +16,11 @@ public interface SchedulerInterface extends Serializable {
     void doSearch() throws TimeoutException, InterruptedException;
 
     /**
+     * Resume the Search
+     */
+    void resumeSearch() throws TimeoutException, InterruptedException;
+
+    /**
      * Return the next integer (within a bound) based on the search and strategy.
      *
      * @param bound upper bound (exclusive) on the integer.

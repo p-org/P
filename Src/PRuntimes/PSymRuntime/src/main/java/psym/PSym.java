@@ -6,8 +6,7 @@ import psym.commandline.PSymOptions;
 import psym.runtime.PTestDriver;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
-import psym.runtime.scheduler.SearchScheduler;
-import psym.runtime.scheduler.ReplayScheduler;
+import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.runtime.statistics.SolverStats;
 import psym.utils.exception.BugFoundException;
 import psym.utils.monitor.MemoryMonitor;
@@ -55,8 +54,6 @@ public class PSym {
                 throw new Exception("ERROR");
             }
 
-            SearchScheduler scheduler;
-
             if (config.isWriteToFile()) {
                 BacktrackWriter.Initialize(config.getProjectName(), config.getOutputFolder());
             }
@@ -64,11 +61,9 @@ public class PSym {
             if (config.getReadFromFile().equals("")) {
                 assert (p != null);
                 setTestDriver(p, config, reflections);
-                scheduler = new SearchScheduler(config, p);
-                EntryPoint.run(scheduler, config);
+                EntryPoint.run(config, p);
             } else {
-                scheduler = SearchScheduler.readFromFile(config.getReadFromFile());
-                EntryPoint.resume(scheduler, config);
+                EntryPoint.resume(config);
             }
 
             if (config.isWriteToFile()) {

@@ -2,9 +2,12 @@ package psym;
 
 import psym.commandline.PSymConfiguration;
 import psym.runtime.Concretizer;
+import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.scheduler.SearchScheduler;
-import psym.runtime.scheduler.ReplayScheduler;
+import psym.runtime.scheduler.replay.ReplayScheduler;
+import psym.runtime.scheduler.explicit.ExplicitSearchScheduler;
+import psym.runtime.scheduler.symbolic.SymbolicSearchScheduler;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.utils.exception.BugFoundException;
@@ -62,9 +65,11 @@ public class EntryPoint {
         double searchTime = TimeMonitor.getInstance().stopInterval();
         TimeMonitor.getInstance().startInterval();
         StatWriter.log("status", String.format("%s", status));
-        scheduler.print_stats();
+        scheduler.print_search_stats();
         StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
-        scheduler.reportEstimatedCoverage();
+        if (configuration.isExplicit()) {
+            ((ExplicitSearchScheduler) scheduler).reportEstimatedCoverage();
+        }
     }
 
     private static void preprocess() {
@@ -101,7 +106,12 @@ public class EntryPoint {
         if (printStats) {
             print_stats();
         }
-        PSymLogger.finished(scheduler.getIter(), scheduler.getIter() - scheduler.getStart_iter(), Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(), scheduler.result, mode);
+        if (configuration.isSymbolic()) {
+            PSymLogger.finishedSymbolic(Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(), scheduler.result);
+        } else {
+            ExplicitSearchScheduler explicitSearchScheduler = (ExplicitSearchScheduler) scheduler;
+            PSymLogger.finishedExplicit(explicitSearchScheduler.getIter(), explicitSearchScheduler.getIter() - explicitSearchScheduler.getStart_iter(), Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(), scheduler.result);
+        }
     }
 
     private static void process(boolean resume) throws Exception {
@@ -150,8 +160,12 @@ public class EntryPoint {
         }
     }
 
-    public static void run(SearchScheduler sch, PSymConfiguration config) throws Exception {
-        scheduler = sch;
+    public static void run(PSymConfiguration config, Program p) throws Exception {
+        if (config.isSymbolic()) {
+            scheduler = new SymbolicSearchScheduler(config, p);
+        } else {
+            scheduler = new ExplicitSearchScheduler(config, p);
+        }
         configuration = config;
         scheduler.getProgram().setProgramScheduler(scheduler);
 
@@ -159,8 +173,9 @@ public class EntryPoint {
         process(false);
     }
 
-    public static void resume(SearchScheduler sch, PSymConfiguration config) throws Exception {
-        scheduler = sch;
+    public static void resume(PSymConfiguration config) throws Exception {
+        assert (config.isExplicit());
+        scheduler = ExplicitSearchScheduler.readFromFile(config.getReadFromFile());
         configuration = config;
         scheduler.getProgram().setProgramScheduler(scheduler);
 
@@ -200,15 +215,7 @@ public class EntryPoint {
     }
 
     public static void writeToFile() throws Exception {
-        if (configuration.getVerbosity() > 0) {
-            PSymLogger.info(String.format("Writing 1 current and %d backtrack states in %s/", scheduler.getTotalNumBacktracks(), configuration.getOutputFolder()));
-        }
-        long pid = ProcessHandle.current().pid();
-        String writeFileName = configuration.getOutputFolder() + "/current" + "_pid" + pid + ".out";
-        scheduler.writeToFile(writeFileName);
-        scheduler.writeBacktracksToFiles(configuration.getOutputFolder() + "/backtrack");
-        if (configuration.getVerbosity() > 0) {
-            PSymLogger.info("--------------------");
-        }
+        assert (configuration.isExplicit());
+        ((ExplicitSearchScheduler) scheduler).writeToFile();
     }
 }

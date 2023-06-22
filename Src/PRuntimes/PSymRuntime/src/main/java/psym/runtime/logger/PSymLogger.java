@@ -43,9 +43,17 @@ public class PSymLogger {
         Configurator.setLevel(PSymLogger.class.getName(), Level.ALL);
     }
 
-    public static void finished(int totalIter, int newIter, long timeSpent, String result, String mode) {
+    public static void finishedSymbolic(long timeSpent, String result) {
         log.info("--------------------");
-        log.info(String.format("Explored %d %s executions%s", totalIter, mode, ((totalIter == newIter) ? "" : String.format(" (%d new)", newIter))));
+        log.info(String.format("Explored 1 symbolic execution"));
+        log.info(String.format("Took %d seconds and %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
+        log.info(String.format("Result: " + result));
+        log.info("--------------------");
+    }
+
+    public static void finishedExplicit(int totalIter, int newIter, long timeSpent, String result) {
+        log.info("--------------------");
+        log.info(String.format("Explored %d executions%s", totalIter, ((totalIter == newIter) ? "" : String.format(" (%d new)", newIter))));
         log.info(String.format("Took %d seconds and %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
         log.info(String.format("Result: " + result));
         log.info("--------------------");

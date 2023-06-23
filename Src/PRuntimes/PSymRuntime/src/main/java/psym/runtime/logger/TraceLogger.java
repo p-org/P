@@ -12,7 +12,7 @@ import org.apache.logging.log4j.core.appender.OutputStreamAppender;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import psym.runtime.Message;
+import psym.runtime.machine.events.Message;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.State;
 import psym.valuesummary.Guard;

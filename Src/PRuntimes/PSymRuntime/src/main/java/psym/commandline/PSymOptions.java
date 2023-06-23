@@ -4,14 +4,15 @@ import org.apache.commons.cli.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
-import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
-import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
-import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestratorEpsilonGreedy;
-import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
-import psym.runtime.scheduler.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
-import psym.utils.GlobalData;
-import psym.utils.StateCachingMode;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceOrchestrationMode;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceOrchestratorEpsilonGreedy;
+import psym.runtime.scheduler.symmetry.SymmetryMode;
+import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestrationMode;
+import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
+import psym.runtime.GlobalData;
+import psym.runtime.scheduler.explicit.StateCachingMode;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -180,7 +181,7 @@ public class PSymOptions {
         // whether or not to disable state caching
         Option stateCaching = Option.builder()
                 .longOpt("state-caching")
-                .desc("State caching mode: none, exact, fast (default: exact)")
+                .desc("State caching mode: none, exact, fast (default: fast)")
                 .numberOfArgs(1)
                 .hasArg()
                 .argName("Caching Mode (string)")
@@ -189,9 +190,11 @@ public class PSymOptions {
 
         // whether or not to enable symmetry
         Option symmetry = Option.builder()
-                .longOpt("use-symmetry")
-                .desc("Enable symmetry-aware exploration")
-                .numberOfArgs(0)
+                .longOpt("symmetry")
+                .desc("Symmetry-aware exploration mode: none, simple, full (default: none)")
+                .numberOfArgs(1)
+                .hasArg()
+                .argName("Symmetry Mode (string)")
                 .build();
         addHiddenOption(symmetry);
 
@@ -280,16 +283,6 @@ public class PSymOptions {
                 .numberOfArgs(0)
                 .build();
         addHiddenOption(writeToFile);
-
-        // whether or not to collect search stats
-        Option collectStats = Option.builder()
-                .longOpt("stats")
-                .desc("Level of stats collection/reporting during the search (default: 1)")
-                .numberOfArgs(1)
-                .hasArg()
-                .argName("Collection Level (integer)")
-                .build();
-        addHiddenOption(collectStats);
 
 
         // Help menu
@@ -481,8 +474,20 @@ public class PSymOptions {
                             optionError(option, String.format("Unrecognized state hashing mode, got %s", option.getValue()));
                     }
                     break;
-                case "use-symmetry":
-                    config.setUseSymmetry(true);
+                case "symmetry":
+                    switch (option.getValue()) {
+                        case "none":
+                            config.setSymmetryMode(SymmetryMode.None);
+                            break;
+                        case "simple":
+                            config.setSymmetryMode(SymmetryMode.Simple);
+                            break;
+                        case "full":
+                            config.setSymmetryMode(SymmetryMode.Full);
+                            break;
+                        default:
+                            optionError(option, String.format("Unrecognized symmetry mode, got %s", option.getValue()));
+                    }
                     break;
                 case "no-backtrack":
                     config.setUseBacktrack(false);
@@ -596,13 +601,6 @@ public class PSymOptions {
                     break;
                 case "write":
                     config.setWriteToFile(true);
-                    break;
-                case "stats":
-                    try {
-                        config.setCollectStats(Integer.parseInt(option.getValue()));
-                    } catch (NumberFormatException ex) {
-                        optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
-                    }
                     break;
                 case "h":
                 case "help":

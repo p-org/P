@@ -1,9 +1,9 @@
 package psym.runtime.machine;
 
 import lombok.Getter;
-import psym.commandline.Assert;
-import psym.runtime.Event;
-import psym.runtime.Message;
+import psym.utils.Assert;
+import psym.runtime.machine.events.Event;
+import psym.runtime.machine.events.Message;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.buffer.DeferQueue;
 import psym.runtime.machine.buffer.EventBuffer;
@@ -11,9 +11,9 @@ import psym.runtime.machine.buffer.EventQueue;
 import psym.runtime.machine.eventhandlers.EventHandler;
 import psym.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psym.runtime.scheduler.Scheduler;
-import psym.utils.SerializableBiFunction;
-import psym.utils.SerializableFunction;
-import psym.utils.SerializableRunnable;
+import psym.utils.serialize.SerializableBiFunction;
+import psym.utils.serialize.SerializableFunction;
+import psym.utils.serialize.SerializableRunnable;
 import psym.valuesummary.*;
 
 import java.io.Serializable;

@@ -1,5 +1,7 @@
 package psym.runtime;
 
+import psym.runtime.machine.events.Event;
+import psym.runtime.machine.events.Message;
 import psym.runtime.machine.Machine;
 import psym.runtime.values.*;
 import psym.valuesummary.*;

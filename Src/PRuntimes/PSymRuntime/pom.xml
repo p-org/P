@@ -214,7 +214,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>psym.commandline.PSym</mainClass>
+                            <mainClass>psym.PSym</mainClass>
                         </manifest>
                         <manifestEntries>
                             <Multi-Release>true</Multi-Release>

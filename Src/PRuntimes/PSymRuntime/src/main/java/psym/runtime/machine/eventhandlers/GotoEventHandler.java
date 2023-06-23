@@ -1,6 +1,6 @@
 package psym.runtime.machine.eventhandlers;
 
-import psym.runtime.Event;
+import psym.runtime.machine.events.Event;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.State;
 import psym.valuesummary.Guard;

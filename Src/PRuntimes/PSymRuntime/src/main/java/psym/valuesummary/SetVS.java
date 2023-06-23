@@ -1,8 +1,8 @@
 package psym.valuesummary;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import psym.runtime.machine.Machine;
+
+import java.util.*;
 
 /**
  * Class for set value summaries
@@ -45,6 +45,17 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
      */
     public SetVS<T> getCopy() {
         return new SetVS(this);
+    }
+
+    /**
+     * Permute the value summary
+     *
+     * @param m1 first machine
+     * @param m2 second machine
+     * @return A new cloned copy of the value summary with m1 and m2 swapped
+     */
+    public SetVS<T> swap(Machine m1, Machine m2) {
+        return new SetVS<T>(this.elements.swap(m1, m2));
     }
 
     public PrimitiveVS<Integer> size() {
@@ -105,7 +116,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
         }
 
         // check if each item in the set is symbolically equal
-        Guard equalCond = Guard.constTrue();
+        Guard equalCond = pc;
         for (T lhs : this.elements.getItems()) {
             equalCond = equalCond.and(cmp.contains(lhs).getGuardFor(true));
         }
@@ -113,7 +124,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
             equalCond = equalCond.and(this.contains(rhs).getGuardFor(true));
         }
 
-        return BooleanVS.trueUnderGuard(pc.and(equalCond)).restrict(getUniverse().and(cmp.getUniverse()));
+        return BooleanVS.trueUnderGuard(equalCond).restrict(getUniverse().and(cmp.getUniverse()));
     }
 
     @Override
@@ -124,11 +135,23 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     /**
      * Check whether the SetVS contains an element
      *
-     * @param itemSummary The element to check for. Should be possible under a subset of the SetVS's conditions.
+     * @param element The element to check for. Should be possible under a subset of the SetVS's conditions.
      * @return Whether or not the SetVS contains an element
      */
-    public PrimitiveVS<Boolean> contains(T itemSummary) {
-        return elements.contains(itemSummary);
+    public PrimitiveVS<Boolean> contains(T element) {
+        if (element.getUniverse().isFalse()) {
+            return new PrimitiveVS<>();
+        }
+
+        // check if each item in the set is symbolically equal
+        Guard cond = element.getUniverse().and(getUniverse());
+
+        Guard containsCond = Guard.constFalse();
+        for (T lhs : this.elements.getItems()) {
+            containsCond = containsCond.or(BooleanVS.getTrueGuard(element.symbolicEquals(lhs, cond)));
+        }
+
+        return BooleanVS.trueUnderGuard(containsCond).restrict(cond);
     }
 
     /**

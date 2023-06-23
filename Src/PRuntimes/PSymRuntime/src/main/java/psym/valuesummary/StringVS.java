@@ -29,7 +29,7 @@ public class StringVS {
                 }
             }
         }
-        return new PrimitiveVS<String>(results);
+        return new PrimitiveVS<String>(results, true);
     }
 
     public static String messageFormatter(String baseString, Object... args) {

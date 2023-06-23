@@ -2,10 +2,12 @@ package psym.valuesummary;
 
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
+import psym.runtime.machine.Machine;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -54,6 +56,19 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     public ListVS<T> getCopy() {
         return new ListVS(this);
     }
+
+    /**
+     * Permute the value summary
+     *
+     * @param m1 first machine
+     * @param m2 second machine
+     * @return A new cloned copy of the value summary with m1 and m2 swapped
+     */
+    public ListVS<T> swap(Machine m1, Machine m2) {
+        return new ListVS(new PrimitiveVS<>(this.size),
+                          this.items.stream().map(i -> i.swap(m1, m2)).collect(Collectors.toList()));
+    }
+
 
     /**
      * Is the list empty?
@@ -167,17 +182,19 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
         }
 
         // check if each item in the list is symbolically equal
-        Guard equalCond = Guard.constFalse();
+        Guard equalCond = BooleanVS.getTrueGuard(this.size.symbolicEquals(cmp.size, pc));
         for (GuardedValue<Integer> size : this.size.getGuardedValues()) {
             if (cmp.size.hasValue(size.getValue())) {
+                Guard finalEqualCond = equalCond;
                 Guard listEqual = IntStream.range(0, size.getValue())
-                        .mapToObj((i) -> this.items.get(i).symbolicEquals(cmp.items.get(i), pc).getGuardFor(Boolean.TRUE))
+                        .mapToObj((i) -> this.items.get(i).symbolicEquals(cmp.items.get(i), finalEqualCond).getGuardFor(true))
                         .reduce(Guard::and)
                         .orElse(Guard.constTrue());
-                equalCond = equalCond.or(listEqual);
+                equalCond = equalCond.and(listEqual);
             }
         }
-        return BooleanVS.trueUnderGuard(pc.and(equalCond)).restrict(getUniverse().and(cmp.getUniverse()));
+
+        return BooleanVS.trueUnderGuard(equalCond).restrict(getUniverse().and(cmp.getUniverse()));
     }
 
     @Override

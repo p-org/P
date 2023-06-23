@@ -1,9 +1,9 @@
 package psym.runtime.statistics;
 
 import lombok.Setter;
-import psym.commandline.MemoutException;
+import psym.utils.exception.MemoutException;
 import psym.runtime.logger.SearchLogger;
-import psym.utils.MemoryMonitor;
+import psym.utils.monitor.MemoryMonitor;
 import psym.valuesummary.solvers.SolverEngine;
 
 public class SolverStats {

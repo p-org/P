@@ -1,5 +1,7 @@
 package psym.valuesummary;
 
+import psym.runtime.machine.Machine;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -23,11 +25,21 @@ public class TupleVS implements ValueSummary<TupleVS> {
     /**
      * Copy-constructor for TupleVS
      *
+     * @param fields Fields of the tuple
+     * @param classes Types of the fields of the tuple
+     */
+    public TupleVS(ValueSummary[] fields, Class[] classes) {
+        this.fields = fields;
+        this.classes = classes;
+    }
+
+    /**
+     * Copy-constructor for TupleVS
+     *
      * @param old The TupleVS to copy
      */
     public TupleVS(TupleVS old) {
-        this.fields = Arrays.copyOf(old.fields, old.fields.length);
-        this.classes = Arrays.copyOf(old.classes, old.classes.length);
+        this(Arrays.copyOf(old.fields, old.fields.length), Arrays.copyOf(old.classes, old.classes.length));
     }
 
     /**
@@ -52,6 +64,19 @@ public class TupleVS implements ValueSummary<TupleVS> {
      */
     public TupleVS getCopy() {
         return new TupleVS(this);
+    }
+
+    /**
+     * Permute the value summary
+     *
+     * @param m1 first machine
+     * @param m2 second machine
+     * @return A new cloned copy of the value summary with m1 and m2 swapped
+     */
+    public TupleVS swap(Machine m1, Machine m2) {
+        return new TupleVS(
+                    Arrays.stream(this.fields).map(x -> x.swap(m1, m2)).toArray(size -> new ValueSummary[size]),
+                    Arrays.copyOf(this.classes, this.classes.length));
     }
 
     /**

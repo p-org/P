@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import psym.runtime.machine.Machine;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
-import psym.utils.GlobalData;
+import psym.runtime.GlobalData;
 import psym.valuesummary.Guard;
 import psym.valuesummary.ListVS;
 import psym.valuesummary.PrimitiveVS;

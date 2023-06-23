@@ -2,11 +2,12 @@ package psym.commandline;
 
 import lombok.Getter;
 import lombok.Setter;
-import psym.runtime.scheduler.choiceorchestration.ChoiceLearningRewardMode;
-import psym.runtime.scheduler.choiceorchestration.ChoiceLearningStateMode;
-import psym.runtime.scheduler.choiceorchestration.ChoiceOrchestrationMode;
-import psym.runtime.scheduler.taskorchestration.TaskOrchestrationMode;
-import psym.utils.StateCachingMode;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceOrchestrationMode;
+import psym.runtime.scheduler.symmetry.SymmetryMode;
+import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestrationMode;
+import psym.runtime.scheduler.explicit.StateCachingMode;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -78,11 +79,11 @@ public class PSymConfiguration implements Serializable {
     // mode of state hashing
     @Getter
     @Setter
-    StateCachingMode stateCachingMode = StateCachingMode.Exact;
-    // use symmetry
+    StateCachingMode stateCachingMode = StateCachingMode.Fast;
+    // symmetry mode
     @Getter
     @Setter
-    boolean useSymmetry = false;
+    SymmetryMode symmetryMode = SymmetryMode.None;
     // use backtracking
     @Getter
     @Setter
@@ -123,16 +124,12 @@ public class PSymConfiguration implements Serializable {
     @Getter
     @Setter
     boolean writeToFile = false;
-    // level of stats collection
-    @Getter
-    @Setter
-    int collectStats = 1;
 
     public boolean isSymbolic() {
         return (strategy.equals("symex"));
     }
 
-    public boolean isIterative() {
+    public boolean isExplicit() {
         return !isSymbolic();
     }
 
@@ -190,6 +187,13 @@ public class PSymConfiguration implements Serializable {
         this.setStrategy("coverage");
         this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
         this.setTaskOrchestration(TaskOrchestrationMode.CoverageAStar);
+    }
+
+    public void setToReplay() {
+        this.setStrategy("replay");
+        this.setStateCachingMode(StateCachingMode.None);
+        this.setUseBacktrack(false);
+        this.setSymmetryMode(SymmetryMode.None);
     }
 
     public void setToDebug() {

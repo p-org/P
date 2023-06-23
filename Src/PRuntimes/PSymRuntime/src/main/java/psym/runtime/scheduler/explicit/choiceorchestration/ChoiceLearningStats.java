@@ -21,7 +21,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
   @Getter private final ChoiceComparator choiceComparator = new ChoiceComparator();
   private final ChoiceQTable<S, A> qValues;
   /** State hash corresponding to current environment state */
-  @Getter private Object programStateHash = null;
+  @Getter private Integer programStateHash = 0;
 
   public ChoiceLearningStats() {
     qValues = new ChoiceQTable();
@@ -178,64 +178,75 @@ public class ChoiceLearningStats<S, A> implements Serializable {
 
   private void setProgramHashLastStep(PrimitiveVS<Machine> lastChoice) {
     if (lastChoice != null) {
-      List<Object> features = new ArrayList<>();
+      List<Integer> features = new ArrayList<>();
       for (Machine m : lastChoice.getValues()) {
         addMachineFeatures(features, m);
       }
-      programStateHash = features.toString();
+      programStateHash = features.hashCode();
     }
   }
 
   private void setProgramHashMachineState(Scheduler sch) {
-    List<Object> features = new ArrayList<>();
+    List<Integer> features = new ArrayList<>();
     for (Machine m : sch.getMachines()) {
-      features.add(m);
-      features.addAll(m.getCurrentState().getValues());
+      features.add(m.hashCode());
+      for (Object val: m.getCurrentState().getValues()) {
+        features.add(val.hashCode());
+      }
     }
-    programStateHash = features.toString();
+    programStateHash = features.hashCode();
   }
 
   private void setProgramHashMachineStateAndLastStep(
-      Scheduler sch, PrimitiveVS<Machine> lastChoice) {
-    List<Object> features = new ArrayList<>();
+    Scheduler sch, PrimitiveVS<Machine> lastChoice) {
+    List<Integer> features = new ArrayList<>();
     for (Machine m : sch.getMachines()) {
-      features.add(m);
-      features.addAll(m.getCurrentState().getValues());
+      features.add(m.hashCode());
+      for (Object val: m.getCurrentState().getValues()) {
+        features.add(val.hashCode());
+      }
     }
     if (lastChoice != null) {
       for (Machine m : lastChoice.getValues()) {
         addMachineFeatures(features, m);
       }
     }
-    programStateHash = features.toString();
+    programStateHash = features.hashCode();
   }
 
   private void setProgramHashMachineStateEvents(Scheduler sch) {
-    List<Object> features = new ArrayList<>();
+    List<Integer> features = new ArrayList<>();
     for (Machine m : sch.getMachines()) {
       addMachineFeatures(features, m);
     }
-    programStateHash = features.toString();
+    programStateHash = features.hashCode();
   }
 
-  private void addMachineFeatures(List<Object> features, Machine m) {
-    features.add(m);
-    features.addAll(m.getCurrentState().getValues());
+  private void addMachineFeatures(List<Integer> features, Machine m) {
+    features.add(m.hashCode());
+    for (Object val: m.getCurrentState().getValues()) {
+      features.add(val.hashCode());
+    }
     if (!m.sendBuffer.isEmpty()) {
       Message msg = m.sendBuffer.peek(Guard.constTrue());
-      features.addAll(msg.getTarget().getValues());
-      //                    features.add(msg.getPayloadFor(event));
-      features.addAll(msg.getEvent().getValues());
+      for (Object val: msg.getTarget().getValues()) {
+        features.add(val.hashCode());
+      }
+      for (Object val: msg.getEvent().getValues()) {
+        features.add(val.hashCode());
+      }
     }
   }
 
   private void setProgramHashFullState(Scheduler sch) {
-    List<Object> features = new ArrayList<>();
+    List<Integer> features = new ArrayList<>();
     for (Machine m : sch.getMachines()) {
-      features.add(m);
-      features.add(m.getLocalState());
+      features.add(m.hashCode());
+      for (ValueSummary val: m.getLocalState()) {
+        features.add(val.getConcreteHash());
+      }
     }
-    programStateHash = features.toString();
+    programStateHash = features.hashCode();
   }
 
   private class ChoiceComparator implements Comparator<ValueSummary>, Serializable {

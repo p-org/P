@@ -1,20 +1,29 @@
 package psym.valuesummary;
 
 import java.util.*;
+
+import lombok.Getter;
 import psym.runtime.machine.Machine;
 
 /** Class for set value summaries */
 public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> {
+  @Getter
+  /**
+   * Concrete hash used for hashing in explicit-state search
+   */
+  private final int concreteHash;
 
   /** The underlying set */
   private final ListVS<T> elements;
 
   public SetVS(ListVS<T> elements) {
     this.elements = elements;
+    this.concreteHash = computeConcreteHash();
   }
 
   public SetVS(Guard universe) {
     this.elements = new ListVS<>(universe);
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -24,6 +33,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
    */
   public SetVS(SetVS<T> old) {
     this.elements = new ListVS<>(old.elements);
+    this.concreteHash = computeConcreteHash();
   }
 
   /** Get all the different possible guarded values */
@@ -194,7 +204,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
   }
 
   @Override
-  public int getConcreteHash() {
+  public int computeConcreteHash() {
     return elements.getConcreteHash();
   }
 

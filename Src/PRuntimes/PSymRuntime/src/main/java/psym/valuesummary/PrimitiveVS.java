@@ -4,6 +4,8 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import lombok.Getter;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Event;
 
@@ -13,6 +15,12 @@ import psym.runtime.machine.events.Event;
  * @param <T> Type of value stored in the primitive value summary
  */
 public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
+  @Getter
+  /**
+   * Concrete hash used for hashing in explicit-state search
+   */
+  private final int concreteHash;
+
   /**
    * A primitive value is a collection of guarded values
    *
@@ -40,6 +48,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
    */
   public PrimitiveVS(T value, Guard guard) {
     this.guardedValues = Collections.singletonMap(value, guard);
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -58,6 +67,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
    */
   public PrimitiveVS(Map<T, Guard> guardedValues) {
     this.guardedValues = guardedValues;
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -72,6 +82,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
         this.guardedValues.put(entry.getKey(), entry.getValue());
       }
     }
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -347,7 +358,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
   }
 
   @Override
-  public int getConcreteHash() {
+  public int computeConcreteHash() {
     if (!guardedValues.isEmpty()) {
       T key = guardedValues.entrySet().iterator().next().getKey();
       return (key == null ? 0 : key.hashCode());

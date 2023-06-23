@@ -190,9 +190,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
     List<Integer> features = new ArrayList<>();
     for (Machine m : sch.getMachines()) {
       features.add(m.hashCode());
-      for (Object val: m.getCurrentState().getValues()) {
-        features.add(val.hashCode());
-      }
+      features.add(m.getCurrentState().getConcreteHash());
     }
     programStateHash = features.hashCode();
   }
@@ -202,9 +200,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
     List<Integer> features = new ArrayList<>();
     for (Machine m : sch.getMachines()) {
       features.add(m.hashCode());
-      for (Object val: m.getCurrentState().getValues()) {
-        features.add(val.hashCode());
-      }
+      features.add(m.getCurrentState().getConcreteHash());
     }
     if (lastChoice != null) {
       for (Machine m : lastChoice.getValues()) {
@@ -224,17 +220,11 @@ public class ChoiceLearningStats<S, A> implements Serializable {
 
   private void addMachineFeatures(List<Integer> features, Machine m) {
     features.add(m.hashCode());
-    for (Object val: m.getCurrentState().getValues()) {
-      features.add(val.hashCode());
-    }
+    features.add(m.getCurrentState().getConcreteHash());
     if (!m.sendBuffer.isEmpty()) {
       Message msg = m.sendBuffer.peek(Guard.constTrue());
-      for (Object val: msg.getTarget().getValues()) {
-        features.add(val.hashCode());
-      }
-      for (Object val: msg.getEvent().getValues()) {
-        features.add(val.hashCode());
-      }
+      features.add(msg.getTarget().getConcreteHash());
+      features.add(msg.getEvent().getConcreteHash());
     }
   }
 

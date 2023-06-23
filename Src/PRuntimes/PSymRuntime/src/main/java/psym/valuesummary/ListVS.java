@@ -11,6 +11,12 @@ import psym.runtime.machine.Machine;
 
 /** Represents the list value summaries. */
 public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>> {
+  @Getter
+  /**
+   * Concrete hash used for hashing in explicit-state search
+   */
+  private final int concreteHash;
+
   /** The size of the list under all guards */
   private final PrimitiveVS<Integer> size;
   /**
@@ -22,6 +28,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
   public ListVS(PrimitiveVS<Integer> size, List<T> items) {
     this.size = size;
     this.items = items;
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -493,7 +500,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
   }
 
   @Override
-  public int getConcreteHash() {
+  public int computeConcreteHash() {
     int hashCode = 1;
     for (int i = 0; i < items.size(); i++) {
       hashCode = 31 * hashCode + (items.get(i) == null ? 0 : items.get(i).getConcreteHash());

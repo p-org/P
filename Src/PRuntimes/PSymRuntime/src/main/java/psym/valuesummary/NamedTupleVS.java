@@ -10,6 +10,12 @@ import psym.runtime.values.PString;
 
 /** Class for named tuple value summaries */
 public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
+  @Getter
+  /**
+   * Concrete hash used for hashing in explicit-state search
+   */
+  private final int concreteHash;
+
   /** List of names of the fields in the declared order */
   private final List<String> names;
   /** Underlying representation as a TupleVS */
@@ -18,6 +24,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
   private NamedTupleVS(List<String> names, TupleVS tuple) {
     this.names = names;
     this.tuple = tuple;
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -28,6 +35,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
   public NamedTupleVS(NamedTupleVS old) {
     this.names = new ArrayList<>(old.names);
     this.tuple = new TupleVS(old.tuple);
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -44,6 +52,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
       names.add((String) namesAndFields[i]);
     }
     tuple = new TupleVS(vs);
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -169,7 +178,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
   }
 
   @Override
-  public int getConcreteHash() {
+  public int computeConcreteHash() {
     return tuple.getConcreteHash();
   }
 

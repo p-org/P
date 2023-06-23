@@ -1,12 +1,20 @@
 package psym.valuesummary;
 
 import java.util.*;
+
+import lombok.Getter;
 import psym.runtime.machine.Machine;
 import psym.utils.Assert;
 
 /** Class for map value summaries */
 public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
     implements ValueSummary<MapVS<K, T, V>> {
+  @Getter
+  /**
+   * Concrete hash used for hashing in explicit-state search
+   */
+  private final int concreteHash;
+
   /** The set of keys */
   public final SetVS<T> keys;
   /** The mapping from all possible keys to values */
@@ -22,6 +30,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
   public MapVS(SetVS<T> keys, Map<K, V> entries) {
     this.keys = keys;
     this.entries = entries;
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -32,6 +41,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
   public MapVS(Guard universe) {
     this.keys = new SetVS<>(universe);
     this.entries = new HashMap<>();
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -368,7 +378,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
   }
 
   @Override
-  public int getConcreteHash() {
+  public int computeConcreteHash() {
     int hashCode = 1;
     for (Map.Entry<K, V> entry : entries.entrySet()) {
       hashCode = 31 * hashCode + (entry.getKey() == null ? 0 : entry.getKey().hashCode());

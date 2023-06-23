@@ -5,11 +5,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import lombok.Getter;
 import psym.runtime.machine.Machine;
 
 /** Represents a tuple value summaries */
 @SuppressWarnings("unchecked")
 public class TupleVS implements ValueSummary<TupleVS> {
+  @Getter
+  /**
+   * Concrete hash used for hashing in explicit-state search
+   */
+  private final int concreteHash;
+
   /** The fields of the tuple */
   private final ValueSummary[] fields;
   /** The types of the fields of the tuple */
@@ -24,6 +32,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
   public TupleVS(ValueSummary[] fields, Class[] classes) {
     this.fields = fields;
     this.classes = classes;
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -54,6 +63,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
             .map(x -> x.getClass())
             .collect(Collectors.toList())
             .toArray(new Class[items.length]);
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -213,7 +223,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
   }
 
   @Override
-  public int getConcreteHash() {
+  public int computeConcreteHash() {
     int hashCode = 1;
     for (int i = 0; i < classes.length; i++) {
       hashCode = 31 * hashCode + (fields[i] == null ? 0 : fields[i].getConcreteHash());

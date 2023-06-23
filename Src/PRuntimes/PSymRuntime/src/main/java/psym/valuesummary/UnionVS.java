@@ -1,12 +1,20 @@
 package psym.valuesummary;
 
 import java.util.*;
+
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import psym.runtime.machine.Machine;
 
 /** Represents a value of "any" type It stores a pair (type T, value of type T) */
 @SuppressWarnings("ALL")
 public class UnionVS implements ValueSummary<UnionVS> {
+  @Getter
+  /**
+   * Concrete hash used for hashing in explicit-state search
+   */
+  private final int concreteHash;
+
   /* Type of value stored in the any type variable */
   private final PrimitiveVS<UnionVStype> type;
   /* Map from the type of variable to the value summary representing the value of that type */
@@ -16,6 +24,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
       @NotNull PrimitiveVS<UnionVStype> type, @NotNull Map<UnionVStype, ValueSummary> values) {
     this.type = type;
     this.value = values;
+    this.concreteHash = computeConcreteHash();
   }
 
   public UnionVS(Guard pc, UnionVStype type, ValueSummary values) {
@@ -23,12 +32,14 @@ public class UnionVS implements ValueSummary<UnionVS> {
     this.value = new HashMap<>();
     // TODO: why are we not restricting the values?
     this.value.put(type, values);
+    this.concreteHash = computeConcreteHash();
     assert (this.type != null);
   }
 
   public UnionVS() {
     this.type = new PrimitiveVS<>();
     this.value = new HashMap<>();
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -39,6 +50,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
   public UnionVS(UnionVS old) {
     this.type = new PrimitiveVS<>(old.type);
     this.value = new HashMap<>(old.value);
+    this.concreteHash = computeConcreteHash();
   }
 
   public UnionVS(ValueSummary vs) {
@@ -60,6 +72,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
       this.value.put(type, vs);
       assert (this.type != null);
     }
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -225,7 +238,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
   }
 
   @Override
-  public int getConcreteHash() {
+  public int computeConcreteHash() {
     int hashCode = 1;
     for (Map.Entry<UnionVStype, ValueSummary> entry : value.entrySet()) {
       hashCode = 31 * hashCode + (entry.getKey() == null ? 0 : entry.getKey().hashCode());

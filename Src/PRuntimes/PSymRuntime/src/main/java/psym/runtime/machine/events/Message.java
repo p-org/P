@@ -1,12 +1,19 @@
 package psym.runtime.machine.events;
 
 import java.util.*;
+
+import lombok.Getter;
 import psym.runtime.GlobalData;
 import psym.runtime.machine.Machine;
 import psym.valuesummary.*;
 
 /** Represents a message in the sender buffer of a state machine */
 public class Message implements ValueSummary<Message> {
+  @Getter
+  /**
+   * Concrete hash used for hashing in explicit-state search
+   */
+  private final int concreteHash;
 
   // the target machine to which the message is being sent
   private final PrimitiveVS<Machine> target;
@@ -20,6 +27,7 @@ public class Message implements ValueSummary<Message> {
     this.event = names;
     this.target = machine;
     this.payload = new HashMap<>(map);
+    this.concreteHash = computeConcreteHash();
   }
 
   public Message(Event name, PrimitiveVS<Machine> machine) {
@@ -55,6 +63,7 @@ public class Message implements ValueSummary<Message> {
         this.payload.put(event.getValue(), payload.restrict(event.getGuard()));
       }
     }
+    this.concreteHash = computeConcreteHash();
   }
 
   /**
@@ -276,7 +285,7 @@ public class Message implements ValueSummary<Message> {
   }
 
   @Override
-  public int getConcreteHash() {
+  public int computeConcreteHash() {
     int hashCode = 1;
     hashCode = 31 * hashCode + (target == null ? 0 : target.getConcreteHash());
     hashCode = 31 * hashCode + (event == null ? 0 : event.getConcreteHash());

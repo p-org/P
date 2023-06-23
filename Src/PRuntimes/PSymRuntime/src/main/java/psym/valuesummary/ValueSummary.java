@@ -3,6 +3,8 @@ package psym.valuesummary;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
+import lombok.Getter;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
 
@@ -240,6 +242,13 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
    * @return A string
    */
   String toStringDetailed();
+
+  /**
+   * Compute a concrete hash code
+   *
+   * @return An int
+   */
+  int computeConcreteHash();
 
   /**
    * Get a concrete hash code

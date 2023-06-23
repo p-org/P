@@ -99,11 +99,11 @@ public class ForeignFunctionInvoker {
             return new TupleVS(tupleObjects);
         } else if (o instanceof PNamedTuple) {
             PNamedTuple namedTuple = (PNamedTuple) o;
-            String[] fields = namedTuple.getFields();
-            Object[] namesAndFields = new Object[fields.length * 2];
+            List<String> fields = namedTuple.getFields();
+            Object[] namesAndFields = new Object[fields.size() * 2];
             for (int i = 0, j = 0; i < namesAndFields.length; i += 2, j++) {
-                namesAndFields[i] = fields[j];
-                namesAndFields[i + 1] = convertConcrete(pc, namedTuple.getField(fields[j]));
+                namesAndFields[i] = fields.get(j);
+                namesAndFields[i + 1] = convertConcrete(pc, namedTuple.getField(fields.get(j)));
             }
             return new NamedTupleVS(namesAndFields);
         } else if (o instanceof PBool) {

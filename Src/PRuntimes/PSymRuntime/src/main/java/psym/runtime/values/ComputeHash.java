@@ -2,7 +2,7 @@ package psym.runtime.values;
 
 
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 
 public class ComputeHash {
 
@@ -15,7 +15,7 @@ public class ComputeHash {
         return hashValue;
     }
 
-    public static int getHashCode(Set<String> keySet) {
+    public static int getHashCode(List<String> keySet) {
         int hashValue = 0x802CBBDB;
         for (String val : keySet) {
             if (val != null)

@@ -242,15 +242,17 @@ public class Concretizer {
             Guard pc = namedTupleVS.getUniverse();
             if (pc.isFalse()) return null;
             String[] names = namedTupleVS.getNames();
-            Map<String, PValue<?>> map = new HashMap<>();
+            List<String> fields = new ArrayList<>();
+            Map<String, PValue<?>> values = new HashMap<>();
             for (int i = 0; i < names.length; i++) {
                 String name = names[i];
+                fields.add(name);
                 GuardedValue<? extends PValue<?>> entry = concretize(namedTupleVS.getField(name));
-                map.put(name, entry.getValue());
+                values.put(name, entry.getValue());
                 pc = pc.and(entry.getGuard());
                 namedTupleVS = namedTupleVS.restrict(pc);
             }
-            return new GuardedValue<>(new PNamedTuple(map), pc);
+            return new GuardedValue<>(new PNamedTuple(fields, values), pc);
         } else if (valueSummary instanceof UnionVS) {
             UnionVS unionVS = (UnionVS) valueSummary;
             if (unionVS.getUniverse().isFalse()) return null;

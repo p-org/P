@@ -73,7 +73,6 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     @Override
     protected void step() throws TimeoutException {
         int numStates = 0;
-        int numStatesDistinct = 0;
         int numMessages = 0;
         int numMessagesMerged = 0;
         int numMessagesExplored = 0;
@@ -224,7 +223,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
         if (choices.isEmpty()) {
             // no choice to backtrack to, so generate new choices
             choices = getChoices.get();
-            if (configuration.getSymmetryMode() != SymmetryMode.None) {
+            if (!isData && configuration.getSymmetryMode() != SymmetryMode.None) {
                 choices = GlobalData.getSymmetryTracker().getReducedChoices(choices);
             }
             choices = choices.stream().map(x -> x.restrict(schedule.getFilter())).filter(x -> !(x.getUniverse().isFalse())).collect(Collectors.toList());

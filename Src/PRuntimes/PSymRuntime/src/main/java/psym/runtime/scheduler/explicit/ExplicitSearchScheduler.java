@@ -369,7 +369,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
             if (getIter() > 0)
                 SearchLogger.logMessage("new choice at depth " + depth);
             choices = getChoices.get();
-            if (configuration.getSymmetryMode() != SymmetryMode.None) {
+            if (!isData && configuration.getSymmetryMode() != SymmetryMode.None) {
                 choices = GlobalData.getSymmetryTracker().getReducedChoices(choices);
             }
             choices = choices.stream().map(x -> x.restrict(schedule.getFilter())).filter(x -> !(x.getUniverse().isFalse())).collect(Collectors.toList());
@@ -399,11 +399,6 @@ public class ExplicitSearchScheduler extends SearchScheduler {
         GlobalData.getCoverage().updateDepthCoverage(getDepth(), getChoiceDepth(), chosen.size(), backtrack.size(), isData, isNewChoice, chosenActions);
 
         PrimitiveVS chosenVS = generateNext.apply(chosen);
-        if (configuration.isUseBacktrack()) {
-            if (configuration.getSymmetryMode() != SymmetryMode.None) {
-                schedule.setSchedulerSymmetry();
-            }
-        }
 
 //        addRepeat.accept(chosenVS, depth);
         addBacktrack.accept(backtrack, depth);

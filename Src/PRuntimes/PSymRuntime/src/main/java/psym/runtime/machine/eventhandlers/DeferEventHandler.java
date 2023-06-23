@@ -1,8 +1,8 @@
 package psym.runtime.machine.eventhandlers;
 
+import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
-import psym.runtime.machine.Machine;
 import psym.valuesummary.Guard;
 import psym.valuesummary.PrimitiveVS;
 import psym.valuesummary.UnionVS;

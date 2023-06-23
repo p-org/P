@@ -1,11 +1,10 @@
 package psym.runtime.machine.eventhandlers;
 
-import psym.runtime.machine.events.Event;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.State;
+import psym.runtime.machine.events.Event;
 import psym.valuesummary.Guard;
 import psym.valuesummary.UnionVS;
-
 
 public class GotoEventHandler extends EventHandler {
     public final State gotoState;

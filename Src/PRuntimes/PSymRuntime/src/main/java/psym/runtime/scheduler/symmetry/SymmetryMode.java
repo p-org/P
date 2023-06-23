@@ -1,7 +1,7 @@
 package psym.runtime.scheduler.symmetry;
 
 public enum SymmetryMode {
-    None,
-    Simple,
-    Full
+  None,
+  Simple,
+  Full
 }

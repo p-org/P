@@ -1,8 +1,7 @@
 package psym.runtime.scheduler.explicit.choiceorchestration;
 
-import psym.valuesummary.ValueSummary;
-
 import java.util.List;
+import psym.valuesummary.ValueSummary;
 
 public class ChoiceOrchestratorNone implements ChoiceOrchestrator {
 

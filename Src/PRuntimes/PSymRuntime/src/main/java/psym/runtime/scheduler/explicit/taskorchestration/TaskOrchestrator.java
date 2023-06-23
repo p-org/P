@@ -1,8 +1,7 @@
 package psym.runtime.scheduler.explicit.taskorchestration;
 
-import psym.runtime.scheduler.explicit.BacktrackTask;
-
 import java.io.Serializable;
+import psym.runtime.scheduler.explicit.BacktrackTask;
 
 public interface TaskOrchestrator extends Serializable {
     void addPriority(BacktrackTask task);

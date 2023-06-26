@@ -1,14 +1,13 @@
 package psym.runtime;
 
-import psym.runtime.machine.events.Event;
-import psym.runtime.machine.Machine;
-import psym.runtime.machine.Monitor;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import psym.runtime.machine.Machine;
+import psym.runtime.machine.Monitor;
+import psym.runtime.machine.events.Event;
 
 public abstract class PTestDriver implements Serializable {
     public Machine mainMachine;

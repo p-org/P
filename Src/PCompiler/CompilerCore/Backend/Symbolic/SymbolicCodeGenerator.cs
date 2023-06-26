@@ -291,8 +291,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
-            context.WriteLine(output, "public List<ValueSummary> getLocalState() {");
-            context.WriteLine(output, "    List<ValueSummary> res = super.getLocalState();");
+            context.WriteLine(output, "protected List<ValueSummary> getLocalVars() {");
+            context.WriteLine(output, "    List<ValueSummary> res = super.getLocalVars();");
             foreach (var field in machine.Fields)
                 context.WriteLine(output, $"    res.add({CompilationContext.GetVar(field.Name)});");
             context.WriteLine(output, "    return res;");
@@ -301,10 +301,10 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
-            context.WriteLine(output, "public int setLocalState(List<ValueSummary> localState) {");
-            context.WriteLine(output, "    int idx = super.setLocalState(localState);");
+            context.WriteLine(output, "protected int setLocalVars(List<ValueSummary> localVars) {");
+            context.WriteLine(output, "    int idx = super.setLocalVars(localVars);");
             foreach (var field in machine.Fields)
-                context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetSymbolicType(field.Type)}) localState.get(idx++);");
+                context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetSymbolicType(field.Type)}) localVars.get(idx++);");
             context.WriteLine(output, "    return idx;");
             context.WriteLine(output, "}");
             context.WriteLine(output);
@@ -352,8 +352,8 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
-            context.WriteLine(output, "public List<ValueSummary> getLocalState() {");
-            context.WriteLine(output, "    List<ValueSummary> res = super.getLocalState();");
+            context.WriteLine(output, "protected List<ValueSummary> getLocalVars() {");
+            context.WriteLine(output, "    List<ValueSummary> res = super.getLocalVars();");
             foreach (var field in machine.Fields)
                 context.WriteLine(output, $"    res.add({CompilationContext.GetVar(field.Name)});");
             context.WriteLine(output, "    return res;");
@@ -362,10 +362,10 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
-            context.WriteLine(output, "public int setLocalState(List<ValueSummary> localState) {");
-            context.WriteLine(output, "    int idx = super.setLocalState(localState);");
+            context.WriteLine(output, "protected int setLocalVars(List<ValueSummary> localVars) {");
+            context.WriteLine(output, "    int idx = super.setLocalVars(localVars);");
             foreach (var field in machine.Fields)
-                context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetSymbolicType(field.Type)}) localState.get(idx++);");
+                context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetSymbolicType(field.Type)}) localVars.get(idx++);");
             context.WriteLine(output, "    return idx;");
             context.WriteLine(output, "}");
             context.WriteLine(output);

@@ -1,9 +1,8 @@
 package psym.runtime.scheduler;
 
-import psym.valuesummary.*;
-
 import java.io.Serializable;
 import java.util.concurrent.TimeoutException;
+import psym.valuesummary.*;
 
 /**
  * Scheduler interface for exploring different schedules

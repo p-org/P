@@ -9,34 +9,26 @@ import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFact
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 
-
 public class Log4JConfig {
-    @Getter
-    private static LoggerContext context = null;
+  @Getter private static LoggerContext context = null;
 
-    public static void configureLog4J() {
-        ConfigurationBuilder<BuiltConfiguration> builder =
-                ConfigurationBuilderFactory.newConfigurationBuilder();
+  public static void configureLog4J() {
+    ConfigurationBuilder<BuiltConfiguration> builder =
+        ConfigurationBuilderFactory.newConfigurationBuilder();
 
-        // configure a console appender
-        builder.add(
-                builder.newAppender("stdout", "Console")
-                        .add(
-                                builder.newLayout(PatternLayout.class.getSimpleName())
-                                        .addAttribute(
-                                                "pattern",
-                                                "%msg%n"
-                                        )
-                        )
-        );
+    // configure a console appender
+    builder.add(
+        builder
+            .newAppender("stdout", "Console")
+            .add(
+                builder
+                    .newLayout(PatternLayout.class.getSimpleName())
+                    .addAttribute("pattern", "%msg%n")));
 
-        // configure the root logger
-        builder.add(
-                builder.newRootLogger(Level.INFO)
-                        .add(builder.newAppenderRef("stdout"))
-        );
+    // configure the root logger
+    builder.add(builder.newRootLogger(Level.INFO).add(builder.newAppenderRef("stdout")));
 
-        // apply the configuration
-        context = Configurator.initialize(builder.build());
-    }
+    // apply the configuration
+    context = Configurator.initialize(builder.build());
+  }
 }

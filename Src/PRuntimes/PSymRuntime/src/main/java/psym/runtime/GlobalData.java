@@ -1,15 +1,14 @@
 package psym.runtime;
 
-import psym.runtime.machine.events.StateEvents;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStats;
-import psym.runtime.scheduler.symmetry.SymmetryTracker;
-import psym.runtime.statistics.CoverageStats;
-
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import psym.runtime.machine.events.StateEvents;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStats;
+import psym.runtime.scheduler.symmetry.SymmetryTracker;
+import psym.runtime.statistics.CoverageStats;
 
 /**
  * Class containing global/shared data that is retained when resuming a run

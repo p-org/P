@@ -7,4 +7,9 @@ public class MemoutException extends RuntimeException {
         super(message);
         this.memSpent = memSpent;
     }
+
+    public MemoutException(String message, double memSpent, Throwable cause) {
+        super(message,  cause);
+        this.memSpent = memSpent;
+    }
 }

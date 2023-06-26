@@ -1,15 +1,14 @@
 package psym.runtime.machine.buffer;
 
+import java.util.function.Function;
+import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
-import psym.runtime.machine.Machine;
 import psym.runtime.scheduler.Scheduler;
 import psym.valuesummary.Guard;
 import psym.valuesummary.PrimitiveVS;
 import psym.valuesummary.UnionVS;
 import psym.valuesummary.ValueSummary;
-
-import java.util.function.Function;
 
 /**
  * Represents an interface implemented by P state machine event buffer

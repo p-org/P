@@ -50,10 +50,3 @@ If you have any further questions, please feel free to create an [issue](https:/
 
 
 > _P has always been a collaborative project between industry and academia (since 2013) :drum:. The P team welcomes contributions and suggestions from all of you!! :punch:. See [CONTRIBUTING](CONTRIBUTING.md) for more information._
-
-
-
-
-
-
-

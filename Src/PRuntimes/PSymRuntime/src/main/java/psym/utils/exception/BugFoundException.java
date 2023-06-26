@@ -9,4 +9,9 @@ public class BugFoundException extends RuntimeException {
         super(message);
         this.pathConstraint = pathConstraint;
     }
+
+    public BugFoundException(String message, Guard pathConstraint, Throwable cause) {
+        super(message, cause);
+        this.pathConstraint = pathConstraint;
+    }
 }

@@ -22,7 +22,7 @@ public class TimedCall implements Callable<Integer> {
       if (!this.resume) this.scheduler.doSearch();
       else this.scheduler.resumeSearch();
     } catch (OutOfMemoryError e) {
-      throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent());
+      throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent(), e);
     } catch (MemoutException e) {
       throw e;
     } catch (BugFoundException e) {

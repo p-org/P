@@ -99,7 +99,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
    * @return A scheduler object
    * @throws Exception Throw error if reading fails
    */
-  public static ExplicitSearchScheduler readFromFile(String readFromFile) throws Exception {
+  public static ExplicitSearchScheduler readFromFile(String readFromFile) throws RuntimeException {
     ExplicitSearchScheduler result;
     try {
       PSymLogger.info("... Reading program state from file " + readFromFile);
@@ -111,8 +111,8 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       result.reinitialize();
       PSymLogger.info("... Successfully read.");
     } catch (IOException | ClassNotFoundException e) {
-      e.printStackTrace();
-      throw new Exception("... Failed to read program state from file " + readFromFile);
+//      e.printStackTrace();
+      throw new RuntimeException("... Failed to read program state from file " + readFromFile, e);
     }
     return result;
   }
@@ -995,7 +995,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
    * @param writeFileName Output file name
    * @throws Exception Throw error if writing fails
    */
-  public void writeToFile(String writeFileName) throws Exception {
+  public void writeToFile(String writeFileName) throws RuntimeException {
     try {
       FileOutputStream fos = new FileOutputStream(writeFileName);
       ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -1007,8 +1007,8 @@ public class ExplicitSearchScheduler extends SearchScheduler {
             String.format("  %,.1f MB  written in %s", (szBytes / 1024.0 / 1024.0), writeFileName));
       }
     } catch (IOException e) {
-      e.printStackTrace();
-      throw new Exception("Failed to write state in file " + writeFileName);
+//      e.printStackTrace();
+      throw new RuntimeException("Failed to write state in file " + writeFileName, e);
     }
   }
 

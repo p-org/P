@@ -31,7 +31,7 @@ public class EntryPoint {
   private static String mode;
 
   private static void runWithTimeout(long timeLimit)
-      throws TimeoutException, MemoutException, BugFoundException, InterruptedException {
+      throws TimeoutException, MemoutException, BugFoundException, InterruptedException, RuntimeException {
     try {
       if (timeLimit > 0) {
         future.get(timeLimit, TimeUnit.SECONDS);
@@ -43,7 +43,7 @@ public class EntryPoint {
     } catch (BugFoundException e) {
       throw e;
     } catch (OutOfMemoryError e) {
-      throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent());
+      throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent(), e);
     } catch (ExecutionException e) {
       if (e.getCause() instanceof MemoutException) {
         throw (MemoutException) e.getCause();
@@ -52,9 +52,9 @@ public class EntryPoint {
       } else if (e.getCause() instanceof TimeoutException) {
         throw (TimeoutException) e.getCause();
       } else {
-        e.getCause().printStackTrace();
-        e.printStackTrace();
-        throw new RuntimeException("RuntimeException");
+//        e.getCause().printStackTrace();
+//        e.printStackTrace();
+        throw new RuntimeException("RuntimeException", e);
       }
     } catch (InterruptedException e) {
       throw e;
@@ -131,10 +131,10 @@ public class EntryPoint {
       status = "success";
     } catch (TimeoutException e) {
       status = "timeout";
-      throw new Exception("TIMEOUT");
+      throw new Exception("TIMEOUT", e);
     } catch (MemoutException | OutOfMemoryError e) {
       status = "memout";
-      throw new Exception("MEMOUT");
+      throw new Exception("MEMOUT", e);
     } catch (BugFoundException e) {
       status = "cex";
       scheduler.result = "found cex of length " + scheduler.getDepth();
@@ -161,10 +161,10 @@ public class EntryPoint {
       replay(replayScheduler);
     } catch (InterruptedException e) {
       status = "interrupted";
-      throw new Exception("INTERRUPTED");
+      throw new Exception("INTERRUPTED", e);
     } catch (RuntimeException e) {
       status = "error";
-      throw new Exception("ERROR");
+      throw new Exception("ERROR", e);
     } finally {
       //            GlobalData.getChoiceLearningStats().printQTable();
       future.cancel(true);
@@ -202,7 +202,7 @@ public class EntryPoint {
   }
 
   private static void replay(ReplayScheduler replayScheduler)
-      throws RuntimeException, InterruptedException, TimeoutException {
+      throws RuntimeException, TimeoutException {
     try {
       replayScheduler.doSearch();
       status = "error";
@@ -211,7 +211,7 @@ public class EntryPoint {
       bugFoundException.printStackTrace();
       throw new BugFoundException(
           "Found bug: " + bugFoundException.getLocalizedMessage(),
-          replayScheduler.getPathConstraint());
+          replayScheduler.getPathConstraint(), bugFoundException);
     }
   }
 

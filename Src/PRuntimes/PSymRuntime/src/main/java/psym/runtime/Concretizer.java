@@ -380,7 +380,7 @@ public class Concretizer {
         i = countConcreteValues(pc, x -> false, Concretizer::concretize, args);
       }
     } catch (NullPointerException e) {
-      throw new RuntimeException("Counting concrete values failed.");
+      throw new RuntimeException("Counting concrete values failed.", e);
     }
     return i;
   }

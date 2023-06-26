@@ -350,7 +350,22 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     }
   }
 
+  private void addObservedEvent(Event newEvent) {
+    for (Event happenedBeforeEvent:  observedEvents) {
+      happensBeforePairs.add(new ImmutablePair<>(happenedBeforeEvent, newEvent));
+    }
+    observedEvents.add(newEvent);
+  }
+
+  private void updateObservedEvents(Message message) {
+    for (Event e: message.getEvent().getValues()) {
+      addObservedEvent(e);
+    }
+  }
+
   public void processEventToCompletion(Guard pc, Message message) {
+    updateObservedEvents(message);
+
     final EventHandlerReturnReason eventRaiseEventHandlerReturnReason =
         new EventHandlerReturnReason();
     eventRaiseEventHandlerReturnReason.raiseGuardedMessage(message);

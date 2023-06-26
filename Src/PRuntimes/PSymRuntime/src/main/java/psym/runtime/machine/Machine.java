@@ -13,6 +13,7 @@ import psym.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Scheduler;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
 import psym.utils.Assert;
 import psym.utils.serialize.SerializableBiFunction;
 import psym.utils.serialize.SerializableFunction;
@@ -364,7 +365,10 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   }
 
   public void processEventToCompletion(Guard pc, Message message) {
-    updateObservedEvents(message);
+    if (scheduler.getConfiguration().getChoiceLearningStateMode()
+        == ChoiceLearningStateMode.TimelineAbstraction) {
+      updateObservedEvents(message);
+    }
 
     final EventHandlerReturnReason eventRaiseEventHandlerReturnReason =
         new EventHandlerReturnReason();

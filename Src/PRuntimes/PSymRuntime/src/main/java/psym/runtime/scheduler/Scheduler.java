@@ -41,7 +41,7 @@ public abstract class Scheduler implements SchedulerInterface {
   /** Whether or not search is done */
   protected boolean done = false;
 
-  @Setter protected transient PSymConfiguration configuration;
+  @Getter @Setter protected transient PSymConfiguration configuration;
   /** Choice depth */
   protected int choiceDepth = 0;
   /** Current depth of exploration */

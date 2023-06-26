@@ -1,16 +1,26 @@
 package psym.runtime.machine;
 
 import lombok.Getter;
+import lombok.Setter;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import psym.runtime.machine.events.Event;
 import psym.valuesummary.ValueSummary;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 
 public class MachineLocalState implements Serializable {
     @Getter
-    List<ValueSummary> locals; // <ValueSummary>
-    // Create a constructor that takes a Machine element and popoulates locals as getLocalState() function in Machine.java
-    public MachineLocalState(List<ValueSummary> inp_locals) {
-        locals = inp_locals;
-    }
+    @Setter
+    private List<ValueSummary> locals; // <ValueSummary>
+    @Getter
+    @Setter
+    private Set<Event> observedEvents;
+    @Getter
+    @Setter
+    private Set<ImmutablePair<Event, Event>> happensBeforePairs;
+
+
+    public MachineLocalState() {}
 }

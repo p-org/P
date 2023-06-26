@@ -3,6 +3,7 @@ package psym.runtime.machine;
 import java.io.Serializable;
 import java.util.*;
 import lombok.Getter;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.buffer.DeferQueue;
 import psym.runtime.machine.buffer.EventBuffer;
@@ -42,6 +43,12 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
               Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>>
       receives = new PrimitiveVS<>();
 
+  @Getter
+  private Set<Event> observedEvents;
+  @Getter
+  private Set<ImmutablePair<Event, Event>> happensBeforePairs;
+
+
   public Machine(String name, int id, State startState, State... states) {
     this.name = name;
     //        this.instanceId = id;
@@ -70,6 +77,9 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
 
     this.states = new HashSet<>();
     Collections.addAll(this.states, states);
+
+    this.observedEvents = new HashSet<>();
+    this.happensBeforePairs = new HashSet<>();
   }
 
   public void setScheduler(Scheduler scheduler) {
@@ -113,14 +123,8 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     }
     this.started = new PrimitiveVS<>(false);
     this.halted = new PrimitiveVS<>(false);
-  }
-
-  public MachineLocalState getMachineLocalState() {
-    return new MachineLocalState(getLocalVars());
-  }
-
-  public void setMachineLocalState(MachineLocalState localState) {
-    setLocalVars(localState.getLocals());
+    this.observedEvents .clear();
+    this.happensBeforePairs.clear();
   }
 
   protected List<ValueSummary> getLocalVars() {
@@ -140,13 +144,27 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     this.sendBuffer.setEvents(localVars.get(idx++));
     this.deferredQueue.setEvents(localVars.get(idx++));
     this.receives =
-        (PrimitiveVS<
-                SerializableFunction<
-                    Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>>)
-                localVars.get(idx++);
+            (PrimitiveVS<
+                    SerializableFunction<
+                            Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>>)
+                    localVars.get(idx++);
     this.started = (PrimitiveVS<Boolean>) localVars.get(idx++);
     this.halted = (PrimitiveVS<Boolean>) localVars.get(idx++);
     return idx;
+  }
+
+  public MachineLocalState getMachineLocalState() {
+    MachineLocalState machineLocalState = new MachineLocalState();
+    machineLocalState.setLocals(getLocalVars());
+    machineLocalState.setObservedEvents(observedEvents);
+    machineLocalState.setHappensBeforePairs(happensBeforePairs);
+    return machineLocalState;
+  }
+
+  public void setMachineLocalState(MachineLocalState localState) {
+    setLocalVars(localState.getLocals());
+    observedEvents = localState.getObservedEvents();
+    happensBeforePairs = localState.getHappensBeforePairs();
   }
 
   public void start(Guard pc, UnionVS payload) {

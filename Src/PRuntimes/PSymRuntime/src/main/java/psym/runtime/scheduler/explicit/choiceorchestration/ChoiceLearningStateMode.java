@@ -7,5 +7,6 @@ public enum ChoiceLearningStateMode {
     MachineState,
     MachineStateAndLastStep,
     MachineStateAndEvents,
-    FullState
+    FullState,
+    TimelineAbstraction
 }

@@ -58,7 +58,7 @@ public class PSymConfiguration implements Serializable {
   ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.EpsilonGreedy;
   // mode of choice learning state mode
   @Getter @Setter
-  ChoiceLearningStateMode choiceLearningStateMode = ChoiceLearningStateMode.LastStep;
+  ChoiceLearningStateMode choiceLearningStateMode = ChoiceLearningStateMode.TimelineAbstraction;
   // mode of choice learning reward mode
   @Getter @Setter
   ChoiceLearningRewardMode choiceLearningRewardMode = ChoiceLearningRewardMode.Coverage;

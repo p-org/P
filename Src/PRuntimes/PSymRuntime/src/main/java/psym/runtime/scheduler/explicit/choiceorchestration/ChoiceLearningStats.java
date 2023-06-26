@@ -163,6 +163,9 @@ public class ChoiceLearningStats<S, A> implements Serializable {
       case FullState:
         setProgramHashFullState(sch);
         break;
+      case TimelineAbstraction:
+        setProgramHashTimelineAbstraction(sch);
+        break;
       default:
         assert (false);
     }
@@ -235,6 +238,15 @@ public class ChoiceLearningStats<S, A> implements Serializable {
       for (ValueSummary val: m.getMachineLocalState().getLocals()) {
         features.add(val.getConcreteHash());
       }
+    }
+    programStateHash = features.hashCode();
+  }
+
+  private void setProgramHashTimelineAbstraction(Scheduler sch) {
+    List<Integer> features = new ArrayList<>();
+    for (Machine m : sch.getMachines()) {
+      features.add(m.hashCode());
+      features.add(m.getHappensBeforePairs().hashCode());
     }
     programStateHash = features.hashCode();
   }

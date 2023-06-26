@@ -50,19 +50,3 @@ If you have any further questions, please feel free to create an [issue](https:/
 
 
 > _P has always been a collaborative project between industry and academia (since 2013) :drum:. The P team welcomes contributions and suggestions from all of you!! :punch:. See [CONTRIBUTING](CONTRIBUTING.md) for more information._
-
-
-## Local Development of P
-
-P is distributed as a [dotnet tool](https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools). To test changes locally you can:
-
-1. run `dotnet tool uninstall --global P`
-2. navigate to `/Src/PCompiler/PCommandLine`
-3. run
-  ```
-  dotnet pack PCommandLine.csproj --configuration Release --output ./publish
-      -p:PackAsTool=true
-      -p:ToolCommandName=P
-      -p:Version=<pick a version>
-  ```
-4. run `dotnet tool install P --global --add-source ./publish`

@@ -112,7 +112,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       result.reinitialize();
       PSymLogger.info("... Successfully read.");
     } catch (IOException | ClassNotFoundException e) {
-//      e.printStackTrace();
+      //      e.printStackTrace();
       throw new RuntimeException("... Failed to read program state from file " + readFromFile, e);
     }
     return result;
@@ -226,9 +226,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       schedule.setSchedulerDepth(getDepth());
       schedule.setSchedulerChoiceDepth(getChoiceDepth());
       schedule.setSchedulerState(srcState, machineCounters);
-      if (configuration.getSymmetryMode() != SymmetryMode.None) {
-        schedule.setSchedulerSymmetry();
-      }
+      schedule.setSchedulerSymmetry();
     }
 
     // remove messages with halted target
@@ -929,11 +927,12 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     machineCounters.clear();
     //        machines.clear();
     currentMachines.clear();
+    GlobalData.getSymmetryTracker().reset();
     srcState.clear();
     schedule.setSchedulerDepth(getDepth());
     schedule.setSchedulerChoiceDepth(getChoiceDepth());
     schedule.setSchedulerState(srcState, machineCounters);
-    GlobalData.getSymmetryTracker().reset();
+    schedule.setSchedulerSymmetry();
   }
 
   public void reset_stats() {
@@ -1008,7 +1007,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
             String.format("  %,.1f MB  written in %s", (szBytes / 1024.0 / 1024.0), writeFileName));
       }
     } catch (IOException e) {
-//      e.printStackTrace();
+      //      e.printStackTrace();
       throw new RuntimeException("Failed to write state in file " + writeFileName, e);
     }
   }

@@ -22,7 +22,7 @@ public class Schedule implements Serializable {
   @Setter private int schedulerChoiceDepth = 0;
   private int numBacktracks = 0;
   private int numDataBacktracks = 0;
-  private SymmetryTracker schedulerSymmetry = new SymmetryTracker();
+  private SymmetryTracker schedulerSymmetry;
   private List<Choice> choices = new ArrayList<>();
   private Map<Class<? extends Machine>, ListVS<PrimitiveVS<Machine>>> createdMachines =
       new HashMap<>();
@@ -436,7 +436,7 @@ public class Schedule implements Serializable {
       schedulerChoiceDepth = cdepth;
       choiceState = copyState(state);
       filter = f;
-      symmetry = new SymmetryTracker(sym);
+      symmetry = sym.getCopy();
     }
 
     public int getNumChoicesExplored() {

@@ -5,6 +5,7 @@ import java.util.Set;
 import org.reflections.Reflections;
 import psym.commandline.PSymConfiguration;
 import psym.commandline.PSymOptions;
+import psym.runtime.GlobalData;
 import psym.runtime.PTestDriver;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
@@ -91,6 +92,7 @@ public class PSym {
     PSymLogger.ResetAllConfigurations(
         config.getVerbosity(), config.getProjectName(), config.getOutputFolder());
     SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
+    GlobalData.initializeSymmetryTracker(config.isSymbolic());
     SolverStats.setTimeLimit(config.getTimeLimit());
     SolverStats.setMemLimit(config.getMemLimit());
     MemoryMonitor.setup();

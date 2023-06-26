@@ -8,11 +8,10 @@ import psym.utils.random.RandomNumberGenerator;
 import psym.valuesummary.ValueSummary;
 
 public class ChoiceOrchestratorQLearning implements ChoiceOrchestrator {
-    public ChoiceOrchestratorQLearning() {
-    }
+  public ChoiceOrchestratorQLearning() {}
 
-    public void reorderChoices(List<ValueSummary> choices, boolean isData) {
-        Collections.shuffle(choices, new Random(RandomNumberGenerator.getInstance().getRandomLong()));
-        Collections.sort(choices, GlobalData.getChoiceLearningStats().getChoiceComparator());
-    }
+  public void reorderChoices(List<ValueSummary> choices, boolean isData) {
+    Collections.shuffle(choices, new Random(RandomNumberGenerator.getInstance().getRandomLong()));
+    Collections.sort(choices, GlobalData.getChoiceLearningStats().getChoiceComparator());
+  }
 }

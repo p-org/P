@@ -1,7 +1,6 @@
 package psym.valuesummary;
 
 import java.util.*;
-
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import psym.runtime.machine.Machine;
@@ -10,9 +9,7 @@ import psym.runtime.machine.Machine;
 @SuppressWarnings("ALL")
 public class UnionVS implements ValueSummary<UnionVS> {
   @Getter
-  /**
-   * Concrete hash used for hashing in explicit-state search
-   */
+  /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
 
   /* Type of value stored in the any type variable */

@@ -11,9 +11,7 @@ import psym.runtime.values.PString;
 /** Class for named tuple value summaries */
 public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
   @Getter
-  /**
-   * Concrete hash used for hashing in explicit-state search
-   */
+  /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
 
   /** List of names of the fields in the declared order */

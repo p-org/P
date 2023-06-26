@@ -31,7 +31,11 @@ public class EntryPoint {
   private static String mode;
 
   private static void runWithTimeout(long timeLimit)
-      throws TimeoutException, MemoutException, BugFoundException, InterruptedException, RuntimeException {
+      throws TimeoutException,
+          MemoutException,
+          BugFoundException,
+          InterruptedException,
+          RuntimeException {
     try {
       if (timeLimit > 0) {
         future.get(timeLimit, TimeUnit.SECONDS);
@@ -52,8 +56,8 @@ public class EntryPoint {
       } else if (e.getCause() instanceof TimeoutException) {
         throw (TimeoutException) e.getCause();
       } else {
-//        e.getCause().printStackTrace();
-//        e.printStackTrace();
+        //        e.getCause().printStackTrace();
+        //        e.printStackTrace();
         throw new RuntimeException("RuntimeException", e);
       }
     } catch (InterruptedException e) {
@@ -211,7 +215,8 @@ public class EntryPoint {
       bugFoundException.printStackTrace();
       throw new BugFoundException(
           "Found bug: " + bugFoundException.getLocalizedMessage(),
-          replayScheduler.getPathConstraint(), bugFoundException);
+          replayScheduler.getPathConstraint(),
+          bugFoundException);
     }
   }
 

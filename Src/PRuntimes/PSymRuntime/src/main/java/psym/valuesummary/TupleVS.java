@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import lombok.Getter;
 import psym.runtime.machine.Machine;
 
@@ -13,9 +12,7 @@ import psym.runtime.machine.Machine;
 @SuppressWarnings("unchecked")
 public class TupleVS implements ValueSummary<TupleVS> {
   @Getter
-  /**
-   * Concrete hash used for hashing in explicit-state search
-   */
+  /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
 
   /** The fields of the tuple */

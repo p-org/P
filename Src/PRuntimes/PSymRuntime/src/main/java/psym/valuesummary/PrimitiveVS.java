@@ -4,7 +4,6 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import lombok.Getter;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Event;
@@ -16,9 +15,7 @@ import psym.runtime.machine.events.Event;
  */
 public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
   @Getter
-  /**
-   * Concrete hash used for hashing in explicit-state search
-   */
+  /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
 
   /**

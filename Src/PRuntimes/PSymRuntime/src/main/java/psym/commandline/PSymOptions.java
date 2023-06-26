@@ -252,7 +252,8 @@ public class PSymOptions {
     Option choiceLearnState =
         Option.builder()
             .longOpt("learn-state")
-            .desc("Learning state options: none, last, states, events, full, timeline (default: timeline)")
+            .desc(
+                "Learning state options: none, last, states, events, full, timeline (default: timeline)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Learn State (string)")

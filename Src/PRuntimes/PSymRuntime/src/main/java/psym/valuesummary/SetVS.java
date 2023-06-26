@@ -1,16 +1,13 @@
 package psym.valuesummary;
 
 import java.util.*;
-
 import lombok.Getter;
 import psym.runtime.machine.Machine;
 
 /** Class for set value summaries */
 public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> {
   @Getter
-  /**
-   * Concrete hash used for hashing in explicit-state search
-   */
+  /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
 
   /** The underlying set */

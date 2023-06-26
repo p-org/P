@@ -76,7 +76,7 @@ public class ReplayScheduler extends Scheduler {
       result.reinitialize();
       PSymLogger.info(".. Successfully read.");
     } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+      e.printStackTrace();
       throw new RuntimeException(".. Failed to read replayer state from file " + readFromFile, e);
     }
     return result;
@@ -277,7 +277,7 @@ public class ReplayScheduler extends Scheduler {
             String.format("  %,.1f MB  written in %s", (szBytes / 1024.0 / 1024.0), writeFileName));
       }
     } catch (IOException e) {
-//      e.printStackTrace();
+      //      e.printStackTrace();
       throw new RuntimeException("Failed to write replayer in file " + writeFileName, e);
     }
   }

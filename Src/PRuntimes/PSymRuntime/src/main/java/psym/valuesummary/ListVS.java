@@ -12,9 +12,7 @@ import psym.runtime.machine.Machine;
 /** Represents the list value summaries. */
 public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>> {
   @Getter
-  /**
-   * Concrete hash used for hashing in explicit-state search
-   */
+  /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
 
   /** The size of the list under all guards */

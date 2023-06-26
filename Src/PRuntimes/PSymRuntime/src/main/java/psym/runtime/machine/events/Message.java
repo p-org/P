@@ -1,7 +1,6 @@
 package psym.runtime.machine.events;
 
 import java.util.*;
-
 import lombok.Getter;
 import psym.runtime.GlobalData;
 import psym.runtime.machine.Machine;
@@ -10,9 +9,7 @@ import psym.valuesummary.*;
 /** Represents a message in the sender buffer of a state machine */
 public class Message implements ValueSummary<Message> {
   @Getter
-  /**
-   * Concrete hash used for hashing in explicit-state search
-   */
+  /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
 
   // the target machine to which the message is being sent

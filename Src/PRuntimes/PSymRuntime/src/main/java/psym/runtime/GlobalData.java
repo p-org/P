@@ -6,7 +6,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import psym.runtime.machine.events.StateEvents;
+import psym.runtime.scheduler.explicit.ExplicitSymmetryTracker;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStats;
+import psym.runtime.scheduler.symbolic.SymbolicSymmetryTracker;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.runtime.statistics.CoverageStats;
 
@@ -42,13 +44,12 @@ public class GlobalData implements Serializable {
     /**
      * Global symmetry tracker
      */
-    private SymmetryTracker symmetryTracker = new SymmetryTracker();
+    private SymmetryTracker symmetryTracker = null;
 
     /**
      * Private constructor to enable singleton class object
      */
-    private GlobalData() {
-    }
+    private GlobalData() {}
 
     /**
      * Get/create the singleton class object
@@ -91,5 +92,10 @@ public class GlobalData implements Serializable {
 
     public static void setSymmetryTracker(SymmetryTracker rhs) {
         getInstance().symmetryTracker = rhs;
+    }
+
+    public static void initializeSymmetryTracker(boolean isSymbolic) {
+        getInstance().symmetryTracker =
+            isSymbolic ? new SymbolicSymmetryTracker() : new ExplicitSymmetryTracker();
     }
 }

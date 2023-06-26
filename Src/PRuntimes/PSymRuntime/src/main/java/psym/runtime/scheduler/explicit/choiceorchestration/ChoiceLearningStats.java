@@ -232,7 +232,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
     List<Integer> features = new ArrayList<>();
     for (Machine m : sch.getMachines()) {
       features.add(m.hashCode());
-      for (ValueSummary val: m.getLocalState()) {
+      for (ValueSummary val: m.getMachineLocalState().getLocals()) {
         features.add(val.getConcreteHash());
       }
     }

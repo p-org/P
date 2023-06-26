@@ -115,29 +115,37 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     this.halted = new PrimitiveVS<>(false);
   }
 
-  public List<ValueSummary> getLocalState() {
-    List<ValueSummary> localState = new ArrayList<>();
-    localState.add(this.currentState);
-    localState.add(this.sendBuffer.getEvents());
-    localState.add(this.deferredQueue.getEvents());
-    localState.add(this.receives);
-    localState.add(this.started);
-    localState.add(this.halted);
-    return localState;
+  public MachineLocalState getMachineLocalState() {
+    return new MachineLocalState(getLocalVars());
   }
 
-  public int setLocalState(List<ValueSummary> localState) {
+  public void setMachineLocalState(MachineLocalState localState) {
+    setLocalVars(localState.getLocals());
+  }
+
+  protected List<ValueSummary> getLocalVars() {
+    List<ValueSummary> localVars = new ArrayList<>();
+    localVars.add(this.currentState);
+    localVars.add(this.sendBuffer.getEvents());
+    localVars.add(this.deferredQueue.getEvents());
+    localVars.add(this.receives);
+    localVars.add(this.started);
+    localVars.add(this.halted);
+    return localVars;
+  }
+
+  protected int setLocalVars(List<ValueSummary> localVars) {
     int idx = 0;
-    this.currentState = (PrimitiveVS<State>) localState.get(idx++);
-    this.sendBuffer.setEvents(localState.get(idx++));
-    this.deferredQueue.setEvents(localState.get(idx++));
+    this.currentState = (PrimitiveVS<State>) localVars.get(idx++);
+    this.sendBuffer.setEvents(localVars.get(idx++));
+    this.deferredQueue.setEvents(localVars.get(idx++));
     this.receives =
         (PrimitiveVS<
                 SerializableFunction<
                     Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>>)
-            localState.get(idx++);
-    this.started = (PrimitiveVS<Boolean>) localState.get(idx++);
-    this.halted = (PrimitiveVS<Boolean>) localState.get(idx++);
+                localVars.get(idx++);
+    this.started = (PrimitiveVS<Boolean>) localVars.get(idx++);
+    this.halted = (PrimitiveVS<Boolean>) localVars.get(idx++);
     return idx;
   }
 

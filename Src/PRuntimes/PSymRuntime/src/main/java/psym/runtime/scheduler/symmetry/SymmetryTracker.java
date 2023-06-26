@@ -353,8 +353,8 @@ public class SymmetryTracker implements Serializable {
   private Guard haveSymEqLocalState(Machine m1, Machine m2, Guard pc) {
     assert (m1 != m2);
 
-    List<ValueSummary> m1State = m1.getLocalState();
-    List<ValueSummary> m2State = m2.getLocalState();
+    List<ValueSummary> m1State = m1.getMachineLocalState().getLocals();
+    List<ValueSummary> m2State = m2.getMachineLocalState().getLocals();
     assert (m1State.size() == m2State.size());
 
     Guard result = Guard.constTrue();
@@ -385,7 +385,7 @@ public class SymmetryTracker implements Serializable {
       if (other == m1 || other == m2 || other instanceof Monitor) {
         continue;
       }
-      for (ValueSummary original : other.getLocalState()) {
+      for (ValueSummary original : other.getMachineLocalState().getLocals()) {
         original = original.restrict(pc);
         ValueSummary permuted = original.swap(m1, m2);
         if (original.isEmptyVS() && permuted.isEmptyVS()) {

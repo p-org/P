@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import psym.runtime.GlobalData;
 import psym.runtime.machine.Machine;
+import psym.runtime.machine.MachineLocalState;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.valuesummary.Guard;
 import psym.valuesummary.ListVS;
@@ -62,7 +63,7 @@ public class Schedule implements Serializable {
   }
 
   public void setSchedulerState(
-      Map<Machine, List<ValueSummary>> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
+      Map<Machine, MachineLocalState> ms, Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
     schedulerState.copy(ms, mc);
   }
 
@@ -354,7 +355,7 @@ public class Schedule implements Serializable {
   }
 
   public static class ChoiceState implements Serializable {
-    @Getter private Map<Machine, List<ValueSummary>> machineStates;
+    @Getter private Map<Machine, MachineLocalState> machineStates;
     @Getter private Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
 
     public ChoiceState() {
@@ -362,14 +363,14 @@ public class Schedule implements Serializable {
     }
 
     public ChoiceState(
-        Map<Machine, List<ValueSummary>> ms,
+        Map<Machine, MachineLocalState> ms,
         Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
       this.machineStates = new HashMap<>(ms);
       this.machineCounters = new HashMap<>(mc);
     }
 
     public void copy(
-        Map<Machine, List<ValueSummary>> ms,
+        Map<Machine, MachineLocalState> ms,
         Map<Class<? extends Machine>, PrimitiveVS<Integer>> mc) {
       this.machineStates = new HashMap<>(ms);
       this.machineCounters = new HashMap<>(mc);

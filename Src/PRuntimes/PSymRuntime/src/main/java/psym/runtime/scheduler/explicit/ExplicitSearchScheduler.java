@@ -22,6 +22,7 @@ import psym.runtime.GlobalData;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
+import psym.runtime.machine.MachineLocalState;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Schedule;
 import psym.runtime.scheduler.SearchScheduler;
@@ -51,7 +52,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   private final ChoiceOrchestrator choiceOrchestrator;
   protected boolean isDoneIterating = false;
   /** Source state at the beginning of each schedule step */
-  protected transient Map<Machine, List<ValueSummary>> srcState = new HashMap<>();
+  protected transient Map<Machine, MachineLocalState> srcState = new HashMap<>();
 
   @Getter int iter = 0;
   @Getter int start_iter = 0;
@@ -758,7 +759,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     StringBuilder out = new StringBuilder();
     out.append("Src State:").append(System.lineSeparator());
     for (Machine machine : currentMachines) {
-      List<ValueSummary> machineLocalState = machine.getLocalState();
+      List<ValueSummary> machineLocalState = machine.getMachineLocalState().getLocals();
       out.append(String.format("  Machine: %s", machine)).append(System.lineSeparator());
       for (ValueSummary vs : machineLocalState) {
         out.append(String.format("    %s", vs.toStringDetailed())).append(System.lineSeparator());
@@ -968,8 +969,8 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   public void restoreState(Schedule.ChoiceState state) {
     assert (state != null);
     currentMachines.clear();
-    for (Map.Entry<Machine, List<ValueSummary>> entry : state.getMachineStates().entrySet()) {
-      entry.getKey().setLocalState(entry.getValue());
+    for (Map.Entry<Machine, MachineLocalState> entry : state.getMachineStates().entrySet()) {
+      entry.getKey().setMachineLocalState(entry.getValue());
       currentMachines.add(entry.getKey());
     }
     for (Machine m : machines) {
@@ -984,7 +985,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   private void storeSrcState() {
     if (!srcState.isEmpty()) return;
     for (Machine machine : currentMachines) {
-      List<ValueSummary> machineLocalState = machine.getLocalState();
+      MachineLocalState machineLocalState = machine.getMachineLocalState();
       srcState.put(machine, machineLocalState);
     }
   }
@@ -1111,7 +1112,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     List<List<Object>> globalStateConcrete = new ArrayList<>();
     for (Machine m : currentMachines) {
       assert (srcState.containsKey(m));
-      List<ValueSummary> machineStateSymbolic = srcState.get(m);
+      List<ValueSummary> machineStateSymbolic = srcState.get(m).getLocals();
       List<Object> machineStateConcrete = new ArrayList<>();
       for (int j = 0; j < machineStateSymbolic.size(); j++) {
         Object varValue = null;
@@ -1175,7 +1176,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       int i = 0;
       for (Machine m : currentMachines) {
         if (!srcState.containsKey(m)) continue;
-        List<ValueSummary> machineStateSymbolic = srcState.get(m);
+        List<ValueSummary> machineStateSymbolic = srcState.get(m).getLocals();
         List<Object> machineStateConcrete = new ArrayList<>();
         for (int j = 0; j < machineStateSymbolic.size(); j++) {
           GuardedValue<?> guardedValue =

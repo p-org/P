@@ -535,11 +535,10 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     String str =
         "--------------------"
             + String.format("\n    Status after %.2f seconds:", newRuntime)
-            + String.format(
-                "\n      Progress:         %.12f",
-                GlobalData.getCoverage().getEstimatedCoverage(12))
             + String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent())
             + String.format("\n      Depth:            %d", getDepth())
+            + String.format("\n      Progress:         %.12f",
+                GlobalData.getCoverage().getEstimatedCoverage(12))
             + String.format("\n      Iterations:       %d", (getIter() - getStart_iter()))
             + String.format("\n      Finished:         %d", finishedTasks.size())
             + String.format("\n      Remaining:        %d", getTotalNumBacktracks())

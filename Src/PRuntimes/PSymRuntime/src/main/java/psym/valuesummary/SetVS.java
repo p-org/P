@@ -202,7 +202,13 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
 
   @Override
   public int computeConcreteHash() {
-    return elements.getConcreteHash();
+    int hashCode = 1;
+    List<T> allItems = new ArrayList<>(this.elements.getItems());
+    allItems.sort(Comparator.comparing(ValueSummary::getConcreteHash));
+    for (T item: allItems) {
+      hashCode = 31 * hashCode + (item == null ? 0 : item.getConcreteHash());
+    }
+    return hashCode;
   }
 
   @Override

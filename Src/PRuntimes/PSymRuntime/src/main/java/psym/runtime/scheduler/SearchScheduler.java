@@ -21,8 +21,6 @@ import psym.valuesummary.*;
 
 /** Represents the search scheduler */
 public abstract class SearchScheduler extends Scheduler {
-  protected transient Instant lastReportTime = Instant.now();
-
   protected SearchScheduler(PSymConfiguration config, Program p) {
     super(config, p);
   }

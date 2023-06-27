@@ -71,6 +71,9 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   private int totalStateCount = 0;
   /** Total number of distinct states */
   private int totalDistinctStateCount = 0;
+  /** Time of last report */
+  private transient Instant lastReportTime = Instant.now();
+
 
   public ExplicitSearchScheduler(PSymConfiguration config, Program p) {
     super(config, p);
@@ -535,11 +538,11 @@ public class ExplicitSearchScheduler extends SearchScheduler {
             + String.format(
                 "\n      Progress:         %.12f",
                 GlobalData.getCoverage().getEstimatedCoverage(12))
-            + String.format("\n      Iterations:       %d", (getIter() - getStart_iter()))
             + String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent())
+            + String.format("\n      Depth:            %d", getDepth())
+            + String.format("\n      Iterations:       %d", (getIter() - getStart_iter()))
             + String.format("\n      Finished:         %d", finishedTasks.size())
             + String.format("\n      Remaining:        %d", getTotalNumBacktracks())
-            + String.format("\n      Depth:            %d", getDepth())
             + String.format("\n      States:           %d", totalStateCount)
             + String.format("\n      DistinctStates:   %d", totalDistinctStateCount);
     ScratchLogger.log(str);

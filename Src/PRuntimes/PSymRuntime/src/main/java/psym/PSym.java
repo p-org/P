@@ -73,12 +73,12 @@ public class PSym {
     } catch (BugFoundException e) {
       exit_code = 2;
     } catch (Exception ex) {
-      ex.printStackTrace();
       if (ex.getMessage().equals("TIMEOUT")) {
         exit_code = 3;
       } else if (ex.getMessage().equals("MEMOUT")) {
         exit_code = 4;
       } else {
+        ex.printStackTrace();
         exit_code = 5;
       }
     } finally {

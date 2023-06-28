@@ -48,7 +48,7 @@ public abstract class Scheduler implements SchedulerInterface {
   /** Current depth of exploration */
   protected int depth = 0;
   /** Flag whether current step is a create or sync machine step */
-  protected Boolean stickyStep = false;
+  protected Boolean stickyStep = true;
   /** Flag whether current execution finished */
   protected Boolean executionFinished = false;
   /** List of monitors instances */

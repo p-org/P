@@ -210,11 +210,12 @@ public class EntryPoint {
       replayScheduler.doSearch();
       status = "error";
       throw new RuntimeException("ERROR: Failed to replay counterexample");
-    } catch (BugFoundException bugFoundException) {
+    } catch (BugFoundException e) {
+      e.printStackTrace(System.out);
       throw new BugFoundException(
-          "Found bug: " + bugFoundException.getLocalizedMessage(),
+          "Found bug: " + e.getLocalizedMessage(),
           replayScheduler.getPathConstraint(),
-          bugFoundException);
+          e);
     }
   }
 

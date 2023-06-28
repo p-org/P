@@ -926,6 +926,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     depth = 0;
     choiceDepth = 0;
     done = false;
+    stickyStep = true;
     machineCounters.clear();
     //        machines.clear();
     currentMachines.clear();

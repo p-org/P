@@ -32,8 +32,6 @@ public class EntryPoint {
 
   private static void runWithTimeout(long timeLimit)
       throws TimeoutException,
-          MemoutException,
-          BugFoundException,
           InterruptedException,
           RuntimeException {
     try {

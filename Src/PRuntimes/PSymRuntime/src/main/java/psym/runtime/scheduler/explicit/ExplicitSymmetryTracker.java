@@ -3,7 +3,6 @@ package psym.runtime.scheduler.explicit;
 import java.util.*;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
-import psym.runtime.scheduler.symmetry.SymmetryPendingMerges;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.valuesummary.*;
 
@@ -150,9 +149,7 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
           // iterate over each symmetry class
           for (TreeSet<Machine> symSet: symClasses) {
             // remove chosen from the ith class
-            if (symSet.contains(machine)) {
-              symSet.remove(machine);
-            }
+            symSet.remove(machine);
           }
           // remove empty classes
           symClasses.removeIf(x -> x.isEmpty());

@@ -210,12 +210,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
     if (configuration.getStateCachingMode() != StateCachingMode.None) {
       storeSrcState();
-      int[] numConcrete;
-      if (configuration.isSymbolic()) {
-        numConcrete = enumerateConcreteStatesFromSymbolic(Concretizer::concretize);
-      } else {
-        numConcrete = enumerateConcreteStatesFromExplicit(configuration.getStateCachingMode());
-      }
+      int[] numConcrete = enumerateConcreteStatesFromExplicit(configuration.getStateCachingMode());
       numStates = numConcrete[0];
       numStatesDistinct = numConcrete[1];
     }
@@ -439,7 +434,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     List<ValueSummary> backtrack = new ArrayList();
     for (int i = 0; i < choices.size(); i++) {
       ValueSummary choice = choices.get(i);
-      if (configuration.isSymbolic() || i == 0) {
+      if (i == 0) {
         chosen.add(choice);
         chosenQStateKey.add(choice);
       } else {

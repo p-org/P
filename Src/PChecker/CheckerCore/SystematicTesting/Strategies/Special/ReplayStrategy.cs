@@ -101,10 +101,10 @@ namespace PChecker.SystematicTesting.Strategies.Special
                         throw new InvalidOperationException(ErrorText);
                     }
 
-                    next = enabledOperations.FirstOrDefault(op => op.Id == nextStep.ScheduledOperationId);
+                    next = enabledOperations.FirstOrDefault(op => op.Name == nextStep.ScheduledOperationName);
                     if (next is null)
                     {
-                        ErrorText = $"Trace is not reproducible: cannot detect id '{nextStep.ScheduledOperationId}'.";
+                        ErrorText = $"Trace is not reproducible: cannot detect operation '{nextStep.ScheduledOperationName}'.";
                         throw new InvalidOperationException(ErrorText);
                     }
                 }

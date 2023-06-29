@@ -69,8 +69,7 @@ namespace PChecker.SystematicTesting.Traces
                 }
                 else
                 {
-                    var id = step.TrimStart('(').TrimEnd(')');
-                    AddSchedulingChoice(ulong.Parse(id));
+                    AddSchedulingChoice(step);
                 }
             }
         }
@@ -78,9 +77,9 @@ namespace PChecker.SystematicTesting.Traces
         /// <summary>
         /// Adds a scheduling choice.
         /// </summary>
-        internal void AddSchedulingChoice(ulong scheduledActorId)
+        internal void AddSchedulingChoice(string scheduledActorName)
         {
-            var scheduleStep = ScheduleStep.CreateSchedulingChoice(Count, scheduledActorId);
+            var scheduleStep = ScheduleStep.CreateSchedulingChoice(Count, scheduledActorName);
             Push(scheduleStep);
         }
 

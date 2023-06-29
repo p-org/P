@@ -783,7 +783,7 @@ namespace PChecker.SystematicTesting
                 var step = runtime.Scheduler.ScheduleTrace[idx];
                 if (step.Type == ScheduleStepType.SchedulingChoice)
                 {
-                    stringBuilder.Append($"({step.ScheduledOperationId})");
+                    stringBuilder.Append($"{step.ScheduledOperationName}");
                 }
                 else if (step.BooleanChoice != null)
                 {

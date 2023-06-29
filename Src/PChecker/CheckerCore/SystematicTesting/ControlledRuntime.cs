@@ -70,7 +70,6 @@ namespace PChecker.SystematicTesting
 
         public ConcurrentBag<Actor> DelayedActors;
 
-        
         /// <summary>
         /// Returns the current hashed state of the monitors.
         /// </summary>
@@ -150,10 +149,7 @@ namespace PChecker.SystematicTesting
             Scheduler = new OperationScheduler(this, strategy, scheduleTrace, CheckerConfiguration);
             TaskController = new TaskController(this, Scheduler);
 
-            lock (DelayedActors)
-            {
-                DelayedActors = new ConcurrentBag<Actor>();
-            }
+            DelayedActors = new ConcurrentBag<Actor>();
 
             // Update the current asynchronous control flow with this runtime instance,
             // allowing future retrieval in the same asynchronous call stack.

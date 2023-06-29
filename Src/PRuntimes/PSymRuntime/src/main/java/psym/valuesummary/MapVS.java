@@ -1,7 +1,6 @@
 package psym.valuesummary;
 
 import java.util.*;
-
 import lombok.Getter;
 import psym.runtime.machine.Machine;
 import psym.utils.Assert;
@@ -9,17 +8,14 @@ import psym.utils.Assert;
 /** Class for map value summaries */
 public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
     implements ValueSummary<MapVS<K, T, V>> {
-  @Getter
-  /**
-   * Concrete hash used for hashing in explicit-state search
-   */
-  private final int concreteHash;
-
   /** The set of keys */
   public final SetVS<T> keys;
   /** The mapping from all possible keys to values */
-  /** The mapping from all possible keys to values */
   public final Map<K, V> entries;
+  /** The mapping from all possible keys to values */
+  @Getter
+  /** Concrete hash used for hashing in explicit-state search */
+  private final int concreteHash;
 
   /**
    * Make a new MapVS with the specified set of keys and mapping

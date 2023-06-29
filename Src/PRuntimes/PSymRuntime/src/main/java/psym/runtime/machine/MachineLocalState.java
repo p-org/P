@@ -1,14 +1,13 @@
 package psym.runtime.machine;
 
+import java.io.Serializable;
+import java.util.List;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import psym.runtime.machine.events.Event;
 import psym.valuesummary.ValueSummary;
-
-import java.io.Serializable;
-import java.util.List;
-import java.util.Set;
 
 public class MachineLocalState implements Serializable {
     @Getter

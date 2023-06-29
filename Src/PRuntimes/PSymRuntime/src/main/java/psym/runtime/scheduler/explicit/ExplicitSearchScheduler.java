@@ -71,6 +71,9 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   private int totalStateCount = 0;
   /** Total number of distinct states */
   private int totalDistinctStateCount = 0;
+  /** Time of last report */
+  private transient Instant lastReportTime = Instant.now();
+
 
   public ExplicitSearchScheduler(PSymConfiguration config, Program p) {
     super(config, p);
@@ -112,7 +115,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       result.reinitialize();
       PSymLogger.info("... Successfully read.");
     } catch (IOException | ClassNotFoundException e) {
-//      e.printStackTrace();
+      //      e.printStackTrace();
       throw new RuntimeException("... Failed to read program state from file " + readFromFile, e);
     }
     return result;
@@ -207,12 +210,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
     if (configuration.getStateCachingMode() != StateCachingMode.None) {
       storeSrcState();
-      int[] numConcrete;
-      if (configuration.isSymbolic()) {
-        numConcrete = enumerateConcreteStatesFromSymbolic(Concretizer::concretize);
-      } else {
-        numConcrete = enumerateConcreteStatesFromExplicit(configuration.getStateCachingMode());
-      }
+      int[] numConcrete = enumerateConcreteStatesFromExplicit(configuration.getStateCachingMode());
       numStates = numConcrete[0];
       numStatesDistinct = numConcrete[1];
     }
@@ -226,9 +224,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       schedule.setSchedulerDepth(getDepth());
       schedule.setSchedulerChoiceDepth(getChoiceDepth());
       schedule.setSchedulerState(srcState, machineCounters);
-      if (configuration.getSymmetryMode() != SymmetryMode.None) {
-        schedule.setSchedulerSymmetry();
-      }
+      schedule.setSchedulerSymmetry();
     }
 
     // remove messages with halted target
@@ -438,7 +434,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     List<ValueSummary> backtrack = new ArrayList();
     for (int i = 0; i < choices.size(); i++) {
       ValueSummary choice = choices.get(i);
-      if (configuration.isSymbolic() || i == 0) {
+      if (i == 0) {
         chosen.add(choice);
         chosenQStateKey.add(choice);
       } else {
@@ -534,14 +530,13 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     String str =
         "--------------------"
             + String.format("\n    Status after %.2f seconds:", newRuntime)
-            + String.format(
-                "\n      Progress:         %.12f",
+            + String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent())
+            + String.format("\n      Depth:            %d", getDepth())
+            + String.format("\n      Progress:         %.12f",
                 GlobalData.getCoverage().getEstimatedCoverage(12))
             + String.format("\n      Iterations:       %d", (getIter() - getStart_iter()))
-            + String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent())
             + String.format("\n      Finished:         %d", finishedTasks.size())
             + String.format("\n      Remaining:        %d", getTotalNumBacktracks())
-            + String.format("\n      Depth:            %d", getDepth())
             + String.format("\n      States:           %d", totalStateCount)
             + String.format("\n      DistinctStates:   %d", totalDistinctStateCount);
     ScratchLogger.log(str);
@@ -926,14 +921,16 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     depth = 0;
     choiceDepth = 0;
     done = false;
+    stickyStep = true;
     machineCounters.clear();
     //        machines.clear();
     currentMachines.clear();
+    GlobalData.getSymmetryTracker().reset();
     srcState.clear();
     schedule.setSchedulerDepth(getDepth());
     schedule.setSchedulerChoiceDepth(getChoiceDepth());
     schedule.setSchedulerState(srcState, machineCounters);
-    GlobalData.getSymmetryTracker().reset();
+    schedule.setSchedulerSymmetry();
   }
 
   public void reset_stats() {
@@ -1008,7 +1005,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
             String.format("  %,.1f MB  written in %s", (szBytes / 1024.0 / 1024.0), writeFileName));
       }
     } catch (IOException e) {
-//      e.printStackTrace();
+      //      e.printStackTrace();
       throw new RuntimeException("Failed to write state in file " + writeFileName, e);
     }
   }

@@ -3,8 +3,6 @@ package psym.valuesummary;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-
-import lombok.Getter;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
 

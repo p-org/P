@@ -44,11 +44,8 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
               Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>>
       receives = new PrimitiveVS<>();
 
-  @Getter
-  private Set<Event> observedEvents;
-  @Getter
-  private Set<ImmutablePair<Event, Event>> happensBeforePairs;
-
+  @Getter private Set<Event> observedEvents;
+  @Getter private Set<ImmutablePair<Event, Event>> happensBeforePairs;
 
   public Machine(String name, int id, State startState, State... states) {
     this.name = name;
@@ -124,7 +121,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     }
     this.started = new PrimitiveVS<>(false);
     this.halted = new PrimitiveVS<>(false);
-    this.observedEvents .clear();
+    this.observedEvents.clear();
     this.happensBeforePairs.clear();
   }
 
@@ -145,10 +142,10 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     this.sendBuffer.setEvents(localVars.get(idx++));
     this.deferredQueue.setEvents(localVars.get(idx++));
     this.receives =
-            (PrimitiveVS<
-                    SerializableFunction<
-                            Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>>)
-                    localVars.get(idx++);
+        (PrimitiveVS<
+                SerializableFunction<
+                    Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>>)
+            localVars.get(idx++);
     this.started = (PrimitiveVS<Boolean>) localVars.get(idx++);
     this.halted = (PrimitiveVS<Boolean>) localVars.get(idx++);
     return idx;
@@ -352,14 +349,14 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   }
 
   private void addObservedEvent(Event newEvent) {
-    for (Event happenedBeforeEvent:  observedEvents) {
+    for (Event happenedBeforeEvent : observedEvents) {
       happensBeforePairs.add(new ImmutablePair<>(happenedBeforeEvent, newEvent));
     }
     observedEvents.add(newEvent);
   }
 
   private void updateObservedEvents(Message message) {
-    for (Event e: message.getEvent().getValues()) {
+    for (Event e : message.getEvent().getValues()) {
       addObservedEvent(e);
     }
   }

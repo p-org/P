@@ -15,6 +15,7 @@ import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
+import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.runtime.statistics.SearchStats;
 import psym.utils.Assert;
 import psym.utils.random.NondetUtil;
@@ -47,7 +48,7 @@ public abstract class Scheduler implements SchedulerInterface {
   /** Current depth of exploration */
   protected int depth = 0;
   /** Flag whether current step is a create or sync machine step */
-  protected Boolean stickyStep = false;
+  protected Boolean stickyStep = true;
   /** Flag whether current execution finished */
   protected Boolean executionFinished = false;
   /** List of monitors instances */
@@ -65,7 +66,7 @@ public abstract class Scheduler implements SchedulerInterface {
   protected Scheduler(PSymConfiguration config, Program p, Machine... machines) {
     setConfiguration(config);
     program = p;
-    this.schedule = getNewSchedule();
+    this.schedule = getNewSchedule(GlobalData.getSymmetryTracker());
     this.machines = new ArrayList<>();
     this.currentMachines = new TreeSet<>();
     this.machineCounters = new HashMap<>();
@@ -136,8 +137,8 @@ public abstract class Scheduler implements SchedulerInterface {
    *
    * @return A new Schedule instance
    */
-  public Schedule getNewSchedule() {
-    return new Schedule();
+  public Schedule getNewSchedule(SymmetryTracker symmetryTracker) {
+    return new Schedule(symmetryTracker);
   }
 
   /**

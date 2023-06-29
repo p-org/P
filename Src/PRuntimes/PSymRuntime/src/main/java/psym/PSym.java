@@ -5,6 +5,7 @@ import java.util.Set;
 import org.reflections.Reflections;
 import psym.commandline.PSymConfiguration;
 import psym.commandline.PSymOptions;
+import psym.runtime.GlobalData;
 import psym.runtime.PTestDriver;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
@@ -72,12 +73,12 @@ public class PSym {
     } catch (BugFoundException e) {
       exit_code = 2;
     } catch (Exception ex) {
-      ex.printStackTrace();
       if (ex.getMessage().equals("TIMEOUT")) {
         exit_code = 3;
       } else if (ex.getMessage().equals("MEMOUT")) {
         exit_code = 4;
       } else {
+        ex.printStackTrace();
         exit_code = 5;
       }
     } finally {
@@ -91,6 +92,7 @@ public class PSym {
     PSymLogger.ResetAllConfigurations(
         config.getVerbosity(), config.getProjectName(), config.getOutputFolder());
     SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
+    GlobalData.initializeSymmetryTracker(config.isSymbolic());
     SolverStats.setTimeLimit(config.getTimeLimit());
     SolverStats.setMemLimit(config.getMemLimit());
     MemoryMonitor.setup();

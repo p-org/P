@@ -22,24 +22,28 @@ public class Schedule implements Serializable {
   @Setter private int schedulerChoiceDepth = 0;
   private int numBacktracks = 0;
   private int numDataBacktracks = 0;
-  private SymmetryTracker schedulerSymmetry = new SymmetryTracker();
+  private SymmetryTracker schedulerSymmetry;
   private List<Choice> choices = new ArrayList<>();
   private Map<Class<? extends Machine>, ListVS<PrimitiveVS<Machine>>> createdMachines =
       new HashMap<>();
   private Set<Machine> machines = new HashSet<>();
   private Guard pc = Guard.constTrue();
 
-  public Schedule() {}
+  public Schedule(SymmetryTracker symmetryTracker) {
+    this.schedulerSymmetry = symmetryTracker;
+  }
 
   private Schedule(
       List<Choice> choices,
       Map<Class<? extends Machine>, ListVS<PrimitiveVS<Machine>>> createdMachines,
       Set<Machine> machines,
-      Guard pc) {
+      Guard pc,
+      SymmetryTracker symmetryTracker) {
     this.choices = new ArrayList<>(choices);
     this.createdMachines = new HashMap<>(createdMachines);
     this.machines = new HashSet<>(machines);
     this.pc = pc;
+    this.schedulerSymmetry = symmetryTracker;
   }
 
   public void restrictFilter(Guard c) {
@@ -283,7 +287,7 @@ public class Schedule implements Serializable {
     for (Choice c : choices) {
       newChoices.add(c.restrict(pc));
     }
-    return new Schedule(newChoices, createdMachines, machines, pc);
+    return new Schedule(newChoices, createdMachines, machines, pc, schedulerSymmetry);
   }
 
   public Schedule removeEmptyRepeat() {
@@ -293,7 +297,7 @@ public class Schedule implements Serializable {
         newChoices.add(choices.get(i));
       }
     }
-    return new Schedule(newChoices, createdMachines, machines, pc);
+    return new Schedule(newChoices, createdMachines, machines, pc, schedulerSymmetry);
   }
 
   public void makeMachine(Machine m, Guard pc) {
@@ -436,7 +440,7 @@ public class Schedule implements Serializable {
       schedulerChoiceDepth = cdepth;
       choiceState = copyState(state);
       filter = f;
-      symmetry = new SymmetryTracker(sym);
+      symmetry = sym.getCopy();
     }
 
     public int getNumChoicesExplored() {

@@ -199,7 +199,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
   }
 
   private void setProgramHashMachineStateAndLastStep(
-    Scheduler sch, PrimitiveVS<Machine> lastChoice) {
+      Scheduler sch, PrimitiveVS<Machine> lastChoice) {
     List<Integer> features = new ArrayList<>();
     for (Machine m : sch.getMachines()) {
       features.add(m.hashCode());
@@ -235,7 +235,7 @@ public class ChoiceLearningStats<S, A> implements Serializable {
     List<Integer> features = new ArrayList<>();
     for (Machine m : sch.getMachines()) {
       features.add(m.hashCode());
-      for (ValueSummary val: m.getMachineLocalState().getLocals()) {
+      for (ValueSummary val : m.getMachineLocalState().getLocals()) {
         features.add(val.getConcreteHash());
       }
     }

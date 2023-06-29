@@ -331,36 +331,33 @@ public class SymbolicSearchScheduler extends SearchScheduler {
 
   @Override
   protected void printProgress(boolean forcePrint) {
-    if (forcePrint || (TimeMonitor.getInstance().findInterval(lastReportTime) > 5)) {
-      lastReportTime = Instant.now();
-      double newRuntime = TimeMonitor.getInstance().getRuntime();
-      printCurrentStatus(newRuntime);
-      boolean consolePrint = (configuration.getVerbosity() == 0);
-      if (consolePrint || forcePrint) {
-        long runtime = (long) (newRuntime * 1000);
-        String runtimeHms =
-            String.format(
-                "%02d:%02d:%02d",
-                TimeUnit.MILLISECONDS.toHours(runtime),
-                TimeUnit.MILLISECONDS.toMinutes(runtime) % TimeUnit.HOURS.toMinutes(1),
-                TimeUnit.MILLISECONDS.toSeconds(runtime) % TimeUnit.MINUTES.toSeconds(1));
+    double newRuntime = TimeMonitor.getInstance().getRuntime();
+    printCurrentStatus(newRuntime);
+    boolean consolePrint = (configuration.getVerbosity() == 0);
+    if (consolePrint || forcePrint) {
+      long runtime = (long) (newRuntime * 1000);
+      String runtimeHms =
+          String.format(
+              "%02d:%02d:%02d",
+              TimeUnit.MILLISECONDS.toHours(runtime),
+              TimeUnit.MILLISECONDS.toMinutes(runtime) % TimeUnit.HOURS.toMinutes(1),
+              TimeUnit.MILLISECONDS.toSeconds(runtime) % TimeUnit.MINUTES.toSeconds(1));
 
-        StringBuilder s = new StringBuilder(100);
-        if (consolePrint) {
-          s.append('\r');
-        } else {
-          PSymLogger.info("--------------------");
-          printProgressHeader(false);
-        }
-        s.append(StringUtils.center(String.format("%s", runtimeHms), 11));
-        s.append(
-            StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 9));
-        s.append(StringUtils.center(String.format("%d", getDepth()), 7));
-        if (consolePrint) {
-          System.out.print(s);
-        } else {
-          SearchLogger.log(s.toString());
-        }
+      StringBuilder s = new StringBuilder(100);
+      if (consolePrint) {
+        s.append('\r');
+      } else {
+        PSymLogger.info("--------------------");
+        printProgressHeader(false);
+      }
+      s.append(StringUtils.center(String.format("%s", runtimeHms), 11));
+      s.append(
+          StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 9));
+      s.append(StringUtils.center(String.format("%d", getDepth()), 7));
+      if (consolePrint) {
+        System.out.print(s);
+      } else {
+        SearchLogger.log(s.toString());
       }
     }
   }

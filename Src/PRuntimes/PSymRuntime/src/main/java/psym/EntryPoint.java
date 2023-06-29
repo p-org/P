@@ -31,7 +31,9 @@ public class EntryPoint {
   private static String mode;
 
   private static void runWithTimeout(long timeLimit)
-      throws TimeoutException, MemoutException, BugFoundException, InterruptedException, RuntimeException {
+      throws TimeoutException,
+          InterruptedException,
+          RuntimeException {
     try {
       if (timeLimit > 0) {
         future.get(timeLimit, TimeUnit.SECONDS);
@@ -52,8 +54,6 @@ public class EntryPoint {
       } else if (e.getCause() instanceof TimeoutException) {
         throw (TimeoutException) e.getCause();
       } else {
-//        e.getCause().printStackTrace();
-//        e.printStackTrace();
         throw new RuntimeException("RuntimeException", e);
       }
     } catch (InterruptedException e) {
@@ -140,6 +140,7 @@ public class EntryPoint {
       scheduler.result = "found cex of length " + scheduler.getDepth();
       scheduler.isFinalResult = true;
       postprocess(true);
+      e.printStackTrace();
 
       PSymLogger.setVerbosity(1);
       TraceLogger.setVerbosity(1);
@@ -207,11 +208,12 @@ public class EntryPoint {
       replayScheduler.doSearch();
       status = "error";
       throw new RuntimeException("ERROR: Failed to replay counterexample");
-    } catch (BugFoundException bugFoundException) {
-      bugFoundException.printStackTrace();
+    } catch (BugFoundException e) {
+      e.printStackTrace(System.out);
       throw new BugFoundException(
-          "Found bug: " + bugFoundException.getLocalizedMessage(),
-          replayScheduler.getPathConstraint(), bugFoundException);
+          "Found bug: " + e.getLocalizedMessage(),
+          replayScheduler.getPathConstraint(),
+          e);
     }
   }
 

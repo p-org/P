@@ -87,6 +87,8 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal string BugReport { get; private set; }
 
+        private double PreviousPulseAllTime;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="OperationScheduler"/> class.
         /// </summary>
@@ -103,6 +105,28 @@ namespace PChecker.SystematicTesting
             IsRunning = true;
             BugFound = false;
             HasFullyExploredSchedule = false;
+            PreviousPulseAllTime = 0;
+        }
+
+        internal bool IncrementTime()
+        {
+            var ops = OperationMap.Values.OrderBy(op => op.Id);
+            if (!ops.Any(op => op.Status is AsyncOperationStatus.Enabled))
+            {
+                double time = MockEventQueue.GetTime();
+                var futureScheduledTimestamps = MockEventQueue.ScheduledTimestamps.Where(t => t > time).ToList();
+                if (futureScheduledTimestamps.Any())
+                {
+                    MockEventQueue.SetTime(futureScheduledTimestamps.Min());
+                    foreach (var op in ops.Where(op => op.Status is AsyncOperationStatus.Delayed))
+                    {
+                        // TODO: Enable only necessary ones if possible. If not possible, it should still be ok.
+                        op.OnEnabled();
+                    }
+                }
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -162,23 +186,15 @@ namespace PChecker.SystematicTesting
                     Debug.WriteLine("<ScheduleDebug> Operation '{0}' has status '{1}'.", op.Id, op.Status);
                 }
             }
-            
-            if (!ops.Any(op => op.Status is AsyncOperationStatus.Enabled))
-            {
-                double time = MockEventQueue.GetTime();
-                var futureScheduledTimestamps = MockEventQueue.ScheduledTimestamps.Where(t => t > time).ToList();
-                if (futureScheduledTimestamps.Any())
-                {
-                    MockEventQueue.SetTime(futureScheduledTimestamps.Min());
-                    foreach (var op in ops.Where(op => op.Status is AsyncOperationStatus.Delayed))
-                    {
-                        op.OnEnabled();
-                    }
-                }
-            }
 
             if (!Strategy.GetNextOperation(current, ops, out var next))
             {
+                if (Runtime.DelayedActors.Count > 0)
+                {
+                    // TODO: Check if this is the correct thing to do. It seems to work.
+                    return;
+                }
+
                 // Checks if the program has deadlocked.
                 CheckIfProgramHasDeadlocked(ops.Select(op => op as AsyncOperation));
 
@@ -204,6 +220,7 @@ namespace PChecker.SystematicTesting
                 lock (next)
                 {
                     ScheduledOperation.IsActive = true;
+                    PreviousPulseAllTime = MockEventQueue.GetTime();
                     System.Threading.Monitor.PulseAll(next);
                 }
 
@@ -231,6 +248,15 @@ namespace PChecker.SystematicTesting
                     {
                         throw new ExecutionCanceledException();
                     }
+                }
+            }
+            else if (current == next && PreviousPulseAllTime < MockEventQueue.GetTime())
+            {
+                lock (next)
+                {
+                    ScheduledOperation.IsActive = true;
+                    PreviousPulseAllTime = MockEventQueue.GetTime();
+                    System.Threading.Monitor.PulseAll(next);
                 }
             }
         }

@@ -98,7 +98,7 @@ namespace PChecker.Actors
         /// </summary>
         internal bool IsDefaultHandlerAvailable { get; private set; }
 
-        internal bool IsDelayed;
+        internal bool IsDelayed => CheckIfIsDelayed();
 
         /// <summary>
         /// Id used to identify subsequent operations performed by this actor. This value
@@ -138,7 +138,6 @@ namespace PChecker.Actors
             CurrentStatus = Status.Active;
             CurrentStateName = default;
             IsDefaultHandlerAvailable = false;
-            IsDelayed = false;
         }
 
         /// <summary>
@@ -442,6 +441,18 @@ namespace PChecker.Actors
             return Inbox.Enqueue(e, opGroupId, info);
         }
 
+        private bool CheckIfIsDelayed()
+        {
+            // TODO: Make this function return the timestamp of the event with minimum timestamp value.
+            // TODO: Then, pick actors with smallest timestamps in RunDelayedActorHandlers.
+            var (status, e, opGroupId, info) = Inbox.Dequeue(true);
+            if (status is DequeueStatus.Delayed)
+            {
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// Runs the event handler. The handler terminates if there is no next
         /// event to process or if the actor has halted.
@@ -451,7 +462,6 @@ namespace PChecker.Actors
             Event lastDequeuedEvent = null;
             while (CurrentStatus != Status.Halted && Runtime.IsRunning)
             {
-                IsDelayed = false;
                 (var status, var e, var opGroupId, var info) = Inbox.Dequeue();
                 if (opGroupId != Guid.Empty)
                 {
@@ -491,7 +501,6 @@ namespace PChecker.Actors
                 else if (status is DequeueStatus.Delayed)
                 {
                     // Set the flag and terminate.
-                    IsDelayed = true;
                     break;
                 }
 

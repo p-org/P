@@ -30,7 +30,7 @@ namespace PChecker.Actors.EventQueues
         /// <summary>
         /// Dequeues the next event, if there is one available.
         /// </summary>
-        (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) Dequeue();
+        (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) Dequeue(bool checkOnly = false);
 
         /// <summary>
         /// Enqueues the specified raised event.

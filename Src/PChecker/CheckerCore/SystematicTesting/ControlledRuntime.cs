@@ -68,6 +68,8 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal readonly int? RootTaskId;
 
+        public ConcurrentBag<Actor> DelayedActors;
+
         
         /// <summary>
         /// Returns the current hashed state of the monitors.
@@ -147,6 +149,8 @@ namespace PChecker.SystematicTesting
 
             Scheduler = new OperationScheduler(this, strategy, scheduleTrace, CheckerConfiguration);
             TaskController = new TaskController(this, Scheduler);
+
+            DelayedActors = new ConcurrentBag<Actor>();
 
             // Update the current asynchronous control flow with this runtime instance,
             // allowing future retrieval in the same asynchronous call stack.
@@ -543,7 +547,6 @@ namespace PChecker.SystematicTesting
         {
             var op = Scheduler.GetOperationWithId<ActorOperation>(actor.Id.Value);
             op.OnEnabled();
-
             var task = new Task(async () =>
             {
                 try
@@ -561,12 +564,6 @@ namespace PChecker.SystematicTesting
 
                     await actor.RunEventHandlerAsync();
 
-                    while (actor.IsDelayed)
-                    {
-                        op.Status = AsyncOperationStatus.Delayed;
-                        Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
-                        await actor.RunEventHandlerAsync();
-                    }
                     if (syncCaller != null)
                     {
                         EnqueueEvent(syncCaller, new QuiescentEvent(actor.Id), actor, actor.OperationGroupId, null);
@@ -578,6 +575,12 @@ namespace PChecker.SystematicTesting
                     }
 
                     Debug.WriteLine("<ScheduleDebug> Completed operation {0} on task '{1}'.", actor.Id, Task.CurrentId);
+
+                    if (actor.IsDelayed)
+                    {
+                        DelayedActors.Add(actor);
+                    }
+
                     op.OnCompleted();
 
                     // The actor is inactive or halted, schedule the next enabled operation.
@@ -591,7 +594,33 @@ namespace PChecker.SystematicTesting
 
             Scheduler.ScheduleOperation(op, task.Id);
             task.Start();
+            task.ContinueWith(t => RunDelayedActorHandlers());
             Scheduler.WaitOperationStart(op);
+        }
+
+        public void RunDelayedActorHandlers()
+        {
+            lock (DelayedActors)
+            {
+                if (DelayedActors.Count > 0)
+                {
+                    if (Scheduler.IncrementTime())
+                    {
+                        var operationId = GetNextOperationId();
+                        if (Task.CurrentId != null)
+                        {
+                            var taskOperation = new TaskOperation(operationId, Scheduler);
+                            Scheduler.ScheduleOperation(taskOperation, (int)Task.CurrentId);
+                        }
+                        foreach (var actor in DelayedActors)
+                        {
+                            RunActorEventHandler(actor, null, false, null);
+                        }
+                        DelayedActors.Clear();
+                        Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Default);
+                    }
+                }
+            }
         }
 
         /// <summary>

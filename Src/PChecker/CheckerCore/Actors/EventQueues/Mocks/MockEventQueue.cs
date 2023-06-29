@@ -139,7 +139,7 @@ namespace PChecker.Actors.EventQueues.Mocks
         }
 
         /// <inheritdoc/>
-        public (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) Dequeue()
+        public (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) Dequeue(bool checkOnly = false)
         {
             // Try to get the raised event, if there is one. Raised events
             // have priority over the events in the inbox.
@@ -166,7 +166,7 @@ namespace PChecker.Actors.EventQueues.Mocks
             }
 
             // Try to dequeue the next event, if there is one.
-            var ((e, opGroupId, info), isDelayed) = TryDequeueEvent();
+            var ((e, opGroupId, info), isDelayed) = TryDequeueEvent(checkOnly);
             if (isDelayed)
             {
                 return (DequeueStatus.Delayed, null, Guid.Empty, null);

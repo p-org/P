@@ -150,7 +150,10 @@ namespace PChecker.SystematicTesting
             Scheduler = new OperationScheduler(this, strategy, scheduleTrace, CheckerConfiguration);
             TaskController = new TaskController(this, Scheduler);
 
-            DelayedActors = new ConcurrentBag<Actor>();
+            lock (DelayedActors)
+            {
+                DelayedActors = new ConcurrentBag<Actor>();
+            }
 
             // Update the current asynchronous control flow with this runtime instance,
             // allowing future retrieval in the same asynchronous call stack.
@@ -578,7 +581,10 @@ namespace PChecker.SystematicTesting
 
                     if (actor.IsDelayed)
                     {
-                        DelayedActors.Add(actor);
+                        lock (DelayedActors)
+                        {
+                            DelayedActors.Add(actor);
+                        }
                     }
 
                     op.OnCompleted();
@@ -614,6 +620,7 @@ namespace PChecker.SystematicTesting
                         }
                         foreach (var actor in DelayedActors)
                         {
+                            // TODO: Only run necessary actors, not all of them. This seems to cause a deadlock!
                             RunActorEventHandler(actor, null, false, null);
                         }
                         DelayedActors.Clear();

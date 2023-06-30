@@ -51,7 +51,7 @@ namespace PChecker.SystematicTesting.Traces
 
             foreach (var step in traceDump)
             {
-                if (step.StartsWith("--") || step.Length == 0)
+                if (step.StartsWith("--") || step.Length == 0 || step.StartsWith("//"))
                 {
                     continue;
                 }

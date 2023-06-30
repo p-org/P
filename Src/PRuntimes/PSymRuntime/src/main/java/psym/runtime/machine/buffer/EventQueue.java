@@ -2,11 +2,14 @@ package psym.runtime.machine.buffer;
 
 import java.io.Serializable;
 import java.util.function.Function;
+
+import psym.runtime.logger.ScheduleWriter;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Scheduler;
+import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.valuesummary.*;
 
 public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, Serializable {
@@ -26,6 +29,9 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
     }
     TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
     Message event = new Message(eventName, dest, payload).restrict(pc);
+    if (sender.getScheduler() instanceof ReplayScheduler) {
+      ScheduleWriter.logSend(sender, event);
+    }
     enqueue(event);
     sender.getScheduler().runMonitors(event);
   }
@@ -39,6 +45,9 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
     PrimitiveVS<Machine> machine = scheduler.allocateMachine(pc, machineType, constructor);
     if (payload != null) payload = payload.restrict(pc);
     Message event = new Message(Event.createMachine, machine, payload).restrict(pc);
+    if (sender.getScheduler() instanceof ReplayScheduler) {
+      ScheduleWriter.logSend(sender, event);
+    }
     enqueue(event);
     //        scheduler.performEffect(event);
     return machine;

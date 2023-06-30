@@ -205,11 +205,15 @@ public class EntryPoint {
   private static void replay(ReplayScheduler replayScheduler)
       throws RuntimeException, TimeoutException {
     try {
+      ScheduleWriter.Initialize(configuration.getProjectName(), configuration.getOutputFolder());
       replayScheduler.doSearch();
       status = "error";
       throw new RuntimeException("ERROR: Failed to replay counterexample");
     } catch (BugFoundException e) {
       e.printStackTrace(System.out);
+      PSymLogger.info("Checker found a bug.");
+      PSymLogger.info("... Emitting traces:");
+      PSymLogger.info(String.format("..... Writing %s", ScheduleWriter.getFileName()));
       throw new BugFoundException(
           "Found bug: " + e.getLocalizedMessage(),
           replayScheduler.getPathConstraint(),

@@ -12,6 +12,7 @@ import psym.commandline.PSymConfiguration;
 import psym.runtime.GlobalData;
 import psym.runtime.Program;
 import psym.runtime.logger.PSymLogger;
+import psym.runtime.logger.ScheduleWriter;
 import psym.runtime.logger.SearchLogger;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
@@ -85,6 +86,7 @@ public class ReplayScheduler extends Scheduler {
   @Override
   public void doSearch() throws TimeoutException {
     TraceLogger.logStartReplayCex(cexLength);
+    ScheduleWriter.logHeader(configuration);
     initializeSearch();
     performSearch();
     checkLiveness(isLivenessBug);
@@ -182,6 +184,9 @@ public class ReplayScheduler extends Scheduler {
   @Override
   public PrimitiveVS<Boolean> getNextBoolean(Guard pc) {
     PrimitiveVS<Boolean> res = schedule.getRepeatBool(choiceDepth);
+    List<GuardedValue<Boolean>> gv = res.getGuardedValues();
+    assert (gv.size() == 1);
+    ScheduleWriter.logBoolean(gv.get(0).getValue());
     choiceDepth++;
     return res;
   }
@@ -189,6 +194,9 @@ public class ReplayScheduler extends Scheduler {
   @Override
   public PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc) {
     PrimitiveVS<Integer> res = schedule.getRepeatInt(choiceDepth);
+    List<GuardedValue<Integer>> gv = res.getGuardedValues();
+    assert (gv.size() == 1);
+    ScheduleWriter.logInteger(gv.get(0).getValue());
     choiceDepth++;
     return res;
   }
@@ -196,6 +204,9 @@ public class ReplayScheduler extends Scheduler {
   @Override
   public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
     ValueSummary res = getNextElementFlattener(schedule.getRepeatElement(choiceDepth));
+    List<GuardedValue<?>> gv = ValueSummary.getGuardedValues(res);
+    assert (gv.size() == 1);
+    ScheduleWriter.logElement(gv.get(0).getValue());
     choiceDepth++;
     return res;
   }
@@ -243,6 +254,15 @@ public class ReplayScheduler extends Scheduler {
   @Override
   public boolean isDone() {
     return super.isDone() || this.getChoiceDepth() >= schedule.size();
+  }
+
+  @Override
+  public void performEffect(Message event) {
+    for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
+      target
+              .getValue()
+              .processEventToCompletion(target.getGuard(), event.restrict(target.getGuard()));
+    }
   }
 
   @Override

@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.*;
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import psym.runtime.logger.ScheduleWriter;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.buffer.DeferQueue;
 import psym.runtime.machine.buffer.EventBuffer;
@@ -14,6 +15,7 @@ import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Scheduler;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
+import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.utils.Assert;
 import psym.utils.serialize.SerializableBiFunction;
 import psym.utils.serialize.SerializableFunction;
@@ -21,7 +23,7 @@ import psym.utils.serialize.SerializableRunnable;
 import psym.valuesummary.*;
 
 public abstract class Machine implements Serializable, Comparable<Machine> {
-  private static int numMachines = 0;
+  private static int globalMachineId = 2;
   public final DeferQueue deferredQueue;
   public final Map<
           String,
@@ -50,7 +52,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   public Machine(String name, int id, State startState, State... states) {
     this.name = name;
     //        this.instanceId = id;
-    this.instanceId = numMachines++;
+    this.instanceId = globalMachineId++;
 
     EventBuffer buffer;
     buffer = new EventQueue(this);
@@ -311,6 +313,10 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   void processEvent(Guard pc, EventHandlerReturnReason eventHandlerReturnReason, Message message) {
     // assert(event.getMachine().guard(pc).getValues().size() <= 1);
     TraceLogger.onProcessEvent(pc, this, message);
+    if (scheduler instanceof ReplayScheduler) {
+      ScheduleWriter.logReceive(message);
+    }
+
     PrimitiveVS<State> guardedState = this.currentState.restrict(pc);
     for (GuardedValue<State> entry : guardedState.getGuardedValues()) {
       Guard state_pc = entry.getGuard();

@@ -93,10 +93,8 @@ public class PSym {
         config.getVerbosity(), config.getProjectName(), config.getOutputFolder());
     SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
     GlobalData.initializeSymmetryTracker(config.isSymbolic());
-    SolverStats.setTimeLimit(config.getTimeLimit());
-    SolverStats.setMemLimit(config.getMemLimit());
-    MemoryMonitor.setup();
     RandomNumberGenerator.setup(config.getRandomSeed());
+    MemoryMonitor.setup(config.getMemLimit());
     TimeMonitor.setup(config.getTimeLimit());
   }
 

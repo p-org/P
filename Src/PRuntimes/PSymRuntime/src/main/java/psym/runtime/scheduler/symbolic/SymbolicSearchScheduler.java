@@ -114,7 +114,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
       return;
     }
 
-    TimeMonitor.getInstance().checkTimeout();
+    SolverStats.checkResourceLimits();
 
     Message effect = null;
     List<Message> effects = new ArrayList<>();
@@ -170,7 +170,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     //        SolverEngine.switchEngineAuto();
 
     double memoryUsed = MemoryMonitor.getMemSpent();
-    if (memoryUsed > (0.8 * SolverStats.memLimit)) {
+    if (memoryUsed > (0.8 * MemoryMonitor.getMemLimit())) {
       cleanup();
     }
     SolverStats.checkResourceLimits();

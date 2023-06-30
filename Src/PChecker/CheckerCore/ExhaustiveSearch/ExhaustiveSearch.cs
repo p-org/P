@@ -2,8 +2,13 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using PChecker.IO.Debugging;
 using PChecker.IO.Logging;
+using PChecker.SystematicTesting;
+using PChecker.Utilities;
+using Debug = System.Diagnostics.Debug;
 
 namespace PChecker.ExhaustiveSearch
 {
@@ -24,6 +29,11 @@ namespace PChecker.ExhaustiveSearch
         private TextWriter Logger;
 
         /// <summary>
+        /// The testing task cancellation token source.
+        /// </summary>
+        private readonly CancellationTokenSource CancellationTokenSource;
+
+        /// <summary>
         /// Creates a new exhaustive engine.
         /// </summary>
         public static ExhaustiveEngine Create(CheckerConfiguration checkerConfiguration)
@@ -37,14 +47,14 @@ namespace PChecker.ExhaustiveSearch
         private ExhaustiveEngine(CheckerConfiguration checkerConfiguration)
         {
             _checkerConfiguration = checkerConfiguration;
-
             Logger = new ConsoleLogger();
+            CancellationTokenSource = new CancellationTokenSource();
         }
 
         /// <summary>
         /// Run a shell command in the active directory.
         /// </summary>
-        private static int RunCommand(string activeDirectory, string exeName, string arguments)
+        private void RunCommand(string activeDirectory, string exeName, string arguments)
         {
             var psi = new ProcessStartInfo(exeName)
             {
@@ -54,10 +64,64 @@ namespace PChecker.ExhaustiveSearch
                 Arguments = arguments
             };
 
-            var proc = new Process { StartInfo = psi };
-            proc.Start();
-            proc.WaitForExit();
-            return proc.ExitCode;
+            Process proc = null;
+            Task task = null;
+            try
+            {
+                if (_checkerConfiguration.Timeout > 0)
+                {
+                    CancellationTokenSource.CancelAfter(
+                        (_checkerConfiguration.Timeout + 30) * 1000);
+                }
+
+                if (!CancellationTokenSource.IsCancellationRequested)
+                {
+                    proc = new Process { StartInfo = psi };
+                    proc.Start();
+                    task = proc.WaitForExitAsync(CancellationTokenSource.Token);
+                    task.Wait(CancellationTokenSource.Token);
+
+                    switch (proc.ExitCode)
+                    {
+                        case 0:
+                            Logger.WriteLine($"... Checker run finished.");
+                            break;
+                        case 2:
+                            Logger.WriteLine($"... Checker found a bug.");
+                            break;
+                        case 3:
+                            Logger.WriteLine($"... Checker timed out.");
+                            break;
+                        case 4:
+                            Logger.WriteLine($"... Checker ran out of memory.");
+                            break;
+                        default:
+                            Logger.WriteLine($"... Checker run exited with code {proc.ExitCode}.");
+                            break;
+                    }
+                }
+            }
+            catch (OperationCanceledException ex)
+            {
+                if (CancellationTokenSource.IsCancellationRequested)
+                {
+                    Logger.WriteLine($"... Checker forced timed out.");
+                    Error.Report($"{ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine($"... Checker failed due to an internal error: {ex}");
+                Error.Report($"{ex.Message}");
+            }
+            finally
+            {
+                proc?.Kill();
+                proc?.WaitForExit();
+                task?.Dispose();
+                Debug.Assert(proc?.ExitCode != null, "proc?.ExitCode != null");
+                Environment.Exit((int)proc?.ExitCode);
+            }
         }
 
         /// <summary>
@@ -128,19 +192,9 @@ namespace PChecker.ExhaustiveSearch
             }
             
             arguments.Append($"{_checkerConfiguration.PSymArgs} ");
-            
-            int exitCode = -1;
-            exitCode = RunCommand(Directory.GetCurrentDirectory(), "java", arguments.ToString());
-            
-            if (exitCode != 0)
-            {
-                Error.Report($"Checker run exited with code {exitCode}.");
-                Environment.Exit(exitCode);
-            }
-            else
-            {
-                Logger.WriteLine($"... Checker run finished.");
-            }
+
+            RunCommand(Directory.GetCurrentDirectory(), "java", arguments.ToString());
+
         }
     }
 }

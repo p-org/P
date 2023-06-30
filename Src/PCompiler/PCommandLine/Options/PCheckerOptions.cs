@@ -286,7 +286,7 @@ namespace Plang.Options
 
             if (checkerConfiguration.MaxFairSchedulingSteps < checkerConfiguration.MaxUnfairSchedulingSteps)
             {
-                Error.CheckerReportAndExit("For the option '-max-steps N[,M]', please make sure that M >= N.");
+                Error.CheckerReportAndExit("For the option '--max-steps N[,M]', please make sure that M >= N.");
             }
         }
         

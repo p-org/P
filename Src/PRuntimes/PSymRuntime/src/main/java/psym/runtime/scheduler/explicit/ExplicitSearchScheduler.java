@@ -251,7 +251,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       return;
     }
 
-    TimeMonitor.getInstance().checkTimeout();
+    SolverStats.checkResourceLimits();
 
     if (configuration.isChoiceOrchestrationLearning()) {
       GlobalData.getChoiceLearningStats()

@@ -257,15 +257,6 @@ public class ReplayScheduler extends Scheduler {
   }
 
   @Override
-  public void performEffect(Message event) {
-    for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
-      target
-              .getValue()
-              .processEventToCompletion(target.getGuard(), event.restrict(target.getGuard()));
-    }
-  }
-
-  @Override
   public boolean isFinishedExecution() {
     return super.isFinishedExecution() || this.getChoiceDepth() >= schedule.size();
   }

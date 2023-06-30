@@ -221,23 +221,30 @@ namespace PChecker.Actors.EventQueues.Mocks
                     continue;
                 }
 
-                // Skips a deferred event.
-                if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
+                if (currentEvent.e.Timestamp <= GetTime())
                 {
-                    nextAvailableEvent = currentEvent;
-                    isDelayed = false;
-                    if (nextAvailableEvent.Item1.Timestamp > Time)
+                    if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
                     {
+                        nextAvailableEvent = currentEvent;
+                        isDelayed = false;
+
+                        if (!checkOnly)
+                        {
+                            Queue.Remove(node);
+                        }
+
+                        break;
+                    }
+                }
+
+                // TODO: If we end up returning timestamp of a delayed event, we need to find the event with min timestamp.
+                if (currentEvent.e.Timestamp > GetTime())
+                {
+                    if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
+                    {
+                        nextAvailableEvent = currentEvent;
                         isDelayed = true;
-                        node = nextNode;
-                        continue;
                     }
-                    
-                    if (!checkOnly)
-                    {
-                        Queue.Remove(node);
-                    }
-                    break;
                 }
 
                 node = nextNode;

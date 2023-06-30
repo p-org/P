@@ -184,9 +184,7 @@ public class ReplayScheduler extends Scheduler {
   @Override
   public PrimitiveVS<Boolean> getNextBoolean(Guard pc) {
     PrimitiveVS<Boolean> res = schedule.getRepeatBool(choiceDepth);
-    List<GuardedValue<Boolean>> gv = res.getGuardedValues();
-    assert (gv.size() == 1);
-    ScheduleWriter.logBoolean(gv.get(0).getValue());
+    ScheduleWriter.logBoolean(res);
     choiceDepth++;
     return res;
   }
@@ -194,9 +192,7 @@ public class ReplayScheduler extends Scheduler {
   @Override
   public PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc) {
     PrimitiveVS<Integer> res = schedule.getRepeatInt(choiceDepth);
-    List<GuardedValue<Integer>> gv = res.getGuardedValues();
-    assert (gv.size() == 1);
-    ScheduleWriter.logInteger(gv.get(0).getValue());
+    ScheduleWriter.logInteger(res);
     choiceDepth++;
     return res;
   }
@@ -206,7 +202,7 @@ public class ReplayScheduler extends Scheduler {
     ValueSummary res = getNextElementFlattener(schedule.getRepeatElement(choiceDepth));
     List<GuardedValue<?>> gv = ValueSummary.getGuardedValues(res);
     assert (gv.size() == 1);
-    ScheduleWriter.logElement(gv.get(0).getValue());
+    ScheduleWriter.logElement(res);
     choiceDepth++;
     return res;
   }

@@ -6,6 +6,8 @@ import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.valuesummary.GuardedValue;
+import psym.valuesummary.PrimitiveVS;
+import psym.valuesummary.ValueSummary;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,24 +32,30 @@ public class ScheduleWriter {
         }
     }
 
-    public static void log(String value) {
+    private static void log(String value) {
         log.println(value);
         log.flush();
     }
 
-    public static void logBoolean(Boolean value) {
+    public static void logBoolean(PrimitiveVS<Boolean> res) {
+        List<GuardedValue<Boolean>> gv = res.getGuardedValues();
+        assert (gv.size() == 1);
         log("// boolean choice");
-        log(value ? "True" : "False");
+        log(gv.get(0).getValue() ? "True" : "False");
     }
 
-    public static void logInteger(Integer value) {
+    public static void logInteger(PrimitiveVS<Integer> res) {
+        List<GuardedValue<Integer>> gv = res.getGuardedValues();
+        assert (gv.size() == 1);
         log("// integer choice");
-        log(value.toString());
+        log(gv.get(0).getValue().toString());
     }
 
-    public static void logElement(Object value) {
+    public static void logElement(ValueSummary res) {
+        List<GuardedValue<?>> gv = ValueSummary.getGuardedValues(res);
+        assert (gv.size() == 1);
         log("// element choice");
-        log(value.toString());
+        log(gv.get(0).getValue().toString());
     }
 
     public static void logSend(Machine sender, Message msg) {

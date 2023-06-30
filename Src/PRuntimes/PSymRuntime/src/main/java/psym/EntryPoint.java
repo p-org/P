@@ -108,17 +108,18 @@ public class EntryPoint {
     if (printStats) {
       print_stats();
     }
-    if (configuration.isSymbolic()) {
-      PSymLogger.finishedSymbolic(
-          Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(),
-          scheduler.result);
-    } else {
+    if (scheduler instanceof ExplicitSearchScheduler) {
       ExplicitSearchScheduler explicitSearchScheduler = (ExplicitSearchScheduler) scheduler;
       PSymLogger.finishedExplicit(
-          explicitSearchScheduler.getIter(),
-          explicitSearchScheduler.getIter() - explicitSearchScheduler.getStart_iter(),
-          Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(),
-          scheduler.result);
+              explicitSearchScheduler.getIter(),
+              explicitSearchScheduler.getIter() - explicitSearchScheduler.getStart_iter(),
+              Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(),
+              scheduler.result);
+    } else {
+      assert (scheduler instanceof SymbolicSearchScheduler);
+      PSymLogger.finishedSymbolic(
+              Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(),
+              scheduler.result);
     }
   }
 

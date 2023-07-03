@@ -536,9 +536,10 @@ namespace PChecker.SystematicTesting
                 Assert = options?.Assert ?? -1
             };
 
+            var enqueueStatus = actor.Enqueue(e, opGroupId, eventInfo);
             LogWriter.LogSendEvent(actor.Id, sender?.Id.Name, sender?.Id.Type, stateName,
                 e, opGroupId, isTargetHalted: false);
-            return actor.Enqueue(e, opGroupId, eventInfo);
+            return enqueueStatus;
         }
 
         /// <summary>

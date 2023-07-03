@@ -446,7 +446,7 @@ namespace PChecker.Actors
             var (status, e, _, _) = Inbox.Dequeue(true);
             if (status is DequeueStatus.Delayed)
             {
-                return e.Timestamp;
+                return e.DequeueTime;
             }
             return -1; // This means that the event is not delayed
         }

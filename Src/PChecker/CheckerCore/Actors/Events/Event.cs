@@ -11,6 +11,7 @@ namespace PChecker.Actors.Events
     [DataContract]
     public abstract class Event
     {
-        public double Timestamp = 0;
+        public double EnqueueTime = 0;
+        public double DequeueTime = 0;
     }
 }

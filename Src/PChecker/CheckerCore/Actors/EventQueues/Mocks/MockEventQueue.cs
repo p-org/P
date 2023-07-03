@@ -92,11 +92,12 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <inheritdoc/>
         public EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
         {
-            e.Timestamp = GetTime();
+            e.EnqueueTime = GetTime();
+            e.DequeueTime = e.EnqueueTime;
             if (TestingEngine.Strategy.GetSampleFromDistribution("DiscreteUniform(1, 20)", out var delay))
             {
-                e.Timestamp += delay;
-                ScheduledTimestamps.Add(e.Timestamp);
+                e.DequeueTime += delay;
+                ScheduledTimestamps.Add(e.DequeueTime);
             }
             if (IsClosed)
             {
@@ -221,7 +222,7 @@ namespace PChecker.Actors.EventQueues.Mocks
                     continue;
                 }
 
-                if (currentEvent.e.Timestamp <= GetTime())
+                if (currentEvent.e.DequeueTime <= GetTime())
                 {
                     if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
                     {
@@ -238,11 +239,11 @@ namespace PChecker.Actors.EventQueues.Mocks
                 }
 
                 // TODO: If we end up returning timestamp of a delayed event, we need to find the event with min timestamp.
-                if (currentEvent.e.Timestamp > GetTime())
+                if (currentEvent.e.DequeueTime > GetTime())
                 {
                     if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
                     {
-                        if (nextAvailableEvent == default || nextAvailableEvent.Item1.Timestamp > currentEvent.e.Timestamp)
+                        if (nextAvailableEvent == default || nextAvailableEvent.Item1.DequeueTime > currentEvent.e.DequeueTime)
                         {
                             nextAvailableEvent = currentEvent;
                             isDelayed = true;

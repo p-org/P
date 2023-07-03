@@ -41,7 +41,7 @@ namespace PChecker.IO.Logging
         /// <param name="e">The event being sent.</param>
         public void OnSendEvent(ActorId targetActorId, string senderName, string senderState, Event e)
         {
-            InMemoryLogger.WriteLine(MockEventQueue.GetTime() + ",Send," + e + "," + senderName + "," + senderState + "," + targetActorId);
+            InMemoryLogger.WriteLine(e.EnqueueTime + ",Send," + e + "," + senderName + "," + senderState + "," + targetActorId);
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace PChecker.IO.Logging
         /// <param name="e">The event being dequeued.</param>
         public void OnDequeueEvent(ActorId id, string stateName, Event e)
         {
-            InMemoryLogger.WriteLine(MockEventQueue.GetTime() + ",Dequeue," + e + "," + id + "," + stateName + ",null");
+            InMemoryLogger.WriteLine(e.DequeueTime + ",Dequeue," + e + "," + id + "," + stateName + ",null");
         }
 
         /// <summary>

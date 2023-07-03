@@ -92,7 +92,7 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <inheritdoc/>
         public EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
         {
-            e.Timestamp = Time;
+            e.Timestamp = GetTime();
             if (TestingEngine.Strategy.GetSampleFromDistribution("DiscreteUniform(1, 20)", out var delay))
             {
                 e.Timestamp += delay;

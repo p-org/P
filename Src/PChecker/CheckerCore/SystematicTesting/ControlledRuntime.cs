@@ -68,7 +68,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal readonly int? RootTaskId;
 
-        public ConcurrentBag<Actor> DelayedActors;
+        public List<Actor> Actors;
 
         /// <summary>
         /// Returns the current hashed state of the monitors.
@@ -149,7 +149,7 @@ namespace PChecker.SystematicTesting
             Scheduler = new OperationScheduler(this, strategy, scheduleTrace, CheckerConfiguration);
             TaskController = new TaskController(this, Scheduler);
 
-            DelayedActors = new ConcurrentBag<Actor>();
+            Actors = new List<Actor>();
 
             // Update the current asynchronous control flow with this runtime instance,
             // allowing future retrieval in the same asynchronous call stack.
@@ -302,6 +302,10 @@ namespace PChecker.SystematicTesting
             AssertExpectedCallerActor(creator, "CreateActor");
 
             var actor = CreateActor(id, type, name, creator, opGroupId);
+            lock (Actors)
+            {
+                Actors.Add(actor);
+            }
             RunActorEventHandler(actor, initialEvent, true, null);
             return actor.Id;
         }
@@ -427,7 +431,10 @@ namespace PChecker.SystematicTesting
             var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, options, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {
-                RunActorEventHandler(target, null, false, null);
+                if (target.ScheduledDelayedTimestamp == -1)
+                {
+                    RunActorEventHandler(target, null, false, null);
+                }
             }
         }
 
@@ -575,18 +582,7 @@ namespace PChecker.SystematicTesting
 
                     Debug.WriteLine("<ScheduleDebug> Completed operation {0} on task '{1}'.", actor.Id, Task.CurrentId);
 
-                    if (actor.IsDelayed)
-                    {
-                        lock (DelayedActors)
-                        {
-                            DelayedActors.Add(actor);
-                        }
-                    }
-
                     op.OnCompleted();
-
-                    // The actor is inactive or halted, schedule the next enabled operation.
-                    Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
                 }
                 catch (Exception ex)
                 {
@@ -602,28 +598,44 @@ namespace PChecker.SystematicTesting
 
         public void RunDelayedActorHandlers()
         {
-            lock (DelayedActors)
+            List<Actor> actorsToRun = null;
+            lock (Actors)
             {
-                if (DelayedActors.Count > 0)
+                if (Scheduler.IsAllOperationsCompleted() && !Actors.Any(a => a.ScheduledDelayedTimestamp == MockEventQueue.GetTime()))
                 {
-                    if (Scheduler.IncrementTime())
+                    var delayedActors = Actors.Where(a => a.ScheduledDelayedTimestamp > MockEventQueue.GetTime());
+                    if (delayedActors.Any())
                     {
-                        var operationId = GetNextOperationId();
-                        if (Task.CurrentId != null)
+                        var minTimestamp = delayedActors.Min(a => a.ScheduledDelayedTimestamp);
+                        actorsToRun = Actors.Where(a => a.ScheduledDelayedTimestamp == minTimestamp).ToList();
+                        foreach (var actor in actorsToRun)
                         {
-                            var taskOperation = new TaskOperation(operationId, Scheduler);
-                            Scheduler.ScheduleOperation(taskOperation, (int)Task.CurrentId);
+                            // Associated operations of each actor should be enabled inside this lock so that another
+                            // instance of this task does not increment the time before running the actors.
+                            var op = Scheduler.GetOperationWithId<ActorOperation>(actor.Id.Value);
+                            op.OnEnabled();
                         }
-                        foreach (var actor in DelayedActors)
-                        {
-                            // TODO: Only run necessary actors, not all of them. This seems to cause a deadlock!
-                            RunActorEventHandler(actor, null, false, null);
-                        }
-                        DelayedActors.Clear();
-                        Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Default);
+                        MockEventQueue.SetTime(minTimestamp);
                     }
                 }
             }
+
+            if (actorsToRun != null)
+            {
+                var operationId = GetNextOperationId();
+                if (Task.CurrentId != null)
+                {
+                    var taskOperation = new TaskOperation(operationId, Scheduler);
+                    Scheduler.ScheduleOperation(taskOperation, (int)Task.CurrentId);
+                }
+
+                foreach (var actor in actorsToRun)
+                {
+                    RunActorEventHandler(actor, null, false, null);
+                }
+            }
+            // The actor is inactive or halted, schedule the next enabled operation.
+            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
         }
 
         /// <summary>

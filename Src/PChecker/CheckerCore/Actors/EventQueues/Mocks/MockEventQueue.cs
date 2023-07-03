@@ -169,7 +169,7 @@ namespace PChecker.Actors.EventQueues.Mocks
             var ((e, opGroupId, info), isDelayed) = TryDequeueEvent(checkOnly);
             if (isDelayed)
             {
-                return (DequeueStatus.Delayed, null, Guid.Empty, null);
+                return (DequeueStatus.Delayed, e, Guid.Empty, null);
             }
 
             if (e != null)
@@ -242,8 +242,11 @@ namespace PChecker.Actors.EventQueues.Mocks
                 {
                     if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
                     {
-                        nextAvailableEvent = currentEvent;
-                        isDelayed = true;
+                        if (nextAvailableEvent == default || nextAvailableEvent.Item1.Timestamp > currentEvent.e.Timestamp)
+                        {
+                            nextAvailableEvent = currentEvent;
+                            isDelayed = true;
+                        }
                     }
                 }
 

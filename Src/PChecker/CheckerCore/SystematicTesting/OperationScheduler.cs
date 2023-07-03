@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using PChecker.Actors;
 using PChecker.Actors.EventQueues.Mocks;
 using PChecker.Exceptions;
 using PChecker.SystematicTesting.Operations;
@@ -108,25 +109,10 @@ namespace PChecker.SystematicTesting
             PreviousPulseAllTime = 0;
         }
 
-        internal bool IncrementTime()
+        internal bool IsAllOperationsCompleted()
         {
             var ops = OperationMap.Values.OrderBy(op => op.Id);
-            if (!ops.Any(op => op.Status is AsyncOperationStatus.Enabled))
-            {
-                double time = MockEventQueue.GetTime();
-                var futureScheduledTimestamps = MockEventQueue.ScheduledTimestamps.Where(t => t > time).ToList();
-                if (futureScheduledTimestamps.Any())
-                {
-                    MockEventQueue.SetTime(futureScheduledTimestamps.Min());
-                    foreach (var op in ops.Where(op => op.Status is AsyncOperationStatus.Delayed))
-                    {
-                        // TODO: Enable only necessary ones if possible. If not possible, it should still be ok.
-                        op.OnEnabled();
-                    }
-                }
-                return true;
-            }
-            return false;
+            return ops.All(op => op.Status is AsyncOperationStatus.Completed);
         }
 
         /// <summary>
@@ -189,10 +175,12 @@ namespace PChecker.SystematicTesting
 
             if (!Strategy.GetNextOperation(current, ops, out var next))
             {
-                if (Runtime.DelayedActors.Count > 0)
+                lock (Runtime.Actors)
                 {
-                    // TODO: Check if this is the correct thing to do. It seems to work.
-                    return;
+                    if (Runtime.Actors.Any(actor => actor.ScheduledDelayedTimestamp != -1))
+                    {
+                        return;
+                    }
                 }
 
                 // Checks if the program has deadlocked.
@@ -208,7 +196,6 @@ namespace PChecker.SystematicTesting
                     throw new ExecutionCanceledException();
                 }
             }
-
             ScheduledOperation = next as AsyncOperation;
             ScheduleTrace.AddSchedulingChoice(next.Id);
 

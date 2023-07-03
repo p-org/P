@@ -68,7 +68,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal readonly int? RootTaskId;
 
-        public List<Actor> Actors;
+        public readonly List<Actor> Actors;
 
         /// <summary>
         /// Returns the current hashed state of the monitors.
@@ -583,6 +583,11 @@ namespace PChecker.SystematicTesting
                     Debug.WriteLine("<ScheduleDebug> Completed operation {0} on task '{1}'.", actor.Id, Task.CurrentId);
 
                     op.OnCompleted();
+
+                    RunDelayedActorEventHandlers();
+
+                    // The actor is inactive or halted, schedule the next enabled operation.
+                    Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
                 }
                 catch (Exception ex)
                 {
@@ -592,11 +597,10 @@ namespace PChecker.SystematicTesting
 
             Scheduler.ScheduleOperation(op, task.Id);
             task.Start();
-            task.ContinueWith(t => RunDelayedActorHandlers());
             Scheduler.WaitOperationStart(op);
         }
 
-        public void RunDelayedActorHandlers()
+        private void RunDelayedActorEventHandlers()
         {
             List<Actor> actorsToRun = null;
             lock (Actors)
@@ -622,20 +626,11 @@ namespace PChecker.SystematicTesting
 
             if (actorsToRun != null)
             {
-                var operationId = GetNextOperationId();
-                if (Task.CurrentId != null)
-                {
-                    var taskOperation = new TaskOperation(operationId, Scheduler);
-                    Scheduler.ScheduleOperation(taskOperation, (int)Task.CurrentId);
-                }
-
                 foreach (var actor in actorsToRun)
                 {
                     RunActorEventHandler(actor, null, false, null);
                 }
             }
-            // The actor is inactive or halted, schedule the next enabled operation.
-            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
         }
 
         /// <summary>

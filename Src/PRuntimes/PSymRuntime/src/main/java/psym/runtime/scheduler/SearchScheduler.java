@@ -103,24 +103,6 @@ public abstract class SearchScheduler extends Scheduler {
   }
 
   @Override
-  public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
-    int depth = choiceDepth;
-    PrimitiveVS<ValueSummary> res =
-        getNext(
-            depth,
-            schedule::getRepeatElement,
-            schedule::getBacktrackElement,
-            schedule::clearBacktrack,
-            schedule::addRepeatElement,
-            schedule::addBacktrackElement,
-            () -> super.getNextElementChoices(candidates, pc),
-            super::getNextElementHelper,
-            true);
-    choiceDepth = depth + 1;
-    return super.getNextElementFlattener(res);
-  }
-
-  @Override
   public PrimitiveVS<Machine> allocateMachine(
       Guard pc,
       Class<? extends Machine> machineType,

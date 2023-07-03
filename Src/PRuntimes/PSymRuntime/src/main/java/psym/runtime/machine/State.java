@@ -3,13 +3,16 @@ package psym.runtime.machine;
 import java.io.Serializable;
 import java.util.Objects;
 import psym.runtime.GlobalData;
+import psym.runtime.logger.ScheduleWriter;
 import psym.runtime.logger.TraceLogger;
+import psym.runtime.machine.eventhandlers.DeferEventHandler;
 import psym.runtime.machine.eventhandlers.EventHandler;
 import psym.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psym.runtime.machine.eventhandlers.IgnoreEventHandler;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.runtime.machine.events.StateEvents;
+import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.utils.Assert;
 import psym.valuesummary.*;
 import psym.valuesummary.util.ValueSummaryChecks;
@@ -49,12 +52,18 @@ public abstract class State implements Serializable {
       getStateEvents().eventHandlers.put(handler.event, handler);
       if (handler instanceof IgnoreEventHandler) {
         getStateEvents().ignored.add(handler.event);
+      } else if (handler instanceof DeferEventHandler) {
+        getStateEvents().deferred.add(handler.event);
       }
     }
   }
 
   public Boolean isIgnored(Event event) {
     return getStateEvents().ignored.contains(event);
+  }
+
+  public Boolean isDeferred(Event event) {
+    return getStateEvents().deferred.contains(event);
   }
 
   public PrimitiveVS<Boolean> hasHandler(Message message) {
@@ -74,6 +83,10 @@ public abstract class State implements Serializable {
       assert (message.restrict(eventPc).getEvent().getGuardedValues().size() == 1);
       PrimitiveVS<State> current = new PrimitiveVS<>(this).restrict(eventPc);
       TraceLogger.handle(machine, this, message.restrict(entry.getGuard()));
+      if (machine.getScheduler() instanceof ReplayScheduler) {
+        ScheduleWriter.logReceive(machine, this, event);
+      }
+
       Guard handledPc = Guard.constFalse();
       for (GuardedValue<State> guardedValue : current.getGuardedValues()) {
         if (guardedValue.getValue().getStateEvents().eventHandlers.containsKey(event)) {

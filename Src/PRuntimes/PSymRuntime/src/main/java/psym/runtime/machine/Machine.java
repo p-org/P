@@ -23,7 +23,7 @@ import psym.utils.serialize.SerializableRunnable;
 import psym.valuesummary.*;
 
 public abstract class Machine implements Serializable, Comparable<Machine> {
-  private static int globalMachineId = 2;
+  protected static int globalMachineId = 2;
   public final DeferQueue deferredQueue;
   public final Map<
           String,
@@ -31,8 +31,8 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
               Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>>
       continuations = new HashMap<>();
   public final Set<SerializableRunnable> clearContinuationVars = new HashSet<>();
-  @Getter private final String name;
-  @Getter private final int instanceId;
+  @Getter protected final String name;
+  @Getter protected int instanceId;
   private final State startState;
   private final Set<State> states;
   public EventBuffer sendBuffer;
@@ -313,9 +313,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   void processEvent(Guard pc, EventHandlerReturnReason eventHandlerReturnReason, Message message) {
     // assert(event.getMachine().guard(pc).getValues().size() <= 1);
     TraceLogger.onProcessEvent(pc, this, message);
-    if (scheduler instanceof ReplayScheduler) {
-      ScheduleWriter.logReceive(message);
-    }
 
     PrimitiveVS<State> guardedState = this.currentState.restrict(pc);
     for (GuardedValue<State> entry : guardedState.getGuardedValues()) {

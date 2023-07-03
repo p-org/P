@@ -198,16 +198,6 @@ public class ReplayScheduler extends Scheduler {
   }
 
   @Override
-  public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
-    ValueSummary res = getNextElementFlattener(schedule.getRepeatElement(choiceDepth));
-    List<GuardedValue<?>> gv = ValueSummary.getGuardedValues(res);
-    assert (gv.size() == 1);
-    ScheduleWriter.logElement(res);
-    choiceDepth++;
-    return res;
-  }
-
-  @Override
   public PrimitiveVS<Machine> allocateMachine(
       Guard pc,
       Class<? extends Machine> machineType,

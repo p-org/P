@@ -32,7 +32,7 @@ public class EventQueue extends SymbolicQueue implements EventBuffer, Serializab
     if (sender.getScheduler() instanceof ReplayScheduler) {
       ScheduleWriter.logSend(sender, event);
     }
-    enqueue(event);
+    addEvent(event);
     sender.getScheduler().runMonitors(event);
   }
 
@@ -48,7 +48,7 @@ public class EventQueue extends SymbolicQueue implements EventBuffer, Serializab
     if (sender.getScheduler() instanceof ReplayScheduler) {
       ScheduleWriter.logSend(sender, event);
     }
-    enqueue(event);
+    addEvent(event);
     //        scheduler.performEffect(event);
     return machine;
   }
@@ -60,14 +60,13 @@ public class EventQueue extends SymbolicQueue implements EventBuffer, Serializab
     }
   }
 
-  @Override
-  public void enqueue(Message event) {
+  private void addEvent(Message event) {
     if (sender.getScheduler().getConfiguration().isReceiverQueue()) {
       for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
-        target.getValue().getReceiverQueue().enqueue(event.restrict(target.getGuard()));
+        target.getValue().getReceiverQueue().add(event.restrict(target.getGuard()));
       }
     } else {
-      super.enqueue(event);
+      super.add(event);
     }
   }
 

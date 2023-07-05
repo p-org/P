@@ -341,7 +341,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     while (true) {
       Guard deferredPc = pc.and(deferredQueue.isEnabledUnderGuard());
       if (!deferredPc.isFalse()) {
-        Message deferredMessage = deferredQueue.dequeueEntry(deferredPc);
+        Message deferredMessage = deferredQueue.remove(deferredPc);
         deferredMessageGuards.add(deferredPc);
         deferredMessages.add(deferredMessage);
       } else {

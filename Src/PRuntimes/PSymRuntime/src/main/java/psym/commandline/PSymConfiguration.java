@@ -29,7 +29,7 @@ public class PSymConfiguration implements Serializable {
   // time limit in seconds (0 means infinite)
   @Getter @Setter double timeLimit = 0;
   // memory limit in megabytes (0 means infinite)
-  @Getter @Setter double memLimit = (Runtime.getRuntime().maxMemory() / 1024.0 / 1024.0);
+  @Getter @Setter double memLimit = (Runtime.getRuntime().maxMemory() / 2.0 / 1024.0 / 1024.0);
   // level of verbosity for the logging
   @Getter @Setter int verbosity = 0;
   // strategy of exploration

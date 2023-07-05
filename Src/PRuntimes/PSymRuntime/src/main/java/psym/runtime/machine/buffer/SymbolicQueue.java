@@ -35,20 +35,12 @@ public abstract class SymbolicQueue implements Serializable {
     return elements.restrict(pc).size();
   }
 
-  public void enqueue(Message entry) {
-    elements = elements.add(entry);
-  }
-
   public boolean isEmpty() {
     return elements.isEmpty();
   }
 
   public Guard isEnabledUnderGuard() {
     return elements.getNonEmptyUniverse();
-  }
-
-  public Message dequeueEntry(Guard pc) {
-    return peekOrDequeueHelper(pc, true);
   }
 
   public Message peek(Guard pc) {
@@ -75,7 +67,7 @@ public abstract class SymbolicQueue implements Serializable {
   }
 
   public void add(Message e) {
-    enqueue(e);
+    elements = elements.add(e);
   }
 
   public PrimitiveVS<Boolean> satisfiesPredUnderGuard(
@@ -87,7 +79,7 @@ public abstract class SymbolicQueue implements Serializable {
   }
 
   public Message remove(Guard pc) {
-    return dequeueEntry(pc);
+    return peekOrDequeueHelper(pc, true);
   }
 
   public PrimitiveVS<Boolean> hasCreateMachineUnderGuard() {

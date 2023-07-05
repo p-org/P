@@ -383,6 +383,9 @@ public class PSymOptions {
         case "timeout":
           try {
             config.setTimeLimit(Double.parseDouble(option.getValue()));
+            if (config.getMaxExecutions() == 1) {
+              config.setMaxExecutions(0);
+            }
           } catch (NumberFormatException ex) {
             optionError(
                 option, String.format("Expected a double value, got %s", option.getValue()));

@@ -18,6 +18,6 @@ public class DeferQueue extends SymbolicQueue implements Serializable {
    * @param event Event to be deferred
    */
   public void defer(Guard pc, Message event) {
-    enqueue(event.restrict(pc));
+    add(event.restrict(pc));
   }
 }

@@ -19,7 +19,7 @@ public class ReceiverQueue extends SymbolicQueue implements Serializable {
      * @param event Event to be deferred
      */
     public void receive(Guard pc, Message event) {
-        enqueue(event.restrict(pc));
+        add(event.restrict(pc));
     }
 }
 

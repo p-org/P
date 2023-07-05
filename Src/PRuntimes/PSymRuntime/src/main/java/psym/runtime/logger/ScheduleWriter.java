@@ -5,6 +5,7 @@ import psym.commandline.PSymConfiguration;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
+import psym.runtime.machine.buffer.EventQueue;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.valuesummary.GuardedValue;
@@ -58,32 +59,62 @@ public class ScheduleWriter {
         log(gv.get(0).getValue().toString());
     }
 
+    public static void logReceive(Machine target, State state, Event event) {
+        if (!(target instanceof Monitor)) {
+            if (!state.isIgnored(event) && !state.isDeferred(event)) {
+                logComment(String.format("receive %s at %s in state %s",
+                        event,
+                        target,
+                        state));
+                log(target.toString());
+            }
+        }
+    }
+
     public static void logSend(Machine sender, Message msg) {
         List<GuardedValue<Event>> eventGv = msg.getEvent().getGuardedValues();
         assert (eventGv.size() == 1);
+        Event event = eventGv.get(0).getValue();
+
         List<GuardedValue<Machine>> targetGv = msg.getTarget().getGuardedValues();
         assert (targetGv.size() == 1);
+        Machine target = targetGv.get(0).getValue();
+
+        List<GuardedValue<State>> senderStateGv = sender.getCurrentState().getGuardedValues();
+        assert (senderStateGv.size() == 1);
+        State senderState = senderStateGv.get(0).getValue();
+
+        List<GuardedValue<State>> targetStateGv = target.getCurrentState().getGuardedValues();
+        assert (targetStateGv.size() == 1);
+        State targetState = targetStateGv.get(0).getValue();
+
         if (!(sender instanceof Monitor)) {
             logComment(String.format("send %s from %s in state %s to %s in state %s",
-                    eventGv.get(0).getValue(),
+                    event,
                     sender,
-                    sender.getCurrentState().getGuardedValues().get(0).getValue(),
-                    targetGv.get(0).getValue(),
-                    targetGv.get(0).getValue().getCurrentState().getGuardedValues().get(0).getValue()));
+                    senderState,
+                    target,
+                    targetState));
             log(sender.toString());
         }
     }
 
-    public static void logReceive(Machine machine, State state, Event event) {
-        if (!(machine instanceof Monitor)) {
-          if (!state.isIgnored(event) && !state.isDeferred(event)) {
-              logComment(String.format("receive %s at %s in state %s",
-                      event,
-                      machine,
-                      machine.getCurrentState().getGuardedValues().get(0).getValue()));
-            log(machine.toString());
-          }
-        }
+    public static void logUnblock(Machine target, Message msg) {
+        List<GuardedValue<Event>> eventGv = msg.getEvent().getGuardedValues();
+        assert (eventGv.size() == 1);
+        Event event = eventGv.get(0).getValue();
+
+        List<GuardedValue<State>> targetStateGv = target.getCurrentState().getGuardedValues();
+        assert (targetStateGv.size() == 1);
+        State targetState = targetStateGv.get(0).getValue();
+
+        assert (!(target instanceof Monitor));
+
+        logComment(String.format("unblocked %s in state %s on receiving %s",
+                target,
+                targetState,
+                event));
+        log(target.toString());
     }
 
     public static void logHeader(PSymConfiguration config) {

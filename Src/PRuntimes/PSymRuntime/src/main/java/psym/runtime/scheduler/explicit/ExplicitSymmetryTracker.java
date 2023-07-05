@@ -115,7 +115,7 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
 
                 // get representative as first element of the class
                 Machine m = symSet.first();
-                assert (!m.sendBuffer.isEmpty());
+                assert (!m.getEventBuffer().isEmpty());
                 pendingSummaries.add(m);
               }
             }
@@ -129,7 +129,7 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
     }
 
     for (Machine m : pendingSummaries) {
-      assert (!m.sendBuffer.isEmpty());
+      assert (!m.getEventBuffer().isEmpty());
       reduced.add(new PrimitiveVS(Collections.singletonMap(m, Guard.constTrue())));
     }
 

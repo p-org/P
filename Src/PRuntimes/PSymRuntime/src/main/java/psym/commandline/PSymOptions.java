@@ -10,6 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import psym.runtime.GlobalData;
+import psym.runtime.machine.buffer.BufferSemantics;
 import psym.runtime.scheduler.explicit.StateCachingMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
@@ -183,6 +184,17 @@ public class PSymOptions {
     addOption(configFile);
 
     // Invisible/expert options
+
+    // buffer semantics
+    Option bufferSemantics =
+            Option.builder()
+                    .longOpt("buffer-type")
+                    .desc("Event buffer type: sender-queue, receiver-queue (default: receiver-queue)")
+                    .numberOfArgs(1)
+                    .hasArg()
+                    .argName("Buffer Type (string)")
+                    .build();
+    addHiddenOption(bufferSemantics);
 
     // whether or not to disable state caching
     Option stateCaching =
@@ -482,6 +494,20 @@ public class PSymOptions {
           readConfigFile(config, option.getValue(), option);
           break;
           // expert options
+        case "buffer-type":
+          switch (option.getValue()) {
+            case "sender-queue":
+              config.setBufferSemantics(BufferSemantics.SenderQueue);
+              break;
+            case "receiver-queue":
+              config.setBufferSemantics(BufferSemantics.ReceiverQueue);
+              break;
+            default:
+              optionError(
+                      option,
+                      String.format("Unrecognized buffer type, got %s", option.getValue()));
+          }
+          break;
         case "state-caching":
           switch (option.getValue()) {
             case "none":

@@ -48,18 +48,18 @@ public abstract class SearchScheduler extends Scheduler {
   public abstract void print_search_stats();
 
   @Override
-  public PrimitiveVS<Machine> getNextSender() {
+  public PrimitiveVS<Machine> getNextSchedulingChoice() {
     int depth = choiceDepth;
     PrimitiveVS<Machine> res =
         getNext(
             depth,
-            schedule::getRepeatSender,
-            schedule::getBacktrackSender,
+            schedule::getRepeatSchedulingChoice,
+            schedule::getBacktrackSchedulingChoice,
             schedule::clearBacktrack,
-            schedule::addRepeatSender,
-            schedule::addBacktrackSender,
-            this::getNextSenderChoices,
-            this::getNextSenderSummary,
+            schedule::addRepeatSchedulingChoice,
+            schedule::addBacktrackSchedulingChoice,
+            this::getNextSchedulingChoices,
+            this::getNextSchedulingChoiceSummary,
             false);
 
     choiceDepth = depth + 1;
@@ -170,19 +170,19 @@ public abstract class SearchScheduler extends Scheduler {
     StatWriter.logSolverStats();
   }
 
-  private PrimitiveVS<Machine> getNextSenderSummary(List<PrimitiveVS> candidateSenders) {
+  private PrimitiveVS<Machine> getNextSchedulingChoiceSummary(List<PrimitiveVS> candidates) {
     PrimitiveVS<Machine> choices =
-        (PrimitiveVS<Machine>) NondetUtil.getNondetChoice(candidateSenders);
-    schedule.addRepeatSender(choices, choiceDepth);
+        (PrimitiveVS<Machine>) NondetUtil.getNondetChoice(candidates);
+    schedule.addRepeatSchedulingChoice(choices, choiceDepth);
     choiceDepth++;
     return choices;
   }
 
-  protected List<PrimitiveVS> getNextSenderChoices() {
+  protected List<PrimitiveVS> getNextSchedulingChoices() {
     // prioritize the create actions
     for (Machine machine : machines) {
-      if (!machine.sendBuffer.isEmpty()) {
-        Guard initCond = machine.sendBuffer.hasCreateMachineUnderGuard().getGuardFor(true);
+      if (!machine.getEventBuffer().isEmpty()) {
+        Guard initCond = machine.getEventBuffer().hasCreateMachineUnderGuard().getGuardFor(true);
         if (!initCond.isFalse()) {
           PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(initCond);
           return new ArrayList<>(Collections.singletonList(ret));
@@ -192,8 +192,8 @@ public abstract class SearchScheduler extends Scheduler {
 
     // prioritize the sync actions i.e. events that are marked as synchronous
     for (Machine machine : machines) {
-      if (!machine.sendBuffer.isEmpty()) {
-        Guard syncCond = machine.sendBuffer.hasSyncEventUnderGuard().getGuardFor(true);
+      if (!machine.getEventBuffer().isEmpty()) {
+        Guard syncCond = machine.getEventBuffer().hasSyncEventUnderGuard().getGuardFor(true);
         if (!syncCond.isFalse()) {
           PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(syncCond);
           return new ArrayList<>(Collections.singletonList(ret));
@@ -205,9 +205,9 @@ public abstract class SearchScheduler extends Scheduler {
     List<GuardedValue<Machine>> guardedMachines = new ArrayList<>();
 
     for (Machine machine : machines) {
-      if (!machine.sendBuffer.isEmpty()) {
+      if (!machine.getEventBuffer().isEmpty()) {
         Guard canRun =
-            machine.sendBuffer.satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true);
+            machine.getEventBuffer().satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true);
         if (!canRun.isFalse()) {
           guardedMachines.add(new GuardedValue(machine, canRun));
         }
@@ -219,11 +219,11 @@ public abstract class SearchScheduler extends Scheduler {
             .map(x -> x.getGuard().and(schedule.getFilter()))
             .allMatch(x -> x.isFalse());
 
-    List<PrimitiveVS> candidateSenders = new ArrayList<>();
+    List<PrimitiveVS> candidates = new ArrayList<>();
     for (GuardedValue<Machine> guardedValue : guardedMachines) {
-      candidateSenders.add(
+      candidates.add(
           new PrimitiveVS<>(guardedValue.getValue()).restrict(guardedValue.getGuard()));
     }
-    return candidateSenders;
+    return candidates;
   }
 }

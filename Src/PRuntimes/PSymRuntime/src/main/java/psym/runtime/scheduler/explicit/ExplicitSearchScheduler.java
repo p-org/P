@@ -227,22 +227,11 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       schedule.setSchedulerSymmetry();
     }
 
-    // remove messages with halted target
-    for (Machine machine : machines) {
-      while (!machine.sendBuffer.isEmpty()) {
-        Guard targetHalted =
-            machine.sendBuffer.satisfiesPredUnderGuard(x -> x.targetHalted()).getGuardFor(true);
-        if (!targetHalted.isFalse()) {
-          rmBuffer(machine, targetHalted);
-          continue;
-        }
-        break;
-      }
-    }
+    removeHalted();
 
-    PrimitiveVS<Machine> choices = getNextSender();
+    PrimitiveVS<Machine> schedulingChoices = getNextSchedulingChoice();
 
-    if (choices.isEmptyVS()) {
+    if (schedulingChoices.isEmptyVS()) {
       done = true;
       SearchLogger.finishedExecution(depth);
     }
@@ -255,19 +244,19 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
     if (configuration.isChoiceOrchestrationLearning()) {
       GlobalData.getChoiceLearningStats()
-          .setProgramStateHash(this, configuration.getChoiceLearningStateMode(), choices);
+          .setProgramStateHash(this, configuration.getChoiceLearningStateMode(), schedulingChoices);
     }
 
     Message effect = null;
     List<Message> effects = new ArrayList<>();
 
     if (configuration.getSymmetryMode() != SymmetryMode.None) {
-      GlobalData.getSymmetryTracker().updateSymmetrySet(choices);
+      GlobalData.getSymmetryTracker().updateSymmetrySet(schedulingChoices);
     }
 
-    for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
-      Machine machine = sender.getValue();
-      Guard guard = sender.getGuard();
+    for (GuardedValue<Machine> schedulingChoice : schedulingChoices.getGuardedValues()) {
+      Machine machine = schedulingChoice.getValue();
+      Guard guard = schedulingChoice.getGuard();
       Message removed = rmBuffer(machine, guard);
 
       if (configuration.getSymmetryMode() == SymmetryMode.Full) {
@@ -301,7 +290,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       depth++;
     }
 
-    TraceLogger.schedule(depth, effect, choices);
+    TraceLogger.schedule(depth, effect);
 
     performEffect(effect);
 
@@ -645,14 +634,14 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   }
 
   @Override
-  public List<PrimitiveVS> getNextSenderChoices() {
-    List<PrimitiveVS> candidateSenders = super.getNextSenderChoices();
+  public List<PrimitiveVS> getNextSchedulingChoices() {
+    List<PrimitiveVS> candidates = super.getNextSchedulingChoices();
     if (configuration.getStateCachingMode() != StateCachingMode.None) {
       if (distinctStateGuard != null) {
-        candidateSenders = filterDistinct(candidateSenders);
+        candidates = filterDistinct(candidates);
       }
     }
-    return candidateSenders;
+    return candidates;
   }
 
   private void postIterationCleanup() {

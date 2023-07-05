@@ -94,7 +94,7 @@ public abstract class Scheduler implements SchedulerInterface {
 
   protected abstract void step() throws TimeoutException;
 
-  public abstract PrimitiveVS<Machine> getNextSender();
+  public abstract PrimitiveVS<Machine> getNextSchedulingChoice();
 
   /**
    * Find out whether symbolic execution is done
@@ -280,12 +280,23 @@ public abstract class Scheduler implements SchedulerInterface {
     }
   }
 
-  private Message peekBuffer(Machine m, Guard g) {
-    return m.sendBuffer.peek(g);
+  protected Message rmBuffer(Machine m, Guard g) {
+    return m.getEventBuffer().remove(g);
   }
 
-  protected Message rmBuffer(Machine m, Guard g) {
-    return m.sendBuffer.remove(g);
+  protected void removeHalted() {
+    // remove messages with halted target
+    for (Machine machine : machines) {
+      while (!machine.getEventBuffer().isEmpty()) {
+        Guard targetHalted =
+                machine.getEventBuffer().satisfiesPredUnderGuard(x -> x.targetHalted()).getGuardFor(true);
+        if (!targetHalted.isFalse()) {
+          rmBuffer(machine, targetHalted);
+          continue;
+        }
+        break;
+      }
+    }
   }
 
   public Machine setupNewMachine(

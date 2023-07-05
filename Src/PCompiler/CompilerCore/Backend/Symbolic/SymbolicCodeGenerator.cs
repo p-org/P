@@ -407,7 +407,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     var cont = (Continuation) method;
                     context.Write(output, $"continuations.put(\"{context.GetContinuationName(cont)}\", ");
                     context.Write(output, $"(pc) -> ((continuation_outcome, msg) -> {context.GetContinuationName(cont)}(pc,");
-                    context.Write(output, $"sendBuffer");
+                    context.Write(output, $"getSendBuffer()");
                     context.Write(output, ", continuation_outcome");
                     context.WriteLine(output, $", msg)));");
                     context.WriteLine(output, $"clearContinuationVars.add(() -> clear_{context.GetContinuationName(cont)}());");
@@ -459,7 +459,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
                 var entryFunc = state.Entry;
                 entryFunc.Name = $"{context.GetNameForDecl(state)}_entry";
-                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}({entryPcScope.PathConstraintVar}, machine.sendBuffer");
+                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}({entryPcScope.PathConstraintVar}, machine.getSendBuffer()");
                 if (entryFunc.CanChangeState ?? false)
                     context.Write(output, ", outcome");
                 else if (entryFunc.CanRaiseEvent ?? false)
@@ -486,7 +486,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 Debug.Assert(!(exitFunc.CanRaiseEvent ?? false));
                 if (exitFunc.Signature.Parameters.Count() != 0)
                     throw new NotImplementedException("Exit functions with payloads are not yet supported");
-                context.WriteLine(output, $"(({context.GetNameForDecl(exitFunc.Owner)})machine).{context.GetNameForDecl(exitFunc)}(pc, machine.sendBuffer);");
+                context.WriteLine(output, $"(({context.GetNameForDecl(exitFunc.Owner)})machine).{context.GetNameForDecl(exitFunc)}(pc, machine.getSendBuffer());");
 
                 context.WriteLine(output, "}");
             }
@@ -507,7 +507,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     var actionFunc = action.Target;
                     if (actionFunc.Name == "")
                         actionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}";
-                    context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc, machine.sendBuffer");
+                    context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc, machine.getSendBuffer()");
                     if (actionFunc.CanChangeState ?? false)
                         context.Write(output, ", outcome");
                     else if (actionFunc.CanRaiseEvent ?? false)
@@ -539,7 +539,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         if (transitionFunc.Name == "")
                             transitionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}_{destTag}";
 
-                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(pc, machine.sendBuffer");
+                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(pc, machine.getSendBuffer()");
                         if (transitionFunc.Signature.Parameters.Count() == 1)
                         {
                             Debug.Assert(!transitionFunc.Signature.Parameters[0].Type.IsSameTypeAs(PrimitiveType.Null));
@@ -1358,6 +1358,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, $"Message {messageName}_{idx} = {messageName}.restrict(cond_{idx});");
                 context.WriteLine(output, $"if (!{messageName}_{idx}.isEmptyVS())");
                 context.WriteLine(output, "{");
+                context.WriteLine(output, $"{CompilationContext.EffectCollectionVar}.unblock({messageName}_{idx});");
                 context.WriteLine(output, $"deferGuard = deferGuard.and(cond_{idx}.not());");
                 var caseScope = context.FreshPathConstraintScope();
                 context.WriteLine(output, $"Guard {caseScope.PathConstraintVar} = {rootPCScope.PathConstraintVar}.and(cond_{idx});");

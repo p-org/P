@@ -6,9 +6,7 @@ import lombok.Getter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import psym.runtime.logger.ScheduleWriter;
 import psym.runtime.logger.TraceLogger;
-import psym.runtime.machine.buffer.DeferQueue;
-import psym.runtime.machine.buffer.EventBuffer;
-import psym.runtime.machine.buffer.EventQueue;
+import psym.runtime.machine.buffer.*;
 import psym.runtime.machine.eventhandlers.EventHandler;
 import psym.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psym.runtime.machine.events.Event;
@@ -24,7 +22,6 @@ import psym.valuesummary.*;
 
 public abstract class Machine implements Serializable, Comparable<Machine> {
   protected static int globalMachineId = 2;
-  public final DeferQueue deferredQueue;
   public final Map<
           String,
           SerializableFunction<
@@ -35,7 +32,9 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   @Getter protected int instanceId;
   private final State startState;
   private final Set<State> states;
-  public EventBuffer sendBuffer;
+  @Getter private EventQueue sendBuffer;
+  @Getter private ReceiverQueue receiverQueue;
+  @Getter private DeferQueue deferredQueue;
   @Getter private transient Scheduler scheduler;
   private PrimitiveVS<Boolean> started = new PrimitiveVS<>(false);
   private PrimitiveVS<Boolean> halted = new PrimitiveVS<>(false);
@@ -54,11 +53,9 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     //        this.instanceId = id;
     this.instanceId = globalMachineId++;
 
-    EventBuffer buffer;
-    buffer = new EventQueue(this);
-
     this.startState = startState;
-    this.sendBuffer = buffer;
+    this.sendBuffer = new EventQueue(this);
+    this.receiverQueue = new ReceiverQueue();
     this.deferredQueue = new DeferQueue();
     this.currentState = new PrimitiveVS<>(startState);
 
@@ -84,6 +81,14 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
 
   public void setScheduler(Scheduler scheduler) {
     this.scheduler = scheduler;
+  }
+
+  public SymbolicQueue getEventBuffer() {
+    if (scheduler.getConfiguration().isReceiverQueue()) {
+      return receiverQueue;
+    } else {
+      return sendBuffer;
+    }
   }
 
   public void receive(String continuationName, Guard pc) {
@@ -113,10 +118,8 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   public void reset() {
     this.currentState = new PrimitiveVS<>(startState);
     this.sendBuffer = new EventQueue(this);
-    while (!deferredQueue.isEmpty()) {
-      deferredQueue.dequeueEntry(
-          deferredQueue.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
-    }
+    this.receiverQueue = new ReceiverQueue();
+    this.deferredQueue = new DeferQueue();
     this.receives = new PrimitiveVS<>();
     for (Runnable r : clearContinuationVars) {
       r.run();
@@ -131,6 +134,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     List<ValueSummary> localVars = new ArrayList<>();
     localVars.add(this.currentState);
     localVars.add(this.sendBuffer.getEvents());
+    localVars.add(this.receiverQueue.getEvents());
     localVars.add(this.deferredQueue.getEvents());
     localVars.add(this.receives);
     localVars.add(this.started);
@@ -142,6 +146,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     int idx = 0;
     this.currentState = (PrimitiveVS<State>) localVars.get(idx++);
     this.sendBuffer.setEvents(localVars.get(idx++));
+    this.receiverQueue.setEvents(localVars.get(idx++));
     this.deferredQueue.setEvents(localVars.get(idx++));
     this.receives =
         (PrimitiveVS<

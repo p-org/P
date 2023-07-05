@@ -12,7 +12,7 @@ import psym.runtime.scheduler.Scheduler;
 import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.valuesummary.*;
 
-public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, Serializable {
+public class EventQueue extends SymbolicQueue implements EventBuffer, Serializable {
 
   private final Machine sender;
 
@@ -53,52 +53,23 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
     return machine;
   }
 
-  @Override
-  public void add(Message e) {
-    enqueue(e);
+  public void unblock(Message event) {
+    TraceLogger.unblock(event);
+    if (sender.getScheduler() instanceof ReplayScheduler) {
+      ScheduleWriter.logUnblock(sender, event);
+    }
   }
 
   @Override
-  public PrimitiveVS<Boolean> satisfiesPredUnderGuard(
-      Function<Message, PrimitiveVS<Boolean>> pred) {
-    Guard cond = isEnabledUnderGuard();
-    assert (!cond.isFalse());
-    Message top = peek(cond);
-    return pred.apply(top).restrict(top.getUniverse());
+  public void enqueue(Message event) {
+    if (sender.getScheduler().getConfiguration().isReceiverQueue()) {
+      for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
+        target.getValue().getReceiverQueue().enqueue(event.restrict(target.getGuard()));
+      }
+    } else {
+      super.enqueue(event);
+    }
   }
 
-  @Override
-  public Message remove(Guard pc) {
-    return dequeueEntry(pc);
-  }
 
-  @Override
-  public PrimitiveVS<Machine> create(
-      Guard pc,
-      Scheduler scheduler,
-      Class<? extends Machine> machineType,
-      Function<Integer, ? extends Machine> constructor) {
-    return EventBuffer.super.create(pc, scheduler, machineType, constructor);
-  }
-
-  @Override
-  public PrimitiveVS<Boolean> hasCreateMachineUnderGuard() {
-    return satisfiesPredUnderGuard(Message::isCreateMachine);
-  }
-
-  @Override
-  public PrimitiveVS<Boolean> hasSyncEventUnderGuard() {
-    return satisfiesPredUnderGuard(Message::isSyncEvent);
-  }
-
-  @Override
-  public ValueSummary getEvents() {
-    return this.elements;
-  }
-
-  @Override
-  public void setEvents(ValueSummary events) {
-    this.elements = (ListVS<Message>) events;
-    resetPeek();
-  }
 }

@@ -127,7 +127,7 @@ public class SymbolicSymmetryTracker extends SymmetryTracker {
                   currentGuard = currentGuard.or(g);
 
                   assert (!BooleanVS.isEverTrue(
-                      IntegerVS.lessThan(m.sendBuffer.size().restrict(currentGuard), 1)));
+                      IntegerVS.lessThan(m.getEventBuffer().size().restrict(currentGuard), 1)));
                   pendingSummaries.put(m, currentGuard);
                 }
 
@@ -150,7 +150,7 @@ public class SymbolicSymmetryTracker extends SymmetryTracker {
 
     for (Map.Entry<Machine, Guard> entry : pendingSummaries.entrySet()) {
       assert (!BooleanVS.isEverTrue(
-          IntegerVS.lessThan(entry.getKey().sendBuffer.size().restrict(entry.getValue()), 1)));
+          IntegerVS.lessThan(entry.getKey().getEventBuffer().size().restrict(entry.getValue()), 1)));
       reduced.add(new PrimitiveVS(Collections.singletonMap(entry.getKey(), entry.getValue())));
     }
 

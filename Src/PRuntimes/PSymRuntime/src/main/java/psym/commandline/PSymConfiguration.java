@@ -3,6 +3,7 @@ package psym.commandline;
 import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
+import psym.runtime.machine.buffer.BufferSemantics;
 import psym.runtime.scheduler.explicit.StateCachingMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
@@ -45,6 +46,8 @@ public class PSymConfiguration implements Serializable {
   @Getter @Setter long randomSeed = System.currentTimeMillis();
   // name of the psym configuration file
   @Getter @Setter String configFile = "";
+  // buffer semantics
+  @Getter @Setter BufferSemantics bufferSemantics = BufferSemantics.ReceiverQueue;
   // mode of state hashing
   @Getter @Setter StateCachingMode stateCachingMode = StateCachingMode.Fast;
   // symmetry mode
@@ -80,6 +83,10 @@ public class PSymConfiguration implements Serializable {
 
   public boolean isExplicit() {
     return !isSymbolic();
+  }
+
+  public boolean isReceiverQueue() {
+    return bufferSemantics == BufferSemantics.ReceiverQueue;
   }
 
   public boolean isChoiceOrchestrationLearning() {
@@ -122,6 +129,7 @@ public class PSymConfiguration implements Serializable {
     this.setStateCachingMode(StateCachingMode.None);
     this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
     this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
+    this.setBufferSemantics(BufferSemantics.SenderQueue);
   }
 
   public void setToFuzz() {

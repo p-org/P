@@ -117,22 +117,11 @@ public class ReplayScheduler extends Scheduler {
 
   @Override
   public void step() {
-    // remove messages with halted target
-    for (Machine machine : machines) {
-      while (!machine.sendBuffer.isEmpty()) {
-        Guard targetHalted =
-            machine.sendBuffer.satisfiesPredUnderGuard(x -> x.targetHalted()).getGuardFor(true);
-        if (!targetHalted.isFalse()) {
-          rmBuffer(machine, targetHalted);
-          continue;
-        }
-        break;
-      }
-    }
+    removeHalted();
 
-    PrimitiveVS<Machine> choices = getNextSender();
+    PrimitiveVS<Machine> schedulingChoices = getNextSchedulingChoice();
 
-    if (choices.isEmptyVS()) {
+    if (schedulingChoices.isEmptyVS()) {
       done = true;
       SearchLogger.finishedExecution(depth);
     }
@@ -144,9 +133,9 @@ public class ReplayScheduler extends Scheduler {
     Message effect = null;
     List<Message> effects = new ArrayList<>();
 
-    for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
-      Machine machine = sender.getValue();
-      Guard guard = sender.getGuard();
+    for (GuardedValue<Machine> schedulingChoice : schedulingChoices.getGuardedValues()) {
+      Machine machine = schedulingChoice.getValue();
+      Guard guard = schedulingChoice.getGuard();
       Message removed = rmBuffer(machine, guard);
       if (effect == null) {
         effect = removed;
@@ -169,14 +158,14 @@ public class ReplayScheduler extends Scheduler {
       depth++;
     }
 
-    TraceLogger.schedule(depth, effect, choices);
+    TraceLogger.schedule(depth, effect);
 
     performEffect(effect);
   }
 
   @Override
-  public PrimitiveVS<Machine> getNextSender() {
-    PrimitiveVS<Machine> res = schedule.getRepeatSender(choiceDepth);
+  public PrimitiveVS<Machine> getNextSchedulingChoice() {
+    PrimitiveVS<Machine> res = schedule.getRepeatSchedulingChoice(choiceDepth);
     choiceDepth++;
     return res;
   }

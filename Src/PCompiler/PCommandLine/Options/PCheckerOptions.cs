@@ -136,6 +136,10 @@ namespace Plang.Options
                     break;
                 case "timeout":
                     checkerConfiguration.Timeout = (int)(uint)option.Value;
+                    if (checkerConfiguration.TestingIterations == 1)
+                    {
+                        checkerConfiguration.TestingIterations = 0;
+                    }
                     break;
                 case "memout":
                     checkerConfiguration.MemoryLimit = (double)option.Value;

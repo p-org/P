@@ -3,7 +3,10 @@ package psym.runtime.machine.buffer;
 import java.io.Serializable;
 import java.util.function.Function;
 
+import psym.runtime.PSymGlobal;
+import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
+import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.valuesummary.Guard;
 import psym.valuesummary.ListVS;
 import psym.valuesummary.PrimitiveVS;
@@ -17,9 +20,11 @@ public abstract class SymbolicQueue implements Serializable {
   // elements in the queue
   protected ListVS<Message> elements;
   private Message peek = null;
+  private final Machine owner;
 
-  public SymbolicQueue() {
+  public SymbolicQueue(Machine m) {
     this.elements = new ListVS<>(Guard.constTrue());
+    this.owner = m;
     assert (elements.getUniverse().isTrue());
   }
 
@@ -67,6 +72,9 @@ public abstract class SymbolicQueue implements Serializable {
   }
 
   public void add(Message e) {
+    if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+      PSymGlobal.getSymmetryTracker().updateSymmetrySet(owner, e.getUniverse());
+    }
     elements = elements.add(e);
   }
 
@@ -79,6 +87,9 @@ public abstract class SymbolicQueue implements Serializable {
   }
 
   public Message remove(Guard pc) {
+    if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+      PSymGlobal.getSymmetryTracker().updateSymmetrySet(owner, pc);
+    }
     return peekOrDequeueHelper(pc, true);
   }
 

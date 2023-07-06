@@ -2,7 +2,7 @@ package psym.runtime.machine;
 
 import java.io.Serializable;
 import java.util.Objects;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.runtime.logger.ScheduleWriter;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.eventhandlers.DeferEventHandler;
@@ -42,9 +42,9 @@ public abstract class State implements Serializable {
 
   private StateEvents getStateEvents() {
     String key = getStateKey();
-    if (!GlobalData.getAllStateEvents().containsKey(key))
-      GlobalData.getAllStateEvents().put(key, new StateEvents());
-    return GlobalData.getAllStateEvents().get(key);
+    if (!PSymGlobal.getAllStateEvents().containsKey(key))
+      PSymGlobal.getAllStateEvents().put(key, new StateEvents());
+    return PSymGlobal.getAllStateEvents().get(key);
   }
 
   public void addHandlers(EventHandler... eventHandlers) {

@@ -1,11 +1,10 @@
 package psym.runtime.logger;
 
 import lombok.Getter;
-import psym.commandline.PSymConfiguration;
+import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
-import psym.runtime.machine.buffer.EventQueue;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.valuesummary.GuardedValue;
@@ -117,9 +116,9 @@ public class ScheduleWriter {
         log(target.toString());
     }
 
-    public static void logHeader(PSymConfiguration config) {
-        if (!config.getTestDriver().equals(config.getTestDriverDefault())) {
-            log(String.format("--test-method:%s", config.getTestDriver()));
+    public static void logHeader() {
+        if (!PSymGlobal.getConfiguration().getTestDriver().equals(PSymGlobal.getConfiguration().getTestDriverDefault())) {
+            log(String.format("--test-method:%s", PSymGlobal.getConfiguration().getTestDriver()));
         }
         logComment("create GodMachine");
         log("Task(0)");

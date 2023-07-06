@@ -6,21 +6,23 @@ import psym.runtime.machine.Monitor;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.valuesummary.*;
 
+import javax.crypto.Mac;
+
 public class ExplicitSymmetryTracker extends SymmetryTracker {
   Map<String, List<TreeSet<Machine>>> typeToSymmetryClasses;
-  Machine pendingMerge;
+  Set<Machine> pendingMerges;
 
   public ExplicitSymmetryTracker() {
     typeToSymmetryClasses = new HashMap<>();
     for (String type : typeToAllSymmetricMachines.keySet()) {
       typeToSymmetryClasses.put(type, null);
     }
-    pendingMerge = null;
+    pendingMerges = new HashSet<>();
   }
 
   private ExplicitSymmetryTracker(
       Map<String, List<TreeSet<Machine>>> symClasses,
-      Machine pending) {
+      Set<Machine> pending) {
     typeToSymmetryClasses = new HashMap<>();
     for (Map.Entry<String, List<TreeSet<Machine>>> entry: symClasses.entrySet()) {
       List<TreeSet<Machine>> newClasses = null;
@@ -32,11 +34,11 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
       }
       typeToSymmetryClasses.put(entry.getKey(), newClasses);
     }
-    pendingMerge = pending;
+    pendingMerges = new HashSet<>(pending);
   }
 
   public SymmetryTracker getCopy() {
-    return new ExplicitSymmetryTracker(typeToSymmetryClasses, pendingMerge);
+    return new ExplicitSymmetryTracker(typeToSymmetryClasses, pendingMerges);
   }
 
   public void reset() {
@@ -44,7 +46,7 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
       symMachines.clear();
     }
     typeToSymmetryClasses.replaceAll((t, v) -> null);
-    pendingMerge = null;
+    pendingMerges = new HashSet<>();
   }
 
   public void createMachine(Machine machine, Guard guard) {
@@ -136,42 +138,35 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
     return reduced;
   }
 
-  public void updateSymmetrySet(PrimitiveVS chosenVS) {
-    List<? extends GuardedValue<?>> choices = ((PrimitiveVS<?>) chosenVS).getGuardedValues();
-    for (GuardedValue<?> choice : choices) {
-      Object value = choice.getValue();
-      if (value instanceof Machine) {
-        Machine machine = ((Machine) value);
-        String type = machine.getName();
+  public void updateSymmetrySet(Machine machine, Guard guard) {
+    String type = machine.getName();
 
-        List<TreeSet<Machine>> symClasses = typeToSymmetryClasses.get(type);
-        if (symClasses != null) {
-          // iterate over each symmetry class
-          for (TreeSet<Machine> symSet: symClasses) {
-            // remove chosen from the ith class
-            symSet.remove(machine);
-          }
-          // remove empty classes
-          symClasses.removeIf(x -> x.isEmpty());
-
-          // add self as a single-element class
-          TreeSet<Machine> selfSet = new TreeSet<>();
-          selfSet.add(machine);
-          // update symmetry classes map
-          symClasses.add(selfSet);
-
-          assert (symClasses.size() <= typeToAllSymmetricMachines.get(type).size());
-          pendingMerge = machine;
-        }
+    List<TreeSet<Machine>> symClasses = typeToSymmetryClasses.get(type);
+    if (symClasses != null) {
+      // iterate over each symmetry class
+      for (TreeSet<Machine> symSet: symClasses) {
+        // remove chosen from the ith class
+        symSet.remove(machine);
       }
+      // remove empty classes
+      symClasses.removeIf(x -> x.isEmpty());
+
+      // add self as a single-element class
+      TreeSet<Machine> selfSet = new TreeSet<>();
+      selfSet.add(machine);
+      // update symmetry classes map
+      symClasses.add(selfSet);
+
+      assert (symClasses.size() <= typeToAllSymmetricMachines.get(type).size());
+      pendingMerges.add(machine);
     }
   }
 
   public void mergeAllSymmetryClasses() {
-    if (pendingMerge != null) {
-      mergeSymmetryClassesForType(pendingMerge);
-      pendingMerge = null;
+    for (Machine m: pendingMerges) {
+      mergeSymmetryClassesForType(m);
     }
+    pendingMerges.clear();
   }
 
   private void mergeSymmetryClassesForType(Machine pending) {

@@ -24,7 +24,7 @@ public abstract class SymmetryTracker implements Serializable {
 
   public abstract List<ValueSummary> getReducedChoices(List<ValueSummary> original);
 
-  public abstract void updateSymmetrySet(PrimitiveVS chosenVS);
+  public abstract void updateSymmetrySet(Machine machine, Guard guard);
 
   public abstract void mergeAllSymmetryClasses();
 

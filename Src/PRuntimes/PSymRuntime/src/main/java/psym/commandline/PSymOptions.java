@@ -9,7 +9,7 @@ import org.apache.commons.cli.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.runtime.machine.buffer.BufferSemantics;
 import psym.runtime.scheduler.explicit.StateCachingMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
@@ -211,7 +211,7 @@ public class PSymOptions {
     Option symmetry =
         Option.builder()
             .longOpt("symmetry")
-            .desc("Symmetry-aware exploration mode: none, simple, full (default: none)")
+            .desc("Symmetry-aware exploration mode: none, full (default: none)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Symmetry Mode (string)")
@@ -533,9 +533,6 @@ public class PSymOptions {
             case "none":
               config.setSymmetryMode(SymmetryMode.None);
               break;
-            case "simple":
-              config.setSymmetryMode(SymmetryMode.Simple);
-              break;
             case "full":
               config.setSymmetryMode(SymmetryMode.Full);
               break;
@@ -726,14 +723,14 @@ public class PSymOptions {
             JSONArray syncEvents = value.getJSONArray("default");
             for (int i = 0; i < syncEvents.length(); i++) {
               String syncEventName = syncEvents.getString(i);
-              GlobalData.getSyncEvents().add(syncEventName);
+              PSymGlobal.getSyncEvents().add(syncEventName);
             }
             break;
           case "symmetric-machines":
             JSONArray symMachineTypes = value.getJSONArray("default");
             for (int i = 0; i < symMachineTypes.length(); i++) {
               String symTypeName = symMachineTypes.getString(i);
-              GlobalData.getSymmetryTracker().addSymmetryType(symTypeName);
+              PSymGlobal.getSymmetryTracker().addSymmetryType(symTypeName);
             }
             break;
           default:

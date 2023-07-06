@@ -16,9 +16,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
-import psym.commandline.PSymConfiguration;
 import psym.runtime.Concretizer;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
@@ -75,9 +74,9 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   private transient Instant lastReportTime = Instant.now();
 
 
-  public ExplicitSearchScheduler(PSymConfiguration config, Program p) {
-    super(config, p);
-    switch (config.getChoiceOrchestration()) {
+  public ExplicitSearchScheduler(Program p) {
+    super(p);
+    switch (PSymGlobal.getConfiguration().getChoiceOrchestration()) {
       case None:
         choiceOrchestrator = new ChoiceOrchestratorNone();
         break;
@@ -92,7 +91,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
         break;
       default:
         throw new RuntimeException(
-            "Unrecognized choice orchestration mode: " + config.getChoiceOrchestration());
+            "Unrecognized choice orchestration mode: " + PSymGlobal.getConfiguration().getChoiceOrchestration());
     }
   }
 
@@ -111,7 +110,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       fis = new FileInputStream(readFromFile);
       ObjectInputStream ois = new ObjectInputStream(fis);
       result = (ExplicitSearchScheduler) ois.readObject();
-      GlobalData.setInstance((GlobalData) ois.readObject());
+      PSymGlobal.setInstance((PSymGlobal) ois.readObject());
       result.reinitialize();
       PSymLogger.info("... Successfully read.");
     } catch (IOException | ClassNotFoundException e) {
@@ -129,7 +128,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     iter++;
     SearchLogger.logStartExecution(iter, getDepth());
     initializeSearch();
-    if (configuration.getVerbosity() == 0) {
+    if (PSymGlobal.getConfiguration().getVerbosity() == 0) {
       printProgressHeader(true);
     }
     while (!isDoneIterating) {
@@ -155,7 +154,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     reset_stats();
     schedule.setNumBacktracksInSchedule();
     boolean resetAfterInitial = isDone();
-    if (configuration.getVerbosity() == 0) {
+    if (PSymGlobal.getConfiguration().getVerbosity() == 0) {
       printProgressHeader(true);
     }
     while (!isDoneIterating) {
@@ -172,7 +171,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       summarizeIteration(backtrackDepth);
       if (resetAfterInitial) {
         resetAfterInitial = false;
-        GlobalData.getCoverage().resetCoverage();
+        PSymGlobal.getCoverage().resetCoverage();
       }
     }
   }
@@ -183,14 +182,14 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     while (!isDone()) {
       printProgress(false);
       Assert.prop(
-          getDepth() < configuration.getMaxStepBound(),
-          "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded",
+          getDepth() < PSymGlobal.getConfiguration().getMaxStepBound(),
+          "Maximum allowed depth " + PSymGlobal.getConfiguration().getMaxStepBound() + " exceeded",
           schedule.getLengthCond(schedule.size()));
       step();
     }
     Assert.prop(
-        !configuration.isFailOnMaxStepBound() || (getDepth() < configuration.getMaxStepBound()),
-        "Scheduling steps bound of " + configuration.getMaxStepBound() + " reached.",
+        !PSymGlobal.getConfiguration().isFailOnMaxStepBound() || (getDepth() < PSymGlobal.getConfiguration().getMaxStepBound()),
+        "Scheduling steps bound of " + PSymGlobal.getConfiguration().getMaxStepBound() + " reached.",
         schedule.getLengthCond(schedule.size()));
     schedule.setNumBacktracksInSchedule();
     if (done) {
@@ -208,18 +207,18 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     int numMessagesMerged = 0;
     int numMessagesExplored = 0;
 
-    if (configuration.getStateCachingMode() != StateCachingMode.None) {
+    if (PSymGlobal.getConfiguration().getStateCachingMode() != StateCachingMode.None) {
       storeSrcState();
-      int[] numConcrete = enumerateConcreteStatesFromExplicit(configuration.getStateCachingMode());
+      int[] numConcrete = enumerateConcreteStatesFromExplicit(PSymGlobal.getConfiguration().getStateCachingMode());
       numStates = numConcrete[0];
       numStatesDistinct = numConcrete[1];
     }
 
-    if (configuration.getSymmetryMode() == SymmetryMode.Full) {
-      GlobalData.getSymmetryTracker().mergeAllSymmetryClasses();
+    if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+      PSymGlobal.getSymmetryTracker().mergeAllSymmetryClasses();
     }
 
-    if (configuration.isUseBacktrack()) {
+    if (PSymGlobal.getConfiguration().isUseBacktrack()) {
       storeSrcState();
       schedule.setSchedulerDepth(getDepth());
       schedule.setSchedulerChoiceDepth(getChoiceDepth());
@@ -242,38 +241,32 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
     SolverStats.checkResourceLimits();
 
-    if (configuration.isChoiceOrchestrationLearning()) {
-      GlobalData.getChoiceLearningStats()
-          .setProgramStateHash(this, configuration.getChoiceLearningStateMode(), schedulingChoices);
+    if (PSymGlobal.getConfiguration().isChoiceOrchestrationLearning()) {
+      PSymGlobal.getChoiceLearningStats()
+          .setProgramStateHash(this, PSymGlobal.getConfiguration().getChoiceLearningStateMode(), schedulingChoices);
     }
 
     Message effect = null;
     List<Message> effects = new ArrayList<>();
 
-    if (configuration.getSymmetryMode() != SymmetryMode.None) {
-      GlobalData.getSymmetryTracker().updateSymmetrySet(schedulingChoices);
+    List<GuardedValue<Machine>> schedulingChoicesGv = schedulingChoices.getGuardedValues();
+    assert (schedulingChoicesGv.size() == 1);
+
+    GuardedValue<Machine> schedulingChoice = schedulingChoicesGv.get(0);
+    Machine machine = schedulingChoice.getValue();
+    Guard guard = schedulingChoice.getGuard();
+    Message removed = rmBuffer(machine, guard);
+
+    if (PSymGlobal.getConfiguration().getVerbosity() > 5) {
+      System.out.println("  Machine " + machine);
+      System.out.println("    state   " + machine.getCurrentState().toStringDetailed());
+      System.out.println("    message " + removed.toString());
+      System.out.println("    target " + removed.getTarget().toString());
     }
-
-    for (GuardedValue<Machine> schedulingChoice : schedulingChoices.getGuardedValues()) {
-      Machine machine = schedulingChoice.getValue();
-      Guard guard = schedulingChoice.getGuard();
-      Message removed = rmBuffer(machine, guard);
-
-      if (configuration.getSymmetryMode() == SymmetryMode.Full) {
-        GlobalData.getSymmetryTracker().updateSymmetrySet(removed.getTarget());
-      }
-
-      if (configuration.getVerbosity() > 5) {
-        System.out.println("  Machine " + machine);
-        System.out.println("    state   " + machine.getCurrentState().toStringDetailed());
-        System.out.println("    message " + removed.toString());
-        System.out.println("    target " + removed.getTarget().toString());
-      }
-      if (effect == null) {
-        effect = removed;
-      } else {
-        effects.add(removed);
-      }
+    if (effect == null) {
+      effect = removed;
+    } else {
+      effects.add(removed);
     }
 
     assert effect != null;
@@ -309,9 +302,9 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     searchStats.addDepthStatistics(depth, depthStats);
 
     // log statistics
-    if (configuration.getVerbosity() > 3) {
+    if (PSymGlobal.getConfiguration().getVerbosity() > 3) {
       double timeUsed = TimeMonitor.getInstance().getRuntime();
-      if (configuration.getVerbosity() > 4) {
+      if (PSymGlobal.getConfiguration().getVerbosity() > 4) {
         SearchLogger.log("--------------------");
         SearchLogger.log("Resource Stats::");
         SearchLogger.log("time-seconds", String.format("%.1f", timeUsed));
@@ -345,7 +338,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     }
 
     // log depth statistics
-    if (configuration.getVerbosity() > 4) {
+    if (PSymGlobal.getConfiguration().getVerbosity() > 4) {
       SearchLogger.logDepthStats(depthStats);
       System.out.println("--------------------");
       System.out.println("Collect Stats::");
@@ -403,8 +396,8 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       // no choice to backtrack to, so generate new choices
       if (getIter() > 0) SearchLogger.logMessage("new choice at depth " + depth);
       choices = getChoices.get();
-      if (!isData && configuration.getSymmetryMode() != SymmetryMode.None) {
-        choices = GlobalData.getSymmetryTracker().getReducedChoices(choices);
+      if (!isData && PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+        choices = PSymGlobal.getSymmetryTracker().getReducedChoices(choices);
       }
       choices =
           choices.stream()
@@ -431,12 +424,12 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       }
     }
     ChoiceQTable.ChoiceQTableKey chosenActions = null;
-    if (configuration.isChoiceOrchestrationLearning()) {
+    if (PSymGlobal.getConfiguration().isChoiceOrchestrationLearning()) {
       chosenActions =
           new ChoiceQTable.ChoiceQTableKey(
-              GlobalData.getChoiceLearningStats().getProgramStateHash(), chosenQStateKey);
+              PSymGlobal.getChoiceLearningStats().getProgramStateHash(), chosenQStateKey);
     }
-    GlobalData.getCoverage()
+    PSymGlobal.getCoverage()
         .updateDepthCoverage(
             getDepth(),
             getChoiceDepth(),
@@ -457,20 +450,20 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
   @Override
   protected void summarizeIteration(int startDepth) throws InterruptedException {
-    if (configuration.getVerbosity() > 3) {
+    if (PSymGlobal.getConfiguration().getVerbosity() > 3) {
       SearchLogger.logIterationStats(searchStats.getIterationStats().get(getIter()));
     }
-    if (configuration.getMaxExecutions() > 0) {
-      isDoneIterating = ((getIter() - getStart_iter()) >= configuration.getMaxExecutions());
+    if (PSymGlobal.getConfiguration().getMaxExecutions() > 0) {
+      isDoneIterating = ((getIter() - getStart_iter()) >= PSymGlobal.getConfiguration().getMaxExecutions());
     }
-    GlobalData.getCoverage()
+    PSymGlobal.getCoverage()
         .updateIterationCoverage(
-            getChoiceDepth() - 1, startDepth, configuration.getChoiceLearningRewardMode());
-    if (configuration.getTaskOrchestration() != TaskOrchestrationMode.DepthFirst) {
+            getChoiceDepth() - 1, startDepth, PSymGlobal.getConfiguration().getChoiceLearningRewardMode());
+    if (PSymGlobal.getConfiguration().getTaskOrchestration() != TaskOrchestrationMode.DepthFirst) {
       setBacktrackTasks();
       BacktrackTask nextTask = setNextBacktrackTask();
       if (nextTask != null) {
-        if (configuration.getVerbosity() > 1) {
+        if (PSymGlobal.getConfiguration().getVerbosity() > 1) {
           PSymLogger.info(
               String.format(
                   "    Next is %s [depth: %d, parent: %s]",
@@ -497,7 +490,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
         result += "partially correct with " + getTotalNumBacktracks() + " backtracks remaining";
       }
     } else {
-      int safeDepth = configuration.getMaxStepBound();
+      int safeDepth = PSymGlobal.getConfiguration().getMaxStepBound();
       if (totalStats.getDepthStats().getDepth() < safeDepth) {
         safeDepth = totalStats.getDepthStats().getDepth();
       }
@@ -506,7 +499,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       } else {
         result +=
             "partially correct up to step "
-                + (configuration.getMaxStepBound() - 1)
+                + (PSymGlobal.getConfiguration().getMaxStepBound() - 1)
                 + " with "
                 + getTotalNumBacktracks()
                 + " backtracks remaining";
@@ -522,7 +515,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
             + String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent())
             + String.format("\n      Depth:            %d", getDepth())
             + String.format("\n      Progress:         %.12f",
-                GlobalData.getCoverage().getEstimatedCoverage(12))
+                PSymGlobal.getCoverage().getEstimatedCoverage(12))
             + String.format("\n      Iterations:       %d", (getIter() - getStart_iter()))
             + String.format("\n      Finished:         %d", finishedTasks.size())
             + String.format("\n      Remaining:        %d", getTotalNumBacktracks())
@@ -540,7 +533,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     s.append(StringUtils.center("Iteration", 12));
     s.append(StringUtils.center("Remaining", 24));
     s.append(StringUtils.center("Progress", 24));
-    if (configuration.getStateCachingMode() != StateCachingMode.None) {
+    if (PSymGlobal.getConfiguration().getStateCachingMode() != StateCachingMode.None) {
       s.append(StringUtils.center("States", 12));
     }
 
@@ -557,7 +550,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       lastReportTime = Instant.now();
       double newRuntime = TimeMonitor.getInstance().getRuntime();
       printCurrentStatus(newRuntime);
-      boolean consolePrint = (configuration.getVerbosity() == 0);
+      boolean consolePrint = (PSymGlobal.getConfiguration().getVerbosity() == 0);
       if (consolePrint || forcePrint) {
         long runtime = (long) (newRuntime * 1000);
         String runtimeHms =
@@ -589,11 +582,11 @@ public class ExplicitSearchScheduler extends SearchScheduler {
             StringUtils.center(
                 String.format(
                     "%.12f (%s)",
-                    GlobalData.getCoverage().getEstimatedCoverage(12),
-                    GlobalData.getCoverage().getCoverageGoalAchieved()),
+                    PSymGlobal.getCoverage().getEstimatedCoverage(12),
+                    PSymGlobal.getCoverage().getCoverageGoalAchieved()),
                 24));
 
-        if (configuration.getStateCachingMode() != StateCachingMode.None) {
+        if (PSymGlobal.getConfiguration().getStateCachingMode() != StateCachingMode.None) {
           s.append(StringUtils.center(String.format("%d", totalDistinctStateCount), 12));
         }
         if (consolePrint) {
@@ -620,9 +613,9 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
     // print learn statistics
     StatWriter.log(
-        "learn-#-qstates", String.format("%d", GlobalData.getChoiceLearningStats().numQStates()));
+        "learn-#-qstates", String.format("%d", PSymGlobal.getChoiceLearningStats().numQStates()));
     StatWriter.log(
-        "learn-#-qvalues", String.format("%d", GlobalData.getChoiceLearningStats().numQValues()));
+        "learn-#-qvalues", String.format("%d", PSymGlobal.getChoiceLearningStats().numQValues()));
 
     // print task statistics
     StatWriter.log("#-tasks-finished", String.format("%d", finishedTasks.size()));
@@ -636,7 +629,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   @Override
   public List<PrimitiveVS> getNextSchedulingChoices() {
     List<PrimitiveVS> candidates = super.getNextSchedulingChoices();
-    if (configuration.getStateCachingMode() != StateCachingMode.None) {
+    if (PSymGlobal.getConfiguration().getStateCachingMode() != StateCachingMode.None) {
       if (distinctStateGuard != null) {
         candidates = filterDistinct(candidates);
       }
@@ -652,7 +645,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       schedule.clearRepeat(d);
       if (choice.isBacktrackNonEmpty()) {
         int newDepth = 0;
-        if (configuration.isUseBacktrack()) {
+        if (PSymGlobal.getConfiguration().isUseBacktrack()) {
           newDepth = choice.getSchedulerDepth();
         }
         if (newDepth == 0) {
@@ -662,8 +655,8 @@ public class ExplicitSearchScheduler extends SearchScheduler {
         } else {
           restoreState(choice.getChoiceState());
           schedule.setFilter(choice.getFilter());
-          if (configuration.getSymmetryMode() != SymmetryMode.None) {
-            GlobalData.setSymmetryTracker(choice.getSymmetry());
+          if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+            PSymGlobal.setSymmetryTracker(choice.getSymmetry());
           }
         }
         SearchLogger.logMessage("backtrack to " + d);
@@ -677,7 +670,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
         return;
       } else {
         schedule.clearChoice(d);
-        GlobalData.getCoverage().resetPathCoverage(d);
+        PSymGlobal.getCoverage().resetPathCoverage(d);
       }
     }
     isDoneIterating = true;
@@ -688,18 +681,18 @@ public class ExplicitSearchScheduler extends SearchScheduler {
    * at each depth
    */
   public void reportEstimatedCoverage() {
-    GlobalData.getCoverage().reportChoiceCoverage();
+    PSymGlobal.getCoverage().reportChoiceCoverage();
 
-    if (configuration.getStateCachingMode() != StateCachingMode.None) {
+    if (PSymGlobal.getConfiguration().getStateCachingMode() != StateCachingMode.None) {
       SearchLogger.log(String.format("Distinct States Explored %d", totalDistinctStateCount));
     }
 
-    BigDecimal coverage = GlobalData.getCoverage().getEstimatedCoverage(22);
+    BigDecimal coverage = PSymGlobal.getCoverage().getEstimatedCoverage(22);
     assert (coverage.compareTo(BigDecimal.ONE) <= 0) : "Error in progress estimation";
 
-    String coverageGoalAchieved = GlobalData.getCoverage().getCoverageGoalAchieved();
+    String coverageGoalAchieved = PSymGlobal.getCoverage().getCoverageGoalAchieved();
     if (isFinalResult && result.endsWith("correct for any depth")) {
-      GlobalData.getCoverage();
+      PSymGlobal.getCoverage();
       coverageGoalAchieved = CoverageStats.getMaxCoverageGoal();
     }
 
@@ -708,7 +701,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
     SearchLogger.log(
         String.format(
-            "Progress Guarantee       %.12f", GlobalData.getCoverage().getEstimatedCoverage(12)));
+            "Progress Guarantee       %.12f", PSymGlobal.getCoverage().getEstimatedCoverage(12)));
     SearchLogger.log(String.format("Coverage Goal Achieved   %s", coverageGoalAchieved));
   }
 
@@ -716,7 +709,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     pendingTasks.clear();
     numPendingBacktracks = 0;
     numPendingDataBacktracks = 0;
-    BacktrackTask.initialize(configuration.getTaskOrchestration());
+    BacktrackTask.initialize(PSymGlobal.getConfiguration().getTaskOrchestration());
   }
 
   private void isValidTaskId(int taskId) {
@@ -778,16 +771,16 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     BacktrackTask parentTask;
     if (latestTaskId == 0) {
       assert (allTasks.isEmpty());
-      BacktrackTask.setOrchestration(configuration.getTaskOrchestration());
+      BacktrackTask.setOrchestration(PSymGlobal.getConfiguration().getTaskOrchestration());
       parentTask = new BacktrackTask(0);
       parentTask.setPrefixCoverage(new BigDecimal(1));
       allTasks.add(parentTask);
     } else {
       parentTask = getTask(latestTaskId);
     }
-    parentTask.postProcess(GlobalData.getCoverage().getPathCoverageAtDepth(getChoiceDepth() - 1));
+    parentTask.postProcess(PSymGlobal.getCoverage().getPathCoverageAtDepth(getChoiceDepth() - 1));
     finishedTasks.add(parentTask.getId());
-    if (configuration.getVerbosity() > 1) {
+    if (PSymGlobal.getConfiguration().getVerbosity() > 1) {
       PSymLogger.info(
           String.format(
               "  Finished %s [depth: %d, parent: %s]",
@@ -799,8 +792,8 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       Schedule.Choice choice = schedule.getChoice(i);
       // if choice at this depth is non-empty
       if (choice.isBacktrackNonEmpty()) {
-        if (configuration.getMaxBacktrackTasksPerExecution() > 0
-            && numBacktracksAdded == (configuration.getMaxBacktrackTasksPerExecution() - 1)) {
+        if (PSymGlobal.getConfiguration().getMaxBacktrackTasksPerExecution() > 0
+            && numBacktracksAdded == (PSymGlobal.getConfiguration().getMaxBacktrackTasksPerExecution() - 1)) {
           setBacktrackTaskAtDepthCombined(parentTask, i);
           numBacktracksAdded++;
           break;
@@ -812,9 +805,9 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       }
     }
 
-    if (configuration.getVerbosity() > 1) {
+    if (PSymGlobal.getConfiguration().getVerbosity() > 1) {
       PSymLogger.info(String.format("    Added %d new tasks", parentTask.getChildren().size()));
-      if (configuration.getVerbosity() > 2) {
+      if (PSymGlobal.getConfiguration().getVerbosity() > 2) {
         for (BacktrackTask t : parentTask.getChildren()) {
           PSymLogger.info(String.format("      %s [depth: %d]", t, t.getDepth()));
         }
@@ -857,14 +850,14 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     }
 
     BigDecimal prefixCoverage =
-        GlobalData.getCoverage().getPathCoverageAtDepth(backtrackChoiceDepth);
+        PSymGlobal.getCoverage().getPathCoverageAtDepth(backtrackChoiceDepth);
 
     BacktrackTask newTask = new BacktrackTask(allTasks.size());
     newTask.setPrefixCoverage(prefixCoverage);
     newTask.setDepth(schedule.getChoice(backtrackChoiceDepth).getSchedulerDepth());
     newTask.setChoiceDepth(backtrackChoiceDepth);
     newTask.setChoices(schedule.getChoices());
-    newTask.setPerChoiceDepthStats(GlobalData.getCoverage().getPerChoiceDepthStats());
+    newTask.setPerChoiceDepthStats(PSymGlobal.getCoverage().getPerChoiceDepthStats());
     newTask.setParentTask(parentTask);
     newTask.setPriority();
     allTasks.add(newTask);
@@ -884,12 +877,12 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     removePendingTask(latestTask);
 
     schedule.getChoices().clear();
-    GlobalData.getCoverage().getPerChoiceDepthStats().clear();
+    PSymGlobal.getCoverage().getPerChoiceDepthStats().clear();
     assert (!latestTask.isInitialTask());
     latestTask.getParentTask().cleanup();
 
     schedule.setChoices(latestTask.getChoices());
-    GlobalData.getCoverage().setPerChoiceDepthStats(latestTask.getPerChoiceDepthStats());
+    PSymGlobal.getCoverage().setPerChoiceDepthStats(latestTask.getPerChoiceDepthStats());
     return latestTask;
   }
 
@@ -914,7 +907,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     machineCounters.clear();
     //        machines.clear();
     currentMachines.clear();
-    GlobalData.getSymmetryTracker().reset();
+    PSymGlobal.getSymmetryTracker().reset();
     srcState.clear();
     schedule.setSchedulerDepth(getDepth());
     schedule.setSchedulerChoiceDepth(getChoiceDepth());
@@ -927,10 +920,10 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     distinctStates.clear();
     totalStateCount = 0;
     totalDistinctStateCount = 0;
-    GlobalData.getCoverage().resetCoverage();
-    if (configuration.isChoiceOrchestrationLearning()) {
-      GlobalData.getChoiceLearningStats()
-          .setProgramStateHash(this, configuration.getChoiceLearningStateMode(), null);
+    PSymGlobal.getCoverage().resetCoverage();
+    if (PSymGlobal.getConfiguration().isChoiceOrchestrationLearning()) {
+      PSymGlobal.getChoiceLearningStats()
+          .setProgramStateHash(this, PSymGlobal.getConfiguration().getChoiceLearningStateMode(), null);
     }
   }
 
@@ -987,8 +980,8 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       FileOutputStream fos = new FileOutputStream(writeFileName);
       ObjectOutputStream oos = new ObjectOutputStream(fos);
       oos.writeObject(this);
-      oos.writeObject(GlobalData.getInstance());
-      if (configuration.getVerbosity() > 0) {
+      oos.writeObject(PSymGlobal.getInstance());
+      if (PSymGlobal.getConfiguration().getVerbosity() > 0) {
         long szBytes = Files.size(Paths.get(writeFileName));
         PSymLogger.info(
             String.format("  %,.1f MB  written in %s", (szBytes / 1024.0 / 1024.0), writeFileName));
@@ -1056,7 +1049,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     writeToFile(writeFileName);
     BacktrackWriter.log(
         writeFileName,
-        GlobalData.getCoverage().getPathCoverageAtDepth(backtrackChoiceDepth),
+        PSymGlobal.getCoverage().getPathCoverageAtDepth(backtrackChoiceDepth),
         depth,
         backtrackChoiceDepth);
 
@@ -1065,17 +1058,17 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   }
 
   public void writeToFile() throws Exception {
-    if (configuration.getVerbosity() > 0) {
+    if (PSymGlobal.getConfiguration().getVerbosity() > 0) {
       PSymLogger.info(
           String.format(
               "Writing 1 current and %d backtrack states in %s/",
-              getTotalNumBacktracks(), configuration.getOutputFolder()));
+              getTotalNumBacktracks(), PSymGlobal.getConfiguration().getOutputFolder()));
     }
     long pid = ProcessHandle.current().pid();
-    String writeFileName = configuration.getOutputFolder() + "/current" + "_pid" + pid + ".out";
+    String writeFileName = PSymGlobal.getConfiguration().getOutputFolder() + "/current" + "_pid" + pid + ".out";
     writeToFile(writeFileName);
-    writeBacktracksToFiles(configuration.getOutputFolder() + "/backtrack");
-    if (configuration.getVerbosity() > 0) {
+    writeBacktracksToFiles(PSymGlobal.getConfiguration().getOutputFolder() + "/backtrack");
+    if (PSymGlobal.getConfiguration().getVerbosity() > 0) {
       PSymLogger.info("--------------------");
     }
   }
@@ -1086,7 +1079,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
    * @return number of concrete states represented by the symbolic state
    */
   public int[] enumerateConcreteStatesFromExplicit(StateCachingMode mode) {
-    if (configuration.getVerbosity() > 5) {
+    if (PSymGlobal.getConfiguration().getVerbosity() > 5) {
       PSymLogger.info(globalStateString());
     }
 
@@ -1118,13 +1111,13 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     String concreteState = globalStateConcrete.toString();
     totalStateCount += 1;
     if (distinctStates.contains(concreteState)) {
-      if (configuration.getVerbosity() > 5) {
+      if (PSymGlobal.getConfiguration().getVerbosity() > 5) {
         PSymLogger.info("Repeated State: " + getConcreteStateString(globalStateConcrete));
       }
       distinctStateGuard = Guard.constFalse();
       return new int[] {1, 0};
     } else {
-      if (configuration.getVerbosity() > 4) {
+      if (PSymGlobal.getConfiguration().getVerbosity() > 4) {
         PSymLogger.info("New State:      " + getConcreteStateString(globalStateConcrete));
       }
       distinctStates.add(concreteState);
@@ -1152,7 +1145,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       return new int[] {0, 0};
     }
 
-    if (configuration.getVerbosity() > 5) {
+    if (PSymGlobal.getConfiguration().getVerbosity() > 5) {
       PSymLogger.info(globalStateString());
     }
 
@@ -1189,17 +1182,17 @@ public class ExplicitSearchScheduler extends SearchScheduler {
         numConcreteStates += 1;
         String concreteState = globalStateConcrete.toString();
         if (distinctStates.contains(concreteState)) {
-          if (configuration.getVerbosity() > 5) {
+          if (PSymGlobal.getConfiguration().getVerbosity() > 5) {
             PSymLogger.info("Repeated State: " + getConcreteStateString(globalStateConcrete));
           }
         } else {
           totalDistinctStateCount += 1;
           numDistinctConcreteStates += 1;
           distinctStates.add(concreteState);
-          if (configuration.getStateCachingMode() != StateCachingMode.None) {
+          if (PSymGlobal.getConfiguration().getStateCachingMode() != StateCachingMode.None) {
             distinctStateGuard = distinctStateGuard.or(concreteStateGuard);
           }
-          if (configuration.getVerbosity() > 4) {
+          if (PSymGlobal.getConfiguration().getVerbosity() > 4) {
             PSymLogger.info("New State:      " + getConcreteStateString(globalStateConcrete));
           }
         }

@@ -3,6 +3,7 @@ package psym.runtime.machine.buffer;
 import java.io.Serializable;
 import java.util.function.Function;
 
+import psym.runtime.PSymGlobal;
 import psym.runtime.logger.ScheduleWriter;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
@@ -17,7 +18,7 @@ public class EventQueue extends SymbolicQueue implements EventBuffer, Serializab
   private final Machine sender;
 
   public EventQueue(Machine sender) {
-    super();
+    super(sender);
     this.sender = sender;
   }
 
@@ -61,7 +62,7 @@ public class EventQueue extends SymbolicQueue implements EventBuffer, Serializab
   }
 
   private void addEvent(Message event) {
-    if (sender.getScheduler().getConfiguration().isReceiverQueue()) {
+    if (PSymGlobal.getConfiguration().isReceiverQueue()) {
       for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
         target.getValue().getReceiverQueue().add(event.restrict(target.getGuard()));
       }

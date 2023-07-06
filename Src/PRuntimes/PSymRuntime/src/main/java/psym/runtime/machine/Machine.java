@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.*;
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import psym.runtime.logger.ScheduleWriter;
+import psym.runtime.PSymGlobal;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.buffer.*;
 import psym.runtime.machine.eventhandlers.EventHandler;
@@ -13,7 +13,6 @@ import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Scheduler;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
-import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.utils.Assert;
 import psym.utils.serialize.SerializableBiFunction;
 import psym.utils.serialize.SerializableFunction;
@@ -55,8 +54,8 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
 
     this.startState = startState;
     this.sendBuffer = new EventQueue(this);
-    this.receiverQueue = new ReceiverQueue();
-    this.deferredQueue = new DeferQueue();
+    this.receiverQueue = new ReceiverQueue(this);
+    this.deferredQueue = new DeferQueue(this);
     this.currentState = new PrimitiveVS<>(startState);
 
     startState.addHandlers(
@@ -84,7 +83,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   }
 
   public SymbolicQueue getEventBuffer() {
-    if (scheduler.getConfiguration().isReceiverQueue()) {
+    if (PSymGlobal.getConfiguration().isReceiverQueue()) {
       return receiverQueue;
     } else {
       return sendBuffer;
@@ -118,8 +117,8 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   public void reset() {
     this.currentState = new PrimitiveVS<>(startState);
     this.sendBuffer = new EventQueue(this);
-    this.receiverQueue = new ReceiverQueue();
-    this.deferredQueue = new DeferQueue();
+    this.receiverQueue = new ReceiverQueue(this);
+    this.deferredQueue = new DeferQueue(this);
     this.receives = new PrimitiveVS<>();
     for (Runnable r : clearContinuationVars) {
       r.run();
@@ -370,7 +369,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   }
 
   public void processEventToCompletion(Guard pc, Message message) {
-    if (scheduler.getConfiguration().getChoiceLearningStateMode()
+    if (PSymGlobal.getConfiguration().getChoiceLearningStateMode()
         == ChoiceLearningStateMode.TimelineAbstraction) {
       updateObservedEvents(message);
     }

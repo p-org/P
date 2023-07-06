@@ -2673,16 +2673,6 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.MainClassName} implements Program {{");
             context.WriteLine(output);
-            context.WriteLine(output, $"public static Scheduler programScheduler;");
-            context.WriteLine(output);
-            context.WriteLine(output, "@Generated");
-            context.WriteLine(output, "@Override");
-            context.WriteLine(output, $"public Scheduler getProgramScheduler () {{ return this.programScheduler; }}");
-            context.WriteLine(output);
-            context.WriteLine(output, "@Generated");
-            context.WriteLine(output, "@Override");
-            context.WriteLine(output, $"public void setProgramScheduler (Scheduler s) {{ this.programScheduler = s; }}");
-            context.WriteLine(output);
         }
 
         private void WriteSourceEpilogue(CompilationContext context, StringWriter output)

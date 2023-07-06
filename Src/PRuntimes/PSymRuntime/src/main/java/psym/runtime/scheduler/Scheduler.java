@@ -3,10 +3,8 @@ package psym.runtime.scheduler;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+
 import lombok.Getter;
-import lombok.Setter;
-import psym.commandline.PSymConfiguration;
 import psym.runtime.*;
 import psym.runtime.Program;
 import psym.runtime.logger.TraceLogger;
@@ -42,7 +40,6 @@ public abstract class Scheduler implements SchedulerInterface {
   /** Whether or not search is done */
   protected boolean done = false;
 
-  @Getter @Setter protected transient PSymConfiguration configuration;
   /** Choice depth */
   protected int choiceDepth = 0;
   /** Current depth of exploration */
@@ -63,10 +60,9 @@ public abstract class Scheduler implements SchedulerInterface {
    *
    * @param machines The machines initially in the Scheduler
    */
-  protected Scheduler(PSymConfiguration config, Program p, Machine... machines) {
-    setConfiguration(config);
+  protected Scheduler(Program p, Machine... machines) {
     program = p;
-    this.schedule = getNewSchedule(GlobalData.getSymmetryTracker());
+    this.schedule = getNewSchedule(PSymGlobal.getSymmetryTracker());
     this.machines = new ArrayList<>();
     this.currentMachines = new TreeSet<>();
     this.machineCounters = new HashMap<>();
@@ -102,7 +98,7 @@ public abstract class Scheduler implements SchedulerInterface {
    * @return Whether or not there are more steps to run
    */
   public boolean isDone() {
-    return done || depth == configuration.getMaxStepBound();
+    return done || depth == PSymGlobal.getConfiguration().getMaxStepBound();
   }
 
   /**
@@ -111,7 +107,7 @@ public abstract class Scheduler implements SchedulerInterface {
    * @return Whether or not current execution finished
    */
   public boolean isFinishedExecution() {
-    return executionFinished || depth == configuration.getMaxStepBound();
+    return executionFinished || depth == PSymGlobal.getConfiguration().getMaxStepBound();
   }
 
   /**
@@ -239,9 +235,9 @@ public abstract class Scheduler implements SchedulerInterface {
   public void initializeSearch() {
     assert (getDepth() == 0);
 
-    if (configuration.isChoiceOrchestrationLearning()) {
-      GlobalData.getChoiceLearningStats()
-          .setProgramStateHash(this, configuration.getChoiceLearningStateMode(), null);
+    if (PSymGlobal.getConfiguration().isChoiceOrchestrationLearning()) {
+      PSymGlobal.getChoiceLearningStats()
+          .setProgramStateHash(this, PSymGlobal.getConfiguration().getChoiceLearningStateMode(), null);
     }
     listeners = program.getListeners();
     monitors = new ArrayList<>(program.getMonitors());
@@ -372,6 +368,6 @@ public abstract class Scheduler implements SchedulerInterface {
   }
 
   public int getMaxInternalSteps() {
-    return configuration.getMaxInternalSteps();
+    return PSymGlobal.getConfiguration().getMaxInternalSteps();
   }
 }

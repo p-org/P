@@ -2,7 +2,7 @@ package psym.runtime.machine.events;
 
 import java.util.*;
 import lombok.Getter;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.valuesummary.*;
 
@@ -114,7 +114,7 @@ public class Message implements ValueSummary<Message> {
     for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
       PrimitiveVS<Event> events = this.getEvent();
       for (GuardedValue<Event> event : events.getGuardedValues()) {
-        if (GlobalData.getSyncEvents().contains(event.getValue().name)
+        if (PSymGlobal.getSyncEvents().contains(event.getValue().name)
             || event.getValue().name.contains("sync")) {
           cond = cond.or(event.getGuard());
         }

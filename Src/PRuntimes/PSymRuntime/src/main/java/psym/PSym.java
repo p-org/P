@@ -3,14 +3,12 @@ package psym;
 import java.util.Optional;
 import java.util.Set;
 import org.reflections.Reflections;
-import psym.commandline.PSymConfiguration;
 import psym.commandline.PSymOptions;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.runtime.PTestDriver;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.scheduler.replay.ReplayScheduler;
-import psym.runtime.statistics.SolverStats;
 import psym.utils.exception.BugFoundException;
 import psym.utils.monitor.MemoryMonitor;
 import psym.utils.monitor.TimeMonitor;
@@ -25,11 +23,11 @@ public class PSym {
     Program p = null;
 
     // parse the commandline arguments to create the configuration
-    PSymConfiguration config = PSymOptions.ParseCommandlineArgs(args);
-    PSymLogger.Initialize(config.getVerbosity());
+    PSymGlobal.setConfiguration(PSymOptions.ParseCommandlineArgs(args));
+    PSymLogger.Initialize(PSymGlobal.getConfiguration().getVerbosity());
 
     try {
-      if (config.getReadFromFile().equals("") && config.getReadReplayerFromFile().equals("")) {
+      if (PSymGlobal.getConfiguration().getReadFromFile().equals("") && PSymGlobal.getConfiguration().getReadReplayerFromFile().equals("")) {
         Set<Class<? extends Program>> subTypesProgram = reflections.getSubTypesOf(Program.class);
         if (subTypesProgram.size() == 0) {
           throw new Exception("No program found.");
@@ -37,37 +35,37 @@ public class PSym {
 
         Optional<Class<? extends Program>> program = subTypesProgram.stream().findFirst();
         p = program.get().getDeclaredConstructor().newInstance();
-        setProjectName(p, config);
+        setProjectName(p);
       }
     } catch (Exception ex) {
       ex.printStackTrace();
       System.exit(5);
     }
 
-    setup(config);
+    setup();
 
     int exit_code = 0;
     try {
-      if (!config.getReadReplayerFromFile().equals("")) {
+      if (!PSymGlobal.getConfiguration().getReadReplayerFromFile().equals("")) {
         ReplayScheduler replayScheduler =
-            ReplayScheduler.readFromFile(config.getReadReplayerFromFile());
-        EntryPoint.replayBug(replayScheduler, config);
+            ReplayScheduler.readFromFile(PSymGlobal.getConfiguration().getReadReplayerFromFile());
+        EntryPoint.replayBug(replayScheduler);
         throw new Exception("ERROR");
       }
 
-      if (config.isWriteToFile()) {
-        BacktrackWriter.Initialize(config.getProjectName(), config.getOutputFolder());
+      if (PSymGlobal.getConfiguration().isWriteToFile()) {
+        BacktrackWriter.Initialize(PSymGlobal.getConfiguration().getProjectName(), PSymGlobal.getConfiguration().getOutputFolder());
       }
 
-      if (config.getReadFromFile().equals("")) {
+      if (PSymGlobal.getConfiguration().getReadFromFile().equals("")) {
         assert (p != null);
-        setTestDriver(p, config, reflections);
-        EntryPoint.run(config, p);
+        setTestDriver(p, reflections);
+        EntryPoint.run(p);
       } else {
-        EntryPoint.resume(config);
+        EntryPoint.resume();
       }
 
-      if (config.isWriteToFile()) {
+      if (PSymGlobal.getConfiguration().isWriteToFile()) {
         EntryPoint.writeToFile();
       }
     } catch (BugFoundException e) {
@@ -88,25 +86,24 @@ public class PSym {
     }
   }
 
-  private static void setup(PSymConfiguration config) {
+  private static void setup() {
     PSymLogger.ResetAllConfigurations(
-        config.getVerbosity(), config.getProjectName(), config.getOutputFolder());
-    SolverEngine.resetEngine(config.getSolverType(), config.getExprLibType());
-    GlobalData.initializeSymmetryTracker(config.isSymbolic());
-    RandomNumberGenerator.setup(config.getRandomSeed());
-    MemoryMonitor.setup(config.getMemLimit());
-    TimeMonitor.setup(config.getTimeLimit());
+            PSymGlobal.getConfiguration().getVerbosity(), PSymGlobal.getConfiguration().getProjectName(), PSymGlobal.getConfiguration().getOutputFolder());
+    SolverEngine.resetEngine(PSymGlobal.getConfiguration().getSolverType(), PSymGlobal.getConfiguration().getExprLibType());
+    PSymGlobal.initializeSymmetryTracker(PSymGlobal.getConfiguration().isSymbolic());
+    RandomNumberGenerator.setup(PSymGlobal.getConfiguration().getRandomSeed());
+    MemoryMonitor.setup(PSymGlobal.getConfiguration().getMemLimit());
+    TimeMonitor.setup(PSymGlobal.getConfiguration().getTimeLimit());
   }
 
   /**
    * Set the project name
    *
    * @param p Input program instance
-   * @param config Input PSymConfiguration
    */
-  private static void setProjectName(Program p, PSymConfiguration config) {
-    if (config.getProjectName().equals("default")) {
-      config.setProjectName(p.getClass().getSimpleName());
+  private static void setProjectName(Program p) {
+    if (PSymGlobal.getConfiguration().getProjectName().equals("default")) {
+      PSymGlobal.getConfiguration().setProjectName(p.getClass().getSimpleName());
     }
   }
 
@@ -114,13 +111,12 @@ public class PSym {
    * Set the test driver for the program
    *
    * @param p Input program instance
-   * @param config Input PSymConfiguration
    * @throws Exception Throws exception if test driver is not found
    */
-  private static void setTestDriver(Program p, PSymConfiguration config, Reflections reflections)
+  private static void setTestDriver(Program p, Reflections reflections)
       throws Exception {
-    final String name = sanitizeTestName(config.getTestDriver());
-    final String defaultTestDriver = sanitizeTestName(config.getTestDriverDefault());
+    final String name = sanitizeTestName(PSymGlobal.getConfiguration().getTestDriver());
+    final String defaultTestDriver = sanitizeTestName(PSymGlobal.getConfiguration().getTestDriverDefault());
 
     Set<Class<? extends PTestDriver>> subTypesDriver = reflections.getSubTypesOf(PTestDriver.class);
     PTestDriver driver = null;
@@ -149,12 +145,12 @@ public class PSym {
         PSymLogger.info(String.format("%s", td.getSimpleName()));
       }
       if (!name.equals(defaultTestDriver)) {
-        throw new Exception("No test driver found named \"" + config.getTestDriver() + "\"");
+        throw new Exception("No test driver found named \"" + PSymGlobal.getConfiguration().getTestDriver() + "\"");
       } else {
         System.exit(6);
       }
     }
-    config.setTestDriver(driver.getClass().getSimpleName());
+    PSymGlobal.getConfiguration().setTestDriver(driver.getClass().getSimpleName());
     p.setTestDriver(driver);
   }
 
@@ -173,8 +169,8 @@ public class PSym {
     SearchLogger.disable();
     TraceLogger.disable();
     // parse the commandline arguments to create the configuration
-    PSymConfiguration config = PSymOptions.ParseCommandlineArgs(new String[0]);
-    config.setOutputFolder(outputFolder);
-    setup(config);
+    PSymGlobal.setConfiguration(PSymOptions.ParseCommandlineArgs(new String[0]));
+    PSymGlobal.getConfiguration().setOutputFolder(outputFolder);
+    setup();
   }
 }

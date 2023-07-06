@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.MachineLocalState;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
@@ -72,7 +72,7 @@ public class Schedule implements Serializable {
   }
 
   public void setSchedulerSymmetry() {
-    schedulerSymmetry = GlobalData.getSymmetryTracker();
+    schedulerSymmetry = PSymGlobal.getSymmetryTracker();
   }
 
   public List<Choice> getChoices() {

@@ -7,8 +7,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import psym.commandline.PSymConfiguration;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
@@ -20,8 +19,8 @@ import psym.valuesummary.*;
 
 /** Represents the search scheduler */
 public abstract class SearchScheduler extends Scheduler {
-  protected SearchScheduler(PSymConfiguration config, Program p) {
-    super(config, p);
+  protected SearchScheduler(Program p) {
+    super(p);
   }
 
   protected abstract PrimitiveVS getNext(
@@ -126,16 +125,16 @@ public abstract class SearchScheduler extends Scheduler {
         currentMachines.add(m);
         assert (machines.size() >= currentMachines.size());
         m.setScheduler(this);
-        if (configuration.getSymmetryMode() != SymmetryMode.None) {
-          GlobalData.getSymmetryTracker().createMachine(m, g);
+        if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+          PSymGlobal.getSymmetryTracker().createMachine(m, g);
         }
       }
     } else {
       Machine newMachine = setupNewMachine(pc, guardedCount, constructor);
 
       allocated = new PrimitiveVS<>(newMachine).restrict(pc);
-      if (configuration.getSymmetryMode() != SymmetryMode.None) {
-        GlobalData.getSymmetryTracker().createMachine(newMachine, pc);
+      if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+        PSymGlobal.getSymmetryTracker().createMachine(newMachine, pc);
       }
     }
 

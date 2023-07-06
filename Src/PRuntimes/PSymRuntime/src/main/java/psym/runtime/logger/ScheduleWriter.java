@@ -59,15 +59,11 @@ public class ScheduleWriter {
     }
 
     public static void logReceive(Machine target, State state, Event event) {
-        if (!(target instanceof Monitor)) {
-            if (!state.isIgnored(event) && !state.isDeferred(event)) {
-                logComment(String.format("receive %s at %s in state %s",
-                        event,
-                        target,
-                        state));
-                log(target.toString());
-            }
-        }
+        logComment(String.format("receive %s at %s in state %s",
+                event,
+                target,
+                state));
+        log(target.toString());
     }
 
     public static void logSend(Machine sender, Message msg) {

@@ -30,9 +30,6 @@ public class EventQueue extends SymbolicQueue implements EventBuffer, Serializab
     }
     TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
     Message event = new Message(eventName, dest, payload).restrict(pc);
-    if (sender.getScheduler() instanceof ReplayScheduler) {
-      ScheduleWriter.logSend(sender, event);
-    }
     addEvent(event);
     sender.getScheduler().runMonitors(event);
   }
@@ -46,9 +43,6 @@ public class EventQueue extends SymbolicQueue implements EventBuffer, Serializab
     PrimitiveVS<Machine> machine = scheduler.allocateMachine(pc, machineType, constructor);
     if (payload != null) payload = payload.restrict(pc);
     Message event = new Message(Event.createMachine, machine, payload).restrict(pc);
-    if (sender.getScheduler() instanceof ReplayScheduler) {
-      ScheduleWriter.logSend(sender, event);
-    }
     addEvent(event);
     //        scheduler.performEffect(event);
     return machine;
@@ -62,6 +56,10 @@ public class EventQueue extends SymbolicQueue implements EventBuffer, Serializab
   }
 
   private void addEvent(Message event) {
+    if (sender.getScheduler() instanceof ReplayScheduler) {
+      ScheduleWriter.logSend(sender, event);
+    }
+
     if (PSymGlobal.getConfiguration().isReceiverQueue()) {
       for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
         target.getValue().getReceiverQueue().add(event.restrict(target.getGuard()));

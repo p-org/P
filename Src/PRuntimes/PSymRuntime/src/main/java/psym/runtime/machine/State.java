@@ -83,8 +83,19 @@ public abstract class State implements Serializable {
       assert (message.restrict(eventPc).getEvent().getGuardedValues().size() == 1);
       PrimitiveVS<State> current = new PrimitiveVS<>(this).restrict(eventPc);
       TraceLogger.handle(machine, this, message.restrict(entry.getGuard()));
-      if (machine.getScheduler() instanceof ReplayScheduler) {
-        ScheduleWriter.logReceive(machine, this, event);
+
+      if (PSymGlobal.getScheduler() instanceof ReplayScheduler) {
+        // exclude announce event
+        if (!(machine instanceof Monitor)) {
+          // exclude ignored and deferred events
+          if (!isIgnored(event) && !isDeferred(event)) {
+            // exclude raise event from user
+            if (!message.getTarget().getGuardedValues().isEmpty()) {
+              assert (message.getTarget().getGuardedValues().get(0).getValue() == machine);
+              ScheduleWriter.logReceive(machine, this, event);
+            }
+          }
+        }
       }
 
       Guard handledPc = Guard.constFalse();

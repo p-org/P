@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using PChecker.Exceptions;
 using PChecker.IO.Debugging;
 using PChecker.IO.Logging;
 using PChecker.SystematicTesting;
@@ -52,84 +53,10 @@ namespace PChecker.ExhaustiveSearch
         }
 
         /// <summary>
-        /// Run a shell command in the active directory.
+        /// Creates the set of arguments for the exhaustive engine.
         /// </summary>
-        private void RunCommand(string activeDirectory, string exeName, string arguments)
+        private String CreateArguments()
         {
-            var psi = new ProcessStartInfo(exeName)
-            {
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                WorkingDirectory = activeDirectory,
-                Arguments = arguments
-            };
-
-            Process proc = null;
-            Task task = null;
-            try
-            {
-                if (_checkerConfiguration.Timeout > 0)
-                {
-                    CancellationTokenSource.CancelAfter(
-                        (_checkerConfiguration.Timeout + 30) * 1000);
-                }
-
-                if (!CancellationTokenSource.IsCancellationRequested)
-                {
-                    proc = new Process { StartInfo = psi };
-                    proc.Start();
-                    task = proc.WaitForExitAsync(CancellationTokenSource.Token);
-                    task.Wait(CancellationTokenSource.Token);
-
-                    switch (proc.ExitCode)
-                    {
-                        case 0:
-                            Logger.WriteLine($"... Checker run finished.");
-                            break;
-                        case 2:
-                            Logger.WriteLine($"... Checker found a bug.");
-                            break;
-                        case 3:
-                            Logger.WriteLine($"... Checker timed out.");
-                            break;
-                        case 4:
-                            Logger.WriteLine($"... Checker ran out of memory.");
-                            break;
-                        default:
-                            Logger.WriteLine($"... Checker run exited with code {proc.ExitCode}.");
-                            break;
-                    }
-                }
-            }
-            catch (OperationCanceledException ex)
-            {
-                if (CancellationTokenSource.IsCancellationRequested)
-                {
-                    Logger.WriteLine($"... Checker forced timed out.");
-                    Error.Report($"{ex.Message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.WriteLine($"... Checker failed due to an internal error: {ex}");
-                Error.Report($"{ex.Message}");
-            }
-            finally
-            {
-                proc?.Kill();
-                proc?.WaitForExit();
-                task?.Dispose();
-                Debug.Assert(proc?.ExitCode != null, "proc?.ExitCode != null");
-                Environment.Exit((int)proc?.ExitCode);
-            }
-        }
-
-        /// <summary>
-        /// Runs the testing engine.
-        /// </summary>
-        public void Run()
-        {
-            // run the jar file
             var arguments = new StringBuilder();
 
             arguments.Append($"{_checkerConfiguration.JvmArgs} ");
@@ -186,15 +113,129 @@ namespace PChecker.ExhaustiveSearch
                 }
             }
 
+            arguments.Append($"{_checkerConfiguration.PSymArgs} ");
+
+            return arguments.ToString();
+        }
+
+        /// <summary>
+        /// Creates the process from the shell command
+        /// </summary>
+        private Process CreateProcess(string activeDirectory, string exeName, string arguments)
+        {
+            var psi = new ProcessStartInfo(exeName)
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                WorkingDirectory = activeDirectory,
+                Arguments = arguments
+            };
+
+            return new Process { StartInfo = psi };
+        }
+
+        /// <summary>
+        /// Wait for task to finish
+        /// </summary>
+        private async Task CreateTaskFromProcess(Process proc)
+        {
+            if (proc != null)
+            {
+                if (_checkerConfiguration.Timeout > 0)
+                {
+                    CancellationTokenSource.CancelAfter(
+                        (_checkerConfiguration.Timeout + 30) * 1000);
+                }
+            
+                await  proc.WaitForExitAsync(CancellationTokenSource.Token);
+                    
+                switch (proc.ExitCode)
+                {
+                    case 0:
+                        Logger.WriteLine($"... Checker run finished.");
+                        break;
+                    case 2:
+                        Logger.WriteLine($"... Checker found a bug.");
+                        break;
+                    case 3:
+                        Logger.WriteLine($"... Checker timed out.");
+                        break;
+                    case 4:
+                        Logger.WriteLine($"... Checker ran out of memory.");
+                        break;
+                    default:
+                        Logger.WriteLine($"... Checker run exited with code {proc.ExitCode}.");
+                        break;
+                }
+            }
+        }
+
+        private void Cleanup(Process proc, Task task)
+        {
+            proc?.Kill(true);
+            proc?.WaitForExit();
+            task?.Dispose();
+        }
+
+        /// <summary>
+        /// Runs the exhaustive engine.
+        /// </summary>
+        public void Run()
+        {
+            var arguments = CreateArguments();
+
             if (_checkerConfiguration.IsVerbose)
             {
                 Logger.WriteLine($"... Executing command: java {arguments}");
             }
+
+            var proc = CreateProcess(Directory.GetCurrentDirectory(), "java", arguments);
+            proc.Start();
+            Task task = CreateTaskFromProcess(proc);
+            bool interrupted = false;
             
-            arguments.Append($"{_checkerConfiguration.PSymArgs} ");
+            // For graceful shutdown, trap unload event
+            AppDomain.CurrentDomain.ProcessExit += delegate
+            {
+                interrupted = true;
+                CancellationTokenSource.Cancel();
+                Cleanup(proc, task);
+                Logger.WriteLine($"... Checker run terminated.");
+            };
 
-            RunCommand(Directory.GetCurrentDirectory(), "java", arguments.ToString());
+            Console.CancelKeyPress += delegate
+            {
+                interrupted = true;
+                CancellationTokenSource.Cancel();
+                Cleanup(proc, task);
+                Logger.WriteLine($"... Checker run cancelled by user.");
+            };
 
+            try
+            {
+                task.Wait(CancellationTokenSource.Token);
+            }
+            catch (OperationCanceledException ex)
+            {
+                if (CancellationTokenSource.IsCancellationRequested)
+                {
+                    if (!interrupted)
+                    {
+                        Logger.WriteLine($"... Checker run forcefully cancelled on timeout.");
+                    }
+                    Error.Report($"{ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine($"... Checker failed due to an internal error: {ex}");
+                Error.Report($"{ex.Message}");
+            }
+            finally
+            {
+                Cleanup(proc, task);
+                Environment.Exit(proc.ExitCode);
+            }
         }
     }
 }

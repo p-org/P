@@ -113,6 +113,11 @@ namespace PChecker.Testing
                 arguments.Append("--xml-trace ");
             }
 
+            if (checkerConfiguration.IsJsonLogEnabled)
+            {
+                arguments.Append("--json-trace ");
+            }
+
             if (!string.IsNullOrEmpty(checkerConfiguration.CustomActorRuntimeLogType))
             {
                 arguments.Append($"--actor-runtime-log {checkerConfiguration.CustomActorRuntimeLogType} ");

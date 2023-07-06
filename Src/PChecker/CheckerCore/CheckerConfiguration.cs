@@ -203,6 +203,12 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public bool IsXmlLogEnabled { get; set; }
+        
+        /// <summary>
+        /// Produce a JSON formatted runtime log file.
+        /// </summary>
+        [DataMember]
+        public bool IsJsonLogEnabled { get; set; }
 
         /// <summary>
         /// If specified, requests a custom runtime log to be used instead of the default.
@@ -487,6 +493,16 @@ namespace PChecker
         public CheckerConfiguration WithXmlLogEnabled(bool isEnabled = true)
         {
             IsXmlLogEnabled = isEnabled;
+            return this;
+        }
+        
+        /// <summary>
+        /// Updates the checkerConfiguration with JSON log generation enabled or disabled.
+        /// </summary>
+        /// <param name="isEnabled">If true, then enables JSON log generation.</param>
+        public CheckerConfiguration WithJsonLogEnabled(bool isEnabled = true)
+        {
+            IsJsonLogEnabled = isEnabled;
             return this;
         }
     }

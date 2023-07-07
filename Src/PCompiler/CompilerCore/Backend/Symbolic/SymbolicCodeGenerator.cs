@@ -1334,7 +1334,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, ",");
             context.Write(output, "EventHandlerReturnReason outcome");
             context.WriteLine(output, ",");
-            var messageName = CompilationContext.GetVar("msg");
+            var messageName = $"{continuationName}_msg";
             context.WriteLine(output, $"Message {messageName}");
             context.WriteLine(output);
             context.Write(output, ") ");
@@ -1351,10 +1351,10 @@ namespace Plang.Compiler.Backend.Symbolic
             }
             var idx = 0;
             context.WriteLine(output, $"Guard deferGuard = {rootPCScope.PathConstraintVar};");
-            foreach (var e in continuation.Cases.Keys)
+            foreach (var (key, value) in continuation.Cases)
             {
                 var args = new List<IPExpr>();
-                context.WriteLine(output, $"Guard cond_{idx} = {messageName}.getEvent().getGuardFor({e.Name});");
+                context.WriteLine(output, $"Guard cond_{idx} = {messageName}.getEvent().getGuardFor({key.Name});");
                 context.WriteLine(output, $"Message {messageName}_{idx} = {messageName}.restrict(cond_{idx});");
                 context.WriteLine(output, $"if (!{messageName}_{idx}.isEmptyVS())");
                 context.WriteLine(output, "{");
@@ -1363,13 +1363,13 @@ namespace Plang.Compiler.Backend.Symbolic
                 var caseScope = context.FreshPathConstraintScope();
                 context.WriteLine(output, $"Guard {caseScope.PathConstraintVar} = {rootPCScope.PathConstraintVar}.and(cond_{idx});");
                 var caseContext = ControlFlowContext.FreshFuncContext(context, caseScope);
-                if (continuation.Cases[e].Signature.Parameters.Count > 0)
+                if (value.Signature.Parameters.Count > 0)
                 {
-                    if (continuation.Cases[e].Signature.Parameters.Count > 1)
+                    if (value.Signature.Parameters.Count > 1)
                     {
-                        throw new NotImplementedException($"Too many parameters ({continuation.Cases[e].Signature.Parameters.Count}) in receive case");
+                        throw new NotImplementedException($"Too many parameters ({value.Signature.Parameters.Count}) in receive case");
                     }
-                    var arg = continuation.Cases[e].Signature.Parameters[0];
+                    var arg =value.Signature.Parameters[0];
                     var argValue = new Variable($"{arg.Name}_payload", continuation.SourceLocation, VariableRole.Param);
                     argValue.Type = PrimitiveType.Any;
                     context.WriteLine(output, $"UnionVS var_{arg.Name}_payload = {messageName}_{idx}.restrict({caseScope.PathConstraintVar}).getPayload();");
@@ -1377,14 +1377,14 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"{GetSymbolicType(arg.Type)} {CompilationContext.GetVar(arg.Name)} = {GetDefaultValue(context, caseScope, arg.Type)};");
                     WriteStmt(continuation, context, output, caseContext, assignMsg);
                 }
-                foreach (var local in continuation.Cases[e].LocalVariables)
+                foreach (var local in value.LocalVariables)
                 {
                     if (!continuationLocalParams.Contains(local.Name))
                     {
                         context.WriteLine(output, $"{GetSymbolicType(local.Type)} {CompilationContext.GetVar(local.Name)} = {GetDefaultValue(context, caseScope, local.Type)};");
                     }
                 }
-                WriteStmt(continuation, context, output, caseContext, continuation.Cases[e].Body);
+                WriteStmt(continuation, context, output, caseContext, value.Body);
                 context.WriteLine(output, "}");
                 idx++;
             }

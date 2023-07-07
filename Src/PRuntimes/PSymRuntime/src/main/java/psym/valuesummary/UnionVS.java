@@ -60,8 +60,10 @@ public class UnionVS implements ValueSummary<UnionVS> {
         type = UnionVStype.getUnionVStype(vs.getClass(), ((NamedTupleVS) vs).getNames());
       } else if (vs instanceof TupleVS) {
         type = UnionVStype.getUnionVStype(vs.getClass(), ((TupleVS) vs).getNames());
+      } else if (vs instanceof PrimitiveVS) {
+        type = UnionVStype.getUnionVStype(vs.getClass(), ((PrimitiveVS) vs).getValueClass());
       } else {
-        type = UnionVStype.getUnionVStype(vs.getClass(), null);
+        type = UnionVStype.getUnionVStype(vs.getClass(), vs.getClass());
       }
       this.type = new PrimitiveVS<UnionVStype>(type).restrict(vs.getUniverse());
       this.value = new HashMap<>();

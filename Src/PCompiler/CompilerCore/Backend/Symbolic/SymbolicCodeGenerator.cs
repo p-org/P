@@ -117,10 +117,15 @@ namespace Plang.Compiler.Backend.Symbolic
             IEnumerable<IPDecl> decls = TransformASTPass.GetTransformedDecls(globalScope);
             //IEnumerable<IPDecl> decls = globalScope.AllDecls;
 
-            foreach (var decl in decls)
+            bool hasSafetyTest = false;
+            foreach (var decl in decls) {
+                hasSafetyTest |= (decl.GetType() == typeof(SafetyTest));
                 WriteDecl(context, source.Stream, decl);
+            }
 
-            WriteMainDriver(context, source.Stream, globalScope, decls);
+            if (!hasSafetyTest) {
+                WriteMainDriver(context, source.Stream, globalScope, decls);
+            }
 
             context.WriteLine(source.Stream, "PTestDriver testDriver = null;");
             context.WriteLine(source.Stream, "@Generated");
@@ -2032,6 +2037,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     var isPrimitive = binOpExpr.Lhs.Type.Canonicalize() is PrimitiveType && binOpExpr.Rhs.Type.Canonicalize() is PrimitiveType;
                     var isEnum = binOpExpr.Lhs.Type.Canonicalize() is EnumType && binOpExpr.Rhs.Type.Canonicalize() is EnumType;
                     var isEquality = binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq;
+                    var isString = isPrimitive && binOpExpr.Lhs.Type.IsSameTypeAs(PrimitiveType.String);
 
                     if (!(isPrimitive || isEquality))
                     {
@@ -2074,13 +2080,19 @@ namespace Plang.Compiler.Backend.Symbolic
                             context.Write(output, $"{GetDefaultValueNoGuard(context, binOpExpr.Lhs.Type)}.restrict(Guard.constFalse())");
                         else WriteExpr(context, output, pcScope, binOpExpr.Rhs);
                         string lambda;
-                        if (binOpExpr.Operation == BinOpType.Eq) lambda = $"{lhsLambdaTemp}.equals({rhsLambdaTemp}))";
-                        else if (binOpExpr.Operation == BinOpType.Neq) lambda = $"!{lhsLambdaTemp}.equals({rhsLambdaTemp}))";
-                        else lambda = $"{lhsLambdaTemp} {BinOpToStr(binOpExpr.Operation)} {rhsLambdaTemp})";
+                        if (binOpExpr.Operation == BinOpType.Eq)
+                            lambda = $"{lhsLambdaTemp}.equals({rhsLambdaTemp})";
+                        else if (binOpExpr.Operation == BinOpType.Neq)
+                            lambda = $"!{lhsLambdaTemp}.equals({rhsLambdaTemp})";
+                        else if (isString)
+                            lambda = BinOpForStringToStr(binOpExpr.Operation, $"{lhsLambdaTemp}", $"{rhsLambdaTemp}");
+                        else
+                            lambda = $"{lhsLambdaTemp} {BinOpToStr(binOpExpr.Operation)} {rhsLambdaTemp}";
                         context.Write(
                             output,
                             $", ({lhsLambdaTemp}, {rhsLambdaTemp}) -> " +
-                            lambda
+                            lambda +
+                            ")"
                         );
                     }
                     break;
@@ -2405,6 +2417,25 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "==";
                 case BinOpType.Neq:
                     return "!=";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
+            }
+        }
+
+        private string BinOpForStringToStr(BinOpType binOpType, string lhs, string rhs)
+        {
+            switch (binOpType)
+            {
+                case BinOpType.Add:
+                    return $"{lhs}.concat({rhs})";
+                case BinOpType.Lt:
+                    return $"{lhs}.compareTo({rhs}) < 0";
+                case BinOpType.Le:
+                    return $"{lhs}.compareTo({rhs}) <= 0";
+                case BinOpType.Gt:
+                    return $"{lhs}.compareTo({rhs}) > 0";
+                case BinOpType.Ge:
+                    return $"{lhs}.compareTo({rhs}) >= 0";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
             }

@@ -62,17 +62,12 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
       type = UnionVStype.getUnionVStype(def.getClass(), ((NamedTupleVS) def).getNames());
     } else if (def instanceof TupleVS) {
       type = UnionVStype.getUnionVStype(def.getClass(), ((TupleVS) def).getNames());
-    } else if (def instanceof PrimitiveVS) {
-      type = UnionVStype.getUnionVStype(def.getClass(), ((PrimitiveVS) def).getValueClass());
     } else {
-      type = UnionVStype.getUnionVStype(def.getClass(), def.getClass());
+      type = UnionVStype.getUnionVStype(def.getClass(), null);
     }
     Guard typeGuard = anyVal.getGuardFor(type);
     Guard pcDefined = pc.and(typeGuard);
     if (pcDefined.isFalse()) {
-      if (type.equals(UnionVStype.getUnionVStype(PrimitiveVS.class, PrimitiveVS.class))) {
-        return new PrimitiveVS<>(pc);
-      }
       throw new BugFoundException(String.format("Casting %s to type %s is not defined", anyVal, type), pc);
     }
     result = anyVal.getValue(type).restrict(pc);

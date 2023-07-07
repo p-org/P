@@ -15,15 +15,13 @@ public class UnionVStype implements Serializable {
     names = n;
   }
 
-  public static UnionVStype getUnionVStype(Class<? extends ValueSummary> tc, Class c) {
-    return getUnionVStype(tc, new String[]{ c.toString() });
-  }
-
   public static UnionVStype getUnionVStype(Class<? extends ValueSummary> tc, String[] n) {
     UnionVStype result;
 
     String typeName = tc.toString();
-    typeName += String.format("[%s]", String.join(",", n));
+    if (n != null) {
+      typeName += String.format("[%s]", String.join(",", n));
+    }
 
     if (!allTypes.containsKey(typeName)) {
       result = new UnionVStype(tc, n);
@@ -33,6 +31,18 @@ public class UnionVStype implements Serializable {
     }
 
     return result;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder out = new StringBuilder();
+    out.append("[type: ");
+    out.append(typeClass);
+    out.append(", ");
+    out.append("names: ");
+    out.append(names);
+    out.append("]");
+    return out.toString();
   }
 
   @Override

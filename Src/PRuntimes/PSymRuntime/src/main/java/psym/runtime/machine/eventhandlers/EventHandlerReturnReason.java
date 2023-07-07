@@ -38,7 +38,7 @@ public class EventHandlerReturnReason implements Serializable {
    */
   public Message getMessageSummary() {
     return (Message)
-        outcome.getValue(UnionVStype.getUnionVStype(Message.class, Message.class)).restrict(getRaiseCond());
+        outcome.getValue(UnionVStype.getUnionVStype(Message.class, null)).restrict(getRaiseCond());
   }
 
   public void raiseGuardedMessage(Message newMessage) {
@@ -66,7 +66,7 @@ public class EventHandlerReturnReason implements Serializable {
   public PrimitiveVS<State> getGotoStateSummary() {
     return (PrimitiveVS<State>)
         outcome
-            .getValue(UnionVStype.getUnionVStype(PrimitiveVS.class, State.class))
+            .getValue(UnionVStype.getUnionVStype(PrimitiveVS.class, null))
             .restrict(getGotoCond());
   }
 

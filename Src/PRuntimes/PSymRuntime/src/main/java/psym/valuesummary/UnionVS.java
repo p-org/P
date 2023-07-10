@@ -201,14 +201,9 @@ public class UnionVS implements ValueSummary<UnionVS> {
   }
 
   @Override
-  public PrimitiveVS<Boolean> symbolicEquals(UnionVS cmp_orig, Guard pc) {
-    UnionVS cmp;
-    boolean isNullCompare = false;
-    if (cmp_orig == null) {
-      isNullCompare = true;
-      cmp = new UnionVS();
-    } else {
-      cmp = cmp_orig;
+  public PrimitiveVS<Boolean> symbolicEquals(UnionVS cmp, Guard pc) {
+    if (cmp == null) {
+      return type.symbolicEquals(null, pc);
     }
 
     PrimitiveVS res = type.symbolicEquals(cmp.type, pc);

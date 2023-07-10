@@ -1201,8 +1201,10 @@ namespace Plang.Compiler.Backend.Symbolic
                     {
                         var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
                         var isSet = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Set);
+                        PLanguageType keyType = null;
                         PLanguageType elementType = null;
                         if (isMap) {
+                            keyType = ((MapType) insertStmt.Variable.Type.Canonicalize()).KeyType;
                             elementType = ((MapType) insertStmt.Variable.Type.Canonicalize()).ValueType;
                         } else if (isSet) {
                             elementType = ((SetType) insertStmt.Variable.Type.Canonicalize()).ElementType;
@@ -1224,16 +1226,28 @@ namespace Plang.Compiler.Backend.Symbolic
                                     context.Write(output, $".add(");
                                 else
                                     context.Write(output, $".insert(");
-                                WriteExpr(context, output, flowContext.pcScope, insertStmt.Index);
-                                context.Write(output, ", ");
 
-                                var castPrefix = "";
-                                if (elementType != null) {
-                                    castPrefix = GetInlineCastPrefix(insertStmt.Value.Type, elementType, context, flowContext.pcScope);
+                                {
+                                    var castPrefixKey = "";
+                                    if (keyType != null) {
+                                        castPrefixKey = GetInlineCastPrefix(insertStmt.Index.Type, keyType, context, flowContext.pcScope);
+                                    }
+                                    context.Write(output, castPrefixKey);
+                                    WriteExpr(context, output, flowContext.pcScope, insertStmt.Index);
+                                    if (castPrefixKey != "") context.Write(output, ")");
+                                    context.Write(output, ", ");
                                 }
-                                context.Write(output, castPrefix);
-                                WriteExpr(context, output, flowContext.pcScope, insertStmt.Value);
-                                if (castPrefix != "") context.Write(output, ")");
+
+                                {
+                                    var castPrefix = "";
+                                    if (elementType != null) {
+                                        castPrefix = GetInlineCastPrefix(insertStmt.Value.Type, elementType, context, flowContext.pcScope);
+                                    }
+                                    context.Write(output, castPrefix);
+                                    WriteExpr(context, output, flowContext.pcScope, insertStmt.Value);
+                                    if (castPrefix != "") context.Write(output, ")");
+                                }
+
                                 context.WriteLine(output, ");");
                             }
                         );
@@ -1743,7 +1757,7 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (lvalue)
             {
                 case MapAccessExpr mapAccessExpr:
-                    var valueType = mapAccessExpr.Type;
+                    elementType = mapAccessExpr.Type;
                     var indexExpr = mapAccessExpr.IndexExpr;
                     var indexType = indexExpr.Type;
 
@@ -1755,18 +1769,18 @@ namespace Plang.Compiler.Backend.Symbolic
                         true,
                         mapTemp =>
                         {
-                            var valueTemp = context.FreshTempVar();
+                            var elementTemp = context.FreshTempVar();
                             var indexTemp = context.FreshTempVar();
 
                             context.Write(output, $"{GetSymbolicType(indexType)} {indexTemp} = ");
                             WriteExpr(context, output, pcScope, indexExpr);
                             context.WriteLine(output, ";");
 
-                            context.Write(output, $"{GetSymbolicType(valueType)} {valueTemp}");
+                            context.Write(output, $"{GetSymbolicType(elementType)} {elementTemp}");
                             if (needOrigValue)
                             {
                                 context.Write(output, $" = {mapTemp}.getOrDefault({indexTemp}, ");
-                                context.Write(output, GetDefaultValue(context, pcScope, valueType));
+                                context.Write(output, GetDefaultValue(context, pcScope, elementType));
                                 context.WriteLine(output, ");");
                             }
                             else
@@ -1774,9 +1788,37 @@ namespace Plang.Compiler.Backend.Symbolic
                                 context.WriteLine(output, ";");
                             }
 
-                            writeMutator(valueTemp);
+                            writeMutator(elementTemp);
 
-                            context.WriteLine(output, $"{mapTemp} = {mapTemp}.put({indexTemp}, {valueTemp});");
+                            context.Write(output, $"{mapTemp} = {mapTemp}.put(");
+
+                            PLanguageType keyType = null;
+                            PLanguageType valueType = null;
+                            keyType = ((MapType) mapAccessExpr.MapExpr.Type.Canonicalize()).KeyType;
+                            valueType = ((MapType) mapAccessExpr.MapExpr.Type.Canonicalize()).ValueType;
+
+                            {
+                                var castPrefixKey = "";
+                                if (keyType != null) {
+                                    castPrefixKey = GetInlineCastPrefix(indexType, keyType, context, pcScope);
+                                }
+                                context.Write(output, castPrefixKey);
+                                context.Write(output, $"{indexTemp}");
+                                if (castPrefixKey != "") context.Write(output, ")");
+                                context.Write(output, ", ");
+                            }
+
+                            {
+                                var castPrefix = "";
+                                if (valueType != null) {
+                                    castPrefix = GetInlineCastPrefix(elementType, valueType, context, pcScope);
+                                }
+                                context.Write(output, castPrefix);
+                                context.Write(output, $"{elementTemp}");
+                                if (castPrefix != "") context.Write(output, ")");
+                            }
+
+                            context.WriteLine(output, ");");
                         }
                     );
                     break;
@@ -1885,7 +1927,22 @@ namespace Plang.Compiler.Backend.Symbolic
 
                             writeMutator(elementTemp);
 
-                            context.WriteLine(output, $"{seqTemp} = {seqTemp}.set({indexTemp}, {elementTemp});");
+                            context.Write(output, $"{seqTemp} = {seqTemp}.set({indexTemp}, ");
+
+                            PLanguageType valueType = null;
+                            valueType = ((SequenceType) seqAccessExpr.SeqExpr.Type.Canonicalize()).ElementType;
+
+                            {
+                                var castPrefix = "";
+                                if (valueType != null) {
+                                    castPrefix = GetInlineCastPrefix(elementType, valueType, context, pcScope);
+                                }
+                                context.Write(output, castPrefix);
+                                context.Write(output, $"{elementTemp}");
+                                if (castPrefix != "") context.Write(output, ")");
+                            }
+
+                            context.WriteLine(output, ");");
                         }
                     );
                     break;

@@ -311,7 +311,14 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
   @Override
   public PrimitiveVS<T> merge(Iterable<PrimitiveVS<T>> summaries) {
-    final Map<T, Guard> result = new HashMap<>(guardedValues);
+    final Map<T, Guard> result = new HashMap<>();
+
+    for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
+      if (entry.getKey() == null) {
+        continue;
+      }
+      result.merge(entry.getKey(), entry.getValue(), Guard::or);
+    }
 
     for (PrimitiveVS<T> summary : summaries) {
       for (Map.Entry<T, Guard> entry : summary.guardedValues.entrySet()) {

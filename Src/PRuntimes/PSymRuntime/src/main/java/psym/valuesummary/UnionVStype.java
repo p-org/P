@@ -34,6 +34,18 @@ public class UnionVStype implements Serializable {
   }
 
   @Override
+  public String toString() {
+    StringBuilder out = new StringBuilder();
+    out.append("[type: ");
+    out.append(typeClass);
+    out.append(", ");
+    out.append("names: ");
+    out.append(names);
+    out.append("]");
+    return out.toString();
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof UnionVStype)) return false;

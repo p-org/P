@@ -8,6 +8,7 @@ import java.util.Map;
 
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
+import psym.utils.exception.BugFoundException;
 
 public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
 
@@ -74,17 +75,9 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
       type = UnionVStype.getUnionVStype(def.getClass(), null);
     }
     Guard typeGuard = anyVal.getGuardFor(type);
-    Guard pcNotDefined = pc.and(typeGuard.not());
     Guard pcDefined = pc.and(typeGuard);
     if (pcDefined.isFalse()) {
-      if (type.equals(UnionVStype.getUnionVStype(PrimitiveVS.class, null))) {
-        return new PrimitiveVS<>(pc);
-      }
-      System.out.println(anyVal.restrict(typeGuard));
-      throw new ClassCastException(
-          String.format(
-              "Casting to %s under path constraint %s is not defined for %s",
-              type, pcNotDefined, anyVal));
+      throw new BugFoundException(String.format("Casting %s to type %s is not defined", anyVal, type), pc);
     }
     result = anyVal.getValue(type).restrict(pc);
     return result;

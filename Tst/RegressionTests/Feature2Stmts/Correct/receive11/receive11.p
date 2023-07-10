@@ -6,7 +6,7 @@ event Unit;
 
 spec M observes E, F {
 	start state Init {
-		on E goto Next with (payload: int) { assert (payload != 10);}
+		on E goto Next with (payload: int) { assert (payload == 10);}
 	}
 	
 	state Next {
@@ -42,4 +42,6 @@ machine Main {
 		on E do (payload: int) {}
 	}
 }
+
+test DefaultImpl [main=Main]: assert M in { Main, A };
 

@@ -103,8 +103,16 @@ public class PSym {
    */
   private static void setProjectName(Program p) {
     if (PSymGlobal.getConfiguration().getProjectName().equals("default")) {
-      PSymGlobal.getConfiguration().setProjectName(p.getClass().getSimpleName());
+      PSymGlobal.getConfiguration().setProjectName(sanitizeProgramName(p.getClass().getSimpleName()));
     }
+  }
+
+  private static String sanitizeProgramName(String name) {
+    int index = name.lastIndexOf("Program");
+    if (index > 0) {
+      name = name.substring(0, index);
+    }
+    return name;
   }
 
   /**

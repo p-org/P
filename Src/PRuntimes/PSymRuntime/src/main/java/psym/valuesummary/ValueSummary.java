@@ -2,7 +2,10 @@ package psym.valuesummary;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
 
@@ -28,8 +31,14 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
       ListVS elements = toCastVs.getElements();
       return new SetVS<>((ListVS) ValueSummary.castToAnyCollection(pc, elements));
     } else {
-      throw new ClassCastException(
-          String.format("Casting elements in %s to any is unsupported", toCast));
+      assert (toCast instanceof MapVS);
+      MapVS toCastVs = (MapVS) toCast;
+      Map<Object, ValueSummary> items = new HashMap<>();
+      for (Object key: toCastVs.entries.keySet()) {
+        ValueSummary<?> val = (ValueSummary) toCastVs.entries.get(key);
+        items.put(key, ValueSummary.castToAny(pc, val));
+      }
+      return new MapVS<>(toCastVs.keys, items);
     }
   }
 
@@ -95,8 +104,14 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
       ListVS elements = toCastVs.getElements();
       return new SetVS<>((ListVS) ValueSummary.castFromAnyCollection(pc, def, elements));
     } else {
-      throw new ClassCastException(
-          String.format("Casting elements in %s to %s is unsupported", anyVal, def));
+      assert (anyVal instanceof MapVS);
+      MapVS toCastVs = (MapVS) anyVal;
+      Map<Object, ValueSummary> items = new HashMap<>();
+      for (Object key: toCastVs.entries.keySet()) {
+        ValueSummary val = (ValueSummary) toCastVs.entries.get(key);
+        items.put(key, ValueSummary.castFromAny(pc, def, (UnionVS) val));
+      }
+      return new MapVS<>(toCastVs.keys, items);
     }
   }
 

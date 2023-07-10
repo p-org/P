@@ -89,8 +89,6 @@ namespace Plang.Compiler.Backend.Symbolic
             return $"{machine.Name}";
         }
 
-        internal static string NullEventName => "_null";
-
         internal static string SchedulerVar => "PSymGlobal.getScheduler()";
 
         internal static string EffectCollectionVar => "effects";

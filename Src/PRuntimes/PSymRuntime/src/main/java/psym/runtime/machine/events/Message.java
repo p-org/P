@@ -35,10 +35,6 @@ public class Message implements ValueSummary<Message> {
     this(names, machine, new HashMap<>());
   }
 
-  public Message() {
-    this(new PrimitiveVS<>(), new PrimitiveVS<>());
-  }
-
   public Message(Event name, PrimitiveVS<Machine> machine, UnionVS payload) {
     this(new PrimitiveVS<>(name), machine, payload);
   }
@@ -135,7 +131,7 @@ public class Message implements ValueSummary<Message> {
   public boolean hasNullEvent() {
     PrimitiveVS<Event> events = this.getEvent();
     for (GuardedValue<Event> event : events.getGuardedValues()) {
-      if (event.getValue().equals(Event.nullEvent) && !event.getGuard().isFalse()) {
+      if (event.getValue() == null && !event.getGuard().isFalse()) {
         return true;
       }
     }

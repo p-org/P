@@ -2601,7 +2601,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return $"new {GetSymbolicType(type)}(0.0f)";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
-                    return $"new {GetSymbolicType(type)}({CompilationContext.NullEventName})";
+                    return $"new {GetSymbolicType(type)}((Event) null)";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return $"new {GetSymbolicType(type)}()";
                 case DataType _:

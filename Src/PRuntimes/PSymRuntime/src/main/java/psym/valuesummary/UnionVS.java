@@ -30,12 +30,13 @@ public class UnionVS implements ValueSummary<UnionVS> {
     // TODO: why are we not restricting the values?
     this.value.put(type, values);
     this.concreteHash = computeConcreteHash();
-    assert (this.type != null);
   }
 
   public UnionVS() {
-    this.type = new PrimitiveVS<>();
+    UnionVStype t = UnionVStype.getUnionVStype(PrimitiveVS.class, null);
+    this.type = new PrimitiveVS<>(t);
     this.value = new HashMap<>();
+    this.value.put(t, new PrimitiveVS<>((Machine) null));
     this.concreteHash = computeConcreteHash();
   }
 
@@ -52,7 +53,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
 
   public UnionVS(ValueSummary vs) {
     if (vs == null) {
-      this.type = new PrimitiveVS<>();
+      this.type = new PrimitiveVS<>((UnionVStype)null);
       this.value = new HashMap<>();
     } else {
       UnionVStype type;
@@ -128,12 +129,6 @@ public class UnionVS implements ValueSummary<UnionVS> {
     return this.type.getGuardFor(type);
   }
 
-  public void check() {
-    for (UnionVStype type : this.type.getValues()) {
-      assert getGuardFor(type).isFalse() || (getValue(type) != null);
-    }
-  }
-
   @Override
   public boolean isEmptyVS() {
     return type.isEmptyVS();
@@ -170,8 +165,6 @@ public class UnionVS implements ValueSummary<UnionVS> {
       }
     }
 
-    if (valuesToMerge.size() == 0) return new UnionVS(this);
-
     final PrimitiveVS<UnionVStype> mergedType = type.merge(typesToMerge);
     final Map<UnionVStype, ValueSummary> mergedValue = new HashMap<>(this.value);
 
@@ -203,11 +196,16 @@ public class UnionVS implements ValueSummary<UnionVS> {
   }
 
   @Override
-  public PrimitiveVS<Boolean> symbolicEquals(UnionVS cmp, Guard pc) {
-    assert (type != null);
-    if (cmp == null) {
-      return BooleanVS.trueUnderGuard(pc.and(getUniverse().not()));
+  public PrimitiveVS<Boolean> symbolicEquals(UnionVS cmp_orig, Guard pc) {
+    UnionVS cmp;
+    boolean isNullCompare = false;
+    if (cmp_orig == null) {
+      isNullCompare = true;
+      cmp = new UnionVS();
+    } else {
+      cmp = cmp_orig;
     }
+
     PrimitiveVS res = type.symbolicEquals(cmp.type, pc);
     for (Map.Entry<UnionVStype, ValueSummary> payload : cmp.value.entrySet()) {
       if (!value.containsKey(payload.getKey())) {
@@ -250,6 +248,9 @@ public class UnionVS implements ValueSummary<UnionVS> {
     StringBuilder out = new StringBuilder();
     out.append("[");
     for (UnionVStype type : type.getValues()) {
+      if (type == null) {
+        continue;
+      }
       out.append(value.get(type).toString());
       out.append(", ");
     }
@@ -261,6 +262,9 @@ public class UnionVS implements ValueSummary<UnionVS> {
     StringBuilder out = new StringBuilder();
     out.append("Union[");
     for (UnionVStype type : type.getValues()) {
+      if (type == null) {
+        continue;
+      }
       out.append(value.get(type).toStringDetailed()).append(", ");
     }
     out.append("]");

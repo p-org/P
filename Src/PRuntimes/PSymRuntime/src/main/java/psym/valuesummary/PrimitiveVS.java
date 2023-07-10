@@ -340,7 +340,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     Guard equalCond = Guard.constFalse();
     for (Map.Entry<T, Guard> entry : this.guardedValues.entrySet()) {
       if (isNullCompare) {
-        if (entry.getKey() == null || entry.getKey().equals(Event.nullEvent)) {
+        if (entry.getKey() == null) {
           equalCond = equalCond.or(entry.getValue());
         }
       } else {

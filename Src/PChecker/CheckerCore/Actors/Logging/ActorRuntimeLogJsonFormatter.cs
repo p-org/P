@@ -3,15 +3,12 @@
 
 using System;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Xml;
-using PChecker.Actors;
 using PChecker.Actors.Events;
-using PChecker.Actors.Logging;
 using PChecker.Actors.Timers;
 using System.Collections.Generic;
 using Plang.CSharpRuntime;
+using Plang.CSharpRuntime.Exceptions;
 
 namespace PChecker.Actors.Logging
 {
@@ -21,19 +18,103 @@ namespace PChecker.Actors.Logging
     internal class ActorRuntimeLogJsonFormatter : IActorRuntimeLog
     {
         private JsonWriter Writer;
-        private bool Closed;
 
         public ActorRuntimeLogJsonFormatter(JsonWriter writer)
         {
             Writer = writer;
         }
 
-        private string GetShortName(string name)
+        /// <summary>
+        /// Removes the '<' and '>' tags for a log text.
+        /// I.e., '<ErrorLog> Some error log...' becomes 'Some error log...' 
+        /// </summary>
+        /// <param name="log">The text log</param>
+        /// <returns>New string with the tag removed or just the string itself if there is no tag.</returns>
+        private static string RemoveLogTag(string log)
         {
-            return name.Split('.').Last();
+            var openingTagIndex = log.IndexOf("<");
+            var closingTagIndex = log.IndexOf(">");
+            var potentialTagExists = openingTagIndex != -1 && closingTagIndex != -1;
+            var validOpeningTag = openingTagIndex == 0 && closingTagIndex > openingTagIndex;
+
+            if (potentialTagExists && validOpeningTag)
+            {
+                return log[(closingTagIndex + 1)..].Trim();
+            }
+
+            return log;
         }
 
-        private string GetEventNameWithPayload(Event e)
+        /// <summary>
+        /// Parse payload input to dictionary format.
+        /// I.e.
+        /// Input: (<source:Client(4), accountId:0, amount:8, rId:19, >)
+        /// Parsed Output: {
+        ///     "source": "Client(4)",
+        ///     "accountId": "0",
+        ///     "amount": "8",
+        ///     "rId": "19",
+        /// }
+        /// </summary>
+        /// <param name="payload">String representing the payload.</param>
+        /// <returns>The dictionary object representation of the payload.</returns>
+        private static Dictionary<string, string> ParsePayloadToDictionary(string payload)
+        {
+            var parsedPayload = new Dictionary<string, string>();
+            var trimmedPayload = payload.Trim('(', ')', '<', '>');
+            var payloadKeyValuePairs = trimmedPayload.Split(',');
+
+            foreach (var payloadPair in payloadKeyValuePairs)
+            {
+                var payloadKeyValue = payloadPair.Split(':');
+
+                if (payloadKeyValue.Length != 2) continue;
+                var key = payloadKeyValue[0].Trim();
+                var value = payloadKeyValue[1].Trim();
+
+                parsedPayload[key] = value;
+            }
+
+            return parsedPayload;
+        }
+
+        /// <summary>
+        /// Method taken from PLogFormatter.cs file. Takes in a string and only get the
+        /// last element of the string separated by a period.
+        /// I.e.
+        /// Input: PImplementation.TestWithSingleClient(2)
+        /// Output: TestWithSingleClient(2)
+        /// </summary>
+        /// <param name="name">String representing the name to be parsed.</param>
+        /// <returns>The split string.</returns>
+        private static string GetShortName(string name) => name?.Split('.').Last();
+
+        /// TODO: What other forms can the payload be in? Have the method implemented in IPrtValue?
+        /// <summary>
+        /// Cleans the payload string to remove "<" and "/>" and replacing ':' with '='
+        /// I.e.
+        /// Input: (<source:Client(4), accountId:0, amount:4, rId:18, >)
+        /// Output: (source=Client(4), accountId=0, amount=4, rId=18)
+        /// </summary>
+        /// <param name="payload">String representation of the payload.</param>
+        /// <returns>The cleaned payload.</returns>
+        private static string CleanPayloadString(string payload)
+        {
+            var output = payload.Replace("<", string.Empty);
+            output = output.Replace(':', '=');
+            output = output.Replace(", >", string.Empty);
+            return output;
+        }
+
+        /// <summary>
+        /// Method taken from PLogFormatter.cs file. Takes in Event e and returns string
+        /// with details about the event such as event name and its payload. Slightly modified
+        /// from the method in PLogFormatter.cs in that payload is parsed with the CleanPayloadString
+        /// method right above.
+        /// </summary>
+        /// <param name="e">Event input.</param>
+        /// <returns>String with the event description.</returns>
+        private static string GetEventNameWithPayload(Event e)
         {
             if (e.GetType().Name.Contains("GotoStateEvent"))
             {
@@ -42,610 +123,479 @@ namespace PChecker.Actors.Logging
 
             var pe = (PEvent)(e);
             var payload = pe.Payload == null ? "null" : pe.Payload.ToEscapedString();
-            var msg = pe.Payload == null ? "" : $" with payload ({payload})";
+            var msg = pe.Payload == null ? "" : $" with payload ({CleanPayloadString(payload)})";
             return $"{GetShortName(e.GetType().Name)}{msg}";
         }
 
         /// <summary>
-        /// Invoked when a log is complete (and is about to be closed).
+        /// Takes in Event e and returns the dictionary representation of the payload of the event.
         /// </summary>
+        /// <param name="e">Event input.</param>
+        /// <returns>Dictionary representation of the payload for the event, if any.</returns>
+        private static Dictionary<string, string> GetEventPayloadInJson(Event e)
+        {
+            if (e.GetType().Name.Contains("GotoStateEvent"))
+            {
+                return null;
+            }
+
+            var pe = (PEvent)(e);
+            return pe.Payload != null ? ParsePayloadToDictionary(pe.Payload.ToEscapedString()) : null;
+        }
+
         public void OnCompleted()
         {
-            Closed = true;
-            // using (Writer)
-            // {
-            //     Writer.WriteEndElement();
-            // }
         }
 
         public void OnAssertionFailure(string error)
         {
-            if (Closed)
-            {
-                return;
-            }
-
-            // Writer.WriteElementString("AssertionFailure", error);
-
-            Writer.AddElement("AssertionFailure");
-            Writer.AddAssertionFailure(error);
-
-            Writer.AddStep();
+            error = RemoveLogTag(error);
+            Writer.AddLogType(JsonWriter.LogTypes.AssertionFailure);
+            Writer.AddDetail(JsonWriter.DetailAttr.error, error);
+            Writer.AddLog(error);
+            Writer.AddToLogs();
         }
 
         public void OnCreateActor(ActorId id, string creatorName, string creatorType)
         {
-            if (Closed)
+            if (id.Name.Contains("GodMachine") || creatorName.Contains("GodMachine"))
             {
                 return;
             }
 
-            // Writer.WriteStartElement("CreateActor");
-            // Writer.WriteAttributeString("id", id.ToString());
+            var source = creatorName ?? $"task '{Task.CurrentId}'";
+            var log = $"{id} was created by {source}.";
 
-            Writer.AddElement("CreateActor");
-            Writer.AddId(id.ToString());
-
-            if (creatorName != null && creatorType != null)
-            {
-                // Writer.WriteAttributeString("creatorName", creatorName);
-                // Writer.WriteAttributeString("creatorType", creatorType);
-
-                Writer.AddAttribute("creatorName", creatorName);
-                Writer.AddAttribute("creatorType", creatorType);
-            }
-            else
-            {
-                // Writer.WriteAttributeString("creatorName", Task.CurrentId.ToString());
-                // Writer.WriteAttributeString("creatorType", "task");
-
-                Writer.AddAttribute("creatorName", Task.CurrentId.ToString());
-                Writer.AddAttribute("creatorType", "task");
-            }
-
-            // Writer.WriteEndElement();
-
-            Writer.AddStep();
+            Writer.AddLogType(JsonWriter.LogTypes.CreateActor);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.creatorName, source);
+            Writer.AddDetail(JsonWriter.DetailAttr.creatorType, creatorType);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
-
+        
         /// <inheritdoc/>
         public void OnCreateStateMachine(ActorId id, string creatorName, string creatorType)
         {
-            if (Closed)
+            if (id.Name.Contains("GodMachine") || creatorName.Contains("GodMachine"))
             {
                 return;
             }
 
-            // Writer.WriteStartElement("CreateStateMachine");
-            // Writer.WriteAttributeString("id", id.ToString());
+            var source = creatorName ?? $"task '{Task.CurrentId}'";
+            var log = $"{id} was created by {source}.";
 
-            Writer.AddId(id.ToString());
-            Writer.AddElement("CreateStateMachine");
-
-            if (creatorName != null && creatorType != null)
-            {
-                // Writer.WriteAttributeString("creatorName", creatorName);
-                // Writer.WriteAttributeString("creatorType", creatorType);
-
-                Writer.AddAttribute("creatorName", creatorName);
-                Writer.AddAttribute("creatorType", creatorType);
-            }
-            else
-            {
-                // Writer.WriteAttributeString("creatorName", Task.CurrentId.ToString());
-                // Writer.WriteAttributeString("creatorType", "task");
-
-                Writer.AddAttribute("creatorName", Task.CurrentId.ToString());
-                Writer.AddAttribute("creatorType", "task");
-            }
-
-            // Writer.WriteEndElement();
-            Writer.AddStep();
+            Writer.AddLogType(JsonWriter.LogTypes.CreateStateMachine);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.creatorName, source);
+            Writer.AddDetail(JsonWriter.DetailAttr.creatorType, creatorType);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnCreateTimer(TimerInfo info)
         {
-            if (Closed)
-            {
-                return;
-            }
+            var source = info.OwnerId?.Name ?? $"task '{Task.CurrentId}'";
+            var log = info.Period.TotalMilliseconds >= 0
+                ? $"Timer '{info}' (due-time:{info.DueTime.TotalMilliseconds}ms; " +
+                  $"period :{info.Period.TotalMilliseconds}ms) was created by {source}."
+                : $"Timer '{info}' (due-time:{info.DueTime.TotalMilliseconds}ms) was created by {source}.";
 
-            // Writer.WriteStartElement("CreateTimer");
-            // Writer.WriteAttributeString("owner", info.OwnerId?.Name ?? Task.CurrentId.ToString());
-            // Writer.WriteAttributeString("due", info.DueTime.ToString());
-            // Writer.WriteAttributeString("period", info.Period.ToString());
-
-            Writer.AddElement("CreateTimer");
-            Writer.AddAttribute("owner", info.OwnerId?.Name ?? Task.CurrentId.ToString());
-            Writer.AddAttribute("due", info.DueTime.ToString());
-            Writer.AddAttribute("period", info.Period.ToString());
-
-            // Writer.WriteEndElement();
-
-            Writer.AddStep();
+            Writer.AddLogType(JsonWriter.LogTypes.CreateTimer);
+            Writer.AddDetail(JsonWriter.DetailAttr.timerInfo, info.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.timerDueTime, info.DueTime.TotalMilliseconds);
+            Writer.AddDetail(JsonWriter.DetailAttr.timerPeriod, info.Period.TotalMilliseconds);
+            Writer.AddDetail(JsonWriter.DetailAttr.source, source);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnDefaultEventHandler(ActorId id, string stateName)
         {
-            if (Closed)
-            {
-                return;
-            }
+            stateName = GetShortName(stateName);
 
-            // Writer.WriteStartElement("DefaultEvent");
-            // Writer.WriteAttributeString("id", id.ToString());
+            var log = stateName is null
+                ? $"{id} is executing the default handler."
+                : $"{id} is executing the default handler in state '{stateName}'.";
 
-            Writer.AddElement("DefaultEvent");
-            Writer.AddId(id.ToString());
-
-            if (!string.IsNullOrEmpty(stateName))
-            {
-                // Writer.WriteAttributeString("state", stateName);
-
-                Writer.AddAttribute("state", stateName);
-            }
-
-            // Writer.WriteEndElement();
-
-            Writer.AddStep();
+            Writer.AddLogType(JsonWriter.LogTypes.DefaultEventHandler);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.state, stateName);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnDequeueEvent(ActorId id, string stateName, Event e)
         {
-            if (Closed)
+            if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
                 return;
             }
 
-            // Writer.WriteStartElement("DequeueEvent");
-            // Writer.WriteAttributeString("id", id.ToString());
+            var eventName = GetEventNameWithPayload(e);
+            var log = stateName is null
+                ? $"'{id}' dequeued event '{eventName}'."
+                : $"'{id}' dequeued event '{eventName}' in state '{stateName}'.";
 
-            Writer.AddElement("DequeueEvent");
-            Writer.AddId(id.ToString());
-
-            if (!string.IsNullOrEmpty(stateName))
-            {
-                // Writer.WriteAttributeString("state", stateName);
-
-                Writer.AddAttribute("state", stateName);
-            }
-
-            // Writer.WriteAttributeString("event", e.GetType().FullName);
-
-            Writer.AddEvent(e.GetType().FullName);
-
-            // Writer.WriteEndElement();
-
-            Writer.AddStep();
+            Writer.AddLogType(JsonWriter.LogTypes.DequeueEvent);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.@event, GetShortName(e.GetType().Name));
+            Writer.AddDetail(JsonWriter.DetailAttr.state, GetShortName(stateName));
+            Writer.AddDetail(JsonWriter.DetailAttr.payload, GetEventPayloadInJson(e));
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnEnqueueEvent(ActorId id, Event e)
         {
-            if (Closed)
-            {
-                return;
-            }
-
-            // Writer.WriteStartElement("EnqueueEvent");
-            // Writer.WriteAttributeString("id", id.ToString());
-            // Writer.WriteAttributeString("event", e.GetType().FullName);
-
-            Writer.AddElement("EnqueueEvent");
-            Writer.AddId(id.ToString());
-            Writer.AddAttribute("event", e.GetType().FullName);
-
-            // Writer.WriteEndElement();
-
-            Writer.AddStep();
         }
 
         public void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
         {
-            if (Closed)
+            if (ex is PNonStandardReturnException)
             {
                 return;
             }
 
-            // Writer.WriteStartElement("ExceptionHandled");
-            // Writer.WriteAttributeString("id", id.ToString());
+            var log = stateName is null
+                ? $"{id} running action '{actionName}' chose to handle exception '{ex.GetType().Name}'."
+                : $"{id} running action '{actionName}' in state '{stateName}' chose to handle exception '{ex.GetType().Name}'.";
 
-            Writer.AddElement("ExceptionHandled");
-            Writer.AddId(id.ToString());
-
-            if (!string.IsNullOrEmpty(stateName))
-            {
-                // Writer.WriteAttributeString("state", stateName);
-
-                Writer.AddAttribute("state", stateName);
-            }
-
-            // Writer.WriteAttributeString("action", actionName);
-            // Writer.WriteAttributeString("type", ex.GetType().FullName);
-            // Writer.WriteString(ex.ToString());
-
-            Writer.AddAttribute("action", actionName);
-            Writer.AddAttribute("type", ex.GetType().FullName);
-            Writer.AddAttribute("message", ex.ToString());
-
-            // Writer.WriteEndElement();
-
-            Writer.AddStep();
+            Writer.AddLogType(JsonWriter.LogTypes.ExceptionHandled);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.state, GetShortName(stateName));
+            Writer.AddDetail(JsonWriter.DetailAttr.action, actionName);
+            Writer.AddDetail(JsonWriter.DetailAttr.exception, ex.GetType().Name);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnExceptionThrown(ActorId id, string stateName, string actionName, Exception ex)
         {
-            if (Closed)
+            if (ex is PNonStandardReturnException)
             {
                 return;
             }
 
-            // Writer.WriteStartElement("ExceptionThrown");
-            // Writer.WriteAttributeString("id", id.ToString());
-            // Writer.WriteAttributeString("state", stateName);
-            // Writer.WriteAttributeString("action", actionName);
-            // Writer.WriteAttributeString("type", ex.GetType().FullName);
-            // Writer.WriteString(ex.ToString());
+            var log = stateName is null
+                ? $"{id} running action '{actionName}' chose to handle exception '{ex.GetType().Name}'."
+                : $"{id} running action '{actionName}' in state '{stateName}' threw exception '{ex.GetType().Name}'.";
 
-            Writer.AddElement("ExceptionThrown");
-            Writer.AddId(id.ToString());
-            Writer.AddAttribute("state", stateName);
-            Writer.AddAttribute("action", actionName);
-            Writer.AddAttribute("type", ex.GetType().FullName);
-            Writer.AddAttribute("message", ex.ToString());
-
-            // Writer.WriteEndElement();
-
-            Writer.AddStep();
+            Writer.AddLogType(JsonWriter.LogTypes.ExceptionThrown);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.state, GetShortName(stateName));
+            Writer.AddDetail(JsonWriter.DetailAttr.action, actionName);
+            Writer.AddDetail(JsonWriter.DetailAttr.exception, ex.GetType().Name);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnExecuteAction(ActorId id, string handlingStateName, string currentStateName, string actionName)
         {
-            if (Closed)
-            {
-                return;
-            }
-
-            // Writer.WriteStartElement("Action");
-            // Writer.WriteAttributeString("id", id.ToString());
-
-            if (!string.IsNullOrEmpty(currentStateName))
-            {
-                // Writer.WriteAttributeString("state", currentStateName);
-                if (currentStateName != handlingStateName)
-                {
-                    // Writer.WriteAttributeString("handledBy", handlingStateName);
-                }
-            }
-
-            // Writer.WriteAttributeString("action", actionName);
-            // Writer.WriteEndElement();
         }
 
         public void OnGotoState(ActorId id, string currentStateName, string newStateName)
         {
-            if (Closed)
+            if (currentStateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
                 return;
             }
 
-            // Writer.WriteStartElement("Goto");
-            // Writer.WriteAttributeString("id", id.ToString());
-            // Writer.WriteAttributeString("currState", currentStateName);
-            // Writer.WriteAttributeString("newState", newStateName);
-            // Writer.WriteEndElement();
+            currentStateName = GetShortName(currentStateName);
+            newStateName = GetShortName(newStateName);
+
+            var log =
+                $"{id} is transitioning from state '{currentStateName}' to state '{newStateName}'.";
+
+            Writer.AddLogType(JsonWriter.LogTypes.GotoState);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.startState, currentStateName);
+            Writer.AddDetail(JsonWriter.DetailAttr.endState, newStateName);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnHalt(ActorId id, int inboxSize)
         {
-            if (Closed)
-            {
-                return;
-            }
+            var log = $"{id} halted with {inboxSize} events in its inbox.";
 
-            // Writer.WriteStartElement("Halt");
-            // Writer.WriteAttributeString("id", id.ToString());
-            // Writer.WriteAttributeString("inboxSize", inboxSize.ToString());
-            // Writer.WriteEndElement();
+            Writer.AddLogType(JsonWriter.LogTypes.Halt);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.haltInboxSize, inboxSize);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnHandleRaisedEvent(ActorId id, string stateName, Event e)
         {
-            if (Closed)
-            {
-                return;
-            }
         }
 
         public void OnPopState(ActorId id, string currentStateName, string restoredStateName)
         {
-            if (Closed)
-            {
-                return;
-            }
+            currentStateName = string.IsNullOrEmpty(currentStateName) ? "[not recorded]" : currentStateName;
+            var reenteredStateName = restoredStateName ?? string.Empty;
+            var log = $"{id} popped state '{currentStateName}' and reentered state '{reenteredStateName}'.";
 
-            // Writer.WriteStartElement("Pop");
-            // Writer.WriteAttributeString("id", id.ToString());
-            // Writer.WriteAttributeString("currState", currentStateName);
-            // Writer.WriteAttributeString("restoredState", restoredStateName);
-            // Writer.WriteEndElement();
+            Writer.AddLogType(JsonWriter.LogTypes.PopState);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.startState, currentStateName);
+            Writer.AddDetail(JsonWriter.DetailAttr.endState, reenteredStateName);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnPopStateUnhandledEvent(ActorId id, string stateName, Event e)
         {
-            if (Closed)
-            {
-                return;
-            }
+            var log = $"{id} popped state {stateName} due to unhandled event '{e.GetType().Name}'.";
 
-            // Writer.WriteStartElement("PopUnhandled");
-            // Writer.WriteAttributeString("id", id.ToString());
-            // Writer.WriteAttributeString("state", stateName);
-            // Writer.WriteAttributeString("event", e.GetType().FullName);
-            // Writer.WriteEndElement();
+            Writer.AddLogType(JsonWriter.LogTypes.PopStateUnhandledEvent);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.state, stateName);
+            Writer.AddDetail(JsonWriter.DetailAttr.@event, e.GetType().Name);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnPushState(ActorId id, string currentStateName, string newStateName)
         {
-            if (Closed)
-            {
-                return;
-            }
+            var log = $"{id} pushed from state '{currentStateName}' to state '{newStateName}'.";
 
-            // Writer.WriteStartElement("Push");
-            // Writer.WriteAttributeString("id", id.ToString());
-            // Writer.WriteAttributeString("currState", currentStateName);
-            // Writer.WriteAttributeString("newState", newStateName);
-            // Writer.WriteEndElement();
+            Writer.AddLogType(JsonWriter.LogTypes.PushState);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.startState, currentStateName);
+            Writer.AddDetail(JsonWriter.DetailAttr.endState, newStateName);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnRaiseEvent(ActorId id, string stateName, Event e)
         {
-            if (Closed)
+            stateName = GetShortName(stateName);
+            string eventName = GetEventNameWithPayload(e);
+
+            if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine") ||
+                eventName.Contains("GotoStateEvent"))
             {
                 return;
             }
 
-            // Writer.WriteStartElement("Raise");
-            // Writer.WriteAttributeString("id", id.ToString());
-            if (!string.IsNullOrEmpty(stateName))
-            {
-                // Writer.WriteAttributeString("state", stateName);
-            }
+            var log = stateName is null
+                ? $"'{id}' raised event '{eventName}'."
+                : $"'{id}' raised event '{eventName}' in state '{stateName}'.";
 
-            // Writer.WriteAttributeString("event", e.GetType().FullName);
-            // Writer.WriteEndElement();
+            Writer.AddLogType(JsonWriter.LogTypes.RaiseEvent);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.@event, GetShortName(e.GetType().Name));
+            Writer.AddDetail(JsonWriter.DetailAttr.state, stateName);
+            Writer.AddDetail(JsonWriter.DetailAttr.payload, GetEventPayloadInJson(e));
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)
         {
-            if (Closed)
-            {
-                return;
-            }
+            stateName = GetShortName(stateName);
+            string eventName = GetEventNameWithPayload(e);
+            var unblocked = wasBlocked ? " and unblocked" : string.Empty;
+            var log = stateName is null
+                ? $"'{id}' dequeued event '{eventName}'{unblocked}."
+                : $"'{id}' dequeued event '{eventName}'{unblocked} in state '{stateName}'.";
 
-            var eventName = e.GetType().FullName;
-            // Writer.WriteStartElement("Receive");
-            // Writer.WriteAttributeString("id", id.ToString());
-            if (!string.IsNullOrEmpty(stateName))
-            {
-                // Writer.WriteAttributeString("state", stateName);
-            }
-
-            // Writer.WriteAttributeString("event", eventName);
-            // Writer.WriteAttributeString("wasBlocked", wasBlocked.ToString());
-            // Writer.WriteEndElement();
+            Writer.AddLogType(JsonWriter.LogTypes.ReceiveEvent);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.state, stateName);
+            Writer.AddDetail(JsonWriter.DetailAttr.@event, GetShortName(e.GetType().Name));
+            Writer.AddDetail(JsonWriter.DetailAttr.wasBlocked, wasBlocked);
+            Writer.AddDetail(JsonWriter.DetailAttr.payload, GetEventPayloadInJson(e));
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnSendEvent(ActorId targetActorId, string senderName, string senderType, string senderStateName,
             Event e, Guid opGroupId, bool isTargetHalted)
         {
-            if (Closed)
-            {
-                return;
-            }
+            senderStateName = GetShortName(senderStateName);
+            string eventName = GetEventNameWithPayload(e);
+            var opGroupIdMsg = opGroupId != Guid.Empty ? $" (operation group '{opGroupId}')" : string.Empty;
+            var isHalted = isTargetHalted ? $" which has halted" : string.Empty;
+            var sender = !string.IsNullOrEmpty(senderName)
+                ? $"'{senderName}' in state '{senderStateName}'"
+                : $"The runtime";
+            var log = $"{sender} sent event '{eventName}' to '{targetActorId}'{isHalted}{opGroupIdMsg}.";
 
-            var eventNameWithPayload = GetEventNameWithPayload(e);
-
-            // Writer.WriteStartElement("Send");
-            // Writer.WriteAttributeString("target", targetActorId.ToString());
-
-            Writer.AddElement("Send");
-            Writer.AddAttribute("target", targetActorId.ToString());
-
-            if (senderName != null && senderType != null)
-            {
-                // Writer.WriteAttributeString("senderName", senderName);
-                // Writer.WriteAttributeString("senderType", senderType);
-
-                Writer.AddAttribute("senderName", senderName);
-                Writer.AddAttribute("sendType", senderType);
-            }
-
-            // TODO: should this be guarded as above?
-            // Writer.WriteAttributeString("senderState", senderStateName);
-
-            Writer.AddAttribute("senderState", senderStateName);
-
-            // Writer.WriteAttributeString("event", e.GetType().FullName);
-            Writer.AddEvent(eventNameWithPayload);
-
-            if (opGroupId != Guid.Empty)
-            {
-                // Writer.WriteAttributeString("event", opGroupId.ToString());
-
-                Writer.AddEvent(opGroupId.ToString());
-            }
-
-            // Writer.WriteAttributeString("isTargetHalted", isTargetHalted.ToString());
-
-            Writer.AddAttribute("isTargetHalted", isTargetHalted.ToString());
-
-            // Writer.WriteEndElement();
-
-            Writer.AddStep();
+            Writer.AddLogType(JsonWriter.LogTypes.SendEvent);
+            Writer.AddDetail(JsonWriter.DetailAttr.sender, !string.IsNullOrEmpty(senderName) ? senderName : "Runtime");
+            Writer.AddDetail(JsonWriter.DetailAttr.state, senderStateName);
+            Writer.AddDetail(JsonWriter.DetailAttr.@event, GetShortName(e.GetType().Name));
+            Writer.AddDetail(JsonWriter.DetailAttr.target, targetActorId.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.opGroupId, opGroupId.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.isTargetHalted, isTargetHalted);
+            Writer.AddDetail(JsonWriter.DetailAttr.payload, GetEventPayloadInJson(e));
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnStateTransition(ActorId id, string stateName, bool isEntry)
         {
-            if (Closed)
+            if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
                 return;
             }
 
-            // Writer.WriteStartElement("State");
-            // Writer.WriteAttributeString("id", id.ToString());
-            // Writer.WriteAttributeString("state", stateName);
-            // Writer.WriteAttributeString("isEntry", isEntry.ToString());
-            // Writer.WriteEndElement();
+            stateName = GetShortName(stateName);
+            var direction = isEntry ? "enters" : "exits";
+            var log = $"{id} {direction} state '{stateName}'.";
+
+            Writer.AddLogType(JsonWriter.LogTypes.StateTransition);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.state, stateName);
+            Writer.AddDetail(JsonWriter.DetailAttr.isEntry, isEntry);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnStopTimer(TimerInfo info)
         {
-            if (Closed)
-            {
-                return;
-            }
+            var source = info.OwnerId?.Name ?? $"task '{Task.CurrentId}'";
+            var log = $"Timer '{info}' was stopped and disposed by {source}.";
 
-            // Writer.WriteStartElement("StopTimer");
-            // Writer.WriteAttributeString("owner", info.OwnerId?.Name ?? Task.CurrentId.ToString());
-            // Writer.WriteEndElement();
+            Writer.AddLogType(JsonWriter.LogTypes.StopTimer);
+            Writer.AddDetail(JsonWriter.DetailAttr.timerInfo, info.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.source, info.OwnerId?.Name ?? $"{Task.CurrentId}");
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnWaitEvent(ActorId id, string stateName, Type eventType)
         {
-            if (Closed)
-            {
-                return;
-            }
+            stateName = GetShortName(stateName);
 
-            // Writer.WriteStartElement("WaitEvent");
-            // Writer.WriteAttributeString("id", id.ToString());
-            // Writer.WriteAttributeString("event", eventType.FullName);
-            if (!string.IsNullOrEmpty(stateName))
-            {
-                // Writer.WriteAttributeString("state", stateName);
-            }
+            var log = stateName is null
+                ? $"{id} is waiting to dequeue an event of type '{eventType.FullName}'."
+                : $"{id} is waiting to dequeue an event of type '{eventType.FullName}' in state '{stateName}'.";
 
-            // Writer.WriteEndElement();
+            Writer.AddLogType(JsonWriter.LogTypes.WaitEvent);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.eventType, eventType.FullName);
+            Writer.AddDetail(JsonWriter.DetailAttr.state, stateName);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnWaitEvent(ActorId id, string stateName, params Type[] eventTypes)
         {
-            if (Closed)
-            {
-                return;
-            }
+            stateName = GetShortName(stateName);
+            string eventNames;
 
-            // Writer.WriteStartElement("WaitEvent");
-            // Writer.WriteAttributeString("id", id.ToString());
-            var sb = new StringBuilder();
-            foreach (var t in eventTypes)
+            switch (eventTypes.Length)
             {
-                if (sb.Length > 0)
+                case 0:
+                    eventNames = "'<missing>'";
+                    break;
+                case 1:
+                    eventNames = "'" + eventTypes[0].Name + "'";
+                    break;
+                case 2:
+                    eventNames = "'" + eventTypes[0].Name + "' or '" + eventTypes[1].Name + "'";
+                    break;
+                case 3:
+                    eventNames = "'" + eventTypes[0].Name + "', '" + eventTypes[1].Name + "' or '" +
+                                 eventTypes[2].Name +
+                                 "'";
+                    break;
+                default:
                 {
-                    sb.Append(", ");
+                    var eventNameArray = new string[eventTypes.Length - 1];
+                    for (var i = 0; i < eventTypes.Length - 2; i++)
+                    {
+                        eventNameArray[i] = eventTypes[i].Name;
+                    }
+
+                    eventNames = "'" + string.Join("', '", eventNameArray) + "' or '" +
+                                 eventTypes[^1].Name + "'";
+                    break;
                 }
-
-                sb.Append(t.FullName);
             }
 
-            // Writer.WriteAttributeString("event", sb.ToString());
-            if (!string.IsNullOrEmpty(stateName))
-            {
-                // Writer.WriteAttributeString("state", stateName);
-            }
+            var log = stateName is null
+                ? $"{id} is waiting to dequeue an event of type {eventNames}."
+                : $"{id} is waiting to dequeue an event of type {eventNames} in state '{stateName}'.";
 
-            // Writer.WriteEndElement();
+            var eventTypesNames = eventTypes.Select(eventType => eventType.Name).ToList();
+
+            Writer.AddLogType(JsonWriter.LogTypes.WaitMultipleEvents);
+            Writer.AddDetail(JsonWriter.DetailAttr.id, id.ToString());
+            Writer.AddDetail(JsonWriter.DetailAttr.eventTypes, eventTypesNames);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnCreateMonitor(string monitorType)
         {
-            if (Closed)
-            {
-                return;
-            }
+            monitorType = GetShortName(monitorType);
+            var log = $"{monitorType} was created.";
 
-            // Writer.WriteStartElement("CreateMonitor");
-            // Writer.WriteAttributeString("type", monitorType);
-            // Writer.WriteEndElement();
-
-            Writer.AddElement("CreateMonitor");
-            Writer.AddAttribute("type", monitorType);
-            Writer.AddStep();
+            Writer.AddLogType(JsonWriter.LogTypes.CreateMonitor);
+            Writer.AddDetail(JsonWriter.DetailAttr.monitor, monitorType);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnMonitorExecuteAction(string monitorType, string stateName, string actionName)
         {
-            if (Closed)
-            {
-                return;
-            }
-
-            // Writer.WriteStartElement("MonitorAction");
-            // Writer.WriteAttributeString("monitorType", monitorType);
-            // Writer.WriteAttributeString("state", stateName);
-            // Writer.WriteAttributeString("action", actionName);
-            // Writer.WriteEndElement();
         }
 
         public void OnMonitorProcessEvent(string monitorType, string stateName, string senderName,
             string senderType, string senderStateName, Event e)
         {
-            if (Closed)
-            {
-                return;
-            }
+            monitorType = GetShortName(monitorType);
+            var log = $"{monitorType} is processing event '{GetEventNameWithPayload(e)}' in state '{stateName}'.";
 
-            // Writer.WriteStartElement("MonitorEvent");
-            // Writer.WriteAttributeString("monitorType", monitorType);
-            // Writer.WriteAttributeString("state", stateName);
-
-            if (senderName != null && senderType != null)
-            {
-                // Writer.WriteAttributeString("senderName", senderName);
-                // Writer.WriteAttributeString("senderType", senderType);
-            }
-            else
-            {
-                // Writer.WriteAttributeString("senderName", Task.CurrentId.ToString());
-                // Writer.WriteAttributeString("senderType", "task");
-            }
-
-            // TODO: should this be guarded as above?
-            // Writer.WriteAttributeString("senderState", senderStateName);
-
-            // Writer.WriteAttributeString("event", e.GetType().Name);
-            // Writer.WriteEndElement();
+            Writer.AddLogType(JsonWriter.LogTypes.MonitorProcessEvent);
+            Writer.AddDetail(JsonWriter.DetailAttr.monitor, monitorType);
+            Writer.AddDetail(JsonWriter.DetailAttr.@event, GetShortName(e.GetType().Name));
+            Writer.AddDetail(JsonWriter.DetailAttr.state, stateName);
+            Writer.AddDetail(JsonWriter.DetailAttr.payload, GetEventPayloadInJson(e));
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnMonitorRaiseEvent(string monitorType, string stateName, Event e)
         {
-            if (Closed)
-            {
-                return;
-            }
+            stateName = GetShortName(stateName);
+            string eventName = GetEventNameWithPayload(e);
+            var log = $"Monitor '{GetShortName(monitorType)}' raised event '{eventName}' in state '{stateName}'.";
 
-            // Writer.WriteStartElement("MonitorRaise");
-            // Writer.WriteAttributeString("monitorType", monitorType);
-            // Writer.WriteAttributeString("state", stateName);
-            // Writer.WriteAttributeString("event", e.GetType().FullName);
-            // Writer.WriteEndElement();
+            Writer.AddLogType(JsonWriter.LogTypes.MonitorRaiseEvent);
+            Writer.AddDetail(JsonWriter.DetailAttr.monitor, monitorType);
+            Writer.AddDetail(JsonWriter.DetailAttr.@event, GetShortName(e.GetType().Name));
+            Writer.AddDetail(JsonWriter.DetailAttr.state, stateName);
+            Writer.AddDetail(JsonWriter.DetailAttr.payload, GetEventPayloadInJson(e));
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnMonitorStateTransition(string monitorType, string stateName, bool isEntry, bool? isInHotState)
         {
-            if (Closed)
+            monitorType = GetShortName(monitorType);
+
+            if (stateName.Contains("__InitState__"))
             {
                 return;
             }
 
-            // Writer.WriteStartElement("MonitorState");
-            // Writer.WriteAttributeString("monitorType", monitorType);
-            // Writer.WriteAttributeString("state", stateName);
-            // Writer.WriteAttributeString("isEntry", isEntry.ToString());
-            var hot = isInHotState == true;
-            // Writer.WriteAttributeString("isInHotState", hot.ToString());
-            // Writer.WriteEndElement();
+            stateName = GetShortName(stateName);
+            var liveness = isInHotState.HasValue ? (isInHotState.Value ? "hot " : "cold ") : string.Empty;
+            var direction = isEntry ? "enters" : "exits";
+            var log = $"{monitorType} {direction} {liveness}state '{stateName}'.";
+
+            Writer.AddLogType(JsonWriter.LogTypes.MonitorStateTransition);
+            Writer.AddDetail(JsonWriter.DetailAttr.monitor, monitorType);
+            Writer.AddDetail(JsonWriter.DetailAttr.state, stateName);
+            Writer.AddDetail(JsonWriter.DetailAttr.isEntry, isEntry);
+            Writer.AddDetail(JsonWriter.DetailAttr.isInHotState, isInHotState);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
 
         public void OnMonitorError(string monitorType, string stateName, bool? isInHotState)
@@ -654,43 +604,18 @@ namespace PChecker.Actors.Logging
 
         public void OnRandom(object result, string callerName, string callerType)
         {
-            if (Closed)
-            {
-                return;
-            }
-
-            // Writer.WriteStartElement("Random");
-            // Writer.WriteAttributeString("result", result.ToString());
-
-            if (callerName != null && callerType != null)
-            {
-                // Writer.WriteAttributeString("creatorName", callerName);
-                // Writer.WriteAttributeString("creatorType", callerType);
-            }
-            else
-            {
-                // Writer.WriteAttributeString("creatorName", Task.CurrentId.ToString());
-                // Writer.WriteAttributeString("creatorType", "task");
-            }
-
-            // Writer.WriteEndElement();
         }
 
         public void OnStrategyDescription(string strategyName, string description)
         {
-            if (Closed)
-            {
-                return;
-            }
+            var desc = string.IsNullOrEmpty(description) ? $" Description: {description}" : string.Empty;
+            var log = $"Found bug using '{strategyName}' strategy.{desc}";
 
-            // Writer.WriteStartElement("Strategy");
-            // Writer.WriteAttributeString("strategy", strategyName);
-            if (!string.IsNullOrEmpty(description))
-            {
-                // Writer.WriteString(description);
-            }
-
-            // Writer.WriteEndElement();
+            Writer.AddLogType(JsonWriter.LogTypes.StrategyDescription);
+            Writer.AddDetail(JsonWriter.DetailAttr.strategy, strategyName);
+            Writer.AddDetail(JsonWriter.DetailAttr.strategyDescrption, description);
+            Writer.AddLog(log);
+            Writer.AddToLogs();
         }
     }
 }

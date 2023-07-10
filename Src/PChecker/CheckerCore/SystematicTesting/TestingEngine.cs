@@ -12,7 +12,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using System.Text.Json;
 using PChecker.Actors;
 using PChecker.Actors.Logging;
 using PChecker.Coverage;
@@ -601,7 +600,7 @@ namespace PChecker.SystematicTesting
             {
                 var jsonPath = directory + file + "_" + index + ".trace.json";
                 Logger.WriteLine($"..... Writing {jsonPath}");
-                File.WriteAllText(jsonPath, JsonSerializer.Serialize(JsonLog.ToJson()));
+                File.WriteAllText(jsonPath, JsonLog.ToJson());
                 yield return jsonPath;
             }
 

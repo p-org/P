@@ -224,7 +224,7 @@ namespace PChecker.Actors.Logging
             /// Information about the scheduling strategy.
             /// Available for log type StrategyDescription.
             /// </summary>
-            strategyDescrption
+            strategyDescription
         }
 
         /// <summary>

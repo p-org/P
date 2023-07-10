@@ -613,7 +613,7 @@ namespace PChecker.Actors.Logging
 
             Writer.AddLogType(JsonWriter.LogTypes.StrategyDescription);
             Writer.AddDetail(JsonWriter.DetailAttr.strategy, strategyName);
-            Writer.AddDetail(JsonWriter.DetailAttr.strategyDescrption, description);
+            Writer.AddDetail(JsonWriter.DetailAttr.strategyDescription, description);
             Writer.AddLog(log);
             Writer.AddToLogs();
         }

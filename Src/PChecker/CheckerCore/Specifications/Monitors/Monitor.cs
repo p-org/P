@@ -610,7 +610,7 @@ namespace PChecker.Specifications.Monitors
         /// <summary>
         /// Returns true if the monitor is in a hot state.
         /// </summary>
-        internal bool IsInHotState() => ActiveState.IsHot;
+        internal bool IsInHotState() => ActiveState?.IsHot ?? false;
 
         /// <summary>
         /// Returns true if the monitor is in a hot state. Also outputs
@@ -625,7 +625,7 @@ namespace PChecker.Specifications.Monitors
         /// <summary>
         /// Returns true if the monitor is in a cold state.
         /// </summary>
-        internal bool IsInColdState() => ActiveState.IsCold;
+        internal bool IsInColdState() => ActiveState?.IsCold ?? false;
 
         /// <summary>
         /// Returns true if the monitor is in a cold state. Also outputs

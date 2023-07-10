@@ -33,10 +33,8 @@ public class UnionVS implements ValueSummary<UnionVS> {
   }
 
   public UnionVS() {
-    UnionVStype type = UnionVStype.getUnionVStype(PrimitiveVS.class, null);
-    this.type = new PrimitiveVS<>(type);
+    this.type = new PrimitiveVS<>((UnionVStype) null);
     this.value = new HashMap<>();
-    this.value.put(type, new PrimitiveVS<>((Machine) null));
     this.concreteHash = computeConcreteHash();
   }
 
@@ -53,10 +51,8 @@ public class UnionVS implements ValueSummary<UnionVS> {
 
   public UnionVS(ValueSummary vs) {
     if (vs == null) {
-      UnionVStype type = UnionVStype.getUnionVStype(PrimitiveVS.class, null);
-      this.type = new PrimitiveVS<>(type);
+      this.type = new PrimitiveVS<>((UnionVStype) null);
       this.value = new HashMap<>();
-      this.value.put(type, new PrimitiveVS<>((Machine) null));
     } else {
       UnionVStype type;
       if (vs instanceof NamedTupleVS) {

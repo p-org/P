@@ -23,6 +23,7 @@ import psym.runtime.logger.Log4JConfig;
  * ../Tst/SymbolicRegressionTests/
  */
 public class TestSymbolicRegression {
+  private static String strategy = "symex";
   private static String runArgs = "--seed 0";
   private static final String outputDirectory = "output/testCases";
   private static final List<String> excluded = new ArrayList<>();
@@ -30,12 +31,10 @@ public class TestSymbolicRegression {
   private static boolean initialized = false;
 
   private static void setRunArgs() {
-    String strategy = System.getProperty("strategy");
-    if (strategy != null) {
-        runArgs += " -s " + strategy;
-    } else {
-      runArgs += " -s symex";
+    if (System.getProperty("strategy") != null) {
+      strategy = System.getProperty("strategy");
     }
+    runArgs += " -s " + strategy;
     String strategyArgs = System.getProperty("strategy.args");
     if (strategyArgs != null) {
       runArgs += strategyArgs;

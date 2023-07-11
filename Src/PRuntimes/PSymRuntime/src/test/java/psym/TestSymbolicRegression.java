@@ -23,13 +23,33 @@ import psym.runtime.logger.Log4JConfig;
  * ../Tst/SymbolicRegressionTests/
  */
 public class TestSymbolicRegression {
-  private static final String runArgs = "--iterations 20 --seed 0";
+  private static String runArgs = "--seed 0";
   private static final String outputDirectory = "output/testCases";
   private static final List<String> excluded = new ArrayList<>();
 
   private static boolean initialized = false;
 
+  private static void setRunArgs() {
+    String strategy = System.getProperty("strategy");
+    if (strategy != null) {
+        runArgs += " -s " + strategy;
+    } else {
+      runArgs += " -s symex";
+    }
+    String strategyArgs = System.getProperty("strategy.args");
+    if (strategyArgs != null) {
+      runArgs += strategyArgs;
+    }
+    PSymTestLogger.log(String.format("  Using arguments:  %s", runArgs));
+  }
+
   private static void createExcludeList() {
+    // TODO Unsupported: liveness with temperatures
+    excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_1");
+    excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_1_falsePass");
+    excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_FAIRNONDET");
+    excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_FAIRNONDET2");
+
     // TODO Unsupported: deadlock detection
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive2");
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive6");
@@ -85,6 +105,7 @@ public class TestSymbolicRegression {
   private static void initialize() {
     Log4JConfig.configureLog4J();
     PSymTestLogger.Initialize(outputDirectory);
+    setRunArgs();
     createExcludeList();
     initialized = true;
   }

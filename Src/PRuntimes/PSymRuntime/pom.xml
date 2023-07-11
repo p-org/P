@@ -191,6 +191,16 @@
                     <systemPropertyVariables>
                         <propertyName>java.library.path</propertyName>
                     </systemPropertyVariables>
+                    <systemProperties>
+                        <property>
+                            <name>strategy</name>
+                            <value></value>
+                        </property>
+                        <property>
+                            <name>strategy.args</name>
+                            <value></value>
+                        </property>
+                    </systemProperties>
                 </configuration>
             </plugin>
             <plugin>

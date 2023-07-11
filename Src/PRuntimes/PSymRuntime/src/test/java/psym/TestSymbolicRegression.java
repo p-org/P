@@ -40,7 +40,7 @@ public class TestSymbolicRegression {
     if (psymArgs != null && !psymArgs.isEmpty()) {
       runArgs += " --psym-args " + psymArgs;
     }
-    PSymTestLogger.log(String.format("  Using arguments:  %s", runArgs));
+    PSymTestLogger.log(String.format("Running in mode %s with arguments:  %s", mode, runArgs));
   }
 
   private static void createExcludeList() {

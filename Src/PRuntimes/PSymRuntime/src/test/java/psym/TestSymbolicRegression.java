@@ -43,9 +43,6 @@ public class TestSymbolicRegression {
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive15");
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive16");
 
-    // TODO Unsupported: enum starting with non-zero integer values
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/enum4");
-
     // TODO Unsupported: nested type casting in tuple fields with any type
     excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes");
 

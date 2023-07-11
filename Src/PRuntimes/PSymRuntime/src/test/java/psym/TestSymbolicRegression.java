@@ -36,7 +36,7 @@ public class TestSymbolicRegression {
     }
     String psymArgs = System.getProperty("psym.args");
     if (psymArgs != null) {
-      runArgs += "--psym-args" + psymArgs;
+      runArgs += " --psym-args " + psymArgs;
     }
     PSymTestLogger.log(String.format("  Using arguments:  %s", runArgs));
   }

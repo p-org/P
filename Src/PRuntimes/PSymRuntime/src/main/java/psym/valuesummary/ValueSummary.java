@@ -55,7 +55,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
    * @return A ValueSummary that can be casted into the provided type
    */
   static ValueSummary<?> castFromAny(Guard pc, ValueSummary<?> def, UnionVS anyVal) {
-    ValueSummary<?> result;
+    ValueSummary<?> result = null;
     if (def instanceof UnionVS) {
       return anyVal;
     }
@@ -77,9 +77,15 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
     Guard typeGuard = anyVal.getGuardFor(type);
     Guard pcDefined = pc.and(typeGuard);
     if (pcDefined.isFalse()) {
-      throw new BugFoundException(String.format("Casting %s to type %s is not defined", anyVal, type), pc);
+      throw new BugFoundException(
+              String.format("Casting %s to type %s is not defined", anyVal, type), pc);
     }
-    result = anyVal.getValue(type).restrict(pc);
+    ValueSummary val = anyVal.getValue(type);
+    if (val == null) {
+      val = def;
+    }
+    result = val.restrict(pc);
+
     return result;
   }
 

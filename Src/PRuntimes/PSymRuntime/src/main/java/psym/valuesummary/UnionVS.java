@@ -33,8 +33,10 @@ public class UnionVS implements ValueSummary<UnionVS> {
   }
 
   public UnionVS() {
-    this.type = new PrimitiveVS<>((UnionVStype) null);
+    UnionVStype type = UnionVStype.getUnionVStype(PrimitiveVS.class, null);
+    this.type = new PrimitiveVS<>(type);
     this.value = new HashMap<>();
+    this.value.put(type, null);
     this.concreteHash = computeConcreteHash();
   }
 
@@ -51,8 +53,10 @@ public class UnionVS implements ValueSummary<UnionVS> {
 
   public UnionVS(ValueSummary vs) {
     if (vs == null) {
-      this.type = new PrimitiveVS<>((UnionVStype) null);
+      UnionVStype type = UnionVStype.getUnionVStype(PrimitiveVS.class, null);
+      this.type = new PrimitiveVS<>(type);
       this.value = new HashMap<>();
+      this.value.put(type, null);
     } else {
       UnionVStype type;
       if (vs instanceof NamedTupleVS) {
@@ -120,9 +124,6 @@ public class UnionVS implements ValueSummary<UnionVS> {
    */
   public ValueSummary getValue(UnionVStype type) {
     ValueSummary result = value.get(type);
-    if (result == null) {
-      throw new NoSuchElementException(String.format("No entry of type %s in %s", type, this));
-    }
     return result;
   }
 
@@ -157,31 +158,39 @@ public class UnionVS implements ValueSummary<UnionVS> {
     assert (type != null);
     final List<PrimitiveVS<UnionVStype>> typesToMerge = new ArrayList<>();
     final Map<UnionVStype, List<ValueSummary>> valuesToMerge = new HashMap<>();
+
+    for (Map.Entry<UnionVStype, ValueSummary> entry : this.value.entrySet()) {
+      if (!valuesToMerge.containsKey(entry.getKey())) {
+        valuesToMerge.put(entry.getKey(), new ArrayList<>());
+      }
+      if (entry.getValue() != null) {
+        valuesToMerge.get(entry.getKey()).add(entry.getValue());
+      }
+    }
+
     for (UnionVS union : summaries) {
       typesToMerge.add(union.type);
       for (Map.Entry<UnionVStype, ValueSummary> entry : union.value.entrySet()) {
-        valuesToMerge
-            .computeIfAbsent(entry.getKey(), (key) -> new ArrayList<>())
-            .add(entry.getValue());
+        if (!valuesToMerge.containsKey(entry.getKey())) {
+            valuesToMerge.put(entry.getKey(), new ArrayList<>());
+        }
+        if (entry.getValue() != null) {
+          valuesToMerge.get(entry.getKey()).add(entry.getValue());
+        }
       }
     }
 
     final PrimitiveVS<UnionVStype> mergedType = type.merge(typesToMerge);
-    final Map<UnionVStype, ValueSummary> mergedValue = new HashMap<>(this.value);
+    final Map<UnionVStype, ValueSummary> mergedValue = new HashMap<>();
 
     for (Map.Entry<UnionVStype, List<ValueSummary>> entry : valuesToMerge.entrySet()) {
       UnionVStype type = entry.getKey();
       List<ValueSummary> value = entry.getValue();
+      ValueSummary newValue = null;
       if (value.size() > 0) {
-        ValueSummary oldValue = this.value.get(type);
-        ValueSummary newValue;
-        if (oldValue == null) {
-          newValue = value.get(0).merge(value.subList(1, entry.getValue().size()));
-        } else {
-          newValue = oldValue.merge(value);
-        }
-        mergedValue.put(type, newValue);
+        newValue = value.get(0).merge(value.subList(1, entry.getValue().size()));
       }
+      mergedValue.put(type, newValue);
     }
     return new UnionVS(mergedType, mergedValue);
   }
@@ -197,9 +206,12 @@ public class UnionVS implements ValueSummary<UnionVS> {
   }
 
   @Override
-  public PrimitiveVS<Boolean> symbolicEquals(UnionVS cmp, Guard pc) {
-    if (cmp == null) {
-      return type.symbolicEquals(null, pc);
+  public PrimitiveVS<Boolean> symbolicEquals(UnionVS cmp_orig, Guard pc) {
+    UnionVS cmp;
+    if (cmp_orig == null) {
+      cmp = new UnionVS();
+    } else {
+      cmp = cmp_orig;
     }
 
     PrimitiveVS res = type.symbolicEquals(cmp.type, pc);
@@ -208,6 +220,13 @@ public class UnionVS implements ValueSummary<UnionVS> {
         PrimitiveVS<Boolean> bothLackKey =
             BooleanVS.trueUnderGuard(pc.and(type.getGuardFor(payload.getKey()).not()));
         res = BooleanVS.and(res, bothLackKey);
+      } else if (payload.getValue() == null) {
+        if (value.get(payload.getKey()) == null) {
+          continue;
+        } else {
+          res =
+                  BooleanVS.and(res, value.get(payload.getKey()).symbolicEquals(null, pc));
+        }
       } else {
         res =
             BooleanVS.and(res, payload.getValue().symbolicEquals(value.get(payload.getKey()), pc));
@@ -244,7 +263,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
     StringBuilder out = new StringBuilder();
     out.append("[");
     for (UnionVStype type : type.getValues()) {
-      if (type == null) {
+      if (value.get(type) == null) {
         continue;
       }
       out.append(value.get(type).toString());
@@ -258,7 +277,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
     StringBuilder out = new StringBuilder();
     out.append("Union[");
     for (UnionVStype type : type.getValues()) {
-      if (type == null) {
+      if (value.get(type) == null) {
         continue;
       }
       out.append(value.get(type).toStringDetailed()).append(", ");

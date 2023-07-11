@@ -32,6 +32,7 @@ import psym.runtime.statistics.CoverageStats;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
 import psym.utils.Assert;
+import psym.utils.exception.BugFoundException;
 import psym.utils.monitor.MemoryMonitor;
 import psym.utils.monitor.TimeMonitor;
 import psym.valuesummary.Guard;
@@ -62,10 +63,10 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
   private int numPendingBacktracks = 0;
   private int numPendingDataBacktracks = 0;
-  /** Map of distinct concrete state to number of times state is visited */
-  private transient Set<Object> distinctStates = new HashSet<>();
+  /** Map of distinct concrete state to iteration when first visited */
+  private transient Map<Object, Integer> distinctStates = new HashMap<>();
   /** Guard corresponding on distinct states at a step */
-  private transient Guard distinctStateGuard = null;
+  private transient boolean isDistinctState = true;
   /** Total number of states */
   private int totalStateCount = 0;
   /** Total number of distinct states */
@@ -212,6 +213,17 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       int[] numConcrete = enumerateConcreteStatesFromExplicit(PSymGlobal.getConfiguration().getStateCachingMode());
       numStates = numConcrete[0];
       numStatesDistinct = numConcrete[1];
+
+      if (!isDistinctState) {
+        int firstVisitIter = numConcrete[2];
+        if (firstVisitIter == iter) {
+          executionFinished = true;
+//          throw new BugFoundException("Cycle detected: revisited a state multiple times in the same iteration", Guard.constTrue());
+        }
+        done = true;
+        SearchLogger.finishedExecution(depth);
+        return;
+      }
     }
 
     if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
@@ -626,17 +638,6 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     StatWriter.log("#-executions", String.format("%d", (getIter() - getStart_iter())));
   }
 
-  @Override
-  public List<PrimitiveVS> getNextSchedulingChoices() {
-    List<PrimitiveVS> candidates = super.getNextSchedulingChoices();
-    if (PSymGlobal.getConfiguration().getStateCachingMode() != StateCachingMode.None) {
-      if (distinctStateGuard != null) {
-        candidates = filterDistinct(candidates);
-      }
-    }
-    return candidates;
-  }
-
   private void postIterationCleanup() {
     schedule.resetFilter();
     for (int d = schedule.size() - 1; d >= 0; d--) {
@@ -931,8 +932,8 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   public void reinitialize() {
     // set all transient data structures
     srcState = new HashMap<>();
-    distinctStates = new HashSet<>();
-    distinctStateGuard = null;
+    distinctStates = new HashMap<>();
+    isDistinctState = true;
     for (Machine machine : schedule.getMachines()) {
       machine.setScheduler(this);
     }
@@ -1084,8 +1085,8 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     }
 
     if (stickyStep || (choiceDepth <= backtrackDepth) || (mode == StateCachingMode.None)) {
-      distinctStateGuard = Guard.constTrue();
-      return new int[] {0, 0};
+      isDistinctState = true;
+      return new int[] {0, 0, -1};
     }
 
     List<List<Object>> globalStateConcrete = new ArrayList<>();
@@ -1110,106 +1111,20 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
     String concreteState = globalStateConcrete.toString();
     totalStateCount += 1;
-    if (distinctStates.contains(concreteState)) {
+    if (distinctStates.containsKey(concreteState)) {
       if (PSymGlobal.getConfiguration().getVerbosity() > 5) {
         PSymLogger.info("Repeated State: " + getConcreteStateString(globalStateConcrete));
       }
-      distinctStateGuard = Guard.constFalse();
-      return new int[] {1, 0};
+      isDistinctState = false;
+      return new int[] {1, 0, distinctStates.get(concreteState)};
     } else {
       if (PSymGlobal.getConfiguration().getVerbosity() > 4) {
         PSymLogger.info("New State:      " + getConcreteStateString(globalStateConcrete));
       }
-      distinctStates.add(concreteState);
+      distinctStates.put(concreteState, iter);
       totalDistinctStateCount += 1;
-      distinctStateGuard = Guard.constTrue();
-      return new int[] {1, 1};
+      isDistinctState = true;
+      return new int[] {1, 1, -1};
     }
-  }
-
-  /**
-   * Enumerate concrete states from symbolic
-   *
-   * @return number of concrete states represented by the symbolic state
-   */
-  public int[] enumerateConcreteStatesFromSymbolic(
-      Function<ValueSummary, GuardedValue<?>> concretizer) {
-    Guard iterPc = Guard.constTrue();
-    Guard alreadySeen = Guard.constFalse();
-    int numConcreteStates = 0;
-    int numDistinctConcreteStates = 0;
-
-    distinctStateGuard = Guard.constFalse();
-    if (stickyStep || (choiceDepth <= backtrackDepth)) {
-      distinctStateGuard = Guard.constTrue();
-      return new int[] {0, 0};
-    }
-
-    if (PSymGlobal.getConfiguration().getVerbosity() > 5) {
-      PSymLogger.info(globalStateString());
-    }
-
-    while (!iterPc.isFalse()) {
-      Guard concreteStateGuard = Guard.constTrue();
-      List<List<Object>> globalStateConcrete = new ArrayList<>();
-      int i = 0;
-      for (Machine m : currentMachines) {
-        if (!srcState.containsKey(m)) continue;
-        List<ValueSummary> machineStateSymbolic = srcState.get(m).getLocals();
-        List<Object> machineStateConcrete = new ArrayList<>();
-        for (int j = 0; j < machineStateSymbolic.size(); j++) {
-          GuardedValue<?> guardedValue =
-              concretizer.apply(machineStateSymbolic.get(j).restrict(iterPc));
-          if (guardedValue == null) {
-            if (i == 0 && j == 0) {
-              return new int[] {numConcreteStates, numDistinctConcreteStates};
-            }
-            machineStateConcrete.add(null);
-          } else {
-            iterPc = iterPc.and(guardedValue.getGuard());
-            machineStateConcrete.add(guardedValue.getValue());
-            concreteStateGuard = concreteStateGuard.and(guardedValue.getGuard());
-          }
-        }
-        if (!machineStateConcrete.isEmpty()) {
-          globalStateConcrete.add(machineStateConcrete);
-        }
-        i++;
-      }
-
-      if (!globalStateConcrete.isEmpty()) {
-        totalStateCount += 1;
-        numConcreteStates += 1;
-        String concreteState = globalStateConcrete.toString();
-        if (distinctStates.contains(concreteState)) {
-          if (PSymGlobal.getConfiguration().getVerbosity() > 5) {
-            PSymLogger.info("Repeated State: " + getConcreteStateString(globalStateConcrete));
-          }
-        } else {
-          totalDistinctStateCount += 1;
-          numDistinctConcreteStates += 1;
-          distinctStates.add(concreteState);
-          if (PSymGlobal.getConfiguration().getStateCachingMode() != StateCachingMode.None) {
-            distinctStateGuard = distinctStateGuard.or(concreteStateGuard);
-          }
-          if (PSymGlobal.getConfiguration().getVerbosity() > 4) {
-            PSymLogger.info("New State:      " + getConcreteStateString(globalStateConcrete));
-          }
-        }
-      }
-      alreadySeen = alreadySeen.or(iterPc);
-      iterPc = alreadySeen.not();
-    }
-    return new int[] {numConcreteStates, numDistinctConcreteStates};
-  }
-
-  private List<PrimitiveVS> filterDistinct(List<PrimitiveVS> choices) {
-    assert (distinctStateGuard != null);
-    List<PrimitiveVS> filtered = new ArrayList<>();
-    for (PrimitiveVS choice : choices) {
-      choice = choice.restrict(distinctStateGuard);
-      if (!choice.isEmptyVS()) filtered.add(choice);
-    }
-    return filtered;
   }
 }

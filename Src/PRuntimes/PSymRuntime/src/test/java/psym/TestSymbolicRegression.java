@@ -31,11 +31,13 @@ public class TestSymbolicRegression {
   private static boolean initialized = false;
 
   private static void setRunArgs() {
-    if (System.getProperty("mode") != null) {
-      mode = System.getProperty("mode");
-    }
+    String md = System.getProperty("mode");
     String psymArgs = System.getProperty("psym.args");
-    if (psymArgs != null) {
+
+    if (md != null && !md.isEmpty()) {
+      mode = md;
+    }
+    if (psymArgs != null && !psymArgs.isEmpty()) {
       runArgs += " --psym-args " + psymArgs;
     }
     PSymTestLogger.log(String.format("  Using arguments:  %s", runArgs));

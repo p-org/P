@@ -48,30 +48,6 @@ public class TestSymbolicRegression {
 
     // TODO Unsupported: nested type casting in tuple fields with any type
     excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes12");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes13");
-//    excluded.add(
-//        "../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypesAllAsserts");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes1");
-//    excluded.add(
-//        "../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes10");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes2");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes3");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes4");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes5");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes6");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes7");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes8");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes9");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs1");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs2");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs3");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs4");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs5");
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs6");
-
-//    // TODO Unsupported: comparison of null with any type
-//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/anyTypeNullValue");
 
     // TODO Unsupported: null events
     excluded.add("../../../Tst/RegressionTests/Integration/Correct/openwsn1");

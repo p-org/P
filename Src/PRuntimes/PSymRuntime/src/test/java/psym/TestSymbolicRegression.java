@@ -23,21 +23,20 @@ import psym.runtime.logger.Log4JConfig;
  * ../Tst/SymbolicRegressionTests/
  */
 public class TestSymbolicRegression {
-  private static String strategy = "symex";
-  private static String runArgs = "--seed 0";
+  private static String mode = "verification";
+  private static String runArgs = "--seed 0 --timeout 60";
   private static final String outputDirectory = "output/testCases";
   private static final List<String> excluded = new ArrayList<>();
 
   private static boolean initialized = false;
 
   private static void setRunArgs() {
-    if (System.getProperty("strategy") != null) {
-      strategy = System.getProperty("strategy");
+    if (System.getProperty("mode") != null) {
+      mode = System.getProperty("mode");
     }
-    runArgs += " -s " + strategy;
-    String strategyArgs = System.getProperty("strategy.args");
-    if (strategyArgs != null) {
-      runArgs += strategyArgs;
+    String psymArgs = System.getProperty("psym.args");
+    if (psymArgs != null) {
+      runArgs += "--psym-args" + psymArgs;
     }
     PSymTestLogger.log(String.format("  Using arguments:  %s", runArgs));
   }
@@ -143,6 +142,7 @@ public class TestSymbolicRegression {
                 TestCaseExecutor.runTestCase(
                     testCasePaths,
                     testCasePath,
+                    TestSymbolicRegression.mode,
                     TestSymbolicRegression.runArgs,
                     outputDirectory,
                     expected));

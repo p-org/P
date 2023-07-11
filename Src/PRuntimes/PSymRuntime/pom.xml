@@ -193,11 +193,11 @@
                     </systemPropertyVariables>
                     <systemProperties>
                         <property>
-                            <name>strategy</name>
+                            <name>mode</name>
                             <value></value>
                         </property>
                         <property>
-                            <name>strategy.args</name>
+                            <name>psym.args</name>
                             <value></value>
                         </property>
                     </systemProperties>

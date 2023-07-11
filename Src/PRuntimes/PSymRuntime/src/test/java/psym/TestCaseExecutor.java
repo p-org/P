@@ -46,6 +46,7 @@ public class TestCaseExecutor {
   static int runTestCase(
       List<String> testCasePaths,
       String testCasePathPrefix,
+      String mode,
       String runArgs,
       String mainOutputDirectory,
       int expected) {
@@ -81,8 +82,8 @@ public class TestCaseExecutor {
     try {
       String pCompileCommand =
           String.format(
-              "dotnet %s compile --mode coverage --projname %s --outdir %s --pfiles %s",
-              compilerDirectory, testName, outputDirectory, testCasePathsString);
+              "dotnet %s compile --mode %s --projname %s --outdir %s --pfiles %s",
+              compilerDirectory, mode, testName, outputDirectory, testCasePathsString);
       PSymTestLogger.log("      compiling");
       process = buildCompileProcess(pCompileCommand, outputDirectory);
 
@@ -121,8 +122,8 @@ public class TestCaseExecutor {
     try {
       String runJarCommand =
           String.format(
-              "dotnet %s check %s --mode coverage --outdir %s %s",
-              compilerDirectory, pathToJar, outputDirectory, runArgs);
+              "dotnet %s check %s --mode %s --outdir %s %s",
+              compilerDirectory, pathToJar, mode, outputDirectory, runArgs);
       PSymTestLogger.log("      running");
       process = buildRunProcess(runJarCommand, outputDirectory);
 

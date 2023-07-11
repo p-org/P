@@ -2705,8 +2705,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"new {GetSymbolicType(type)}(Guard.constTrue())";
                 case MapType _:
                     return $"new {GetSymbolicType(type)}(Guard.constTrue())";
-                case EnumType _:
-                    return $"new {GetSymbolicType(type)}(0)";
+                case EnumType enumType:
+                    return $"new {GetSymbolicType(type)}({enumType.EnumDecl.Values.Min(elem => elem.Value)})";
                 case NamedTupleType namedTupleType:
                     {
                         var allFieldDefaults = new List<string>();

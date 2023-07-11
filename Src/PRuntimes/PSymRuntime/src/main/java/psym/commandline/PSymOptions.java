@@ -106,7 +106,7 @@ public class PSymOptions {
     Option strategy =
         Option.builder("s")
             .longOpt("strategy")
-            .desc("Exploration strategy: random, dfs, learn, symex (default: learn)")
+            .desc("Exploration strategy: symex, random, dfs, learn, stateless (default: symex)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Strategy (string)")
@@ -185,22 +185,11 @@ public class PSymOptions {
 
     // Invisible/expert options
 
-    // buffer semantics
-    Option bufferSemantics =
-            Option.builder()
-                    .longOpt("buffer-type")
-                    .desc("Event buffer type: sender-queue, receiver-queue (default: receiver-queue)")
-                    .numberOfArgs(1)
-                    .hasArg()
-                    .argName("Buffer Type (string)")
-                    .build();
-    addHiddenOption(bufferSemantics);
-
     // whether or not to disable state caching
     Option stateCaching =
         Option.builder()
             .longOpt("state-caching")
-            .desc("State caching mode: none, exact, fast (default: fast)")
+            .desc("State caching mode: none, exact, fast (default: none)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Caching Mode (string)")
@@ -242,7 +231,7 @@ public class PSymOptions {
     Option choiceOrch =
         Option.builder("corch")
             .longOpt("choice-orch")
-            .desc("Choice orchestration options: random, learn (default: learn)")
+            .desc("Choice orchestration options: none, random, learn (default: none)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Choice Orch. (string)")
@@ -253,7 +242,7 @@ public class PSymOptions {
     Option taskOrch =
         Option.builder("torch")
             .longOpt("task-orch")
-            .desc("Task orchestration options: astar, random, dfs, learn (default: learn)")
+            .desc("Task orchestration options: astar, random, dfs, learn (default: dfs)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Task Orch. (string)")
@@ -412,36 +401,24 @@ public class PSymOptions {
         case "s":
         case "strategy":
           switch (option.getValue()) {
-            case "random":
-              config.setToRandom();
-              break;
-            case "dfs":
-              config.setToDfs();
-              break;
-            case "learn-backtrack":
-              config.setToBacktrackLearn();
-              break;
-            case "learn-choice":
-              config.setToChoiceLearn();
-              break;
-            case "learn":
-            case "learn-all":
-              config.setToAllLearn();
-              break;
             case "bmc":
             case "sym":
             case "symex":
             case "symbolic":
               config.setToSymex();
               break;
+            case "random":
+              config.setToRandom();
+              break;
+            case "dfs":
+              config.setToDfs();
+              break;
+            case "learn":
+              config.setToLearn();
+              break;
             case "fuzz":
-              config.setToFuzz();
-              break;
-            case "coverage":
-              config.setToCoverage();
-              break;
-            case "debug":
-              config.setToDebug();
+            case "stateless":
+              config.setToStateless();
               break;
             default:
               optionError(
@@ -495,21 +472,6 @@ public class PSymOptions {
           break;
         case "config":
           readConfigFile(config, option.getValue(), option);
-          break;
-          // expert options
-        case "buffer-type":
-          switch (option.getValue()) {
-            case "sender-queue":
-              config.setBufferSemantics(BufferSemantics.SenderQueue);
-              break;
-            case "receiver-queue":
-              config.setBufferSemantics(BufferSemantics.ReceiverQueue);
-              break;
-            default:
-              optionError(
-                      option,
-                      String.format("Unrecognized buffer type, got %s", option.getValue()));
-          }
           break;
         case "state-caching":
           switch (option.getValue()) {

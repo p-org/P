@@ -59,14 +59,7 @@ public class EventQueue extends SymbolicQueue implements EventBuffer, Serializab
     if (sender.getScheduler() instanceof ReplayScheduler) {
       ScheduleWriter.logSend(sender, event);
     }
-
-    if (PSymGlobal.getConfiguration().isReceiverQueue()) {
-      for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
-        target.getValue().getReceiverQueue().add(event.restrict(target.getGuard()));
-      }
-    } else {
-      super.add(event);
-    }
+    super.add(event);
   }
 
 

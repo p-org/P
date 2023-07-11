@@ -32,7 +32,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   private final State startState;
   private final Set<State> states;
   @Getter private EventQueue sendBuffer;
-  @Getter private ReceiverQueue receiverQueue;
   @Getter private DeferQueue deferredQueue;
   @Getter private transient Scheduler scheduler;
   private PrimitiveVS<Boolean> started = new PrimitiveVS<>(false);
@@ -54,7 +53,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
 
     this.startState = startState;
     this.sendBuffer = new EventQueue(this);
-    this.receiverQueue = new ReceiverQueue(this);
     this.deferredQueue = new DeferQueue(this);
     this.currentState = new PrimitiveVS<>(startState);
 
@@ -83,11 +81,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   }
 
   public SymbolicQueue getEventBuffer() {
-    if (PSymGlobal.getConfiguration().isReceiverQueue()) {
-      return receiverQueue;
-    } else {
-      return sendBuffer;
-    }
+    return sendBuffer;
   }
 
   public void receive(String continuationName, Guard pc) {
@@ -117,7 +111,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   public void reset() {
     this.currentState = new PrimitiveVS<>(startState);
     this.sendBuffer = new EventQueue(this);
-    this.receiverQueue = new ReceiverQueue(this);
     this.deferredQueue = new DeferQueue(this);
     this.receives = new PrimitiveVS<>();
     for (Runnable r : clearContinuationVars) {
@@ -133,7 +126,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     List<ValueSummary> localVars = new ArrayList<>();
     localVars.add(this.currentState);
     localVars.add(this.sendBuffer.getEvents());
-    localVars.add(this.receiverQueue.getEvents());
     localVars.add(this.deferredQueue.getEvents());
     localVars.add(this.receives);
     localVars.add(this.started);
@@ -145,7 +137,6 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     int idx = 0;
     this.currentState = (PrimitiveVS<State>) localVars.get(idx++);
     this.sendBuffer.setEvents(localVars.get(idx++));
-    this.receiverQueue.setEvents(localVars.get(idx++));
     this.deferredQueue.setEvents(localVars.get(idx++));
     this.receives =
         (PrimitiveVS<

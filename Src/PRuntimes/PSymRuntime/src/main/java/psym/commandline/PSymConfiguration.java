@@ -33,7 +33,7 @@ public class PSymConfiguration implements Serializable {
   // level of verbosity for the logging
   @Getter @Setter int verbosity = 0;
   // strategy of exploration
-  @Getter @Setter String strategy = "learn";
+  @Getter @Setter String strategy = "symex";
   // max number of executions bound provided by the user
   @Getter @Setter int maxExecutions = 1;
   // max steps/depth bound provided by the user
@@ -47,18 +47,18 @@ public class PSymConfiguration implements Serializable {
   // name of the psym configuration file
   @Getter @Setter String configFile = "";
   // buffer semantics
-  @Getter @Setter BufferSemantics bufferSemantics = BufferSemantics.ReceiverQueue;
+  @Getter @Setter BufferSemantics bufferSemantics = BufferSemantics.SenderQueue;
   // mode of state hashing
-  @Getter @Setter StateCachingMode stateCachingMode = StateCachingMode.Fast;
+  @Getter @Setter StateCachingMode stateCachingMode = StateCachingMode.None;
   // symmetry mode
   @Getter @Setter SymmetryMode symmetryMode = SymmetryMode.None;
   // use backtracking
-  @Getter @Setter boolean useBacktrack = true;
+  @Getter @Setter boolean useBacktrack = false;
   // max number of children tasks per execution
   @Getter @Setter int maxBacktrackTasksPerExecution = 2;
   // mode of choice orchestration
   @Getter @Setter
-  ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.EpsilonGreedy;
+  ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.None;
   // mode of choice learning state mode
   @Getter @Setter
   ChoiceLearningStateMode choiceLearningStateMode = ChoiceLearningStateMode.TimelineAbstraction;
@@ -67,7 +67,7 @@ public class PSymConfiguration implements Serializable {
   ChoiceLearningRewardMode choiceLearningRewardMode = ChoiceLearningRewardMode.Coverage;
   // mode of task orchestration
   @Getter @Setter
-  TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.CoverageEpsilonGreedy;
+  TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.DepthFirst;
   // type of solver engine
   @Getter @Setter SolverType solverType = SolverType.BDD;
   // type of expression engine
@@ -85,65 +85,52 @@ public class PSymConfiguration implements Serializable {
     return !isSymbolic();
   }
 
-  public boolean isReceiverQueue() {
-    return bufferSemantics == BufferSemantics.ReceiverQueue;
-  }
-
   public boolean isChoiceOrchestrationLearning() {
     return (getChoiceOrchestration() == ChoiceOrchestrationMode.QLearning)
         || (getChoiceOrchestration() == ChoiceOrchestrationMode.EpsilonGreedy);
   }
 
+  public void setToSymex() {
+    this.setStrategy("symex");
+    this.setStateCachingMode(StateCachingMode.None);
+    this.setUseBacktrack(false);
+    this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
+    this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
+  }
+
+  private void setToExplicit() {
+    this.setStateCachingMode(StateCachingMode.Fast);
+    this.setUseBacktrack(true);
+  }
+
   public void setToRandom() {
+    this.setToExplicit();
     this.setStrategy("random");
     this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
     this.setTaskOrchestration(TaskOrchestrationMode.Random);
   }
 
   public void setToDfs() {
+    this.setToExplicit();
     this.setStrategy("dfs");
     this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
     this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
   }
 
-  public void setToAllLearn() {
+  public void setToLearn() {
+    this.setToExplicit();
     this.setStrategy("learn");
     this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
     this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
   }
 
-  public void setToChoiceLearn() {
-    this.setStrategy("learn");
-    this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
-    this.setTaskOrchestration(TaskOrchestrationMode.Random);
-  }
-
-  public void setToBacktrackLearn() {
-    this.setStrategy("learn");
-    this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
-    this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
-  }
-
-  public void setToSymex() {
-    this.setStrategy("symex");
-    this.setStateCachingMode(StateCachingMode.None);
-    this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
-    this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
-    this.setBufferSemantics(BufferSemantics.SenderQueue);
-  }
-
-  public void setToFuzz() {
-    this.setStrategy("fuzz");
+  public void setToStateless() {
+    this.setToExplicit();
+    this.setStrategy("stateless");
     this.setStateCachingMode(StateCachingMode.None);
     this.setUseBacktrack(false);
     this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
     this.setTaskOrchestration(TaskOrchestrationMode.Random);
-  }
-
-  public void setToCoverage() {
-    this.setStrategy("coverage");
-    this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
-    this.setTaskOrchestration(TaskOrchestrationMode.CoverageAStar);
   }
 
   public void setToReplay() {
@@ -151,9 +138,5 @@ public class PSymConfiguration implements Serializable {
     this.setStateCachingMode(StateCachingMode.None);
     this.setUseBacktrack(false);
     this.setSymmetryMode(SymmetryMode.None);
-  }
-
-  public void setToDebug() {
-    this.setStrategy("debug");
   }
 }

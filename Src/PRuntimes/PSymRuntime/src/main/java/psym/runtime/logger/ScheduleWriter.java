@@ -63,7 +63,7 @@ public class ScheduleWriter {
                 event,
                 target,
                 state));
-        log(target.toString());
+        log(String.format("(%d)", target.getInstanceId()));
     }
 
     public static void logSend(Machine sender, Message msg) {
@@ -90,7 +90,7 @@ public class ScheduleWriter {
                     senderState,
                     target,
                     targetState));
-            log(sender.toString());
+            log(String.format("(%d)", sender.getInstanceId()));
         }
     }
 
@@ -109,7 +109,7 @@ public class ScheduleWriter {
                 target,
                 targetState,
                 event));
-        log(target.toString());
+        log(String.format("(%d)", target.getInstanceId()));
     }
 
     public static void logHeader() {

@@ -178,7 +178,7 @@ namespace PChecker.SystematicTesting
             }
 
             ScheduledOperation = next as AsyncOperation;
-            ScheduleTrace.AddSchedulingChoice(next.Name);
+            ScheduleTrace.AddSchedulingChoice(next.Id);
 
             Debug.WriteLine($"<ScheduleDebug> Scheduling the next operation of '{next.Name}'.");
 

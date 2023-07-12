@@ -152,6 +152,7 @@ public class TraceLogger {
   }
 
   public static void logStartReplayCex(int length) {
+    log.info("--------------------");
     log.info("Replaying Counterexample of Length " + length);
     log.info("--------------------");
   }

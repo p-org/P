@@ -142,9 +142,11 @@ public class EntryPoint {
       status = "cex";
       scheduler.result = "found cex of length " + scheduler.getDepth();
       scheduler.isFinalResult = true;
-      PSymLogger.info("\n" + e);
-      e.printStackTrace(System.err);
       postprocess(true);
+      PSymLogger.info(e.toString());
+      if (PSymGlobal.getConfiguration().getVerbosity() > 0) {
+        e.printStackTrace(System.out);
+      }
 
       PSymLogger.setVerbosity(1);
       TraceLogger.setVerbosity(1);
@@ -209,7 +211,7 @@ public class EntryPoint {
       status = "error";
       throw new RuntimeException("ERROR: Failed to replay counterexample");
     } catch (BugFoundException e) {
-      PSymLogger.info("\n" + e);
+      PSymLogger.info(e.toString());
       e.printStackTrace(System.err);
       PSymLogger.info("Checker found a bug.");
       PSymLogger.info("... Emitting traces:");

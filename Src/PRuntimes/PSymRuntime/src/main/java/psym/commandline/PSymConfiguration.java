@@ -19,7 +19,7 @@ public class PSymConfiguration implements Serializable {
   // default name of the test driver
   @Getter final String testDriverDefault = "DefaultImpl";
   // max internal steps before throwing an exception
-  @Getter final int maxInternalSteps = 1000;
+  @Getter final int maxInternalSteps = 100;
   // name of the test driver
   @Getter @Setter String testDriver = testDriverDefault;
   // name of the project

@@ -145,9 +145,12 @@ public class UnionVS implements ValueSummary<UnionVS> {
     final Map<UnionVStype, ValueSummary> restrictedValues = new HashMap<>();
     for (Map.Entry<UnionVStype, ValueSummary> entry : value.entrySet()) {
       final UnionVStype type = entry.getKey();
-      final ValueSummary value = entry.getValue();
+      ValueSummary value = entry.getValue();
       if (!restrictedType.getGuardFor(type).isFalse()) {
-        restrictedValues.put(type, value.restrict(guard));
+        if (value != null) {
+          value = value.restrict(guard);
+        }
+        restrictedValues.put(type, value);
       }
     }
     return new UnionVS(restrictedType, restrictedValues);

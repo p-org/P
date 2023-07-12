@@ -63,12 +63,15 @@ public class EntryPoint {
   private static void print_stats() {
     double searchTime = TimeMonitor.getInstance().stopInterval();
     TimeMonitor.getInstance().startInterval();
-    StatWriter.log("status", String.format("%s", status));
     scheduler.print_search_stats();
+    if (scheduler.isFinalResult && scheduler.result.equals("correct for any depth")) {
+      status = "proved";
+    }
     StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
     if (PSymGlobal.getConfiguration().isExplicit()) {
       ((ExplicitSearchScheduler) scheduler).reportEstimatedCoverage();
     }
+    StatWriter.log("status", String.format("%s", status));
   }
 
   private static void preprocess() {
@@ -128,7 +131,7 @@ public class EntryPoint {
       future = executor.submit(timedCall);
       TimeMonitor.getInstance().startInterval();
       runWithTimeout((long) PSymGlobal.getConfiguration().getTimeLimit());
-      status = "success";
+      status = "completed";
     } catch (TimeoutException e) {
       status = "timeout";
       throw new Exception("TIMEOUT", e);

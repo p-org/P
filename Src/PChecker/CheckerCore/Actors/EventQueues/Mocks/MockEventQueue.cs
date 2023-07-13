@@ -125,8 +125,7 @@ namespace PChecker.Actors.EventQueues.Mocks
 
             if (!ActorManager.IsEventHandlerRunning)
             {
-                ((Event nextEvent, _, _), bool isDelayed) = TryDequeueEvent(true);
-                if (nextEvent is null || isDelayed)
+                if (TryDequeueEvent(true).Item1.e is null)
                 {
                     return EnqueueStatus.NextEventUnavailable;
                 }
@@ -171,7 +170,11 @@ namespace PChecker.Actors.EventQueues.Mocks
             var ((e, opGroupId, info), isDelayed) = TryDequeueEvent(checkOnly);
             if (isDelayed)
             {
-                ActorManager.IsEventHandlerRunning = false;
+                if (!checkOnly)
+                {
+                    ActorManager.IsEventHandlerRunning = false;
+                }
+
                 return (DequeueStatus.Delayed, e, Guid.Empty, null);
             }
 

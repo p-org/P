@@ -2,9 +2,6 @@
 using System.IO;
 using System.Linq;
 using PChecker;
-using PChecker.ExhaustiveSearch;
-using PChecker.SystematicTesting;
-using PChecker.Instrumentation;
 using PChecker.IO.Debugging;
 using PChecker.Scheduling;
 using Plang.Compiler;

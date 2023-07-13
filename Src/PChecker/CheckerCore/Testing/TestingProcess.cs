@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using PChecker.Coverage;
 using PChecker.SystematicTesting;
-using PChecker.Instrumentation;
 using PChecker.Interfaces;
 using PChecker.SmartSockets;
 
@@ -245,11 +244,8 @@ namespace PChecker.Testing
             var file = Path.GetFileNameWithoutExtension(_checkerConfiguration.AssemblyToBeAnalyzed);
             file += "_" + _checkerConfiguration.TestingProcessId;
 
-            // If this is a separate (sub-)process, CodeCoverageInstrumentation.OutputDirectory may not have been set up.
-            CodeCoverageInstrumentation.SetOutputDirectory(_checkerConfiguration, makeHistory: false);
-
             Console.WriteLine($"... Emitting traces:");
-            var traces = new List<string>(TestingEngine.TryEmitTraces(CodeCoverageInstrumentation.OutputDirectory, file));
+            var traces = new List<string>(TestingEngine.TryEmitTraces(_checkerConfiguration.OutputDirectory, file));
 
             if (Server != null && Server.IsConnected)
             {

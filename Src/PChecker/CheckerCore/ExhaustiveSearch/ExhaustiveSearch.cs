@@ -72,7 +72,7 @@ namespace PChecker.ExhaustiveSearch
 
             arguments.Append($"-jar {_checkerConfiguration.AssemblyToBeAnalyzed} ");
 
-            arguments.Append($"--outdir {_checkerConfiguration.OutputFilePath}/{_checkerConfiguration.Mode.ToString()} ");
+            arguments.Append($"--outdir {_checkerConfiguration.OutputPath}/{_checkerConfiguration.Mode.ToString()} ");
 
             if (!string.IsNullOrEmpty(_checkerConfiguration.TestCaseName))
             {

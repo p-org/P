@@ -94,6 +94,7 @@ namespace Plang.Options
                 FindLocalPCompiledFile(configuration);
 
                 SanitizeConfiguration(configuration);
+                
             }
             catch (CommandLineException ex)
             {
@@ -125,7 +126,7 @@ namespace Plang.Options
             switch (option.LongName)
             {
                 case "outdir":
-                    checkerConfiguration.OutputFilePath = (string)option.Value;
+                    checkerConfiguration.OutputPath = (string)option.Value;
                     break;
                 case "verbose":
                     checkerConfiguration.IsVerbose = true;
@@ -288,6 +289,9 @@ namespace Plang.Options
             {
                 Error.CheckerReportAndExit("For the option '-max-steps N[,M]', please make sure that M >= N.");
             }
+            
+            // the output directory correctly
+            checkerConfiguration.SetOutputDirectory();
         }
         
 

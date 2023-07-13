@@ -1,6 +1,5 @@
 using System;
 using PChecker.ExhaustiveSearch;
-using PChecker.Instrumentation;
 using PChecker.IO.Debugging;
 using PChecker.IO.Logging;
 using PChecker.Scheduling;
@@ -48,9 +47,6 @@ public class Checker
         }
         else
         {
-            // This has to be here because all checker modes now require this to set up output directory.
-            CodeCoverageInstrumentation.SetOutputDirectory(configuration, makeHistory: true);
-
             logger.WriteLine(".. Checking " + configuration.AssemblyToBeAnalyzed);
 
             // Creates and runs the testing process scheduler.

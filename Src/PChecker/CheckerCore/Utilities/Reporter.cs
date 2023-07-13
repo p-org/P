@@ -5,7 +5,6 @@ using System;
 using System.IO;
 using PChecker.Coverage;
 using PChecker.SystematicTesting;
-using PChecker.Instrumentation;
 
 namespace PChecker.Utilities
 {
@@ -28,7 +27,7 @@ namespace PChecker.Utilities
                 file += "_" + processId;
             }
 
-            var directory = CodeCoverageInstrumentation.OutputDirectory;
+            var directory = report.CheckerConfiguration.OutputDirectory;
             if (isDebug)
             {
                 directory += $"Debug{Path.DirectorySeparatorChar}";

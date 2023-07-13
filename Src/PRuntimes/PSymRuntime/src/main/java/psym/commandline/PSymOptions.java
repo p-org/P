@@ -4,6 +4,7 @@ import static java.lang.System.exit;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.HashSet;
 import java.util.Iterator;
 import org.apache.commons.cli.*;
 import org.json.JSONArray;
@@ -682,10 +683,15 @@ public class PSymOptions {
         JSONObject value = (JSONObject) jsonObject.get(key);
         switch (key) {
           case "sync-events":
-            JSONArray syncEvents = value.getJSONArray("default");
-            for (int i = 0; i < syncEvents.length(); i++) {
-              String syncEventName = syncEvents.getString(i);
-              PSymGlobal.getSyncEvents().add(syncEventName);
+            JSONArray allSyncEvents = value.getJSONArray("default");
+            for (int i = 0 ; i < allSyncEvents.length(); i++) {
+              JSONObject element = allSyncEvents.getJSONObject(i);
+              String machineName = element.getString("machine");
+              JSONArray syncEvents = element.getJSONArray("events");
+              for (int j = 0 ; j < syncEvents.length(); j++) {
+                String syncEventName = syncEvents.getString(j);
+                PSymGlobal.addSyncEvent(machineName, syncEventName);
+              }
             }
             break;
           case "symmetric-machines":

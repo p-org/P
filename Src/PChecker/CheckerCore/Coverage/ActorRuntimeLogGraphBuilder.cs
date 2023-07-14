@@ -10,8 +10,6 @@ using System.Xml.Linq;
 using PChecker.Actors;
 using PChecker.Actors.Events;
 using PChecker.Actors.Logging;
-using PChecker.Actors.Timers;
-using PChecker.Actors.Timers.Mocks;
 
 namespace PChecker.Coverage
 {
@@ -60,8 +58,6 @@ namespace PChecker.Coverage
             EventAliases[typeof(DefaultEvent).FullName] = "default";
             EventAliases[typeof(QuiescentEvent).FullName] = "quiescent";
             EventAliases[typeof(WildCardEvent).FullName] = "*";
-            EventAliases[typeof(TimerElapsedEvent).FullName] = "timer_elapsed";
-            EventAliases[typeof(TimerSetupEvent).FullName] = "timer_setup";
             EventAliases[typeof(DoActionEvent).FullName] = "do";
             EventAliases[typeof(PopStateEvent).FullName] = "pop";
         }
@@ -326,17 +322,6 @@ namespace PChecker.Coverage
 
         /// <inheritdoc/>
         public void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
-        {
-        }
-
-        /// <inheritdoc/>
-        public void OnCreateTimer(TimerInfo info)
-        {
-            // TODO: figure out how to graph timers when we have no "timer id" at this point...
-        }
-
-        /// <inheritdoc/>
-        public void OnStopTimer(TimerInfo info)
         {
         }
 

@@ -3,7 +3,6 @@
 
 using System;
 using PChecker.Actors.Events;
-using PChecker.Actors.Timers;
 
 namespace PChecker.Actors.Logging
 {

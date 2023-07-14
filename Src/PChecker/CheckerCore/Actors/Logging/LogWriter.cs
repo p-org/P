@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using PChecker.Actors.Events;
-using PChecker.Actors.Timers;
 using PChecker.IO.Logging;
 
 namespace PChecker.Actors.Logging

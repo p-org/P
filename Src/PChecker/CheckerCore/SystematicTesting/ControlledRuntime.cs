@@ -16,8 +16,6 @@ using PChecker.Actors.Events;
 using PChecker.Actors.Exceptions;
 using PChecker.Actors.Managers;
 using PChecker.Actors.Managers.Mocks;
-using PChecker.Actors.Timers;
-using PChecker.Actors.Timers.Mocks;
 using PChecker.Coverage;
 using PChecker.Exceptions;
 using PChecker.Random;
@@ -623,14 +621,6 @@ namespace PChecker.SystematicTesting
                     $"The stack trace is:\n{ex.StackTrace}");
                 Scheduler.NotifyAssertionFailure(message, killTasks: true, cancelExecution: false);
             }
-        }
-
-        /// <inheritdoc/>
-        internal override IActorTimer CreateActorTimer(TimerInfo info, Actor owner)
-        {
-            var id = CreateActorId(typeof(MockStateMachineTimer));
-            CreateActor(id, typeof(MockStateMachineTimer), new TimerSetupEvent(info, owner));
-            return Scheduler.GetOperationWithId<ActorOperation>(id.Value).Actor as MockStateMachineTimer;
         }
 
         /// <inheritdoc/>

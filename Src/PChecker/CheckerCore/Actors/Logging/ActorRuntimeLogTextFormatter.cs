@@ -5,7 +5,6 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using PChecker.Actors.Events;
-using PChecker.Actors.Timers;
 using PChecker.IO.Logging;
 
 namespace PChecker.Actors.Logging
@@ -62,24 +61,6 @@ namespace PChecker.Actors.Logging
         public virtual void OnCreateMonitor(string monitorType)
         {
             var text = $"<CreateLog> {monitorType} was created.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnCreateTimer(TimerInfo info)
-        {
-            string text;
-            var source = info.OwnerId?.Name ?? $"task '{Task.CurrentId}'";
-            if (info.Period.TotalMilliseconds >= 0)
-            {
-                text = $"<TimerLog> Timer '{info}' (due-time:{info.DueTime.TotalMilliseconds}ms; " +
-                    $"period :{info.Period.TotalMilliseconds}ms) was created by {source}.";
-            }
-            else
-            {
-                text = $"<TimerLog> Timer '{info}' (due-time:{info.DueTime.TotalMilliseconds}ms) was created by {source}.";
-            }
-
             Logger.WriteLine(text);
         }
 
@@ -308,14 +289,6 @@ namespace PChecker.Actors.Logging
         {
             var direction = isEntry ? "enters" : "exits";
             var text = $"<StateLog> {id} {direction} state '{stateName}'.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnStopTimer(TimerInfo info)
-        {
-            var source = info.OwnerId?.Name ?? $"task '{Task.CurrentId}'";
-            var text = $"<TimerLog> Timer '{info}' was stopped and disposed by {source}.";
             Logger.WriteLine(text);
         }
 

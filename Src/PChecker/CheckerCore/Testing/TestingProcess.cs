@@ -2,12 +2,8 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
-using PChecker.Coverage;
 using PChecker.SystematicTesting;
 
 namespace PChecker.Testing

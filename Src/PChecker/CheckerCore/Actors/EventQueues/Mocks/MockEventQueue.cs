@@ -77,6 +77,8 @@ namespace PChecker.Actors.EventQueues.Mocks
 
         public static readonly ConcurrentBag<double> ScheduledTimestamps = new();
 
+        private readonly Dictionary<(ActorId, string), double> MaxDequeueTimestampMap;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MockEventQueue"/> class.
         /// </summary>
@@ -87,6 +89,7 @@ namespace PChecker.Actors.EventQueues.Mocks
             Queue = new LinkedList<(Event, Guid, EventInfo)>();
             EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
             IsClosed = false;
+            MaxDequeueTimestampMap = new Dictionary<(ActorId, string), double>();
         }
 
         /// <inheritdoc/>
@@ -94,11 +97,41 @@ namespace PChecker.Actors.EventQueues.Mocks
         {
             e.EnqueueTime = GetTime();
             e.DequeueTime = e.EnqueueTime;
-            if (TestingEngine.Strategy.GetSampleFromDistribution("DiscreteUniform(1, 20)", out var delay))
+            var eventName = e.ToString() ?? string.Empty;
+            if (ControlledRuntime.EventDelaysMap.ContainsKey(eventName))
             {
-                e.DequeueTime += delay;
-                ScheduledTimestamps.Add(e.DequeueTime);
+                var isFirstEvent = !MaxDequeueTimestampMap.ContainsKey((info.OriginInfo.SenderActorId, eventName));
+                var dist = isFirstEvent ? ControlledRuntime.EventDelaysMap[eventName].initialDelayDist : ControlledRuntime.EventDelaysMap[eventName].delayDist;
+                if (TestingEngine.Strategy.GetSampleFromDistribution(dist, out var delay))
+                {
+                    double maxDequeueTimestamp = 0;
+                    var isDelayOrdered = ControlledRuntime.EventDelaysMap[eventName].isDelayOrdered;
+                    if (isDelayOrdered && !isFirstEvent)
+                    {
+                        maxDequeueTimestamp = MaxDequeueTimestampMap[(info.OriginInfo.SenderActorId, eventName)];
+                        if (maxDequeueTimestamp > e.EnqueueTime)
+                        {
+                            e.DequeueTime = maxDequeueTimestamp;
+                        }
+                    }
+
+                    e.DequeueTime += delay;
+                    ScheduledTimestamps.Add(e.DequeueTime);
+
+                    if (isDelayOrdered)
+                    {
+                        if (isFirstEvent)
+                        {
+                            MaxDequeueTimestampMap.Add((info.OriginInfo.SenderActorId, eventName), e.DequeueTime);
+                        }
+                        else
+                        {
+                            MaxDequeueTimestampMap[(info.OriginInfo.SenderActorId, eventName)] = e.DequeueTime;
+                        }
+                    }
+                }
             }
+
             if (IsClosed)
             {
                 return EnqueueStatus.Dropped;

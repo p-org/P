@@ -70,6 +70,8 @@ namespace PChecker.SystematicTesting
 
         public readonly List<Actor> Actors;
 
+        public static readonly ConcurrentDictionary<string, (string initialDelayDist, string delayDist, bool isDelayOrdered)> EventDelaysMap = new();
+
         /// <summary>
         /// Returns the current hashed state of the monitors.
         /// </summary>
@@ -150,6 +152,17 @@ namespace PChecker.SystematicTesting
             TaskController = new TaskController(this, Scheduler);
 
             Actors = new List<Actor>();
+
+            EventDelaysMap.TryAdd("PImplementation.eStart",            (initialDelayDist: "0.0", delayDist: "0.0", isDelayOrdered: true));
+            EventDelaysMap.TryAdd("PImplementation.eReaderRun",        (initialDelayDist: "0.2", delayDist: "1.0", isDelayOrdered: true));
+            EventDelaysMap.TryAdd("PImplementation.eWriterRun",        (initialDelayDist: "0.1", delayDist: "1.0", isDelayOrdered: true));
+            EventDelaysMap.TryAdd("PImplementation.eStorageRun",       (initialDelayDist: "0.3", delayDist: "1.0", isDelayOrdered: true));
+            EventDelaysMap.TryAdd("PImplementation.ePollRequest",      (initialDelayDist: "0.0", delayDist: "0.0", isDelayOrdered: true));
+            EventDelaysMap.TryAdd("PImplementation.ePollResponse",     (initialDelayDist: "0.0", delayDist: "0.0", isDelayOrdered: true));
+            EventDelaysMap.TryAdd("PImplementation.eEnqueueRequest",   (initialDelayDist: "0.0", delayDist: "0.0", isDelayOrdered: true));
+            EventDelaysMap.TryAdd("PImplementation.eSubscribeRequest", (initialDelayDist: "0.0", delayDist: "0.0", isDelayOrdered: true));
+            EventDelaysMap.TryAdd("PImplementation.eReadRequest",      (initialDelayDist: "0.0", delayDist: "0.0", isDelayOrdered: true));
+            EventDelaysMap.TryAdd("PImplementation.eReadResponse",     (initialDelayDist: "0.0", delayDist: "0.0", isDelayOrdered: true));
 
             // Update the current asynchronous control flow with this runtime instance,
             // allowing future retrieval in the same asynchronous call stack.

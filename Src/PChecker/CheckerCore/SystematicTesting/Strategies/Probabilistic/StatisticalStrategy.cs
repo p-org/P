@@ -79,23 +79,34 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// <inheritdoc/>
         public bool GetSampleFromDistribution(string dist, out double sample)
         {
-            if (dist.Contains("DiscreteUniform"))
+            if (dist is not null)
             {
-                var bounds = dist.Replace(" ", "").Replace("(", "").Replace(")", "").Substring(15).Split(",");
-                if (int.TryParse(bounds[0], out var lowerBound) && int.TryParse(bounds[1], out var upperBound))
+                if (dist.Contains("DiscreteUniform"))
                 {
-                    sample = RandomValueGenerator.Next(lowerBound, upperBound);
-                    return true;
+                    var bounds = dist.Replace(" ", "").Replace("(", "").Replace(")", "").Substring(15).Split(",");
+                    if (int.TryParse(bounds[0], out var lowerBound) && int.TryParse(bounds[1], out var upperBound))
+                    {
+                        sample = RandomValueGenerator.Next(lowerBound, upperBound);
+                        return true;
+                    }
+                } else if (dist.Contains("ContinuousUniform"))
+                {
+                    var bounds = dist.Replace(" ", "").Replace("(", "").Replace(")", "").Substring(17).Split(",");
+                    if (double.TryParse(bounds[0], out var lowerBound) && double.TryParse(bounds[1], out var upperBound))
+                    {
+                        sample = RandomValueGenerator.NextDouble() * (upperBound - lowerBound) + lowerBound;
+                        return true;
+                    }
                 }
-            } else if (dist.Contains("ContinuousUniform"))
-            {
-                var bounds = dist.Replace(" ", "").Replace("(", "").Replace(")", "").Substring(17).Split(",");
-                if (int.TryParse(bounds[0], out var lowerBound) && int.TryParse(bounds[1], out var upperBound))
+                else
                 {
-                    sample = RandomValueGenerator.NextDouble() * (upperBound - lowerBound) + lowerBound;
-                    return true;
+                    if (double.TryParse(dist, out sample))
+                    {
+                        return true;
+                    }
                 }
             }
+
             sample = 0;
             return false;
         }

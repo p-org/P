@@ -9,6 +9,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using PChecker.Coverage;
 using PChecker.SystematicTesting;
+<<<<<<< HEAD
+=======
+using PChecker.Interfaces;
+using PChecker.SmartSockets;
+>>>>>>> master
 
 namespace PChecker.Testing
 {

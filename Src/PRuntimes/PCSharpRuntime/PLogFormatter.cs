@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using PChecker;
 using PChecker.Actors;
 using PChecker.Actors.Events;
 using PChecker.Actors.Logging;

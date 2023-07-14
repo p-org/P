@@ -14,7 +14,6 @@ using PChecker.Actors.Events;
 using PChecker.Actors.Exceptions;
 using PChecker.Actors.Logging;
 using PChecker.Actors.Managers;
-using PChecker.Actors.Timers;
 using PChecker.Random;
 using PChecker.Runtime;
 using PChecker.Specifications.Monitors;
@@ -389,12 +388,7 @@ namespace PChecker.Actors
                 return;
             }
         }
-
-        /// <summary>
-        /// Creates a new timer that sends a <see cref="TimerElapsedEvent"/> to its owner actor.
-        /// </summary>
-        internal virtual IActorTimer CreateActorTimer(TimerInfo info, Actor owner) => new ActorTimer(info, owner);
-
+        
         /// <inheritdoc/>
         internal override void TryCreateMonitor(Type type)
         {

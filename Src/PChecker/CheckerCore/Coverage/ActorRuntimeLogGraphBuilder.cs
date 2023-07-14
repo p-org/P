@@ -10,8 +10,6 @@ using System.Xml.Linq;
 using PChecker.Actors;
 using PChecker.Actors.Events;
 using PChecker.Actors.Logging;
-using PChecker.Actors.Timers;
-using PChecker.Actors.Timers.Mocks;
 
 namespace PChecker.Coverage
 {
@@ -58,11 +56,8 @@ namespace PChecker.Coverage
             EventAliases[typeof(GotoStateEvent).FullName] = "goto";
             EventAliases[typeof(HaltEvent).FullName] = "halt";
             EventAliases[typeof(DefaultEvent).FullName] = "default";
-            EventAliases[typeof(PushStateEvent).FullName] = "push";
             EventAliases[typeof(QuiescentEvent).FullName] = "quiescent";
             EventAliases[typeof(WildCardEvent).FullName] = "*";
-            EventAliases[typeof(TimerElapsedEvent).FullName] = "timer_elapsed";
-            EventAliases[typeof(TimerSetupEvent).FullName] = "timer_setup";
             EventAliases[typeof(DoActionEvent).FullName] = "do";
             EventAliases[typeof(PopStateEvent).FullName] = "pop";
         }
@@ -245,22 +240,6 @@ namespace PChecker.Coverage
         }
 
         /// <inheritdoc/>
-        public void OnPushState(ActorId id, string currentStateName, string newStateName)
-        {
-            LinkTransition(typeof(PushStateEvent), id, currentStateName, currentStateName, newStateName);
-        }
-
-        /// <inheritdoc/>
-        public void OnPopState(ActorId id, string currentStateName, string restoredStateName)
-        {
-            if (!string.IsNullOrEmpty(currentStateName))
-            {
-                LinkTransition(typeof(PopStateEvent), id, currentStateName,
-                    currentStateName, restoredStateName);
-            }
-        }
-
-        /// <inheritdoc/>
         public void OnHalt(ActorId id, int inboxSize)
         {
             lock (Inbox)
@@ -343,17 +322,6 @@ namespace PChecker.Coverage
 
         /// <inheritdoc/>
         public void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
-        {
-        }
-
-        /// <inheritdoc/>
-        public void OnCreateTimer(TimerInfo info)
-        {
-            // TODO: figure out how to graph timers when we have no "timer id" at this point...
-        }
-
-        /// <inheritdoc/>
-        public void OnStopTimer(TimerInfo info)
         {
         }
 

@@ -9,14 +9,12 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 using PChecker.Actors.EventQueues;
 using PChecker.Actors.Events;
 using PChecker.Actors.Exceptions;
 using PChecker.Actors.Handlers;
 using PChecker.Actors.Managers;
-using PChecker.Actors.Timers;
 using PChecker.Exceptions;
 using PChecker.IO.Debugging;
 using EventInfo = PChecker.Actors.Events.EventInfo;
@@ -73,11 +71,6 @@ namespace PChecker.Actors
         private protected readonly Dictionary<Type, CachedDelegate> ActionMap;
 
         /// <summary>
-        /// Map that contains the active timers.
-        /// </summary>
-        private protected readonly Dictionary<TimerInfo, IActorTimer> Timers;
-
-        /// <summary>
         /// The current status of the actor. It is marked volatile as
         /// the runtime can read it concurrently.
         /// </summary>
@@ -132,7 +125,6 @@ namespace PChecker.Actors
         protected Actor()
         {
             ActionMap = new Dictionary<Type, CachedDelegate>();
-            Timers = new Dictionary<TimerInfo, IActorTimer>();
             CurrentStatus = Status.Active;
             CurrentStateName = default;
             IsDefaultHandlerAvailable = false;
@@ -248,51 +240,6 @@ namespace PChecker.Actors
             Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
             Runtime.NotifyReceiveCalled(this);
             return Inbox.ReceiveEventAsync(events);
-        }
-
-        /// <summary>
-        /// Starts a timer that sends a <see cref="TimerElapsedEvent"/> to this actor after the
-        /// specified due time. The timer accepts an optional payload to be used during timeout.
-        /// The timer is automatically disposed after it timeouts. To manually stop and dispose
-        /// the timer, invoke the <see cref="StopTimer"/> method.
-        /// </summary>
-        /// <param name="startDelay">The amount of time to wait before sending the timeout event.</param>
-        /// <param name="customEvent">Optional custom event to raise instead of the default TimerElapsedEvent.</param>
-        /// <returns>Handle that contains information about the timer.</returns>
-        protected TimerInfo StartTimer(TimeSpan startDelay, TimerElapsedEvent customEvent = null)
-        {
-            // The specified due time and period must be valid.
-            Assert(startDelay.TotalMilliseconds >= 0, "{0} registered a timer with a negative due time.", Id);
-            return RegisterTimer(startDelay, Timeout.InfiniteTimeSpan, customEvent);
-        }
-
-        /// <summary>
-        /// Starts a periodic timer that sends a <see cref="TimerElapsedEvent"/> to this actor after
-        /// the specified due time, and then repeats after each specified period. The timer accepts
-        /// an optional payload to be used during timeout. The timer can be stopped by invoking the
-        /// <see cref="StopTimer"/> method.
-        /// </summary>
-        /// <param name="startDelay">The amount of time to wait before sending the first timeout event.</param>
-        /// <param name="period">The time interval between timeout events.</param>
-        /// <param name="customEvent">Optional custom event to raise instead of the default TimerElapsedEvent.</param>
-        /// <returns>Handle that contains information about the timer.</returns>
-        protected TimerInfo StartPeriodicTimer(TimeSpan startDelay, TimeSpan period, TimerElapsedEvent customEvent = null)
-        {
-            // The specified due time and period must be valid.
-            Assert(startDelay.TotalMilliseconds >= 0, "{0} registered a periodic timer with a negative due time.", Id);
-            Assert(period.TotalMilliseconds >= 0, "{0} registered a periodic timer with a negative period.", Id);
-            return RegisterTimer(startDelay, period, customEvent);
-        }
-
-        /// <summary>
-        /// Stops and disposes the specified timer.
-        /// </summary>
-        /// <param name="info">Handle that contains information about the timer.</param>
-        protected void StopTimer(TimerInfo info)
-        {
-            Assert(info.OwnerId == Id, "{0} is not allowed to dispose timer '{1}', which is owned by {2}.",
-                Id, info, info.OwnerId);
-            UnregisterTimer(info);
         }
 
         /// <summary>
@@ -486,13 +433,6 @@ namespace PChecker.Actors
                     break;
                 }
 
-                if (e is TimerElapsedEvent timeoutEvent &&
-                    timeoutEvent.Info.Period.TotalMilliseconds < 0)
-                {
-                    // If the timer is not periodic, then dispose it.
-                    UnregisterTimer(timeoutEvent.Info);
-                }
-
                 if (CurrentStatus is Status.Active)
                 {
                     // Handles the next event, if the actor is not halted.
@@ -683,12 +623,6 @@ namespace PChecker.Actors
         /// </summary>
         internal bool IsEventIgnored(Event e)
         {
-            if (e is TimerElapsedEvent timeoutEvent && !Timers.ContainsKey(timeoutEvent.Info))
-            {
-                // The timer that created this timeout event is not active.
-                return true;
-            }
-
             return false;
         }
 
@@ -714,36 +648,6 @@ namespace PChecker.Actors
                 }
 
                 return hash;
-            }
-        }
-
-        /// <summary>
-        /// Registers a new timer using the specified checkerConfiguration.
-        /// </summary>
-        private protected TimerInfo RegisterTimer(TimeSpan dueTime, TimeSpan period, TimerElapsedEvent customEvent)
-        {
-            var info = new TimerInfo(Id, dueTime, period, customEvent);
-            var timer = Runtime.CreateActorTimer(info, this);
-            Runtime.LogWriter.LogCreateTimer(info);
-            Timers.Add(info, timer);
-            return info;
-        }
-
-        /// <summary>
-        /// Unregisters the specified timer.
-        /// </summary>
-        private protected void UnregisterTimer(TimerInfo info)
-        {
-            if (!Timers.TryGetValue(info, out var timer))
-            {
-                Assert(info.OwnerId == Id, "Timer '{0}' is already disposed.", info);
-            }
-
-            Runtime.LogWriter.LogStopTimer(info);
-            Timers.Remove(info);
-            using (timer)
-            {
-                // sometimes timer can be null.
             }
         }
 
@@ -995,10 +899,6 @@ namespace PChecker.Actors
 
             // Dispose any held resources.
             Inbox.Dispose();
-            foreach (var timer in Timers.Keys.ToList())
-            {
-                UnregisterTimer(timer);
-            }
 
             // Invoke user callback.
             return OnHaltAsync(e);

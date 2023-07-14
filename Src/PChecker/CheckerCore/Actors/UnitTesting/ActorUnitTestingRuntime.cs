@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using PChecker.Actors.EventQueues;
 using PChecker.Actors.Events;
 using PChecker.Actors.Managers;
-using PChecker.Actors.Timers;
 using PChecker.Random;
 
 namespace PChecker.Actors.UnitTesting
@@ -234,11 +233,7 @@ namespace PChecker.Actors.UnitTesting
                 }
             });
         }
-
-        /// <inheritdoc/>
-        internal override IActorTimer CreateActorTimer(TimerInfo info, Actor owner) =>
-            throw new NotSupportedException("Invoking this method is not supported in actor unit testing mode.");
-
+        
         /// <inheritdoc/>
         internal override void NotifyReceivedEvent(Actor actor, Event e, EventInfo eventInfo)
         {

@@ -58,7 +58,6 @@ namespace PChecker.Coverage
             EventAliases[typeof(GotoStateEvent).FullName] = "goto";
             EventAliases[typeof(HaltEvent).FullName] = "halt";
             EventAliases[typeof(DefaultEvent).FullName] = "default";
-            EventAliases[typeof(PushStateEvent).FullName] = "push";
             EventAliases[typeof(QuiescentEvent).FullName] = "quiescent";
             EventAliases[typeof(WildCardEvent).FullName] = "*";
             EventAliases[typeof(TimerElapsedEvent).FullName] = "timer_elapsed";
@@ -242,22 +241,6 @@ namespace PChecker.Coverage
         public void OnGotoState(ActorId id, string currentStateName, string newStateName)
         {
             LinkTransition(typeof(GotoStateEvent), id, currentStateName, currentStateName, newStateName);
-        }
-
-        /// <inheritdoc/>
-        public void OnPushState(ActorId id, string currentStateName, string newStateName)
-        {
-            LinkTransition(typeof(PushStateEvent), id, currentStateName, currentStateName, newStateName);
-        }
-
-        /// <inheritdoc/>
-        public void OnPopState(ActorId id, string currentStateName, string restoredStateName)
-        {
-            if (!string.IsNullOrEmpty(currentStateName))
-            {
-                LinkTransition(typeof(PopStateEvent), id, currentStateName,
-                    currentStateName, restoredStateName);
-            }
         }
 
         /// <inheritdoc/>

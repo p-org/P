@@ -33,7 +33,6 @@ namespace PChecker.Coverage
         {
             CoverageInfo = coverageInfo;
             BuiltInEvents.Add(typeof(GotoStateEvent).FullName);
-            BuiltInEvents.Add(typeof(PushStateEvent).FullName);
             BuiltInEvents.Add(typeof(DefaultEvent).FullName);
         }
 

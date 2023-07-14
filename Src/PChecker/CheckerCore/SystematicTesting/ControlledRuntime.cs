@@ -987,13 +987,6 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyPopState(StateMachine stateMachine)
-        {
-            AssertExpectedCallerActor(stateMachine, "Pop");
-            LogWriter.LogPopState(stateMachine.Id, string.Empty, stateMachine.CurrentStateName);
-        }
-
-        /// <inheritdoc/>
         internal override void NotifyInvokedOnEntryAction(StateMachine stateMachine, MethodInfo action, Event receivedEvent)
         {
             var stateName = stateMachine.CurrentStateName;

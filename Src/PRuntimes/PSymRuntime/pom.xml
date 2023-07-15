@@ -190,17 +190,9 @@
                 <configuration>
                     <systemPropertyVariables>
                         <propertyName>java.library.path</propertyName>
+                        <mode>""</mode>
+                        <psym.args>""</psym.args>
                     </systemPropertyVariables>
-                    <systemProperties>
-                        <property>
-                            <name>mode</name>
-                            <value></value>
-                        </property>
-                        <property>
-                            <name>psym.args</name>
-                            <value></value>
-                        </property>
-                    </systemProperties>
                 </configuration>
             </plugin>
             <plugin>

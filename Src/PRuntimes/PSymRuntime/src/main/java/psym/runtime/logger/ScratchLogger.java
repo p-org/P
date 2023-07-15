@@ -38,8 +38,7 @@ public class ScratchLogger {
       // Define new file printer
       FileOutputStream fout = new FileOutputStream(fileName, false);
 
-      Configuration config = Log4JConfig.getContext().getConfiguration();
-      PatternLayout layout = PatternLayout.createDefaultLayout(config);
+      PatternLayout layout = Log4JConfig.getPatternLayout();
       Appender fileAppender =
           OutputStreamAppender.createAppender(layout, null, fout, fileName, false, true);
       fileAppender.start();

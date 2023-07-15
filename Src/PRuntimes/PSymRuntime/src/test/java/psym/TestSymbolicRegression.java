@@ -35,7 +35,14 @@ public class TestSymbolicRegression {
     String psymArgs = System.getProperty("psym.args");
 
     if (md != null && !md.isEmpty()) {
-      mode = md;
+      switch (md) {
+        case "verification":
+        case "coverage":
+          mode = md;
+          break;
+        default:
+          break;
+      }
     }
     if (psymArgs != null && !psymArgs.isEmpty()) {
       runArgs += " --psym-args " + psymArgs;

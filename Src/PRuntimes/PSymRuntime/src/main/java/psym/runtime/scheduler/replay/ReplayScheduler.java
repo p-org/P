@@ -103,7 +103,7 @@ public class ReplayScheduler extends Scheduler {
         !PSymGlobal.getConfiguration().isFailOnMaxStepBound() || (getDepth() < PSymGlobal.getConfiguration().getMaxStepBound()),
         "Scheduling steps bound of " + PSymGlobal.getConfiguration().getMaxStepBound() + " reached.",
         schedule.getLengthCond(schedule.size()));
-    if (done) {
+    if (done.isTrue()) {
       searchStats.setIterationCompleted();
     }
   }
@@ -117,11 +117,11 @@ public class ReplayScheduler extends Scheduler {
     PrimitiveVS<Machine> schedulingChoices = getNextSchedulingChoice();
 
     if (schedulingChoices.isEmptyVS()) {
-      done = true;
+      done = Guard.constTrue();
       SearchLogger.finishedExecution(depth);
     }
 
-    if (done) {
+    if (done.isTrue()) {
       return;
     }
 

@@ -38,7 +38,7 @@ public abstract class Scheduler implements SchedulerInterface {
   /** How many instances of each Machine there are */
   protected Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
   /** Whether or not search is done */
-  protected boolean done = false;
+  protected Guard done = Guard.constFalse();
 
   /** Choice depth */
   protected int choiceDepth = 0;
@@ -98,7 +98,7 @@ public abstract class Scheduler implements SchedulerInterface {
    * @return Whether or not there are more steps to run
    */
   public boolean isDone() {
-    return done || depth == PSymGlobal.getConfiguration().getMaxStepBound();
+    return done.isTrue() || depth == PSymGlobal.getConfiguration().getMaxStepBound();
   }
 
   /**

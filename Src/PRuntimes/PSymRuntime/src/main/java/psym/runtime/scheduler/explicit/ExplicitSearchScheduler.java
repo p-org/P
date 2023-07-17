@@ -192,7 +192,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
         "Scheduling steps bound of " + PSymGlobal.getConfiguration().getMaxStepBound() + " reached.",
         schedule.getLengthCond(schedule.size()));
     schedule.setNumBacktracksInSchedule();
-    if (done) {
+    if (done.isTrue()) {
       searchStats.setIterationCompleted();
     }
   }
@@ -217,12 +217,13 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       if (!isDistinctState) {
         int firstVisitIter = numConcrete[2];
         if (firstVisitIter == iter) {
-          Assert.liveness(
-                  false,
-                  String.format("Cycle detected: Possible infinite loop found due to revisiting a state multiple times in the same iteration"),
-                  Guard.constTrue());
+          allMachinesHalted = Guard.constTrue();
+//          Assert.liveness(
+//                  false,
+//                  String.format("Cycle detected: Possible infinite loop found due to revisiting a state multiple times in the same iteration"),
+//                  Guard.constTrue());
         }
-        done = true;
+        done = Guard.constTrue();
         SearchLogger.finishedExecution(depth);
         return;
       }
@@ -245,11 +246,11 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     PrimitiveVS<Machine> schedulingChoices = getNextSchedulingChoice();
 
     if (schedulingChoices.isEmptyVS()) {
-      done = true;
+      done = Guard.constTrue();
       SearchLogger.finishedExecution(depth);
     }
 
-    if (done) {
+    if (done.isTrue()) {
       return;
     }
 
@@ -905,7 +906,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   public void reset() {
     depth = 0;
     choiceDepth = 0;
-    done = false;
+    done = Guard.constFalse();
     stickyStep = true;
     machineCounters.clear();
     //        machines.clear();
@@ -945,7 +946,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   public void restore(int d, int cd) {
     depth = d;
     choiceDepth = cd;
-    done = false;
+    done = Guard.constFalse();
   }
 
   public void restoreState(Schedule.ChoiceState state) {

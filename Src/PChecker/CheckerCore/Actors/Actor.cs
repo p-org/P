@@ -444,12 +444,12 @@ namespace PChecker.Actors
 
         private Timestamp GetScheduledDelayedTimestamp()
         {
-            var (status, e, _, _) = Inbox.Dequeue(true);
-            if (status is DequeueStatus.Delayed)
+            var (_, e, _, _) = Inbox.Dequeue(true);
+            if (e is not null)
             {
                 return e.DequeueTime;
             }
-            return Timestamp.DefaultTimestamp; // This means that the event is not delayed
+            return Timestamp.DefaultTimestamp;
         }
 
         /// <summary>

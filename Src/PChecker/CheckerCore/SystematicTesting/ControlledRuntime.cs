@@ -454,10 +454,7 @@ namespace PChecker.SystematicTesting
             var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, options, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {
-                if (target.ScheduledDelayedTimestamp == Timestamp.DefaultTimestamp)
-                {
-                    RunActorEventHandler(target, null, false, null);
-                }
+                RunActorEventHandler(target, null, false, null);
             }
         }
 
@@ -652,6 +649,7 @@ namespace PChecker.SystematicTesting
             {
                 foreach (var actor in actorsToRun)
                 {
+                    actor.Manager.IsEventHandlerRunning = true;
                     RunActorEventHandler(actor, null, false, null);
                 }
             }

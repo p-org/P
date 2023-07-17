@@ -20,6 +20,7 @@ import psym.runtime.machine.Machine;
 import psym.runtime.machine.MachineLocalState;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.SearchScheduler;
+import psym.runtime.scheduler.explicit.StateCachingMode;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
@@ -188,7 +189,9 @@ public class SymbolicSearchScheduler extends SearchScheduler {
       }
     }
     if (!stickyStep) {
-      effect = effect.restrict(done.not());
+      if (PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Exact) {
+        effect = effect.restrict(done.not());
+      }
       depth++;
     }
 
@@ -197,13 +200,15 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     performEffect(effect);
 
     if (!stickyStep) {
-      ProtocolState destProtocolState = new ProtocolState(currentMachines);
-      for (ProtocolState srcProtocolState: depthToProtocolState.values()) {
-        Guard areEqual = destProtocolState.symbolicEquals(srcProtocolState);
-        done = done.or(areEqual);
-        allMachinesHalted = allMachinesHalted.or(done);
+      if (PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Exact) {
+        ProtocolState destProtocolState = new ProtocolState(currentMachines);
+        for (ProtocolState srcProtocolState : depthToProtocolState.values()) {
+          Guard areEqual = destProtocolState.symbolicEquals(srcProtocolState);
+          done = done.or(areEqual);
+          allMachinesHalted = allMachinesHalted.or(done);
+        }
+        depthToProtocolState.put(depth, destProtocolState);
       }
-      depthToProtocolState.put(depth, destProtocolState);
     }
 
     // simplify engine

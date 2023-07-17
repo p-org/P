@@ -268,7 +268,6 @@ namespace PChecker.Actors.EventQueues.Mocks
                     }
                 }
 
-                // TODO: If we end up returning timestamp of a delayed event, we need to find the event with min timestamp.
                 if (currentEvent.e.DequeueTime > ControlledRuntime.GlobalTime)
                 {
                     if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))

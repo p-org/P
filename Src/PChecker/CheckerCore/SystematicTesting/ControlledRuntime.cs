@@ -172,6 +172,7 @@ namespace PChecker.SystematicTesting
             EventDelaysMap.TryAdd("PImplementation.eReadResponse",     (initialDelayDist: "0.0", delayDist: "0.0", isDelayOrdered: true));
             EventDelaysMap.TryAdd("PImplementation.eA",     (initialDelayDist: "DiscreteUniform(1, 10)", delayDist: "DiscreteUniform(1, 10)", isDelayOrdered: false));
             EventDelaysMap.TryAdd("PImplementation.eB",     (initialDelayDist: "DiscreteUniform(1, 10)", delayDist: "DiscreteUniform(1, 10)", isDelayOrdered: false));
+            EventDelaysMap.TryAdd("PImplementation.eC",     (initialDelayDist: "DiscreteUniform(1, 10)", delayDist: "DiscreteUniform(1, 10)", isDelayOrdered: false));
             EventDelaysMap.TryAdd("PImplementation.eAck",     (initialDelayDist: "DiscreteUniform(1, 10)", delayDist: "DiscreteUniform(1, 10)", isDelayOrdered: false));
 
             // Update the current asynchronous control flow with this runtime instance,
@@ -645,6 +646,11 @@ namespace PChecker.SystematicTesting
                 }
             }
 
+            // Note that here we only run actors that are waiting for an event with dequeue time equal to minTimestamp.
+            // This is ok for handling late events that are deferred. For example, an event with dequeue time 10 might
+            // be deferred in the current state, and the machine is waiting for an event with dequeue time 20 to exit
+            // this state. We increment the time to 20, handle that event, and transition to the new state. This dequeue
+            // operation will trigger running the event handler of the actor again since now early events are available.
             if (actorsToRun != null)
             {
                 foreach (var actor in actorsToRun)

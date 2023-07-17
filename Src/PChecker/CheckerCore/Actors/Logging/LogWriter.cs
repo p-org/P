@@ -26,6 +26,11 @@ namespace PChecker.Actors.Logging
         /// Used to log messages.
         /// </summary>
         internal TextWriter Logger { get; private set; }
+        
+        /// <summary>
+        /// Used to log json messages.
+        /// </summary>
+        private JsonWriter JsonLogger { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LogWriter"/> class.
@@ -626,6 +631,12 @@ namespace PChecker.Actors.Logging
 
             return prevLogger;
         }
+        
+        /// <summary>
+        /// Sets the JsonLogger to an instance created on runtime.
+        /// </summary>
+        /// <param name="jsonLogger">The jsonLogger instance created from runtime before running tests.</param>
+        internal void SetJsonLogger(JsonWriter jsonLogger) => JsonLogger = jsonLogger;
 
         private ActorRuntimeLogTextFormatter GetOrCreateTextLog()
         {
@@ -672,7 +683,14 @@ namespace PChecker.Actors.Logging
                     a.Logger = Logger;
                 }
             }
-
+            
+            // If log is or of subclass ActorRuntimeLogJsonFormatter (i.e. when log is PJsonFormatter),
+            // update the Writer reference to the JsonLogger instance defined within LogWriter.cs
+            if (log is ActorRuntimeLogJsonFormatter tempJsonFormatter)
+            {
+                tempJsonFormatter.Writer = JsonLogger;
+            }
+            
             Logs.Add(log);
         }
 

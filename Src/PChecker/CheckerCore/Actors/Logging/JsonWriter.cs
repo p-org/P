@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace PChecker.Actors.Logging
 {
-    internal sealed class JsonWriter
+    public class JsonWriter
     {
         /// <summary>
         /// Enum representing the different log types the JSON error trace logs.
@@ -297,6 +297,6 @@ namespace PChecker.Actors.Logging
         /// Serializes the _logs to be exported as a JSON file. 
         /// </summary>
         /// <returns></returns>
-        public string ToJson() => JsonSerializer.Serialize(_logs);
+        public string ToJsonString() => JsonSerializer.Serialize(_logs);
     }
 }

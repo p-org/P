@@ -76,6 +76,12 @@ namespace PChecker.SystematicTesting
         private TextWriter Logger;
 
         /// <summary>
+        /// Contains a single iteration of JSON log output in the case where the IsJsonLogEnabled
+        /// checkerConfiguration is specified.
+        /// </summary>
+        private JsonWriter JsonLogger;
+        
+        /// <summary>
         /// The profiler.
         /// </summary>
         private readonly Profiler Profiler;
@@ -101,13 +107,7 @@ namespace PChecker.SystematicTesting
         /// checkerConfiguration is specified.
         /// </summary>
         private StringBuilder XmlLog;
-
-        /// <summary>
-        /// Contains a single iteration of JSON log output in the case where the IsJsonLogEnabled
-        /// checkerConfiguration is specified.
-        /// </summary>
-        private JsonWriter JsonLog;
-
+        
         /// <summary>
         /// The readable trace, if any.
         /// </summary>
@@ -147,8 +147,7 @@ namespace PChecker.SystematicTesting
             }
             catch
             {
-                Error.ReportAndExit(
-                    $"Failed to get test method '{checkerConfiguration.TestCaseName}' from assembly '{assembly.FullName}'");
+                Error.ReportAndExit($"Failed to get test method '{checkerConfiguration.TestCaseName}' from assembly '{assembly.FullName}'");
             }
 
             return new TestingEngine(checkerConfiguration, testMethodInfo);
@@ -181,15 +180,13 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration,
-            Func<ICoyoteRuntime, Tasks.Task> test) =>
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<ICoyoteRuntime, Tasks.Task> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration,
-            Func<IActorRuntime, Tasks.Task> test) =>
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<IActorRuntime, Tasks.Task> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
@@ -236,17 +233,14 @@ namespace PChecker.SystematicTesting
             }
             else if (checkerConfiguration.SchedulingStrategy is "pct")
             {
-                Strategy = new PCTStrategy(checkerConfiguration.MaxUnfairSchedulingSteps,
-                    checkerConfiguration.StrategyBound,
+                Strategy = new PCTStrategy(checkerConfiguration.MaxUnfairSchedulingSteps, checkerConfiguration.StrategyBound,
                     RandomValueGenerator);
             }
             else if (checkerConfiguration.SchedulingStrategy is "fairpct")
             {
                 var prefixLength = checkerConfiguration.MaxUnfairSchedulingSteps;
-                var prefixStrategy =
-                    new PCTStrategy(prefixLength, checkerConfiguration.StrategyBound, RandomValueGenerator);
-                var suffixStrategy =
-                    new RandomStrategy(checkerConfiguration.MaxFairSchedulingSteps, RandomValueGenerator);
+                var prefixStrategy = new PCTStrategy(prefixLength, checkerConfiguration.StrategyBound, RandomValueGenerator);
+                var suffixStrategy = new RandomStrategy(checkerConfiguration.MaxFairSchedulingSteps, RandomValueGenerator);
                 Strategy = new ComboStrategy(prefixStrategy, suffixStrategy);
             }
             else if (checkerConfiguration.SchedulingStrategy is "probabilistic")
@@ -265,7 +259,7 @@ namespace PChecker.SystematicTesting
             else if (checkerConfiguration.SchedulingStrategy is "portfolio")
             {
                 Error.ReportAndExit("Portfolio testing strategy is only " +
-                                    "available in parallel testing.");
+                    "available in parallel testing.");
             }
 
             if (checkerConfiguration.SchedulingStrategy != "replay" &&
@@ -320,7 +314,7 @@ namespace PChecker.SystematicTesting
                 }
 
                 Error.ReportAndExit("Exception thrown during testing outside the context of an actor, " +
-                                    "possibly in a test method. Please use /debug /v:2 to print more information.");
+                    "possibly in a test method. Please use /debug /v:2 to print more information.");
             }
             catch (Exception ex)
             {
@@ -349,7 +343,7 @@ namespace PChecker.SystematicTesting
             }
 
             Logger.WriteLine($"... Checker is " +
-                             $"using '{_checkerConfiguration.SchedulingStrategy}' strategy{options}.");
+                $"using '{_checkerConfiguration.SchedulingStrategy}' strategy{options}.");
 
             return new Task(() =>
             {
@@ -370,8 +364,7 @@ namespace PChecker.SystematicTesting
                         RunNextIteration(i);
 
                         if (IsReplayModeEnabled || (!_checkerConfiguration.PerformFullExploration &&
-                                                    TestReport.NumOfFoundBugs > 0) ||
-                            !Strategy.PrepareForNextIteration())
+                            TestReport.NumOfFoundBugs > 0) || !Strategy.PrepareForNextIteration())
                         {
                             break;
                         }
@@ -448,6 +441,10 @@ namespace PChecker.SystematicTesting
                 // Creates a new instance of the controlled runtime.
                 runtime = new ControlledRuntime(_checkerConfiguration, Strategy, RandomValueGenerator);
 
+                // Always output a json log of the error
+                JsonLogger = new JsonWriter();
+                runtime.SetJsonLogger(JsonLogger);
+                    
                 // If verbosity is turned off, then intercept the program log, and also redirect
                 // the standard output and error streams to a nul logger.
                 if (!_checkerConfiguration.IsVerbose)
@@ -514,8 +511,8 @@ namespace PChecker.SystematicTesting
                 if (!IsReplayModeEnabled && _checkerConfiguration.PerformFullExploration && runtime.Scheduler.BugFound)
                 {
                     Logger.WriteLine($"..... Iteration #{iteration + 1} " +
-                                     $"triggered bug #{TestReport.NumOfFoundBugs} " +
-                                     $"[task-{_checkerConfiguration.TestingProcessId}]");
+                        $"triggered bug #{TestReport.NumOfFoundBugs} " +
+                        $"[task-{_checkerConfiguration.TestingProcessId}]");
                 }
 
                 // Cleans up the runtime before the next iteration starts.
@@ -542,7 +539,7 @@ namespace PChecker.SystematicTesting
                 var report = new StringBuilder();
                 report.AppendFormat("... Reproduced {0} bug{1}.", TestReport.NumOfFoundBugs,
                     TestReport.NumOfFoundBugs == 1 ? string.Empty : "s");
-                report.AppendLine();
+                    report.AppendLine();
                 report.Append($"... Elapsed {Profiler.Results()} sec.");
                 return report.ToString();
             }
@@ -595,12 +592,12 @@ namespace PChecker.SystematicTesting
                 File.WriteAllText(xmlPath, XmlLog.ToString());
                 yield return xmlPath;
             }
-
+            
             if (_checkerConfiguration.IsJsonLogEnabled)
             {
                 var jsonPath = directory + file + "_" + index + ".trace.json";
                 Logger.WriteLine($"..... Writing {jsonPath}");
-                File.WriteAllText(jsonPath, JsonLog.ToJson());
+                File.WriteAllText(jsonPath, JsonLogger.ToJsonString());
                 yield return jsonPath;
             }
 
@@ -671,12 +668,6 @@ namespace PChecker.SystematicTesting
                 XmlLog = new StringBuilder();
                 runtime.RegisterLog(new ActorRuntimeLogXmlFormatter(XmlWriter.Create(XmlLog,
                     new XmlWriterSettings() { Indent = true, IndentChars = "  ", OmitXmlDeclaration = true })));
-            }
-
-            if (_checkerConfiguration.IsJsonLogEnabled)
-            {
-                JsonLog = new JsonWriter();
-                runtime.RegisterLog(new ActorRuntimeLogJsonFormatter(JsonLog));
             }
         }
 
@@ -794,13 +785,15 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.IsLivenessCheckingEnabled)
             {
                 stringBuilder.Append("--liveness-temperature-threshold:" +
-                                     _checkerConfiguration.LivenessTemperatureThreshold).Append(Environment.NewLine);
+                    _checkerConfiguration.LivenessTemperatureThreshold).
+                    Append(Environment.NewLine);
             }
 
             if (!string.IsNullOrEmpty(_checkerConfiguration.TestCaseName))
             {
                 stringBuilder.Append("--test-method:" +
-                                     _checkerConfiguration.TestCaseName).Append(Environment.NewLine);
+                    _checkerConfiguration.TestCaseName).
+                    Append(Environment.NewLine);
             }
 
             for (var idx = 0; idx < runtime.Scheduler.ScheduleTrace.Count; idx++)
@@ -836,9 +829,7 @@ namespace PChecker.SystematicTesting
             string[] scheduleDump;
             if (_checkerConfiguration.ScheduleTrace.Length > 0)
             {
-                scheduleDump =
-                    _checkerConfiguration.ScheduleTrace.Split(new string[] { Environment.NewLine },
-                        StringSplitOptions.None);
+                scheduleDump = _checkerConfiguration.ScheduleTrace.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
             }
             else
             {

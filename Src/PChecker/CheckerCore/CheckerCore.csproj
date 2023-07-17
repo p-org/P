@@ -19,12 +19,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
     <ItemGroup>
-        <None Include="../../../Icon/icon.png" Pack="true" PackagePath="" />
-        <None Include="../../../README.md" Pack="true" PackagePath="" />
-    </ItemGroup>
-    <ItemGroup>
-        <Reference Include="PCSharpRuntime">
-            <HintPath>..\..\..\Tutorial\1_ClientServer\PGenerated\CSharp\net6.0\PCSharpRuntime.dll</HintPath>
-        </Reference>
+        <None Include="../../../Icon/icon.png" Pack="true" PackagePath=""/>
+        <None Include="../../../README.md" Pack="true" PackagePath=""/>
     </ItemGroup>
 </Project>

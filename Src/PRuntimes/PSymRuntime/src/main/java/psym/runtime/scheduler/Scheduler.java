@@ -253,8 +253,7 @@ public abstract class Scheduler implements SchedulerInterface {
     start = target;
   }
 
-  protected void checkLiveness() {
-    Guard finished = isFinishedExecution();
+  protected void checkLiveness(Guard finished) {
     if (!finished.isFalse()) {
       for (Monitor m : monitors) {
         PrimitiveVS<State> monitorState = m.getCurrentState().restrict(finished);

@@ -184,8 +184,9 @@ public class ExplicitSearchScheduler extends SearchScheduler {
           "Maximum allowed depth " + PSymGlobal.getConfiguration().getMaxStepBound() + " exceeded",
           schedule.getLengthCond(schedule.size()));
       step();
-      checkLiveness();
+      checkLiveness(allMachinesHalted);
     }
+    checkLiveness(Guard.constTrue());
     Assert.prop(
         !PSymGlobal.getConfiguration().isFailOnMaxStepBound() || (getDepth() < PSymGlobal.getConfiguration().getMaxStepBound()),
         "Scheduling steps bound of " + PSymGlobal.getConfiguration().getMaxStepBound() + " reached.",
@@ -215,10 +216,12 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
       if (!isDistinctState) {
         int firstVisitIter = numConcrete[2];
-        Assert.prop(
-                firstVisitIter != iter,
-                String.format("Cycle detected: Possible infinite loop found due to revisiting a state multiple times in the same iteration"),
-                Guard.constTrue());
+        if (firstVisitIter == iter) {
+          Assert.liveness(
+                  false,
+                  String.format("Cycle detected: Possible infinite loop found due to revisiting a state multiple times in the same iteration"),
+                  Guard.constTrue());
+        }
         done = true;
         SearchLogger.finishedExecution(depth);
         return;

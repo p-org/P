@@ -355,7 +355,6 @@ namespace PChecker.SystematicTesting
                     var maxIterations = IsReplayModeEnabled ? 1 : _checkerConfiguration.TestingIterations;
                     for (var i = 0; i < maxIterations; i++)
                     {
-                        MockEventQueue.SetTime(0);
                         if (CancellationTokenSource.IsCancellationRequested)
                         {
                             break;

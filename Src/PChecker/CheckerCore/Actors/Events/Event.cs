@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Runtime.Serialization;
+using PChecker.SystematicTesting;
 
 namespace PChecker.Actors.Events
 {
@@ -11,7 +12,7 @@ namespace PChecker.Actors.Events
     [DataContract]
     public abstract class Event
     {
-        public double EnqueueTime = 0;
-        public double DequeueTime = 0;
+        public readonly Timestamp EnqueueTime = new();
+        public readonly Timestamp DequeueTime = new();
     }
 }

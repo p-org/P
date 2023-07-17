@@ -88,7 +88,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal string BugReport { get; private set; }
 
-        private double PreviousPulseAllTime;
+        private Timestamp PreviousPulseAllTimestamp;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OperationScheduler"/> class.
@@ -106,7 +106,7 @@ namespace PChecker.SystematicTesting
             IsRunning = true;
             BugFound = false;
             HasFullyExploredSchedule = false;
-            PreviousPulseAllTime = 0;
+            PreviousPulseAllTimestamp = new Timestamp();
         }
 
         internal bool IsAllOperationsCompleted()
@@ -177,7 +177,7 @@ namespace PChecker.SystematicTesting
             {
                 lock (Runtime.Actors)
                 {
-                    if (Runtime.Actors.Any(actor => actor.ScheduledDelayedTimestamp != -1))
+                    if (Runtime.Actors.Any(actor => actor.ScheduledDelayedTimestamp != Timestamp.DefaultTimestamp))
                     {
                         return;
                     }
@@ -207,7 +207,7 @@ namespace PChecker.SystematicTesting
                 lock (next)
                 {
                     ScheduledOperation.IsActive = true;
-                    PreviousPulseAllTime = MockEventQueue.GetTime();
+                    PreviousPulseAllTimestamp.SetTime(ControlledRuntime.GlobalTime.GetTime());
                     System.Threading.Monitor.PulseAll(next);
                 }
 
@@ -237,12 +237,12 @@ namespace PChecker.SystematicTesting
                     }
                 }
             }
-            else if (current == next && PreviousPulseAllTime < MockEventQueue.GetTime())
+            else if (current == next && PreviousPulseAllTimestamp < ControlledRuntime.GlobalTime)
             {
                 lock (next)
                 {
                     ScheduledOperation.IsActive = true;
-                    PreviousPulseAllTime = MockEventQueue.GetTime();
+                    PreviousPulseAllTimestamp.SetTime(ControlledRuntime.GlobalTime.GetTime());
                     System.Threading.Monitor.PulseAll(next);
                 }
             }

@@ -19,6 +19,7 @@ using PChecker.Actors.Managers;
 using PChecker.Actors.Timers;
 using PChecker.Exceptions;
 using PChecker.IO.Debugging;
+using PChecker.SystematicTesting;
 using EventInfo = PChecker.Actors.Events.EventInfo;
 
 namespace PChecker.Actors
@@ -98,7 +99,7 @@ namespace PChecker.Actors
         /// </summary>
         internal bool IsDefaultHandlerAvailable { get; private set; }
 
-        internal double ScheduledDelayedTimestamp => GetScheduledDelayedTimestamp();
+        internal Timestamp ScheduledDelayedTimestamp => GetScheduledDelayedTimestamp();
 
         /// <summary>
         /// Id used to identify subsequent operations performed by this actor. This value
@@ -441,14 +442,14 @@ namespace PChecker.Actors
             return Inbox.Enqueue(e, opGroupId, info);
         }
 
-        private double GetScheduledDelayedTimestamp()
+        private Timestamp GetScheduledDelayedTimestamp()
         {
             var (status, e, _, _) = Inbox.Dequeue(true);
             if (status is DequeueStatus.Delayed)
             {
                 return e.DequeueTime;
             }
-            return -1; // This means that the event is not delayed
+            return Timestamp.DefaultTimestamp; // This means that the event is not delayed
         }
 
         /// <summary>

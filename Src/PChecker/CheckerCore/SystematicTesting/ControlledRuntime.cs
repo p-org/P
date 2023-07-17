@@ -68,6 +68,11 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal readonly int? RootTaskId;
 
+        /// <summary>
+        /// Global time.
+        /// </summary>
+        internal static readonly Timestamp GlobalTime = new();
+
         public readonly List<Actor> Actors;
 
         public static readonly ConcurrentDictionary<string, (string initialDelayDist, string delayDist, bool isDelayOrdered)> EventDelaysMap = new();
@@ -153,6 +158,8 @@ namespace PChecker.SystematicTesting
 
             Actors = new List<Actor>();
 
+            GlobalTime.SetTime(0);
+
             EventDelaysMap.TryAdd("PImplementation.eStart",            (initialDelayDist: "0.0", delayDist: "0.0", isDelayOrdered: true));
             EventDelaysMap.TryAdd("PImplementation.eReaderRun",        (initialDelayDist: "0.2", delayDist: "1.0", isDelayOrdered: true));
             EventDelaysMap.TryAdd("PImplementation.eWriterRun",        (initialDelayDist: "0.1", delayDist: "1.0", isDelayOrdered: true));
@@ -163,6 +170,9 @@ namespace PChecker.SystematicTesting
             EventDelaysMap.TryAdd("PImplementation.eSubscribeRequest", (initialDelayDist: "0.0", delayDist: "0.0", isDelayOrdered: true));
             EventDelaysMap.TryAdd("PImplementation.eReadRequest",      (initialDelayDist: "0.0", delayDist: "0.0", isDelayOrdered: true));
             EventDelaysMap.TryAdd("PImplementation.eReadResponse",     (initialDelayDist: "0.0", delayDist: "0.0", isDelayOrdered: true));
+            EventDelaysMap.TryAdd("PImplementation.eA",     (initialDelayDist: "DiscreteUniform(1, 10)", delayDist: "DiscreteUniform(1, 10)", isDelayOrdered: false));
+            EventDelaysMap.TryAdd("PImplementation.eB",     (initialDelayDist: "DiscreteUniform(1, 10)", delayDist: "DiscreteUniform(1, 10)", isDelayOrdered: false));
+            EventDelaysMap.TryAdd("PImplementation.eAck",     (initialDelayDist: "DiscreteUniform(1, 10)", delayDist: "DiscreteUniform(1, 10)", isDelayOrdered: false));
 
             // Update the current asynchronous control flow with this runtime instance,
             // allowing future retrieval in the same asynchronous call stack.
@@ -444,7 +454,7 @@ namespace PChecker.SystematicTesting
             var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, options, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {
-                if (target.ScheduledDelayedTimestamp == -1)
+                if (target.ScheduledDelayedTimestamp == Timestamp.DefaultTimestamp)
                 {
                     RunActorEventHandler(target, null, false, null);
                 }
@@ -619,9 +629,9 @@ namespace PChecker.SystematicTesting
             List<Actor> actorsToRun = null;
             lock (Actors)
             {
-                if (Scheduler.IsAllOperationsCompleted() && !Actors.Any(a => a.ScheduledDelayedTimestamp == MockEventQueue.GetTime()))
+                if (Scheduler.IsAllOperationsCompleted() && Actors.All(a => a.ScheduledDelayedTimestamp != GlobalTime))
                 {
-                    var delayedActors = Actors.Where(a => a.ScheduledDelayedTimestamp > MockEventQueue.GetTime());
+                    var delayedActors = Actors.Where(a => a.ScheduledDelayedTimestamp > GlobalTime);
                     if (delayedActors.Any())
                     {
                         var minTimestamp = delayedActors.Min(a => a.ScheduledDelayedTimestamp);
@@ -633,7 +643,7 @@ namespace PChecker.SystematicTesting
                             var op = Scheduler.GetOperationWithId<ActorOperation>(actor.Id.Value);
                             op.OnEnabled();
                         }
-                        MockEventQueue.SetTime(minTimestamp);
+                        GlobalTime.SetTime(minTimestamp.GetTime());
                     }
                 }
             }

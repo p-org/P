@@ -54,15 +54,5 @@ namespace PChecker.IO.Logging
         {
             InMemoryLogger.WriteLine(e.DequeueTime + ",Dequeue," + e + "," + id + "," + stateName + ",null");
         }
-
-        /// <summary>
-        /// Use this method to write log to the file.
-        /// </summary>
-        public void OnCompleted()
-        {
-            InMemoryLogger.WriteLine(MockEventQueue.GetTime() + ",Completed,null,null,null,null");
-            File.WriteAllText(LogFilePath, InMemoryLogger.ToString());
-            InMemoryLogger.Dispose();
-        }
     }
 }

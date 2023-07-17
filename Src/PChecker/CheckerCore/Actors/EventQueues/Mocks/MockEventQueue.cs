@@ -66,18 +66,13 @@ namespace PChecker.Actors.EventQueues.Mocks
         public bool IsEventRaised => RaisedEvent != default;
 
         /// <summary>
-        /// Global time.
-        /// </summary>
-        private static double Time;
-
-        /// <summary>
         /// Lock for global time.
         /// </summary>
         private static readonly object TimeLock = new();
 
-        public static readonly ConcurrentBag<double> ScheduledTimestamps = new();
+        public static readonly ConcurrentBag<Timestamp> ScheduledTimestamps = new();
 
-        private readonly Dictionary<(ActorId, string), double> MaxDequeueTimestampMap;
+        private readonly Dictionary<(ActorId, string), Timestamp> MaxDequeueTimestampMap;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MockEventQueue"/> class.
@@ -89,14 +84,14 @@ namespace PChecker.Actors.EventQueues.Mocks
             Queue = new LinkedList<(Event, Guid, EventInfo)>();
             EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
             IsClosed = false;
-            MaxDequeueTimestampMap = new Dictionary<(ActorId, string), double>();
+            MaxDequeueTimestampMap = new Dictionary<(ActorId, string), Timestamp>();
         }
 
         /// <inheritdoc/>
         public EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
         {
-            e.EnqueueTime = GetTime();
-            e.DequeueTime = e.EnqueueTime;
+            e.EnqueueTime.SetTime(ControlledRuntime.GlobalTime.GetTime());
+            e.DequeueTime.SetTime(e.EnqueueTime.GetTime());
             var eventName = e.ToString() ?? string.Empty;
             if (ControlledRuntime.EventDelaysMap.ContainsKey(eventName))
             {
@@ -104,18 +99,17 @@ namespace PChecker.Actors.EventQueues.Mocks
                 var dist = isFirstEvent ? ControlledRuntime.EventDelaysMap[eventName].initialDelayDist : ControlledRuntime.EventDelaysMap[eventName].delayDist;
                 if (TestingEngine.Strategy.GetSampleFromDistribution(dist, out var delay))
                 {
-                    double maxDequeueTimestamp = 0;
                     var isDelayOrdered = ControlledRuntime.EventDelaysMap[eventName].isDelayOrdered;
                     if (isDelayOrdered && !isFirstEvent)
                     {
-                        maxDequeueTimestamp = MaxDequeueTimestampMap[(info.OriginInfo.SenderActorId, eventName)];
+                        var maxDequeueTimestamp = MaxDequeueTimestampMap[(info.OriginInfo.SenderActorId, eventName)];
                         if (maxDequeueTimestamp > e.EnqueueTime)
                         {
-                            e.DequeueTime = maxDequeueTimestamp;
+                            e.DequeueTime.SetTime(maxDequeueTimestamp.GetTime());
                         }
                     }
 
-                    e.DequeueTime += delay;
+                    e.DequeueTime.IncrementTime(delay);
                     ScheduledTimestamps.Add(e.DequeueTime);
 
                     if (isDelayOrdered)
@@ -260,7 +254,7 @@ namespace PChecker.Actors.EventQueues.Mocks
                     continue;
                 }
 
-                if (currentEvent.e.DequeueTime <= GetTime())
+                if (currentEvent.e.DequeueTime <= ControlledRuntime.GlobalTime)
                 {
                     if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
                     {
@@ -277,7 +271,7 @@ namespace PChecker.Actors.EventQueues.Mocks
                 }
 
                 // TODO: If we end up returning timestamp of a delayed event, we need to find the event with min timestamp.
-                if (currentEvent.e.DequeueTime > GetTime())
+                if (currentEvent.e.DequeueTime > ControlledRuntime.GlobalTime)
                 {
                     if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
                     {
@@ -392,24 +386,6 @@ namespace PChecker.Actors.EventQueues.Mocks
                 }
 
                 return hash;
-            }
-        }
-
-        public static double GetTime()
-        {
-            double time;
-            lock (TimeLock)
-            {
-                time = Time;
-            }
-            return time;
-        }
-
-        public static void SetTime(double time)
-        {
-            lock (TimeLock)
-            {
-                Time = time;
             }
         }
 

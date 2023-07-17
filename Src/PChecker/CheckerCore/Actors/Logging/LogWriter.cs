@@ -607,8 +607,6 @@ namespace PChecker.Actors.Logging
             {
                 log.OnCompleted();
             }
-
-            TimedLogger?.OnCompleted();
         }
 
         /// <summary>

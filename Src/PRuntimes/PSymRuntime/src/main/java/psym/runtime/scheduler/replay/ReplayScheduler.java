@@ -26,24 +26,19 @@ public class ReplayScheduler extends Scheduler {
   @Getter
   /** Path constraint */
   private final Guard pathConstraint;
-
-  @Getter
-  /** Flag for liveness bug */
-  private final boolean isLivenessBug;
   /** Counterexample length */
   private final int cexLength;
 
   public ReplayScheduler(
-      Program p, Schedule schedule, int length, boolean livenessBug) {
-    this(p, schedule, Guard.constTrue(), length, livenessBug);
+      Program p, Schedule schedule, int length) {
+    this(p, schedule, Guard.constTrue(), length);
   }
 
   public ReplayScheduler(
       Program p,
       Schedule schedule,
       Guard pc,
-      int length,
-      boolean livenessBug) {
+      int length) {
     super(p);
     TraceLogger.enable();
     this.schedule = schedule.guard(pc).getSingleSchedule();
@@ -53,7 +48,6 @@ public class ReplayScheduler extends Scheduler {
     PSymGlobal.getConfiguration().setToReplay();
     cexLength = length;
     pathConstraint = pc;
-    isLivenessBug = livenessBug;
   }
 
   /**
@@ -87,7 +81,6 @@ public class ReplayScheduler extends Scheduler {
     ScheduleWriter.logHeader();
     initializeSearch();
     performSearch();
-    checkLiveness(isLivenessBug);
   }
 
   @Override
@@ -103,6 +96,7 @@ public class ReplayScheduler extends Scheduler {
           "Maximum allowed depth " + PSymGlobal.getConfiguration().getMaxStepBound() + " exceeded",
           schedule.getLengthCond(schedule.size()));
       step();
+      checkLiveness();
     }
     Assert.prop(
         !PSymGlobal.getConfiguration().isFailOnMaxStepBound() || (getDepth() < PSymGlobal.getConfiguration().getMaxStepBound()),
@@ -115,6 +109,8 @@ public class ReplayScheduler extends Scheduler {
 
   @Override
   public void step() {
+    allMachinesHalted = Guard.constFalse();
+
     removeHalted();
 
     PrimitiveVS<Machine> schedulingChoices = getNextSchedulingChoice();
@@ -164,6 +160,9 @@ public class ReplayScheduler extends Scheduler {
   @Override
   public PrimitiveVS<Machine> getNextSchedulingChoice() {
     PrimitiveVS<Machine> res = schedule.getRepeatSchedulingChoice(choiceDepth);
+    if (res.isEmptyVS()) {
+      allMachinesHalted = Guard.constTrue();
+    }
     choiceDepth++;
     return res;
   }
@@ -227,11 +226,6 @@ public class ReplayScheduler extends Scheduler {
   @Override
   public boolean isDone() {
     return super.isDone() || this.getChoiceDepth() >= schedule.size();
-  }
-
-  @Override
-  public boolean isFinishedExecution() {
-    return super.isFinishedExecution() || this.getChoiceDepth() >= schedule.size();
   }
 
   public void reinitialize() {

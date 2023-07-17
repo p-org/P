@@ -203,6 +203,7 @@ public abstract class SearchScheduler extends Scheduler {
     // now there are no create machine and sync event actions remaining
     List<GuardedValue<Machine>> guardedMachines = new ArrayList<>();
 
+    allMachinesHalted = Guard.constTrue();
     for (Machine machine : machines) {
       if (!machine.getEventBuffer().isEmpty()) {
         Guard canRun =
@@ -210,13 +211,9 @@ public abstract class SearchScheduler extends Scheduler {
         if (!canRun.isFalse()) {
           guardedMachines.add(new GuardedValue(machine, canRun));
         }
+        allMachinesHalted = allMachinesHalted.and(canRun.not());
       }
     }
-
-    executionFinished =
-        guardedMachines.stream()
-            .map(x -> x.getGuard().and(schedule.getFilter()))
-            .allMatch(x -> x.isFalse());
 
     List<PrimitiveVS> candidates = new ArrayList<>();
     for (GuardedValue<Machine> guardedValue : guardedMachines) {

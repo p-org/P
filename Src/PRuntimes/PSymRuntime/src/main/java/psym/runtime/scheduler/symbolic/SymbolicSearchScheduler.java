@@ -50,7 +50,6 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     }
     searchStats.startNewIteration(1, 0);
     performSearch();
-    checkLiveness(false);
     summarizeIteration(0);
   }
 
@@ -68,6 +67,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
           "Maximum allowed depth " + PSymGlobal.getConfiguration().getMaxStepBound() + " exceeded",
           schedule.getLengthCond(schedule.size()));
       step();
+      checkLiveness();
     }
     Assert.prop(
         !PSymGlobal.getConfiguration().isFailOnMaxStepBound() || (getDepth() < PSymGlobal.getConfiguration().getMaxStepBound()),
@@ -80,6 +80,8 @@ public class SymbolicSearchScheduler extends SearchScheduler {
 
   @Override
   protected void step() throws TimeoutException {
+    allMachinesHalted = Guard.constFalse();
+
     int numStates = 0;
     int numMessages = 0;
     int numMessagesMerged = 0;

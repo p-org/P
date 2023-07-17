@@ -159,8 +159,7 @@ public class EntryPoint {
               scheduler.getProgram(),
               scheduler.getSchedule(),
               pc,
-              scheduler.getDepth(),
-              (e instanceof LivenessException));
+              scheduler.getDepth());
       PSymGlobal.setScheduler(replayScheduler);
       String writeFileName = PSymGlobal.getConfiguration().getOutputFolder() + "/cex.schedule";
       replayScheduler.writeToFile(writeFileName);

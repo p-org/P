@@ -32,7 +32,6 @@ import psym.runtime.statistics.CoverageStats;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
 import psym.utils.Assert;
-import psym.utils.exception.BugFoundException;
 import psym.utils.monitor.MemoryMonitor;
 import psym.utils.monitor.TimeMonitor;
 import psym.valuesummary.Guard;
@@ -141,7 +140,6 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       }
       searchStats.startNewIteration(iter, backtrackDepth);
       performSearch();
-      checkLiveness(false);
       summarizeIteration(backtrackDepth);
     }
   }
@@ -168,7 +166,6 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       }
       searchStats.startNewIteration(iter, backtrackDepth);
       performSearch();
-      checkLiveness(false);
       summarizeIteration(backtrackDepth);
       if (resetAfterInitial) {
         resetAfterInitial = false;
@@ -187,6 +184,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
           "Maximum allowed depth " + PSymGlobal.getConfiguration().getMaxStepBound() + " exceeded",
           schedule.getLengthCond(schedule.size()));
       step();
+      checkLiveness();
     }
     Assert.prop(
         !PSymGlobal.getConfiguration().isFailOnMaxStepBound() || (getDepth() < PSymGlobal.getConfiguration().getMaxStepBound()),
@@ -201,6 +199,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   @Override
   protected void step() throws TimeoutException {
     srcState.clear();
+    allMachinesHalted = Guard.constFalse();
 
     int numStates = 0;
     int numStatesDistinct = 0;
@@ -216,10 +215,10 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
       if (!isDistinctState) {
         int firstVisitIter = numConcrete[2];
-        if (firstVisitIter == iter) {
-          executionFinished = true;
-//          throw new BugFoundException("Cycle detected: revisited a state multiple times in the same iteration", Guard.constTrue());
-        }
+        Assert.prop(
+                firstVisitIter != iter,
+                String.format("Cycle detected: Possible infinite loop found due to revisiting a state multiple times in the same iteration"),
+                Guard.constTrue());
         done = true;
         SearchLogger.finishedExecution(depth);
         return;

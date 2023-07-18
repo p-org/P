@@ -476,13 +476,15 @@ namespace Plang.Compiler.Backend.CSharp
             WriteNameSpacePrologue(context, output);
 
             var declName = context.Names.GetNameForDecl(pEvent);
-
+            string distributionStmt = pEvent.Distribution != ""? $"DelayDistribution = {pEvent.Distribution};": "";
+            string isOrderedStmt = !pEvent.IsOrdered? $"IsOrdered = false;": "";
+            
             // initialize the payload type
             var payloadType = GetCSharpType(pEvent.PayloadType, true);
             context.WriteLine(output, $"internal partial class {declName} : PEvent");
             context.WriteLine(output, "{");
-            context.WriteLine(output, $"public {declName}() : base() {{}}");
-            context.WriteLine(output, $"public {declName} ({payloadType} payload): base(payload)" + "{ }");
+            context.WriteLine(output, $"public {declName}() : base() {{{distributionStmt} {isOrderedStmt}}}");
+            context.WriteLine(output, $"public {declName} ({payloadType} payload): base(payload)" + $"{{{distributionStmt} {isOrderedStmt}}}");
             context.WriteLine(output, $"public override IPrtValue Clone() {{ return new {declName}();}}");
             context.WriteLine(output, "}");
 

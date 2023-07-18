@@ -70,9 +70,7 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// </summary>
         private static readonly object TimeLock = new();
 
-        public static readonly ConcurrentBag<Timestamp> ScheduledTimestamps = new();
-
-        private readonly Dictionary<(ActorId, string), Timestamp> MaxDequeueTimestampMap;
+        private readonly Dictionary<ActorId, Timestamp> MaxDequeueTimestampMap;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MockEventQueue"/> class.
@@ -84,7 +82,7 @@ namespace PChecker.Actors.EventQueues.Mocks
             Queue = new LinkedList<(Event, Guid, EventInfo)>();
             EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
             IsClosed = false;
-            MaxDequeueTimestampMap = new Dictionary<(ActorId, string), Timestamp>();
+            MaxDequeueTimestampMap = new Dictionary<ActorId, Timestamp>();
         }
 
         /// <inheritdoc/>
@@ -95,14 +93,14 @@ namespace PChecker.Actors.EventQueues.Mocks
             var eventName = e.ToString() ?? string.Empty;
             if (ControlledRuntime.EventDelaysMap.ContainsKey(eventName))
             {
-                var isFirstEvent = !MaxDequeueTimestampMap.ContainsKey((info.OriginInfo.SenderActorId, eventName));
+                var isFirstEvent = !MaxDequeueTimestampMap.ContainsKey(info.OriginInfo.SenderActorId);
                 var dist = isFirstEvent ? ControlledRuntime.EventDelaysMap[eventName].initialDelayDist : ControlledRuntime.EventDelaysMap[eventName].delayDist;
                 if (TestingEngine.Strategy.GetSampleFromDistribution(dist, out var delay))
                 {
                     var isDelayOrdered = ControlledRuntime.EventDelaysMap[eventName].isDelayOrdered;
                     if (isDelayOrdered && !isFirstEvent)
                     {
-                        var maxDequeueTimestamp = MaxDequeueTimestampMap[(info.OriginInfo.SenderActorId, eventName)];
+                        var maxDequeueTimestamp = MaxDequeueTimestampMap[info.OriginInfo.SenderActorId];
                         if (maxDequeueTimestamp > e.EnqueueTime)
                         {
                             e.DequeueTime.SetTime(maxDequeueTimestamp.GetTime());
@@ -110,17 +108,16 @@ namespace PChecker.Actors.EventQueues.Mocks
                     }
 
                     e.DequeueTime.IncrementTime(delay);
-                    ScheduledTimestamps.Add(e.DequeueTime);
 
                     if (isDelayOrdered)
                     {
                         if (isFirstEvent)
                         {
-                            MaxDequeueTimestampMap.Add((info.OriginInfo.SenderActorId, eventName), e.DequeueTime);
+                            MaxDequeueTimestampMap.Add(info.OriginInfo.SenderActorId, e.DequeueTime);
                         }
                         else
                         {
-                            MaxDequeueTimestampMap[(info.OriginInfo.SenderActorId, eventName)] = e.DequeueTime;
+                            MaxDequeueTimestampMap[info.OriginInfo.SenderActorId] = e.DequeueTime;
                         }
                     }
                 }

@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using PChecker.IO.Debugging;
 using PChecker.Random;
 using PChecker.SystematicTesting.Operations;
 
@@ -104,6 +104,8 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                     {
                         return true;
                     }
+
+                    Error.ReportAndExit("Given distribution " + dist + " is not supported.");
                 }
             }
 

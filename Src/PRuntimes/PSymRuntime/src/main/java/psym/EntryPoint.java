@@ -3,8 +3,8 @@ package psym;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.*;
-import psym.commandline.PSymConfiguration;
 import psym.runtime.Concretizer;
+import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.scheduler.SearchScheduler;
@@ -26,7 +26,6 @@ public class EntryPoint {
   private static ExecutorService executor;
   private static Future<Integer> future;
   private static String status;
-  private static PSymConfiguration configuration;
   private static SearchScheduler scheduler;
   private static String mode;
 
@@ -64,43 +63,46 @@ public class EntryPoint {
   private static void print_stats() {
     double searchTime = TimeMonitor.getInstance().stopInterval();
     TimeMonitor.getInstance().startInterval();
-    StatWriter.log("status", String.format("%s", status));
     scheduler.print_search_stats();
+    if (scheduler.isFinalResult && scheduler.result.equals("correct for any depth")) {
+      status = "proved";
+    }
     StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
-    if (configuration.isExplicit()) {
+    if (PSymGlobal.getConfiguration().isExplicit()) {
       ((ExplicitSearchScheduler) scheduler).reportEstimatedCoverage();
     }
+    StatWriter.log("status", String.format("%s", status));
   }
 
   private static void preprocess() {
-    PSymLogger.info(String.format(".. Test case :: " + configuration.getTestDriver()));
+    PSymLogger.info(String.format(".. Test case :: " + PSymGlobal.getConfiguration().getTestDriver()));
     PSymLogger.info(
         String.format(
             "... Checker is using '%s' strategy (seed:%s)",
-            configuration.getStrategy(), configuration.getRandomSeed()));
+                PSymGlobal.getConfiguration().getStrategy(), PSymGlobal.getConfiguration().getRandomSeed()));
     PSymLogger.info("--------------------");
 
     executor = Executors.newSingleThreadExecutor();
     status = "error";
-    if (configuration.isSymbolic()) {
+    if (PSymGlobal.getConfiguration().isSymbolic()) {
       mode = "symbolic";
     } else {
       mode = "single";
     }
-    if (configuration.getSymmetryMode() != SymmetryMode.None) {
+    if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
       SymmetryTracker.setScheduler(scheduler);
     }
 
     double preSearchTime =
         TimeMonitor.getInstance().findInterval(TimeMonitor.getInstance().getStart());
-    StatWriter.log("project-name", String.format("%s", configuration.getProjectName()));
+    StatWriter.log("project-name", String.format("%s", PSymGlobal.getConfiguration().getProjectName()));
     StatWriter.log("mode", String.format("%s", mode));
-    StatWriter.log("solver", String.format("%s", configuration.getSolverType().toString()));
-    StatWriter.log("expr-type", String.format("%s", configuration.getExprLibType().toString()));
-    StatWriter.log("time-limit-seconds", String.format("%.1f", configuration.getTimeLimit()));
-    StatWriter.log("memory-limit-MB", String.format("%.1f", configuration.getMemLimit()));
+    StatWriter.log("solver", String.format("%s", PSymGlobal.getConfiguration().getSolverType().toString()));
+    StatWriter.log("expr-type", String.format("%s", PSymGlobal.getConfiguration().getExprLibType().toString()));
+    StatWriter.log("time-limit-seconds", String.format("%.1f", PSymGlobal.getConfiguration().getTimeLimit()));
+    StatWriter.log("memory-limit-MB", String.format("%.1f", PSymGlobal.getConfiguration().getMemLimit()));
     StatWriter.log("time-pre-seconds", String.format("%.1f", preSearchTime));
-    Concretizer.print = (configuration.getVerbosity() > 8);
+    Concretizer.print = (PSymGlobal.getConfiguration().getVerbosity() > 8);
   }
 
   private static void postprocess(boolean printStats) {
@@ -108,17 +110,18 @@ public class EntryPoint {
     if (printStats) {
       print_stats();
     }
-    if (configuration.isSymbolic()) {
-      PSymLogger.finishedSymbolic(
-          Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(),
-          scheduler.result);
-    } else {
+    if (scheduler instanceof ExplicitSearchScheduler) {
       ExplicitSearchScheduler explicitSearchScheduler = (ExplicitSearchScheduler) scheduler;
       PSymLogger.finishedExplicit(
-          explicitSearchScheduler.getIter(),
-          explicitSearchScheduler.getIter() - explicitSearchScheduler.getStart_iter(),
-          Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(),
-          scheduler.result);
+              explicitSearchScheduler.getIter(),
+              explicitSearchScheduler.getIter() - explicitSearchScheduler.getStart_iter(),
+              Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(),
+              scheduler.result);
+    } else {
+      assert (scheduler instanceof SymbolicSearchScheduler);
+      PSymLogger.finishedSymbolic(
+              Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(),
+              scheduler.result);
     }
   }
 
@@ -127,8 +130,8 @@ public class EntryPoint {
       TimedCall timedCall = new TimedCall(scheduler, resume);
       future = executor.submit(timedCall);
       TimeMonitor.getInstance().startInterval();
-      runWithTimeout((long) configuration.getTimeLimit());
-      status = "success";
+      runWithTimeout((long) PSymGlobal.getConfiguration().getTimeLimit());
+      status = "completed";
     } catch (TimeoutException e) {
       status = "timeout";
       throw new Exception("TIMEOUT", e);
@@ -140,7 +143,10 @@ public class EntryPoint {
       scheduler.result = "found cex of length " + scheduler.getDepth();
       scheduler.isFinalResult = true;
       postprocess(true);
-      e.printStackTrace();
+      PSymLogger.info(e.toString());
+      if (PSymGlobal.getConfiguration().getVerbosity() > 0) {
+        e.printStackTrace(System.out);
+      }
 
       PSymLogger.setVerbosity(1);
       TraceLogger.setVerbosity(1);
@@ -150,14 +156,13 @@ public class EntryPoint {
 
       ReplayScheduler replayScheduler =
           new ReplayScheduler(
-              configuration,
               scheduler.getProgram(),
               scheduler.getSchedule(),
               pc,
               scheduler.getDepth(),
               (e instanceof LivenessException));
-      scheduler.getProgram().setProgramScheduler(replayScheduler);
-      String writeFileName = configuration.getOutputFolder() + "/cex.schedule";
+      PSymGlobal.setScheduler(replayScheduler);
+      String writeFileName = PSymGlobal.getConfiguration().getOutputFolder() + "/cex.schedule";
       replayScheduler.writeToFile(writeFileName);
       replay(replayScheduler);
     } catch (InterruptedException e) {
@@ -175,27 +180,23 @@ public class EntryPoint {
     }
   }
 
-  public static void run(PSymConfiguration config, Program p) throws Exception {
-    if (config.isSymbolic()) {
-      scheduler = new SymbolicSearchScheduler(config, p);
+  public static void run(Program p) throws Exception {
+    if (PSymGlobal.getConfiguration().isSymbolic()) {
+      scheduler = new SymbolicSearchScheduler(p);
     } else {
-      scheduler = new ExplicitSearchScheduler(config, p);
+      scheduler = new ExplicitSearchScheduler(p);
     }
-    configuration = config;
-    scheduler.getProgram().setProgramScheduler(scheduler);
+    PSymGlobal.setScheduler(scheduler);
 
     preprocess();
     process(false);
   }
 
-  public static void resume(PSymConfiguration config) throws Exception {
-    assert (config.isExplicit());
-    scheduler = ExplicitSearchScheduler.readFromFile(config.getReadFromFile());
-    configuration = config;
-    scheduler.getProgram().setProgramScheduler(scheduler);
-
-    scheduler.setConfiguration(configuration);
-    TraceLogger.setVerbosity(config.getVerbosity());
+  public static void resume() throws Exception {
+    assert (PSymGlobal.getConfiguration().isExplicit());
+    scheduler = ExplicitSearchScheduler.readFromFile(PSymGlobal.getConfiguration().getReadFromFile());
+    PSymGlobal.setScheduler(scheduler);
+    TraceLogger.setVerbosity(PSymGlobal.getConfiguration().getVerbosity());
     SolverEngine.resumeEngine();
 
     preprocess();
@@ -205,11 +206,16 @@ public class EntryPoint {
   private static void replay(ReplayScheduler replayScheduler)
       throws RuntimeException, TimeoutException {
     try {
+      ScheduleWriter.Initialize(PSymGlobal.getConfiguration().getProjectName(), PSymGlobal.getConfiguration().getOutputFolder());
       replayScheduler.doSearch();
       status = "error";
       throw new RuntimeException("ERROR: Failed to replay counterexample");
     } catch (BugFoundException e) {
-      e.printStackTrace(System.out);
+      PSymLogger.info(e.toString());
+      e.printStackTrace(System.err);
+      PSymLogger.info("Checker found a bug.");
+      PSymLogger.info("... Emitting traces:");
+      PSymLogger.info(String.format("..... Writing %s", ScheduleWriter.getFileName()));
       throw new BugFoundException(
           "Found bug: " + e.getLocalizedMessage(),
           replayScheduler.getPathConstraint(),
@@ -217,25 +223,24 @@ public class EntryPoint {
     }
   }
 
-  public static void replayBug(ReplayScheduler replayScheduler, PSymConfiguration config)
+  public static void replayBug(ReplayScheduler replayScheduler)
       throws RuntimeException, InterruptedException, TimeoutException {
     SolverEngine.resumeEngine();
-    if (config.getVerbosity() == 0) {
+    if (PSymGlobal.getConfiguration().getVerbosity() == 0) {
       PSymLogger.setVerbosity(1);
       TraceLogger.setVerbosity(1);
     }
     TraceLogger.enable();
-    replayScheduler.setConfiguration(config);
-    replayScheduler.getProgram().setProgramScheduler(replayScheduler);
+    PSymGlobal.setScheduler(replayScheduler);
 
-    PSymLogger.info(String.format(".. Test case :: " + config.getTestDriver()));
+    PSymLogger.info(String.format(".. Test case :: " + PSymGlobal.getConfiguration().getTestDriver()));
     PSymLogger.info("... Checker is using 'replay' strategy");
 
     replay(replayScheduler);
   }
 
   public static void writeToFile() throws Exception {
-    assert (configuration.isExplicit());
+    assert (PSymGlobal.getConfiguration().isExplicit());
     ((ExplicitSearchScheduler) scheduler).writeToFile();
   }
 }

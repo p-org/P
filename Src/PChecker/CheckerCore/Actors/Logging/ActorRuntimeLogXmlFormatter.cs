@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using PChecker.Actors.Events;
-using PChecker.Actors.Timers;
 
 namespace PChecker.Actors.Logging
 {
@@ -92,20 +91,6 @@ namespace PChecker.Actors.Logging
                 Writer.WriteAttributeString("creatorType", "task");
             }
 
-            Writer.WriteEndElement();
-        }
-
-        public void OnCreateTimer(TimerInfo info)
-        {
-            if (Closed)
-            {
-                return;
-            }
-
-            Writer.WriteStartElement("CreateTimer");
-            Writer.WriteAttributeString("owner", info.OwnerId?.Name ?? Task.CurrentId.ToString());
-            Writer.WriteAttributeString("due", info.DueTime.ToString());
-            Writer.WriteAttributeString("period", info.Period.ToString());
             Writer.WriteEndElement();
         }
 
@@ -371,18 +356,6 @@ namespace PChecker.Actors.Logging
             Writer.WriteAttributeString("id", id.ToString());
             Writer.WriteAttributeString("state", stateName);
             Writer.WriteAttributeString("isEntry", isEntry.ToString());
-            Writer.WriteEndElement();
-        }
-
-        public void OnStopTimer(TimerInfo info)
-        {
-            if (Closed)
-            {
-                return;
-            }
-
-            Writer.WriteStartElement("StopTimer");
-            Writer.WriteAttributeString("owner", info.OwnerId?.Name ?? Task.CurrentId.ToString());
             Writer.WriteEndElement();
         }
 

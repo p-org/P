@@ -9,7 +9,8 @@ import org.apache.commons.cli.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
+import psym.runtime.machine.buffer.BufferSemantics;
 import psym.runtime.scheduler.explicit.StateCachingMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
@@ -105,7 +106,7 @@ public class PSymOptions {
     Option strategy =
         Option.builder("s")
             .longOpt("strategy")
-            .desc("Exploration strategy: random, dfs, learn, symex (default: learn)")
+            .desc("Exploration strategy: symex, random, dfs, learn, stateless (default: symex)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Strategy (string)")
@@ -188,7 +189,7 @@ public class PSymOptions {
     Option stateCaching =
         Option.builder()
             .longOpt("state-caching")
-            .desc("State caching mode: none, exact, fast (default: fast)")
+            .desc("State caching mode: none, exact, fast (default: none)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Caching Mode (string)")
@@ -199,7 +200,7 @@ public class PSymOptions {
     Option symmetry =
         Option.builder()
             .longOpt("symmetry")
-            .desc("Symmetry-aware exploration mode: none, simple, full (default: none)")
+            .desc("Symmetry-aware exploration mode: none, full (default: none)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Symmetry Mode (string)")
@@ -230,7 +231,7 @@ public class PSymOptions {
     Option choiceOrch =
         Option.builder("corch")
             .longOpt("choice-orch")
-            .desc("Choice orchestration options: random, learn (default: learn)")
+            .desc("Choice orchestration options: none, random, learn (default: none)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Choice Orch. (string)")
@@ -241,7 +242,7 @@ public class PSymOptions {
     Option taskOrch =
         Option.builder("torch")
             .longOpt("task-orch")
-            .desc("Task orchestration options: astar, random, dfs, learn (default: learn)")
+            .desc("Task orchestration options: astar, random, dfs, learn (default: dfs)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Task Orch. (string)")
@@ -371,6 +372,9 @@ public class PSymOptions {
         case "timeout":
           try {
             config.setTimeLimit(Double.parseDouble(option.getValue()));
+            if (config.getMaxExecutions() == 1) {
+              config.setMaxExecutions(0);
+            }
           } catch (NumberFormatException ex) {
             optionError(
                 option, String.format("Expected a double value, got %s", option.getValue()));
@@ -397,36 +401,24 @@ public class PSymOptions {
         case "s":
         case "strategy":
           switch (option.getValue()) {
-            case "random":
-              config.setToRandom();
-              break;
-            case "dfs":
-              config.setToDfs();
-              break;
-            case "learn-backtrack":
-              config.setToBacktrackLearn();
-              break;
-            case "learn-choice":
-              config.setToChoiceLearn();
-              break;
-            case "learn":
-            case "learn-all":
-              config.setToAllLearn();
-              break;
             case "bmc":
             case "sym":
             case "symex":
             case "symbolic":
               config.setToSymex();
               break;
+            case "random":
+              config.setToRandom();
+              break;
+            case "dfs":
+              config.setToDfs();
+              break;
+            case "learn":
+              config.setToLearn();
+              break;
             case "fuzz":
-              config.setToFuzz();
-              break;
-            case "coverage":
-              config.setToCoverage();
-              break;
-            case "debug":
-              config.setToDebug();
+            case "stateless":
+              config.setToStateless();
               break;
             default:
               optionError(
@@ -481,7 +473,6 @@ public class PSymOptions {
         case "config":
           readConfigFile(config, option.getValue(), option);
           break;
-          // expert options
         case "state-caching":
           switch (option.getValue()) {
             case "none":
@@ -503,9 +494,6 @@ public class PSymOptions {
           switch (option.getValue()) {
             case "none":
               config.setSymmetryMode(SymmetryMode.None);
-              break;
-            case "simple":
-              config.setSymmetryMode(SymmetryMode.Simple);
               break;
             case "full":
               config.setSymmetryMode(SymmetryMode.Full);
@@ -697,14 +685,14 @@ public class PSymOptions {
             JSONArray syncEvents = value.getJSONArray("default");
             for (int i = 0; i < syncEvents.length(); i++) {
               String syncEventName = syncEvents.getString(i);
-              GlobalData.getSyncEvents().add(syncEventName);
+              PSymGlobal.getSyncEvents().add(syncEventName);
             }
             break;
           case "symmetric-machines":
             JSONArray symMachineTypes = value.getJSONArray("default");
             for (int i = 0; i < symMachineTypes.length(); i++) {
               String symTypeName = symMachineTypes.getString(i);
-              GlobalData.getSymmetryTracker().addSymmetryType(symTypeName);
+              PSymGlobal.getSymmetryTracker().addSymmetryType(symTypeName);
             }
             break;
           default:

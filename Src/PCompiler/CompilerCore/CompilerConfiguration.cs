@@ -11,12 +11,12 @@ namespace Plang.Compiler
     {
         public CompilerConfiguration()
         {
-            OutputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
+            OutputDirectory = null;
             InputPFiles = new List<string>();
             InputForeignFiles = new List<string>();
-            Output = new DefaultCompilerOutput(OutputDirectory);
+            Output = null;
             ProjectName = "generatedOutput";
-            ProjectRootPath = OutputDirectory;
+            ProjectRootPath = new DirectoryInfo(Directory.GetCurrentDirectory());
             LocationResolver = new DefaultLocationResolver();
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
             OutputLanguage = CompilerOutput.CSharp;

@@ -94,6 +94,7 @@ namespace Plang.Options
                 FindLocalPCompiledFile(configuration);
 
                 SanitizeConfiguration(configuration);
+                
             }
             catch (CommandLineException ex)
             {
@@ -125,7 +126,7 @@ namespace Plang.Options
             switch (option.LongName)
             {
                 case "outdir":
-                    checkerConfiguration.OutputFilePath = (string)option.Value;
+                    checkerConfiguration.OutputPath = (string)option.Value;
                     break;
                 case "verbose":
                     checkerConfiguration.IsVerbose = true;
@@ -136,6 +137,10 @@ namespace Plang.Options
                     break;
                 case "timeout":
                     checkerConfiguration.Timeout = (int)(uint)option.Value;
+                    if (checkerConfiguration.TestingIterations == 1)
+                    {
+                        checkerConfiguration.TestingIterations = 0;
+                    }
                     break;
                 case "memout":
                     checkerConfiguration.MemoryLimit = (double)option.Value;
@@ -286,8 +291,11 @@ namespace Plang.Options
 
             if (checkerConfiguration.MaxFairSchedulingSteps < checkerConfiguration.MaxUnfairSchedulingSteps)
             {
-                Error.CheckerReportAndExit("For the option '-max-steps N[,M]', please make sure that M >= N.");
+                Error.CheckerReportAndExit("For the option '--max-steps N[,M]', please make sure that M >= N.");
             }
+            
+            // the output directory correctly
+            checkerConfiguration.SetOutputDirectory();
         }
         
 

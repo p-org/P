@@ -23,13 +23,33 @@ import psym.runtime.logger.Log4JConfig;
  * ../Tst/SymbolicRegressionTests/
  */
 public class TestSymbolicRegression {
-  private static final String runArgs = "--iterations 20 --seed 0";
+  private static String mode = "verification";
+  private static String runArgs = "--seed 0 --timeout 60";
   private static final String outputDirectory = "output/testCases";
   private static final List<String> excluded = new ArrayList<>();
 
   private static boolean initialized = false;
 
+  private static void setRunArgs() {
+    String md = System.getProperty("mode");
+    String psymArgs = System.getProperty("psym.args");
+
+    if (md != null && !md.isEmpty()) {
+      mode = md;
+    }
+    if (psymArgs != null && !psymArgs.isEmpty()) {
+      runArgs += " --psym-args " + psymArgs;
+    }
+    PSymTestLogger.log(String.format("Running in mode %s with arguments:  %s", mode, runArgs));
+  }
+
   private static void createExcludeList() {
+    // TODO Unsupported: liveness with temperatures
+    excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_1");
+    excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_1_falsePass");
+    excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_FAIRNONDET");
+    excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_FAIRNONDET2");
+
     // TODO Unsupported: deadlock detection
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive2");
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive6");
@@ -43,42 +63,8 @@ public class TestSymbolicRegression {
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive15");
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive16");
 
-    // TODO Unsupported: enum starting with non-zero integer values
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/enum4");
-
-    // TODO Unsupported: relational operations over strings
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/stringcomp");
-
-    // TODO Unsupported: complex type casting with any type
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/EnumType1");
-
-    // TODO Unsupported: type casting collections with any type
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/CastInExprsAsserts");
+    // TODO Unsupported: nested type casting in tuple fields with any type
     excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes12");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes13");
-    excluded.add(
-        "../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypesAllAsserts");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes1");
-    excluded.add(
-        "../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes10");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes2");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes3");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes4");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes5");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes6");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes7");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes8");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes9");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs1");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs2");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs3");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs4");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs5");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs6");
-
-    // TODO Unsupported: comparison of null with any type
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/anyTypeNullValue");
 
     // TODO Unsupported: null events
     excluded.add("../../../Tst/RegressionTests/Integration/Correct/openwsn1");
@@ -114,17 +100,12 @@ public class TestSymbolicRegression {
     excluded.add("../../../Tst/RegressionTests/Feature3Exprs/StaticError/payloadActions");
     excluded.add("../../../Tst/RegressionTests/Feature3Exprs/StaticError/payloadEntry_1");
     excluded.add("../../../Tst/RegressionTests/Feature3Exprs/StaticError/payloadActionsFuns");
-
-    // TODO Wait4Fix: exclude test errors due to main machine with spec: issue #510
-    excluded.add("../../../Tst/RegressionTests/Integration/Correct/SEM_TwoMachines_14");
-    excluded.add("../../../Tst/RegressionTests/Integration/Correct/SEM_TwoMachines_15");
-    excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive11");
-    excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive11_1");
   }
 
   private static void initialize() {
     Log4JConfig.configureLog4J();
     PSymTestLogger.Initialize(outputDirectory);
+    setRunArgs();
     createExcludeList();
     initialized = true;
   }
@@ -163,6 +144,7 @@ public class TestSymbolicRegression {
                 TestCaseExecutor.runTestCase(
                     testCasePaths,
                     testCasePath,
+                    TestSymbolicRegression.mode,
                     TestSymbolicRegression.runArgs,
                     outputDirectory,
                     expected));
@@ -264,10 +246,9 @@ public class TestSymbolicRegression {
   //        return loadTests("../../../Tst/RegressionTests/Feature5ModuleSystem");
   //    }
 
-  // TODO Unsupported: liveness
-  //    @TestFactory
-  //    //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-  //    Collection<DynamicTest>  loadLivenessTests() {
-  //        return loadTests("../../../Tst/RegressionTests/Liveness");
-  //    }
+  @TestFactory
+  //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+  Collection<DynamicTest>  loadLivenessTests() {
+      return loadTests("../../../Tst/RegressionTests/Liveness");
+  }
 }

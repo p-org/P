@@ -7,7 +7,6 @@ using System.Runtime.Serialization;
 using PChecker.Actors;
 using PChecker.Actors.Events;
 using PChecker.Actors.Logging;
-using PChecker.Actors.Timers;
 
 namespace PChecker.Coverage
 {
@@ -134,10 +133,6 @@ namespace PChecker.Coverage
         {
         }
 
-        public void OnCreateTimer(TimerInfo info)
-        {
-        }
-
         public void OnDefaultEventHandler(ActorId id, string stateName)
         {
             Dequeued = DefaultEvent.Instance;
@@ -249,10 +244,6 @@ namespace PChecker.Coverage
         }
 
         public void OnStateTransition(ActorId id, string stateName, bool isEntry)
-        {
-        }
-
-        public void OnStopTimer(TimerInfo info)
         {
         }
 

@@ -222,6 +222,12 @@ namespace Plang.Options
             {
                 Error.CompilerReportAndExit($"{compilerConfiguration.ProjectName} is not a legal project name");
             }
+
+            if (compilerConfiguration.OutputDirectory == null)
+            {
+                compilerConfiguration.OutputDirectory = Directory.CreateDirectory("PGenerated");
+                compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
+           }
             
             compilerConfiguration.OutputDirectory = Directory.CreateDirectory(Path.Combine(compilerConfiguration.OutputDirectory.FullName, compilerConfiguration.OutputLanguage.ToString()));
             compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);

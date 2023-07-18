@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.runtime.logger.CoverageWriter;
 import psym.runtime.logger.StatWriter;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
@@ -145,7 +145,7 @@ public class CoverageStats implements Serializable {
       for (int i = startDepth; i <= choiceDepth; i++) {
         CoverageChoiceDepthStats stats = perChoiceDepthStats.get(i);
         if (stats != null) {
-          GlobalData.getChoiceLearningStats()
+          PSymGlobal.getChoiceLearningStats()
               .rewardIteration(
                   stats.getStateActions(), iterationCoverage.doubleValue(), rewardMode);
         }

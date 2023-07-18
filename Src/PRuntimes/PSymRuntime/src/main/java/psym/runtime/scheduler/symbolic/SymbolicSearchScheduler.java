@@ -12,8 +12,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import psym.commandline.PSymConfiguration;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
@@ -33,8 +32,8 @@ import psym.valuesummary.solvers.SolverEngine;
 
 public class SymbolicSearchScheduler extends SearchScheduler {
 
-  public SymbolicSearchScheduler(PSymConfiguration config, Program p) {
-    super(config, p);
+  public SymbolicSearchScheduler(Program p) {
+    super(p);
   }
 
   public static void cleanup() {
@@ -46,7 +45,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     result = "incomplete";
     SearchLogger.logStartExecution(1, getDepth());
     initializeSearch();
-    if (configuration.getVerbosity() == 0) {
+    if (PSymGlobal.getConfiguration().getVerbosity() == 0) {
       printProgressHeader(true);
     }
     searchStats.startNewIteration(1, 0);
@@ -65,14 +64,14 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     while (!isDone()) {
       printProgress(false);
       Assert.prop(
-          getDepth() < configuration.getMaxStepBound(),
-          "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded",
+          getDepth() < PSymGlobal.getConfiguration().getMaxStepBound(),
+          "Maximum allowed depth " + PSymGlobal.getConfiguration().getMaxStepBound() + " exceeded",
           schedule.getLengthCond(schedule.size()));
       step();
     }
     Assert.prop(
-        !configuration.isFailOnMaxStepBound() || (getDepth() < configuration.getMaxStepBound()),
-        "Scheduling steps bound of " + configuration.getMaxStepBound() + " reached.",
+        !PSymGlobal.getConfiguration().isFailOnMaxStepBound() || (getDepth() < PSymGlobal.getConfiguration().getMaxStepBound()),
+        "Scheduling steps bound of " + PSymGlobal.getConfiguration().getMaxStepBound() + " reached.",
         schedule.getLengthCond(schedule.size()));
     if (done) {
       searchStats.setIterationCompleted();
@@ -86,26 +85,15 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     int numMessagesMerged = 0;
     int numMessagesExplored = 0;
 
-    if (configuration.getSymmetryMode() == SymmetryMode.Full) {
-      GlobalData.getSymmetryTracker().mergeAllSymmetryClasses();
+    if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+      PSymGlobal.getSymmetryTracker().mergeAllSymmetryClasses();
     }
 
-    // remove messages with halted target
-    for (Machine machine : machines) {
-      while (!machine.sendBuffer.isEmpty()) {
-        Guard targetHalted =
-            machine.sendBuffer.satisfiesPredUnderGuard(x -> x.targetHalted()).getGuardFor(true);
-        if (!targetHalted.isFalse()) {
-          rmBuffer(machine, targetHalted);
-          continue;
-        }
-        break;
-      }
-    }
+    removeHalted();
 
-    PrimitiveVS<Machine> choices = getNextSender();
+    PrimitiveVS<Machine> schedulingChoices = getNextSchedulingChoice();
 
-    if (choices.isEmptyVS()) {
+    if (schedulingChoices.isEmptyVS()) {
       done = true;
       SearchLogger.finishedExecution(depth);
     }
@@ -114,25 +102,17 @@ public class SymbolicSearchScheduler extends SearchScheduler {
       return;
     }
 
-    TimeMonitor.getInstance().checkTimeout();
+    SolverStats.checkResourceLimits();
 
     Message effect = null;
     List<Message> effects = new ArrayList<>();
 
-    if (configuration.getSymmetryMode() != SymmetryMode.None) {
-      GlobalData.getSymmetryTracker().updateSymmetrySet(choices);
-    }
-
-    for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
-      Machine machine = sender.getValue();
-      Guard guard = sender.getGuard();
+    for (GuardedValue<Machine> schedulingChoice : schedulingChoices.getGuardedValues()) {
+      Machine machine = schedulingChoice.getValue();
+      Guard guard = schedulingChoice.getGuard();
       Message removed = rmBuffer(machine, guard);
 
-      if (configuration.getSymmetryMode() == SymmetryMode.Full) {
-        GlobalData.getSymmetryTracker().updateSymmetrySet(removed.getTarget());
-      }
-
-      if (configuration.getVerbosity() > 5) {
+      if (PSymGlobal.getConfiguration().getVerbosity() > 5) {
         System.out.println("  Machine " + machine);
         System.out.println("    state   " + machine.getCurrentState().toStringDetailed());
         System.out.println("    message " + removed.toString());
@@ -159,7 +139,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
       depth++;
     }
 
-    TraceLogger.schedule(depth, effect, choices);
+    TraceLogger.schedule(depth, effect);
 
     performEffect(effect);
 
@@ -170,7 +150,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     //        SolverEngine.switchEngineAuto();
 
     double memoryUsed = MemoryMonitor.getMemSpent();
-    if (memoryUsed > (0.8 * SolverStats.memLimit)) {
+    if (memoryUsed > (0.8 * MemoryMonitor.getMemLimit())) {
       cleanup();
     }
     SolverStats.checkResourceLimits();
@@ -182,9 +162,9 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     searchStats.addDepthStatistics(depth, depthStats);
 
     // log statistics
-    if (configuration.getVerbosity() > 3) {
+    if (PSymGlobal.getConfiguration().getVerbosity() > 3) {
       double timeUsed = TimeMonitor.getInstance().getRuntime();
-      if (configuration.getVerbosity() > 4) {
+      if (PSymGlobal.getConfiguration().getVerbosity() > 4) {
         SearchLogger.log("--------------------");
         SearchLogger.log("Resource Stats::");
         SearchLogger.log("time-seconds", String.format("%.1f", timeUsed));
@@ -218,7 +198,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     }
 
     // log depth statistics
-    if (configuration.getVerbosity() > 4) {
+    if (PSymGlobal.getConfiguration().getVerbosity() > 4) {
       SearchLogger.logDepthStats(depthStats);
       System.out.println("--------------------");
       System.out.println("Collect Stats::");
@@ -266,8 +246,8 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     if (choices.isEmpty()) {
       // no choice to backtrack to, so generate new choices
       choices = getChoices.get();
-      if (!isData && configuration.getSymmetryMode() != SymmetryMode.None) {
-        choices = GlobalData.getSymmetryTracker().getReducedChoices(choices);
+      if (!isData && PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+        choices = PSymGlobal.getSymmetryTracker().getReducedChoices(choices);
       }
       choices =
           choices.stream()
@@ -297,7 +277,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     if (totalStats.isCompleted()) {
       result += "correct for any depth";
     } else {
-      int safeDepth = configuration.getMaxStepBound();
+      int safeDepth = PSymGlobal.getConfiguration().getMaxStepBound();
       if (totalStats.getDepthStats().getDepth() < safeDepth) {
         safeDepth = totalStats.getDepthStats().getDepth();
       }
@@ -333,7 +313,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
   protected void printProgress(boolean forcePrint) {
     double newRuntime = TimeMonitor.getInstance().getRuntime();
     printCurrentStatus(newRuntime);
-    boolean consolePrint = (configuration.getVerbosity() == 0);
+    boolean consolePrint = (PSymGlobal.getConfiguration().getVerbosity() == 0);
     if (consolePrint || forcePrint) {
       long runtime = (long) (newRuntime * 1000);
       String runtimeHms =

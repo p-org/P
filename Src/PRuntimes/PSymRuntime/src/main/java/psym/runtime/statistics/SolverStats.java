@@ -4,7 +4,10 @@ import lombok.Setter;
 import psym.runtime.logger.SearchLogger;
 import psym.utils.exception.MemoutException;
 import psym.utils.monitor.MemoryMonitor;
+import psym.utils.monitor.TimeMonitor;
 import psym.valuesummary.solvers.SolverEngine;
+
+import java.util.concurrent.TimeoutException;
 
 public class SolverStats {
   public static int andOperations = 0;
@@ -12,15 +15,12 @@ public class SolverStats {
   public static int notOperations = 0;
   public static int isSatOperations = 0;
   public static int isSatResult = 0;
-
-  @Setter public static double memLimit = 0; // memory limit in megabytes (0 means infinite)
-  @Setter public static double timeLimit = 0; // time limit in seconds (0 means infinite)
   public static double timeTotalCreateGuards = 0; // total time in milliseconds to create guards
   public static double timeMaxCreateGuards = 0; // max time in milliseconds to create guards
   public static double timeTotalSolveGuards = 0; // total time in milliseconds to solve guards
   public static double timeMaxSolveGuards = 0; // max time in milliseconds to solve guards
 
-  public static void updateCreateGuardTime(long timeSpent) {
+  public static void updateCreateGuardTime(long timeSpent) throws TimeoutException, MemoutException {
     timeTotalCreateGuards += timeSpent;
     if (timeMaxCreateGuards < timeSpent) timeMaxCreateGuards = timeSpent;
 
@@ -28,21 +28,16 @@ public class SolverStats {
     checkResourceLimits();
   }
 
-  public static void updateSolveGuardTime(long timeSpent) {
+  public static void updateSolveGuardTime(long timeSpent) throws TimeoutException, MemoutException {
     timeTotalSolveGuards += timeSpent;
     if (timeMaxSolveGuards < timeSpent) timeMaxSolveGuards = timeSpent;
     // check if reached time or memory limit
     checkResourceLimits();
   }
 
-  public static void checkResourceLimits() {
-    if (memLimit > 0) {
-      if (MemoryMonitor.getMemSpent() > memLimit) {
-        throw new MemoutException(
-            String.format("Max memory limit reached: %.1f MB", MemoryMonitor.getMemSpent()),
-            MemoryMonitor.getMemSpent());
-      }
-    }
+  public static void checkResourceLimits() throws TimeoutException, MemoutException {
+    TimeMonitor.getInstance().checkTimeout();
+    MemoryMonitor.checkMemout();
   }
 
   public static double getDoublePercent(double spent, double total) {

@@ -7,8 +7,6 @@ import java.util.Objects;
 public class Event implements Serializable {
   // Special event send to a machine on creation
   public static final Event createMachine = new Event("createMachine");
-  // Special null event
-  public static final Event nullEvent = new Event("_null");
   // Special halt event
   public static final Event haltEvent = new Event("_halt");
 

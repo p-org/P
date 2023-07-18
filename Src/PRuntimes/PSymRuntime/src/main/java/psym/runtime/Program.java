@@ -11,10 +11,6 @@ import psym.runtime.scheduler.Scheduler;
 public interface Program extends Serializable {
     Machine getStart();
 
-    Scheduler getProgramScheduler();
-
-    void setProgramScheduler(Scheduler s);
-
     Map<Event, List<Monitor>> getListeners();
 
     List<Monitor> getMonitors();

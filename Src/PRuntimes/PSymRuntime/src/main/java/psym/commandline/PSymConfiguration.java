@@ -3,6 +3,7 @@ package psym.commandline;
 import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
+import psym.runtime.machine.buffer.BufferSemantics;
 import psym.runtime.scheduler.explicit.StateCachingMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
@@ -18,7 +19,7 @@ public class PSymConfiguration implements Serializable {
   // default name of the test driver
   @Getter final String testDriverDefault = "DefaultImpl";
   // max internal steps before throwing an exception
-  @Getter final int maxInternalSteps = 1000;
+  @Getter final int maxInternalSteps = 100;
   // name of the test driver
   @Getter @Setter String testDriver = testDriverDefault;
   // name of the project
@@ -28,11 +29,11 @@ public class PSymConfiguration implements Serializable {
   // time limit in seconds (0 means infinite)
   @Getter @Setter double timeLimit = 0;
   // memory limit in megabytes (0 means infinite)
-  @Getter @Setter double memLimit = (Runtime.getRuntime().maxMemory() / 1024.0 / 1024.0);
+  @Getter @Setter double memLimit = (Runtime.getRuntime().maxMemory() / 2.0 / 1024.0 / 1024.0);
   // level of verbosity for the logging
   @Getter @Setter int verbosity = 0;
   // strategy of exploration
-  @Getter @Setter String strategy = "learn";
+  @Getter @Setter String strategy = "symex";
   // max number of executions bound provided by the user
   @Getter @Setter int maxExecutions = 1;
   // max steps/depth bound provided by the user
@@ -45,17 +46,19 @@ public class PSymConfiguration implements Serializable {
   @Getter @Setter long randomSeed = System.currentTimeMillis();
   // name of the psym configuration file
   @Getter @Setter String configFile = "";
+  // buffer semantics
+  @Getter @Setter BufferSemantics bufferSemantics = BufferSemantics.SenderQueue;
   // mode of state hashing
-  @Getter @Setter StateCachingMode stateCachingMode = StateCachingMode.Fast;
+  @Getter @Setter StateCachingMode stateCachingMode = StateCachingMode.None;
   // symmetry mode
   @Getter @Setter SymmetryMode symmetryMode = SymmetryMode.None;
   // use backtracking
-  @Getter @Setter boolean useBacktrack = true;
+  @Getter @Setter boolean useBacktrack = false;
   // max number of children tasks per execution
   @Getter @Setter int maxBacktrackTasksPerExecution = 2;
   // mode of choice orchestration
   @Getter @Setter
-  ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.EpsilonGreedy;
+  ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.None;
   // mode of choice learning state mode
   @Getter @Setter
   ChoiceLearningStateMode choiceLearningStateMode = ChoiceLearningStateMode.TimelineAbstraction;
@@ -64,7 +67,7 @@ public class PSymConfiguration implements Serializable {
   ChoiceLearningRewardMode choiceLearningRewardMode = ChoiceLearningRewardMode.Coverage;
   // mode of task orchestration
   @Getter @Setter
-  TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.CoverageEpsilonGreedy;
+  TaskOrchestrationMode taskOrchestration = TaskOrchestrationMode.DepthFirst;
   // type of solver engine
   @Getter @Setter SolverType solverType = SolverType.BDD;
   // type of expression engine
@@ -87,55 +90,47 @@ public class PSymConfiguration implements Serializable {
         || (getChoiceOrchestration() == ChoiceOrchestrationMode.EpsilonGreedy);
   }
 
+  public void setToSymex() {
+    this.setStrategy("symex");
+    this.setStateCachingMode(StateCachingMode.None);
+    this.setUseBacktrack(false);
+    this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
+    this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
+  }
+
+  private void setToExplicit() {
+    this.setStateCachingMode(StateCachingMode.Fast);
+    this.setUseBacktrack(true);
+  }
+
   public void setToRandom() {
+    this.setToExplicit();
     this.setStrategy("random");
     this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
     this.setTaskOrchestration(TaskOrchestrationMode.Random);
   }
 
   public void setToDfs() {
+    this.setToExplicit();
     this.setStrategy("dfs");
     this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
     this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
   }
 
-  public void setToAllLearn() {
+  public void setToLearn() {
+    this.setToExplicit();
     this.setStrategy("learn");
     this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
     this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
   }
 
-  public void setToChoiceLearn() {
-    this.setStrategy("learn");
-    this.setChoiceOrchestration(ChoiceOrchestrationMode.EpsilonGreedy);
-    this.setTaskOrchestration(TaskOrchestrationMode.Random);
-  }
-
-  public void setToBacktrackLearn() {
-    this.setStrategy("learn");
-    this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
-    this.setTaskOrchestration(TaskOrchestrationMode.CoverageEpsilonGreedy);
-  }
-
-  public void setToSymex() {
-    this.setStrategy("symex");
-    this.setStateCachingMode(StateCachingMode.None);
-    this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
-    this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
-  }
-
-  public void setToFuzz() {
-    this.setStrategy("fuzz");
+  public void setToStateless() {
+    this.setToExplicit();
+    this.setStrategy("stateless");
     this.setStateCachingMode(StateCachingMode.None);
     this.setUseBacktrack(false);
     this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
     this.setTaskOrchestration(TaskOrchestrationMode.Random);
-  }
-
-  public void setToCoverage() {
-    this.setStrategy("coverage");
-    this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
-    this.setTaskOrchestration(TaskOrchestrationMode.CoverageAStar);
   }
 
   public void setToReplay() {
@@ -143,9 +138,5 @@ public class PSymConfiguration implements Serializable {
     this.setStateCachingMode(StateCachingMode.None);
     this.setUseBacktrack(false);
     this.setSymmetryMode(SymmetryMode.None);
-  }
-
-  public void setToDebug() {
-    this.setStrategy("debug");
   }
 }

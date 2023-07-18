@@ -3,7 +3,7 @@ package psym.runtime.scheduler.explicit.choiceorchestration;
 import java.io.Serializable;
 import java.util.*;
 import lombok.Getter;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.valuesummary.ValueSummary;
 
 public class ChoiceQTable<S, A> implements Serializable {
@@ -77,7 +77,7 @@ public class ChoiceQTable<S, A> implements Serializable {
       if (!table.containsKey(cls)) {
         table.put(cls, new ArrayList<>());
       }
-      table.get(cls).add((A) GlobalData.getChoiceLearningStats().getActionHash(cls, action));
+      table.get(cls).add((A) PSymGlobal.getChoiceLearningStats().getActionHash(cls, action));
     }
 
     public List<A> get(Class cls) {

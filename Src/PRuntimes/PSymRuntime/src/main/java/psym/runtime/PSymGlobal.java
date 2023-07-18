@@ -5,7 +5,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import psym.commandline.PSymConfiguration;
 import psym.runtime.machine.events.StateEvents;
+import psym.runtime.scheduler.Scheduler;
 import psym.runtime.scheduler.explicit.ExplicitSymmetryTracker;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStats;
 import psym.runtime.scheduler.symbolic.SymbolicSymmetryTracker;
@@ -15,11 +18,21 @@ import psym.runtime.statistics.CoverageStats;
 /**
  * Class containing global/shared data that is retained when resuming a run
  */
-public class GlobalData implements Serializable {
+public class PSymGlobal implements Serializable {
     /**
      * Singleton object of the class
      */
-    private static GlobalData globalData = null;
+    private static PSymGlobal PSymGlobal = null;
+
+    /**
+     * Global configuration
+     */
+    private static PSymConfiguration configuration = null;
+
+    /**
+     * Scheduler
+     */
+    private static Scheduler scheduler = null;
 
     /**
      * Mapping of each machine's state with its corresponding event handlers
@@ -49,16 +62,16 @@ public class GlobalData implements Serializable {
     /**
      * Private constructor to enable singleton class object
      */
-    private GlobalData() {}
+    private PSymGlobal() {}
 
     /**
      * Get/create the singleton class object
      */
-    public static synchronized GlobalData getInstance() {
-        if (globalData == null) {
-            setInstance(new GlobalData());
+    public static synchronized PSymGlobal getInstance() {
+        if (PSymGlobal == null) {
+            setInstance(new PSymGlobal());
         }
-        return globalData;
+        return PSymGlobal;
     }
 
     /**
@@ -66,8 +79,23 @@ public class GlobalData implements Serializable {
      *
      * @param rhs Singleton object to set to
      */
-    public static void setInstance(GlobalData rhs) {
-        globalData = rhs;
+    public static void setInstance(PSymGlobal rhs) {
+        PSymGlobal = rhs;
+    }
+
+    public static PSymConfiguration getConfiguration() {
+        return getInstance().configuration;
+    }
+    public static void setConfiguration(PSymConfiguration config) {
+        getInstance().configuration = config;
+    }
+
+    public static Scheduler getScheduler() {
+        return getInstance().scheduler;
+    }
+
+    public static void setScheduler(Scheduler s) {
+        getInstance().scheduler = s;
     }
 
     public static Map<String, StateEvents> getAllStateEvents() {

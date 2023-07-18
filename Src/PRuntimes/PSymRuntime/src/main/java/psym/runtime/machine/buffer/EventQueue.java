@@ -2,19 +2,23 @@ package psym.runtime.machine.buffer;
 
 import java.io.Serializable;
 import java.util.function.Function;
+
+import psym.runtime.PSymGlobal;
+import psym.runtime.logger.ScheduleWriter;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Scheduler;
+import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.valuesummary.*;
 
-public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, Serializable {
+public class EventQueue extends SymbolicQueue implements EventBuffer, Serializable {
 
   private final Machine sender;
 
   public EventQueue(Machine sender) {
-    super();
+    super(sender);
     this.sender = sender;
   }
 
@@ -26,7 +30,7 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
     }
     TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
     Message event = new Message(eventName, dest, payload).restrict(pc);
-    enqueue(event);
+    addEvent(event);
     sender.getScheduler().runMonitors(event);
   }
 
@@ -39,57 +43,24 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
     PrimitiveVS<Machine> machine = scheduler.allocateMachine(pc, machineType, constructor);
     if (payload != null) payload = payload.restrict(pc);
     Message event = new Message(Event.createMachine, machine, payload).restrict(pc);
-    enqueue(event);
+    addEvent(event);
     //        scheduler.performEffect(event);
     return machine;
   }
 
-  @Override
-  public void add(Message e) {
-    enqueue(e);
+  public void unblock(Message event) {
+    TraceLogger.unblock(event);
+    if (sender.getScheduler() instanceof ReplayScheduler) {
+      ScheduleWriter.logUnblock(sender, event);
+    }
   }
 
-  @Override
-  public PrimitiveVS<Boolean> satisfiesPredUnderGuard(
-      Function<Message, PrimitiveVS<Boolean>> pred) {
-    Guard cond = isEnabledUnderGuard();
-    assert (!cond.isFalse());
-    Message top = peek(cond);
-    return pred.apply(top).restrict(top.getUniverse());
+  private void addEvent(Message event) {
+    if (sender.getScheduler() instanceof ReplayScheduler) {
+      ScheduleWriter.logSend(sender, event);
+    }
+    super.add(event);
   }
 
-  @Override
-  public Message remove(Guard pc) {
-    return dequeueEntry(pc);
-  }
 
-  @Override
-  public PrimitiveVS<Machine> create(
-      Guard pc,
-      Scheduler scheduler,
-      Class<? extends Machine> machineType,
-      Function<Integer, ? extends Machine> constructor) {
-    return EventBuffer.super.create(pc, scheduler, machineType, constructor);
-  }
-
-  @Override
-  public PrimitiveVS<Boolean> hasCreateMachineUnderGuard() {
-    return satisfiesPredUnderGuard(Message::isCreateMachine);
-  }
-
-  @Override
-  public PrimitiveVS<Boolean> hasSyncEventUnderGuard() {
-    return satisfiesPredUnderGuard(Message::isSyncEvent);
-  }
-
-  @Override
-  public ValueSummary getEvents() {
-    return this.elements;
-  }
-
-  @Override
-  public void setEvents(ValueSummary events) {
-    this.elements = (ListVS<Message>) events;
-    resetPeek();
-  }
 }

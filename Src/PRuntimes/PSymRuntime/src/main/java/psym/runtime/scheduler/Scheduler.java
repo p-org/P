@@ -3,10 +3,8 @@ package psym.runtime.scheduler;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+
 import lombok.Getter;
-import lombok.Setter;
-import psym.commandline.PSymConfiguration;
 import psym.runtime.*;
 import psym.runtime.Program;
 import psym.runtime.logger.TraceLogger;
@@ -42,7 +40,6 @@ public abstract class Scheduler implements SchedulerInterface {
   /** Whether or not search is done */
   protected boolean done = false;
 
-  @Getter @Setter protected transient PSymConfiguration configuration;
   /** Choice depth */
   protected int choiceDepth = 0;
   /** Current depth of exploration */
@@ -63,10 +60,9 @@ public abstract class Scheduler implements SchedulerInterface {
    *
    * @param machines The machines initially in the Scheduler
    */
-  protected Scheduler(PSymConfiguration config, Program p, Machine... machines) {
-    setConfiguration(config);
+  protected Scheduler(Program p, Machine... machines) {
     program = p;
-    this.schedule = getNewSchedule(GlobalData.getSymmetryTracker());
+    this.schedule = getNewSchedule(PSymGlobal.getSymmetryTracker());
     this.machines = new ArrayList<>();
     this.currentMachines = new TreeSet<>();
     this.machineCounters = new HashMap<>();
@@ -94,7 +90,7 @@ public abstract class Scheduler implements SchedulerInterface {
 
   protected abstract void step() throws TimeoutException;
 
-  public abstract PrimitiveVS<Machine> getNextSender();
+  public abstract PrimitiveVS<Machine> getNextSchedulingChoice();
 
   /**
    * Find out whether symbolic execution is done
@@ -102,7 +98,7 @@ public abstract class Scheduler implements SchedulerInterface {
    * @return Whether or not there are more steps to run
    */
   public boolean isDone() {
-    return done || depth == configuration.getMaxStepBound();
+    return done || depth == PSymGlobal.getConfiguration().getMaxStepBound();
   }
 
   /**
@@ -111,7 +107,7 @@ public abstract class Scheduler implements SchedulerInterface {
    * @return Whether or not current execution finished
    */
   public boolean isFinishedExecution() {
-    return executionFinished || depth == configuration.getMaxStepBound();
+    return executionFinished || depth == PSymGlobal.getConfiguration().getMaxStepBound();
   }
 
   /**
@@ -196,54 +192,10 @@ public abstract class Scheduler implements SchedulerInterface {
     return getNextBoolean(getNextBooleanChoices(pc));
   }
 
-  public List<ValueSummary> getNextElementChoices(ListVS candidates, Guard pc) {
-    PrimitiveVS<Integer> size = candidates.size();
-    PrimitiveVS<Integer> index = new PrimitiveVS<>(0).restrict(size.getUniverse());
-    List<ValueSummary> list = new ArrayList<>();
-    while (BooleanVS.isEverTrue(IntegerVS.lessThan(index, size))) {
-      Guard cond = BooleanVS.getTrueGuard(IntegerVS.lessThan(index, size));
-      if (cond.isTrue()) {
-        list.add(candidates.get(index).restrict(pc));
-      } else {
-        list.add(candidates.restrict(cond).get(index).restrict(pc));
-      }
-      index = IntegerVS.add(index, 1);
-    }
-    return list;
-  }
-
-  public PrimitiveVS<ValueSummary> getNextElementHelper(List<ValueSummary> candidates) {
-    PrimitiveVS<ValueSummary> choices =
-        NondetUtil.getNondetChoice(
-            candidates.stream()
-                .map(x -> new PrimitiveVS(x).restrict(x.getUniverse()))
-                .collect(Collectors.toList()));
-    schedule.addRepeatElement(choices, choiceDepth);
-    choiceDepth++;
-    return choices;
-  }
-
-  public ValueSummary getNextElementFlattener(PrimitiveVS<ValueSummary> choices) {
-    ValueSummary flattened = null;
-    List<ValueSummary> toMerge = new ArrayList<>();
-    for (GuardedValue<ValueSummary> guardedValue : choices.getGuardedValues()) {
-      if (flattened == null) {
-        flattened = guardedValue.getValue().restrict(guardedValue.getGuard());
-      } else {
-        toMerge.add(guardedValue.getValue().restrict(guardedValue.getGuard()));
-      }
-    }
-    if (flattened == null) {
-      flattened = new PrimitiveVS<>();
-    } else {
-      flattened = flattened.merge(toMerge);
-    }
-    return flattened;
-  }
-
   @Override
   public ValueSummary getNextElement(ListVS<? extends ValueSummary> s, Guard pc) {
-    return getNextElementFlattener(getNextElementHelper(getNextElementChoices(s, pc)));
+    PrimitiveVS<Integer> idx = getNextInteger(s.size(), pc);
+    return s.get(idx);
   }
 
   @Override
@@ -283,9 +235,9 @@ public abstract class Scheduler implements SchedulerInterface {
   public void initializeSearch() {
     assert (getDepth() == 0);
 
-    if (configuration.isChoiceOrchestrationLearning()) {
-      GlobalData.getChoiceLearningStats()
-          .setProgramStateHash(this, configuration.getChoiceLearningStateMode(), null);
+    if (PSymGlobal.getConfiguration().isChoiceOrchestrationLearning()) {
+      PSymGlobal.getChoiceLearningStats()
+          .setProgramStateHash(this, PSymGlobal.getConfiguration().getChoiceLearningStateMode(), null);
     }
     listeners = program.getListeners();
     monitors = new ArrayList<>(program.getMonitors());
@@ -324,12 +276,23 @@ public abstract class Scheduler implements SchedulerInterface {
     }
   }
 
-  private Message peekBuffer(Machine m, Guard g) {
-    return m.sendBuffer.peek(g);
+  protected Message rmBuffer(Machine m, Guard g) {
+    return m.getEventBuffer().remove(g);
   }
 
-  protected Message rmBuffer(Machine m, Guard g) {
-    return m.sendBuffer.remove(g);
+  protected void removeHalted() {
+    // remove messages with halted target
+    for (Machine machine : machines) {
+      while (!machine.getEventBuffer().isEmpty()) {
+        Guard targetHalted =
+                machine.getEventBuffer().satisfiesPredUnderGuard(x -> x.targetHalted()).getGuardFor(true);
+        if (!targetHalted.isFalse()) {
+          rmBuffer(machine, targetHalted);
+          continue;
+        }
+        break;
+      }
+    }
   }
 
   public Machine setupNewMachine(
@@ -405,6 +368,6 @@ public abstract class Scheduler implements SchedulerInterface {
   }
 
   public int getMaxInternalSteps() {
-    return configuration.getMaxInternalSteps();
+    return PSymGlobal.getConfiguration().getMaxInternalSteps();
   }
 }

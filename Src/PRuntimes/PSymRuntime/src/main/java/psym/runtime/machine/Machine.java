@@ -4,10 +4,9 @@ import java.io.Serializable;
 import java.util.*;
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import psym.runtime.PSymGlobal;
 import psym.runtime.logger.TraceLogger;
-import psym.runtime.machine.buffer.DeferQueue;
-import psym.runtime.machine.buffer.EventBuffer;
-import psym.runtime.machine.buffer.EventQueue;
+import psym.runtime.machine.buffer.*;
 import psym.runtime.machine.eventhandlers.EventHandler;
 import psym.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psym.runtime.machine.events.Event;
@@ -21,19 +20,19 @@ import psym.utils.serialize.SerializableRunnable;
 import psym.valuesummary.*;
 
 public abstract class Machine implements Serializable, Comparable<Machine> {
-  private static int numMachines = 0;
-  public final DeferQueue deferredQueue;
+  protected static int globalMachineId = 2;
   public final Map<
           String,
           SerializableFunction<
               Guard, SerializableBiFunction<EventHandlerReturnReason, Message, Guard>>>
       continuations = new HashMap<>();
   public final Set<SerializableRunnable> clearContinuationVars = new HashSet<>();
-  @Getter private final String name;
-  @Getter private final int instanceId;
+  @Getter protected final String name;
+  @Getter protected int instanceId;
   private final State startState;
   private final Set<State> states;
-  public EventBuffer sendBuffer;
+  @Getter private EventQueue sendBuffer;
+  @Getter private DeferQueue deferredQueue;
   @Getter private transient Scheduler scheduler;
   private PrimitiveVS<Boolean> started = new PrimitiveVS<>(false);
   private PrimitiveVS<Boolean> halted = new PrimitiveVS<>(false);
@@ -50,14 +49,11 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   public Machine(String name, int id, State startState, State... states) {
     this.name = name;
     //        this.instanceId = id;
-    this.instanceId = numMachines++;
-
-    EventBuffer buffer;
-    buffer = new EventQueue(this);
+    this.instanceId = globalMachineId++;
 
     this.startState = startState;
-    this.sendBuffer = buffer;
-    this.deferredQueue = new DeferQueue();
+    this.sendBuffer = new EventQueue(this);
+    this.deferredQueue = new DeferQueue(this);
     this.currentState = new PrimitiveVS<>(startState);
 
     startState.addHandlers(
@@ -82,6 +78,10 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
 
   public void setScheduler(Scheduler scheduler) {
     this.scheduler = scheduler;
+  }
+
+  public SymbolicQueue getEventBuffer() {
+    return sendBuffer;
   }
 
   public void receive(String continuationName, Guard pc) {
@@ -111,10 +111,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   public void reset() {
     this.currentState = new PrimitiveVS<>(startState);
     this.sendBuffer = new EventQueue(this);
-    while (!deferredQueue.isEmpty()) {
-      deferredQueue.dequeueEntry(
-          deferredQueue.satisfiesPredUnderGuard(x -> new PrimitiveVS<>(true)).getGuardFor(true));
-    }
+    this.deferredQueue = new DeferQueue(this);
     this.receives = new PrimitiveVS<>();
     for (Runnable r : clearContinuationVars) {
       r.run();
@@ -311,6 +308,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   void processEvent(Guard pc, EventHandlerReturnReason eventHandlerReturnReason, Message message) {
     // assert(event.getMachine().guard(pc).getValues().size() <= 1);
     TraceLogger.onProcessEvent(pc, this, message);
+
     PrimitiveVS<State> guardedState = this.currentState.restrict(pc);
     for (GuardedValue<State> entry : guardedState.getGuardedValues()) {
       Guard state_pc = entry.getGuard();
@@ -333,7 +331,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     while (true) {
       Guard deferredPc = pc.and(deferredQueue.isEnabledUnderGuard());
       if (!deferredPc.isFalse()) {
-        Message deferredMessage = deferredQueue.dequeueEntry(deferredPc);
+        Message deferredMessage = deferredQueue.remove(deferredPc);
         deferredMessageGuards.add(deferredPc);
         deferredMessages.add(deferredMessage);
       } else {
@@ -362,7 +360,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   }
 
   public void processEventToCompletion(Guard pc, Message message) {
-    if (scheduler.getConfiguration().getChoiceLearningStateMode()
+    if (PSymGlobal.getConfiguration().getChoiceLearningStateMode()
         == ChoiceLearningStateMode.TimelineAbstraction) {
       updateObservedEvents(message);
     }

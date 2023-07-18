@@ -1,6 +1,12 @@
 package psym.runtime.machine.buffer;
 
 import java.io.Serializable;
+import java.util.function.Function;
+
+import psym.runtime.PSymGlobal;
+import psym.runtime.machine.Machine;
+import psym.runtime.machine.events.Message;
+import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.valuesummary.Guard;
 import psym.valuesummary.ListVS;
 import psym.valuesummary.PrimitiveVS;
@@ -8,17 +14,17 @@ import psym.valuesummary.ValueSummary;
 
 /**
  * Represents a event-queue implementation using value summaries
- *
- * @param <T>
  */
-public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
+public abstract class SymbolicQueue implements Serializable {
 
   // elements in the queue
-  protected ListVS<T> elements;
-  private T peek = null;
+  protected ListVS<Message> elements;
+  private Message peek = null;
+  private final Machine owner;
 
-  public SymbolicQueue() {
+  public SymbolicQueue(Machine m) {
     this.elements = new ListVS<>(Guard.constTrue());
+    this.owner = m;
     assert (elements.getUniverse().isTrue());
   }
 
@@ -34,10 +40,6 @@ public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
     return elements.restrict(pc).size();
   }
 
-  public void enqueue(T entry) {
-    elements = elements.add(entry);
-  }
-
   public boolean isEmpty() {
     return elements.isEmpty();
   }
@@ -46,25 +48,21 @@ public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
     return elements.getNonEmptyUniverse();
   }
 
-  public T dequeueEntry(Guard pc) {
-    return peekOrDequeueHelper(pc, true);
-  }
-
-  public T peek(Guard pc) {
+  public Message peek(Guard pc) {
     return peekOrDequeueHelper(pc, false);
   }
 
-  private T peekOrDequeueHelper(Guard pc, boolean dequeue) {
+  private Message peekOrDequeueHelper(Guard pc, boolean dequeue) {
     boolean updatePeek = peek == null || !pc.implies(peek.getUniverse()).isTrue();
     if (!dequeue && !updatePeek) {
       return peek.restrict(pc);
     }
     assert (elements.getUniverse().isTrue());
-    ListVS<T> filtered = elements.restrict(pc);
+    ListVS<Message> filtered = elements.restrict(pc);
     if (updatePeek) {
       peek = filtered.get(new PrimitiveVS<>(0).restrict(pc));
     }
-    T ret = peek.restrict(pc);
+    Message ret = peek.restrict(pc);
     if (dequeue) {
       elements = elements.removeAt(new PrimitiveVS<>(0).restrict(pc));
       resetPeek();
@@ -72,6 +70,46 @@ public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
     assert (!pc.isFalse());
     return ret;
   }
+
+  public void add(Message e) {
+    if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+      PSymGlobal.getSymmetryTracker().updateSymmetrySet(owner, e.getUniverse());
+    }
+    elements = elements.add(e);
+  }
+
+  public PrimitiveVS<Boolean> satisfiesPredUnderGuard(
+          Function<Message, PrimitiveVS<Boolean>> pred) {
+    Guard cond = isEnabledUnderGuard();
+    assert (!cond.isFalse());
+    Message top = peek(cond);
+    return pred.apply(top).restrict(top.getUniverse());
+  }
+
+  public Message remove(Guard pc) {
+    if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+      PSymGlobal.getSymmetryTracker().updateSymmetrySet(owner, pc);
+    }
+    return peekOrDequeueHelper(pc, true);
+  }
+
+  public PrimitiveVS<Boolean> hasCreateMachineUnderGuard() {
+    return satisfiesPredUnderGuard(Message::isCreateMachine);
+  }
+
+  public PrimitiveVS<Boolean> hasSyncEventUnderGuard() {
+    return satisfiesPredUnderGuard(Message::isSyncEvent);
+  }
+
+  public ValueSummary getEvents() {
+    return this.elements;
+  }
+
+  public void setEvents(ValueSummary events) {
+    this.elements = (ListVS<Message>) events;
+    resetPeek();
+  }
+
 
   @Override
   public String toString() {

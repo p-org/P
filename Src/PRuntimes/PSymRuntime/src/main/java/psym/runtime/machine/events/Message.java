@@ -2,7 +2,7 @@ package psym.runtime.machine.events;
 
 import java.util.*;
 import lombok.Getter;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.valuesummary.*;
 
@@ -33,10 +33,6 @@ public class Message implements ValueSummary<Message> {
 
   public Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine) {
     this(names, machine, new HashMap<>());
-  }
-
-  public Message() {
-    this(new PrimitiveVS<>(), new PrimitiveVS<>());
   }
 
   public Message(Event name, PrimitiveVS<Machine> machine, UnionVS payload) {
@@ -114,8 +110,8 @@ public class Message implements ValueSummary<Message> {
     for (GuardedValue<Machine> machine : getTarget().getGuardedValues()) {
       PrimitiveVS<Event> events = this.getEvent();
       for (GuardedValue<Event> event : events.getGuardedValues()) {
-        if (GlobalData.getSyncEvents().contains(event.getValue().name)
-            || event.getValue().name.contains("sync")) {
+        if (PSymGlobal.getSyncEvents().contains(event.getValue().name)
+                || event.getValue().name.startsWith("sync_")) {
           cond = cond.or(event.getGuard());
         }
       }
@@ -136,7 +132,7 @@ public class Message implements ValueSummary<Message> {
   public boolean hasNullEvent() {
     PrimitiveVS<Event> events = this.getEvent();
     for (GuardedValue<Event> event : events.getGuardedValues()) {
-      if (event.getValue().equals(Event.nullEvent) && !event.getGuard().isFalse()) {
+      if (event.getValue() == null && !event.getGuard().isFalse()) {
         return true;
       }
     }

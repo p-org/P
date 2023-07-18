@@ -127,7 +127,7 @@ public class SymbolicSymmetryTracker extends SymmetryTracker {
                   currentGuard = currentGuard.or(g);
 
                   assert (!BooleanVS.isEverTrue(
-                      IntegerVS.lessThan(m.sendBuffer.size().restrict(currentGuard), 1)));
+                      IntegerVS.lessThan(m.getEventBuffer().size().restrict(currentGuard), 1)));
                   pendingSummaries.put(m, currentGuard);
                 }
 
@@ -150,72 +150,64 @@ public class SymbolicSymmetryTracker extends SymmetryTracker {
 
     for (Map.Entry<Machine, Guard> entry : pendingSummaries.entrySet()) {
       assert (!BooleanVS.isEverTrue(
-          IntegerVS.lessThan(entry.getKey().sendBuffer.size().restrict(entry.getValue()), 1)));
+          IntegerVS.lessThan(entry.getKey().getEventBuffer().size().restrict(entry.getValue()), 1)));
       reduced.add(new PrimitiveVS(Collections.singletonMap(entry.getKey(), entry.getValue())));
     }
 
     return reduced;
   }
 
-  public void updateSymmetrySet(PrimitiveVS chosenVS) {
-    List<? extends GuardedValue<?>> choices = ((PrimitiveVS<?>) chosenVS).getGuardedValues();
-    for (GuardedValue<?> choice : choices) {
-      Object value = choice.getValue();
-      if (value instanceof Machine) {
-        Machine machine = ((Machine) value);
-        String type = machine.getName();
-        Guard guard = choice.getGuard();
+  public void updateSymmetrySet(Machine machine, Guard guard) {
+    String type = machine.getName();
 
-        ListVS<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(type);
-        if (symClasses != null) {
-          PrimitiveVS<Machine> primitiveVS = new PrimitiveVS<>(machine, guard);
-          ListVS<SetVS<PrimitiveVS<Machine>>> newClasses = new ListVS<>(Guard.constTrue());
+    ListVS<SetVS<PrimitiveVS<Machine>>> symClasses = typeToSymmetryClasses.get(type);
+    if (symClasses != null) {
+      PrimitiveVS<Machine> primitiveVS = new PrimitiveVS<>(machine, guard);
+      ListVS<SetVS<PrimitiveVS<Machine>>> newClasses = new ListVS<>(Guard.constTrue());
 
-          // iterate over each symmetry class
-          PrimitiveVS<Integer> size = symClasses.size();
-          PrimitiveVS<Integer> zero = new PrimitiveVS<>(0);
-          PrimitiveVS<Integer> indexI = new PrimitiveVS<>(0, size.getUniverse());
-          while (BooleanVS.isEverTrue(IntegerVS.lessThan(indexI, size))) {
-            Guard condI = BooleanVS.getTrueGuard(IntegerVS.lessThan(indexI, size));
+      // iterate over each symmetry class
+      PrimitiveVS<Integer> size = symClasses.size();
+      PrimitiveVS<Integer> zero = new PrimitiveVS<>(0);
+      PrimitiveVS<Integer> indexI = new PrimitiveVS<>(0, size.getUniverse());
+      while (BooleanVS.isEverTrue(IntegerVS.lessThan(indexI, size))) {
+        Guard condI = BooleanVS.getTrueGuard(IntegerVS.lessThan(indexI, size));
 
-            if (!condI.isFalse()) {
-              PrimitiveVS<Integer> condIndexI = indexI.restrict(condI);
-              SetVS<PrimitiveVS<Machine>> symClassI = symClasses.get(condIndexI);
+        if (!condI.isFalse()) {
+          PrimitiveVS<Integer> condIndexI = indexI.restrict(condI);
+          SetVS<PrimitiveVS<Machine>> symClassI = symClasses.get(condIndexI);
 
-              // remove chosen from the ith class
-              symClassI = symClassI.remove(primitiveVS);
+          // remove chosen from the ith class
+          symClassI = symClassI.remove(primitiveVS);
 
-              // if class not empty, add to new classes
-              Guard isNonEmpty = BooleanVS.getFalseGuard(IntegerVS.equalTo(symClassI.size(), zero));
-              if (!isNonEmpty.isFalse()) {
-                assert (!BooleanVS.isEverTrue(
-                    IntegerVS.lessThan(
-                        typeToAllSymmetricMachines.get(type).size(), symClassI.size())));
-                newClasses = newClasses.add(symClassI.restrict(isNonEmpty));
-              }
-            }
-            indexI = IntegerVS.add(indexI, 1);
+          // if class not empty, add to new classes
+          Guard isNonEmpty = BooleanVS.getFalseGuard(IntegerVS.equalTo(symClassI.size(), zero));
+          if (!isNonEmpty.isFalse()) {
+            assert (!BooleanVS.isEverTrue(
+                IntegerVS.lessThan(
+                    typeToAllSymmetricMachines.get(type).size(), symClassI.size())));
+            newClasses = newClasses.add(symClassI.restrict(isNonEmpty));
           }
-
-          // add self as a single-element class
-          SetVS<PrimitiveVS<Machine>> selfSet = new SetVS<>(guard);
-          selfSet = selfSet.add(primitiveVS);
-          newClasses = newClasses.add(selfSet);
-
-          // update symmetry classes map
-          assert (!BooleanVS.isEverTrue(
-              IntegerVS.lessThan(typeToAllSymmetricMachines.get(type).size(), newClasses.size())));
-          typeToSymmetryClasses.put(type, newClasses);
-          //                    checkSymmetryClassesForType(type);
-
-          SymmetryPendingMerges pendingMerges = typeToPendingMerges.get(type);
-          if (pendingMerges == null) {
-            pendingMerges = new SymmetryPendingMerges();
-          }
-          pendingMerges.add(primitiveVS);
-          typeToPendingMerges.put(type, pendingMerges);
         }
+        indexI = IntegerVS.add(indexI, 1);
       }
+
+      // add self as a single-element class
+      SetVS<PrimitiveVS<Machine>> selfSet = new SetVS<>(guard);
+      selfSet = selfSet.add(primitiveVS);
+      newClasses = newClasses.add(selfSet);
+
+      // update symmetry classes map
+      assert (!BooleanVS.isEverTrue(
+          IntegerVS.lessThan(typeToAllSymmetricMachines.get(type).size(), newClasses.size())));
+      typeToSymmetryClasses.put(type, newClasses);
+      //                    checkSymmetryClassesForType(type);
+
+      SymmetryPendingMerges pendingMerges = typeToPendingMerges.get(type);
+      if (pendingMerges == null) {
+        pendingMerges = new SymmetryPendingMerges();
+      }
+      pendingMerges.add(primitiveVS);
+      typeToPendingMerges.put(type, pendingMerges);
     }
   }
 
@@ -409,7 +401,9 @@ public class SymbolicSymmetryTracker extends SymmetryTracker {
       ListVS<SetVS<PrimitiveVS<Machine>>> lvs = typeToSymmetryClasses.get(type);
       for (SetVS<PrimitiveVS<Machine>> svs : lvs.getItems()) {
         for (PrimitiveVS<Machine> mvs : svs.getElements().getItems()) {
-          updateSymmetrySet(mvs);
+          for (GuardedValue<Machine> gv: mvs.getGuardedValues()) {
+            updateSymmetrySet(gv.getValue(), gv.getGuard());
+          }
         }
       }
       assert (!BooleanVS.isEverFalse(

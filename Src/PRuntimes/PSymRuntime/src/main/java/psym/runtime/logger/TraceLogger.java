@@ -124,12 +124,19 @@ public class TraceLogger {
     }
   }
 
-  public static void schedule(int depth, Message effect, PrimitiveVS<Machine> src) {
+  public static void unblock(Message effect) {
+    if (verbosity > 3) {
+      String msg = "Unblock [" + effect.getTarget() + "] on receiving effect [" + effect.getEvent() + "]";
+      log.info(msg);
+    }
+  }
+
+  public static void schedule(int depth, Message effect) {
     if (verbosity > 0) {
       String msg =
           String.format(
-              "  Depth %d: scheduled event[%s] from [%s] sent to [%s]",
-              depth, effect.getEvent().toString(), src, effect.getTarget());
+              "  Depth %d: scheduled event[%s] sent to [%s]",
+              depth, effect.getEvent().toString(), effect.getTarget());
       log.info(msg);
     }
   }
@@ -145,6 +152,7 @@ public class TraceLogger {
   }
 
   public static void logStartReplayCex(int length) {
+    log.info("--------------------");
     log.info("Replaying Counterexample of Length " + length);
     log.info("--------------------");
   }

@@ -210,7 +210,7 @@ namespace Plang.Options
                     checkerConfiguration.IsDgmlGraphEnabled = true;
                     checkerConfiguration.IsDgmlBugGraph = true;
                     break;
-                case "xml-trace": 
+                case "xml-trace":
                     checkerConfiguration.IsXmlLogEnabled = true;
                     break;
                 case "explore":

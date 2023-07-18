@@ -40,8 +40,8 @@ public class PSymConfiguration implements Serializable {
   @Getter @Setter int maxStepBound = 10000;
   // fail on reaching the maximum scheduling step bound
   @Getter @Setter boolean failOnMaxStepBound = false;
-  // name of the cex file to read the replayer state
-  @Getter @Setter String readReplayerFromFile = "";
+  // name of the .schedule file to read the schedule
+  @Getter @Setter String readScheduleFromFile = "";
   // random seed
   @Getter @Setter long randomSeed = System.currentTimeMillis();
   // name of the psym configuration file

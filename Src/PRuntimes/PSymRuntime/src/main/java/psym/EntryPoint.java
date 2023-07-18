@@ -161,8 +161,6 @@ public class EntryPoint {
               pc,
               scheduler.getDepth());
       PSymGlobal.setScheduler(replayScheduler);
-      String writeFileName = PSymGlobal.getConfiguration().getOutputFolder() + "/cex.schedule";
-      replayScheduler.writeToFile(writeFileName);
       replay(replayScheduler);
     } catch (InterruptedException e) {
       status = "interrupted";
@@ -223,7 +221,7 @@ public class EntryPoint {
   }
 
   public static void replayBug(ReplayScheduler replayScheduler)
-      throws RuntimeException, InterruptedException, TimeoutException {
+      throws RuntimeException, TimeoutException {
     SolverEngine.resumeEngine();
     if (PSymGlobal.getConfiguration().getVerbosity() == 0) {
       PSymLogger.setVerbosity(1);

@@ -27,7 +27,7 @@ public class PSym {
     PSymLogger.Initialize(PSymGlobal.getConfiguration().getVerbosity());
 
     try {
-      if (PSymGlobal.getConfiguration().getReadFromFile().equals("") && PSymGlobal.getConfiguration().getReadReplayerFromFile().equals("")) {
+      if (PSymGlobal.getConfiguration().getReadFromFile().equals("") && PSymGlobal.getConfiguration().getReadScheduleFromFile().equals("")) {
         Set<Class<? extends Program>> subTypesProgram = reflections.getSubTypesOf(Program.class);
         if (subTypesProgram.size() == 0) {
           throw new Exception("No program found.");
@@ -46,23 +46,26 @@ public class PSym {
 
     int exit_code = 0;
     try {
-      if (!PSymGlobal.getConfiguration().getReadReplayerFromFile().equals("")) {
-        ReplayScheduler replayScheduler =
-            ReplayScheduler.readFromFile(PSymGlobal.getConfiguration().getReadReplayerFromFile());
-        EntryPoint.replayBug(replayScheduler);
-        throw new Exception("ERROR");
-      }
-
       if (PSymGlobal.getConfiguration().isWriteToFile()) {
         BacktrackWriter.Initialize(PSymGlobal.getConfiguration().getProjectName(), PSymGlobal.getConfiguration().getOutputFolder());
       }
 
-      if (PSymGlobal.getConfiguration().getReadFromFile().equals("")) {
+      if (!PSymGlobal.getConfiguration().getReadScheduleFromFile().equals("")) {
+        // replay mode
+        assert (p != null);
+        setTestDriver(p, reflections);
+        ReplayScheduler replayScheduler =
+            ReplayScheduler.readFromFile(PSymGlobal.getConfiguration().getReadScheduleFromFile());
+        EntryPoint.replayBug(replayScheduler);
+        throw new Exception("ERROR");
+      } else if(!PSymGlobal.getConfiguration().getReadFromFile().equals("")){
+        // resume mode
+        EntryPoint.resume();
+      } else {
+        // default mode
         assert (p != null);
         setTestDriver(p, reflections);
         EntryPoint.run(p);
-      } else {
-        EntryPoint.resume();
       }
 
       if (PSymGlobal.getConfiguration().isWriteToFile()) {

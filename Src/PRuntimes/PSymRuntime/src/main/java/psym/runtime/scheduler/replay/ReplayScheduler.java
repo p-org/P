@@ -1,13 +1,11 @@
 package psym.runtime.scheduler.replay;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import lombok.Getter;
+import org.apache.commons.lang3.NotImplementedException;
 import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.PSymLogger;
@@ -15,10 +13,10 @@ import psym.runtime.logger.ScheduleWriter;
 import psym.runtime.logger.SearchLogger;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
-import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Schedule;
 import psym.runtime.scheduler.Scheduler;
+import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.utils.Assert;
 import psym.valuesummary.*;
 
@@ -28,11 +26,6 @@ public class ReplayScheduler extends Scheduler {
   private final Guard pathConstraint;
   /** Counterexample length */
   private final int cexLength;
-
-  public ReplayScheduler(
-      Program p, Schedule schedule, int length) {
-    this(p, schedule, Guard.constTrue(), length);
-  }
 
   public ReplayScheduler(
       Program p,
@@ -60,19 +53,14 @@ public class ReplayScheduler extends Scheduler {
   public static ReplayScheduler readFromFile(String readFromFile) throws Exception {
     ReplayScheduler result;
     try {
-      PSymLogger.info(".. Reading replayer state from file " + readFromFile);
-      FileInputStream fis;
-      fis = new FileInputStream(readFromFile);
-      ObjectInputStream ois = new ObjectInputStream(fis);
-      result = (ReplayScheduler) ois.readObject();
-      PSymGlobal.setInstance((PSymGlobal) ois.readObject());
-      result.reinitialize();
-      PSymLogger.info(".. Successfully read.");
-    } catch (IOException | ClassNotFoundException e) {
+      PSymLogger.info(".. Reading schedule from file " + readFromFile);
+      throw new NotImplementedException("Replaying a schedule is currently unsupported.");
+//      PSymLogger.info(".. Successfully read.");
+    } catch (NotImplementedException e) {
       e.printStackTrace();
-      throw new RuntimeException(".. Failed to read replayer state from file " + readFromFile, e);
+      throw new RuntimeException(".. Failed to read schedule from file " + readFromFile, e);
     }
-    return result;
+//    return result;
   }
 
   @Override
@@ -201,27 +189,9 @@ public class ReplayScheduler extends Scheduler {
     guardedCount = IntegerVS.add(guardedCount, 1);
 
     PrimitiveVS<Integer> mergedCount =
-        machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);
+            machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);
     machineCounters.put(machineType, mergedCount);
     return allocated;
-  }
-
-  @Override
-  public void startWith(Machine machine) {
-    PrimitiveVS<Machine> machineVS;
-    if (this.machineCounters.containsKey(machine.getClass())) {
-      machineVS =
-          schedule.getMachine(machine.getClass(), this.machineCounters.get(machine.getClass()));
-      this.machineCounters.put(
-          machine.getClass(), IntegerVS.add(this.machineCounters.get(machine.getClass()), 1));
-    } else {
-      machineVS = schedule.getMachine(machine.getClass(), new PrimitiveVS<>(0));
-      this.machineCounters.put(machine.getClass(), new PrimitiveVS<>(1));
-    }
-
-    TraceLogger.onCreateMachine(machineVS.getUniverse(), machine);
-    machine.setScheduler(this);
-    performEffect(new Message(Event.createMachine, machineVS, null));
   }
 
   @Override
@@ -229,35 +199,4 @@ public class ReplayScheduler extends Scheduler {
     return super.isDone() || this.getChoiceDepth() >= schedule.size();
   }
 
-  public void reinitialize() {
-    for (Machine machine : schedule.getMachines()) {
-      machine.reset();
-    }
-    for (Machine machine : schedule.getMachines()) {
-      machine.setScheduler(this);
-    }
-  }
-
-  /**
-   * Write scheduler state to a file
-   *
-   * @param writeFileName Output file name
-   * @throws Exception Throw error if writing fails
-   */
-  public void writeToFile(String writeFileName) throws RuntimeException {
-    try {
-      FileOutputStream fos = new FileOutputStream(writeFileName);
-      ObjectOutputStream oos = new ObjectOutputStream(fos);
-      oos.writeObject(this);
-      oos.writeObject(PSymGlobal.getInstance());
-      if (PSymGlobal.getConfiguration().getVerbosity() > 0) {
-        long szBytes = Files.size(Paths.get(writeFileName));
-        PSymLogger.info(
-            String.format("  %,.1f MB  written in %s", (szBytes / 1024.0 / 1024.0), writeFileName));
-      }
-    } catch (IOException e) {
-      //      e.printStackTrace();
-      throw new RuntimeException("Failed to write replayer in file " + writeFileName, e);
-    }
-  }
 }

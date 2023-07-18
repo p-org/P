@@ -4,14 +4,12 @@ import static java.lang.System.exit;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.HashSet;
 import java.util.Iterator;
 import org.apache.commons.cli.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import psym.runtime.PSymGlobal;
-import psym.runtime.machine.buffer.BufferSemantics;
 import psym.runtime.scheduler.explicit.StateCachingMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
@@ -462,13 +460,13 @@ public class PSymOptions {
           // replay options
         case "r":
         case "replay":
-          config.setReadReplayerFromFile(option.getValue());
-          File file = new File(config.getReadReplayerFromFile());
+          config.setReadScheduleFromFile(option.getValue());
+          File file = new File(config.getReadScheduleFromFile());
           try {
             file.getCanonicalPath();
           } catch (IOException e) {
             optionError(
-                option, String.format("File %s does not exist", config.getReadReplayerFromFile()));
+                option, String.format("File %s does not exist", config.getReadScheduleFromFile()));
           }
           break;
           // advanced options

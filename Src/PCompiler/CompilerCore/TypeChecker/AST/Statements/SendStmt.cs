@@ -17,7 +17,7 @@ namespace Plang.Compiler.TypeChecker.AST.Statements
         public IPExpr MachineExpr { get; }
         public IPExpr Evt { get; }
         public IReadOnlyList<IPExpr> Arguments { get; }
-
+        
         public ParserRuleContext SourceLocation { get; }
     }
 }

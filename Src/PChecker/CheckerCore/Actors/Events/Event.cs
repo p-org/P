@@ -12,6 +12,8 @@ namespace PChecker.Actors.Events
     [DataContract]
     public abstract class Event
     {
+        public string DelayDistribution = "Uniform(1, 10)";
+        public bool IsOrdered = true;
         public readonly Timestamp EnqueueTime = new();
         public readonly Timestamp DequeueTime = new();
     }

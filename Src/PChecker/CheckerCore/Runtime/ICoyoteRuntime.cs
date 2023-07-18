@@ -5,7 +5,6 @@ using System;
 using System.IO;
 using PChecker.Actors.Events;
 using PChecker.Exceptions;
-using PChecker.Specifications;
 using PChecker.Specifications.Monitors;
 
 namespace PChecker.Runtime

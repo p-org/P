@@ -16,8 +16,6 @@ using PChecker.Actors.Events;
 using PChecker.Actors.Exceptions;
 using PChecker.Actors.Managers;
 using PChecker.Actors.Managers.Mocks;
-using PChecker.Actors.Timers;
-using PChecker.Actors.Timers.Mocks;
 using PChecker.Coverage;
 using PChecker.Exceptions;
 using PChecker.Random;
@@ -626,14 +624,6 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override IActorTimer CreateActorTimer(TimerInfo info, Actor owner)
-        {
-            var id = CreateActorId(typeof(MockStateMachineTimer));
-            CreateActor(id, typeof(MockStateMachineTimer), new TimerSetupEvent(info, owner));
-            return Scheduler.GetOperationWithId<ActorOperation>(id.Value).Actor as MockStateMachineTimer;
-        }
-
-        /// <inheritdoc/>
         internal override void TryCreateMonitor(Type type)
         {
             if (Monitors.Any(m => m.GetType() == type))
@@ -984,13 +974,6 @@ namespace PChecker.SystematicTesting
         internal override void NotifyExitedState(StateMachine stateMachine)
         {
             LogWriter.LogStateTransition(stateMachine.Id, stateMachine.CurrentStateName, isEntry: false);
-        }
-
-        /// <inheritdoc/>
-        internal override void NotifyPopState(StateMachine stateMachine)
-        {
-            AssertExpectedCallerActor(stateMachine, "Pop");
-            LogWriter.LogPopState(stateMachine.Id, string.Empty, stateMachine.CurrentStateName);
         }
 
         /// <inheritdoc/>

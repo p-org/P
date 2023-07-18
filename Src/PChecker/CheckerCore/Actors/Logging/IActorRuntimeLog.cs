@@ -3,7 +3,6 @@
 
 using System;
 using PChecker.Actors.Events;
-using PChecker.Actors.Timers;
 
 namespace PChecker.Actors.Logging
 {
@@ -115,22 +114,7 @@ namespace PChecker.Actors.Logging
         /// <param name="currentStateName">The name of the current state.</param>
         /// <param name="newStateName">The target state of the transition.</param>
         void OnGotoState(ActorId id, string currentStateName, string newStateName);
-
-        /// <summary>
-        /// Invoked when the specified state machine is being pushed to a state.
-        /// </summary>
-        /// <param name="id">The id of the actor being pushed to the state.</param>
-        /// <param name="currentStateName">The name of the current state.</param>
-        /// <param name="newStateName">The target state of the transition.</param>
-        void OnPushState(ActorId id, string currentStateName, string newStateName);
-
-        /// <summary>
-        /// Invoked when the specified state machine has popped its current state.
-        /// </summary>
-        /// <param name="id">The id of the actor that the pop executed in.</param>
-        /// <param name="currentStateName">The name of the current state.</param>
-        /// <param name="restoredStateName">The name of the state being re-entered, if any.</param>
-        void OnPopState(ActorId id, string currentStateName, string restoredStateName);
+  
 
         /// <summary>
         /// Invoked when the specified actor is idle (there is nothing to dequeue) and the default
@@ -182,18 +166,7 @@ namespace PChecker.Actors.Logging
         /// <param name="actionName">The name of the action being executed.</param>
         /// <param name="ex">The exception.</param>
         void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex);
-
-        /// <summary>
-        /// Invoked when the specified actor timer has been created.
-        /// </summary>
-        /// <param name="info">Handle that contains information about the timer.</param>
-        void OnCreateTimer(TimerInfo info);
-
-        /// <summary>
-        /// Invoked when the specified actor timer has been stopped.
-        /// </summary>
-        /// <param name="info">Handle that contains information about the timer.</param>
-        void OnStopTimer(TimerInfo info);
+        
 
         /// <summary>
         /// Invoked when the specified monitor has been created.

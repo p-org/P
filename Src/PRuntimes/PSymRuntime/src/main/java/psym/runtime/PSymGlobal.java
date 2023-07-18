@@ -1,5 +1,7 @@
 package psym.runtime;
 
+import java.io.StringWriter;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import psym.commandline.PSymConfiguration;
+import psym.runtime.logger.PSymLogger;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.StateEvents;
@@ -145,5 +148,25 @@ public class PSymGlobal implements Serializable {
     public static void initializeSymmetryTracker(boolean isSymbolic) {
         getInstance().symmetryTracker =
             isSymbolic ? new SymbolicSymmetryTracker() : new ExplicitSymmetryTracker();
+    }
+
+    public static void printStackTrace(Exception e, boolean stderrOnly) {
+        if (stderrOnly) {
+            System.err.println("-----------");
+            System.err.println("Stack Trace");
+            System.err.println("-----------");
+            e.printStackTrace(System.err);
+            System.err.println("-----------");
+        } else {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+
+            PSymLogger.info("-----------");
+            PSymLogger.info("Stack Trace");
+            PSymLogger.info("-----------");
+            PSymLogger.info(sw.toString());
+            PSymLogger.info("-----------");
+        }
     }
 }

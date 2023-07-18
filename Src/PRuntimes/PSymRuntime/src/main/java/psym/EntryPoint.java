@@ -145,7 +145,7 @@ public class EntryPoint {
       postprocess(true);
       PSymLogger.info(e.toString());
       if (PSymGlobal.getConfiguration().getVerbosity() > 0) {
-        e.printStackTrace(System.out);
+        PSymGlobal.printStackTrace(e, false);
       }
 
       PSymLogger.setVerbosity(1);
@@ -209,7 +209,7 @@ public class EntryPoint {
       throw new RuntimeException("ERROR: Failed to replay counterexample");
     } catch (BugFoundException e) {
       PSymLogger.info(e.toString());
-      e.printStackTrace(System.err);
+      PSymGlobal.printStackTrace(e, true);
       PSymLogger.info("Checker found a bug.");
       PSymLogger.info("... Emitting traces:");
       PSymLogger.info(String.format("..... Writing %s", ScheduleWriter.getFileName()));

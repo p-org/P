@@ -2,8 +2,6 @@ package psym.runtime.machine.buffer;
 
 import java.io.Serializable;
 import java.util.function.Function;
-
-import psym.runtime.PSymGlobal;
 import psym.runtime.logger.ScheduleWriter;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
@@ -28,7 +26,7 @@ public class EventQueue extends SymbolicQueue implements EventBuffer, Serializab
     Guard destIsNull = dest.symbolicEquals(null, pc).getGuardFor(true);
     if (!destIsNull.isFalse()) {
       throw new BugFoundException(
-              String.format("Machine in send cannot be null"),
+              "Machine in send cannot be null",
               destIsNull
       );
     }

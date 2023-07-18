@@ -10,7 +10,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import psym.runtime.PSymGlobal;
@@ -34,52 +33,6 @@ import psym.valuesummary.ValueSummary;
 import psym.valuesummary.solvers.SolverEngine;
 
 public class SymbolicSearchScheduler extends SearchScheduler {
-  public static class ProtocolState {
-    @Getter
-    Map<Machine, MachineLocalState> stateMap = null;
-
-    public ProtocolState(Collection<Machine> machines) {
-      stateMap = new HashMap<>();
-      for (Machine m: machines) {
-        stateMap.put(m, m.getMachineLocalState());
-      }
-    }
-
-    public Guard symbolicEquals(ProtocolState rhs) {
-      Map<Machine, MachineLocalState> rhsStateMap = rhs.getStateMap();
-      if (stateMap.size() != rhsStateMap.size()) {
-        return Guard.constFalse();
-      }
-
-      Guard areEqual = Guard.constTrue();
-      for (Map.Entry<Machine, MachineLocalState> entry: stateMap.entrySet()) {
-        Machine machine = entry.getKey();
-        MachineLocalState lhsMachineState = entry.getValue();
-        MachineLocalState rhsMachineState = rhsStateMap.get(machine);
-        if (rhsMachineState == null) {
-          return Guard.constFalse();
-        }
-        List<ValueSummary> lhsLocals = lhsMachineState.getLocals();
-        List<ValueSummary> rhsLocals = rhsMachineState.getLocals();
-        assert (lhsLocals.size() == rhsLocals.size());
-
-        for (int i = 0; i < lhsLocals.size(); i++) {
-          ValueSummary lhsVs = lhsLocals.get(i).restrict(areEqual);
-          ValueSummary rhsVs = rhsLocals.get(i).restrict(areEqual);
-          if (lhsVs.isEmptyVS() && rhsVs.isEmptyVS()) {
-            continue;
-          }
-          areEqual = areEqual.and(lhsVs.symbolicEquals(rhsVs, Guard.constTrue()).getGuardFor(true));
-          if (areEqual.isFalse()) {
-            return Guard.constFalse();
-          }
-        }
-      }
-      return areEqual;
-    }
-
-  }
-
   private final TreeMap<Integer, ProtocolState> depthToProtocolState = new TreeMap<>();
 
   public SymbolicSearchScheduler(Program p) {
@@ -450,5 +403,51 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     StatWriter.log(
         "#-events-explored",
         String.format("%d", totalStats.getDepthStats().getNumOfTransitionsExplored()));
+  }
+
+  public static class ProtocolState {
+    @Getter
+    Map<Machine, MachineLocalState> stateMap = null;
+
+    public ProtocolState(Collection<Machine> machines) {
+      stateMap = new HashMap<>();
+      for (Machine m: machines) {
+        stateMap.put(m, m.getMachineLocalState());
+      }
+    }
+
+    public Guard symbolicEquals(ProtocolState rhs) {
+      Map<Machine, MachineLocalState> rhsStateMap = rhs.getStateMap();
+      if (stateMap.size() != rhsStateMap.size()) {
+        return Guard.constFalse();
+      }
+
+      Guard areEqual = Guard.constTrue();
+      for (Map.Entry<Machine, MachineLocalState> entry: stateMap.entrySet()) {
+        Machine machine = entry.getKey();
+        MachineLocalState lhsMachineState = entry.getValue();
+        MachineLocalState rhsMachineState = rhsStateMap.get(machine);
+        if (rhsMachineState == null) {
+          return Guard.constFalse();
+        }
+        List<ValueSummary> lhsLocals = lhsMachineState.getLocals();
+        List<ValueSummary> rhsLocals = rhsMachineState.getLocals();
+        assert (lhsLocals.size() == rhsLocals.size());
+
+        for (int i = 0; i < lhsLocals.size(); i++) {
+          ValueSummary lhsVs = lhsLocals.get(i).restrict(areEqual);
+          ValueSummary rhsVs = rhsLocals.get(i).restrict(areEqual);
+          if (lhsVs.isEmptyVS() && rhsVs.isEmptyVS()) {
+            continue;
+          }
+          areEqual = areEqual.and(lhsVs.symbolicEquals(rhsVs, Guard.constTrue()).getGuardFor(true));
+          if (areEqual.isFalse()) {
+            return Guard.constFalse();
+          }
+        }
+      }
+      return areEqual;
+    }
+
   }
 }

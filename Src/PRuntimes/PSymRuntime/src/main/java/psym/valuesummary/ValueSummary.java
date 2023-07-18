@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
 import psym.utils.exception.BugFoundException;

@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import psym.runtime.PSymGlobal;
-import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.MachineLocalState;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;

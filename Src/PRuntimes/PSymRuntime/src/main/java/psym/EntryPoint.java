@@ -14,7 +14,6 @@ import psym.runtime.scheduler.symbolic.SymbolicSearchScheduler;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.utils.exception.BugFoundException;
-import psym.utils.exception.LivenessException;
 import psym.utils.exception.MemoutException;
 import psym.utils.monitor.MemoryMonitor;
 import psym.utils.monitor.TimeMonitor;

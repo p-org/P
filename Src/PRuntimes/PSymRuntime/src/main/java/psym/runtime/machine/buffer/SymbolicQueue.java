@@ -2,7 +2,6 @@ package psym.runtime.machine.buffer;
 
 import java.io.Serializable;
 import java.util.function.Function;
-
 import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
@@ -17,10 +16,10 @@ import psym.valuesummary.ValueSummary;
  */
 public abstract class SymbolicQueue implements Serializable {
 
+  private final Machine owner;
   // elements in the queue
   protected ListVS<Message> elements;
   private Message peek = null;
-  private final Machine owner;
 
   public SymbolicQueue(Machine m) {
     this.elements = new ListVS<>(Guard.constTrue());

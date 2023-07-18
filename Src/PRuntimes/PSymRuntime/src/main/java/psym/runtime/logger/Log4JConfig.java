@@ -11,9 +11,9 @@ import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.reflections.Reflections;
 
 public class Log4JConfig {
+  private static final String pattern = "%msg%n";
   @Getter private static LoggerContext context = null;
   @Getter private static PatternLayout patternLayout = null;
-  private static String pattern = "%msg%n";
 
   public static void configureLog4J() {
     ConfigurationBuilder<BuiltConfiguration> builder =

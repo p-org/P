@@ -23,11 +23,10 @@ import psym.runtime.logger.Log4JConfig;
  * ../Tst/SymbolicRegressionTests/
  */
 public class TestSymbolicRegression {
-  private static String mode = "verification";
-  private static String runArgs = "--seed 0 --timeout 60 --max-steps 300";
   private static final String outputDirectory = "output/testCases";
   private static final List<String> excluded = new ArrayList<>();
-
+  private static String mode = "verification";
+  private static String runArgs = "--seed 0 --timeout 60 --max-steps 300";
   private static boolean initialized = false;
 
   private static void setRunArgs() {

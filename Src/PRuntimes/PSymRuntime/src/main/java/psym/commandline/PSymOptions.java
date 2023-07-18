@@ -186,11 +186,7 @@ public class PSymOptions {
 
     // whether or not to disable sync events
     Option sync =
-            Option.builder()
-                    .longOpt("no-sync")
-                    .desc("Disable sync events")
-                    .numberOfArgs(0)
-                    .build();
+        Option.builder().longOpt("no-sync").desc("Disable sync events").numberOfArgs(0).build();
     addHiddenOption(sync);
 
     // whether or not to disable state caching
@@ -694,11 +690,11 @@ public class PSymOptions {
         switch (key) {
           case "sync-events":
             JSONArray allSyncEvents = value.getJSONArray("default");
-            for (int i = 0 ; i < allSyncEvents.length(); i++) {
+            for (int i = 0; i < allSyncEvents.length(); i++) {
               JSONObject element = allSyncEvents.getJSONObject(i);
               String machineName = element.getString("machine");
               JSONArray syncEvents = element.getJSONArray("events");
-              for (int j = 0 ; j < syncEvents.length(); j++) {
+              for (int j = 0; j < syncEvents.length(); j++) {
                 String syncEventName = syncEvents.getString(j);
                 PSymGlobal.addSyncEvent(machineName, syncEventName);
               }

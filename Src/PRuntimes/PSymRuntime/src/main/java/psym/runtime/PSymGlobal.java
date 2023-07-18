@@ -1,13 +1,12 @@
 package psym.runtime;
 
-import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import psym.commandline.PSymConfiguration;
 import psym.runtime.logger.PSymLogger;
 import psym.runtime.machine.Machine;

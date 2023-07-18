@@ -274,7 +274,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     if (!outOfRange.isFalse()) {
       // there is a possibility that the index is out-of-bounds
       throw new BugFoundException(
-              String.format("Index was out of range. Must be non-negative and less than the size of the collection."),
+              "Index was out of range. Must be non-negative and less than the size of the collection.",
               outOfRange);
     }
 
@@ -323,7 +323,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     if (!outOfRange.isFalse()) {
       // there is a possibility that the index is out-of-bounds
       throw new BugFoundException(
-          String.format("Index was out of range. Must be non-negative and less than the size of the collection."),
+              "Index was out of range. Must be non-negative and less than the size of the collection.",
           outOfRange);
     }
 
@@ -381,7 +381,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     if (!outOfRange.isFalse()) {
       // there is a possibility that the index is out-of-bounds
       throw new BugFoundException(
-              String.format("Index must be within the bounds of the List."),
+              "Index must be within the bounds of the List.",
               outOfRange);
     }
 
@@ -437,7 +437,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     if (!outOfRange.isFalse()) {
       // there is a possibility that the index is out-of-bounds
       throw new BugFoundException(
-              String.format("Index was out of range. Must be non-negative and less than the size of the collection."),
+              "Index was out of range. Must be non-negative and less than the size of the collection.",
               outOfRange);
     }
 

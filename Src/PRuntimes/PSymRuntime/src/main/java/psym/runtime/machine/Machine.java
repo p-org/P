@@ -28,9 +28,9 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
       continuations = new HashMap<>();
   public final Set<SerializableRunnable> clearContinuationVars = new HashSet<>();
   @Getter protected final String name;
-  @Getter protected int instanceId;
   private final State startState;
   private final Set<State> states;
+  @Getter protected int instanceId;
   @Getter private EventQueue sendBuffer;
   @Getter private DeferQueue deferredQueue;
   @Getter private transient Scheduler scheduler;
@@ -245,7 +245,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
 
       // Inner loop: process sequences of 'goto's and 'raise's.
       while (eventHandlerReturnReason.isAbnormalReturn()) {
-        Assert.prop(
+        Assert.liveness(
             scheduler.getMaxInternalSteps() < 0 || steps < scheduler.getMaxInternalSteps(),
             String.format("Possible infinite loop found in machine %s", this),
             pc.and(

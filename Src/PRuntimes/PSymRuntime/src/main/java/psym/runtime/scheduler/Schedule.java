@@ -9,10 +9,7 @@ import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.MachineLocalState;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
-import psym.valuesummary.Guard;
-import psym.valuesummary.ListVS;
-import psym.valuesummary.PrimitiveVS;
-import psym.valuesummary.ValueSummary;
+import psym.valuesummary.*;
 
 public class Schedule implements Serializable {
 
@@ -137,13 +134,6 @@ public class Schedule implements Serializable {
     choices.get(depth).addRepeatInt(choice);
   }
 
-  public void addRepeatElement(PrimitiveVS<ValueSummary> choice, int depth) {
-    if (depth >= choices.size()) {
-      choices.add(newChoice());
-    }
-    choices.get(depth).addRepeatElement(choice);
-  }
-
   public void addBacktrackSchedulingChoice(List<PrimitiveVS<Machine>> machines, int depth) {
     if (depth >= choices.size()) {
       choices.add(newChoice());
@@ -206,27 +196,6 @@ public class Schedule implements Serializable {
     }
   }
 
-  public void addBacktrackElement(List<ValueSummary> elements, int depth) {
-    if (depth >= choices.size()) {
-      choices.add(newChoice());
-    }
-    if (elements.isEmpty()) {
-      choices
-          .get(depth)
-          .storeState(schedulerDepth, schedulerChoiceDepth, null, filter, schedulerSymmetry);
-    } else {
-      choices
-          .get(depth)
-          .storeState(
-              schedulerDepth, schedulerChoiceDepth, schedulerState, filter, schedulerSymmetry);
-      numBacktracks++;
-      numDataBacktracks++;
-    }
-    for (ValueSummary choice : elements) {
-      choices.get(depth).addBacktrackElement(choice);
-    }
-  }
-
   public PrimitiveVS<Machine> getRepeatSchedulingChoice(int depth) {
     return choices.get(depth).getRepeatSchedulingChoice();
   }
@@ -239,10 +208,6 @@ public class Schedule implements Serializable {
     return choices.get(depth).getRepeatInt();
   }
 
-  public PrimitiveVS<ValueSummary> getRepeatElement(int depth) {
-    return choices.get(depth).getRepeatElement();
-  }
-
   public List<PrimitiveVS<Machine>> getBacktrackSchedulingChoice(int depth) {
     return choices.get(depth).getBacktrackSchedulingChoice();
   }
@@ -253,10 +218,6 @@ public class Schedule implements Serializable {
 
   public List<PrimitiveVS<Integer>> getBacktrackInt(int depth) {
     return choices.get(depth).getBacktrackInt();
-  }
-
-  public List<ValueSummary> getBacktrackElement(int depth) {
-    return choices.get(depth).getBacktrackElement();
   }
 
   public void clearRepeat(int depth) {
@@ -290,16 +251,6 @@ public class Schedule implements Serializable {
     return new Schedule(newChoices, createdMachines, machines, pc, schedulerSymmetry);
   }
 
-  public Schedule removeEmptyRepeat() {
-    List<Choice> newChoices = new ArrayList<>();
-    for (int i = 0; i < size(); i++) {
-      if (!choices.get(i).isRepeatEmpty()) {
-        newChoices.add(choices.get(i));
-      }
-    }
-    return new Schedule(newChoices, createdMachines, machines, pc, schedulerSymmetry);
-  }
-
   public void makeMachine(Machine m, Guard pc) {
     PrimitiveVS<Machine> toAdd = new PrimitiveVS<>(m).restrict(pc);
     if (createdMachines.containsKey(m.getClass())) {
@@ -326,31 +277,42 @@ public class Schedule implements Serializable {
   }
 
   public Schedule getSingleSchedule() {
+    Schedule result = new Schedule(null);
+
     Guard pc = Guard.constTrue();
     pc = pc.and(getFilter());
-    for (Choice choice : choices) {
+
+    int dNew = 0;
+    for (int d = 0; d < choices.size(); d++) {
+      Choice choice = choices.get(d);
       Choice guarded = choice.restrict(pc);
       PrimitiveVS<Machine> schedulingChoice = guarded.getRepeatSchedulingChoice();
       if (schedulingChoice.getGuardedValues().size() > 0) {
+        // add schedule choice
         pc = pc.and(schedulingChoice.getGuardedValues().get(0).getGuard());
+        result.addRepeatSchedulingChoice(new PrimitiveVS<>(schedulingChoice.getGuardedValues().get(0).getValue()), dNew++);
       } else {
+        // add bool choice
         PrimitiveVS<Boolean> boolChoice = guarded.getRepeatBool();
         if (boolChoice.getGuardedValues().size() > 0) {
           pc = pc.and(boolChoice.getGuardedValues().get(0).getGuard());
+          result.addRepeatBool(new PrimitiveVS<>(boolChoice.getGuardedValues().get(0).getValue()), dNew++);
         } else {
+          // add int choice
           PrimitiveVS<Integer> intChoice = guarded.getRepeatInt();
           if (intChoice.getGuardedValues().size() > 0) {
             pc = pc.and(intChoice.getGuardedValues().get(0).getGuard());
-          } else {
-            PrimitiveVS<ValueSummary> elementChoice = guarded.getRepeatElement();
-            if (elementChoice.getGuardedValues().size() > 0) {
-              pc = pc.and(elementChoice.getGuardedValues().get(0).getGuard());
-            }
+            result.addRepeatInt(new PrimitiveVS<>(intChoice.getGuardedValues().get(0).getValue()), dNew++);
           }
         }
       }
     }
-    return this.guard(pc).removeEmptyRepeat();
+
+    for (Machine machine : machines) {
+      result.makeMachine(machine, Guard.constTrue());
+    }
+
+    return result;
   }
 
   public Guard getLengthCond(int size) {
@@ -385,11 +347,9 @@ public class Schedule implements Serializable {
     @Getter PrimitiveVS<Machine> repeatSchedulingChoice = new PrimitiveVS<>();
     @Getter PrimitiveVS<Boolean> repeatBool = new PrimitiveVS<>();
     @Getter PrimitiveVS<Integer> repeatInt = new PrimitiveVS<>();
-    @Getter PrimitiveVS<ValueSummary> repeatElement = new PrimitiveVS<>();
     @Getter List<PrimitiveVS<Machine>> backtrackSchedulingChoice = new ArrayList<>();
     @Getter List<PrimitiveVS<Boolean>> backtrackBool = new ArrayList();
     @Getter List<PrimitiveVS<Integer>> backtrackInt = new ArrayList<>();
-    @Getter List<ValueSummary> backtrackElement = new ArrayList<>();
     @Getter Guard handledUniverse = Guard.constFalse();
     @Getter int schedulerDepth = 0;
     @Getter int schedulerChoiceDepth = 0;
@@ -408,11 +368,9 @@ public class Schedule implements Serializable {
       repeatSchedulingChoice = new PrimitiveVS<>(old.repeatSchedulingChoice);
       repeatBool = new PrimitiveVS<>(old.repeatBool);
       repeatInt = new PrimitiveVS<>(old.repeatInt);
-      repeatElement = new PrimitiveVS<>(old.repeatElement);
       backtrackSchedulingChoice = new ArrayList<>(old.backtrackSchedulingChoice);
       backtrackBool = new ArrayList<>(old.backtrackBool);
       backtrackInt = new ArrayList<>(old.backtrackInt);
-      backtrackElement = new ArrayList<>(old.backtrackElement);
       handledUniverse = old.handledUniverse;
       schedulerDepth = old.schedulerDepth;
       schedulerChoiceDepth = old.schedulerChoiceDepth;
@@ -446,14 +404,13 @@ public class Schedule implements Serializable {
     public int getNumChoicesExplored() {
       return repeatSchedulingChoice.getValues().size()
           + repeatBool.getValues().size()
-          + repeatInt.getValues().size()
-          + repeatElement.getValues().size();
+          + repeatInt.getValues().size();
     }
 
     public Guard getRepeatUniverse() {
       return repeatSchedulingChoice
           .getUniverse()
-          .or(repeatBool.getUniverse().or(repeatInt.getUniverse().or(repeatElement.getUniverse())));
+          .or(repeatBool.getUniverse().or(repeatInt.getUniverse()));
     }
 
     public Guard getBacktrackUniverse() {
@@ -466,9 +423,6 @@ public class Schedule implements Serializable {
       }
       for (PrimitiveVS<Integer> integer : backtrackInt) {
         backtrackUniverse = backtrackUniverse.or(integer.getUniverse());
-      }
-      for (ValueSummary element : backtrackElement) {
-        backtrackUniverse = backtrackUniverse.or(element.getUniverse());
       }
       return backtrackUniverse;
     }
@@ -487,8 +441,7 @@ public class Schedule implements Serializable {
 
     public boolean isDataBacktrackNonEmpty() {
       return !getBacktrackBool().isEmpty()
-          || !getBacktrackInt().isEmpty()
-          || !getBacktrackElement().isEmpty();
+          || !getBacktrackInt().isEmpty();
     }
 
     public Choice restrict(Guard pc) {
@@ -496,7 +449,6 @@ public class Schedule implements Serializable {
       c.repeatSchedulingChoice = repeatSchedulingChoice.restrict(pc);
       c.repeatBool = repeatBool.restrict(pc);
       c.repeatInt = repeatInt.restrict(pc);
-      c.repeatElement = repeatElement.restrict(pc);
       c.backtrackSchedulingChoice =
           backtrackSchedulingChoice.stream()
               .map(x -> x.restrict(pc))
@@ -509,11 +461,6 @@ public class Schedule implements Serializable {
               .collect(Collectors.toList());
       c.backtrackInt =
           backtrackInt.stream()
-              .map(x -> x.restrict(pc))
-              .filter(x -> !x.isEmptyVS())
-              .collect(Collectors.toList());
-      c.backtrackElement =
-          backtrackElement.stream()
               .map(x -> x.restrict(pc))
               .filter(x -> !x.isEmptyVS())
               .collect(Collectors.toList());
@@ -542,19 +489,10 @@ public class Schedule implements Serializable {
       repeatInt = choice;
     }
 
-    public void addRepeatElement(PrimitiveVS<ValueSummary> choice) {
-      repeatElement = choice;
-    }
-
-    public void clearRepeatSchedulingChoice() {
-      repeatSchedulingChoice = new PrimitiveVS<>();
-    }
-
     public void clearRepeat() {
       repeatSchedulingChoice = new PrimitiveVS<>();
       repeatBool = new PrimitiveVS<>();
       repeatInt = new PrimitiveVS<>();
-      repeatElement = new PrimitiveVS<>();
     }
 
     public void addBacktrackSchedulingChoice(PrimitiveVS<Machine> choice) {
@@ -569,15 +507,10 @@ public class Schedule implements Serializable {
       if (!choice.isEmptyVS()) backtrackInt.add(choice);
     }
 
-    public void addBacktrackElement(ValueSummary choice) {
-      if (!choice.isEmptyVS()) backtrackElement.add(choice);
-    }
-
     public void clearBacktrack() {
       backtrackSchedulingChoice = new ArrayList<>();
       backtrackBool = new ArrayList<>();
       backtrackInt = new ArrayList<>();
-      backtrackElement = new ArrayList<>();
     }
 
     public void clear() {

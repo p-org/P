@@ -283,23 +283,27 @@ public class Schedule implements Serializable {
     Guard pc = Guard.constTrue();
     pc = pc.and(getFilter());
 
-    for (int d = 0; d< choices.size(); d++) {
+    int dNew = 0;
+    for (int d = 0; d < choices.size(); d++) {
       Choice choice = choices.get(d);
       Choice guarded = choice.restrict(pc);
       PrimitiveVS<Machine> schedulingChoice = guarded.getRepeatSchedulingChoice();
       if (schedulingChoice.getGuardedValues().size() > 0) {
+        // add schedule choice
         pc = pc.and(schedulingChoice.getGuardedValues().get(0).getGuard());
-        result.addRepeatSchedulingChoice(new PrimitiveVS<>(schedulingChoice.getGuardedValues().get(0).getValue()), d);
+        result.addRepeatSchedulingChoice(new PrimitiveVS<>(schedulingChoice.getGuardedValues().get(0).getValue()), dNew++);
       } else {
+        // add bool choice
         PrimitiveVS<Boolean> boolChoice = guarded.getRepeatBool();
         if (boolChoice.getGuardedValues().size() > 0) {
           pc = pc.and(boolChoice.getGuardedValues().get(0).getGuard());
-          result.addRepeatBool(new PrimitiveVS<>(boolChoice.getGuardedValues().get(0).getValue()), d);
+          result.addRepeatBool(new PrimitiveVS<>(boolChoice.getGuardedValues().get(0).getValue()), dNew++);
         } else {
+          // add int choice
           PrimitiveVS<Integer> intChoice = guarded.getRepeatInt();
           if (intChoice.getGuardedValues().size() > 0) {
             pc = pc.and(intChoice.getGuardedValues().get(0).getGuard());
-            result.addRepeatInt(new PrimitiveVS<>(intChoice.getGuardedValues().get(0).getValue()), d);
+            result.addRepeatInt(new PrimitiveVS<>(intChoice.getGuardedValues().get(0).getValue()), dNew++);
           }
         }
       }

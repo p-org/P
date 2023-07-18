@@ -60,8 +60,6 @@ public abstract class SearchScheduler extends Scheduler {
             this::getNextSchedulingChoices,
             this::getNextSchedulingChoiceSummary,
             false);
-
-    choiceDepth = depth + 1;
     return res;
   }
 
@@ -79,7 +77,6 @@ public abstract class SearchScheduler extends Scheduler {
             () -> super.getNextBooleanChoices(pc),
             super::getNextBoolean,
             true);
-    choiceDepth = depth + 1;
     return res;
   }
 
@@ -97,7 +94,6 @@ public abstract class SearchScheduler extends Scheduler {
             () -> super.getNextIntegerChoices(bound, pc),
             super::getNextInteger,
             true);
-    choiceDepth = depth + 1;
     return res;
   }
 

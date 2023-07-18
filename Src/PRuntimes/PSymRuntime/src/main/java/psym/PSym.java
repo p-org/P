@@ -27,7 +27,7 @@ public class PSym {
     PSymLogger.Initialize(PSymGlobal.getConfiguration().getVerbosity());
 
     try {
-      if (PSymGlobal.getConfiguration().getReadFromFile().equals("") && PSymGlobal.getConfiguration().getReadScheduleFromFile().equals("")) {
+      if (PSymGlobal.getConfiguration().getReadFromFile().equals("")) {
         Set<Class<? extends Program>> subTypesProgram = reflections.getSubTypesOf(Program.class);
         if (subTypesProgram.size() == 0) {
           throw new Exception("No program found.");

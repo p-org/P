@@ -111,8 +111,7 @@ public class Message implements ValueSummary<Message> {
       Machine m = machineGv.getValue();
       PrimitiveVS<Event> events = this.getEvent();
       for (GuardedValue<Event> event : events.getGuardedValues()) {
-        if (PSymGlobal.hasSyncEvent(m, event.getValue())
-                || event.getValue().name.startsWith("sync_")) {
+        if (PSymGlobal.hasSyncEvent(m, event.getValue())) {
           cond = cond.or(event.getGuard());
         }
       }

@@ -48,6 +48,8 @@ public class PSymConfiguration implements Serializable {
   @Getter @Setter String configFile = "";
   // buffer semantics
   @Getter @Setter BufferSemantics bufferSemantics = BufferSemantics.SenderQueue;
+  // whether or not to allow sync events
+  @Getter @Setter boolean allowSyncEvents = true;
   // mode of state hashing
   @Getter @Setter StateCachingMode stateCachingMode = StateCachingMode.None;
   // symmetry mode

@@ -186,6 +186,15 @@ public class PSymOptions {
 
     // Invisible/expert options
 
+    // whether or not to disable sync events
+    Option sync =
+            Option.builder()
+                    .longOpt("no-sync")
+                    .desc("Disable sync events")
+                    .numberOfArgs(0)
+                    .build();
+    addHiddenOption(sync);
+
     // whether or not to disable state caching
     Option stateCaching =
         Option.builder()
@@ -473,6 +482,9 @@ public class PSymOptions {
           break;
         case "config":
           readConfigFile(config, option.getValue(), option);
+          break;
+        case "no-sync":
+          config.setAllowSyncEvents(false);
           break;
         case "state-caching":
           switch (option.getValue()) {

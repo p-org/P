@@ -112,11 +112,18 @@ public class PSymGlobal implements Serializable {
     }
 
     public static boolean hasSyncEvent(Machine machine, Event event) {
-        Set<String> syncEvents = getInstance().syncEvents.get(machine.getName());
-        if (syncEvents == null) {
+        if (configuration.isAllowSyncEvents()) {
+            if (event.toString().startsWith("sync_")) {
+                return true;
+            }
+            Set<String> syncEvents = getInstance().syncEvents.get(machine.getName());
+            if (syncEvents == null) {
+                return false;
+            }
+            return syncEvents.contains(event.toString());
+        } else {
             return false;
         }
-        return syncEvents.contains(event.toString());
     }
 
     public static CoverageStats getCoverage() {

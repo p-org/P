@@ -3,7 +3,6 @@ package psym.runtime.scheduler.replay;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 import lombok.Getter;
 import org.apache.commons.lang3.NotImplementedException;
 import psym.runtime.PSymGlobal;
@@ -16,7 +15,6 @@ import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Schedule;
 import psym.runtime.scheduler.Scheduler;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.utils.Assert;
 import psym.valuesummary.*;
 
@@ -170,28 +168,6 @@ public class ReplayScheduler extends Scheduler {
     ScheduleWriter.logInteger(res);
     choiceDepth++;
     return res;
-  }
-
-  @Override
-  public PrimitiveVS<Machine> allocateMachine(
-      Guard pc,
-      Class<? extends Machine> machineType,
-      Function<Integer, ? extends Machine> constructor) {
-    if (!machineCounters.containsKey(machineType)) {
-      machineCounters.put(machineType, new PrimitiveVS<>(0));
-    }
-    PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).restrict(pc);
-
-    PrimitiveVS<Machine> allocated = schedule.getMachine(machineType, guardedCount);
-    TraceLogger.onCreateMachine(pc, allocated.getValues().iterator().next());
-    allocated.getValues().iterator().next().setScheduler(this);
-
-    guardedCount = IntegerVS.add(guardedCount, 1);
-
-    PrimitiveVS<Integer> mergedCount =
-            machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);
-    machineCounters.put(machineType, mergedCount);
-    return allocated;
   }
 
   @Override

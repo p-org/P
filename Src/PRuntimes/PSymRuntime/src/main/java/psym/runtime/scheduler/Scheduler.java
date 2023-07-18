@@ -13,6 +13,7 @@ import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
+import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.runtime.statistics.SearchStats;
 import psym.utils.Assert;
@@ -318,20 +319,47 @@ public abstract class Scheduler implements SchedulerInterface {
   }
 
   public PrimitiveVS<Machine> allocateMachine(
-      Guard pc,
-      Class<? extends Machine> machineType,
-      Function<Integer, ? extends Machine> constructor) {
+          Guard pc,
+          Class<? extends Machine> machineType,
+          Function<Integer, ? extends Machine> constructor) {
     if (!machineCounters.containsKey(machineType)) {
       machineCounters.put(machineType, new PrimitiveVS<>(0));
     }
     PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).restrict(pc);
-    Machine newMachine = setupNewMachine(pc, guardedCount, constructor);
+
+    PrimitiveVS<Machine> allocated;
+    if (schedule.hasMachine(machineType, guardedCount, pc)) {
+      allocated = schedule.getMachine(machineType, guardedCount).restrict(pc);
+      for (GuardedValue gv : allocated.getGuardedValues()) {
+        Guard g = gv.getGuard();
+        Machine m = (Machine) gv.getValue();
+        assert (!BooleanVS.isEverTrue(m.hasStarted().restrict(g)));
+        TraceLogger.onCreateMachine(pc.and(g), m);
+        if (!machines.contains(m)) {
+          machines.add(m);
+        }
+        currentMachines.add(m);
+        assert (machines.size() >= currentMachines.size());
+        m.setScheduler(this);
+        if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+          PSymGlobal.getSymmetryTracker().createMachine(m, g);
+        }
+      }
+    } else {
+      Machine newMachine = setupNewMachine(pc, guardedCount, constructor);
+
+      allocated = new PrimitiveVS<>(newMachine).restrict(pc);
+      if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+        PSymGlobal.getSymmetryTracker().createMachine(newMachine, pc);
+      }
+    }
 
     guardedCount = IntegerVS.add(guardedCount, 1);
+
     PrimitiveVS<Integer> mergedCount =
-        machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);
+            machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);
     machineCounters.put(machineType, mergedCount);
-    return new PrimitiveVS<>(newMachine).restrict(pc);
+    return allocated;
   }
 
   public void runMonitors(Message event) {

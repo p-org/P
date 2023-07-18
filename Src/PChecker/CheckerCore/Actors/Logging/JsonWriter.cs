@@ -166,7 +166,7 @@ namespace PChecker.Actors.Logging
         /// <param name="eventName">Of type string: name of the event.</param>
         /// <param name="eventPayload">Of type Dictionary&lt;string, string&gt;: payload of the event, if there is any.</param>
         /// <returns>string: the string containing all information.</returns>
-        private static string GetSendReceiveId(string machineName, string? eventName,
+        private static string GetSendReceiveId(string? machineName, string? eventName,
             Dictionary<string, string>? eventPayload) =>
             $"_{machineName}:_{eventName}:_{ConvertPayloadToString(eventPayload)}";
 

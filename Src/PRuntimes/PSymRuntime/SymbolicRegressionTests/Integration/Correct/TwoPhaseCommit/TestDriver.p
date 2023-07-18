@@ -10,7 +10,6 @@ machine Main {
             }
             coord = new Coordinator(participants);
 			new Client((coor = coord, n = 1));
-            new Client((coor = coord, n = 1));
 		}
 	}
 }

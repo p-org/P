@@ -224,8 +224,8 @@ public class ChoiceLearningStats<S, A> implements Serializable {
   private void addMachineFeatures(List<Integer> features, Machine m) {
     features.add(m.hashCode());
     features.add(m.getCurrentState().getConcreteHash());
-    if (!m.sendBuffer.isEmpty()) {
-      Message msg = m.sendBuffer.peek(Guard.constTrue());
+    if (!m.getEventBuffer().isEmpty()) {
+      Message msg = m.getEventBuffer().peek(Guard.constTrue());
       features.add(msg.getTarget().getConcreteHash());
       features.add(msg.getEvent().getConcreteHash());
     }

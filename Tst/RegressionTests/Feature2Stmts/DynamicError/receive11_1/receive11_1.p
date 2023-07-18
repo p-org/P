@@ -42,3 +42,5 @@ machine Main {
 		on E do (payload: int) {}
 	}
 }
+
+test DefaultImpl [main=Main]: assert M in { Main, A };

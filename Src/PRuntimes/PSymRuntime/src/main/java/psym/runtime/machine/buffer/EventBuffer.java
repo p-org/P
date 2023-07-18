@@ -24,6 +24,8 @@ public interface EventBuffer {
             Function<Integer, ? extends Machine> constructor
     );
 
+    void unblock(Message event);
+
     PrimitiveVS<Integer> size();
 
     boolean isEmpty();

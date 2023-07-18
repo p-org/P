@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import lombok.Getter;
-import psym.commandline.PSymConfiguration;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.PSymLogger;
+import psym.runtime.logger.ScheduleWriter;
 import psym.runtime.logger.SearchLogger;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
@@ -34,24 +34,23 @@ public class ReplayScheduler extends Scheduler {
   private final int cexLength;
 
   public ReplayScheduler(
-      PSymConfiguration config, Program p, Schedule schedule, int length, boolean livenessBug) {
-    this(config, p, schedule, Guard.constTrue(), length, livenessBug);
+      Program p, Schedule schedule, int length, boolean livenessBug) {
+    this(p, schedule, Guard.constTrue(), length, livenessBug);
   }
 
   public ReplayScheduler(
-      PSymConfiguration config,
       Program p,
       Schedule schedule,
       Guard pc,
       int length,
       boolean livenessBug) {
-    super(config, p);
+    super(p);
     TraceLogger.enable();
     this.schedule = schedule.guard(pc).getSingleSchedule();
     for (Machine machine : schedule.getMachines()) {
       machine.reset();
     }
-    configuration.setToReplay();
+    PSymGlobal.getConfiguration().setToReplay();
     cexLength = length;
     pathConstraint = pc;
     isLivenessBug = livenessBug;
@@ -72,7 +71,7 @@ public class ReplayScheduler extends Scheduler {
       fis = new FileInputStream(readFromFile);
       ObjectInputStream ois = new ObjectInputStream(fis);
       result = (ReplayScheduler) ois.readObject();
-      GlobalData.setInstance((GlobalData) ois.readObject());
+      PSymGlobal.setInstance((PSymGlobal) ois.readObject());
       result.reinitialize();
       PSymLogger.info(".. Successfully read.");
     } catch (IOException | ClassNotFoundException e) {
@@ -85,6 +84,7 @@ public class ReplayScheduler extends Scheduler {
   @Override
   public void doSearch() throws TimeoutException {
     TraceLogger.logStartReplayCex(cexLength);
+    ScheduleWriter.logHeader();
     initializeSearch();
     performSearch();
     checkLiveness(isLivenessBug);
@@ -99,14 +99,14 @@ public class ReplayScheduler extends Scheduler {
   protected void performSearch() throws TimeoutException {
     while (!isDone()) {
       Assert.prop(
-          getDepth() < configuration.getMaxStepBound(),
-          "Maximum allowed depth " + configuration.getMaxStepBound() + " exceeded",
+          getDepth() < PSymGlobal.getConfiguration().getMaxStepBound(),
+          "Maximum allowed depth " + PSymGlobal.getConfiguration().getMaxStepBound() + " exceeded",
           schedule.getLengthCond(schedule.size()));
       step();
     }
     Assert.prop(
-        !configuration.isFailOnMaxStepBound() || (getDepth() < configuration.getMaxStepBound()),
-        "Scheduling steps bound of " + configuration.getMaxStepBound() + " reached.",
+        !PSymGlobal.getConfiguration().isFailOnMaxStepBound() || (getDepth() < PSymGlobal.getConfiguration().getMaxStepBound()),
+        "Scheduling steps bound of " + PSymGlobal.getConfiguration().getMaxStepBound() + " reached.",
         schedule.getLengthCond(schedule.size()));
     if (done) {
       searchStats.setIterationCompleted();
@@ -115,22 +115,11 @@ public class ReplayScheduler extends Scheduler {
 
   @Override
   public void step() {
-    // remove messages with halted target
-    for (Machine machine : machines) {
-      while (!machine.sendBuffer.isEmpty()) {
-        Guard targetHalted =
-            machine.sendBuffer.satisfiesPredUnderGuard(x -> x.targetHalted()).getGuardFor(true);
-        if (!targetHalted.isFalse()) {
-          rmBuffer(machine, targetHalted);
-          continue;
-        }
-        break;
-      }
-    }
+    removeHalted();
 
-    PrimitiveVS<Machine> choices = getNextSender();
+    PrimitiveVS<Machine> schedulingChoices = getNextSchedulingChoice();
 
-    if (choices.isEmptyVS()) {
+    if (schedulingChoices.isEmptyVS()) {
       done = true;
       SearchLogger.finishedExecution(depth);
     }
@@ -142,9 +131,9 @@ public class ReplayScheduler extends Scheduler {
     Message effect = null;
     List<Message> effects = new ArrayList<>();
 
-    for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
-      Machine machine = sender.getValue();
-      Guard guard = sender.getGuard();
+    for (GuardedValue<Machine> schedulingChoice : schedulingChoices.getGuardedValues()) {
+      Machine machine = schedulingChoice.getValue();
+      Guard guard = schedulingChoice.getGuard();
       Message removed = rmBuffer(machine, guard);
       if (effect == null) {
         effect = removed;
@@ -167,14 +156,14 @@ public class ReplayScheduler extends Scheduler {
       depth++;
     }
 
-    TraceLogger.schedule(depth, effect, choices);
+    TraceLogger.schedule(depth, effect);
 
     performEffect(effect);
   }
 
   @Override
-  public PrimitiveVS<Machine> getNextSender() {
-    PrimitiveVS<Machine> res = schedule.getRepeatSender(choiceDepth);
+  public PrimitiveVS<Machine> getNextSchedulingChoice() {
+    PrimitiveVS<Machine> res = schedule.getRepeatSchedulingChoice(choiceDepth);
     choiceDepth++;
     return res;
   }
@@ -182,6 +171,7 @@ public class ReplayScheduler extends Scheduler {
   @Override
   public PrimitiveVS<Boolean> getNextBoolean(Guard pc) {
     PrimitiveVS<Boolean> res = schedule.getRepeatBool(choiceDepth);
+    ScheduleWriter.logBoolean(res);
     choiceDepth++;
     return res;
   }
@@ -189,13 +179,7 @@ public class ReplayScheduler extends Scheduler {
   @Override
   public PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc) {
     PrimitiveVS<Integer> res = schedule.getRepeatInt(choiceDepth);
-    choiceDepth++;
-    return res;
-  }
-
-  @Override
-  public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
-    ValueSummary res = getNextElementFlattener(schedule.getRepeatElement(choiceDepth));
+    ScheduleWriter.logInteger(res);
     choiceDepth++;
     return res;
   }
@@ -270,8 +254,8 @@ public class ReplayScheduler extends Scheduler {
       FileOutputStream fos = new FileOutputStream(writeFileName);
       ObjectOutputStream oos = new ObjectOutputStream(fos);
       oos.writeObject(this);
-      oos.writeObject(GlobalData.getInstance());
-      if (configuration.getVerbosity() > 0) {
+      oos.writeObject(PSymGlobal.getInstance());
+      if (PSymGlobal.getConfiguration().getVerbosity() > 0) {
         long szBytes = Files.size(Paths.get(writeFileName));
         PSymLogger.info(
             String.format("  %,.1f MB  written in %s", (szBytes / 1024.0 / 1024.0), writeFileName));

@@ -2,9 +2,13 @@ package psym.valuesummary;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
+import psym.utils.exception.BugFoundException;
 
 public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
 
@@ -28,8 +32,14 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
       ListVS elements = toCastVs.getElements();
       return new SetVS<>((ListVS) ValueSummary.castToAnyCollection(pc, elements));
     } else {
-      throw new ClassCastException(
-          String.format("Casting elements in %s to any is unsupported", toCast));
+      assert (toCast instanceof MapVS);
+      MapVS toCastVs = (MapVS) toCast;
+      Map<Object, ValueSummary> items = new HashMap<>();
+      for (Object key: toCastVs.entries.keySet()) {
+        ValueSummary<?> val = (ValueSummary) toCastVs.entries.get(key);
+        items.put(key, ValueSummary.castToAny(pc, val));
+      }
+      return new MapVS<>(toCastVs.keys, items);
     }
   }
 
@@ -45,7 +55,7 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
    * @return A ValueSummary that can be casted into the provided type
    */
   static ValueSummary<?> castFromAny(Guard pc, ValueSummary<?> def, UnionVS anyVal) {
-    ValueSummary<?> result;
+    ValueSummary<?> result = null;
     if (def instanceof UnionVS) {
       return anyVal;
     }
@@ -65,19 +75,17 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
       type = UnionVStype.getUnionVStype(def.getClass(), null);
     }
     Guard typeGuard = anyVal.getGuardFor(type);
-    Guard pcNotDefined = pc.and(typeGuard.not());
     Guard pcDefined = pc.and(typeGuard);
     if (pcDefined.isFalse()) {
-      if (type.equals(UnionVStype.getUnionVStype(PrimitiveVS.class, null))) {
-        return new PrimitiveVS<>(pc);
-      }
-      System.out.println(anyVal.restrict(typeGuard));
-      throw new ClassCastException(
-          String.format(
-              "Casting to %s under path constraint %s is not defined for %s",
-              type, pcNotDefined, anyVal));
+      throw new BugFoundException(
+              String.format("Casting %s to type %s is not defined", anyVal, type), pc);
     }
-    result = anyVal.getValue(type).restrict(pc);
+    ValueSummary val = anyVal.getValue(type);
+    if (val == null) {
+      val = def;
+    }
+    result = val.restrict(pc);
+
     return result;
   }
 
@@ -95,8 +103,14 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
       ListVS elements = toCastVs.getElements();
       return new SetVS<>((ListVS) ValueSummary.castFromAnyCollection(pc, def, elements));
     } else {
-      throw new ClassCastException(
-          String.format("Casting elements in %s to %s is unsupported", anyVal, def));
+      assert (anyVal instanceof MapVS);
+      MapVS toCastVs = (MapVS) anyVal;
+      Map<Object, ValueSummary> items = new HashMap<>();
+      for (Object key: toCastVs.entries.keySet()) {
+        ValueSummary val = (ValueSummary) toCastVs.entries.get(key);
+        items.put(key, ValueSummary.castFromAny(pc, def, (UnionVS) val));
+      }
+      return new MapVS<>(toCastVs.keys, items);
     }
   }
 

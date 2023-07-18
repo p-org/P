@@ -117,10 +117,15 @@ namespace Plang.Compiler.Backend.Symbolic
             IEnumerable<IPDecl> decls = TransformASTPass.GetTransformedDecls(globalScope);
             //IEnumerable<IPDecl> decls = globalScope.AllDecls;
 
-            foreach (var decl in decls)
+            bool hasSafetyTest = false;
+            foreach (var decl in decls) {
+                hasSafetyTest |= (decl.GetType() == typeof(SafetyTest));
                 WriteDecl(context, source.Stream, decl);
+            }
 
-            WriteMainDriver(context, source.Stream, globalScope, decls);
+            if (!hasSafetyTest) {
+                WriteMainDriver(context, source.Stream, globalScope, decls);
+            }
 
             context.WriteLine(source.Stream, "PTestDriver testDriver = null;");
             context.WriteLine(source.Stream, "@Generated");
@@ -407,7 +412,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     var cont = (Continuation) method;
                     context.Write(output, $"continuations.put(\"{context.GetContinuationName(cont)}\", ");
                     context.Write(output, $"(pc) -> ((continuation_outcome, msg) -> {context.GetContinuationName(cont)}(pc,");
-                    context.Write(output, $"sendBuffer");
+                    context.Write(output, $"getSendBuffer()");
                     context.Write(output, ", continuation_outcome");
                     context.WriteLine(output, $", msg)));");
                     context.WriteLine(output, $"clearContinuationVars.add(() -> clear_{context.GetContinuationName(cont)}());");
@@ -459,7 +464,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
                 var entryFunc = state.Entry;
                 entryFunc.Name = $"{context.GetNameForDecl(state)}_entry";
-                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}({entryPcScope.PathConstraintVar}, machine.sendBuffer");
+                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}({entryPcScope.PathConstraintVar}, machine.getSendBuffer()");
                 if (entryFunc.CanChangeState ?? false)
                     context.Write(output, ", outcome");
                 else if (entryFunc.CanRaiseEvent ?? false)
@@ -486,7 +491,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 Debug.Assert(!(exitFunc.CanRaiseEvent ?? false));
                 if (exitFunc.Signature.Parameters.Count() != 0)
                     throw new NotImplementedException("Exit functions with payloads are not yet supported");
-                context.WriteLine(output, $"(({context.GetNameForDecl(exitFunc.Owner)})machine).{context.GetNameForDecl(exitFunc)}(pc, machine.sendBuffer);");
+                context.WriteLine(output, $"(({context.GetNameForDecl(exitFunc.Owner)})machine).{context.GetNameForDecl(exitFunc)}(pc, machine.getSendBuffer());");
 
                 context.WriteLine(output, "}");
             }
@@ -507,7 +512,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     var actionFunc = action.Target;
                     if (actionFunc.Name == "")
                         actionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}";
-                    context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc, machine.sendBuffer");
+                    context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(pc, machine.getSendBuffer()");
                     if (actionFunc.CanChangeState ?? false)
                         context.Write(output, ", outcome");
                     else if (actionFunc.CanRaiseEvent ?? false)
@@ -539,7 +544,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         if (transitionFunc.Name == "")
                             transitionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}_{destTag}";
 
-                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(pc, machine.sendBuffer");
+                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(pc, machine.getSendBuffer()");
                         if (transitionFunc.Signature.Parameters.Count() == 1)
                         {
                             Debug.Assert(!transitionFunc.Signature.Parameters[0].Type.IsSameTypeAs(PrimitiveType.Null));
@@ -1196,8 +1201,10 @@ namespace Plang.Compiler.Backend.Symbolic
                     {
                         var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
                         var isSet = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Set);
+                        PLanguageType keyType = null;
                         PLanguageType elementType = null;
                         if (isMap) {
+                            keyType = ((MapType) insertStmt.Variable.Type.Canonicalize()).KeyType;
                             elementType = ((MapType) insertStmt.Variable.Type.Canonicalize()).ValueType;
                         } else if (isSet) {
                             elementType = ((SetType) insertStmt.Variable.Type.Canonicalize()).ElementType;
@@ -1219,16 +1226,28 @@ namespace Plang.Compiler.Backend.Symbolic
                                     context.Write(output, $".add(");
                                 else
                                     context.Write(output, $".insert(");
-                                WriteExpr(context, output, flowContext.pcScope, insertStmt.Index);
-                                context.Write(output, ", ");
 
-                                var castPrefix = "";
-                                if (elementType != null) {
-                                    castPrefix = GetInlineCastPrefix(insertStmt.Value.Type, elementType, context, flowContext.pcScope);
+                                {
+                                    var castPrefixKey = "";
+                                    if (keyType != null) {
+                                        castPrefixKey = GetInlineCastPrefix(insertStmt.Index.Type, keyType, context, flowContext.pcScope);
+                                    }
+                                    context.Write(output, castPrefixKey);
+                                    WriteExpr(context, output, flowContext.pcScope, insertStmt.Index);
+                                    if (castPrefixKey != "") context.Write(output, ")");
+                                    context.Write(output, ", ");
                                 }
-                                context.Write(output, castPrefix);
-                                WriteExpr(context, output, flowContext.pcScope, insertStmt.Value);
-                                if (castPrefix != "") context.Write(output, ")");
+
+                                {
+                                    var castPrefix = "";
+                                    if (elementType != null) {
+                                        castPrefix = GetInlineCastPrefix(insertStmt.Value.Type, elementType, context, flowContext.pcScope);
+                                    }
+                                    context.Write(output, castPrefix);
+                                    WriteExpr(context, output, flowContext.pcScope, insertStmt.Value);
+                                    if (castPrefix != "") context.Write(output, ")");
+                                }
+
                                 context.WriteLine(output, ");");
                             }
                         );
@@ -1334,7 +1353,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, ",");
             context.Write(output, "EventHandlerReturnReason outcome");
             context.WriteLine(output, ",");
-            var messageName = CompilationContext.GetVar("msg");
+            var messageName = $"{continuationName}_msg";
             context.WriteLine(output, $"Message {messageName}");
             context.WriteLine(output);
             context.Write(output, ") ");
@@ -1351,24 +1370,25 @@ namespace Plang.Compiler.Backend.Symbolic
             }
             var idx = 0;
             context.WriteLine(output, $"Guard deferGuard = {rootPCScope.PathConstraintVar};");
-            foreach (var e in continuation.Cases.Keys)
+            foreach (var (key, value) in continuation.Cases)
             {
                 var args = new List<IPExpr>();
-                context.WriteLine(output, $"Guard cond_{idx} = {messageName}.getEvent().getGuardFor({e.Name});");
+                context.WriteLine(output, $"Guard cond_{idx} = {messageName}.getEvent().getGuardFor({key.Name});");
                 context.WriteLine(output, $"Message {messageName}_{idx} = {messageName}.restrict(cond_{idx});");
                 context.WriteLine(output, $"if (!{messageName}_{idx}.isEmptyVS())");
                 context.WriteLine(output, "{");
+                context.WriteLine(output, $"{CompilationContext.EffectCollectionVar}.unblock({messageName}_{idx});");
                 context.WriteLine(output, $"deferGuard = deferGuard.and(cond_{idx}.not());");
                 var caseScope = context.FreshPathConstraintScope();
                 context.WriteLine(output, $"Guard {caseScope.PathConstraintVar} = {rootPCScope.PathConstraintVar}.and(cond_{idx});");
                 var caseContext = ControlFlowContext.FreshFuncContext(context, caseScope);
-                if (continuation.Cases[e].Signature.Parameters.Count > 0)
+                if (value.Signature.Parameters.Count > 0)
                 {
-                    if (continuation.Cases[e].Signature.Parameters.Count > 1)
+                    if (value.Signature.Parameters.Count > 1)
                     {
-                        throw new NotImplementedException($"Too many parameters ({continuation.Cases[e].Signature.Parameters.Count}) in receive case");
+                        throw new NotImplementedException($"Too many parameters ({value.Signature.Parameters.Count}) in receive case");
                     }
-                    var arg = continuation.Cases[e].Signature.Parameters[0];
+                    var arg =value.Signature.Parameters[0];
                     var argValue = new Variable($"{arg.Name}_payload", continuation.SourceLocation, VariableRole.Param);
                     argValue.Type = PrimitiveType.Any;
                     context.WriteLine(output, $"UnionVS var_{arg.Name}_payload = {messageName}_{idx}.restrict({caseScope.PathConstraintVar}).getPayload();");
@@ -1376,14 +1396,14 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, $"{GetSymbolicType(arg.Type)} {CompilationContext.GetVar(arg.Name)} = {GetDefaultValue(context, caseScope, arg.Type)};");
                     WriteStmt(continuation, context, output, caseContext, assignMsg);
                 }
-                foreach (var local in continuation.Cases[e].LocalVariables)
+                foreach (var local in value.LocalVariables)
                 {
                     if (!continuationLocalParams.Contains(local.Name))
                     {
                         context.WriteLine(output, $"{GetSymbolicType(local.Type)} {CompilationContext.GetVar(local.Name)} = {GetDefaultValue(context, caseScope, local.Type)};");
                     }
                 }
-                WriteStmt(continuation, context, output, caseContext, continuation.Cases[e].Body);
+                WriteStmt(continuation, context, output, caseContext, value.Body);
                 context.WriteLine(output, "}");
                 idx++;
             }
@@ -1737,7 +1757,7 @@ namespace Plang.Compiler.Backend.Symbolic
             switch (lvalue)
             {
                 case MapAccessExpr mapAccessExpr:
-                    var valueType = mapAccessExpr.Type;
+                    elementType = mapAccessExpr.Type;
                     var indexExpr = mapAccessExpr.IndexExpr;
                     var indexType = indexExpr.Type;
 
@@ -1749,18 +1769,18 @@ namespace Plang.Compiler.Backend.Symbolic
                         true,
                         mapTemp =>
                         {
-                            var valueTemp = context.FreshTempVar();
+                            var elementTemp = context.FreshTempVar();
                             var indexTemp = context.FreshTempVar();
 
                             context.Write(output, $"{GetSymbolicType(indexType)} {indexTemp} = ");
                             WriteExpr(context, output, pcScope, indexExpr);
                             context.WriteLine(output, ";");
 
-                            context.Write(output, $"{GetSymbolicType(valueType)} {valueTemp}");
+                            context.Write(output, $"{GetSymbolicType(elementType)} {elementTemp}");
                             if (needOrigValue)
                             {
                                 context.Write(output, $" = {mapTemp}.getOrDefault({indexTemp}, ");
-                                context.Write(output, GetDefaultValue(context, pcScope, valueType));
+                                context.Write(output, GetDefaultValue(context, pcScope, elementType));
                                 context.WriteLine(output, ");");
                             }
                             else
@@ -1768,9 +1788,37 @@ namespace Plang.Compiler.Backend.Symbolic
                                 context.WriteLine(output, ";");
                             }
 
-                            writeMutator(valueTemp);
+                            writeMutator(elementTemp);
 
-                            context.WriteLine(output, $"{mapTemp} = {mapTemp}.put({indexTemp}, {valueTemp});");
+                            context.Write(output, $"{mapTemp} = {mapTemp}.put(");
+
+                            PLanguageType keyType = null;
+                            PLanguageType valueType = null;
+                            keyType = ((MapType) mapAccessExpr.MapExpr.Type.Canonicalize()).KeyType;
+                            valueType = ((MapType) mapAccessExpr.MapExpr.Type.Canonicalize()).ValueType;
+
+                            {
+                                var castPrefixKey = "";
+                                if (keyType != null) {
+                                    castPrefixKey = GetInlineCastPrefix(indexType, keyType, context, pcScope);
+                                }
+                                context.Write(output, castPrefixKey);
+                                context.Write(output, $"{indexTemp}");
+                                if (castPrefixKey != "") context.Write(output, ")");
+                                context.Write(output, ", ");
+                            }
+
+                            {
+                                var castPrefix = "";
+                                if (valueType != null) {
+                                    castPrefix = GetInlineCastPrefix(elementType, valueType, context, pcScope);
+                                }
+                                context.Write(output, castPrefix);
+                                context.Write(output, $"{elementTemp}");
+                                if (castPrefix != "") context.Write(output, ")");
+                            }
+
+                            context.WriteLine(output, ");");
                         }
                     );
                     break;
@@ -1879,7 +1927,22 @@ namespace Plang.Compiler.Backend.Symbolic
 
                             writeMutator(elementTemp);
 
-                            context.WriteLine(output, $"{seqTemp} = {seqTemp}.set({indexTemp}, {elementTemp});");
+                            context.Write(output, $"{seqTemp} = {seqTemp}.set({indexTemp}, ");
+
+                            PLanguageType valueType = null;
+                            valueType = ((SequenceType) seqAccessExpr.SeqExpr.Type.Canonicalize()).ElementType;
+
+                            {
+                                var castPrefix = "";
+                                if (valueType != null) {
+                                    castPrefix = GetInlineCastPrefix(elementType, valueType, context, pcScope);
+                                }
+                                context.Write(output, castPrefix);
+                                context.Write(output, $"{elementTemp}");
+                                if (castPrefix != "") context.Write(output, ")");
+                            }
+
+                            context.WriteLine(output, ");");
                         }
                     );
                     break;
@@ -2031,6 +2094,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     var isPrimitive = binOpExpr.Lhs.Type.Canonicalize() is PrimitiveType && binOpExpr.Rhs.Type.Canonicalize() is PrimitiveType;
                     var isEnum = binOpExpr.Lhs.Type.Canonicalize() is EnumType && binOpExpr.Rhs.Type.Canonicalize() is EnumType;
                     var isEquality = binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq;
+                    var isString = isPrimitive && binOpExpr.Lhs.Type.IsSameTypeAs(PrimitiveType.String);
 
                     if (!(isPrimitive || isEquality))
                     {
@@ -2073,13 +2137,19 @@ namespace Plang.Compiler.Backend.Symbolic
                             context.Write(output, $"{GetDefaultValueNoGuard(context, binOpExpr.Lhs.Type)}.restrict(Guard.constFalse())");
                         else WriteExpr(context, output, pcScope, binOpExpr.Rhs);
                         string lambda;
-                        if (binOpExpr.Operation == BinOpType.Eq) lambda = $"{lhsLambdaTemp}.equals({rhsLambdaTemp}))";
-                        else if (binOpExpr.Operation == BinOpType.Neq) lambda = $"!{lhsLambdaTemp}.equals({rhsLambdaTemp}))";
-                        else lambda = $"{lhsLambdaTemp} {BinOpToStr(binOpExpr.Operation)} {rhsLambdaTemp})";
+                        if (binOpExpr.Operation == BinOpType.Eq)
+                            lambda = $"{lhsLambdaTemp}.equals({rhsLambdaTemp})";
+                        else if (binOpExpr.Operation == BinOpType.Neq)
+                            lambda = $"!{lhsLambdaTemp}.equals({rhsLambdaTemp})";
+                        else if (isString)
+                            lambda = BinOpForStringToStr(binOpExpr.Operation, $"{lhsLambdaTemp}", $"{rhsLambdaTemp}");
+                        else
+                            lambda = $"{lhsLambdaTemp} {BinOpToStr(binOpExpr.Operation)} {rhsLambdaTemp}";
                         context.Write(
                             output,
                             $", ({lhsLambdaTemp}, {rhsLambdaTemp}) -> " +
-                            lambda
+                            lambda +
+                            ")"
                         );
                     }
                     break;
@@ -2409,6 +2479,25 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
+        private string BinOpForStringToStr(BinOpType binOpType, string lhs, string rhs)
+        {
+            switch (binOpType)
+            {
+                case BinOpType.Add:
+                    return $"{lhs}.concat({rhs})";
+                case BinOpType.Lt:
+                    return $"{lhs}.compareTo({rhs}) < 0";
+                case BinOpType.Le:
+                    return $"{lhs}.compareTo({rhs}) <= 0";
+                case BinOpType.Gt:
+                    return $"{lhs}.compareTo({rhs}) > 0";
+                case BinOpType.Ge:
+                    return $"{lhs}.compareTo({rhs}) >= 0";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
+            }
+        }
+
         // TODO: This is copied from PSharpCodeGenerator.cs.  Should we refactor this into some common location?
         private static string UnOpToStr(UnaryOpType operation)
         {
@@ -2600,7 +2689,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return $"new {GetSymbolicType(type)}(0.0f)";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
-                    return $"new {GetSymbolicType(type)}({CompilationContext.NullEventName})";
+                    return $"new {GetSymbolicType(type)}((Event) null)";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return $"new {GetSymbolicType(type)}()";
                 case DataType _:
@@ -2616,8 +2705,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"new {GetSymbolicType(type)}(Guard.constTrue())";
                 case MapType _:
                     return $"new {GetSymbolicType(type)}(Guard.constTrue())";
-                case EnumType _:
-                    return $"new {GetSymbolicType(type)}(0)";
+                case EnumType enumType:
+                    return $"new {GetSymbolicType(type)}({enumType.EnumDecl.Values.Min(elem => elem.Value)})";
                 case NamedTupleType namedTupleType:
                     {
                         var allFieldDefaults = new List<string>();
@@ -2671,16 +2760,6 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, "import lombok.Generated;");
             context.WriteLine(output);
             context.WriteLine(output, $"public class {context.MainClassName} implements Program {{");
-            context.WriteLine(output);
-            context.WriteLine(output, $"public static Scheduler programScheduler;");
-            context.WriteLine(output);
-            context.WriteLine(output, "@Generated");
-            context.WriteLine(output, "@Override");
-            context.WriteLine(output, $"public Scheduler getProgramScheduler () {{ return this.programScheduler; }}");
-            context.WriteLine(output);
-            context.WriteLine(output, "@Generated");
-            context.WriteLine(output, "@Override");
-            context.WriteLine(output, $"public void setProgramScheduler (Scheduler s) {{ this.programScheduler = s; }}");
             context.WriteLine(output);
         }
 

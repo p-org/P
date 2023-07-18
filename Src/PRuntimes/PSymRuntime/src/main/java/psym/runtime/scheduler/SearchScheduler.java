@@ -7,8 +7,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import psym.commandline.PSymConfiguration;
-import psym.runtime.GlobalData;
+import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
@@ -20,8 +19,8 @@ import psym.valuesummary.*;
 
 /** Represents the search scheduler */
 public abstract class SearchScheduler extends Scheduler {
-  protected SearchScheduler(PSymConfiguration config, Program p) {
-    super(config, p);
+  protected SearchScheduler(Program p) {
+    super(p);
   }
 
   protected abstract PrimitiveVS getNext(
@@ -48,18 +47,18 @@ public abstract class SearchScheduler extends Scheduler {
   public abstract void print_search_stats();
 
   @Override
-  public PrimitiveVS<Machine> getNextSender() {
+  public PrimitiveVS<Machine> getNextSchedulingChoice() {
     int depth = choiceDepth;
     PrimitiveVS<Machine> res =
         getNext(
             depth,
-            schedule::getRepeatSender,
-            schedule::getBacktrackSender,
+            schedule::getRepeatSchedulingChoice,
+            schedule::getBacktrackSchedulingChoice,
             schedule::clearBacktrack,
-            schedule::addRepeatSender,
-            schedule::addBacktrackSender,
-            this::getNextSenderChoices,
-            this::getNextSenderSummary,
+            schedule::addRepeatSchedulingChoice,
+            schedule::addBacktrackSchedulingChoice,
+            this::getNextSchedulingChoices,
+            this::getNextSchedulingChoiceSummary,
             false);
 
     choiceDepth = depth + 1;
@@ -103,24 +102,6 @@ public abstract class SearchScheduler extends Scheduler {
   }
 
   @Override
-  public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
-    int depth = choiceDepth;
-    PrimitiveVS<ValueSummary> res =
-        getNext(
-            depth,
-            schedule::getRepeatElement,
-            schedule::getBacktrackElement,
-            schedule::clearBacktrack,
-            schedule::addRepeatElement,
-            schedule::addBacktrackElement,
-            () -> super.getNextElementChoices(candidates, pc),
-            super::getNextElementHelper,
-            true);
-    choiceDepth = depth + 1;
-    return super.getNextElementFlattener(res);
-  }
-
-  @Override
   public PrimitiveVS<Machine> allocateMachine(
       Guard pc,
       Class<? extends Machine> machineType,
@@ -144,16 +125,16 @@ public abstract class SearchScheduler extends Scheduler {
         currentMachines.add(m);
         assert (machines.size() >= currentMachines.size());
         m.setScheduler(this);
-        if (configuration.getSymmetryMode() != SymmetryMode.None) {
-          GlobalData.getSymmetryTracker().createMachine(m, g);
+        if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+          PSymGlobal.getSymmetryTracker().createMachine(m, g);
         }
       }
     } else {
       Machine newMachine = setupNewMachine(pc, guardedCount, constructor);
 
       allocated = new PrimitiveVS<>(newMachine).restrict(pc);
-      if (configuration.getSymmetryMode() != SymmetryMode.None) {
-        GlobalData.getSymmetryTracker().createMachine(newMachine, pc);
+      if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+        PSymGlobal.getSymmetryTracker().createMachine(newMachine, pc);
       }
     }
 
@@ -188,19 +169,19 @@ public abstract class SearchScheduler extends Scheduler {
     StatWriter.logSolverStats();
   }
 
-  private PrimitiveVS<Machine> getNextSenderSummary(List<PrimitiveVS> candidateSenders) {
+  private PrimitiveVS<Machine> getNextSchedulingChoiceSummary(List<PrimitiveVS> candidates) {
     PrimitiveVS<Machine> choices =
-        (PrimitiveVS<Machine>) NondetUtil.getNondetChoice(candidateSenders);
-    schedule.addRepeatSender(choices, choiceDepth);
+        (PrimitiveVS<Machine>) NondetUtil.getNondetChoice(candidates);
+    schedule.addRepeatSchedulingChoice(choices, choiceDepth);
     choiceDepth++;
     return choices;
   }
 
-  protected List<PrimitiveVS> getNextSenderChoices() {
+  protected List<PrimitiveVS> getNextSchedulingChoices() {
     // prioritize the create actions
     for (Machine machine : machines) {
-      if (!machine.sendBuffer.isEmpty()) {
-        Guard initCond = machine.sendBuffer.hasCreateMachineUnderGuard().getGuardFor(true);
+      if (!machine.getEventBuffer().isEmpty()) {
+        Guard initCond = machine.getEventBuffer().hasCreateMachineUnderGuard().getGuardFor(true);
         if (!initCond.isFalse()) {
           PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(initCond);
           return new ArrayList<>(Collections.singletonList(ret));
@@ -210,8 +191,8 @@ public abstract class SearchScheduler extends Scheduler {
 
     // prioritize the sync actions i.e. events that are marked as synchronous
     for (Machine machine : machines) {
-      if (!machine.sendBuffer.isEmpty()) {
-        Guard syncCond = machine.sendBuffer.hasSyncEventUnderGuard().getGuardFor(true);
+      if (!machine.getEventBuffer().isEmpty()) {
+        Guard syncCond = machine.getEventBuffer().hasSyncEventUnderGuard().getGuardFor(true);
         if (!syncCond.isFalse()) {
           PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(syncCond);
           return new ArrayList<>(Collections.singletonList(ret));
@@ -223,9 +204,9 @@ public abstract class SearchScheduler extends Scheduler {
     List<GuardedValue<Machine>> guardedMachines = new ArrayList<>();
 
     for (Machine machine : machines) {
-      if (!machine.sendBuffer.isEmpty()) {
+      if (!machine.getEventBuffer().isEmpty()) {
         Guard canRun =
-            machine.sendBuffer.satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true);
+            machine.getEventBuffer().satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true);
         if (!canRun.isFalse()) {
           guardedMachines.add(new GuardedValue(machine, canRun));
         }
@@ -237,11 +218,11 @@ public abstract class SearchScheduler extends Scheduler {
             .map(x -> x.getGuard().and(schedule.getFilter()))
             .allMatch(x -> x.isFalse());
 
-    List<PrimitiveVS> candidateSenders = new ArrayList<>();
+    List<PrimitiveVS> candidates = new ArrayList<>();
     for (GuardedValue<Machine> guardedValue : guardedMachines) {
-      candidateSenders.add(
+      candidates.add(
           new PrimitiveVS<>(guardedValue.getValue()).restrict(guardedValue.getGuard()));
     }
-    return candidateSenders;
+    return candidates;
   }
 }

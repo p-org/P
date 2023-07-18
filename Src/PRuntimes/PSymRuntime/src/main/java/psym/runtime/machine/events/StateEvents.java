@@ -1,19 +1,19 @@
 package psym.runtime.machine.events;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import psym.runtime.machine.eventhandlers.EventHandler;
 
 public class StateEvents implements Serializable {
     public final Map<Event, EventHandler> eventHandlers;
-    public final List<Event> ignored;
+    public final Set<Event> ignored;
+    public final Set<Event> deferred;
 
     public StateEvents() {
         this.eventHandlers = new HashMap<>();
-        this.ignored = new ArrayList<>();
+        this.ignored = new HashSet<>();
+        this.deferred = new HashSet<>();
     }
 
 }

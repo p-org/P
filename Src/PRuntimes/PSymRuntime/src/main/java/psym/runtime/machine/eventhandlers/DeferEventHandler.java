@@ -15,7 +15,7 @@ public class DeferEventHandler extends EventHandler {
 
     @Override
     public void handleEvent(Guard pc, Machine target, UnionVS payload, EventHandlerReturnReason outcome) {
-        Message deferredMessage = new Message(event, new PrimitiveVS<>(), payload);
-        target.deferredQueue.defer(pc, deferredMessage.restrict(pc));
+        Message deferredMessage = new Message(event, new PrimitiveVS<>(target), payload);
+        target.getDeferredQueue().add(deferredMessage.restrict(pc));
     }
 }

@@ -9,8 +9,7 @@ machine Main {
                 i = i + 1;
             }
             coord = new Coordinator(participants);
-			new Client((coor = coord, n = 1));
-            new Client((coor = coord, n = 1));
+			new Client((coor = coord, n = 2));
 		}
 	}
 }

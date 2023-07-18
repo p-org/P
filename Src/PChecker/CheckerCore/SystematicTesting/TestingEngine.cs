@@ -347,7 +347,8 @@ namespace PChecker.SystematicTesting
                     TestMethodInfo.InitializeAllIterations();
 
                     var maxIterations = IsReplayModeEnabled ? 1 : _checkerConfiguration.TestingIterations;
-                    for (var i = 0; i < maxIterations; i++)
+                    int i = 0;
+                    while (maxIterations == 0 || i < maxIterations)
                     {
                         if (CancellationTokenSource.IsCancellationRequested)
                         {
@@ -370,13 +371,7 @@ namespace PChecker.SystematicTesting
                             RandomValueGenerator.Seed += 1;
                         }
 
-                        // Increases iterations if there is a specified timeout
-                        // and the default iteration given.
-                        if (_checkerConfiguration.TestingIterations == 1 &&
-                            _checkerConfiguration.Timeout > 0)
-                        {
-                            maxIterations++;
-                        }
+                        i++;
                     }
 
                     // Invokes the user-specified test disposal method.

@@ -141,7 +141,6 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       }
       searchStats.startNewIteration(iter, backtrackDepth);
       performSearch();
-      checkLiveness(false);
       summarizeIteration(backtrackDepth);
     }
   }
@@ -168,7 +167,6 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       }
       searchStats.startNewIteration(iter, backtrackDepth);
       performSearch();
-      checkLiveness(false);
       summarizeIteration(backtrackDepth);
       if (resetAfterInitial) {
         resetAfterInitial = false;
@@ -187,13 +185,15 @@ public class ExplicitSearchScheduler extends SearchScheduler {
           "Maximum allowed depth " + PSymGlobal.getConfiguration().getMaxStepBound() + " exceeded",
           schedule.getLengthCond(schedule.size()));
       step();
+      checkLiveness(allMachinesHalted);
     }
+    checkLiveness(Guard.constTrue());
     Assert.prop(
         !PSymGlobal.getConfiguration().isFailOnMaxStepBound() || (getDepth() < PSymGlobal.getConfiguration().getMaxStepBound()),
         "Scheduling steps bound of " + PSymGlobal.getConfiguration().getMaxStepBound() + " reached.",
         schedule.getLengthCond(schedule.size()));
     schedule.setNumBacktracksInSchedule();
-    if (done) {
+    if (done.isTrue()) {
       searchStats.setIterationCompleted();
     }
   }
@@ -201,6 +201,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   @Override
   protected void step() throws TimeoutException {
     srcState.clear();
+    allMachinesHalted = Guard.constFalse();
 
     int numStates = 0;
     int numStatesDistinct = 0;
@@ -217,10 +218,13 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       if (!isDistinctState) {
         int firstVisitIter = numConcrete[2];
         if (firstVisitIter == iter) {
-          executionFinished = true;
-//          throw new BugFoundException("Cycle detected: revisited a state multiple times in the same iteration", Guard.constTrue());
+          allMachinesHalted = Guard.constTrue();
+//          Assert.liveness(
+//                  false,
+//                  String.format("Cycle detected: Possible infinite loop found due to revisiting a state multiple times in the same iteration"),
+//                  Guard.constTrue());
         }
-        done = true;
+        done = Guard.constTrue();
         SearchLogger.finishedExecution(depth);
         return;
       }
@@ -243,11 +247,11 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     PrimitiveVS<Machine> schedulingChoices = getNextSchedulingChoice();
 
     if (schedulingChoices.isEmptyVS()) {
-      done = true;
+      done = Guard.constTrue();
       SearchLogger.finishedExecution(depth);
     }
 
-    if (done) {
+    if (done.isTrue()) {
       return;
     }
 
@@ -903,7 +907,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   public void reset() {
     depth = 0;
     choiceDepth = 0;
-    done = false;
+    done = Guard.constFalse();
     stickyStep = true;
     machineCounters.clear();
     //        machines.clear();
@@ -943,7 +947,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   public void restore(int d, int cd) {
     depth = d;
     choiceDepth = cd;
-    done = false;
+    done = Guard.constFalse();
   }
 
   public void restoreState(Schedule.ChoiceState state) {

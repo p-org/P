@@ -290,16 +290,6 @@ public class Schedule implements Serializable {
     return new Schedule(newChoices, createdMachines, machines, pc, schedulerSymmetry);
   }
 
-  public Schedule removeEmptyRepeat() {
-    List<Choice> newChoices = new ArrayList<>();
-    for (int i = 0; i < size(); i++) {
-      if (!choices.get(i).isRepeatEmpty()) {
-        newChoices.add(choices.get(i));
-      }
-    }
-    return new Schedule(newChoices, createdMachines, machines, pc, schedulerSymmetry);
-  }
-
   public void makeMachine(Machine m, Guard pc) {
     PrimitiveVS<Machine> toAdd = new PrimitiveVS<>(m).restrict(pc);
     if (createdMachines.containsKey(m.getClass())) {
@@ -328,29 +318,44 @@ public class Schedule implements Serializable {
   public Schedule getSingleSchedule() {
     Guard pc = Guard.constTrue();
     pc = pc.and(getFilter());
+
+    List<Choice> newChoices = new ArrayList<>();
     for (Choice choice : choices) {
       Choice guarded = choice.restrict(pc);
       PrimitiveVS<Machine> schedulingChoice = guarded.getRepeatSchedulingChoice();
       if (schedulingChoice.getGuardedValues().size() > 0) {
         pc = pc.and(schedulingChoice.getGuardedValues().get(0).getGuard());
+        Choice newChoice = newChoice();
+        newChoice.addRepeatSchedulingChoice(new PrimitiveVS<>(schedulingChoice.getGuardedValues().get(0).getValue()));
+        newChoices.add(newChoice);
       } else {
         PrimitiveVS<Boolean> boolChoice = guarded.getRepeatBool();
         if (boolChoice.getGuardedValues().size() > 0) {
           pc = pc.and(boolChoice.getGuardedValues().get(0).getGuard());
+          Choice newChoice = newChoice();
+          newChoice.addRepeatBool(new PrimitiveVS<>(boolChoice.getGuardedValues().get(0).getValue()));
+          newChoices.add(newChoice);
         } else {
           PrimitiveVS<Integer> intChoice = guarded.getRepeatInt();
           if (intChoice.getGuardedValues().size() > 0) {
             pc = pc.and(intChoice.getGuardedValues().get(0).getGuard());
+            Choice newChoice = newChoice();
+            newChoice.addRepeatInt(new PrimitiveVS<>(intChoice.getGuardedValues().get(0).getValue()));
+            newChoices.add(newChoice);
           } else {
             PrimitiveVS<ValueSummary> elementChoice = guarded.getRepeatElement();
             if (elementChoice.getGuardedValues().size() > 0) {
               pc = pc.and(elementChoice.getGuardedValues().get(0).getGuard());
+              Choice newChoice = newChoice();
+              newChoice.addRepeatElement(new PrimitiveVS<>(elementChoice.getGuardedValues().get(0).getValue()));
+              newChoices.add(newChoice);
             }
           }
         }
       }
     }
-    return this.guard(pc).removeEmptyRepeat();
+    return new Schedule(newChoices, createdMachines, machines, pc, schedulerSymmetry);
+//    return this.guard(pc).removeEmptyRepeat();
   }
 
   public Guard getLengthCond(int size) {

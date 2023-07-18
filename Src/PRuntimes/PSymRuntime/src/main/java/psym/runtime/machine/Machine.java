@@ -245,7 +245,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
 
       // Inner loop: process sequences of 'goto's and 'raise's.
       while (eventHandlerReturnReason.isAbnormalReturn()) {
-        Assert.prop(
+        Assert.liveness(
             scheduler.getMaxInternalSteps() < 0 || steps < scheduler.getMaxInternalSteps(),
             String.format("Possible infinite loop found in machine %s", this),
             pc.and(

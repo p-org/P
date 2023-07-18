@@ -11,6 +11,7 @@ import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Scheduler;
 import psym.runtime.scheduler.replay.ReplayScheduler;
+import psym.utils.exception.BugFoundException;
 import psym.valuesummary.*;
 
 public class EventQueue extends SymbolicQueue implements EventBuffer, Serializable {
@@ -24,12 +25,15 @@ public class EventQueue extends SymbolicQueue implements EventBuffer, Serializab
 
   public void send(
       Guard pc, PrimitiveVS<Machine> dest, PrimitiveVS<Event> eventName, UnionVS payload) {
-    if (eventName.getGuardedValues().size() > 1) {
-      throw new RuntimeException(
-          String.format("Handling multiple events together is not supported, in %s", eventName));
+    Guard destIsNull = dest.symbolicEquals(null, pc).getGuardFor(true);
+    if (!destIsNull.isFalse()) {
+      throw new BugFoundException(
+              String.format("Machine in send cannot be null"),
+              destIsNull
+      );
     }
-    TraceLogger.send(new Message(eventName, dest, payload).restrict(pc));
     Message event = new Message(eventName, dest, payload).restrict(pc);
+    TraceLogger.send(event);
     addEvent(event);
     sender.getScheduler().runMonitors(event);
   }

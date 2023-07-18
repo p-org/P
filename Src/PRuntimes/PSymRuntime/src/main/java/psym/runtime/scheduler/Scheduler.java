@@ -38,7 +38,7 @@ public abstract class Scheduler implements SchedulerInterface {
   /** How many instances of each Machine there are */
   protected Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
   /** Whether or not search is done */
-  protected boolean done = false;
+  protected Guard done = Guard.constFalse();
 
   /** Choice depth */
   protected int choiceDepth = 0;
@@ -47,7 +47,7 @@ public abstract class Scheduler implements SchedulerInterface {
   /** Flag whether current step is a create or sync machine step */
   protected Boolean stickyStep = true;
   /** Flag whether current execution finished */
-  protected Boolean executionFinished = false;
+  protected Guard allMachinesHalted = Guard.constFalse();
   /** List of monitors instances */
   List<Monitor> monitors;
   /** The machine to start with */
@@ -98,7 +98,7 @@ public abstract class Scheduler implements SchedulerInterface {
    * @return Whether or not there are more steps to run
    */
   public boolean isDone() {
-    return done || depth == PSymGlobal.getConfiguration().getMaxStepBound();
+    return done.isTrue() || depth == PSymGlobal.getConfiguration().getMaxStepBound();
   }
 
   /**
@@ -106,8 +106,12 @@ public abstract class Scheduler implements SchedulerInterface {
    *
    * @return Whether or not current execution finished
    */
-  public boolean isFinishedExecution() {
-    return executionFinished || depth == PSymGlobal.getConfiguration().getMaxStepBound();
+  public Guard isFinishedExecution() {
+    if (depth == PSymGlobal.getConfiguration().getMaxStepBound()) {
+      return Guard.constTrue();
+    } else {
+      return allMachinesHalted;
+    }
   }
 
   /**
@@ -249,15 +253,15 @@ public abstract class Scheduler implements SchedulerInterface {
     start = target;
   }
 
-  protected void checkLiveness(boolean forceCheck) {
-    if (forceCheck || isFinishedExecution()) {
+  protected void checkLiveness(Guard finished) {
+    if (!finished.isFalse()) {
       for (Monitor m : monitors) {
-        PrimitiveVS<State> monitorState = m.getCurrentState().restrict(schedule.getFilter());
+        PrimitiveVS<State> monitorState = m.getCurrentState().restrict(finished);
         for (GuardedValue<State> entry : monitorState.getGuardedValues()) {
           State s = entry.getValue();
           if (s.isHotState()) {
             Guard g = entry.getGuard();
-            if (executionFinished) {
+            if (!allMachinesHalted.isFalse()) {
               Assert.liveness(
                   g.isFalse(),
                   String.format(

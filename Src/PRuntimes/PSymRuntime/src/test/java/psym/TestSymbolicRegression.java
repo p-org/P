@@ -24,7 +24,7 @@ import psym.runtime.logger.Log4JConfig;
  */
 public class TestSymbolicRegression {
   private static String mode = "verification";
-  private static String runArgs = "--seed 0 --timeout 60";
+  private static String runArgs = "--seed 0 --timeout 60 --max-steps 200";
   private static final String outputDirectory = "output/testCases";
   private static final List<String> excluded = new ArrayList<>();
 
@@ -35,7 +35,14 @@ public class TestSymbolicRegression {
     String psymArgs = System.getProperty("psym.args");
 
     if (md != null && !md.isEmpty()) {
-      mode = md;
+      switch (md) {
+        case "verification":
+        case "coverage":
+          mode = md;
+          break;
+        default:
+          break;
+      }
     }
     if (psymArgs != null && !psymArgs.isEmpty()) {
       runArgs += " --psym-args " + psymArgs;

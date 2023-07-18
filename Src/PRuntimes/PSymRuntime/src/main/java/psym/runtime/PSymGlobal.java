@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 
 import psym.commandline.PSymConfiguration;
+import psym.runtime.machine.Machine;
+import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.StateEvents;
 import psym.runtime.scheduler.Scheduler;
 import psym.runtime.scheduler.explicit.ExplicitSymmetryTracker;
@@ -42,7 +44,7 @@ public class PSymGlobal implements Serializable {
     /**
      * Set of sync event names
      */
-    private final Set<String> syncEvents = new HashSet<>();
+    private final Map<String, Set<String>> syncEvents = new HashMap<>();
 
     /**
      * Global coverage statistics
@@ -102,8 +104,19 @@ public class PSymGlobal implements Serializable {
         return getInstance().allStateEvents;
     }
 
-    public static Set<String> getSyncEvents() {
-        return getInstance().syncEvents;
+    public static void addSyncEvent(String machineName, String eventName) {
+        Set<String> syncEvents =
+            getInstance().syncEvents.computeIfAbsent(machineName, k -> new HashSet<>());
+        syncEvents.add(eventName);
+        getInstance().syncEvents.put(machineName, syncEvents);
+    }
+
+    public static boolean hasSyncEvent(Machine machine, Event event) {
+        Set<String> syncEvents = getInstance().syncEvents.get(machine.getName());
+        if (syncEvents == null) {
+            return false;
+        }
+        return syncEvents.contains(event.toString());
     }
 
     public static CoverageStats getCoverage() {

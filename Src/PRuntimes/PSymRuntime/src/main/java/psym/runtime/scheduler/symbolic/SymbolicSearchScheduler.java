@@ -2,8 +2,7 @@ package psym.runtime.scheduler.symbolic;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
@@ -11,13 +10,17 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
+import psym.runtime.machine.MachineLocalState;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.SearchScheduler;
+import psym.runtime.scheduler.explicit.StateCachingMode;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
@@ -31,6 +34,53 @@ import psym.valuesummary.ValueSummary;
 import psym.valuesummary.solvers.SolverEngine;
 
 public class SymbolicSearchScheduler extends SearchScheduler {
+  public static class ProtocolState {
+    @Getter
+    Map<Machine, MachineLocalState> stateMap = null;
+
+    public ProtocolState(Collection<Machine> machines) {
+      stateMap = new HashMap<>();
+      for (Machine m: machines) {
+        stateMap.put(m, m.getMachineLocalState());
+      }
+    }
+
+    public Guard symbolicEquals(ProtocolState rhs) {
+      Map<Machine, MachineLocalState> rhsStateMap = rhs.getStateMap();
+      if (stateMap.size() != rhsStateMap.size()) {
+        return Guard.constFalse();
+      }
+
+      Guard areEqual = Guard.constTrue();
+      for (Map.Entry<Machine, MachineLocalState> entry: stateMap.entrySet()) {
+        Machine machine = entry.getKey();
+        MachineLocalState lhsMachineState = entry.getValue();
+        MachineLocalState rhsMachineState = rhsStateMap.get(machine);
+        if (rhsMachineState == null) {
+          return Guard.constFalse();
+        }
+        List<ValueSummary> lhsLocals = lhsMachineState.getLocals();
+        List<ValueSummary> rhsLocals = rhsMachineState.getLocals();
+        assert (lhsLocals.size() == rhsLocals.size());
+
+        for (int i = 0; i < lhsLocals.size(); i++) {
+          ValueSummary lhsVs = lhsLocals.get(i).restrict(areEqual);
+          ValueSummary rhsVs = rhsLocals.get(i).restrict(areEqual);
+          if (lhsVs.isEmptyVS() && rhsVs.isEmptyVS()) {
+            continue;
+          }
+          areEqual = areEqual.and(lhsVs.symbolicEquals(rhsVs, Guard.constTrue()).getGuardFor(true));
+          if (areEqual.isFalse()) {
+            return Guard.constFalse();
+          }
+        }
+      }
+      return areEqual;
+    }
+
+  }
+
+  private final TreeMap<Integer, ProtocolState> depthToProtocolState = new TreeMap<>();
 
   public SymbolicSearchScheduler(Program p) {
     super(p);
@@ -50,7 +100,6 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     }
     searchStats.startNewIteration(1, 0);
     performSearch();
-    checkLiveness(false);
     summarizeIteration(0);
   }
 
@@ -68,18 +117,22 @@ public class SymbolicSearchScheduler extends SearchScheduler {
           "Maximum allowed depth " + PSymGlobal.getConfiguration().getMaxStepBound() + " exceeded",
           schedule.getLengthCond(schedule.size()));
       step();
+      checkLiveness(allMachinesHalted);
     }
+    checkLiveness(Guard.constTrue());
     Assert.prop(
         !PSymGlobal.getConfiguration().isFailOnMaxStepBound() || (getDepth() < PSymGlobal.getConfiguration().getMaxStepBound()),
         "Scheduling steps bound of " + PSymGlobal.getConfiguration().getMaxStepBound() + " reached.",
         schedule.getLengthCond(schedule.size()));
-    if (done) {
+    if (done.isTrue()) {
       searchStats.setIterationCompleted();
     }
   }
 
   @Override
   protected void step() throws TimeoutException {
+    allMachinesHalted = Guard.constFalse();
+
     int numStates = 0;
     int numMessages = 0;
     int numMessagesMerged = 0;
@@ -94,11 +147,11 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     PrimitiveVS<Machine> schedulingChoices = getNextSchedulingChoice();
 
     if (schedulingChoices.isEmptyVS()) {
-      done = true;
+      done = Guard.constTrue();
       SearchLogger.finishedExecution(depth);
     }
 
-    if (done) {
+    if (done.isTrue()) {
       return;
     }
 
@@ -136,12 +189,27 @@ public class SymbolicSearchScheduler extends SearchScheduler {
       }
     }
     if (!stickyStep) {
+      if (PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Exact) {
+        effect = effect.restrict(done.not());
+      }
       depth++;
     }
 
     TraceLogger.schedule(depth, effect);
 
     performEffect(effect);
+
+    if (!stickyStep) {
+      if (PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Exact) {
+        ProtocolState destProtocolState = new ProtocolState(currentMachines);
+        for (ProtocolState srcProtocolState : depthToProtocolState.values()) {
+          Guard areEqual = destProtocolState.symbolicEquals(srcProtocolState);
+          done = done.or(areEqual);
+          allMachinesHalted = allMachinesHalted.or(done);
+        }
+        depthToProtocolState.put(depth, destProtocolState);
+      }
+    }
 
     // simplify engine
     //        SolverEngine.simplifyEngineAuto();

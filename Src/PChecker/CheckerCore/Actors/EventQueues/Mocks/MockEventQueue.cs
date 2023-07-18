@@ -90,15 +90,12 @@ namespace PChecker.Actors.EventQueues.Mocks
         {
             e.EnqueueTime.SetTime(ControlledRuntime.GlobalTime.GetTime());
             e.DequeueTime.SetTime(e.EnqueueTime.GetTime());
-            var eventName = e.ToString() ?? string.Empty;
-            if (ControlledRuntime.EventDelaysMap.ContainsKey(eventName))
+            if (e.DelayDistribution is not null)
             {
                 var isFirstEvent = !MaxDequeueTimestampMap.ContainsKey(info.OriginInfo.SenderActorId);
-                var dist = isFirstEvent ? ControlledRuntime.EventDelaysMap[eventName].initialDelayDist : ControlledRuntime.EventDelaysMap[eventName].delayDist;
-                if (TestingEngine.Strategy.GetSampleFromDistribution(dist, out var delay))
+                if (TestingEngine.Strategy.GetSampleFromDistribution(e.DelayDistribution, out var delay))
                 {
-                    var isDelayOrdered = ControlledRuntime.EventDelaysMap[eventName].isDelayOrdered;
-                    if (isDelayOrdered && !isFirstEvent)
+                    if (e.IsOrdered && !isFirstEvent)
                     {
                         var maxDequeueTimestamp = MaxDequeueTimestampMap[info.OriginInfo.SenderActorId];
                         if (maxDequeueTimestamp > e.EnqueueTime)
@@ -109,7 +106,7 @@ namespace PChecker.Actors.EventQueues.Mocks
 
                     e.DequeueTime.IncrementTime(delay);
 
-                    if (isDelayOrdered)
+                    if (e.IsOrdered)
                     {
                         if (isFirstEvent)
                         {

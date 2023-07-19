@@ -16,6 +16,7 @@ import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Schedule;
 import psym.runtime.scheduler.Scheduler;
 import psym.utils.Assert;
+import psym.utils.exception.LivenessException;
 import psym.valuesummary.*;
 
 public class ReplayScheduler extends Scheduler {
@@ -85,6 +86,9 @@ public class ReplayScheduler extends Scheduler {
       checkLiveness(allMachinesHalted);
     }
     checkLiveness(Guard.constTrue());
+    if (Assert.getFailureType().equals("cycle")) {
+      throw new LivenessException(Assert.getFailureMsg(), Guard.constTrue());
+    }
     Assert.prop(
         !PSymGlobal.getConfiguration().isFailOnMaxStepBound() || (getDepth() < PSymGlobal.getConfiguration().getMaxStepBound()),
         "Scheduling steps bound of " + PSymGlobal.getConfiguration().getMaxStepBound() + " reached.",

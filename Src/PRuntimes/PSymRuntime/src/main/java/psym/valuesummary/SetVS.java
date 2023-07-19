@@ -122,6 +122,12 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     for (T rhs : cmp.elements.getItems()) {
       equalCond = equalCond.and(this.contains(rhs).getGuardFor(true));
     }
+    // check case where both empty
+    Guard thisEmpty = this.elements.size().getGuardFor(0);
+    if (!thisEmpty.isFalse()) {
+      Guard cmpEmpty = cmp.elements.size().getGuardFor(0);
+      equalCond = equalCond.or(thisEmpty.and(cmpEmpty));
+    }
 
     return BooleanVS.trueUnderGuard(equalCond).restrict(getUniverse().and(cmp.getUniverse()));
   }

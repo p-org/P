@@ -591,7 +591,6 @@ namespace PChecker.SystematicTesting
                 var jsonPath = directory + file + "_" + index + ".trace.json";
                 Logger.WriteLine($"..... Writing {jsonPath}");
                 File.WriteAllText(jsonPath, JsonLogger.ToJsonString());
-                yield return jsonPath;
             }
 
             if (Graph != null)

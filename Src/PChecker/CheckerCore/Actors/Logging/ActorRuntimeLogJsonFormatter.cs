@@ -3,7 +3,6 @@
 
 using System;
 using PChecker.Actors.Events;
-using PChecker.Actors.Timers;
 
 namespace PChecker.Actors.Logging
 {
@@ -40,13 +39,8 @@ namespace PChecker.Actors.Logging
         {
         }
 
-        /// <inheritdoc/>
-        public virtual void OnCreateStateMachine(ActorId id, string creatorName, string creatorType)
-        {
-        }
-
         /// <inheritdoc />
-        public virtual void OnCreateTimer(TimerInfo info)
+        public virtual void OnCreateStateMachine(ActorId id, string creatorName, string creatorType)
         {
         }
 
@@ -76,7 +70,8 @@ namespace PChecker.Actors.Logging
         }
 
         /// <inheritdoc />
-        public virtual void OnExecuteAction(ActorId id, string handlingStateName, string currentStateName, string actionName)
+        public virtual void OnExecuteAction(ActorId id, string handlingStateName, string currentStateName,
+            string actionName)
         {
         }
 
@@ -121,18 +116,14 @@ namespace PChecker.Actors.Logging
         }
 
         /// <inheritdoc />
-        public virtual void OnSendEvent(ActorId targetActorId, string senderName, string senderType, string senderStateName,
+        public virtual void OnSendEvent(ActorId targetActorId, string senderName, string senderType,
+            string senderStateName,
             Event e, Guid opGroupId, bool isTargetHalted)
         {
         }
 
         /// <inheritdoc />
         public virtual void OnStateTransition(ActorId id, string stateName, bool isEntry)
-        {
-        }
-
-        /// <inheritdoc />
-        public virtual void OnStopTimer(TimerInfo info)
         {
         }
 
@@ -168,7 +159,8 @@ namespace PChecker.Actors.Logging
         }
 
         /// <inheritdoc />
-        public virtual void OnMonitorStateTransition(string monitorType, string stateName, bool isEntry, bool? isInHotState)
+        public virtual void OnMonitorStateTransition(string monitorType, string stateName, bool isEntry,
+            bool? isInHotState)
         {
         }
 

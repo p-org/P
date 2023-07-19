@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using PChecker.Actors;
 using PChecker.Actors.Logging;
 using PChecker.Actors.Events;
-using PChecker.Actors.Timers;
 using System.Collections.Generic;
 using Plang.CSharpRuntime.Exceptions;
 
@@ -191,24 +190,7 @@ namespace Plang.CSharpRuntime
             Writer.AddLog(log);
             Writer.AddToLogs(updateVcMap: true);
         }
-
-        public override void OnCreateTimer(TimerInfo info)
-        {
-            var source = info.OwnerId?.Name ?? $"task '{Task.CurrentId}'";
-            var log = info.Period.TotalMilliseconds >= 0
-                ? $"Timer '{info}' (due-time:{info.DueTime.TotalMilliseconds}ms; " +
-                  $"period :{info.Period.TotalMilliseconds}ms) was created by {source}."
-                : $"Timer '{info}' (due-time:{info.DueTime.TotalMilliseconds}ms) was created by {source}.";
-
-            Writer.AddLogType(JsonWriter.LogType.CreateTimer);
-            Writer.LogDetails.TimerInfo = info.ToString();
-            Writer.LogDetails.TimerDueTime = info.DueTime.TotalMilliseconds;
-            Writer.LogDetails.TimerPeriod = info.Period.TotalMilliseconds;
-            Writer.LogDetails.Source = source;
-            Writer.AddLog(log);
-            Writer.AddToLogs(updateVcMap: true);
-        }
-
+        
         public override void OnDefaultEventHandler(ActorId id, string stateName)
         {
             stateName = GetShortName(stateName);
@@ -449,18 +431,6 @@ namespace Plang.CSharpRuntime
             Writer.LogDetails.Id = id.ToString();
             Writer.LogDetails.State = stateName;
             Writer.LogDetails.IsEntry = isEntry;
-            Writer.AddLog(log);
-            Writer.AddToLogs(updateVcMap: true);
-        }
-
-        public override void OnStopTimer(TimerInfo info)
-        {
-            var source = info.OwnerId?.Name ?? $"task '{Task.CurrentId}'";
-            var log = $"Timer '{info}' was stopped and disposed by {source}.";
-
-            Writer.AddLogType(JsonWriter.LogType.StopTimer);
-            Writer.LogDetails.TimerInfo = info.ToString();
-            Writer.LogDetails.Source = info.OwnerId?.Name ?? $"{Task.CurrentId}";
             Writer.AddLog(log);
             Writer.AddToLogs(updateVcMap: true);
         }

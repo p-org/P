@@ -12,7 +12,7 @@ namespace PChecker.Actors.Logging
     /// <summary>
     /// Class for handling generating the vector clock for a log entry
     /// </summary>
-    public class VectorClockGenerator
+    internal class VectorClockGenerator
     {
         /// <summary>
         /// Nested class for handling FIFO send receive requests.
@@ -62,7 +62,7 @@ namespace PChecker.Actors.Logging
         /// <summary>
         /// Field declaration that keeps track of a global vector clock map of all the machines.
         /// </summary>
-        private readonly Dictionary<string, Dictionary<string, int>> _globalVcMap;
+        private readonly Dictionary<string, Dictionary<string, int>> _contextVcMap;
 
         /// <summary>
         /// Field declaration that keeps track of unprocessed send requests. I.e., when a send request happened
@@ -82,11 +82,11 @@ namespace PChecker.Actors.Logging
 
         /// <summary>
         /// VectorClockGenerator constructor
-        /// Initialize empty mappings for _globalVcMap, _unhandledSendRequests, _machines, and _sendRequestsCount.
+        /// Initialize empty mappings for _contextVcMap, _unhandledSendRequests, _machines, and _sendRequestsCount.
         /// </summary>
         public VectorClockGenerator()
         {
-            _globalVcMap = new Dictionary<string, Dictionary<string, int>>();
+            _contextVcMap = new Dictionary<string, Dictionary<string, int>>();
             _unhandledSendRequests = new Dictionary<string, Dictionary<string, int>>();
             _machines = new HashSet<string>();
             _sendRequestsCount = new Dictionary<string, FifoSendReceiveMapping>();
@@ -102,10 +102,10 @@ namespace PChecker.Actors.Logging
         /// <summary>
         /// Get the machine name for appropriate naming of the vector clock map.
         /// </summary>
-        /// <param name="logDetails">Of type LogDetails: only names can be extracted from Id, Monitor, Sender, or TimerInfo</param>
+        /// <param name="logDetails">Of type LogDetails: only names can be extracted from Id, Monitor, or Sender</param>
         /// <returns>string: the name of the machine for the type among the possible attributes containing the machine name.</returns>
         private static string GetMachineName(LogDetails logDetails) =>
-            (logDetails.Id ?? logDetails.Monitor ?? logDetails.Sender ?? logDetails.TimerInfo)!;
+            (logDetails.Id ?? logDetails.Monitor ?? logDetails.Sender)!;
 
         /// <summary>
         /// Hashes a string.
@@ -181,15 +181,15 @@ namespace PChecker.Actors.Logging
             var logDetails = logEntry.Details;
             var machine = GetMachineName(logDetails);
 
-            // If new machine, create a new mapping for it in the _globalVcMap and add it to _machines.
+            // If new machine, create a new mapping for it in the _contextVcMap and add it to _machines.
             if (MachineIsNew(machine))
             {
                 _machines.Add(machine);
-                _globalVcMap.Add(machine, new Dictionary<string, int> { { machine, 0 } });
+                _contextVcMap.Add(machine, new Dictionary<string, int> { { machine, 0 } });
             }
 
             // Always update the local machine count by one on any event.
-            _globalVcMap[machine][machine] += 1;
+            _contextVcMap[machine][machine] += 1;
 
             switch (logType)
             {
@@ -215,7 +215,7 @@ namespace PChecker.Actors.Logging
                     // Update the sendReqId with the send count of it.
                     sendReqId += $":_{_sendRequestsCount[hashedGeneralSendReqId].SentCount}";
                     var hashedSendReqId = HashString(sendReqId);
-                    _unhandledSendRequests.Add(hashedSendReqId, CopyVcMap(_globalVcMap[machine]));
+                    _unhandledSendRequests.Add(hashedSendReqId, CopyVcMap(_contextVcMap[machine]));
                     break;
 
                 // On dequeue event, has the string containing information about the current machine that dequeued (i.e. received the event),
@@ -247,25 +247,25 @@ namespace PChecker.Actors.Logging
                     // Get a set of all machine names to update between the sender vc map and the current machine vc map (minus the current machine)
                     var machinesToUpdateInVc =
                         new HashSet<string>(
-                            _globalVcMap[machine].Keys.Union(senderVcMap.Keys).Except(new[] { machine }));
+                            _contextVcMap[machine].Keys.Union(senderVcMap.Keys).Except(new[] { machine }));
 
-                    // Update local machine's vector clock in _globalVcMap, outside of itself, since it was already updated (incremented) from above
+                    // Update local machine's vector clock in _contextVcMap, outside of itself, since it was already updated (incremented) from above
                     // right before the switch case.
                     // The rule for the remaining machines to be updated is taking the max between the sender machine's vector clock at that time and
                     // the current machine's vector clock. Details can be found here: https://en.wikipedia.org/wiki/Vector_clock
                     foreach (var machineToUpdate in machinesToUpdateInVc)
                     {
-                        if (_globalVcMap[machine].TryGetValue(machineToUpdate, out var localMachineToUpdateValue))
+                        if (_contextVcMap[machine].TryGetValue(machineToUpdate, out var localMachineToUpdateValue))
                         {
                             if (senderVcMap.TryGetValue(machineToUpdate, out var senderMachineToUpdateValue))
                             {
-                                _globalVcMap[machine][machineToUpdate] =
+                                _contextVcMap[machine][machineToUpdate] =
                                     Math.Max(senderMachineToUpdateValue, localMachineToUpdateValue);
                             }
                         }
                         else
                         {
-                            _globalVcMap[machine].Add(machineToUpdate, senderVcMap[machineToUpdate]);
+                            _contextVcMap[machine].Add(machineToUpdate, senderVcMap[machineToUpdate]);
                         }
                     }
 
@@ -275,7 +275,7 @@ namespace PChecker.Actors.Logging
             }
 
             // Update the log entry with the vector clock.
-            logEntry.Details.Clock = CopyVcMap(_globalVcMap[machine]);
+            logEntry.Details.Clock = CopyVcMap(_contextVcMap[machine]);
         }
     }
 
@@ -346,28 +346,7 @@ namespace PChecker.Actors.Logging
         /// Type of creator.
         /// </summary>
         public string? CreatorType { get; set; }
-
-        /// <summary>
-        /// Information about timer.
-        /// </summary>
-        public string? TimerInfo { get; set; }
-
-        /// <summary>
-        /// Amount of time to wait before sending the first timeout event.
-        /// </summary>
-        public double? TimerDueTime { get; set; }
-
-        /// <summary>
-        /// Time interval between timeout events.
-        /// </summary>
-        public double? TimerPeriod { get; set; }
-
-        /// <summary>
-        /// The actor id that owns the timer.
-        /// Available for log type CreateTimer and StopTimer.
-        /// </summary>
-        public string? Source { get; set; }
-
+        
         /// <summary>
         /// The state associated with an event, machine, etc...
         /// </summary>
@@ -558,11 +537,6 @@ namespace PChecker.Actors.Logging
             CreateMonitor,
 
             /// <summary>
-            /// Invoked when the specified actor timer has been created.
-            /// </summary>
-            CreateTimer,
-
-            /// <summary>
             /// Invoked when the specified actor is idle (there is nothing to dequeue) and the default
             /// event handler is about to be executed.
             /// </summary>
@@ -644,11 +618,6 @@ namespace PChecker.Actors.Logging
             /// Invoked when the specified state machine enters or exits a state.
             /// </summary>
             StateTransition,
-
-            /// <summary>
-            /// Invoked when the specified actor timer has been stopped.
-            /// </summary>
-            StopTimer,
 
             /// <summary>
             /// Invoked to describe the specified scheduling strategy.

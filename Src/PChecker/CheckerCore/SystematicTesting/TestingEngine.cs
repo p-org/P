@@ -76,6 +76,12 @@ namespace PChecker.SystematicTesting
         private TextWriter Logger;
 
         /// <summary>
+        /// Contains a single iteration of JSON log output in the case where the IsJsonLogEnabled
+        /// checkerConfiguration is specified.
+        /// </summary>
+        private JsonWriter JsonLogger;
+        
+        /// <summary>
         /// The profiler.
         /// </summary>
         private readonly Profiler Profiler;
@@ -101,7 +107,7 @@ namespace PChecker.SystematicTesting
         /// checkerConfiguration is specified.
         /// </summary>
         private StringBuilder XmlLog;
-
+        
         /// <summary>
         /// The readable trace, if any.
         /// </summary>
@@ -430,6 +436,10 @@ namespace PChecker.SystematicTesting
                 // Creates a new instance of the controlled runtime.
                 runtime = new ControlledRuntime(_checkerConfiguration, Strategy, RandomValueGenerator);
 
+                // Always output a json log of the error
+                JsonLogger = new JsonWriter();
+                runtime.SetJsonLogger(JsonLogger);
+                    
                 // If verbosity is turned off, then intercept the program log, and also redirect
                 // the standard output and error streams to a nul logger.
                 if (!_checkerConfiguration.IsVerbose)
@@ -574,6 +584,13 @@ namespace PChecker.SystematicTesting
                 var xmlPath = directory + file + "_" + index + ".trace.xml";
                 Logger.WriteLine($"..... Writing {xmlPath}");
                 File.WriteAllText(xmlPath, XmlLog.ToString());
+            }
+            
+            if (_checkerConfiguration.IsJsonLogEnabled)
+            {
+                var jsonPath = directory + file + "_" + index + ".trace.json";
+                Logger.WriteLine($"..... Writing {jsonPath}");
+                File.WriteAllText(jsonPath, JsonLogger.ToJsonString());
             }
 
             if (Graph != null)

@@ -218,13 +218,13 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
       if (!isDistinctState) {
         int firstVisitIter = numConcrete[2];
-        if (firstVisitIter == iter) {
-          Assert.cycle(
-                  false,
-                  String.format("Cycle detected: Infinite loop found due to revisiting a state multiple times in the same iteration"),
-                  Guard.constTrue());
+        if (firstVisitIter == iter && PSymGlobal.getConfiguration().isFailOnMaxStepBound()) {
+            Assert.cycle(
+                    false,
+                    String.format("Cycle detected: Infinite loop found due to revisiting a state multiple times in the same iteration"),
+                    Guard.constTrue());
         } else {
-          // early termination (without cycles)
+          // early termination
           terminalLivenessEnabled = false;
         }
         done = Guard.constTrue();

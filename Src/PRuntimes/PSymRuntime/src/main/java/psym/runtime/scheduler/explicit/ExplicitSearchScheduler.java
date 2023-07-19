@@ -219,8 +219,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       if (!isDistinctState) {
         int firstVisitIter = numConcrete[2];
         if (firstVisitIter == iter) {
-//          allMachinesHalted = Guard.constTrue();
-          Assert.liveness(
+          Assert.cycle(
                   false,
                   String.format("Cycle detected: Infinite loop found due to revisiting a state multiple times in the same iteration"),
                   Guard.constTrue());

@@ -151,21 +151,15 @@ public class PSymGlobal implements Serializable {
 
     public static void printStackTrace(Exception e, boolean stderrOnly) {
         if (stderrOnly) {
-            System.err.println("-----------");
-            System.err.println("Stack Trace");
-            System.err.println("-----------");
+            System.err.println("... Stack trace:");
             e.printStackTrace(System.err);
-            System.err.println("-----------");
         } else {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
 
-            PSymLogger.info("-----------");
-            PSymLogger.info("Stack Trace");
-            PSymLogger.info("-----------");
+            PSymLogger.info("... Stack trace:");
             PSymLogger.info(sw.toString());
-            PSymLogger.info("-----------");
         }
     }
 }

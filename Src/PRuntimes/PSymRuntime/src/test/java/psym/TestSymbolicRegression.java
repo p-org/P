@@ -26,7 +26,7 @@ public class TestSymbolicRegression {
   private static final String outputDirectory = "output/testCases";
   private static final List<String> excluded = new ArrayList<>();
   private static String mode = "verification";
-  private static String runArgs = "--seed 0 --timeout 60 --max-steps 300";
+  private static String runArgs = "--timeout 60 --iterations 100 --max-steps 300";
   private static boolean initialized = false;
 
   private static void setRunArgs() {

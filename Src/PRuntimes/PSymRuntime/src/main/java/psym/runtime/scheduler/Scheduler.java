@@ -48,6 +48,8 @@ public abstract class Scheduler implements SchedulerInterface {
   protected Boolean stickyStep = true;
   /** Flag whether current execution finished */
   protected Guard allMachinesHalted = Guard.constFalse();
+  /** Flag whether check for liveness at the end */
+  protected boolean terminalLivenessEnabled = true;
   /** List of monitors instances */
   List<Monitor> monitors;
   /** The machine to start with */

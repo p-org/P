@@ -6,10 +6,7 @@ import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
-import psym.valuesummary.Guard;
-import psym.valuesummary.ListVS;
-import psym.valuesummary.PrimitiveVS;
-import psym.valuesummary.ValueSummary;
+import psym.valuesummary.*;
 
 /**
  * Represents a event-queue implementation using value summaries
@@ -63,7 +60,12 @@ public abstract class SymbolicQueue implements Serializable {
     }
     Message ret = peek.restrict(pc);
     if (dequeue) {
-      elements = elements.removeAt(new PrimitiveVS<>(0).restrict(pc));
+      PrimitiveVS<Integer> idxVs = new PrimitiveVS<>(0, pc);
+      Guard outOfRange = elements.inRange(idxVs).getGuardFor(false);
+      if (!outOfRange.isFalse()) {
+        throw new RuntimeException("Internal error: dequeing from an empty queue");
+      }
+      elements = elements.removeAt(idxVs);
       resetPeek();
     }
     assert (!pc.isFalse());

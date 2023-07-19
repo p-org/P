@@ -186,7 +186,9 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       step();
       checkLiveness(allMachinesHalted);
     }
-    checkLiveness(Guard.constTrue());
+    if (terminalLivenessEnabled) {
+      checkLiveness(Guard.constTrue());
+    }
     Assert.prop(
         !PSymGlobal.getConfiguration().isFailOnMaxStepBound() || (getDepth() < PSymGlobal.getConfiguration().getMaxStepBound()),
         "Scheduling steps bound of " + PSymGlobal.getConfiguration().getMaxStepBound() + " reached.",
@@ -217,11 +219,14 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       if (!isDistinctState) {
         int firstVisitIter = numConcrete[2];
         if (firstVisitIter == iter) {
-          allMachinesHalted = Guard.constTrue();
-//          Assert.liveness(
-//                  false,
-//                  String.format("Cycle detected: Possible infinite loop found due to revisiting a state multiple times in the same iteration"),
-//                  Guard.constTrue());
+//          allMachinesHalted = Guard.constTrue();
+          Assert.liveness(
+                  false,
+                  String.format("Cycle detected: Infinite loop found due to revisiting a state multiple times in the same iteration"),
+                  Guard.constTrue());
+        } else {
+          // early termination (without cycles)
+          terminalLivenessEnabled = false;
         }
         done = Guard.constTrue();
         SearchLogger.finishedExecution(depth);
@@ -917,6 +922,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     schedule.setSchedulerChoiceDepth(getChoiceDepth());
     schedule.setSchedulerState(srcState, machineCounters);
     schedule.setSchedulerSymmetry();
+    terminalLivenessEnabled = true;
   }
 
   public void reset_stats() {
@@ -947,6 +953,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     depth = d;
     choiceDepth = cd;
     done = Guard.constFalse();
+    terminalLivenessEnabled = true;
   }
 
   public void restoreState(Schedule.ChoiceState state) {

@@ -14,7 +14,7 @@ on:
         required: false
 
 jobs:
-  PSym-Build-And-Test-Ubuntu:
+  PCover-Build-And-Test-Ubuntu:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1

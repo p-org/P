@@ -11,6 +11,9 @@ import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
+import psym.utils.Assert;
+import psym.utils.exception.LivenessException;
+import psym.valuesummary.Guard;
 import psym.valuesummary.GuardedValue;
 import psym.valuesummary.PrimitiveVS;
 
@@ -115,11 +118,14 @@ public class ScheduleWriter {
         if (!PSymGlobal.getConfiguration().getTestDriver().equals(PSymGlobal.getConfiguration().getTestDriverDefault())) {
             log(String.format("--test-method:%s", PSymGlobal.getConfiguration().getTestDriver()));
         }
+        if (Assert.getFailureType().equals("cycle")) {
+            log(String.format("--cycle-detected: %s", Assert.getFailureMsg()));
+        }
         logComment("create GodMachine");
-        log("Task(0)");
+        log("(0)");
         logComment("start GodMachine");
-        log("Plang.CSharpRuntime._GodMachine(1)");
+        log("(1)");
         logComment("create Main(2)");
-        log("Plang.CSharpRuntime._GodMachine(1)");
+        log("(1)");
     }
 }

@@ -545,7 +545,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Tries to emit the testing traces, if any.
         /// </summary>
-        public IEnumerable<string> TryEmitTraces(string directory, string file)
+        public void TryEmitTraces(string directory, string file)
         {
             var index = 0;
             // Find the next available file index.
@@ -576,7 +576,6 @@ namespace PChecker.SystematicTesting
 
                     Logger.WriteLine($"..... Writing {readableTracePath}");
                     File.WriteAllText(readableTracePath, ReadableTrace);
-                    yield return readableTracePath;
                 }
             }
 
@@ -585,7 +584,6 @@ namespace PChecker.SystematicTesting
                 var xmlPath = directory + file + "_" + index + ".trace.xml";
                 Logger.WriteLine($"..... Writing {xmlPath}");
                 File.WriteAllText(xmlPath, XmlLog.ToString());
-                yield return xmlPath;
             }
             
             if (_checkerConfiguration.IsJsonLogEnabled)
@@ -601,7 +599,6 @@ namespace PChecker.SystematicTesting
                 var graphPath = directory + file + "_" + index + ".dgml";
                 Graph.SaveDgml(graphPath, true);
                 Logger.WriteLine($"..... Writing {graphPath}");
-                yield return graphPath;
             }
 
             if (!_checkerConfiguration.PerformFullExploration)
@@ -613,7 +610,6 @@ namespace PChecker.SystematicTesting
 
                     Logger.WriteLine($"..... Writing {reproTracePath}");
                     File.WriteAllText(reproTracePath, ReproducableTrace);
-                    yield return reproTracePath;
                 }
             }
 

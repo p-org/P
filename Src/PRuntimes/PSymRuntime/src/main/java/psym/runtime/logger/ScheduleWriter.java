@@ -1,5 +1,9 @@
 package psym.runtime.logger;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.List;
 import lombok.Getter;
 import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
@@ -9,11 +13,6 @@ import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.valuesummary.GuardedValue;
 import psym.valuesummary.PrimitiveVS;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.List;
 
 public class ScheduleWriter {
     static PrintWriter log = null;

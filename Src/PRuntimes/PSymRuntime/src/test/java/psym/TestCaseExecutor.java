@@ -133,23 +133,18 @@ public class TestCaseExecutor {
       StreamGobbler outstreamGobbler =
           new StreamGobbler(process.getInputStream(), System.out::println);
       Executors.newSingleThreadExecutor().submit(outstreamGobbler);
-      int exitCode = process.waitFor();
+      resultCode = process.waitFor();
 
-      if (exitCode == 0) {
+      if (resultCode == 0) {
         PSymTestLogger.log("      ok");
-        resultCode = 0;
-      } else if (exitCode == 2) {
+      } else if (resultCode == 2) {
         PSymTestLogger.log("      bug");
-        resultCode = 2;
-      } else if (exitCode == 3) {
+      } else if (resultCode == 3) {
         PSymTestLogger.log("      timeout");
-        resultCode = 2;
-      } else if (exitCode == 4) {
+      } else if (resultCode == 4) {
         PSymTestLogger.log("      memout");
-        resultCode = 2;
       } else {
         PSymTestLogger.log("      error");
-        resultCode = 2;
       }
     } catch (IOException | InterruptedException e) {
       PSymTestLogger.error("      fail");

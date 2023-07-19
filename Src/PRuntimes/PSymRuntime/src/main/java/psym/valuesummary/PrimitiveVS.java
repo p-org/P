@@ -6,7 +6,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import psym.runtime.machine.Machine;
-import psym.runtime.machine.events.Event;
 
 /**
  * Represents a primitive value summary (Boolean, Integer, Float, String)

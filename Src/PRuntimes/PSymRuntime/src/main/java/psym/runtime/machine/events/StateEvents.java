@@ -2,7 +2,6 @@ package psym.runtime.machine.events;
 
 import java.io.Serializable;
 import java.util.*;
-
 import psym.runtime.machine.eventhandlers.EventHandler;
 
 public class StateEvents implements Serializable {

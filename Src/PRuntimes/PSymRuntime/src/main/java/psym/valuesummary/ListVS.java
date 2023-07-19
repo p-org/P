@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Getter;
 import psym.runtime.machine.Machine;
+import psym.utils.exception.BugFoundException;
 
 /** Represents the list value summaries. */
 public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>> {
@@ -269,9 +270,12 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     // (Checks.sameUniverse(indexSummary.getUniverse(), getUniverse()));
     final PrimitiveVS<Boolean> inRange = inRange(indexSummary);
     // make sure it is always in range
-    if (!inRange.getGuardFor(false).isFalse()) {
+    Guard outOfRange = inRange.getGuardFor(false);
+    if (!outOfRange.isFalse()) {
       // there is a possibility that the index is out-of-bounds
-      throw new IndexOutOfBoundsException();
+      throw new BugFoundException(
+              "Index was out of range. Must be non-negative and less than the size of the collection.",
+              outOfRange);
     }
 
     T merger = null;
@@ -314,11 +318,13 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
    */
   private ListVS<T> setHelper(PrimitiveVS<Integer> indexSummary, T itemToSet) {
     final PrimitiveVS<Boolean> inRange = inRange(indexSummary);
+    Guard outOfRange = inRange.getGuardFor(false);
     // make sure it is always in range
-    if (!inRange.getGuardFor(false).isFalse()) {
+    if (!outOfRange.isFalse()) {
       // there is a possibility that the index is out-of-bounds
-      throw new IndexOutOfBoundsException(
-          "Index was out of range. Must be non-negative and less than the size of the collection.");
+      throw new BugFoundException(
+              "Index was out of range. Must be non-negative and less than the size of the collection.",
+          outOfRange);
     }
 
     ListVS<T> merger = null;
@@ -371,9 +377,12 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
 
     final PrimitiveVS<Boolean> inRange = inRange(indexSummary);
     // make sure it is always in range
-    if (!inRange.getGuardFor(false).isFalse()) {
+    Guard outOfRange = inRange.getGuardFor(false);
+    if (!outOfRange.isFalse()) {
       // there is a possibility that the index is out-of-bounds
-      throw new IndexOutOfBoundsException();
+      throw new BugFoundException(
+              "Index must be within the bounds of the List.",
+              outOfRange);
     }
 
     // 1. add a new entry (we'll re-add the last entry)
@@ -424,9 +433,12 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     // assert (Checks.sameUniverse(indexSummary.getUniverse(), getUniverse()));
     final PrimitiveVS<Boolean> inRange = inRange(indexSummary);
     // make sure it is always in range
-    if (!inRange.getGuardFor(false).isFalse()) {
+    Guard outOfRange = inRange.getGuardFor(false);
+    if (!outOfRange.isFalse()) {
       // there is a possibility that the index is out-of-bounds
-      throw new IndexOutOfBoundsException();
+      throw new BugFoundException(
+              "Index was out of range. Must be non-negative and less than the size of the collection.",
+              outOfRange);
     }
 
     // new size

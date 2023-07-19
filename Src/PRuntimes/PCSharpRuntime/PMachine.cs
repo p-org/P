@@ -84,7 +84,9 @@ namespace Plang.CSharpRuntime
             Assert(target.Permissions.Contains(ev.GetType().Name),
                 $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+            var delayDistribution = ev.DelayDistribution;
             ev = (Event)oneArgConstructor.Invoke(new[] { payload });
+            ev.DelayDistribution = delayDistribution;
 
             AnnounceInternal(ev);
             SendEvent(target.Id, ev);

@@ -371,8 +371,12 @@ namespace Plang.Compiler.TypeChecker
             }
 
             method.CanSend = true;
+
+            var distribution = "";
+            if (context.StringLiteral() != null)
+                distribution = context.StringLiteral().GetText();
             
-            return new SendStmt(context, machineExpr, evtExpr, args);
+            return new SendStmt(context, machineExpr, evtExpr, args, distribution);
         }
 
         private static bool IsDefinitelyNullEvent(IPExpr evtExpr)

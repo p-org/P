@@ -152,7 +152,7 @@ statement : LBRACE statement* RBRACE							# CompoundStmt
           | fun=iden LPAREN rvalueList? RPAREN SEMI				# FunCallStmt
           | RAISE expr (COMMA rvalueList)? SEMI					# RaiseStmt
           | SEND machine=expr COMMA event=expr 
-           (COMMA rvalueList)? (COMMA StringLiteral)? SEMI			# SendStmt
+                (COMMA rvalueList)? (COMMA DELAY StringLiteral)? SEMI	# SendStmt
           | ANNOUNCE expr (COMMA rvalueList)? SEMI				# AnnounceStmt
           | GOTO stateName (COMMA rvalueList)? SEMI				# GotoStmt
           | RECEIVE LBRACE recvCase+ RBRACE						# ReceiveStmt

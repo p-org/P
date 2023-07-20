@@ -1,4 +1,5 @@
-fun Temp(rho: float): float;
+fun Random(): float;
+fun Expovariate(rho: float): float;
 
 type Subscription = (t: float, key: string, queue: set[float]);
 
@@ -218,7 +219,7 @@ machine Writer {
             _eEnqueueRequestPayload.key = choose(keys(storages));
             _eEnqueueRequestPayload.t = payload.t;
             send journal, eEnqueueRequest, _eEnqueueRequestPayload;
-            period = Temp(rho);
+            period = Expovariate(rho);
             if (backPressure) {
                 _eAtTRequestPayload.writer = this;
                 send storages[_eEnqueueRequestPayload.key], eAtTRequest, _eAtTRequestPayload;

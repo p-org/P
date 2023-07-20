@@ -23,14 +23,14 @@ public class ReplayScheduler extends Scheduler {
   @Getter
   /** Path constraint */
   private final Guard pathConstraint;
+  @Getter
   /** Counterexample length */
   private final int cexLength;
 
   public ReplayScheduler(
       Program p,
       Schedule schedule,
-      Guard pc,
-      int length) {
+      Guard pc) {
     super(p);
     TraceLogger.enable();
     this.schedule = schedule.guard(pc).getSingleSchedule();
@@ -38,7 +38,7 @@ public class ReplayScheduler extends Scheduler {
       machine.reset();
     }
     PSymGlobal.getConfiguration().setToReplay();
-    cexLength = length;
+    cexLength = this.schedule.size();
     pathConstraint = pc;
   }
 

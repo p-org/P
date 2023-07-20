@@ -157,8 +157,7 @@ public class EntryPoint {
           new ReplayScheduler(
               scheduler.getProgram(),
               scheduler.getSchedule(),
-              pc,
-              scheduler.getDepth());
+              pc);
       PSymGlobal.setScheduler(replayScheduler);
       replay(replayScheduler);
     } catch (InterruptedException e) {
@@ -207,15 +206,20 @@ public class EntryPoint {
       status = "error";
       throw new RuntimeException("ERROR: Failed to replay counterexample");
     } catch (BugFoundException e) {
-      PSymLogger.info(e.toString());
-      PSymGlobal.printStackTrace(e, true);
-      PSymLogger.info("Checker found a bug.");
-      PSymLogger.info("... Emitting traces:");
-      PSymLogger.info(String.format("..... Writing %s", ScheduleWriter.getFileName()));
-      throw new BugFoundException(
-          "Found bug: " + e.getLocalizedMessage(),
-          replayScheduler.getPathConstraint(),
-          e);
+      if (replayScheduler.getCexLength() != replayScheduler.getChoiceDepth()) {
+        status = "error";
+        throw new RuntimeException("ERROR: Failed to replay counterexample");
+      } else {
+        PSymLogger.info(e.toString());
+        PSymGlobal.printStackTrace(e, true);
+        PSymLogger.info("Checker found a bug.");
+        PSymLogger.info("... Emitting traces:");
+        PSymLogger.info(String.format("..... Writing %s", ScheduleWriter.getFileName()));
+        throw new BugFoundException(
+                "Found bug: " + e.getLocalizedMessage(),
+                replayScheduler.getPathConstraint(),
+                e);
+      }
     }
   }
 

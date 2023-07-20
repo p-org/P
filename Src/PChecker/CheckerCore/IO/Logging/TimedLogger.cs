@@ -65,6 +65,5 @@ namespace PChecker.IO.Logging
             File.WriteAllText(LogFilePath, InMemoryLogger.ToString());
             InMemoryLogger.Dispose();
         }
-
     }
 }

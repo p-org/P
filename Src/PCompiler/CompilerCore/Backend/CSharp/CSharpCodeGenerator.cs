@@ -1100,10 +1100,12 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case SendStmt sendStmt:
-                    if (sendStmt.DelayDistribution != "")
+                    if (sendStmt.DelayDistribution != null)
                     {
                         WriteExpr(context, output, sendStmt.Evt);
-                        context.WriteLine(output, $".DelayDistribution = {sendStmt.DelayDistribution};");
+                        context.Write(output, ".DelayDistribution = ");
+                        WriteExpr(context, output, sendStmt.DelayDistribution);
+                        context.WriteLine(output, ";");
                     }
                     context.Write(output, "currentMachine.TrySendEvent(");
                     WriteExpr(context, output, sendStmt.MachineExpr);

@@ -372,10 +372,16 @@ namespace Plang.Compiler.TypeChecker
 
             method.CanSend = true;
 
-            var distribution = "";
-            if (context.StringLiteral() != null)
-                distribution = context.StringLiteral().GetText();
-            
+            IPExpr distribution = null;
+            if (context.dist != null)
+            {
+                distribution = exprVisitor.Visit(context.dist);
+                if (!PrimitiveType.String.IsAssignableFrom(distribution.Type))
+                {
+                    throw handler.TypeMismatch(context.dist, distribution.Type, PrimitiveType.String);
+                }
+            }
+
             return new SendStmt(context, machineExpr, evtExpr, args, distribution);
         }
 

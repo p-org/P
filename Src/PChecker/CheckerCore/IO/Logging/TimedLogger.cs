@@ -2,6 +2,7 @@ using System.IO;
 using PChecker.Actors;
 using PChecker.Actors.EventQueues.Mocks;
 using PChecker.Actors.Events;
+using PChecker.SystematicTesting;
 
 namespace PChecker.IO.Logging
 {
@@ -41,7 +42,7 @@ namespace PChecker.IO.Logging
         /// <param name="e">The event being sent.</param>
         public void OnSendEvent(ActorId targetActorId, string senderName, string senderState, Event e)
         {
-            InMemoryLogger.WriteLine(e.EnqueueTime + ",Send," + e + "," + senderName + "," + senderState + "," + targetActorId);
+            InMemoryLogger.WriteLine(e.EnqueueTime.GetTime() + ",Send," + e + "," + senderName + "," + senderState + "," + targetActorId);
         }
 
         /// <summary>
@@ -52,7 +53,18 @@ namespace PChecker.IO.Logging
         /// <param name="e">The event being dequeued.</param>
         public void OnDequeueEvent(ActorId id, string stateName, Event e)
         {
-            InMemoryLogger.WriteLine(e.DequeueTime + ",Dequeue," + e + "," + id + "," + stateName + ",null");
+            InMemoryLogger.WriteLine(e.DequeueTime.GetTime() + ",Dequeue," + e + "," + id + "," + stateName + ",null");
         }
+
+        /// <summary>
+        /// Use this method to write log to the file.
+        /// </summary>
+        public void OnCompleted()
+        {
+            InMemoryLogger.WriteLine(ControlledRuntime.GlobalTime.GetTime() + ", Completed, null, null, null, null");
+            File.WriteAllText(LogFilePath, InMemoryLogger.ToString());
+            InMemoryLogger.Dispose();
+        }
+
     }
 }

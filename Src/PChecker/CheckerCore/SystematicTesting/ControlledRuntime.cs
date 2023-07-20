@@ -659,7 +659,6 @@ namespace PChecker.SystematicTesting
                         var minTimestamp = delayedActors.Min(a => a.ScheduledDelayedTimestamp);
                         actorsToRun = Actors.Where(a => a.ScheduledDelayedTimestamp == minTimestamp).ToList();
                         GlobalTime.SetTime(minTimestamp.GetTime());
-                        Console.WriteLine("Time is incremented to " + minTimestamp.GetTime());
                     }
                 }
             }

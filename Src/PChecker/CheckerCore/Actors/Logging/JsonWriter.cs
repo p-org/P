@@ -2,10 +2,8 @@
 using System;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Text.Json.Serialization;
 
 namespace PChecker.Actors.Logging
 {
@@ -497,6 +495,11 @@ namespace PChecker.Actors.Logging
         /// Getter for accessing log entry details.
         /// </summary>
         public LogDetails LogDetails => _log.Details;
+        
+        /// <summary>
+        /// Getter for accessing logs.
+        /// </summary>
+        public List<LogEntry> Logs => _logs;
 
         /// <summary>
         /// Initializes the Writer. Create empty _logs, _log, and _details objects.
@@ -663,16 +666,5 @@ namespace PChecker.Actors.Logging
             _logs.Add(_log);
             _log = new LogEntry();
         }
-
-        /// <summary>
-        /// Serializes the _logs to be exported as a JSON file. 
-        /// </summary>
-        /// <returns></returns>
-        public string ToJsonString() => JsonSerializer.Serialize(_logs,
-            new JsonSerializerOptions
-            {
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true
-            });
     }
 }

@@ -7,7 +7,7 @@ namespace Plang.Compiler.TypeChecker.AST.Statements
     public class SendStmt : IPStmt
     {
         public SendStmt(ParserRuleContext sourceLocation, IPExpr machineExpr, IPExpr evt,
-            IReadOnlyList<IPExpr> arguments, string delayDistribution = "")
+            IReadOnlyList<IPExpr> arguments, IPExpr delayDistribution = null)
         {
             SourceLocation = sourceLocation;
             MachineExpr = machineExpr;
@@ -20,7 +20,7 @@ namespace Plang.Compiler.TypeChecker.AST.Statements
         public IPExpr Evt { get; }
         public IReadOnlyList<IPExpr> Arguments { get; }
 
-        public string DelayDistribution { get;  }
+        public IPExpr DelayDistribution { get;  }
         public ParserRuleContext SourceLocation { get; }
     }
 }

@@ -31,6 +31,14 @@ public class Schedule implements Serializable {
   }
 
   private Schedule(
+          Map<Class<? extends Machine>, ListVS<PrimitiveVS<Machine>>> createdMachines,
+          Set<Machine> machines) {
+    this.createdMachines = new HashMap<>(createdMachines);
+    this.machines = new HashSet<>(machines);
+  }
+
+
+  private Schedule(
       List<Choice> choices,
       Map<Class<? extends Machine>, ListVS<PrimitiveVS<Machine>>> createdMachines,
       Set<Machine> machines,
@@ -277,7 +285,7 @@ public class Schedule implements Serializable {
   }
 
   public Schedule getSingleSchedule() {
-    Schedule result = new Schedule(null);
+    Schedule result = new Schedule(createdMachines, machines);
 
     Guard pc = Guard.constTrue();
     pc = pc.and(getFilter());
@@ -306,10 +314,6 @@ public class Schedule implements Serializable {
           }
         }
       }
-    }
-
-    for (Machine machine : machines) {
-      result.makeMachine(machine, Guard.constTrue());
     }
 
     return result;

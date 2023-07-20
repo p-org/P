@@ -1114,5 +1114,10 @@ namespace PChecker.Actors
                 Action = actionName;
             }
         }
+
+        public bool ReceiveDelayedWaitEvents()
+        {
+            return Inbox.ReceiveDelayedWaitEvents();
+        }
     }
 }

@@ -124,13 +124,17 @@ namespace PChecker.Actors.EventQueues.Mocks
             {
                 return EnqueueStatus.Dropped;
             }
-            if (EventWaitTypes.TryGetValue(e.GetType(), out var predicate) &&
-                (predicate is null || predicate(e)))
+
+            if (e.DequeueTime <= ControlledRuntime.GlobalTime)
             {
-                EventWaitTypes.Clear();
-                ActorManager.OnReceiveEvent(e, opGroupId, info);
-                ReceiveCompletionSource.SetResult(e);
-                return EnqueueStatus.EventHandlerRunning;
+                if (EventWaitTypes.TryGetValue(e.GetType(), out var predicate) &&
+                    (predicate is null || predicate(e)))
+                {
+                    EventWaitTypes.Clear();
+                    ActorManager.OnReceiveEvent(e, opGroupId, info);
+                    ReceiveCompletionSource.SetResult(e);
+                    return EnqueueStatus.EventHandlerRunning;
+                }
             }
 
             ActorManager.OnEnqueueEvent(e, opGroupId, info);
@@ -336,13 +340,16 @@ namespace PChecker.Actors.EventQueues.Mocks
             var node = Queue.First;
             while (node != null)
             {
-                // Dequeue the first event that the caller waits to receive, if there is one in the queue.
-                if (eventWaitTypes.TryGetValue(node.Value.e.GetType(), out var predicate) &&
-                    (predicate is null || predicate(node.Value.e)))
+                if (node.Value.e.DequeueTime <= ControlledRuntime.GlobalTime)
                 {
-                    receivedEvent = node.Value;
-                    Queue.Remove(node);
-                    break;
+                    // Dequeue the first event that the caller waits to receive, if there is one in the queue.
+                    if (eventWaitTypes.TryGetValue(node.Value.e.GetType(), out var predicate) &&
+                        (predicate is null || predicate(node.Value.e)))
+                    {
+                        receivedEvent = node.Value;
+                        Queue.Remove(node);
+                        break;
+                    }
                 }
 
                 node = node.Next;
@@ -358,6 +365,38 @@ namespace PChecker.Actors.EventQueues.Mocks
 
             ActorManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.opGroupId, receivedEvent.info);
             return Task.FromResult(receivedEvent.e);
+        }
+
+        public bool ReceiveDelayedWaitEvents()
+        {
+            (Event e, Guid opGroupId, EventInfo info) receivedEvent = default;
+            var node = Queue.First;
+            while (node != null)
+            {
+                if (node.Value.e.DequeueTime <= ControlledRuntime.GlobalTime)
+                {
+                    // Dequeue the first event that the caller waits to receive, if there is one in the queue.
+                    if (EventWaitTypes.TryGetValue(node.Value.e.GetType(), out var predicate) &&
+                        (predicate is null || predicate(node.Value.e)))
+                    {
+                        receivedEvent = node.Value;
+                        Queue.Remove(node);
+                        break;
+                    }
+                }
+
+                node = node.Next;
+            }
+
+            if (receivedEvent != default)
+            {
+                EventWaitTypes.Clear();
+                ActorManager.OnReceiveEvent(receivedEvent.e, receivedEvent.opGroupId, receivedEvent.info);
+                ReceiveCompletionSource.SetResult(receivedEvent.e);
+                return true;
+            }
+
+            return false;
         }
 
         /// <inheritdoc/>

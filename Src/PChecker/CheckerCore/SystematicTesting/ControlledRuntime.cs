@@ -252,6 +252,8 @@ namespace PChecker.SystematicTesting
 
                     OperationScheduler.StartOperation(op);
 
+                    RunGlobalTimeHandler();
+
                     if (testMethod is Action<IActorRuntime> actionWithRuntime)
                     {
                         actionWithRuntime(this);
@@ -278,6 +280,47 @@ namespace PChecker.SystematicTesting
 
                     // Task has completed, schedule the next enabled operation.
                     Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
+                }
+                catch (Exception ex)
+                {
+                    ProcessUnhandledExceptionInOperation(op, ex);
+                }
+            });
+
+            Scheduler.ScheduleOperation(op, task.Id);
+            task.Start();
+            Scheduler.WaitOperationStart(op);
+        }
+
+        internal void RunGlobalTimeHandler()
+        {
+            var operationId = ulong.MaxValue;
+            var op = new TaskOperation(operationId, Scheduler);
+            Scheduler.RegisterOperation(op);
+            op.OnEnabled();
+
+            var task = new Task(() =>
+            {
+                try
+                {
+                    while (op.Status is AsyncOperationStatus.Enabled)
+                    {
+                        // Update the current asynchronous control flow with the current runtime instance,
+                        // allowing future retrieval in the same asynchronous call stack.
+                        AssignAsyncControlFlowRuntime(this);
+
+                        OperationScheduler.StartOperation(op);
+
+                        if (RunDelayedActorEventHandlers())
+                        {
+                            // Task has completed, schedule the next enabled operation.
+                            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
+                        }
+                        else
+                        {
+                            op.OnCompleted();
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -589,8 +632,6 @@ namespace PChecker.SystematicTesting
 
                     op.OnCompleted();
 
-                    RunDelayedActorEventHandlers();
-
                     // The actor is inactive or halted, schedule the next enabled operation.
                     Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
                 }
@@ -605,26 +646,20 @@ namespace PChecker.SystematicTesting
             Scheduler.WaitOperationStart(op);
         }
 
-        private void RunDelayedActorEventHandlers()
+        private bool RunDelayedActorEventHandlers()
         {
             List<Actor> actorsToRun = null;
             lock (Actors)
             {
-                if (Scheduler.IsAllOperationsCompleted() && Actors.All(a => a.ScheduledDelayedTimestamp != GlobalTime))
+                if (Actors.All(a => a.ScheduledDelayedTimestamp != GlobalTime))
                 {
                     var delayedActors = Actors.Where(a => a.ScheduledDelayedTimestamp > GlobalTime);
                     if (delayedActors.Any())
                     {
                         var minTimestamp = delayedActors.Min(a => a.ScheduledDelayedTimestamp);
                         actorsToRun = Actors.Where(a => a.ScheduledDelayedTimestamp == minTimestamp).ToList();
-                        foreach (var actor in actorsToRun)
-                        {
-                            // Associated operations of each actor should be enabled inside this lock so that another
-                            // instance of this task does not increment the time before running the actors.
-                            var op = Scheduler.GetOperationWithId<ActorOperation>(actor.Id.Value);
-                            op.OnEnabled();
-                        }
                         GlobalTime.SetTime(minTimestamp.GetTime());
+                        Console.WriteLine("Time is incremented to " + minTimestamp.GetTime());
                     }
                 }
             }
@@ -638,10 +673,17 @@ namespace PChecker.SystematicTesting
             {
                 foreach (var actor in actorsToRun)
                 {
-                    actor.Manager.IsEventHandlerRunning = true;
-                    RunActorEventHandler(actor, null, false, null);
+                    if (!actor.ReceiveDelayedWaitEvents())
+                    {
+                        actor.Manager.IsEventHandlerRunning = true;
+                        RunActorEventHandler(actor, null, false, null);
+                    }
                 }
+
+                return true;
             }
+
+            return false;
         }
 
         /// <summary>

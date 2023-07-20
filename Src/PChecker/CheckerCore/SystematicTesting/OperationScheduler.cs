@@ -109,12 +109,6 @@ namespace PChecker.SystematicTesting
             PreviousPulseAllTimestamp = new Timestamp();
         }
 
-        internal bool IsAllOperationsCompleted()
-        {
-            var ops = OperationMap.Values.OrderBy(op => op.Id);
-            return ops.All(op => op.Status is AsyncOperationStatus.Completed);
-        }
-
         /// <summary>
         /// Schedules the next enabled operation.
         /// </summary>
@@ -161,7 +155,7 @@ namespace PChecker.SystematicTesting
             }
 
             // Get and order the operations by their id.
-            var ops = OperationMap.Values.OrderBy(op => op.Id);
+            var ops = OperationMap.Values.Where(op => op.Id < ulong.MaxValue).OrderBy(op => op.Id);
 
             // Try enable any operation that is currently waiting, but has its dependencies already satisfied.
             foreach (var op in ops)
@@ -175,25 +169,25 @@ namespace PChecker.SystematicTesting
 
             if (!Strategy.GetNextOperation(current, ops, out var next))
             {
-                lock (Runtime.Actors)
+                var op = GetOperationWithId<TaskOperation>(ulong.MaxValue);
+                if (op.Status is AsyncOperationStatus.Enabled)
                 {
-                    if (Runtime.Actors.Any(actor => actor.ScheduledDelayedTimestamp != Timestamp.DefaultTimestamp))
-                    {
-                        return;
-                    }
+                    next = op;
                 }
-
-                // Checks if the program has deadlocked.
-                CheckIfProgramHasDeadlocked(ops.Select(op => op as AsyncOperation));
-
-                Debug.WriteLine("<ScheduleDebug> Schedule explored.");
-                HasFullyExploredSchedule = true;
-                Stop();
-
-                if (current.Status != AsyncOperationStatus.Completed)
+                else
                 {
-                    // The schedule is explored so throw exception to force terminate the current operation.
-                    throw new ExecutionCanceledException();
+                    // Checks if the program has deadlocked.
+                    CheckIfProgramHasDeadlocked(ops.Select(op => op as AsyncOperation));
+
+                    Debug.WriteLine("<ScheduleDebug> Schedule explored.");
+                    HasFullyExploredSchedule = true;
+                    Stop();
+
+                    if (current.Status != AsyncOperationStatus.Completed)
+                    {
+                        // The schedule is explored so throw exception to force terminate the current operation.
+                        throw new ExecutionCanceledException();
+                    }
                 }
             }
             ScheduledOperation = next as AsyncOperation;
@@ -235,15 +229,6 @@ namespace PChecker.SystematicTesting
                     {
                         throw new ExecutionCanceledException();
                     }
-                }
-            }
-            else if (current == next && PreviousPulseAllTimestamp < ControlledRuntime.GlobalTime)
-            {
-                lock (next)
-                {
-                    ScheduledOperation.IsActive = true;
-                    PreviousPulseAllTimestamp.SetTime(ControlledRuntime.GlobalTime.GetTime());
-                    System.Threading.Monitor.PulseAll(next);
                 }
             }
         }

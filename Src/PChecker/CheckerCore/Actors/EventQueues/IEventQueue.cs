@@ -61,5 +61,10 @@ namespace PChecker.Actors.EventQueues
         /// Closes the queue, which stops any further event enqueues.
         /// </summary>
         void Close();
+
+        public bool ReceiveDelayedWaitEvents()
+        {
+            return false;
+        }
     }
 }

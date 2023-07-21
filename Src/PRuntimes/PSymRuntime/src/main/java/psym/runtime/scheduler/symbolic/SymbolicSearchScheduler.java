@@ -20,6 +20,7 @@ import psym.runtime.machine.MachineLocalState;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.SearchScheduler;
 import psym.runtime.scheduler.explicit.StateCachingMode;
+import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceQTable;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
@@ -239,57 +240,6 @@ public class SymbolicSearchScheduler extends SearchScheduler {
               + searchStats.getSearchTotal().getDepthStats().getNumOfTransitionsExplored());
       System.out.println("--------------------");
     }
-  }
-
-  @Override
-  protected PrimitiveVS getNext(
-      int depth,
-      Function<Integer, PrimitiveVS> getRepeat,
-      Function<Integer, List> getBacktrack,
-      Consumer<Integer> clearBacktrack,
-      BiConsumer<PrimitiveVS, Integer> addRepeat,
-      BiConsumer<List, Integer> addBacktrack,
-      Supplier<List> getChoices,
-      Function<List, PrimitiveVS> generateNext,
-      boolean isData) {
-    int bound = isData ? PSymGlobal.getConfiguration().getDataChoiceBound() : PSymGlobal.getConfiguration().getSchedChoiceBound();
-    List<ValueSummary> choices = new ArrayList();
-    if (depth < schedule.size()) {
-      PrimitiveVS repeat = getRepeat.apply(depth);
-      if (!repeat.getUniverse().isFalse()) {
-        schedule.restrictFilterForDepth(depth);
-        return repeat;
-      }
-      // nothing to repeat, so look at backtrack set
-      choices = getBacktrack.apply(depth);
-      clearBacktrack.accept(depth);
-    }
-
-    if (choices.isEmpty()) {
-      // no choice to backtrack to, so generate new choices
-      choices = getChoices.get();
-      if (!isData && PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
-        choices = PSymGlobal.getSymmetryTracker().getReducedChoices(choices);
-      }
-      choices =
-          choices.stream()
-              .map(x -> x.restrict(schedule.getFilter()))
-              .filter(x -> !(x.getUniverse().isFalse()))
-              .collect(Collectors.toList());
-    }
-
-    if (choices.size() > 1) {
-      getChoiceOrchestrator().reorderChoices(choices, bound, isData);
-    }
-
-    List<ValueSummary> chosen = choices;
-    PrimitiveVS chosenVS = generateNext.apply(chosen);
-
-    //        addRepeat.accept(chosenVS, depth);
-    addBacktrack.accept(new ArrayList(), depth);
-    schedule.restrictFilterForDepth(depth);
-
-    return chosenVS;
   }
 
   @Override

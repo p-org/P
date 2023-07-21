@@ -45,7 +45,7 @@ public class PSymConfiguration implements Serializable {
   // random seed
   @Getter @Setter long randomSeed = System.currentTimeMillis();
   // max scheduling choice bound provided by the user
-  @Getter @Setter int schedChoiceBound = 0;
+  @Getter @Setter int schChoiceBound = 0;
   // max data choice bound provided by the user
   @Getter @Setter int dataChoiceBound = 0;
   // name of the psym configuration file

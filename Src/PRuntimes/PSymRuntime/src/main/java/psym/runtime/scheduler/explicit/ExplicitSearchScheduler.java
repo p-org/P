@@ -9,11 +9,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import psym.runtime.Concretizer;
@@ -25,7 +21,6 @@ import psym.runtime.machine.MachineLocalState;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Schedule;
 import psym.runtime.scheduler.SearchScheduler;
-import psym.runtime.scheduler.explicit.choiceorchestration.*;
 import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestrationMode;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.statistics.CoverageStats;
@@ -75,6 +70,8 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
   public ExplicitSearchScheduler(Program p) {
     super(p);
+    PSymGlobal.getConfiguration().setSchChoiceBound(1);
+    PSymGlobal.getConfiguration().setDataChoiceBound(1);
   }
 
   /**
@@ -368,87 +365,6 @@ public class ExplicitSearchScheduler extends SearchScheduler {
               + searchStats.getSearchTotal().getDepthStats().getNumOfTransitionsExplored());
       System.out.println("--------------------");
     }
-  }
-
-  @Override
-  protected PrimitiveVS getNext(
-      int depth,
-      Function<Integer, PrimitiveVS> getRepeat,
-      Function<Integer, List> getBacktrack,
-      Consumer<Integer> clearBacktrack,
-      BiConsumer<PrimitiveVS, Integer> addRepeat,
-      BiConsumer<List, Integer> addBacktrack,
-      Supplier<List> getChoices,
-      Function<List, PrimitiveVS> generateNext,
-      boolean isData) {
-    List<ValueSummary> choices = new ArrayList();
-    boolean isNewChoice = false;
-
-    if (depth < schedule.size()) {
-      PrimitiveVS repeat = getRepeat.apply(depth);
-      if (!repeat.getUniverse().isFalse()) {
-        schedule.restrictFilterForDepth(depth);
-        return repeat;
-      }
-      // nothing to repeat, so look at backtrack set
-      choices = getBacktrack.apply(depth);
-      clearBacktrack.accept(depth);
-    }
-
-    if (choices.isEmpty()) {
-      // no choice to backtrack to, so generate new choices
-      if (getIter() > 0) SearchLogger.logMessage("new choice at depth " + depth);
-      choices = getChoices.get();
-      if (!isData && PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
-        choices = PSymGlobal.getSymmetryTracker().getReducedChoices(choices);
-      }
-      choices =
-          choices.stream()
-              .map(x -> x.restrict(schedule.getFilter()))
-              .filter(x -> !(x.getUniverse().isFalse()))
-              .collect(Collectors.toList());
-      isNewChoice = true;
-    }
-
-    if (choices.size() > 1) {
-      getChoiceOrchestrator().reorderChoices(choices, 1, isData);
-    }
-
-    List<ValueSummary> chosen = new ArrayList();
-    ChoiceQTable.ChoiceQStateKey chosenQStateKey = new ChoiceQTable.ChoiceQStateKey();
-    List<ValueSummary> backtrack = new ArrayList();
-    for (int i = 0; i < choices.size(); i++) {
-      ValueSummary choice = choices.get(i);
-      if (i == 0) {
-        chosen.add(choice);
-        chosenQStateKey.add(choice);
-      } else {
-        backtrack.add(choice);
-      }
-    }
-    ChoiceQTable.ChoiceQTableKey chosenActions = null;
-    if (PSymGlobal.getConfiguration().isChoiceOrchestrationLearning()) {
-      chosenActions =
-          new ChoiceQTable.ChoiceQTableKey(
-              PSymGlobal.getChoiceLearningStats().getProgramStateHash(), chosenQStateKey);
-    }
-    PSymGlobal.getCoverage()
-        .updateDepthCoverage(
-            getDepth(),
-            getChoiceDepth(),
-            chosen.size(),
-            backtrack.size(),
-            isData,
-            isNewChoice,
-            chosenActions);
-
-    PrimitiveVS chosenVS = generateNext.apply(chosen);
-
-    //        addRepeat.accept(chosenVS, depth);
-    addBacktrack.accept(backtrack, depth);
-    schedule.restrictFilterForDepth(depth);
-
-    return chosenVS;
   }
 
   @Override

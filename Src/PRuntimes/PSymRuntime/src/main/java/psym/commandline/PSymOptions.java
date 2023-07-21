@@ -498,7 +498,7 @@ public class PSymOptions {
         case "sb":
         case "sch-bound":
           try {
-            config.setSchedChoiceBound(Integer.parseInt(option.getValue()));
+            config.setSchChoiceBound(Integer.parseInt(option.getValue()));
           } catch (NumberFormatException ex) {
             optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
           }

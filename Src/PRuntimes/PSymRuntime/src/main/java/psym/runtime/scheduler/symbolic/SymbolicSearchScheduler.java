@@ -252,6 +252,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
       Supplier<List> getChoices,
       Function<List, PrimitiveVS> generateNext,
       boolean isData) {
+    int bound = isData ? PSymGlobal.getConfiguration().getDataChoiceBound() : PSymGlobal.getConfiguration().getSchedChoiceBound();
     List<ValueSummary> choices = new ArrayList();
     if (depth < schedule.size()) {
       PrimitiveVS repeat = getRepeat.apply(depth);
@@ -275,6 +276,10 @@ public class SymbolicSearchScheduler extends SearchScheduler {
               .map(x -> x.restrict(schedule.getFilter()))
               .filter(x -> !(x.getUniverse().isFalse()))
               .collect(Collectors.toList());
+    }
+
+    if (choices.size() > 1) {
+      getChoiceOrchestrator().reorderChoices(choices, bound, isData);
     }
 
     List<ValueSummary> chosen = choices;

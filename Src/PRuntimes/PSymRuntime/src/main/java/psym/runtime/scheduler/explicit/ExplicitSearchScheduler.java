@@ -48,7 +48,6 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   /** List of all backtrack tasks that finished */
   private final List<Integer> finishedTasks = new ArrayList<>();
 
-  private final ChoiceOrchestrator choiceOrchestrator;
   protected boolean isDoneIterating = false;
   /** Source state at the beginning of each schedule step */
   protected transient Map<Machine, MachineLocalState> srcState = new HashMap<>();
@@ -76,23 +75,6 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
   public ExplicitSearchScheduler(Program p) {
     super(p);
-    switch (PSymGlobal.getConfiguration().getChoiceOrchestration()) {
-      case None:
-        choiceOrchestrator = new ChoiceOrchestratorNone();
-        break;
-      case Random:
-        choiceOrchestrator = new ChoiceOrchestratorRandom();
-        break;
-      case QLearning:
-        choiceOrchestrator = new ChoiceOrchestratorQLearning();
-        break;
-      case EpsilonGreedy:
-        choiceOrchestrator = new ChoiceOrchestratorEpsilonGreedy();
-        break;
-      default:
-        throw new RuntimeException(
-            "Unrecognized choice orchestration mode: " + PSymGlobal.getConfiguration().getChoiceOrchestration());
-    }
   }
 
   /**
@@ -429,7 +411,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     }
 
     if (choices.size() > 1) {
-      choiceOrchestrator.reorderChoices(choices, isData);
+      getChoiceOrchestrator().reorderChoices(choices, 1, isData);
     }
 
     List<ValueSummary> chosen = new ArrayList();

@@ -171,6 +171,27 @@ public class PSymOptions {
             .build();
     addOption(randomSeed);
 
+    // max scheduling choice bound for the search
+    Option maxSchedBound = Option.builder("sb")
+            .longOpt("sch-bound")
+            .desc("Max scheduling choice bound at each step during the search (default: unbounded)")
+            .numberOfArgs(1)
+            .hasArg()
+            .argName("Schedule Bound (integer)")
+            .build();
+    addOption(maxSchedBound);
+
+    // max data choice bound for the search
+    Option dataChoiceBound = Option.builder("db")
+            .longOpt("data-bound")
+            .desc("Max data choice bound at each step during the search (default: unbounded)")
+            .numberOfArgs(1)
+            .hasArg()
+            .argName("Data Bound (integer)")
+            .build();
+    addOption(dataChoiceBound);
+
+
     // psym configuration file
     Option configFile =
         Option.builder()
@@ -472,6 +493,22 @@ public class PSymOptions {
           } catch (NumberFormatException ex) {
             optionError(
                 option, String.format("Expected an integer value, got %s", option.getValue()));
+          }
+          break;
+        case "sb":
+        case "sch-bound":
+          try {
+            config.setSchedChoiceBound(Integer.parseInt(option.getValue()));
+          } catch (NumberFormatException ex) {
+            optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
+          }
+          break;
+        case "db":
+        case "data-bound":
+          try {
+            config.setDataChoiceBound(Integer.parseInt(option.getValue()));
+          } catch (NumberFormatException ex) {
+            optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
           }
           break;
         case "config":

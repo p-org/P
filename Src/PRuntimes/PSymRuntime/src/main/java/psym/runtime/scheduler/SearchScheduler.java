@@ -7,9 +7,13 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import lombok.Getter;
+import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
+import psym.runtime.scheduler.explicit.choiceorchestration.*;
 import psym.runtime.statistics.SearchStats;
 import psym.utils.monitor.MemoryMonitor;
 import psym.utils.random.NondetUtil;
@@ -17,8 +21,27 @@ import psym.valuesummary.*;
 
 /** Represents the search scheduler */
 public abstract class SearchScheduler extends Scheduler {
+  @Getter
+  private final ChoiceOrchestrator choiceOrchestrator;
   protected SearchScheduler(Program p) {
     super(p);
+    switch (PSymGlobal.getConfiguration().getChoiceOrchestration()) {
+      case None:
+        choiceOrchestrator = new ChoiceOrchestratorNone();
+        break;
+      case Random:
+        choiceOrchestrator = new ChoiceOrchestratorRandom();
+        break;
+      case QLearning:
+        choiceOrchestrator = new ChoiceOrchestratorQLearning();
+        break;
+      case EpsilonGreedy:
+        choiceOrchestrator = new ChoiceOrchestratorEpsilonGreedy();
+        break;
+      default:
+        throw new RuntimeException(
+                "Unrecognized choice orchestration mode: " + PSymGlobal.getConfiguration().getChoiceOrchestration());
+    }
   }
 
   protected abstract PrimitiveVS getNext(

@@ -1,5 +1,5 @@
 fun Random(): float;
-fun Expovariate(rho: float): float;
+fun Expovariate(lambda: float): float;
 
 type Subscription = (t: float, key: string, queue: set[float]);
 
@@ -71,7 +71,7 @@ machine Journal {
 
 machine Storage {
     var initT: float;
-    var period: float;
+    var every_t: float;
     var journal: Journal;
     var s_id: string;
     var at_t: float;
@@ -79,10 +79,10 @@ machine Storage {
     var eStorageRunT: float;
 
     start state Init {
-        entry (payload: (initT: float, period: float, key: string, s_id: string, journal: Journal)) {
+        entry (payload: (initT: float, every_t: float, key: string, s_id: string, journal: Journal)) {
             var _eSubscribeRequestPayload: (s_id: string, key: string);
             initT = payload.initT;
-            period = payload.period;
+            every_t = payload.every_t;
             journal = payload.journal;
             s_id = payload.s_id;
             at_t = 0.0;
@@ -128,8 +128,8 @@ machine Storage {
                 }
             }
             blockedReads = stillBlockedReads;
-            _eStorageRunPayload.t = payload.t + period;
-            send this, eStorageRun, _eStorageRunPayload, delay format("{0}", period); // This should be a delayed event
+            _eStorageRunPayload.t = payload.t + every_t;
+            send this, eStorageRun, _eStorageRunPayload, delay format("{0}", every_t); // This should be a delayed event
         }
         on eReadRequest do (payload: (t: float, reader: Reader)) {
             blockedReads += (payload);
@@ -174,8 +174,8 @@ machine Storage {
                 }
             }
             blockedReads = stillBlockedReads;
-            _eStorageRunPayload.t = eStorageRunT + period;
-            send this, eStorageRun, _eStorageRunPayload, delay format("{0}", period); // This should be a delayed event
+            _eStorageRunPayload.t = eStorageRunT + every_t;
+            send this, eStorageRun, _eStorageRunPayload, delay format("{0}", every_t); // This should be a delayed event
         }
         on eAtTRequest do (payload: (writer: Writer)) {
             var _eAtTResponsePayload: (t: float);
@@ -187,18 +187,16 @@ machine Storage {
 
 machine Writer {
     var initT: float;
-    var period: float;
+    var every_t: float;
     var journal: Journal;
     var backPressure: bool;
     var storages: map[string, Storage];
-    var rho: float;
 
     start state Init {
-        entry (payload: (initT: float, period: float, journal: Journal, storages: map[string, Storage], rho:float, backPressure: bool)) {
+        entry (payload: (initT: float, every_t: float, journal: Journal, storages: map[string, Storage], backPressure: bool)) {
             initT = payload.initT;
-            period = payload.period;
+            every_t = payload.every_t;
             journal = payload.journal;
-            rho = payload.rho;
             backPressure = payload.backPressure;
             storages = payload.storages;
         }
@@ -216,10 +214,11 @@ machine Writer {
             var _eAtTRequestPayload: (writer: Writer);
             var lag: float;
             var at_t: float;
+            var _delay: float;
             _eEnqueueRequestPayload.key = choose(keys(storages));
             _eEnqueueRequestPayload.t = payload.t;
             send journal, eEnqueueRequest, _eEnqueueRequestPayload;
-            period = Expovariate(rho);
+            _delay = Expovariate(1.0 / every_t);
             if (backPressure) {
                 _eAtTRequestPayload.writer = this;
                 send storages[_eEnqueueRequestPayload.key], eAtTRequest, _eAtTRequestPayload;
@@ -230,24 +229,24 @@ machine Writer {
                 }
                 lag = payload.t - at_t;
                 if (lag > 1.0) {
-                    period = period + lag - 1.0;
+                    _delay = _delay + lag - 1.0;
                 }
             }
-            _eWriterRunPayload.t = payload.t + period;
-            send this, eWriterRun, _eWriterRunPayload, delay format("{0}", period); // This should be a delayed event with backpressure delay
+            _eWriterRunPayload.t = payload.t + _delay;
+            send this, eWriterRun, _eWriterRunPayload, delay format("{0}", _delay); // This should be a delayed event with backpressure delay
         }
     }
 }
 
 machine Reader {
     var initT: float;
-    var period: float;
+    var every_t: float;
     var storages: map[string, Storage];
 
     start state Init {
-        entry (payload: (initT: float, period: float, storages: map[string, Storage])) {
+        entry (payload: (initT: float, every_t: float, storages: map[string, Storage])) {
             initT = payload.initT;
-            period = payload.period;
+            every_t = payload.every_t;
             storages = payload.storages;
         }
         on eStart goto Run with {
@@ -264,8 +263,8 @@ machine Reader {
             _eReadRequestPayload.t = payload.t;
             _eReadRequestPayload.reader = this;
             send storages[choose(keys(storages))], eReadRequest, _eReadRequestPayload;
-            _eReaderRunPayload.t = payload.t + period;
-            send this, eReaderRun, _eReaderRunPayload, delay format("{0}", period); // This should be a delayed event
+            _eReaderRunPayload.t = payload.t + every_t;
+            send this, eReaderRun, _eReaderRunPayload, delay format("{0}", every_t); // This should be a delayed event
         }
         on eReadResponse do (payload: (tStart: float, tEnd: float)) {
             var tStart: float;

@@ -242,12 +242,18 @@ machine Reader {
     var initT: float;
     var every_t: float;
     var storages: map[string, Storage];
+    var journal: Journal;
+    var writer: Writer;
+    var n: int;
 
     start state Init {
-        entry (payload: (initT: float, every_t: float, storages: map[string, Storage])) {
+        entry (payload: (initT: float, every_t: float, storages: map[string, Storage], journal: Journal, writer: Writer, n: int)) {
             initT = payload.initT;
             every_t = payload.every_t;
             storages = payload.storages;
+            journal = payload.journal;
+            writer = payload.writer;
+            n = payload.n;
         }
         on eStart goto Run with {
             var _eReaderRunPayload: (t: float);
@@ -269,8 +275,18 @@ machine Reader {
         on eReadResponse do (payload: (tStart: float, tEnd: float)) {
             var tStart: float;
             var tEnd: float;
+            var storage: Storage;
             tStart = payload.tStart;
             tEnd = payload.tEnd;
+            n = n - 1;
+            if (n == 0) {
+                foreach (storage in values(storages)) {
+                    send storage, halt;
+                }
+                send journal, halt;
+                send writer, halt;
+                raise halt;
+            }
         }
     }
 }

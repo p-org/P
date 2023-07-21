@@ -311,15 +311,13 @@ namespace PChecker.SystematicTesting
 
                         OperationScheduler.StartOperation(op);
 
-                        if (RunDelayedActorEventHandlers())
-                        {
-                            // Task has completed, schedule the next enabled operation.
-                            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
-                        }
-                        else
+                        if (!RunDelayedActorEventHandlers())
                         {
                             op.OnCompleted();
                         }
+
+                        // Task has completed, schedule the next enabled operation.
+                        Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
                     }
                 }
                 catch (Exception ex)

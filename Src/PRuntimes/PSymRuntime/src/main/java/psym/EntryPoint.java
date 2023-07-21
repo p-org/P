@@ -7,12 +7,12 @@ import psym.runtime.Concretizer;
 import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
-import psym.runtime.scheduler.SearchScheduler;
-import psym.runtime.scheduler.explicit.ExplicitSearchScheduler;
+import psym.runtime.scheduler.search.SearchScheduler;
+import psym.runtime.scheduler.search.explicit.ExplicitSearchScheduler;
 import psym.runtime.scheduler.replay.ReplayScheduler;
-import psym.runtime.scheduler.symbolic.SymbolicSearchScheduler;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
-import psym.runtime.scheduler.symmetry.SymmetryTracker;
+import psym.runtime.scheduler.search.symbolic.SymbolicSearchScheduler;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.utils.exception.BugFoundException;
 import psym.utils.exception.MemoutException;
 import psym.utils.monitor.MemoryMonitor;
@@ -26,7 +26,6 @@ public class EntryPoint {
   private static Future<Integer> future;
   private static String status;
   private static SearchScheduler scheduler;
-  private static String mode;
 
   private static void runWithTimeout(long timeLimit)
       throws TimeoutException,
@@ -67,8 +66,8 @@ public class EntryPoint {
       status = "proved";
     }
     StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
-    if (PSymGlobal.getConfiguration().isExplicit()) {
-      ((ExplicitSearchScheduler) scheduler).reportEstimatedCoverage();
+    if (PSymGlobal.getConfiguration().isIterative()) {
+      ((SearchScheduler) scheduler).reportEstimatedCoverage();
     }
     StatWriter.log("status", String.format("%s", status));
   }
@@ -83,11 +82,6 @@ public class EntryPoint {
 
     executor = Executors.newSingleThreadExecutor();
     status = "error";
-    if (PSymGlobal.getConfiguration().isSymbolic()) {
-      mode = "symbolic";
-    } else {
-      mode = "single";
-    }
     if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
       SymmetryTracker.setScheduler(scheduler);
     }
@@ -95,7 +89,7 @@ public class EntryPoint {
     double preSearchTime =
         TimeMonitor.getInstance().findInterval(TimeMonitor.getInstance().getStart());
     StatWriter.log("project-name", String.format("%s", PSymGlobal.getConfiguration().getProjectName()));
-    StatWriter.log("mode", String.format("%s", mode));
+    StatWriter.log("strategy", String.format("%s", PSymGlobal.getConfiguration().getStrategy()));
     StatWriter.log("solver", String.format("%s", PSymGlobal.getConfiguration().getSolverType().toString()));
     StatWriter.log("expr-type", String.format("%s", PSymGlobal.getConfiguration().getExprLibType().toString()));
     StatWriter.log("time-limit-seconds", String.format("%.1f", PSymGlobal.getConfiguration().getTimeLimit()));

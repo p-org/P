@@ -1,4 +1,4 @@
-package psym.runtime.scheduler.explicit;
+package psym.runtime.scheduler.search.explicit;
 
 public enum StateCachingMode {
     None,

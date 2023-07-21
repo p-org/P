@@ -1,4 +1,4 @@
-package psym.runtime.scheduler.explicit;
+package psym.runtime.scheduler.search.taskorchestration;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -8,7 +8,6 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import psym.runtime.scheduler.Schedule;
-import psym.runtime.scheduler.explicit.taskorchestration.*;
 import psym.runtime.statistics.CoverageStats;
 
 public class BacktrackTask implements Serializable {

@@ -1,4 +1,4 @@
-package psym.runtime.scheduler.symmetry;
+package psym.runtime.scheduler.search.symmetry;
 
 import lombok.Getter;
 import psym.runtime.machine.Machine;

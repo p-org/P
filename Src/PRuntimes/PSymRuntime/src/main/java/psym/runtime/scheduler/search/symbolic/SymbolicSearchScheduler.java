@@ -1,16 +1,13 @@
-package psym.runtime.scheduler.symbolic;
+package psym.runtime.scheduler.search.symbolic;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+
 import lombok.Getter;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
@@ -18,10 +15,9 @@ import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.MachineLocalState;
 import psym.runtime.machine.events.Message;
-import psym.runtime.scheduler.SearchScheduler;
-import psym.runtime.scheduler.explicit.StateCachingMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceQTable;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.SearchScheduler;
+import psym.runtime.scheduler.search.explicit.StateCachingMode;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
 import psym.utils.Assert;
@@ -358,6 +354,11 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     StatWriter.log(
         "#-events-explored",
         String.format("%d", totalStats.getDepthStats().getNumOfTransitionsExplored()));
+  }
+
+  @Override
+  public void reportEstimatedCoverage() {
+    throw new NotImplementedException();
   }
 
   public static class ProtocolState {

@@ -1,10 +1,10 @@
-package psym.runtime.scheduler.symbolic;
+package psym.runtime.scheduler.search.symbolic;
 
 import java.util.*;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
-import psym.runtime.scheduler.symmetry.SymmetryPendingMerges;
-import psym.runtime.scheduler.symmetry.SymmetryTracker;
+import psym.runtime.scheduler.search.symmetry.SymmetryPendingMerges;
+import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.valuesummary.*;
 
 public class SymbolicSymmetryTracker extends SymmetryTracker {

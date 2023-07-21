@@ -1,7 +1,6 @@
-package psym.runtime.scheduler.explicit.taskorchestration;
+package psym.runtime.scheduler.search.taskorchestration;
 
 import lombok.Setter;
-import psym.runtime.scheduler.explicit.BacktrackTask;
 import psym.utils.random.RandomNumberGenerator;
 
 public class TaskOrchestratorCoverageEpsilonGreedy implements TaskOrchestrator {

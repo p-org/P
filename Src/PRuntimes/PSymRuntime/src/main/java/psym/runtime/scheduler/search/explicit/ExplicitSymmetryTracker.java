@@ -1,9 +1,9 @@
-package psym.runtime.scheduler.explicit;
+package psym.runtime.scheduler.search.explicit;
 
 import java.util.*;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
-import psym.runtime.scheduler.symmetry.SymmetryTracker;
+import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.valuesummary.*;
 
 public class ExplicitSymmetryTracker extends SymmetryTracker {

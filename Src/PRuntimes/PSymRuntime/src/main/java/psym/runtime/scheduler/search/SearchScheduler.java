@@ -1,4 +1,4 @@
-package psym.runtime.scheduler;
+package psym.runtime.scheduler.search;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,8 +14,9 @@ import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
-import psym.runtime.scheduler.explicit.choiceorchestration.*;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
+import psym.runtime.scheduler.Scheduler;
+import psym.runtime.scheduler.search.choiceorchestration.*;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.statistics.SearchStats;
 import psym.utils.monitor.MemoryMonitor;
 import psym.utils.random.NondetUtil;
@@ -140,7 +141,14 @@ public abstract class SearchScheduler extends Scheduler {
 
   public abstract void print_search_stats();
 
-  @Override
+  /**
+   * Estimates and prints a coverage percentage based on number of choices explored versus remaining
+   * at each depth
+   */
+  public abstract void reportEstimatedCoverage();
+
+
+    @Override
   public PrimitiveVS<Machine> getNextSchedulingChoice() {
     int depth = choiceDepth;
     PrimitiveVS<Machine> res =

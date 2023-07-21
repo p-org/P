@@ -8,7 +8,7 @@ import lombok.Setter;
 import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.MachineLocalState;
-import psym.runtime.scheduler.symmetry.SymmetryTracker;
+import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.valuesummary.*;
 
 public class Schedule implements Serializable {

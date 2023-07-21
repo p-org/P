@@ -13,10 +13,10 @@ import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.StateEvents;
 import psym.runtime.scheduler.Scheduler;
-import psym.runtime.scheduler.explicit.ExplicitSymmetryTracker;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStats;
-import psym.runtime.scheduler.symbolic.SymbolicSymmetryTracker;
-import psym.runtime.scheduler.symmetry.SymmetryTracker;
+import psym.runtime.scheduler.search.explicit.ExplicitSymmetryTracker;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningStats;
+import psym.runtime.scheduler.search.symbolic.SymbolicSymmetryTracker;
+import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.runtime.statistics.CoverageStats;
 
 /**

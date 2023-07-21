@@ -10,14 +10,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import psym.runtime.PSymGlobal;
-import psym.runtime.scheduler.explicit.StateCachingMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceOrchestrationMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceOrchestratorEpsilonGreedy;
-import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestrationMode;
-import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.explicit.StateCachingMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningRewardMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningStateMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceOrchestrationMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceOrchestratorEpsilonGreedy;
+import psym.runtime.scheduler.search.taskorchestration.TaskOrchestrationMode;
+import psym.runtime.scheduler.search.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 
 /** Represents the commandline options for the tool */
 public class PSymOptions {

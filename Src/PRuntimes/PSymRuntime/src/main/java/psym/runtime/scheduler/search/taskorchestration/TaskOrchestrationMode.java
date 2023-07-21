@@ -1,4 +1,4 @@
-package psym.runtime.scheduler.explicit.taskorchestration;
+package psym.runtime.scheduler.search.taskorchestration;
 
 public enum TaskOrchestrationMode {
     DepthFirst,

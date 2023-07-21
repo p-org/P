@@ -1,4 +1,4 @@
-package psym.runtime.scheduler.symmetry;
+package psym.runtime.scheduler.search.symmetry;
 
 import java.io.Serializable;
 import java.util.*;

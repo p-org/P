@@ -1,4 +1,4 @@
-package psym.runtime.scheduler.explicit.choiceorchestration;
+package psym.runtime.scheduler.search.choiceorchestration;
 
 import java.io.Serializable;
 import java.util.*;

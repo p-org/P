@@ -4,12 +4,12 @@ import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 import psym.runtime.machine.buffer.BufferSemantics;
-import psym.runtime.scheduler.explicit.StateCachingMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceOrchestrationMode;
-import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestrationMode;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.explicit.StateCachingMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningRewardMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningStateMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceOrchestrationMode;
+import psym.runtime.scheduler.search.taskorchestration.TaskOrchestrationMode;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -91,6 +91,10 @@ public class PSymConfiguration implements Serializable {
     return !isSymbolic();
   }
 
+  public boolean isIterative() {
+    return (schChoiceBound > 0) || (dataChoiceBound > 0);
+  }
+
   public boolean isChoiceOrchestrationLearning() {
     return (getChoiceOrchestration() == ChoiceOrchestrationMode.QLearning)
         || (getChoiceOrchestration() == ChoiceOrchestrationMode.EpsilonGreedy);
@@ -105,6 +109,8 @@ public class PSymConfiguration implements Serializable {
   }
 
   private void setToExplicit() {
+    this.setSchChoiceBound(1);
+    this.setDataChoiceBound(1);
     this.setStateCachingMode(StateCachingMode.Fast);
     this.setUseBacktrack(true);
   }

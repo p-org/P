@@ -1,4 +1,4 @@
-package psym.runtime.scheduler.explicit;
+package psym.runtime.scheduler.search.explicit;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -20,9 +20,10 @@ import psym.runtime.machine.Machine;
 import psym.runtime.machine.MachineLocalState;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Schedule;
-import psym.runtime.scheduler.SearchScheduler;
-import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestrationMode;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.taskorchestration.BacktrackTask;
+import psym.runtime.scheduler.search.SearchScheduler;
+import psym.runtime.scheduler.search.taskorchestration.TaskOrchestrationMode;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.statistics.CoverageStats;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
@@ -545,6 +546,32 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     StatWriter.log("#-executions", String.format("%d", (getIter() - getStart_iter())));
   }
 
+  @Override
+  public void reportEstimatedCoverage() {
+    PSymGlobal.getCoverage().reportChoiceCoverage();
+
+    if (PSymGlobal.getConfiguration().getStateCachingMode() != StateCachingMode.None) {
+      SearchLogger.log(String.format("Distinct States Explored %d", totalDistinctStateCount));
+    }
+
+    BigDecimal coverage = PSymGlobal.getCoverage().getEstimatedCoverage(22);
+    assert (coverage.compareTo(BigDecimal.ONE) <= 0) : "Error in progress estimation";
+
+    String coverageGoalAchieved = PSymGlobal.getCoverage().getCoverageGoalAchieved();
+    if (isFinalResult && result.endsWith("correct for any depth")) {
+      PSymGlobal.getCoverage();
+      coverageGoalAchieved = CoverageStats.getMaxCoverageGoal();
+    }
+
+    StatWriter.log("progress", String.format("%.22f", coverage));
+    StatWriter.log("coverage-achieved", String.format("%s", coverageGoalAchieved));
+
+    SearchLogger.log(
+        String.format(
+            "Progress Guarantee       %.12f", PSymGlobal.getCoverage().getEstimatedCoverage(12)));
+    SearchLogger.log(String.format("Coverage Goal Achieved   %s", coverageGoalAchieved));
+  }
+
   private void postIterationCleanup() {
     schedule.resetFilter();
     for (int d = schedule.size() - 1; d >= 0; d--) {
@@ -582,35 +609,6 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       }
     }
     isDoneIterating = true;
-  }
-
-  /**
-   * Estimates and prints a coverage percentage based on number of choices explored versus remaining
-   * at each depth
-   */
-  public void reportEstimatedCoverage() {
-    PSymGlobal.getCoverage().reportChoiceCoverage();
-
-    if (PSymGlobal.getConfiguration().getStateCachingMode() != StateCachingMode.None) {
-      SearchLogger.log(String.format("Distinct States Explored %d", totalDistinctStateCount));
-    }
-
-    BigDecimal coverage = PSymGlobal.getCoverage().getEstimatedCoverage(22);
-    assert (coverage.compareTo(BigDecimal.ONE) <= 0) : "Error in progress estimation";
-
-    String coverageGoalAchieved = PSymGlobal.getCoverage().getCoverageGoalAchieved();
-    if (isFinalResult && result.endsWith("correct for any depth")) {
-      PSymGlobal.getCoverage();
-      coverageGoalAchieved = CoverageStats.getMaxCoverageGoal();
-    }
-
-    StatWriter.log("progress", String.format("%.22f", coverage));
-    StatWriter.log("coverage-achieved", String.format("%s", coverageGoalAchieved));
-
-    SearchLogger.log(
-        String.format(
-            "Progress Guarantee       %.12f", PSymGlobal.getCoverage().getEstimatedCoverage(12)));
-    SearchLogger.log(String.format("Coverage Goal Achieved   %s", coverageGoalAchieved));
   }
 
   private void resetBacktrackTasks() {

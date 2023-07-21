@@ -13,7 +13,7 @@ import psym.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Scheduler;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningStateMode;
 import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.utils.Assert;
 import psym.utils.serialize.SerializableBiFunction;

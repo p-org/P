@@ -5,7 +5,7 @@ import java.util.function.Function;
 import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.valuesummary.*;
 
 /**

@@ -7,10 +7,7 @@ import lombok.Getter;
 import org.apache.commons.lang3.NotImplementedException;
 import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
-import psym.runtime.logger.PSymLogger;
-import psym.runtime.logger.ScheduleWriter;
-import psym.runtime.logger.SearchLogger;
-import psym.runtime.logger.TraceLogger;
+import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Schedule;
@@ -66,6 +63,7 @@ public class ReplayScheduler extends Scheduler {
   public void doSearch() throws TimeoutException {
     TraceLogger.logStartReplayCex(cexLength);
     ScheduleWriter.logHeader();
+    TextWriter.logHeader();
     initializeSearch();
     performSearch();
   }

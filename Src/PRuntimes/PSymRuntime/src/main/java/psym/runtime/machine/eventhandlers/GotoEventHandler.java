@@ -1,8 +1,10 @@
 package psym.runtime.machine.eventhandlers;
 
+import psym.runtime.logger.TextWriter;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.State;
 import psym.runtime.machine.events.Event;
+import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.valuesummary.Guard;
 import psym.valuesummary.UnionVS;
 

@@ -3,6 +3,7 @@ package psym.runtime.machine.buffer;
 import java.io.Serializable;
 import java.util.function.Function;
 import psym.runtime.logger.ScheduleWriter;
+import psym.runtime.logger.TextWriter;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Event;
@@ -54,12 +55,14 @@ public class EventQueue extends SymbolicQueue implements EventBuffer, Serializab
     TraceLogger.unblock(event);
     if (sender.getScheduler() instanceof ReplayScheduler) {
       ScheduleWriter.logUnblock(sender, event);
+      TextWriter.logUnblock(sender, event);
     }
   }
 
   private void addEvent(Message event) {
     if (sender.getScheduler() instanceof ReplayScheduler) {
-      ScheduleWriter.logSend(sender, event);
+      ScheduleWriter.logEnqueue(sender, event);
+      TextWriter.logEnqueue(sender, event);
     }
     super.add(event);
   }

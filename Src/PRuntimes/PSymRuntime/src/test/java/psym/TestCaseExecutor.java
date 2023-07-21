@@ -121,7 +121,7 @@ public class TestCaseExecutor {
 
     // Next, try to dynamically load and compile this file
     try {
-      int seed = (new Random()).nextInt();
+      int seed = Math.abs((new Random()).nextInt());
       String runJarCommand =
           String.format(
               "dotnet %s check %s --mode %s --outdir %s --seed %d %s",

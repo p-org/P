@@ -201,7 +201,8 @@ public class EntryPoint {
   private static void replay(ReplayScheduler replayScheduler)
       throws RuntimeException, TimeoutException {
     try {
-      ScheduleWriter.Initialize(PSymGlobal.getConfiguration().getProjectName(), PSymGlobal.getConfiguration().getOutputFolder());
+      ScheduleWriter.Initialize();
+      TextWriter.Initialize();
       replayScheduler.doSearch();
       status = "error";
       throw new RuntimeException("ERROR: Failed to replay counterexample");
@@ -214,6 +215,7 @@ public class EntryPoint {
         PSymGlobal.printStackTrace(e, true);
         PSymLogger.info("Checker found a bug.");
         PSymLogger.info("... Emitting traces:");
+        PSymLogger.info(String.format("..... Writing %s", TextWriter.getFileName()));
         PSymLogger.info(String.format("..... Writing %s", ScheduleWriter.getFileName()));
         throw new BugFoundException(
                 "Found bug: " + e.getLocalizedMessage(),

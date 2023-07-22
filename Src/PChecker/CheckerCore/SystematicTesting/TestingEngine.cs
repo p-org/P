@@ -8,6 +8,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -80,6 +82,23 @@ namespace PChecker.SystematicTesting
         /// checkerConfiguration is specified.
         /// </summary>
         private JsonWriter JsonLogger;
+        
+        /// <summary>
+        /// Field declaration for the JsonVerboseLogs
+        /// Structure representation is a list of the JsonWriter logs.
+        /// [log iter 1, log iter 2, log iter 3, ...]
+        /// </summary>
+        private readonly List<List<LogEntry>> JsonVerboseLogs;
+
+        /// <summary>
+        /// Field declaration with default JSON serializer options
+        /// </summary>
+        private JsonSerializerOptions jsonSerializerConfig = new()
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
+        };
         
         /// <summary>
         /// The profiler.
@@ -221,6 +240,12 @@ namespace PChecker.SystematicTesting
             CancellationTokenSource = new CancellationTokenSource();
             PrintGuard = 1;
 
+            // Initialize a new instance of JsonVerboseLogs if running in verbose mode.
+            if (checkerConfiguration.IsVerbose)
+            {
+                JsonVerboseLogs = new List<List<LogEntry>>();
+            }
+            
             if (checkerConfiguration.SchedulingStrategy is "replay")
             {
                 var scheduleDump = GetScheduleForReplay(out var isFair);
@@ -401,6 +426,24 @@ namespace PChecker.SystematicTesting
                         ExceptionDispatchInfo.Capture(innerException).Throw();
                     }
                 }
+
+                // Output JSON verbose logs at the end of Task
+                if (_checkerConfiguration.IsVerbose)
+                {
+                    // Get the file path to output the json verbose logs file
+                    var directory = _checkerConfiguration.OutputDirectory;
+                    var file = Path.GetFileNameWithoutExtension(_checkerConfiguration.AssemblyToBeAnalyzed);
+                    file += "_" + _checkerConfiguration.TestingProcessId;
+                    var jsonVerbosePath = directory + file  + "_verbose.trace.json";
+
+                    Logger.WriteLine("... Emitting verbose logs:");
+                    Logger.WriteLine($"..... Writing {jsonVerbosePath}");
+
+                    // Stream directly to the output file while serializing the JSON
+                    using var jsonStreamFile = File.Create(jsonVerbosePath);
+                    JsonSerializer.Serialize(jsonStreamFile, JsonVerboseLogs, jsonSerializerConfig);
+                }
+                
             }, CancellationTokenSource.Token);
         }
 
@@ -479,6 +522,12 @@ namespace PChecker.SystematicTesting
                     ErrorReporter.WriteErrorLine(runtime.Scheduler.BugReport);
                 }
 
+                // Only add the current iteration of JsonLogger logs to JsonVerboseLogs if in verbose mode
+                if (_checkerConfiguration.IsVerbose)
+                {
+                    JsonVerboseLogs.Add(JsonLogger.Logs);
+                }
+                
                 runtime.LogWriter.LogCompletion();
 
                 GatherTestingStatistics(runtime);
@@ -590,7 +639,10 @@ namespace PChecker.SystematicTesting
             {
                 var jsonPath = directory + file + "_" + index + ".trace.json";
                 Logger.WriteLine($"..... Writing {jsonPath}");
-                File.WriteAllText(jsonPath, JsonLogger.ToJsonString());
+                
+                // Stream directly to the output file while serializing the JSON
+                using var jsonStreamFile = File.Create(jsonPath);
+                JsonSerializer.Serialize(jsonStreamFile, JsonLogger.Logs, jsonSerializerConfig);
             }
 
             if (Graph != null)

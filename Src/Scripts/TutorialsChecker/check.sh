@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ITERATIONS=10000
+ITERATIONS=25000
 
 cd $1
 

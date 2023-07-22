@@ -31,8 +31,6 @@ public abstract class Scheduler implements SchedulerInterface {
   @Getter private final Program program;
   /** The scheduling choices made */
   public Schedule schedule;
-  /** Result of the search */
-  public String result;
   /** Whether final result is set or not */
   public boolean isFinalResult = false;
   /** How many instances of each Machine there are */

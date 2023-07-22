@@ -83,8 +83,9 @@ public class PSym {
         exit_code = 5;
       }
     } finally {
-      double postSearchTime = TimeMonitor.getInstance().stopInterval();
-      StatWriter.log("time-post-seconds", String.format("%.1f", postSearchTime));
+      StatWriter.log("result", PSymGlobal.getResult());
+      StatWriter.log("status", String.format("%s", PSymGlobal.getStatus()));
+      StatWriter.log("exit-code", String.format("%d", exit_code));
       System.exit(exit_code);
     }
   }

@@ -461,6 +461,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 context.WriteLine(output, "@Generated");
                 context.WriteLine(output, "@Override");
                 context.WriteLine(output, $"public void entry(Guard {entryPcScope.PathConstraintVar}, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {{");
+                context.WriteLine(output, $"super.entry({entryPcScope.PathConstraintVar}, machine, outcome, payload);");
 
                 var entryFunc = state.Entry;
                 entryFunc.Name = $"{context.GetNameForDecl(state)}_entry";
@@ -484,6 +485,7 @@ namespace Plang.Compiler.Backend.Symbolic
             if (state.Exit != null)
             {
                 context.WriteLine(output, "@Override public void exit(Guard pc, Machine machine) {");
+                context.WriteLine(output, $"super.exit(pc, machine);");
 
                 var exitFunc = state.Exit;
                 exitFunc.Name = $"{context.GetNameForDecl(state)}_exit";

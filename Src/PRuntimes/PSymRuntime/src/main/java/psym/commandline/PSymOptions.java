@@ -105,7 +105,7 @@ public class PSymOptions {
     Option strategy =
         Option.builder("s")
             .longOpt("strategy")
-            .desc("Exploration strategy: symex, random, dfs, learn, stateless (default: symex)")
+            .desc("Exploration strategy: symbolic, random, dfs, learn, stateless (default: symbolic)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Strategy (string)")
@@ -430,7 +430,7 @@ public class PSymOptions {
             case "sym":
             case "symex":
             case "symbolic":
-              config.setToSymex();
+              config.setToSymbolic();
               break;
             case "random":
               config.setToRandom();

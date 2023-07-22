@@ -7,6 +7,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import lombok.Getter;
+import lombok.Setter;
 import psym.commandline.PSymConfiguration;
 import psym.runtime.logger.PSymLogger;
 import psym.runtime.machine.Machine;
@@ -37,6 +40,14 @@ public class PSymGlobal implements Serializable {
      * Scheduler
      */
     private static Scheduler scheduler = null;
+
+    /** Status of the run **/
+    @Getter @Setter
+    private static String status = "incomplete";
+
+    /** Result of the run **/
+    @Getter @Setter
+    private static String result = "error";
 
     /**
      * Mapping of each machine's state with its corresponding event handlers

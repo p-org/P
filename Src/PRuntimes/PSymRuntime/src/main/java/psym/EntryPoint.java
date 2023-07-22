@@ -7,9 +7,9 @@ import psym.runtime.Concretizer;
 import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
+import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.runtime.scheduler.search.SearchScheduler;
 import psym.runtime.scheduler.search.explicit.ExplicitSearchScheduler;
-import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.runtime.scheduler.search.symbolic.SymbolicSearchScheduler;
 import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
@@ -65,7 +65,7 @@ public class EntryPoint {
     }
     StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
     if (PSymGlobal.getConfiguration().isIterative()) {
-      ((SearchScheduler) searchScheduler).reportEstimatedCoverage();
+      searchScheduler.reportEstimatedCoverage();
     }
   }
 

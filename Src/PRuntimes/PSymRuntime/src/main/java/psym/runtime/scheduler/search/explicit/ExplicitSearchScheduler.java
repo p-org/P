@@ -9,20 +9,15 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import psym.runtime.Concretizer;
 import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
 import psym.runtime.machine.Machine;
-import psym.runtime.machine.MachineLocalState;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Schedule;
-import psym.runtime.scheduler.search.taskorchestration.BacktrackTask;
 import psym.runtime.scheduler.search.SearchScheduler;
-import psym.runtime.scheduler.search.taskorchestration.TaskOrchestrationMode;
 import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.statistics.CoverageStats;
 import psym.runtime.statistics.SearchStats;
@@ -100,7 +95,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
           if (PSymGlobal.getConfiguration().isFailOnMaxStepBound()) {
             Assert.cycle(
                     false,
-                    String.format("Cycle detected: Infinite loop found due to revisiting a state multiple times in the same iteration"),
+                    "Cycle detected: Infinite loop found due to revisiting a state multiple times in the same iteration",
                     Guard.constTrue());
           }
         } else {

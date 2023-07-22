@@ -4,12 +4,12 @@ import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 import psym.runtime.machine.buffer.BufferSemantics;
-import psym.runtime.scheduler.search.explicit.StateCachingMode;
 import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningStateMode;
 import psym.runtime.scheduler.search.choiceorchestration.ChoiceOrchestrationMode;
-import psym.runtime.scheduler.search.taskorchestration.TaskOrchestrationMode;
+import psym.runtime.scheduler.search.explicit.StateCachingMode;
 import psym.runtime.scheduler.search.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.taskorchestration.TaskOrchestrationMode;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 

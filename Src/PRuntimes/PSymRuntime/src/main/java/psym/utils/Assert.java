@@ -2,7 +2,6 @@ package psym.utils;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
 import lombok.Getter;
 import psym.utils.exception.BugFoundException;
 import psym.utils.exception.LivenessException;

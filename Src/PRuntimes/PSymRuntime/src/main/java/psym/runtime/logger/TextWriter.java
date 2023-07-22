@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
-
 import lombok.Getter;
 import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
@@ -15,7 +14,6 @@ import psym.runtime.machine.events.Message;
 import psym.valuesummary.GuardedValue;
 import psym.valuesummary.PrimitiveVS;
 import psym.valuesummary.UnionVS;
-
 
 public class TextWriter {
     static PrintWriter log = null;

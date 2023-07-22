@@ -3,17 +3,14 @@ package psym.runtime.scheduler.search;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang3.StringUtils;
 import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
@@ -22,42 +19,37 @@ import psym.runtime.machine.MachineLocalState;
 import psym.runtime.scheduler.Schedule;
 import psym.runtime.scheduler.Scheduler;
 import psym.runtime.scheduler.search.choiceorchestration.*;
-import psym.runtime.scheduler.search.explicit.StateCachingMode;
 import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.scheduler.search.taskorchestration.BacktrackTask;
 import psym.runtime.scheduler.search.taskorchestration.TaskOrchestrationMode;
 import psym.runtime.statistics.SearchStats;
 import psym.utils.Assert;
 import psym.utils.monitor.MemoryMonitor;
-import psym.utils.monitor.TimeMonitor;
 import psym.utils.random.NondetUtil;
 import psym.valuesummary.*;
 
 /** Represents the search scheduler */
 public abstract class SearchScheduler extends Scheduler {
-  @Getter private int iter = 0;
-  @Getter private int start_iter = 0;
-  @Getter private int backtrackDepth = 0;
-  private boolean isDoneIterating = false;
-
-  /** Source state at the beginning of each schedule step */
-  protected transient Map<Machine, MachineLocalState> srcState = new HashMap<>();
   /** List of all backtrack tasks */
   private final List<BacktrackTask> allTasks = new ArrayList<>();
   /** Priority queue of all backtrack tasks that are pending */
   private final Set<Integer> pendingTasks = new HashSet<>();
   /** List of all backtrack tasks that finished */
   @Getter private final List<Integer> finishedTasks = new ArrayList<>();
+  private final ChoiceOrchestrator choiceOrchestrator;
+  /** Source state at the beginning of each schedule step */
+  protected transient Map<Machine, MachineLocalState> srcState = new HashMap<>();
+  @Getter private int iter = 0;
+  @Getter private int start_iter = 0;
+  @Getter private int backtrackDepth = 0;
+  private boolean isDoneIterating = false;
   /** Task id of the latest backtrack task */
   @Getter private int latestTaskId = 0;
   private int numPendingBacktracks = 0;
   private int numPendingDataBacktracks = 0;
-
   /** Time of last report */
   @Getter @Setter
   private transient Instant lastReportTime = Instant.now();
-
-  private final ChoiceOrchestrator choiceOrchestrator;
   protected SearchScheduler(Program p) {
     super(p);
     switch (PSymGlobal.getConfiguration().getChoiceOrchestration()) {

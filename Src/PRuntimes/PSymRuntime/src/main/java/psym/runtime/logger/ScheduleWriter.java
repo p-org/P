@@ -12,8 +12,6 @@ import psym.runtime.machine.State;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.utils.Assert;
-import psym.utils.exception.LivenessException;
-import psym.valuesummary.Guard;
 import psym.valuesummary.GuardedValue;
 import psym.valuesummary.PrimitiveVS;
 

@@ -6,9 +6,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
 import lombok.Getter;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
@@ -22,7 +20,6 @@ import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.statistics.CoverageStats;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
-import psym.utils.Assert;
 import psym.utils.monitor.MemoryMonitor;
 import psym.utils.monitor.TimeMonitor;
 import psym.valuesummary.Guard;
@@ -39,9 +36,12 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     if (PSymGlobal.getConfiguration().getSchChoiceBound() == 1
         && PSymGlobal.getConfiguration().getDataChoiceBound() == 1) {
       throw new RuntimeException(
-              String.format(
-                      "Error: symbolic strategy does not support both schedule and data choice bounds as 1. Use other strategies instead."));
+              "Error: symbolic strategy does not support both schedule and data choice bounds as 1. Use other strategies instead.");
     }
+  }
+
+  public static void cleanup() {
+    SolverEngine.cleanupEngine();
   }
 
   @Override
@@ -400,10 +400,6 @@ public class SymbolicSearchScheduler extends SearchScheduler {
   @Override protected void restore(int d, int cd) {
     super.restore(d, cd);
     depthToProtocolState.clear();
-  }
-
-  public static void cleanup() {
-    SolverEngine.cleanupEngine();
   }
 
   public static class ProtocolState {

@@ -197,8 +197,16 @@ namespace PChecker.Actors.EventQueues.Mocks
             var ((e, opGroupId, info), isDelayed) = TryDequeueEvent(checkOnly);
             if (isDelayed)
             {
-                ActorManager.IsEventHandlerRunning = false;
-                return (DequeueStatus.Delayed, e, Guid.Empty, null);
+                if (e == null)
+                {
+                    return (DequeueStatus.NotAvailable, null, Guid.Empty, null);
+                }
+                else
+                {
+                    ActorManager.IsEventHandlerRunning = false;
+                    return (DequeueStatus.Delayed, e, Guid.Empty, null);
+                }
+
             }
 
             if (e != null)
@@ -228,6 +236,15 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// </summary>
         private ((Event e, Guid opGroupId, EventInfo info), bool isDelayed) TryDequeueEvent(bool checkOnly = false)
         {
+            if (EventWaitTypes.Count > 0)
+            {
+                // We cannot dequeue anything. The actor is blocked on a receive. Being blocked on a receive and calling
+                // this function means that the actor is waiting for a delayed event. Therefore, this event is
+                // inherently delayed, but we cannot return the event from the queue because it cannot be dequeued,
+                // i.e.,it has to be received through a different path in the code.
+                return (default, true);
+            }
+
             (Event, Guid, EventInfo) nextAvailableEvent = default;
             bool isDelayed = false;
 
@@ -397,6 +414,28 @@ namespace PChecker.Actors.EventQueues.Mocks
             }
 
             return false;
+        }
+
+        public Event GetDelayedWaitEvent()
+        {
+            var node = Queue.First;
+            Event minTimestampWaitEvent = null;
+            while (node != null)
+            {
+                // Dequeue the first event that the caller waits to receive, if there is one in the queue.
+                if (EventWaitTypes.TryGetValue(node.Value.e.GetType(), out var predicate) &&
+                    (predicate is null || predicate(node.Value.e)))
+                {
+                    if (minTimestampWaitEvent is null || node.Value.e.DequeueTime < minTimestampWaitEvent.DequeueTime)
+                    {
+                        minTimestampWaitEvent = node.Value.e;
+                    }
+                }
+
+                node = node.Next;
+            }
+
+            return minTimestampWaitEvent;
         }
 
         /// <inheritdoc/>

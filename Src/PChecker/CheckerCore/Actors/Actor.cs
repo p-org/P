@@ -444,12 +444,13 @@ namespace PChecker.Actors
 
         private Timestamp GetScheduledDelayedTimestamp()
         {
-            var (_, e, _, _) = Inbox.Dequeue(true);
-            if (e is not null)
+            var waitEvent = Inbox.GetDelayedWaitEvent();
+            if (waitEvent is not null)
             {
-                return e.DequeueTime;
+                return waitEvent.DequeueTime;
             }
-            return Timestamp.DefaultTimestamp;
+            var (_, e, _, _) = Inbox.Dequeue(true);
+            return e is not null ? e.DequeueTime : Timestamp.DefaultTimestamp;
         }
 
         /// <summary>

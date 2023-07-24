@@ -66,5 +66,10 @@ namespace PChecker.Actors.EventQueues
         {
             return false;
         }
+
+        public Event GetDelayedWaitEvent()
+        {
+            return null;
+        }
     }
 }

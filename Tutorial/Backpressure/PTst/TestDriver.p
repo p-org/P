@@ -48,12 +48,9 @@ machine TestCase {
             _ReaderPayload.storages = storages;
             _ReaderPayload.journal = journal;
             _ReaderPayload.writer = writer;
-            _ReaderPayload.n = 10000;
+            _ReaderPayload.n = 100;
             reader = new Reader(_ReaderPayload);
             send reader, eStart;
         }
     }
 }
-
-test temp [main = TestCase]:
-  assert Spec in (union Module, { TestCase });

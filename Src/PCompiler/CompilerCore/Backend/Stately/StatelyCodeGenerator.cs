@@ -35,7 +35,7 @@ namespace Plang.Compiler.Backend.Stately {
 
         private void WriteDecl(CompilationContext context, StringWriter output, IPDecl decl)
         {
-            string declName;
+            //string declName;
             switch (decl)
             {
                 case Machine machine:
@@ -103,6 +103,7 @@ namespace Plang.Compiler.Backend.Stately {
                                 gotoStmts.Add((doAct.Trigger.Name, gotoS.State.Name));
                             }
                         }
+                        //TODO: If the statement is a Function Call, recursively add any goto statements inside too.
                         break;
                     
                 }

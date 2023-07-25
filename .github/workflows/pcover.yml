@@ -1,0 +1,40 @@
+# This workflow will build and test PCover, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: PCover on Ubuntu
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      args:
+        description: Additional arguments
+        default: ""
+        required: false
+
+jobs:
+  PCover-Build-And-Test-Ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+    - name: Set up JDK
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+    - name: Cache Maven packages
+      uses: actions/cache@v2
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+    - name: Build PCover
+      working-directory: Src/PRuntimes/PSymRuntime
+      run: ./scripts/build.sh
+    - name: Test PCover
+      working-directory: Src/PRuntimes/PSymRuntime
+      run: mvn test -Dmode="coverage"

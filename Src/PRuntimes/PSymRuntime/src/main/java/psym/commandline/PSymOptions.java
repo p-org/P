@@ -10,7 +10,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import psym.runtime.PSymGlobal;
-import psym.runtime.machine.buffer.BufferSemantics;
 import psym.runtime.scheduler.explicit.StateCachingMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
 import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
@@ -184,6 +183,11 @@ public class PSymOptions {
     addOption(configFile);
 
     // Invisible/expert options
+
+    // whether or not to disable sync events
+    Option sync =
+        Option.builder().longOpt("no-sync").desc("Disable sync events").numberOfArgs(0).build();
+    addHiddenOption(sync);
 
     // whether or not to disable state caching
     Option stateCaching =
@@ -452,13 +456,13 @@ public class PSymOptions {
           // replay options
         case "r":
         case "replay":
-          config.setReadReplayerFromFile(option.getValue());
-          File file = new File(config.getReadReplayerFromFile());
+          config.setReadScheduleFromFile(option.getValue());
+          File file = new File(config.getReadScheduleFromFile());
           try {
             file.getCanonicalPath();
           } catch (IOException e) {
             optionError(
-                option, String.format("File %s does not exist", config.getReadReplayerFromFile()));
+                option, String.format("File %s does not exist", config.getReadScheduleFromFile()));
           }
           break;
           // advanced options
@@ -472,6 +476,9 @@ public class PSymOptions {
           break;
         case "config":
           readConfigFile(config, option.getValue(), option);
+          break;
+        case "no-sync":
+          config.setAllowSyncEvents(false);
           break;
         case "state-caching":
           switch (option.getValue()) {
@@ -682,10 +689,15 @@ public class PSymOptions {
         JSONObject value = (JSONObject) jsonObject.get(key);
         switch (key) {
           case "sync-events":
-            JSONArray syncEvents = value.getJSONArray("default");
-            for (int i = 0; i < syncEvents.length(); i++) {
-              String syncEventName = syncEvents.getString(i);
-              PSymGlobal.getSyncEvents().add(syncEventName);
+            JSONArray allSyncEvents = value.getJSONArray("default");
+            for (int i = 0; i < allSyncEvents.length(); i++) {
+              JSONObject element = allSyncEvents.getJSONObject(i);
+              String machineName = element.getString("machine");
+              JSONArray syncEvents = element.getJSONArray("events");
+              for (int j = 0; j < syncEvents.length(); j++) {
+                String syncEventName = syncEvents.getString(j);
+                PSymGlobal.addSyncEvent(machineName, syncEventName);
+              }
             }
             break;
           case "symmetric-machines":

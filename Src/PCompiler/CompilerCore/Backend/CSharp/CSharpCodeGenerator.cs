@@ -387,6 +387,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "[PChecker.SystematicTesting.Test]");
             context.WriteLine(output, "public static void Execute(IActorRuntime runtime) {");
             context.WriteLine(output, "runtime.RegisterLog(new PLogFormatter());");
+            context.WriteLine(output, "runtime.RegisterLog(new PJsonFormatter());");
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "PHelper.InitializeEnums();");

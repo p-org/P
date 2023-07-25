@@ -3,7 +3,6 @@ package psym.runtime.scheduler;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-
 import lombok.Getter;
 import psym.runtime.*;
 import psym.runtime.Program;
@@ -13,6 +12,7 @@ import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
+import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.runtime.statistics.SearchStats;
 import psym.utils.Assert;
@@ -38,7 +38,7 @@ public abstract class Scheduler implements SchedulerInterface {
   /** How many instances of each Machine there are */
   protected Map<Class<? extends Machine>, PrimitiveVS<Integer>> machineCounters;
   /** Whether or not search is done */
-  protected boolean done = false;
+  protected Guard done = Guard.constFalse();
 
   /** Choice depth */
   protected int choiceDepth = 0;
@@ -47,7 +47,9 @@ public abstract class Scheduler implements SchedulerInterface {
   /** Flag whether current step is a create or sync machine step */
   protected Boolean stickyStep = true;
   /** Flag whether current execution finished */
-  protected Boolean executionFinished = false;
+  protected Guard allMachinesHalted = Guard.constFalse();
+  /** Flag whether check for liveness at the end */
+  protected boolean terminalLivenessEnabled = true;
   /** List of monitors instances */
   List<Monitor> monitors;
   /** The machine to start with */
@@ -98,7 +100,7 @@ public abstract class Scheduler implements SchedulerInterface {
    * @return Whether or not there are more steps to run
    */
   public boolean isDone() {
-    return done || depth == PSymGlobal.getConfiguration().getMaxStepBound();
+    return done.isTrue() || depth == PSymGlobal.getConfiguration().getMaxStepBound();
   }
 
   /**
@@ -106,8 +108,12 @@ public abstract class Scheduler implements SchedulerInterface {
    *
    * @return Whether or not current execution finished
    */
-  public boolean isFinishedExecution() {
-    return executionFinished || depth == PSymGlobal.getConfiguration().getMaxStepBound();
+  public Guard isFinishedExecution() {
+    if (depth == PSymGlobal.getConfiguration().getMaxStepBound()) {
+      return Guard.constTrue();
+    } else {
+      return allMachinesHalted;
+    }
   }
 
   /**
@@ -249,15 +255,15 @@ public abstract class Scheduler implements SchedulerInterface {
     start = target;
   }
 
-  protected void checkLiveness(boolean forceCheck) {
-    if (forceCheck || isFinishedExecution()) {
+  protected void checkLiveness(Guard finished) {
+    if (!finished.isFalse()) {
       for (Monitor m : monitors) {
-        PrimitiveVS<State> monitorState = m.getCurrentState().restrict(schedule.getFilter());
+        PrimitiveVS<State> monitorState = m.getCurrentState().restrict(finished);
         for (GuardedValue<State> entry : monitorState.getGuardedValues()) {
           State s = entry.getValue();
           if (s.isHotState()) {
             Guard g = entry.getGuard();
-            if (executionFinished) {
+            if (!allMachinesHalted.isFalse()) {
               Assert.liveness(
                   g.isFalse(),
                   String.format(
@@ -314,20 +320,47 @@ public abstract class Scheduler implements SchedulerInterface {
   }
 
   public PrimitiveVS<Machine> allocateMachine(
-      Guard pc,
-      Class<? extends Machine> machineType,
-      Function<Integer, ? extends Machine> constructor) {
+          Guard pc,
+          Class<? extends Machine> machineType,
+          Function<Integer, ? extends Machine> constructor) {
     if (!machineCounters.containsKey(machineType)) {
       machineCounters.put(machineType, new PrimitiveVS<>(0));
     }
     PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).restrict(pc);
-    Machine newMachine = setupNewMachine(pc, guardedCount, constructor);
+
+    PrimitiveVS<Machine> allocated;
+    if (schedule.hasMachine(machineType, guardedCount, pc)) {
+      allocated = schedule.getMachine(machineType, guardedCount).restrict(pc);
+      for (GuardedValue gv : allocated.getGuardedValues()) {
+        Guard g = gv.getGuard();
+        Machine m = (Machine) gv.getValue();
+        assert (!BooleanVS.isEverTrue(m.hasStarted().restrict(g)));
+        TraceLogger.onCreateMachine(pc.and(g), m);
+        if (!machines.contains(m)) {
+          machines.add(m);
+        }
+        currentMachines.add(m);
+        assert (machines.size() >= currentMachines.size());
+        m.setScheduler(this);
+        if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+          PSymGlobal.getSymmetryTracker().createMachine(m, g);
+        }
+      }
+    } else {
+      Machine newMachine = setupNewMachine(pc, guardedCount, constructor);
+
+      allocated = new PrimitiveVS<>(newMachine).restrict(pc);
+      if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+        PSymGlobal.getSymmetryTracker().createMachine(newMachine, pc);
+      }
+    }
 
     guardedCount = IntegerVS.add(guardedCount, 1);
+
     PrimitiveVS<Integer> mergedCount =
-        machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);
+            machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);
     machineCounters.put(machineType, mergedCount);
-    return new PrimitiveVS<>(newMachine).restrict(pc);
+    return allocated;
   }
 
   public void runMonitors(Message event) {

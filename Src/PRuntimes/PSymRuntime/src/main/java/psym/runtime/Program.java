@@ -6,7 +6,6 @@ import java.util.Map;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
 import psym.runtime.machine.events.Event;
-import psym.runtime.scheduler.Scheduler;
 
 public interface Program extends Serializable {
     Machine getStart();

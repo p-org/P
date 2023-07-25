@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.OutputStreamAppender;
-import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 
 /** Represents the scratch logger */
@@ -38,8 +37,7 @@ public class ScratchLogger {
       // Define new file printer
       FileOutputStream fout = new FileOutputStream(fileName, false);
 
-      Configuration config = Log4JConfig.getContext().getConfiguration();
-      PatternLayout layout = PatternLayout.createDefaultLayout(config);
+      PatternLayout layout = Log4JConfig.getPatternLayout();
       Appender fileAppender =
           OutputStreamAppender.createAppender(layout, null, fout, fileName, false, true);
       fileAppender.start();

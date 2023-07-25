@@ -692,6 +692,12 @@ namespace PChecker.Actors
 
         /// <inheritdoc/>
         public override TextWriter SetLogger(TextWriter logger) => LogWriter.SetLogger(logger);
+        
+        /// <summary>
+        /// Sets the JsonLogger in LogWriter.cs
+        /// </summary>
+        /// <param name="jsonLogger">jsonLogger instance</param>
+        public void SetJsonLogger(JsonWriter jsonLogger) => LogWriter.SetJsonLogger(jsonLogger);
 
         /// <summary>
         /// Use this method to register an <see cref="IActorRuntimeLog"/>.

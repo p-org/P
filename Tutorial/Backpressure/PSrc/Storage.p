@@ -28,50 +28,6 @@ machine Storage {
         }
     }
 
-    /*state Run {
-        on eStorageRun do (payload: (t: float)) {
-            var next_t: float;
-            var _ePollRequestPayload: (s_id: string, storage: Storage);
-            var readRequestPayload: (t: float, reader: Reader);
-            var _eReadResponsePayload: (tStart: float, tEnd:float);
-            var _eStorageRunPayload: (t: float);
-            var stillBlockedReads: set[(t: float, reader: Reader)];
-            _ePollRequestPayload.s_id = s_id;
-            _ePollRequestPayload.storage = this;
-            send journal, ePollRequest, _ePollRequestPayload;
-            receive {
-                case ePollResponse: (payload: (t: float)) {
-                    next_t = payload.t;
-                }
-            }
-            if (next_t != -1.0) {
-                at_t = next_t;
-            } else {
-                at_t = payload.t;
-            }
-            foreach (readRequestPayload in blockedReads) {
-                if (readRequestPayload.t > at_t) {
-                    stillBlockedReads += (readRequestPayload);
-                } else {
-                    _eReadResponsePayload.tStart = readRequestPayload.t;
-                    _eReadResponsePayload.tEnd = payload.t;
-                    send readRequestPayload.reader, eReadResponse, _eReadResponsePayload;
-                }
-            }
-            blockedReads = stillBlockedReads;
-            _eStorageRunPayload.t = payload.t + every_t;
-            send this, eStorageRun, _eStorageRunPayload, delay format("{0}", every_t); // This should be a delayed event
-        }
-        on eReadRequest do (payload: (t: float, reader: Reader)) {
-            blockedReads += (payload);
-        }
-        on eAtTRequest do (payload: (writer: Writer)) {
-            var _eAtTResponsePayload: (t: float);
-            _eAtTResponsePayload.t = at_t;
-            send payload.writer, eAtTResponse, _eAtTResponsePayload;
-        }
-    }*/
-
     state Run {
         on eStorageRun do (payload: (t: float)) {
             var _ePollRequestPayload: (s_id: string, storage: Storage);

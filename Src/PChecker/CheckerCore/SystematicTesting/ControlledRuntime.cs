@@ -252,7 +252,10 @@ namespace PChecker.SystematicTesting
 
                     OperationScheduler.StartOperation(op);
 
-                    RunGlobalTimeHandler();
+                    if (CheckerConfiguration.SchedulingStrategy.Equals("statistical"))
+                    {
+                        RunGlobalTimeHandler();
+                    }
 
                     if (testMethod is Action<IActorRuntime> actionWithRuntime)
                     {

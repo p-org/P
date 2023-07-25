@@ -170,7 +170,7 @@ namespace PChecker.SystematicTesting
             if (!Strategy.GetNextOperation(current, ops, out var next))
             {
                 var op = GetOperationWithId<TaskOperation>(ulong.MaxValue);
-                if (op.Status is AsyncOperationStatus.Enabled)
+                if (op?.Status is AsyncOperationStatus.Enabled)
                 {
                     next = op;
                 }

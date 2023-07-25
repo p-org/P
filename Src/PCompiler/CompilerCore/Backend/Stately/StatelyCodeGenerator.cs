@@ -48,6 +48,33 @@ namespace Plang.Compiler.Backend.Stately {
             }
         }
 
+        //Collects all the go-to's within a function call, iteratively 
+        private List<String> WriteStmt(IPStmt statement)
+        {
+            var gotoStmts = new List<String>();
+            switch (statement)
+            {
+                case GotoStmt goStmt:
+                    gotoStmts.Add(goStmt.State.Name);
+                    break;
+                case FunCallStmt fStmt:
+                    foreach (var stmt in fStmt.Function.Body.Statements)
+                    {
+                        gotoStmts = gotoStmts.Union(WriteStmt(stmt)).ToList();
+                    }
+                    break;
+                case IfStmt ifStmt:
+                    foreach (var stmt in ifStmt.ThenBranch.Statements)
+                    {
+                        gotoStmts = gotoStmts.Union(WriteStmt(stmt)).ToList();
+                    }
+                    break;
+            }
+
+            return gotoStmts;
+        }
+        
+        //Handles writing all instances of a machine
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
         {
 
@@ -69,7 +96,8 @@ namespace Plang.Compiler.Backend.Stately {
             context.WriteLine(output, "}");
             context.WriteLine(output, "});");
         }
-
+        
+        //Handles writing all instances of states (within a machine)
         private void WriteState(CompilationContext context, StringWriter output, State state)
         {
             //Entry function exists!
@@ -83,7 +111,8 @@ namespace Plang.Compiler.Backend.Stately {
                     }
                 }
             }
-            var gotoStmts = new List<(String, String)>();
+            //All the go to Statements in a state (of a machine)
+            var gotoStmts = new Dictionary<String, List<String>>();
             foreach (var pair in state.AllEventHandlers)
             {
                 var handledEvent = pair.Key;
@@ -91,29 +120,44 @@ namespace Plang.Compiler.Backend.Stately {
                 //context.WriteLine(output, $"{pair.Value}");
                 switch (pair.Value)
                 {
+                    //on... goto...
                     case EventGotoState goAct:
-                        gotoStmts.Add((goAct.Trigger.Name, goAct.Target.Name));
+                        List<String> target = new List<String> { goAct.Target.Name };
+                        if (gotoStmts.ContainsKey(goAct.Trigger.Name))
+                        {
+                            target.AddRange(gotoStmts[goAct.Trigger.Name]);
+                        }
+                        gotoStmts[goAct.Trigger.Name] =  target;
                         break;
+                    //on... do...
                     case EventDoAction doAct:
                         foreach (var stmt in doAct.Target.Body.Statements)
                         {
-                            if (stmt.GetType() == typeof(GotoStmt))
+                            List<String> funCallS = WriteStmt(stmt);
+                            if (gotoStmts.ContainsKey(doAct.Trigger.Name))
                             {
-                                var gotoS = (GotoStmt)stmt;
-                                gotoStmts.Add((doAct.Trigger.Name, gotoS.State.Name));
+                                funCallS.AddRange(gotoStmts[doAct.Trigger.Name]);
                             }
+                            gotoStmts[doAct.Trigger.Name] =  funCallS;
                         }
-                        //TODO: If the statement is a Function Call, recursively add any goto statements inside too.
                         break;
                     
                 }
             }
+            
+            //Writes out all the Go-To Statements collected within a state into the code.
             if (gotoStmts.Any())
             {
                 context.WriteLine(output, "on: {");
                 foreach (var stmt in gotoStmts)
                 {
-                    context.WriteLine(output, $"{stmt.Item1} : {{ target: \"{stmt.Item2}\"}},");
+                    context.WriteLine(output, $"{stmt.Key} : {{ target: [");
+                    foreach (var target in stmt.Value)
+                    {
+                        context.WriteLine(output, $"\"{target}\",");
+                    }
+                    context.WriteLine(output, "]");
+                    context.WriteLine(output, "},");
                 }
                 context.WriteLine(output, "}");
             }

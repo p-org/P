@@ -6,8 +6,6 @@ import psym.runtime.machine.Monitor;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.valuesummary.*;
 
-import javax.crypto.Mac;
-
 public class ExplicitSymmetryTracker extends SymmetryTracker {
   Map<String, List<TreeSet<Machine>>> typeToSymmetryClasses;
   Set<Machine> pendingMerges;

@@ -13,7 +13,6 @@ import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.appender.OutputStreamAppender;
-import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import psym.runtime.statistics.SearchStats;
@@ -42,8 +41,7 @@ public class SearchLogger {
       // Define new file printer
       FileOutputStream fout = new FileOutputStream(fileName, false);
 
-      Configuration config = Log4JConfig.getContext().getConfiguration();
-      PatternLayout layout = PatternLayout.createDefaultLayout(config);
+      PatternLayout layout = Log4JConfig.getPatternLayout();
       Appender fileAppender =
           OutputStreamAppender.createAppender(layout, null, fout, fileName, false, true);
       ConsoleAppender consoleAppender = ConsoleAppender.createDefaultAppenderForLayout(layout);

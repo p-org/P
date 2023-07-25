@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
+using PChecker.Actors.Logging;
 using PChecker.Utilities;
 
 namespace PChecker
@@ -211,7 +212,14 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public bool IsXmlLogEnabled { get; set; }
-
+        
+        /// <summary>
+        /// Produce a JSON formatted runtime log file.
+        /// Defaults to true.
+        /// </summary>
+        [DataMember]
+        public bool IsJsonLogEnabled { get; set; } = true;
+        
         /// <summary>
         /// If specified, requests a custom runtime log to be used instead of the default.
         /// This is the AssemblyQualifiedName of the type to load.
@@ -310,7 +318,7 @@ namespace PChecker
             EnableDebugging = false;
 
             AdditionalCodeCoverageAssemblies = new Dictionary<string, bool>();
-
+            
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
 

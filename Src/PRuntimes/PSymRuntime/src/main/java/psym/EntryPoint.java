@@ -14,7 +14,6 @@ import psym.runtime.scheduler.symbolic.SymbolicSearchScheduler;
 import psym.runtime.scheduler.symmetry.SymmetryMode;
 import psym.runtime.scheduler.symmetry.SymmetryTracker;
 import psym.utils.exception.BugFoundException;
-import psym.utils.exception.LivenessException;
 import psym.utils.exception.MemoutException;
 import psym.utils.monitor.MemoryMonitor;
 import psym.utils.monitor.TimeMonitor;
@@ -145,7 +144,7 @@ public class EntryPoint {
       postprocess(true);
       PSymLogger.info(e.toString());
       if (PSymGlobal.getConfiguration().getVerbosity() > 0) {
-        e.printStackTrace(System.out);
+        PSymGlobal.printStackTrace(e, false);
       }
 
       PSymLogger.setVerbosity(1);
@@ -159,11 +158,8 @@ public class EntryPoint {
               scheduler.getProgram(),
               scheduler.getSchedule(),
               pc,
-              scheduler.getDepth(),
-              (e instanceof LivenessException));
+              scheduler.getDepth());
       PSymGlobal.setScheduler(replayScheduler);
-      String writeFileName = PSymGlobal.getConfiguration().getOutputFolder() + "/cex.schedule";
-      replayScheduler.writeToFile(writeFileName);
       replay(replayScheduler);
     } catch (InterruptedException e) {
       status = "interrupted";
@@ -212,7 +208,7 @@ public class EntryPoint {
       throw new RuntimeException("ERROR: Failed to replay counterexample");
     } catch (BugFoundException e) {
       PSymLogger.info(e.toString());
-      e.printStackTrace(System.err);
+      PSymGlobal.printStackTrace(e, true);
       PSymLogger.info("Checker found a bug.");
       PSymLogger.info("... Emitting traces:");
       PSymLogger.info(String.format("..... Writing %s", ScheduleWriter.getFileName()));
@@ -224,7 +220,7 @@ public class EntryPoint {
   }
 
   public static void replayBug(ReplayScheduler replayScheduler)
-      throws RuntimeException, InterruptedException, TimeoutException {
+      throws RuntimeException, TimeoutException {
     SolverEngine.resumeEngine();
     if (PSymGlobal.getConfiguration().getVerbosity() == 0) {
       PSymLogger.setVerbosity(1);

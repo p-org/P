@@ -1,13 +1,11 @@
 package psym.runtime.statistics;
 
-import lombok.Setter;
+import java.util.concurrent.TimeoutException;
 import psym.runtime.logger.SearchLogger;
 import psym.utils.exception.MemoutException;
 import psym.utils.monitor.MemoryMonitor;
 import psym.utils.monitor.TimeMonitor;
 import psym.valuesummary.solvers.SolverEngine;
-
-import java.util.concurrent.TimeoutException;
 
 public class SolverStats {
   public static int andOperations = 0;

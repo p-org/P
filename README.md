@@ -9,6 +9,8 @@
 ![GitHub Action (CI on Ubuntu)](https://github.com/p-org/P/workflows/CI%20on%20Ubuntu/badge.svg)
 ![GitHub Action (CI on MacOS)](https://github.com/p-org/P/workflows/CI%20on%20MacOS/badge.svg)
 [![Tutorials](https://github.com/p-org/P/actions/workflows/tutorials.yml/badge.svg)](https://github.com/p-org/P/actions/workflows/tutorials.yml)
+[![PSym](https://github.com/p-org/P/actions/workflows/psym.yml/badge.svg)](https://github.com/p-org/P/actions/workflows/psym.yml)
+[![PCover](https://github.com/p-org/P/actions/workflows/pcover.yml/badge.svg)](https://github.com/p-org/P/actions/workflows/pcover.yml)
 
 **Challenge**: 
 Distributed systems are notoriously hard to get right. Programming these systems is challenging because of the need to reason about correctness in the presence of myriad possible interleaving of messages and failures. Unsurprisingly, it is common for service teams to uncover correctness bugs after deployment. Formal methods can play an important role in addressing this challenge!

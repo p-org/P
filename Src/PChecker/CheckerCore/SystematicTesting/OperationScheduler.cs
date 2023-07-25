@@ -1,15 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using PChecker.Actors;
-using PChecker.Actors.EventQueues.Mocks;
 using PChecker.Exceptions;
 using PChecker.SystematicTesting.Operations;
 using PChecker.SystematicTesting.Strategies;
@@ -88,8 +85,6 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal string BugReport { get; private set; }
 
-        private Timestamp PreviousPulseAllTimestamp;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="OperationScheduler"/> class.
         /// </summary>
@@ -106,7 +101,6 @@ namespace PChecker.SystematicTesting
             IsRunning = true;
             BugFound = false;
             HasFullyExploredSchedule = false;
-            PreviousPulseAllTimestamp = new Timestamp();
         }
 
         /// <summary>
@@ -201,7 +195,6 @@ namespace PChecker.SystematicTesting
                 lock (next)
                 {
                     ScheduledOperation.IsActive = true;
-                    PreviousPulseAllTimestamp.SetTime(ControlledRuntime.GlobalTime.GetTime());
                     System.Threading.Monitor.PulseAll(next);
                 }
 

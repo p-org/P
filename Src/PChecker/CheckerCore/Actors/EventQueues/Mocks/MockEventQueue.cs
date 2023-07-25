@@ -2,13 +2,13 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using PChecker.Actors.Events;
 using PChecker.Actors.Managers;
 using PChecker.SystematicTesting;
+using PChecker.SystematicTesting.Strategies;
 
 namespace PChecker.Actors.EventQueues.Mocks
 {
@@ -66,19 +66,20 @@ namespace PChecker.Actors.EventQueues.Mocks
         public bool IsEventRaised => RaisedEvent != default;
 
         /// <summary>
-        /// Lock for global time.
+        /// The scheduling strategy used for program exploration.
         /// </summary>
-        private static readonly object TimeLock = new();
+        private readonly ISchedulingStrategy Strategy;
 
         private readonly Dictionary<ActorId, Timestamp> MaxDequeueTimestampMap;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MockEventQueue"/> class.
         /// </summary>
-        internal MockEventQueue(IActorManager actorManager, Actor actor)
+        internal MockEventQueue(IActorManager actorManager, Actor actor, ISchedulingStrategy strategy)
         {
             ActorManager = actorManager;
             Actor = actor;
+            Strategy = strategy;
             Queue = new LinkedList<(Event, Guid, EventInfo)>();
             EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
             IsClosed = false;
@@ -92,9 +93,9 @@ namespace PChecker.Actors.EventQueues.Mocks
             e.DequeueTime.SetTime(e.EnqueueTime.GetTime());
             if (e.DelayDistribution is not null)
             {
-                var isFirstEvent = !MaxDequeueTimestampMap.ContainsKey(info.OriginInfo.SenderActorId);
-                if (TestingEngine.Strategy.GetSampleFromDistribution(e.DelayDistribution, out var delay))
+                if (Strategy.GetSampleFromDistribution(e.DelayDistribution, out var delay))
                 {
+                    var isFirstEvent = !MaxDequeueTimestampMap.ContainsKey(info.OriginInfo.SenderActorId);
                     if (e.IsOrdered && !isFirstEvent)
                     {
                         var maxDequeueTimestamp = MaxDequeueTimestampMap[info.OriginInfo.SenderActorId];

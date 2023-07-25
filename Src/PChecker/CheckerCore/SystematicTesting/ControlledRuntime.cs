@@ -73,6 +73,11 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal static readonly Timestamp GlobalTime = new();
 
+        /// <summary>
+        /// The scheduling strategy used for program exploration.
+        /// </summary>
+        private readonly ISchedulingStrategy Strategy;
+
         public readonly List<Actor> Actors;
 
         /// <summary>
@@ -151,6 +156,7 @@ namespace PChecker.SystematicTesting
                 strategy = new TemperatureCheckingStrategy(checkerConfiguration, Monitors, strategy);
             }
 
+            Strategy = strategy;
             Scheduler = new OperationScheduler(this, strategy, scheduleTrace, CheckerConfiguration);
             TaskController = new TaskController(this, Scheduler);
 
@@ -434,7 +440,7 @@ namespace PChecker.SystematicTesting
                 actorManager = new MockActorManager(this, actor, opGroupId);
             }
 
-            IEventQueue eventQueue = new MockEventQueue(actorManager, actor);
+            IEventQueue eventQueue = new MockEventQueue(actorManager, actor, Strategy);
             actor.Configure(this, id, actorManager, eventQueue);
             actor.SetupEventHandlers();
 
@@ -584,6 +590,7 @@ namespace PChecker.SystematicTesting
                 Assert = options?.Assert ?? -1
             };
 
+            // Enqueue has to be called before logging so that timestamps are written to the event.
             var enqueueStatus = actor.Enqueue(e, opGroupId, eventInfo);
             LogWriter.LogSendEvent(actor.Id, sender?.Id.Name, sender?.Id.Type, stateName,
                 e, opGroupId, isTargetHalted: false);

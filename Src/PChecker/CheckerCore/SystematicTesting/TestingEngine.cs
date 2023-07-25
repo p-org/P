@@ -13,7 +13,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using PChecker.Actors;
-using PChecker.Actors.EventQueues.Mocks;
 using PChecker.Actors.Logging;
 using PChecker.Coverage;
 using PChecker.IO;
@@ -56,7 +55,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// The program exploration strategy.
         /// </summary>
-        internal static ISchedulingStrategy Strategy;
+        internal readonly ISchedulingStrategy Strategy;
 
         /// <summary>
         /// Random value generator used by the scheduling strategies.

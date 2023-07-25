@@ -83,7 +83,7 @@ namespace PChecker.Actors.EventQueues.Mocks
             Queue = new LinkedList<(Event, Guid, EventInfo)>();
             EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
             IsClosed = false;
-            MaxDequeueTimestampMap = new Dictionary<ActorId, Timestamp>();
+            MaxDequeueTimestampMap = Strategy is null ? null : new Dictionary<ActorId, Timestamp>();
         }
 
         /// <inheritdoc/>
@@ -91,32 +91,29 @@ namespace PChecker.Actors.EventQueues.Mocks
         {
             e.EnqueueTime.SetTime(ControlledRuntime.GlobalTime.GetTime());
             e.DequeueTime.SetTime(e.EnqueueTime.GetTime());
-            if (e.DelayDistribution is not null)
+            if (Strategy is not null && Strategy.GetSampleFromDistribution(e.DelayDistribution, out var delay))
             {
-                if (Strategy.GetSampleFromDistribution(e.DelayDistribution, out var delay))
+                var isFirstEvent = !MaxDequeueTimestampMap.ContainsKey(info.OriginInfo.SenderActorId);
+                if (e.IsOrdered && !isFirstEvent)
                 {
-                    var isFirstEvent = !MaxDequeueTimestampMap.ContainsKey(info.OriginInfo.SenderActorId);
-                    if (e.IsOrdered && !isFirstEvent)
+                    var maxDequeueTimestamp = MaxDequeueTimestampMap[info.OriginInfo.SenderActorId];
+                    if (maxDequeueTimestamp > e.EnqueueTime)
                     {
-                        var maxDequeueTimestamp = MaxDequeueTimestampMap[info.OriginInfo.SenderActorId];
-                        if (maxDequeueTimestamp > e.EnqueueTime)
-                        {
-                            e.DequeueTime.SetTime(maxDequeueTimestamp.GetTime());
-                        }
+                        e.DequeueTime.SetTime(maxDequeueTimestamp.GetTime());
                     }
+                }
 
-                    e.DequeueTime.IncrementTime(delay);
+                e.DequeueTime.IncrementTime(delay);
 
-                    if (e.IsOrdered)
+                if (e.IsOrdered)
+                {
+                    if (isFirstEvent)
                     {
-                        if (isFirstEvent)
-                        {
-                            MaxDequeueTimestampMap.Add(info.OriginInfo.SenderActorId, e.DequeueTime);
-                        }
-                        else
-                        {
-                            MaxDequeueTimestampMap[info.OriginInfo.SenderActorId] = e.DequeueTime;
-                        }
+                        MaxDequeueTimestampMap.Add(info.OriginInfo.SenderActorId, e.DequeueTime);
+                    }
+                    else
+                    {
+                        MaxDequeueTimestampMap[info.OriginInfo.SenderActorId] = e.DequeueTime;
                     }
                 }
             }

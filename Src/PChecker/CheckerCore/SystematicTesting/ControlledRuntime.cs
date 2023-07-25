@@ -156,7 +156,15 @@ namespace PChecker.SystematicTesting
                 strategy = new TemperatureCheckingStrategy(checkerConfiguration, Monitors, strategy);
             }
 
-            Strategy = strategy;
+            if (CheckerConfiguration.SchedulingStrategy.Equals("statistical"))
+            {
+                Strategy = strategy;
+            }
+            else
+            {
+                Strategy = null;
+            }
+
             Scheduler = new OperationScheduler(this, strategy, scheduleTrace, CheckerConfiguration);
             TaskController = new TaskController(this, Scheduler);
 

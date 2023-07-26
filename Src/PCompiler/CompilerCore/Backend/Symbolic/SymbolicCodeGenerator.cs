@@ -2136,7 +2136,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         WriteExpr(context, output, pcScope, binOpExpr.Lhs);
                         context.Write(output, ").apply(");
                         if (binOpExpr.Rhs is NullLiteralExpr)
-                            context.Write(output, $"{GetDefaultValueNoGuard(context, binOpExpr.Lhs.Type)}.restrict(Guard.constFalse())");
+                            context.Write(output, $"{GetDefaultValue(context, pcScope, binOpExpr.Lhs.Type)}.");
                         else WriteExpr(context, output, pcScope, binOpExpr.Rhs);
                         string lambda;
                         if (binOpExpr.Operation == BinOpType.Eq)

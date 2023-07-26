@@ -28,9 +28,9 @@ namespace PChecker.Actors.Logging
         internal TextWriter Logger { get; private set; }
 
         /// <summary>
-        /// Used to log latencies.
+        /// Is checker strategy statistical.
         /// </summary>
-        private readonly TimedLogger TimedLogger;
+        private bool isStatisticalStrategy;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LogWriter"/> class.
@@ -48,14 +48,7 @@ namespace PChecker.Actors.Logging
                 Logger = TextWriter.Null;
             }
 
-            if (checkerConfiguration.SchedulingStrategy.Equals("statistical"))
-            {
-                TimedLogger = new TimedLogger(checkerConfiguration);
-            }
-            else
-            {
-                TimedLogger = null;
-            }
+            isStatisticalStrategy = checkerConfiguration.SchedulingStrategy is "statistical";
         }
 
         /// <summary>
@@ -123,6 +116,24 @@ namespace PChecker.Actors.Logging
         public void LogSendEvent(ActorId targetActorId, string senderName, string senderType, string senderState,
             Event e, Guid opGroupId, bool isTargetHalted)
         {
+            if (!isStatisticalStrategy)
+            {
+                IActorRuntimeLog timeLogger = null;
+                foreach (var log in Logs)
+                {
+                    if (log.GetType().ToString().Equals("Plang.CSharpRuntime.PTimeLogger"))
+                    {
+                        timeLogger = log;
+                        break;
+                    }
+                }
+
+                if (timeLogger is not null)
+                {
+                    Logs.Remove(timeLogger);
+                }
+            }
+
             if (Logs.Count > 0)
             {
                 foreach (var log in Logs)
@@ -130,8 +141,6 @@ namespace PChecker.Actors.Logging
                     log.OnSendEvent(targetActorId, senderName, senderType, senderState, e, opGroupId, isTargetHalted);
                 }
             }
-
-            TimedLogger?.OnSendEvent(targetActorId, senderName, senderState, e);
         }
 
         /// <summary>
@@ -182,8 +191,6 @@ namespace PChecker.Actors.Logging
                     log.OnDequeueEvent(id, stateName, e);
                 }
             }
-
-            TimedLogger?.OnDequeueEvent(id, stateName, e);
         }
 
         /// <summary>
@@ -607,8 +614,6 @@ namespace PChecker.Actors.Logging
             {
                 log.OnCompleted();
             }
-
-            TimedLogger?.OnCompleted();
         }
 
         /// <summary>

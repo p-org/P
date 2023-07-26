@@ -1,6 +1,6 @@
 <!-- P project file for the Two Phase Commit example -->
 <Project>
-<ProjectName>Backpressure</ProjectName>
+<ProjectName>RetryStorm</ProjectName>
 <InputFiles>
 	<PFile>./PSrc/</PFile>
 	<PFile>./PSpec/</PFile>

@@ -7,12 +7,12 @@ import psym.runtime.Concretizer;
 import psym.runtime.PSymGlobal;
 import psym.runtime.Program;
 import psym.runtime.logger.*;
-import psym.runtime.scheduler.SearchScheduler;
-import psym.runtime.scheduler.explicit.ExplicitSearchScheduler;
 import psym.runtime.scheduler.replay.ReplayScheduler;
-import psym.runtime.scheduler.symbolic.SymbolicSearchScheduler;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
-import psym.runtime.scheduler.symmetry.SymmetryTracker;
+import psym.runtime.scheduler.search.SearchScheduler;
+import psym.runtime.scheduler.search.explicit.ExplicitSearchScheduler;
+import psym.runtime.scheduler.search.symbolic.SymbolicSearchScheduler;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.utils.exception.BugFoundException;
 import psym.utils.exception.MemoutException;
 import psym.utils.monitor.MemoryMonitor;
@@ -24,9 +24,7 @@ import psym.valuesummary.solvers.SolverEngine;
 public class EntryPoint {
   private static ExecutorService executor;
   private static Future<Integer> future;
-  private static String status;
-  private static SearchScheduler scheduler;
-  private static String mode;
+  private static SearchScheduler searchScheduler;
 
   private static void runWithTimeout(long timeLimit)
       throws TimeoutException,
@@ -61,16 +59,14 @@ public class EntryPoint {
 
   private static void print_stats() {
     double searchTime = TimeMonitor.getInstance().stopInterval();
-    TimeMonitor.getInstance().startInterval();
-    scheduler.print_search_stats();
-    if (scheduler.isFinalResult && scheduler.result.equals("correct for any depth")) {
-      status = "proved";
+    searchScheduler.print_search_stats();
+    if (searchScheduler.isFinalResult && PSymGlobal.getResult().equals("correct for any depth")) {
+      PSymGlobal.setStatus("proved");
     }
     StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
-    if (PSymGlobal.getConfiguration().isExplicit()) {
-      ((ExplicitSearchScheduler) scheduler).reportEstimatedCoverage();
+    if (PSymGlobal.getConfiguration().isIterative()) {
+      searchScheduler.reportEstimatedCoverage();
     }
-    StatWriter.log("status", String.format("%s", status));
   }
 
   private static void preprocess() {
@@ -82,20 +78,16 @@ public class EntryPoint {
     PSymLogger.info("--------------------");
 
     executor = Executors.newSingleThreadExecutor();
-    status = "error";
-    if (PSymGlobal.getConfiguration().isSymbolic()) {
-      mode = "symbolic";
-    } else {
-      mode = "single";
-    }
+
+    PSymGlobal.setResult("error");
     if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
-      SymmetryTracker.setScheduler(scheduler);
+      SymmetryTracker.setScheduler(searchScheduler);
     }
 
     double preSearchTime =
         TimeMonitor.getInstance().findInterval(TimeMonitor.getInstance().getStart());
     StatWriter.log("project-name", String.format("%s", PSymGlobal.getConfiguration().getProjectName()));
-    StatWriter.log("mode", String.format("%s", mode));
+    StatWriter.log("strategy", String.format("%s", PSymGlobal.getConfiguration().getStrategy()));
     StatWriter.log("solver", String.format("%s", PSymGlobal.getConfiguration().getSolverType().toString()));
     StatWriter.log("expr-type", String.format("%s", PSymGlobal.getConfiguration().getExprLibType().toString()));
     StatWriter.log("time-limit-seconds", String.format("%.1f", PSymGlobal.getConfiguration().getTimeLimit()));
@@ -109,38 +101,41 @@ public class EntryPoint {
     if (printStats) {
       print_stats();
     }
-    if (scheduler instanceof ExplicitSearchScheduler) {
-      ExplicitSearchScheduler explicitSearchScheduler = (ExplicitSearchScheduler) scheduler;
+    if (searchScheduler instanceof ExplicitSearchScheduler) {
+      ExplicitSearchScheduler explicitSearchScheduler = (ExplicitSearchScheduler) searchScheduler;
       PSymLogger.finishedExplicit(
               explicitSearchScheduler.getIter(),
               explicitSearchScheduler.getIter() - explicitSearchScheduler.getStart_iter(),
               Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(),
-              scheduler.result);
+              PSymGlobal.getResult());
     } else {
-      assert (scheduler instanceof SymbolicSearchScheduler);
+      assert (searchScheduler instanceof SymbolicSearchScheduler);
       PSymLogger.finishedSymbolic(
               Duration.between(TimeMonitor.getInstance().getStart(), end).getSeconds(),
-              scheduler.result);
+              PSymGlobal.getResult());
     }
   }
 
   private static void process(boolean resume) throws Exception {
     try {
-      TimedCall timedCall = new TimedCall(scheduler, resume);
+      TimedCall timedCall = new TimedCall(searchScheduler, resume);
       future = executor.submit(timedCall);
       TimeMonitor.getInstance().startInterval();
       runWithTimeout((long) PSymGlobal.getConfiguration().getTimeLimit());
-      status = "completed";
+      PSymGlobal.setStatus("completed");
     } catch (TimeoutException e) {
-      status = "timeout";
+      PSymGlobal.setStatus("timeout");
       throw new Exception("TIMEOUT", e);
     } catch (MemoutException | OutOfMemoryError e) {
-      status = "memout";
+      PSymGlobal.setStatus("memout");
       throw new Exception("MEMOUT", e);
     } catch (BugFoundException e) {
-      status = "cex";
-      scheduler.result = "found cex of length " + scheduler.getDepth();
-      scheduler.isFinalResult = true;
+      PSymGlobal.setStatus("cex");
+      PSymGlobal.setResult(String.format(
+              "found cex of %slength %d",
+              PSymGlobal.getConfiguration().isSymbolic() ? "symbolic " : "",
+              searchScheduler.getDepth()));
+      searchScheduler.isFinalResult = true;
       postprocess(true);
       PSymLogger.info(e.toString());
       if (PSymGlobal.getConfiguration().getVerbosity() > 0) {
@@ -155,34 +150,33 @@ public class EntryPoint {
 
       ReplayScheduler replayScheduler =
           new ReplayScheduler(
-              scheduler.getProgram(),
-              scheduler.getSchedule(),
-              pc,
-              scheduler.getDepth());
+              searchScheduler.getProgram(),
+              searchScheduler.getSchedule(),
+              pc);
       PSymGlobal.setScheduler(replayScheduler);
       replay(replayScheduler);
     } catch (InterruptedException e) {
-      status = "interrupted";
+      PSymGlobal.setStatus("interrupted");
       throw new Exception("INTERRUPTED", e);
     } catch (RuntimeException e) {
-      status = "error";
+      PSymGlobal.setStatus("error");
       throw new Exception("ERROR", e);
     } finally {
       //            GlobalData.getChoiceLearningStats().printQTable();
       future.cancel(true);
       executor.shutdownNow();
       TraceLogger.setVerbosity(0);
-      postprocess(!status.equals("cex"));
+      postprocess(!PSymGlobal.getStatus().equals("cex"));
     }
   }
 
   public static void run(Program p) throws Exception {
     if (PSymGlobal.getConfiguration().isSymbolic()) {
-      scheduler = new SymbolicSearchScheduler(p);
+      searchScheduler = new SymbolicSearchScheduler(p);
     } else {
-      scheduler = new ExplicitSearchScheduler(p);
+      searchScheduler = new ExplicitSearchScheduler(p);
     }
-    PSymGlobal.setScheduler(scheduler);
+    PSymGlobal.setScheduler(searchScheduler);
 
     preprocess();
     process(false);
@@ -190,8 +184,8 @@ public class EntryPoint {
 
   public static void resume() throws Exception {
     assert (PSymGlobal.getConfiguration().isExplicit());
-    scheduler = ExplicitSearchScheduler.readFromFile(PSymGlobal.getConfiguration().getReadFromFile());
-    PSymGlobal.setScheduler(scheduler);
+    searchScheduler = ExplicitSearchScheduler.readFromFile(PSymGlobal.getConfiguration().getReadFromFile());
+    PSymGlobal.setScheduler(searchScheduler);
     TraceLogger.setVerbosity(PSymGlobal.getConfiguration().getVerbosity());
     SolverEngine.resumeEngine();
 
@@ -202,20 +196,28 @@ public class EntryPoint {
   private static void replay(ReplayScheduler replayScheduler)
       throws RuntimeException, TimeoutException {
     try {
-      ScheduleWriter.Initialize(PSymGlobal.getConfiguration().getProjectName(), PSymGlobal.getConfiguration().getOutputFolder());
+      ScheduleWriter.Initialize();
+      TextWriter.Initialize();
       replayScheduler.doSearch();
-      status = "error";
+      PSymGlobal.setStatus("error");
       throw new RuntimeException("ERROR: Failed to replay counterexample");
     } catch (BugFoundException e) {
-      PSymLogger.info(e.toString());
-      PSymGlobal.printStackTrace(e, true);
-      PSymLogger.info("Checker found a bug.");
-      PSymLogger.info("... Emitting traces:");
-      PSymLogger.info(String.format("..... Writing %s", ScheduleWriter.getFileName()));
-      throw new BugFoundException(
-          "Found bug: " + e.getLocalizedMessage(),
-          replayScheduler.getPathConstraint(),
-          e);
+      if (replayScheduler.getChoiceDepth() != replayScheduler.schedule.size()) {
+        PSymGlobal.setStatus("error");
+        throw new RuntimeException("ERROR: Failed to replay counterexample");
+      } else {
+        PSymGlobal.setResult(String.format("found cex of length %d", replayScheduler.getDepth()));
+        PSymLogger.info(e.toString());
+        PSymGlobal.printStackTrace(e, true);
+        PSymLogger.info("Checker found a bug.");
+        PSymLogger.info("... Emitting traces:");
+        PSymLogger.info(String.format("..... Writing %s", TextWriter.getFileName()));
+        PSymLogger.info(String.format("..... Writing %s", ScheduleWriter.getFileName()));
+        throw new BugFoundException(
+                "Found bug: " + e.getLocalizedMessage(),
+                replayScheduler.getPathConstraint(),
+                e);
+      }
     }
   }
 
@@ -237,6 +239,6 @@ public class EntryPoint {
 
   public static void writeToFile() throws Exception {
     assert (PSymGlobal.getConfiguration().isExplicit());
-    ((ExplicitSearchScheduler) scheduler).writeToFile();
+    ((ExplicitSearchScheduler) searchScheduler).writeToFile();
   }
 }

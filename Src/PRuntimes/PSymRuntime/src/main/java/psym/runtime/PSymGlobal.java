@@ -7,16 +7,18 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import lombok.Getter;
+import lombok.Setter;
 import psym.commandline.PSymConfiguration;
 import psym.runtime.logger.PSymLogger;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.StateEvents;
 import psym.runtime.scheduler.Scheduler;
-import psym.runtime.scheduler.explicit.ExplicitSymmetryTracker;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStats;
-import psym.runtime.scheduler.symbolic.SymbolicSymmetryTracker;
-import psym.runtime.scheduler.symmetry.SymmetryTracker;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningStats;
+import psym.runtime.scheduler.search.explicit.ExplicitSymmetryTracker;
+import psym.runtime.scheduler.search.symbolic.SymbolicSymmetryTracker;
+import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.runtime.statistics.CoverageStats;
 
 /**
@@ -37,6 +39,14 @@ public class PSymGlobal implements Serializable {
      * Scheduler
      */
     private static Scheduler scheduler = null;
+
+    /** Status of the run **/
+    @Getter @Setter
+    private static String status = "incomplete";
+
+    /** Result of the run **/
+    @Getter @Setter
+    private static String result = "error";
 
     /**
      * Mapping of each machine's state with its corresponding event handlers

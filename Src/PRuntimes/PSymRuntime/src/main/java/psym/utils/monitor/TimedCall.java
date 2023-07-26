@@ -2,7 +2,7 @@ package psym.utils.monitor;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
-import psym.runtime.scheduler.SearchScheduler;
+import psym.runtime.scheduler.search.SearchScheduler;
 import psym.utils.exception.BugFoundException;
 import psym.utils.exception.MemoutException;
 

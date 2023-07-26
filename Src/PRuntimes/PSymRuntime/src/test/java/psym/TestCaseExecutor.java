@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -120,11 +121,12 @@ public class TestCaseExecutor {
 
     // Next, try to dynamically load and compile this file
     try {
+      int seed = Math.abs((new Random()).nextInt());
       String runJarCommand =
           String.format(
-              "dotnet %s check %s --mode %s --outdir %s %s",
-              compilerDirectory, pathToJar, mode, outputDirectory, runArgs);
-      PSymTestLogger.log("      running");
+              "dotnet %s check %s --mode %s --outdir %s --seed %d %s",
+              compilerDirectory, pathToJar, mode, outputDirectory, seed, runArgs);
+      PSymTestLogger.log(String.format("      running with seed %d", seed));
       process = buildRunProcess(runJarCommand, outputDirectory);
 
       StreamGobbler streamGobbler =

@@ -10,14 +10,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import psym.runtime.PSymGlobal;
-import psym.runtime.scheduler.explicit.StateCachingMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceOrchestrationMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceOrchestratorEpsilonGreedy;
-import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestrationMode;
-import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningRewardMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningStateMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceOrchestrationMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceOrchestratorEpsilonGreedy;
+import psym.runtime.scheduler.search.explicit.StateCachingMode;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.taskorchestration.TaskOrchestrationMode;
+import psym.runtime.scheduler.search.taskorchestration.TaskOrchestratorCoverageEpsilonGreedy;
 
 /** Represents the commandline options for the tool */
 public class PSymOptions {
@@ -105,7 +105,7 @@ public class PSymOptions {
     Option strategy =
         Option.builder("s")
             .longOpt("strategy")
-            .desc("Exploration strategy: symex, random, dfs, learn, stateless (default: symex)")
+            .desc("Exploration strategy: symbolic, random, dfs, learn, stateless (default: symbolic)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Strategy (string)")
@@ -170,6 +170,27 @@ public class PSymOptions {
             .argName("Random Seed (integer)")
             .build();
     addOption(randomSeed);
+
+    // max scheduling choice bound for the search
+    Option maxSchedBound = Option.builder("sb")
+            .longOpt("sch-bound")
+            .desc("Max scheduling choice bound at each step during the search (default: unbounded)")
+            .numberOfArgs(1)
+            .hasArg()
+            .argName("Schedule Bound (integer)")
+            .build();
+    addOption(maxSchedBound);
+
+    // max data choice bound for the search
+    Option dataChoiceBound = Option.builder("db")
+            .longOpt("data-bound")
+            .desc("Max data choice bound at each step during the search (default: unbounded)")
+            .numberOfArgs(1)
+            .hasArg()
+            .argName("Data Bound (integer)")
+            .build();
+    addOption(dataChoiceBound);
+
 
     // psym configuration file
     Option configFile =
@@ -409,7 +430,7 @@ public class PSymOptions {
             case "sym":
             case "symex":
             case "symbolic":
-              config.setToSymex();
+              config.setToSymbolic();
               break;
             case "random":
               config.setToRandom();
@@ -472,6 +493,22 @@ public class PSymOptions {
           } catch (NumberFormatException ex) {
             optionError(
                 option, String.format("Expected an integer value, got %s", option.getValue()));
+          }
+          break;
+        case "sb":
+        case "sch-bound":
+          try {
+            config.setSchChoiceBound(Integer.parseInt(option.getValue()));
+          } catch (NumberFormatException ex) {
+            optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
+          }
+          break;
+        case "db":
+        case "data-bound":
+          try {
+            config.setDataChoiceBound(Integer.parseInt(option.getValue()));
+          } catch (NumberFormatException ex) {
+            optionError(option, String.format("Expected an integer value, got %s", option.getValue()));
           }
           break;
         case "config":

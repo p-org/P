@@ -4,12 +4,12 @@ import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 import psym.runtime.machine.buffer.BufferSemantics;
-import psym.runtime.scheduler.explicit.StateCachingMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceOrchestrationMode;
-import psym.runtime.scheduler.explicit.taskorchestration.TaskOrchestrationMode;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningRewardMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningStateMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceOrchestrationMode;
+import psym.runtime.scheduler.search.explicit.StateCachingMode;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.taskorchestration.TaskOrchestrationMode;
 import psym.valuesummary.solvers.SolverType;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -33,7 +33,7 @@ public class PSymConfiguration implements Serializable {
   // level of verbosity for the logging
   @Getter @Setter int verbosity = 0;
   // strategy of exploration
-  @Getter @Setter String strategy = "symex";
+  @Getter @Setter String strategy = "symbolic";
   // max number of executions bound provided by the user
   @Getter @Setter int maxExecutions = 1;
   // max steps/depth bound provided by the user
@@ -44,6 +44,10 @@ public class PSymConfiguration implements Serializable {
   @Getter @Setter String readScheduleFromFile = "";
   // random seed
   @Getter @Setter long randomSeed = System.currentTimeMillis();
+  // max scheduling choice bound provided by the user
+  @Getter @Setter int schChoiceBound = 0;
+  // max data choice bound provided by the user
+  @Getter @Setter int dataChoiceBound = 0;
   // name of the psym configuration file
   @Getter @Setter String configFile = "";
   // buffer semantics
@@ -80,11 +84,15 @@ public class PSymConfiguration implements Serializable {
   @Getter @Setter boolean writeToFile = false;
 
   public boolean isSymbolic() {
-    return (strategy.equals("symex"));
+    return (strategy.equals("symbolic"));
   }
 
   public boolean isExplicit() {
     return !isSymbolic();
+  }
+
+  public boolean isIterative() {
+    return (schChoiceBound > 0) || (dataChoiceBound > 0);
   }
 
   public boolean isChoiceOrchestrationLearning() {
@@ -92,8 +100,8 @@ public class PSymConfiguration implements Serializable {
         || (getChoiceOrchestration() == ChoiceOrchestrationMode.EpsilonGreedy);
   }
 
-  public void setToSymex() {
-    this.setStrategy("symex");
+  public void setToSymbolic() {
+    this.setStrategy("symbolic");
     this.setStateCachingMode(StateCachingMode.None);
     this.setUseBacktrack(false);
     this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
@@ -101,6 +109,8 @@ public class PSymConfiguration implements Serializable {
   }
 
   private void setToExplicit() {
+    this.setSchChoiceBound(1);
+    this.setDataChoiceBound(1);
     this.setStateCachingMode(StateCachingMode.Fast);
     this.setUseBacktrack(true);
   }

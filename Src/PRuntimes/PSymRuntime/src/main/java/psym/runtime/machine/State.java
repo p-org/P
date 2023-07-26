@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Objects;
 import psym.runtime.PSymGlobal;
 import psym.runtime.logger.ScheduleWriter;
+import psym.runtime.logger.TextWriter;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.eventhandlers.DeferEventHandler;
 import psym.runtime.machine.eventhandlers.EventHandler;
@@ -32,9 +33,17 @@ public abstract class State implements Serializable {
     this.temperature = temperature;
   }
 
-  public void entry(Guard pc, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {}
+  public void entry(Guard pc, Machine machine, EventHandlerReturnReason outcome, UnionVS payload) {
+    if (machine.getScheduler() instanceof ReplayScheduler) {
+      TextWriter.logStateEntry(machine, this);
+    }
+  }
 
-  public void exit(Guard pc, Machine machine) {}
+  public void exit(Guard pc, Machine machine) {
+    if (machine.getScheduler() instanceof ReplayScheduler) {
+      TextWriter.logStateExit(machine, this);
+    }
+  }
 
   private String getStateKey() {
     return String.format("%s_%s", name, machineName);
@@ -92,7 +101,8 @@ public abstract class State implements Serializable {
             // exclude raise event from user
             if (!message.getTarget().getGuardedValues().isEmpty()) {
               assert (message.getTarget().getGuardedValues().get(0).getValue() == machine);
-              ScheduleWriter.logReceive(machine, this, event);
+              ScheduleWriter.logDequeue(machine, this, event);
+              TextWriter.logDequeue(machine, this, event, message.getPayload());
             }
           }
         }

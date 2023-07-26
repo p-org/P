@@ -217,28 +217,25 @@ public class UnionVS implements ValueSummary<UnionVS> {
       cmp = cmp_orig;
     }
 
-    PrimitiveVS res = type.symbolicEquals(cmp.type, pc);
-    for (Map.Entry<UnionVStype, ValueSummary> payload : cmp.value.entrySet()) {
-      if (!value.containsKey(payload.getKey())) {
-        PrimitiveVS<Boolean> bothLackKey =
-            BooleanVS.trueUnderGuard(pc.and(type.getGuardFor(payload.getKey()).not()));
-        res = BooleanVS.and(res, bothLackKey);
-      } else if (payload.getValue() == null) {
-        if (value.get(payload.getKey()) == null) {
-          continue;
+    Guard equalCond = Guard.constFalse();
+    for (GuardedValue<UnionVStype> typeGv: type.restrict(pc).getGuardedValues()) {
+        Guard typeGuard = typeGv.getGuard();
+        UnionVStype typeVal = typeGv.getValue();
+
+        ValueSummary lhsVal = getValue(typeVal);
+        ValueSummary rhsVal = cmp.getValue(typeVal);
+
+        if (lhsVal == null && rhsVal == null) {
+          equalCond = equalCond.or(typeGuard);
+        } else if (lhsVal == null) {
+          equalCond = equalCond.or(rhsVal.symbolicEquals(null, typeGuard).getGuardFor(true));
+        } else if (rhsVal == null) {
+          equalCond = equalCond.or(lhsVal.symbolicEquals(null, typeGuard).getGuardFor(true));
         } else {
-          res =
-                  BooleanVS.and(res, value.get(payload.getKey()).symbolicEquals(null, pc));
+          equalCond = equalCond.or(lhsVal.symbolicEquals(rhsVal, typeGuard).getGuardFor(true));
         }
-      } else {
-        res =
-            BooleanVS.and(res, payload.getValue().symbolicEquals(value.get(payload.getKey()), pc));
-      }
     }
-    if (res.isEmptyVS()) {
-      return BooleanVS.trueUnderGuard(Guard.constFalse());
-    }
-    return res.restrict(getUniverse().and(cmp.getUniverse()));
+    return BooleanVS.trueUnderGuard(equalCond).restrict(getUniverse().and(cmp.getUniverse()));
   }
 
   @Override

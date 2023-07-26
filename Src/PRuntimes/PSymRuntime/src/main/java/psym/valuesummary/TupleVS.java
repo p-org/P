@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Getter;
 import psym.runtime.machine.Machine;
+import psym.utils.exception.BugFoundException;
 
 /** Represents a tuple value summaries */
 @SuppressWarnings("unchecked")
@@ -216,7 +217,10 @@ public class TupleVS implements ValueSummary<TupleVS> {
   public Guard getUniverse() {
     // Optimization: Tuples should always be nonempty,
     // and all fields should exist under the same conditions
-    return fields[0].getUniverse();
+    Guard result = fields[0].getUniverse();
+    assert IntStream.range(0, fields.length).allMatch(i -> fields[i].getUniverse().equals(result)):
+          "Error: all tuple fields should have same universe";
+    return result;
   }
 
   @Override

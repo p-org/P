@@ -60,13 +60,48 @@ namespace Plang.Compiler.Backend.Stately {
                 case FunCallStmt fStmt:
                     foreach (var stmt in fStmt.Function.Body.Statements)
                     {
-                        gotoStmts = gotoStmts.Union(WriteStmt(stmt)).ToList();
+                       gotoStmts.AddRange(WriteStmt(stmt));
                     }
                     break;
                 case IfStmt ifStmt:
                     foreach (var stmt in ifStmt.ThenBranch.Statements)
                     {
-                        gotoStmts = gotoStmts.Union(WriteStmt(stmt)).ToList();
+                        gotoStmts.AddRange(WriteStmt(stmt));
+                    }
+
+                    if (ifStmt.ElseBranch != null)
+                    {
+                        foreach (var stmt in ifStmt.ElseBranch.Statements)
+                        {
+                            gotoStmts.AddRange(WriteStmt(stmt));;
+                        }
+                    }
+                    break;
+                case WhileStmt whileStmt:
+                    foreach (var stmt in whileStmt.Body.Statements)
+                    {
+                        gotoStmts.AddRange(WriteStmt(stmt));
+                    }
+                    break;
+                case ForeachStmt foreachStmt:
+                    foreach (var stmt in foreachStmt.Body.Statements)
+                    {
+                        gotoStmts.AddRange(WriteStmt(stmt));
+                    }
+                    break;
+                case CompoundStmt compoundStmt:
+                    foreach (var stmt in compoundStmt.Statements)
+                    {
+                        gotoStmts.AddRange(WriteStmt(stmt));
+                    }
+                    break;
+                case ReceiveStmt receiveStmt:
+                    foreach (var (key, value) in receiveStmt.Cases)
+                    {
+                        foreach (var stmt in value.Body.Statements)
+                        {
+                            gotoStmts.AddRange(WriteStmt(stmt));
+                        }
                     }
                     break;
             }
@@ -100,16 +135,26 @@ namespace Plang.Compiler.Backend.Stately {
         //Handles writing all instances of states (within a machine)
         private void WriteState(CompilationContext context, StringWriter output, State state)
         {
+            var entryGotoStmts = new List<String>();
             //Entry function exists!
             if (state.Entry != null) {
                 foreach (var s in state.Entry.Body.Statements) {
-                    if (s.GetType() == typeof(GotoStmt)) {
-                        var x = (GotoStmt)s;
-                        context.WriteLine(output, "always: [");
-                        context.WriteLine(output, $"{{target: '{x.State.Name}'}}");
-                        context.WriteLine(output, "]");
-                    }
+                    entryGotoStmts.AddRange(WriteStmt(s));
                 }
+
+                if (entryGotoStmts.Count > 0)
+                {
+                    context.WriteLine(output, "always: [");
+                    context.WriteLine(output, "{ target: [");
+                    foreach (var stmt in entryGotoStmts)
+                    {
+                        context.WriteLine(output, $"\"{stmt}\",");
+                    }
+                    context.WriteLine(output,"]");
+                    context.WriteLine(output, "}");
+                    context.WriteLine(output, "],");
+                }
+
             }
             //All the go to Statements in a state (of a machine)
             var gotoStmts = new Dictionary<String, List<String>>();

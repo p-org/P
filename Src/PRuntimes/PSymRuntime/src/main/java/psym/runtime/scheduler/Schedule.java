@@ -8,7 +8,7 @@ import lombok.Setter;
 import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.MachineLocalState;
-import psym.runtime.scheduler.symmetry.SymmetryTracker;
+import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.valuesummary.*;
 
 public class Schedule implements Serializable {
@@ -29,6 +29,14 @@ public class Schedule implements Serializable {
   public Schedule(SymmetryTracker symmetryTracker) {
     this.schedulerSymmetry = symmetryTracker;
   }
+
+  private Schedule(
+          Map<Class<? extends Machine>, ListVS<PrimitiveVS<Machine>>> createdMachines,
+          Set<Machine> machines) {
+    this.createdMachines = new HashMap<>(createdMachines);
+    this.machines = new HashSet<>(machines);
+  }
+
 
   private Schedule(
       List<Choice> choices,
@@ -277,7 +285,7 @@ public class Schedule implements Serializable {
   }
 
   public Schedule getSingleSchedule() {
-    Schedule result = new Schedule(null);
+    Schedule result = new Schedule(createdMachines, machines);
 
     Guard pc = Guard.constTrue();
     pc = pc.and(getFilter());
@@ -306,10 +314,6 @@ public class Schedule implements Serializable {
           }
         }
       }
-    }
-
-    for (Machine machine : machines) {
-      result.makeMachine(machine, Guard.constTrue());
     }
 
     return result;

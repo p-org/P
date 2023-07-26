@@ -12,8 +12,8 @@ import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
-import psym.runtime.scheduler.symmetry.SymmetryTracker;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.runtime.statistics.SearchStats;
 import psym.utils.Assert;
 import psym.utils.random.NondetUtil;
@@ -31,8 +31,6 @@ public abstract class Scheduler implements SchedulerInterface {
   @Getter private final Program program;
   /** The scheduling choices made */
   public Schedule schedule;
-  /** Result of the search */
-  public String result;
   /** Whether final result is set or not */
   public boolean isFinalResult = false;
   /** How many instances of each Machine there are */

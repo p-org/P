@@ -5,7 +5,7 @@ import java.util.function.Function;
 import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
-import psym.runtime.scheduler.symmetry.SymmetryMode;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.valuesummary.*;
 
 /**
@@ -55,16 +55,16 @@ public abstract class SymbolicQueue implements Serializable {
     }
     assert (elements.getUniverse().isTrue());
     ListVS<Message> filtered = elements.restrict(pc);
+    PrimitiveVS<Integer> idxVs = new PrimitiveVS<>(0, pc);
+    Guard outOfRange = elements.inRange(idxVs).getGuardFor(false);
+    if (!outOfRange.isFalse()) {
+      throw new RuntimeException("Internal error: peeking into an empty queue");
+    }
     if (updatePeek) {
-      peek = filtered.get(new PrimitiveVS<>(0).restrict(pc));
+      peek = filtered.get(idxVs);
     }
     Message ret = peek.restrict(pc);
     if (dequeue) {
-      PrimitiveVS<Integer> idxVs = new PrimitiveVS<>(0, pc);
-      Guard outOfRange = elements.inRange(idxVs).getGuardFor(false);
-      if (!outOfRange.isFalse()) {
-        throw new RuntimeException("Internal error: dequeing from an empty queue");
-      }
       elements = elements.removeAt(idxVs);
       resetPeek();
     }

@@ -12,8 +12,6 @@ import psym.runtime.machine.State;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.utils.Assert;
-import psym.utils.exception.LivenessException;
-import psym.valuesummary.Guard;
 import psym.valuesummary.GuardedValue;
 import psym.valuesummary.PrimitiveVS;
 
@@ -22,10 +20,10 @@ public class ScheduleWriter {
     @Getter static String fileName = "";
     private static int logIdx = 0;
 
-    public static void Initialize(String projectName, String outputFolder) {
+    public static void Initialize() {
         try {
             // get new file name
-            fileName = outputFolder + "/" + projectName + ".schedule";
+            fileName = PSymGlobal.getConfiguration().getOutputFolder() + "/" + PSymGlobal.getConfiguration().getProjectName() + "_0_0.schedule";
             // Define new file printer
             File schFile = new File(fileName);
             schFile.getParentFile().mkdirs();
@@ -60,7 +58,7 @@ public class ScheduleWriter {
         log(gv.get(0).getValue().toString());
     }
 
-    public static void logReceive(Machine target, State state, Event event) {
+    public static void logDequeue(Machine target, State state, Event event) {
         logComment(String.format("receive %s at %s in state %s",
                 event,
                 target,
@@ -68,7 +66,7 @@ public class ScheduleWriter {
         log(String.format("(%d)", target.getInstanceId()));
     }
 
-    public static void logSend(Machine sender, Message msg) {
+    public static void logEnqueue(Machine sender, Message msg) {
         List<GuardedValue<Event>> eventGv = msg.getEvent().getGuardedValues();
         assert (eventGv.size() == 1);
         Event event = eventGv.get(0).getValue();

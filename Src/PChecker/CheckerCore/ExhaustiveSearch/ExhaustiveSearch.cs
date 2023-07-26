@@ -79,7 +79,7 @@ namespace PChecker.ExhaustiveSearch
                 switch (_checkerConfiguration.Mode)
                 {
                     case CheckerMode.Verification:
-                        arguments.Append("--strategy symex ");
+                        arguments.Append("--strategy symbolic ");
                         break;
                     case CheckerMode.Coverage:
                         arguments.Append($"--strategy {_checkerConfiguration.SchedulingStrategy} ");

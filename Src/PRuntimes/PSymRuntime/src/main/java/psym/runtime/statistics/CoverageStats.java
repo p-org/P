@@ -12,8 +12,8 @@ import lombok.Setter;
 import psym.runtime.PSymGlobal;
 import psym.runtime.logger.CoverageWriter;
 import psym.runtime.logger.StatWriter;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningRewardMode;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceQTable;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningRewardMode;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceQTable;
 
 /** Class to track all coverage statistics */
 public class CoverageStats implements Serializable {

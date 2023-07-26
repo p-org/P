@@ -44,7 +44,7 @@ public class TestSymbolicRegression {
       }
     }
     if (psymArgs != null && !psymArgs.isEmpty()) {
-      runArgs += " --psym-args " + psymArgs;
+      runArgs += " --psym-args :" + psymArgs.replace(" ", ":");
     }
     PSymTestLogger.log(String.format("Running in mode %s with arguments:  %s", mode, runArgs));
   }

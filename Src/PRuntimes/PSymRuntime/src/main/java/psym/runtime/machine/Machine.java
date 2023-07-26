@@ -5,6 +5,7 @@ import java.util.*;
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import psym.runtime.PSymGlobal;
+import psym.runtime.logger.TextWriter;
 import psym.runtime.logger.TraceLogger;
 import psym.runtime.machine.buffer.*;
 import psym.runtime.machine.eventhandlers.EventHandler;
@@ -12,7 +13,8 @@ import psym.runtime.machine.eventhandlers.EventHandlerReturnReason;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Scheduler;
-import psym.runtime.scheduler.explicit.choiceorchestration.ChoiceLearningStateMode;
+import psym.runtime.scheduler.replay.ReplayScheduler;
+import psym.runtime.scheduler.search.choiceorchestration.ChoiceLearningStateMode;
 import psym.utils.Assert;
 import psym.utils.serialize.SerializableBiFunction;
 import psym.utils.serialize.SerializableFunction;
@@ -20,7 +22,9 @@ import psym.utils.serialize.SerializableRunnable;
 import psym.valuesummary.*;
 
 public abstract class Machine implements Serializable, Comparable<Machine> {
-  protected static int globalMachineId = 2;
+  @Getter
+  private static final int mainMachineId = 2;
+  protected static int globalMachineId = mainMachineId;
   public final Map<
           String,
           SerializableFunction<
@@ -285,6 +289,9 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
       PrimitiveVS<State> newState,
       Map<State, UnionVS> payloads) {
     TraceLogger.onProcessStateTransition(pc, this, newState);
+    if (this.getScheduler() instanceof ReplayScheduler) {
+      TextWriter.logGoto(this, newState);
+    }
 
     if (this.currentState == null) {
       this.currentState = newState;

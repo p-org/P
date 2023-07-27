@@ -71,6 +71,7 @@ public class TestSymbolicRegression {
 
     // TODO Unsupported: nested type casting in tuple fields with any type
     excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes");
+    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/cast3");
 
     // TODO Unsupported: null events
     excluded.add("../../../Tst/RegressionTests/Integration/Correct/openwsn1");

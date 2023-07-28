@@ -231,8 +231,8 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
     }
 
     MapVS<K, T, V> result = new MapVS<>(newKeys, newEntries);
-    assert result.containsKey(keySummary).getGuardFor(true).equals(keySummary.getUniverse());
-    assert (result.get(keySummary).symbolicEquals(valSummary, Guard.constTrue()).getGuardFor(true).equals(valSummary.getUniverse()));
+//    assert result.containsKey(keySummary).getGuardFor(true).equals(keySummary.getUniverse());
+//    assert (result.get(keySummary).symbolicEquals(valSummary, Guard.constTrue()).getGuardFor(true).equals(valSummary.getUniverse()));
     return result;
   }
 

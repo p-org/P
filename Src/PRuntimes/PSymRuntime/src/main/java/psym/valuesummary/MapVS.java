@@ -124,12 +124,17 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
     final SetVS<T> newKeys = keys.restrict(guard);
     final Map<K, V> newEntries = new HashMap<>();
 
-    if (!newKeys.isEmptyVS()) {
-      for (Map.Entry<K, V> entry : entries.entrySet()) {
-        final V newValue = entry.getValue().restrict(guard);
-        newEntries.put(entry.getKey(), newValue);
+    for (T keySummary : newKeys.getElements().getItems()) {
+      for (GuardedValue<?> guardedKey : ValueSummary.getGuardedValues(keySummary)) {
+        K key = (K) guardedKey.getValue();
+        V val = entries.get(key);
+        if (val != null) {
+          val = val.restrict(guard);
+        }
+        newEntries.put(key, val);
       }
     }
+
     return new MapVS<>(newKeys, newEntries);
   }
 

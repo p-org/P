@@ -10,17 +10,21 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
   Map<String, List<TreeSet<Machine>>> typeToSymmetryClasses;
   Set<Machine> pendingMerges;
 
+  Map<Machine, Map<String, Object>> machineToSymData;
+
   public ExplicitSymmetryTracker() {
     typeToSymmetryClasses = new HashMap<>();
     for (String type : typeToAllSymmetricMachines.keySet()) {
       typeToSymmetryClasses.put(type, null);
     }
     pendingMerges = new HashSet<>();
+    machineToSymData = new HashMap<>();
   }
 
   private ExplicitSymmetryTracker(
       Map<String, List<TreeSet<Machine>>> symClasses,
-      Set<Machine> pending) {
+      Set<Machine> pending,
+      Map<Machine, Map<String, Object>> symData) {
     typeToSymmetryClasses = new HashMap<>();
     for (Map.Entry<String, List<TreeSet<Machine>>> entry: symClasses.entrySet()) {
       List<TreeSet<Machine>> newClasses = null;
@@ -33,10 +37,11 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
       typeToSymmetryClasses.put(entry.getKey(), newClasses);
     }
     pendingMerges = new HashSet<>(pending);
+    machineToSymData = new HashMap<>(symData);
   }
 
   public SymmetryTracker getCopy() {
-    return new ExplicitSymmetryTracker(typeToSymmetryClasses, pendingMerges);
+    return new ExplicitSymmetryTracker(typeToSymmetryClasses, pendingMerges, machineToSymData);
   }
 
   public void reset() {
@@ -45,6 +50,28 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
     }
     typeToSymmetryClasses.replaceAll((t, v) -> null);
     pendingMerges = new HashSet<>();
+    machineToSymData = new HashMap<>();
+  }
+
+  public void addMachineSymData(Machine machine, String dataName, Object data) {
+    Map<String, Object> machineSymmetricData = machineToSymData.get(machine);
+    if (machineSymmetricData == null) {
+      machineSymmetricData = new HashMap<>();
+    }
+    machineSymmetricData.put(dataName, data);
+    machineToSymData.put(machine, machineSymmetricData);
+  }
+
+  public Object getMachineSymData(Machine machine, String dataName, Object curr) {
+    Object result = curr;
+    Map<String, Object> machineSymmetricData = machineToSymData.get(machine);
+    if (machineSymmetricData != null) {
+      result = machineSymmetricData.get(dataName);
+      if (result != null) {
+        return result;
+      }
+    }
+    return curr;
   }
 
   public void createMachine(Machine machine, Guard guard) {

@@ -36,7 +36,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
     UnionVStype type = UnionVStype.getUnionVStype(PrimitiveVS.class, null);
     this.type = new PrimitiveVS<>(type);
     this.value = new HashMap<>();
-    this.value.put(type, null);
+    this.value.put(type, new PrimitiveVS(null, Guard.constTrue()));
     this.concreteHash = computeConcreteHash();
   }
 
@@ -191,7 +191,10 @@ public class UnionVS implements ValueSummary<UnionVS> {
       List<ValueSummary> value = entry.getValue();
       ValueSummary newValue = null;
       if (value.size() > 0) {
-        newValue = value.get(0).merge(value.subList(1, entry.getValue().size()));
+        newValue = value.get(0);
+        if (value.size() > 1) {
+          newValue = newValue.merge(value.subList(1, entry.getValue().size()));
+        }
       }
       mergedValue.put(type, newValue);
     }

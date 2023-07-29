@@ -2,10 +2,16 @@ machine Server {
     var maxQPS: int;
     var currentQPS: int;
     var servedRequestIds: set[int];
+    var nServerFails: int;
+    var serverFailOffset: int;
+    var time: int;
     start state Init {
-        entry (payload: (maxQPS: int)) {
+        entry (payload: (maxQPS: int, nServerFails: int, serverFailOffset: int)) {
             maxQPS = payload.maxQPS;
+            nServerFails = payload.nServerFails;
+            serverFailOffset = payload.serverFailOffset;
             currentQPS = 0;
+            time = 0;
         }
         on eStart goto Wait with {
             send this, eServerRun, delay "0.2";
@@ -13,9 +19,15 @@ machine Server {
     }
     state Wait {
         defer eRequest;
-        on eServerRun goto Run with {
+        on eServerRun do {
+            time = time + 1;
             currentQPS = 0;
             send this, eServerRun;
+            if (time > serverFailOffset && nServerFails > 0) {
+                nServerFails = nServerFails - 1;
+            } else {
+                goto Run;
+            }
        }
     }
     state Run {

@@ -274,6 +274,7 @@ namespace PChecker.Actors.EventQueues.Mocks
 
                         if (!checkOnly)
                         {
+                            currentEvent.e.DequeueTime.SetTime(ControlledRuntime.GlobalTime.GetTime());
                             Queue.Remove(node);
                         }
 
@@ -362,6 +363,7 @@ namespace PChecker.Actors.EventQueues.Mocks
                         (predicate is null || predicate(node.Value.e)))
                     {
                         receivedEvent = node.Value;
+                        receivedEvent.e.DequeueTime.SetTime(ControlledRuntime.GlobalTime.GetTime());
                         Queue.Remove(node);
                         break;
                     }
@@ -395,6 +397,7 @@ namespace PChecker.Actors.EventQueues.Mocks
                         (predicate is null || predicate(node.Value.e)))
                     {
                         receivedEvent = node.Value;
+                        receivedEvent.e.DequeueTime.SetTime(ControlledRuntime.GlobalTime.GetTime());
                         Queue.Remove(node);
                         break;
                     }

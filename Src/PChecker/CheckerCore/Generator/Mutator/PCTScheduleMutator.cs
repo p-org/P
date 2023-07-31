@@ -5,8 +5,8 @@ namespace PChecker.Generator.Mutator;
 
 internal class PCTScheduleMutator : IMutator<PctScheduleGenerator>
 {
-    private readonly int _meanMutationCount = 5;
-    private readonly int _meanMutationSize = 5;
+    private int _meanMutationCount = 5;
+    private int _meanMutationSize = 5;
     private System.Random _random = new();
     public PctScheduleGenerator Mutate(PctScheduleGenerator prev)
     {

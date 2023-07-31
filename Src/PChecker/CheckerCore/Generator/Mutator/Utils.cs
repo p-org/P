@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using PChecker.Generator.Object;
 
 namespace PChecker.Generator.Mutator;
@@ -12,6 +13,8 @@ public class Utils
     public static RandomChoices<T> MutateRandomChoices<T> (RandomChoices<T> randomChoices, int meanMutationCount, int meanMutationSize, System.Random random)
         where T: IConvertible
     {
+        meanMutationCount = Math.Max(Math.Min(randomChoices.Data.Count / 5, meanMutationCount), 1);
+        meanMutationSize = Math.Max(Math.Min(randomChoices.Data.Count / 5, meanMutationSize), 1);
         RandomChoices<T> newChoices = new RandomChoices<T>(randomChoices);
         int mutations = Utils.SampleGeometric(1.0f / meanMutationCount, random.NextDouble());
 

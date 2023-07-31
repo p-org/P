@@ -22,8 +22,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     protected int ScheduledSteps;
     private int _visitedStates = 0;
 
-    private readonly EventCoverage _visitedEvents = new();
-    private readonly HashSet<int> _visitedEventSeqs = new();
+    private readonly HashSet<int> _visitedTimelines = new();
 
     protected readonly List<StrategyGenerator> SavedGenerators = new();
 
@@ -46,7 +45,14 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     /// </summary>
     public FeedbackGuidedStrategy(CheckerConfiguration checkerConfiguration, TInput input, TSchedule schedule)
     {
-        _maxScheduledSteps = checkerConfiguration.MaxFairSchedulingSteps;
+        if (schedule is PctScheduleGenerator)
+        {
+            _maxScheduledSteps = checkerConfiguration.MaxUnfairSchedulingSteps;
+        }
+        else
+        {
+            _maxScheduledSteps = checkerConfiguration.MaxFairSchedulingSteps;
+        }
         Generator = new StrategyGenerator(input, schedule);
     }
 
@@ -63,6 +69,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     public bool GetNextBooleanChoice(AsyncOperation current, int maxValue, out bool next)
     {
         next = Generator.InputGenerator.Next(maxValue) == 0;
+        ScheduledSteps++;
         return true;
     }
 
@@ -70,6 +77,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     public bool GetNextIntegerChoice(AsyncOperation current, int maxValue, out int next)
     {
         next = Generator.InputGenerator.Next(maxValue);
+        ScheduledSteps++;
         return true;
     }
 
@@ -126,7 +134,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     {
         if (patternObserver == null)
         {
-            if (_visitedEventSeqs.Add(runtime.TimelineObserver.GetTimelineHash()))
+            if (_visitedTimelines.Add(runtime.TimelineObserver.GetTimelineHash()))
             {
                 SavedGenerators.Add(Generator);
                 _numMutationsWithoutNewSaved = 0;
@@ -139,7 +147,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
             {
                 if (state == -1)
                 {
-                    if (_visitedEventSeqs.Add(runtime.TimelineObserver.GetTimelineHash()))
+                    if (_visitedTimelines.Add(runtime.TimelineObserver.GetTimelineHash()))
                     {
                         SavedGenerators.Add(Generator);
                         _numMutationsWithoutNewSaved = 0;

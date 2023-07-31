@@ -5,14 +5,17 @@ machine Client {
     var maxTime: int;
     var kClientAmplification: int;
     var clientAmplificationOffset: int;
+    var nRetries: int;
     var currentRequestId: int;
     var waitingIds: set[int];
+    var retryCounts: map[int, int];
     start state Init {
-        entry (payload: (maxQPS: int, server: Server, maxTime: int, kClientAmplification: int, clientAmplificationOffset: int)) {
+        entry (payload: (maxQPS: int, server: Server, maxTime: int, kClientAmplification: int, clientAmplificationOffset: int, nRetries: int)) {
             maxQPS = payload.maxQPS;
             server = payload.server;
             maxTime = payload.maxTime;
             kClientAmplification = payload.kClientAmplification;
+            nRetries = payload.nRetries;
             clientAmplificationOffset = payload.clientAmplificationOffset;
             currentRequestId = 0;
             time = 0;
@@ -33,9 +36,12 @@ machine Client {
             if (time < maxTime) {
                 i = 0;
                 while (i < sizeof(waitingIds)) {
-                    _eRequestPayload.id = waitingIds[i];
-                    _eRequestPayload.client = this;
-                    send server, eRequest, _eRequestPayload;
+                    if (nRetries == -1 || retryCounts[waitingIds[i]] < nRetries) {
+                        _eRequestPayload.id = waitingIds[i];
+                        _eRequestPayload.client = this;
+                        send server, eRequest, _eRequestPayload;
+                        retryCounts[waitingIds[i]] = retryCounts[waitingIds[i]] + 1;
+                    }
                     i = i + 1;
                 }
                 i = 0;
@@ -50,6 +56,7 @@ machine Client {
                     _eRequestPayload.client = this;
                     send server, eRequest, _eRequestPayload;
                     waitingIds += (currentRequestId);
+                    retryCounts[currentRequestId] = 0;
                     currentRequestId = currentRequestId + 1;
                     i = i + 1;
                 }

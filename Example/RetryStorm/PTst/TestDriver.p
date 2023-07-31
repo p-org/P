@@ -8,16 +8,18 @@ machine TestCase {
             var serverFailOffset: int;
             var kClientAmplification: int;
             var clientAmplificationOffset: int;
+            var nRetries: int;
             var server: Server;
             var client: Client;
             var _ServerPayload: (maxQPS: int, nServerFails: int, serverFailOffset: int);
-            var _ClientPayload: (maxQPS: int, server: Server, maxTime: int, kClientAmplification: int, clientAmplificationOffset: int);
+            var _ClientPayload: (maxQPS: int, server: Server, maxTime: int, kClientAmplification: int, clientAmplificationOffset: int, nRetries: int);
 
             request_qps = 10;
             response_qps = 10;
             maxTime = 100;
-            nServerFails = 5;
-            kClientAmplification = 1;
+            nServerFails = 0;
+            kClientAmplification = 4;
+            nRetries = 4;
             serverFailOffset = 0;
             clientAmplificationOffset = 0;
 
@@ -32,6 +34,7 @@ machine TestCase {
             _ClientPayload.maxTime = maxTime;
             _ClientPayload.kClientAmplification = kClientAmplification;
             _ClientPayload.clientAmplificationOffset = clientAmplificationOffset;
+            _ClientPayload.nRetries = nRetries;
             client = new Client(_ClientPayload);
             send client, eStart;
         }

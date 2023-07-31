@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using PChecker.Coverage;
@@ -98,6 +99,19 @@ namespace PChecker.SystematicTesting
         /// </summary>
         [DataMember]
         public HashSet<string> InternalErrors { get; internal set; }
+
+
+        /// <summary>
+        /// Set of hashes of timelines discovered by the scheduler.
+        /// </summary>
+        [DataMember]
+        public HashSet<int> ExploredTimelines = new();
+
+        /// <summary>
+        /// Number of schedulings that satisfies the pattern.
+        /// </summary>
+        [DataMember]
+        public int ValidScheduling = 0;
 
         /// <summary>
         /// Lock for the test report.

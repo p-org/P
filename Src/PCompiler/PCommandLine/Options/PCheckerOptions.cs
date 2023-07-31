@@ -79,6 +79,8 @@ namespace Plang.Options
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
             advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of PSym-specific JVM arguments to pass, each starting with a colon").IsHidden = true;
+            advancedGroup.AddArgument("interesting-events", null, "The name of the interesting events generator", typeof(string));
+            advancedGroup.AddArgument("pattern", null, "The name of the pattern matcher generator", typeof(string));
         }
 
         /// <summary>
@@ -190,6 +192,9 @@ namespace Plang.Options
                 case "debug":
                     checkerConfiguration.EnableDebugging = true;
                     Debug.IsEnabled = true;
+                    break;
+                case "interesting-events":
+                    checkerConfiguration.InterestingEventsSource = (string)option.Value;
                     break;
                 case "timeout":
                     checkerConfiguration.Timeout = (int)(uint)option.Value;
@@ -318,6 +323,9 @@ namespace Plang.Options
                     break;
                 case "pproj":
                     // do nothing, since already configured through UpdateConfigurationWithPProjectFile
+                    break;
+                case "pattern":
+                    checkerConfiguration.PatternSource = (string) option.Value;
                     break;
                 default:
                     throw new Exception(string.Format("Unhandled parsed argument: '{0}'", option.LongName));

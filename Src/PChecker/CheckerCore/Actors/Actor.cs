@@ -64,7 +64,7 @@ namespace PChecker.Actors
         /// The inbox of the actor. Incoming events are enqueued here.
         /// Events are dequeued to be processed.
         /// </summary>
-        private protected IEventQueue Inbox;
+        internal IEventQueue Inbox;
 
         /// <summary>
         /// Map from event types to cached action delegates.

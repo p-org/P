@@ -18,6 +18,7 @@ using PChecker.Actors.Managers;
 using PChecker.Actors.Managers.Mocks;
 using PChecker.Coverage;
 using PChecker.Exceptions;
+using PChecker.Feedback;
 using PChecker.Random;
 using PChecker.Runtime;
 using PChecker.Specifications.Monitors;
@@ -66,7 +67,12 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal readonly int? RootTaskId;
 
-        
+        /// <summary>
+        /// The observer that extracts the timeline information of the scheduling.
+        /// </summary>
+        internal readonly TimelineObserver TimelineObserver = new();
+
+
         /// <summary>
         /// Returns the current hashed state of the monitors.
         /// </summary>
@@ -149,6 +155,7 @@ namespace PChecker.SystematicTesting
             // Update the current asynchronous control flow with this runtime instance,
             // allowing future retrieval in the same asynchronous call stack.
             AssignAsyncControlFlowRuntime(this);
+            RegisterLog(TimelineObserver);
         }
 
         /// <inheritdoc/>
@@ -831,7 +838,7 @@ namespace PChecker.SystematicTesting
         {
             Scheduler.CheckIfSchedulingStepsBoundIsReached();
         }
-        
+
         /// <summary>
         /// Schedules the next controlled asynchronous operation. This method
         /// is only used during testing.

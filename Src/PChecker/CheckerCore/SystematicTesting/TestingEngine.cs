@@ -1039,6 +1039,10 @@ namespace PChecker.SystematicTesting
                 var count = schedule.ToString().Length - 1;
                 var guard = "1" + (count > 0 ? string.Concat(Enumerable.Repeat("0", count)) : string.Empty);
                 PrintGuard = int.Parse(guard);
+                if (PrintGuard > 1000)
+                {
+                    PrintGuard = 1000;
+                }
             }
 
             return schedule % PrintGuard == 0;

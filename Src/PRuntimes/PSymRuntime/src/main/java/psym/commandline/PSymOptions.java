@@ -214,7 +214,7 @@ public class PSymOptions {
     Option stateCaching =
         Option.builder()
             .longOpt("state-caching")
-            .desc("State caching mode: none, exact, fast (default: none)")
+            .desc("State caching mode: none, symbolic, exact, fast (default: symbolic/fast)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Caching Mode (string)")
@@ -522,11 +522,15 @@ public class PSymOptions {
             case "none":
               config.setStateCachingMode(StateCachingMode.None);
               break;
+            case "sym":
+            case "symbolic":
+              config.setStateCachingMode(StateCachingMode.Symbolic);
+              break;
             case "exact":
-              config.setStateCachingMode(StateCachingMode.Exact);
+              config.setStateCachingMode(StateCachingMode.ExplicitExact);
               break;
             case "fast":
-              config.setStateCachingMode(StateCachingMode.Fast);
+              config.setStateCachingMode(StateCachingMode.ExplicitFast);
               break;
             default:
               optionError(

@@ -581,7 +581,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       List<Object> machineStateConcrete = new ArrayList<>();
       for (int j = 0; j < machineStateSymbolic.size(); j++) {
         Object varValue = null;
-        if (mode == StateCachingMode.Fast) {
+        if (mode == StateCachingMode.ExplicitFast) {
           varValue = machineStateSymbolic.get(j).getConcreteHash();
         } else {
           GuardedValue<?> guardedValue = Concretizer.concretize(machineStateSymbolic.get(j));

@@ -379,10 +379,12 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
   @Override
   public int computeConcreteHash() {
     int hashCode = 1;
-    for (Map.Entry<K, V> entry : entries.entrySet()) {
-      hashCode = 31 * hashCode + (entry.getKey() == null ? 0 : entry.getKey().hashCode());
+    List<K> sortedKeys = new ArrayList<>(this.entries.keySet());
+    sortedKeys.sort(Comparator.comparing(Objects::hashCode));
+    for (K key : sortedKeys) {
+      hashCode = 31 * hashCode + (key == null ? 0 : key.hashCode());
       hashCode =
-          31 * hashCode + (entry.getValue() == null ? 0 : entry.getValue().getConcreteHash());
+          31 * hashCode + (entries.get(key) == null ? 0 : entries.get(key).getConcreteHash());
     }
     return hashCode;
   }

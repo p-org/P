@@ -18,6 +18,7 @@ using System.Xml;
 using PChecker.Actors;
 using PChecker.Actors.Logging;
 using PChecker.Coverage;
+using PChecker.Feedback;
 using PChecker.Generator;
 using PChecker.IO;
 using PChecker.IO.Debugging;
@@ -62,6 +63,8 @@ namespace PChecker.SystematicTesting
         /// The program exploration strategy.
         /// </summary>
         internal readonly ISchedulingStrategy Strategy;
+
+        private EventPatternObserver? _eventPatternObserver;
 
         /// <summary>
         /// Random value generator used by the scheduling strategies.
@@ -165,17 +168,34 @@ namespace PChecker.SystematicTesting
         public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Assembly assembly)
         {
             TestMethodInfo testMethodInfo = null;
+            EventPatternObserver eventMatcher = null;
             try
             {
                 testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, checkerConfiguration.TestCaseName);
                 Console.Out.WriteLine($".. Test case :: {testMethodInfo.Name}");
+
+                Type t = assembly.GetType("PImplementation.GlobalFunctions");
+                if (checkerConfiguration.PatternSource.Length > 0)
+                {
+                    var result = (IMatcher) t.GetMethod(checkerConfiguration.PatternSource,
+                            BindingFlags.Public | BindingFlags.Static)
+                        .Invoke(null, null);
+                    eventMatcher = new EventPatternObserver(result);
+                }
+                if (checkerConfiguration.InterestingEventsSource.Length > 0)
+                {
+                    var result = (HashSet<Type>) t.GetMethod(checkerConfiguration.InterestingEventsSource,
+                            BindingFlags.Public | BindingFlags.Static)
+                        .Invoke(null, null);
+                    checkerConfiguration.InterestingEvents = result;
+                }
             }
             catch
             {
                 Error.ReportAndExit($"Failed to get test method '{checkerConfiguration.TestCaseName}' from assembly '{assembly.FullName}'");
             }
 
-            return new TestingEngine(checkerConfiguration, testMethodInfo);
+            return new TestingEngine(checkerConfiguration, testMethodInfo, eventMatcher);
         }
 
         /// <summary>
@@ -222,13 +242,19 @@ namespace PChecker.SystematicTesting
         {
         }
 
+        private TestingEngine(CheckerConfiguration checkerConfiguration, TestMethodInfo testMethodInfo)
+            : this(checkerConfiguration, testMethodInfo, null)
+        {
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TestingEngine"/> class.
         /// </summary>
-        private TestingEngine(CheckerConfiguration checkerConfiguration, TestMethodInfo testMethodInfo)
+        private TestingEngine(CheckerConfiguration checkerConfiguration, TestMethodInfo testMethodInfo, EventPatternObserver observer)
         {
             _checkerConfiguration = checkerConfiguration;
             TestMethodInfo = testMethodInfo;
+            _eventPatternObserver = observer;
 
             Logger = new ConsoleLogger();
             ErrorReporter = new ErrorReporter(checkerConfiguration, Logger);
@@ -397,6 +423,7 @@ namespace PChecker.SystematicTesting
             {
                 try
                 {
+                    
                     // Invokes the user-specified initialization method.
                     TestMethodInfo.InitializeAllIterations();
                     watch = Stopwatch.StartNew();
@@ -500,6 +527,10 @@ namespace PChecker.SystematicTesting
             {
                 // Creates a new instance of the controlled runtime.
                 runtime = new ControlledRuntime(_checkerConfiguration, Strategy, RandomValueGenerator);
+                if (_eventPatternObserver != null)
+                {
+                    runtime.RegisterLog(_eventPatternObserver);
+                }
 
                 // Always output a json log of the error
                 JsonLogger = new JsonWriter();
@@ -530,6 +561,11 @@ namespace PChecker.SystematicTesting
                 foreach (var callback in PerIterationCallbacks)
                 {
                     callback(iteration);
+                }
+
+                if (Strategy is IFeedbackGuidedStrategy strategy)
+                {
+                    strategy.ObserveRunningResults(_eventPatternObserver, runtime);
                 }
 
                 // Checks that no monitor is in a hot state at termination. Only
@@ -595,8 +631,13 @@ namespace PChecker.SystematicTesting
                 }
 
                 // Cleans up the runtime before the next iteration starts.
+                if (_eventPatternObserver != null)
+                {
+                    runtime.RemoveLog(_eventPatternObserver);
+                }
                 runtimeLogger?.Dispose();
                 runtime?.Dispose();
+                _eventPatternObserver?.Reset();
             }
         }
 
@@ -839,20 +880,24 @@ namespace PChecker.SystematicTesting
                 report.CoverageInfo.CoverageGraph = Graph;
             }
 
-            var coverageInfo = runtime.GetCoverageInfo();
-            report.CoverageInfo.Merge(coverageInfo);
-            TestReport.Merge(report);
-
-            if (TestReport.ExploredTimelines.Add(runtime.TimelineObserver.GetTimelineHash()))
+            if (_eventPatternObserver == null || _eventPatternObserver.IsMatched())
             {
-                if (_checkerConfiguration.IsVerbose)
+                var coverageInfo = runtime.GetCoverageInfo();
+                report.CoverageInfo.Merge(coverageInfo);
+                TestReport.Merge(report);
+
+                if (TestReport.ExploredTimelines.Add(runtime.TimelineObserver.GetTimelineHash()))
                 {
-                    Logger.WriteLine($"... New timeline observed: {runtime.TimelineObserver.GetTimeline()}");
+                    if (_checkerConfiguration.IsVerbose)
+                    {
+                        Logger.WriteLine($"... New timeline observed: {runtime.TimelineObserver.GetTimeline()}");
+                    }
                 }
+
+                TestReport.ValidScheduling += 1;
+                // Also save the graph snapshot of the last iteration, if there is one.
+                Graph = coverageInfo.CoverageGraph;
             }
-            TestReport.ValidScheduling += 1;
-            // Also save the graph snapshot of the last iteration, if there is one.
-            Graph = coverageInfo.CoverageGraph;
         }
 
         /// <summary>

@@ -1,10 +1,10 @@
-using System.Collections.Generic;
+using PChecker.Feedback;
 
 namespace PChecker.SystematicTesting.Strategies.Feedback;
 
 internal interface IFeedbackGuidedStrategy: ISchedulingStrategy
 {
-    public void ObserveRunningResults(ControlledRuntime runtime);
+    public void ObserveRunningResults(EventPatternObserver patternObserver, ControlledRuntime runtime);
     public int TotalSavedInputs();
     public int CurrentInputIndex();
 }

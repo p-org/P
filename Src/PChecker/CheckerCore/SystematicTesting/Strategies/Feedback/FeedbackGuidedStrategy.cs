@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PChecker.Coverage;
 using PChecker.Generator;
+using PChecker.Feedback;
 using AsyncOperation = PChecker.SystematicTesting.Operations.AsyncOperation;
 
 namespace PChecker.SystematicTesting.Strategies.Feedback;
@@ -121,12 +122,46 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     /// This method observes the results of previous run and prepare for the next run.
     /// </summary>
     /// <param name="runtime">The ControlledRuntime of previous run.</param>
-    public virtual void ObserveRunningResults(ControlledRuntime runtime)
+    public virtual void ObserveRunningResults(EventPatternObserver patternObserver, ControlledRuntime runtime)
     {
-        if (_visitedEventSeqs.Add(runtime.TimelineObserver.GetTimelineHash()))
+        if (patternObserver == null)
         {
-            SavedGenerators.Add(Generator);
-            _numMutationsWithoutNewSaved = 0;
+            if (_visitedEventSeqs.Add(runtime.TimelineObserver.GetTimelineHash()))
+            {
+                SavedGenerators.Add(Generator);
+                _numMutationsWithoutNewSaved = 0;
+            }
+        }
+        else
+        {
+            int state = patternObserver.ShouldSave();
+            if (_matched)
+            {
+                if (state == -1)
+                {
+                    if (_visitedEventSeqs.Add(runtime.TimelineObserver.GetTimelineHash()))
+                    {
+                        SavedGenerators.Add(Generator);
+                        _numMutationsWithoutNewSaved = 0;
+                    }
+                }
+            }
+            else
+            {
+                if (state == -1)
+                {
+                    _matched = true;
+                    SavedGenerators.Clear();
+                    SavedGenerators.Add(Generator);
+                    _numMutationsWithoutNewSaved = 0;
+                }
+                else if ((_visitedStates | state) != _visitedStates)
+                {
+                    _visitedStates |= state;
+                    SavedGenerators.Add(Generator);
+                    _numMutationsWithoutNewSaved = 0;
+                }
+            }
         }
     }
 

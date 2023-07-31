@@ -22,7 +22,7 @@ public class Utils
         {
             int offset = random.Next(newChoices.Data.Count);
             int mutationSize = Utils.SampleGeometric(1.0f / meanMutationSize, random.NextDouble());
-            for (int i = 0; i < offset + mutationSize; i++)
+            for (int i = offset; i < offset + mutationSize; i++)
             {
                 if (i >= newChoices.Data.Count)
                 {

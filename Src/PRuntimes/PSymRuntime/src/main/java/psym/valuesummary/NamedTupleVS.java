@@ -201,6 +201,9 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     final List<TupleVS> tuples = new ArrayList<TupleVS>();
 
     for (NamedTupleVS summary : summaries) {
+      if (summary == null) {
+        continue;
+      }
       if (!Arrays.equals(getNames(), summary.getNames())) {
         throw new RuntimeException("Merging named tuples with different fields is unsupported.");
       }

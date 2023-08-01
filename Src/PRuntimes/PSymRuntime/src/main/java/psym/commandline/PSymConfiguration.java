@@ -84,7 +84,7 @@ public class PSymConfiguration implements Serializable {
   @Getter @Setter boolean writeToFile = false;
 
   public boolean isSymbolic() {
-    return (strategy.equals("symbolic"));
+    return (strategy.startsWith("symbolic"));
   }
 
   public boolean isExplicit() {
@@ -109,18 +109,16 @@ public class PSymConfiguration implements Serializable {
   }
 
   public void setToSymbolicFixpoint() {
+    setToSymbolic();
     this.setStrategy("symbolic-fixpoint");
     this.setStateCachingMode(StateCachingMode.Symbolic);
-    this.setUseBacktrack(false);
-    this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
-    this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
   }
 
   public void setToSymbolicIterative() {
+    setToSymbolic();
     this.setStrategy("symbolic-iterative");
     this.setSchChoiceBound(2);
     this.setDataChoiceBound(2);
-    this.setStateCachingMode(StateCachingMode.None);
     this.setUseBacktrack(true);
     this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
     this.setTaskOrchestration(TaskOrchestrationMode.Random);

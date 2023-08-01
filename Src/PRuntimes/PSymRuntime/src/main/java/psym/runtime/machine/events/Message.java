@@ -295,11 +295,11 @@ public class Message implements ValueSummary<Message> {
     StringBuilder out = new StringBuilder();
     out.append("{");
     int i = 0;
+    out.append(getTarget()).append(" -> ");
     for (GuardedValue<Event> event : getEvent().getGuardedValues()) {
       out.append(event.getValue());
       out.append(" @ ");
       out.append(event.getGuard());
-      // str += " -> " + getMachine().guard(name.guard);
       if (payload.size() > 0 && payload.containsKey(event.getValue())) {
         out.append(": ");
         out.append(payload.get(event.getValue()));

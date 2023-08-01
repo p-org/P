@@ -111,7 +111,7 @@ public class PSymConfiguration implements Serializable {
   private void setToExplicit() {
     this.setSchChoiceBound(1);
     this.setDataChoiceBound(1);
-    this.setStateCachingMode(StateCachingMode.Fast);
+    this.setStateCachingMode(StateCachingMode.ExplicitFast);
     this.setUseBacktrack(true);
   }
 

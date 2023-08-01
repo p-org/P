@@ -36,7 +36,7 @@ machine Client {
     state Run {
         on eClientRun do {
             var i: int;
-            var _eRequestPayload: (id: int, client: Client);
+            var _eRequestPayload: (id: int, client: Client, isRetry: bool);
             var nRequests: int;
             if (time == maxTime + 1) {
                 send server, halt;
@@ -50,6 +50,7 @@ machine Client {
                         nTotal = nTotal + 1.0;
                         _eRequestPayload.id = waitingIds[i];
                         _eRequestPayload.client = this;
+                        _eRequestPayload.isRetry = true;
                         send server, eRequest, _eRequestPayload;
                         retryCounts[waitingIds[i]] = retryCounts[waitingIds[i]] + 1;
                     }
@@ -65,6 +66,7 @@ machine Client {
                 while (i < nRequests) {
                     _eRequestPayload.id = currentRequestId;
                     _eRequestPayload.client = this;
+                    _eRequestPayload.isRetry = false;
                     send server, eRequest, _eRequestPayload;
                     waitingIds += (currentRequestId);
                     retryCounts[currentRequestId] = 0;

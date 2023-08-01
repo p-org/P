@@ -4,5 +4,6 @@ maxTime = 100;
 nServerFails = 0;
 kClientAmplification = 2;
 nRetries = 4;
+retryRateThreshold = 0.0;
 serverFailOffset = 0;
 clientAmplificationOffset = 20;

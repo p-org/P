@@ -32,7 +32,7 @@ machine Server {
     }
     state Run {
         defer eServerRun;
-        on eRequest do (payload: (id: int, client: Client)) {
+        on eRequest do (payload: (id: int, client: Client, isRetry: bool)) {
             var _eResponsePayload: (id: int);
             if (!(payload.id in servedRequestIds)) {
                 _eResponsePayload.id = payload.id;

@@ -15,15 +15,15 @@ machine TestCase {
             var _ServerPayload: (maxQPS: int, nServerFails: int, serverFailOffset: int);
             var _ClientPayload: (maxQPS: int, server: Server, maxTime: int, kClientAmplification: int, clientAmplificationOffset: int, nRetries: int, retryRateThreshold: float);
 
-            request_qps = 10;
+            request_qps = 5;
             response_qps = 10;
             maxTime = 100;
-            nServerFails = 0;
-            kClientAmplification = 4;
-            nRetries = -2;
-            retryRateThreshold = 0.5;
-            serverFailOffset = 0;
-            clientAmplificationOffset = 20;
+            nServerFails = 10;
+            kClientAmplification = 1;
+            nRetries = 0;
+            retryRateThreshold = 0.0;
+            serverFailOffset = 20;
+            clientAmplificationOffset = 0;
 
             _ServerPayload.maxQPS = response_qps;
             _ServerPayload.nServerFails = nServerFails;

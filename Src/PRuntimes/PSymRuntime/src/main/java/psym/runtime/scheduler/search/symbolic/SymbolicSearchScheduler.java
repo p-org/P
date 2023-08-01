@@ -20,6 +20,7 @@ import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.statistics.CoverageStats;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
+import psym.utils.Assert;
 import psym.utils.monitor.MemoryMonitor;
 import psym.utils.monitor.TimeMonitor;
 import psym.valuesummary.Guard;
@@ -54,7 +55,8 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     int numMessagesExplored = 0;
     int numStates = 0;
 
-    if (PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Symbolic) {
+    if (PSymGlobal.getConfiguration().isIterative()
+            && PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Symbolic) {
       ProtocolState srcProtocolState = new ProtocolState(currentMachines);
       for (int i = depth; i >= 0; i--) {
         ProtocolState cachedProtocolState = depthToCachedProtocolState.get(i);
@@ -62,7 +64,10 @@ public class SymbolicSearchScheduler extends SearchScheduler {
           Guard areEqual = srcProtocolState.symbolicEquals(cachedProtocolState);
           if (!areEqual.isFalse()) {
             done = done.or(areEqual);
-            allMachinesHalted = allMachinesHalted.or(done);
+            if (done.isTrue()) {
+              terminalLivenessEnabled = false;
+              return;
+            }
 //            break;
           }
         }
@@ -138,7 +143,8 @@ public class SymbolicSearchScheduler extends SearchScheduler {
       depth++;
     }
 
-    if (PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Symbolic) {
+    if (PSymGlobal.getConfiguration().isIterative()
+            && PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Symbolic) {
       Message effectNew = effect.restrict(done.not());
       if (effectNew.isEmptyVS()) {
         return;

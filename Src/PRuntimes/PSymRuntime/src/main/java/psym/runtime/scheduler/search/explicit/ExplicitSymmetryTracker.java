@@ -239,8 +239,10 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
     }
   }
 
-  private boolean haveSymEqLocalState(Machine m1, Machine m2) {
+  private boolean haveSymEqLocalState(Machine m1, Machine m2, Set<Machine> otherMachines) {
     assert (m1 != m2);
+    otherMachines.remove(m1);
+    otherMachines.remove(m2);
 
     List<ValueSummary> m1State = m1.getMachineLocalState().getLocals();
     List<ValueSummary> m2State = m2.getMachineLocalState().getLocals();
@@ -256,20 +258,49 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
         return false;
       }
     }
+
+    Map<String, Object> m1SymData = machineToSymData.get(m1);
+    if (m1SymData != null) {
+      Map<String, Object> m2SymData = machineToSymData.get(m2);
+      if (m2SymData != null) {
+        for (String fieldName : m1SymData.keySet()) {
+              Object m1Object = m1SymData.get(fieldName);
+              if (m1Object != null && m1Object instanceof Machine) {
+                Machine m1Dep = (Machine) m1Object;
+                Object m2Object = m2SymData.get(fieldName);
+                if (m2Object != null && m2Object instanceof Machine) {
+                  Machine m2Dep = (Machine) m2Object;
+                  if (m1Dep != m2Dep) {
+                    if (!haveSymEqLocalState(m1Dep, m2Dep, otherMachines)) {
+                        return false;
+                    }
+                  }
+              }
+          }
+        }
+      }
+    }
+
     return true;
   }
 
   private boolean isSymEquiv(Machine m1, Machine m2) {
     assert (m1 != m2);
 
-    if (!haveSymEqLocalState(m1, m2)) {
+    Set<Machine> otherMachines = new HashSet<>();
+    for (Machine m : scheduler.getMachines()) {
+      if (m instanceof Monitor) {
+        continue;
+      }
+      otherMachines.add(m);
+    }
+
+    if (!haveSymEqLocalState(m1, m2, otherMachines)) {
       return false;
     }
 
-    for (Machine other : scheduler.getMachines()) {
-      if (other == m1 || other == m2 || other instanceof Monitor) {
-        continue;
-      }
+    for (Machine other : otherMachines) {
+      assert (other != m1 && other != m2 && !(other instanceof Monitor));
       for (ValueSummary original : other.getMachineLocalState().getLocals()) {
         ValueSummary permuted = original.swap(m1, m2);
         if (original.isEmptyVS() && permuted.isEmptyVS()) {

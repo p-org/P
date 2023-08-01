@@ -65,7 +65,7 @@ namespace Plang.Compiler.Backend.CSharp
             }
 
             // compile the csproj file
-            var args = new[] { "build -c Release", csprojName };
+            var args = new[] { "build --no-incremental -c Release", csprojName };
 
             var exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "dotnet", args);
             if (exitCode != 0)

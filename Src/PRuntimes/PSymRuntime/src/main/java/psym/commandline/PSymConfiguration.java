@@ -55,7 +55,7 @@ public class PSymConfiguration implements Serializable {
   // whether or not to allow sync events
   @Getter @Setter boolean allowSyncEvents = true;
   // mode of state hashing
-  @Getter @Setter StateCachingMode stateCachingMode = StateCachingMode.Symbolic;
+  @Getter @Setter StateCachingMode stateCachingMode = StateCachingMode.None;
   // symmetry mode
   @Getter @Setter SymmetryMode symmetryMode = SymmetryMode.None;
   // use backtracking
@@ -102,10 +102,28 @@ public class PSymConfiguration implements Serializable {
 
   public void setToSymbolic() {
     this.setStrategy("symbolic");
+    this.setStateCachingMode(StateCachingMode.None);
+    this.setUseBacktrack(false);
+    this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
+    this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
+  }
+
+  public void setToSymbolicFixpoint() {
+    this.setStrategy("symbolic-fixpoint");
     this.setStateCachingMode(StateCachingMode.Symbolic);
     this.setUseBacktrack(false);
     this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
     this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
+  }
+
+  public void setToSymbolicIterative() {
+    this.setStrategy("symbolic-iterative");
+    this.setSchChoiceBound(2);
+    this.setDataChoiceBound(2);
+    this.setStateCachingMode(StateCachingMode.None);
+    this.setUseBacktrack(true);
+    this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
+    this.setTaskOrchestration(TaskOrchestrationMode.Random);
   }
 
   private void setToExplicit() {

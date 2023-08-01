@@ -214,7 +214,7 @@ public class PSymOptions {
     Option stateCaching =
         Option.builder()
             .longOpt("state-caching")
-            .desc("State caching mode: none, symbolic, exact, fast (default: symbolic/fast)")
+            .desc("State caching mode: none, symbolic, exact, fast (default: auto)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Caching Mode (string)")

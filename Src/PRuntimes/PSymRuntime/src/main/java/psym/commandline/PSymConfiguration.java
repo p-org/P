@@ -55,7 +55,7 @@ public class PSymConfiguration implements Serializable {
   // whether or not to allow sync events
   @Getter @Setter boolean allowSyncEvents = true;
   // mode of state hashing
-  @Getter @Setter StateCachingMode stateCachingMode = StateCachingMode.Symbolic;
+  @Getter @Setter StateCachingMode stateCachingMode = StateCachingMode.None;
   // symmetry mode
   @Getter @Setter SymmetryMode symmetryMode = SymmetryMode.None;
   // use backtracking
@@ -102,7 +102,7 @@ public class PSymConfiguration implements Serializable {
 
   public void setToSymbolic() {
     this.setStrategy("symbolic");
-    this.setStateCachingMode(StateCachingMode.Symbolic);
+    this.setStateCachingMode(StateCachingMode.None);
     this.setUseBacktrack(false);
     this.setChoiceOrchestration(ChoiceOrchestrationMode.None);
     this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);

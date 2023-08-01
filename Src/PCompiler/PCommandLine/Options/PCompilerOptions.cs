@@ -39,8 +39,8 @@ namespace Plang.Options
             pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
 
-            var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve). (default: bugfinding)");
-            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
+            var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately). (default: bugfinding)");
+            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "stately" };
             modes.IsHidden = true;
         }
 
@@ -163,6 +163,7 @@ namespace Plang.Options
                             "verification" => CompilerOutput.Symbolic,
                             "coverage" => CompilerOutput.Symbolic,
                             "pobserve" => CompilerOutput.Java,
+                            "stately" => CompilerOutput.Stately,
                             _ => compilerConfiguration.OutputLanguage
                         };
                         compilerConfiguration.Backend = TargetLanguage.GetCodeGenerator(compilerConfiguration.OutputLanguage);

@@ -33,6 +33,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     private int _currentInputIndex = 0;
 
     private bool _matched = false;
+    private readonly bool _savePartialMatch;
 
     public int CurrentInputIndex()
     {
@@ -54,6 +55,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
             _maxScheduledSteps = checkerConfiguration.MaxFairSchedulingSteps;
         }
         Generator = new StrategyGenerator(input, schedule);
+        _savePartialMatch = checkerConfiguration.SavePartialMatch;
     }
 
     /// <inheritdoc/>
@@ -124,8 +126,6 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         ScheduledSteps = 0;
     }
 
-    public List<string> LastSavedSchedule = new();
-
     /// <summary>
     /// This method observes the results of previous run and prepare for the next run.
     /// </summary>
@@ -143,7 +143,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         else
         {
             int state = patternObserver.ShouldSave();
-            if (_matched)
+            if (_matched || !_savePartialMatch)
             {
                 if (state == -1)
                 {
@@ -218,10 +218,5 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     public int GetAllCoveredStates()
     {
         return _visitedStates;
-    }
-
-    public List<string> GetLastSavedScheduling()
-    {
-        return LastSavedSchedule;
     }
 }

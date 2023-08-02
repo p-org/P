@@ -295,6 +295,12 @@ namespace PChecker
         public string JvmArgs;
 
         /// <summary>
+        /// Save input if the pattern are partially matched.
+        /// </summary>
+        [DataMember]
+        public bool SavePartialMatch;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="CheckerConfiguration"/> class.
         /// </summary>
         protected CheckerConfiguration()
@@ -313,7 +319,7 @@ namespace PChecker
             RandomGeneratorSeed = null;
             IncrementalSchedulingSeed = false;
             PerformFullExploration = false;
-            MaxFairSchedulingSteps = 100000; // 10 times the unfair steps
+            MaxFairSchedulingSteps = 10000; // 10 times the unfair steps
             MaxUnfairSchedulingSteps = 10000;
             UserExplicitlySetMaxFairSchedulingSteps = false;
             TestingSchedulerEndPoint = "CoyoteTestScheduler.4723bb92-c413-4ecb-8e8a-22eb2ba22234";
@@ -342,6 +348,7 @@ namespace PChecker
             
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
+            SavePartialMatch = true;
 
             PSymArgs = "";
             JvmArgs = "";

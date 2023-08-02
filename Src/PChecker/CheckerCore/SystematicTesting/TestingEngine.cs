@@ -611,12 +611,14 @@ namespace PChecker.SystematicTesting
                     Console.SetError(stdErr);
                 }
 
+
                 if (ShouldPrintIteration(iteration))
                 {
                     var seconds = watch.Elapsed.TotalSeconds;
                     Logger.WriteLine($"Elapsed: {seconds}, " +
                                      $"# timelines: {TestReport.ExploredTimelines.Count}, " +
-                                     $"# valid schedules: {TestReport.ValidScheduling}.");
+                                     $"# terminated schedules: {TestReport.MaxFairStepsHitInFairTests}.");
+                    Logger.WriteLine(String.Join(";", TestReport.ValidScheduling.Select(it => $"({it.Key}, {it.Value})")));
                     if (Strategy is IFeedbackGuidedStrategy s)
                     {
                         Logger.WriteLine($"..... Current input: {s.CurrentInputIndex()}, total saved: {s.TotalSavedInputs()}");
@@ -880,23 +882,31 @@ namespace PChecker.SystematicTesting
                 report.CoverageInfo.CoverageGraph = Graph;
             }
 
-            if (_eventPatternObserver == null || _eventPatternObserver.IsMatched())
+            if (_eventPatternObserver != null)
             {
-                var coverageInfo = runtime.GetCoverageInfo();
-                report.CoverageInfo.Merge(coverageInfo);
-                TestReport.Merge(report);
+                int data = _eventPatternObserver.ShouldSave();
 
-                if (TestReport.ExploredTimelines.Add(runtime.TimelineObserver.GetTimelineHash()))
+                if (data == -1)
                 {
-                    if (_checkerConfiguration.IsVerbose)
+                    var coverageInfo = runtime.GetCoverageInfo();
+                    report.CoverageInfo.Merge(coverageInfo);
+                    TestReport.Merge(report);
+
+                    if (TestReport.ExploredTimelines.Add(runtime.TimelineObserver.GetTimelineHash()))
                     {
-                        Logger.WriteLine($"... New timeline observed: {runtime.TimelineObserver.GetTimeline()}");
+                        if (_checkerConfiguration.IsVerbose)
+                        {
+                            Logger.WriteLine($"... New timeline observed: {runtime.TimelineObserver.GetTimeline()}");
+                        }
                     }
+                    // Also save the graph snapshot of the last iteration, if there is one.
+                    Graph = coverageInfo.CoverageGraph;
                 }
 
-                TestReport.ValidScheduling += 1;
-                // Also save the graph snapshot of the last iteration, if there is one.
-                Graph = coverageInfo.CoverageGraph;
+
+                TestReport.ValidScheduling.TryAdd(data, 0);
+                TestReport.ValidScheduling[data] += 1;
+
             }
         }
 

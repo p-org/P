@@ -49,7 +49,7 @@ internal class EventPatternObserver : IActorRuntimeLog
 
     public void OnDequeueEvent(ActorId id, string stateName, Event e)
     {
-        _events.Add(new EventObj(e, _senderMap.GetValueOrDefault(e), id.Name, _events.Count));
+        _events.Add(new EventObj(e, _senderMap.GetValueOrDefault(e), id.Name, stateName, _events.Count));
     }
 
 
@@ -130,7 +130,7 @@ internal class EventPatternObserver : IActorRuntimeLog
     public void OnMonitorProcessEvent(string monitorType, string stateName, string senderName, string senderType,
         string senderStateName, Event e)
     {
-        _events.Add(new EventObj(e, senderName, null, _events.Count));
+        _events.Add(new EventObj(e, senderName, null, stateName, _events.Count));
     }
 
     public void OnMonitorRaiseEvent(string monitorType, string stateName, Event e)

@@ -142,7 +142,7 @@ public class TestCaseExecutor {
       } else if (resultCode == 2) {
         PSymTestLogger.log("      bug");
       } else if (resultCode == 3) {
-        PSymTestLogger.log("      timeout");
+        PSymTestLogger.log("      ok");
       } else if (resultCode == 4) {
         PSymTestLogger.log("      memout");
       } else {

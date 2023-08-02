@@ -15,10 +15,6 @@ namespace PImplementation
   public static partial class GlobalFunctions
   {
     static System.Random random = new System.Random();
-    public static PrtFloat Expovariate(PrtFloat lambda, PMachine pMachine)
-    {
-      return (new PrtFloat(Math.Log(1 - random.NextDouble()))/(-lambda));
-    }
     public static PrtFloat Random(PMachine pMachine)
     {
       return (new PrtFloat(random.NextDouble()));

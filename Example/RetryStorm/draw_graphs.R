@@ -8,7 +8,8 @@ height=5
 
 d=read.table("results.csv", sep=",", header=TRUE)
 # d$col=sprintf("n_server_fails=%d", d$n_server_fails)
-d$col=sprintf("k_client_amplification=%d", d$k_client_amplification)
+# d$col=sprintf("k_client_amplification=%d", d$k_client_amplification)
+d$col=sprintf("request_drop_rate=%f", d$request_drop_rate)
 
 gg = ggplot(d, aes(x=request_qps, y=success_percentage, color=col)) +
     geom_line() + geom_point() +

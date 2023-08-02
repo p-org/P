@@ -16,11 +16,11 @@ machine TestCase {
             var _ServerPayload: (maxQPS: int, nServerFails: int, serverFailOffset: int, requestDropRate: float);
             var _ClientPayload: (maxQPS: int, server: Server, maxTime: int, kClientAmplification: int, clientAmplificationOffset: int, nRetries: int, retryRateThreshold: float);
 
-            request_qps = 5;
+            request_qps = 10;
             response_qps = 10;
             maxTime = 100;
-            nServerFails = 10;
-            requestDropRate = 0.5;
+            nServerFails = 0;
+            requestDropRate = 0.4;
             kClientAmplification = 1;
             nRetries = -2;
             retryRateThreshold = 0.5;

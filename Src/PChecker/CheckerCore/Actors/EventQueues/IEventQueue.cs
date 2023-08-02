@@ -62,11 +62,17 @@ namespace PChecker.Actors.EventQueues
         /// </summary>
         void Close();
 
+        /// <summary>
+        /// This function is implemented by MockEventQueue.
+        /// </summary>
         public bool ReceiveDelayedWaitEvents()
         {
             return false;
         }
 
+        /// <summary>
+        /// This function is implemented by MockEventQueue.
+        /// </summary>
         public Event GetDelayedWaitEvent()
         {
             return null;

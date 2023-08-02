@@ -99,6 +99,9 @@ namespace PChecker.Actors
         /// </summary>
         internal bool IsDefaultHandlerAvailable { get; private set; }
 
+        /// <summary>
+        /// Returns the min timestamp that will unblock the actor.
+        /// </summary>
         internal Timestamp ScheduledDelayedTimestamp => GetScheduledDelayedTimestamp();
 
         /// <summary>
@@ -442,6 +445,11 @@ namespace PChecker.Actors
             return Inbox.Enqueue(e, opGroupId, info);
         }
 
+        /// <summary>
+        /// Returns the min timestamp that will unblock the actor. If the actor is blocked on a receive and those events
+        /// are in the queue, then min timestamp of those events is returned. Otherwise, min timestamp of events waiting
+        /// to be dequeued is returned.
+        /// </summary>
         private Timestamp GetScheduledDelayedTimestamp()
         {
             var waitEvent = Inbox.GetDelayedWaitEvent();
@@ -1116,6 +1124,10 @@ namespace PChecker.Actors
             }
         }
 
+        /// <summary>
+        /// Tries to receive events that are blocking the actor and that can be received in the current timestamp.
+        /// If such events are received, then returns true; otherwise, returns false.
+        /// </summary>
         public bool ReceiveDelayedWaitEvents()
         {
             return Inbox.ReceiveDelayedWaitEvents();

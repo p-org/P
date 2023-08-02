@@ -7,6 +7,11 @@ using PChecker.SystematicTesting;
 
 namespace PChecker.Actors.Logging;
 
+/// <summary>
+/// This class implements IActorRuntimeLog and generates log output in a CSV format with time information included.
+/// To be able to access the payload of events, PTimeLogger in CSharpRuntime inherits from this class and implements
+/// the logging methods with payload information included in the log.
+/// </summary>
 public class ActorRuntimeTimeLogCsvFormatter : IActorRuntimeLog
 {
 

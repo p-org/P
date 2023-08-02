@@ -384,6 +384,10 @@ namespace PChecker.Actors.EventQueues.Mocks
             return Task.FromResult(receivedEvent.e);
         }
 
+        /// <summary>
+        /// Tries to receive events that are blocking the actor and that can be received in the current timestamp.
+        /// If such events are received, then returns true; otherwise, returns false.
+        /// </summary>
         public bool ReceiveDelayedWaitEvents()
         {
             (Event e, Guid opGroupId, EventInfo info) receivedEvent = default;

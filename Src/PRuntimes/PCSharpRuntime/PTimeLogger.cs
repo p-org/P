@@ -2,15 +2,17 @@
 // Licensed under the MIT License.
 
 using System;
-using System.IO;
 using PChecker.Actors;
 using PChecker.Actors.Events;
 using PChecker.Actors.Logging;
 using PChecker.Actors.Timers;
-using PChecker.IO.Logging;
 
 namespace Plang.CSharpRuntime
 {
+    /// <summary>
+    /// This class implements ActorRuntimeTimeLogCsvFormatter and generates log output in a CSV format with time
+    /// and payload information included.
+    /// </summary>
     public class PTimeLogger : ActorRuntimeTimeLogCsvFormatter
     {
 

@@ -14,5 +14,9 @@ machine Main {
 }
 spec M observes E2 {
 	start state x {
+                on E2 do (payload: bool) { assert (payload == false); }
 	}
 }
+
+test DefaultImpl [main=Main]: assert M in { Main };
+

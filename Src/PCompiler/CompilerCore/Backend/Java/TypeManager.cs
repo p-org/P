@@ -270,7 +270,7 @@ namespace Plang.Compiler.Backend.Java
             {
                 internal JForeign(string clazz)
                 {
-                    _unboxedType = $"{Constants.FFITypesPackage}.{clazz}";
+                    _unboxedType = $"{clazz}";
                 }
 
                 internal override bool IsPrimitive => false;

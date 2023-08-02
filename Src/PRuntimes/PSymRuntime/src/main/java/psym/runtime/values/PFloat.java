@@ -1,29 +1,27 @@
 package psym.runtime.values;
 
 
-
 public class PFloat extends PValue<PFloat> {
     // stores the int value
     private final double value;
 
-    public double getValue() { return value; }
-
-    public PFloat(double val)
-    {
+    public PFloat(double val) {
         value = val;
     }
 
-    public PFloat(Object val)
-    {
+    public PFloat(Object val) {
         if (val instanceof PFloat)
             value = ((PFloat) val).value;
         else
             value = (double) val;
     }
 
-    public PFloat(PFloat val)
-    {
+    public PFloat(PFloat val) {
         value = val.value;
+    }
+
+    public double getValue() {
+        return value;
     }
 
     @Override
@@ -43,7 +41,7 @@ public class PFloat extends PValue<PFloat> {
         else if (!(obj instanceof PFloat)) {
             return false;
         }
-        return this.value == ((PFloat)obj).value;
+        return this.value == ((PFloat) obj).value;
     }
 
     @Override

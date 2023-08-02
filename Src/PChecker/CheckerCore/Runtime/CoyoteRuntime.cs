@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using PChecker.Actors.Events;
 using PChecker.Exceptions;
 using PChecker.Random;
-using PChecker.Specifications.Monitors;
 using Monitor = PChecker.Specifications.Monitors.Monitor;
 
 namespace PChecker.Runtime

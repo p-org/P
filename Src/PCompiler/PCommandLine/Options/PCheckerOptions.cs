@@ -58,8 +58,8 @@ namespace Plang.Options
             schedulingGroup.AddArgument("sch-pct", null, "Choose the PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
             schedulingGroup.AddArgument("sch-fairpct", null, "Choose the fair PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
             schedulingGroup.AddArgument("sch-rl", null, "Choose the reinforcement learning (RL) scheduling strategy", typeof(bool)).IsHidden = true;
-            var schCoverage = schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for explicit-state search in coverage mode (options: random, dfs, learn). (default: learn)");
-            schCoverage.AllowedValues = new List<string>() { "random", "dfs", "learn" };
+            var schCoverage = schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for coverage mode (options: learn, random, dfs, stateless). (default: learn)");
+            schCoverage.AllowedValues = new List<string>() { "learn", "random", "dfs", "stateless" };
             schCoverage.IsHidden = true;
 
             var replayOptions = Parser.GetOrCreateGroup("replay", "Replay and debug options");
@@ -95,6 +95,7 @@ namespace Plang.Options
                 FindLocalPCompiledFile(configuration);
 
                 SanitizeConfiguration(configuration);
+                
             }
             catch (CommandLineException ex)
             {
@@ -126,7 +127,7 @@ namespace Plang.Options
             switch (option.LongName)
             {
                 case "outdir":
-                    checkerConfiguration.OutputFilePath = (string)option.Value;
+                    checkerConfiguration.OutputPath = (string)option.Value;
                     break;
                 case "verbose":
                     checkerConfiguration.IsVerbose = true;
@@ -137,6 +138,10 @@ namespace Plang.Options
                     break;
                 case "timeout":
                     checkerConfiguration.Timeout = (int)(uint)option.Value;
+                    if (checkerConfiguration.TestingIterations == 1)
+                    {
+                        checkerConfiguration.TestingIterations = 0;
+                    }
                     break;
                 case "memout":
                     checkerConfiguration.MemoryLimit = (double)option.Value;
@@ -280,17 +285,21 @@ namespace Plang.Options
                 checkerConfiguration.SchedulingStrategy != "fairpct" &&
                 checkerConfiguration.SchedulingStrategy != "probabilistic" &&
                 checkerConfiguration.SchedulingStrategy != "rl" &&
-                checkerConfiguration.SchedulingStrategy != "dfs" &&
                 checkerConfiguration.SchedulingStrategy != "replay" &&
-                checkerConfiguration.SchedulingStrategy != "learn")
+                checkerConfiguration.SchedulingStrategy != "learn" &&
+                checkerConfiguration.SchedulingStrategy != "dfs" &&
+                checkerConfiguration.SchedulingStrategy != "stateless")
             {
                 Error.CheckerReportAndExit("Please provide a scheduling strategy (see --sch* options)");
             }
 
             if (checkerConfiguration.MaxFairSchedulingSteps < checkerConfiguration.MaxUnfairSchedulingSteps)
             {
-                Error.CheckerReportAndExit("For the option '-max-steps N[,M]', please make sure that M >= N.");
+                Error.CheckerReportAndExit("For the option '--max-steps N[,M]', please make sure that M >= N.");
             }
+            
+            // the output directory correctly
+            checkerConfiguration.SetOutputDirectory();
         }
         
 

@@ -13,7 +13,6 @@ using PChecker.Actors.Events;
 using PChecker.Actors.Exceptions;
 using PChecker.Actors.Handlers;
 using PChecker.Actors.StateTransitions;
-using PChecker.Actors.Timers;
 using PChecker.Exceptions;
 
 namespace PChecker.Actors
@@ -124,8 +123,8 @@ namespace PChecker.Actors
         /// This event is not handled until the action that calls this method returns control back
         /// to the runtime.  It is handled before any other events are dequeued from the inbox.
         /// Only one of the following can be called per action:
-        /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
-        /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
+        /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/> or
+        /// <see cref="RaiseHaltEvent"/>.
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
         /// </remarks>
         /// <param name="e">The event to raise.</param>
@@ -151,8 +150,8 @@ namespace PChecker.Actors
         /// This event is not handled until the action that calls this method returns control back
         /// to the runtime.  It is handled before any other events are dequeued from the inbox.
         /// Only one of the following can be called per action:
-        /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
-        /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
+        /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/> or
+        /// <see cref="RaiseHaltEvent"/>.
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
         /// </remarks>
         /// <typeparam name="S">Type of the state.</typeparam>
@@ -174,8 +173,7 @@ namespace PChecker.Actors
         /// This event is not handled until the action that calls this method returns control back
         /// to the runtime.  It is handled before any other events are dequeued from the inbox.
         /// Only one of the following can be called per action:
-        /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
-        /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
+        /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/> <see cref="RaiseHaltEvent"/>.
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
         /// </remarks>
         /// <param name="state">Type of the state.</param>
@@ -189,80 +187,6 @@ namespace PChecker.Actors
         }
 
         /// <summary>
-        /// Raise a special event that performs a push state operation at the end of the current action.
-        /// </summary>
-        /// <remarks>
-        /// Pushing a state does not pop the current <see cref="State"/>, instead it pushes the specified <see cref="State"/> on the active state stack
-        /// so that you can have multiple active states.  In this case events can be handled by all active states on the stack.
-        /// This is shorthand for the following code:
-        /// <code>
-        /// class Event E { }
-        /// [OnEventPushState(typeof(E), typeof(S))]
-        /// this.RaiseEvent(new E());
-        /// </code>
-        /// This event is not handled until the action that calls this method returns control back
-        /// to the runtime.  It is handled before any other events are dequeued from the inbox.
-        /// Only one of the following can be called per action:
-        /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
-        /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
-        /// An Assert is raised if you accidentally try and do two of these operations in a single action.
-        /// </remarks>
-        /// <typeparam name="S">Type of the state.</typeparam>
-        protected void RaisePushStateEvent<S>()
-            where S : State =>
-            RaisePushStateEvent(typeof(S));
-
-        /// <summary>
-        /// Raise a special event that performs a push state operation at the end of the current action.
-        /// </summary>
-        /// <remarks>
-        /// Pushing a state does not pop the current <see cref="State"/>, instead it pushes the specified <see cref="State"/> on the active state stack
-        /// so that you can have multiple active states.  In this case events can be handled by all active states on the stack.
-        /// This is shorthand for the following code:
-        /// <code>
-        /// class Event E { }
-        /// [OnEventPushState(typeof(E), typeof(S))]
-        /// this.RaiseEvent(new E());
-        /// </code>
-        /// This event is not handled until the action that calls this method returns control back
-        /// to the runtime.  It is handled before any other events are dequeued from the inbox.
-        /// Only one of the following can be called per action:
-        /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
-        /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
-        /// An Assert is raised if you accidentally try and do two of these operations in a single action.
-        /// </remarks>
-        /// <param name="state">Type of the state.</param>
-        protected void RaisePushStateEvent(Type state)
-        {
-            Assert(CurrentStatus is Status.Active, "{0} invoked PushState while halting.", Id);
-            Assert(StateTypeCache[GetType()].Any(val => val.DeclaringType.Equals(state.DeclaringType) && val.Name.Equals(state.Name)),
-                "{0} is trying to transition to non-existing state '{1}'.", Id, state.Name);
-            CheckDanglingTransition();
-            PendingTransition = new Transition(Transition.Type.PushState, state, default);
-        }
-
-        /// <summary>
-        /// Raise a special event that performs a pop state operation at the end of the current action.
-        /// </summary>
-        /// <remarks>
-        /// Popping a state pops the current <see cref="State"/> that was pushed using <see cref='RaisePushStateEvent'/> or an OnEventPushStateAttribute.
-        /// An assert is raised if there are no states left to pop.
-        /// This event is not handled until the action that calls this method returns control back
-        /// to the runtime.  It is handled before any other events are dequeued from the inbox.
-        ///
-        /// Only one of the following can be called per action:
-        /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
-        /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
-        /// An Assert is raised if you accidentally try and do two of these operations in a single action.
-        /// </remarks>
-        protected void RaisePopStateEvent()
-        {
-            Assert(CurrentStatus is Status.Active, "{0} invoked PopState while halting.", Id);
-            CheckDanglingTransition();
-            PendingTransition = new Transition(Transition.Type.PopState, null, default);
-        }
-
-        /// <summary>
         /// Raises a <see cref='HaltEvent'/> to halt the actor at the end of the current action.
         /// </summary>
         /// <remarks>
@@ -270,8 +194,7 @@ namespace PChecker.Actors
         /// to the runtime.  It is handled before any other events are dequeued from the inbox.
         ///
         /// Only one of the following can be called per action:
-        /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/>,  <see cref="RaisePushStateEvent{T}"/> or
-        /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
+        /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/> and <see cref="RaiseHaltEvent"/>.
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
         /// </remarks>
         protected override void RaiseHaltEvent()
@@ -326,10 +249,6 @@ namespace PChecker.Actors
                 if (e is GotoStateEvent gotoStateEvent)
                 {
                     await GotoStateAsync(gotoStateEvent.State, null, e);
-                }
-                else if (e is PushStateEvent pushStateEvent)
-                {
-                    await PushStateAsync(pushStateEvent.State, e);
                 }
                 else if (EventHandlerMap.ContainsKey(e.GetType()))
                 {
@@ -471,7 +390,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Applies the specified event handler transition.
         /// </summary>
-        private async Task ApplyEventHandlerTransitionAsync(Transition transition, Event e)
+        private Task ApplyEventHandlerTransitionAsync(Transition transition, Event e)
         {
             if (transition.TypeValue != PendingTransition.TypeValue && PendingTransition.TypeValue != Transition.Type.None)
             {
@@ -487,26 +406,6 @@ namespace PChecker.Actors
                 PendingTransition = default;
                 Inbox.RaiseEvent(new GotoStateEvent(transition.State), OperationGroupId);
             }
-            else if (transition.TypeValue is Transition.Type.PushState)
-            {
-                PendingTransition = default;
-                Inbox.RaiseEvent(new PushStateEvent(transition.State), OperationGroupId);
-            }
-            else if (transition.TypeValue is Transition.Type.PopState)
-            {
-                PendingTransition = default;
-                var prevStateName = CurrentStateName;
-                Runtime.NotifyPopState(this);
-
-                // The state machine performs the on exit action of the current state.
-                await ExecuteCurrentStateOnExitAsync(null, e);
-                if (CurrentStatus is Status.Active)
-                {
-                    DoStatePop();
-                    Runtime.LogWriter.LogPopState(Id, prevStateName, CurrentStateName);
-                    Assert(CurrentState != null, "{0} popped its state with no matching push state.", Id);
-                }
-            }
             else if (transition.TypeValue is Transition.Type.Halt)
             {
                 // If it is the halt transition, then change the actor status to halting.
@@ -517,6 +416,8 @@ namespace PChecker.Actors
             {
                 PendingTransition = default;
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -578,7 +479,6 @@ namespace PChecker.Actors
         /// </summary>
         private async Task PushStateAsync(Type s, Event e)
         {
-            Runtime.LogWriter.LogPushState(Id, CurrentStateName, s.FullName);
 
             var nextState = StateInstanceCache[GetType()].First(val => val.GetType().Equals(s));
             DoStatePush(nextState);
@@ -707,12 +607,6 @@ namespace PChecker.Actors
         /// </summary>
         internal bool IsEventIgnoredInCurrentState(Event e)
         {
-            if (e is TimerElapsedEvent timeoutEvent && !Timers.ContainsKey(timeoutEvent.Info))
-            {
-                // The timer that created this timeout event is not active.
-                return true;
-            }
-
             var eventType = e.GetType();
 
             // If a non-inheritable transition is defined, then the event is not ignored
@@ -1056,8 +950,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Defines the <see cref="StateMachine"/> transition that is the
         /// result of executing an event handler.  Transitions are created by using
-        /// <see cref="RaiseGotoStateEvent{T}"/>, <see cref="RaiseEvent"/>, <see cref="RaisePushStateEvent{T}"/> or
-        /// <see cref="RaisePopStateEvent"/> and <see cref="RaiseHaltEvent"/>.
+        /// <see cref="RaiseGotoStateEvent{T}"/>, <see cref="RaiseEvent"/> and <see cref="RaiseHaltEvent"/>.
         /// The Transition is processed by the Coyote runtime when
         /// an event handling method of a StateMachine returns a Transition object.
         /// This means such a method can only do one such Transition per method call.
@@ -1125,18 +1018,6 @@ namespace PChecker.Actors
                 /// stack of <see cref="StateMachine"/> states.
                 /// </summary>
                 GotoState,
-
-                /// <summary>
-                /// A transition created by <see cref="RaisePushStateEvent{S}"/> that pushes the specified <see cref="StateMachine.State"/>
-                /// on the stack of <see cref="StateMachine"/> states.
-                /// </summary>
-                PushState,
-
-                /// <summary>
-                /// A transition created by <see cref="RaisePopStateEvent"/> that pops the current <see cref="StateMachine.State"/>
-                /// from the stack of <see cref="StateMachine"/> states.
-                /// </summary>
-                PopState,
 
                 /// <summary>
                 /// A transition created by <see cref="RaiseHaltEvent"/> that halts the <see cref="StateMachine"/>.

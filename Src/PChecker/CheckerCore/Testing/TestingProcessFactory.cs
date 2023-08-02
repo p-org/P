@@ -113,14 +113,19 @@ namespace PChecker.Testing
                 arguments.Append("--xml-trace ");
             }
 
+            if (checkerConfiguration.IsJsonLogEnabled)
+            {
+                arguments.Append("--json-trace ");
+            }
+
             if (!string.IsNullOrEmpty(checkerConfiguration.CustomActorRuntimeLogType))
             {
                 arguments.Append($"--actor-runtime-log {checkerConfiguration.CustomActorRuntimeLogType} ");
             }
 
-            if (checkerConfiguration.OutputFilePath.Length > 0)
+            if (checkerConfiguration.OutputPath.Length > 0)
             {
-                arguments.Append($"--outdir {checkerConfiguration.OutputFilePath} ");
+                arguments.Append($"--outdir {checkerConfiguration.OutputPath} ");
             }
 
             arguments.Append("--run-as-parallel-testing-task ");

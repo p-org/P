@@ -6,21 +6,21 @@ namespace Plang.Compiler.TypeChecker
 {
     public class FunctionBodyVisitor : PParserBaseVisitor<object>
     {
-        private readonly ITranslationErrorHandler handler;
+        private readonly ICompilerConfiguration config;
         private readonly Machine machine;
         private readonly Function method;
 
-        private FunctionBodyVisitor(ITranslationErrorHandler handler, Machine machine, Function method)
+        private FunctionBodyVisitor(ICompilerConfiguration config, Machine machine, Function method)
         {
-            this.handler = handler;
+            this.config = config;
             this.machine = machine;
             this.method = method;
         }
 
-        public static void PopulateMethod(ITranslationErrorHandler handler, Function fun)
+        public static void PopulateMethod(ICompilerConfiguration config, Function fun)
         {
             Contract.Requires(fun.Body == null);
-            var visitor = new FunctionBodyVisitor(handler, fun.Owner, fun);
+            var visitor = new FunctionBodyVisitor(config, fun.Owner, fun);
             visitor.Visit(fun.SourceLocation);
         }
 
@@ -55,7 +55,7 @@ namespace Plang.Compiler.TypeChecker
             }
 
             // Build the statement trees
-            var statementVisitor = new StatementVisitor(handler, machine, method);
+            var statementVisitor = new StatementVisitor(config, machine, method);
             method.Body = (CompoundStmt)statementVisitor.Visit(context);
             return null;
         }
@@ -65,7 +65,7 @@ namespace Plang.Compiler.TypeChecker
             foreach (var varName in context.idenList()._names)
             {
                 var variable = method.Scope.Put(varName.GetText(), varName, VariableRole.Local);
-                variable.Type = TypeResolver.ResolveType(context.type(), method.Scope, handler);
+                variable.Type = TypeResolver.ResolveType(context.type(), method.Scope, config.Handler);
                 method.AddLocalVariable(variable);
             }
 

@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PChecker.Actors;
 using PChecker.Actors.Events;
 
 namespace PChecker.Coverage
@@ -33,7 +32,6 @@ namespace PChecker.Coverage
         {
             CoverageInfo = coverageInfo;
             BuiltInEvents.Add(typeof(GotoStateEvent).FullName);
-            BuiltInEvents.Add(typeof(PushStateEvent).FullName);
             BuiltInEvents.Add(typeof(DefaultEvent).FullName);
         }
 

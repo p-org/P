@@ -47,7 +47,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>psym.commandline.PSym</mainClass>
+                            <mainClass>psym.PSym</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
@@ -62,7 +62,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         <dependency>
             <groupId>io.github.p-org</groupId>
             <artifactId>psym</artifactId>
-            <version>[1.0.4,)</version>
+            <version>[1.0.10,)</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->

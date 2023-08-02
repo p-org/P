@@ -31,7 +31,7 @@ namespace Plang.Compiler.Backend.Java
     internal class FFIStubGenerator : JavaSourceGenerator
     {
 
-        internal FFIStubGenerator(string filename) : base(filename)
+        internal FFIStubGenerator(ICompilerConfiguration job, string filename) : base(job, filename)
         {
         }
 
@@ -155,7 +155,7 @@ namespace Plang.Compiler.Backend.Java
             WriteFFITypesHeader(t.CanonicalRepresentation);
             WriteLine();
 
-            WriteLine($"package {Constants.FFITypesPackage};");
+            WriteLine($"package {PackageName};");
             WriteLine();
 
             var cname = t.CanonicalRepresentation;
@@ -210,11 +210,10 @@ namespace Plang.Compiler.Backend.Java
             WriteFFIHeader(Constants.FFIGlobalScopeCname);
             WriteLine();
 
-            WriteLine($"package {Constants.FFIPackage};");
+            WriteLine($"package {PackageName};");
             WriteLine();
 
             WriteLine("import prt.exceptions.*;");
-            WriteLine($"import {Constants.PGeneratedNamespaceName}.*;");
 
             // The foreign types we need to import are the ones occuring in the signature of
             // a top-level foreign function.
@@ -222,7 +221,7 @@ namespace Plang.Compiler.Backend.Java
             foreach (var t in ffs.SelectMany(ExtractForeignTypesFrom))
             {
                 var toImport = Types.JavaTypeFor(t);
-                WriteLine($"import {Constants.FFITypesPackage}.{toImport.TypeName};");
+                WriteLine($"import {PackageName}.{toImport.TypeName};");
             }
             WriteLine();
 
@@ -259,19 +258,17 @@ namespace Plang.Compiler.Backend.Java
             WriteFFIHeader(mname);
             WriteLine();
 
-            WriteLine($"package {Constants.FFIPackage};");
+            WriteLine($"package {PackageName};");
             WriteLine();
 
             WriteLine("import prt.exceptions.*;");
-            WriteLine($"import {Constants.PGeneratedNamespaceName}.*;");
-            WriteLine($"import {Constants.PGeneratedNamespaceName}.{Constants.MachineNamespaceName}.{m.Name}.PrtStates;");
 
             // Import dependencies for a FFI bridge for a monitor are whatever foreign types are used
             // by foreign functions in this monitor.
             foreach (var t in ffs.SelectMany(ExtractForeignTypesFrom))
             {
                 var toImport = Types.JavaTypeFor(t);
-                WriteLine($"import {Constants.FFITypesPackage}.{toImport.TypeName};");
+                WriteLine($"import {PackageName}.{toImport.TypeName};");
             }
             WriteLine();
 
@@ -315,15 +312,18 @@ namespace Plang.Compiler.Backend.Java
                 ? "prt.Monitor<?>"
                 : $"{Constants.MachineNamespaceName}.{m.Name}");
 
+            // All foreign functions have an implicit first argument to the current machine
+            Write($"Object machine");
+
             foreach (var param in f.Signature.Parameters)
             {
                 var pname = Names.GetNameForDecl(param);
                 var ptype = Types.JavaTypeFor(param.Type);
 
-                Write($"{ptype.TypeName} {pname}");
+                Write($", {ptype.TypeName} {pname}");
             }
 
-            WriteLine(")");
+            WriteLine(") {");
             WriteLine(" /* throws RaiseEventException, TransitionException */ {");
 
             if (ret is TypeManager.JType.JVoid _)

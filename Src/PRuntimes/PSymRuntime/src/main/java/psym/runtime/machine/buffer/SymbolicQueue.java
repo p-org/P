@@ -1,77 +1,119 @@
 package psym.runtime.machine.buffer;
 
-import psym.valuesummary.Guard;
-import psym.valuesummary.ListVS;
-import psym.valuesummary.PrimitiveVS;
-import psym.valuesummary.ValueSummary;
-
 import java.io.Serializable;
+import java.util.function.Function;
+import psym.runtime.PSymGlobal;
+import psym.runtime.machine.Machine;
+import psym.runtime.machine.events.Message;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
+import psym.valuesummary.*;
 
 /**
  * Represents a event-queue implementation using value summaries
- * @param <T>
  */
-public class SymbolicQueue<T extends ValueSummary<T>> implements Serializable {
+public abstract class SymbolicQueue implements Serializable {
 
-    // elements in the queue
-    protected ListVS<T> elements;
-    private T peek = null;
+  private final Machine owner;
+  // elements in the queue
+  protected ListVS<Message> elements;
+  private Message peek = null;
 
-    public SymbolicQueue() {
-        this.elements = new ListVS<>(Guard.constTrue());
-        assert(elements.getUniverse().isTrue());
+  public SymbolicQueue(Machine m) {
+    this.elements = new ListVS<>(Guard.constTrue());
+    this.owner = m;
+    assert (elements.getUniverse().isTrue());
+  }
+
+  public void resetPeek() {
+    peek = null;
+  }
+
+  public PrimitiveVS<Integer> size() {
+    return elements.size();
+  }
+
+  public PrimitiveVS<Integer> size(Guard pc) {
+    return elements.restrict(pc).size();
+  }
+
+  public boolean isEmpty() {
+    return elements.isEmpty();
+  }
+
+  public Guard isEnabledUnderGuard() {
+    return elements.getNonEmptyUniverse();
+  }
+
+  public Message peek(Guard pc) {
+    return peekOrDequeueHelper(pc, false);
+  }
+
+  private Message peekOrDequeueHelper(Guard pc, boolean dequeue) {
+    boolean updatePeek = peek == null || !pc.implies(peek.getUniverse()).isTrue();
+    if (!dequeue && !updatePeek) {
+      return peek.restrict(pc);
     }
-
-    public void resetPeek() {
-        peek = null;
+    assert (elements.getUniverse().isTrue());
+    ListVS<Message> filtered = elements.restrict(pc);
+    PrimitiveVS<Integer> idxVs = new PrimitiveVS<>(0, pc);
+    Guard outOfRange = elements.inRange(idxVs).getGuardFor(false);
+    if (!outOfRange.isFalse()) {
+      throw new RuntimeException("Internal error: peeking into an empty queue");
     }
-
-    public PrimitiveVS<Integer> size() { return elements.size(); }
-
-    public PrimitiveVS<Integer> size(Guard pc) { return elements.restrict(pc).size(); }
-
-    public void enqueue(T entry) {
-        elements = elements.add(entry);
+    if (updatePeek) {
+      peek = filtered.get(idxVs);
     }
-
-    public boolean isEmpty() {
-        return elements.isEmpty();
+    Message ret = peek.restrict(pc);
+    if (dequeue) {
+      elements = elements.removeAt(idxVs);
+      resetPeek();
     }
+    assert (!pc.isFalse());
+    return ret;
+  }
 
-    public Guard isEnabledUnderGuard() {
-        return elements.getNonEmptyUniverse();
+  public void add(Message e) {
+    if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+      PSymGlobal.getSymmetryTracker().updateSymmetrySet(owner, e.getUniverse());
     }
+    elements = elements.add(e);
+  }
 
+  public PrimitiveVS<Boolean> satisfiesPredUnderGuard(
+          Function<Message, PrimitiveVS<Boolean>> pred) {
+    Guard cond = isEnabledUnderGuard();
+    assert (!cond.isFalse());
+    Message top = peek(cond);
+    return pred.apply(top).restrict(top.getUniverse());
+  }
 
-    public T dequeueEntry(Guard pc) {
-        return peekOrDequeueHelper(pc, true);
+  public Message remove(Guard pc) {
+    if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+      PSymGlobal.getSymmetryTracker().updateSymmetrySet(owner, pc);
     }
+    return peekOrDequeueHelper(pc, true);
+  }
 
-    public T peek(Guard pc) {
-        return peekOrDequeueHelper(pc, false);
-    }
+  public PrimitiveVS<Boolean> hasCreateMachineUnderGuard() {
+    return satisfiesPredUnderGuard(Message::isCreateMachine);
+  }
 
-    private T peekOrDequeueHelper(Guard pc, boolean dequeue) {
-        boolean updatePeek = peek == null || !pc.implies(peek.getUniverse()).isTrue();
-        if (!dequeue && !updatePeek) {
-            return peek.restrict(pc);
-        }
-        assert(elements.getUniverse().isTrue());
-        ListVS<T> filtered = elements.restrict(pc);
-        if (updatePeek) {
-            peek = filtered.get(new PrimitiveVS<>(0).restrict(pc));
-        }
-        T ret = peek.restrict(pc);
-        if (dequeue) {
-            elements = elements.removeAt(new PrimitiveVS<>(0).restrict(pc));
-            resetPeek();
-        }
-        assert(!pc.isFalse());
-        return ret;
-    }
+  public PrimitiveVS<Boolean> hasSyncEventUnderGuard() {
+    return satisfiesPredUnderGuard(Message::isSyncEvent);
+  }
 
-    @Override
-    public String toString() {
-        return String.format("EventQueue{elements=%s}", elements);
-    }
+  public ValueSummary getEvents() {
+    return this.elements;
+  }
+
+  public void setEvents(ValueSummary events) {
+    this.elements = (ListVS<Message>) events;
+    resetPeek();
+  }
+
+
+  @Override
+  public String toString() {
+    return String.format("EventQueue{elements=%s}", elements);
+  }
 }

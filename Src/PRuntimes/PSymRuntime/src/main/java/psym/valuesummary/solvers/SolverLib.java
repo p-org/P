@@ -20,7 +20,7 @@ public interface SolverLib<T> {
     String toString(T bdd);
 
     T fromString(String s);
-    
+
     int getVarCount();
 
     int getNodeCount();

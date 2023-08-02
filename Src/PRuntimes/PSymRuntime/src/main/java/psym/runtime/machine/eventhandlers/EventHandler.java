@@ -1,11 +1,10 @@
 package psym.runtime.machine.eventhandlers;
 
-import psym.runtime.Event;
+import java.io.Serializable;
 import psym.runtime.machine.Machine;
+import psym.runtime.machine.events.Event;
 import psym.valuesummary.Guard;
 import psym.valuesummary.UnionVS;
-
-import java.io.Serializable;
 
 public abstract class EventHandler implements Serializable {
     public final Event event;

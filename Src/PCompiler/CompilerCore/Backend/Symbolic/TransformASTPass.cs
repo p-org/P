@@ -640,6 +640,29 @@ namespace Plang.Compiler.Backend.Symbolic
                                  {
                                      c.Value.AddLocalVariables(function.Signature.Parameters);
                                      c.Value.AddLocalVariables(function.LocalVariables);
+
+                                     if (c.Value.Signature.Parameters.Count() != 0)
+                                     {
+                                         var caseVarMap = new Dictionary<Variable,Variable>();
+                                         foreach (var local in c.Value.Signature.Parameters)
+                                         {
+                                             var caseVar = new Variable($"{c.Key.Name}_{local.Name}", local.SourceLocation, local.Role);
+                                             caseVar.Type = local.Type;
+                                             caseVarMap.Add(local, caseVar);
+                                         }
+                                         foreach(var entry in caseVarMap)
+                                         {
+                                             c.Value.Signature.Parameters.Remove(entry.Key);
+                                             c.Value.Signature.Parameters.Add(entry.Value);
+                                         }
+                                         if (c.Value.Body != null)
+                                         {
+                                             var newCaseBody = new List<IPStmt>();
+                                             newCaseBody.Add(ReplaceVars(c.Value.Body, caseVarMap));
+                                             c.Value.Body = new CompoundStmt(c.Value.Body.SourceLocation, newCaseBody);
+                                         }
+                                     }
+
                                      if (canReceiveInCase == true && after != null)
                                      {
                                         var caseStmts = new List<IPStmt>();

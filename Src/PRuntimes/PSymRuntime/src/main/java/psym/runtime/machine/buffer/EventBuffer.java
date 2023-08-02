@@ -1,23 +1,22 @@
 package psym.runtime.machine.buffer;
 
-import psym.runtime.Event;
-import psym.runtime.scheduler.Scheduler;
+import java.util.function.Function;
 import psym.runtime.machine.Machine;
-import psym.runtime.Message;
+import psym.runtime.machine.events.Event;
+import psym.runtime.machine.events.Message;
+import psym.runtime.scheduler.Scheduler;
 import psym.valuesummary.Guard;
 import psym.valuesummary.PrimitiveVS;
 import psym.valuesummary.UnionVS;
 import psym.valuesummary.ValueSummary;
 
-import java.util.function.Function;
-
 /**
  * Represents an interface implemented by P state machine event buffer
  */
 public interface EventBuffer {
-    public void send(Guard pc, PrimitiveVS<Machine> dest, PrimitiveVS<Event> eventName, UnionVS payload);
+    void send(Guard pc, PrimitiveVS<Machine> dest, PrimitiveVS<Event> eventName, UnionVS payload);
 
-    public PrimitiveVS<Machine> create(
+    PrimitiveVS<Machine> create(
             Guard pc,
             Scheduler scheduler,
             Class<? extends Machine> machineType,
@@ -25,28 +24,30 @@ public interface EventBuffer {
             Function<Integer, ? extends Machine> constructor
     );
 
-    public PrimitiveVS<Integer> size();
+    void unblock(Message event);
+
+    PrimitiveVS<Integer> size();
 
     boolean isEmpty();
 
-    public void add(Message e);
+    void add(Message e);
 
-    public PrimitiveVS<Boolean> satisfiesPredUnderGuard(Function<Message, PrimitiveVS<Boolean>> pred);
+    PrimitiveVS<Boolean> satisfiesPredUnderGuard(Function<Message, PrimitiveVS<Boolean>> pred);
 
-    public PrimitiveVS<Boolean> hasCreateMachineUnderGuard();
+    PrimitiveVS<Boolean> hasCreateMachineUnderGuard();
 
-    public Message remove(Guard pc);
+    Message remove(Guard pc);
 
-    public Message peek(Guard pc);
+    Message peek(Guard pc);
 
-    default public PrimitiveVS<Machine> create(Guard pc, Scheduler scheduler, Class<? extends Machine> machineType,
-                                  Function<Integer, ? extends Machine> constructor) {
+    default PrimitiveVS<Machine> create(Guard pc, Scheduler scheduler, Class<? extends Machine> machineType,
+                                        Function<Integer, ? extends Machine> constructor) {
         return create(pc, scheduler, machineType, null, constructor);
     }
 
     PrimitiveVS<Boolean> hasSyncEventUnderGuard();
 
-    public ValueSummary getEvents();
+    ValueSummary getEvents();
 
-    public void setEvents(ValueSummary events);
+    void setEvents(ValueSummary events);
 }

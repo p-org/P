@@ -8,6 +8,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -76,6 +78,29 @@ namespace PChecker.SystematicTesting
         private TextWriter Logger;
 
         /// <summary>
+        /// Contains a single iteration of JSON log output in the case where the IsJsonLogEnabled
+        /// checkerConfiguration is specified.
+        /// </summary>
+        private JsonWriter JsonLogger;
+        
+        /// <summary>
+        /// Field declaration for the JsonVerboseLogs
+        /// Structure representation is a list of the JsonWriter logs.
+        /// [log iter 1, log iter 2, log iter 3, ...]
+        /// </summary>
+        private readonly List<List<LogEntry>> JsonVerboseLogs;
+
+        /// <summary>
+        /// Field declaration with default JSON serializer options
+        /// </summary>
+        private JsonSerializerOptions jsonSerializerConfig = new()
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
+        };
+        
+        /// <summary>
         /// The profiler.
         /// </summary>
         private readonly Profiler Profiler;
@@ -101,7 +126,7 @@ namespace PChecker.SystematicTesting
         /// checkerConfiguration is specified.
         /// </summary>
         private StringBuilder XmlLog;
-
+        
         /// <summary>
         /// The readable trace, if any.
         /// </summary>
@@ -215,6 +240,12 @@ namespace PChecker.SystematicTesting
             CancellationTokenSource = new CancellationTokenSource();
             PrintGuard = 1;
 
+            // Initialize a new instance of JsonVerboseLogs if running in verbose mode.
+            if (checkerConfiguration.IsVerbose)
+            {
+                JsonVerboseLogs = new List<List<LogEntry>>();
+            }
+            
             if (checkerConfiguration.SchedulingStrategy is "replay")
             {
                 var scheduleDump = GetScheduleForReplay(out var isFair);
@@ -352,7 +383,8 @@ namespace PChecker.SystematicTesting
                     TestMethodInfo.InitializeAllIterations();
 
                     var maxIterations = IsReplayModeEnabled ? 1 : _checkerConfiguration.TestingIterations;
-                    for (var i = 0; i < maxIterations; i++)
+                    int i = 0;
+                    while (maxIterations == 0 || i < maxIterations)
                     {
                         if (CancellationTokenSource.IsCancellationRequested)
                         {
@@ -375,13 +407,7 @@ namespace PChecker.SystematicTesting
                             RandomValueGenerator.Seed += 1;
                         }
 
-                        // Increases iterations if there is a specified timeout
-                        // and the default iteration given.
-                        if (_checkerConfiguration.TestingIterations == 1 &&
-                            _checkerConfiguration.Timeout > 0)
-                        {
-                            maxIterations++;
-                        }
+                        i++;
                     }
 
                     // Invokes the user-specified test disposal method.
@@ -405,6 +431,24 @@ namespace PChecker.SystematicTesting
                         ExceptionDispatchInfo.Capture(innerException).Throw();
                     }
                 }
+
+                // Output JSON verbose logs at the end of Task
+                if (_checkerConfiguration.IsVerbose)
+                {
+                    // Get the file path to output the json verbose logs file
+                    var directory = _checkerConfiguration.OutputDirectory;
+                    var file = Path.GetFileNameWithoutExtension(_checkerConfiguration.AssemblyToBeAnalyzed);
+                    file += "_" + _checkerConfiguration.TestingProcessId;
+                    var jsonVerbosePath = directory + file  + "_verbose.trace.json";
+
+                    Logger.WriteLine("... Emitting verbose logs:");
+                    Logger.WriteLine($"..... Writing {jsonVerbosePath}");
+
+                    // Stream directly to the output file while serializing the JSON
+                    using var jsonStreamFile = File.Create(jsonVerbosePath);
+                    JsonSerializer.Serialize(jsonStreamFile, JsonVerboseLogs, jsonSerializerConfig);
+                }
+                
             }, CancellationTokenSource.Token);
         }
 
@@ -441,6 +485,10 @@ namespace PChecker.SystematicTesting
                 _checkerConfiguration.CurrentIteration = iteration + 1;
                 runtime = new ControlledRuntime(_checkerConfiguration, Strategy, RandomValueGenerator);
 
+                // Always output a json log of the error
+                JsonLogger = new JsonWriter();
+                runtime.SetJsonLogger(JsonLogger);
+                    
                 // If verbosity is turned off, then intercept the program log, and also redirect
                 // the standard output and error streams to a nul logger.
                 if (!_checkerConfiguration.IsVerbose)
@@ -480,6 +528,12 @@ namespace PChecker.SystematicTesting
                     ErrorReporter.WriteErrorLine(runtime.Scheduler.BugReport);
                 }
 
+                // Only add the current iteration of JsonLogger logs to JsonVerboseLogs if in verbose mode
+                if (_checkerConfiguration.IsVerbose)
+                {
+                    JsonVerboseLogs.Add(JsonLogger.Logs);
+                }
+                
                 runtime.LogWriter.LogCompletion();
 
                 GatherTestingStatistics(runtime);
@@ -546,7 +600,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Tries to emit the testing traces, if any.
         /// </summary>
-        public IEnumerable<string> TryEmitTraces(string directory, string file)
+        public void TryEmitTraces(string directory, string file)
         {
             var index = 0;
             // Find the next available file index.
@@ -577,7 +631,6 @@ namespace PChecker.SystematicTesting
 
                     Logger.WriteLine($"..... Writing {readableTracePath}");
                     File.WriteAllText(readableTracePath, ReadableTrace);
-                    yield return readableTracePath;
                 }
             }
 
@@ -586,7 +639,16 @@ namespace PChecker.SystematicTesting
                 var xmlPath = directory + file + "_" + index + ".trace.xml";
                 Logger.WriteLine($"..... Writing {xmlPath}");
                 File.WriteAllText(xmlPath, XmlLog.ToString());
-                yield return xmlPath;
+            }
+            
+            if (_checkerConfiguration.IsJsonLogEnabled)
+            {
+                var jsonPath = directory + file + "_" + index + ".trace.json";
+                Logger.WriteLine($"..... Writing {jsonPath}");
+                
+                // Stream directly to the output file while serializing the JSON
+                using var jsonStreamFile = File.Create(jsonPath);
+                JsonSerializer.Serialize(jsonStreamFile, JsonLogger.Logs, jsonSerializerConfig);
             }
 
             if (Graph != null)
@@ -594,7 +656,6 @@ namespace PChecker.SystematicTesting
                 var graphPath = directory + file + "_" + index + ".dgml";
                 Graph.SaveDgml(graphPath, true);
                 Logger.WriteLine($"..... Writing {graphPath}");
-                yield return graphPath;
             }
 
             if (!_checkerConfiguration.PerformFullExploration)
@@ -606,7 +667,6 @@ namespace PChecker.SystematicTesting
 
                     Logger.WriteLine($"..... Writing {reproTracePath}");
                     File.WriteAllText(reproTracePath, ReproducableTrace);
-                    yield return reproTracePath;
                 }
             }
 

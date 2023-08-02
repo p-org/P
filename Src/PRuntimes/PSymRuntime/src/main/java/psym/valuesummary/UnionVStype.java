@@ -1,58 +1,64 @@
 package psym.valuesummary;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class UnionVStype implements Serializable {
-    private static HashMap<String, UnionVStype> allTypes = new HashMap<>();
+  private static final HashMap<String, UnionVStype> allTypes = new HashMap<>();
 
-    Class<? extends ValueSummary> typeClass;
-    String[] names;
+  final Class<? extends ValueSummary> typeClass;
+  final String[] names;
 
-    public static UnionVStype getUnionVStype(Class<? extends ValueSummary> tc, String[] n) {
-        UnionVStype result;
+  private UnionVStype(Class<? extends ValueSummary> tc, String[] n) {
+    typeClass = tc;
+    names = n;
+  }
 
-        String typeName = tc.toString();
-        if (n != null) {
-            typeName += String.format("[%s]", String.join(",", n));
-        }
+  public static UnionVStype getUnionVStype(Class<? extends ValueSummary> tc, String[] n) {
+    UnionVStype result;
 
-        if (!allTypes.containsKey(typeName)) {
-            result = new UnionVStype(tc, n);
-            allTypes.put(typeName, result);
-        } else {
-            result = allTypes.get(typeName);
-        }
-
-        return result;
+    String typeName = tc.toString();
+    if (n != null) {
+      typeName += String.format("[%s]", String.join(",", n));
     }
 
-    private UnionVStype(Class<? extends ValueSummary> tc, String[] n) {
-        typeClass = tc;
-        names = n;
+    if (!allTypes.containsKey(typeName)) {
+      result = new UnionVStype(tc, n);
+      allTypes.put(typeName, result);
+    } else {
+      result = allTypes.get(typeName);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof UnionVStype)) return false;
-        UnionVStype rhs = (UnionVStype) o;
-        if (names == null) {
-            return (rhs.names == null) && typeClass.equals(rhs.typeClass);
-        } else if (rhs.names == null) {
-            return (names == null) && typeClass.equals(rhs.typeClass);
-        } else {
-            return typeClass.equals(rhs.typeClass) && (names.equals(rhs.names));
-        }
-    }
+    return result;
+  }
 
-    @Override
-    public int hashCode() {
-        if (names == null) {
-            return typeClass.hashCode();
-        } else {
-            return 31 * typeClass.hashCode() + names.hashCode();
-        }
-    }
+  @Override
+  public String toString() {
+    String out = "[type: " + typeClass + ", " + "names: " + names + "]";
+    return out;
+  }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof UnionVStype)) return false;
+    UnionVStype rhs = (UnionVStype) o;
+    if (names == null) {
+      return (rhs.names == null) && typeClass.equals(rhs.typeClass);
+    } else if (rhs.names == null) {
+      return false;
+    } else {
+      return typeClass.equals(rhs.typeClass) && (Arrays.equals(names, rhs.names));
+    }
+  }
+
+  @Override
+  public int hashCode() {
+    if (names == null) {
+      return typeClass.hashCode();
+    } else {
+      return 31 * typeClass.hashCode() + Arrays.hashCode(names);
+    }
+  }
 }

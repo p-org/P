@@ -3,7 +3,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.Serialization;
+using PChecker.Actors.Logging;
+using PChecker.Utilities;
 
 namespace PChecker
 {
@@ -20,8 +23,14 @@ namespace PChecker
         /// The output path.
         /// </summary>
         [DataMember]
-        public string OutputFilePath;
-
+        public string OutputPath;
+        
+        /// <summary>
+        /// Timeout in seconds.
+        /// </summary>
+        [DataMember]
+        public string OutputDirectory;
+        
         /// <summary>
         /// Timeout in seconds.
         /// </summary>
@@ -203,7 +212,14 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public bool IsXmlLogEnabled { get; set; }
-
+        
+        /// <summary>
+        /// Produce a JSON formatted runtime log file.
+        /// Defaults to true.
+        /// </summary>
+        [DataMember]
+        public bool IsJsonLogEnabled { get; set; } = true;
+        
         /// <summary>
         /// If specified, requests a custom runtime log to be used instead of the default.
         /// This is the AssemblyQualifiedName of the type to load.
@@ -269,7 +285,7 @@ namespace PChecker
         /// </summary>
         protected CheckerConfiguration()
         {
-            OutputFilePath = "PCheckerOutput";
+            OutputPath = "PCheckerOutput";
 
             Timeout = 0;
             MemoryLimit = 0;
@@ -308,7 +324,7 @@ namespace PChecker
             EnableDebugging = false;
 
             AdditionalCodeCoverageAssemblies = new Dictionary<string, bool>();
-
+            
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
 
@@ -503,6 +519,47 @@ namespace PChecker
         {
             IsXmlLogEnabled = isEnabled;
             return this;
+        }
+        
+        /// <summary>
+        /// Set the <see cref="OutputDirectory"/> to either the user-specified <see cref="CheckerConfiguration.OutputPath"/>
+        /// or to a unique output directory name in the same directory as <see cref="CheckerConfiguration.AssemblyToBeAnalyzed"/>
+        /// and starting with its name.
+        /// </summary>
+        public void SetOutputDirectory()
+        {
+            // Do not create the output directory yet if we have to scroll back the history first.
+            OutputDirectory = Reporter.GetOutputDirectory(OutputPath, AssemblyToBeAnalyzed,
+                Mode.ToString(), createDir: false);
+
+            // The MaxHistory previous results are kept under the directory name with a suffix scrolling back from 0 to 9 (oldest).
+            const int MaxHistory = 10;
+            string makeHistoryDirName(int history) => OutputDirectory.Substring(0, OutputDirectory.Length - 1) + history;
+            var older = makeHistoryDirName(MaxHistory - 1);
+
+            if (Directory.Exists(older))
+            {
+                Directory.Delete(older, true);
+            }
+
+            for (var history = MaxHistory - 2; history >= 0; --history)
+            {
+                var newer = makeHistoryDirName(history);
+                if (Directory.Exists(newer))
+                {
+                    Directory.Move(newer, older);
+                }
+
+                older = newer;
+            }
+
+            if (Directory.Exists(OutputDirectory))
+            {
+                Directory.Move(OutputDirectory, older);
+            }
+
+            // Now create the new directory.
+            Directory.CreateDirectory(OutputDirectory);
         }
     }
 #pragma warning restore CA1724 // Type names should not match namespaces

@@ -16,7 +16,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private Machine _currentMachine; // Some generated code is machine-dependent, so stash the current machine here.
 
-        internal MachineGenerator(string filename) : base(filename)
+        internal MachineGenerator(ICompilerConfiguration job, string filename) : base(job, filename)
         {
         }
 

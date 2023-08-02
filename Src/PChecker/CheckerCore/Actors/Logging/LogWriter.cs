@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using PChecker.Actors.Events;
-using PChecker.Actors.Timers;
 using PChecker.IO.Logging;
 
 namespace PChecker.Actors.Logging
@@ -26,6 +25,11 @@ namespace PChecker.Actors.Logging
         /// Used to log messages.
         /// </summary>
         internal TextWriter Logger { get; private set; }
+        
+        /// <summary>
+        /// Used to log json messages.
+        /// </summary>
+        private JsonWriter JsonLogger { get; set; }
 
         /// <summary>
         /// Is checker strategy statistical.
@@ -298,40 +302,6 @@ namespace PChecker.Actors.Logging
         }
 
         /// <summary>
-        /// Logs that the specified state machine performs a push state transition.
-        /// </summary>
-        /// <param name="id">The id of the actor being pushed to the state.</param>
-        /// <param name="currentStateName">The name of the current state.</param>
-        /// <param name="newStateName">The target state of the transition.</param>
-        public void LogPushState(ActorId id, string currentStateName, string newStateName)
-        {
-            if (Logs.Count > 0)
-            {
-                foreach (var log in Logs)
-                {
-                    log.OnPushState(id, currentStateName, newStateName);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Logs that the specified state machine performs a pop state transition.
-        /// </summary>
-        /// <param name="id">The id of the actor that the pop executed in.</param>
-        /// <param name="currStateName">The name of the current state.</param>
-        /// <param name="restoredStateName">The name of the state being re-entered, if any.</param>
-        public void LogPopState(ActorId id, string currStateName, string restoredStateName)
-        {
-            if (Logs.Count > 0)
-            {
-                foreach (var log in Logs)
-                {
-                    log.OnPopState(id, currStateName, restoredStateName);
-                }
-            }
-        }
-
-        /// <summary>
         /// Logs that the specified actor has halted.
         /// </summary>
         /// <param name="id">The id of the actor that has been halted.</param>
@@ -432,36 +402,6 @@ namespace PChecker.Actors.Logging
                 foreach (var log in Logs)
                 {
                     log.OnExceptionHandled(id, stateName, actionName, ex);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Logs that the specified actor timer has been created.
-        /// </summary>
-        /// <param name="info">Handle that contains information about the timer.</param>
-        public void LogCreateTimer(TimerInfo info)
-        {
-            if (Logs.Count > 0)
-            {
-                foreach (var log in Logs)
-                {
-                    log.OnCreateTimer(info);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Logs that the specified actor timer has been stopped.
-        /// </summary>
-        /// <param name="info">Handle that contains information about the timer.</param>
-        public void LogStopTimer(TimerInfo info)
-        {
-            if (Logs.Count > 0)
-            {
-                foreach (var log in Logs)
-                {
-                    log.OnStopTimer(info);
                 }
             }
         }
@@ -651,6 +591,12 @@ namespace PChecker.Actors.Logging
 
             return prevLogger;
         }
+        
+        /// <summary>
+        /// Sets the JsonLogger to an instance created on runtime.
+        /// </summary>
+        /// <param name="jsonLogger">The jsonLogger instance created from runtime before running tests.</param>
+        internal void SetJsonLogger(JsonWriter jsonLogger) => JsonLogger = jsonLogger;
 
         private ActorRuntimeLogTextFormatter GetOrCreateTextLog()
         {
@@ -697,7 +643,14 @@ namespace PChecker.Actors.Logging
                     a.Logger = Logger;
                 }
             }
-
+            
+            // If log is or of subclass ActorRuntimeLogJsonFormatter (i.e. when log is PJsonFormatter),
+            // update the Writer reference to the JsonLogger instance defined within LogWriter.cs
+            if (log is ActorRuntimeLogJsonFormatter tempJsonFormatter)
+            {
+                tempJsonFormatter.Writer = JsonLogger;
+            }
+            
             Logs.Add(log);
         }
 

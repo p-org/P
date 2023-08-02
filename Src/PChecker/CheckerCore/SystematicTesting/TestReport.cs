@@ -111,7 +111,7 @@ namespace PChecker.SystematicTesting
         /// Number of schedulings that satisfies the pattern.
         /// </summary>
         [DataMember]
-        public int ValidScheduling = 0;
+        public Dictionary<int, int> ValidScheduling = new();
 
         /// <summary>
         /// Lock for the test report.

@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using PChecker.Actors.Events;
-using PChecker.Actors.Timers;
 using PChecker.IO.Logging;
 using PChecker.SystematicTesting;
 
@@ -132,16 +131,6 @@ public class ActorRuntimeTimeLogCsvFormatter : IActorRuntimeLog
 
     /// <inheritdoc />
     public virtual void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
-    {
-    }
-
-    /// <inheritdoc />
-    public virtual void OnCreateTimer(TimerInfo info)
-    {
-    }
-
-    /// <inheritdoc />
-    public virtual void OnStopTimer(TimerInfo info)
     {
     }
 

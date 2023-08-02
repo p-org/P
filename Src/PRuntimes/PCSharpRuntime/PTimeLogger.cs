@@ -5,7 +5,6 @@ using System;
 using PChecker.Actors;
 using PChecker.Actors.Events;
 using PChecker.Actors.Logging;
-using PChecker.Actors.Timers;
 
 namespace Plang.CSharpRuntime
 {
@@ -127,16 +126,6 @@ namespace Plang.CSharpRuntime
 
         /// <inheritdoc />
         public override void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
-        {
-        }
-
-        /// <inheritdoc />
-        public override void OnCreateTimer(TimerInfo info)
-        {
-        }
-
-        /// <inheritdoc />
-        public override void OnStopTimer(TimerInfo info)
         {
         }
 

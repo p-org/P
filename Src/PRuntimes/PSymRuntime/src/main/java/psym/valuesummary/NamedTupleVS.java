@@ -87,14 +87,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     return new NamedTupleVS(this);
   }
 
-  /**
-   * Permute the value summary
-   *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
-   */
-  public NamedTupleVS swap(Machine m1, Machine m2) {
+  public NamedTupleVS swap(Map<Machine, Machine> mapping) {
     if (this.names.size() == 2 && !isEmptyVS()) {
         if (this.names.get(0).equals("symMachine")) {
           if (PSymGlobal.getSymmetryTracker() instanceof ExplicitSymmetryTracker) {
@@ -104,35 +97,26 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
             List<GuardedValue<?>> dataGVs = ValueSummary.getGuardedValues(this.tuple.getField(1));
             assert (machineGVs.size() == 1);
             assert (dataGVs.size() == 1);
-            assert (machineGVs.get(0).getValue() instanceof Machine);
+            if (machineGVs.get(0).getValue() != null) {
+              assert (machineGVs.get(0).getValue() instanceof Machine);
 
-            Guard guard = machineGVs.get(0).getGuard();
-            Machine origMachine = (Machine) machineGVs.get(0).getValue();
-            Object origValue = dataGVs.get(0).getValue();
-            Machine newMachine = origMachine;
-            Object newValue = origValue;
-            boolean swapped = false;
+              Machine origMachine = (Machine) machineGVs.get(0).getValue();
+              Machine newMachine = mapping.get(origMachine);
+              if (newMachine != null) {
+                Object origValue = dataGVs.get(0).getValue();
+                Object newValue = symTracker.getMachineSymData(newMachine, this.names.get(1), origValue);
+                Guard guard = machineGVs.get(0).getGuard();
 
-            if (origMachine.equals(m1)) {
-              newMachine = m2;
-              newValue = symTracker.getMachineSymData(m2, this.names.get(1), origValue);
-              swapped = true;
-            } else if (origMachine.equals(m2)) {
-              newMachine = m1;
-              newValue = symTracker.getMachineSymData(m1, this.names.get(1), origValue);
-              swapped = true;
+                return new NamedTupleVS(
+                        new ArrayList<>(this.names),
+                        new TupleVS(new PrimitiveVS<>(newMachine, guard), new PrimitiveVS<>(newValue, guard)));
+              }
             }
-            if (swapped) {
-              return new NamedTupleVS(
-                      new ArrayList<>(this.names),
-                      new TupleVS(new PrimitiveVS<>(newMachine, guard), new PrimitiveVS<>(newValue, guard)));
-            } else {
-              return this;
-            }
+            return this;
           }
         }
     }
-    return new NamedTupleVS(new ArrayList<>(this.names), this.tuple.swap(m1, m2));
+    return new NamedTupleVS(new ArrayList<>(this.names), this.tuple.swap(mapping));
   }
 
   /**

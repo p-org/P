@@ -1,9 +1,6 @@
 package psym.valuesummary;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Getter;
@@ -76,16 +73,9 @@ public class TupleVS implements ValueSummary<TupleVS> {
     return new TupleVS(this);
   }
 
-  /**
-   * Permute the value summary
-   *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
-   */
-  public TupleVS swap(Machine m1, Machine m2) {
+  public TupleVS swap(Map<Machine, Machine> mapping) {
     return new TupleVS(
-        Arrays.stream(this.fields).map(x -> x.swap(m1, m2)).toArray(size -> new ValueSummary[size]),
+        Arrays.stream(this.fields).map(x -> x.swap(mapping)).toArray(size -> new ValueSummary[size]),
         this.classes);
   }
 

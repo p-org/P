@@ -84,16 +84,9 @@ public class UnionVS implements ValueSummary<UnionVS> {
     return new UnionVS(this);
   }
 
-  /**
-   * Permute the value summary
-   *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
-   */
-  public UnionVS swap(Machine m1, Machine m2) {
+  public UnionVS swap(Map<Machine, Machine> mapping) {
     Map<UnionVStype, ValueSummary> newValues = new HashMap<>(this.value);
-    newValues.replaceAll((k, v) -> v.swap(m1, m2));
+    newValues.replaceAll((k, v) -> v.swap(mapping));
     return new UnionVS(this.type.getCopy(), newValues);
   }
 

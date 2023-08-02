@@ -1,6 +1,8 @@
 package psym.runtime.scheduler.search.symbolic;
 
 import java.util.*;
+
+import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
 import psym.runtime.scheduler.search.symmetry.SymmetryPendingMerges;
@@ -352,7 +354,7 @@ public class SymbolicSymmetryTracker extends SymmetryTracker {
 
     for (int i = 0; i < m1State.size(); i++) {
       ValueSummary original = m1State.get(i).restrict(pc);
-      ValueSummary permuted = m2State.get(i).restrict(pc).swap(m1, m2);
+      ValueSummary permuted = m2State.get(i).restrict(pc).swap(Collections.singletonMap(m1, m2));
       if (original.isEmptyVS() && permuted.isEmptyVS()) {
         continue;
       }
@@ -372,13 +374,13 @@ public class SymbolicSymmetryTracker extends SymmetryTracker {
       return result;
     }
 
-    for (Machine other : scheduler.getMachines()) {
+    for (Machine other : PSymGlobal.getScheduler().getMachines()) {
       if (other == m1 || other == m2 || other instanceof Monitor) {
         continue;
       }
       for (ValueSummary original : other.getMachineLocalState().getLocals()) {
         original = original.restrict(pc);
-        ValueSummary permuted = original.swap(m1, m2);
+        ValueSummary permuted = original.swap(Collections.singletonMap(m1, m2));
         if (original.isEmptyVS() && permuted.isEmptyVS()) {
           continue;
         }

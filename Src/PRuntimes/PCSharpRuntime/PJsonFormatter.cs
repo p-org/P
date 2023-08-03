@@ -186,7 +186,7 @@ namespace Plang.CSharpRuntime
             Writer.AddLogType(JsonWriter.LogType.CreateStateMachine);
             Writer.LogDetails.Id = id.ToString();
             Writer.LogDetails.CreatorName = creatorName;
-            Writer.LogDetails.CreatorType = creatorType;
+            Writer.LogDetails.CreatorType = GetShortName(creatorType);
             Writer.AddLog(log);
             Writer.AddToLogs(updateVcMap: true);
         }
@@ -532,8 +532,9 @@ namespace Plang.CSharpRuntime
         public override void OnMonitorRaiseEvent(string monitorType, string stateName, Event e)
         {
             stateName = GetShortName(stateName);
+            monitorType = GetShortName(monitorType);
             string eventName = GetEventNameWithPayload(e);
-            var log = $"Monitor '{GetShortName(monitorType)}' raised event '{eventName}' in state '{stateName}'.";
+            var log = $"Monitor '{monitorType}' raised event '{eventName}' in state '{stateName}'.";
 
             Writer.AddLogType(JsonWriter.LogType.MonitorRaiseEvent);
             Writer.LogDetails.Monitor = monitorType;

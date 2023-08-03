@@ -216,9 +216,10 @@ namespace PChecker.Actors.Logging
                     _unhandledSendRequests.Add(hashedSendReqId, CopyVcMap(_contextVcMap[machine]));
                     break;
 
-                // On dequeue event, has the string containing information about the current machine that dequeued (i.e. received the event),
+                // On dequeue OR receive event, has the string containing information about the current machine that dequeued (i.e. received the event),
                 // the event name, and payload. This is used to find the corresponding SendReqId from the machine that sent it in order to retrieve
                 // the vector clock of the sender machine during that time when it was sent.
+                case "ReceiveEvent":
                 case "DequeueEvent":
                     var correspondingSendReqId = GetSendReceiveId(machine, logDetails.Event, logDetails.Payload);
                     var hashedGeneralCorrespondingSendReqId = HashString(correspondingSendReqId);

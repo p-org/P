@@ -312,17 +312,33 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
   public PrimitiveVS<T> merge(Iterable<PrimitiveVS<T>> summaries) {
     final Map<T, Guard> result = new HashMap<>();
 
+    Guard nullUniverse = Guard.constFalse();
+    Guard coveredUniverse = Guard.constFalse();
+    Guard totalUniverse = getUniverse();
     for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
       if (entry.getKey() == null) {
+        nullUniverse = nullUniverse.or(entry.getValue());
         continue;
       }
+      coveredUniverse = coveredUniverse.or(entry.getValue());
       result.merge(entry.getKey(), entry.getValue(), Guard::or);
     }
 
     for (PrimitiveVS<T> summary : summaries) {
+      totalUniverse = totalUniverse.or(summary.getUniverse());
       for (Map.Entry<T, Guard> entry : summary.guardedValues.entrySet()) {
+        if (entry.getKey() == null) {
+          nullUniverse = nullUniverse.or(entry.getValue());
+          continue;
+        }
+        coveredUniverse = coveredUniverse.or(entry.getValue());
         result.merge(entry.getKey(), entry.getValue(), Guard::or);
       }
+    }
+    Guard remainingUniverse = totalUniverse.and(coveredUniverse.not());
+    if (!remainingUniverse.isFalse()) {
+      assert (remainingUniverse.implies(nullUniverse).isTrue());
+      result.put(null, remainingUniverse);
     }
 
     return new PrimitiveVS<>(result);

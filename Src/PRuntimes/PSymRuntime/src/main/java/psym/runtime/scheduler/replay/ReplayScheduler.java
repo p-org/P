@@ -77,9 +77,13 @@ public class ReplayScheduler extends Scheduler {
           "Maximum allowed depth " + PSymGlobal.getConfiguration().getMaxStepBound() + " exceeded",
           schedule.getLengthCond(schedule.size()));
       step();
-      checkLiveness(allMachinesHalted);
+      if (Assert.getFailureType().equals("liveness")) {
+        checkLiveness(allMachinesHalted);
+      }
     }
-    checkLiveness(Guard.constTrue());
+    if (Assert.getFailureType().equals("liveness")) {
+      checkLiveness(Guard.constTrue());
+    }
     if (Assert.getFailureType().equals("cycle")) {
       throw new LivenessException(Assert.getFailureMsg(), Guard.constTrue());
     }

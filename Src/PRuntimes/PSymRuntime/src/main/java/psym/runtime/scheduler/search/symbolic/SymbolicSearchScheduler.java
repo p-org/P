@@ -55,7 +55,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     int numMessagesExplored = 0;
     int numStates = 0;
 
-    if (PSymGlobal.getConfiguration().isIterative()
+    if (!PSymGlobal.getConfiguration().isIterative()
             && PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Symbolic) {
       ProtocolState srcProtocolState = new ProtocolState(currentMachines);
       for (int i = depth; i >= 0; i--) {
@@ -143,7 +143,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
       depth++;
     }
 
-    if (PSymGlobal.getConfiguration().isIterative()
+    if (!PSymGlobal.getConfiguration().isIterative()
             && PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Symbolic) {
       Message effectNew = effect.restrict(done.not());
       if (effectNew.isEmptyVS()) {

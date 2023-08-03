@@ -121,7 +121,7 @@ public class PSymConfiguration implements Serializable {
     this.setDataChoiceBound(2);
     this.setUseBacktrack(true);
     this.setChoiceOrchestration(ChoiceOrchestrationMode.Random);
-    this.setTaskOrchestration(TaskOrchestrationMode.Random);
+    this.setTaskOrchestration(TaskOrchestrationMode.DepthFirst);
   }
 
   private void setToExplicit() {

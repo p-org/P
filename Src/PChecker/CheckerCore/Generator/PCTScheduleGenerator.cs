@@ -51,6 +51,11 @@ internal sealed class PctScheduleGenerator: IScheduleGenerator<PctScheduleGenera
         return new PCTScheduleMutator().Mutate(this);
     }
 
+    public PctScheduleGenerator New()
+    {
+        return new PctScheduleGenerator(Random, null, null, NumSwitchPoints, MaxScheduleLength);
+    }
+
     public PctScheduleGenerator Copy()
     {
         return new PctScheduleGenerator(Random, PriorityChoices, SwitchPointChoices, NumSwitchPoints, MaxScheduleLength);

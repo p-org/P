@@ -13,4 +13,6 @@ public interface IGenerator<T>
     /// </summary>
     /// <returns>A new generator.</returns>
     T Copy();
+
+    T New();
 }

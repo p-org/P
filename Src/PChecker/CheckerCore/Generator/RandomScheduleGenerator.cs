@@ -51,4 +51,9 @@ internal class RandomScheduleGenerator: IScheduleGenerator<RandomScheduleGenerat
     public void PrepareForNextInput()
     {
     }
+
+    public RandomScheduleGenerator New()
+    {
+        return new RandomScheduleGenerator(Random, null);
+    }
 }

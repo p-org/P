@@ -66,7 +66,18 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal readonly int? RootTaskId;
 
-        
+        /// <summary>
+        /// Global time.
+        /// </summary>
+        internal static readonly Timestamp GlobalTime = new();
+
+        /// <summary>
+        /// The scheduling strategy used for program exploration.
+        /// </summary>
+        private readonly ISchedulingStrategy Strategy;
+
+        public readonly List<Actor> Actors;
+
         /// <summary>
         /// Returns the current hashed state of the monitors.
         /// </summary>
@@ -143,8 +154,21 @@ namespace PChecker.SystematicTesting
                 strategy = new TemperatureCheckingStrategy(checkerConfiguration, Monitors, strategy);
             }
 
+            if (CheckerConfiguration.SchedulingStrategy.Equals("statistical"))
+            {
+                Strategy = strategy;
+            }
+            else
+            {
+                Strategy = null;
+            }
+
             Scheduler = new OperationScheduler(this, strategy, scheduleTrace, CheckerConfiguration);
             TaskController = new TaskController(this, Scheduler);
+
+            Actors = new List<Actor>();
+
+            GlobalTime.SetTime(0);
 
             // Update the current asynchronous control flow with this runtime instance,
             // allowing future retrieval in the same asynchronous call stack.
@@ -240,6 +264,11 @@ namespace PChecker.SystematicTesting
 
                     OperationScheduler.StartOperation(op);
 
+                    if (CheckerConfiguration.SchedulingStrategy.Equals("statistical"))
+                    {
+                        RunGlobalTimeHandler();
+                    }
+
                     if (testMethod is Action<IActorRuntime> actionWithRuntime)
                     {
                         actionWithRuntime(this);
@@ -278,6 +307,45 @@ namespace PChecker.SystematicTesting
             Scheduler.WaitOperationStart(op);
         }
 
+        internal void RunGlobalTimeHandler()
+        {
+            var operationId = ulong.MaxValue;
+            var op = new TaskOperation(operationId, Scheduler);
+            Scheduler.RegisterOperation(op);
+            op.OnEnabled();
+
+            var task = new Task(() =>
+            {
+                try
+                {
+                    while (op.Status is AsyncOperationStatus.Enabled)
+                    {
+                        // Update the current asynchronous control flow with the current runtime instance,
+                        // allowing future retrieval in the same asynchronous call stack.
+                        AssignAsyncControlFlowRuntime(this);
+
+                        OperationScheduler.StartOperation(op);
+
+                        if (!RunDelayedActorEventHandlers())
+                        {
+                            op.OnCompleted();
+                        }
+
+                        // Task has completed, schedule the next enabled operation.
+                        Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ProcessUnhandledExceptionInOperation(op, ex);
+                }
+            });
+
+            Scheduler.ScheduleOperation(op, task.Id);
+            task.Start();
+            Scheduler.WaitOperationStart(op);
+        }
+
         /// <summary>
         /// Creates a new actor of the specified <see cref="Type"/> and name, using the specified
         /// unbound actor id, and passes the specified optional <see cref="Event"/>. This event
@@ -297,6 +365,10 @@ namespace PChecker.SystematicTesting
             AssertExpectedCallerActor(creator, "CreateActor");
 
             var actor = CreateActor(id, type, name, creator, opGroupId);
+            lock (Actors)
+            {
+                Actors.Add(actor);
+            }
             RunActorEventHandler(actor, initialEvent, true, null);
             return actor.Id;
         }
@@ -374,7 +446,7 @@ namespace PChecker.SystematicTesting
                 actorManager = new MockActorManager(this, actor, opGroupId);
             }
 
-            IEventQueue eventQueue = new MockEventQueue(actorManager, actor);
+            IEventQueue eventQueue = new MockEventQueue(actorManager, actor, Strategy);
             actor.Configure(this, id, actorManager, eventQueue);
             actor.SetupEventHandlers();
 
@@ -524,9 +596,11 @@ namespace PChecker.SystematicTesting
                 Assert = options?.Assert ?? -1
             };
 
+            // Enqueue has to be called before logging so that timestamps are written to the event.
+            var enqueueStatus = actor.Enqueue(e, opGroupId, eventInfo);
             LogWriter.LogSendEvent(actor.Id, sender?.Id.Name, sender?.Id.Type, stateName,
                 e, opGroupId, isTargetHalted: false);
-            return actor.Enqueue(e, opGroupId, eventInfo);
+            return enqueueStatus;
         }
 
         /// <summary>
@@ -541,7 +615,6 @@ namespace PChecker.SystematicTesting
         {
             var op = Scheduler.GetOperationWithId<ActorOperation>(actor.Id.Value);
             op.OnEnabled();
-
             var task = new Task(async () =>
             {
                 try
@@ -558,6 +631,7 @@ namespace PChecker.SystematicTesting
                     }
 
                     await actor.RunEventHandlerAsync();
+
                     if (syncCaller != null)
                     {
                         EnqueueEvent(syncCaller, new QuiescentEvent(actor.Id), actor, actor.OperationGroupId, null);
@@ -569,6 +643,7 @@ namespace PChecker.SystematicTesting
                     }
 
                     Debug.WriteLine("<ScheduleDebug> Completed operation {0} on task '{1}'.", actor.Id, Task.CurrentId);
+
                     op.OnCompleted();
 
                     // The actor is inactive or halted, schedule the next enabled operation.
@@ -583,6 +658,45 @@ namespace PChecker.SystematicTesting
             Scheduler.ScheduleOperation(op, task.Id);
             task.Start();
             Scheduler.WaitOperationStart(op);
+        }
+
+        private bool RunDelayedActorEventHandlers()
+        {
+            List<Actor> actorsToRun = null;
+            lock (Actors)
+            {
+                if (Actors.All(a => a.ScheduledDelayedTimestamp != GlobalTime))
+                {
+                    var delayedActors = Actors.Where(a => a.ScheduledDelayedTimestamp > GlobalTime);
+                    if (delayedActors.Any())
+                    {
+                        var minTimestamp = delayedActors.Min(a => a.ScheduledDelayedTimestamp);
+                        actorsToRun = Actors.Where(a => a.ScheduledDelayedTimestamp == minTimestamp).ToList();
+                        GlobalTime.SetTime(minTimestamp.GetTime());
+                    }
+                }
+            }
+
+            // Note that here we only run actors that are waiting for an event with dequeue time equal to minTimestamp.
+            // This is ok for handling late events that are deferred. For example, an event with dequeue time 10 might
+            // be deferred in the current state, and the machine is waiting for an event with dequeue time 20 to exit
+            // this state. We increment the time to 20, handle that event, and transition to the new state. This dequeue
+            // operation will trigger running the event handler of the actor again since now early events are available.
+            if (actorsToRun != null)
+            {
+                foreach (var actor in actorsToRun)
+                {
+                    if (!actor.ReceiveDelayedWaitEvents())
+                    {
+                        actor.Manager.IsEventHandlerRunning = true;
+                        RunActorEventHandler(actor, null, false, null);
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>

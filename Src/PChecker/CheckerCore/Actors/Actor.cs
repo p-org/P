@@ -17,6 +17,7 @@ using PChecker.Actors.Handlers;
 using PChecker.Actors.Managers;
 using PChecker.Exceptions;
 using PChecker.IO.Debugging;
+using PChecker.SystematicTesting;
 using EventInfo = PChecker.Actors.Events.EventInfo;
 
 namespace PChecker.Actors
@@ -90,6 +91,11 @@ namespace PChecker.Actors
         /// Checks if a default handler is available.
         /// </summary>
         internal bool IsDefaultHandlerAvailable { get; private set; }
+
+        /// <summary>
+        /// Returns the min timestamp that will unblock the actor.
+        /// </summary>
+        internal Timestamp ScheduledDelayedTimestamp => GetScheduledDelayedTimestamp();
 
         /// <summary>
         /// Id used to identify subsequent operations performed by this actor. This value
@@ -383,8 +389,23 @@ namespace PChecker.Actors
             {
                 return EnqueueStatus.Dropped;
             }
-
             return Inbox.Enqueue(e, opGroupId, info);
+        }
+
+        /// <summary>
+        /// Returns the min timestamp that will unblock the actor. If the actor is blocked on a receive and those events
+        /// are in the queue, then min timestamp of those events is returned. Otherwise, min timestamp of events waiting
+        /// to be dequeued is returned.
+        /// </summary>
+        private Timestamp GetScheduledDelayedTimestamp()
+        {
+            var waitEvent = Inbox.GetDelayedWaitEvent();
+            if (waitEvent is not null)
+            {
+                return waitEvent.DequeueTime;
+            }
+            var (_, e, _, _) = Inbox.Dequeue(true);
+            return e is not null ? e.DequeueTime : Timestamp.DefaultTimestamp;
         }
 
         /// <summary>
@@ -432,6 +453,12 @@ namespace PChecker.Actors
                     // Terminate the handler as there is no event available.
                     break;
                 }
+                else if (status is DequeueStatus.Delayed)
+                {
+                    // Set the flag and terminate.
+                    break;
+                }
+
 
                 if (CurrentStatus is Status.Active)
                 {
@@ -995,6 +1022,15 @@ namespace PChecker.Actors
                 Event = eventType;
                 Action = actionName;
             }
+        }
+
+        /// <summary>
+        /// Tries to receive events that are blocking the actor and that can be received in the current timestamp.
+        /// If such events are received, then returns true; otherwise, returns false.
+        /// </summary>
+        public bool ReceiveDelayedWaitEvents()
+        {
+            return Inbox.ReceiveDelayedWaitEvents();
         }
     }
 }

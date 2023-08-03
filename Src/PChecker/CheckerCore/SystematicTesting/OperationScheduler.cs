@@ -141,7 +141,7 @@ namespace PChecker.SystematicTesting
             
             // Update the operation type.
             current.Type = type;
-            
+
             if (CheckerConfiguration.IsProgramStateHashingEnabled)
             {
                 // Update the current operation with the hashed program state.
@@ -149,7 +149,7 @@ namespace PChecker.SystematicTesting
             }
 
             // Get and order the operations by their id.
-            var ops = OperationMap.Values.OrderBy(op => op.Id);
+            var ops = OperationMap.Values.Where(op => op.Id < ulong.MaxValue).OrderBy(op => op.Id);
 
             // Try enable any operation that is currently waiting, but has its dependencies already satisfied.
             foreach (var op in ops)
@@ -163,20 +163,27 @@ namespace PChecker.SystematicTesting
 
             if (!Strategy.GetNextOperation(current, ops, out var next))
             {
-                // Checks if the program has deadlocked.
-                CheckIfProgramHasDeadlocked(ops.Select(op => op as AsyncOperation));
-
-                Debug.WriteLine("<ScheduleDebug> Schedule explored.");
-                HasFullyExploredSchedule = true;
-                Stop();
-
-                if (current.Status != AsyncOperationStatus.Completed)
+                var op = GetOperationWithId<TaskOperation>(ulong.MaxValue);
+                if (op?.Status is AsyncOperationStatus.Enabled)
                 {
-                    // The schedule is explored so throw exception to force terminate the current operation.
-                    throw new ExecutionCanceledException();
+                    next = op;
+                }
+                else
+                {
+                    // Checks if the program has deadlocked.
+                    CheckIfProgramHasDeadlocked(ops.Select(op => op as AsyncOperation));
+
+                    Debug.WriteLine("<ScheduleDebug> Schedule explored.");
+                    HasFullyExploredSchedule = true;
+                    Stop();
+
+                    if (current.Status != AsyncOperationStatus.Completed)
+                    {
+                        // The schedule is explored so throw exception to force terminate the current operation.
+                        throw new ExecutionCanceledException();
+                    }
                 }
             }
-
             ScheduledOperation = next as AsyncOperation;
             ScheduleTrace.AddSchedulingChoice(next.Id);
 

@@ -405,7 +405,7 @@ namespace Plang.Compiler.Backend.Symbolic
                  case SendStmt sendStmt:
                      var sendArgs = new List<IPExpr>();
                      foreach (var arg in sendStmt.Arguments) sendArgs.Add(ReplaceVars(arg, varMap));
-                     return new SendStmt(sendStmt.SourceLocation, ReplaceVars(sendStmt.MachineExpr, varMap), ReplaceVars(sendStmt.Evt, varMap), sendArgs);
+                     return new SendStmt(sendStmt.SourceLocation, ReplaceVars(sendStmt.MachineExpr, varMap), ReplaceVars(sendStmt.Evt, varMap), sendArgs, sendStmt.DelayDistribution);
                  case WhileStmt whileStmt:
                      return new WhileStmt(whileStmt.SourceLocation, ReplaceVars(whileStmt.Condition, varMap), ReplaceVars(whileStmt.Body, varMap));
                  default:

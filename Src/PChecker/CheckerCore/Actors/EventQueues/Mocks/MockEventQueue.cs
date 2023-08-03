@@ -7,6 +7,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using PChecker.Actors.Events;
 using PChecker.Actors.Managers;
+using PChecker.SystematicTesting;
+using PChecker.SystematicTesting.Strategies;
 
 namespace PChecker.Actors.EventQueues.Mocks
 {
@@ -64,32 +66,73 @@ namespace PChecker.Actors.EventQueues.Mocks
         public bool IsEventRaised => RaisedEvent != default;
 
         /// <summary>
+        /// The scheduling strategy used for program exploration.
+        /// </summary>
+        private readonly ISchedulingStrategy Strategy;
+
+        private readonly Dictionary<ActorId, Timestamp> MaxDequeueTimestampMap;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="MockEventQueue"/> class.
         /// </summary>
-        internal MockEventQueue(IActorManager actorManager, Actor actor)
+        internal MockEventQueue(IActorManager actorManager, Actor actor, ISchedulingStrategy strategy)
         {
             ActorManager = actorManager;
             Actor = actor;
+            Strategy = strategy;
             Queue = new LinkedList<(Event, Guid, EventInfo)>();
             EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
             IsClosed = false;
+            MaxDequeueTimestampMap = Strategy is null ? null : new Dictionary<ActorId, Timestamp>();
         }
 
         /// <inheritdoc/>
         public EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
         {
+            e.EnqueueTime.SetTime(ControlledRuntime.GlobalTime.GetTime());
+            e.DequeueTime.SetTime(e.EnqueueTime.GetTime());
+            if (Strategy is not null && Strategy.GetSampleFromDistribution(e.DelayDistribution, out var delay))
+            {
+                var isFirstEvent = !MaxDequeueTimestampMap.ContainsKey(info.OriginInfo.SenderActorId);
+                if (e.IsOrdered && !isFirstEvent)
+                {
+                    var maxDequeueTimestamp = MaxDequeueTimestampMap[info.OriginInfo.SenderActorId];
+                    if (maxDequeueTimestamp > e.EnqueueTime)
+                    {
+                        e.DequeueTime.SetTime(maxDequeueTimestamp.GetTime());
+                    }
+                }
+
+                e.DequeueTime.IncrementTime(delay);
+
+                if (e.IsOrdered)
+                {
+                    if (isFirstEvent)
+                    {
+                        MaxDequeueTimestampMap.Add(info.OriginInfo.SenderActorId, e.DequeueTime);
+                    }
+                    else
+                    {
+                        MaxDequeueTimestampMap[info.OriginInfo.SenderActorId] = e.DequeueTime;
+                    }
+                }
+            }
+
             if (IsClosed)
             {
                 return EnqueueStatus.Dropped;
             }
 
-            if (EventWaitTypes.TryGetValue(e.GetType(), out var predicate) &&
-                (predicate is null || predicate(e)))
+            if (e.DequeueTime <= ControlledRuntime.GlobalTime)
             {
-                EventWaitTypes.Clear();
-                ActorManager.OnReceiveEvent(e, opGroupId, info);
-                ReceiveCompletionSource.SetResult(e);
-                return EnqueueStatus.EventHandlerRunning;
+                if (EventWaitTypes.TryGetValue(e.GetType(), out var predicate) &&
+                    (predicate is null || predicate(e)))
+                {
+                    EventWaitTypes.Clear();
+                    ActorManager.OnReceiveEvent(e, opGroupId, info);
+                    ReceiveCompletionSource.SetResult(e);
+                    return EnqueueStatus.EventHandlerRunning;
+                }
             }
 
             ActorManager.OnEnqueueEvent(e, opGroupId, info);
@@ -105,7 +148,8 @@ namespace PChecker.Actors.EventQueues.Mocks
 
             if (!ActorManager.IsEventHandlerRunning)
             {
-                if (TryDequeueEvent(true).e is null)
+                ((Event nextEvent, _, _), bool isDelayed) = TryDequeueEvent(true);
+                if (nextEvent is null || isDelayed)
                 {
                     return EnqueueStatus.NextEventUnavailable;
                 }
@@ -113,6 +157,7 @@ namespace PChecker.Actors.EventQueues.Mocks
                 {
                     ActorManager.IsEventHandlerRunning = true;
                     return EnqueueStatus.EventHandlerNotRunning;
+
                 }
             }
 
@@ -120,7 +165,7 @@ namespace PChecker.Actors.EventQueues.Mocks
         }
 
         /// <inheritdoc/>
-        public (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) Dequeue()
+        public (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) Dequeue(bool checkOnly = false)
         {
             // Try to get the raised event, if there is one. Raised events
             // have priority over the events in the inbox.
@@ -147,7 +192,21 @@ namespace PChecker.Actors.EventQueues.Mocks
             }
 
             // Try to dequeue the next event, if there is one.
-            var (e, opGroupId, info) = TryDequeueEvent();
+            var ((e, opGroupId, info), isDelayed) = TryDequeueEvent(checkOnly);
+            if (isDelayed)
+            {
+                if (e == null)
+                {
+                    return (DequeueStatus.NotAvailable, null, Guid.Empty, null);
+                }
+                else
+                {
+                    ActorManager.IsEventHandlerRunning = false;
+                    return (DequeueStatus.Delayed, e, Guid.Empty, null);
+                }
+
+            }
+
             if (e != null)
             {
                 // Found next event that can be dequeued.
@@ -173,9 +232,19 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <summary>
         /// Dequeues the next event and its metadata, if there is one available, else returns null.
         /// </summary>
-        private (Event e, Guid opGroupId, EventInfo info) TryDequeueEvent(bool checkOnly = false)
+        private ((Event e, Guid opGroupId, EventInfo info), bool isDelayed) TryDequeueEvent(bool checkOnly = false)
         {
+            if (EventWaitTypes.Count > 0)
+            {
+                // We cannot dequeue anything. The actor is blocked on a receive. Being blocked on a receive and calling
+                // this function means that the actor is waiting for a delayed event. Therefore, this event is
+                // inherently delayed, but we cannot return the event from the queue because it cannot be dequeued,
+                // i.e.,it has to be received through a different path in the code.
+                return (default, true);
+            }
+
             (Event, Guid, EventInfo) nextAvailableEvent = default;
+            bool isDelayed = false;
 
             // Iterates through the events and metadata in the inbox.
             var node = Queue.First;
@@ -196,22 +265,38 @@ namespace PChecker.Actors.EventQueues.Mocks
                     continue;
                 }
 
-                // Skips a deferred event.
-                if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
+                if (currentEvent.e.DequeueTime <= ControlledRuntime.GlobalTime)
                 {
-                    nextAvailableEvent = currentEvent;
-                    if (!checkOnly)
+                    if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
                     {
-                        Queue.Remove(node);
-                    }
+                        nextAvailableEvent = currentEvent;
+                        isDelayed = false;
 
-                    break;
+                        if (!checkOnly)
+                        {
+                            currentEvent.e.DequeueTime.SetTime(ControlledRuntime.GlobalTime.GetTime());
+                            Queue.Remove(node);
+                        }
+
+                        break;
+                    }
+                }
+
+                if (currentEvent.e.DequeueTime > ControlledRuntime.GlobalTime)
+                {
+                    if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
+                    {
+                        if (nextAvailableEvent == default || nextAvailableEvent.Item1.DequeueTime > currentEvent.e.DequeueTime)
+                        {
+                            nextAvailableEvent = currentEvent;
+                            isDelayed = true;
+                        }
+                    }
                 }
 
                 node = nextNode;
             }
-
-            return nextAvailableEvent;
+            return (nextAvailableEvent, isDelayed);
         }
 
         /// <inheritdoc/>
@@ -271,13 +356,17 @@ namespace PChecker.Actors.EventQueues.Mocks
             var node = Queue.First;
             while (node != null)
             {
-                // Dequeue the first event that the caller waits to receive, if there is one in the queue.
-                if (eventWaitTypes.TryGetValue(node.Value.e.GetType(), out var predicate) &&
-                    (predicate is null || predicate(node.Value.e)))
+                if (node.Value.e.DequeueTime <= ControlledRuntime.GlobalTime)
                 {
-                    receivedEvent = node.Value;
-                    Queue.Remove(node);
-                    break;
+                    // Dequeue the first event that the caller waits to receive, if there is one in the queue.
+                    if (eventWaitTypes.TryGetValue(node.Value.e.GetType(), out var predicate) &&
+                        (predicate is null || predicate(node.Value.e)))
+                    {
+                        receivedEvent = node.Value;
+                        receivedEvent.e.DequeueTime.SetTime(ControlledRuntime.GlobalTime.GetTime());
+                        Queue.Remove(node);
+                        break;
+                    }
                 }
 
                 node = node.Next;
@@ -293,6 +382,65 @@ namespace PChecker.Actors.EventQueues.Mocks
 
             ActorManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.opGroupId, receivedEvent.info);
             return Task.FromResult(receivedEvent.e);
+        }
+
+        /// <summary>
+        /// Tries to receive events that are blocking the actor and that can be received in the current timestamp.
+        /// If such events are received, then returns true; otherwise, returns false.
+        /// </summary>
+        public bool ReceiveDelayedWaitEvents()
+        {
+            (Event e, Guid opGroupId, EventInfo info) receivedEvent = default;
+            var node = Queue.First;
+            while (node != null)
+            {
+                if (node.Value.e.DequeueTime <= ControlledRuntime.GlobalTime)
+                {
+                    // Dequeue the first event that the caller waits to receive, if there is one in the queue.
+                    if (EventWaitTypes.TryGetValue(node.Value.e.GetType(), out var predicate) &&
+                        (predicate is null || predicate(node.Value.e)))
+                    {
+                        receivedEvent = node.Value;
+                        receivedEvent.e.DequeueTime.SetTime(ControlledRuntime.GlobalTime.GetTime());
+                        Queue.Remove(node);
+                        break;
+                    }
+                }
+
+                node = node.Next;
+            }
+
+            if (receivedEvent != default)
+            {
+                EventWaitTypes.Clear();
+                ActorManager.OnReceiveEvent(receivedEvent.e, receivedEvent.opGroupId, receivedEvent.info);
+                ReceiveCompletionSource.SetResult(receivedEvent.e);
+                return true;
+            }
+
+            return false;
+        }
+
+        public Event GetDelayedWaitEvent()
+        {
+            var node = Queue.First;
+            Event minTimestampWaitEvent = null;
+            while (node != null)
+            {
+                // Dequeue the first event that the caller waits to receive, if there is one in the queue.
+                if (EventWaitTypes.TryGetValue(node.Value.e.GetType(), out var predicate) &&
+                    (predicate is null || predicate(node.Value.e)))
+                {
+                    if (minTimestampWaitEvent is null || node.Value.e.DequeueTime < minTimestampWaitEvent.DequeueTime)
+                    {
+                        minTimestampWaitEvent = node.Value.e;
+                    }
+                }
+
+                node = node.Next;
+            }
+
+            return minTimestampWaitEvent;
         }
 
         /// <inheritdoc/>

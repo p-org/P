@@ -276,6 +276,11 @@ namespace PChecker
         public string JvmArgs;
 
         /// <summary>
+        /// Current iteration number.
+        /// </summary>
+        public int CurrentIteration;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="CheckerConfiguration"/> class.
         /// </summary>
         protected CheckerConfiguration()
@@ -301,6 +306,7 @@ namespace PChecker
             TestingProcessId = 0;
             ConsiderDepthBoundHitAsBug = false;
             StrategyBound = 0;
+            CurrentIteration = 0;
 
             IsLivenessCheckingEnabled = true;
             LivenessTemperatureThreshold = 0;
@@ -340,6 +346,15 @@ namespace PChecker
         public CheckerConfiguration WithRandomStrategy()
         {
             SchedulingStrategy = "random";
+            return this;
+        }
+
+        /// <summary>
+        /// Updates the checkerConfiguration to use the statistical scheduling strategy during systematic testing.
+        /// </summary>
+        public CheckerConfiguration WithStatisticalStrategy()
+        {
+            SchedulingStrategy = "statistical";
             return this;
         }
 

@@ -30,7 +30,7 @@ namespace PChecker.Actors.EventQueues
         /// <summary>
         /// Dequeues the next event, if there is one available.
         /// </summary>
-        (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) Dequeue();
+        (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) Dequeue(bool checkOnly = false);
 
         /// <summary>
         /// Enqueues the specified raised event.
@@ -61,5 +61,21 @@ namespace PChecker.Actors.EventQueues
         /// Closes the queue, which stops any further event enqueues.
         /// </summary>
         void Close();
+
+        /// <summary>
+        /// This function is implemented by MockEventQueue.
+        /// </summary>
+        public bool ReceiveDelayedWaitEvents()
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// This function is implemented by MockEventQueue.
+        /// </summary>
+        public Event GetDelayedWaitEvent()
+        {
+            return null;
+        }
     }
 }

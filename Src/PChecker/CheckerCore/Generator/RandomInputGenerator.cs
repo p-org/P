@@ -92,5 +92,10 @@ namespace PChecker.Generator
         {
             return new RandomInputGenerator(this);
         }
+
+        public RandomInputGenerator New()
+        {
+            return new RandomInputGenerator(Random, null, null);
+        }
     }
 }

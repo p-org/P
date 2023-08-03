@@ -188,7 +188,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         if (SavedGenerators.Count == 0)
         {
             // Mutate current input if no input is saved.
-            Generator = MutateGenerator(Generator);
+            Generator = NewGenerator();
             return;
         }
 
@@ -206,7 +206,15 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         {
             _currentInputIndex = 0;
         }
-        Generator = MutateGenerator(SavedGenerators[_currentInputIndex].Item2);
+
+        if (SavedGenerators.Count == 0)
+        {
+            Generator = NewGenerator();
+        }
+        else
+        {
+            Generator = MutateGenerator(SavedGenerators[_currentInputIndex].Item2);
+        }
     }
 
     protected virtual void MoveToNextInput()
@@ -226,7 +234,12 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 
     protected virtual StrategyGenerator MutateGenerator(StrategyGenerator prev)
     {
-        return new StrategyGenerator(Generator.InputGenerator.Mutate(), Generator.ScheduleGenerator.Mutate());
+        return new StrategyGenerator(prev.InputGenerator.Mutate(), prev.ScheduleGenerator.Mutate());
+    }
+
+    protected virtual StrategyGenerator NewGenerator()
+    {
+        return new StrategyGenerator(Generator.InputGenerator.New(), Generator.ScheduleGenerator.New());
     }
 
     public int GetAllCoveredStates()

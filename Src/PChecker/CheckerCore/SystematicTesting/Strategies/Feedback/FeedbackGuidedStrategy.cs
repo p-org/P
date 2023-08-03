@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.XPath;
 using PChecker.Coverage;
 using PChecker.Generator;
 using PChecker.Feedback;
@@ -22,13 +23,16 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     protected int ScheduledSteps;
     private int _visitedStates = 0;
 
-    private readonly HashSet<int> _visitedTimelines = new();
+    private readonly Dictionary<int, HashSet<int>> _visitedTimelines = new();
 
-    protected readonly List<StrategyGenerator> SavedGenerators = new();
+    protected List<(int, StrategyGenerator)> SavedGenerators = new();
 
-    private readonly int _maxMutationsWithoutNewSaved = 50;
+    private readonly int _maxMutationsForFavored = 50;
+    private readonly int _maxMutationsForUnfavored = 10;
+    private readonly int _nonFavoredCap = 10;
+    private int _nonFavoredSaved = 0;
 
-    private int _numMutationsWithoutNewSaved = 0;
+    private int _numMutations = 0;
 
     private int _currentInputIndex = 0;
 
@@ -134,40 +138,40 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     {
         if (patternObserver == null)
         {
-            if (_visitedTimelines.Add(runtime.TimelineObserver.GetTimelineHash()))
+            _visitedTimelines.TryAdd(-1, new HashSet<int>());
+            if (_visitedTimelines[-1].Add(runtime.TimelineObserver.GetTimelineHash()))
             {
-                SavedGenerators.Add(Generator);
-                _numMutationsWithoutNewSaved = 0;
+                SavedGenerators.Add((-1, Generator));
             }
         }
         else
         {
             int state = patternObserver.ShouldSave();
-            if (_matched || !_savePartialMatch)
+            if (state == -1 || (_savePartialMatch && state >= _visitedStates))
             {
-                if (state == -1)
+                if (state != -1 && state > _visitedStates)
                 {
-                    if (_visitedTimelines.Add(runtime.TimelineObserver.GetTimelineHash()))
+                    System.Random rng = new System.Random();
+                    SavedGenerators = SavedGenerators.Where(it => it.Item1 == -1).OrderBy(_ => rng.Next()).ToList();
+                    _visitedStates = state;
+                    _currentInputIndex = 0;
+                    _nonFavoredSaved = 0;
+                    _numMutations = 0;
+                }
+
+                _visitedTimelines.TryAdd(state, new HashSet<int>());
+                int timelineHash = runtime.TimelineObserver.GetTimelineHash();
+                if (!_visitedTimelines[state].Contains(timelineHash))
+                {
+                    if (state == -1 || (_nonFavoredSaved < _nonFavoredCap))
                     {
-                        SavedGenerators.Add(Generator);
-                        _numMutationsWithoutNewSaved = 0;
+                        _visitedTimelines[state].Add(timelineHash);
+                        SavedGenerators.Add((state, Generator));
+                        if (state != -1)
+                        {
+                            _nonFavoredSaved += 1;
+                        }
                     }
-                }
-            }
-            else
-            {
-                if (state == -1)
-                {
-                    _matched = true;
-                    SavedGenerators.Clear();
-                    SavedGenerators.Add(Generator);
-                    _numMutationsWithoutNewSaved = 0;
-                }
-                else if ((_visitedStates | state) != _visitedStates)
-                {
-                    _visitedStates |= state;
-                    SavedGenerators.Add(Generator);
-                    _numMutationsWithoutNewSaved = 0;
                 }
             }
         }
@@ -187,26 +191,36 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
             Generator = MutateGenerator(Generator);
             return;
         }
-        if (_numMutationsWithoutNewSaved >= _maxMutationsWithoutNewSaved)
+
+        int maxMutations = SavedGenerators[_currentInputIndex].Item1 == -1 ? _maxMutationsForFavored : _maxMutationsForUnfavored;
+        if (_numMutations >= maxMutations)
         {
             MoveToNextInput();
         }
         else
         {
-            _numMutationsWithoutNewSaved ++;
+            _numMutations ++;
         }
 
         if (_currentInputIndex >= SavedGenerators.Count)
         {
             _currentInputIndex = 0;
         }
-        Generator = MutateGenerator(SavedGenerators[_currentInputIndex]);
+        Generator = MutateGenerator(SavedGenerators[_currentInputIndex].Item2);
     }
 
     protected virtual void MoveToNextInput()
     {
-        _currentInputIndex += 1;
-        _numMutationsWithoutNewSaved = 0;
+        if (SavedGenerators[_currentInputIndex].Item1 != -1)
+        {
+            SavedGenerators.RemoveAt(_currentInputIndex);
+            _nonFavoredSaved -= 1;
+        }
+        else
+        {
+            _currentInputIndex += 1;
+        }
+        _numMutations = 0;
     }
 
 

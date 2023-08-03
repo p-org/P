@@ -62,7 +62,7 @@ public class TestSymbolicRegression {
     runArgs += String.format(" --timeout %s --iterations %s --max-steps %s", timeout, iterations, maxSteps);
 
     if (psymArgs != null && !psymArgs.isEmpty()) {
-      runArgs += " --psym-args :" + psymArgs.replace(" ", ":");
+      runArgs += String.format(" --psym-args :%s ", psymArgs.replace(" ", ":"));
     }
     PSymTestLogger.log(String.format("Running in mode %s with arguments:  %s", mode, runArgs));
   }

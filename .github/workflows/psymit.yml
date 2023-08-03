@@ -37,4 +37,4 @@ jobs:
       run: ./scripts/build.sh
     - name: Test PSym
       working-directory: Src/PRuntimes/PSymRuntime
-      run: mvn test -Dpsym.args="--strategy symbolic-iterative"
+      run: mvn test -Dpsym.args="--strategy symbolic-iterative" -Diterations="20"

@@ -80,9 +80,6 @@ public class EntryPoint {
     executor = Executors.newSingleThreadExecutor();
 
     PSymGlobal.setResult("error");
-    if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
-      SymmetryTracker.setScheduler(searchScheduler);
-    }
 
     double preSearchTime =
         TimeMonitor.getInstance().findInterval(TimeMonitor.getInstance().getStart());

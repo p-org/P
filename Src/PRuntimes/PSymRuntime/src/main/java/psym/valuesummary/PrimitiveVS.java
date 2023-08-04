@@ -136,25 +136,16 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     return new PrimitiveVS(this);
   }
 
-  /**
-   * Permute the value summary
-   *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
-   */
-  public PrimitiveVS<T> swap(Machine m1, Machine m2) {
+  public PrimitiveVS<T> swap(Map<Machine, Machine> mapping) {
     boolean swapped = false;
     Map<T, Guard> newGuardedValues = new HashMap<>();
     for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
       T key = entry.getKey();
       if (key instanceof Machine) {
-        Machine machineKey = (Machine) key;
-        if (key.equals(m1)) {
-          key = (T) m2;
-          swapped = true;
-        } else if (key.equals(m2)) {
-          key = (T) m1;
+        Machine origMachine = (Machine) key;
+        Machine newMachine = mapping.get(origMachine);
+        if (newMachine != null) {
+          key = (T) newMachine;
           swapped = true;
         }
       }

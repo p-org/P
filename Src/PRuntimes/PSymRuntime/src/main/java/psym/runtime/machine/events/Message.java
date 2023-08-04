@@ -157,17 +157,10 @@ public class Message implements ValueSummary<Message> {
     return new Message(this);
   }
 
-  /**
-   * Permute the value summary
-   *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
-   */
-  public Message swap(Machine m1, Machine m2) {
+  public Message swap(Map<Machine, Machine> mapping) {
     Map<Event, UnionVS> newPayload = new HashMap<>(this.payload);
-    newPayload.replaceAll((k, v) -> v.swap(m1, m2));
-    return new Message(this.event.swap(m1, m2), this.target.swap(m1, m2), newPayload);
+    newPayload.replaceAll((k, v) -> v.swap(mapping));
+    return new Message(this.event.swap(mapping), this.target.swap(mapping), newPayload);
   }
 
   public PrimitiveVS<Event> getEvent() {

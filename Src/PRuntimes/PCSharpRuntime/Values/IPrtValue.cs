@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Plang.CSharpRuntime.Values
 {
@@ -14,5 +15,7 @@ namespace Plang.CSharpRuntime.Values
         {
             return ToString();
         }
+        
+        object ToDict();
     }
 }

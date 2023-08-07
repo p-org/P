@@ -215,5 +215,20 @@ namespace Plang.CSharpRuntime.Values
             sb.Append(")");
             return sb.ToString();
         }
+        
+        public object ToDict()
+        {
+            var mapDict = new Dictionary<string, object>();
+            
+            foreach (var value in map)
+            {
+                var mapKey = value.Key.ToEscapedString();
+                var mapValue = value.Value.ToDict();
+                
+                mapDict.Add(mapKey, mapValue);
+            }
+            
+            return mapDict;
+        }
     }
 }

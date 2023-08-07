@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections;
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
@@ -131,28 +132,50 @@ namespace PChecker.Actors.Logging
         /// </summary>
         /// <param name="eventPayload">Of type Dictionary&lt;string, string&gt;: JSON representation of payload.</param>
         /// <returns>string: string representation of payload.</returns>
-        private static string ConvertPayloadToString(Dictionary<string, string>? eventPayload)
+        private static string? ConvertPayloadToString(object? eventPayload)
         {
             // If no payload, return empty string.
             if (eventPayload is null)
             {
                 return string.Empty;
             }
-
-            // Construct the string payload in the format as follows: { key: val, key2: val2, ... }
-            var stringBuilder = new StringBuilder();
-            foreach (var kvp in eventPayload)
+            
+            if (eventPayload is IDictionary eventPayloadDict)
             {
-                stringBuilder.Append($"{kvp.Key}: {kvp.Value}, ");
+                var stringBuilder = new StringBuilder();
+                var eventPayloadDictKeys =eventPayloadDict.Keys; 
+                foreach(var key in eventPayloadDictKeys)
+                {
+                    stringBuilder.Append($"{key}: {ConvertPayloadToString(eventPayloadDict[key])}, ");
+                }
+                
+                // Remove the last ", "
+                if (stringBuilder.Length >= 2)
+                {
+                    stringBuilder.Length -= 2;
+                }
+                
+                return $"{{ {stringBuilder} }}";
             }
 
-            // Remove the last ", "
-            if (stringBuilder.Length >= 2)
+            if (eventPayload is IList eventPayloadList)
             {
-                stringBuilder.Length -= 2;
+                var stringBuilder = new StringBuilder();
+                foreach (var value in eventPayloadList)
+                {
+                    stringBuilder.Append($"{ConvertPayloadToString(value)}, ");
+                }
+                
+                // Remove the last ", "
+                if (stringBuilder.Length >= 2)
+                {
+                    stringBuilder.Length -= 2;
+                }
+                
+                return $"[ {stringBuilder} ]";
             }
-
-            return $"{{ {stringBuilder} }}";
+            
+            return eventPayload.ToString();
         }
 
         /// <summary>
@@ -165,7 +188,7 @@ namespace PChecker.Actors.Logging
         /// <param name="eventPayload">Of type Dictionary&lt;string, string&gt;: payload of the event, if there is any.</param>
         /// <returns>string: the string containing all information.</returns>
         private static string GetSendReceiveId(string? machineName, string? eventName,
-            Dictionary<string, string>? eventPayload) =>
+            object? eventPayload) =>
             $"_{machineName}:_{eventName}:_{ConvertPayloadToString(eventPayload)}";
 
         /// <summary>
@@ -373,7 +396,7 @@ namespace PChecker.Actors.Logging
         ///     "rId": "1"
         /// }
         /// </summary>
-        public Dictionary<string, string>? Payload { get; set; }
+        public object? Payload { get; set; }
 
         /// <summary>
         /// The action being executed.

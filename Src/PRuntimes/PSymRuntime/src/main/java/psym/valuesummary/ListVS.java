@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Getter;
@@ -57,17 +58,10 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     return new ListVS(this);
   }
 
-  /**
-   * Permute the value summary
-   *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
-   */
-  public ListVS<T> swap(Machine m1, Machine m2) {
+  public ListVS<T> swap(Map<Machine, Machine> mapping) {
     return new ListVS(
         new PrimitiveVS<>(this.size),
-        this.items.stream().map(i -> i.swap(m1, m2)).collect(Collectors.toList()));
+        this.items.stream().map(i -> i.swap(mapping)).collect(Collectors.toList()));
   }
 
   /**

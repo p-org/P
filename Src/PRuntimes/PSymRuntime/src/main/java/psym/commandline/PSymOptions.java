@@ -432,6 +432,12 @@ public class PSymOptions {
             case "symbolic":
               config.setToSymbolic();
               break;
+            case "symbolic-fixpoint":
+              config.setToSymbolicFixpoint();
+              break;
+            case "symbolic-iterative":
+              config.setToSymbolicIterative();
+              break;
             case "random":
               config.setToRandom();
               break;

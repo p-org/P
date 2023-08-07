@@ -58,29 +58,21 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
     return new MapVS(this);
   }
 
-  /**
-   * Permute the value summary
-   *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
-   */
-  public MapVS<K, T, V> swap(Machine m1, Machine m2) {
+  public MapVS<K, T, V> swap(Map<Machine, Machine> mapping) {
     Map<K, V> newEntries = new HashMap<>();
     for (Map.Entry<K, V> kv : this.entries.entrySet()) {
       K key = kv.getKey();
       if (key instanceof Machine) {
-        Machine machineKey = (Machine) key;
-        if (key.equals(m1)) {
-          key = (K) m2;
-        } else if (key.equals(m2)) {
-          key = (K) m1;
+        Machine origMachine = (Machine) key;
+        Machine newMachine = mapping.get(origMachine);
+        if (newMachine != null) {
+          key = (K) newMachine;
         }
       }
-      V val = kv.getValue().swap(m1, m2);
+      V val = kv.getValue().swap(mapping);
       newEntries.put(key, val);
     }
-    return new MapVS(this.keys.swap(m1, m2), newEntries);
+    return new MapVS(this.keys.swap(mapping), newEntries);
   }
 
   /**

@@ -193,7 +193,7 @@ public class TestCaseExecutor {
    * @throws IOException
    */
   private static Process buildRunProcess(String cmd, String outFolder) throws IOException {
-    ProcessBuilder builder = new ProcessBuilder(cmd.split(" "));
+    ProcessBuilder builder = new ProcessBuilder(cmd.split("\\s+"));
     File outFile = new File(outFolder + "/run.out");
     outFile.getParentFile().mkdirs();
     outFile.createNewFile();

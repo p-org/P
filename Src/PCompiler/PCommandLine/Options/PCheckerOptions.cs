@@ -80,7 +80,9 @@ namespace Plang.Options
             advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of PSym-specific JVM arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("interesting-events", null, "The name of the interesting events generator", typeof(string));
             advancedGroup.AddArgument("pattern", null, "The name of the pattern matcher generator", typeof(string));
-            advancedGroup.AddArgument("no-partial-match", null, "Do not save a schedule if the pattern is partially matched", typeof(bool));
+            advancedGroup.AddArgument("no-partial-match", null, "For feedback strategy, do not save a schedule if the pattern is partially matched", typeof(bool));
+            advancedGroup.AddArgument("no-discard", null, "For feedback strategy, discard saved generators if a new generator with higher coverage is found", typeof(bool));
+            advancedGroup.AddArgument("fixed-priority", null, "For feedback strategy, schedule generator mutations based on diversity", typeof(bool));
         }
 
         /// <summary>
@@ -275,6 +277,12 @@ namespace Plang.Options
                     break;
                 case "no-partial-match":
                     checkerConfiguration.SavePartialMatch = false;
+                    break;
+                case "no-discard":
+                    checkerConfiguration.DiscardLowerCoverage = false;
+                    break;
+                case "fixed-priority":
+                    checkerConfiguration.DiversityBasedPriority = false;
                     break;
                 default:
                     throw new Exception(string.Format("Unhandled parsed argument: '{0}'", option.LongName));

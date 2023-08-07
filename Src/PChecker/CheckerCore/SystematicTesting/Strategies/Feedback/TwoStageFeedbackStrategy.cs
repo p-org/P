@@ -17,26 +17,6 @@ internal class TwoStageFeedbackStrategy<TInput, TSchedule> : FeedbackGuidedStrat
     {
     }
 
-    public override void ObserveRunningResults(EventPatternObserver patternObserver, ControlledRuntime runtime)
-    {
-        int numSavedInput = SavedGenerators.Count;
-        base.ObserveRunningResults(patternObserver, runtime);
-        if (SavedGenerators.Count != numSavedInput)
-        {
-            _numScheduleMutationWithoutNewSaved = 0;
-        }
-        else
-        {
-            _numScheduleMutationWithoutNewSaved += 1;
-        }
-    }
-
-    protected override void MoveToNextInput()
-    {
-        base.MoveToNextInput();
-        _numScheduleMutationWithoutNewSaved = 0;
-    }
-
     protected override StrategyGenerator MutateGenerator(StrategyGenerator prev)
     {
         if (_numScheduleMutationWithoutNewSaved > _maxScheduleMutationsWithoutNewSaved)

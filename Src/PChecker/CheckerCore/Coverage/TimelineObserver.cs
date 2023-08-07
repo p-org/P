@@ -10,9 +10,22 @@ namespace PChecker.Feedback;
 public class TimelineObserver: IActorRuntimeLog
 {
 
-    private Dictionary<string, HashSet<Tuple<string, string>>> _timelines = new();
+    private HashSet<(string, string, string)> _timelines = new();
     private Dictionary<string, HashSet<string>> _allEvents = new();
 
+    public static readonly List<(int, int)> Coefficients = new();
+    public static int NumOfCoefficients = 50;
+
+    static TimelineObserver()
+    {
+        // Fix seed to generate same random numbers across runs.
+        var rand = new System.Random(0);
+
+        for (int i = 0; i < NumOfCoefficients; i++)
+        {
+            Coefficients.Add((rand.Next(), rand.Next()));
+        }
+    }
 
     public void OnCreateActor(ActorId id, string creatorName, string creatorType)
     {
@@ -48,32 +61,42 @@ public class TimelineObserver: IActorRuntimeLog
         string actor = id.Type;
         
         _allEvents.TryAdd(actor, new());
-        _timelines.TryAdd(actor, new());
-        
+
         string name = e.GetType().Name;
         foreach (var ev in _allEvents[actor])
         {
-            _timelines[actor].Add(new Tuple<string, string>(ev, name));
+            _timelines.Add((actor, ev, name));
         }
-        
         _allEvents[actor].Add(name);
     }
 
     public int GetTimelineHash()
     {
-        return GetTimeline().GetHashCode();
+        return _timelines.GetHashCode();
     }
 
     public string GetTimeline()
     {
-        var timelines = _timelines.Select(kv =>
+        var tls = _timelines.Select(it => $"<{it.Item1}, {it.Item2}, {it.Item3}>").ToList();
+        tls.Sort();
+        return string.Join(";", tls);
+    }
+
+    public List<int> GetTimelineMinhash()
+    {
+        List<int> minHash = new();
+        var timelineHash = _timelines.Select(it => it.GetHashCode());
+        foreach (var (a, b) in Coefficients)
         {
-            var tl = kv.Value.Select(it => $"<{it.Item1},{it.Item2}>").ToList();
-            tl.Sort();
-            return  kv.Key + ":" + string.Join(",", tl);
-        }).ToList();
-        timelines.Sort();
-        return string.Join(";", timelines);
+            int minValue = Int32.MaxValue;
+            foreach (var value in timelineHash)
+            {
+                int hash = a * value + b;
+                minValue = Math.Min(minValue, hash);
+            }
+            minHash.Add(minValue);
+        }
+        return minHash;
     }
 
     public void OnReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)
@@ -98,16 +121,6 @@ public class TimelineObserver: IActorRuntimeLog
 
     public void OnGotoState(ActorId id, string currentStateName, string newStateName)
     {
-    }
-
-    public void OnPushState(ActorId id, string currentStateName, string newStateName)
-    {
-
-    }
-
-    public void OnPopState(ActorId id, string currentStateName, string restoredStateName)
-    {
-
     }
 
     public void OnDefaultEventHandler(ActorId id, string stateName)

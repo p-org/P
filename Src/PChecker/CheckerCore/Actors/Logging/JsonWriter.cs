@@ -129,53 +129,64 @@ namespace PChecker.Actors.Logging
 
         /// <summary>
         /// Converts payload from json to string representation.
+        ///
+        /// Recursively builds string in case of nested data types.
         /// </summary>
-        /// <param name="eventPayload">Of type Dictionary&lt;string, string&gt;: JSON representation of payload.</param>
+        /// <param name="eventPayload">Of type object: JSON representation of payload.</param>
         /// <returns>string: string representation of payload.</returns>
         private static string? ConvertPayloadToString(object? eventPayload)
         {
-            // If no payload, return empty string.
-            if (eventPayload is null)
+            switch (eventPayload)
             {
-                return string.Empty;
+                // If no payload, return empty string
+                case null:
+                    return string.Empty;
+                
+                // If payload is of Dictionary, iterate through key, value pair and build string. Recurse on the value 
+                // in the case that the value is another dictionary/list rather than a primitive type
+                case IDictionary eventPayloadDict:
+                {
+                    var stringBuilder = new StringBuilder();
+                    var eventPayloadDictKeys =eventPayloadDict.Keys; 
+                    foreach(var key in eventPayloadDictKeys)
+                    {
+                        stringBuilder.Append($"{key}: {ConvertPayloadToString(eventPayloadDict[key])}, ");
+                    }
+                
+                    // Remove the last ", "
+                    if (stringBuilder.Length >= 2)
+                    {
+                        stringBuilder.Length -= 2;
+                    }
+                    
+                    // Surround string with { and }
+                    return $"{{ {stringBuilder} }}";
+                }
+                
+                // If payload is of List, iterate through each item, and build string. Recurse on the item value
+                // in the case that the value is another dictionary/list rather than a primitive type
+                case IList eventPayloadList:
+                {
+                    var stringBuilder = new StringBuilder();
+                    foreach (var value in eventPayloadList)
+                    {
+                        stringBuilder.Append($"{ConvertPayloadToString(value)}, ");
+                    }
+                
+                    // Remove the last ", "
+                    if (stringBuilder.Length >= 2)
+                    {
+                        stringBuilder.Length -= 2;
+                    }
+                
+                    // Surround string with [ and ]
+                    return $"[ {stringBuilder} ]";
+                }
+                
+                // Just convert primitive types to string
+                default:
+                    return eventPayload.ToString();
             }
-            
-            if (eventPayload is IDictionary eventPayloadDict)
-            {
-                var stringBuilder = new StringBuilder();
-                var eventPayloadDictKeys =eventPayloadDict.Keys; 
-                foreach(var key in eventPayloadDictKeys)
-                {
-                    stringBuilder.Append($"{key}: {ConvertPayloadToString(eventPayloadDict[key])}, ");
-                }
-                
-                // Remove the last ", "
-                if (stringBuilder.Length >= 2)
-                {
-                    stringBuilder.Length -= 2;
-                }
-                
-                return $"{{ {stringBuilder} }}";
-            }
-
-            if (eventPayload is IList eventPayloadList)
-            {
-                var stringBuilder = new StringBuilder();
-                foreach (var value in eventPayloadList)
-                {
-                    stringBuilder.Append($"{ConvertPayloadToString(value)}, ");
-                }
-                
-                // Remove the last ", "
-                if (stringBuilder.Length >= 2)
-                {
-                    stringBuilder.Length -= 2;
-                }
-                
-                return $"[ {stringBuilder} ]";
-            }
-            
-            return eventPayload.ToString();
         }
 
         /// <summary>
@@ -185,7 +196,7 @@ namespace PChecker.Actors.Logging
         /// </summary>
         /// <param name="machineName">of type string: name of the machine.</param>
         /// <param name="eventName">Of type string: name of the event.</param>
-        /// <param name="eventPayload">Of type Dictionary&lt;string, string&gt;: payload of the event, if there is any.</param>
+        /// <param name="eventPayload">Of type object: payload of the event, if there is any.</param>
         /// <returns>string: the string containing all information.</returns>
         private static string GetSendReceiveId(string? machineName, string? eventName,
             object? eventPayload) =>
@@ -387,7 +398,7 @@ namespace PChecker.Actors.Logging
         public string? EndState { get; set; }
 
         /// <summary>
-        /// Payload of an event. Represented in dictionary object.
+        /// Payload of an event. Represented in object or primitive types, or Dictionary, or List.
         /// I.e.
         /// {
         ///     "source": "Client(4)",

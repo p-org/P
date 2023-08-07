@@ -29,7 +29,7 @@ namespace Plang.CSharpRuntime
 
         public object ToDict()
         {
-            return GetType().FullName;
+            throw new NotImplementedException();
         }
     }
 

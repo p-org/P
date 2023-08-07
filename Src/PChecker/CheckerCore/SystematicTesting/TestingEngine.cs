@@ -622,7 +622,7 @@ namespace PChecker.SystematicTesting
                     Logger.WriteLine(String.Join(";", TestReport.ValidScheduling.Select(it => $"({it.Key}, {it.Value})")));
                     if (Strategy is IFeedbackGuidedStrategy s)
                     {
-                        Logger.WriteLine($"..... Current input: {s.CurrentInputIndex()}, total saved: {s.TotalSavedInputs()}");
+                        Logger.WriteLine($"..... Total saved: {s.TotalSavedInputs()}");
                     }
                 }
 
@@ -918,32 +918,33 @@ namespace PChecker.SystematicTesting
                 report.CoverageInfo.CoverageGraph = Graph;
             }
 
+            int shouldSave = -1;
+
             if (_eventPatternObserver != null)
             {
-                int data = _eventPatternObserver.ShouldSave();
-
-                if (data == -1)
-                {
-                    var coverageInfo = runtime.GetCoverageInfo();
-                    report.CoverageInfo.Merge(coverageInfo);
-                    TestReport.Merge(report);
-
-                    if (TestReport.ExploredTimelines.Add(runtime.TimelineObserver.GetTimelineHash()))
-                    {
-                        if (_checkerConfiguration.IsVerbose)
-                        {
-                            Logger.WriteLine($"... New timeline observed: {runtime.TimelineObserver.GetTimeline()}");
-                        }
-                    }
-                    // Also save the graph snapshot of the last iteration, if there is one.
-                    Graph = coverageInfo.CoverageGraph;
-                }
-
-
-                TestReport.ValidScheduling.TryAdd(data, 0);
-                TestReport.ValidScheduling[data] += 1;
+                shouldSave = _eventPatternObserver.ShouldSave();
+                TestReport.ValidScheduling.TryAdd(shouldSave, 0);
+                TestReport.ValidScheduling[shouldSave] += 1;
 
             }
+
+            if (shouldSave == 1)
+            {
+                var coverageInfo = runtime.GetCoverageInfo();
+                report.CoverageInfo.Merge(coverageInfo);
+                TestReport.Merge(report);
+
+                if (TestReport.ExploredTimelines.Add(runtime.TimelineObserver.GetTimelineHash()))
+                {
+                    if (_checkerConfiguration.IsVerbose)
+                    {
+                        Logger.WriteLine($"... New timeline observed: {runtime.TimelineObserver.GetTimeline()}");
+                    }
+                }
+                // Also save the graph snapshot of the last iteration, if there is one.
+                Graph = coverageInfo.CoverageGraph;
+            }
+
         }
 
         /// <summary>

@@ -175,7 +175,7 @@ internal class EventPatternObserver : IActorRuntimeLog
     public virtual bool IsMatched()
     {
         int result = _matcher.IsMatched(_events);
-        return result == -1;
+        return result == 1;
     }
     
 

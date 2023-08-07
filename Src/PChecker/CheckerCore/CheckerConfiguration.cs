@@ -301,10 +301,22 @@ namespace PChecker
         public string JvmArgs;
 
         /// <summary>
-        /// Save input if the pattern are partially matched.
+        /// For feedback strategy, save input if the pattern are partially matched.
         /// </summary>
         [DataMember]
         public bool SavePartialMatch;
+
+        /// <summary>
+        /// For feedback strategy, discard saved generators if a new generator with higher coverage is found.
+        /// </summary>
+        [DataMember]
+        public bool DiscardLowerCoverage;
+
+        /// <summary>
+        /// For feedback strategy, schedule generator mutations based on diversity.
+        /// </summary>
+        [DataMember]
+        public bool DiversityBasedPriority;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CheckerConfiguration"/> class.
@@ -356,6 +368,8 @@ namespace PChecker
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
             SavePartialMatch = true;
+            DiscardLowerCoverage = true;
+            DiversityBasedPriority = true;
 
             PSymArgs = "";
             JvmArgs = "";

@@ -6,5 +6,4 @@ internal interface IFeedbackGuidedStrategy: ISchedulingStrategy
 {
     public void ObserveRunningResults(EventPatternObserver patternObserver, ControlledRuntime runtime);
     public int TotalSavedInputs();
-    public int CurrentInputIndex();
 }

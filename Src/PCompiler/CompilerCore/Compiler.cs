@@ -80,6 +80,10 @@ namespace Plang.Compiler
                     return Environment.ExitCode;
                 }
             }
+            else
+            {
+                job.Output.WriteInfo("Build succeeded.");
+            }
             job.Output.WriteInfo($"----------------------------------------");
             Environment.ExitCode = 0;
             return Environment.ExitCode;

@@ -16,6 +16,9 @@ namespace Plang.CSharpRuntime.Values
             return ToString();
         }
         
-        object ToDict();
+        object ToDict()
+        {
+            return ToEscapedString();
+        }
     }
 }

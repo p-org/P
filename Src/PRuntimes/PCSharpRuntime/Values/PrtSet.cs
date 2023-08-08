@@ -136,6 +136,11 @@ namespace Plang.CSharpRuntime.Values
             return sb.ToString();
         }
 
+        public object ToDict()
+        {
+            return set.Select(value => value == null ? null : value.ToDict()).ToList();
+        }
+
         public IPrtValue this[int index]
         {
             get => set.ElementAt(index);

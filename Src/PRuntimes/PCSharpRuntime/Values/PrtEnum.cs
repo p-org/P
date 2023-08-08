@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Plang.CSharpRuntime.Values
 {
@@ -22,6 +23,11 @@ namespace Plang.CSharpRuntime.Values
         public static void Clear()
         {
             enumElements.Clear();
+        }
+        
+        public object ToDict()
+        {
+            return enumElements.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToDict());
         }
     }
 }

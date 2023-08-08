@@ -219,6 +219,11 @@ namespace Plang.CSharpRuntime
             {
                 throw new NotImplementedException();
             }
+
+            public object ToDict()
+            {
+                throw new NotImplementedException();
+            }
         }
 
         public class InitializeParametersEvent : PEvent

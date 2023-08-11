@@ -108,7 +108,7 @@ namespace PChecker.Actors.EventQueues
         }
 
         /// <inheritdoc/>
-        public (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) Dequeue(bool checkOnly = false)
+        public (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) Dequeue()
         {
             // Try to get the raised event, if there is one. Raised events
             // have priority over the events in the inbox.

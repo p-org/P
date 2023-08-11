@@ -446,7 +446,16 @@ namespace PChecker.SystematicTesting
                 actorManager = new MockActorManager(this, actor, opGroupId);
             }
 
-            IEventQueue eventQueue = new MockEventQueue(actorManager, actor, Strategy);
+            IEventQueue eventQueue = null;
+            if (CheckerConfiguration.SchedulingStrategy.Equals("statistical"))
+            {
+                eventQueue = new TimedMockEventQueue(actorManager, actor, Strategy);
+            }
+            else
+            {
+                eventQueue = new MockEventQueue(actorManager, actor);
+            }
+
             actor.Configure(this, id, actorManager, eventQueue);
             actor.SetupEventHandlers();
 

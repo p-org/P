@@ -882,7 +882,7 @@ namespace PChecker.SystematicTesting
                 report.CoverageInfo.CoverageGraph = Graph;
             }
 
-            int shouldSave = -1;
+            int shouldSave = 1;
 
             if (_eventPatternObserver != null)
             {

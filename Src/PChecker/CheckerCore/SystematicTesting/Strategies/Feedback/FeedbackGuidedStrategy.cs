@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Xml.XPath;
-using PChecker.Coverage;
 using PChecker.Generator;
 using PChecker.Feedback;
 using AsyncOperation = PChecker.SystematicTesting.Operations.AsyncOperation;
+using Debug = System.Diagnostics.Debug;
 
 namespace PChecker.SystematicTesting.Strategies.Feedback;
 
@@ -39,6 +39,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     private readonly bool _savePartialMatch;
     private readonly bool _discardLowerCoverage;
     private readonly bool _diversityBasedPriority;
+    private int _pendingMutations = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FeedbackGuidedStrategy"/> class.
@@ -178,6 +179,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         {
             if (diversityScore > 0)
             {
+                _pendingMutations += diversityScore;
                 SavedGenerators.Add(new(diversityScore, Generator, timelineMinhash, 1));
             }
         }
@@ -205,12 +207,14 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
                     {
                         // We remove all saved generators if a new generator with higher coverage is found.
                         SavedGenerators.Elements.Clear();
+                        _pendingMutations = 0;
                         priority = diversityScore;
                     }
                 }
                 if (priority > 0)
                 {
                     SavedGenerators.Add(new(priority, Generator, timelineMinhash, coverageResult));
+                    _pendingMutations += priority;
                 }
             }
         }
@@ -234,6 +238,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
             var record = SavedGenerators.Pop();
             Generator = MutateGenerator(record.Generator);
             record.Priority -= 1;
+            _pendingMutations -= 1;
             SavedGenerators.Add(record);
         }
     }
@@ -249,8 +254,10 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         return new StrategyGenerator(Generator.InputGenerator.New(), Generator.ScheduleGenerator.New());
     }
 
-    public int GetAllCoveredStates()
+    public void DumpStats(TextWriter writer)
     {
-        return _visitedStates;
+        Debug.Assert(
+            SavedGenerators.Elements.Select(it => it.Priority).Sum() == _pendingMutations);
+        writer.WriteLine($"..... Total saved: {TotalSavedInputs()}, pending mutations: {_pendingMutations}");
     }
 }

@@ -72,7 +72,7 @@ public class TimelineObserver: IActorRuntimeLog
 
     public int GetTimelineHash()
     {
-        return _timelines.GetHashCode();
+        return GetTimeline().GetHashCode();
     }
 
     public string GetTimeline()

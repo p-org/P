@@ -10,8 +10,6 @@ import psym.valuesummary.*;
 public abstract class SymmetryTracker implements Serializable {
   public static final Map<String, Set<Machine>> typeToAllSymmetricMachines = new HashMap<>();
 
-  @Setter protected static Scheduler scheduler;
-
   public static void addSymmetryType(String type) {
     typeToAllSymmetricMachines.put(type, new TreeSet<>());
   }

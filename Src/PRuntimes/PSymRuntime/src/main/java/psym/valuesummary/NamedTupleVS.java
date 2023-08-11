@@ -1,11 +1,12 @@
 package psym.valuesummary;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+
 import lombok.Getter;
+import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
+import psym.runtime.scheduler.search.explicit.ExplicitSymmetryTracker;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.values.PString;
 
 /** Class for named tuple value summaries */
@@ -19,10 +20,32 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
   /** Underlying representation as a TupleVS */
   @Getter private final TupleVS tuple;
 
+  private void storeSymmetricTuple() {
+    if (PSymGlobal.getConfiguration().getSymmetryMode() == SymmetryMode.Full) {
+      if (this.names.size() == 2 && !isEmptyVS()) {
+        if (this.names.get(0).equals("symMachine")) {
+          if (PSymGlobal.getSymmetryTracker() instanceof ExplicitSymmetryTracker) {
+            ExplicitSymmetryTracker symTracker = (ExplicitSymmetryTracker) PSymGlobal.getSymmetryTracker();
+            List<GuardedValue<?>> machineGVs = ValueSummary.getGuardedValues(this.tuple.getField(0));
+            List<GuardedValue<?>> dataGVs = ValueSummary.getGuardedValues(this.tuple.getField(1));
+            assert (machineGVs.size() == 1);
+            assert (dataGVs.size() == 1);
+            if (machineGVs.get(0).getValue() != null) {
+              assert (machineGVs.get(0).getValue() instanceof Machine);
+              symTracker.addMachineSymData(
+                      (Machine) machineGVs.get(0).getValue(), this.names.get(1), dataGVs.get(0).getValue());
+            }
+          }
+        }
+      }
+    }
+  }
+
   private NamedTupleVS(List<String> names, TupleVS tuple) {
     this.names = names;
     this.tuple = tuple;
     this.concreteHash = computeConcreteHash();
+    storeSymmetricTuple();
   }
 
   /**
@@ -34,6 +57,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     this.names = new ArrayList<>(old.names);
     this.tuple = new TupleVS(old.tuple);
     this.concreteHash = computeConcreteHash();
+    storeSymmetricTuple();
   }
 
   /**
@@ -51,6 +75,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     }
     tuple = new TupleVS(vs);
     this.concreteHash = computeConcreteHash();
+    storeSymmetricTuple();
   }
 
   /**
@@ -62,15 +87,36 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     return new NamedTupleVS(this);
   }
 
-  /**
-   * Permute the value summary
-   *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
-   */
-  public NamedTupleVS swap(Machine m1, Machine m2) {
-    return new NamedTupleVS(new ArrayList<>(this.names), this.tuple.swap(m1, m2));
+  public NamedTupleVS swap(Map<Machine, Machine> mapping) {
+    if (this.names.size() == 2 && !isEmptyVS()) {
+        if (this.names.get(0).equals("symMachine")) {
+          if (PSymGlobal.getSymmetryTracker() instanceof ExplicitSymmetryTracker) {
+            ExplicitSymmetryTracker symTracker = (ExplicitSymmetryTracker) PSymGlobal.getSymmetryTracker();
+
+            List<GuardedValue<?>> machineGVs = ValueSummary.getGuardedValues(this.tuple.getField(0));
+            List<GuardedValue<?>> dataGVs = ValueSummary.getGuardedValues(this.tuple.getField(1));
+            assert (machineGVs.size() == 1);
+            assert (dataGVs.size() == 1);
+            if (machineGVs.get(0).getValue() != null) {
+              assert (machineGVs.get(0).getValue() instanceof Machine);
+
+              Machine origMachine = (Machine) machineGVs.get(0).getValue();
+              Machine newMachine = mapping.get(origMachine);
+              if (newMachine != null) {
+                Object origValue = dataGVs.get(0).getValue();
+                Object newValue = symTracker.getMachineSymData(newMachine, this.names.get(1), origValue);
+                Guard guard = machineGVs.get(0).getGuard();
+
+                return new NamedTupleVS(
+                        new ArrayList<>(this.names),
+                        new TupleVS(new PrimitiveVS<>(newMachine, guard), new PrimitiveVS<>(newValue, guard)));
+              }
+            }
+            return this;
+          }
+        }
+    }
+    return new NamedTupleVS(new ArrayList<>(this.names), this.tuple.swap(mapping));
   }
 
   /**
@@ -139,6 +185,9 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     final List<TupleVS> tuples = new ArrayList<TupleVS>();
 
     for (NamedTupleVS summary : summaries) {
+      if (summary == null) {
+        continue;
+      }
       if (!Arrays.equals(getNames(), summary.getNames())) {
         throw new RuntimeException("Merging named tuples with different fields is unsupported.");
       }

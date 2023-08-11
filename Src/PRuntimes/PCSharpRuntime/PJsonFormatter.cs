@@ -41,40 +41,7 @@ namespace Plang.CSharpRuntime
 
             return log;
         }
-
-        /// <summary>
-        /// Parse payload input to dictionary format.
-        /// I.e.
-        /// Input: (<source:Client(4), accountId:0, amount:8, rId:19, >)
-        /// Parsed Output: {
-        ///     "source": "Client(4)",
-        ///     "accountId": "0",
-        ///     "amount": "8",
-        ///     "rId": "19",
-        /// }
-        /// </summary>
-        /// <param name="payload">String representing the payload.</param>
-        /// <returns>The dictionary object representation of the payload.</returns>
-        private static Dictionary<string, string> ParsePayloadToDictionary(string payload)
-        {
-            var parsedPayload = new Dictionary<string, string>();
-            var trimmedPayload = payload.Trim('(', ')', '<', '>');
-            var payloadKeyValuePairs = trimmedPayload.Split(',');
-
-            foreach (var payloadPair in payloadKeyValuePairs)
-            {
-                var payloadKeyValue = payloadPair.Split(':');
-
-                if (payloadKeyValue.Length != 2) continue;
-                var key = payloadKeyValue[0].Trim();
-                var value = payloadKeyValue[1].Trim();
-
-                parsedPayload[key] = value;
-            }
-
-            return parsedPayload;
-        }
-
+        
         /// <summary>
         /// Method taken from PLogFormatter.cs file. Takes in a string and only get the
         /// last element of the string separated by a period.
@@ -85,24 +52,7 @@ namespace Plang.CSharpRuntime
         /// <param name="name">String representing the name to be parsed.</param>
         /// <returns>The split string.</returns>
         private static string GetShortName(string name) => name?.Split('.').Last();
-
-        /// TODO: What other forms can the payload be in? Have the method implemented in IPrtValue?
-        /// <summary>
-        /// Cleans the payload string to remove "<" and "/>" and replacing ':' with '='
-        /// I.e.
-        /// Input: (<source:Client(4), accountId:0, amount:4, rId:18, >)
-        /// Output: (source=Client(4), accountId=0, amount=4, rId=18)
-        /// </summary>
-        /// <param name="payload">String representation of the payload.</param>
-        /// <returns>The cleaned payload.</returns>
-        private static string CleanPayloadString(string payload)
-        {
-            var output = payload.Replace("<", string.Empty);
-            output = output.Replace(':', '=');
-            output = output.Replace(", >", string.Empty);
-            return output;
-        }
-
+        
         /// <summary>
         /// Method taken from PLogFormatter.cs file. Takes in Event e and returns string
         /// with details about the event such as event name and its payload. Slightly modified
@@ -117,10 +67,10 @@ namespace Plang.CSharpRuntime
             {
                 return e.GetType().Name;
             }
-
+            
             var pe = (PEvent)(e);
             var payload = pe.Payload == null ? "null" : pe.Payload.ToEscapedString();
-            var msg = pe.Payload == null ? "" : $" with payload ({CleanPayloadString(payload)})";
+            var msg = pe.Payload == null ? "" : $" with payload ({payload})";
             return $"{GetShortName(e.GetType().Name)}{msg}";
         }
 
@@ -129,7 +79,7 @@ namespace Plang.CSharpRuntime
         /// </summary>
         /// <param name="e">Event input.</param>
         /// <returns>Dictionary representation of the payload for the event, if any.</returns>
-        private static Dictionary<string, string> GetEventPayloadInJson(Event e)
+        private static object GetEventPayloadInJson(Event e)
         {
             if (e.GetType().Name.Contains("GotoStateEvent"))
             {
@@ -137,7 +87,7 @@ namespace Plang.CSharpRuntime
             }
 
             var pe = (PEvent)(e);
-            return pe.Payload != null ? ParsePayloadToDictionary(pe.Payload.ToEscapedString()) : null;
+            return pe.Payload == null ? null : pe.Payload.ToDict();
         }
 
         public override void OnCompleted()
@@ -186,7 +136,7 @@ namespace Plang.CSharpRuntime
             Writer.AddLogType(JsonWriter.LogType.CreateStateMachine);
             Writer.LogDetails.Id = id.ToString();
             Writer.LogDetails.CreatorName = creatorName;
-            Writer.LogDetails.CreatorType = creatorType;
+            Writer.LogDetails.CreatorType = GetShortName(creatorType);
             Writer.AddLog(log);
             Writer.AddToLogs(updateVcMap: true);
         }
@@ -532,8 +482,9 @@ namespace Plang.CSharpRuntime
         public override void OnMonitorRaiseEvent(string monitorType, string stateName, Event e)
         {
             stateName = GetShortName(stateName);
+            monitorType = GetShortName(monitorType);
             string eventName = GetEventNameWithPayload(e);
-            var log = $"Monitor '{GetShortName(monitorType)}' raised event '{eventName}' in state '{stateName}'.";
+            var log = $"Monitor '{monitorType}' raised event '{eventName}' in state '{stateName}'.";
 
             Writer.AddLogType(JsonWriter.LogType.MonitorRaiseEvent);
             Writer.LogDetails.Monitor = monitorType;

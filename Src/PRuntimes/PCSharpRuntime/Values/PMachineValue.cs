@@ -47,5 +47,10 @@ namespace Plang.CSharpRuntime.Values
         {
             return Id.Name.Split('.').Last();
         }
+        
+        public object ToDict()
+        {
+            return ToString();
+        }
     }
 }

@@ -25,6 +25,11 @@ namespace Plang.CSharpRuntime.Values
         {
             return value.ToString();
         }
+        
+        public object ToDict()
+        {
+            return value;
+        }
 
         private readonly bool value;
 

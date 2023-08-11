@@ -47,15 +47,8 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     return new SetVS(this);
   }
 
-  /**
-   * Permute the value summary
-   *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
-   */
-  public SetVS<T> swap(Machine m1, Machine m2) {
-    return new SetVS<T>(this.elements.swap(m1, m2));
+  public SetVS<T> swap(Map<Machine, Machine> mapping) {
+    return new SetVS<T>(this.elements.swap(mapping));
   }
 
   public PrimitiveVS<Integer> size() {

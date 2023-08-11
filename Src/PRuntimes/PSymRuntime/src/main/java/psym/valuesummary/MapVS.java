@@ -58,29 +58,21 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
     return new MapVS(this);
   }
 
-  /**
-   * Permute the value summary
-   *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
-   */
-  public MapVS<K, T, V> swap(Machine m1, Machine m2) {
+  public MapVS<K, T, V> swap(Map<Machine, Machine> mapping) {
     Map<K, V> newEntries = new HashMap<>();
     for (Map.Entry<K, V> kv : this.entries.entrySet()) {
       K key = kv.getKey();
       if (key instanceof Machine) {
-        Machine machineKey = (Machine) key;
-        if (key.equals(m1)) {
-          key = (K) m2;
-        } else if (key.equals(m2)) {
-          key = (K) m1;
+        Machine origMachine = (Machine) key;
+        Machine newMachine = mapping.get(origMachine);
+        if (newMachine != null) {
+          key = (K) newMachine;
         }
       }
-      V val = kv.getValue().swap(m1, m2);
+      V val = kv.getValue().swap(mapping);
       newEntries.put(key, val);
     }
-    return new MapVS(this.keys.swap(m1, m2), newEntries);
+    return new MapVS(this.keys.swap(mapping), newEntries);
   }
 
   /**
@@ -124,12 +116,17 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
     final SetVS<T> newKeys = keys.restrict(guard);
     final Map<K, V> newEntries = new HashMap<>();
 
-    if (!newKeys.isEmptyVS()) {
-      for (Map.Entry<K, V> entry : entries.entrySet()) {
-        final V newValue = entry.getValue().restrict(guard);
-        newEntries.put(entry.getKey(), newValue);
+    for (T keySummary : newKeys.getElements().getItems()) {
+      for (GuardedValue<?> guardedKey : ValueSummary.getGuardedValues(keySummary)) {
+        K key = (K) guardedKey.getValue();
+        V val = entries.get(key);
+        if (val != null) {
+          val = val.restrict(guard);
+        }
+        newEntries.put(key, val);
       }
     }
+
     return new MapVS<>(newKeys, newEntries);
   }
 
@@ -185,28 +182,23 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
       return BooleanVS.trueUnderGuard(Guard.constFalse());
     }
 
-    Guard guard = BooleanVS.getTrueGuard(this.keys.symbolicEquals(cmp.keys, pc));
-    ListVS<T> thisSet = this.restrict(guard).getKeys();
-    ListVS<T> cmpSet = cmp.restrict(guard).getKeys();
+    Guard keyGuard = BooleanVS.getTrueGuard(this.keys.symbolicEquals(cmp.keys, pc));
 
-    if (thisSet.isEmpty() && cmpSet.isEmpty())
-      return BooleanVS.trueUnderGuard(guard).restrict(getUniverse().and(cmp.getUniverse()));
-
-    Guard equalCond = guard;
-    while (!thisSet.isEmpty()) {
-      T thisVal = thisSet.get(new PrimitiveVS<>(0, guard));
-      for (GuardedValue<?> key : ValueSummary.getGuardedValues(thisVal)) {
-        PrimitiveVS<Boolean> compareVals =
-            entries
-                .get(key.getValue())
-                .restrict(key.getGuard())
-                .symbolicEquals(
-                    cmp.entries.get(key.getValue()).restrict(key.getGuard()), equalCond);
-        equalCond = equalCond.and(BooleanVS.getTrueGuard(compareVals));
+    Guard notEqual = Guard.constFalse();
+    for (Object key: this.restrict(keyGuard).getKeys().getItems()) {
+      ValueSummary thisVal = this.entries.get(key);
+      ValueSummary cmpVal = cmp.entries.get(key);
+      if (thisVal == null && cmpVal == null) {
+          continue;
+      } else if (thisVal == null) {
+        notEqual = notEqual.or(cmpVal.symbolicEquals(null, Guard.constTrue()).getGuardFor(false));
+      } else if (cmpVal == null) {
+        notEqual = notEqual.or(thisVal.symbolicEquals(null, Guard.constTrue()).getGuardFor(false));
+      } else {
+        notEqual = notEqual.or(thisVal.symbolicEquals(cmpVal, Guard.constTrue()).getGuardFor(false));
       }
-      thisSet = thisSet.removeAt(new PrimitiveVS<>(0, thisVal.getUniverse()));
     }
-
+    Guard equalCond = keyGuard.and(notEqual.not());
     return BooleanVS.trueUnderGuard(equalCond).restrict(getUniverse().and(cmp.getUniverse()));
   }
 
@@ -227,7 +219,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
     final Map<K, V> newEntries = new HashMap<>(entries);
     for (GuardedValue<?> guardedKey : ValueSummary.getGuardedValues(keySummary)) {
       V oldVal = entries.get(guardedKey.getValue());
-      if (oldVal == null) {
+      if (oldVal == null || oldVal.isEmptyVS()) {
         newEntries.put((K) guardedKey.getValue(), valSummary);
       } else {
         newEntries.put(
@@ -235,7 +227,10 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
       }
     }
 
-    return new MapVS<>(newKeys, newEntries);
+    MapVS<K, T, V> result = new MapVS<>(newKeys, newEntries);
+//    assert result.containsKey(keySummary).getGuardFor(true).equals(keySummary.getUniverse());
+//    assert (result.get(keySummary).symbolicEquals(valSummary, Guard.constTrue()).getGuardFor(true).equals(valSummary.getUniverse()));
+    return result;
   }
 
   /**
@@ -376,10 +371,12 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
   @Override
   public int computeConcreteHash() {
     int hashCode = 1;
-    for (Map.Entry<K, V> entry : entries.entrySet()) {
-      hashCode = 31 * hashCode + (entry.getKey() == null ? 0 : entry.getKey().hashCode());
+    List<K> sortedKeys = new ArrayList<>(this.entries.keySet());
+    sortedKeys.sort(Comparator.comparing(Objects::hashCode));
+    for (K key : sortedKeys) {
+      hashCode = 31 * hashCode + (key == null ? 0 : key.hashCode());
       hashCode =
-          31 * hashCode + (entry.getValue() == null ? 0 : entry.getValue().getConcreteHash());
+          31 * hashCode + (entries.get(key) == null ? 0 : entries.get(key).getConcreteHash());
     }
     return hashCode;
   }

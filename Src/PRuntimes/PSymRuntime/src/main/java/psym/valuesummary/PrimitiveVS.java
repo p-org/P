@@ -136,25 +136,16 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     return new PrimitiveVS(this);
   }
 
-  /**
-   * Permute the value summary
-   *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
-   */
-  public PrimitiveVS<T> swap(Machine m1, Machine m2) {
+  public PrimitiveVS<T> swap(Map<Machine, Machine> mapping) {
     boolean swapped = false;
     Map<T, Guard> newGuardedValues = new HashMap<>();
     for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
       T key = entry.getKey();
       if (key instanceof Machine) {
-        Machine machineKey = (Machine) key;
-        if (key.equals(m1)) {
-          key = (T) m2;
-          swapped = true;
-        } else if (key.equals(m2)) {
-          key = (T) m1;
+        Machine origMachine = (Machine) key;
+        Machine newMachine = mapping.get(origMachine);
+        if (newMachine != null) {
+          key = (T) newMachine;
           swapped = true;
         }
       }
@@ -312,17 +303,33 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
   public PrimitiveVS<T> merge(Iterable<PrimitiveVS<T>> summaries) {
     final Map<T, Guard> result = new HashMap<>();
 
+    Guard nullUniverse = Guard.constFalse();
+    Guard coveredUniverse = Guard.constFalse();
+    Guard totalUniverse = getUniverse();
     for (Map.Entry<T, Guard> entry : guardedValues.entrySet()) {
       if (entry.getKey() == null) {
+        nullUniverse = nullUniverse.or(entry.getValue());
         continue;
       }
+      coveredUniverse = coveredUniverse.or(entry.getValue());
       result.merge(entry.getKey(), entry.getValue(), Guard::or);
     }
 
     for (PrimitiveVS<T> summary : summaries) {
+      totalUniverse = totalUniverse.or(summary.getUniverse());
       for (Map.Entry<T, Guard> entry : summary.guardedValues.entrySet()) {
+        if (entry.getKey() == null) {
+          nullUniverse = nullUniverse.or(entry.getValue());
+          continue;
+        }
+        coveredUniverse = coveredUniverse.or(entry.getValue());
         result.merge(entry.getKey(), entry.getValue(), Guard::or);
       }
+    }
+    Guard remainingUniverse = totalUniverse.and(coveredUniverse.not());
+    if (!remainingUniverse.isFalse()) {
+      assert (remainingUniverse.implies(nullUniverse).isTrue());
+      result.put(null, remainingUniverse);
     }
 
     return new PrimitiveVS<>(result);

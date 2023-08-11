@@ -24,6 +24,11 @@ namespace Plang.CSharpRuntime.Values
         {
             return value.ToString();
         }
+        
+        public object ToDict()
+        {
+            return value;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(IPrtValue other)

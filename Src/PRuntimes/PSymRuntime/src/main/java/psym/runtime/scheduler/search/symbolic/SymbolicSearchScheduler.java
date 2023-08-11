@@ -20,6 +20,7 @@ import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.statistics.CoverageStats;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
+import psym.utils.Assert;
 import psym.utils.monitor.MemoryMonitor;
 import psym.utils.monitor.TimeMonitor;
 import psym.valuesummary.Guard;
@@ -29,7 +30,7 @@ import psym.valuesummary.ValueSummary;
 import psym.valuesummary.solvers.SolverEngine;
 
 public class SymbolicSearchScheduler extends SearchScheduler {
-  private transient final TreeMap<Integer, ProtocolState> depthToProtocolState = new TreeMap<>();
+  private transient final TreeMap<Integer, ProtocolState> depthToCachedProtocolState = new TreeMap<>();
 
   public SymbolicSearchScheduler(Program p) {
     super(p);
@@ -53,6 +54,26 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     int numMessagesMerged = 0;
     int numMessagesExplored = 0;
     int numStates = 0;
+
+    if (!PSymGlobal.getConfiguration().isIterative()
+            && PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Symbolic) {
+      ProtocolState srcProtocolState = new ProtocolState(currentMachines);
+      for (int i = depth; i >= 0; i--) {
+        ProtocolState cachedProtocolState = depthToCachedProtocolState.get(i);
+        if (cachedProtocolState != null) {
+          Guard areEqual = srcProtocolState.symbolicEquals(cachedProtocolState);
+          if (!areEqual.isFalse()) {
+            done = done.or(areEqual);
+            if (done.isTrue()) {
+              terminalLivenessEnabled = false;
+              return;
+            }
+//            break;
+          }
+        }
+      }
+      depthToCachedProtocolState.put(depth, srcProtocolState);
+    }
 
     if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
       PSymGlobal.getSymmetryTracker().mergeAllSymmetryClasses();
@@ -117,28 +138,24 @@ public class SymbolicSearchScheduler extends SearchScheduler {
         stickyStep = true;
       }
     }
+
     if (!stickyStep) {
-      if (PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Exact) {
-        effect = effect.restrict(done.not());
-      }
       depth++;
+    }
+
+    if (!PSymGlobal.getConfiguration().isIterative()
+            && PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Symbolic) {
+      Message effectNew = effect.restrict(done.not());
+      if (effectNew.isEmptyVS()) {
+        return;
+      }
+      effect = effectNew;
     }
 
     TraceLogger.schedule(depth, effect);
 
     performEffect(effect);
 
-    if (!stickyStep) {
-      if (PSymGlobal.getConfiguration().getStateCachingMode() == StateCachingMode.Exact) {
-        ProtocolState destProtocolState = new ProtocolState(currentMachines);
-        for (ProtocolState srcProtocolState : depthToProtocolState.values()) {
-          Guard areEqual = destProtocolState.symbolicEquals(srcProtocolState);
-          done = done.or(areEqual);
-          allMachinesHalted = allMachinesHalted.or(done);
-        }
-        depthToProtocolState.put(depth, destProtocolState);
-      }
-    }
 
     // simplify engine
     //        SolverEngine.simplifyEngineAuto();
@@ -393,13 +410,13 @@ public class SymbolicSearchScheduler extends SearchScheduler {
   /** Reset scheduler state */
   @Override protected void reset() {
     super.reset();
-    depthToProtocolState.clear();
+    depthToCachedProtocolState.clear();
   }
 
   /** Restore scheduler state */
   @Override protected void restore(int d, int cd) {
     super.restore(d, cd);
-    depthToProtocolState.clear();
+    depthToCachedProtocolState.clear();
   }
 
   public static class ProtocolState {

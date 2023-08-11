@@ -163,5 +163,10 @@ namespace Plang.CSharpRuntime.Values
             sb.Append(")");
             return sb.ToString();
         }
+
+        public object ToDict()
+        {
+            return values.Select(value => value == null ? null : value.ToDict()).ToList();
+        }
     }
 }

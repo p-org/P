@@ -1,12 +1,11 @@
 package psym.valuesummary;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Getter;
 import psym.runtime.machine.Machine;
+import psym.utils.exception.BugFoundException;
 
 /** Represents a tuple value summaries */
 @SuppressWarnings("unchecked")
@@ -23,13 +22,15 @@ public class TupleVS implements ValueSummary<TupleVS> {
   /**
    * Copy-constructor for TupleVS
    *
-   * @param fields Fields of the tuple
-   * @param classes Types of the fields of the tuple
+   * @param inpFields Fields of the tuple
+   * @param inpClasses Types of the fields of the tuple
    */
-  public TupleVS(ValueSummary[] fields, Class[] classes) {
-    this.fields = fields;
-    this.classes = classes;
+  public TupleVS(ValueSummary[] inpFields, Class[] inpClasses) {
+    this.fields = Arrays.copyOf(inpFields, inpFields.length);
+    this.classes = Arrays.copyOf(inpClasses, inpClasses.length);
     this.concreteHash = computeConcreteHash();
+    assert (IntStream.range(0, this.fields.length).allMatch(x -> this.fields[x].getUniverse().equals(this.fields[0].getUniverse()))) :
+            "Error in tuple field guards";
   }
 
   /**
@@ -38,9 +39,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
    * @param old The TupleVS to copy
    */
   public TupleVS(TupleVS old) {
-    this(
-        Arrays.copyOf(old.fields, old.fields.length),
-        Arrays.copyOf(old.classes, old.classes.length));
+    this(old.fields, old.classes);
   }
 
   /** Make a new TupleVS from the provided items */
@@ -61,6 +60,8 @@ public class TupleVS implements ValueSummary<TupleVS> {
             .collect(Collectors.toList())
             .toArray(new Class[items.length]);
     this.concreteHash = computeConcreteHash();
+    assert (IntStream.range(0, this.fields.length).allMatch(x -> this.fields[x].getUniverse().equals(this.fields[0].getUniverse()))) :
+            "Error in tuple field guards";
   }
 
   /**
@@ -72,17 +73,10 @@ public class TupleVS implements ValueSummary<TupleVS> {
     return new TupleVS(this);
   }
 
-  /**
-   * Permute the value summary
-   *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
-   */
-  public TupleVS swap(Machine m1, Machine m2) {
+  public TupleVS swap(Map<Machine, Machine> mapping) {
     return new TupleVS(
-        Arrays.stream(this.fields).map(x -> x.swap(m1, m2)).toArray(size -> new ValueSummary[size]),
-        Arrays.copyOf(this.classes, this.classes.length));
+        Arrays.stream(this.fields).map(x -> x.swap(mapping)).toArray(size -> new ValueSummary[size]),
+        this.classes);
   }
 
   /**
@@ -151,8 +145,6 @@ public class TupleVS implements ValueSummary<TupleVS> {
 
   @Override
   public TupleVS restrict(Guard guard) {
-    if (guard.equals(getUniverse())) return new TupleVS(this);
-
     ValueSummary<?>[] resultFields = new ValueSummary[fields.length];
     for (int i = 0; i < fields.length; i++) {
       resultFields[i] = fields[i].restrict(guard);
@@ -162,7 +154,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
 
   @Override
   public TupleVS merge(Iterable<TupleVS> summaries) {
-    List<ValueSummary> resultList = Arrays.asList(fields);
+    List<ValueSummary> resultList = Arrays.asList(Arrays.copyOf(fields, fields.length));
     for (TupleVS summary : summaries) {
       for (int i = 0; i < summary.fields.length; i++) {
         if (i < resultList.size()) {
@@ -216,7 +208,8 @@ public class TupleVS implements ValueSummary<TupleVS> {
   public Guard getUniverse() {
     // Optimization: Tuples should always be nonempty,
     // and all fields should exist under the same conditions
-    return fields[0].getUniverse();
+    Guard result = fields[0].getUniverse();
+    return result;
   }
 
   @Override

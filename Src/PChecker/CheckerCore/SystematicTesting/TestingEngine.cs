@@ -621,7 +621,7 @@ namespace PChecker.SystematicTesting
                     Logger.WriteLine(String.Join(";", TestReport.ValidScheduling.Select(it => $"({it.Key}, {it.Value})")));
                     if (Strategy is IFeedbackGuidedStrategy s)
                     {
-                        Logger.WriteLine($"..... Total saved: {s.TotalSavedInputs()}");
+                        s.DumpStats(Logger);
                     }
                 }
 

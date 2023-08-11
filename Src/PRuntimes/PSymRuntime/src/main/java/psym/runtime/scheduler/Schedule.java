@@ -30,12 +30,7 @@ public class Schedule implements Serializable {
     this.schedulerSymmetry = symmetryTracker;
   }
 
-  private Schedule(
-          Map<Class<? extends Machine>, ListVS<PrimitiveVS<Machine>>> createdMachines,
-          Set<Machine> machines) {
-    this.createdMachines = new HashMap<>(createdMachines);
-    this.machines = new HashSet<>(machines);
-  }
+  private Schedule() {}
 
 
   private Schedule(
@@ -285,7 +280,7 @@ public class Schedule implements Serializable {
   }
 
   public Schedule getSingleSchedule() {
-    Schedule result = new Schedule(createdMachines, machines);
+    Schedule result = new Schedule();
 
     Guard pc = Guard.constTrue();
     pc = pc.and(getFilter());
@@ -312,6 +307,15 @@ public class Schedule implements Serializable {
             pc = pc.and(intChoice.getGuardedValues().get(0).getGuard());
             result.addRepeatInt(new PrimitiveVS<>(intChoice.getGuardedValues().get(0).getValue()), dNew++);
           }
+        }
+      }
+    }
+
+    for (Map.Entry<Class<? extends Machine>, ListVS<PrimitiveVS<Machine>>> entry: createdMachines.entrySet()) {
+      ListVS<PrimitiveVS<Machine>> machineListVs = entry.getValue().restrict(pc);
+      for (PrimitiveVS<Machine> machineVs: machineListVs.getItems()) {
+        for (Machine m: machineVs.getValues()) {
+          result.makeMachine(m, Guard.constTrue());
         }
       }
     }

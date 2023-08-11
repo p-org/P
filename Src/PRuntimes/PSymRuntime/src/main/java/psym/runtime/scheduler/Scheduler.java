@@ -90,6 +90,11 @@ public abstract class Scheduler implements SchedulerInterface {
 
   protected abstract void step() throws TimeoutException;
 
+  public abstract PrimitiveVS<Machine> allocateMachine(
+          Guard pc,
+          Class<? extends Machine> machineType,
+          Function<Integer, ? extends Machine> constructor);
+
   public abstract PrimitiveVS<Machine> getNextSchedulingChoice();
 
   /**
@@ -315,50 +320,6 @@ public abstract class Scheduler implements SchedulerInterface {
     newMachine.setScheduler(this);
     schedule.makeMachine(newMachine, pc);
     return newMachine;
-  }
-
-  public PrimitiveVS<Machine> allocateMachine(
-          Guard pc,
-          Class<? extends Machine> machineType,
-          Function<Integer, ? extends Machine> constructor) {
-    if (!machineCounters.containsKey(machineType)) {
-      machineCounters.put(machineType, new PrimitiveVS<>(0));
-    }
-    PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).restrict(pc);
-
-    PrimitiveVS<Machine> allocated;
-    if (schedule.hasMachine(machineType, guardedCount, pc)) {
-      allocated = schedule.getMachine(machineType, guardedCount).restrict(pc);
-      for (GuardedValue gv : allocated.getGuardedValues()) {
-        Guard g = gv.getGuard();
-        Machine m = (Machine) gv.getValue();
-        assert (!BooleanVS.isEverTrue(m.hasStarted().restrict(g)));
-        TraceLogger.onCreateMachine(pc.and(g), m);
-        if (!machines.contains(m)) {
-          machines.add(m);
-        }
-        currentMachines.add(m);
-        assert (machines.size() >= currentMachines.size());
-        m.setScheduler(this);
-        if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
-          PSymGlobal.getSymmetryTracker().createMachine(m, g);
-        }
-      }
-    } else {
-      Machine newMachine = setupNewMachine(pc, guardedCount, constructor);
-
-      allocated = new PrimitiveVS<>(newMachine).restrict(pc);
-      if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
-        PSymGlobal.getSymmetryTracker().createMachine(newMachine, pc);
-      }
-    }
-
-    guardedCount = IntegerVS.add(guardedCount, 1);
-
-    PrimitiveVS<Integer> mergedCount =
-            machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);
-    machineCounters.put(machineType, mergedCount);
-    return allocated;
   }
 
   public void runMonitors(Message event) {

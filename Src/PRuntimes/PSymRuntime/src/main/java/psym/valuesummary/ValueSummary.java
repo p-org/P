@@ -234,11 +234,10 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
   /**
    * Permute the value summary
    *
-   * @param m1 first machine
-   * @param m2 second machine
-   * @return A new cloned copy of the value summary with m1 and m2 swapped
+   * @param mapping map for each machine pairs
+   * @return A new cloned copy of the value summary with m1 and m2 swapped where mapping[m1] = m2
    */
-  T swap(Machine m1, Machine m2);
+  T swap(Map<Machine, Machine> mapping);
 
   /**
    * String representation of the value summary

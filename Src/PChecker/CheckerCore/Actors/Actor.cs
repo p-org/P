@@ -404,8 +404,14 @@ namespace PChecker.Actors
             {
                 return waitEvent.DequeueTime;
             }
-            var (_, e, _, _) = Inbox.Dequeue(true);
-            return e is not null ? e.DequeueTime : Timestamp.DefaultTimestamp;
+
+            var eventTuple = Inbox.CheckDequeue();
+            if (eventTuple == default)
+            {
+                return Timestamp.DefaultTimestamp;
+            }
+
+            return eventTuple.e is not null ? eventTuple.e.DequeueTime : Timestamp.DefaultTimestamp;
         }
 
         /// <summary>

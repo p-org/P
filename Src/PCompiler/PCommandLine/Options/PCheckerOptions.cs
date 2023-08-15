@@ -82,7 +82,7 @@ namespace Plang.Options
             advancedGroup.AddArgument("interesting-events", null, "The name of the interesting events generator", typeof(string));
             advancedGroup.AddArgument("pattern", null, "The name of the pattern matcher generator", typeof(string));
             advancedGroup.AddArgument("no-partial-match", null, "For feedback strategy, do not save a schedule if the pattern is partially matched", typeof(bool));
-            advancedGroup.AddArgument("no-discard", null, "For feedback strategy, discard saved generators if a new generator with higher coverage is found", typeof(bool));
+            advancedGroup.AddArgument("discard-after", null, "For feedback strategy, discard saved generators after saving N inputs", typeof(int));
             advancedGroup.AddArgument("fixed-priority", null, "For feedback strategy, schedule generator mutations based on diversity", typeof(bool));
         }
 
@@ -333,8 +333,8 @@ namespace Plang.Options
                 case "no-partial-match":
                     checkerConfiguration.SavePartialMatch = false;
                     break;
-                case "no-discard":
-                    checkerConfiguration.DiscardLowerCoverage = false;
+                case "discard-after":
+                    checkerConfiguration.DiscardAfter = (int) option.Value;
                     break;
                 case "fixed-priority":
                     checkerConfiguration.DiversityBasedPriority = false;

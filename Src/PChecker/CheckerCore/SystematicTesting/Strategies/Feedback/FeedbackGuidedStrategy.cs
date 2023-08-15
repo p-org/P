@@ -16,30 +16,26 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 {
     public record StrategyGenerator(TInput InputGenerator, TSchedule ScheduleGenerator);
 
-    public record GeneratorRecord(int Priority, StrategyGenerator Generator, List<int> Hash, int Coverage)
-    {
-        public int Priority { set; get; } = Priority;
-    }
+    public record GeneratorRecord(int Priority, StrategyGenerator Generator, List<int> MinHash);
 
     protected StrategyGenerator Generator;
 
     private readonly int _maxScheduledSteps;
 
     protected int ScheduledSteps;
-    private int _visitedStates = 0;
 
-    private readonly HashSet<int> _visitedTimelines = new();
+    private readonly HashSet<string> _visitedTimelines = new();
 
-    protected MaxHeap<GeneratorRecord> SavedGenerators = new(Comparer<GeneratorRecord>.Create((l, r) =>
-    {
-        return l.Priority - r.Priority;
-    }));
-
-    private bool _matched = false;
-    private readonly bool _savePartialMatch;
-    private readonly bool _discardLowerCoverage;
-    private readonly bool _diversityBasedPriority;
+    private LinkedList<GeneratorRecord> _savedGenerators = new LinkedList<GeneratorRecord>();
     private int _pendingMutations = 0;
+    private HashSet<GeneratorRecord> _visitedGenerators = new HashSet<GeneratorRecord>();
+    private GeneratorRecord? _currentParent = null;
+
+    private readonly bool _savePartialMatch;
+    private readonly bool _diversityBasedPriority;
+    private readonly int _discardAfter;
+
+
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FeedbackGuidedStrategy"/> class.
@@ -56,8 +52,9 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         }
         Generator = new StrategyGenerator(input, schedule);
         _savePartialMatch = checkerConfiguration.SavePartialMatch;
-        _discardLowerCoverage = checkerConfiguration.DiscardLowerCoverage;
         _diversityBasedPriority = checkerConfiguration.DiversityBasedPriority;
+        _discardAfter = checkerConfiguration.DiscardAfter;
+
     }
 
     /// <inheritdoc/>
@@ -128,22 +125,22 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         ScheduledSteps = 0;
     }
 
-    private int ComputeDiversity(int timeline, List<int> hash)
+    private int ComputeDiversity(string timeline, List<int> hash)
     {
         if (!_visitedTimelines.Add(timeline))
         {
             return 0;
         }
 
-        if (SavedGenerators.Elements.Count == 0 || !_diversityBasedPriority)
+        if (_savedGenerators.Count == 0 || !_diversityBasedPriority)
         {
             return 20;
         }
 
         var maxSim = int.MinValue;
-        foreach (var record in SavedGenerators.Elements)
+        foreach (var record in _savedGenerators)
         {
-            var timelineHash = record.Hash;
+            var timelineHash = record.MinHash;
             var similarity = 0;
             for (int i = 0; i < hash.Count; i++)
             {
@@ -157,7 +154,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         }
 
 
-        return (hash.Count - maxSim) * 5 + 10;
+        return (hash.Count - maxSim) * 10;
     }
 
     /// <summary>
@@ -166,7 +163,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     /// <param name="runtime">The ControlledRuntime of previous run.</param>
     public virtual void ObserveRunningResults(EventPatternObserver patternObserver, ControlledRuntime runtime)
     {
-        var timelineHash = runtime.TimelineObserver.GetTimelineHash();
+        var timelineHash = runtime.TimelineObserver.GetTimeline();
         var timelineMinhash = runtime.TimelineObserver.GetTimelineMinhash();
         int diversityScore = ComputeDiversity(timelineHash, timelineMinhash);
 
@@ -175,71 +172,103 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
             return;
         }
 
+        int priority = 0;
         if (patternObserver == null)
         {
-            if (diversityScore > 0)
-            {
-                _pendingMutations += diversityScore;
-                SavedGenerators.Add(new(diversityScore, Generator, timelineMinhash, 1));
-            }
+            priority = diversityScore;
         }
         else
         {
             int coverageResult = patternObserver.ShouldSave();
-
-
             if (coverageResult == 1 || _savePartialMatch)
             {
+                double coverageScore = 1.0 / coverageResult;
+                priority = (int)(diversityScore * coverageScore);
+            }
+        }
 
-                int priority = 0;
-                if (!_discardLowerCoverage)
-                {
-                    double coverageScore = 1.0 / coverageResult;
-                    priority = (int) (diversityScore * coverageScore);
-                }
-                else
-                {
-                    if (SavedGenerators.Elements.Count == 0 || coverageResult == SavedGenerators.Peek().Coverage)
-                    {
-                        priority = diversityScore;
-                    }
-                    else if (coverageResult < SavedGenerators.Peek().Coverage)
-                    {
-                        // We remove all saved generators if a new generator with higher coverage is found.
-                        SavedGenerators.Elements.Clear();
-                        _pendingMutations = 0;
-                        priority = diversityScore;
-                    }
-                }
-                if (priority > 0)
-                {
-                    SavedGenerators.Add(new(priority, Generator, timelineMinhash, coverageResult));
-                    _pendingMutations += priority;
-                }
+        if (priority > 0)
+        {
+            var record = new GeneratorRecord(priority, Generator, timelineMinhash);
+            if (_savedGenerators.Count == 0)
+            {
+                _savedGenerators.AddLast(record);
+                return;
+            }
+
+            if (priority <= _savedGenerators.Last.Value.Priority)
+            {
+                return;
+            }
+
+            // Maybe use binary search to speed up in the future.
+            var cur = _savedGenerators.First;
+            while (cur != null && priority < cur.Value.Priority)
+            {
+                cur = cur.Next;
+            }
+
+            if (cur == null)
+            {
+                _savedGenerators.AddLast(record);
+            }
+            else
+            {
+                _savedGenerators.AddBefore(cur, record);
+            }
+
+            if (_savedGenerators.Count > _discardAfter)
+            {
+                _savedGenerators.RemoveLast();
             }
         }
     }
 
     public int TotalSavedInputs()
     {
-        return SavedGenerators.Elements.Count;
+        return _savedGenerators.Count;
     }
 
     private void PrepareNextInput()
     {
         Generator.ScheduleGenerator.PrepareForNextInput();
-        if (SavedGenerators.Elements.Count == 0)
+        if (_savedGenerators.Count == 0)
         {
             // Mutate current input if no input is saved.
             Generator = NewGenerator();
         }
         else
         {
-            var record = SavedGenerators.Pop();
-            Generator = MutateGenerator(record.Generator);
-            record.Priority -= 1;
+            if (_currentParent == null)
+            {
+                _currentParent = _savedGenerators.First!.Value;
+                _visitedGenerators.Add(_currentParent);
+                _pendingMutations = _currentParent.Priority;
+            }
+
+            if (_pendingMutations == 0)
+            {
+                bool found = false;
+                foreach (var generator in _savedGenerators)
+                {
+                    if (_visitedGenerators.Contains(generator)) continue;
+                    _currentParent = generator;
+                    _visitedGenerators.Add(generator);
+                    _pendingMutations = generator.Priority;
+                    found = true;
+                }
+
+                if (!found)
+                {
+                    _visitedGenerators.Clear();
+                    _currentParent = _savedGenerators.First!.Value;
+                    _visitedGenerators.Add(_currentParent);
+                    _pendingMutations = _currentParent.Priority;
+                }
+            }
+
+            Generator = MutateGenerator(_currentParent.Generator);
             _pendingMutations -= 1;
-            SavedGenerators.Add(record);
         }
     }
 
@@ -256,8 +285,6 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 
     public void DumpStats(TextWriter writer)
     {
-        Debug.Assert(
-            SavedGenerators.Elements.Select(it => it.Priority).Sum() == _pendingMutations);
         writer.WriteLine($"..... Total saved: {TotalSavedInputs()}, pending mutations: {_pendingMutations}");
     }
 }

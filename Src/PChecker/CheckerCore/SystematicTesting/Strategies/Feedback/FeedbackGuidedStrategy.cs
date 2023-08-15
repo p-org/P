@@ -154,7 +154,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         }
 
 
-        return (hash.Count - maxSim) * 10;
+        return (hash.Count - maxSim) * 10 + 20;
     }
 
     /// <summary>
@@ -285,6 +285,6 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 
     public void DumpStats(TextWriter writer)
     {
-        writer.WriteLine($"..... Total saved: {TotalSavedInputs()}, pending mutations: {_pendingMutations}");
+        writer.WriteLine($"..... Total saved: {TotalSavedInputs()}, pending mutations: {_pendingMutations}, visited generators: {_visitedGenerators.Count}");
     }
 }

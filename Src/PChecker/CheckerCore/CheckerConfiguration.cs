@@ -301,10 +301,10 @@ namespace PChecker
         public bool SavePartialMatch;
 
         /// <summary>
-        /// For feedback strategy, discard saved generators if a new generator with higher coverage is found.
+        /// For feedback strategy, discard saved generators if the size of the buffer is greater than N.
         /// </summary>
         [DataMember]
-        public bool DiscardLowerCoverage;
+        public int DiscardAfter;
 
         /// <summary>
         /// For feedback strategy, schedule generator mutations based on diversity.
@@ -361,7 +361,7 @@ namespace PChecker
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
             SavePartialMatch = true;
-            DiscardLowerCoverage = true;
+            DiscardAfter = 100;
             DiversityBasedPriority = true;
 
             PSymArgs = "";

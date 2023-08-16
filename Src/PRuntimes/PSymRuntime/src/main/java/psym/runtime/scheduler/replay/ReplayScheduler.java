@@ -3,6 +3,8 @@ package psym.runtime.scheduler.replay;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
+
 import lombok.Getter;
 import org.apache.commons.lang3.NotImplementedException;
 import psym.runtime.PSymGlobal;
@@ -12,6 +14,7 @@ import psym.runtime.machine.Machine;
 import psym.runtime.machine.events.Message;
 import psym.runtime.scheduler.Schedule;
 import psym.runtime.scheduler.Scheduler;
+import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.utils.Assert;
 import psym.utils.exception.LivenessException;
 import psym.valuesummary.*;
@@ -77,9 +80,13 @@ public class ReplayScheduler extends Scheduler {
           "Maximum allowed depth " + PSymGlobal.getConfiguration().getMaxStepBound() + " exceeded",
           schedule.getLengthCond(schedule.size()));
       step();
-      checkLiveness(allMachinesHalted);
+      if (Assert.getFailureType().equals("liveness")) {
+        checkLiveness(allMachinesHalted);
+      }
     }
-    checkLiveness(Guard.constTrue());
+    if (Assert.getFailureType().equals("liveness")) {
+      checkLiveness(Guard.constTrue());
+    }
     if (Assert.getFailureType().equals("cycle")) {
       throw new LivenessException(Assert.getFailureMsg(), Guard.constTrue());
     }
@@ -143,6 +150,43 @@ public class ReplayScheduler extends Scheduler {
   }
 
   @Override
+  public PrimitiveVS<Machine> allocateMachine(
+          Guard pc,
+          Class<? extends Machine> machineType,
+          Function<Integer, ? extends Machine> constructor) {
+    if (!machineCounters.containsKey(machineType)) {
+      machineCounters.put(machineType, new PrimitiveVS<>(0));
+    }
+    PrimitiveVS<Integer> guardedCount = machineCounters.get(machineType).restrict(pc);
+
+    PrimitiveVS<Machine> allocated;
+    assert (schedule.hasMachine(machineType, guardedCount, pc));
+    allocated = schedule.getMachine(machineType, guardedCount).restrict(pc);
+    for (GuardedValue gv : allocated.getGuardedValues()) {
+      Guard g = gv.getGuard();
+      Machine m = (Machine) gv.getValue();
+      assert (!BooleanVS.isEverTrue(m.hasStarted().restrict(g)));
+      TraceLogger.onCreateMachine(pc.and(g), m);
+      if (!machines.contains(m)) {
+        machines.add(m);
+      }
+      currentMachines.add(m);
+      assert (machines.size() >= currentMachines.size());
+      m.setScheduler(this);
+      if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+        PSymGlobal.getSymmetryTracker().createMachine(m, g);
+      }
+    }
+
+    guardedCount = IntegerVS.add(guardedCount, 1);
+
+    PrimitiveVS<Integer> mergedCount =
+            machineCounters.get(machineType).updateUnderGuard(pc, guardedCount);
+    machineCounters.put(machineType, mergedCount);
+    return allocated;
+  }
+
+  @Override
   public PrimitiveVS<Machine> getNextSchedulingChoice() {
     PrimitiveVS<Machine> res = schedule.getRepeatSchedulingChoice(choiceDepth);
     if (res.isEmptyVS()) {
@@ -172,5 +216,4 @@ public class ReplayScheduler extends Scheduler {
   public boolean isDone() {
     return super.isDone() || this.getChoiceDepth() >= schedule.size();
   }
-
 }

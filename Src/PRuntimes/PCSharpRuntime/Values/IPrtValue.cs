@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Plang.CSharpRuntime.Values
 {
@@ -13,6 +14,11 @@ namespace Plang.CSharpRuntime.Values
         string ToEscapedString()
         {
             return ToString();
+        }
+        
+        object ToDict()
+        {
+            return ToEscapedString();
         }
     }
 }

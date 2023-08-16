@@ -99,6 +99,19 @@ namespace Plang.CSharpRuntime.Values
             retStr += ">";
             return retStr;
         }
+
+        public object ToDict()
+        {
+            var tupleDict = new Dictionary<int, object>();
+
+            for (var i = 0; i < fieldValues.Count; i++)
+            {
+                var fieldValue = fieldValues[i];
+                tupleDict.Add(i, fieldValue);
+            }
+
+            return tupleDict;
+        }
     }
 
     [Serializable]
@@ -223,6 +236,20 @@ namespace Plang.CSharpRuntime.Values
 
             retStr += ">";
             return retStr;
+        }
+
+        public object ToDict()
+        {
+            var namedTupleDict = new Dictionary<string, object>();
+
+            for (var i = 0; i < fieldValues.Count; i++)
+            {
+                var fieldValue = fieldValues[i] == null ? null : fieldValues[i].ToDict();
+                var fieldName = fieldNames[i];
+                namedTupleDict.Add(fieldName, fieldValue);
+            }
+
+            return namedTupleDict;
         }
     }
 }

@@ -24,7 +24,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 
     protected int ScheduledSteps;
 
-    private readonly HashSet<string> _visitedTimelines = new();
+    private readonly HashSet<int> _visitedTimelines = new();
 
     private LinkedList<GeneratorRecord> _savedGenerators = new LinkedList<GeneratorRecord>();
     private int _pendingMutations = 0;
@@ -125,7 +125,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         ScheduledSteps = 0;
     }
 
-    private int ComputeDiversity(string timeline, List<int> hash)
+    private int ComputeDiversity(int timeline, List<int> hash)
     {
         if (!_visitedTimelines.Add(timeline))
         {
@@ -163,7 +163,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     /// <param name="runtime">The ControlledRuntime of previous run.</param>
     public virtual void ObserveRunningResults(EventPatternObserver patternObserver, ControlledRuntime runtime)
     {
-        var timelineHash = runtime.TimelineObserver.GetTimeline();
+        var timelineHash = runtime.TimelineObserver.GetTimelineHash();
         var timelineMinhash = runtime.TimelineObserver.GetTimelineMinhash();
         int diversityScore = ComputeDiversity(timelineHash, timelineMinhash);
 

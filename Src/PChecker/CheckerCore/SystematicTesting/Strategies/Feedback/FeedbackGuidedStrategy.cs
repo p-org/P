@@ -219,6 +219,8 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 
             if (_savedGenerators.Count > _discardAfter)
             {
+                var last = _savedGenerators.Last.Value;
+                _visitedGenerators.Remove(last);
                 _savedGenerators.RemoveLast();
             }
         }

@@ -83,6 +83,7 @@ namespace Plang.Options
             advancedGroup.AddArgument("no-partial-match", null, "For feedback strategy, do not save a schedule if the pattern is partially matched", typeof(bool));
             advancedGroup.AddArgument("discard-after", null, "For feedback strategy, discard saved generators after saving N inputs", typeof(int));
             advancedGroup.AddArgument("fixed-priority", null, "For feedback strategy, schedule generator mutations based on diversity", typeof(bool));
+            advancedGroup.AddArgument("ignore-pattern", null, "For feedback strategy, ignore the pattern feedback", typeof(bool));
         }
 
         /// <summary>
@@ -283,6 +284,9 @@ namespace Plang.Options
                     break;
                 case "fixed-priority":
                     checkerConfiguration.DiversityBasedPriority = false;
+                    break;
+                case "ignore-pattern":
+                    checkerConfiguration.IgnorePatternFeedback = true;
                     break;
                 default:
                     throw new Exception(string.Format("Unhandled parsed argument: '{0}'", option.LongName));

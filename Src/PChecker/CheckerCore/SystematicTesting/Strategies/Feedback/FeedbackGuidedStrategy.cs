@@ -55,6 +55,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         _savePartialMatch = checkerConfiguration.SavePartialMatch;
         _diversityBasedPriority = checkerConfiguration.DiversityBasedPriority;
         _discardAfter = checkerConfiguration.DiscardAfter;
+        _ignorePatternFeedback = checkerConfiguration.IgnorePatternFeedback;
 
     }
 

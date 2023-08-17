@@ -33,6 +33,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 
     private readonly bool _savePartialMatch;
     private readonly bool _diversityBasedPriority;
+    private readonly bool _ignorePatternFeedback;
     private readonly int _discardAfter;
 
 
@@ -173,7 +174,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         }
 
         int priority = 0;
-        if (patternObserver == null)
+        if (patternObserver == null || _ignorePatternFeedback)
         {
             priority = diversityScore;
         }

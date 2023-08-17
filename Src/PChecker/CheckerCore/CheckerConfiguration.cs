@@ -319,6 +319,12 @@ namespace PChecker
         public bool DiversityBasedPriority;
 
         /// <summary>
+        /// For feedback strategy, ignore the pattern feedback.
+        /// </summary>
+        [DataMember]
+        public bool IgnorePatternFeedback;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="CheckerConfiguration"/> class.
         /// </summary>
         protected CheckerConfiguration()
@@ -370,6 +376,7 @@ namespace PChecker
             SavePartialMatch = true;
             DiscardAfter = 100;
             DiversityBasedPriority = true;
+            IgnorePatternFeedback = false;
 
             PSymArgs = "";
             JvmArgs = "";

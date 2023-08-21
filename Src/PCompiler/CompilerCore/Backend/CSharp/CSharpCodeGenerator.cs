@@ -387,6 +387,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "[PChecker.SystematicTesting.Test]");
             context.WriteLine(output, "public static void Execute(IActorRuntime runtime) {");
             context.WriteLine(output, "runtime.RegisterLog(new PLogFormatter());");
+            context.WriteLine(output, "runtime.RegisterLog(new PTimeLogger());");
             context.WriteLine(output, "runtime.RegisterLog(new PJsonFormatter());");
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
@@ -479,13 +480,15 @@ namespace Plang.Compiler.Backend.CSharp
             WriteNameSpacePrologue(context, output);
 
             var declName = context.Names.GetNameForDecl(pEvent);
-
+            string distributionStmt = pEvent.Distribution != ""? $"DelayDistribution = {pEvent.Distribution};": "";
+            string isOrderedStmt = !pEvent.IsOrdered? $"IsOrdered = false;": "";
+            
             // initialize the payload type
             var payloadType = GetCSharpType(pEvent.PayloadType, true);
             context.WriteLine(output, $"internal partial class {declName} : PEvent");
             context.WriteLine(output, "{");
-            context.WriteLine(output, $"public {declName}() : base() {{}}");
-            context.WriteLine(output, $"public {declName} ({payloadType} payload): base(payload)" + "{ }");
+            context.WriteLine(output, $"public {declName}() : base() {{{distributionStmt} {isOrderedStmt}}}");
+            context.WriteLine(output, $"public {declName} ({payloadType} payload): base(payload)" + $"{{{distributionStmt} {isOrderedStmt}}}");
             context.WriteLine(output, $"public override IPrtValue Clone() {{ return new {declName}();}}");
             context.WriteLine(output, "}");
 
@@ -1101,6 +1104,13 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case SendStmt sendStmt:
+                    if (sendStmt.DelayDistribution != null)
+                    {
+                        WriteExpr(context, output, sendStmt.Evt);
+                        context.Write(output, ".DelayDistribution = ");
+                        WriteExpr(context, output, sendStmt.DelayDistribution);
+                        context.WriteLine(output, ";");
+                    }
                     context.Write(output, "currentMachine.TrySendEvent(");
                     WriteExpr(context, output, sendStmt.MachineExpr);
                     context.Write(output, ", (Event)");

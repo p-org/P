@@ -539,7 +539,7 @@ namespace Plang.Compiler.Backend
                         .Concat(sendArgDeps)
                         .Concat(new[]
                         {
-                            new SendStmt(location, sendMachineAccessExpr, sendEventAccessExpr, sendArgs)
+                            new SendStmt(location, sendMachineAccessExpr, sendEventAccessExpr, sendArgs, sendStmt.DelayDistribution)
                         })
                         .ToList();
 

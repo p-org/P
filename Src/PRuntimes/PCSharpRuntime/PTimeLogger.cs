@@ -14,7 +14,7 @@ namespace Plang.CSharpRuntime
     /// </summary>
     public class PTimeLogger : ActorRuntimeTimeLogCsvFormatter
     {
-
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="PTimeLogger"/> class.
         /// </summary>
@@ -41,9 +41,7 @@ namespace Plang.CSharpRuntime
         public override void OnSendEvent(ActorId targetActorId, string senderName, string senderType, string senderStateName, Event e,
             Guid opGroupId, bool isTargetHalted)
         {
-            var pe = (PEvent)e;
-            var payload = pe.Payload == null ? "null" : pe.Payload.ToEscapedString().Replace(" ", "").Replace(",", "|");
-            InMemoryLogger.WriteLine(e.EnqueueTime.GetTime() + ",Send," + e + "," + payload + "," + senderName + "," + senderStateName + "," + targetActorId);
+            
         }
 
         /// <inheritdoc />
@@ -54,6 +52,9 @@ namespace Plang.CSharpRuntime
         /// <inheritdoc />
         public override void OnEnqueueEvent(ActorId id, Event e)
         {
+            var pe = (PEvent)e;
+            var payload = pe.Payload == null ? "null" : pe.Payload.ToEscapedString().Replace(" ", "").Replace(",", "|");
+            InMemoryLogger.WriteLine(e.EnqueueTime.GetTime() + ", enqueue," + e + "," + payload + "," + "," + id);
         }
 
         /// <inheritdoc />

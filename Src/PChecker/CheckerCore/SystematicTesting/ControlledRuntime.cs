@@ -604,12 +604,11 @@ namespace PChecker.SystematicTesting
                 MustHandle = options?.MustHandle ?? false,
                 Assert = options?.Assert ?? -1
             };
-
-            // Enqueue has to be called before logging so that timestamps are written to the event.
-            var enqueueStatus = actor.Enqueue(e, opGroupId, eventInfo);
+            
             LogWriter.LogSendEvent(actor.Id, sender?.Id.Name, sender?.Id.Type, stateName,
                 e, opGroupId, isTargetHalted: false);
-            return enqueueStatus;
+            
+            return actor.Enqueue(e, opGroupId, eventInfo);;
         }
 
         /// <summary>

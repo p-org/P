@@ -10,6 +10,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 using PChecker.Actors;
+using PChecker.Actors.Logging;
 using PChecker.Actors.Events;
 using PChecker.Actors.Handlers;
 using PChecker.Actors.StateTransitions;
@@ -101,6 +102,11 @@ namespace PChecker.Specifications.Monitors
         /// See <see href="/coyote/learn/core/logging" >Logging</see> for more information.
         /// </remarks>
         protected TextWriter Logger => Runtime.Logger;
+        
+        /// <summary>
+        /// The runtime installed json logger;
+        /// </summary>
+        protected JsonWriter JsonLogger => Runtime.JsonLogger;
 
         /// <summary>
         /// Gets the current state.

@@ -15,6 +15,7 @@ using PChecker.Actors.Events;
 using PChecker.Actors.Exceptions;
 using PChecker.Actors.Handlers;
 using PChecker.Actors.Managers;
+using PChecker.Actors.Logging;
 using PChecker.Exceptions;
 using PChecker.IO.Debugging;
 using EventInfo = PChecker.Actors.Events.EventInfo;
@@ -112,6 +113,11 @@ namespace PChecker.Actors
         /// The installed runtime logger.
         /// </summary>
         protected TextWriter Logger => Runtime.Logger;
+        
+        /// <summary>
+        /// The installed runtime json logger.
+        /// </summary>
+        protected JsonWriter JsonLogger => Runtime.JsonLogger;
 
         /// <summary>
         /// User-defined hashed state of the actor. Override to improve the

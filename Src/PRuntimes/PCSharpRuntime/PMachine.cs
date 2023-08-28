@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using PChecker.Actors;
 using PChecker.Actors.Events;
 using PChecker.Actors.Exceptions;
+using PChecker.Actors.Logging;
 using Plang.CSharpRuntime.Exceptions;
 using Plang.CSharpRuntime.Values;
 
@@ -160,6 +161,11 @@ namespace Plang.CSharpRuntime
         public void LogLine(string message)
         {
             Logger.WriteLine($"<PrintLog> {message}");
+            
+            // Log message to JSON output
+            JsonLogger.AddLogType(JsonWriter.LogType.Print); 
+            JsonLogger.AddLog(message);
+            JsonLogger.AddToLogs(updateVcMap: false);
         }
 
         public void Log(string message)
@@ -178,7 +184,20 @@ namespace Plang.CSharpRuntime
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
             var pText = payload == null ? "" : $" with payload {((IPrtValue)payload).ToEscapedString()}";
-            LogLine($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
+            
+            Logger.WriteLine($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
+            
+            // Log message to JSON output
+            JsonLogger.AddLogType(JsonWriter.LogType.Announce);
+            JsonLogger.LogDetails.Id = $"{Id}";
+            JsonLogger.LogDetails.Event = ev.GetType().Name;
+            if (payload != null)
+            {
+                JsonLogger.LogDetails.Payload = ((IPrtValue)payload).ToDict();    
+            }
+            JsonLogger.AddLog($"{Id} announced event {ev.GetType().Name}{pText}.");
+            JsonLogger.AddToLogs(updateVcMap: true);
+            
             AnnounceInternal(@event);
         }
 

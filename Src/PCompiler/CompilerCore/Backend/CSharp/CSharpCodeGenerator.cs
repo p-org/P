@@ -983,7 +983,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case PrintStmt printStmt:
-                    context.Write(output, $"PModule.runtime.Logger.WriteLine(\"<PrintLog> \" + ");
+                    context.Write(output, $"currentMachine.LogLine(\"\" + ");
                     WriteExpr(context, output, printStmt.Message);
                     context.WriteLine(output, ");");
                     break;

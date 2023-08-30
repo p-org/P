@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using PChecker.Actors.Events;
+using PChecker.Actors.Logging;
 using PChecker.Specifications.Monitors;
 
 namespace Plang.CSharpRuntime
@@ -38,6 +39,11 @@ namespace Plang.CSharpRuntime
         public void LogLine(string message)
         {
             Logger.WriteLine($"<PrintLog> {message}");
+            
+            // Log message to JSON output
+            JsonLogger.AddLogType(JsonWriter.LogType.Print); 
+            JsonLogger.AddLog(message);
+            JsonLogger.AddToLogs(updateVcMap: false);
         }
 
         public void Log(string message)

@@ -670,7 +670,17 @@ namespace PChecker.Actors.Logging
             /// <summary>
             /// Invoked when the specified actor waits to receive multiple events of a specified type.
             /// </summary>
-            WaitMultipleEvents
+            WaitMultipleEvents,
+            
+            /// <summary>
+            /// Invoked on a print statement
+            /// </summary>
+            Print,
+            
+            /// <summary>
+            /// Invoked on a print statement
+            /// </summary>
+            Announce,
         }
 
         /// <summary>

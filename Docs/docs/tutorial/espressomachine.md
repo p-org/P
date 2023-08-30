@@ -137,13 +137,13 @@ p check
 There are two test cases defined in the EspressoMachine project and you can specify which
 test case to run by using the `-tc` parameter along with the `-i` parameter for the number of schedules to explore.
 
-Check the `tcSaneUserUsingCoffeeMachine` test case for 10000 schedules:
+Check the `tcSaneUserUsingCoffeeMachine` test case for 10,000 schedules:
 
 ```shell
 p check -tc tcSaneUserUsingCoffeeMachine -i 10000
 ```
 
-Check the `tcCrazyUserUsingCoffeeMachine` test case for 10000 schedules:
+Check the `tcCrazyUserUsingCoffeeMachine` test case for 10,000 schedules:
 
 ```shell
 p check -tc tcCrazyUserUsingCoffeeMachine -i 10000
@@ -151,7 +151,7 @@ p check -tc tcCrazyUserUsingCoffeeMachine -i 10000
 
 ### Exercise Problem
 
-- [Problem 1] Note that the current safety specification `CoffeeMakerModesOfOperation` does not capture the case where the CoffeeMaker can move to GroundsOpen and GroundsClosed state. Extend the spec to cover those modes of operations as well.
+- [Problem 1] Note that the current safety specification `EspressoMachineModesOfOperation` does not capture the case where the CoffeeMaker can move to CoffeeMakerDoorOpened state. Extend the spec to cover those modes of operations as well.
 
 !!! info "Thinking! ... :thinking::thinking:"
     Can you think of other cases where you would like to check that your system evolves through a certain sequence of states? Or that it allows only those executions which follow a pattern? Can these be specified as P monitors? If not, what are the challenges? A typical example of such cases is when for files in a storage system the sequence of operations that must succeed need to have a pattern of the form: open &rarr; read* &rarr; close; and similarly, for lock services, lockAcquire &rarr; readSuccess &rarr; lockReleased. More interestingly, you can also check things like: AuthenticationSuccess(x) &rarr; ReadSuccess(x), and never see a case of AuthenticationFailure(x) &rarr; ReadSuccess(x) in your executions! What do you think? Post your comments in the [github discussions](https://github.com/p-org/P/discussions).

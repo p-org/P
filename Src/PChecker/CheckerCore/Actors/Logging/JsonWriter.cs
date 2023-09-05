@@ -147,8 +147,8 @@ namespace PChecker.Actors.Logging
                 case IDictionary eventPayloadDict:
                 {
                     var stringBuilder = new StringBuilder();
-                    var eventPayloadDictKeys =eventPayloadDict.Keys; 
-                    foreach(var key in eventPayloadDictKeys)
+                    var eventPayloadDictKeys = eventPayloadDict.Keys;
+                    foreach (var key in eventPayloadDictKeys)
                     {
                         stringBuilder.Append($"{key}: {ConvertPayloadToString(eventPayloadDict[key])}, ");
                     }
@@ -198,9 +198,35 @@ namespace PChecker.Actors.Logging
         /// <param name="eventName">Of type string: name of the event.</param>
         /// <param name="eventPayload">Of type object: payload of the event, if there is any.</param>
         /// <returns>string: the string containing all information.</returns>
-        private static string GetSendReceiveId(string? machineName, string? eventName,
-            object? eventPayload) =>
+        private static string GetSendReceiveId(string? machineName, string? eventName, object? eventPayload) =>
             $"_{machineName}:_{eventName}:_{ConvertPayloadToString(eventPayload)}";
+
+        private void updateMachineVcMap(string machine, Dictionary<string, int> senderVcMap)
+        {
+            // Get a set of all machine names to update between the sender vc map and the current machine vc map (minus the current machine)
+            var machinesToUpdateInVc =
+                new HashSet<string>(_contextVcMap[machine].Keys.Union(senderVcMap.Keys).Except(new[] { machine }));
+
+            // Update local machine's vector clock in _contextVcMap, outside of itself, since it was already updated (incremented) from above
+            // right before the switch case.
+            // The rule for the remaining machines to be updated is taking the max between the sender machine's vector clock at that time and
+            // the current machine's vector clock. Details can be found here: https://en.wikipedia.org/wiki/Vector_clock
+            foreach (var machineToUpdate in machinesToUpdateInVc)
+            {
+                if (_contextVcMap[machine].TryGetValue(machineToUpdate, out var localMachineToUpdateValue))
+                {
+                    if (senderVcMap.TryGetValue(machineToUpdate, out var senderMachineToUpdateValue))
+                    {
+                        _contextVcMap[machine][machineToUpdate] =
+                            Math.Max(senderMachineToUpdateValue, localMachineToUpdateValue);
+                    }
+                }
+                else
+                {
+                    _contextVcMap[machine].Add(machineToUpdate, senderVcMap[machineToUpdate]);
+                }
+            }
+        }
 
         /// <summary>
         /// Main method to update the vector clock mappings.
@@ -250,6 +276,12 @@ namespace PChecker.Actors.Logging
                     _unhandledSendRequests.Add(hashedSendReqId, CopyVcMap(_contextVcMap[machine]));
                     break;
 
+                // For MonitorProcessEvents, tie it to the senderMachine's current vector clock 
+                // so that there is some association in the timeline
+                case "MonitorProcessEvent":
+                    updateMachineVcMap(machine, _contextVcMap[logDetails.Sender]);
+                    break;
+
                 // On dequeue OR receive event, has the string containing information about the current machine that dequeued (i.e. received the event),
                 // the event name, and payload. This is used to find the corresponding SendReqId from the machine that sent it in order to retrieve
                 // the vector clock of the sender machine during that time when it was sent.
@@ -277,30 +309,7 @@ namespace PChecker.Actors.Logging
                     var hashedCorrespondingSendReqId = HashString(correspondingSendReqId);
                     var senderVcMap = _unhandledSendRequests[hashedCorrespondingSendReqId];
 
-                    // Get a set of all machine names to update between the sender vc map and the current machine vc map (minus the current machine)
-                    var machinesToUpdateInVc =
-                        new HashSet<string>(
-                            _contextVcMap[machine].Keys.Union(senderVcMap.Keys).Except(new[] { machine }));
-
-                    // Update local machine's vector clock in _contextVcMap, outside of itself, since it was already updated (incremented) from above
-                    // right before the switch case.
-                    // The rule for the remaining machines to be updated is taking the max between the sender machine's vector clock at that time and
-                    // the current machine's vector clock. Details can be found here: https://en.wikipedia.org/wiki/Vector_clock
-                    foreach (var machineToUpdate in machinesToUpdateInVc)
-                    {
-                        if (_contextVcMap[machine].TryGetValue(machineToUpdate, out var localMachineToUpdateValue))
-                        {
-                            if (senderVcMap.TryGetValue(machineToUpdate, out var senderMachineToUpdateValue))
-                            {
-                                _contextVcMap[machine][machineToUpdate] =
-                                    Math.Max(senderMachineToUpdateValue, localMachineToUpdateValue);
-                            }
-                        }
-                        else
-                        {
-                            _contextVcMap[machine].Add(machineToUpdate, senderVcMap[machineToUpdate]);
-                        }
-                    }
+                    updateMachineVcMap(machine, senderVcMap);
 
                     // Remove the SendReqId because we've processed it.
                     _unhandledSendRequests.Remove(hashedCorrespondingSendReqId);

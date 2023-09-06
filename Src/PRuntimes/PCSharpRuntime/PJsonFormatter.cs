@@ -472,8 +472,9 @@ namespace Plang.CSharpRuntime
 
             Writer.AddLogType(JsonWriter.LogType.MonitorProcessEvent);
             Writer.LogDetails.Monitor = monitorType;
-            Writer.LogDetails.Event = GetShortName(e.GetType().Name);
             Writer.LogDetails.State = stateName;
+            Writer.LogDetails.Sender = senderName;
+            Writer.LogDetails.Event = GetShortName(e.GetType().Name);
             Writer.LogDetails.Payload = GetEventPayloadInJson(e);
             Writer.AddLog(log);
             Writer.AddToLogs(updateVcMap: true);

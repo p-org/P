@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using PChecker.Actors.Events;
 #if !DEBUG
 using System.Diagnostics;
 #endif
@@ -50,7 +49,6 @@ namespace PChecker.SystematicTesting.Operations
         /// True if the next awaiter is controlled, else false.
         /// </summary>
         internal bool IsAwaiterControlled;
-        public Event? LastEvent = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncOperation"/> class.

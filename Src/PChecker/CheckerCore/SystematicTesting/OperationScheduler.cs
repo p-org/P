@@ -161,8 +161,6 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            ops = Utils.FindHighPriorityOperations(ops, CheckerConfiguration.InterestingEvents);
-
             if (!Strategy.GetNextOperation(current, ops, out var next))
             {
                 // Checks if the program has deadlocked.

@@ -136,13 +136,6 @@ namespace PChecker
         [DataMember]
         public bool ConsiderDepthBoundHitAsBug;
 
-
-        /// <summary>
-        /// The generator of interesting events.
-        /// </summary>
-        [DataMember]
-        public string InterestingEventsSource;
-
         /// <summary>
         /// A strategy-specific bound.
         /// </summary>
@@ -276,12 +269,6 @@ namespace PChecker
         /// </summary>
         public bool DisableEnvironmentExit;
 
-
-        /// <summary>
-        /// A list of interesting events that should be delayed.
-        /// </summary>
-        public HashSet<Type> InterestingEvents = new();
-
         /// <summary>
         /// Additional arguments to pass to PSym.
         /// </summary>
@@ -342,7 +329,6 @@ namespace PChecker
             UserExplicitlySetMaxFairSchedulingSteps = false;
             TestingSchedulerEndPoint = "CoyoteTestScheduler.4723bb92-c413-4ecb-8e8a-22eb2ba22234";
             PatternSource = "";
-            InterestingEventsSource = "";
             TestingProcessId = 0;
             ConsiderDepthBoundHitAsBug = false;
             StrategyBound = 0;

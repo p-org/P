@@ -182,13 +182,6 @@ namespace PChecker.SystematicTesting
                         .Invoke(null, null);
                     eventMatcher = new EventPatternObserver(result);
                 }
-                if (checkerConfiguration.InterestingEventsSource.Length > 0)
-                {
-                    var result = (HashSet<Type>) t.GetMethod(checkerConfiguration.InterestingEventsSource,
-                            BindingFlags.Public | BindingFlags.Static)
-                        .Invoke(null, null);
-                    checkerConfiguration.InterestingEvents = result;
-                }
             }
             catch
             {

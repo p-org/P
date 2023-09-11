@@ -98,7 +98,7 @@ namespace PChecker.ExhaustiveSearch
                     arguments.Append($"--verbose 1 ");
                 }
                 
-                arguments.Append($"--iterations {_checkerConfiguration.TestingIterations} ");
+                arguments.Append($"--schedules {_checkerConfiguration.TestingIterations} ");
                 
                 arguments.Append($"--max-steps {_checkerConfiguration.MaxUnfairSchedulingSteps} ");
 

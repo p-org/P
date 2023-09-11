@@ -103,7 +103,7 @@ public class PSymOptions {
 
     // strategy of exploration
     Option strategy =
-        Option.builder("s")
+        Option.builder("st")
             .longOpt("strategy")
             .desc("Exploration strategy: symbolic, random, dfs, learn, stateless (default: symbolic)")
             .numberOfArgs(1)
@@ -114,16 +114,25 @@ public class PSymOptions {
 
     // Systematic exploration options
 
-    // max number of executions for the search
-    Option maxExecutions =
+    // max number of schedules for the search
+    Option maxIterations =
         Option.builder("i")
             .longOpt("iterations")
             .desc("Number of schedules to explore (default: 1)")
             .numberOfArgs(1)
             .hasArg()
-            .argName("Iterations (integer)")
+            .argName("Schedules (integer)")
             .build();
-    addOption(maxExecutions);
+    addHiddenOption(maxIterations);
+    Option maxSchedules =
+        Option.builder("s")
+            .longOpt("schedules")
+            .desc("Number of schedules to explore (default: 1)")
+            .numberOfArgs(1)
+            .hasArg()
+            .argName("Schedules (integer)")
+            .build();
+    addOption(maxSchedules);
 
     // max steps/depth bound for the search
     Option maxSteps =
@@ -244,8 +253,8 @@ public class PSymOptions {
     // max number of backtrack tasks per execution
     Option maxBacktrackTasksPerExecution =
         Option.builder()
-            .longOpt("backtracks-per-iteration")
-            .desc("Max number of backtracks to generate per iteration (default: 2)")
+            .longOpt("backtracks-per-schedule")
+            .desc("Max number of backtracks to generate per schedule (default: 2)")
             .numberOfArgs(1)
             .hasArg()
             .argName("(integer)")
@@ -423,7 +432,7 @@ public class PSymOptions {
                 option, String.format("Expected an integer value, got %s", option.getValue()));
           }
           break;
-        case "s":
+        case "st":
         case "strategy":
           switch (option.getValue()) {
             case "bmc":
@@ -460,6 +469,8 @@ public class PSymOptions {
           // exploration options
         case "i":
         case "iterations":
+        case "s":
+        case "schedules":
           try {
             config.setMaxExecutions(Integer.parseInt(option.getValue()));
           } catch (NumberFormatException ex) {
@@ -560,7 +571,7 @@ public class PSymOptions {
         case "no-backtrack":
           config.setUseBacktrack(false);
           break;
-        case "backtracks-per-iteration":
+        case "backtracks-per-schedule":
           try {
             config.setMaxBacktrackTasksPerExecution(Integer.parseInt(option.getValue()));
           } catch (NumberFormatException ex) {
@@ -693,7 +704,7 @@ public class PSymOptions {
           formatter.printHelp(
               100,
               "java -jar <.jar-file> [options]",
-              "----------------------------\nCommandline options for PSym\n----------------------------",
+              "-----------------------------------\nCommandline options for PSym/PCover\n-----------------------------------",
               visibleOptions,
               "See https://p-org.github.io/P/ for details.");
           exit(0);

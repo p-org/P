@@ -86,14 +86,14 @@ public class SearchLogger {
   public static void logResumeExecution(int iter, int depth) {
     if (verbosity > 0) {
       log.info("--------------------");
-      log.info("Resuming Iteration: " + iter + " from Depth: " + depth);
+      log.info("Resuming Schedule: " + iter + " from Depth: " + depth);
     }
   }
 
   public static void logStartExecution(int iter, int depth) {
     if (verbosity > 0) {
       log.info("--------------------");
-      log.info("Starting Iteration: " + iter + " from Depth: " + depth);
+      log.info("Starting Schedule: " + iter + " from Depth: " + depth);
     }
   }
 
@@ -109,8 +109,8 @@ public class SearchLogger {
   public static void logIterationStats(SearchStats.IterationStats iterStats) {
     log.info(
         String.format(
-            "Finished Iteration: %d: Max Depth: %d, TotalStates = %d, TotalTransitions = %d, ReducedTransitionsExplored = %d",
-            iterStats.getIteration(),
+            "Finished Schedule: %d: Max Depth: %d, TotalStates = %d, TotalTransitions = %d, ReducedTransitionsExplored = %d",
+            iterStats.getSchedule(),
             iterStats.getIterationTotal().getDepth(),
             iterStats.getIterationTotal().getNumOfStates(),
             iterStats.getIterationTotal().getNumOfTransitions(),

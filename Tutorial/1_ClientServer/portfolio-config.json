@@ -23,8 +23,8 @@
         "metavar" : "N"
     },
 
-    "iterations": {
-        "help"    : "Number of iterations, per method per partition",
+    "schedules": {
+        "help"    : "Number of schedules, per method per partition",
         "default" : 100000,
         "metavar" : "N"
     },

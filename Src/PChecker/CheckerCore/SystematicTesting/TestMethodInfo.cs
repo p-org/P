@@ -44,7 +44,7 @@ namespace PChecker.SystematicTesting
         private readonly MethodInfo DisposeMethod;
 
         /// <summary>
-        /// The test dispose method per iteration.
+        /// The test dispose method per schedule.
         /// </summary>
         private readonly MethodInfo IterationDisposeMethod;
 
@@ -71,17 +71,17 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Invokes the user-specified initialization method for all iterations executing this test.
+        /// Invokes the user-specified initialization method for all schedules executing this test.
         /// </summary>
         internal void InitializeAllIterations() => InitMethod?.Invoke(null, Array.Empty<object>());
 
         /// <summary>
-        /// Invokes the user-specified disposal method for the iteration currently executing this test.
+        /// Invokes the user-specified disposal method for the schedule currently executing this test.
         /// </summary>
         internal void DisposeCurrentIteration() => IterationDisposeMethod?.Invoke(null, null);
 
         /// <summary>
-        /// Invokes the user-specified disposal method for all iterations executing this test.
+        /// Invokes the user-specified disposal method for all schedules executing this test.
         /// </summary>
         internal void DisposeAllIterations() => DisposeMethod?.Invoke(null, Array.Empty<object>());
 

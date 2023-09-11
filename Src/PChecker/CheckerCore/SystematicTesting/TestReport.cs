@@ -66,7 +66,7 @@ namespace PChecker.SystematicTesting
 
         /// <summary>
         /// The total explored scheduling steps (across
-        /// all testing iterations), in fair tests.
+        /// all testing schedules), in fair tests.
         /// </summary>
         [DataMember]
         public int TotalExploredFairSteps { get; internal set; }

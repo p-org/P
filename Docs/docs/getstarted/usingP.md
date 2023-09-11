@@ -86,7 +86,6 @@ There are two ways of compiling a P program:
         ....... includes p file: P/Tutorial/1_ClientServer/PTst/TestDriver.p
         ....... includes p file: P/Tutorial/1_ClientServer/PTst/Testscript.p
         ----------------------------------------
-        ----------------------------------------
         Parsing ...
         Type checking ...
         Code generation ...
@@ -95,18 +94,18 @@ There are two ways of compiling a P program:
         Compiling ClientServer...
         MSBuild version 17.3.1+2badb37d1 for .NET
         Determining projects to restore...
-        Restored P/Tutorial/1_ClientServer/PGenerated/CSharp/ClientServer.csproj (in 365 ms).
+        Restored P/Tutorial/1_ClientServer/PGenerated/CSharp/ClientServer.csproj (in 102 ms).
         ClientServer -> P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
         
         Build succeeded.
         0 Warning(s)
         0 Error(s)
         
-        Time Elapsed 00:00:02.34
+        Time Elapsed 00:00:02.25
         
         
         ----------------------------------------
-        [PTool]: Thanks for using P!
+        ~~ [PTool]: Thanks for using P! ~~
         ```
 
     `p compile` command searches for the `*.pproj` file in the current directory.
@@ -148,7 +147,6 @@ There are two ways of compiling a P program:
         ```
         $ p compile -pf PSpec/*.p PSrc/*.p PTst/*.p -pn ClientServer -o PGenerated
 
-        ----------------------------------------
         Parsing ...
         Type checking ...
         Code generation ...
@@ -157,18 +155,18 @@ There are two ways of compiling a P program:
         Compiling ClientServer...
         MSBuild version 17.3.1+2badb37d1 for .NET
         Determining projects to restore...
-        All projects are up-to-date for restore.
+        Restored P/Tutorial/1_ClientServer/PGenerated/CSharp/ClientServer.csproj (in 115 ms).
         ClientServer -> P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
         
         Build succeeded.
         0 Warning(s)
         0 Error(s)
         
-        Time Elapsed 00:00:01.87
+        Time Elapsed 00:00:05.74
         
         
         ----------------------------------------
-        [PTool]: Thanks for using P!
+        ~~ [PTool]: Thanks for using P! ~~
         ```
 
 ### Checking a P program
@@ -199,7 +197,7 @@ p check
     tcMultipleClients
     tcAbstractServer
     
-    [PTool]: Thanks for using P!
+    ~~ [PTool]: Thanks for using P! ~~
     ```
 
 `p check` command searches for the `*.dll` file in the current directory.
@@ -207,7 +205,7 @@ p check
 If you are running `p check` from outside the directory where `*.dll` is compiled to, run `p check <path to *.dll>` instead.
 
 There are three test cases defined in the ClientServer P project, and you can specify which
-test case to run by using the `-tc` or `--testcase` parameter along with the `-i` parameter to
+test case to run by using the `-tc` or `--testcase` parameter along with the `-s` parameter to
 specify how many different schedules to explore when running this test case (by default the checker explores a single schedule).
 *For complex systems, running for 100,000 schedules typically finds most of the easy to find bugs before
 running the checker on a distributed cluster to explore billions of schedules and rule out deep bugs in the system.*
@@ -215,37 +213,37 @@ running the checker on a distributed cluster to explore billions of schedules an
 So to run the `tcSingleClient` test case for 100 schedules, we can use the following command:
 
 ```shell
-p check -tc tcSingleClient -i 100
+p check -tc tcSingleClient -s 100
 ```
 
 ??? info "Expected Output"
     ```
-    $ p check -tc tcSingleClient -i 100
+    $ p check -tc tcSingleClient -s 100
 
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Test case :: tcSingleClient
-    ... Checker is using 'random' strategy (seed:2766677439).
-    ..... Iteration #1
-    ..... Iteration #2
-    ..... Iteration #3
-    ..... Iteration #4
-    ..... Iteration #5
-    ..... Iteration #6
-    ..... Iteration #7
-    ..... Iteration #8
-    ..... Iteration #9
-    ..... Iteration #10
-    ..... Iteration #20
-    ..... Iteration #30
-    ..... Iteration #40
-    ..... Iteration #50
-    ..... Iteration #60
-    ..... Iteration #70
-    ..... Iteration #80
-    ..... Iteration #90
-    ..... Iteration #100
+    ... Checker is using 'random' strategy (seed:2510398613).
+    ..... Schedule #1
+    ..... Schedule #2
+    ..... Schedule #3
+    ..... Schedule #4
+    ..... Schedule #5
+    ..... Schedule #6
+    ..... Schedule #7
+    ..... Schedule #8
+    ..... Schedule #9
+    ..... Schedule #10
+    ..... Schedule #20
+    ..... Schedule #30
+    ..... Schedule #40
+    ..... Schedule #50
+    ..... Schedule #60
+    ..... Schedule #70
+    ..... Schedule #80
+    ..... Schedule #90
+    ..... Schedule #100
     ... Emitting coverage reports:
     ..... Writing PCheckerOutput/BugFinding/ClientServer.dgml
     ..... Writing PCheckerOutput/BugFinding/ClientServer.coverage.txt
@@ -253,35 +251,36 @@ p check -tc tcSingleClient -i 100
     ... Checking statistics:
     ..... Found 0 bugs.
     ... Scheduling statistics:
-    ..... Explored 100 schedules: 100 fair and 0 unfair.
-    ..... Number of scheduling points in fair terminating schedules: 11 (min), 167 (avg), 691 (max).
-    ... Elapsed 1.2432111 sec.
+    ..... Explored 100 schedules
+    ..... Number of scheduling points in terminating schedules: 22 (min), 139 (avg), 585 (max).
+    ... Elapsed 1.4774908 sec.
     . Done
-    [PTool]: Thanks for using P!
+    ~~ [PTool]: Thanks for using P! ~~
     ```
 
 There is a known bug in the ClientServer example (explained in the Tutorials) which is caught by
 the `tcAbstractServer` test case. Run command:
 ```shell
-p check -tc tcAbstractServer -i 100
+p check -tc tcAbstractServer -s 100
 ```
 
 ??? info "Expected Output"
     ```hl_lines="9 11 13 20"
-    $ p check -tc tcAbstractServer -i 100
+    $ p check -tc tcAbstractServer -s 100
 
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Test case :: tcAbstractServer
-    ... Checker is using 'random' strategy (seed:1823819121).
-    ..... Iteration #1
+    ... Checker is using 'random' strategy (seed:490949683).
+    ..... Schedule #1
     Checker found a bug.
     ... Emitting traces:
     ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.txt
+    ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.trace.json
     ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.dgml
     ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.schedule
-    ... Elapsed 0.2219742 sec.
+    ... Elapsed 0.2264114 sec.
     ... Emitting coverage reports:
     ..... Writing PCheckerOutput/BugFinding/ClientServer.dgml
     ..... Writing PCheckerOutput/BugFinding/ClientServer.coverage.txt
@@ -289,12 +288,12 @@ p check -tc tcAbstractServer -i 100
     ... Checking statistics:
     ..... Found 1 bug.
     ... Scheduling statistics:
-    ..... Explored 1 schedule: 1 fair and 0 unfair.
+    ..... Explored 1 schedule
     ..... Found 100.00% buggy schedules.
-    ..... Number of scheduling points in fair terminating schedules: 117 (min), 117 (avg), 117 (max).
-    ... Elapsed 0.3952627 sec.
+    ..... Number of scheduling points in terminating schedules: 97 (min), 97 (avg), 97 (max).
+    ... Elapsed 0.4172069 sec.
     . Done
-    [PTool]: Thanks for using P!
+    ~~ [PTool]: Thanks for using P! ~~
     ```
 
 The P checker on finding a bug generates two artifacts (highlighted in the expected output above):

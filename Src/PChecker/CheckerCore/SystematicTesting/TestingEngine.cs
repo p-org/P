@@ -50,7 +50,7 @@ namespace PChecker.SystematicTesting
 
         /// <summary>
         /// Set of callbacks to invoke at the end
-        /// of each iteration.
+        /// of each schedule.
         /// </summary>
         private readonly ISet<Action<int>> PerIterationCallbacks;
 
@@ -78,7 +78,7 @@ namespace PChecker.SystematicTesting
         private TextWriter Logger;
 
         /// <summary>
-        /// Contains a single iteration of JSON log output in the case where the IsJsonLogEnabled
+        /// Contains a single schedule of JSON log output in the case where the IsJsonLogEnabled
         /// checkerConfiguration is specified.
         /// </summary>
         private JsonWriter JsonLogger;
@@ -117,12 +117,12 @@ namespace PChecker.SystematicTesting
         public TestReport TestReport { get; set; }
 
         /// <summary>
-        /// A graph of the actors, state machines and events of a single test iteration.
+        /// A graph of the actors, state machines and events of a single test schedule.
         /// </summary>
         private Graph Graph;
 
         /// <summary>
-        /// Contains a single iteration of XML log output in the case where the IsXmlLogEnabled
+        /// Contains a single schedule of XML log output in the case where the IsXmlLogEnabled
         /// checkerConfiguration is specified.
         /// </summary>
         private StringBuilder XmlLog;
@@ -386,7 +386,7 @@ namespace PChecker.SystematicTesting
                             break;
                         }
 
-                        // Runs a new testing iteration.
+                        // Runs a new testing schedule.
                         RunNextIteration(i);
 
                         if (IsReplayModeEnabled || (!_checkerConfiguration.PerformFullExploration &&
@@ -398,7 +398,7 @@ namespace PChecker.SystematicTesting
                         if (RandomValueGenerator != null && _checkerConfiguration.IncrementalSchedulingSeed)
                         {
                             // Increments the seed in the random number generator (if one is used), to
-                            // capture the seed used by the scheduling strategy in the next iteration.
+                            // capture the seed used by the scheduling strategy in the next schedule.
                             RandomValueGenerator.Seed += 1;
                         }
 
@@ -448,13 +448,13 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Runs the next testing iteration.
+        /// Runs the next testing schedule.
         /// </summary>
-        private void RunNextIteration(int iteration)
+        private void RunNextIteration(int schedule)
         {
-            if (!IsReplayModeEnabled && ShouldPrintIteration(iteration + 1))
+            if (!IsReplayModeEnabled && ShouldPrintIteration(schedule + 1))
             {
-                Logger.WriteLine($"..... Iteration #{iteration + 1}");
+                Logger.WriteLine($"..... Schedule #{schedule + 1}");
 
                 // Flush when logging to console.
                 if (Logger is ConsoleLogger)
@@ -463,7 +463,7 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            // Runtime used to serialize and test the program in this iteration.
+            // Runtime used to serialize and test the program in this schedule.
             ControlledRuntime runtime = null;
 
             // Logger used to intercept the program output if no custom logger
@@ -501,13 +501,13 @@ namespace PChecker.SystematicTesting
                 runtime.RunTest(TestMethodInfo.Method, TestMethodInfo.Name);
                 runtime.WaitAsync().Wait();
 
-                // Invokes the user-specified iteration disposal method.
+                // Invokes the user-specified schedule disposal method.
                 TestMethodInfo.DisposeCurrentIteration();
 
-                // Invoke the per iteration callbacks, if any.
+                // Invoke the per schedule callbacks, if any.
                 foreach (var callback in PerIterationCallbacks)
                 {
-                    callback(iteration);
+                    callback(schedule);
                 }
 
                 // Checks that no monitor is in a hot state at termination. Only
@@ -522,7 +522,7 @@ namespace PChecker.SystematicTesting
                     ErrorReporter.WriteErrorLine(runtime.Scheduler.BugReport);
                 }
 
-                // Only add the current iteration of JsonLogger logs to JsonVerboseLogs if in verbose mode
+                // Only add the current schedule of JsonLogger logs to JsonVerboseLogs if in verbose mode
                 if (_checkerConfiguration.IsVerbose)
                 {
                     JsonVerboseLogs.Add(JsonLogger.Logs);
@@ -554,12 +554,12 @@ namespace PChecker.SystematicTesting
 
                 if (!IsReplayModeEnabled && _checkerConfiguration.PerformFullExploration && runtime.Scheduler.BugFound)
                 {
-                    Logger.WriteLine($"..... Iteration #{iteration + 1} " +
+                    Logger.WriteLine($"..... Schedule #{schedule + 1} " +
                         $"triggered bug #{TestReport.NumOfFoundBugs} " +
                         $"[task-{_checkerConfiguration.TestingProcessId}]");
                 }
 
-                // Cleans up the runtime before the next iteration starts.
+                // Cleans up the runtime before the next schedule starts.
                 runtimeLogger?.Dispose();
                 runtime?.Dispose();
             }
@@ -668,8 +668,8 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Registers a callback to invoke at the end of each iteration. The callback takes as
-        /// a parameter an integer representing the current iteration.
+        /// Registers a callback to invoke at the end of each schedule. The callback takes as
+        /// a parameter an integer representing the current schedule.
         /// </summary>
         public void RegisterPerIterationCallBack(Action<int> callback)
         {
@@ -808,7 +808,7 @@ namespace PChecker.SystematicTesting
             report.CoverageInfo.Merge(coverageInfo);
             TestReport.Merge(report);
 
-            // Also save the graph snapshot of the last iteration, if there is one.
+            // Also save the graph snapshot of the last schedule, if there is one.
             Graph = coverageInfo.CoverageGraph;
         }
 
@@ -906,18 +906,18 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Returns true if the engine should print the current iteration.
+        /// Returns true if the engine should print the current schedule.
         /// </summary>
-        private bool ShouldPrintIteration(int iteration)
+        private bool ShouldPrintIteration(int schedule)
         {
-            if (iteration > PrintGuard * 10)
+            if (schedule > PrintGuard * 10)
             {
-                var count = iteration.ToString().Length - 1;
+                var count = schedule.ToString().Length - 1;
                 var guard = "1" + (count > 0 ? string.Concat(Enumerable.Repeat("0", count)) : string.Empty);
                 PrintGuard = int.Parse(guard);
             }
 
-            return iteration % PrintGuard == 0;
+            return schedule % PrintGuard == 0;
         }
 
         /// <summary>

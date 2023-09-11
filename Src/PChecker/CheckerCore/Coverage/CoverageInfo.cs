@@ -10,7 +10,7 @@ namespace PChecker.Coverage
 {
     /// <summary>
     /// Class for storing coverage-specific data
-    /// across multiple testing iterations.
+    /// across multiple testing schedules.
     /// </summary>
     [DataContract]
     public class CoverageInfo

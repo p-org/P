@@ -22,7 +22,7 @@ for folder in $folders; do
     echo "------------------------------------------------------"
 
     checkLog="check.log"
-    p check -s ${SCHEDULES} 2>&1 | tee ${checkLog}
+    p check -i ${SCHEDULES} 2>&1 | tee ${checkLog}
     if grep -q "Possible options are:" ${checkLog}; then
       beginFlag=false
       while IFS=" " read firstWord _; do
@@ -33,7 +33,7 @@ for folder in $folders; do
             break;
           fi
           echo "Smoke testing for test case ${firstWord}";
-          p check -s ${SCHEDULES} -tc ${firstWord}
+          p check -i ${SCHEDULES} -tc ${firstWord}
           if [ $? -ne 0 ]; then  
             let "errorCount=errorCount + 1"
           fi  

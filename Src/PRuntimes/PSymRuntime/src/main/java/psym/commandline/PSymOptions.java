@@ -704,7 +704,7 @@ public class PSymOptions {
           formatter.printHelp(
               100,
               "java -jar <.jar-file> [options]",
-              "----------------------------\nCommandline options for PSym\n----------------------------",
+              "-----------------------------------\nCommandline options for PSym/PCover\n-----------------------------------",
               visibleOptions,
               "See https://p-org.github.io/P/ for details.");
           exit(0);

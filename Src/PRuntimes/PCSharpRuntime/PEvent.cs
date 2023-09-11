@@ -26,6 +26,21 @@ namespace Plang.CSharpRuntime
         {
             throw new NotImplementedException();
         }
+
+        public object ToDict()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is PEvent other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return GetType().FullName.GetHashCode();
+        }
     }
 
     public class PHalt : PEvent

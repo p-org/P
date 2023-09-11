@@ -70,26 +70,6 @@ namespace Plang.Compiler.Backend.Java
         /// <summary>
         /// This compiler has a compilation stage.
         /// </summary>
-        public bool HasCompilationStage => true;
-
-        /// <summary>
-        /// Collates the previously-generated Java sources into a final JAR.
-        /// </summary>
-        public void Compile(ICompilerConfiguration job)
-        {
-            var stdout = "";
-            var stderr = "";
-
-            string[] args = { "clean", "package"};
-            if (Compiler.RunWithOutput(
-                job.OutputDirectory.FullName, out stdout, out stderr, "mvn", args) != 0)
-            {
-                throw new TranslationException($"Java project compilation failed.\n" + $"{stdout}\n" + $"{stderr}\n");
-            }
-            else
-            {
-                job.Output.WriteInfo("Build succeeded.");
-            }
-        }
+        public bool HasCompilationStage => false;
     }
 }

@@ -29,7 +29,7 @@ namespace PChecker.Actors.Logging
         /// <summary>
         /// Used to log json messages.
         /// </summary>
-        private JsonWriter JsonLogger { get; set; }
+        public JsonWriter JsonLogger { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LogWriter"/> class.

@@ -41,6 +41,11 @@ namespace PChecker.Actors
         /// to replace the logger with a custom one.
         /// </summary>
         public override TextWriter Logger => LogWriter.Logger;
+        
+        /// <summary>
+        /// Used to log json trace outputs.
+        /// </summary>
+        public JsonWriter JsonLogger => LogWriter.JsonLogger;
 
         /// <summary>
         /// Callback that is fired when a Coyote event is dropped.

@@ -103,7 +103,7 @@ public class PSymOptions {
 
     // strategy of exploration
     Option strategy =
-        Option.builder("s")
+        Option.builder("st")
             .longOpt("strategy")
             .desc("Exploration strategy: symbolic, random, dfs, learn, stateless (default: symbolic)")
             .numberOfArgs(1)
@@ -432,7 +432,7 @@ public class PSymOptions {
                 option, String.format("Expected an integer value, got %s", option.getValue()));
           }
           break;
-        case "s":
+        case "st":
         case "strategy":
           switch (option.getValue()) {
             case "bmc":

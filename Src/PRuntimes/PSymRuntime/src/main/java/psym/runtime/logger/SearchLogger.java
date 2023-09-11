@@ -110,7 +110,7 @@ public class SearchLogger {
     log.info(
         String.format(
             "Finished Schedule: %d: Max Depth: %d, TotalStates = %d, TotalTransitions = %d, ReducedTransitionsExplored = %d",
-            iterStats.getIteration(),
+            iterStats.getSchedule(),
             iterStats.getIterationTotal().getDepth(),
             iterStats.getIterationTotal().getNumOfStates(),
             iterStats.getIterationTotal().getNumOfTransitions(),

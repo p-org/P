@@ -115,7 +115,6 @@ p compile
     ....... includes p file: P/Tutorial/2_TwoPhaseCommit/PTst/TestDriver.p
     ....... includes p file: P/Tutorial/2_TwoPhaseCommit/PTst/Client.p
     ....... includes p file: P/Tutorial/2_TwoPhaseCommit/PTst/TestScripts.p
-    ....... includes foreign file: P/Tutorial/2_TwoPhaseCommit/PForeign/GlobalFunctions.java
     ....... includes foreign file: P/Tutorial/2_TwoPhaseCommit/PForeign/ForeignCode.cs
     ==== Loading project file: P/Tutorial/Common/Timer/Timer.pproj
     ....... includes p file: P/Tutorial/Common/Timer/PSrc/Timer.p

@@ -25,7 +25,7 @@ namespace PChecker.SystematicTesting
 
     /// <summary>
     /// Attribute for declaring a cleanup method to be
-    /// called when all test iterations terminate.
+    /// called when all test schedules terminate.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public sealed class TestDisposeAttribute : Attribute
@@ -34,7 +34,7 @@ namespace PChecker.SystematicTesting
 
     /// <summary>
     /// Attribute for declaring a cleanup method to be
-    /// called when each test iteration terminates.
+    /// called when each test schedule terminates.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public sealed class TestIterationDisposeAttribute : Attribute

@@ -336,8 +336,8 @@ def initialize_bugfinding_worker(method):
     cmd = [PBIN, "check", dllFile, "--mode bugfinding", f"--outdir {worker.get_path()}", schedule ]
     if method != "":
         cmd.append("-tc " + method)
-    if hasattr(configArgs, "iterations"):
-        cmd.append("-i " + str(configArgs.iterations))
+    if hasattr(configArgs, "schedules"):
+        cmd.append("-s " + str(configArgs.schedules))
     if hasattr(configArgs, "max_steps"):
         cmd.append("--max-steps " + str(configArgs.max_steps))
     if hasattr(configArgs, "timeout"):
@@ -368,8 +368,8 @@ def initialize_psym_worker(method, mode, strategy):
         cmd.append("--sch-coverage " + strategy)
     if method != "":
         cmd.append("-tc " + method)
-    if hasattr(configArgs, "iterations"):
-        cmd.append("-i " + str(configArgs.iterations))
+    if hasattr(configArgs, "schedules"):
+        cmd.append("-s " + str(configArgs.schedules))
     if hasattr(configArgs, "max_steps"):
         cmd.append("--max-steps " + str(configArgs.max_steps))
     if hasattr(configArgs, "timeout"):

@@ -71,7 +71,7 @@ namespace PChecker.SystematicTesting
                 catch (Exception ex)
                 {
                     // Report the unhandled exception unless it is our ExecutionCanceledException which is our
-                    // way of terminating async task operations at the end of the test iteration.
+                    // way of terminating async task operations at the end of the test schedule.
                     if (!(ex is ExecutionCanceledException))
                     {
                         ReportUnhandledExceptionInOperation(op, ex);

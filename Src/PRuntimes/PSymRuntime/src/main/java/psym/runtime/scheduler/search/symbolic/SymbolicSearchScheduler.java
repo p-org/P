@@ -246,7 +246,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     if (PSymGlobal.getConfiguration().isIterative()) {
       s.append(String.format("\n      Progress:         %.12f",
               PSymGlobal.getCoverage().getEstimatedCoverage(12)));
-      s.append(String.format("\n      Iterations:       %d", (getIter() - getStart_iter())));
+      s.append(String.format("\n      Schedules:        %d", (getIter() - getStart_iter())));
       s.append(String.format("\n      Finished:         %d", getFinishedTasks().size()));
       s.append(String.format("\n      Remaining:        %d", getTotalNumBacktracks()));
     }
@@ -262,7 +262,7 @@ public class SymbolicSearchScheduler extends SearchScheduler {
     s.append(StringUtils.center("Depth", 7));
 
     if (PSymGlobal.getConfiguration().isIterative()) {
-      s.append(StringUtils.center("Iteration", 12));
+      s.append(StringUtils.center("Schedule", 12));
       s.append(StringUtils.center("Remaining", 24));
       s.append(StringUtils.center("Progress", 24));
     }

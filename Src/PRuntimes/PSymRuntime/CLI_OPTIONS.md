@@ -17,7 +17,7 @@ Commandline options for PSym
  -o,--outdir <Output Dir (string)>              Dump output to directory (absolute or relative path)
  -v,--verbose <Log Verbosity (integer)>         Level of verbose log output during exploration
                                                 (default: 0)
- -i,--iterations <Iterations (integer)>         Number of schedules to explore (default: 1)
+ -s,--schedules <Schedules (integer)>           Number of schedules to explore (default: 1)
  -ms,--max-steps <Max Steps (integer)>          Max scheduling steps to be explored (default:
                                                 10,000)
  -fms,--fail-on-maxsteps                        Consider it a bug if the test hits the specified
@@ -34,7 +34,7 @@ Commandline options for PSym
  -r,--replay <File Name (string)>               Schedule file to replay
     --seed <Random Seed (integer)>              Specify the random value generator seed
     --no-backtrack                              Disable stateful backtracking
-    --backtracks-per-iteration <(integer)>      Max number of backtracks to generate per iteration
+    --backtracks-per-schedule <(integer)>       Max number of backtracks to generate per schedule
                                                 (default: 2)
     --solver <Solver Type (string)>             Solver type to use: bdd, yices2, z3, cvc5 (default:
                                                 bdd)
@@ -54,10 +54,10 @@ For example, running:
 
 ````
     ./scripts/run_psym.sh Examples/tests/pingPong/ psymExample \
-    --strategy learn --timeout 60 --memout 2 --iterations 4 --max-steps 5
+    --strategy learn --timeout 60 --memout 2 --schedules 4 --max-steps 5
 ````
 runs PSym with 
 - learning-based explicit-state search strategy
 - with a time limit of 60 seconds and memory limit of 2 GB
-- with at most 4 iterations
+- with at most 4 schedules
 - and exploring up to 5 steps in depth

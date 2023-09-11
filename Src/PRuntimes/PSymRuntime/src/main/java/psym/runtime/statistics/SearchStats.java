@@ -9,7 +9,7 @@ import lombok.Setter;
 
 /** Represents the search statistics during exploration */
 public class SearchStats implements Serializable {
-  // per iteration statistics map
+  // per schedule statistics map
   @Getter private final HashMap<Integer, IterationStats> iterationStats = new HashMap<>();
   @Setter private int current_iter = 1;
   private int lastCompletedIteration = 1;
@@ -27,9 +27,9 @@ public class SearchStats implements Serializable {
     }
   }
 
-  public void startNewIteration(int iteration, int backtrack) {
-    iterationStats.put(iteration, new IterationStats(iteration, backtrack));
-    current_iter = iteration;
+  public void startNewIteration(int schedule, int backtrack) {
+    iterationStats.put(schedule, new IterationStats(schedule, backtrack));
+    current_iter = schedule;
   }
 
   public TotalStats getSearchTotal() {
@@ -72,7 +72,7 @@ public class SearchStats implements Serializable {
     iterationStats.clear();
   }
 
-  /** Represents the statistics at each depth per iteration */
+  /** Represents the statistics at each depth per schedule */
   @AllArgsConstructor
   @Getter
   @Setter
@@ -108,22 +108,22 @@ public class SearchStats implements Serializable {
     private boolean completed;
   }
 
-  /** Represents the search statistics for one iteration */
+  /** Represents the search statistics for one schedule */
   @Getter
   public static class IterationStats implements Serializable {
 
-    // iteration number
-    private final int iteration;
+    // schedule number
+    private final int schedule;
 
-    // iteration number
+    // schedule number
     @Getter private final int startDepth;
-    // per depth statistics during this iteration
+    // per depth statistics during this schedule
     private final HashMap<Integer, DepthStats> perDepthStats;
-    // has the iteration completed for any depth
+    // has the schedule completed for any depth
     @Getter @Setter private boolean completed;
 
     public IterationStats(int iterationNumber, int startDepth) {
-      iteration = iterationNumber;
+      schedule = iterationNumber;
       this.startDepth = startDepth;
       perDepthStats = new HashMap<>();
       completed = false;

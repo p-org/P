@@ -45,7 +45,8 @@ namespace Plang.Options
             basicGroup.AddArgument("debug", "d", "Enable debugging", typeof(bool)).IsHidden = true;
             
             var exploreGroup = Parser.GetOrCreateGroup("explore", "Systematic exploration options");
-            exploreGroup.AddArgument("iterations", "i", "Number of schedules to explore", typeof(uint));
+            exploreGroup.AddArgument("iterations", "i", "Number of schedules to explore", typeof(uint)).IsHidden = true;
+            exploreGroup.AddArgument("schedules", "s", "Number of schedules to explore", typeof(uint));
             exploreGroup.AddArgument("max-steps", "ms", @"Max scheduling steps to be explored during systematic exploration (by default 10,000 unfair and 100,000 fair steps). You can provide one or two unsigned integer values", typeof(uint)).IsMultiValue = true;
             exploreGroup.AddArgument("fail-on-maxsteps", null, "Consider it a bug if the test hits the specified max-steps", typeof(bool));
             exploreGroup.AddArgument("liveness-temperature-threshold", null, "Specify the liveness temperature threshold is the liveness temperature value that triggers a liveness bug", typeof(uint)).IsHidden = true;
@@ -65,10 +66,10 @@ namespace Plang.Options
             replayOptions.AddArgument("replay", "r", "Schedule file to replay");
             
             var advancedGroup = Parser.GetOrCreateGroup("advanced", "Advanced options");
-            advancedGroup.AddArgument("explore", null, "Keep testing until the bound (e.g. iteration or time) is reached", typeof(bool));
+            advancedGroup.AddArgument("explore", null, "Keep testing until the bound (e.g. schedule or time) is reached", typeof(bool));
             advancedGroup.AddArgument("seed", null, "Specify the random value generator seed", typeof(uint));
-            advancedGroup.AddArgument("graph-bug", null, "Output a DGML graph of the iteration that found a bug", typeof(bool));
-            advancedGroup.AddArgument("graph", null, "Output a DGML graph of all test iterations whether a bug was found or not", typeof(bool));
+            advancedGroup.AddArgument("graph-bug", null, "Output a DGML graph of the schedule that found a bug", typeof(bool));
+            advancedGroup.AddArgument("graph", null, "Output a DGML graph of all test schedules whether a bug was found or not", typeof(bool));
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
             advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of PSym-specific JVM arguments to pass, each starting with a colon").IsHidden = true;
@@ -205,6 +206,7 @@ namespace Plang.Options
 
                     break;
                 case "iterations":
+                case "schedules":
                     checkerConfiguration.TestingIterations = (int)(uint)option.Value;
                     break;
                 case "graph":

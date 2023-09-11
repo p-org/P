@@ -68,8 +68,8 @@ public class CoverageStats implements Serializable {
    * Update running path coverage at a given choice depth
    *
    * @param choiceDepth Choice depth to update at
-   * @param numExplored Number of choices explored in current iteration at choiceDepth
-   * @param numRemaining Number of choices remaining in current iteration at choiceDepth
+   * @param numExplored Number of choices explored in current schedule at choiceDepth
+   * @param numRemaining Number of choices remaining in current schedule at choiceDepth
    * @param isNewChoice Whether or not this is a new choice
    */
   public void updatePathCoverage(
@@ -91,8 +91,8 @@ public class CoverageStats implements Serializable {
    *
    * @param depth Scheduler depth/step
    * @param choiceDepth Current choice depth
-   * @param numExplored Number of choices explored in current iteration at choiceDepth
-   * @param numRemaining Number of choices remaining in current iteration at choiceDepth
+   * @param numExplored Number of choices explored in current schedule at choiceDepth
+   * @param numRemaining Number of choices remaining in current schedule at choiceDepth
    * @param isData Is true if the choice is a data choice
    * @param isNewChoice Whether or not this is a new choice
    */
@@ -131,9 +131,9 @@ public class CoverageStats implements Serializable {
   }
 
   /**
-   * Increment path coverage after an iteration has ended
+   * Increment path coverage after a schedule has ended
    *
-   * @param choiceDepth Highest choice depth at which the last iteration ended
+   * @param choiceDepth Highest choice depth at which the last schedule ended
    */
   public void updateIterationCoverage(
       int choiceDepth, int startDepth, ChoiceLearningRewardMode rewardMode) {
@@ -189,9 +189,9 @@ public class CoverageStats implements Serializable {
   }
 
   /**
-   * Get path coverage of an interation after an iteration has ended
+   * Get path coverage of a schedule after a schedule has ended
    *
-   * @param choiceDepth Highest choice depth at which the last iteration ended
+   * @param choiceDepth Highest choice depth at which the last schedule ended
    */
   public BigDecimal getPathCoverageAtDepth(int choiceDepth) {
     assert (choiceDepth < perChoiceDepthStats.size());

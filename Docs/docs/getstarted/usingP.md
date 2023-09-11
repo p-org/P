@@ -207,7 +207,7 @@ p check
 If you are running `p check` from outside the directory where `*.dll` is compiled to, run `p check <path to *.dll>` instead.
 
 There are three test cases defined in the ClientServer P project, and you can specify which
-test case to run by using the `-tc` or `--testcase` parameter along with the `-i` parameter to
+test case to run by using the `-tc` or `--testcase` parameter along with the `-s` parameter to
 specify how many different schedules to explore when running this test case (by default the checker explores a single schedule).
 *For complex systems, running for 100,000 schedules typically finds most of the easy to find bugs before
 running the checker on a distributed cluster to explore billions of schedules and rule out deep bugs in the system.*
@@ -215,37 +215,37 @@ running the checker on a distributed cluster to explore billions of schedules an
 So to run the `tcSingleClient` test case for 100 schedules, we can use the following command:
 
 ```shell
-p check -tc tcSingleClient -i 100
+p check -tc tcSingleClient -s 100
 ```
 
 ??? info "Expected Output"
     ```
-    $ p check -tc tcSingleClient -i 100
+    $ p check -tc tcSingleClient -s 100
 
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Test case :: tcSingleClient
     ... Checker is using 'random' strategy (seed:2766677439).
-    ..... Iteration #1
-    ..... Iteration #2
-    ..... Iteration #3
-    ..... Iteration #4
-    ..... Iteration #5
-    ..... Iteration #6
-    ..... Iteration #7
-    ..... Iteration #8
-    ..... Iteration #9
-    ..... Iteration #10
-    ..... Iteration #20
-    ..... Iteration #30
-    ..... Iteration #40
-    ..... Iteration #50
-    ..... Iteration #60
-    ..... Iteration #70
-    ..... Iteration #80
-    ..... Iteration #90
-    ..... Iteration #100
+    ..... Schedule #1
+    ..... Schedule #2
+    ..... Schedule #3
+    ..... Schedule #4
+    ..... Schedule #5
+    ..... Schedule #6
+    ..... Schedule #7
+    ..... Schedule #8
+    ..... Schedule #9
+    ..... Schedule #10
+    ..... Schedule #20
+    ..... Schedule #30
+    ..... Schedule #40
+    ..... Schedule #50
+    ..... Schedule #60
+    ..... Schedule #70
+    ..... Schedule #80
+    ..... Schedule #90
+    ..... Schedule #100
     ... Emitting coverage reports:
     ..... Writing PCheckerOutput/BugFinding/ClientServer.dgml
     ..... Writing PCheckerOutput/BugFinding/ClientServer.coverage.txt
@@ -263,19 +263,19 @@ p check -tc tcSingleClient -i 100
 There is a known bug in the ClientServer example (explained in the Tutorials) which is caught by
 the `tcAbstractServer` test case. Run command:
 ```shell
-p check -tc tcAbstractServer -i 100
+p check -tc tcAbstractServer -s 100
 ```
 
 ??? info "Expected Output"
     ```hl_lines="9 11 13 20"
-    $ p check -tc tcAbstractServer -i 100
+    $ p check -tc tcAbstractServer -s 100
 
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Test case :: tcAbstractServer
     ... Checker is using 'random' strategy (seed:1823819121).
-    ..... Iteration #1
+    ..... Schedule #1
     Checker found a bug.
     ... Emitting traces:
     ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.txt

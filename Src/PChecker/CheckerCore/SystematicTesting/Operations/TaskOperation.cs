@@ -193,7 +193,7 @@ namespace PChecker.SystematicTesting.Operations
             {
                 // Traverse the stack trace to identify and return the currently executing
                 // asynchronous controlled task method, and cache it for quick access later
-                // in the execution or future test iterations.
+                // in the execution or future test schedules.
                 var st = new StackTrace(false);
                 for (var i = 0; i < st.FrameCount; i++)
                 {

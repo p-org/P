@@ -169,24 +169,24 @@ p check
     ```
 
 There are three test cases defined in the ClientServer project, and you can specify which
-test case to run by using the `-tc` parameter along with the `-i` parameter for the number of schedules to explore.
+test case to run by using the `-tc` parameter along with the `-s` parameter for the number of schedules to explore.
 
 Check the `tcSingleClient` test case for 1000 schedules:
 
 ```shell
-p check -tc tcSingleClient -i 1000
+p check -tc tcSingleClient -s 1000
 ```
 
 Check the `tcMultipleClients` test case for 1000 schedules:
 
 ```shell
-p check -tc tcMultipleClients -i 1000
+p check -tc tcMultipleClients -s 1000
 ```
 
 Check the `tcAbstractServer` test case for 1000 schedules:
 
 ```shell
-p check -tc tcAbstractServer -i 1000
+p check -tc tcAbstractServer -s 1000
 ```
 
 !!! danger "Error"

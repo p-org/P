@@ -20,7 +20,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         private readonly Dictionary<int, Dictionary<ulong, double>> OperationQTable;
 
         /// <summary>
-        /// The path that is being executed during the current iteration. Each
+        /// The path that is being executed during the current schedule. Each
         /// step of the execution is represented by an operation and a value
         /// represented the program state after the operation executed.
         /// </summary>

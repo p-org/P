@@ -192,7 +192,7 @@
                         <propertyName>java.library.path</propertyName>
                         <mode/>
                         <timeout/>
-                        <iterations/>
+                        <schedules/>
                         <max.steps/>
                         <psym.args/>
                     </systemPropertyVariables>

@@ -172,18 +172,18 @@ p check
     ```
 
 There are three test cases defined in the TwoPhaseCommit project and you can specify which
-test case to run by using the `-tc` parameter along with the `-i` parameter for the number of schedules to explore.
+test case to run by using the `-tc` parameter along with the `-s` parameter for the number of schedules to explore.
 
 Check the `tcSingleClientNoFailure` test case for 10000 schedules:
 
 ```shell
-p check -tc tcSingleClientNoFailure -i 10000
+p check -tc tcSingleClientNoFailure -s 10000
 ```
 
 Check the `tcMultipleClientsNoFailure` test case for 10000 schedules:
 
 ```
-p check -tc tcMultipleClientsNoFailure -i 10000
+p check -tc tcMultipleClientsNoFailure -s 10000
 ```
 !!! danger "Error"
     `tcMultipleClientsNoFailure` triggers a very subtle concurrency bug in the assumption made by the client of the two phase commit protocol.
@@ -199,7 +199,7 @@ p check -tc tcMultipleClientsNoFailure -i 10000
 Check the `tcMultipleClientsWithFailure` test case for 10000 schedules:
 
 ```shell
-p check -tc tcMultipleClientsWithFailure -i 10000
+p check -tc tcMultipleClientsWithFailure -s 10000
 ```
 
 !!! danger "Error"

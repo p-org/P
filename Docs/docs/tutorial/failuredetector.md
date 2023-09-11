@@ -129,10 +129,10 @@ p compile
 
 ### Checking FailureDetector
 
-There is only a single test case in the FailureDetector project and we can directly run the test case for 10000 iterations:
+There is only a single test case in the FailureDetector project and we can directly run the test case for 10000 schedules:
 
 ```shell
-p check -i 10000
+p check -s 10000
 ```
 
 ### Discussion: Modeling Message Reordering

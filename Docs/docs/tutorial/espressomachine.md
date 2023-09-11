@@ -135,18 +135,18 @@ p check
     ```
 
 There are two test cases defined in the EspressoMachine project and you can specify which
-test case to run by using the `-tc` parameter along with the `-i` parameter for the number of schedules to explore.
+test case to run by using the `-tc` parameter along with the `-s` parameter for the number of schedules to explore.
 
 Check the `tcSaneUserUsingCoffeeMachine` test case for 10000 schedules:
 
 ```shell
-p check -tc tcSaneUserUsingCoffeeMachine -i 10000
+p check -tc tcSaneUserUsingCoffeeMachine -s 10000
 ```
 
 Check the `tcCrazyUserUsingCoffeeMachine` test case for 10000 schedules:
 
 ```shell
-p check -tc tcCrazyUserUsingCoffeeMachine -i 10000
+p check -tc tcCrazyUserUsingCoffeeMachine -s 10000
 ```
 
 ### Exercise Problem

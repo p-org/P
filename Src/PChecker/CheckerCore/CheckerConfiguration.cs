@@ -68,7 +68,7 @@ namespace PChecker
         public string SchedulingStrategy { get;  set; }
 
         /// <summary>
-        /// Number of testing iterations.
+        /// Number of testing schedules.
         /// </summary>
         [DataMember]
         public int TestingIterations { get;  set; }
@@ -82,7 +82,7 @@ namespace PChecker
 
         /// <summary>
         /// If true, the seed will increment in each
-        /// testing iteration.
+        /// testing schedule.
         /// </summary>
         [DataMember]
         public bool IncrementalSchedulingSeed;
@@ -194,14 +194,14 @@ namespace PChecker
         public bool DebugActivityCoverage;
 
         /// <summary>
-        /// Is DGML graph showing all test iterations or just one "bug" iteration.
-        /// False means all, and True means only the iteration containing a bug.
+        /// Is DGML graph showing all test schedules or just one "bug" schedule.
+        /// False means all, and True means only the schedule containing a bug.
         /// </summary>
         [DataMember]
         public bool IsDgmlBugGraph;
 
         /// <summary>
-        /// If specified, requests a DGML graph of the iteration that contains a bug, if a bug is found.
+        /// If specified, requests a DGML graph of the schedule that contains a bug, if a bug is found.
         /// This is different from a coverage activity graph, as it will also show actor instances.
         /// </summary>
         [DataMember]
@@ -403,20 +403,20 @@ namespace PChecker
         }
 
         /// <summary>
-        /// Updates the checkerConfiguration with the specified number of iterations to run during systematic testing.
+        /// Updates the checkerConfiguration with the specified number of schedules to run during systematic testing.
         /// </summary>
-        /// <param name="iterations">The number of iterations to run.</param>
-        public CheckerConfiguration WithTestingIterations(uint iterations)
+        /// <param name="schedules">The number of schedules to run.</param>
+        public CheckerConfiguration WithTestingIterations(uint schedules)
         {
-            TestingIterations = (int)iterations;
+            TestingIterations = (int)schedules;
             return this;
         }
 
         /// <summary>
-        /// Updates the checkerConfiguration with the specified number of scheduling steps to explore per iteration
+        /// Updates the checkerConfiguration with the specified number of scheduling steps to explore per schedule
         /// (for both fair and unfair schedulers) during systematic testing.
         /// </summary>
-        /// <param name="maxSteps">The scheduling steps to explore per iteration.</param>
+        /// <param name="maxSteps">The scheduling steps to explore per schedule.</param>
         public CheckerConfiguration WithMaxSchedulingSteps(uint maxSteps)
         {
             MaxSchedulingSteps = (int)maxSteps;
@@ -425,9 +425,9 @@ namespace PChecker
 
         /// <summary>
         /// Updates the checkerConfiguration with the specified number of fair scheduling steps to explore
-        /// per iteration during systematic testing.
+        /// per schedule during systematic testing.
         /// </summary>
-        /// <param name="maxFairSteps">The scheduling steps to explore per iteration.</param>
+        /// <param name="maxFairSteps">The scheduling steps to explore per schedule.</param>
         public CheckerConfiguration WithMaxFairSchedulingSteps(uint maxFairSteps)
         {
             MaxFairSchedulingSteps = (int)maxFairSteps;
@@ -436,9 +436,9 @@ namespace PChecker
 
         /// <summary>
         /// Updates the checkerConfiguration with the specified number of unfair scheduling steps to explore
-        /// per iteration during systematic testing.
+        /// per schedule during systematic testing.
         /// </summary>
-        /// <param name="maxUnfairSteps">The scheduling steps to explore per iteration.</param>
+        /// <param name="maxUnfairSteps">The scheduling steps to explore per schedule.</param>
         public CheckerConfiguration WithMaxUnfairSchedulingSteps(uint maxUnfairSteps)
         {
             MaxUnfairSchedulingSteps = (int)maxUnfairSteps;

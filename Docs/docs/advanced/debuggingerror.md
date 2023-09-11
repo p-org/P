@@ -3,19 +3,19 @@
 As described in the [using P compiler and checker](../getstarted/usingP.md) section, running the following command for the ClientServer example finds an error.
 
 ```shell
-p check -tc tcAbstractServer -i 100
+p check -tc tcAbstractServer -s 100
 ```
 
 ??? info "Expected Output"
     ```hl_lines="9 11 13 20"
-    $ p check -tc tcAbstractServer -i 100
+    $ p check -tc tcAbstractServer -s 100
 
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Test case :: tcAbstractServer
     ... Checker is using 'random' strategy (seed:1415055147).
-    ..... Iteration #1
+    ..... Schedule #1
     Checker found a bug.
     ... Emitting traces:
     ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.txt

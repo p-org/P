@@ -444,9 +444,9 @@ namespace PChecker.Coverage
         }
 
         /// <summary>
-        /// Return current graph and reset for next iteration.
+        /// Return current graph and reset for next schedule.
         /// </summary>
-        /// <param name="reset">Set to true will reset the graph for the next iteration.</param>
+        /// <param name="reset">Set to true will reset the graph for the next schedule.</param>
         /// <returns>The graph.</returns>
         public Graph SnapshotGraph(bool reset)
         {

@@ -34,12 +34,12 @@ the user.
 machine CoffeeMakerControlPanel
 {
   var coffeeMaker: EspressoCoffeeMaker;
-  var cofferMakerState: tCoffeeMakerState;
+  var coffeeMakerState: tCoffeeMakerState;
   var currentUser: machine;
 
   start state Init {
     entry {
-      cofferMakerState = NotWarmedUp;
+      coffeeMakerState = NotWarmedUp;
       coffeeMaker = new EspressoCoffeeMaker(this);
       WaitForUser();
       goto WarmUpCoffeeMaker;
@@ -81,7 +81,7 @@ machine CoffeeMakerControlPanel
       // inform the specification about current state of the coffee maker
       announce eInReadyState;
 
-      cofferMakerState = Ready;
+      coffeeMakerState = Ready;
       send currentUser, eCoffeeMakerReady;
     }
 
@@ -105,12 +105,12 @@ machine CoffeeMakerControlPanel
       GrindBeans();
     }
     on eNoBeansError goto EncounteredError with {
-      cofferMakerState = NoBeansError;
+      coffeeMakerState = NoBeansError;
       print "No beans to grind! Please refill beans and reset the machine!";
     }
 
     on eNoWaterError goto EncounteredError with {
-      cofferMakerState = NoWaterError;
+      coffeeMakerState = NoWaterError;
       print "No Water! Please refill water and reset the machine!";
     }
 
@@ -135,7 +135,7 @@ machine CoffeeMakerControlPanel
     on eEspressoCompleted goto CoffeeMakerReady with { send currentUser, eEspressoCompleted; }
 
     on eNoWaterError goto EncounteredError with {
-      cofferMakerState = NoWaterError;
+      coffeeMakerState = NoWaterError;
       print "No Water! Please refill water and reset the machine!";
     }
 
@@ -159,7 +159,7 @@ machine CoffeeMakerControlPanel
     }
 
     on eNoWaterError goto EncounteredError with {
-      cofferMakerState = NoWaterError;
+      coffeeMakerState = NoWaterError;
       print "No Water! Please refill water and reset the machine!";
     }
 
@@ -172,7 +172,7 @@ machine CoffeeMakerControlPanel
 
   state CoffeeMakerDoorOpened {
     on eCloseGroundsDoor do {
-      if(cofferMakerState == NotWarmedUp)
+      if(coffeeMakerState == NotWarmedUp)
         goto WarmUpCoffeeMaker;
       else
         goto CoffeeMakerReady;
@@ -188,7 +188,7 @@ machine CoffeeMakerControlPanel
       announce eErrorHappened;
 
       // send the error message to the client
-      send currentUser, eCoffeeMakerError, cofferMakerState;
+      send currentUser, eCoffeeMakerError, coffeeMakerState;
     }
 
     on eResetCoffeeMaker goto WarmUpCoffeeMaker with {

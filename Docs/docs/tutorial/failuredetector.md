@@ -128,7 +128,7 @@ p compile
 
 ### Checking FailureDetector
 
-There is only a single test case in the FailureDetector project and we can directly run the test case for 10000 schedules:
+There is only a single test case in the FailureDetector project and we can directly run the test case for 10,000 schedules:
 
 ```shell
 p check -s 10000

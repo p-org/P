@@ -173,13 +173,13 @@ p check
 There are three test cases defined in the TwoPhaseCommit project and you can specify which
 test case to run by using the `-tc` parameter along with the `-s` parameter for the number of schedules to explore.
 
-Check the `tcSingleClientNoFailure` test case for 10000 schedules:
+Check the `tcSingleClientNoFailure` test case for 10,000 schedules:
 
 ```shell
 p check -tc tcSingleClientNoFailure -s 10000
 ```
 
-Check the `tcMultipleClientsNoFailure` test case for 10000 schedules:
+Check the `tcMultipleClientsNoFailure` test case for 10,000 schedules:
 
 ```
 p check -tc tcMultipleClientsNoFailure -s 10000
@@ -193,9 +193,9 @@ p check -tc tcMultipleClientsNoFailure -s 10000
 
 !!! hint "Hint"
 
-    If you dive deeper in the log, you would notice that the error happens when two clients write to the same key. There is a race between the two clients issueing a write and read transaction on the same key with different values. The fix for this problem is to update the assertion on the client side to: if the value that is read when confirming the transaction is not the same as the value that was written then it must have been overridden by a transaction with id greater than its transaction id. **This is true because Participants accept transaction to the same key in the monotonically increasing transaction ids**.
+    If you dive deeper in the log, you would notice that the error happens when two clients write to the same key. There is a race between the two clients issuing a write and read transaction on the same key with different values. The fix for this problem is to update the assertion on the client side to: if the value that is read when confirming the transaction is not the same as the value that was written then it must have been overridden by a transaction with id greater than its transaction id. **This is true because Participants accept transaction to the same key in the monotonically increasing transaction ids**.
 
-Check the `tcMultipleClientsWithFailure` test case for 10000 schedules:
+Check the `tcMultipleClientsWithFailure` test case for 10,000 schedules:
 
 ```shell
 p check -tc tcMultipleClientsWithFailure -s 10000

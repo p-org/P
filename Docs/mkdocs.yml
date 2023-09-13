@@ -33,12 +33,18 @@ theme:
       quote: octicons/quote-16
   features:
     - navigation.instant
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.tracking
+    - navigation.sections
     - navigation.indexes
-    - navigation.expand
     - navigation.top
     - toc.integrate
     - search.suggest
     - search.highlight
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
 
 # This should be renamed to nav for mkdocs 1.0+
 nav:
@@ -86,13 +92,17 @@ nav:
       - Building from Source: getstarted/build.md
 
 markdown_extensions:
+  - attr_list
+  - md_in_html
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.snippets
   - admonition
   - pymdownx.tabbed
   - pymdownx.details
   - pymdownx.highlight
   - pymdownx.critic
-  - attr_list
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
@@ -102,8 +112,7 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
-  - toc:
-      toc_depth: 4
+  
 
 plugins:
   - search:

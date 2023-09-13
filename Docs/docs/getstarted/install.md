@@ -9,6 +9,7 @@ P is built to be cross-platform and can be used on MacOS, Linux, and Windows. We
 The P compiler is implemented in C# and hence the tool chain requires `dotnet`.
 P currently uses the specific version of [.Net SDK 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
 
+
 === "MacOS"
 
     Installing .Net SDK on MacOS using Homebrew ([details](https://formulae.brew.sh/cask/dotnet))

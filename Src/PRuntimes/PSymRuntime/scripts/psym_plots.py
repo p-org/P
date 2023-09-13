@@ -79,7 +79,7 @@ def read_input():
             i += 1
         else:
             continue
-        if ("Iterations:" in line):
+        if ("Schedules:" in line):
             eVal = line.split()[1]
             line = lines[i].strip()
             i += 1

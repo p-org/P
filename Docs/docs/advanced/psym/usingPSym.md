@@ -137,7 +137,7 @@ java -jar target/ClientServer-jar-with-dependencies.jar \
     ... Method tcSingleClient
     ... Project clientserver is using 'default' strategy (seed:0)
     --------------------
-      Time       Memory        Coverage      Iteration         Remaining          Depth      States   
+      Time       Memory        Coverage      Schedule         Remaining          Depth      States   
     00:00:10     0.2 GB     1.4246418994 %      140        1820 (100 % data)        1         8043
     --------------------
     Estimated Coverage:: 1.4246418994 %
@@ -153,7 +153,7 @@ java -jar target/ClientServer-jar-with-dependencies.jar \
     at psym.commandline.PSym.main(PSym.java:73)
     ```
 
-    Here, PSym explores 140 schedules/iterations, checking 8043 distinct states, and achieving an estimated coverage of ~ 1.4 %.
+    Here, PSym explores 140 schedules, checking 8043 distinct states, and achieving an estimated coverage of ~ 1.4 %.
 
     Check file `output/coverage-clientserver.log` for a detailed Coverage Report.
 
@@ -173,7 +173,7 @@ randomly-sampled schedule to be bug free.
     For example, for the ClientServer run above, PSym prints:
     
     ```
-      Time       Memory        Coverage      Iteration         Remaining          Depth      States   
+      Time       Memory        Coverage      Schedule         Remaining          Depth      States   
     00:00:10     0.2 GB     1.4246418994 %      140        1820 (100 % data)        1         8043
     ```
     
@@ -184,7 +184,7 @@ randomly-sampled schedule to be bug free.
     | Time      | Elapsed runtime in ``hh:mm:ss`` format                                           |
     | Memory    | Memory usage in gigabytes                                                        |
     | Coverage  | Estimated Coverage                                                               |
-    | Iteration | Iteration/schedule number                                                        |
+    | Schedule  | Schedule number                                                                  |
     | Remaining | Number of unexplored backtracks/choices remaining (as well as % of data choices) |
     | Depth     | Current depth of the exploration                                                 |
     | States    | Number of distinct states explored                                               |
@@ -300,16 +300,16 @@ For example, coverage report corresponding to the previous ClientServer run can 
 
 Here is a list of frequently-used commandline options that can be passed to the `.jar`:
 
-| CLI Option                | Description                                                                   |    Default    |
-|---------------------------|-------------------------------------------------------------------------------|:-------------:|
-| `` --method <string> ``   | Name of the test method to execute                                            |  `` auto ``   |
-| `` --time-limit <sec> ``  | Time limit in seconds (use 0 for no limit)                                    |   `` 60 ``    |
-| `` --memory-limit <MB> `` | Memory limit in megabytes (use 0 for no limit)                                |  `` auto ``   |
-| `` --iterations <int> ``  | Number of schedules/executions to explore (use 0 for no limit)                |    `` 0 ``    |
-| `` --max-steps <int> ``   | Max scheduling steps to be explored per schedule                              |  `` 1000 ``   |
-| `` --seed <int> ``        | Random seed to use for the exploration                                        |    `` 0 ``    |
-| `` --verbose <int> ``     | Level of verbosity in the log output                                          |    `` 0 ``    |
-| `` --mode <string> ``     | Preconfigured exploration mode to use (`` default ``, `` bmc ``, ``  fuzz ``) | `` default `` |
+| CLI Option                 | Description                                                                   |    Default    |
+|----------------------------|-------------------------------------------------------------------------------|:-------------:|
+| `` --method <string> ``    | Name of the test method to execute                                            |  `` auto ``   |
+| `` --time-limit <sec> ``   | Time limit in seconds (use 0 for no limit)                                    |   `` 60 ``    |
+| `` --memory-limit <MB> ``  | Memory limit in megabytes (use 0 for no limit)                                |  `` auto ``   |
+| `` --schedules <int> ``    | Number of schedules to explore (use 0 for no limit)                           |    `` 0 ``    |
+| `` --max-steps <int> ``    | Max scheduling steps to be explored per schedule                              |  `` 1000 ``   |
+| `` --seed <int> ``         | Random seed to use for the exploration                                        |    `` 0 ``    |
+| `` --verbose <int> ``      | Level of verbosity in the log output                                          |    `` 0 ``    |
+| `` --mode <string> ``      | Preconfigured exploration mode to use (`` default ``, `` bmc ``, ``  fuzz ``) | `` default `` |
 
 For a complete list of options, pass the argument ` --help `.
 

@@ -87,7 +87,6 @@ p compile
     ....... includes p file: P/Tutorial/3_EspressoMachine/PTst/TestDrivers.p
     ....... includes p file: P/Tutorial/3_EspressoMachine/PTst/TestScripts.p
     ----------------------------------------
-    ----------------------------------------
     Parsing ...
     Type checking ...
     Code generation ...
@@ -96,18 +95,18 @@ p compile
     Compiling EspressoMachine...
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    Restored P/Tutorial/3_EspressoMachine/PGenerated/CSharp/EspressoMachine.csproj (in 389 ms).
+    Restored P/Tutorial/3_EspressoMachine/PGenerated/CSharp/EspressoMachine.csproj (in 102 ms).
     EspressoMachine -> P/Tutorial/3_EspressoMachine/PGenerated/CSharp/net6.0/EspressoMachine.dll
     
     Build succeeded.
     0 Warning(s)
     0 Error(s)
     
-    Time Elapsed 00:00:05.04
+    Time Elapsed 00:00:04.57
     
     
     ----------------------------------------
-    [PTool]: Thanks for using P!
+    ~~ [PTool]: Thanks for using P! ~~
     ```
 
 ### Checking EspressoMachine
@@ -131,22 +130,22 @@ p check
     tcSaneUserUsingCoffeeMachine
     tcCrazyUserUsingCoffeeMachine
     
-    [PTool]: Thanks for using P!
+    ~~ [PTool]: Thanks for using P! ~~
     ```
 
 There are two test cases defined in the EspressoMachine project and you can specify which
-test case to run by using the `-tc` parameter along with the `-i` parameter for the number of schedules to explore.
+test case to run by using the `-tc` parameter along with the `-s` parameter for the number of schedules to explore.
 
 Check the `tcSaneUserUsingCoffeeMachine` test case for 10,000 schedules:
 
 ```shell
-p check -tc tcSaneUserUsingCoffeeMachine -i 10000
+p check -tc tcSaneUserUsingCoffeeMachine -s 10000
 ```
 
 Check the `tcCrazyUserUsingCoffeeMachine` test case for 10,000 schedules:
 
 ```shell
-p check -tc tcCrazyUserUsingCoffeeMachine -i 10000
+p check -tc tcCrazyUserUsingCoffeeMachine -s 10000
 ```
 
 ### Exercise Problem

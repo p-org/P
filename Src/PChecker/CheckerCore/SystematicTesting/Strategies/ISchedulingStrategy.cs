@@ -39,11 +39,11 @@ namespace PChecker.SystematicTesting.Strategies
         bool GetNextIntegerChoice(AsyncOperation current, int maxValue, out int next);
 
         /// <summary>
-        /// Prepares for the next scheduling iteration. This is invoked
-        /// at the end of a scheduling iteration. It must return false
+        /// Prepares for the next schedule. This is invoked
+        /// at the end of a schedule. It must return false
         /// if the scheduling strategy should stop exploring.
         /// </summary>
-        /// <returns>True to start the next iteration.</returns>
+        /// <returns>True to start the next schedule.</returns>
         bool PrepareForNextIteration();
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace PChecker.SystematicTesting.Strategies
 
         /// <summary>
         /// True if the scheduling strategy has reached the max
-        /// scheduling steps for the given scheduling iteration.
+        /// scheduling steps for the given schedule.
         /// </summary>
         bool HasReachedMaxSchedulingSteps();
 

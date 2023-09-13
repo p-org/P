@@ -54,7 +54,7 @@ namespace PChecker.Testing
                 arguments.Append($"--testcase {checkerConfiguration.TestCaseName} ");
             }
 
-            arguments.Append($"--iterations {checkerConfiguration.TestingIterations} ");
+            arguments.Append($"--schedules {checkerConfiguration.TestingIterations} ");
             arguments.Append($"--timeout {checkerConfiguration.Timeout} ");
 
             if (checkerConfiguration.UserExplicitlySetMaxFairSchedulingSteps)

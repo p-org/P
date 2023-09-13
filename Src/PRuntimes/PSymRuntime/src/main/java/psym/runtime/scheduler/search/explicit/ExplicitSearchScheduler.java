@@ -36,7 +36,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
   private int totalStateCount = 0;
   /** Total number of distinct states */
   private int totalDistinctStateCount = 0;
-  /** Map of distinct concrete state to iteration when first visited */
+  /** Map of distinct concrete state to schedule when first visited */
   private transient Map<Object, Integer> distinctStates = new HashMap<>();
   /** Guard corresponding on distinct states at a step */
   private transient boolean isDistinctState = true;
@@ -95,7 +95,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
           if (PSymGlobal.getConfiguration().isFailOnMaxStepBound()) {
             Assert.cycle(
                     false,
-                    "Cycle detected: Infinite loop found due to revisiting a state multiple times in the same iteration",
+                    "Cycle detected: Infinite loop found due to revisiting a state multiple times in the same schedule",
                     Guard.constTrue());
           }
         } else {
@@ -272,7 +272,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
 
     s.append(String.format("\n      Progress:         %.12f",
             PSymGlobal.getCoverage().getEstimatedCoverage(12)));
-    s.append(String.format("\n      Iterations:       %d", (getIter() - getStart_iter())));
+    s.append(String.format("\n      Schedules:        %d", (getIter() - getStart_iter())));
     s.append(String.format("\n      Finished:         %d", getFinishedTasks().size()));
     s.append(String.format("\n      Remaining:        %d", getTotalNumBacktracks()));
 
@@ -291,7 +291,7 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     s.append(StringUtils.center("Memory", 9));
     s.append(StringUtils.center("Depth", 7));
 
-    s.append(StringUtils.center("Iteration", 12));
+    s.append(StringUtils.center("Schedule", 12));
     s.append(StringUtils.center("Remaining", 24));
     s.append(StringUtils.center("Progress", 24));
 

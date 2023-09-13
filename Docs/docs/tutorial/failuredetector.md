@@ -104,7 +104,6 @@ p compile
     ....... includes p file: P/Tutorial/Common/FailureInjector/PSrc/NetworkFunctions.p
     ....... includes p file: P/Tutorial/Common/FailureInjector/PSrc/FailureInjector.p
     ----------------------------------------
-    ----------------------------------------
     Parsing ...
     Type checking ...
     Code generation ...
@@ -113,26 +112,26 @@ p compile
     Compiling FailureDetector...
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
-    Restored P/Tutorial/4_FailureDetector/PGenerated/CSharp/FailureDetector.csproj (in 386 ms).
+    Restored P/Tutorial/4_FailureDetector/PGenerated/CSharp/FailureDetector.csproj (in 93 ms).
     FailureDetector -> P/Tutorial/4_FailureDetector/PGenerated/CSharp/net6.0/FailureDetector.dll
     
     Build succeeded.
     0 Warning(s)
     0 Error(s)
     
-    Time Elapsed 00:00:04.85
+    Time Elapsed 00:00:04.42
     
     
     ----------------------------------------
-    [PTool]: Thanks for using P!
+    ~~ [PTool]: Thanks for using P! ~~
     ```
 
 ### Checking FailureDetector
 
-There is only a single test case in the FailureDetector project and we can directly run the test case for 10,000 iterations:
+There is only a single test case in the FailureDetector project and we can directly run the test case for 10,000 schedules:
 
 ```shell
-p check -i 10000
+p check -s 10000
 ```
 
 ### Discussion: Modeling Message Reordering

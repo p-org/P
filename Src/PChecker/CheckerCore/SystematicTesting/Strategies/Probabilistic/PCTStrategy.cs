@@ -40,7 +40,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         private readonly int MaxPrioritySwitchPoints;
 
         /// <summary>
-        /// Approximate length of the schedule across all iterations.
+        /// Approximate length of the schedule across all schedules.
         /// </summary>
         private int ScheduleLength;
 

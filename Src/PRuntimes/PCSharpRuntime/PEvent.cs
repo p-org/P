@@ -29,7 +29,22 @@ namespace Plang.CSharpRuntime
 
         public object ToDict()
         {
-            throw new NotImplementedException();
+            return this.GetType().Name;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is PEvent other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return GetType().FullName.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return GetType().Name;
         }
     }
 

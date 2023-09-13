@@ -521,7 +521,7 @@ namespace PChecker.Actors.Logging
         }
 
         /// <summary>
-        /// Use this method to notify all logs that the test iteration is complete.
+        /// Use this method to notify all logs that the test schedule is complete.
         /// </summary>
         internal void LogCompletion()
         {

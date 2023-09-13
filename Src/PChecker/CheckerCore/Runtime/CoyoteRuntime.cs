@@ -23,7 +23,7 @@ namespace PChecker.Runtime
         /// Provides access to the runtime associated with each asynchronous control flow.
         /// </summary>
         /// <remarks>
-        /// In testing mode, each testing iteration uses a unique runtime instance. To safely
+        /// In testing mode, each testing schedule uses a unique runtime instance. To safely
         /// retrieve it from static methods, we store it in each asynchronous control flow.
         /// </remarks>
         private static readonly AsyncLocal<CoyoteRuntime> AsyncLocalInstance = new AsyncLocal<CoyoteRuntime>();

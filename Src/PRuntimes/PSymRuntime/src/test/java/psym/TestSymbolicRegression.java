@@ -27,7 +27,7 @@ public class TestSymbolicRegression {
   private static final List<String> excluded = new ArrayList<>();
   private static String mode = "verification";
   private static String timeout = "60";
-  private static String iterations = "50";
+  private static String schedules = "50";
   private static String maxSteps = "300";
   private static String runArgs = "";
   private static boolean initialized = false;
@@ -35,7 +35,7 @@ public class TestSymbolicRegression {
   private static void setRunArgs() {
     String md = System.getProperty("mode");
     String to = System.getProperty("timeout");
-    String it = System.getProperty("iterations");
+    String it = System.getProperty("schedules");
     String ms = System.getProperty("max.steps");
     String psymArgs = System.getProperty("psym.args");
 
@@ -53,13 +53,13 @@ public class TestSymbolicRegression {
       timeout = to;
     }
     if (it != null && !it.isEmpty()) {
-      iterations = it;
+      schedules = it;
     }
     if (ms != null && !ms.isEmpty()) {
       maxSteps = ms;
     }
 
-    runArgs += String.format(" --timeout %s --iterations %s --max-steps %s", timeout, iterations, maxSteps);
+    runArgs += String.format(" --timeout %s --schedules %s --max-steps %s", timeout, schedules, maxSteps);
 
     if (psymArgs != null && !psymArgs.isEmpty()) {
       runArgs += String.format(" --psym-args :%s ", psymArgs.replace(" ", ":"));

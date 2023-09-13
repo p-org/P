@@ -6,47 +6,30 @@ Here is a summary of these options:
 
 ````
 usage: java -jar <.jar-file> [options]
-----------------------------
-Commandline options for PSym
-----------------------------
- -s,--strategy <Strategy (string)>              Exploration strategy: random, dfs, learn, symex
-                                                (default: learn)
- -tc,--testcase <Test Case (string)>            Test case to explore
- -t,--timeout <Time Limit (seconds)>            Timeout in seconds (disabled by default)
- -m,--memout <Memory Limit (GB)>                Memory limit in Giga bytes (auto-detect by default)
- -o,--outdir <Output Dir (string)>              Dump output to directory (absolute or relative path)
- -v,--verbose <Log Verbosity (integer)>         Level of verbose log output during exploration
-                                                (default: 0)
- -i,--iterations <Iterations (integer)>         Number of schedules to explore (default: 1)
- -ms,--max-steps <Max Steps (integer)>          Max scheduling steps to be explored (default:
-                                                10,000)
- -fms,--fail-on-maxsteps                        Consider it a bug if the test hits the specified
-                                                max-steps
- -nsc,--no-state-caching                        Disable state caching
- -corch,--choice-orch <Choice Orch. (string)>   Choice orchestration options: random, learn
-                                                (default: learn)
- -torch,--task-orch <Task Orch. (string)>       Task orchestration options: astar, random, dfs,
-                                                learn (default: learn)
- -sb,--sched-bound <Schedule Bound (integer)>   Max scheduling choice bound at each step during the
-                                                search (default: 1)
- -db,--data-bound <Data Bound (integer)>        Max data choice bound at each step during the search
-                                                (default: 1)
- -r,--replay <File Name (string)>               Schedule file to replay
-    --seed <Random Seed (integer)>              Specify the random value generator seed
-    --no-backtrack                              Disable stateful backtracking
-    --backtracks-per-iteration <(integer)>      Max number of backtracks to generate per iteration
-                                                (default: 2)
-    --solver <Solver Type (string)>             Solver type to use: bdd, yices2, z3, cvc5 (default:
-                                                bdd)
-    --expr <Expression Type (string)>           Expression type to use: bdd, fraig, aig, native
-                                                (default: bdd)
-    --no-filters                                Disable filter-based reductions
-    --read <File Name (string)>                 Name of the file with the program state
-    --write                                     Enable writing program state
-    --stats <Collection Level (integer)>        Level of stats collection/reporting during the
-                                                search (default: 1)
-    --config <File Name (string)>               Name of the JSON configuration file
- -h,--help                                      Show this help menu
+-----------------------------------
+Commandline options for PSym/PCover
+-----------------------------------
+ -tc,--testcase <Test Case (string)>          Test case to explore
+ -pn,--projname <Project Name (string)>       Project name
+ -o,--outdir <Output Dir (string)>            Dump output to directory (absolute or relative path)
+ -t,--timeout <Time Limit (seconds)>          Timeout in seconds (disabled by default)
+ -m,--memout <Memory Limit (GB)>              Memory limit in Giga bytes (auto-detect by default)
+ -v,--verbose <Log Verbosity (integer)>       Level of verbose log output during exploration
+                                              (default: 0)
+ -st,--strategy <Strategy (string)>           Exploration strategy: symbolic, random, dfs, learn,
+                                              stateless (default: symbolic)
+ -s,--schedules <Schedules (integer)>         Number of schedules to explore (default: 1)
+ -ms,--max-steps <Max Steps (integer)>        Max scheduling steps to be explored (default: 10,000)
+ -fms,--fail-on-maxsteps                      Consider it a bug if the test hits the specified
+                                              max-steps
+ -r,--replay <File Name (string)>             Schedule file to replay
+    --seed <Random Seed (integer)>            Specify the random value generator seed
+ -sb,--sch-bound <Schedule Bound (integer)>   Max scheduling choice bound at each step during the
+                                              search (default: unbounded)
+ -db,--data-bound <Data Bound (integer)>      Max data choice bound at each step during the search
+                                              (default: unbounded)
+    --config <File Name (string)>             Name of the JSON configuration file
+ -h,--help                                    Show this help menu
 See https://p-org.github.io/P/ for details.
 ````
 
@@ -54,10 +37,10 @@ For example, running:
 
 ````
     ./scripts/run_psym.sh Examples/tests/pingPong/ psymExample \
-    --strategy learn --timeout 60 --memout 2 --iterations 4 --max-steps 5
+    --strategy learn --timeout 60 --memout 2 --schedules 4 --max-steps 5
 ````
 runs PSym with 
 - learning-based explicit-state search strategy
 - with a time limit of 60 seconds and memory limit of 2 GB
-- with at most 4 iterations
+- with at most 4 schedules
 - and exploring up to 5 steps in depth

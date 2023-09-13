@@ -1,4 +1,4 @@
-event eAllocateRequest;
+event eAllocateRequest: event;
 
 machine Main {
     start state Init {
@@ -8,8 +8,11 @@ machine Main {
             var myevent: event;
             myevent = eAllocateRequest;
             myevents += (eAllocateRequest);
+            send this, eAllocateRequest, eAllocateRequest;
             print(format("myevents: {0}", myevents));
-            assert (myevent in myevents && eAllocateRequest == myevent);
+            assert ((myevent in myevents) && eAllocateRequest == myevent);
         }
+        ignore eAllocateRequest;
     }
+    
 }

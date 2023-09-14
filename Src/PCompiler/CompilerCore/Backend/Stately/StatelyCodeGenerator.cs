@@ -157,7 +157,7 @@ namespace Plang.Compiler.Backend.Stately {
 
             }
             //All the go to Statements in a state (of a machine)
-            var gotoStmts = new Dictionary<String, List<String>>();
+            var gotoStmts = new Dictionary<String, HashSet<String>>();
             foreach (var pair in state.AllEventHandlers)
             {
                 var handledEvent = pair.Key;
@@ -167,23 +167,13 @@ namespace Plang.Compiler.Backend.Stately {
                 {
                     //on... goto...
                     case EventGotoState goAct:
-                        List<String> target = new List<String> { goAct.Target.Name };
-                        if (gotoStmts.ContainsKey(goAct.Trigger.Name))
-                        {
-                            target.AddRange(gotoStmts[goAct.Trigger.Name]);
-                        }
-                        gotoStmts[goAct.Trigger.Name] =  target;
+                        gotoStmts[goAct.Trigger.Name].Add(goAct.Target.Name)
                         break;
                     //on... do...
                     case EventDoAction doAct:
                         foreach (var stmt in doAct.Target.Body.Statements)
                         {
-                            List<String> funCallS = WriteStmt(stmt);
-                            if (gotoStmts.ContainsKey(doAct.Trigger.Name))
-                            {
-                                funCallS.AddRange(gotoStmts[doAct.Trigger.Name]);
-                            }
-                            gotoStmts[doAct.Trigger.Name] =  funCallS;
+                            gotoStmts[doAct.Trigger.Name].UnionWith(WriteStmt(stmt));
                         }
                         break;
                     

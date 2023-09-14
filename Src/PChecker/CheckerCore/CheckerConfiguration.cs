@@ -527,20 +527,22 @@ namespace PChecker
                 Directory.Delete(older, true);
             }
 
-            for (var history = MaxHistory - 2; history >= 0; --history)
-            {
-                var newer = makeHistoryDirName(history);
-                if (Directory.Exists(newer))
+            if(this.SchedulingStrategy != "replay"){
+                for (var history = MaxHistory - 2; history >= 0; --history)
                 {
-                    Directory.Move(newer, older);
+                    var newer = makeHistoryDirName(history);
+                    if (Directory.Exists(newer))
+                    {
+                        Directory.Move(newer, older);
+                    }
+
+                    older = newer;
                 }
 
-                older = newer;
-            }
-
-            if (Directory.Exists(OutputDirectory))
-            {
-                Directory.Move(OutputDirectory, older);
+                if (Directory.Exists(OutputDirectory))
+                {
+                    Directory.Move(OutputDirectory, older);
+                }
             }
 
             // Now create the new directory.

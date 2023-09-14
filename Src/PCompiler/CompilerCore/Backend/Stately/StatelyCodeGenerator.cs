@@ -167,7 +167,7 @@ namespace Plang.Compiler.Backend.Stately {
                 {
                     //on... goto...
                     case EventGotoState goAct:
-                        gotoStmts[goAct.Trigger.Name].Add(goAct.Target.Name)
+                        gotoStmts[goAct.Trigger.Name].Add(goAct.Target.Name);
                         break;
                     //on... do...
                     case EventDoAction doAct:

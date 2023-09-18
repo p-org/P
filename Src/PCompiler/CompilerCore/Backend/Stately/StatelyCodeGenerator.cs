@@ -167,12 +167,18 @@ namespace Plang.Compiler.Backend.Stately {
                 {
                     //on... goto...
                     case EventGotoState goAct:
+                        if(!gotoStmts.ContainsKey(goAct.Trigger.Name)) {
+                            gotoStmts[goAct.Trigger.Name] = new HashSet<String>();
+                        }
                         gotoStmts[goAct.Trigger.Name].Add(goAct.Target.Name);
                         break;
                     //on... do...
                     case EventDoAction doAct:
                         foreach (var stmt in doAct.Target.Body.Statements)
                         {
+                            if(!gotoStmts.ContainsKey(doAct.Trigger.Name)) {
+                                gotoStmts[doAct.Trigger.Name] = new HashSet<String>();
+                            }
                             gotoStmts[doAct.Trigger.Name].UnionWith(WriteStmt(stmt));
                         }
                         break;

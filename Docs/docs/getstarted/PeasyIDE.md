@@ -32,7 +32,9 @@
 
 ### Peasy: An Intuitive Development Environment for P
 
-Peasy (VS Code extension) offers an intuitive development environment tailored specifically for the P programming language, making it easier for developers to edit, compile, test, debug, and visualize their P programs.
+> :mega: **Peasy** is a step towards making application of formal methods in practice **easy-peasy**
+
+Peasy offers an intuitive development environment tailored specifically for the P programming language, making it easier for developers to edit, compile, test, debug, and visualize their P programs.
 
 Peasy provides syntax highlighting for code clarity and code snippets to reduce development time, automated compilation and testing for hassle-free program development. Moreover, Peasy's trace and state machine visualization tools provide rich analysis to gain insights into your projects and simplifies error debugging process.
 

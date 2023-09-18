@@ -52,7 +52,7 @@ nav:
   - What is P?: whatisP.md
   - Getting Started:
       - Installing P: getstarted/install.md
-      - Syntax Highlighting for P: getstarted/syntaxhighlight.md
+      - IDE for P: getstarted/PeasyIDE.md
       - Using P Compiler and Checker: getstarted/usingP.md
 
   - Tutorials:

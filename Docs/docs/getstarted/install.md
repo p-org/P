@@ -218,12 +218,7 @@ dotnet tool install --global P
 
 ### [Step 4] Recommended IDE (Optional)
 
-- For developing P programs, we recommend using [IntelliJ
-  IDEA](https://www.jetbrains.com/idea/) as we support basic [P syntax
-  highlighting](syntaxhighlight.md) for IntelliJ.  There is also a [plugin for
-  the Vim editor](https://github.com/dijkstracula/vim-plang), which IntelliJ
-  will automatically use when [Vim
-  emulation](https://plugins.jetbrains.com/plugin/164-ideavim) is enabled.
+- For developing P programs, we recommend using [Peasy for VS Code](https://marketplace.visualstudio.com/items?itemName=PLanguage.peasy-extension).
 
 - For debugging generated C# code, we recommend using [Rider](https://www.jetbrains.com/rider/) for Mac/Linux or [Visual Studio 2019](https://docs.microsoft.com/en-us/visualstudio/install/install-visual-studio) for Windows.
 

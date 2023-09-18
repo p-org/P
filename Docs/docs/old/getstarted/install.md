@@ -158,15 +158,6 @@ We highly recommend that you create the following alias as we use it in the rest
     function pmc { coyote test $args }
     ```
 
-### [Step 5] Recommended IDE (Optional)
-
-- For developing P programs, we recommend using [IntelliJ
-  IDEA](https://www.jetbrains.com/idea/) as we support basic [P syntax
-  highlighting](../../getstarted/syntaxhighlight.md) for IntelliJ.  There is also a [plugin for
-  the Vim editor](https://github.com/dijkstracula/vim-plang), which IntelliJ
-  will automatically use when [Vim
-  emulation](https://plugins.jetbrains.com/plugin/164-ideavim) is enabled.
-
 - For debugging generated C# code, we recommend using [Rider](https://www.jetbrains.com/rider/) for Mac/Linux or [Visual Studio 2019](https://docs.microsoft.com/en-us/visualstudio/install/install-visual-studio) for Windows.
 
 - For debugging generated Java code, we recommend using [IntelliJ IDEA](https://www.jetbrains.com/idea/)

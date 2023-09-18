@@ -2,7 +2,7 @@
 
 !!! check ""  
     Before moving forward, we assume that you have successfully installed
-    [P](install.md) and the [Syntax highlighting plugin](syntaxhighlight.md) :metal:.
+    [P](install.md) and the [Peasy extension](PeasyIDE.md) :metal:.
 
 We introduce the P language syntax and semantics in details in the
 [Tutorials](../tutsoutline.md) and [Language Manual](../manualoutline.md). In this

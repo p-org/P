@@ -218,12 +218,11 @@ dotnet tool install --global P
 
 ### [Step 4] Recommended IDE (Optional)
 
-- For developing P programs, we recommend using [Peasy for VS Code](https://marketplace.visualstudio.com/items?itemName=PLanguage.peasy-extension).
+- For developing P programs, we recommend using [Peasy](https://marketplace.visualstudio.com/items?itemName=PLanguage.peasy-extension).
 
 - For debugging generated C# code, we recommend using [Rider](https://www.jetbrains.com/rider/) for Mac/Linux or [Visual Studio 2019](https://docs.microsoft.com/en-us/visualstudio/install/install-visual-studio) for Windows.
 
 - For debugging generated Java code, we recommend using [IntelliJ IDEA](https://www.jetbrains.com/idea/)
 
-## Using P
-
- Great :smile:! You are all set to compile and check your first P program :mortar_board:!
+!!! note ""
+    Great :smile:! You are all set to compile and check your first P program :mortar_board:!

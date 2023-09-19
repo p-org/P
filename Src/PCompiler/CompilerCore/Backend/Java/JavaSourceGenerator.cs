@@ -14,7 +14,7 @@ namespace Plang.Compiler.Backend.Java
 
         internal NameManager Names => _context.Names;
         internal TypeManager Types => _context.Types;
-        internal String PackageName => $"{Job.ProjectName}.pobserve";
+        internal String PackageName => $"{Job.PObservePackageName}";
 
         /// <summary>
         /// Constructs a new Java source generator for a particular output file.

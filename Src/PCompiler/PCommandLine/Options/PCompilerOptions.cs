@@ -42,6 +42,8 @@ namespace Plang.Options
             var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately). (default: bugfinding)");
             modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "stately" };
             modes.IsHidden = true;
+
+            Parser.AddArgument("pobserve-package", "po", "PObserve package name").IsHidden = true;
         }
 
         /// <summary>
@@ -168,6 +170,9 @@ namespace Plang.Options
                         };
                         compilerConfiguration.Backend = TargetLanguage.GetCodeGenerator(compilerConfiguration.OutputLanguage);
                     }
+                    break;
+                case "pobserve-package":
+                    compilerConfiguration.PObservePackageName = (string)option.Value;
                     break;
                 case "pfiles":
                     {

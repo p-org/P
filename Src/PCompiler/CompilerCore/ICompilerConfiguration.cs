@@ -8,6 +8,7 @@ namespace Plang.Compiler
     public interface ICompilerConfiguration
     {
         string ProjectName { get; }
+        string PObservePackageName { get; }
         DirectoryInfo ProjectRootPath { get; }
         CompilerOutput OutputLanguage { get; }
         ICompilerOutput Output { get; }

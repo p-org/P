@@ -115,10 +115,10 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.amazon.p</groupId>
-    <artifactId>-project-name-</artifactId>
+    <artifactId>-package-name-</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <name>-project-name-</name>
+    <name>-package-name-</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
@@ -165,7 +165,6 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
                 </executions>
             </plugin>
         </plugins>
-        <directory>${{buildDirectory}}</directory>
         <sourceDirectory>.</sourceDirectory>
     </build>
 </project>";

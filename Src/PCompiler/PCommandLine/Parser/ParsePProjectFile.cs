@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using PChecker;
 using PChecker.IO.Debugging;
 using Plang.Compiler;
 
@@ -12,12 +13,12 @@ namespace Plang.Parser
     {
 
         /// <summary>
-        /// Parse the P Project file
+        /// Parse the P Project file for compiler
         /// </summary>
         /// <param name="projectFile">Path to the P project file</param>
         /// <param name="job">out parameter of P compilation job, after parsing the project file</param>
         /// <returns></returns>
-        public void ParseProjectFile(string projectFile, out CompilerConfiguration job)
+        public void ParseProjectFileForCompiler(string projectFile, out CompilerConfiguration job)
         {
             job = null;
             try
@@ -65,6 +66,33 @@ namespace Plang.Parser
             }
         }
 
+        /// <summary>
+        /// Parse the P Project file for P checker
+        /// </summary>
+        /// <param name="projectFile">Path to the P project file</param>
+        /// <param name="job">out parameter of P checker job, after parsing the project file</param>
+        /// <returns></returns>
+        public void ParseProjectFileForChecker(string projectFile, CheckerConfiguration job)
+        {
+            try
+            {
+                if (!CheckFileValidity.IsLegalPProjFile(projectFile, out var projectFilePath))
+                {
+                    throw new CommandlineParsingError($"Illegal P project file name {projectFile} or file {projectFilePath?.FullName} not found");
+                }
+
+                // set compiler output directory as p compiled path
+                job.PCompiledPath = GetOutputDirectoryName(projectFilePath);
+            }
+            catch (CommandlineParsingError ex)
+            {
+                Error.ReportAndExit($"<Error parsing project file>:\n {ex.Message}");
+            }
+            catch (Exception other)
+            {
+                Error.ReportAndExit($"<Internal Error>:\n {other.Message}\n <Please report to the P team or create a issue on GitHub, Thanks!>");
+            }
+        }
        
 
         /// <summary>
@@ -139,6 +167,20 @@ namespace Plang.Parser
                 return Directory.CreateDirectory(projectXml.Element("OutputDir")?.Value);
             else
                 return new DirectoryInfo(Directory.GetCurrentDirectory());
+        }
+
+        /// <summary>
+        /// Parse the output directory information from the pproj file
+        /// </summary>
+        /// <param name="fullPathName"></param>
+        /// <returns>If present returns the output directory name, else the current directory name</returns>
+        private string GetOutputDirectoryName(FileInfo fullPathName)
+        {
+            var projectXml = XElement.Load(fullPathName.FullName);
+            if (projectXml.Elements("OutputDir").Any())
+                return projectXml.Element("OutputDir")?.Value;
+            else
+                return Directory.GetCurrentDirectory();
         }
 
         private void GetTargetLanguage(FileInfo fullPathName, ref CompilerOutput outputLanguage, ref bool generateSourceMaps)

@@ -20,6 +20,12 @@ namespace PChecker
     {
 
         /// <summary>
+        /// The P compiled path.
+        /// </summary>
+        [DataMember]
+        public string PCompiledPath;
+        
+        /// <summary>
         /// The output path.
         /// </summary>
         [DataMember]
@@ -280,6 +286,7 @@ namespace PChecker
         /// </summary>
         protected CheckerConfiguration()
         {
+            PCompiledPath = Directory.GetCurrentDirectory();
             OutputPath = "PCheckerOutput";
 
             Timeout = 0;

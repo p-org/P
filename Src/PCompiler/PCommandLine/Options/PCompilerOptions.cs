@@ -134,7 +134,7 @@ namespace Plang.Options
                 {
                     case "pproj":
                     {
-                        new ParsePProjectFile().ParseProjectFile((string)option.Value, out var parsedConfig);
+                        new ParsePProjectFile().ParseProjectFileForCompiler((string)option.Value, out var parsedConfig);
                         compilerConfiguration.Copy(parsedConfig);
                     }
                         return;

@@ -30,9 +30,9 @@
     }
     </style>
 
-### Peasy: An Intuitive Development Environment for P
+### Peasy: An easy-to-use development environment for P
 
-> :mega: **Peasy** is a step towards making application of formal methods in practice **easy-peasy**
+> :mega: **Peasy** is a step towards making application of P in practice **easy-peasy**
 
 Peasy offers an intuitive development environment tailored specifically for the P programming language, making it easier for developers to edit, compile, test, debug, and visualize their P programs.
 

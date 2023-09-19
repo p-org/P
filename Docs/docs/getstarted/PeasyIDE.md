@@ -30,14 +30,16 @@
     }
     </style>
 
-<h3>Peasy for VS Code</h3>
+### Peasy: An easy-to-use development environment for P
 
-Peasy VS Code language extension offers an intuitive development environment tailored specifically for the P programming language, making it easier for developers to create, debug, and optimize their P projects.
+> :mega: **Peasy** is a step towards making application of P in practice **easy-peasy**
 
-<a href="vscode:extension/PLanguage.peasy-extension">
-<button id="hover" style="font-weight:bold;" class="button1 block1"> Download Peasy for VS Code </button>
-</a>
+Peasy offers an intuitive development environment tailored specifically for the P programming language, making it easier for developers to edit, compile, test, debug, and visualize their P programs.
 
-With Peasy, you can leverage the capabilities of syntax highlighting for code clarity, automated compilation for hassle-free project building, and code snippets to reduce development time. Peasy's error reporting feature ensures code correctness, while the the testing framework streamlines test case execution. Moreover, Peasy's trace and state machine visualization tools provide rich analysis to gain insights into your projects and simplifies debugging process.
+Peasy provides syntax highlighting for code clarity and code snippets to reduce development time, automated compilation and testing for hassle-free program development. Moreover, Peasy's trace and state machine visualization tools provide rich analysis to gain insights into your projects and simplifies error debugging process.
 
-!!! tip "Want to learn more about Peasy? Checkout [Peasy's Github page](https://p-org.github.io/peasy-ide-vscode/) for more information!"
+[Download Peasy for VS Code](vscode:extension/PLanguage.peasy-extension){ .md-button }
+
+!!! tip "[Recommended] Checkout [Peasy's Github page](https://p-org.github.io/peasy-ide-vscode/) for more information, getting started, and demo videos on the IDE!"
+
+

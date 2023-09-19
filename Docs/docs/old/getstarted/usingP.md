@@ -2,7 +2,7 @@
 
 !!! check ""  
     Before moving forward, we assume that you have successfully installed the
-    [P Compiler and Checker](install.md#step-3-install-p-compiler) and the [Syntax highlighting plugin](../../getstarted/syntaxhighlight.md) :metal: .
+    [P Compiler and Checker](install.md#step-3-install-p-compiler).
 
 We introduce the P language syntax and semantics in details in the
 [Tutorials](../../tutsoutline.md) and [Language Manual](../../manualoutline.md). In this

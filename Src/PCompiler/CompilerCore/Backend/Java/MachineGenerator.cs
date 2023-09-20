@@ -116,7 +116,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteSupplierCDef(string cname)
         {
-            WriteLine($"public static class Supplier implements java.util.function.Supplier<{cname}> {{");
+            WriteLine($"public static class Supplier implements java.util.function.Supplier<{cname}>, Serializable {{");
             WriteLine($"public {cname} get() {{");
             WriteLine($"{cname} ret = new {cname}();");
             WriteLine("ret.ready();"); // TODO: at this point, we may as well ready() within the monitor's constructor?

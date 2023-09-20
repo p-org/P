@@ -26,7 +26,8 @@ namespace Plang.Compiler.Backend.Java
 
         private static readonly string[] JreDefaultImports =
         {
-            "java.util.*",
+            "java.io.Serializable",
+            "java.util.*"
         };
 
         /// <summary>

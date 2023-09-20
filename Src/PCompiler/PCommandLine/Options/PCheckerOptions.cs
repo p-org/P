@@ -86,6 +86,12 @@ namespace Plang.Options
             try
             {
                 var result = Parser.ParseArguments(args);
+                // if there are no --pproj or --pfiles arguments, then search for a pproj file locally and load it
+                FindLocalPProject(result);
+
+                // load pproj file first
+                UpdateConfigurationWithPProjectFile(configuration, result);
+                
                 foreach (var arg in result)
                 {
                     UpdateConfigurationWithParsedArgument(configuration, arg);
@@ -119,6 +125,50 @@ namespace Plang.Options
             return configuration;
         }
 
+        private static void FindLocalPProject(List<CommandLineArgument> result)
+        {
+            // CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
+            var filtered = 
+                from file in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj")
+                let info = new FileInfo(file)
+                where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
+                select file;
+            var files = filtered.ToArray();
+            if (files.Length == 0)
+            {
+                // CommandLineOutput.WriteInfo(
+                //     $".. No P project file *.pproj found in the current folder: {Directory.GetCurrentDirectory()}");
+            }
+            else
+            {
+                var commandlineArg = new CommandLineArgument();
+                commandlineArg.Value = files.First();
+                commandlineArg.LongName = "pproj";
+                commandlineArg.ShortName = "pp";
+                // CommandLineOutput.WriteInfo($".. Found P project file: {commandlineArg.Value}");
+                result.Add(commandlineArg);
+            }
+        }
+
+
+        /// <summary>
+        /// Updates the checker configuration with the specified P project file.
+        /// </summary>
+        private static void UpdateConfigurationWithPProjectFile(CheckerConfiguration configuration, List<CommandLineArgument> result)
+        {
+            foreach (var option in result)
+            {
+                switch (option.LongName)
+                {
+                    case "pproj":
+                    {
+                        new ParsePProjectFile().ParseProjectFileForChecker((string)option.Value, configuration);
+                    }
+                        return;
+                }
+            }
+        }
+        
         /// <summary>
         /// Updates the checkerConfiguration with the specified parsed argument.
         /// </summary>
@@ -257,6 +307,9 @@ namespace Plang.Options
                 case "jvm-args":
                     checkerConfiguration.JvmArgs = ((string)option.Value).Replace(':', ' ');
                     break;
+                case "pproj":
+                    // do nothing, since already configured through UpdateConfigurationWithPProjectFile
+                    break;
                 default:
                     throw new Exception(string.Format("Unhandled parsed argument: '{0}'", option.LongName));
             }
@@ -306,7 +359,7 @@ namespace Plang.Options
         {
             if (checkerConfiguration.AssemblyToBeAnalyzed == string.Empty)
             {
-                CommandLineOutput.WriteInfo(".. Searching for a P compiled file locally in the current folder");
+                CommandLineOutput.WriteInfo($".. Searching for a P compiled file locally in folder {checkerConfiguration.PCompiledPath}");
                 var pathSep = Path.DirectorySeparatorChar;
                 
                 string filePattern =  checkerConfiguration.Mode switch
@@ -323,7 +376,7 @@ namespace Plang.Options
                 
                 
                 var files = 
-                    from file in Directory.GetFiles(Directory.GetCurrentDirectory(), filePattern, enumerationOptions)
+                    from file in Directory.GetFiles(checkerConfiguration.PCompiledPath, filePattern, enumerationOptions)
                     let info = new FileInfo(file)
                     where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
                     select file;

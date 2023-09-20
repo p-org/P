@@ -16,6 +16,7 @@ namespace Plang.Compiler
             InputForeignFiles = new List<string>();
             Output = null;
             ProjectName = "generatedOutput";
+            PObservePackageName = $"{ProjectName}.pobserve";
             ProjectRootPath = new DirectoryInfo(Directory.GetCurrentDirectory());
             LocationResolver = new DefaultLocationResolver();
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
@@ -47,6 +48,7 @@ namespace Plang.Compiler
                 }
             }
             ProjectName = projectName ?? Path.GetFileNameWithoutExtension(inputFiles[0]);
+            PObservePackageName = $"{ProjectName}.pobserve";
             ProjectRootPath = projectRoot;
             LocationResolver = new DefaultLocationResolver();
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
@@ -59,6 +61,7 @@ namespace Plang.Compiler
         public DirectoryInfo OutputDirectory { get; set; }
         public CompilerOutput OutputLanguage { get; set; }
         public string ProjectName { get; set; }
+        public string PObservePackageName { get; set; }
         public DirectoryInfo ProjectRootPath { get; set; }
         public ICodeGenerator Backend { get; set; }
         public IList<string> InputPFiles { get; set; }
@@ -79,6 +82,7 @@ namespace Plang.Compiler
             LocationResolver = parsedConfig.LocationResolver;
             ProjectDependencies = parsedConfig.ProjectDependencies;
             ProjectName = parsedConfig.ProjectName;
+            PObservePackageName = parsedConfig.PObservePackageName;
             OutputLanguage = parsedConfig.OutputLanguage;
             ProjectRootPath = parsedConfig.ProjectRootPath;
         }

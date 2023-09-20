@@ -28,6 +28,10 @@ public class CoverageStats implements Serializable {
 
   public CoverageStats() {}
 
+  public static BigDecimal getMaxCoverage() {
+    return BigDecimal.ONE;
+  }
+
   public static String getMaxCoverageGoal() {
     return "∞ 9s";
   }

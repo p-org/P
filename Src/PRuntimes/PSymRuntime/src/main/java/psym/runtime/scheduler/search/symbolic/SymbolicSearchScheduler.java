@@ -376,22 +376,26 @@ public class SymbolicSearchScheduler extends SearchScheduler {
   public void reportEstimatedCoverage() {
     PSymGlobal.getCoverage().reportChoiceCoverage();
 
-    BigDecimal coverage = PSymGlobal.getCoverage().getEstimatedCoverage(22);
-    assert (coverage.compareTo(BigDecimal.ONE) <= 0) : "Error in progress estimation";
+    BigDecimal coverage22 = PSymGlobal.getCoverage().getEstimatedCoverage(22);
+    assert (coverage22.compareTo(BigDecimal.ONE) <= 0) : "Error in progress estimation";
+
+    BigDecimal coverage12 = PSymGlobal.getCoverage().getEstimatedCoverage(12);
 
     String coverageGoalAchieved = PSymGlobal.getCoverage().getCoverageGoalAchieved();
     if (isFinalResult && PSymGlobal.getResult().equals("correct for any depth")) {
       PSymGlobal.getCoverage();
+      coverage22 = CoverageStats.getMaxCoverage();
+      coverage12 = CoverageStats.getMaxCoverage();
       coverageGoalAchieved = CoverageStats.getMaxCoverageGoal();
     }
 
-    StatWriter.log("progress", String.format("%.22f", coverage));
+    StatWriter.log("progress", String.format("%.22f", coverage22));
     StatWriter.log("coverage-achieved", String.format("%s", coverageGoalAchieved));
 
     if (PSymGlobal.getConfiguration().isIterative()) {
       SearchLogger.log(
               String.format(
-                      "Progress Guarantee       %.12f", PSymGlobal.getCoverage().getEstimatedCoverage(12)));
+                      "Progress Guarantee       %.12f", coverage12));
       SearchLogger.log(String.format("Coverage Goal Achieved   %s", coverageGoalAchieved));
     }
   }

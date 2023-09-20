@@ -15,6 +15,7 @@ namespace Plang.Compiler.Backend.Java {
     {
 
         private Machine _currentMachine; // Some generated code is machine-dependent, so stash the current machine here.
+        private HashSet<Function> _calledStaticFunctions = new HashSet<Function>(); // static functions allowed 
 
         internal MachineGenerator(ICompilerConfiguration job, string filename) : base(job, filename)
         {
@@ -47,6 +48,13 @@ namespace Plang.Compiler.Backend.Java {
                 }
                 _currentMachine = null;
             }
+            
+            // static functions
+            foreach (var f in _calledStaticFunctions)
+            {
+                WriteFunction(f);
+            }
+            
             WriteLine("}");
         }
 
@@ -608,7 +616,7 @@ namespace Plang.Compiler.Backend.Java {
             var isStatic = f.Owner == null;
             if (isStatic && !f.IsForeign)
             {
-                throw new NotImplementedException("StaticFunCallExpr is not implemented.");
+                _calledStaticFunctions.Add(f);
             }
 
             var fname = Names.GetNameForDecl(f);

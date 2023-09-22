@@ -592,16 +592,16 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Returns an object where the keys with null values are removed
+        /// Returns an object where the value null is replaced with "null"
         /// </summary>
-        public object RecursivelyRemoveNullValueKeys(object obj) {
+        public object RecursivelyReplaceNullWithString(object obj) {
             if (obj == null) {
-                return null;
+                return "null";
             }
             if (obj is Dictionary<string, object> dictionary) {
                 var newDictionary = new Dictionary<string, object>();
                 foreach (var item in dictionary) {
-                    var newVal = RecursivelyRemoveNullValueKeys(item.Value);
+                    var newVal = RecursivelyReplaceNullWithString(item.Value);
                     if (newVal != null)
                         newDictionary[item.Key] = newVal;
                 }
@@ -610,7 +610,7 @@ namespace PChecker.SystematicTesting
             else if (obj is List<object> list) {
                 var newList = new List<object>();
                 foreach (var item in list) {
-                    var newItem = RecursivelyRemoveNullValueKeys(item);
+                    var newItem = RecursivelyReplaceNullWithString(item);
                     if (newItem != null)
                         newList.Add(newItem);
                 }
@@ -672,7 +672,7 @@ namespace PChecker.SystematicTesting
                 
                 // Remove the null objects from payload recursively for each log event
                 for(int i=0; i<JsonLogger.Logs.Count; i++) {
-                    JsonLogger.Logs[i].Details.Payload = RecursivelyRemoveNullValueKeys(JsonLogger.Logs[i].Details.Payload);
+                    JsonLogger.Logs[i].Details.Payload = RecursivelyReplaceNullWithString(JsonLogger.Logs[i].Details.Payload);
                 }
 
                 // Stream directly to the output file while serializing the JSON

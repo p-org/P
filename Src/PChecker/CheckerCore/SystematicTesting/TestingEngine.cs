@@ -592,6 +592,36 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
+        /// Returns an object where the value null is replaced with "null"
+        /// </summary>
+        public object RecursivelyReplaceNullWithString(object obj) {
+            if (obj == null) {
+                return "null";
+            }
+            if (obj is Dictionary<string, object> dictionary) {
+                var newDictionary = new Dictionary<string, object>();
+                foreach (var item in dictionary) {
+                    var newVal = RecursivelyReplaceNullWithString(item.Value);
+                    if (newVal != null)
+                        newDictionary[item.Key] = newVal;
+                }
+                return newDictionary;
+            }
+            else if (obj is List<object> list) {
+                var newList = new List<object>();
+                foreach (var item in list) {
+                    var newItem = RecursivelyReplaceNullWithString(item);
+                    if (newItem != null)
+                        newList.Add(newItem);
+                }
+                return newList;
+            }
+            else {
+                return obj;
+            }
+        }
+
+        /// <summary>
         /// Tries to emit the testing traces, if any.
         /// </summary>
         public void TryEmitTraces(string directory, string file)
@@ -640,6 +670,11 @@ namespace PChecker.SystematicTesting
                 var jsonPath = directory + file + "_" + index + ".trace.json";
                 Logger.WriteLine($"..... Writing {jsonPath}");
                 
+                // Remove the null objects from payload recursively for each log event
+                for(int i=0; i<JsonLogger.Logs.Count; i++) {
+                    JsonLogger.Logs[i].Details.Payload = RecursivelyReplaceNullWithString(JsonLogger.Logs[i].Details.Payload);
+                }
+
                 // Stream directly to the output file while serializing the JSON
                 using var jsonStreamFile = File.Create(jsonPath);
                 JsonSerializer.Serialize(jsonStreamFile, JsonLogger.Logs, jsonSerializerConfig);

@@ -53,9 +53,10 @@ namespace Plang.Compiler
                 IRTransformer.SimplifyMethod(fun);
             }
 
+            DirectoryInfo parentDirectory = job.OutputDirectory;
             foreach (var entry in job.OutputLanguages)
             {
-                job.OutputDirectory = Directory.CreateDirectory(Path.Combine(job.OutputDirectory.FullName, entry.Key));
+                job.OutputDirectory = Directory.CreateDirectory(Path.Combine(parentDirectory.FullName, entry.Key));
                 job.Output = new DefaultCompilerOutput(job.OutputDirectory);
                 job.Backend = TargetLanguage.GetCodeGenerator(entry.Value);
                 

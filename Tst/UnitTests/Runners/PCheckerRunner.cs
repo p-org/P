@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Plang.Compiler;
@@ -155,7 +156,7 @@ namespace PImplementation
         {
             var compiler = new Compiler();
             var outputStream = new TestExecutionStream(scratchDirectory);
-            var compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory, CompilerOutput.CSharp, sources.Select(x => x.FullName).ToList(), "Main", scratchDirectory);
+            var compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory, new Dictionary<string, CompilerOutput>{{"CSharp", CompilerOutput.CSharp}}, sources.Select(x => x.FullName).ToList(), "Main", scratchDirectory);
             try
             {
                 return compiler.Compile(compilerConfiguration);

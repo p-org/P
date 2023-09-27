@@ -78,7 +78,8 @@ namespace UnitTests.Runners
         {
             var compiler = new Compiler();
             var outputStream = new TestExecutionStream(scratchDirectory);
-            var compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory, CompilerOutput.C, sources.Select(x => x.FullName).ToList(), "main");
+            var compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory, 
+                new Dictionary<string, CompilerOutput>{{"C", CompilerOutput.C}}, sources.Select(x => x.FullName).ToList(), "main");
             compiler.Compile(compilerConfiguration);
         }
 

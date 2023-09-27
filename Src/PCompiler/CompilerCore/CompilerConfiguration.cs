@@ -20,12 +20,12 @@ namespace Plang.Compiler
             ProjectRootPath = new DirectoryInfo(Directory.GetCurrentDirectory());
             LocationResolver = new DefaultLocationResolver();
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
-            OutputLanguage = CompilerOutput.CSharp;
-            Backend = TargetLanguage.GetCodeGenerator(OutputLanguage);
+            OutputLanguages = new Dictionary<string, CompilerOutput>{{"CSharp", CompilerOutput.CSharp}};
+            Backend = null;
             ProjectDependencies = new List<string>();
         }
-        public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, CompilerOutput outputLanguage, IList<string> inputFiles,
-            string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null)
+        public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IDictionary<string, CompilerOutput> outputLanguages, IList<string> inputFiles,
+            string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null, string pObservePackageName = null)
         {
             if (!inputFiles.Any())
             {
@@ -48,18 +48,18 @@ namespace Plang.Compiler
                 }
             }
             ProjectName = projectName ?? Path.GetFileNameWithoutExtension(inputFiles[0]);
-            PObservePackageName = $"{ProjectName}.pobserve";
+            PObservePackageName = pObservePackageName ?? $"{ProjectName}.pobserve";
             ProjectRootPath = projectRoot;
             LocationResolver = new DefaultLocationResolver();
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
-            OutputLanguage = outputLanguage;
-            Backend = TargetLanguage.GetCodeGenerator(outputLanguage);
+            OutputLanguages = outputLanguages;
+            Backend = null;
             ProjectDependencies = projectDependencies ?? new List<string>();
         }
         
         public ICompilerOutput Output { get; set; }
         public DirectoryInfo OutputDirectory { get; set; }
-        public CompilerOutput OutputLanguage { get; set; }
+        public IDictionary<string, CompilerOutput> OutputLanguages { get; set; }
         public string ProjectName { get; set; }
         public string PObservePackageName { get; set; }
         public DirectoryInfo ProjectRootPath { get; set; }
@@ -83,7 +83,7 @@ namespace Plang.Compiler
             ProjectDependencies = parsedConfig.ProjectDependencies;
             ProjectName = parsedConfig.ProjectName;
             PObservePackageName = parsedConfig.PObservePackageName;
-            OutputLanguage = parsedConfig.OutputLanguage;
+            OutputLanguages = parsedConfig.OutputLanguages;
             ProjectRootPath = parsedConfig.ProjectRootPath;
         }
     }

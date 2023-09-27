@@ -53,38 +53,49 @@ namespace Plang.Compiler
                 IRTransformer.SimplifyMethod(fun);
             }
 
-            job.Output.WriteInfo($"Code generation ...");
-            // Run the selected backend on the project and write the files.
-            var compiledFiles = job.Backend.GenerateCode(job, scope);
-            foreach (var file in compiledFiles)
+            foreach (var entry in job.OutputLanguages)
             {
-                job.Output.WriteInfo($"Generated {file.FileName}.");
-                job.Output.WriteFile(file);
+                job.OutputDirectory = Directory.CreateDirectory(Path.Combine(job.OutputDirectory.FullName, entry.Key));
+                job.Output = new DefaultCompilerOutput(job.OutputDirectory);
+                job.Backend = TargetLanguage.GetCodeGenerator(entry.Value);
+                
+                job.Output.WriteInfo($"----------------------------------------");
+                job.Output.WriteInfo($"Code generation for {entry.Key}...");
+
+                // Run the selected backend on the project and write the files.
+                var compiledFiles = job.Backend.GenerateCode(job, scope);
+                foreach (var file in compiledFiles)
+                {
+                    job.Output.WriteInfo($"Generated {file.FileName}.");
+                    job.Output.WriteFile(file);
+                }
+
+                // Not every backend has a compilation stage following code generation.
+                // For those that do, execute that stage.
+                if (job.Backend.HasCompilationStage)
+                {
+                    job.Output.WriteInfo($"Compiling generated code...");
+                    try
+                    {
+                        job.Backend.Compile(job);
+                    }
+                    catch (TranslationException e)
+                    {
+                        job.Output.WriteError($"[{entry.Key} Compiling Generated Code:]\n" + e.Message);
+                        job.Output.WriteError("[THIS SHOULD NOT HAVE HAPPENED, please report it to the P team or create a GitHub issue]\n" + e.Message);
+                        Environment.ExitCode = 2;
+                        return Environment.ExitCode;
+                    }
+                }
+                else
+                {
+                    job.Output.WriteInfo($"Build succeeded.");
+                }
             }
 
-            // Not every backend has a compilation stage following code generation.
-            // For those that do, execute that stage.
-            if (job.Backend.HasCompilationStage)
-            {
-                job.Output.WriteInfo($"----------------------------------------");
-                job.Output.WriteInfo($"Compiling {job.ProjectName}...");
-                try
-                {
-                    job.Backend.Compile(job);
-                }
-                catch (TranslationException e)
-                {
-                    job.Output.WriteError("[Compiling Generated Code:]\n" + e.Message);
-                    job.Output.WriteError("[THIS SHOULD NOT HAVE HAPPENED, please report it to the P team or create a GitHub issue]\n" + e.Message);
-                    Environment.ExitCode = 2;
-                    return Environment.ExitCode;
-                }
-            }
-            else
-            {
-                job.Output.WriteInfo("Build succeeded.");
-            }
             job.Output.WriteInfo($"----------------------------------------");
+            job.Output.WriteInfo($"Compilation succeeded.");
+            
             Environment.ExitCode = 0;
             return Environment.ExitCode;
         }

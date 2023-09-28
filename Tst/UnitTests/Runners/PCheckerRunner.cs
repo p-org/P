@@ -50,22 +50,25 @@ namespace UnitTests.Runners
         {
             stdout = "";
             stderr = "";
+
+            // path to generated code
+            DirectoryInfo scratchDirectoryGenerated = Directory.CreateDirectory(Path.Combine(scratchDirectory.FullName, "CSharp"));
             // Do not want to use the auto-generated Test.cs file
-            CreateFileWithMainFunction(scratchDirectory);
+            CreateFileWithMainFunction(scratchDirectoryGenerated);
             // Do not want to use the auto-generated csproj file
-            CreateCSProjFile(scratchDirectory);
+            CreateCSProjFile(scratchDirectoryGenerated);
             // copy the foreign code to the folder
             foreach (var nativeFile in nativeSources)
             {
-                FileCopy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
+                FileCopy(nativeFile.FullName, Path.Combine(scratchDirectoryGenerated.FullName, nativeFile.Name), true);
             }
 
             var exitCode = DoCompile(scratchDirectory);
 
             if (exitCode == 0)
             {
-                exitCode = RunPChecker(scratchDirectory.FullName,
-                    Path.Combine(scratchDirectory.FullName, "./net6.0/Main.dll"), out var testStdout, out var testStderr);
+                exitCode = RunPChecker(scratchDirectoryGenerated.FullName,
+                    Path.Combine(scratchDirectoryGenerated.FullName, "./net6.0/Main.dll"), out var testStdout, out var testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
             }

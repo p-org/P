@@ -25,6 +25,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
   @Getter
   private static final int mainMachineId = 2;
   protected static int globalMachineId = mainMachineId;
+  @Getter private static final Map<String, Machine> nameToMachine = new HashMap<>();
   public final Map<
           String,
           SerializableFunction<
@@ -54,6 +55,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     this.name = name;
     //        this.instanceId = id;
     this.instanceId = globalMachineId++;
+    nameToMachine.put(toString(), this);
 
     this.startState = startState;
     this.sendBuffer = new EventQueue(this);

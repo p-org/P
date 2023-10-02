@@ -70,7 +70,8 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
     machineToParent = new HashMap<>();
   }
 
-  public void addMachineSymData(Machine machine, String dataName, Object data) {
+  public void addMachineSymData(Machine machine, Object data) {
+    String dataName = data.getClass().toString();
     Map<String, Object> machineSymmetricData = machineToSymData.get(machine);
     if (machineSymmetricData == null) {
       machineSymmetricData = new HashMap<>();
@@ -89,11 +90,11 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
     }
   }
 
-  public Object getMachineSymData(Machine machine, String dataName, Object curr) {
-    Object result = curr;
+  public Object getMachineSymData(Machine machine, Object curr) {
+    String dataName = curr.getClass().toString();
     Map<String, Object> machineSymmetricData = machineToSymData.get(machine);
     if (machineSymmetricData != null) {
-      result = machineSymmetricData.get(dataName);
+      Object result = machineSymmetricData.get(dataName);
       if (result != null) {
         return result;
       }

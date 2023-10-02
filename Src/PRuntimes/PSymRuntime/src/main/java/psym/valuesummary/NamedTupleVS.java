@@ -23,17 +23,21 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
   private void storeSymmetricTuple() {
     if (PSymGlobal.getConfiguration().getSymmetryMode() == SymmetryMode.Full) {
       if (this.names.size() == 2 && !isEmptyVS()) {
-        if (this.names.get(0).equals("symMachine")) {
+        if (this.names.get(0).equals("symtag")) {
           if (PSymGlobal.getSymmetryTracker() instanceof ExplicitSymmetryTracker) {
             ExplicitSymmetryTracker symTracker = (ExplicitSymmetryTracker) PSymGlobal.getSymmetryTracker();
-            List<GuardedValue<?>> machineGVs = ValueSummary.getGuardedValues(this.tuple.getField(0));
+
+            List<GuardedValue<?>> symtagGVs = ValueSummary.getGuardedValues(this.tuple.getField(0));
+            assert (symtagGVs.size() == 1);
             List<GuardedValue<?>> dataGVs = ValueSummary.getGuardedValues(this.tuple.getField(1));
-            assert (machineGVs.size() == 1);
             assert (dataGVs.size() == 1);
-            if (machineGVs.get(0).getValue() != null) {
-              assert (machineGVs.get(0).getValue() instanceof Machine);
-              symTracker.addMachineSymData(
-                      (Machine) machineGVs.get(0).getValue(), this.names.get(1), dataGVs.get(0).getValue());
+
+            if (symtagGVs.get(0).getValue() != null) {
+              String symTag = symtagGVs.get(0).getValue().toString();
+              Machine machineTag = Machine.getNameToMachine().get(symTag);
+              if (machineTag != null) {
+                symTracker.addMachineSymData(machineTag, dataGVs.get(0).getValue());
+              }
             }
           }
         }
@@ -89,27 +93,31 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
 
   public NamedTupleVS swap(Map<Machine, Machine> mapping) {
     if (this.names.size() == 2 && !isEmptyVS()) {
-        if (this.names.get(0).equals("symMachine")) {
+        if (this.names.get(0).equals("symtag")) {
           if (PSymGlobal.getSymmetryTracker() instanceof ExplicitSymmetryTracker) {
             ExplicitSymmetryTracker symTracker = (ExplicitSymmetryTracker) PSymGlobal.getSymmetryTracker();
 
-            List<GuardedValue<?>> machineGVs = ValueSummary.getGuardedValues(this.tuple.getField(0));
+            List<GuardedValue<?>> symtagGVs = ValueSummary.getGuardedValues(this.tuple.getField(0));
+            assert (symtagGVs.size() == 1);
             List<GuardedValue<?>> dataGVs = ValueSummary.getGuardedValues(this.tuple.getField(1));
-            assert (machineGVs.size() == 1);
             assert (dataGVs.size() == 1);
-            if (machineGVs.get(0).getValue() != null) {
-              assert (machineGVs.get(0).getValue() instanceof Machine);
 
-              Machine origMachine = (Machine) machineGVs.get(0).getValue();
-              Machine newMachine = mapping.get(origMachine);
-              if (newMachine != null) {
-                Object origValue = dataGVs.get(0).getValue();
-                Object newValue = symTracker.getMachineSymData(newMachine, this.names.get(1), origValue);
-                Guard guard = machineGVs.get(0).getGuard();
+            if (symtagGVs.get(0).getValue() != null) {
+              String symTag = symtagGVs.get(0).getValue().toString();
+              Machine machineTag = Machine.getNameToMachine().get(symTag);
+              if (machineTag != null) {
+                Machine machineTagSwapped = mapping.get(machineTag);
+                if (machineTagSwapped != null) {
+                  Object origValue = dataGVs.get(0).getValue();
+                  Object newValue =
+                      symTracker.getMachineSymData(machineTagSwapped, origValue);
+                  Guard guard = symtagGVs.get(0).getGuard();
 
-                return new NamedTupleVS(
-                        new ArrayList<>(this.names),
-                        new TupleVS(new PrimitiveVS<>(newMachine, guard), new PrimitiveVS<>(newValue, guard)));
+                  return new NamedTupleVS(
+                      new ArrayList<>(this.names),
+                      new TupleVS(
+                          new PrimitiveVS<>(machineTagSwapped.toString(), guard), new PrimitiveVS<>(newValue, guard)));
+                }
               }
             }
             return this;

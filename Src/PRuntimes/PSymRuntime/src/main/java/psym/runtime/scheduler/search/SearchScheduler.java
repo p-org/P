@@ -376,13 +376,16 @@ public abstract class SearchScheduler extends Scheduler {
         if (PSymGlobal.getConfiguration().getMaxBacktrackTasksPerExecution() > 0
                 && numBacktracksAdded == (PSymGlobal.getConfiguration().getMaxBacktrackTasksPerExecution() - 1)) {
           setBacktrackTaskAtDepthCombined(parentTask, i);
-          numBacktracksAdded++;
           break;
-        } else {
-          // top backtrack should be never combined
-          setBacktrackTaskAtDepthExact(parentTask, i);
-          numBacktracksAdded++;
         }
+        if (PSymGlobal.getConfiguration().getMaxPendingBacktrackTasks() > 0
+                && pendingTasks.size() >= PSymGlobal.getConfiguration().getMaxPendingBacktrackTasks()) {
+          setBacktrackTaskAtDepthCombined(parentTask, i);
+          break;
+        }
+        // top backtrack should be never combined
+        setBacktrackTaskAtDepthExact(parentTask, i);
+        numBacktracksAdded++;
       }
     }
 

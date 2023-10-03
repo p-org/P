@@ -20,11 +20,11 @@ namespace Plang.Compiler
             ProjectRootPath = new DirectoryInfo(Directory.GetCurrentDirectory());
             LocationResolver = new DefaultLocationResolver();
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
-            OutputLanguages = new Dictionary<string, CompilerOutput>{{"CSharp", CompilerOutput.CSharp}};
+            OutputLanguages = new List<CompilerOutput>{CompilerOutput.CSharp};
             Backend = null;
             ProjectDependencies = new List<string>();
         }
-        public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IDictionary<string, CompilerOutput> outputLanguages, IList<string> inputFiles,
+        public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IList<CompilerOutput> outputLanguages, IList<string> inputFiles,
             string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null, string pObservePackageName = null)
         {
             if (!inputFiles.Any())
@@ -59,7 +59,7 @@ namespace Plang.Compiler
         
         public ICompilerOutput Output { get; set; }
         public DirectoryInfo OutputDirectory { get; set; }
-        public IDictionary<string, CompilerOutput> OutputLanguages { get; set; }
+        public IList<CompilerOutput> OutputLanguages { get; set; }
         public string ProjectName { get; set; }
         public string PObservePackageName { get; set; }
         public DirectoryInfo ProjectRootPath { get; set; }

@@ -14,7 +14,7 @@ namespace UnitTests.Runners
     /// </summary>
     public class CompileOnlyRunner : ICompilerTestRunner
     {
-        private readonly IDictionary<string, CompilerOutput> compilerOutputs;
+        private readonly IList<CompilerOutput> compilerOutputs;
         private readonly IList<string> inputFiles;
 
         /// <summary>
@@ -22,7 +22,7 @@ namespace UnitTests.Runners
         /// </summary>
         /// <param name="compilerOutputs"></param>
         /// <param name="inputFiles">The P source files to compile</param>
-        public CompileOnlyRunner(IDictionary<string, CompilerOutput> compilerOutputs, IList<string> inputFiles)
+        public CompileOnlyRunner(IList<CompilerOutput> compilerOutputs, IList<string> inputFiles)
         {
             this.inputFiles = inputFiles;
             this.compilerOutputs = compilerOutputs;

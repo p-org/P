@@ -10,10 +10,10 @@ namespace Plang.Compiler
         string ProjectName { get; }
         string PObservePackageName { get; }
         DirectoryInfo ProjectRootPath { get; }
-        CompilerOutput OutputLanguage { get; }
-        ICompilerOutput Output { get; }
-        DirectoryInfo OutputDirectory { get; }
-        ICodeGenerator Backend { get; }
+        IList<CompilerOutput> OutputLanguages { get; }
+        ICompilerOutput Output { get; set; }
+        DirectoryInfo OutputDirectory { get; set; }
+        ICodeGenerator Backend { get; set; }
         IList<string> InputPFiles { get; }
         IList<string> InputForeignFiles { get; }
         IList<string> ProjectDependencies { get; }

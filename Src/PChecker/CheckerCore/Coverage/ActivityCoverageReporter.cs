@@ -356,9 +356,10 @@ namespace PChecker.Coverage
         
         private static string GetSanitizedName(string name)
         {
-            if (name.StartsWith("PImplementation."))
+            var i = name.LastIndexOf(".");
+            if (i > 0)
             {
-                return name.Substring("PImplementation.".Length);
+                return name.Substring(i + 1);
             }
             
             return name;

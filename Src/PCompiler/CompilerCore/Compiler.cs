@@ -54,14 +54,14 @@ namespace Plang.Compiler
             }
 
             DirectoryInfo parentDirectory = job.OutputDirectory;
-            foreach (var entry in job.OutputLanguages)
+            foreach (var entry in job.OutputLanguages.Distinct())
             {
-                job.OutputDirectory = Directory.CreateDirectory(Path.Combine(parentDirectory.FullName, entry.Key));
+                job.OutputDirectory = Directory.CreateDirectory(Path.Combine(parentDirectory.FullName, entry.ToString()));
                 job.Output = new DefaultCompilerOutput(job.OutputDirectory);
-                job.Backend = TargetLanguage.GetCodeGenerator(entry.Value);
+                job.Backend = TargetLanguage.GetCodeGenerator(entry);
                 
                 job.Output.WriteInfo($"----------------------------------------");
-                job.Output.WriteInfo($"Code generation for {entry.Key}...");
+                job.Output.WriteInfo($"Code generation for {entry}...");
 
                 // Run the selected backend on the project and write the files.
                 var compiledFiles = job.Backend.GenerateCode(job, scope);
@@ -82,7 +82,7 @@ namespace Plang.Compiler
                     }
                     catch (TranslationException e)
                     {
-                        job.Output.WriteError($"[{entry.Key} Compiling Generated Code:]\n" + e.Message);
+                        job.Output.WriteError($"[{entry} Compiling Generated Code:]\n" + e.Message);
                         job.Output.WriteError("[THIS SHOULD NOT HAVE HAPPENED, please report it to the P team or create a GitHub issue]\n" + e.Message);
                         Environment.ExitCode = 2;
                         return Environment.ExitCode;

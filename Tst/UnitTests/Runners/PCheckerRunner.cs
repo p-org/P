@@ -159,7 +159,7 @@ namespace PImplementation
         {
             var compiler = new Compiler();
             var outputStream = new TestExecutionStream(scratchDirectory);
-            var compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory, new Dictionary<string, CompilerOutput>{{"CSharp", CompilerOutput.CSharp}}, sources.Select(x => x.FullName).ToList(), "Main", scratchDirectory);
+            var compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory, new List<CompilerOutput>{CompilerOutput.CSharp}, sources.Select(x => x.FullName).ToList(), "Main", scratchDirectory);
             try
             {
                 return compiler.Compile(compilerConfiguration);

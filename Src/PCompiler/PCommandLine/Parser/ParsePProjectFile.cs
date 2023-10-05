@@ -208,13 +208,13 @@ namespace Plang.Parser
                 return Directory.GetCurrentDirectory();
         }
 
-        private IDictionary<string, CompilerOutput> GetTargetLanguages(FileInfo fullPathName)
+        private IList<CompilerOutput> GetTargetLanguages(FileInfo fullPathName)
         {
-            var outputLanguages = new Dictionary<string, CompilerOutput>();
+            var outputLanguages = new List<CompilerOutput>();
             var projectXml = XElement.Load(fullPathName.FullName);
             if (!projectXml.Elements("Target").Any())
             {
-                outputLanguages["CSharp"] = CompilerOutput.CSharp;
+                outputLanguages.Add(CompilerOutput.CSharp);
             }
             else
             {
@@ -226,21 +226,21 @@ namespace Plang.Parser
                     {
                         case "bugfinding":
                         case "csharp":
-                            outputLanguages["CSharp"] = CompilerOutput.CSharp;
+                            outputLanguages.Add(CompilerOutput.CSharp);
                             break;
                         case "verification":
                         case "coverage":
                         case "symbolic":
                         case "psym":
                         case "pcover":
-                            outputLanguages["Symbolic"] = CompilerOutput.Symbolic;
+                            outputLanguages.Add(CompilerOutput.Symbolic);
                             break;
                         case "pobserve":
                         case "java":
-                            outputLanguages["Java"] = CompilerOutput.Java;
+                            outputLanguages.Add(CompilerOutput.Java);
                             break;
                         case "stately":
-                            outputLanguages["Stately"] = CompilerOutput.Stately;
+                            outputLanguages.Add(CompilerOutput.Stately);
                             break;
                         default:
                             throw new CommandlineParsingError(

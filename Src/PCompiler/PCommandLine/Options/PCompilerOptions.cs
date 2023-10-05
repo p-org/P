@@ -158,26 +158,26 @@ namespace Plang.Options
                     compilerConfiguration.ProjectName = (string)option.Value;
                     break;
                 case "mode":
-                    compilerConfiguration.OutputLanguages = new Dictionary<string, CompilerOutput>();
+                    compilerConfiguration.OutputLanguages = new List<CompilerOutput>();
                     switch (((string)option.Value).ToLowerInvariant())
                     {
                         case "bugfinding":
                         case "csharp":
-                            compilerConfiguration.OutputLanguages["CSharp"] = CompilerOutput.CSharp;
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.CSharp);
                             break;
                         case "verification":
                         case "coverage":
                         case "symbolic":
                         case "psym":
                         case "pcover":
-                            compilerConfiguration.OutputLanguages["Symbolic"] = CompilerOutput.Symbolic;
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.Symbolic);
                             break;
                         case "pobserve":
                         case "java":
-                            compilerConfiguration.OutputLanguages["Java"] = CompilerOutput.Java;
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.Java);
                             break;
                         case "stately":
-                            compilerConfiguration.OutputLanguages["Stately"] = CompilerOutput.Stately;
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.Stately);
                             break;
                         default:
                             throw new Exception($"Unexpected mode: '{option.Value}'");

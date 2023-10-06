@@ -372,6 +372,9 @@ public class ExplicitSearchScheduler extends SearchScheduler {
     // print states statistics
     StatWriter.log("#-states", String.format("%d", totalStateCount));
     StatWriter.log("#-distinct-states", String.format("%d", totalDistinctStateCount));
+
+    // print symmetry statistics
+    StatWriter.log("#-pruned-symmetry", String.format("%d", ExplicitSymmetryTracker.getPruneCount()));
   }
 
   @Override

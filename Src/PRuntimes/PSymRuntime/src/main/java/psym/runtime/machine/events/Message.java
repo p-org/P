@@ -6,11 +6,29 @@ import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.valuesummary.*;
 
+import javax.crypto.Mac;
+
 /** Represents a message in the sender buffer of a state machine */
 public class Message implements ValueSummary<Message> {
   @Getter
   /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
+
+  static class ConcreteMessage {
+    private final Machine target;
+    private final Event event;
+    private final Map<Event, Object> payload;
+
+    ConcreteMessage(Machine t, Event e, Map<Event, Object> p) {
+      target = t;
+      event = e;
+      payload = p;
+    }
+  }
+
+  @Getter
+  /** Concrete value used in explicit-state search */
+  private final ConcreteMessage concreteValue;
 
   // the target machine to which the message is being sent
   private final PrimitiveVS<Machine> target;
@@ -25,6 +43,7 @@ public class Message implements ValueSummary<Message> {
     this.target = machine;
     this.payload = new HashMap<>(map);
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   public Message(Event name, PrimitiveVS<Machine> machine) {
@@ -57,6 +76,7 @@ public class Message implements ValueSummary<Message> {
       }
     }
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   /**
@@ -281,6 +301,18 @@ public class Message implements ValueSummary<Message> {
           31 * hashCode + (entry.getValue() == null ? 0 : entry.getValue().getConcreteHash());
     }
     return hashCode;
+  }
+
+  @Override
+  public ConcreteMessage computeConcreteValue() {
+    Machine t = target == null ? null : (Machine) target.getConcreteValue();
+    Event e = event == null ? null : (Event) event.getConcreteValue();
+
+    Map<Event, Object> p = new HashMap<>();
+    for (Map.Entry<Event, UnionVS> entry : payload.entrySet()) {
+      p.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().getConcreteValue());
+    }
+    return new ConcreteMessage(t, e, p);
   }
 
   @Override

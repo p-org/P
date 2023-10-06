@@ -14,6 +14,7 @@ import psym.runtime.machine.events.Message;
 import psym.utils.Assert;
 import psym.valuesummary.GuardedValue;
 import psym.valuesummary.PrimitiveVS;
+import psym.valuesummary.ValueSummary;
 
 public class ScheduleWriter {
     static PrintWriter log = null;
@@ -55,6 +56,12 @@ public class ScheduleWriter {
         List<GuardedValue<Integer>> gv = res.getGuardedValues();
         assert (gv.size() == 1);
         logComment("integer choice");
+        log(gv.get(0).getValue().toString());
+    }
+
+    public static void logElement(List<GuardedValue<?>> gv) {
+        assert (gv.size() == 1);
+        logComment("element choice");
         log(gv.get(0).getValue().toString());
     }
 

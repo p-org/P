@@ -536,8 +536,8 @@ public abstract class SearchScheduler extends Scheduler {
       // no choice to backtrack to, so generate new choices
       SearchLogger.logMessage("new choice at depth " + depth);
       choices = getChoices.get();
-      if (!isData && PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
-        choices = PSymGlobal.getSymmetryTracker().getReducedChoices(choices);
+      if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+        choices = PSymGlobal.getSymmetryTracker().getReducedChoices(choices, isData);
       }
       choices =
               choices.stream()
@@ -652,6 +652,24 @@ public abstract class SearchScheduler extends Scheduler {
             true);
     choiceDepth = depth + 1;
     return res;
+  }
+
+  @Override
+  public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
+    int depth = choiceDepth;
+    PrimitiveVS<ValueSummary> res =
+            getNext(
+                    depth,
+                    schedule::getRepeatElement,
+                    schedule::getBacktrackElement,
+                    schedule::clearBacktrack,
+                    schedule::addRepeatElement,
+                    schedule::addBacktrackElement,
+                    () -> super.getNextElementChoices(candidates, pc),
+                    super::getNextElementHelper,
+                    true);
+    choiceDepth = depth + 1;
+    return super.getNextElementFlattener(res);
   }
 
   public void print_stats(SearchStats.TotalStats totalStats, double timeUsed, double memoryUsed) {

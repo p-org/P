@@ -14,6 +14,9 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
   @Getter
   /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
+  @Getter
+  /** Concrete value used in explicit-state search */
+  private final Object[] concreteValue;
 
   /** List of names of the fields in the declared order */
   private final List<String> names;
@@ -27,16 +30,14 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
           if (PSymGlobal.getSymmetryTracker() instanceof ExplicitSymmetryTracker) {
             ExplicitSymmetryTracker symTracker = (ExplicitSymmetryTracker) PSymGlobal.getSymmetryTracker();
 
-            List<GuardedValue<?>> symtagGVs = ValueSummary.getGuardedValues(this.tuple.getField(0));
-            assert (symtagGVs.size() == 1);
-            List<GuardedValue<?>> dataGVs = ValueSummary.getGuardedValues(this.tuple.getField(1));
-            assert (dataGVs.size() == 1);
+            Object symTagObj = this.tuple.getField(0).getConcreteValue();
+            Object dataObj = this.tuple.getField(1).getConcreteValue();
 
-            if (symtagGVs.get(0).getValue() != null) {
-              String symTag = symtagGVs.get(0).getValue().toString();
+            if (symTagObj != null) {
+              String symTag = symTagObj.toString();
               Machine machineTag = Machine.getNameToMachine().get(symTag);
               if (machineTag != null) {
-                symTracker.addMachineSymData(machineTag, dataGVs.get(0).getValue());
+                symTracker.addMachineSymData(machineTag, dataObj);
               }
             }
           }
@@ -49,6 +50,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     this.names = names;
     this.tuple = tuple;
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
     storeSymmetricTuple();
   }
 
@@ -61,6 +63,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     this.names = new ArrayList<>(old.names);
     this.tuple = new TupleVS(old.tuple);
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
     storeSymmetricTuple();
   }
 
@@ -79,6 +82,7 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     }
     tuple = new TupleVS(vs);
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
     storeSymmetricTuple();
   }
 
@@ -97,26 +101,23 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
           if (PSymGlobal.getSymmetryTracker() instanceof ExplicitSymmetryTracker) {
             ExplicitSymmetryTracker symTracker = (ExplicitSymmetryTracker) PSymGlobal.getSymmetryTracker();
 
-            List<GuardedValue<?>> symtagGVs = ValueSummary.getGuardedValues(this.tuple.getField(0));
-            assert (symtagGVs.size() == 1);
-            List<GuardedValue<?>> dataGVs = ValueSummary.getGuardedValues(this.tuple.getField(1));
-            assert (dataGVs.size() == 1);
+            Object symTagObj = this.tuple.getField(0).getConcreteValue();
+            Object dataObj = this.tuple.getField(1).getConcreteValue();
 
-            if (symtagGVs.get(0).getValue() != null) {
-              String symTag = symtagGVs.get(0).getValue().toString();
+            if (symTagObj != null) {
+              String symTag = symTagObj.toString();
               Machine machineTag = Machine.getNameToMachine().get(symTag);
               if (machineTag != null) {
                 Machine machineTagSwapped = mapping.get(machineTag);
                 if (machineTagSwapped != null) {
-                  Object origValue = dataGVs.get(0).getValue();
+                  Object origValue = dataObj;
                   Object newValue =
                       symTracker.getMachineSymData(machineTagSwapped, origValue);
-                  Guard guard = symtagGVs.get(0).getGuard();
 
                   return new NamedTupleVS(
                       new ArrayList<>(this.names),
                       new TupleVS(
-                          new PrimitiveVS<>(machineTagSwapped.toString(), guard), new PrimitiveVS<>(newValue, guard)));
+                          new PrimitiveVS<>(machineTagSwapped.toString(), Guard.constTrue()), new PrimitiveVS<>(newValue, Guard.constTrue())));
                 }
               }
             }
@@ -235,6 +236,11 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
   @Override
   public int computeConcreteHash() {
     return tuple.getConcreteHash();
+  }
+
+  @Override
+  public Object[] computeConcreteValue() {
+    return tuple == null ? null : tuple.getConcreteValue();
   }
 
   @Override

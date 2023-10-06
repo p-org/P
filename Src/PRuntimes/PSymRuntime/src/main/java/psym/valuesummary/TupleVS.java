@@ -13,6 +13,9 @@ public class TupleVS implements ValueSummary<TupleVS> {
   @Getter
   /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
+  @Getter
+  /** Concrete value used in explicit-state search */
+  private final Object[] concreteValue;
 
   /** The fields of the tuple */
   private final ValueSummary[] fields;
@@ -29,6 +32,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
     this.fields = Arrays.copyOf(inpFields, inpFields.length);
     this.classes = Arrays.copyOf(inpClasses, inpClasses.length);
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
     assert (IntStream.range(0, this.fields.length).allMatch(x -> this.fields[x].getUniverse().equals(this.fields[0].getUniverse()))) :
             "Error in tuple field guards";
   }
@@ -60,6 +64,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
             .collect(Collectors.toList())
             .toArray(new Class[items.length]);
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
     assert (IntStream.range(0, this.fields.length).allMatch(x -> this.fields[x].getUniverse().equals(this.fields[0].getUniverse()))) :
             "Error in tuple field guards";
   }
@@ -219,6 +224,15 @@ public class TupleVS implements ValueSummary<TupleVS> {
       hashCode = 31 * hashCode + (fields[i] == null ? 0 : fields[i].getConcreteHash());
     }
     return hashCode;
+  }
+
+  @Override
+  public Object[] computeConcreteValue() {
+    Object[] value = new Object[classes.length];
+    for (int i = 0; i < classes.length; i++) {
+      value[i] = fields[i] == null ? null : fields[i].getConcreteValue();
+    }
+    return value;
   }
 
   @Override

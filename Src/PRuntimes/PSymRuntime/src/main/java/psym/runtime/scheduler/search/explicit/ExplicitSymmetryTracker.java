@@ -2,6 +2,7 @@ package psym.runtime.scheduler.search.explicit;
 
 import java.util.*;
 
+import lombok.Getter;
 import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;
@@ -9,6 +10,8 @@ import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.valuesummary.*;
 
 public class ExplicitSymmetryTracker extends SymmetryTracker {
+  @Getter
+  private static int pruneCount = 0;
   Map<String, List<TreeSet<Machine>>> typeToSymmetryClasses;
   Set<Machine> pendingMerges;
 
@@ -134,7 +137,7 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
     }
   }
 
-  public List<ValueSummary> getReducedChoices(List<ValueSummary> original) {
+  public List<ValueSummary> getReducedChoices(List<ValueSummary> original, boolean isData) {
     // trivial case
     if (original.size() <= 1 || typeToSymmetryClasses.isEmpty()) {
       return original;
@@ -184,7 +187,9 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
                 }
                 assert (machineRep != null);
 
-                assert (!machineRep.getEventBuffer().isEmpty());
+                if (!isData) {
+                  assert (!machineRep.getEventBuffer().isEmpty());
+                }
                 pendingSummaries.add(machineRep);
               }
               added = true;
@@ -202,6 +207,7 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
       reduced.add(new PrimitiveVS(Collections.singletonMap(m_orig, Guard.constTrue())));
     }
 
+    pruneCount += original.size() - reduced.size();
     return reduced;
   }
 

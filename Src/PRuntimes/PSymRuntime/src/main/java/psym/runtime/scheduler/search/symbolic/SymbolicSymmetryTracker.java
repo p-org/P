@@ -70,7 +70,7 @@ public class SymbolicSymmetryTracker extends SymmetryTracker {
     }
   }
 
-  public List<ValueSummary> getReducedChoices(List<ValueSummary> original) {
+  public List<ValueSummary> getReducedChoices(List<ValueSummary> original, boolean isData) {
     // trivial case
     if (original.size() <= 1 || typeToSymmetryClasses.isEmpty()) {
       return original;

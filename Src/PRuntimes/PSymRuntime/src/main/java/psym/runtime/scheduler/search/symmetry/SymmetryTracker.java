@@ -20,7 +20,7 @@ public abstract class SymmetryTracker implements Serializable {
 
   public abstract void createMachine(Machine machine, Guard guard);
 
-  public abstract List<ValueSummary> getReducedChoices(List<ValueSummary> original);
+  public abstract List<ValueSummary> getReducedChoices(List<ValueSummary> original, boolean isData);
 
   public abstract void updateSymmetrySet(Machine machine, Guard guard);
 

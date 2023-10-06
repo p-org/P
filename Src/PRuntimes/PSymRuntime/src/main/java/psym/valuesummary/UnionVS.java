@@ -11,6 +11,9 @@ public class UnionVS implements ValueSummary<UnionVS> {
   @Getter
   /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
+  @Getter
+  /** Concrete value used in explicit-state search */
+  private final Map<UnionVStype, Object> concreteValue;
 
   /* Type of value stored in the any type variable */
   private final PrimitiveVS<UnionVStype> type;
@@ -22,6 +25,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
     this.type = type;
     this.value = values;
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   public UnionVS(Guard pc, UnionVStype type, ValueSummary values) {
@@ -30,6 +34,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
     // TODO: why are we not restricting the values?
     this.value.put(type, values);
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   public UnionVS() {
@@ -38,6 +43,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
     this.value = new HashMap<>();
     this.value.put(type, new PrimitiveVS(null, Guard.constTrue()));
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   /**
@@ -49,6 +55,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
     this.type = new PrimitiveVS<>(old.type);
     this.value = new HashMap<>(old.value);
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   public UnionVS(ValueSummary vs) {
@@ -73,6 +80,7 @@ public class UnionVS implements ValueSummary<UnionVS> {
       assert (this.type != null);
     }
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   /**
@@ -252,6 +260,15 @@ public class UnionVS implements ValueSummary<UnionVS> {
           31 * hashCode + (entry.getValue() == null ? 0 : entry.getValue().getConcreteHash());
     }
     return hashCode;
+  }
+
+  @Override
+  public Map<UnionVStype, Object> computeConcreteValue() {
+    Map<UnionVStype, Object> ret = new HashMap<>();
+    for (Map.Entry<UnionVStype, ValueSummary> entry : value.entrySet()) {
+      ret.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().getConcreteValue());
+    }
+    return ret;
   }
 
   @Override

@@ -1,7 +1,6 @@
 package psym.runtime.scheduler.search.symbolic;
 
 import java.util.*;
-
 import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
 import psym.runtime.machine.Monitor;

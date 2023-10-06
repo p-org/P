@@ -24,8 +24,8 @@ import psym.valuesummary.*;
 public abstract class Machine implements Serializable, Comparable<Machine> {
   @Getter
   private static final int mainMachineId = 2;
-  protected static int globalMachineId = mainMachineId;
   @Getter private static final Map<String, Machine> nameToMachine = new HashMap<>();
+  protected static int globalMachineId = mainMachineId;
   public final Map<
           String,
           SerializableFunction<

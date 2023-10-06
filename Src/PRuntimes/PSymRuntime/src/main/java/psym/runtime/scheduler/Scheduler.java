@@ -4,7 +4,6 @@ import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import lombok.Getter;
 import psym.runtime.*;
 import psym.runtime.Program;
@@ -14,7 +13,6 @@ import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
-import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.runtime.statistics.SearchStats;
 import psym.utils.Assert;

@@ -14,7 +14,6 @@ import psym.runtime.machine.events.Message;
 import psym.utils.Assert;
 import psym.valuesummary.GuardedValue;
 import psym.valuesummary.PrimitiveVS;
-import psym.valuesummary.ValueSummary;
 
 public class ScheduleWriter {
     static PrintWriter log = null;

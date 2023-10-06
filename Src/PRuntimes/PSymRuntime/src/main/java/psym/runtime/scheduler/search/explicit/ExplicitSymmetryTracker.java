@@ -1,7 +1,6 @@
 package psym.runtime.scheduler.search.explicit;
 
 import java.util.*;
-
 import lombok.Getter;
 import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
@@ -187,9 +186,7 @@ public class ExplicitSymmetryTracker extends SymmetryTracker {
                 }
                 assert (machineRep != null);
 
-                if (!isData) {
-                  assert (!machineRep.getEventBuffer().isEmpty());
-                }
+                assert isData || (!machineRep.getEventBuffer().isEmpty());
                 pendingSummaries.add(machineRep);
               }
               added = true;

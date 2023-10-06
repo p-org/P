@@ -5,7 +5,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Getter;
 import psym.runtime.machine.Machine;
-import psym.utils.exception.BugFoundException;
 
 /** Represents a tuple value summaries */
 @SuppressWarnings("unchecked")

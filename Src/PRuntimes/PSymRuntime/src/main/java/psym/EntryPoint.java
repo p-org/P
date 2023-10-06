@@ -11,8 +11,6 @@ import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.runtime.scheduler.search.SearchScheduler;
 import psym.runtime.scheduler.search.explicit.ExplicitSearchScheduler;
 import psym.runtime.scheduler.search.symbolic.SymbolicSearchScheduler;
-import psym.runtime.scheduler.search.symmetry.SymmetryMode;
-import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.utils.exception.BugFoundException;
 import psym.utils.exception.MemoutException;
 import psym.utils.monitor.MemoryMonitor;

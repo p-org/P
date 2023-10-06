@@ -1,7 +1,6 @@
 package psym.valuesummary;
 
 import java.util.*;
-
 import lombok.Getter;
 import psym.runtime.PSymGlobal;
 import psym.runtime.machine.Machine;
@@ -22,29 +21,6 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
   private final List<String> names;
   /** Underlying representation as a TupleVS */
   @Getter private final TupleVS tuple;
-
-  private void storeSymmetricTuple() {
-    if (PSymGlobal.getConfiguration().getSymmetryMode() == SymmetryMode.Full) {
-      if (this.names.size() == 2 && !isEmptyVS()) {
-        if (this.names.get(0).equals("symtag")) {
-          if (PSymGlobal.getSymmetryTracker() instanceof ExplicitSymmetryTracker) {
-            ExplicitSymmetryTracker symTracker = (ExplicitSymmetryTracker) PSymGlobal.getSymmetryTracker();
-
-            Object symTagObj = this.tuple.getField(0).getConcreteValue();
-            Object dataObj = this.tuple.getField(1).getConcreteValue();
-
-            if (symTagObj != null) {
-              String symTag = symTagObj.toString();
-              Machine machineTag = Machine.getNameToMachine().get(symTag);
-              if (machineTag != null) {
-                symTracker.addMachineSymData(machineTag, dataObj);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
 
   private NamedTupleVS(List<String> names, TupleVS tuple) {
     this.names = names;
@@ -84,6 +60,29 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
     this.concreteHash = computeConcreteHash();
     this.concreteValue = computeConcreteValue();
     storeSymmetricTuple();
+  }
+
+  private void storeSymmetricTuple() {
+    if (PSymGlobal.getConfiguration().getSymmetryMode() == SymmetryMode.Full) {
+      if (this.names.size() == 2 && !isEmptyVS()) {
+        if (this.names.get(0).equals("symtag")) {
+          if (PSymGlobal.getSymmetryTracker() instanceof ExplicitSymmetryTracker) {
+            ExplicitSymmetryTracker symTracker = (ExplicitSymmetryTracker) PSymGlobal.getSymmetryTracker();
+
+            Object symTagObj = this.tuple.getField(0).getConcreteValue();
+            Object dataObj = this.tuple.getField(1).getConcreteValue();
+
+            if (symTagObj != null) {
+              String symTag = symTagObj.toString();
+              Machine machineTag = Machine.getNameToMachine().get(symTag);
+              if (machineTag != null) {
+                symTracker.addMachineSymData(machineTag, dataObj);
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   /**

@@ -59,7 +59,7 @@ public class EntryPoint {
     double searchTime = TimeMonitor.getInstance().stopInterval();
     searchScheduler.print_search_stats();
     if (searchScheduler.isFinalResult && PSymGlobal.getResult().equals("correct for any depth")) {
-      PSymGlobal.setStatus("proved");
+      PSymGlobal.setStatus("verified");
     }
     StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
     if (PSymGlobal.getConfiguration().isIterative()) {

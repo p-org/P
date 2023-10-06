@@ -135,7 +135,7 @@ namespace PChecker.Coverage
             foreach (var machine in machines)
             {
                 machineTypes.TryGetValue(machine, out var machineType);
-                WriteHeader(writer, string.Format("{0}: {1}", machineType, machine));
+                WriteHeader(writer, string.Format("{0}: {1}", machineType, GetSanitizedName(machine)));
 
                 // find all possible events for this machine.
                 var uncoveredMachineEvents = new Dictionary<string, HashSet<string>>();
@@ -314,7 +314,11 @@ namespace PChecker.Coverage
 
         private static List<string> SortHashSet(HashSet<string> items)
         {
-            var sorted = new List<string>(items);
+            var sorted = new List<string>();
+            foreach (var i in items)
+            {
+                sorted.Add(GetSanitizedName(i));
+            }
             sorted.Sort();
             return sorted;
         }
@@ -349,5 +353,16 @@ namespace PChecker.Coverage
 
         private static string GetStateId(string machineName, string stateName) =>
             string.Format("{0}::{1}", stateName, machineName);
+        
+        private static string GetSanitizedName(string name)
+        {
+            var i = name.LastIndexOf(".");
+            if (i > 0)
+            {
+                return name.Substring(i + 1);
+            }
+            
+            return name;
+        }
     }
 }

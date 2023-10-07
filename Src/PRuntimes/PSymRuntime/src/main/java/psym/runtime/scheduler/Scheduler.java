@@ -246,11 +246,17 @@ public abstract class Scheduler implements SchedulerInterface {
     return flattened;
   }
 
+  protected abstract ValueSummary getNextPrimitiveList(ListVS<? extends ValueSummary> s, Guard pc);
+
   @Override
   public ValueSummary getNextElement(ListVS<? extends ValueSummary> s, Guard pc) {
-//    PrimitiveVS<Integer> idx = getNextInteger(s.size(), pc);
-//    return s.get(idx);
-    return getNextElementFlattener(getNextElementHelper(getNextElementChoices(s, pc)));
+    if (s.getItems().size() != 0) {
+      if (!(s.getItems().get(0) instanceof PrimitiveVS)) {
+        PrimitiveVS<Integer> idx = getNextInteger(s.size(), pc);
+        return s.get(idx);
+      }
+    }
+    return getNextPrimitiveList(s, pc);
   }
 
   @Override

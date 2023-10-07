@@ -655,7 +655,7 @@ public abstract class SearchScheduler extends Scheduler {
   }
 
   @Override
-  public ValueSummary getNextElement(ListVS<? extends ValueSummary> candidates, Guard pc) {
+  public ValueSummary getNextPrimitiveList(ListVS<? extends ValueSummary> candidates, Guard pc) {
     int depth = choiceDepth;
     PrimitiveVS<ValueSummary> res =
             getNext(

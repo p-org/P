@@ -390,7 +390,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
   public Map<K, Object> computeConcreteValue() {
     Map<K, Object> value = new HashMap<>();
     for (Map.Entry<K, V> entry : this.entries.entrySet()) {
-      value.put(entry.getKey(), entry.getValue().computeConcreteValue());
+      value.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().getConcreteValue());
     }
     return value;
   }

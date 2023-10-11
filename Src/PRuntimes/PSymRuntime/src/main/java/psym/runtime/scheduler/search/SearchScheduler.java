@@ -702,7 +702,7 @@ public abstract class SearchScheduler extends Scheduler {
             "#-tasks-remaining", String.format("%d", (allTasks.size() - getFinishedTasks().size())));
     StatWriter.log("#-backtracks", String.format("%d", getTotalNumBacktracks()));
     StatWriter.log("%-backtracks-data", String.format("%.2f", getTotalDataBacktracksPercent()));
-    StatWriter.log("#-executions", String.format("%d", (getIter() - getStart_iter())));
+    StatWriter.log("#-schedules", String.format("%d", (getIter() - getStart_iter())));
 
     // print solver statistics
     StatWriter.logSolverStats();

@@ -64,19 +64,22 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
 
   private void storeSymmetricTuple() {
     if (PSymGlobal.getConfiguration().getSymmetryMode() == SymmetryMode.Full) {
-      if (this.names.size() == 2 && !isEmptyVS()) {
-        if (this.names.get(0).equals("symtag")) {
+      if (this.names.size() == 3 && !isEmptyVS()) {
+        if (this.names.get(0).equals("symtag")
+              && this.names.get(1).equals("name")
+              && this.names.get(2).equals("value")) {
           if (PSymGlobal.getSymmetryTracker() instanceof ExplicitSymmetryTracker) {
             ExplicitSymmetryTracker symTracker = (ExplicitSymmetryTracker) PSymGlobal.getSymmetryTracker();
 
             Object symTagObj = this.tuple.getField(0).getConcreteValue();
-            Object dataObj = this.tuple.getField(1).getConcreteValue();
+            Object nameObj = this.tuple.getField(1).getConcreteValue();
+            Object valueObj = this.tuple.getField(2).getConcreteValue();
 
             if (symTagObj != null) {
               String symTag = symTagObj.toString();
               Machine machineTag = Machine.getNameToMachine().get(symTag);
               if (machineTag != null) {
-                symTracker.addMachineSymData(machineTag, dataObj);
+                symTracker.addMachineSymData(machineTag, nameObj.toString(), valueObj);
               }
             }
           }
@@ -95,13 +98,16 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
   }
 
   public NamedTupleVS swap(Map<Machine, Machine> mapping) {
-    if (this.names.size() == 2 && !isEmptyVS()) {
-        if (this.names.get(0).equals("symtag")) {
+    if (this.names.size() == 3 && !isEmptyVS()) {
+      if (this.names.get(0).equals("symtag")
+              && this.names.get(1).equals("name")
+              && this.names.get(2).equals("value")) {
           if (PSymGlobal.getSymmetryTracker() instanceof ExplicitSymmetryTracker) {
             ExplicitSymmetryTracker symTracker = (ExplicitSymmetryTracker) PSymGlobal.getSymmetryTracker();
 
             Object symTagObj = this.tuple.getField(0).getConcreteValue();
-            Object dataObj = this.tuple.getField(1).getConcreteValue();
+            Object nameObj = this.tuple.getField(1).getConcreteValue();
+            Object valueObj = this.tuple.getField(2).getConcreteValue();
 
             if (symTagObj != null) {
               String symTag = symTagObj.toString();
@@ -109,14 +115,16 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
               if (machineTag != null) {
                 Machine machineTagSwapped = mapping.get(machineTag);
                 if (machineTagSwapped != null) {
-                  Object origValue = dataObj;
+                  Object origValue = valueObj;
                   Object newValue =
-                      symTracker.getMachineSymData(machineTagSwapped, origValue);
+                      symTracker.getMachineSymData(machineTagSwapped, nameObj.toString(), origValue);
 
                   return new NamedTupleVS(
                       new ArrayList<>(this.names),
                       new TupleVS(
-                          new PrimitiveVS<>(machineTagSwapped.toString(), Guard.constTrue()), new PrimitiveVS<>(newValue, Guard.constTrue())));
+                          new PrimitiveVS<>(machineTagSwapped.toString(), Guard.constTrue()),
+                          new PrimitiveVS<>(nameObj.toString(), Guard.constTrue()),
+                          new PrimitiveVS<>(newValue, Guard.constTrue())));
                 }
               }
             }

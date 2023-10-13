@@ -606,7 +606,7 @@ namespace PChecker.SystematicTesting
                 }
 
 
-                if (ShouldPrintIteration(iteration))
+                if (ShouldPrintIteration(schedule))
                 {
                     var seconds = watch.Elapsed.TotalSeconds;
                     Logger.WriteLine($"Elapsed: {seconds}, " +

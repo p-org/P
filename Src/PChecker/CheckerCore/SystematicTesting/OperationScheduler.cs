@@ -149,7 +149,7 @@ namespace PChecker.SystematicTesting
             }
 
             // Get and order the operations by their id.
-            var ops = OperationMap.Values.OrderBy(op => op.Id);
+            var ops = OperationMap.Values.OrderBy(op => op.Id).ToList();
 
             // Try enable any operation that is currently waiting, but has its dependencies already satisfied.
             foreach (var op in ops)

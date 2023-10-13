@@ -253,6 +253,12 @@ namespace PChecker
         public uint TestingProcessId;
 
         /// <summary>
+        /// The source of the pattern generator.
+        /// </summary>
+        [DataMember]
+        public string PatternSource;
+
+        /// <summary>
         /// Additional assembly specifications to instrument for code coverage, besides those in the
         /// dependency graph between <see cref="AssemblyToBeAnalyzed"/> and the Microsoft.Coyote DLLs.
         /// Key is filename, value is whether it is a list file (true) or a single file (false).
@@ -282,6 +288,30 @@ namespace PChecker
         public string JvmArgs;
 
         /// <summary>
+        /// For feedback strategy, save input if the pattern are partially matched.
+        /// </summary>
+        [DataMember]
+        public bool SavePartialMatch;
+
+        /// <summary>
+        /// For feedback strategy, discard saved generators if the size of the buffer is greater than N.
+        /// </summary>
+        [DataMember]
+        public int DiscardAfter;
+
+        /// <summary>
+        /// For feedback strategy, schedule generator mutations based on diversity.
+        /// </summary>
+        [DataMember]
+        public bool DiversityBasedPriority;
+
+        /// <summary>
+        /// For feedback strategy, ignore the pattern feedback.
+        /// </summary>
+        [DataMember]
+        public bool IgnorePatternFeedback;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="CheckerConfiguration"/> class.
         /// </summary>
         protected CheckerConfiguration()
@@ -301,10 +331,11 @@ namespace PChecker
             RandomGeneratorSeed = null;
             IncrementalSchedulingSeed = false;
             PerformFullExploration = false;
-            MaxFairSchedulingSteps = 100000; // 10 times the unfair steps
+            MaxFairSchedulingSteps = 10000; // 10 times the unfair steps
             MaxUnfairSchedulingSteps = 10000;
             UserExplicitlySetMaxFairSchedulingSteps = false;
             TestingSchedulerEndPoint = "CoyoteTestScheduler.4723bb92-c413-4ecb-8e8a-22eb2ba22234";
+            PatternSource = "";
             TestingProcessId = 0;
             ConsiderDepthBoundHitAsBug = false;
             StrategyBound = 0;
@@ -328,6 +359,10 @@ namespace PChecker
             
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
+            SavePartialMatch = true;
+            DiscardAfter = 100;
+            DiversityBasedPriority = true;
+            IgnorePatternFeedback = false;
 
             PSymArgs = "";
             JvmArgs = "";

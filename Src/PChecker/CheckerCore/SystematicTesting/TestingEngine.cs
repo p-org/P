@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -17,6 +18,8 @@ using System.Xml;
 using PChecker.Actors;
 using PChecker.Actors.Logging;
 using PChecker.Coverage;
+using PChecker.Feedback;
+using PChecker.Generator;
 using PChecker.IO;
 using PChecker.IO.Debugging;
 using PChecker.IO.Logging;
@@ -24,11 +27,13 @@ using PChecker.Random;
 using PChecker.Runtime;
 using PChecker.SystematicTesting.Strategies;
 using PChecker.SystematicTesting.Strategies.Exhaustive;
+using PChecker.SystematicTesting.Strategies.Feedback;
 using PChecker.SystematicTesting.Strategies.Probabilistic;
 using PChecker.SystematicTesting.Strategies.Special;
 using PChecker.SystematicTesting.Traces;
 using PChecker.Utilities;
 using CoyoteTasks = PChecker.Tasks;
+using Debug = PChecker.IO.Debugging.Debug;
 
 namespace PChecker.SystematicTesting
 {
@@ -58,6 +63,8 @@ namespace PChecker.SystematicTesting
         /// The program exploration strategy.
         /// </summary>
         internal readonly ISchedulingStrategy Strategy;
+
+        private EventPatternObserver? _eventPatternObserver;
 
         /// <summary>
         /// Random value generator used by the scheduling strategies.
@@ -152,6 +159,8 @@ namespace PChecker.SystematicTesting
         /// </summary>
         public static TestingEngine Create(CheckerConfiguration checkerConfiguration) =>
             Create(checkerConfiguration, LoadAssembly(checkerConfiguration.AssemblyToBeAnalyzed));
+        
+        private Stopwatch watch;
 
         /// <summary>
         /// Creates a new systematic testing engine.
@@ -159,17 +168,27 @@ namespace PChecker.SystematicTesting
         public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Assembly assembly)
         {
             TestMethodInfo testMethodInfo = null;
+            EventPatternObserver eventMatcher = null;
             try
             {
                 testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, checkerConfiguration.TestCaseName);
                 Console.Out.WriteLine($".. Test case :: {testMethodInfo.Name}");
+
+                Type t = assembly.GetType("PImplementation.GlobalFunctions");
+                if (checkerConfiguration.PatternSource.Length > 0)
+                {
+                    var result = (IMatcher) t.GetMethod(checkerConfiguration.PatternSource,
+                            BindingFlags.Public | BindingFlags.Static)
+                        .Invoke(null, null);
+                    eventMatcher = new EventPatternObserver(result);
+                }
             }
             catch
             {
                 Error.ReportAndExit($"Failed to get test method '{checkerConfiguration.TestCaseName}' from assembly '{assembly.FullName}'");
             }
 
-            return new TestingEngine(checkerConfiguration, testMethodInfo);
+            return new TestingEngine(checkerConfiguration, testMethodInfo, eventMatcher);
         }
 
         /// <summary>
@@ -216,13 +235,19 @@ namespace PChecker.SystematicTesting
         {
         }
 
+        private TestingEngine(CheckerConfiguration checkerConfiguration, TestMethodInfo testMethodInfo)
+            : this(checkerConfiguration, testMethodInfo, null)
+        {
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TestingEngine"/> class.
         /// </summary>
-        private TestingEngine(CheckerConfiguration checkerConfiguration, TestMethodInfo testMethodInfo)
+        private TestingEngine(CheckerConfiguration checkerConfiguration, TestMethodInfo testMethodInfo, EventPatternObserver observer)
         {
             _checkerConfiguration = checkerConfiguration;
             TestMethodInfo = testMethodInfo;
+            _eventPatternObserver = observer;
 
             Logger = new ConsoleLogger();
             ErrorReporter = new ErrorReporter(checkerConfiguration, Logger);
@@ -281,10 +306,27 @@ namespace PChecker.SystematicTesting
             {
                 Strategy = new DFSStrategy(checkerConfiguration.MaxUnfairSchedulingSteps);
             }
+            else if (checkerConfiguration.SchedulingStrategy is "feedback")
+            {
+                Strategy = new FeedbackGuidedStrategy<RandomInputGenerator, RandomScheduleGenerator>(
+                    _checkerConfiguration, new RandomInputGenerator(checkerConfiguration), new RandomScheduleGenerator(checkerConfiguration));
+            }
+            else if (checkerConfiguration.SchedulingStrategy is "2stagefeedback")
+            {
+                Strategy = new TwoStageFeedbackStrategy<RandomInputGenerator, RandomScheduleGenerator>(_checkerConfiguration, new RandomInputGenerator(checkerConfiguration), new RandomScheduleGenerator(checkerConfiguration));
+            }
+            else if (checkerConfiguration.SchedulingStrategy is "feedbackpct")
+            {
+                Strategy = new FeedbackGuidedStrategy<RandomInputGenerator, PctScheduleGenerator>(_checkerConfiguration, new RandomInputGenerator(checkerConfiguration), new PctScheduleGenerator(checkerConfiguration));
+            }
+            else if (checkerConfiguration.SchedulingStrategy is "2stagefeedbackpct")
+            {
+                Strategy = new TwoStageFeedbackStrategy<RandomInputGenerator, PctScheduleGenerator>(_checkerConfiguration, new RandomInputGenerator(checkerConfiguration), new PctScheduleGenerator(checkerConfiguration));
+            }
             else if (checkerConfiguration.SchedulingStrategy is "portfolio")
             {
                 Error.ReportAndExit("Portfolio testing strategy is only " +
-                    "available in parallel testing.");
+                                    "available in parallel testing.");
             }
 
             if (checkerConfiguration.SchedulingStrategy != "replay" &&
@@ -339,7 +381,7 @@ namespace PChecker.SystematicTesting
                 }
 
                 Error.ReportAndExit("Exception thrown during testing outside the context of an actor, " +
-                    "possibly in a test method. Please use /debug /v:2 to print more information.");
+                                    "possibly in a test method. Please use /debug /v:2 to print more information.");
             }
             catch (Exception ex)
             {
@@ -368,15 +410,16 @@ namespace PChecker.SystematicTesting
             }
 
             Logger.WriteLine($"... Checker is " +
-                $"using '{_checkerConfiguration.SchedulingStrategy}' strategy{options}.");
+                             $"using '{_checkerConfiguration.SchedulingStrategy}' strategy{options}.");
 
             return new Task(() =>
             {
                 try
                 {
+                    
                     // Invokes the user-specified initialization method.
                     TestMethodInfo.InitializeAllIterations();
-
+                    watch = Stopwatch.StartNew();
                     var maxIterations = IsReplayModeEnabled ? 1 : _checkerConfiguration.TestingIterations;
                     int i = 0;
                     while (maxIterations == 0 || i < maxIterations)
@@ -390,7 +433,7 @@ namespace PChecker.SystematicTesting
                         RunNextIteration(i);
 
                         if (IsReplayModeEnabled || (!_checkerConfiguration.PerformFullExploration &&
-                            TestReport.NumOfFoundBugs > 0) || !Strategy.PrepareForNextIteration())
+                                                    TestReport.NumOfFoundBugs > 0) || !Strategy.PrepareForNextIteration())
                         {
                             break;
                         }
@@ -478,6 +521,10 @@ namespace PChecker.SystematicTesting
             {
                 // Creates a new instance of the controlled runtime.
                 runtime = new ControlledRuntime(_checkerConfiguration, Strategy, RandomValueGenerator);
+                if (_eventPatternObserver != null)
+                {
+                    runtime.RegisterLog(_eventPatternObserver);
+                }
 
                 // Always output a json log of the error
                 JsonLogger = new JsonWriter();
@@ -508,6 +555,11 @@ namespace PChecker.SystematicTesting
                 foreach (var callback in PerIterationCallbacks)
                 {
                     callback(schedule);
+                }
+
+                if (Strategy is IFeedbackGuidedStrategy strategy)
+                {
+                    strategy.ObserveRunningResults(_eventPatternObserver, runtime);
                 }
 
                 // Checks that no monitor is in a hot state at termination. Only
@@ -542,6 +594,7 @@ namespace PChecker.SystematicTesting
 
                     ConstructReproducableTrace(runtime);
                 }
+
             }
             finally
             {
@@ -552,6 +605,20 @@ namespace PChecker.SystematicTesting
                     Console.SetError(stdErr);
                 }
 
+
+                if (ShouldPrintIteration(iteration))
+                {
+                    var seconds = watch.Elapsed.TotalSeconds;
+                    Logger.WriteLine($"Elapsed: {seconds}, " +
+                                     $"# timelines: {TestReport.ExploredTimelines.Count}, " +
+                                     $"# terminated schedules: {TestReport.MaxFairStepsHitInFairTests}.");
+                    Logger.WriteLine(String.Join(";", TestReport.ValidScheduling.Select(it => $"({it.Key}, {it.Value})")));
+                    if (Strategy is IFeedbackGuidedStrategy s)
+                    {
+                        s.DumpStats(Logger);
+                    }
+                }
+
                 if (!IsReplayModeEnabled && _checkerConfiguration.PerformFullExploration && runtime.Scheduler.BugFound)
                 {
                     Logger.WriteLine($"..... Schedule #{schedule + 1} " +
@@ -559,9 +626,14 @@ namespace PChecker.SystematicTesting
                         $"[task-{_checkerConfiguration.TestingProcessId}]");
                 }
 
-                // Cleans up the runtime before the next schedule starts.
+                // Cleans up the runtime before the next iteration starts.
+                if (_eventPatternObserver != null)
+                {
+                    runtime.RemoveLog(_eventPatternObserver);
+                }
                 runtimeLogger?.Dispose();
                 runtime?.Dispose();
+                _eventPatternObserver?.Reset();
             }
         }
 
@@ -583,7 +655,7 @@ namespace PChecker.SystematicTesting
                 var report = new StringBuilder();
                 report.AppendFormat("... Reproduced {0} bug{1}.", TestReport.NumOfFoundBugs,
                     TestReport.NumOfFoundBugs == 1 ? string.Empty : "s");
-                    report.AppendLine();
+                report.AppendLine();
                 report.Append($"... Elapsed {Profiler.Results()} sec.");
                 return report.ToString();
             }
@@ -839,12 +911,33 @@ namespace PChecker.SystematicTesting
                 report.CoverageInfo.CoverageGraph = Graph;
             }
 
-            var coverageInfo = runtime.GetCoverageInfo();
-            report.CoverageInfo.Merge(coverageInfo);
-            TestReport.Merge(report);
+            int shouldSave = 1;
 
-            // Also save the graph snapshot of the last schedule, if there is one.
-            Graph = coverageInfo.CoverageGraph;
+            if (_eventPatternObserver != null)
+            {
+                shouldSave = _eventPatternObserver.ShouldSave();
+                TestReport.ValidScheduling.TryAdd(shouldSave, 0);
+                TestReport.ValidScheduling[shouldSave] += 1;
+
+            }
+
+            if (shouldSave == 1)
+            {
+                var coverageInfo = runtime.GetCoverageInfo();
+                report.CoverageInfo.Merge(coverageInfo);
+                TestReport.Merge(report);
+
+                if (TestReport.ExploredTimelines.Add(runtime.TimelineObserver.GetTimelineHash()))
+                {
+                    if (_checkerConfiguration.IsVerbose)
+                    {
+                        Logger.WriteLine($"... New timeline observed: {runtime.TimelineObserver.GetTimeline()}");
+                    }
+                }
+                // Also save the graph snapshot of the last iteration, if there is one.
+                Graph = coverageInfo.CoverageGraph;
+            }
+
         }
 
         /// <summary>
@@ -862,14 +955,14 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.IsLivenessCheckingEnabled)
             {
                 stringBuilder.Append("--liveness-temperature-threshold:" +
-                    _checkerConfiguration.LivenessTemperatureThreshold).
+                                     _checkerConfiguration.LivenessTemperatureThreshold).
                     Append(Environment.NewLine);
             }
 
             if (!string.IsNullOrEmpty(_checkerConfiguration.TestCaseName))
             {
                 stringBuilder.Append("--test-method:" +
-                    _checkerConfiguration.TestCaseName).
+                                     _checkerConfiguration.TestCaseName).
                     Append(Environment.NewLine);
             }
 
@@ -950,6 +1043,10 @@ namespace PChecker.SystematicTesting
                 var count = schedule.ToString().Length - 1;
                 var guard = "1" + (count > 0 ? string.Concat(Enumerable.Repeat("0", count)) : string.Empty);
                 PrintGuard = int.Parse(guard);
+                if (PrintGuard > 1000)
+                {
+                    PrintGuard = 1000;
+                }
             }
 
             return schedule % PrintGuard == 0;

@@ -53,6 +53,12 @@ namespace Plang.Options
             
             var schedulingGroup = Parser.GetOrCreateGroup("scheduling", "Search prioritization options");
             schedulingGroup.AddArgument("sch-random", null, "Choose the random scheduling strategy (this is the default)", typeof(bool));
+            schedulingGroup.AddArgument("sch-feedback", null, "Choose the random scheduling strategy with feedback mutation", typeof(bool));
+            schedulingGroup.AddArgument("sch-2stagefeedback", null, "Choose the random scheduling strategy with 2 stage feedback mutation", typeof(bool));
+
+            schedulingGroup.AddArgument("sch-feedbackpct", null, "Choose the PCT scheduling strategy with feedback mutation", typeof(uint));
+            schedulingGroup.AddArgument("sch-2stagefeedbackpct", null, "Choose the PCT scheduling strategy with 2 stage feedback mutation", typeof(uint));
+
             schedulingGroup.AddArgument("sch-probabilistic", "sp", "Choose the probabilistic scheduling strategy with given probability for each scheduling decision where the probability is " +
                                                                    "specified as the integer N in the equation 0.5 to the power of N.  So for N=1, the probability is 0.5, for N=2 the probability is 0.25, N=3 you get 0.125, etc.", typeof(uint));
             schedulingGroup.AddArgument("sch-pct", null, "Choose the PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
@@ -73,7 +79,11 @@ namespace Plang.Options
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
             advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of PSym-specific JVM arguments to pass, each starting with a colon").IsHidden = true;
-            
+            advancedGroup.AddArgument("pattern", null, "The name of the pattern matcher generator", typeof(string));
+            advancedGroup.AddArgument("no-partial-match", null, "For feedback strategy, do not save a schedule if the pattern is partially matched", typeof(bool));
+            advancedGroup.AddArgument("discard-after", null, "For feedback strategy, discard saved generators after saving N inputs", typeof(int));
+            advancedGroup.AddArgument("fixed-priority", null, "For feedback strategy, schedule generator mutations based on diversity", typeof(bool));
+            advancedGroup.AddArgument("ignore-pattern", null, "For feedback strategy, ignore the pattern feedback", typeof(bool));
         }
 
         /// <summary>
@@ -223,11 +233,15 @@ namespace Plang.Options
                     checkerConfiguration.RandomGeneratorSeed = (uint)option.Value;
                     break;
                 case "sch-random":
+                case "sch-feedback":
+                case "sch-2stagefeedback":
                     checkerConfiguration.SchedulingStrategy = option.LongName.Substring(4);
                     break;
                 case "sch-probabilistic":
                 case "sch-pct":
                 case "sch-fairpct":
+                case "sch-feedbackpct":
+                case "sch-2stagefeedbackpct":
                     checkerConfiguration.SchedulingStrategy = option.LongName.Substring(4);
                     checkerConfiguration.StrategyBound = (int)(uint)option.Value;
                     break;
@@ -310,6 +324,21 @@ namespace Plang.Options
                 case "pproj":
                     // do nothing, since already configured through UpdateConfigurationWithPProjectFile
                     break;
+                case "pattern":
+                    checkerConfiguration.PatternSource = (string) option.Value;
+                    break;
+                case "no-partial-match":
+                    checkerConfiguration.SavePartialMatch = false;
+                    break;
+                case "discard-after":
+                    checkerConfiguration.DiscardAfter = (int) option.Value;
+                    break;
+                case "fixed-priority":
+                    checkerConfiguration.DiversityBasedPriority = false;
+                    break;
+                case "ignore-pattern":
+                    checkerConfiguration.IgnorePatternFeedback = true;
+                    break;
                 default:
                     throw new Exception(string.Format("Unhandled parsed argument: '{0}'", option.LongName));
             }
@@ -333,6 +362,10 @@ namespace Plang.Options
 
             if (checkerConfiguration.SchedulingStrategy != "portfolio" &&
                 checkerConfiguration.SchedulingStrategy != "random" &&
+                checkerConfiguration.SchedulingStrategy != "feedback" &&
+                checkerConfiguration.SchedulingStrategy != "feedbackpct" &&
+                checkerConfiguration.SchedulingStrategy != "2stagefeedback" &&
+                checkerConfiguration.SchedulingStrategy != "2stagefeedbackpct" &&
                 checkerConfiguration.SchedulingStrategy != "pct" &&
                 checkerConfiguration.SchedulingStrategy != "fairpct" &&
                 checkerConfiguration.SchedulingStrategy != "probabilistic" &&

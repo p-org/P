@@ -58,6 +58,12 @@ public class ScheduleWriter {
         log(gv.get(0).getValue().toString());
     }
 
+    public static void logElement(List<GuardedValue<?>> gv) {
+        assert (gv.size() == 1);
+        logComment("element choice");
+        log(gv.get(0).getValue().toString());
+    }
+
     public static void logDequeue(Machine target, State state, Event event) {
         logComment(String.format("receive %s at %s in state %s",
                 event,

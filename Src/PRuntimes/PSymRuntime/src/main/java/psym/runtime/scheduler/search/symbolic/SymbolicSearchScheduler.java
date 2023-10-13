@@ -20,7 +20,6 @@ import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.statistics.CoverageStats;
 import psym.runtime.statistics.SearchStats;
 import psym.runtime.statistics.SolverStats;
-import psym.utils.Assert;
 import psym.utils.monitor.MemoryMonitor;
 import psym.utils.monitor.TimeMonitor;
 import psym.valuesummary.Guard;

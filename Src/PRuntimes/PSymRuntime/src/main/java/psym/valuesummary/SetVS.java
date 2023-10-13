@@ -9,6 +9,9 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
   @Getter
   /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
+  @Getter
+  /** Concrete value used in explicit-state search */
+  private final Set<Object> concreteValue;
 
   /** The underlying set */
   private final ListVS<T> elements;
@@ -16,11 +19,13 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
   public SetVS(ListVS<T> elements) {
     this.elements = elements;
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   public SetVS(Guard universe) {
     this.elements = new ListVS<>(universe);
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   /**
@@ -31,6 +36,7 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
   public SetVS(SetVS<T> old) {
     this.elements = new ListVS<>(old.elements);
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   /** Get all the different possible guarded values */
@@ -208,6 +214,15 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
       hashCode = 31 * hashCode + (item == null ? 0 : item.getConcreteHash());
     }
     return hashCode;
+  }
+
+  @Override
+  public Set<Object> computeConcreteValue() {
+    Set<Object> value = new HashSet<>();
+    for (T item: this.elements.getItems()) {
+      value.add(item == null ? null : item.getConcreteValue());
+    }
+    return value;
   }
 
   @Override

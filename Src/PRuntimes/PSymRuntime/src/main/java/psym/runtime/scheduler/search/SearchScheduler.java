@@ -376,13 +376,16 @@ public abstract class SearchScheduler extends Scheduler {
         if (PSymGlobal.getConfiguration().getMaxBacktrackTasksPerExecution() > 0
                 && numBacktracksAdded == (PSymGlobal.getConfiguration().getMaxBacktrackTasksPerExecution() - 1)) {
           setBacktrackTaskAtDepthCombined(parentTask, i);
-          numBacktracksAdded++;
           break;
-        } else {
-          // top backtrack should be never combined
-          setBacktrackTaskAtDepthExact(parentTask, i);
-          numBacktracksAdded++;
         }
+        if (PSymGlobal.getConfiguration().getMaxPendingBacktrackTasks() > 0
+                && pendingTasks.size() >= PSymGlobal.getConfiguration().getMaxPendingBacktrackTasks()) {
+          setBacktrackTaskAtDepthCombined(parentTask, i);
+          break;
+        }
+        // top backtrack should be never combined
+        setBacktrackTaskAtDepthExact(parentTask, i);
+        numBacktracksAdded++;
       }
     }
 
@@ -533,8 +536,8 @@ public abstract class SearchScheduler extends Scheduler {
       // no choice to backtrack to, so generate new choices
       SearchLogger.logMessage("new choice at depth " + depth);
       choices = getChoices.get();
-      if (!isData && PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
-        choices = PSymGlobal.getSymmetryTracker().getReducedChoices(choices);
+      if (PSymGlobal.getConfiguration().getSymmetryMode() != SymmetryMode.None) {
+        choices = PSymGlobal.getSymmetryTracker().getReducedChoices(choices, isData);
       }
       choices =
               choices.stream()
@@ -651,6 +654,24 @@ public abstract class SearchScheduler extends Scheduler {
     return res;
   }
 
+  @Override
+  public ValueSummary getNextPrimitiveList(ListVS<? extends ValueSummary> candidates, Guard pc) {
+    int depth = choiceDepth;
+    PrimitiveVS<ValueSummary> res =
+            getNext(
+                    depth,
+                    schedule::getRepeatElement,
+                    schedule::getBacktrackElement,
+                    schedule::clearBacktrack,
+                    schedule::addRepeatElement,
+                    schedule::addBacktrackElement,
+                    () -> super.getNextElementChoices(candidates, pc),
+                    super::getNextElementHelper,
+                    true);
+    choiceDepth = depth + 1;
+    return super.getNextElementFlattener(res);
+  }
+
   public void print_stats(SearchStats.TotalStats totalStats, double timeUsed, double memoryUsed) {
     printProgress(true);
     if (!isFinalResult) {
@@ -681,7 +702,7 @@ public abstract class SearchScheduler extends Scheduler {
             "#-tasks-remaining", String.format("%d", (allTasks.size() - getFinishedTasks().size())));
     StatWriter.log("#-backtracks", String.format("%d", getTotalNumBacktracks()));
     StatWriter.log("%-backtracks-data", String.format("%.2f", getTotalDataBacktracksPercent()));
-    StatWriter.log("#-executions", String.format("%d", (getIter() - getStart_iter())));
+    StatWriter.log("#-schedules", String.format("%d", (getIter() - getStart_iter())));
 
     // print solver statistics
     StatWriter.logSolverStats();

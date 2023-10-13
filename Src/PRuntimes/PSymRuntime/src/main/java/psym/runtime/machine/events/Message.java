@@ -11,20 +11,22 @@ public class Message implements ValueSummary<Message> {
   @Getter
   /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
-
+  @Getter
+  /** Concrete value used in explicit-state search */
+  private final ConcreteMessage concreteValue;
   // the target machine to which the message is being sent
   private final PrimitiveVS<Machine> target;
   // the event sent to the target machine
   private final PrimitiveVS<Event> event;
   // the payload associated with the event
   private final Map<Event, UnionVS> payload;
-
   private Message(PrimitiveVS<Event> names, PrimitiveVS<Machine> machine, Map<Event, UnionVS> map) {
     assert (!machine.getValues().contains(null));
     this.event = names;
     this.target = machine;
     this.payload = new HashMap<>(map);
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   public Message(Event name, PrimitiveVS<Machine> machine) {
@@ -57,6 +59,7 @@ public class Message implements ValueSummary<Message> {
       }
     }
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   /**
@@ -284,6 +287,18 @@ public class Message implements ValueSummary<Message> {
   }
 
   @Override
+  public ConcreteMessage computeConcreteValue() {
+    Machine t = target == null ? null : target.getConcreteValue();
+    Event e = event == null ? null : event.getConcreteValue();
+
+    Map<Event, Object> p = new HashMap<>();
+    for (Map.Entry<Event, UnionVS> entry : payload.entrySet()) {
+      p.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().getConcreteValue());
+    }
+    return new ConcreteMessage(t, e, p);
+  }
+
+  @Override
   public String toString() {
     StringBuilder out = new StringBuilder();
     out.append("{");
@@ -321,5 +336,17 @@ public class Message implements ValueSummary<Message> {
     out.append(target.toStringDetailed());
     out.append("]");
     return out.toString();
+  }
+
+  static class ConcreteMessage {
+    private final Machine target;
+    private final Event event;
+    private final Map<Event, Object> payload;
+
+    ConcreteMessage(Machine t, Event e, Map<Event, Object> p) {
+      target = t;
+      event = e;
+      payload = p;
+    }
   }
 }

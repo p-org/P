@@ -62,6 +62,7 @@ public class PSymConfiguration implements Serializable {
   @Getter @Setter boolean useBacktrack = false;
   // max number of children tasks per execution
   @Getter @Setter int maxBacktrackTasksPerExecution = 2;
+  @Getter @Setter int maxPendingBacktrackTasks = 0;
   // mode of choice orchestration
   @Getter @Setter
   ChoiceOrchestrationMode choiceOrchestration = ChoiceOrchestrationMode.None;

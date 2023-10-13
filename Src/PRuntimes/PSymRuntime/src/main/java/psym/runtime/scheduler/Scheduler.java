@@ -3,6 +3,7 @@ package psym.runtime.scheduler;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import psym.runtime.*;
 import psym.runtime.Program;
@@ -12,7 +13,6 @@ import psym.runtime.machine.Monitor;
 import psym.runtime.machine.State;
 import psym.runtime.machine.events.Event;
 import psym.runtime.machine.events.Message;
-import psym.runtime.scheduler.search.symmetry.SymmetryMode;
 import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.runtime.statistics.SearchStats;
 import psym.utils.Assert;
@@ -201,10 +201,62 @@ public abstract class Scheduler implements SchedulerInterface {
     return getNextBoolean(getNextBooleanChoices(pc));
   }
 
+  public List<ValueSummary> getNextElementChoices(ListVS candidates, Guard pc) {
+    PrimitiveVS<Integer> size = candidates.size();
+    PrimitiveVS<Integer> index = new PrimitiveVS<>(0).restrict(size.getUniverse());
+    List<ValueSummary> list = new ArrayList<>();
+    while (BooleanVS.isEverTrue(IntegerVS.lessThan(index, size))) {
+      Guard cond = BooleanVS.getTrueGuard(IntegerVS.lessThan(index, size));
+      if (cond.isTrue()) {
+        list.add(candidates.get(index).restrict(pc));
+      } else {
+        list.add(candidates.restrict(cond).get(index).restrict(pc));
+      }
+      index = IntegerVS.add(index, 1);
+    }
+    return list;
+  }
+
+  public PrimitiveVS<ValueSummary> getNextElementHelper(List<ValueSummary> candidates) {
+    PrimitiveVS<ValueSummary> choices =
+            NondetUtil.getNondetChoice(
+                    candidates.stream()
+                            .map(x -> new PrimitiveVS(x).restrict(x.getUniverse()))
+                            .collect(Collectors.toList()));
+    schedule.addRepeatElement(choices, choiceDepth);
+    choiceDepth++;
+    return choices;
+  }
+
+  public ValueSummary getNextElementFlattener(PrimitiveVS<ValueSummary> choices) {
+    ValueSummary flattened = null;
+    List<ValueSummary> toMerge = new ArrayList<>();
+    for (GuardedValue<ValueSummary> guardedValue : choices.getGuardedValues()) {
+      if (flattened == null) {
+        flattened = guardedValue.getValue().restrict(guardedValue.getGuard());
+      } else {
+        toMerge.add(guardedValue.getValue().restrict(guardedValue.getGuard()));
+      }
+    }
+    if (flattened == null) {
+      flattened = new PrimitiveVS<>();
+    } else {
+      flattened = flattened.merge(toMerge);
+    }
+    return flattened;
+  }
+
+  protected abstract ValueSummary getNextPrimitiveList(ListVS<? extends ValueSummary> s, Guard pc);
+
   @Override
   public ValueSummary getNextElement(ListVS<? extends ValueSummary> s, Guard pc) {
-    PrimitiveVS<Integer> idx = getNextInteger(s.size(), pc);
-    return s.get(idx);
+    if (s.getItems().size() != 0) {
+      if (!(s.getItems().get(0) instanceof PrimitiveVS)) {
+        PrimitiveVS<Integer> idx = getNextInteger(s.size(), pc);
+        return s.get(idx);
+      }
+    }
+    return getNextPrimitiveList(s, pc);
   }
 
   @Override

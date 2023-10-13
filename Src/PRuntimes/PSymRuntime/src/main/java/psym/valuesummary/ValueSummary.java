@@ -266,4 +266,18 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
    * @return An int
    */
   int getConcreteHash();
+
+  /**
+   * Compute a concrete value
+   *
+   * @return An int
+   */
+  Object computeConcreteValue();
+
+  /**
+   * Get a concrete value
+   *
+   * @return An Object
+   */
+  Object getConcreteValue();
 }

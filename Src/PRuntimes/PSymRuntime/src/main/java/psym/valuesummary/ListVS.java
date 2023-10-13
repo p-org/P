@@ -16,6 +16,9 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
   @Getter
   /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
+  @Getter
+  /** Concrete value used in explicit-state search */
+  private final List<Object> concreteValue;
 
   /** The size of the list under all guards */
   private final PrimitiveVS<Integer> size;
@@ -29,6 +32,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
     this.size = size;
     this.items = items;
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   /**
@@ -510,6 +514,15 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
       hashCode = 31 * hashCode + (items.get(i) == null ? 0 : items.get(i).getConcreteHash());
     }
     return hashCode;
+  }
+
+  @Override
+  public List<Object> computeConcreteValue() {
+    List<Object> value = new ArrayList<>();
+    for (int i = 0; i < items.size(); i++) {
+      value.add(items.get(i) == null ? null : items.get(i).getConcreteValue());
+    }
+    return value;
   }
 
   @Override

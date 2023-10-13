@@ -16,6 +16,9 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
   @Getter
   /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
+  @Getter
+  /** Concrete value used in explicit-state search */
+  private final Map<K, Object> concreteValue;
 
   /**
    * Make a new MapVS with the specified set of keys and mapping
@@ -27,6 +30,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
     this.keys = keys;
     this.entries = entries;
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   /**
@@ -38,6 +42,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
     this.keys = new SetVS<>(universe);
     this.entries = new HashMap<>();
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   /**
@@ -379,6 +384,15 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
           31 * hashCode + (entries.get(key) == null ? 0 : entries.get(key).getConcreteHash());
     }
     return hashCode;
+  }
+
+  @Override
+  public Map<K, Object> computeConcreteValue() {
+    Map<K, Object> value = new HashMap<>();
+    for (Map.Entry<K, V> entry : this.entries.entrySet()) {
+      value.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().getConcreteValue());
+    }
+    return value;
   }
 
   @Override

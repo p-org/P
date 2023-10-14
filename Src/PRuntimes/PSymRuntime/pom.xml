@@ -327,7 +327,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <log4j2.configurationFile>${project.basedir}/src/main/resources/log4j2.xml</log4j2.configurationFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <revision>1.1.4</revision>
+        <revision>1.1.5</revision>
 
         <deps.path>${project.basedir}/../../../Bld</deps.path>
 

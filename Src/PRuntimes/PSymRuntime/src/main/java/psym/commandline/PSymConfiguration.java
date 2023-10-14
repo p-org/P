@@ -115,9 +115,9 @@ public class PSymConfiguration implements Serializable {
     this.setStateCachingMode(StateCachingMode.Symbolic);
   }
 
-  public void setToSymbolicIterative() {
+  public void setToSymbolicBounded() {
     setToSymbolic();
-    this.setStrategy("symbolic-iterative");
+    this.setStrategy("symbolic-bounded");
     this.setSchChoiceBound(2);
     this.setDataChoiceBound(2);
     this.setUseBacktrack(true);

@@ -720,7 +720,7 @@ public abstract class SearchScheduler extends Scheduler {
     // prioritize the create actions
     for (Machine machine : machines) {
       if (!machine.getEventBuffer().isEmpty()) {
-        Guard initCond = machine.getEventBuffer().hasCreateMachineUnderGuard().getGuardFor(true);
+        Guard initCond = machine.getEventBuffer().hasCreateMachineUnderGuard().getGuardFor(true).and(schedule.getFilter());
         if (!initCond.isFalse()) {
           PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(initCond);
           return new ArrayList<>(Collections.singletonList(ret));
@@ -731,7 +731,7 @@ public abstract class SearchScheduler extends Scheduler {
     // prioritize the sync actions i.e. events that are marked as synchronous
     for (Machine machine : machines) {
       if (!machine.getEventBuffer().isEmpty()) {
-        Guard syncCond = machine.getEventBuffer().hasSyncEventUnderGuard().getGuardFor(true);
+        Guard syncCond = machine.getEventBuffer().hasSyncEventUnderGuard().getGuardFor(true).and(schedule.getFilter());
         if (!syncCond.isFalse()) {
           PrimitiveVS<Machine> ret = new PrimitiveVS<>(machine).restrict(syncCond);
           return new ArrayList<>(Collections.singletonList(ret));
@@ -746,7 +746,7 @@ public abstract class SearchScheduler extends Scheduler {
     for (Machine machine : machines) {
       if (!machine.getEventBuffer().isEmpty()) {
         Guard canRun =
-            machine.getEventBuffer().satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true);
+            machine.getEventBuffer().satisfiesPredUnderGuard(x -> x.canRun()).getGuardFor(true).and(schedule.getFilter());
         if (!canRun.isFalse()) {
           guardedMachines.add(new GuardedValue(machine, canRun));
         }

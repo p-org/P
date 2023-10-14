@@ -107,19 +107,6 @@ public abstract class Scheduler implements SchedulerInterface {
   }
 
   /**
-   * Find out whether current execution finished completely
-   *
-   * @return Whether or not current execution finished
-   */
-  public Guard isFinishedExecution() {
-    if (depth == PSymGlobal.getConfiguration().getMaxStepBound()) {
-      return Guard.constTrue();
-    } else {
-      return allMachinesHalted;
-    }
-  }
-
-  /**
    * Get current depth
    *
    * @return current depth
@@ -310,7 +297,8 @@ public abstract class Scheduler implements SchedulerInterface {
     start = target;
   }
 
-  protected void checkLiveness(Guard finished) {
+  protected void checkLiveness(Guard finished_orig) {
+    Guard finished = finished_orig.and(schedule.getFilter());
     if (!finished.isFalse()) {
       for (Monitor m : monitors) {
         PrimitiveVS<State> monitorState = m.getCurrentState().restrict(finished);

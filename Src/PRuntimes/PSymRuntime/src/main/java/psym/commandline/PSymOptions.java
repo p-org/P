@@ -105,7 +105,7 @@ public class PSymOptions {
     Option strategy =
         Option.builder("st")
             .longOpt("strategy")
-            .desc("Exploration strategy: symbolic, random, dfs, learn, stateless (default: symbolic)")
+            .desc("Exploration strategy: symbolic, random, dfs, learn (default: symbolic)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Strategy (string)")
@@ -455,8 +455,8 @@ public class PSymOptions {
             case "symbolic-fixpoint":
               config.setToSymbolicFixpoint();
               break;
-            case "symbolic-iterative":
-              config.setToSymbolicIterative();
+            case "symbolic-bounded":
+              config.setToSymbolicBounded();
               break;
             case "random":
               config.setToRandom();

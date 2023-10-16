@@ -33,7 +33,7 @@ public class PSymConfiguration implements Serializable {
   // level of verbosity for the logging
   @Getter @Setter int verbosity = 0;
   // strategy of exploration
-  @Getter @Setter String strategy = "symbolic";
+  @Setter String strategy = "symbolic";
   // max number of executions bound provided by the user
   @Getter @Setter int maxExecutions = 1;
   // max steps/depth bound provided by the user
@@ -84,6 +84,16 @@ public class PSymConfiguration implements Serializable {
   // whether or not to write the program state(s) to file
   @Getter @Setter boolean writeToFile = false;
 
+  public String getStrategy() {
+    String result = this.strategy;
+    if (isSymbolic()) {
+      if (getSchChoiceBound() > 1 || getDataChoiceBound() > 1) {
+        result = this.strategy + "-bounded";
+      }
+    }
+    return result;
+  }
+
   public boolean isSymbolic() {
     return (strategy.startsWith("symbolic"));
   }
@@ -115,9 +125,8 @@ public class PSymConfiguration implements Serializable {
     this.setStateCachingMode(StateCachingMode.Symbolic);
   }
 
-  public void setToSymbolicIterative() {
+  public void setToSymbolicBounded() {
     setToSymbolic();
-    this.setStrategy("symbolic-iterative");
     this.setSchChoiceBound(2);
     this.setDataChoiceBound(2);
     this.setUseBacktrack(true);

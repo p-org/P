@@ -31,9 +31,7 @@ public class BacktrackTask implements Serializable {
   @Getter @Setter private BacktrackTask parentTask = null;
   @Getter private boolean completed = false;
 
-  public BacktrackTask(int id) {
-    this.id = id;
-  }
+  public BacktrackTask(int id) { this.id = id; }
 
   public static void initialize(TaskOrchestrationMode orch) {
     orchestration = orch;

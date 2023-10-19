@@ -145,16 +145,16 @@ public class CoverageStats implements Serializable {
     estimatedCoverage = estimatedCoverage.add(iterationCoverage);
     //        assert (estimatedCoverage.compareTo(BigDecimal.ONE) <= 0): "Error in path coverage
     // estimation";
-    if (rewardMode != ChoiceLearningRewardMode.None) {
-      for (int i = startDepth; i <= choiceDepth; i++) {
-        CoverageChoiceDepthStats stats = perChoiceDepthStats.get(i);
-        if (stats != null) {
-          PSymGlobal.getChoiceLearningStats()
-              .rewardIteration(
-                  stats.getStateActions(), iterationCoverage.doubleValue(), rewardMode);
-        }
-      }
-    }
+//    if (rewardMode != ChoiceLearningRewardMode.None) {
+//      for (int i = startDepth; i <= choiceDepth; i++) {
+//        CoverageChoiceDepthStats stats = perChoiceDepthStats.get(i);
+//        if (stats != null) {
+//          PSymGlobal.getChoiceLearningStats()
+//              .rewardIteration(
+//                  stats.getStateActions(), iterationCoverage.doubleValue(), rewardMode);
+//        }
+//      }
+//    }
   }
 
   /** Reset coverage statistics after a resumed run */
@@ -345,7 +345,7 @@ public class CoverageStats implements Serializable {
   public static class CoverageChoiceDepthStats implements Serializable {
     BigDecimal pathCoverage;
     int numTotal;
-    @Getter ChoiceQTable.ChoiceQTableKey stateActions;
+//    @Getter ChoiceQTable.ChoiceQTableKey stateActions;
 
     CoverageChoiceDepthStats() {
       this(new BigDecimal(1), 0, new ChoiceQTable.ChoiceQTableKey());
@@ -361,7 +361,7 @@ public class CoverageStats implements Serializable {
         ChoiceQTable.ChoiceQTableKey inputStateActions) {
       this.pathCoverage = inputPathCoverage;
       this.numTotal = inputNumTotal;
-      this.stateActions = inputStateActions;
+//      this.stateActions = inputStateActions;
     }
 
     void update(
@@ -382,15 +382,15 @@ public class CoverageStats implements Serializable {
                 BigDecimal.valueOf(numExplored)
                     .divide(BigDecimal.valueOf(numTotal), 20, RoundingMode.FLOOR));
       }
-      this.stateActions = chosenActions;
+//      this.stateActions = chosenActions;
     }
 
     public void reset() {
       pathCoverage = new BigDecimal(1);
       numTotal = 0;
-      if (stateActions != null) {
-        stateActions.clear();
-      }
+//      if (stateActions != null) {
+//        stateActions.clear();
+//      }
     }
 
     public CoverageChoiceDepthStats getCopy() {

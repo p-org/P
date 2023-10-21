@@ -625,7 +625,7 @@ namespace Plang.Compiler.Backend.Java {
                 var ffiBridge = Names.FFIBridgeForMachine(
                     isStatic
                     ? Constants.FFIGlobalScopeCname
-                    : _currentMachine.Name);
+                    : $"{_currentMachine.Name}{Constants.FFILocalScopeSuffix}");
                 Write($"{ffiBridge}.{fname}(");
 
                 // All foreign functions have an implicit first argument to the current machine

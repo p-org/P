@@ -80,6 +80,7 @@ in the body of each function definition as necessary for your project's business
 
         public static readonly string FFIPackage = "PForeign";
         public static readonly string FFIGlobalScopeCname = "PObserveGlobal";
+        public static readonly string FFILocalScopeSuffix = "Foreign";
 
 
         // Something that is clearly not valid Java.

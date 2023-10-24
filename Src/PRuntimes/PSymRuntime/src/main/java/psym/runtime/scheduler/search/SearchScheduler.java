@@ -387,6 +387,10 @@ public abstract class SearchScheduler extends Scheduler {
         setBacktrackTaskAtDepthExact(parentTask, i);
         numBacktracksAdded++;
       }
+      choice.clearBacktrack();
+      if (i >= parentTask.getBacktrackChoiceDepth()) {
+        parentTask.addPrefixChoice(i, choice);
+      }
     }
 
     if (PSymGlobal.getConfiguration().getVerbosity() > 1) {
@@ -418,33 +422,26 @@ public abstract class SearchScheduler extends Scheduler {
 
   private void setBacktrackTaskAtDepth(
           BacktrackTask parentTask, int backtrackChoiceDepth, boolean isExact) {
-    // create a copy of original choices
-    List<Schedule.Choice> originalChoices = clearAndReturnOriginalTask(backtrackChoiceDepth);
-    if (isExact) {
-      // clear the complete choice information (including repeats and backtracks) at all successor
-      // depths
-      for (int i = backtrackChoiceDepth + 1; i < schedule.size(); i++) {
-        schedule.clearChoice(i);
-      }
-    }
-
     BigDecimal prefixCoverage =
             PSymGlobal.getCoverage().getPathCoverageAtDepth(backtrackChoiceDepth);
-
     BacktrackTask newTask = new BacktrackTask(allTasks.size());
+
     newTask.setPrefixCoverage(prefixCoverage);
     newTask.setDepth(schedule.getChoice(backtrackChoiceDepth).getSchedulerDepth());
-    newTask.setChoiceDepth(backtrackChoiceDepth);
-    newTask.setChoices(schedule.getChoices());
+    newTask.setBacktrackChoiceDepth(backtrackChoiceDepth);
     newTask.setPerChoiceDepthStats(PSymGlobal.getCoverage().getPerChoiceDepthStats());
     newTask.setParentTask(parentTask);
     newTask.setPriority();
+    newTask.addSuffixChoice(schedule.getChoice(backtrackChoiceDepth));
+    if (!isExact) {
+      for (int i = backtrackChoiceDepth + 1; i < schedule.size(); i++) {
+        newTask.addSuffixChoice(schedule.getChoice(i));
+      }
+    }
+
     allTasks.add(newTask);
     parentTask.addChild(newTask);
     addPendingTask(newTask);
-
-    // restore schedule to original choices
-    schedule.setChoices(originalChoices);
   }
 
   protected List<Schedule.Choice> clearAndReturnOriginalTask(int backtrackChoiceDepth) {
@@ -474,7 +471,7 @@ public abstract class SearchScheduler extends Scheduler {
     assert (!latestTask.isInitialTask());
     latestTask.getParentTask().cleanup();
 
-    schedule.setChoices(latestTask.getChoices());
+    schedule.setChoices(latestTask.getAllChoices());
     PSymGlobal.getCoverage().setPerChoiceDepthStats(latestTask.getPerChoiceDepthStats());
     return latestTask;
   }

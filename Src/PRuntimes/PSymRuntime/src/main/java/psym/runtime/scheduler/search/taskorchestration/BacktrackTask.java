@@ -4,7 +4,10 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import lombok.Getter;
 import lombok.Setter;
 import psym.runtime.scheduler.Schedule;
@@ -13,7 +16,8 @@ import psym.runtime.statistics.CoverageStats;
 public class BacktrackTask implements Serializable {
   @Setter private static TaskOrchestrationMode orchestration;
   private static TaskOrchestrator taskOrchestrator = null;
-  @Getter private final List<Schedule.Choice> choices = new ArrayList<>();
+  @Getter private Map<Integer, Schedule.Choice> prefixChoices = new HashMap<>();
+  @Getter private List<Schedule.Choice> suffixChoices = new ArrayList<>();
 
   @Getter
   private final List<CoverageStats.CoverageChoiceDepthStats> perChoiceDepthStats =
@@ -25,7 +29,7 @@ public class BacktrackTask implements Serializable {
   @Getter @Setter private BigDecimal prefixCoverage = new BigDecimal(0);
   @Getter private BigDecimal estimatedCoverage = new BigDecimal(0);
   @Getter @Setter private int depth = -1;
-  @Getter @Setter private int choiceDepth = -1;
+  @Getter @Setter private int backtrackChoiceDepth = -1;
   @Getter private int numBacktracks = 0;
   @Getter private int numDataBacktracks = 0;
   @Getter @Setter private BacktrackTask parentTask = null;
@@ -75,23 +79,51 @@ public class BacktrackTask implements Serializable {
   }
 
   public void cleanup() {
-    choices.clear();
     numBacktracks = 0;
     numDataBacktracks = 0;
     perChoiceDepthStats.clear();
-  }
-
-  public void setChoices(List<Schedule.Choice> inputChoices) {
-    assert (choices.isEmpty());
-    for (Schedule.Choice choice : inputChoices) {
-      choices.add(choice.getCopy());
-      if (choice.isBacktrackNonEmpty()) {
-        numBacktracks++;
-        if (choice.isDataBacktrackNonEmpty()) {
-          numDataBacktracks++;
-        }
+    suffixChoices.clear();
+    // clear task choices if all children have completed
+    for (BacktrackTask child: children) {
+      if (!child.completed) {
+        return;
       }
     }
+  }
+
+  public void addPrefixChoice(int cdepth, Schedule.Choice choice) {
+    // TODO: check if we need copy here
+    assert (!choice.isBacktrackNonEmpty());
+    prefixChoices.put(cdepth, choice);
+  }
+
+  public void addSuffixChoice(Schedule.Choice choice) {
+    // TODO: check if we need copy here
+    suffixChoices.add(choice.getCopy());
+    if (choice.isBacktrackNonEmpty()) {
+      numBacktracks++;
+      if (choice.isDataBacktrackNonEmpty()) {
+        numDataBacktracks++;
+      }
+    }
+  }
+
+  public List<Schedule.Choice> getAllChoices() {
+    List<Schedule.Choice> result = new ArrayList<>(suffixChoices);
+    BacktrackTask task = this;
+    int i = backtrackChoiceDepth-1;
+    while(i >= 0) {
+      Schedule.Choice c = task.getPrefixChoices().get(i);
+      if (c == null) {
+        assert (!task.isInitialTask());
+        task = task.getParentTask();
+      } else {
+        result.add(0, c);
+        i--;
+      }
+    }
+    assert(result.size() == (suffixChoices.size() + backtrackChoiceDepth));
+    return result;
   }
 
   public void setPerChoiceDepthStats(List<CoverageStats.CoverageChoiceDepthStats> inputStats) {

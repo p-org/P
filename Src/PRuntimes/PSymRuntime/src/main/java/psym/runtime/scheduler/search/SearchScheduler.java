@@ -390,6 +390,7 @@ public abstract class SearchScheduler extends Scheduler {
       choice.clearBacktrack();
       if (i >= parentTask.getBacktrackChoiceDepth()) {
         parentTask.addPrefixChoice(i, choice);
+        parentTask.addPrefixCoverageStats(i, PSymGlobal.getCoverage().getPerChoiceDepthStats().get(i));
       }
     }
 
@@ -429,13 +430,14 @@ public abstract class SearchScheduler extends Scheduler {
     newTask.setPrefixCoverage(prefixCoverage);
     newTask.setDepth(schedule.getChoice(backtrackChoiceDepth).getSchedulerDepth());
     newTask.setBacktrackChoiceDepth(backtrackChoiceDepth);
-    newTask.setPerChoiceDepthStats(PSymGlobal.getCoverage().getPerChoiceDepthStats());
     newTask.setParentTask(parentTask);
     newTask.setPriority();
     newTask.addSuffixChoice(schedule.getChoice(backtrackChoiceDepth));
+    newTask.addSuffixCoverageStats(PSymGlobal.getCoverage().getPerChoiceDepthStats().get(backtrackChoiceDepth));
     if (!isExact) {
       for (int i = backtrackChoiceDepth + 1; i < schedule.size(); i++) {
         newTask.addSuffixChoice(schedule.getChoice(i));
+        newTask.addSuffixCoverageStats(PSymGlobal.getCoverage().getPerChoiceDepthStats().get(i));
       }
     }
 
@@ -472,7 +474,7 @@ public abstract class SearchScheduler extends Scheduler {
     latestTask.getParentTask().cleanup();
 
     schedule.setChoices(latestTask.getAllChoices());
-    PSymGlobal.getCoverage().setPerChoiceDepthStats(latestTask.getPerChoiceDepthStats());
+    PSymGlobal.getCoverage().setPerChoiceDepthStats(latestTask.getAllPerChoiceDepthStats());
     return latestTask;
   }
 

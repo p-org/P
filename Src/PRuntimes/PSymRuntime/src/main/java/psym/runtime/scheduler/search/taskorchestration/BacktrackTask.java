@@ -20,8 +20,12 @@ public class BacktrackTask implements Serializable {
   @Getter private List<Schedule.Choice> suffixChoices = new ArrayList<>();
 
   @Getter
-  private final List<CoverageStats.CoverageChoiceDepthStats> perChoiceDepthStats =
-      new ArrayList<>();
+  private final Map<Integer, CoverageStats.CoverageChoiceDepthStats> prefixPerChoiceDepthStats =
+      new HashMap<>();
+
+  @Getter
+  private final List<CoverageStats.CoverageChoiceDepthStats> suffixPerChoiceDepthStats =
+          new ArrayList<>();
 
   @Getter private final int id;
   @Getter private final List<BacktrackTask> children = new ArrayList<>();
@@ -81,20 +85,19 @@ public class BacktrackTask implements Serializable {
   public void cleanup() {
     numBacktracks = 0;
     numDataBacktracks = 0;
-    perChoiceDepthStats.clear();
+    suffixPerChoiceDepthStats.clear();
     suffixChoices.clear();
-    // clear task choices if all children have completed
-    for (BacktrackTask child: children) {
-      if (!child.completed) {
-        return;
-      }
-    }
   }
 
   public void addPrefixChoice(int cdepth, Schedule.Choice choice) {
     // TODO: check if we need copy here
     assert (!choice.isBacktrackNonEmpty());
     prefixChoices.put(cdepth, choice);
+  }
+
+  public void addPrefixCoverageStats(int cdepth, CoverageStats.CoverageChoiceDepthStats stats) {
+    // TODO: check if we need copy here
+    prefixPerChoiceDepthStats.put(cdepth, stats);
   }
 
   public void addSuffixChoice(Schedule.Choice choice) {
@@ -106,6 +109,11 @@ public class BacktrackTask implements Serializable {
         numDataBacktracks++;
       }
     }
+  }
+
+  public void addSuffixCoverageStats(CoverageStats.CoverageChoiceDepthStats stats) {
+    // TODO: check if we need copy here
+    suffixPerChoiceDepthStats.add(stats.getCopy());
   }
 
   public List<Schedule.Choice> getAllChoices() {
@@ -126,11 +134,22 @@ public class BacktrackTask implements Serializable {
     return result;
   }
 
-  public void setPerChoiceDepthStats(List<CoverageStats.CoverageChoiceDepthStats> inputStats) {
-    assert (perChoiceDepthStats.isEmpty());
-    for (CoverageStats.CoverageChoiceDepthStats stat : inputStats) {
-      perChoiceDepthStats.add(stat.getCopy());
+  public List<CoverageStats.CoverageChoiceDepthStats> getAllPerChoiceDepthStats() {
+    List<CoverageStats.CoverageChoiceDepthStats> result = new ArrayList<>(suffixPerChoiceDepthStats);
+    BacktrackTask task = this;
+    int i = backtrackChoiceDepth-1;
+    while(i >= 0) {
+      CoverageStats.CoverageChoiceDepthStats c = task.getPrefixPerChoiceDepthStats().get(i);
+      if (c == null) {
+        assert (!task.isInitialTask());
+        task = task.getParentTask();
+      } else {
+        result.add(0, c);
+        i--;
+      }
     }
+    assert(result.size() == (suffixPerChoiceDepthStats.size() + backtrackChoiceDepth));
+    return result;
   }
 
   public boolean isInitialTask() {

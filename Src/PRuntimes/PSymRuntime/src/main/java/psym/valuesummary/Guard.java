@@ -9,6 +9,9 @@ import psym.valuesummary.solvers.SolverGuard;
  * Currently, the guards are implemented using BDDs.
  */
 public class Guard implements Serializable {
+  private static Guard trueGuard = null;
+  private static Guard falseGuard = null;
+
   /** Represents the boolean formula for the restrict */
   private final SolverGuard guard;
 
@@ -17,12 +20,11 @@ public class Guard implements Serializable {
   }
 
   /**
-   * Create a constant false restrict
-   *
-   * @return Guard representing constant false
+   * Initialize true/false guards
    */
-  public static Guard constFalse() {
-    return new Guard(SolverGuard.constFalse());
+  public static void initialize() {
+    trueGuard = new Guard(SolverGuard.constTrue());
+    falseGuard = new Guard(SolverGuard.constFalse());
   }
 
   /**
@@ -31,7 +33,16 @@ public class Guard implements Serializable {
    * @return Guard representing constant true
    */
   public static Guard constTrue() {
-    return new Guard(SolverGuard.constTrue());
+    return trueGuard;
+  }
+
+  /**
+   * Create a constant false restrict
+   *
+   * @return Guard representing constant false
+   */
+  public static Guard constFalse() {
+    return falseGuard;
   }
 
   /**

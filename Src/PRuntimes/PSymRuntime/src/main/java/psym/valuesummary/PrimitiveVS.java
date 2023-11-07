@@ -122,7 +122,15 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
   @Override
   public Guard getUniverse() {
-    if (universe == null) universe = Guard.orMany(new ArrayList<>(guardedValues.values()));
+    if (universe == null) {
+      universe = Guard.constFalse();
+      for (Guard g : guardedValues.values()) {
+        universe = universe.or(g);
+        if (universe.isTrue()) {
+          break;
+        }
+      }
+    }
     return universe;
   }
 

@@ -4,6 +4,7 @@ import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
 import psym.runtime.logger.SearchLogger;
+import psym.valuesummary.Guard;
 import psym.valuesummary.solvers.bdd.PJBDDImpl;
 import psym.valuesummary.solvers.sat.expr.ExprLibType;
 
@@ -21,6 +22,7 @@ public class SolverEngine {
     }
     setSolver(getSolverType(), getExprLibType());
     SolverGuard.resumeSolverGuard();
+    Guard.initialize();
   }
 
   public static void resetEngine(SolverType type, ExprLibType etype) {
@@ -29,6 +31,7 @@ public class SolverEngine {
     }
     setSolver(type, etype);
     SolverGuard.reset();
+    Guard.initialize();
   }
 
   public static void cleanupEngine() {

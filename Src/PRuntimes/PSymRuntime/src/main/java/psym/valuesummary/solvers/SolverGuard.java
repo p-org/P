@@ -176,11 +176,25 @@ public class SolverGuard implements Serializable {
    * @return a cached solver guard or create a new one
    */
   private static SolverGuard getSolverGuard(
-      Object formula, SolverGuardType type, String name, ImmutableList<SolverGuard> children) {
+      Object formula, SolverGuardType type, String name) {
     if (table.containsKey(formula)) {
       return table.get(formula);
     }
-    return new SolverGuard(formula, type, name, children);
+    return new SolverGuard(formula, type, name, ImmutableList.of());
+  }
+  private static SolverGuard getSolverGuard(
+          Object formula, SolverGuardType type, String name, SolverGuard child) {
+    if (table.containsKey(formula)) {
+      return table.get(formula);
+    }
+    return new SolverGuard(formula, type, name, ImmutableList.of(child));
+  }
+  private static SolverGuard getSolverGuard(
+          Object formula, SolverGuardType type, String name, SolverGuard child1, SolverGuard child2) {
+    if (table.containsKey(formula)) {
+      return table.get(formula);
+    }
+    return new SolverGuard(formula, type, name, ImmutableList.of(child1, child2));
   }
 
   /**
@@ -200,7 +214,7 @@ public class SolverGuard implements Serializable {
   private static SolverGuard createTrue() {
     SolverGuard g =
         getSolverGuard(
-            SolverEngine.getSolver().constTrue(), SolverGuardType.TRUE, "true", ImmutableList.of());
+            SolverEngine.getSolver().constTrue(), SolverGuardType.TRUE, "true");
     g.statusTrue = SolverTrueStatus.True;
     g.statusFalse = SolverFalseStatus.NotFalse;
     return g;
@@ -216,8 +230,7 @@ public class SolverGuard implements Serializable {
         getSolverGuard(
             SolverEngine.getSolver().constFalse(),
             SolverGuardType.FALSE,
-            "false",
-            ImmutableList.of());
+            "false");
     g.statusTrue = SolverTrueStatus.NotTrue;
     g.statusFalse = SolverFalseStatus.False;
     return g;
@@ -252,8 +265,7 @@ public class SolverGuard implements Serializable {
         getSolverGuard(
             SolverEngine.getSolver().newVar(name),
             SolverGuardType.VARIABLE,
-            name,
-            ImmutableList.of());
+            name);
     g.statusTrue = SolverTrueStatus.NotTrue;
     g.statusFalse = SolverFalseStatus.NotFalse;
     varList.add(g);
@@ -355,7 +367,7 @@ public class SolverGuard implements Serializable {
     //        Instant start = Instant.now();
     SolverGuard result =
         getSolverGuard(
-            SolverEngine.getSolver().not(formula), SolverGuardType.NOT, "", ImmutableList.of(this));
+            SolverEngine.getSolver().not(formula), SolverGuardType.NOT, "", this);
     //        SolverStats.updateCreateGuardTime((Duration.between(start,
     // Instant.now()).toMillis()));
     return result;
@@ -376,7 +388,7 @@ public class SolverGuard implements Serializable {
             SolverEngine.getSolver().and(formula, other.formula),
             SolverGuardType.AND,
             "",
-            ImmutableList.of(this, other));
+            this, other);
     //        SolverStats.updateCreateGuardTime((Duration.between(start,
     // Instant.now()).toMillis()));
     return result;
@@ -397,7 +409,7 @@ public class SolverGuard implements Serializable {
             SolverEngine.getSolver().or(formula, other.formula),
             SolverGuardType.OR,
             "",
-            ImmutableList.of(this, other));
+            this, other);
     //        SolverStats.updateCreateGuardTime((Duration.between(start,
     // Instant.now()).toMillis()));
     return result;

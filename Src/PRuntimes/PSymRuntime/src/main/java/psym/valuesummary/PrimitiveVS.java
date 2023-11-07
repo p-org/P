@@ -62,6 +62,15 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
   }
 
   /**
+   * Create a value summary with the given guarded values, concrete hash/value.
+   */
+  public PrimitiveVS(Map<T, Guard> guardedValues, int ch, T cv) {
+    this.guardedValues = guardedValues;
+    this.concreteHash = ch;
+    this.concreteValue = cv;
+  }
+
+  /**
    * Create a value summary with the given guarded values Caution: The caller must take care to
    * ensure that the guards on the provided values are mutually exclusive.
    */
@@ -93,7 +102,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
    * @param old The PrimitiveVS to copy
    */
   public PrimitiveVS(PrimitiveVS<T> old) {
-    this(new HashMap<>(old.guardedValues));
+    this(old.guardedValues, old.concreteHash, old.concreteValue);
   }
 
   /** Make an empty PrimVS */
@@ -390,6 +399,21 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     } else {
       return null;
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof PrimitiveVS)) return false;
+    PrimitiveVS rhs = (PrimitiveVS) o;
+    return (concreteHash == rhs.concreteHash)
+            && concreteValue.equals(rhs.concreteValue)
+            && guardedValues.equals(rhs.guardedValues);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(concreteHash, concreteValue, guardedValues);
   }
 
   @Override

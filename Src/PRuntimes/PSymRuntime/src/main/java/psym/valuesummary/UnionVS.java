@@ -54,8 +54,8 @@ public class UnionVS implements ValueSummary<UnionVS> {
   public UnionVS(UnionVS old) {
     this.type = new PrimitiveVS<>(old.type);
     this.value = new HashMap<>(old.value);
-    this.concreteHash = computeConcreteHash();
-    this.concreteValue = computeConcreteValue();
+    this.concreteHash = old.concreteHash;
+    this.concreteValue = old.concreteValue;
   }
 
   public UnionVS(ValueSummary vs) {
@@ -269,6 +269,22 @@ public class UnionVS implements ValueSummary<UnionVS> {
       ret.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().getConcreteValue());
     }
     return ret;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof UnionVS)) return false;
+    UnionVS rhs = (UnionVS) o;
+    return (concreteHash == rhs.concreteHash)
+            && concreteValue.equals(rhs.concreteValue)
+            && type.equals(rhs.type)
+            && value.equals(rhs.value);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(concreteHash, concreteValue, type, value);
   }
 
   @Override

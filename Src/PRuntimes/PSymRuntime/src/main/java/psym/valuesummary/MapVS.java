@@ -26,6 +26,19 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
    * @param keys The set of keys
    * @param entries The mapping from all possible keys to value summaries
    */
+  public MapVS(SetVS<T> keys, Map<K, V> entries, int ch, Map<K, Object> cv) {
+    this.keys = keys;
+    this.entries = entries;
+    this.concreteHash = ch;
+    this.concreteValue = cv;
+  }
+
+  /**
+   * Make a new MapVS with the specified set of keys and mapping
+   *
+   * @param keys The set of keys
+   * @param entries The mapping from all possible keys to value summaries
+   */
   public MapVS(SetVS<T> keys, Map<K, V> entries) {
     this.keys = keys;
     this.entries = entries;
@@ -51,7 +64,7 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
    * @param old The MapVS to copy
    */
   public MapVS(MapVS<K, T, V> old) {
-    this(new SetVS<>(old.keys), new HashMap<>(old.entries));
+    this(new SetVS<>(old.keys), new HashMap<>(old.entries), old.concreteHash, old.concreteValue);
   }
 
   /**
@@ -393,6 +406,22 @@ public class MapVS<K, T extends ValueSummary<T>, V extends ValueSummary<V>>
       value.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().getConcreteValue());
     }
     return value;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof MapVS)) return false;
+    MapVS rhs = (MapVS) o;
+    return (concreteHash == rhs.concreteHash)
+        && concreteValue.equals(rhs.concreteValue)
+        && keys.equals(rhs.keys)
+        && entries.equals(rhs.entries);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(concreteHash, concreteValue, keys, entries);
   }
 
   @Override

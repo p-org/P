@@ -35,8 +35,8 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
    */
   public SetVS(SetVS<T> old) {
     this.elements = new ListVS<>(old.elements);
-    this.concreteHash = computeConcreteHash();
-    this.concreteValue = computeConcreteValue();
+    this.concreteHash = old.concreteHash;
+    this.concreteValue = old.concreteValue;
   }
 
   /** Get all the different possible guarded values */
@@ -223,6 +223,21 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
       value.add(item == null ? null : item.getConcreteValue());
     }
     return value;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof SetVS)) return false;
+    SetVS rhs = (SetVS) o;
+    return (concreteHash == rhs.concreteHash)
+            && concreteValue.equals(rhs.concreteValue)
+            && elements.equals(rhs.elements);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(concreteHash, concreteValue, elements);
   }
 
   @Override

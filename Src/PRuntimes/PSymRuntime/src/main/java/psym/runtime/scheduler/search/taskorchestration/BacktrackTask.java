@@ -219,7 +219,7 @@ public class BacktrackTask implements Serializable {
   }
 
   public void postProcess(BigDecimal inputCoverage) {
-    assert (inputCoverage.doubleValue() <= prefixCoverage.doubleValue())
+    assert (prefixCoverage.compareTo(inputCoverage) >= 0)
         : String.format(
             "Error in coverage estimation: path coverage (%.5f) should be <= prefix coverage (%.5f)",
             inputCoverage, prefixCoverage);

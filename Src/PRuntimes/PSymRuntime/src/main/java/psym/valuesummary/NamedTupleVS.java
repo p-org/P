@@ -38,8 +38,8 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
   public NamedTupleVS(NamedTupleVS old) {
     this.names = new ArrayList<>(old.names);
     this.tuple = new TupleVS(old.tuple);
-    this.concreteHash = computeConcreteHash();
-    this.concreteValue = computeConcreteValue();
+    this.concreteHash = old.concreteHash;
+    this.concreteValue = old.concreteValue;
     storeSymmetricTuple();
   }
 
@@ -248,6 +248,22 @@ public class NamedTupleVS implements ValueSummary<NamedTupleVS> {
   @Override
   public Object[] computeConcreteValue() {
     return tuple == null ? null : tuple.getConcreteValue();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof NamedTupleVS)) return false;
+    NamedTupleVS rhs = (NamedTupleVS) o;
+    return (concreteHash == rhs.concreteHash)
+        && Arrays.equals(concreteValue, rhs.concreteValue)
+        && names.equals(rhs.names)
+        && tuple.equals(rhs.tuple);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(concreteHash, Arrays.hashCode(concreteValue), names, tuple);
   }
 
   @Override

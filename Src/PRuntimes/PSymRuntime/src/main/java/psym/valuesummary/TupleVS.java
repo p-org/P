@@ -27,6 +27,21 @@ public class TupleVS implements ValueSummary<TupleVS> {
    * @param inpFields Fields of the tuple
    * @param inpClasses Types of the fields of the tuple
    */
+  public TupleVS(ValueSummary[] inpFields, Class[] inpClasses, int ch, Object[] cv) {
+    this.fields = Arrays.copyOf(inpFields, inpFields.length);
+    this.classes = Arrays.copyOf(inpClasses, inpClasses.length);
+    this.concreteHash = ch;
+    this.concreteValue = cv;
+    assert (IntStream.range(0, this.fields.length).allMatch(x -> this.fields[x].getUniverse().equals(this.fields[0].getUniverse()))) :
+            "Error in tuple field guards";
+  }
+
+  /**
+   * Copy-constructor for TupleVS
+   *
+   * @param inpFields Fields of the tuple
+   * @param inpClasses Types of the fields of the tuple
+   */
   public TupleVS(ValueSummary[] inpFields, Class[] inpClasses) {
     this.fields = Arrays.copyOf(inpFields, inpFields.length);
     this.classes = Arrays.copyOf(inpClasses, inpClasses.length);
@@ -42,7 +57,7 @@ public class TupleVS implements ValueSummary<TupleVS> {
    * @param old The TupleVS to copy
    */
   public TupleVS(TupleVS old) {
-    this(old.fields, old.classes);
+    this(old.fields, old.classes, old.concreteHash, old.concreteValue);
   }
 
   /** Make a new TupleVS from the provided items */
@@ -232,6 +247,22 @@ public class TupleVS implements ValueSummary<TupleVS> {
       value[i] = fields[i] == null ? null : fields[i].getConcreteValue();
     }
     return value;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof TupleVS)) return false;
+    TupleVS rhs = (TupleVS) o;
+    return (concreteHash == rhs.concreteHash)
+        && Arrays.equals(concreteValue, rhs.concreteValue)
+        && Arrays.equals(classes, rhs.classes)
+        && Arrays.equals(fields, rhs.fields);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(concreteHash, Arrays.hashCode(concreteValue), Arrays.hashCode(classes), Arrays.hashCode(fields));
   }
 
   @Override

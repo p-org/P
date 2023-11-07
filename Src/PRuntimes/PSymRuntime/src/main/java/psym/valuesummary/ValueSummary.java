@@ -239,6 +239,10 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
    */
   T swap(Map<Machine, Machine> mapping);
 
+  boolean equals(Object o);
+
+  int hashCode();
+
   /**
    * String representation of the value summary
    *

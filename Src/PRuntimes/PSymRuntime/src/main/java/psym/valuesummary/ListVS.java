@@ -1,10 +1,8 @@
 package psym.valuesummary;
 
 import com.google.common.collect.ImmutableList;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Getter;
@@ -28,6 +26,13 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
    */
   @Getter private final List<T> items;
 
+  public ListVS(PrimitiveVS<Integer> size, List<T> items, int ch, List<Object> cv) {
+    this.size = size;
+    this.items = items;
+    this.concreteHash = ch;
+    this.concreteValue = cv;
+  }
+
   public ListVS(PrimitiveVS<Integer> size, List<T> items) {
     this.size = size;
     this.items = items;
@@ -50,7 +55,7 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
    * @param old The ListVS to copy
    */
   public ListVS(ListVS<T> old) {
-    this(new PrimitiveVS<>(old.size), new ArrayList<>(old.items));
+    this(new PrimitiveVS<>(old.size), new ArrayList<>(old.items), old.concreteHash, old.concreteValue);
   }
 
   /**
@@ -523,6 +528,22 @@ public class ListVS<T extends ValueSummary<T>> implements ValueSummary<ListVS<T>
       value.add(items.get(i) == null ? null : items.get(i).getConcreteValue());
     }
     return value;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ListVS)) return false;
+    ListVS rhs = (ListVS) o;
+    return (concreteHash == rhs.concreteHash)
+        && concreteValue.equals(rhs.concreteValue)
+        && size.equals(rhs.size)
+        && items.equals(rhs.items);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(concreteHash, concreteValue, size, items);
   }
 
   @Override

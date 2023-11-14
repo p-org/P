@@ -442,11 +442,11 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(insertStmt.Variable);
                     if (PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Sequence))
                     {
-                        Write($".{t.MutatorMethodName}((int)(");
+                        Write($".{t.InsertMethodName}((int)(");
                     }
                     else
                     {
-                        Write($".{t.MutatorMethodName}((");
+                        Write($".{t.InsertMethodName}((");
                     }
                     WriteExpr(insertStmt.Index);
                     Write("), ");

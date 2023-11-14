@@ -89,7 +89,10 @@ namespace Plang.Compiler.Backend.Java
             /// </summary>
             internal virtual string MutatorMethodName =>
                 throw new Exception($"MutatorMethodName not implemented for {TypeName}");
-
+            
+            internal virtual string InsertMethodName =>
+                throw new Exception($"MutatorMethodName not implemented for {TypeName}");
+            
             /// <summary>
             /// The name of the method K -> void that removes key K from the collection.  Throws for
             /// non-collection types!
@@ -201,6 +204,7 @@ namespace Plang.Compiler.Backend.Java
                 internal override string AccessorMethodName => "get";
                 internal override string ContainsMethodName => "contains";
                 internal override string MutatorMethodName => "set";
+                internal override string InsertMethodName => "add";
                 internal override string RemoveMethodName => "remove";
             }
             internal class JMap : JType
@@ -218,6 +222,7 @@ namespace Plang.Compiler.Backend.Java
                 internal override string AccessorMethodName => "get";
                 internal override string ContainsMethodName => "containsKey";
                 internal override string MutatorMethodName => "put";
+                internal override string InsertMethodName => "put";
                 internal override string RemoveMethodName => "remove";
 
                 /// <summary>
@@ -252,7 +257,7 @@ namespace Plang.Compiler.Backend.Java
                 // the Java PRT runtime.
 
                 internal override string ContainsMethodName => "contains";
-                internal override string MutatorMethodName => "add";
+                internal override string InsertMethodName => "add";
                 internal override string RemoveMethodName => "remove";
             }
 

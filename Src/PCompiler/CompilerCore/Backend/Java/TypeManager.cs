@@ -258,6 +258,7 @@ namespace Plang.Compiler.Backend.Java
 
                 internal override string ContainsMethodName => "contains";
                 internal override string InsertMethodName => "add";
+                internal override string MutatorMethodName => "add";
                 internal override string RemoveMethodName => "remove";
             }
 

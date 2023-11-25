@@ -279,7 +279,7 @@ namespace PChecker.Actors.Logging
                 // For MonitorProcessEvents, tie it to the senderMachine's current vector clock 
                 // so that there is some association in the timeline
                 case "MonitorProcessEvent":
-                    updateMachineVcMap(machine, _contextVcMap[logDetails.Sender]);
+                    if (logDetails.Sender != null) updateMachineVcMap(machine, _contextVcMap[logDetails.Sender]);
                     break;
 
                 // On dequeue OR receive event, has the string containing information about the current machine that dequeued (i.e. received the event),
@@ -712,13 +712,21 @@ namespace PChecker.Actors.Logging
         /// <param name="updateVcMap">Of type Bool: If true, run HandleLogEntry to get vector clock. Else, don't.</param>
         public void AddToLogs(bool updateVcMap = false)
         {
-            if (updateVcMap)
+            try
             {
-                _vcGenerator.HandleLogEntry(_log);
-            }
+                if (updateVcMap)
+                {
+                    _vcGenerator.HandleLogEntry(_log);
+                }
 
-            _logs.Add(_log);
-            _log = new LogEntry();
+                _logs.Add(_log);
+                _log = new LogEntry();
+            }
+            catch (Exception)
+            {
+                // ignoring exceptions in logger.
+                // TODO: this needs to be fixed.
+            }
         }
     }
 }

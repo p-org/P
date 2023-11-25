@@ -17,20 +17,16 @@ namespace Plang.CSharpRuntime
     /// </summary>
     public class PJsonFormatter : ActorRuntimeLogJsonFormatter
     {
-        public PJsonFormatter() : base()
-        {
-        }
 
         /// <summary>
         /// Removes the '<' and '>' tags for a log text.
-        /// I.e., '<ErrorLog> Some error log...' becomes 'Some error log...' 
         /// </summary>
         /// <param name="log">The text log</param>
         /// <returns>New string with the tag removed or just the string itself if there is no tag.</returns>
         private static string RemoveLogTag(string log)
         {
-            var openingTagIndex = log.IndexOf("<");
-            var closingTagIndex = log.IndexOf(">");
+            var openingTagIndex = log.IndexOf("<", StringComparison.Ordinal);
+            var closingTagIndex = log.IndexOf(">", StringComparison.Ordinal);
             var potentialTagExists = openingTagIndex != -1 && closingTagIndex != -1;
             var validOpeningTag = openingTagIndex == 0 && closingTagIndex > openingTagIndex;
 
@@ -87,7 +83,7 @@ namespace Plang.CSharpRuntime
             }
 
             var pe = (PEvent)(e);
-            return pe.Payload == null ? null : pe.Payload.ToDict();
+            return pe.Payload?.ToDict();
         }
 
         public override void OnCompleted()

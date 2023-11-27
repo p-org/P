@@ -1435,7 +1435,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case IntLiteralExpr intLiteralExpr:
-                    context.Write(output, $"((PrtInt){intLiteralExpr.Value})");
+                    context.Write(output, $"((PrtInt)({intLiteralExpr.Value}))");
                     break;
 
                 case KeysExpr keysExpr:

@@ -1,5 +1,5 @@
 /********************
- * This example explains the usage of foreach iterator with continue
+ * This example explains the usage of foreach iterator with break
  * ******************/
  
 

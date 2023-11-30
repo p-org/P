@@ -158,17 +158,29 @@ namespace Plang.Options
                     compilerConfiguration.ProjectName = (string)option.Value;
                     break;
                 case "mode":
+                    compilerConfiguration.OutputLanguages = new List<CompilerOutput>();
+                    switch (((string)option.Value).ToLowerInvariant())
                     {
-                        compilerConfiguration.OutputLanguage = (string)option.Value switch
-                        {
-                            "bugfinding" => CompilerOutput.CSharp,
-                            "verification" => CompilerOutput.Symbolic,
-                            "coverage" => CompilerOutput.Symbolic,
-                            "pobserve" => CompilerOutput.Java,
-                            "stately" => CompilerOutput.Stately,
-                            _ => compilerConfiguration.OutputLanguage
-                        };
-                        compilerConfiguration.Backend = TargetLanguage.GetCodeGenerator(compilerConfiguration.OutputLanguage);
+                        case "bugfinding":
+                        case "csharp":
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.CSharp);
+                            break;
+                        case "verification":
+                        case "coverage":
+                        case "symbolic":
+                        case "psym":
+                        case "pcover":
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.Symbolic);
+                            break;
+                        case "pobserve":
+                        case "java":
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.Java);
+                            break;
+                        case "stately":
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.Stately);
+                            break;
+                        default:
+                            throw new Exception($"Unexpected mode: '{option.Value}'");
                     }
                     break;
                 case "pobserve-package":
@@ -234,9 +246,6 @@ namespace Plang.Options
                 compilerConfiguration.OutputDirectory = Directory.CreateDirectory("PGenerated");
                 compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
            }
-            
-            compilerConfiguration.OutputDirectory = Directory.CreateDirectory(Path.Combine(compilerConfiguration.OutputDirectory.FullName, compilerConfiguration.OutputLanguage.ToString()));
-            compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
         }
         
 

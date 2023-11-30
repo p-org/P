@@ -144,7 +144,7 @@ namespace Plang.Compiler.Backend.Java
         private void WriteFFIHeader(string monitorName)
         {
             WriteLine(Constants.AsFFIComment(
-                $"Please place and complete the following class in {Constants.FFIPackage}/{monitorName}.java :"));
+                $"Please place and complete the following class in {Constants.FFIPackage}/{monitorName}{Constants.FFILocalScopeSuffix}.java :"));
         }
 
         private void WriteForeignTypeStub(ForeignType t)
@@ -275,7 +275,7 @@ namespace Plang.Compiler.Backend.Java
             // Class definition: By convention, this "para-class" has the same name as
             // the P machine it is defined within, to mimic the C#-style partial class mixin
             // functionalty that we are not afforded in Java, unfortunately.
-            WriteLine($"public class {mname} {{");
+            WriteLine($"public class {mname}{Constants.FFILocalScopeSuffix} {{");
             foreach (var f in ffs)
             {
                 WriteForeignFunctionStub(f, m);
@@ -324,7 +324,7 @@ namespace Plang.Compiler.Backend.Java
             }
 
             WriteLine(") {");
-            WriteLine(" /* throws RaiseEventException, TransitionException */ {");
+            WriteLine(" /* throws RaiseEventException, TransitionException */");
 
             if (ret is TypeManager.JType.JVoid _)
             {

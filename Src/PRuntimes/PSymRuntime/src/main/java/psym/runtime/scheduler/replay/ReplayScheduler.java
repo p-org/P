@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-
 import lombok.Getter;
 import org.apache.commons.lang3.NotImplementedException;
 import psym.runtime.PSymGlobal;
@@ -208,6 +207,16 @@ public class ReplayScheduler extends Scheduler {
   public PrimitiveVS<Integer> getNextInteger(PrimitiveVS<Integer> bound, Guard pc) {
     PrimitiveVS<Integer> res = schedule.getRepeatInt(choiceDepth);
     ScheduleWriter.logInteger(res);
+    choiceDepth++;
+    return res;
+  }
+
+  @Override
+  public ValueSummary getNextPrimitiveList(ListVS<? extends ValueSummary> candidates, Guard pc) {
+    ValueSummary res = getNextElementFlattener(schedule.getRepeatElement(choiceDepth));
+    List<GuardedValue<?>> gv = ValueSummary.getGuardedValues(res);
+    assert (gv.size() == 1);
+    ScheduleWriter.logElement(gv);
     choiceDepth++;
     return res;
   }

@@ -190,7 +190,7 @@ namespace PChecker.Coverage
         public void OnMonitorProcessEvent(string monitorType, string stateName, string senderName,
             string senderType, string senderStateName, Event e)
         {
-            EventCoverage.AddEventReceived(GetStateId(monitorType, stateName), e.GetType().Name);
+            EventCoverage.AddEventReceived(GetStateId(monitorType, stateName), e.GetType().FullName);
         }
 
         public void OnMonitorRaiseEvent(string monitorType, string stateName, Event e)

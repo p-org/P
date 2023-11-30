@@ -105,7 +105,7 @@ public class PSymOptions {
     Option strategy =
         Option.builder("st")
             .longOpt("strategy")
-            .desc("Exploration strategy: symbolic, random, dfs, learn, stateless (default: symbolic)")
+            .desc("Exploration strategy: symbolic, random, dfs, learn (default: symbolic)")
             .numberOfArgs(1)
             .hasArg()
             .argName("Strategy (string)")
@@ -260,6 +260,17 @@ public class PSymOptions {
             .argName("(integer)")
             .build();
     addHiddenOption(maxBacktrackTasksPerExecution);
+
+    // max number of backtrack tasks per execution
+    Option maxPendingBacktrackTasks =
+            Option.builder()
+                    .longOpt("backtracks-pending")
+                    .desc("Max number of pending backtracks (default: 100)")
+                    .numberOfArgs(1)
+                    .hasArg()
+                    .argName("(integer)")
+                    .build();
+    addHiddenOption(maxPendingBacktrackTasks);
 
     // mode of choice orchestration
     Option choiceOrch =
@@ -444,8 +455,8 @@ public class PSymOptions {
             case "symbolic-fixpoint":
               config.setToSymbolicFixpoint();
               break;
-            case "symbolic-iterative":
-              config.setToSymbolicIterative();
+            case "symbolic-bounded":
+              config.setToSymbolicBounded();
               break;
             case "random":
               config.setToRandom();
@@ -577,6 +588,14 @@ public class PSymOptions {
           } catch (NumberFormatException ex) {
             optionError(
                 option, String.format("Expected an integer value, got %s", option.getValue()));
+          }
+          break;
+        case "backtracks-pending":
+          try {
+            config.setMaxPendingBacktrackTasks(Integer.parseInt(option.getValue()));
+          } catch (NumberFormatException ex) {
+            optionError(
+                    option, String.format("Expected an integer value, got %s", option.getValue()));
           }
           break;
         case "corch":

@@ -11,8 +11,6 @@ import psym.runtime.scheduler.replay.ReplayScheduler;
 import psym.runtime.scheduler.search.SearchScheduler;
 import psym.runtime.scheduler.search.explicit.ExplicitSearchScheduler;
 import psym.runtime.scheduler.search.symbolic.SymbolicSearchScheduler;
-import psym.runtime.scheduler.search.symmetry.SymmetryMode;
-import psym.runtime.scheduler.search.symmetry.SymmetryTracker;
 import psym.utils.exception.BugFoundException;
 import psym.utils.exception.MemoutException;
 import psym.utils.monitor.MemoryMonitor;
@@ -61,7 +59,7 @@ public class EntryPoint {
     double searchTime = TimeMonitor.getInstance().stopInterval();
     searchScheduler.print_search_stats();
     if (searchScheduler.isFinalResult && PSymGlobal.getResult().equals("correct for any depth")) {
-      PSymGlobal.setStatus("proved");
+      PSymGlobal.setStatus("verified");
     }
     StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
     if (PSymGlobal.getConfiguration().isIterative()) {

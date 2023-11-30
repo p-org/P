@@ -581,12 +581,12 @@ namespace Plang.Compiler.Backend
             // collectionCopy = collection;
             // var i: int;
             // var sizeof: int;
-            // i = 0;
+            // i = -1;
             // sizeof = sizeof(collectionCopy);
-            // while(i < sizeof) {
+            // while(i < (sizeof - 1)) {
+            //     i = i + 1;
             //     item = collectionCopy[i];
             //     body;
-            //     i = i + 1;
             // }
 
             var location = foreachStmt.SourceLocation;
@@ -608,14 +608,25 @@ namespace Plang.Compiler.Backend
             sizeVar.Type = PrimitiveType.Int;
             function.AddLocalVariable(sizeVar);
 
-            // i = 0;
-            newBody.Add(new AssignStmt(location, new VariableAccessExpr(location, iVar), new IntLiteralExpr(location, 0)));
+            // i = -1;
+            newBody.Add(new AssignStmt(location, new VariableAccessExpr(location, iVar), new IntLiteralExpr(location, -1)));
 
             // sizeof = sizeof(collection)
             newBody.Add(new AssignStmt(location, new VariableAccessExpr(location, sizeVar), new SizeofExpr(location, collectionCopy)));
 
-            // while(i < sizeof)
-            IPExpr cond = new BinOpExpr(location, BinOpType.Lt, new VariableAccessExpr(location, iVar), new VariableAccessExpr(location, sizeVar));
+            // while(i < (sizeof - 1))
+            IPExpr cond = new BinOpExpr(location, BinOpType.Lt, 
+                            new VariableAccessExpr(location, iVar), 
+                            new BinOpExpr(location, BinOpType.Sub, 
+                                new VariableAccessExpr(location, sizeVar), 
+                                new IntLiteralExpr(location, 1)));
+
+            // inside loop: i = i+1;
+            IPStmt incrementI = new AssignStmt(location, new VariableAccessExpr(location, iVar), 
+                new BinOpExpr(location, 
+                    BinOpType.Add,
+                    new VariableAccessExpr(location, iVar), 
+                    new IntLiteralExpr(location, 1)));
 
             // inside loop: item = collection[i]
             IPExpr accessExpr;
@@ -634,14 +645,7 @@ namespace Plang.Compiler.Backend
             }
             IPStmt assignItem = new AssignStmt(location, new VariableAccessExpr(location, item), accessExpr);
 
-            // inside loop: i = i+1;
-            IPStmt incrementI = new AssignStmt(location, new VariableAccessExpr(location, iVar), 
-                                                            new BinOpExpr(location, 
-                                                                            BinOpType.Add,
-                                                                            new VariableAccessExpr(location, iVar), 
-                                                                            new IntLiteralExpr(location, 1)));
-
-            newBody.Add(new WhileStmt(location, cond, new CompoundStmt(location, new List<IPStmt>{ assignItem,  body, incrementI })));
+            newBody.Add(new WhileStmt(location, cond, new CompoundStmt(location, new List<IPStmt>{ incrementI, assignItem,  body })));
             return new CompoundStmt(location, newBody);
         }
 

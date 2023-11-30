@@ -44,6 +44,10 @@ public class SearchStats implements Serializable {
     for (int i = 1; i <= lastCompletedIteration; i++) {
       if (!iterationStats.containsKey(i)) continue;
       IterationStats entry = iterationStats.get(i);
+      if (!entry.isCompleted()) {
+        completed = false;
+      }
+
       DepthStats d = entry.getIterationNewTotal();
       if (d.getDepth() == 0) continue;
       if (d.getDepth() > maxDepth) {
@@ -53,10 +57,6 @@ public class SearchStats implements Serializable {
       totalTransitions += d.getNumOfTransitions();
       totalMergedTransitions += d.getNumOfMergedTransitions();
       totalTransitionsExplored += d.getNumOfTransitionsExplored();
-
-      if (!entry.isCompleted()) {
-        completed = false;
-      }
     }
     DepthStats totalDepthStats =
         new DepthStats(

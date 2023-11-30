@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Plang.Compiler;
@@ -86,7 +87,7 @@ namespace UnitTests.Core
             ICompilerTestRunner runner;
             ITestResultsValidator validator;
 
-            var output = CompilerOutput.C;
+            var output = new List<CompilerOutput>{CompilerOutput.C};
             runner = new CompileOnlyRunner(output, inputFiles.Select(x => x.FullName).ToList());
 
             // TODO: validate information about the particular kind of compiler error

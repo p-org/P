@@ -103,18 +103,11 @@ namespace Plang.Compiler.Backend.Java
                 case TypeManager.JType.JMap _:
                 case TypeManager.JType.JList _:
                 case TypeManager.JType.JSet _:
+                case TypeManager.JType.JForeign _:
+                case TypeManager.JType.JNamedTuple _:
                     Write($"{Constants.PrtDeepCloneMethodName}(");
                     writeTermToBeCloned();
                     Write(")");
-                    break;
-
-                /* JNamedTuples and foreign types extend prt.values.PValue, and thus have an explicit `.deepEquals()`
-                 * method.  (We could have just as easily passed these to the runtime's `deepClone` method, but this
-                 * saves us a type dispatch). */
-                case TypeManager.JType.JForeign _:
-                case TypeManager.JType.JNamedTuple _:
-                    writeTermToBeCloned();
-                    Write(".deepClone()");
                     break;
 
                 default:

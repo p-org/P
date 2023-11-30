@@ -24,6 +24,7 @@ import psym.valuesummary.*;
 public abstract class Machine implements Serializable, Comparable<Machine> {
   @Getter
   private static final int mainMachineId = 2;
+  @Getter private static final Map<String, Machine> nameToMachine = new HashMap<>();
   protected static int globalMachineId = mainMachineId;
   public final Map<
           String,
@@ -54,6 +55,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     this.name = name;
     //        this.instanceId = id;
     this.instanceId = globalMachineId++;
+    nameToMachine.put(toString(), this);
 
     this.startState = startState;
     this.sendBuffer = new EventQueue(this);

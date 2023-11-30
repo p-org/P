@@ -52,7 +52,7 @@ public class PSymLogger {
     log.info("--------------------");
     log.info(
         String.format(
-            "Explored %d executions%s",
+            "Explored %d schedules%s",
             totalIter, ((totalIter == newIter) ? "" : String.format(" (%d new)", newIter))));
     log.info(
         String.format(

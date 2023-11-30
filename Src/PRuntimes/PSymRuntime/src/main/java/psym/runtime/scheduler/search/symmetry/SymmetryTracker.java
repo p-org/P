@@ -2,9 +2,7 @@ package psym.runtime.scheduler.search.symmetry;
 
 import java.io.Serializable;
 import java.util.*;
-import lombok.Setter;
 import psym.runtime.machine.Machine;
-import psym.runtime.scheduler.Scheduler;
 import psym.valuesummary.*;
 
 public abstract class SymmetryTracker implements Serializable {
@@ -20,7 +18,7 @@ public abstract class SymmetryTracker implements Serializable {
 
   public abstract void createMachine(Machine machine, Guard guard);
 
-  public abstract List<ValueSummary> getReducedChoices(List<ValueSummary> original);
+  public abstract List<ValueSummary> getReducedChoices(List<ValueSummary> original, boolean isData);
 
   public abstract void updateSymmetrySet(Machine machine, Guard guard);
 

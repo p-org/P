@@ -6,6 +6,7 @@ using System.Xml.Linq;
 using PChecker;
 using PChecker.IO.Debugging;
 using Plang.Compiler;
+using Debug = System.Diagnostics.Debug;
 
 namespace Plang.Parser
 {
@@ -30,7 +31,6 @@ namespace Plang.Parser
                 CommandLineOutput.WriteInfo($"----------------------------------------");
                 CommandLineOutput.WriteInfo($"==== Loading project file: {projectFile}");
 
-                var outputLanguage = CompilerOutput.CSharp;
                 var inputFiles = new HashSet<string>();
                 var projectDependencies = new HashSet<string>();
 
@@ -50,9 +50,17 @@ namespace Plang.Parser
 
                 // get output directory
                 var outputDirectory = GetOutputDirectory(projectFilePath);
+                
+                // get targets
+                var outputLanguages = GetTargetLanguages(projectFilePath);
+
+                // get pobserve package name
+                var pObservePackageName = GetPObservePackage(projectFilePath);
 
                 job = new CompilerConfiguration(output: new DefaultCompilerOutput(outputDirectory), outputDir: outputDirectory,
-                    outputLanguage: outputLanguage, inputFiles: inputFiles.ToList(), projectName: projectName, projectRoot: projectFilePath.Directory, projectDependencies: projectDependencies.ToList());
+                    outputLanguages: outputLanguages, inputFiles: inputFiles.ToList(), projectName: projectName, 
+                    projectRoot: projectFilePath.Directory, projectDependencies: projectDependencies.ToList(),
+                    pObservePackageName: pObservePackageName);
 
                 CommandLineOutput.WriteInfo($"----------------------------------------");
             }
@@ -156,6 +164,23 @@ namespace Plang.Parser
         }
 
         /// <summary>
+        /// Parse the PObserve package name from the pproj file
+        /// </summary>
+        /// <param name="projectFullPath">Path to the pproj file</param>
+        /// <returns>pobserve package name</returns>
+        private string GetPObservePackage(FileInfo projectFullPath)
+        {
+            string pObservePackageName = null;
+            var projectXml = XElement.Load(projectFullPath.FullName);
+            if (projectXml.Elements("pobserve-package").Any())
+            {
+                pObservePackageName = projectXml.Element("pobserve-package")?.Value;
+            }
+
+            return pObservePackageName;
+        }
+
+        /// <summary>
         /// Parse the output directory information from the pproj file
         /// </summary>
         /// <param name="fullPathName"></param>
@@ -183,43 +208,48 @@ namespace Plang.Parser
                 return Directory.GetCurrentDirectory();
         }
 
-        private void GetTargetLanguage(FileInfo fullPathName, ref CompilerOutput outputLanguage, ref bool generateSourceMaps)
+        private IList<CompilerOutput> GetTargetLanguages(FileInfo fullPathName)
         {
+            var outputLanguages = new List<CompilerOutput>();
             var projectXml = XElement.Load(fullPathName.FullName);
-            if (!projectXml.Elements("Target").Any()) return;
-            switch (projectXml.Element("Target")?.Value.ToLowerInvariant())
+            if (!projectXml.Elements("Target").Any())
             {
-                case "c":
-                    outputLanguage = CompilerOutput.C;
-                    // check for generate source maps attribute
-                    try
-                    {
-                        if (projectXml.Element("Target")!.Attributes("sourcemaps").Any())
-                        {
-                            generateSourceMaps = bool.Parse(projectXml.Element("Target")?.Attribute("sourcemaps")?.Value ?? string.Empty);
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        throw new CommandlineParsingError($"Expected true or false, received {projectXml.Element("Target")?.Attribute("sourcemaps")?.Value}");
-                    }
-                    break;
-
-                case "csharp":
-                    outputLanguage = CompilerOutput.CSharp;
-                    break;
-
-                case "java":
-                    outputLanguage = CompilerOutput.Java;
-                    break;
-
-                case "symbolic":
-                    outputLanguage = CompilerOutput.Symbolic;
-                    break;
-
-                default:
-                    throw new CommandlineParsingError($"Expected c, csharp, java, or symbolic as target, received {projectXml.Element("Target")?.Value}");
+                outputLanguages.Add(CompilerOutput.CSharp);
             }
+            else
+            {
+                string[] values = projectXml.Element("Target")?.Value.Split(new[] { ',', ' ' }, 
+                    StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < values!.Length; i++)
+                {
+                    switch (values[i].ToLowerInvariant())
+                    {
+                        case "bugfinding":
+                        case "csharp":
+                            outputLanguages.Add(CompilerOutput.CSharp);
+                            break;
+                        case "verification":
+                        case "coverage":
+                        case "symbolic":
+                        case "psym":
+                        case "pcover":
+                            outputLanguages.Add(CompilerOutput.Symbolic);
+                            break;
+                        case "pobserve":
+                        case "java":
+                            outputLanguages.Add(CompilerOutput.Java);
+                            break;
+                        case "stately":
+                            outputLanguages.Add(CompilerOutput.Stately);
+                            break;
+                        default:
+                            throw new CommandlineParsingError(
+                                $"Expected CSharp, Java, Stately, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
+                    }
+                }
+            }
+
+            return outputLanguages;
         }
 
         /// <summary>

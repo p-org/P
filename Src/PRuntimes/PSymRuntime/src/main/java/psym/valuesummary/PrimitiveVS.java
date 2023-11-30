@@ -16,6 +16,9 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
   @Getter
   /** Concrete hash used for hashing in explicit-state search */
   private final int concreteHash;
+  @Getter
+  /** Concrete value used in explicit-state search */
+  private final T concreteValue;
 
   /**
    * A primitive value is a collection of guarded values
@@ -45,6 +48,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
   public PrimitiveVS(T value, Guard guard) {
     this.guardedValues = Collections.singletonMap(value, guard);
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   /**
@@ -64,6 +68,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
   public PrimitiveVS(Map<T, Guard> guardedValues) {
     this.guardedValues = guardedValues;
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   /**
@@ -79,6 +84,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
       }
     }
     this.concreteHash = computeConcreteHash();
+    this.concreteValue = computeConcreteValue();
   }
 
   /**
@@ -374,6 +380,15 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
       return (key == null ? 0 : key.hashCode());
     } else {
       return 0;
+    }
+  }
+
+  @Override
+  public T computeConcreteValue() {
+    if (!guardedValues.isEmpty()) {
+      return guardedValues.entrySet().iterator().next().getKey();
+    } else {
+      return null;
     }
   }
 

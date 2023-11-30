@@ -80,6 +80,10 @@ public class TestSymbolicRegression {
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive7");
 
     // TODO Unsupported: continue statement
+    excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/foreach2");
+    excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/foreach4");
+    excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/foreach2");
+    excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/foreach4");
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/continue1");
 
     // TODO Unsupported: receive in state exit functions

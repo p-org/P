@@ -119,7 +119,7 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20230227</version>
+            <version>20231013</version>
         </dependency>
     </dependencies>
 
@@ -327,7 +327,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <log4j2.configurationFile>${project.basedir}/src/main/resources/log4j2.xml</log4j2.configurationFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <revision>1.1.1</revision>
+        <revision>1.1.5</revision>
 
         <deps.path>${project.basedir}/../../../Bld</deps.path>
 

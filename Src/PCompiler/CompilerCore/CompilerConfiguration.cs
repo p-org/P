@@ -23,9 +23,10 @@ namespace Plang.Compiler
             OutputLanguages = new List<CompilerOutput>{CompilerOutput.CSharp};
             Backend = null;
             ProjectDependencies = new List<string>();
+            Debug = false;
         }
         public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IList<CompilerOutput> outputLanguages, IList<string> inputFiles,
-            string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null, string pObservePackageName = null)
+            string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null, string pObservePackageName = null, bool debug = false)
         {
             if (!inputFiles.Any())
             {
@@ -55,6 +56,7 @@ namespace Plang.Compiler
             OutputLanguages = outputLanguages;
             Backend = null;
             ProjectDependencies = projectDependencies ?? new List<string>();
+            Debug = debug;
         }
         
         public ICompilerOutput Output { get; set; }
@@ -70,6 +72,7 @@ namespace Plang.Compiler
         public ITranslationErrorHandler Handler { get; set; }
 
         public IList<string> ProjectDependencies { get; set;  }
+        public bool Debug { get; set; }
 
         public void Copy(CompilerConfiguration parsedConfig)
         {
@@ -85,6 +88,7 @@ namespace Plang.Compiler
             PObservePackageName = parsedConfig.PObservePackageName;
             OutputLanguages = parsedConfig.OutputLanguages;
             ProjectRootPath = parsedConfig.ProjectRootPath;
+            Debug = parsedConfig.Debug;
         }
     }
 }

@@ -19,5 +19,6 @@ namespace Plang.Compiler
         IList<string> ProjectDependencies { get; }
         ILocationResolver LocationResolver { get; }
         ITranslationErrorHandler Handler { get; }
+        bool Debug { get; }
     }
 }

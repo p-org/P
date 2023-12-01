@@ -44,6 +44,8 @@ namespace Plang.Options
             modes.IsHidden = true;
 
             Parser.AddArgument("pobserve-package", "po", "PObserve package name").IsHidden = true;
+
+            Parser.AddArgument("debug", "d", "Enable debug logs", typeof(bool)).IsHidden = true;
         }
 
         /// <summary>
@@ -156,6 +158,9 @@ namespace Plang.Options
                     break;
                 case "projname":
                     compilerConfiguration.ProjectName = (string)option.Value;
+                    break;
+                case "debug":
+                    compilerConfiguration.Debug = true;
                     break;
                 case "mode":
                     compilerConfiguration.OutputLanguages = new List<CompilerOutput>();

@@ -16,9 +16,11 @@ namespace Plang.Compiler.Backend.Java {
 
         private Machine _currentMachine; // Some generated code is machine-dependent, so stash the current machine here.
         private HashSet<Function> _calledStaticFunctions = new HashSet<Function>(); // static functions allowed 
+        private bool debug = false;
 
         internal MachineGenerator(ICompilerConfiguration job, string filename) : base(job, filename)
         {
+            debug = job.Debug;
         }
 
         /// <summary>
@@ -34,6 +36,12 @@ namespace Plang.Compiler.Backend.Java {
         protected override void GenerateCodeImpl()
         {
             WriteLine($"public class {Constants.MachineNamespaceName} {{");
+            WriteLine($"private static Logger logger = Logger.getLogger({Constants.MachineNamespaceName}.class.getName());");
+            if (debug) {
+                WriteLine($"static {{ logger.setLevel(Level.ALL); }};");
+            } else {
+                WriteLine($"static {{ logger.setLevel(Level.OFF); }};");
+            }
 
             foreach (var m in GlobalScope.Machines)
             {
@@ -462,7 +470,7 @@ namespace Plang.Compiler.Backend.Java {
                     break;
 
                 case PrintStmt printStmt:
-                    Write("System.out.println(");
+                    Write("logger.info(");
                     WriteExpr(printStmt.Message);
                     WriteLine(");");
                     break;

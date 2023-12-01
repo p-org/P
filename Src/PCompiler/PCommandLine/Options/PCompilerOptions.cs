@@ -45,8 +45,7 @@ namespace Plang.Options
 
             Parser.AddArgument("pobserve-package", "po", "PObserve package name").IsHidden = true;
 
-            var debug = Parser.AddArgument("debug", "d", "Enable or Disable debug logs in pobserve mode (Disabled by default)");
-            debug.AllowedValues = new List<string>() { "true", "false" };
+            Parser.AddArgument("debug", "d", "Enable debug logs", typeof(bool)).IsHidden = true;
         }
 
         /// <summary>
@@ -161,7 +160,7 @@ namespace Plang.Options
                     compilerConfiguration.ProjectName = (string)option.Value;
                     break;
                 case "debug":
-                    compilerConfiguration.Debug = bool.Parse((string)option.Value);
+                    compilerConfiguration.Debug = true;
                     break;
                 case "mode":
                     compilerConfiguration.OutputLanguages = new List<CompilerOutput>();

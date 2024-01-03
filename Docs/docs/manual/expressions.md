@@ -194,7 +194,7 @@ P supports four other operations on collection types:
 
 ``` java
 var sq: seq[int];
-while (i < sizeof(sq)>) {
+while (i < sizeof(sq)) {
     ...
     i = i + 1;
 }

@@ -662,7 +662,12 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 if (i > 0)
                     context.WriteLine(output, ",");
-                context.Write(output, $"new {GetConcreteForeignBoxedType(param.Type)}(args.get({i}))");
+                string foreignType = GetConcreteForeignBoxedType(param.Type);
+                if (foreignType == "Object") {
+                    context.Write(output, $"args.get({i})");
+                } else {
+                    context.Write(output, $"new {foreignType}(args.get({i}))");
+                }
                 i++;
             }
             context.WriteLine(output, ");");
@@ -2559,7 +2564,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case EnumType _: 
                     return "Integer";
                 default:
-                    throw new NotImplementedException($"Concrete type '{type.OriginalRepresentation}' is not supported");
+                    return "Object";
             }
         }
 
@@ -2591,7 +2596,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case EnumType _:
                     return "PEnum";
                 default:
-                    throw new NotImplementedException($"Concrete type '{type.OriginalRepresentation}' is not supported");
+                    return "Object";
             }
         }
 

@@ -322,7 +322,7 @@ Insert statement is used to insert or add an element into a collection.
 
     !!! warning "Index for a sequence"
         The value of index `i` above should be between `0 <= i <= sizeof(sq)`. 
-        `i = 0` insserts x at the start of `sq` and `i = sizeof(sq)` appends x at the end of `sq`
+        `i = 0` inserts x at the start of `sq` and `i = sizeof(sq)` appends x at the end of `sq`
 
 === "Insert into a map or update map"
 

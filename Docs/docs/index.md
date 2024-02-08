@@ -28,12 +28,14 @@ communicating state machines. P supports several backend analysis engines
 checking and symbolic execution) to check that the distributed system modeled in P
 satisfy the desired correctness specifications.
 
-> The following talk provides an overview of P, its impact in academia and industry, and answers the main question that gets asked most by service teams and developers: **"why do formal modeling?"**:
-[(P @ StrangeLoop) Formal Modeling and Analysis of Distributed Systems (Finding Critical Bugs Early!!)](https://www.youtube.com/watch?v=5YjsSDDWFDY)
+> If you are wondering **"why do formal methods at all?"** or **"how is AWS using P to gain confidence in correctness of their services?"**, the following re:Invent 2023 talk answers this question, provides an overview of P, and its impact inside AWS:
+[(Re:Invent 2023 Talk) Gain confidence in system correctness & resilience with Formal Methods (Finding Critical Bugs Early!!)](https://youtu.be/FdXZXnkMDxs?si=iFqpl16ONKZuS4C0)
+
+
 
 <div align="center">
-      <a href="https://www.youtube.com/watch?v=5YjsSDDWFDY">
-         <img src="https://img.youtube.com/vi/5YjsSDDWFDY/0.jpg" style="width:40%;">
+      <a href="https://www.youtube.com/watch?v=FdXZXnkMDxs">
+         <img src="https://img.youtube.com/vi/FdXZXnkMDxs/hqdefault.jpg" style="width:40%;">
       </a>
 </div>
 

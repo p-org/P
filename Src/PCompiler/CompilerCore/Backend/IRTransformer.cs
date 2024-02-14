@@ -352,11 +352,12 @@ namespace Plang.Compiler.Backend
                 case AssertStmt assertStmt:
                     (var assertExpr, var assertDeps) = SimplifyExpression(assertStmt.Assertion);
                     (var messageExpr, var messageDeps) = SimplifyExpression(assertStmt.Message);
-
-                    return assertDeps.Concat(messageDeps).Concat(new[]
+                    var ifStmtForAssert = new IfStmt(location, assertExpr, new NoStmt(location), new CompoundStmt(
+                        location, messageDeps.Concat(new[]
                         {
                             new AssertStmt(location, assertExpr, messageExpr)
-                        })
+                        }).ToList()));
+                    return assertDeps.Concat(new List<IPStmt>{ifStmtForAssert})
                         .ToList();
 
                 case AssignStmt assignStmt:

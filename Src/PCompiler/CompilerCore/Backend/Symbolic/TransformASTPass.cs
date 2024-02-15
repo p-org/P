@@ -593,17 +593,21 @@ namespace Plang.Compiler.Backend.Symbolic
                                   if (after != null)
                                   {
                                      after = (CompoundStmt) HandleReceives(after, function, machine);
-                                     foreach (var stmt in after.Statements)
-                                     {
-                                       thenStmts.Add(stmt);
-                                       elseStmts.Add(stmt);
-                                     }
+//                                     foreach (var stmt in after.Statements)
+//                                     {
+//                                       thenStmts.Add(stmt);
+//                                       elseStmts.Add(stmt);
+//                                     }
                                   }
                                   IPStmt thenBody = new CompoundStmt(cond.SourceLocation, thenStmts);
                                   IPStmt elseBody = new CompoundStmt(cond.SourceLocation, elseStmts);
                                   thenBody = HandleReceives(thenBody, function, machine);
                                   elseBody = HandleReceives(elseBody, function, machine);
                                   result.Add(new IfStmt(cond.SourceLocation, cond.Condition, thenBody, elseBody));
+                                  if (after != null)
+                                  {
+                                      result.Add(after);
+                                  }
                                   break;
                              case ReceiveStmt recv:
                                  IDictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();

@@ -590,15 +590,6 @@ namespace Plang.Compiler.Backend.Symbolic
                                       thenStmts = new List<IPStmt>(cond.ThenBranch.Statements);
                                   if (cond.ElseBranch != null)
                                       elseStmts = new List<IPStmt>(cond.ElseBranch.Statements);
-                                  if (after != null)
-                                  {
-                                     after = (CompoundStmt) HandleReceives(after, function, machine);
-//                                     foreach (var stmt in after.Statements)
-//                                     {
-//                                       thenStmts.Add(stmt);
-//                                       elseStmts.Add(stmt);
-//                                     }
-                                  }
                                   IPStmt thenBody = new CompoundStmt(cond.SourceLocation, thenStmts);
                                   IPStmt elseBody = new CompoundStmt(cond.SourceLocation, elseStmts);
                                   thenBody = HandleReceives(thenBody, function, machine);
@@ -606,7 +597,8 @@ namespace Plang.Compiler.Backend.Symbolic
                                   result.Add(new IfStmt(cond.SourceLocation, cond.Condition, thenBody, elseBody));
                                   if (after != null)
                                   {
-                                      result.Add(after);
+                                     after = (CompoundStmt) HandleReceives(after, function, machine);
+                                     result.Add(after);
                                   }
                                   break;
                              case ReceiveStmt recv:

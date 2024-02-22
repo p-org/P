@@ -140,9 +140,6 @@ public class ExplicitSearchScheduler extends SearchScheduler {
           .setProgramStateHash(this, PSymGlobal.getConfiguration().getChoiceLearningStateMode(), schedulingChoices);
     }
 
-    Message effect = null;
-    List<Message> effects = new ArrayList<>();
-
     List<GuardedValue<Machine>> schedulingChoicesGv = schedulingChoices.getGuardedValues();
     assert (schedulingChoicesGv.size() == 1);
 
@@ -157,27 +154,19 @@ public class ExplicitSearchScheduler extends SearchScheduler {
       System.out.println("    message " + removed.toString());
       System.out.println("    target " + removed.getTarget().toString());
     }
-    if (effect == null) {
-      effect = removed;
-    } else {
-      effects.add(removed);
-    }
-
+    Message effect = removed;
     assert effect != null;
-    effect = effect.merge(effects);
 
     stickyStep = false;
-    if (effects.isEmpty()) {
-      if (!effect.isCreateMachine().getGuardFor(true).isFalse()
-          || !effect.isSyncEvent().getGuardFor(true).isFalse()) {
-        stickyStep = true;
-      }
+    if (!effect.isCreateMachine().getGuardFor(true).isFalse()
+        || !effect.isSyncEvent().getGuardFor(true).isFalse()) {
+      stickyStep = true;
     }
     if (!stickyStep) {
       depth++;
     }
 
-    TraceLogger.schedule(depth, effect);
+    TraceLogger.schedule(depth, effect, machine);
 
     performEffect(effect);
 

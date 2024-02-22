@@ -129,6 +129,16 @@ public class TraceLogger {
     }
   }
 
+  public static void schedule(int depth, Message effect, Machine sender) {
+    if (verbosity > 0) {
+      String msg =
+              String.format(
+                      "  Depth %d: scheduled event[%s] sent to [%s] from [%s]",
+                      depth, effect.getEvent().toString(), effect.getTarget(), sender);
+      log.info(msg);
+    }
+  }
+
   public static void schedule(int depth, Message effect) {
     if (verbosity > 0) {
       String msg =

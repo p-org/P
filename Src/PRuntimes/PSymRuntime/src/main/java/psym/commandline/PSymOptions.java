@@ -115,15 +115,6 @@ public class PSymOptions {
     // Systematic exploration options
 
     // max number of schedules for the search
-    Option maxIterations =
-        Option.builder("i")
-            .longOpt("iterations")
-            .desc("Number of schedules to explore (default: 1)")
-            .numberOfArgs(1)
-            .hasArg()
-            .argName("Schedules (integer)")
-            .build();
-    addHiddenOption(maxIterations);
     Option maxSchedules =
         Option.builder("s")
             .longOpt("schedules")
@@ -349,8 +340,11 @@ public class PSymOptions {
     addHiddenOption(writeToFile);
 
     // Help menu
-    Option help = Option.builder("h").longOpt("help").desc("Show this help menu").build();
+    Option help = Option.builder("h").longOpt("help").desc("Show help menu").build();
     addOption(help);
+
+    Option helpAll = Option.builder().longOpt("help-all").desc("Show complete help menu").build();
+    addHiddenOption(helpAll);
   }
 
   private static void addHiddenOption(Option opt) {
@@ -726,6 +720,15 @@ public class PSymOptions {
               "-----------------------------------\nCommandline options for PSym/PCover\n-----------------------------------",
               visibleOptions,
               "See https://p-org.github.io/P/ for details.");
+          exit(0);
+          break;
+        case "help-all":
+          formatter.printHelp(
+                  100,
+                  "java -jar <.jar-file> [options]",
+                  "-----------------------------------\nCommandline options for PSym/PCover\n-----------------------------------",
+                  allOptions,
+                  "See https://p-org.github.io/P/ for details.");
           exit(0);
           break;
         default:

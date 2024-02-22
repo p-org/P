@@ -115,35 +115,27 @@ public class ReplayScheduler extends Scheduler {
       return;
     }
 
-    Message effect = null;
-    List<Message> effects = new ArrayList<>();
+    List<GuardedValue<Machine>> schedulingChoicesGv = schedulingChoices.getGuardedValues();
+    assert (schedulingChoicesGv.size() == 1);
 
-    for (GuardedValue<Machine> schedulingChoice : schedulingChoices.getGuardedValues()) {
-      Machine machine = schedulingChoice.getValue();
-      Guard guard = schedulingChoice.getGuard();
-      Message removed = rmBuffer(machine, guard);
-      if (effect == null) {
-        effect = removed;
-      } else {
-        effects.add(removed);
-      }
-    }
+    GuardedValue<Machine> schedulingChoice = schedulingChoicesGv.get(0);
+    Machine machine = schedulingChoice.getValue();
+    Guard guard = schedulingChoice.getGuard();
+    Message removed = rmBuffer(machine, guard);
 
+    Message effect = removed;
     assert effect != null;
-    effect = effect.merge(effects);
 
     stickyStep = false;
-    if (effects.isEmpty()) {
-      if (!effect.isCreateMachine().getGuardFor(true).isFalse()
-          || !effect.isSyncEvent().getGuardFor(true).isFalse()) {
-        stickyStep = true;
-      }
+    if (!effect.isCreateMachine().getGuardFor(true).isFalse()
+        || !effect.isSyncEvent().getGuardFor(true).isFalse()) {
+      stickyStep = true;
     }
     if (!stickyStep) {
       depth++;
     }
 
-    TraceLogger.schedule(depth, effect);
+    TraceLogger.schedule(depth, effect, machine);
 
     performEffect(effect);
   }

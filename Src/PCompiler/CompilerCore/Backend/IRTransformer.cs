@@ -352,6 +352,11 @@ namespace Plang.Compiler.Backend
                 case AssertStmt assertStmt:
                     (var assertExpr, var assertDeps) = SimplifyExpression(assertStmt.Assertion);
                     (var messageExpr, var messageDeps) = SimplifyExpression(assertStmt.Message);
+                    if (assertExpr is BoolLiteralExpr)
+                    {
+                        return assertDeps.Concat(messageDeps).Concat(new []{new AssertStmt(location, assertExpr, messageExpr)}).ToList();
+                    }
+                    
                     var ifStmtForAssert = new IfStmt(location, assertExpr, new NoStmt(location), new CompoundStmt(
                         location, messageDeps.Concat(new[]
                         {

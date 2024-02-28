@@ -16,9 +16,5 @@ namespace Plang.CSharpRuntime.Exceptions
         public PInternalException(string message, Exception innerException) : base(message, innerException)
         {
         }
-
-        protected PInternalException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
 }

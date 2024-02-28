@@ -69,7 +69,7 @@ namespace UnitTests.Runners
             if (exitCode == 0)
             {
                 exitCode = RunPChecker(scratchDirectoryGenerated.FullName,
-                    Path.Combine(scratchDirectoryGenerated.FullName, "./net6.0/Main.dll"), out var testStdout, out var testStderr);
+                    Path.Combine(scratchDirectoryGenerated.FullName, "./net8.0/Main.dll"), out var testStdout, out var testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
             }
@@ -87,7 +87,7 @@ namespace UnitTests.Runners
             const string csprojTemplate = @"
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject />

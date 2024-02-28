@@ -16,9 +16,5 @@ namespace Plang.CSharpRuntime.Exceptions
         public PIllegalCoercionException(string message, Exception innerException) : base(message, innerException)
         {
         }
-
-        protected PIllegalCoercionException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
 }

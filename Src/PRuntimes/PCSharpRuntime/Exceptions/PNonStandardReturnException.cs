@@ -24,10 +24,6 @@ namespace Plang.CSharpRuntime.Exceptions
         {
         }
 
-        protected PNonStandardReturnException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
-
         public NonStandardReturn ReturnKind { get; set; }
     }
 }

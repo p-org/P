@@ -86,7 +86,7 @@ namespace Plang.Compiler.TypeChecker
 
             // check if the same monitor has already been attached
             foreach (var conflictMonitor in componentModuleInfo.MonitorMap.Keys.Where(
-                x => assertExpr.SpecMonitors.Contains(x)))
+                         x => assertExpr.SpecMonitors.Contains(x)))
             {
                 throw handler.InvalidAssertExpr(assertExpr.SourceLocation, conflictMonitor);
             }
@@ -115,7 +115,7 @@ namespace Plang.Compiler.TypeChecker
             currentModule.Creates.AddInterfaces(componentModuleInfo.Creates.Interfaces);
 
             foreach (var linkMapItem in componentModuleInfo
-                .LinkMap)
+                         .LinkMap)
             {
                 currentModule.LinkMap[linkMapItem.Key] = new Dictionary<Interface, Interface>();
                 foreach (var localLinkMap in linkMapItem.Value)
@@ -296,7 +296,7 @@ namespace Plang.Compiler.TypeChecker
 
             // 2) oldInterface must belong to implemented or created interface
             if (!componentModuleInfo.Creates.Interfaces.Union(componentModuleInfo.InterfaceDef.Keys)
-                .Contains(renameExpr.OldInterface))
+                    .Contains(renameExpr.OldInterface))
             {
                 throw handler.InvalidRenameExpr(renameExpr.SourceLocation,
                     $"{renameExpr.OldInterface.Name} must belong to either created interfaces or bounded interfaces of the module");
@@ -343,7 +343,7 @@ namespace Plang.Compiler.TypeChecker
 
             // compute the new link map
             foreach (var linkMapItem in componentModuleInfo
-                .LinkMap)
+                         .LinkMap)
             {
                 var keyInterface = linkMapItem.Key.Equals(renameExpr.OldInterface)
                     ? renameExpr.NewInterface
@@ -403,29 +403,29 @@ namespace Plang.Compiler.TypeChecker
                     var module1Info = module1.ModuleInfo;
                     var module2Info = module2.ModuleInfo;
                     var allPrivateEvents = module1Info
-                    .PrivateEvents.Events
-                    .Union(module2Info.PrivateEvents.Events).ToList();
+                        .PrivateEvents.Events
+                        .Union(module2Info.PrivateEvents.Events).ToList();
                     var allSendAndReceiveEvents =
-                    module1Info.Sends.Events.Union(
-                        module1Info.Receives.Events.Union(
-                            module2Info.Receives.Events.Union(
-                                module2Info.Sends.Events))).ToList();
+                        module1Info.Sends.Events.Union(
+                            module1Info.Receives.Events.Union(
+                                module2Info.Receives.Events.Union(
+                                    module2Info.Sends.Events))).ToList();
 
                     // 1) domain of interface def map is disjoint
                     foreach (var @interface in module1Info.InterfaceDef.Keys.Intersect(
-                        module2Info.InterfaceDef.Keys))
+                                 module2Info.InterfaceDef.Keys))
                     {
                         throw handler.InvalidCompositionExpr(module1.SourceLocation,
-                        "bound interfaces after composition are not disjoint, e.g., " +
-                        $"interface {@interface.Name} is bound in both the modules being composed");
+                            "bound interfaces after composition are not disjoint, e.g., " +
+                            $"interface {@interface.Name} is bound in both the modules being composed");
                     }
 
                     // 2) no private events in the sends or receives events
                     foreach (var @event in allSendAndReceiveEvents.Intersect(allPrivateEvents))
                     {
                         throw handler.InvalidCompositionExpr(module1.SourceLocation,
-                        "private events after composition are not disjoint from send and receives set, e.g., " +
-                        $"after composition private event {@event.Name} belongs to both private and public (sends or receives) events");
+                            "private events after composition are not disjoint from send and receives set, e.g., " +
+                            $"after composition private event {@event.Name} belongs to both private and public (sends or receives) events");
                     }
 
                     // 3) no private events in the sends or receives permissions
@@ -433,32 +433,32 @@ namespace Plang.Compiler.TypeChecker
                     {
                         var permissionsEmbedded = GetPermissions(@event.PayloadType.AllowedPermissions?.Value);
                         foreach (var privatePermission in allPrivateEvents.Where(
-                            ev => permissionsEmbedded.Contains(ev)))
+                                     ev => permissionsEmbedded.Contains(ev)))
                         {
                             throw handler.InvalidCompositionExpr(module1.SourceLocation,
-                            "private events after composition are not disjoint from permissions in events sent or received, e.g., " +
-                            $"after composition private event {privatePermission.Name} is in the permissions set of {@event.Name}");
+                                "private events after composition are not disjoint from permissions in events sent or received, e.g., " +
+                                $"after composition private event {privatePermission.Name} is in the permissions set of {@event.Name}");
                         }
                     }
 
                     var interfaceImplAndNotCreated1 =
-                    module1Info.Creates.Interfaces.Except(module1Info.InterfaceDef.Keys);
+                        module1Info.Creates.Interfaces.Except(module1Info.InterfaceDef.Keys);
                     var interfaceCreatedAndNotImpl1 =
-                    module1Info.InterfaceDef.Keys.Except(module1Info.Creates.Interfaces);
+                        module1Info.InterfaceDef.Keys.Except(module1Info.Creates.Interfaces);
                     var interfaceImplAndNotCreated2 =
-                    module2Info.Creates.Interfaces.Except(module2Info.InterfaceDef.Keys);
+                        module2Info.Creates.Interfaces.Except(module2Info.InterfaceDef.Keys);
                     var interfaceCreatedAndNotImpl2 =
-                    module2Info.InterfaceDef.Keys.Except(module2Info.Creates.Interfaces);
+                        module2Info.InterfaceDef.Keys.Except(module2Info.Creates.Interfaces);
 
                     foreach (var @interface in interfaceImplAndNotCreated1.Union(
-                        interfaceCreatedAndNotImpl1.Union(
-                            interfaceImplAndNotCreated2.Union(interfaceCreatedAndNotImpl2))))
+                                 interfaceCreatedAndNotImpl1.Union(
+                                     interfaceImplAndNotCreated2.Union(interfaceCreatedAndNotImpl2))))
                     {
                         foreach (var @event in allPrivateEvents.Where(
-                    ev => @interface.ReceivableEvents.Contains(ev)))
+                                     ev => @interface.ReceivableEvents.Contains(ev)))
                         {
                             throw handler.InvalidCompositionExpr(module1.SourceLocation,
-                        $"After composition, private event {@event.Name} is in the received events of interface {@interface.Name} which is created or bound in the module");
+                                $"After composition, private event {@event.Name} is in the received events of interface {@interface.Name} which is created or bound in the module");
                         }
                     }
 
@@ -466,7 +466,7 @@ namespace Plang.Compiler.TypeChecker
                     foreach (var monitor in module1Info.MonitorMap.Keys.Intersect(module2Info.MonitorMap.Keys))
                     {
                         throw handler.InvalidCompositionExpr(module1.SourceLocation,
-                        $"monitor {monitor.Name} is attached in more than one modules being composed");
+                            $"monitor {monitor.Name} is attached in more than one modules being composed");
                     }
 
                     // if composition then output actions must be disjoint
@@ -475,25 +475,25 @@ namespace Plang.Compiler.TypeChecker
                         foreach (var @event in module1Info.Sends.Events.Intersect(module2Info.Sends.Events))
                         {
                             throw handler.InvalidCompositionExpr(module1.SourceLocation,
-                            $"output sends are not disjoint, {@event.Name} belongs to the sends of multiple composed module");
+                                $"output sends are not disjoint, {@event.Name} belongs to the sends of multiple composed module");
                         }
 
                         foreach (var @interface in module1Info.Creates.Interfaces.Intersect(
-                        module2Info.Creates.Interfaces))
+                                     module2Info.Creates.Interfaces))
                         {
                             throw handler.InvalidCompositionExpr(module1.SourceLocation,
-                            $"output creates are not disjoint, {@interface.Name} belongs to the creates of multiple composed module");
+                                $"output creates are not disjoint, {@interface.Name} belongs to the creates of multiple composed module");
                         }
                     }
 
                     foreach (var exportedOrCreatedInterface in module1.ModuleInfo.InterfaceDef.Keys.Union(module1.ModuleInfo
-                        .Creates.Interfaces))
+                                 .Creates.Interfaces))
                     {
                         foreach (var priEvent in module2.ModuleInfo.PrivateEvents.Events.Where(ev =>
-                    GetPermissions(exportedOrCreatedInterface.PayloadType.AllowedPermissions?.Value).Contains(ev)))
+                                     GetPermissions(exportedOrCreatedInterface.PayloadType.AllowedPermissions?.Value).Contains(ev)))
                         {
                             throw handler.InvalidHideEventExpr(module2.SourceLocation,
-                        $"private event {priEvent.Name} belongs to the permissions of the constructor type of public interface {exportedOrCreatedInterface.Name}");
+                                $"private event {priEvent.Name} belongs to the permissions of the constructor type of public interface {exportedOrCreatedInterface.Name}");
                         }
                     }
                 }
@@ -568,8 +568,8 @@ namespace Plang.Compiler.TypeChecker
                 componentModuleInfo.InterfaceDef.Keys.Except(componentModuleInfo.Creates.Interfaces);
 
             foreach (var @interface in interfaceCreatedAndNotImpl
-                .Union(interfaceImplAndNotCreated)
-                .Where(i => hideEExpr.HideEvents.Intersects(i.ReceivableEvents.Events)))
+                         .Union(interfaceImplAndNotCreated)
+                         .Where(i => hideEExpr.HideEvents.Intersects(i.ReceivableEvents.Events)))
             {
                 var @event = hideEExpr.HideEvents.Events.First(ev => @interface.ReceivableEvents.Contains(ev));
                 throw handler.InvalidHideEventExpr(hideEExpr.SourceLocation,
@@ -584,7 +584,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 var permissionsEmbedded = GetPermissions(@event.PayloadType.AllowedPermissions.Value);
                 foreach (var privatePermission in hideEExpr.HideEvents.Events.Where(
-                    ev => permissionsEmbedded.Contains(ev)))
+                             ev => permissionsEmbedded.Contains(ev)))
                 {
                     throw handler.InvalidHideEventExpr(hideEExpr.SourceLocation,
                         $"event {privatePermission} cannot be made private as it belongs to allowed permission of {@event.Name} which is received or sent by the module");
@@ -592,13 +592,13 @@ namespace Plang.Compiler.TypeChecker
             }
 
             foreach (var exportedOrCreatedInterface in hideEExpr.ModuleInfo.InterfaceDef.Keys.Union(hideEExpr.ModuleInfo
-                .Creates.Interfaces))
+                         .Creates.Interfaces))
             {
                 foreach (var priEvent in hideEExpr.HideEvents.Events.Where(ev =>
-                GetPermissions(exportedOrCreatedInterface.PayloadType.AllowedPermissions?.Value).Contains(ev)))
+                             GetPermissions(exportedOrCreatedInterface.PayloadType.AllowedPermissions?.Value).Contains(ev)))
                 {
                     throw handler.InvalidHideEventExpr(hideEExpr.SourceLocation,
-                    $"event {priEvent.Name} cannot be made private as it belongs to the permissions of the contructor type of interface {exportedOrCreatedInterface.Name}");
+                        $"event {priEvent.Name} cannot be made private as it belongs to the permissions of the contructor type of interface {exportedOrCreatedInterface.Name}");
                 }
             }
 
@@ -620,7 +620,7 @@ namespace Plang.Compiler.TypeChecker
             }
 
             foreach (var linkMapItem in componentModuleInfo
-                .LinkMap)
+                         .LinkMap)
             {
                 currentModuleInfo.LinkMap[linkMapItem.Key] = new Dictionary<Interface, Interface>();
                 foreach (var localLinkMap in linkMapItem.Value)
@@ -652,7 +652,7 @@ namespace Plang.Compiler.TypeChecker
             var interfacesImplementedAndCreated =
                 componentModuleInfo.Creates.Interfaces.Intersect(componentModuleInfo.InterfaceDef.Keys);
             foreach (var @interface in hideIExpr.HideInterfaces.Where(
-                it => !interfacesImplementedAndCreated.Contains(it)))
+                         it => !interfacesImplementedAndCreated.Contains(it)))
             {
                 throw handler.InvalidHideInterfaceExpr(hideIExpr.SourceLocation,
                     $"interface {@interface.Name} cannot be made private. Interface {@interface.Name} must be both created and bounded in the module");
@@ -675,7 +675,7 @@ namespace Plang.Compiler.TypeChecker
             }
 
             foreach (var linkMapItem in componentModuleInfo
-                .LinkMap)
+                         .LinkMap)
             {
                 currentModuleInfo.LinkMap[linkMapItem.Key] = new Dictionary<Interface, Interface>();
                 foreach (var localLinkMap in linkMapItem.Value)

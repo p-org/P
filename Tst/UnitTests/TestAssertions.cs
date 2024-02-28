@@ -1,6 +1,6 @@
-﻿using NUnit.Framework;
-using System;
+﻿using System;
 using System.IO;
+using NUnit.Framework;
 using UnitTests.Core;
 
 namespace UnitTests

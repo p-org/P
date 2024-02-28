@@ -558,9 +558,9 @@ namespace Plang.Compiler.Backend
                     var condLocation = whileStmt.Condition.SourceLocation;
                     var condCheck =
                         condDeps
-                        .Append(condStore)
-                        .Append(new IfStmt(condLocation, condTemp, new NoStmt(condLocation), new BreakStmt(condLocation)))
-                        .ToList();
+                            .Append(condStore)
+                            .Append(new IfStmt(condLocation, condTemp, new NoStmt(condLocation), new BreakStmt(condLocation)))
+                            .ToList();
 
                     var loopBody = new CompoundStmt(
                         whileStmt.Body.SourceLocation,
@@ -622,10 +622,10 @@ namespace Plang.Compiler.Backend
 
             // while(i < (sizeof - 1))
             IPExpr cond = new BinOpExpr(location, BinOpType.Lt, 
-                            new VariableAccessExpr(location, iVar), 
-                            new BinOpExpr(location, BinOpType.Sub, 
-                                new VariableAccessExpr(location, sizeVar), 
-                                new IntLiteralExpr(location, 1)));
+                new VariableAccessExpr(location, iVar), 
+                new BinOpExpr(location, BinOpType.Sub, 
+                    new VariableAccessExpr(location, sizeVar), 
+                    new IntLiteralExpr(location, 1)));
 
             // inside loop: i = i+1;
             IPStmt incrementI = new AssignStmt(location, new VariableAccessExpr(location, iVar), 

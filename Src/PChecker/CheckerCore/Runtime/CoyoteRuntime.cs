@@ -32,13 +32,13 @@ namespace PChecker.Runtime
         /// The currently executing runtime.
         /// </summary>
         internal static CoyoteRuntime Current => AsyncLocalInstance.Value ??
-            (IsExecutionControlled ? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture,
-                "Uncontrolled task '{0}' invoked a runtime method. Please make sure to avoid using concurrency APIs " +
-                "(e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from the 'System.Threading.Tasks' namespace) inside " +
-                "actor handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
-                "you will need to mock them during testing.",
-                Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>")) :
-            RuntimeFactory.InstalledRuntime);
+                                                 (IsExecutionControlled ? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture,
+                                                         "Uncontrolled task '{0}' invoked a runtime method. Please make sure to avoid using concurrency APIs " +
+                                                         "(e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from the 'System.Threading.Tasks' namespace) inside " +
+                                                         "actor handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
+                                                         "you will need to mock them during testing.",
+                                                         Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>")) :
+                                                     RuntimeFactory.InstalledRuntime);
 
         /// <summary>
         /// If true, the program execution is controlled by the runtime to

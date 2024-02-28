@@ -155,8 +155,8 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         public string GetDescription()
         {
             var text = $"pct[priority change points '{MaxPrioritySwitchPoints}' [" +
-                string.Join(", ", PriorityChangePoints.ToArray()) +
-                "], seed '" + RandomValueGenerator.Seed + "']";
+                       string.Join(", ", PriorityChangePoints.ToArray()) +
+                       "], seed '" + RandomValueGenerator.Seed + "']";
             return text;
         }
 

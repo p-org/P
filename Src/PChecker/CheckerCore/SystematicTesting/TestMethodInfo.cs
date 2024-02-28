@@ -119,7 +119,7 @@ namespace PChecker.SystematicTesting
                 if (testMethods.Count > 0)
                 {
                     var msg = "Cannot find a P test case that contains " + methodName +
-                        ". Possible options are: " + Environment.NewLine;
+                              ". Possible options are: " + Environment.NewLine;
                     foreach (var mi in testMethods)
                     {
                         msg += $"{mi.DeclaringType.Name}{Environment.NewLine}";
@@ -135,8 +135,8 @@ namespace PChecker.SystematicTesting
             else if (filteredTestMethods.Count > 1)
             {
                 var msg = $"We found '{testMethods.Count}' test cases. Please provide " +
-                    $"a more precise name of the test case you wish to check using (--testcase | -tc).\n" +
-                    "Possible options are: " + Environment.NewLine;
+                          $"a more precise name of the test case you wish to check using (--testcase | -tc).\n" +
+                          "Possible options are: " + Environment.NewLine;
 
                 foreach (var mi in testMethods)
                 {
@@ -159,23 +159,23 @@ namespace PChecker.SystematicTesting
             var hasTaskInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(ICoyoteRuntime);
 
             if (!((hasVoidReturnType || hasAsyncReturnType) && (hasNoInputParameters || hasActorInputParameters || hasTaskInputParameters) &&
-                !testMethod.IsAbstract && !testMethod.IsVirtual && !testMethod.IsConstructor &&
-                !testMethod.ContainsGenericParameters && testMethod.IsPublic && testMethod.IsStatic))
+                  !testMethod.IsAbstract && !testMethod.IsVirtual && !testMethod.IsConstructor &&
+                  !testMethod.ContainsGenericParameters && testMethod.IsPublic && testMethod.IsStatic))
             {
                 Error.ReportAndExit("Incorrect test method declaration. Please " +
-                    "use one of the following supported declarations:\n\n" +
-                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                    $"  public static void {testMethod.Name}() {{ ... }}\n\n" +
-                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                    $"  public static void {testMethod.Name}(ICoyoteRuntime runtime) {{ ... }}\n\n" +
-                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                    $"  public static void {testMethod.Name}(IActorRuntime runtime) {{ ... }}\n\n" +
-                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                    $"  public static async {typeof(Task).FullName} {testMethod.Name}() {{ ... await ... }}\n\n" +
-                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                    $"  public static async {typeof(Task).FullName} {testMethod.Name}(ICoyoteRuntime runtime) {{ ... await ... }}\n\n" +
-                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                    $"  public static async {typeof(Task).FullName} {testMethod.Name}(IActorRuntime runtime) {{ ... await ... }}");
+                                    "use one of the following supported declarations:\n\n" +
+                                    $"  [{typeof(TestAttribute).FullName}]\n" +
+                                    $"  public static void {testMethod.Name}() {{ ... }}\n\n" +
+                                    $"  [{typeof(TestAttribute).FullName}]\n" +
+                                    $"  public static void {testMethod.Name}(ICoyoteRuntime runtime) {{ ... }}\n\n" +
+                                    $"  [{typeof(TestAttribute).FullName}]\n" +
+                                    $"  public static void {testMethod.Name}(IActorRuntime runtime) {{ ... }}\n\n" +
+                                    $"  [{typeof(TestAttribute).FullName}]\n" +
+                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}() {{ ... await ... }}\n\n" +
+                                    $"  [{typeof(TestAttribute).FullName}]\n" +
+                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}(ICoyoteRuntime runtime) {{ ... await ... }}\n\n" +
+                                    $"  [{typeof(TestAttribute).FullName}]\n" +
+                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}(IActorRuntime runtime) {{ ... await ... }}");
             }
 
             Delegate test;
@@ -229,8 +229,8 @@ namespace PChecker.SystematicTesting
             else if (testMethods.Count > 1)
             {
                 Error.ReportAndExit("Only one test case in the program can " +
-                    $"be declared with the attribute '{attribute.FullName}'. " +
-                    $"'{testMethods.Count}' test methods were found instead.");
+                                    $"be declared with the attribute '{attribute.FullName}'. " +
+                                    $"'{testMethods.Count}' test methods were found instead.");
             }
 
             if (testMethods[0].ReturnType != typeof(void) ||
@@ -241,9 +241,9 @@ namespace PChecker.SystematicTesting
                 testMethods[0].GetParameters().Length != 0)
             {
                 Error.ReportAndExit("Incorrect test method declaration. Please " +
-                    "declare the test method as follows:\n" +
-                    $"  [{attribute.FullName}] public static void " +
-                    $"{testMethods[0].Name}() {{ ... }}");
+                                    "declare the test method as follows:\n" +
+                                    $"  [{attribute.FullName}] public static void " +
+                                    $"{testMethods[0].Name}() {{ ... }}");
             }
 
             return testMethods[0];

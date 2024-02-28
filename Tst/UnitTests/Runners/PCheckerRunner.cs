@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Plang.Compiler;
 using UnitTests.Core;
 
@@ -41,7 +42,7 @@ namespace UnitTests.Runners
                     {
                         throw;
                     }
-                    System.Threading.Thread.Sleep(1000);
+                    Thread.Sleep(1000);
                 }
             }
         }

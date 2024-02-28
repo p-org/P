@@ -535,7 +535,7 @@ namespace Plang.Compiler.Backend.Java {
                 default:
                     WriteLine($"// TODO: {stmt}");
                     return;
-                    //throw new NotImplementedException(stmt.GetType().ToString());
+                //throw new NotImplementedException(stmt.GetType().ToString());
             }
         }
 
@@ -632,8 +632,8 @@ namespace Plang.Compiler.Backend.Java {
             {
                 var ffiBridge = Names.FFIBridgeForMachine(
                     isStatic
-                    ? Constants.FFIGlobalScopeCname
-                    : $"{_currentMachine.Name}{Constants.FFILocalScopeSuffix}");
+                        ? Constants.FFIGlobalScopeCname
+                        : $"{_currentMachine.Name}{Constants.FFILocalScopeSuffix}");
                 Write($"{ffiBridge}.{fname}(");
 
                 // All foreign functions have an implicit first argument to the current machine

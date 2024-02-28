@@ -439,56 +439,56 @@ namespace Plang.Compiler.Backend.Java
         }
     }
 
-        public static class BinOpExtensions
+    public static class BinOpExtensions
+    {
+        /// <summary>
+        /// Produces the binary operator that should be used for a binary operation between
+        /// two Java primitive values.
+        /// </summary>
+        /// <param name="op"></param>
+        /// <returns></returns>
+        public static string JavaPrimitiveBinOp(this BinOpType op)
         {
-            /// <summary>
-            /// Produces the binary operator that should be used for a binary operation between
-            /// two Java primitive values.
-            /// </summary>
-            /// <param name="op"></param>
-            /// <returns></returns>
-            public static string JavaPrimitiveBinOp(this BinOpType op)
+            switch (op)
             {
-                switch (op)
-                {
-                    // Comparison operators
-                    case BinOpType.Lt:
-                        return "<";
-                    case BinOpType.Le:
-                        return "<=";
-                    case BinOpType.Ge:
-                        return ">=";
-                    case BinOpType.Gt:
-                        return ">";
+                // Comparison operators
+                case BinOpType.Lt:
+                    return "<";
+                case BinOpType.Le:
+                    return "<=";
+                case BinOpType.Ge:
+                    return ">=";
+                case BinOpType.Gt:
+                    return ">";
 
-                    // Equality operators
-                    case BinOpType.Neq:
-                        return "!=";
-                    case BinOpType.Eq:
-                        return "==";
+                // Equality operators
+                case BinOpType.Neq:
+                    return "!=";
+                case BinOpType.Eq:
+                    return "==";
 
-                    // Arithmetic operators
-                    case BinOpType.Add:
-                        return "+";
-                    case BinOpType.Sub:
-                        return "-";
-                    case BinOpType.Mul:
-                        return "*";
-                    case BinOpType.Div:
-                        return "/";
-                    case BinOpType.Mod:
-                        return "%";
+                // Arithmetic operators
+                case BinOpType.Add:
+                    return "+";
+                case BinOpType.Sub:
+                    return "-";
+                case BinOpType.Mul:
+                    return "*";
+                case BinOpType.Div:
+                    return "/";
+                case BinOpType.Mod:
+                    return "%";
 
-                    // Boolean operators:
-                    case BinOpType.And:
-                        return "&&";
-                    case BinOpType.Or:
-                        return "||";
+                // Boolean operators:
+                case BinOpType.And:
+                    return "&&";
+                case BinOpType.Or:
+                    return "||";
 
-                    // This should be dead code.
-                    default:
-                        throw new NotImplementedException(op.ToString());
-                }
+                // This should be dead code.
+                default:
+                    throw new NotImplementedException(op.ToString());
             }
         }
+    }
 }

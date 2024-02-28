@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Xml;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -60,7 +59,7 @@ namespace Plang.Compiler.Backend.Stately {
                 case FunCallStmt fStmt:
                     foreach (var stmt in fStmt.Function.Body.Statements)
                     {
-                       gotoStmts.AddRange(WriteStmt(stmt));
+                        gotoStmts.AddRange(WriteStmt(stmt));
                     }
                     break;
                 case IfStmt ifStmt:

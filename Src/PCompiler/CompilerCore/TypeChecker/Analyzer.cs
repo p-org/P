@@ -51,7 +51,7 @@ namespace Plang.Compiler.TypeChecker
                     true),
                 CreatePropagation(fn => fn.IsNondeterministic, (fn, value) => fn.IsNondeterministic = value,
                     true)
-                );
+            );
 
             // Step 5: Verify capability restrictions
             foreach (var function in allFunctions)

@@ -139,15 +139,15 @@ namespace Plang.CSharpRuntime
                     return (PrtInt)TryRandomInt(maxValue);
 
                 case PrtSeq seq:
-                    {
-                        TryAssert(seq.Any(), "Trying to choose from an empty sequence!");
-                        return seq[TryRandomInt(seq.Count)];
-                    }
+                {
+                    TryAssert(seq.Any(), "Trying to choose from an empty sequence!");
+                    return seq[TryRandomInt(seq.Count)];
+                }
                 case PrtSet set:
-                    {
-                        TryAssert(set.Any(), "Trying to choose from an empty set!");
-                        return set.ElementAt(TryRandomInt(set.Count));
-                    }
+                {
+                    TryAssert(set.Any(), "Trying to choose from an empty set!");
+                    return set.ElementAt(TryRandomInt(set.Count));
+                }
                 case PrtMap map:
                 {
                     TryAssert(map.Any(), "Trying to choose from an empty map!");

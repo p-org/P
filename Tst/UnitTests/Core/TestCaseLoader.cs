@@ -1,7 +1,7 @@
-using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NUnit.Framework;
 
 namespace UnitTests.Core
 {
@@ -24,10 +24,10 @@ namespace UnitTests.Core
         public static IEnumerable<TestCaseData> FindTestCasesInDirectory(string directoryName, string[] testDirNames)
         {
             return from testDir in TestDirs
-                   let baseDirectory = new DirectoryInfo(Path.Combine(directoryName, testDir))
-                   from testCaseDir in baseDirectory.EnumerateDirectories("*.*", SearchOption.AllDirectories)
-                   where testDirNames.Contains(testCaseDir.Parent.Name)
-                   select DirectoryToTestCase(testCaseDir, baseDirectory);
+                let baseDirectory = new DirectoryInfo(Path.Combine(directoryName, testDir))
+                from testCaseDir in baseDirectory.EnumerateDirectories("*.*", SearchOption.AllDirectories)
+                where testDirNames.Contains(testCaseDir.Parent.Name)
+                select DirectoryToTestCase(testCaseDir, baseDirectory);
         }
 
         private static TestCaseData DirectoryToTestCase(DirectoryInfo dir, DirectoryInfo testRoot)

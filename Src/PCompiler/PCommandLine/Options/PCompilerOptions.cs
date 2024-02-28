@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using PChecker.IO.Debugging;
 using Plang.Compiler;
-using Plang.Compiler.Backend;
 using Plang.Parser;
 
 namespace Plang.Options
@@ -28,7 +27,7 @@ namespace Plang.Options
                 // "  --mode verification : for verification through exhaustive symbolic exploration\n" + 
                 // "  --mode coverage     : for achieving state-space coverage through exhaustive explicit-state search\n" +
                 // "  --mode pobserve     : for runtime monitoring of P specs against implementation logs" 
-                );
+            );
 
             var projectGroup = Parser.GetOrCreateGroup("project", "Compiling using `.pproj` file");
             projectGroup.AddArgument("pproj", "pp", "P project file to compile (*.pproj)." +
@@ -105,9 +104,9 @@ namespace Plang.Options
             CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
             var filtered = 
                 from file in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj")
-                    let info = new FileInfo(file)
-                    where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
-                    select file;
+                let info = new FileInfo(file)
+                where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
+                select file;
             var files = filtered.ToArray();
             if (files.Length == 0)
             {
@@ -192,25 +191,25 @@ namespace Plang.Options
                     compilerConfiguration.PObservePackageName = (string)option.Value;
                     break;
                 case "pfiles":
+                {
+                    var files = (string[])option.Value;
+                    foreach (var file in files.Distinct())
                     {
-                        var files = (string[])option.Value;
-                        foreach (var file in files.Distinct())
+                        if (file.EndsWith(".p"))
                         {
-                            if (file.EndsWith(".p"))
-                            {
-                                compilerConfiguration.InputPFiles.Add(file);
-                            }
-                            else
-                            {
-                                compilerConfiguration.InputForeignFiles.Add(file);
-                            }
+                            compilerConfiguration.InputPFiles.Add(file);
+                        }
+                        else
+                        {
+                            compilerConfiguration.InputForeignFiles.Add(file);
                         }
                     }
+                }
                     break;
                 case "pproj":
-                    {
-                        // do nothing, since already configured through UpdateConfigurationWithPProjectFile
-                    }
+                {
+                    // do nothing, since already configured through UpdateConfigurationWithPProjectFile
+                }
                     break;
                 default:
                     throw new Exception($"Unhandled parsed argument: '{option.LongName}'");
@@ -250,7 +249,7 @@ namespace Plang.Options
             {
                 compilerConfiguration.OutputDirectory = Directory.CreateDirectory("PGenerated");
                 compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
-           }
+            }
         }
         
 

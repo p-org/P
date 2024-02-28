@@ -33,7 +33,7 @@ namespace Plang.Compiler.Backend.CSharp
             // create the .csproj file
             var csprojTemplate = Constants.csprojTemplate;
             csprojTemplate = csprojTemplate.Replace("-directory-",
-                    Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName));
+                Path.GetRelativePath(job.ProjectRootPath.FullName, job.OutputDirectory.FullName));
 
             string foreignInclude = "";
             var foreignFiles = job.InputForeignFiles.Where(x => x.EndsWith(".cs"));
@@ -1046,42 +1046,42 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case RemoveStmt removeStmt:
-                    {
-                        var castOperation = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map)
+                {
+                    var castOperation = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map)
                         ? "(PrtMap)"
                         : PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Sequence)
-                        ? "(PrtSeq)"
-                        : "(PrtSet)";
-                        context.Write(output, $"({castOperation}");
-                        switch (removeStmt.Variable.Type.Canonicalize())
-                        {
-                            case MapType _:
-                                WriteExpr(context, output, removeStmt.Variable);
-                                context.Write(output, ").Remove(");
-                                WriteExpr(context, output, removeStmt.Value);
-                                context.WriteLine(output, ");");
-                                break;
+                            ? "(PrtSeq)"
+                            : "(PrtSet)";
+                    context.Write(output, $"({castOperation}");
+                    switch (removeStmt.Variable.Type.Canonicalize())
+                    {
+                        case MapType _:
+                            WriteExpr(context, output, removeStmt.Variable);
+                            context.Write(output, ").Remove(");
+                            WriteExpr(context, output, removeStmt.Value);
+                            context.WriteLine(output, ");");
+                            break;
 
-                            case SequenceType _:
-                                WriteExpr(context, output, removeStmt.Variable);
-                                context.Write(output, ").RemoveAt(");
-                                WriteExpr(context, output, removeStmt.Value);
-                                context.WriteLine(output, ");");
-                                break;
+                        case SequenceType _:
+                            WriteExpr(context, output, removeStmt.Variable);
+                            context.Write(output, ").RemoveAt(");
+                            WriteExpr(context, output, removeStmt.Value);
+                            context.WriteLine(output, ");");
+                            break;
 
-                            case SetType _:
-                                WriteExpr(context, output, removeStmt.Variable);
-                                context.Write(output, ").Remove(");
-                                WriteExpr(context, output, removeStmt.Value);
-                                context.WriteLine(output, ");");
-                                break;
+                        case SetType _:
+                            WriteExpr(context, output, removeStmt.Variable);
+                            context.Write(output, ").Remove(");
+                            WriteExpr(context, output, removeStmt.Value);
+                            context.WriteLine(output, ");");
+                            break;
 
-                            default:
-                                throw new ArgumentOutOfRangeException(
-                                    $"Remove cannot be applied to type {removeStmt.Variable.Type.OriginalRepresentation}");
-                        }
-                        break;
+                        default:
+                            throw new ArgumentOutOfRangeException(
+                                $"Remove cannot be applied to type {removeStmt.Variable.Type.OriginalRepresentation}");
                     }
+                    break;
+                }
 
                 case ReturnStmt returnStmt:
                     context.Write(output, "return ");

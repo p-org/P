@@ -11,7 +11,7 @@ using PChecker.Exceptions;
 using PChecker.IO.Debugging;
 using PChecker.Runtime;
 using PChecker.SystematicTesting.Operations;
-using CoyoteTasks = PChecker.Tasks;
+using Task = PChecker.Tasks.Task;
 
 namespace PChecker.SystematicTesting
 {
@@ -42,7 +42,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Schedules the specified action to be executed asynchronously.
         /// </summary>
-        public Tasks.Task ScheduleAction(Action action, Task predecessor, CancellationToken cancellationToken)
+        public Task ScheduleAction(Action action, System.Threading.Tasks.Task predecessor, CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
             Assert(action != null, "The task cannot execute a null action.");
@@ -52,7 +52,7 @@ namespace PChecker.SystematicTesting
             Scheduler.RegisterOperation(op);
             op.OnEnabled();
 
-            var task = new Task(() =>
+            var task = new System.Threading.Tasks.Task(() =>
             {
                 try
                 {
@@ -82,7 +82,7 @@ namespace PChecker.SystematicTesting
                 }
                 finally
                 {
-                    Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, Task.CurrentId);
+                    Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, System.Threading.Tasks.Task.CurrentId);
                     op.OnCompleted();
                 }
             }, cancellationToken);
@@ -96,13 +96,13 @@ namespace PChecker.SystematicTesting
             Scheduler.WaitOperationStart(op);
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Create);
 
-            return new Tasks.Task(this, task);
+            return new Task(this, task);
         }
 
         /// <summary>
         /// Schedules the specified function to be executed asynchronously.
         /// </summary>
-        public Tasks.Task ScheduleFunction(Func<Tasks.Task> function, Task predecessor, CancellationToken cancellationToken)
+        public Task ScheduleFunction(Func<Task> function, System.Threading.Tasks.Task predecessor, CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
             Assert(function != null, "The task cannot execute a null function.");
@@ -112,7 +112,7 @@ namespace PChecker.SystematicTesting
             Scheduler.RegisterOperation(op);
             op.OnEnabled();
 
-            var task = new Task<Task>(() =>
+            var task = new Task<System.Threading.Tasks.Task>(() =>
             {
                 try
                 {
@@ -138,7 +138,7 @@ namespace PChecker.SystematicTesting
                 }
                 finally
                 {
-                    Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, Task.CurrentId);
+                    Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, System.Threading.Tasks.Task.CurrentId);
                     op.OnCompleted();
                 }
             }, cancellationToken);
@@ -154,13 +154,13 @@ namespace PChecker.SystematicTesting
             Scheduler.WaitOperationStart(op);
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Create);
 
-            return new Tasks.Task(this, innerTask);
+            return new Task(this, innerTask);
         }
 
         /// <summary>
         /// Schedules the specified function to be executed asynchronously.
         /// </summary>
-        public Tasks.Task<TResult> ScheduleFunction<TResult>(Func<Tasks.Task<TResult>> function, Task predecessor,
+        public Tasks.Task<TResult> ScheduleFunction<TResult>(Func<Tasks.Task<TResult>> function, System.Threading.Tasks.Task predecessor,
             CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
@@ -197,7 +197,7 @@ namespace PChecker.SystematicTesting
                 }
                 finally
                 {
-                    Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, Task.CurrentId);
+                    Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, System.Threading.Tasks.Task.CurrentId);
                     op.OnCompleted();
                 }
             }, cancellationToken);
@@ -219,7 +219,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Schedules the specified delegate to be executed asynchronously.
         /// </summary>
-        public Tasks.Task<TResult> ScheduleDelegate<TResult>(Delegate work, Task predecessor, CancellationToken cancellationToken)
+        public Tasks.Task<TResult> ScheduleDelegate<TResult>(Delegate work, System.Threading.Tasks.Task predecessor, CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
             Assert(work != null, "The task cannot execute a null delegate.");
@@ -243,7 +243,7 @@ namespace PChecker.SystematicTesting
                         op.OnWaitTask(predecessor);
                     }
 
-                    if (work is Func<Task> funcWithTaskResult)
+                    if (work is Func<System.Threading.Tasks.Task> funcWithTaskResult)
                     {
                         var resultTask = funcWithTaskResult();
                         OnWaitTask(operationId, resultTask);
@@ -273,7 +273,7 @@ namespace PChecker.SystematicTesting
                 }
                 finally
                 {
-                    Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, Task.CurrentId);
+                    Debug.WriteLine("<ScheduleDebug> Completed operation '{0}' on task '{1}'.", op.Name, System.Threading.Tasks.Task.CurrentId);
                     op.OnCompleted();
                 }
             }, cancellationToken);
@@ -293,13 +293,13 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Schedules the specified delay to be executed asynchronously.
         /// </summary>
-        public Tasks.Task ScheduleDelay(TimeSpan delay, CancellationToken cancellationToken)
+        public Task ScheduleDelay(TimeSpan delay, CancellationToken cancellationToken)
         {
             // TODO: support cancellations during testing.
             if (delay.TotalMilliseconds == 0)
             {
                 // If the delay is 0, then complete synchronously.
-                return Tasks.Task.CompletedTask;
+                return Task.CompletedTask;
             }
 
             // TODO: cache the dummy delay action to optimize memory.
@@ -309,22 +309,22 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Schedules the specified task awaiter continuation to be executed asynchronously.
         /// </summary>
-        public void ScheduleTaskAwaiterContinuation(Task task, Action continuation)
+        public void ScheduleTaskAwaiterContinuation(System.Threading.Tasks.Task task, Action continuation)
         {
             try
             {
                 var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
                 Assert(callerOp != null,
                     "Task with id '{0}' that is not controlled by the runtime is executing controlled task '{1}'.",
-                    Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>", task.Id);
+                    System.Threading.Tasks.Task.CurrentId.HasValue ? System.Threading.Tasks.Task.CurrentId.Value.ToString() : "<unknown>", task.Id);
 
                 if (callerOp.IsExecutingInRootAsyncMethod())
                 {
                     Debug.WriteLine("<Task> '{0}' is executing continuation of task '{1}' on task '{2}'.",
-                        callerOp.Name, task.Id, Task.CurrentId);
+                        callerOp.Name, task.Id, System.Threading.Tasks.Task.CurrentId);
                     continuation();
                     Debug.WriteLine("<Task> '{0}' resumed after continuation of task '{1}' on task '{2}'.",
-                        callerOp.Name, task.Id, Task.CurrentId);
+                        callerOp.Name, task.Id, System.Threading.Tasks.Task.CurrentId);
                 }
                 else
                 {
@@ -335,7 +335,7 @@ namespace PChecker.SystematicTesting
             }
             catch (ExecutionCanceledException)
             {
-                Debug.WriteLine($"<Exception> ExecutionCanceledException was thrown from task '{Task.CurrentId}'.");
+                Debug.WriteLine($"<Exception> ExecutionCanceledException was thrown from task '{System.Threading.Tasks.Task.CurrentId}'.");
             }
         }
 
@@ -349,13 +349,13 @@ namespace PChecker.SystematicTesting
                 var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
                 Assert(callerOp != null,
                     "Uncontrolled task '{0}' invoked a yield operation.",
-                    Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>");
+                    System.Threading.Tasks.Task.CurrentId.HasValue ? System.Threading.Tasks.Task.CurrentId.Value.ToString() : "<unknown>");
                 Debug.WriteLine("<Task> '{0}' is executing a yield operation.", callerOp.Id);
                 ScheduleAction(continuation, null, default);
             }
             catch (ExecutionCanceledException)
             {
-                Debug.WriteLine($"<Exception> ExecutionCanceledException was thrown from task '{Task.CurrentId}'.");
+                Debug.WriteLine($"<Exception> ExecutionCanceledException was thrown from task '{System.Threading.Tasks.Task.CurrentId}'.");
             }
         }
 
@@ -363,7 +363,7 @@ namespace PChecker.SystematicTesting
         /// Creates a controlled task that will complete when all tasks
         /// in the specified enumerable collection have completed.
         /// </summary>
-        public Tasks.Task WhenAllTasksCompleteAsync(IEnumerable<Tasks.Task> tasks)
+        public Task WhenAllTasksCompleteAsync(IEnumerable<Task> tasks)
         {
             Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
             Assert(tasks.Count() > 0, "Cannot wait for zero tasks to complete.");
@@ -371,7 +371,7 @@ namespace PChecker.SystematicTesting
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
             Assert(callerOp != null,
                 "Uncontrolled task '{0}' invoked a when-all operation.",
-                Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>");
+                System.Threading.Tasks.Task.CurrentId.HasValue ? System.Threading.Tasks.Task.CurrentId.Value.ToString() : "<unknown>");
             callerOp.OnWaitTasks(tasks, waitAll: true);
 
             List<Exception> exceptions = null;
@@ -390,11 +390,11 @@ namespace PChecker.SystematicTesting
 
             if (exceptions != null)
             {
-                return Tasks.Task.FromException(new AggregateException(exceptions));
+                return Task.FromException(new AggregateException(exceptions));
             }
             else
             {
-                return Tasks.Task.CompletedTask;
+                return Task.CompletedTask;
             }
         }
 
@@ -410,7 +410,7 @@ namespace PChecker.SystematicTesting
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
             Assert(callerOp != null,
                 "Uncontrolled task '{0}' invoked a when-all operation.",
-                Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>");
+                System.Threading.Tasks.Task.CurrentId.HasValue ? System.Threading.Tasks.Task.CurrentId.Value.ToString() : "<unknown>");
             callerOp.OnWaitTasks(tasks, waitAll: true);
 
             var idx = 0;
@@ -421,14 +421,14 @@ namespace PChecker.SystematicTesting
                 idx++;
             }
 
-            return Tasks.Task.FromResult(result);
+            return Task.FromResult(result);
         }
 
         /// <summary>
         /// Creates a controlled task that will complete when any task
         /// in the specified enumerable collection have completed.
         /// </summary>
-        public Tasks.Task<Tasks.Task> WhenAnyTaskCompletesAsync(IEnumerable<Tasks.Task> tasks)
+        public Tasks.Task<Task> WhenAnyTaskCompletesAsync(IEnumerable<Task> tasks)
         {
             Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
             Assert(tasks.Count() > 0, "Cannot wait for zero tasks to complete.");
@@ -436,10 +436,10 @@ namespace PChecker.SystematicTesting
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
             Assert(callerOp != null,
                 "Uncontrolled task '{0}' invoked a when-any operation.",
-                Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>");
+                System.Threading.Tasks.Task.CurrentId.HasValue ? System.Threading.Tasks.Task.CurrentId.Value.ToString() : "<unknown>");
             callerOp.OnWaitTasks(tasks, waitAll: false);
 
-            Tasks.Task result = null;
+            Task result = null;
             foreach (var task in tasks)
             {
                 if (task.IsCompleted)
@@ -449,7 +449,7 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            return Tasks.Task.FromResult(result);
+            return Task.FromResult(result);
         }
 
         /// <summary>
@@ -464,7 +464,7 @@ namespace PChecker.SystematicTesting
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
             Assert(callerOp != null,
                 "Uncontrolled task '{0}' invoked a when-any operation.",
-                Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>");
+                System.Threading.Tasks.Task.CurrentId.HasValue ? System.Threading.Tasks.Task.CurrentId.Value.ToString() : "<unknown>");
             callerOp.OnWaitTasks(tasks, waitAll: false);
 
             Tasks.Task<TResult> result = null;
@@ -477,14 +477,14 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            return Tasks.Task.FromResult(result);
+            return Task.FromResult(result);
         }
 
         /// <summary>
         /// Waits for all of the provided controlled task objects to complete execution within
         /// a specified number of milliseconds or until a cancellation token is cancelled.
         /// </summary>
-        public bool WaitAllTasksComplete(Tasks.Task[] tasks)
+        public bool WaitAllTasksComplete(Task[] tasks)
         {
             // TODO: support cancellations during testing.
             Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
@@ -493,7 +493,7 @@ namespace PChecker.SystematicTesting
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
             Assert(callerOp != null,
                 "Uncontrolled task '{0}' invoked a wait-all operation.",
-                Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>");
+                System.Threading.Tasks.Task.CurrentId.HasValue ? System.Threading.Tasks.Task.CurrentId.Value.ToString() : "<unknown>");
             callerOp.OnWaitTasks(tasks, waitAll: true);
 
             // TODO: support timeouts during testing, this would become false if there is a timeout.
@@ -504,7 +504,7 @@ namespace PChecker.SystematicTesting
         /// Waits for any of the provided controlled task objects to complete execution within
         /// a specified number of milliseconds or until a cancellation token is cancelled.
         /// </summary>
-        public int WaitAnyTaskCompletes(Tasks.Task[] tasks)
+        public int WaitAnyTaskCompletes(Task[] tasks)
         {
             // TODO: support cancellations during testing.
             Assert(tasks != null, "Cannot wait for a null array of tasks to complete.");
@@ -513,7 +513,7 @@ namespace PChecker.SystematicTesting
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
             Assert(callerOp != null,
                 "Uncontrolled task '{0}' invoked a wait-any operation.",
-                Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>");
+                System.Threading.Tasks.Task.CurrentId.HasValue ? System.Threading.Tasks.Task.CurrentId.Value.ToString() : "<unknown>");
             callerOp.OnWaitTasks(tasks, waitAll: false);
 
             var result = -1;
@@ -534,13 +534,13 @@ namespace PChecker.SystematicTesting
         /// Waits for the task to complete execution. The wait terminates if a timeout interval
         /// elapses or a cancellation token is canceled before the task completes.
         /// </summary>
-        public bool WaitTaskCompletes(Tasks.Task task)
+        public bool WaitTaskCompletes(Task task)
         {
             // TODO: return immediately if completed without errors.
             // TODO: support timeouts and cancellation tokens.
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
             Debug.WriteLine("<Task> '{0}' is waiting task '{1}' to complete from task '{2}'.",
-                callerOp.Name, task.Id, Task.CurrentId);
+                callerOp.Name, task.Id, System.Threading.Tasks.Task.CurrentId);
             callerOp.OnWaitTask(task.UncontrolledTask);
             return true;
         }
@@ -553,7 +553,7 @@ namespace PChecker.SystematicTesting
             // TODO: return immediately if completed without errors.
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
             Debug.WriteLine("<Task> '{0}' is waiting task '{1}' with result type '{2}' to complete from task '{3}'.",
-                callerOp.Name, task.Id, typeof(TResult), Task.CurrentId);
+                callerOp.Name, task.Id, typeof(TResult), System.Threading.Tasks.Task.CurrentId);
             callerOp.OnWaitTask(task.UncontrolledTask);
             return task.UncontrolledTask.Result;
         }
@@ -597,19 +597,19 @@ namespace PChecker.SystematicTesting
             if (!callerOp.IsAwaiterControlled)
             {
                 Assert(false, "Controlled task '{0}' is trying to wait for an uncontrolled " +
-                    "task or awaiter to complete. Please make sure to use Coyote APIs to express concurrency " +
-                    "(e.g. Microsoft.Coyote.Tasks.Task instead of System.Threading.Tasks.Task).",
-                    Task.CurrentId);
+                              "task or awaiter to complete. Please make sure to use Coyote APIs to express concurrency " +
+                              "(e.g. Microsoft.Coyote.Tasks.Task instead of System.Threading.Tasks.Task).",
+                    System.Threading.Tasks.Task.CurrentId);
             }
 
-            var sameNamespace = awaiterType.Namespace == typeof(Tasks.Task).Namespace;
+            var sameNamespace = awaiterType.Namespace == typeof(Task).Namespace;
             if (!sameNamespace)
             {
                 Assert(false,
                     "Controlled task '{0}' is trying to wait for an uncontrolled task or awaiter to complete. " +
                     "Please make sure to use Coyote APIs to express concurrency (e.g. Microsoft.Coyote.Tasks.Task " +
                     "instead of System.Threading.Tasks.Task).",
-                    Task.CurrentId);
+                    System.Threading.Tasks.Task.CurrentId);
             }
 
             callerOp.SetExecutingAsyncTaskStateMachineType(stateMachineType);
@@ -635,7 +635,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Callback invoked when the executing operation is waiting for the specified task to complete.
         /// </summary>
-        public void OnWaitTask(Task task)
+        public void OnWaitTask(System.Threading.Tasks.Task task)
         {
             var callerOp = Scheduler.GetExecutingOperation<TaskOperation>();
             callerOp.OnWaitTask(task);
@@ -644,9 +644,9 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Callback invoked when the executing task is waiting for the task with the specified operation id to complete.
         /// </summary>
-        internal void OnWaitTask(ulong operationId, Task task)
+        internal void OnWaitTask(ulong operationId, System.Threading.Tasks.Task task)
         {
-            Assert(task != null, "Task '{0}' is waiting for a null task to complete.", Task.CurrentId);
+            Assert(task != null, "Task '{0}' is waiting for a null task to complete.", System.Threading.Tasks.Task.CurrentId);
             if (!task.IsCompleted)
             {
                 var op = Scheduler.GetOperationWithId<TaskOperation>(operationId);

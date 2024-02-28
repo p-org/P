@@ -44,11 +44,11 @@ namespace Plang.Compiler.TypeChecker.Types
         public override PLanguageType Canonicalize()
         {
             return new NamedTupleType(Fields.Select(f => new NamedTupleEntry
-            {
-                Name = f.Name,
-                FieldNo = f.FieldNo,
-                Type = f.Type.Canonicalize()
-            })
+                {
+                    Name = f.Name,
+                    FieldNo = f.FieldNo,
+                    Type = f.Type.Canonicalize()
+                })
                 .ToArray());
         }
 

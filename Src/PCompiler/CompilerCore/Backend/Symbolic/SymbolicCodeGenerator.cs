@@ -402,7 +402,7 @@ namespace Plang.Compiler.Backend.Symbolic
 
             foreach (var state in machine.States)
             {
-              WriteHandlerUpdate(context, output, state);
+                WriteHandlerUpdate(context, output, state);
             }
 
             foreach (var method in machine.Methods)
@@ -1205,111 +1205,111 @@ namespace Plang.Compiler.Backend.Symbolic
                     break;
 
                 case InsertStmt insertStmt:
-                    {
-                        var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
-                        var isSet = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Set);
-                        PLanguageType keyType = null;
-                        PLanguageType elementType = null;
-                        if (isMap) {
-                            keyType = ((MapType) insertStmt.Variable.Type.Canonicalize()).KeyType;
-                            elementType = ((MapType) insertStmt.Variable.Type.Canonicalize()).ValueType;
-                        } else if (isSet) {
-                            elementType = ((SetType) insertStmt.Variable.Type.Canonicalize()).ElementType;
-                        } else {
-                            elementType = ((SequenceType) insertStmt.Variable.Type.Canonicalize()).ElementType;
-                        }
-
-                        WriteWithLValueMutationContext(
-                            context,
-                            output,
-                            flowContext.pcScope,
-                            insertStmt.Variable,
-                            true,
-                            (structureTemp) =>
-                            {
-                                context.Write(output, $"{structureTemp} = ");
-                                WriteExpr(context, output, flowContext.pcScope, insertStmt.Variable);
-                                if (isMap)
-                                    context.Write(output, $".add(");
-                                else
-                                    context.Write(output, $".insert(");
-
-                                {
-                                    var castPrefixKey = "";
-                                    if (keyType != null) {
-                                        castPrefixKey = GetInlineCastPrefix(insertStmt.Index.Type, keyType, context, flowContext.pcScope);
-                                    }
-                                    context.Write(output, castPrefixKey);
-                                    WriteExpr(context, output, flowContext.pcScope, insertStmt.Index);
-                                    if (castPrefixKey != "") context.Write(output, ")");
-                                    context.Write(output, ", ");
-                                }
-
-                                {
-                                    var castPrefix = "";
-                                    if (elementType != null) {
-                                        castPrefix = GetInlineCastPrefix(insertStmt.Value.Type, elementType, context, flowContext.pcScope);
-                                    }
-                                    context.Write(output, castPrefix);
-                                    WriteExpr(context, output, flowContext.pcScope, insertStmt.Value);
-                                    if (castPrefix != "") context.Write(output, ")");
-                                }
-
-                                context.WriteLine(output, ");");
-                            }
-                        );
-
-                        break;
+                {
+                    var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
+                    var isSet = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Set);
+                    PLanguageType keyType = null;
+                    PLanguageType elementType = null;
+                    if (isMap) {
+                        keyType = ((MapType) insertStmt.Variable.Type.Canonicalize()).KeyType;
+                        elementType = ((MapType) insertStmt.Variable.Type.Canonicalize()).ValueType;
+                    } else if (isSet) {
+                        elementType = ((SetType) insertStmt.Variable.Type.Canonicalize()).ElementType;
+                    } else {
+                        elementType = ((SequenceType) insertStmt.Variable.Type.Canonicalize()).ElementType;
                     }
+
+                    WriteWithLValueMutationContext(
+                        context,
+                        output,
+                        flowContext.pcScope,
+                        insertStmt.Variable,
+                        true,
+                        (structureTemp) =>
+                        {
+                            context.Write(output, $"{structureTemp} = ");
+                            WriteExpr(context, output, flowContext.pcScope, insertStmt.Variable);
+                            if (isMap)
+                                context.Write(output, $".add(");
+                            else
+                                context.Write(output, $".insert(");
+
+                            {
+                                var castPrefixKey = "";
+                                if (keyType != null) {
+                                    castPrefixKey = GetInlineCastPrefix(insertStmt.Index.Type, keyType, context, flowContext.pcScope);
+                                }
+                                context.Write(output, castPrefixKey);
+                                WriteExpr(context, output, flowContext.pcScope, insertStmt.Index);
+                                if (castPrefixKey != "") context.Write(output, ")");
+                                context.Write(output, ", ");
+                            }
+
+                            {
+                                var castPrefix = "";
+                                if (elementType != null) {
+                                    castPrefix = GetInlineCastPrefix(insertStmt.Value.Type, elementType, context, flowContext.pcScope);
+                                }
+                                context.Write(output, castPrefix);
+                                WriteExpr(context, output, flowContext.pcScope, insertStmt.Value);
+                                if (castPrefix != "") context.Write(output, ")");
+                            }
+
+                            context.WriteLine(output, ");");
+                        }
+                    );
+
+                    break;
+                }
 
                 case AddStmt addStmt:
-                    {
-                        WriteWithLValueMutationContext(
-                            context,
-                            output,
-                            flowContext.pcScope,
-                            addStmt.Variable,
-                            true,
-                            (structureTemp) =>
-                            {
-                                context.Write(output, $"{structureTemp} = ");
-                                WriteExpr(context, output, flowContext.pcScope, addStmt.Variable);
-                                context.Write(output, $".add(");
-                                WriteExpr(context, output, flowContext.pcScope, addStmt.Value);
-                                context.WriteLine(output, ");");
-                            }
-                        );
+                {
+                    WriteWithLValueMutationContext(
+                        context,
+                        output,
+                        flowContext.pcScope,
+                        addStmt.Variable,
+                        true,
+                        (structureTemp) =>
+                        {
+                            context.Write(output, $"{structureTemp} = ");
+                            WriteExpr(context, output, flowContext.pcScope, addStmt.Variable);
+                            context.Write(output, $".add(");
+                            WriteExpr(context, output, flowContext.pcScope, addStmt.Value);
+                            context.WriteLine(output, ");");
+                        }
+                    );
 
-                        break;
-                    }
+                    break;
+                }
 
                 case RemoveStmt removeStmt:
-                    {
-                        var isMap = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map);
-                        var isSet = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Set);
+                {
+                    var isMap = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map);
+                    var isSet = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Set);
 
-                        WriteWithLValueMutationContext(
-                            context,
-                            output,
-                            flowContext.pcScope,
-                            removeStmt.Variable,
-                            true,
-                            (structureTemp) =>
-                            {
-                                context.Write(output, $"{structureTemp} = ");
-                                WriteExpr(context, output, flowContext.pcScope, removeStmt.Variable);
+                    WriteWithLValueMutationContext(
+                        context,
+                        output,
+                        flowContext.pcScope,
+                        removeStmt.Variable,
+                        true,
+                        (structureTemp) =>
+                        {
+                            context.Write(output, $"{structureTemp} = ");
+                            WriteExpr(context, output, flowContext.pcScope, removeStmt.Variable);
 
-                                if (isMap || isSet)
-                                    context.Write(output, $".remove(");
-                                else
-                                    context.Write(output, $".removeAt(");
+                            if (isMap || isSet)
+                                context.Write(output, $".remove(");
+                            else
+                                context.Write(output, $".removeAt(");
 
-                                WriteExpr(context, output, flowContext.pcScope, removeStmt.Value);
-                                context.WriteLine(output, ");");
-                            }
-                        );
-                        break;
-                    }
+                            WriteExpr(context, output, flowContext.pcScope, removeStmt.Value);
+                            context.WriteLine(output, ");");
+                        }
+                    );
+                    break;
+                }
                 case AnnounceStmt announceStmt:
                     context.Write(output, $"{CompilationContext.SchedulerVar}.announce(");
                     WriteExpr(context, output, flowContext.pcScope, announceStmt.PEvent);
@@ -1459,9 +1459,9 @@ namespace Plang.Compiler.Backend.Symbolic
                 var locationTupleType = (NamedTupleType) locationType;
 
                 if (valueTupleType.Fields.Count != locationTupleType.Fields.Count)
-                        throw new NotImplementedException(
-                            $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
-                            $"from value of type {valueType.CanonicalRepresentation}");
+                    throw new NotImplementedException(
+                        $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
+                        $"from value of type {valueType.CanonicalRepresentation}");
 
                 for(var i = 0; i < valueTupleType.Fields.Count; i++)
                 {
@@ -1482,9 +1482,9 @@ namespace Plang.Compiler.Backend.Symbolic
                 var locationTupleType = (TupleType) locationType;
 
                 if (valueTupleType.Types.Count != locationTupleType.Types.Count)
-                        throw new NotImplementedException(
-                            $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
-                            $"from value of type {valueType.CanonicalRepresentation}");
+                    throw new NotImplementedException(
+                        $"Cannot yet handle assignment to variable of type {locationType.CanonicalRepresentation} " +
+                        $"from value of type {valueType.CanonicalRepresentation}");
 
                 for(var i = 0; i < valueTupleType.Types.Count; i++)
                 {
@@ -1582,8 +1582,8 @@ namespace Plang.Compiler.Backend.Symbolic
             }
 
             throw new NotImplementedException(
-                    $"Cannot yet handle casting to variable of type {locationType.CanonicalRepresentation} " +
-                    $"from value of type {valueType.CanonicalRepresentation}");
+                $"Cannot yet handle casting to variable of type {locationType.CanonicalRepresentation} " +
+                $"from value of type {valueType.CanonicalRepresentation}");
         }
 
         private void WriteForeignFunCallStmt(CompilationContext context, StringWriter output, ControlFlowContext flowContext, Function function, IReadOnlyList<IPExpr> args, IPExpr dest=null)
@@ -2113,23 +2113,23 @@ namespace Plang.Compiler.Backend.Symbolic
                     {
                         if (binOpExpr.Operation == BinOpType.Neq)
                         {
-                          context.Write(output, "(");
+                            context.Write(output, "(");
                         }
                         WriteExpr(context, output, pcScope, binOpExpr.Lhs);
                         context.Write(output, ".symbolicEquals(");
 
                         {
-                                var castPrefix = "";
-                                castPrefix = GetInlineCastPrefix(binOpExpr.Rhs.Type, binOpExpr.Lhs.Type, context, pcScope);
-                                context.Write(output, castPrefix);
-                                WriteExpr(context, output, pcScope, binOpExpr.Rhs);
-                                if (castPrefix != "") context.Write(output, ")");
+                            var castPrefix = "";
+                            castPrefix = GetInlineCastPrefix(binOpExpr.Rhs.Type, binOpExpr.Lhs.Type, context, pcScope);
+                            context.Write(output, castPrefix);
+                            WriteExpr(context, output, pcScope, binOpExpr.Rhs);
+                            if (castPrefix != "") context.Write(output, ")");
                         }
 
                         context.Write(output, $", {pcScope.PathConstraintVar})");
                         if (binOpExpr.Operation == BinOpType.Neq)
                         {
-                          context.Write(output, ").apply(x -> !x)");
+                            context.Write(output, ").apply(x -> !x)");
                         }
                     }
                     else
@@ -2161,12 +2161,12 @@ namespace Plang.Compiler.Backend.Symbolic
                     }
                     break;
                 case BoolLiteralExpr boolLiteralExpr:
-                    {
-                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Bool) }" + $"({boolLiteralExpr.Value})".ToLower();
-                        var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
-                        context.Write(output, guarded);
-                        break;
-                    }
+                {
+                    var unguarded = $"new { GetSymbolicType(PrimitiveType.Bool) }" + $"({boolLiteralExpr.Value})".ToLower();
+                    var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
+                    context.Write(output, guarded);
+                    break;
+                }
                 case CastExpr castExpr:
                     if (castExpr.SubExpr is NullLiteralExpr)
                     {
@@ -2179,7 +2179,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         if (castPrefix != "") context.Write(output, ")");
                     }
                     break;
-                 case CoerceExpr coerceExpr:
+                case CoerceExpr coerceExpr:
                     switch (coerceExpr.Type.Canonicalize())
                     {
                         case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
@@ -2195,25 +2195,25 @@ namespace Plang.Compiler.Backend.Symbolic
                         default:
                             throw new ArgumentOutOfRangeException(
                                 @"unexpected coercion operation to:" + coerceExpr.Type.CanonicalRepresentation);
-                     }
-                     break;
+                    }
+                    break;
                 case DefaultExpr defaultExpr:
                     context.Write(output, GetDefaultValue(context, pcScope, defaultExpr.Type));
                     break;
                 case FloatLiteralExpr floatLiteralExpr:
-                    {
-                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Float) }({floatLiteralExpr.Value}f)";
-                        var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
-                        context.Write(output, guarded);
-                        break;
-                    }
+                {
+                    var unguarded = $"new { GetSymbolicType(PrimitiveType.Float) }({floatLiteralExpr.Value}f)";
+                    var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
+                    context.Write(output, guarded);
+                    break;
+                }
                 case IntLiteralExpr intLiteralExpr:
-                    {
-                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Int) }({intLiteralExpr.Value})";
-                        var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
-                        context.Write(output, guarded);
-                        break;
-                    }
+                {
+                    var unguarded = $"new { GetSymbolicType(PrimitiveType.Int) }({intLiteralExpr.Value})";
+                    var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
+                    context.Write(output, guarded);
+                    break;
+                }
                 case KeysExpr keyExpr:
                     var keyArgType = (MapType) keyExpr.Expr.Type.Canonicalize();
                     WriteExpr(context, output, pcScope, keyExpr.Expr);
@@ -2298,19 +2298,19 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.Write(output, ")");
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
-                    {
-                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Int) }({enumElemRefExpr.Value.Value} /* enum {enumElemRefExpr.Type.OriginalRepresentation} elem {enumElemRefExpr.Value.Name} */)";
-                        var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
-                        context.Write(output, guarded);
-                        break;
-                    }
+                {
+                    var unguarded = $"new { GetSymbolicType(PrimitiveType.Int) }({enumElemRefExpr.Value.Value} /* enum {enumElemRefExpr.Type.OriginalRepresentation} elem {enumElemRefExpr.Value.Name} */)";
+                    var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
+                    context.Write(output, guarded);
+                    break;
+                }
                 case EventRefExpr eventRefExpr:
-                    {
-                        var unguarded = $"new { GetSymbolicType(PrimitiveType.Event) }({context.GetNameForDecl(eventRefExpr.Value)})";
-                        var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
-                        context.Write(output, guarded);
-                        break;
-                    }
+                {
+                    var unguarded = $"new { GetSymbolicType(PrimitiveType.Event) }({context.GetNameForDecl(eventRefExpr.Value)})";
+                    var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
+                    context.Write(output, guarded);
+                    break;
+                }
                 case VariableAccessExpr variableAccessExpr:
                     context.Write(output,
                         $"{CompilationContext.GetVar(variableAccessExpr.Variable.Name)}.restrict(" +
@@ -2336,15 +2336,15 @@ namespace Plang.Compiler.Backend.Symbolic
                     else
                         context.Write(output, ".contains(");
 
-                    {
-                        var castPrefix = "";
-                        if (elementType != null) {
-                            castPrefix = GetInlineCastPrefix(containsExpr.Item.Type, elementType, context, pcScope);
-                        }
-                        context.Write(output, castPrefix);
-                        WriteExpr(context, output, pcScope, containsExpr.Item);
-                        if (castPrefix != "") context.Write(output, ")");
+                {
+                    var castPrefix = "";
+                    if (elementType != null) {
+                        castPrefix = GetInlineCastPrefix(containsExpr.Item.Type, elementType, context, pcScope);
                     }
+                    context.Write(output, castPrefix);
+                    WriteExpr(context, output, pcScope, containsExpr.Item);
+                    if (castPrefix != "") context.Write(output, ")");
+                }
                     context.Write(output, ")");
                     break;
                 case CtorExpr ctorExpr:
@@ -2520,7 +2520,7 @@ namespace Plang.Compiler.Backend.Symbolic
         }
 
         private IPExpr convertToStringExpr(IPExpr expr)
-         {
+        {
             switch (expr.Type)
             {
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.String):
@@ -2530,9 +2530,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     newListArgs.Add(expr);
                     return new StringExpr(expr.SourceLocation, "{0}", newListArgs);
             }
-         }
+        }
 
-         private string GetConcreteBoxedType(PLanguageType type)
+        private string GetConcreteBoxedType(PLanguageType type)
         {
             switch (type.Canonicalize())
             {
@@ -2663,9 +2663,9 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"ListVS<{GetSymbolicType(sequenceType.ElementType, true)}>";
                 case MapType mapType:
                     return $"MapVS<" +
-                        $"{GetConcreteBoxedType(mapType.KeyType)}, " +
-                        $"{GetSymbolicType(mapType.KeyType, true)}, " +
-                        $"{GetSymbolicType(mapType.ValueType, true)}>";
+                           $"{GetConcreteBoxedType(mapType.KeyType)}, " +
+                           $"{GetSymbolicType(mapType.KeyType, true)}, " +
+                           $"{GetSymbolicType(mapType.ValueType, true)}>";
                 case NamedTupleType _:
                     return "NamedTupleVS";
                 case TupleType _:
@@ -2715,25 +2715,25 @@ namespace Plang.Compiler.Backend.Symbolic
                 case EnumType enumType:
                     return $"new {GetSymbolicType(type)}({enumType.EnumDecl.Values.Min(elem => elem.Value)})";
                 case NamedTupleType namedTupleType:
+                {
+                    var allFieldDefaults = new List<string>();
+                    foreach (var field in namedTupleType.Fields)
                     {
-                        var allFieldDefaults = new List<string>();
-                        foreach (var field in namedTupleType.Fields)
-                        {
-                            var fieldDefault = GetDefaultValueNoGuard(context, field.Type);
-                            allFieldDefaults.Add($"\"{field.Name}\", {fieldDefault}");
-                        }
-                        return $"new {GetSymbolicType(type)}({string.Join(", ", allFieldDefaults)})";
+                        var fieldDefault = GetDefaultValueNoGuard(context, field.Type);
+                        allFieldDefaults.Add($"\"{field.Name}\", {fieldDefault}");
                     }
+                    return $"new {GetSymbolicType(type)}({string.Join(", ", allFieldDefaults)})";
+                }
                 case TupleType tupleType:
+                {
+                    var allFieldDefaults = new List<string>();
+                    foreach (var field in tupleType.Types)
                     {
-                        var allFieldDefaults = new List<string>();
-                        foreach (var field in tupleType.Types)
-                        {
-                            var fieldDefault = GetDefaultValueNoGuard(context, field);
-                            allFieldDefaults.Add(fieldDefault);
-                        }
-                        return $"new {GetSymbolicType(type)}({string.Join(", ", allFieldDefaults)})";
+                        var fieldDefault = GetDefaultValueNoGuard(context, field);
+                        allFieldDefaults.Add(fieldDefault);
                     }
+                    return $"new {GetSymbolicType(type)}({string.Join(", ", allFieldDefaults)})";
+                }
                 case SetType _:
                     return $"new {GetSymbolicType(type)}(Guard.constTrue())";
                 default:
@@ -2776,4 +2776,3 @@ namespace Plang.Compiler.Backend.Symbolic
         }
     }
 }
-

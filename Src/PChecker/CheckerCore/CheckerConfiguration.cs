@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
-using PChecker.Actors.Logging;
 using PChecker.Utilities;
 
 namespace PChecker

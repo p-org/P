@@ -29,7 +29,7 @@ namespace Plang.Options
 
             var basicOptions = Parser.GetOrCreateGroup("Basic", "Basic options");
             basicOptions.AddPositionalArgument("path", "Path to the compiled file to check for correctness (*.dll)."+
-                " If this option is not passed, the compiler searches for a *.dll file in the current folder").IsRequired = false;
+                                                       " If this option is not passed, the compiler searches for a *.dll file in the current folder").IsRequired = false;
             var modes = basicOptions.AddArgument("mode", "md", "Choose a checker mode (options: bugfinding, verification, coverage, pobserve). (default: bugfinding)");
             modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
             modes.IsHidden = true;
@@ -239,20 +239,20 @@ namespace Plang.Options
                     checkerConfiguration.SchedulingStrategy = (string)option.Value;
                     break;
                 case "replay":
+                {
+                    var filename = (string)option.Value;
+                    var extension = Path.GetExtension(filename);
+                    if (!extension.Equals(".schedule"))
                     {
-                        var filename = (string)option.Value;
-                        var extension = System.IO.Path.GetExtension(filename);
-                        if (!extension.Equals(".schedule"))
-                        {
-                            Error.CheckerReportAndExit("Please give a valid schedule file " +
-                                "'--replay x', where 'x' has extension '.schedule'.");
-                        }
-
-                        checkerConfiguration.ScheduleFile = filename;
-                        checkerConfiguration.SchedulingStrategy = "replay";
-                        checkerConfiguration.EnableColoredConsoleOutput = true;
-                        checkerConfiguration.DisableEnvironmentExit = false;
+                        Error.CheckerReportAndExit("Please give a valid schedule file " +
+                                                   "'--replay x', where 'x' has extension '.schedule'.");
                     }
+
+                    checkerConfiguration.ScheduleFile = filename;
+                    checkerConfiguration.SchedulingStrategy = "replay";
+                    checkerConfiguration.EnableColoredConsoleOutput = true;
+                    checkerConfiguration.DisableEnvironmentExit = false;
+                }
 
                     break;
                 case "iterations":
@@ -274,28 +274,28 @@ namespace Plang.Options
                     checkerConfiguration.PerformFullExploration = true;
                     break;
                 case "max-steps":
+                {
+                    var values = (uint[])option.Value;
+                    if (values.Length > 2)
                     {
-                        var values = (uint[])option.Value;
-                        if (values.Length > 2)
-                        {
-                            Error.CheckerReportAndExit("Invalid number of options supplied via '--max-steps'.");
-                        }
-
-                        var i = values[0];
-                        uint j;
-                        if (values.Length == 2)
-                        {
-                            j = values[1];
-                            checkerConfiguration.UserExplicitlySetMaxFairSchedulingSteps = true;
-                        }
-                        else
-                        {
-                            j = 10 * i;
-                        }
-
-                        checkerConfiguration.MaxUnfairSchedulingSteps = (int)i;
-                        checkerConfiguration.MaxFairSchedulingSteps = (int)j;
+                        Error.CheckerReportAndExit("Invalid number of options supplied via '--max-steps'.");
                     }
+
+                    var i = values[0];
+                    uint j;
+                    if (values.Length == 2)
+                    {
+                        j = values[1];
+                        checkerConfiguration.UserExplicitlySetMaxFairSchedulingSteps = true;
+                    }
+                    else
+                    {
+                        j = 10 * i;
+                    }
+
+                    checkerConfiguration.MaxUnfairSchedulingSteps = (int)i;
+                    checkerConfiguration.MaxFairSchedulingSteps = (int)j;
+                }
 
                     break;
                 case "fail-on-maxsteps":

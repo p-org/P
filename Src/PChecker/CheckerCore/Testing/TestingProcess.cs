@@ -98,7 +98,7 @@ namespace PChecker.Testing
             if (checkerConfiguration.RandomGeneratorSeed.HasValue)
             {
                 checkerConfiguration.RandomGeneratorSeed = checkerConfiguration.RandomGeneratorSeed.Value +
-                    (673 * checkerConfiguration.TestingProcessId);
+                                                           (673 * checkerConfiguration.TestingProcessId);
             }
 
             checkerConfiguration.EnableColoredConsoleOutput = true;

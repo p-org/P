@@ -25,7 +25,6 @@ using PChecker.SystematicTesting.Operations;
 using PChecker.SystematicTesting.Strategies;
 using PChecker.SystematicTesting.Strategies.Liveness;
 using PChecker.SystematicTesting.Traces;
-using CoyoteTasks = PChecker.Tasks;
 using Debug = PChecker.IO.Debugging.Debug;
 using EventInfo = PChecker.Actors.Events.EventInfo;
 
@@ -320,7 +319,7 @@ namespace PChecker.SystematicTesting
         {
             AssertExpectedCallerActor(creator, "CreateActorAndExecuteAsync");
             Assert(creator != null, "Only an actor can call 'CreateActorAndExecuteAsync': avoid calling " +
-                "it directly from the test method; instead call it through a test driver actor.");
+                                    "it directly from the test method; instead call it through a test driver actor.");
 
             var actor = CreateActor(id, type, name, creator, opGroupId);
             RunActorEventHandler(actor, initialEvent, true, creator);
@@ -431,7 +430,7 @@ namespace PChecker.SystematicTesting
             Guid opGroupId, SendOptions options)
         {
             Assert(sender is StateMachine, "Only an actor can call 'SendEventAndExecuteAsync': avoid " +
-                "calling it directly from the test method; instead call it through a test driver actor.");
+                                           "calling it directly from the test method; instead call it through a test driver actor.");
             Assert(e != null, "{0} is sending a null event.", sender.Id);
             Assert(targetId != null, "{0} is sending event {1} to a null actor.", sender.Id, e);
             AssertExpectedCallerActor(sender, "SendEventAndExecuteAsync");

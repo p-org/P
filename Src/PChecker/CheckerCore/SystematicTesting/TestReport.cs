@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.Serialization;
 using System.Text;
 using PChecker.Coverage;
@@ -155,7 +156,7 @@ namespace PChecker.SystematicTesting
 
                 if (testReport.MinExploredFairSteps >= 0 &&
                     (MinExploredFairSteps < 0 ||
-                    MinExploredFairSteps > testReport.MinExploredFairSteps))
+                     MinExploredFairSteps > testReport.MinExploredFairSteps))
                 {
                     MinExploredFairSteps = testReport.MinExploredFairSteps;
                 }
@@ -278,7 +279,7 @@ namespace PChecker.SystematicTesting
             var serializerSettings = new DataContractSerializerSettings();
             serializerSettings.PreserveObjectReferences = true;
             var serializer = new DataContractSerializer(typeof(TestReport), serializerSettings);
-            using (var ms = new System.IO.MemoryStream())
+            using (var ms = new MemoryStream())
             {
                 lock (Lock)
                 {

@@ -163,7 +163,7 @@ namespace PChecker.Actors.UnitTesting
                 methodName, ActorInstance.Id));
             Runtime.Assert(method.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) is null != isAsync,
                 string.Format("Must invoke {0}method '{1}' of {2} using '{3}'.",
-                isAsync ? string.Empty : "async ", methodName, ActorInstance.Id, isAsync ? "Invoke" : "InvokeAsync"));
+                    isAsync ? string.Empty : "async ", methodName, ActorInstance.Id, isAsync ? "Invoke" : "InvokeAsync"));
 
             return method;
         }

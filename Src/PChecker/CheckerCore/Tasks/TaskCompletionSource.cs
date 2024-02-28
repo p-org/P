@@ -161,7 +161,7 @@ namespace PChecker.Tasks
                 if (!TryCompleteWithStatus(status, result, exception))
                 {
                     throw new InvalidOperationException("The underlying Task<TResult> is already in one " +
-                        "of the three final states: RanToCompletion, Faulted, or Canceled.");
+                                                        "of the three final states: RanToCompletion, Faulted, or Canceled.");
                 }
             }
 

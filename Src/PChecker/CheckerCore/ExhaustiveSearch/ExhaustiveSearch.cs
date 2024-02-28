@@ -1,15 +1,11 @@
 using System;
-using System.IO;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using PChecker.Exceptions;
 using PChecker.IO.Debugging;
 using PChecker.IO.Logging;
-using PChecker.SystematicTesting;
-using PChecker.Utilities;
-using Debug = System.Diagnostics.Debug;
 
 namespace PChecker.ExhaustiveSearch
 {

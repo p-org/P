@@ -38,6 +38,7 @@ public class Checker
                     break;
                 case CheckerMode.Verification:
                 case CheckerMode.Coverage:
+                case CheckerMode.CoverageNew:
                     ExhaustiveEngine.Create(configuration).Run();
                     break;
                 default:
@@ -57,6 +58,7 @@ public class Checker
                     break;
                 case CheckerMode.Verification:
                 case CheckerMode.Coverage:
+                case CheckerMode.CoverageNew:
                     ExhaustiveEngine.Create(configuration).Run();
                     break;
                 default:

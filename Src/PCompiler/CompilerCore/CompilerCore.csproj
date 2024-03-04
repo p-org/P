@@ -25,4 +25,7 @@
       <CustomToolNamespace>Plang.Compiler</CustomToolNamespace>
     </Antlr4>
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Backend\PCover" />
+  </ItemGroup>
 </Project>

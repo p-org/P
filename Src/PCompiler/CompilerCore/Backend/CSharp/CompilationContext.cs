@@ -12,7 +12,6 @@ namespace Plang.Compiler.Backend.CSharp
             Names = new CSharpNameManager("PGEN_");
 
             FileName = $"{ProjectName}.cs";
-            ProjectDependencies = job.ProjectDependencies.Count == 0 ? new List<string>() { ProjectName } : job.ProjectDependencies;
             GlobalFunctionClassName = "GlobalFunctions";
         }
 
@@ -23,8 +22,6 @@ namespace Plang.Compiler.Backend.CSharp
         public string GlobalFunctionClassName { get; }
 
         public string FileName { get; }
-
-        public IList<string> ProjectDependencies { get; }
 
         public string GetStaticMethodQualifiedName(Function function)
         {

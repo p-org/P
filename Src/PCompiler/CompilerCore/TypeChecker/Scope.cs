@@ -21,6 +21,8 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, NamedEventSet> eventSets = new Dictionary<string, NamedEventSet>();
         private readonly IDictionary<string, Function> functions = new Dictionary<string, Function>();
         private readonly ITranslationErrorHandler handler;
+        private readonly ILocationResolver locationResolver;
+        private readonly IList<string> projectDependencies;
         private readonly IDictionary<string, Implementation> implementations = new Dictionary<string, Implementation>();
         private readonly IDictionary<string, Interface> interfaces = new Dictionary<string, Interface>();
         private readonly IDictionary<string, Machine> machines = new Dictionary<string, Machine>();
@@ -32,9 +34,11 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
 
-        private Scope(ITranslationErrorHandler handler, Scope parent = null)
+        private Scope(ITranslationErrorHandler handler, ILocationResolver locationResolver, IList<string> projectDependencies, Scope parent)
         {
             this.handler = handler;
+            this.locationResolver = locationResolver;
+            this.projectDependencies = projectDependencies;
             parent?.children.Remove(this);
             Parent = parent;
             parent?.children.Add(this);
@@ -80,14 +84,14 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
 
-        public static Scope CreateGlobalScope(ITranslationErrorHandler handler)
+        public static Scope CreateGlobalScope(ITranslationErrorHandler handler, ILocationResolver locationResolver, IList<string> projectDependencies)
         {
-            return new Scope(handler);
+            return new Scope(handler, locationResolver, projectDependencies, null);
         }
 
         public Scope MakeChildScope()
         {
-            return new Scope(handler, this);
+            return new Scope(handler, locationResolver, projectDependencies, this);
         }
 
         public IEnumerable<Function> GetAllMethods()
@@ -599,6 +603,16 @@ namespace Plang.Compiler.TypeChecker
 
         public SafetyTest Put(string name, PParser.SafetyTestDeclContext tree)
         {
+            // check if test is from an imported project
+            string filePath = locationResolver.GetLocation(tree).File.FullName;
+            foreach (var dependencyPath in projectDependencies)
+            {
+                if (filePath.StartsWith(dependencyPath))
+                {
+                    return null; 
+                }
+            }
+            
             var safetyTest = new SafetyTest(tree, name);
             CheckConflicts(safetyTest,
                 Namespace(implementations),

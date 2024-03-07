@@ -161,7 +161,7 @@ namespace Plang.Compiler.TypeChecker
 
         private static Scope BuildGlobalScope(ICompilerConfiguration config, PParser.ProgramContext[] programUnits)
         {
-            var globalScope = Scope.CreateGlobalScope(config.Handler);
+            var globalScope = Scope.CreateGlobalScope(config.Handler, config.LocationResolver, config.ProjectDependencies);
             var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
 
             // Add built-in events to the table.

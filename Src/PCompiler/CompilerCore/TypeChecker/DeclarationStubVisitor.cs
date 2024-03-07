@@ -211,8 +211,11 @@ namespace Plang.Compiler.TypeChecker
         {
             var symbolName = context.testName.GetText();
             var decl = CurrentScope.Put(symbolName, context);
-            decl.Main = context.mainMachine?.GetText();
-            nodesToDeclarations.Put(context, decl);
+            if (decl != null)
+            {
+                decl.Main = context.mainMachine?.GetText();
+                nodesToDeclarations.Put(context, decl);
+            }
             return null;
         }
 

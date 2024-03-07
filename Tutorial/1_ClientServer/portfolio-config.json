@@ -7,7 +7,7 @@
 
     "dll": {
         "help"    : "Path to generated .dll file, relative to project directory",
-        "default" : "PGenerated/CSharp/net6.0/ClientServer.dll",
+        "default" : "PGenerated/CSharp/net8.0/ClientServer.dll",
         "metavar" : "F"
     },
 

@@ -603,7 +603,7 @@ namespace Plang.Compiler.TypeChecker
 
         public SafetyTest Put(string name, PParser.SafetyTestDeclContext tree)
         {
-            // check if test is from an imported project
+            // check if test is from an imported project, if so, return null
             string filePath = locationResolver.GetLocation(tree).File.FullName;
             foreach (var dependencyPath in projectDependencies)
             {

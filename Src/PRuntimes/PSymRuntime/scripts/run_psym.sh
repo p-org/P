@@ -6,7 +6,7 @@ projectName=${1}
 shift
 args=$@
 
-PBIN="../../../Bld/Drops/Release/Binaries/net6.0/p.dll"
+PBIN="../../../Bld/Drops/Release/Binaries/net8.0/p.dll"
 outPath="output/${projectName}"
 runPath=$(pwd)
 

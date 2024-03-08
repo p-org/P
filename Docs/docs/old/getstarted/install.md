@@ -6,56 +6,134 @@ P is built to be cross-platform and can be used on MacOS, Linux, and Windows. We
     After each step, please use the troubleshooting check to ensure that each installation step succeeded.
 
 ### [Step 1] Install .Net Core SDK
-The P compiler and checker are implemented in C# and hence the tool chain requires `dotnet`. 
-P currently uses the specific version of [.Net SDK 3.1](https://dotnet.microsoft.com/download/dotnet/3.1).
-To install .Net Core 3.1 SDK use:
+The P compiler and checker are implemented in C# and hence the tool chain requires `dotnet`.
 
-=== "MacOS"
+=== "P v2.0.x"
 
-    Installing .Net SDK on MacOS using Homebrew ([details](https://formulae.brew.sh/cask/dotnet))
-    ```
-    brew tap isen-ng/dotnet-sdk-versions
-    brew install --cask dotnet-sdk3-1-400
-    ```
-    Dont have Homebrew? :upside_down_face: Install directly using the [installer](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-macos-x64-installer). 
+    !!! info ""
+        P v2.0.x uses the specific version of [.Net SDK 6.0](https://dotnet.microsoft.com/download/dotnet/6.0). To install .Net Core 6.0 SDK use:
 
-=== "Ubuntu"
+        === "MacOS"
 
-    Installing .Net SDK on Ubuntu ([details](https://docs.microsoft.com/en-us/dotnet/core/install/linux-ubuntu))
-    
-    ```
-    wget https://packages.microsoft.com/config/ubuntu/21.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-    sudo dpkg -i packages-microsoft-prod.deb
-    rm packages-microsoft-prod.deb
-    ```
+            Installing .Net SDK on MacOS using Homebrew ([details](https://formulae.brew.sh/cask/dotnet))
 
-    ```
-    sudo apt-get update; \
-    sudo apt-get install -y apt-transport-https && \
-    sudo apt-get update && \
-    sudo apt-get install -y dotnet-sdk-3.1
-    ```
+            ```shell
+            brew tap isen-ng/dotnet-sdk-versions
+            brew install --cask dotnet-sdk6-0-400
+            ```
 
-=== "Amazon Linux"
-    Installing .Net SDK on Amazon Linux ([details](https://docs.servicestack.net/deploy-netcore-to-amazon-linux-2-ami))
+            Dont have Homebrew? :upside_down_face: Install manually using the installer for [x64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-macos-x64-installer) or [Arm64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-macos-arm64-installer).
 
-    ```
-    sudo rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
-    ```
 
-    ```
-    sudo yum install dotnet-sdk-3.1
-    ```
+        === "Ubuntu"
 
-=== "Windows"
+            Installing .Net SDK on Ubuntu ([details](https://docs.microsoft.com/en-us/dotnet/core/install/linux-ubuntu))
+            
+            ```shell
+            wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+            sudo dpkg -i packages-microsoft-prod.deb
+            rm packages-microsoft-prod.deb
+            ```
 
-    Installing .Net SDK on Windows using the installer ([details](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-windows-x64-installer))
+            ```shell
+            sudo apt update && sudo apt install -y dotnet-sdk-6.0
+            ```
 
-??? hint "Troubleshoot: Confirm that dotnet is correctly installed on your machine."
-    `dotnet --list-sdks`
 
-    You must see an SDK with `3.1.*` dotnet version installed.
-    If you get `dotnet` command not found error, mostly likely, you need to add the path to dotnet in your `PATH`.
+        === "Amazon Linux"
+            
+            Installing .Net SDK on Amazon Linux ([details](https://docs.servicestack.net/deploy-netcore-to-amazon-linux-2-ami))
+
+            ```shell
+            sudo rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
+            ```
+
+            ```shell
+            sudo yum install -y dotnet-sdk-6.0
+            ```
+
+        === "Windows"
+
+            Installing .Net SDK on Windows using the installer for [x64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-windows-x64-installer) or [Arm64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-windows-arm64-installer)
+
+        ??? hint "Troubleshoot: Confirm that dotnet is correctly installed on your machine."
+            ```shell
+            dotnet --list-sdks
+            ```
+
+            You must see an SDK with `6.0.*` dotnet version installed.
+            If you get `dotnet` command not found error, mostly likely, you need to add the path to dotnet in your `PATH`.
+            
+            Useful resources:
+
+            - For Ubuntu: [fxr does not exist](https://stackoverflow.com/questions/73753672/a-fatal-error-occurred-the-folder-usr-share-dotnet-host-fxr-does-not-exist) 
+
+
+
+
+
+=== "P v1.x.x"
+
+    !!! info ""
+        P v1.x.x uses the specific version of [.Net SDK 3.1](https://dotnet.microsoft.com/download/dotnet/3.1). To install .Net Core 3.1 SDK use:
+
+        === "MacOS"
+
+            Installing .Net SDK on MacOS using Homebrew ([details](https://formulae.brew.sh/cask/dotnet))
+            ```
+            brew tap isen-ng/dotnet-sdk-versions
+            brew install --cask dotnet-sdk3-1-400
+            ``` 
+
+            Dont have Homebrew? :upside_down_face: Install directly using the [installer](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-macos-x64-installer).
+
+
+        === "Ubuntu"
+
+            Installing .Net SDK on Ubuntu ([details](https://docs.microsoft.com/en-us/dotnet/core/install/linux-ubuntu))
+            
+            ```
+            wget https://packages.microsoft.com/config/ubuntu/21.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+            sudo dpkg -i packages-microsoft-prod.deb
+            rm packages-microsoft-prod.deb
+            ```
+
+            ```
+            sudo apt-get update; \
+            sudo apt-get install -y apt-transport-https && \
+            sudo apt-get update && \
+            sudo apt-get install -y dotnet-sdk-3.1
+            ```
+
+        === "Amazon Linux"
+            Installing .Net SDK on Amazon Linux ([details](https://docs.servicestack.net/deploy-netcore-to-amazon-linux-2-ami))
+
+            ```
+            sudo rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
+            ```
+
+            ```
+            sudo yum install dotnet-sdk-3.1
+            ```
+
+        === "Windows"
+
+            Installing .Net SDK on Windows using the installer ([details](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-windows-x64-installer))
+
+        ??? hint "Troubleshoot: Confirm that dotnet is correctly installed on your machine."
+            ```shell
+            dotnet --list-sdks
+            ```
+            
+            You must see an SDK with `3.1.*` dotnet version installed.
+            If you get `dotnet` command not found error, mostly likely, you need to add the path to dotnet in your `PATH`.
+            
+            Useful resources:
+
+            - For Ubuntu: [fxr does not exist](https://stackoverflow.com/questions/73753672/a-fatal-error-occurred-the-folder-usr-share-dotnet-host-fxr-does-not-exist) 
+
+
+
 
 ### [Step 2] Install Java Runtime
 

@@ -139,7 +139,7 @@ namespace Plang.Compiler.Backend.PCover
             context.WriteLine(source.Stream, "@Generated");
             context.WriteLine(source.Stream, "public List<Monitor> getMonitors() { return testDriver.getMonitors(); }");
             context.WriteLine(source.Stream, "@Generated");
-            context.WriteLine(source.Stream, "public Map<Event, List<Monitor>> getListeners() { return testDriver.getListeners(); }");
+            context.WriteLine(source.Stream, "public Map<PEvent, List<Monitor>> getListeners() { return testDriver.getListeners(); }");
             context.WriteLine(source.Stream);
 
             WriteSourceEpilogue(context, source.Stream);
@@ -222,7 +222,7 @@ namespace Plang.Compiler.Backend.PCover
 
         private void WriteEvent(CompilationContext context, StringWriter output, PEvent ev)
         {
-            context.WriteLine(output, $"public static Event {context.GetNameForDecl(ev)} = new Event(\"{context.GetNameForDecl(ev)}\");");
+            context.WriteLine(output, $"public static PEvent {context.GetNameForDecl(ev)} = new PEvent(\"{context.GetNameForDecl(ev)}\");");
         }
 
         private void WriteDecl(CompilationContext context, StringWriter output, IPDecl decl)
@@ -456,16 +456,12 @@ namespace Plang.Compiler.Backend.PCover
             {
                 context.WriteLine(output, "@Generated");
                 context.WriteLine(output, "@Override");
-                context.WriteLine(output, $"public void entry(Machine machine, EventHandlerReturnReason outcome, PValue<?> payload) {{");
-                context.WriteLine(output, $"super.entry(machine, outcome, payload);");
+                context.WriteLine(output, $"public void entry(Machine machine, PValue<?> payload) {{");
+                context.WriteLine(output, $"super.entry(machine, payload);");
 
                 var entryFunc = state.Entry;
                 entryFunc.Name = $"{context.GetNameForDecl(state)}_entry";
                 context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}(machine.getSendBuffer()");
-                if (entryFunc.CanChangeState ?? false)
-                    context.Write(output, ", outcome");
-                else if (entryFunc.CanRaiseEvent ?? false)
-                    context.Write(output, ", outcome");
                 if (entryFunc.Signature.Parameters.Any())
                 {
                     Debug.Assert(entryFunc.Signature.Parameters.Count() == 1);
@@ -503,15 +499,11 @@ namespace Plang.Compiler.Backend.PCover
                     break;
                 case EventDoAction action:
                     context.WriteLine(output, $"new EventHandler({eventTag}) {{");
-                    context.WriteLine(output, "@Override public void handleEvent(Machine machine, UnionVS payload, EventHandlerReturnReason outcome) {");
+                    context.WriteLine(output, "@Override public void handleEvent(Machine machine, PValue<?> payload) {");
                     var actionFunc = action.Target;
                     if (actionFunc.Name == "")
                         actionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}";
                     context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(machine.getSendBuffer()");
-                    if (actionFunc.CanChangeState ?? false)
-                        context.Write(output, ", outcome");
-                    else if (actionFunc.CanRaiseEvent ?? false)
-                        context.Write(output, ", outcome");
                     if (actionFunc.Signature.Parameters.Count() == 1)
                     {
                         Debug.Assert(!actionFunc.Signature.Parameters[0].Type.IsSameTypeAs(PrimitiveType.Null));
@@ -692,17 +684,6 @@ namespace Plang.Compiler.Backend.PCover
 
             context.WriteLine(output, $"(");
             context.Write(output, $"EventBuffer {CompilationContext.EffectCollectionVar}");
-            if (function.CanChangeState ?? false)
-            {
-                Debug.Assert(function.Owner != null);
-                context.WriteLine(output, ",");
-                context.Write(output, "EventHandlerReturnReason outcome");
-            }
-            else if (function.CanRaiseEvent ?? false)
-            {
-                context.WriteLine(output, ",");
-                context.Write(output, "EventHandlerReturnReason outcome");
-            }
             foreach (var param in function.Signature.Parameters)
             {
                 context.WriteLine(output, ",");
@@ -927,7 +908,7 @@ namespace Plang.Compiler.Backend.PCover
                     break;
 
                 case GotoStmt gotoStmt:
-                    context.Write(output, $"outcome.addGoto({context.GetNameForDecl(gotoStmt.State)}");
+                    context.Write(output, $"gotoState({context.GetNameForDecl(gotoStmt.State)}");
                     if (gotoStmt.Payload != null)
                     {
                         context.Write(output, $", ");
@@ -943,7 +924,7 @@ namespace Plang.Compiler.Backend.PCover
                     // TODO: Add type checking for the payload!
                     context.WriteLine(output, "// NOTE (TODO): We currently perform no typechecking on the payload!");
 
-                    context.Write(output, $"outcome.raiseEvent(");
+                    context.Write(output, $"raiseEvent(");
                     WriteExpr(context, output, raiseStmt.PEvent);
                     if (raiseStmt.Payload.Count > 0)
                     {
@@ -1225,8 +1206,6 @@ namespace Plang.Compiler.Backend.PCover
             context.WriteLine(output, $"(");
             context.Write(output, $"EventBuffer {CompilationContext.EffectCollectionVar}");
             context.WriteLine(output, ",");
-            context.Write(output, "EventHandlerReturnReason outcome");
-            context.WriteLine(output, ",");
             var messageName = $"{continuationName}_msg";
             context.WriteLine(output, $"Message {messageName}");
             context.WriteLine(output);
@@ -1499,12 +1478,6 @@ namespace Plang.Compiler.Backend.PCover
 
             context.Write(output, $"{context.GetNameForDecl(function)}({CompilationContext.EffectCollectionVar}");
 
-            if (function.CanChangeState ?? false)
-                context.Write(output, ", outcome");
-
-            else if (function.CanRaiseEvent ?? false)
-                context.Write(output, ", outcome");
-
 
             for (var i = 0; i < args.Count(); i++)
             {
@@ -1773,7 +1746,7 @@ namespace Plang.Compiler.Backend.PCover
                         context.WriteLine(output, ";");
                     }
                     writeMutator(guardedTemp);
-                    context.WriteLine(output, $"{unguarded} = {guardedTemp});");
+                    context.WriteLine(output, $"{unguarded} = {guardedTemp};");
                     break;
 
                 default:
@@ -2005,7 +1978,7 @@ namespace Plang.Compiler.Backend.PCover
                     if (prefix != "") context.Write(output, ")");
                     break;
                 case ThisRefExpr _:
-                    context.Write(output, $"new PMachineValue(this)");
+                    context.Write(output, $"this");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, $"({GetPCoverType(tupleAccessExpr.Type)})(");
@@ -2307,7 +2280,7 @@ namespace Plang.Compiler.Backend.PCover
                     return "PString";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
-                    return "PMachineValue";
+                    return "Machine";
                 case ForeignType foreignType:
                     return foreignType.CanonicalRepresentation;
                 case SequenceType sequenceType:
@@ -2346,7 +2319,7 @@ namespace Plang.Compiler.Backend.PCover
                     return $"new {GetPCoverType(type)}(\"\")";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
-                    return $"new {GetPCoverType(type)}((Machine) null)";
+                    return $"null";
                 case ForeignType _:
                     return $"new {GetPCoverType(type)}()";
                 case SequenceType _:
@@ -2378,7 +2351,7 @@ namespace Plang.Compiler.Backend.PCover
                 case EnumType enumType:
                     return $"new {GetPCoverType(type)}({enumType.EnumDecl.Values.Min(elem => elem.Value)})";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
-                    return $"new {GetPCoverType(type)}((Event) null)";
+                    return $"null";
                 default:
                     return $"new {GetPCoverType(type)}()";
             }
@@ -2388,17 +2361,17 @@ namespace Plang.Compiler.Backend.PCover
         {
             context.WriteLine(output, "package pcover.model;");
             context.WriteLine(output);
-            context.WriteLine(output, "import pcover.commandline.*;");
+            // context.WriteLine(output, "import pcover.commandline.*;");
             context.WriteLine(output, "import pcover.runtime.*;");
             context.WriteLine(output, "import pcover.runtime.logger.*;");
             context.WriteLine(output, "import pcover.runtime.machine.*;");
             context.WriteLine(output, "import pcover.runtime.machine.buffer.*;");
             context.WriteLine(output, "import pcover.runtime.machine.eventhandlers.*;");
             context.WriteLine(output, "import pcover.runtime.machine.events.*;");
-            context.WriteLine(output, "import pcover.runtime.scheduler.*;");
-            context.WriteLine(output, "import pcover.runtime.values.*;");
-            context.WriteLine(output, "import pcover.utils.*;");
-            context.WriteLine(output, "import pcover.utils.serialize.*;");
+            // context.WriteLine(output, "import pcover.runtime.scheduler.*;");
+            context.WriteLine(output, "import pcover.values.*;");
+            // context.WriteLine(output, "import pcover.utils.*;");
+            // context.WriteLine(output, "import pcover.utils.serialize.*;");
             context.WriteLine(output, "import java.util.List;");
             context.WriteLine(output, "import java.util.ArrayList;");
             context.WriteLine(output, "import java.util.Map;");

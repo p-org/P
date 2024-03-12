@@ -78,6 +78,8 @@ namespace Plang.Options
             advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of JVM arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("checker-args", null, "Specify a concatenated list of additional checker arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
+            advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of PSym-specific JVM arguments to pass, each starting with a colon").IsHidden = true;
+
         }
 
         /// <summary>

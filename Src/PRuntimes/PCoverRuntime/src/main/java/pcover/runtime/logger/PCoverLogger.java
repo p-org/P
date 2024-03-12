@@ -10,6 +10,9 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import pcover.utils.exceptions.NotImplementedException;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 /** Represents the main PCover logger */
 public class PCoverLogger {
     static Logger log = null;
@@ -103,5 +106,24 @@ public class PCoverLogger {
     public static void ResetAllConfigurations(
             int verbosity, String projectName, String outputFolder) {
         throw new NotImplementedException();
+    }
+
+    /**
+     * Print error trace
+     * @param e Exception object
+     * @param stderrOnly Print to stderr only
+     */
+    public static void printStackTrace(Exception e, boolean stderrOnly) {
+        if (stderrOnly) {
+            System.err.println("... Stack trace:");
+            e.printStackTrace(System.err);
+        } else {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+
+            info("... Stack trace:");
+            info(sw.toString());
+        }
     }
 }

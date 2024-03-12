@@ -294,8 +294,8 @@ namespace Plang.Compiler.Backend.PCover
 
             context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
-            context.WriteLine(output, "protected List<PValue<?>> getLocalVars() {");
-            context.WriteLine(output, "    List<PValue<?>> res = super.getLocalVars();");
+            context.WriteLine(output, "protected List<Object> getLocalVars() {");
+            context.WriteLine(output, "    List<Object> res = super.getLocalVars();");
             foreach (var field in machine.Fields)
                 context.WriteLine(output, $"    res.add({CompilationContext.GetVar(field.Name)});");
             context.WriteLine(output, "    return res;");
@@ -304,7 +304,7 @@ namespace Plang.Compiler.Backend.PCover
 
             context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
-            context.WriteLine(output, "protected int setLocalVars(List<PValue<?>> localVars) {");
+            context.WriteLine(output, "protected int setLocalVars(List<Object> localVars) {");
             context.WriteLine(output, "    int idx = super.setLocalVars(localVars);");
             foreach (var field in machine.Fields)
                 context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetPCoverType(field.Type)}) localVars.get(idx++);");
@@ -355,8 +355,8 @@ namespace Plang.Compiler.Backend.PCover
 
             context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
-            context.WriteLine(output, "protected List<PValue<?>> getLocalVars() {");
-            context.WriteLine(output, "    List<PValue<?>> res = super.getLocalVars();");
+            context.WriteLine(output, "protected List<Object> getLocalVars() {");
+            context.WriteLine(output, "    List<Object> res = super.getLocalVars();");
             foreach (var field in machine.Fields)
                 context.WriteLine(output, $"    res.add({CompilationContext.GetVar(field.Name)});");
             context.WriteLine(output, "    return res;");
@@ -365,7 +365,7 @@ namespace Plang.Compiler.Backend.PCover
 
             context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
-            context.WriteLine(output, "protected int setLocalVars(List<PValue<?>> localVars) {");
+            context.WriteLine(output, "protected int setLocalVars(List<Object> localVars) {");
             context.WriteLine(output, "    int idx = super.setLocalVars(localVars);");
             foreach (var field in machine.Fields)
                 context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetPCoverType(field.Type)}) localVars.get(idx++);");
@@ -409,9 +409,8 @@ namespace Plang.Compiler.Backend.PCover
                 {
                     var cont = (Continuation) method;
                     context.Write(output, $"continuations.put(\"{context.GetContinuationName(cont)}\", ");
-                    context.Write(output, $"(pc) -> ((continuation_outcome, msg) -> {context.GetContinuationName(cont)}(pc,");
-                    context.Write(output, $"getSendBuffer()");
-                    context.Write(output, ", continuation_outcome");
+                    context.Write(output, $"(pc) -> ((continuation_outcome, msg) -> {context.GetContinuationName(cont)}(");
+                    context.Write(output, "continuation_outcome");
                     context.WriteLine(output, $", msg)));");
                     context.WriteLine(output, $"clearContinuationVars.add(() -> clear_{context.GetContinuationName(cont)}());");
                 }
@@ -461,7 +460,7 @@ namespace Plang.Compiler.Backend.PCover
 
                 var entryFunc = state.Entry;
                 entryFunc.Name = $"{context.GetNameForDecl(state)}_entry";
-                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}(machine.getSendBuffer()");
+                context.Write(output, $"(({context.GetNameForDecl(entryFunc.Owner)})machine).{context.GetNameForDecl(entryFunc)}(machine");
                 if (entryFunc.Signature.Parameters.Any())
                 {
                     Debug.Assert(entryFunc.Signature.Parameters.Count() == 1);
@@ -482,7 +481,7 @@ namespace Plang.Compiler.Backend.PCover
                 Debug.Assert(!(exitFunc.CanRaiseEvent ?? false));
                 if (exitFunc.Signature.Parameters.Count() != 0)
                     throw new NotImplementedException("Exit functions with payloads are not yet supported");
-                context.WriteLine(output, $"(({context.GetNameForDecl(exitFunc.Owner)})machine).{context.GetNameForDecl(exitFunc)}(machine.getSendBuffer());");
+                context.WriteLine(output, $"(({context.GetNameForDecl(exitFunc.Owner)})machine).{context.GetNameForDecl(exitFunc)}(machine);");
 
                 context.WriteLine(output, "}");
             }
@@ -503,11 +502,12 @@ namespace Plang.Compiler.Backend.PCover
                     var actionFunc = action.Target;
                     if (actionFunc.Name == "")
                         actionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}";
-                    context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(machine.getSendBuffer()");
+                    context.Write(output, $"(({context.GetNameForDecl(actionFunc.Owner)})machine).{context.GetNameForDecl(actionFunc)}(machine");
                     if (actionFunc.Signature.Parameters.Count() == 1)
                     {
                         Debug.Assert(!actionFunc.Signature.Parameters[0].Type.IsSameTypeAs(PrimitiveType.Null));
-                        context.Write(output, $", payload");
+                        var payloadVSType = GetPCoverType(actionFunc.Signature.Parameters[0].Type);
+                        context.Write(output, $", ({payloadVSType}) payload");
                     }
                     context.WriteLine(output, ");");
                     context.WriteLine(output, "}");
@@ -529,7 +529,7 @@ namespace Plang.Compiler.Backend.PCover
                         if (transitionFunc.Name == "")
                             transitionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}_{destTag}";
 
-                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(machine.getSendBuffer()");
+                        context.Write(output, $"(({context.GetNameForDecl(transitionFunc.Owner)})machine).{context.GetNameForDecl(transitionFunc)}(machine");
                         if (transitionFunc.Signature.Parameters.Count() == 1)
                         {
                             Debug.Assert(!transitionFunc.Signature.Parameters[0].Type.IsSameTypeAs(PrimitiveType.Null));
@@ -683,7 +683,7 @@ namespace Plang.Compiler.Backend.PCover
             context.Write(output, functionName);
 
             context.WriteLine(output, $"(");
-            context.Write(output, $"EventBuffer {CompilationContext.EffectCollectionVar}");
+            context.Write(output, $"Machine {CompilationContext.CurrentMachine}");
             foreach (var param in function.Signature.Parameters)
             {
                 context.WriteLine(output, ",");
@@ -908,8 +908,12 @@ namespace Plang.Compiler.Backend.PCover
                     break;
 
                 case GotoStmt gotoStmt:
-                    context.Write(output, $"gotoState({context.GetNameForDecl(gotoStmt.State)}");
-                    if (gotoStmt.Payload != null)
+                    context.Write(output, $"{CompilationContext.CurrentMachine}.gotoState({context.GetNameForDecl(gotoStmt.State)}");
+                    if (gotoStmt.Payload == null)
+                    {
+                        context.Write(output, ", null");
+                    }
+                    else
                     {
                         context.Write(output, $", ");
                         WriteExpr(context, output, gotoStmt.Payload);
@@ -924,7 +928,7 @@ namespace Plang.Compiler.Backend.PCover
                     // TODO: Add type checking for the payload!
                     context.WriteLine(output, "// NOTE (TODO): We currently perform no typechecking on the payload!");
 
-                    context.Write(output, $"raiseEvent(");
+                    context.Write(output, $"{CompilationContext.CurrentMachine}.raiseEvent(");
                     WriteExpr(context, output, raiseStmt.PEvent);
                     if (raiseStmt.Payload.Count > 0)
                     {
@@ -1044,7 +1048,7 @@ namespace Plang.Compiler.Backend.PCover
                     break;
 
                 case SendStmt sendStmt:
-                    context.Write(output, $"{CompilationContext.EffectCollectionVar}.send(");
+                    context.Write(output, $"{CompilationContext.CurrentMachine}.sendEvent(");
                     WriteExpr(context, output, sendStmt.MachineExpr);
                     context.Write(output, ", ");
                     WriteExpr(context, output, sendStmt.Evt);
@@ -1175,7 +1179,7 @@ namespace Plang.Compiler.Backend.PCover
                     context.WriteLine(output, ");");
                     break;
                 case ReceiveSplitStmt splitStmt:
-                    context.WriteLine(output, $"this.receive(\"{context.GetContinuationName(splitStmt.Cont)}\");");
+                    context.WriteLine(output, $"{CompilationContext.CurrentMachine}.receive(\"{context.GetContinuationName(splitStmt.Cont)}\");");
                     break;
                 default:
                     throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported, found in {function.Name}");
@@ -1204,7 +1208,7 @@ namespace Plang.Compiler.Backend.PCover
             context.Write(output, continuationName);
 
             context.WriteLine(output, $"(");
-            context.Write(output, $"EventBuffer {CompilationContext.EffectCollectionVar}");
+            context.Write(output, $"Machine {CompilationContext.CurrentMachine}");
             context.WriteLine(output, ",");
             var messageName = $"{continuationName}_msg";
             context.WriteLine(output, $"Message {messageName}");
@@ -1226,7 +1230,7 @@ namespace Plang.Compiler.Backend.PCover
                 context.WriteLine(output, $"Message {messageName}_{idx} = {messageName};");
                 context.WriteLine(output, $"if (!{messageName}_{idx}.isEmpty())");
                 context.WriteLine(output, "{");
-                context.WriteLine(output, $"{CompilationContext.EffectCollectionVar}.unblock({messageName}_{idx});");
+                context.WriteLine(output, $"{CompilationContext.CurrentMachine}.unblock({messageName}_{idx});");
                 var caseContext = ControlFlowContext.FreshFuncContext(context);
                 if (value.Signature.Parameters.Count > 0)
                 {
@@ -1476,7 +1480,7 @@ namespace Plang.Compiler.Backend.PCover
                     break;
             }
 
-            context.Write(output, $"{context.GetNameForDecl(function)}({CompilationContext.EffectCollectionVar}");
+            context.Write(output, $"{context.GetNameForDecl(function)}({CompilationContext.CurrentMachine}");
 
 
             for (var i = 0; i < args.Count(); i++)
@@ -1978,7 +1982,7 @@ namespace Plang.Compiler.Backend.PCover
                     if (prefix != "") context.Write(output, ")");
                     break;
                 case ThisRefExpr _:
-                    context.Write(output, $"this");
+                    context.Write(output, $"new PMachineValue(this)");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, $"({GetPCoverType(tupleAccessExpr.Type)})(");
@@ -2135,8 +2139,7 @@ namespace Plang.Compiler.Backend.PCover
             // TODO: Is it safe to take an interface's name and treat it as if it were a machine's name?
             context.Write(
                 output,
-                $"{CompilationContext.EffectCollectionVar}.create(" +
-                $"{CompilationContext.SchedulerVar}, " +
+                $"{CompilationContext.CurrentMachine}.create(" +
                 $"{context.GetNameForDecl(ctorInterface)}.class, ");
 
             if (ctorArguments.Count == 1)
@@ -2280,7 +2283,7 @@ namespace Plang.Compiler.Backend.PCover
                     return "PString";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
-                    return "Machine";
+                    return "PMachineValue";
                 case ForeignType foreignType:
                     return foreignType.CanonicalRepresentation;
                 case SequenceType sequenceType:

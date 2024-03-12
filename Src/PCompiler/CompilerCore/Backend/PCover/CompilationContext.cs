@@ -90,7 +90,7 @@ namespace Plang.Compiler.Backend.PCover
 
         internal static string SchedulerVar => "PCoverGlobal.getScheduler()";
 
-        internal static string EffectCollectionVar => "effects";
+        internal static string CurrentMachine => "currentMachine";
 
         internal static string GetVar(string rawName)
         {

@@ -67,6 +67,12 @@ namespace PChecker
         public string TestCaseName;
 
         /// <summary>
+        /// List test cases and exit.
+        /// </summary>
+        [DataMember]
+        public bool ListTestCases;
+
+        /// <summary>
         /// The systematic testing strategy to use.
         /// </summary>
         [DataMember]
@@ -294,6 +300,7 @@ namespace PChecker
             AssemblyToBeAnalyzed = string.Empty;
             Mode = CheckerMode.BugFinding;
             TestCaseName = string.Empty;
+            ListTestCases = false;
 
             SchedulingStrategy = "random";
             TestingIterations = 1;

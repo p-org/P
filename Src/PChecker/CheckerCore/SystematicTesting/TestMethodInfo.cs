@@ -86,6 +86,15 @@ namespace PChecker.SystematicTesting
         internal void DisposeAllIterations() => DisposeMethod?.Invoke(null, Array.Empty<object>());
 
         /// <summary>
+        /// Returns the list of <see cref="MethodInfo"/> containing all test methods in the specified assembly.
+        /// </summary>
+        internal static List<MethodInfo> GetAllTestMethodsFromAssembly(Assembly assembly)
+        {
+            var flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.InvokeMethod;
+            return FindTestMethodsWithAttribute(typeof(TestAttribute), flags, assembly);
+        }
+
+        /// <summary>
         /// Returns the <see cref="TestMethodInfo"/> with the given name in the specified assembly.
         /// </summary>
         internal static TestMethodInfo GetFromAssembly(Assembly assembly, string methodName)

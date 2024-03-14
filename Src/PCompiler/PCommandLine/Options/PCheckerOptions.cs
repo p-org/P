@@ -34,8 +34,9 @@ namespace Plang.Options
             modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
             modes.IsHidden = true;
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
-            basicOptions.AddArgument("smoke-testing", "tsmoke",
-                "Smoke test the program by running the checker on all the test cases", typeof(bool));
+            // basicOptions.AddArgument("smoke-testing", "tsmoke",
+            //     "Smoke test the program by running the checker on all the test cases", typeof(bool));
+            basicOptions.AddArgument("list-tests", null, "List all test cases and exit.", typeof(bool));
             
             var basicGroup = Parser.GetOrCreateGroup("Basic", "Basic options");
             basicGroup.AddArgument("timeout", "t", "Timeout in seconds (disabled by default)", typeof(uint));
@@ -218,6 +219,9 @@ namespace Plang.Options
                     break;
                 case "testcase":
                     checkerConfiguration.TestCaseName = (string)option.Value;
+                    break;
+                case "list-tests":
+                    checkerConfiguration.ListTestCases = true;
                     break;
                 case "seed":
                     checkerConfiguration.RandomGeneratorSeed = (uint)option.Value;

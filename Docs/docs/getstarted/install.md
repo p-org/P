@@ -1,4 +1,4 @@
-!!! info "If you want to use older P version, please use the installation steps [here](../old/getstarted/install.md)"
+!!! info "If you want to use older P version 1.x.x, please use the installation steps [here](../old/getstarted/install.md)"
 
 P is built to be cross-platform and can be used on MacOS, Linux, and Windows. We provide a step-by-step guide for installing P along with the required dependencies.
 
@@ -92,10 +92,10 @@ The P compiler also requires Java (`java` version 11 or higher).
 
 === "Amazon Linux"
 
-    Installing Java 11 on Amazon Linux (you can use any version of java >= 11)
+    Installing Java 17 on Amazon Linux (you can use any version of java >= 11)
 
     ```shell
-    sudo yum install -y java-11-amazon-corretto
+    sudo yum install -y java-17-amazon-corretto
     ```
 
 === "Windows"

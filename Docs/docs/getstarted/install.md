@@ -37,16 +37,18 @@ P currently uses the specific version of [.Net SDK 8.0](https://dotnet.microsoft
 
 
 === "Amazon Linux"
+
+    Installing .Net SDK on Amazon Linux 2 ([details](https://learn.microsoft.com/en-us/dotnet/core/install/linux-scripted-manual#scripted-install))
     
     ```shell
     wget https://dotnet.microsoft.com/download/dotnet/scripts/v1/dotnet-install.sh
     chmod +x dotnet-install.sh
     ./dotnet-install.sh  -c 8.0 -i ~/.dotnet
-
-    # If using a bash shell, replace .zshrc_profile with .bash_profile in the below commands
-    echo 'PATH=$HOME/.dotnet:$HOME/.dotnet/tools:$PATH' >> ~/.zshrc_profile
-    echo 'export PATH' >> ~/.zshrc_profile
-    source ~/.zshrc_profile
+    
+    # If using a bash shell, replace .zshrc with .bashrc in the below commands
+    echo 'PATH=$HOME/.dotnet:$HOME/.dotnet/tools:$PATH' >> ~/.zshrc
+    echo 'export PATH' >> ~/.zshrc
+    source ~/.zshrc
 
     sudo mkdir /usr/share/dotnet/
     sudo cp -r ~/.dotnet/* /usr/share/dotnet/

@@ -20,7 +20,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, PEvent> events = new Dictionary<string, PEvent>();
         private readonly IDictionary<string, NamedEventSet> eventSets = new Dictionary<string, NamedEventSet>();
         private readonly IDictionary<string, Function> functions = new Dictionary<string, Function>();
-        private readonly ITranslationErrorHandler handler;
+        private readonly ICompilerConfiguration config;
         private readonly IDictionary<string, Implementation> implementations = new Dictionary<string, Implementation>();
         private readonly IDictionary<string, Interface> interfaces = new Dictionary<string, Interface>();
         private readonly IDictionary<string, Machine> machines = new Dictionary<string, Machine>();
@@ -32,9 +32,9 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
 
-        private Scope(ITranslationErrorHandler handler, Scope parent = null)
+        private Scope(ICompilerConfiguration config, Scope parent = null)
         {
-            this.handler = handler;
+            this.config = config;
             parent?.children.Remove(this);
             Parent = parent;
             parent?.children.Add(this);
@@ -80,14 +80,14 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
 
-        public static Scope CreateGlobalScope(ITranslationErrorHandler handler)
+        public static Scope CreateGlobalScope(ICompilerConfiguration config)
         {
-            return new Scope(handler);
+            return new Scope(config);
         }
 
         public Scope MakeChildScope()
         {
-            return new Scope(handler, this);
+            return new Scope(config, this);
         }
 
         public IEnumerable<Function> GetAllMethods()
@@ -599,6 +599,16 @@ namespace Plang.Compiler.TypeChecker
 
         public SafetyTest Put(string name, PParser.SafetyTestDeclContext tree)
         {
+            // check if test is from an imported project, if so, return null
+            string filePath = config.LocationResolver.GetLocation(tree).File.FullName;
+            foreach (var dependencyPath in config.ProjectDependencies)
+            {
+                if (filePath.StartsWith(dependencyPath))
+                {
+                    return null; 
+                }
+            }
+            
             var safetyTest = new SafetyTest(tree, name);
             CheckConflicts(safetyTest,
                 Namespace(implementations),
@@ -631,7 +641,7 @@ namespace Plang.Compiler.TypeChecker
             IPDecl existingDecl = null;
             if (namespaces.Any(table => table(decl.Name, out existingDecl)))
             {
-                throw handler.DuplicateDeclaration(decl.SourceLocation, decl, existingDecl);
+                throw config.Handler.DuplicateDeclaration(decl.SourceLocation, decl, existingDecl);
             }
         }
 

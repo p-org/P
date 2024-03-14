@@ -11,7 +11,6 @@ namespace Plang.Compiler.Backend.Java
             Types = new TypeManager(Names);
 
             FileName = $"{ProjectName}.java";
-            ProjectDependencies = job.ProjectDependencies.Count == 0 ? new List<string>() { ProjectName } : job.ProjectDependencies;
         }
 
         public NameManager Names { get; }
@@ -20,8 +19,6 @@ namespace Plang.Compiler.Backend.Java
         //public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
 
         public string FileName { get; }
-
-        public IList<string> ProjectDependencies { get; }
 
     }
 }

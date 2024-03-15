@@ -60,7 +60,7 @@ namespace PChecker.Testing
             if (checkerConfiguration.UserExplicitlySetMaxFairSchedulingSteps)
             {
                 arguments.Append($"--max-steps {checkerConfiguration.MaxUnfairSchedulingSteps} " +
-                    $"{checkerConfiguration.MaxFairSchedulingSteps} ");
+                                 $"{checkerConfiguration.MaxFairSchedulingSteps} ");
             }
             else
             {
@@ -75,7 +75,7 @@ namespace PChecker.Testing
                 arguments.Append($"--sch-{checkerConfiguration.SchedulingStrategy} {checkerConfiguration.StrategyBound} ");
             }
             else if (checkerConfiguration.SchedulingStrategy is "random" ||
-                checkerConfiguration.SchedulingStrategy is "portfolio")
+                     checkerConfiguration.SchedulingStrategy is "portfolio")
             {
                 arguments.Append($"--sch-{checkerConfiguration.SchedulingStrategy} ");
             }

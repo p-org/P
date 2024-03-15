@@ -6,7 +6,6 @@ using System.Xml.Linq;
 using PChecker;
 using PChecker.IO.Debugging;
 using Plang.Compiler;
-using Debug = System.Diagnostics.Debug;
 
 namespace Plang.Parser
 {

@@ -1,7 +1,7 @@
-﻿using NUnit.Framework;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NUnit.Framework;
 using Plang.Compiler;
 using UnitTests.Core;
 

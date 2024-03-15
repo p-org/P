@@ -4,15 +4,16 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 using PChecker.Actors;
-using PChecker.Actors.Logging;
 using PChecker.Actors.Events;
 using PChecker.Actors.Handlers;
+using PChecker.Actors.Logging;
 using PChecker.Actors.StateTransitions;
 using PChecker.Exceptions;
 
@@ -140,9 +141,9 @@ namespace PChecker.Specifications.Monitors
             get
             {
                 return CurrentStateName +
-                    (IsInHotState() ? "[hot]" :
-                    IsInColdState() ? "[cold]" :
-                    string.Empty);
+                       (IsInHotState() ? "[hot]" :
+                           IsInColdState() ? "[cold]" :
+                           string.Empty);
             }
         }
 
@@ -361,7 +362,7 @@ namespace PChecker.Specifications.Monitors
         /// <summary>
         /// Invokes an action.
         /// </summary>
-        [System.Diagnostics.DebuggerStepThrough]
+        [DebuggerStepThrough]
         private void Do(string actionName, Event e)
         {
             var cachedAction = ActionMap[actionName];
@@ -373,7 +374,7 @@ namespace PChecker.Specifications.Monitors
         /// <summary>
         /// Executes the on entry function of the current state.
         /// </summary>
-        [System.Diagnostics.DebuggerStepThrough]
+        [DebuggerStepThrough]
         private void ExecuteCurrentStateOnEntry(Event e)
         {
             Runtime.NotifyEnteredState(this);
@@ -396,7 +397,7 @@ namespace PChecker.Specifications.Monitors
         /// <summary>
         /// Executes the on exit function of the current state.
         /// </summary>
-        [System.Diagnostics.DebuggerStepThrough]
+        [DebuggerStepThrough]
         private void ExecuteCurrentStateOnExit(string eventHandlerExitActionName, Event e)
         {
             Runtime.NotifyExitedState(this);
@@ -436,7 +437,7 @@ namespace PChecker.Specifications.Monitors
         /// <summary>
         /// Executes the specified action.
         /// </summary>
-        [System.Diagnostics.DebuggerStepThrough]
+        [DebuggerStepThrough]
         private void ExecuteAction(CachedDelegate cachedAction, Event e)
         {
             try
@@ -588,7 +589,7 @@ namespace PChecker.Specifications.Monitors
             {
                 LivenessTemperature++;
                 if (LivenessTemperature > Runtime.
-                    CheckerConfiguration.LivenessTemperatureThreshold)
+                        CheckerConfiguration.LivenessTemperatureThreshold)
                 {
                     Runtime.NotifyMonitorError(this);
                     Runtime.Assert(false,
@@ -722,8 +723,8 @@ namespace PChecker.Specifications.Monitors
                             while (baseType != typeof(Monitor))
                             {
                                 foreach (var s in baseType.GetNestedTypes(BindingFlags.Instance |
-                                    BindingFlags.NonPublic | BindingFlags.Public |
-                                    BindingFlags.DeclaredOnly))
+                                                                          BindingFlags.NonPublic | BindingFlags.Public |
+                                                                          BindingFlags.DeclaredOnly))
                                 {
                                     ExtractStateTypes(s);
                                 }
@@ -752,8 +753,8 @@ namespace PChecker.Specifications.Monitors
                                     // then used to create the state constructor.
                                     var declaringType = GetType();
                                     while (!declaringType.IsGenericType ||
-                                        !type.DeclaringType.FullName.Equals(declaringType.FullName.Substring(
-                                        0, declaringType.FullName.IndexOf('['))))
+                                           !type.DeclaringType.FullName.Equals(declaringType.FullName.Substring(
+                                               0, declaringType.FullName.IndexOf('['))))
                                     {
                                         declaringType = declaringType.BaseType;
                                     }
@@ -861,8 +862,8 @@ namespace PChecker.Specifications.Monitors
                 {
                     // Adds the contents of the group of states to the stack.
                     foreach (var t in nextType.GetNestedTypes(BindingFlags.Instance |
-                        BindingFlags.NonPublic | BindingFlags.Public |
-                        BindingFlags.DeclaredOnly))
+                                                              BindingFlags.NonPublic | BindingFlags.Public |
+                                                              BindingFlags.DeclaredOnly))
                     {
                         Assert(t.IsSubclassOf(typeof(StateGroup)) || t.IsSubclassOf(typeof(State)),
                             "'{0}' is neither a group of states nor a state.", t.Name);
@@ -908,7 +909,7 @@ namespace PChecker.Specifications.Monitors
 
             var parameters = action.GetParameters();
             Assert(parameters.Length is 0 ||
-                (parameters.Length is 1 && parameters[0].ParameterType == typeof(Event)),
+                   (parameters.Length is 1 && parameters[0].ParameterType == typeof(Event)),
                 "Action '{0}' in {1} must either accept no parameters or a single parameter of type 'Event'.",
                 action.Name, GetType().FullName);
 

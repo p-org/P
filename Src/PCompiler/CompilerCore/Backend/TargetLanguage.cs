@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Plang.Compiler.Backend.C;
 using Plang.Compiler.Backend.CSharp;
 using Plang.Compiler.Backend.Java;
 using Plang.Compiler.Backend.Stately;
@@ -15,7 +14,6 @@ namespace Plang.Compiler.Backend
         static TargetLanguage()
         {
             RegisterCodeGenerator(CompilerOutput.CSharp, new CSharpCodeGenerator());
-            RegisterCodeGenerator(CompilerOutput.C, new CCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.Java, new JavaCompiler());
             RegisterCodeGenerator(CompilerOutput.Symbolic, new SymbolicCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.Stately, new StatelyCodeGenerator());

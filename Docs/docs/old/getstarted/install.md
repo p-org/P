@@ -3,10 +3,10 @@
 P is built to be cross-platform and can be used on MacOS, Linux, and Windows. We provide a step-by-step guide for installing P along with its required dependencies.
 
 !!! info ""
-    After each step, please use the troubleshooting check to ensure that each installation step succeeded.
+After each step, please use the troubleshooting check to ensure that each installation step succeeded.
 
 ### [Step 1] Install .Net Core SDK
-The P compiler and checker are implemented in C# and hence the tool chain requires `dotnet`. 
+The P compiler and checker are implemented in C# and hence the tool chain requires `dotnet`.
 P currently uses the specific version of [.Net SDK 3.1](https://dotnet.microsoft.com/download/dotnet/3.1).
 To install .Net Core 3.1 SDK use:
 
@@ -37,7 +37,7 @@ To install .Net Core 3.1 SDK use:
     ```
 
 === "Amazon Linux"
-    Installing .Net SDK on Amazon Linux ([details](https://docs.servicestack.net/deploy-netcore-to-amazon-linux-2-ami))
+Installing .Net SDK on Amazon Linux ([details](https://docs.servicestack.net/deploy-netcore-to-amazon-linux-2-ami))
 
     ```
     sudo rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
@@ -52,7 +52,7 @@ To install .Net Core 3.1 SDK use:
     Installing .Net SDK on Windows using the installer ([details](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-windows-x64-installer))
 
 ??? hint "Troubleshoot: Confirm that dotnet is correctly installed on your machine."
-    `dotnet --list-sdks`
+`dotnet --list-sdks`
 
     You must see an SDK with `3.1.*` dotnet version installed.
     If you get `dotnet` command not found error, mostly likely, you need to add the path to dotnet in your `PATH`.
@@ -92,7 +92,7 @@ To install Java use:
     Installing Java on Windows ([details](https://www.java.com/en/download/help/windows_manual_download.html))
 
 ??? hint "Troubleshoot: Confirm that java is correctly installed on your machine."
-    `java -version`
+`java -version`
 
     If you get `java` command not found error, mostly likely, you need to add the path to `java` in your `PATH`.
 
@@ -115,7 +115,7 @@ dotnet tool install --global P
     If you are getting the error that the `pc` command is not found, it is most likely that `$HOME/.dotnet/tools` is not in your `PATH`.
 
 ??? help "Updating P Compiler"
-    You can update the version of `P` compiler by running the following command:
+You can update the version of `P` compiler by running the following command:
 
     `dotnet tool update --global P`
 
@@ -164,4 +164,4 @@ We highly recommend that you create the following alias as we use it in the rest
 
 ## Using P
 
- Great :smile:! You are all set to compile and test your first P program :mortar_board:!
+Great :smile:! You are all set to compile and test your first P program :mortar_board:!

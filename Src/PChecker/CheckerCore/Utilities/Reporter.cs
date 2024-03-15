@@ -57,8 +57,8 @@ namespace PChecker.Utilities
                 }
 
                 directoryPath = subpath +
-                    Path.DirectorySeparatorChar + "Output" + Path.DirectorySeparatorChar +
-                    Path.GetFileName(assemblyPath) + Path.DirectorySeparatorChar;
+                                Path.DirectorySeparatorChar + "Output" + Path.DirectorySeparatorChar +
+                                Path.GetFileName(assemblyPath) + Path.DirectorySeparatorChar;
             }
 
             if (suffix.Length > 0)

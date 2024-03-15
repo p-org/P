@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using PChecker.Runtime;
 using PChecker.SystematicTesting;
@@ -17,7 +17,7 @@ namespace PChecker.Tasks
     /// This type is intended for compiler use only.
     /// </summary>
     /// <remarks>This type is intended for compiler use rather than use directly in code.</remarks>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [StructLayout(LayoutKind.Auto)]
     public struct AsyncTaskMethodBuilder
     {
@@ -97,9 +97,9 @@ namespace PChecker.Tasks
         /// Begins running the builder with the associated state machine.
         /// </summary>
         [DebuggerStepThrough]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [SystemCompiler.MethodImpl(SystemCompiler.MethodImplOptions.AggressiveInlining)]
         public void Start<TStateMachine>(ref TStateMachine stateMachine)
-            where TStateMachine : IAsyncStateMachine
+            where TStateMachine : SystemCompiler.IAsyncStateMachine
         {
             Debug.WriteLine("<AsyncBuilder> Start state machine from task '{0}'.", Task.CurrentId);
             TaskController?.OnAsyncTaskMethodBuilderStart(stateMachine.GetType());
@@ -110,7 +110,7 @@ namespace PChecker.Tasks
         /// Associates the builder with the specified state machine.
         /// </summary>
         [DebuggerHidden]
-        public void SetStateMachine(IAsyncStateMachine stateMachine) =>
+        public void SetStateMachine(SystemCompiler.IAsyncStateMachine stateMachine) =>
             MethodBuilder.SetStateMachine(stateMachine);
 
         /// <summary>
@@ -143,8 +143,8 @@ namespace PChecker.Tasks
         /// </summary>
         [DebuggerHidden]
         public void AwaitOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine)
-            where TAwaiter : INotifyCompletion
-            where TStateMachine : IAsyncStateMachine
+            where TAwaiter : SystemCompiler.INotifyCompletion
+            where TStateMachine : SystemCompiler.IAsyncStateMachine
         {
             UseBuilder = true;
             TaskController?.OnAsyncTaskMethodBuilderAwaitCompleted(awaiter.GetType(), stateMachine.GetType());
@@ -156,8 +156,8 @@ namespace PChecker.Tasks
         /// </summary>
         [DebuggerHidden]
         public void AwaitUnsafeOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine)
-            where TAwaiter : ICriticalNotifyCompletion
-            where TStateMachine : IAsyncStateMachine
+            where TAwaiter : SystemCompiler.ICriticalNotifyCompletion
+            where TStateMachine : SystemCompiler.IAsyncStateMachine
         {
             UseBuilder = true;
             TaskController?.OnAsyncTaskMethodBuilderAwaitCompleted(awaiter.GetType(), stateMachine.GetType());
@@ -170,7 +170,7 @@ namespace PChecker.Tasks
     /// This type is intended for compiler use only.
     /// </summary>
     /// <remarks>This type is intended for compiler use rather than use directly in code.</remarks>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [StructLayout(LayoutKind.Auto)]
     public struct AsyncTaskMethodBuilder<TResult>
     {
@@ -258,9 +258,9 @@ namespace PChecker.Tasks
         /// Begins running the builder with the associated state machine.
         /// </summary>
         [DebuggerStepThrough]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [SystemCompiler.MethodImpl(SystemCompiler.MethodImplOptions.AggressiveInlining)]
         public void Start<TStateMachine>(ref TStateMachine stateMachine)
-            where TStateMachine : IAsyncStateMachine
+            where TStateMachine : SystemCompiler.IAsyncStateMachine
         {
             Debug.WriteLine("<AsyncBuilder> Start state machine from task '{0}'.", Tasks.Task.CurrentId);
             TaskController?.OnAsyncTaskMethodBuilderStart(stateMachine.GetType());
@@ -271,7 +271,7 @@ namespace PChecker.Tasks
         /// Associates the builder with the specified state machine.
         /// </summary>
         [DebuggerHidden]
-        public void SetStateMachine(IAsyncStateMachine stateMachine) =>
+        public void SetStateMachine(SystemCompiler.IAsyncStateMachine stateMachine) =>
             MethodBuilder.SetStateMachine(stateMachine);
 
         /// <summary>
@@ -306,8 +306,8 @@ namespace PChecker.Tasks
         /// </summary>
         [DebuggerHidden]
         public void AwaitOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine)
-            where TAwaiter : INotifyCompletion
-            where TStateMachine : IAsyncStateMachine
+            where TAwaiter : SystemCompiler.INotifyCompletion
+            where TStateMachine : SystemCompiler.IAsyncStateMachine
         {
             UseBuilder = true;
             TaskController?.OnAsyncTaskMethodBuilderAwaitCompleted(awaiter.GetType(), stateMachine.GetType());
@@ -319,8 +319,8 @@ namespace PChecker.Tasks
         /// </summary>
         [DebuggerHidden]
         public void AwaitUnsafeOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine)
-            where TAwaiter : ICriticalNotifyCompletion
-            where TStateMachine : IAsyncStateMachine
+            where TAwaiter : SystemCompiler.ICriticalNotifyCompletion
+            where TStateMachine : SystemCompiler.IAsyncStateMachine
         {
             UseBuilder = true;
             TaskController?.OnAsyncTaskMethodBuilderAwaitCompleted(awaiter.GetType(), stateMachine.GetType());

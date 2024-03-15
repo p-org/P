@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -55,9 +56,9 @@ namespace Plang.Compiler.TypeChecker
                             break;
                         case EventDefer _:
                         case EventIgnore _:
-                            {
-                                break;
-                            }
+                        {
+                            break;
+                        }
                     }
                 }
             }
@@ -110,7 +111,7 @@ namespace Plang.Compiler.TypeChecker
 
                         default:
                             throw handler.InternalError(pair.Value.SourceLocation,
-                                new System.Exception("Unknown transition type parsed, report to the P team"));
+                                new Exception("Unknown transition type parsed, report to the P team"));
                     }
                 }
             }
@@ -156,9 +157,9 @@ namespace Plang.Compiler.TypeChecker
 
                         case EventDefer _:
                         case EventIgnore _:
-                            {
-                                break;
-                            }
+                        {
+                            break;
+                        }
                     }
                 }
             }
@@ -177,7 +178,7 @@ namespace Plang.Compiler.TypeChecker
 
             if (entrySignature.Count > 1)
             {
-                throw handler.InternalError(sourceLocation, new System.Exception("Target function cannot have multiple parameters (report this to the P developers)"));
+                throw handler.InternalError(sourceLocation, new Exception("Target function cannot have multiple parameters (report this to the P developers)"));
             }
 
             if (entrySignature.Count == 1 && entrySignature[0].IsAssignableFrom(eventPayloadType))

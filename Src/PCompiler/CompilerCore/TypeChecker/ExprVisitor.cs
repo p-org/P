@@ -116,44 +116,44 @@ namespace Plang.Compiler.TypeChecker
             switch (context.fun.Text)
             {
                 case "keys":
+                {
+                    var expr = Visit(context.expr());
+                    if (!(expr.Type.Canonicalize() is MapType mapType))
                     {
-                        var expr = Visit(context.expr());
-                        if (!(expr.Type.Canonicalize() is MapType mapType))
-                        {
-                            throw handler.TypeMismatch(expr, TypeKind.Map);
-                        }
-
-                        return new KeysExpr(context, expr, new SequenceType(mapType.KeyType));
+                        throw handler.TypeMismatch(expr, TypeKind.Map);
                     }
+
+                    return new KeysExpr(context, expr, new SequenceType(mapType.KeyType));
+                }
                 case "values":
+                {
+                    var expr = Visit(context.expr());
+                    if (!(expr.Type.Canonicalize() is MapType mapType))
                     {
-                        var expr = Visit(context.expr());
-                        if (!(expr.Type.Canonicalize() is MapType mapType))
-                        {
-                            throw handler.TypeMismatch(expr, TypeKind.Map);
-                        }
+                        throw handler.TypeMismatch(expr, TypeKind.Map);
+                    }
 
-                        return new ValuesExpr(context, expr, new SequenceType(mapType.ValueType));
-                    }
+                    return new ValuesExpr(context, expr, new SequenceType(mapType.ValueType));
+                }
                 case "sizeof":
-                    {
-                        var expr = Visit(context.expr());
-                        if (!(expr.Type.Canonicalize() is SequenceType)
-                                && !(expr.Type.Canonicalize() is MapType)
-                                && !(expr.Type.Canonicalize() is SetType))
-                            throw handler.TypeMismatch(expr, TypeKind.Map, TypeKind.Sequence, TypeKind.Set);
-                        return new SizeofExpr(context, expr);
-                    }
+                {
+                    var expr = Visit(context.expr());
+                    if (!(expr.Type.Canonicalize() is SequenceType)
+                        && !(expr.Type.Canonicalize() is MapType)
+                        && !(expr.Type.Canonicalize() is SetType))
+                        throw handler.TypeMismatch(expr, TypeKind.Map, TypeKind.Sequence, TypeKind.Set);
+                    return new SizeofExpr(context, expr);
+                }
                 case "default":
-                    {
-                        var type = TypeResolver.ResolveType(context.type(), table, handler);
-                        return new DefaultExpr(context, type.Canonicalize());
-                    }
+                {
+                    var type = TypeResolver.ResolveType(context.type(), table, handler);
+                    return new DefaultExpr(context, type.Canonicalize());
+                }
                 default:
-                    {
-                        throw handler.InternalError(context,
-                            new ArgumentException($"Unknown keyword expression {context.fun.Text}", nameof(context)));
-                    }
+                {
+                    throw handler.InternalError(context,
+                        new ArgumentException($"Unknown keyword expression {context.fun.Text}", nameof(context)));
+                }
             }
         }
 
@@ -276,11 +276,11 @@ namespace Plang.Compiler.TypeChecker
             {
                 case "+":
                     if (PrimitiveType.String.IsAssignableFrom(lhs.Type) &&
-                          PrimitiveType.String.IsAssignableFrom(rhs.Type) ||
-                          PrimitiveType.Int.IsAssignableFrom(lhs.Type) &&
-                          PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
-                          PrimitiveType.Float.IsAssignableFrom(lhs.Type) &&
-                          PrimitiveType.Float.IsAssignableFrom(rhs.Type))
+                        PrimitiveType.String.IsAssignableFrom(rhs.Type) ||
+                        PrimitiveType.Int.IsAssignableFrom(lhs.Type) &&
+                        PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
+                        PrimitiveType.Float.IsAssignableFrom(lhs.Type) &&
+                        PrimitiveType.Float.IsAssignableFrom(rhs.Type))
                     {
                         return arithCtors[op](lhs, rhs);
                     }
@@ -478,7 +478,7 @@ namespace Plang.Compiler.TypeChecker
                         if (oldType is PermissionType)
                         {
                             if (newType.AllowedPermissions.Value.Any(x => !oldType.AllowedPermissions.Value.Contains(x))
-                            )
+                               )
                             {
                                 throw handler.IllegalInterfaceCoerce(context, oldType, newType);
                             }

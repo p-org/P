@@ -5,9 +5,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using PChecker.Actors;
-using PChecker.Actors.Logging;
 using PChecker.Actors.Events;
-using System.Collections.Generic;
+using PChecker.Actors.Logging;
 using Plang.CSharpRuntime.Exceptions;
 
 namespace Plang.CSharpRuntime

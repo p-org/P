@@ -16,9 +16,5 @@ namespace Plang.CSharpRuntime.Exceptions
         public PrtInhabitsTypeException(string message, Exception innerException) : base(message, innerException)
         {
         }
-
-        protected PrtInhabitsTypeException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
 }

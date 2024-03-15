@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using PChecker.Random;
 using PChecker.SystematicTesting.Operations;
 
@@ -362,7 +363,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// </summary>
         private void LearnQValues()
         {
-            var pathBuilder = new System.Text.StringBuilder();
+            var pathBuilder = new StringBuilder();
 
             int idx = 0;
             var node = this.ExecutionPath.First;
@@ -403,7 +404,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 // Update the Q value of the next operation.
                 // Q = [(1-a) * Q]  +  [a * (rt + (g * maxQ))]
                 currOpQValues[nextOp] = ((1 - this.LearningRate) * currOpQValues[nextOp]) +
-                    (this.LearningRate * (reward + (this.Gamma * maxQ)));
+                                        (this.LearningRate * (reward + (this.Gamma * maxQ)));
 
                 node = node.Next;
                 idx++;

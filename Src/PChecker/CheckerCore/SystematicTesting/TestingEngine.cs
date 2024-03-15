@@ -28,7 +28,7 @@ using PChecker.SystematicTesting.Strategies.Probabilistic;
 using PChecker.SystematicTesting.Strategies.Special;
 using PChecker.SystematicTesting.Traces;
 using PChecker.Utilities;
-using CoyoteTasks = PChecker.Tasks;
+using Task = PChecker.Tasks.Task;
 
 namespace PChecker.SystematicTesting
 {
@@ -158,6 +158,26 @@ namespace PChecker.SystematicTesting
         /// </summary>
         public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Assembly assembly)
         {
+            if (checkerConfiguration.ListTestCases)
+            {
+                try
+                {
+                    var testMethods = TestMethodInfo.GetAllTestMethodsFromAssembly(assembly);
+                    Console.Out.WriteLine($".. List of test cases (total {testMethods.Count})");
+
+                    foreach (var mi in testMethods)
+                    {
+                        Console.Out.WriteLine($"{mi.DeclaringType.Name}");
+                    }
+                    
+                    Environment.Exit(0);
+                }
+                catch
+                {
+                    Error.ReportAndExit($"Failed to list test methods from assembly '{assembly.FullName}'");
+                }
+            }
+            
             TestMethodInfo testMethodInfo = null;
             try
             {
@@ -193,19 +213,19 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<Tasks.Task> test) =>
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<Task> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<ICoyoteRuntime, Tasks.Task> test) =>
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<ICoyoteRuntime, Task> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<IActorRuntime, Tasks.Task> test) =>
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<IActorRuntime, Task> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
@@ -284,7 +304,7 @@ namespace PChecker.SystematicTesting
             else if (checkerConfiguration.SchedulingStrategy is "portfolio")
             {
                 Error.ReportAndExit("Portfolio testing strategy is only " +
-                    "available in parallel testing.");
+                                    "available in parallel testing.");
             }
 
             if (checkerConfiguration.SchedulingStrategy != "replay" &&
@@ -339,7 +359,7 @@ namespace PChecker.SystematicTesting
                 }
 
                 Error.ReportAndExit("Exception thrown during testing outside the context of an actor, " +
-                    "possibly in a test method. Please use /debug /v:2 to print more information.");
+                                    "possibly in a test method. Please use /debug /v:2 to print more information.");
             }
             catch (Exception ex)
             {
@@ -355,7 +375,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Creates a new testing task.
         /// </summary>
-        private Task CreateTestingTask()
+        private System.Threading.Tasks.Task CreateTestingTask()
         {
             var options = string.Empty;
             if (_checkerConfiguration.SchedulingStrategy is "random" ||
@@ -368,9 +388,9 @@ namespace PChecker.SystematicTesting
             }
 
             Logger.WriteLine($"... Checker is " +
-                $"using '{_checkerConfiguration.SchedulingStrategy}' strategy{options}.");
+                             $"using '{_checkerConfiguration.SchedulingStrategy}' strategy{options}.");
 
-            return new Task(() =>
+            return new System.Threading.Tasks.Task(() =>
             {
                 try
                 {
@@ -390,7 +410,7 @@ namespace PChecker.SystematicTesting
                         RunNextIteration(i);
 
                         if (IsReplayModeEnabled || (!_checkerConfiguration.PerformFullExploration &&
-                            TestReport.NumOfFoundBugs > 0) || !Strategy.PrepareForNextIteration())
+                                                    TestReport.NumOfFoundBugs > 0) || !Strategy.PrepareForNextIteration())
                         {
                             break;
                         }
@@ -555,8 +575,8 @@ namespace PChecker.SystematicTesting
                 if (!IsReplayModeEnabled && _checkerConfiguration.PerformFullExploration && runtime.Scheduler.BugFound)
                 {
                     Logger.WriteLine($"..... Schedule #{schedule + 1} " +
-                        $"triggered bug #{TestReport.NumOfFoundBugs} " +
-                        $"[task-{_checkerConfiguration.TestingProcessId}]");
+                                     $"triggered bug #{TestReport.NumOfFoundBugs} " +
+                                     $"[task-{_checkerConfiguration.TestingProcessId}]");
                 }
 
                 // Cleans up the runtime before the next schedule starts.
@@ -583,7 +603,7 @@ namespace PChecker.SystematicTesting
                 var report = new StringBuilder();
                 report.AppendFormat("... Reproduced {0} bug{1}.", TestReport.NumOfFoundBugs,
                     TestReport.NumOfFoundBugs == 1 ? string.Empty : "s");
-                    report.AppendLine();
+                report.AppendLine();
                 report.Append($"... Elapsed {Profiler.Results()} sec.");
                 return report.ToString();
             }
@@ -862,14 +882,14 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.IsLivenessCheckingEnabled)
             {
                 stringBuilder.Append("--liveness-temperature-threshold:" +
-                    _checkerConfiguration.LivenessTemperatureThreshold).
+                                     _checkerConfiguration.LivenessTemperatureThreshold).
                     Append(Environment.NewLine);
             }
 
             if (!string.IsNullOrEmpty(_checkerConfiguration.TestCaseName))
             {
                 stringBuilder.Append("--test-method:" +
-                    _checkerConfiguration.TestCaseName).
+                                     _checkerConfiguration.TestCaseName).
                     Append(Environment.NewLine);
             }
 

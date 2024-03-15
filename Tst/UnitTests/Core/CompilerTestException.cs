@@ -28,7 +28,7 @@ namespace UnitTests.Core
         protected CompilerTestException(
             TestCaseError reason,
             SerializationInfo info,
-            StreamingContext context) : base(info, context)
+            StreamingContext context)
         {
             Reason = reason;
         }

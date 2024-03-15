@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
-using PChecker.Actors.Logging;
 using PChecker.Utilities;
 
 namespace PChecker
@@ -66,6 +65,12 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public string TestCaseName;
+
+        /// <summary>
+        /// List test cases and exit.
+        /// </summary>
+        [DataMember]
+        public bool ListTestCases;
 
         /// <summary>
         /// The systematic testing strategy to use.
@@ -295,6 +300,7 @@ namespace PChecker
             AssemblyToBeAnalyzed = string.Empty;
             Mode = CheckerMode.BugFinding;
             TestCaseName = string.Empty;
+            ListTestCases = false;
 
             SchedulingStrategy = "random";
             TestingIterations = 1;

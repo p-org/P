@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Runtime.CompilerServices;
+using System.ComponentModel;
 using PChecker.SystematicTesting;
 using SystemCompiler = System.Runtime.CompilerServices;
 
@@ -13,7 +13,7 @@ namespace PChecker.Tasks
     /// This type is intended for compiler use only.
     /// </summary>
     /// <remarks>This type is intended for compiler use rather than use directly in code.</remarks>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public readonly struct YieldAwaitable
     {
         /// <summary>
@@ -43,7 +43,7 @@ namespace PChecker.Tasks
         /// This type is intended for compiler use only.
         /// </summary>
         /// <remarks>This type is intended for compiler use rather than use directly in code.</remarks>
-        public readonly struct YieldAwaiter : ICriticalNotifyCompletion, INotifyCompletion
+        public readonly struct YieldAwaiter : SystemCompiler.ICriticalNotifyCompletion, SystemCompiler.INotifyCompletion
         {
             /// <summary>
             /// Responsible for controlling the execution of tasks during systematic testing.

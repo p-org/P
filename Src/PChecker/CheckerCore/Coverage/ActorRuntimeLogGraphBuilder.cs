@@ -903,7 +903,7 @@ namespace PChecker.Coverage
             if (includeDefaultStyles)
             {
                 writer.WriteLine(
-@"  <Styles>
+                    @"  <Styles>
     <Style TargetType=""Node"" GroupLabel=""Error"" ValueLabel=""True"">
       <Condition Expression=""HasCategory('Error')"" />
       <Setter Property=""Background"" Value=""#FFC15656"" />

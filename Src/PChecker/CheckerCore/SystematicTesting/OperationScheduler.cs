@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using PChecker.Exceptions;
 using PChecker.SystematicTesting.Operations;
@@ -188,7 +189,7 @@ namespace PChecker.SystematicTesting
                 lock (next)
                 {
                     ScheduledOperation.IsActive = true;
-                    System.Threading.Monitor.PulseAll(next);
+                    Monitor.PulseAll(next);
                 }
 
                 lock (current)
@@ -207,7 +208,7 @@ namespace PChecker.SystematicTesting
                     while (!current.IsActive)
                     {
                         Debug.WriteLine("<ScheduleDebug> Sleeping the operation of '{0}' on task '{1}'.", current.Name, Task.CurrentId);
-                        System.Threading.Monitor.Wait(current);
+                        Monitor.Wait(current);
                         Debug.WriteLine("<ScheduleDebug> Waking up the operation of '{0}' on task '{1}'.", current.Name, Task.CurrentId);
                     }
 
@@ -312,11 +313,11 @@ namespace PChecker.SystematicTesting
             lock (op)
             {
                 op.IsHandlerRunning = true;
-                System.Threading.Monitor.PulseAll(op);
+                Monitor.PulseAll(op);
                 while (!op.IsActive)
                 {
                     Debug.WriteLine($"<ScheduleDebug> Sleeping the operation of '{op.Name}' on task '{Task.CurrentId}'.");
-                    System.Threading.Monitor.Wait(op);
+                    Monitor.Wait(op);
                     Debug.WriteLine($"<ScheduleDebug> Waking up the operation of '{op.Name}' on task '{Task.CurrentId}'.");
                 }
 
@@ -338,13 +339,13 @@ namespace PChecker.SystematicTesting
                 if (OperationMap.Count == 1)
                 {
                     op.IsActive = true;
-                    System.Threading.Monitor.PulseAll(op);
+                    Monitor.PulseAll(op);
                 }
                 else
                 {
                     while (!op.IsHandlerRunning)
                     {
-                        System.Threading.Monitor.Wait(op);
+                        Monitor.Wait(op);
                     }
                 }
             }
@@ -494,7 +495,7 @@ namespace PChecker.SystematicTesting
         {
             var blockedOnReceiveOperations = ops.Where(op => op.Status is AsyncOperationStatus.BlockedOnReceive).ToList();
             var blockedOnWaitOperations = ops.Where(op => op.Status is AsyncOperationStatus.BlockedOnWaitAll ||
-                op.Status is AsyncOperationStatus.BlockedOnWaitAny).ToList();
+                                                          op.Status is AsyncOperationStatus.BlockedOnWaitAny).ToList();
             var blockedOnResourceSynchronization = ops.Where(op => op.Status is AsyncOperationStatus.BlockedOnResource).ToList();
             if (blockedOnReceiveOperations.Count == 0 &&
                 blockedOnWaitOperations.Count == 0 &&
@@ -673,7 +674,7 @@ namespace PChecker.SystematicTesting
                 {
                     lock (op)
                     {
-                        System.Threading.Monitor.PulseAll(op);
+                        Monitor.PulseAll(op);
                     }
                 }
             }

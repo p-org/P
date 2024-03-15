@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Runtime.CompilerServices;
+using System.ComponentModel;
 using PChecker.SystematicTesting;
 using SystemCompiler = System.Runtime.CompilerServices;
 using SystemTasks = System.Threading.Tasks;
@@ -14,7 +14,7 @@ namespace PChecker.Tasks
     /// This type is intended for compiler use only.
     /// </summary>
     /// <remarks>This type is intended for compiler use rather than use directly in code.</remarks>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public struct ConfiguredTaskAwaitable
     {
         /// <summary>
@@ -51,7 +51,7 @@ namespace PChecker.Tasks
         /// Provides an awaiter for an awaitable object. This type is intended for compiler use only.
         /// </summary>
         /// <remarks>This type is intended for compiler use rather than use directly in code.</remarks>
-        public struct ConfiguredTaskAwaiter : ICriticalNotifyCompletion, INotifyCompletion
+        public struct ConfiguredTaskAwaiter : SystemCompiler.ICriticalNotifyCompletion, SystemCompiler.INotifyCompletion
         {
             /// <summary>
             /// Responsible for controlling the execution of tasks during systematic testing.
@@ -132,7 +132,7 @@ namespace PChecker.Tasks
     /// This type is intended for compiler use only.
     /// </summary>
     /// <remarks>This type is intended for compiler use rather than use directly in code.</remarks>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public struct ConfiguredTaskAwaitable<TResult>
     {
         /// <summary>
@@ -169,7 +169,7 @@ namespace PChecker.Tasks
         /// Provides an awaiter for an awaitable object. This type is intended for compiler use only.
         /// </summary>
         /// <remarks>This type is intended for compiler use rather than use directly in code.</remarks>
-        public struct ConfiguredTaskAwaiter : ICriticalNotifyCompletion, INotifyCompletion
+        public struct ConfiguredTaskAwaiter : SystemCompiler.ICriticalNotifyCompletion, SystemCompiler.INotifyCompletion
         {
             /// <summary>
             /// Responsible for controlling the execution of tasks during systematic testing.

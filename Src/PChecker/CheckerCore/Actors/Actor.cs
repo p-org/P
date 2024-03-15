@@ -14,8 +14,8 @@ using PChecker.Actors.EventQueues;
 using PChecker.Actors.Events;
 using PChecker.Actors.Exceptions;
 using PChecker.Actors.Handlers;
-using PChecker.Actors.Managers;
 using PChecker.Actors.Logging;
+using PChecker.Actors.Managers;
 using PChecker.Exceptions;
 using PChecker.IO.Debugging;
 using EventInfo = PChecker.Actors.Events.EventInfo;
@@ -789,7 +789,7 @@ namespace PChecker.Actors
             var actionType = action.DeclaringType;
             var parameters = action.GetParameters();
             Assert(parameters.Length is 0 ||
-                (parameters.Length is 1 && parameters[0].ParameterType == typeof(Event)),
+                   (parameters.Length is 1 && parameters[0].ParameterType == typeof(Event)),
                 "Action '{0}' in '{1}' must either accept no parameters or a single parameter of type 'Event'.",
                 action.Name, actionType.Name);
 

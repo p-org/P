@@ -365,7 +365,7 @@ namespace PChecker.Actors
                 await InvokeActionAsync(exitAction, e);
                 var transition = PendingTransition;
                 Assert(transition.TypeValue is Transition.Type.None ||
-                    transition.TypeValue is Transition.Type.Halt,
+                       transition.TypeValue is Transition.Type.Halt,
                     "{0} has performed a '{1}' transition from an OnExit action.",
                     Id, transition.TypeValue);
                 await ApplyEventHandlerTransitionAsync(transition, e);
@@ -380,7 +380,7 @@ namespace PChecker.Actors
                 await InvokeActionAsync(eventHandlerExitAction, e);
                 var transition = PendingTransition;
                 Assert(transition.TypeValue is Transition.Type.None ||
-                    transition.TypeValue is Transition.Type.Halt,
+                       transition.TypeValue is Transition.Type.Halt,
                     "{0} has performed a '{1}' transition from an OnExit action.",
                     Id, transition.TypeValue);
                 await ApplyEventHandlerTransitionAsync(transition, e);
@@ -716,8 +716,8 @@ namespace PChecker.Actors
                         while (baseType != typeof(StateMachine))
                         {
                             foreach (var s in baseType.GetNestedTypes(BindingFlags.Instance |
-                                BindingFlags.NonPublic | BindingFlags.Public |
-                                BindingFlags.DeclaredOnly))
+                                                                      BindingFlags.NonPublic | BindingFlags.Public |
+                                                                      BindingFlags.DeclaredOnly))
                             {
                                 ExtractStateTypes(s);
                             }
@@ -745,8 +745,8 @@ namespace PChecker.Actors
                                 // type. This type can be then used to create the state constructor.
                                 var declaringType = GetType();
                                 while (!declaringType.IsGenericType ||
-                                    !type.DeclaringType.FullName.Equals(declaringType.FullName.Substring(
-                                    0, declaringType.FullName.IndexOf('['))))
+                                       !type.DeclaringType.FullName.Equals(declaringType.FullName.Substring(
+                                           0, declaringType.FullName.IndexOf('['))))
                                 {
                                     declaringType = declaringType.BaseType;
                                 }
@@ -862,8 +862,8 @@ namespace PChecker.Actors
                 {
                     // Adds the contents of the group of states to the stack.
                     foreach (var t in nextType.GetNestedTypes(BindingFlags.Instance |
-                        BindingFlags.NonPublic | BindingFlags.Public |
-                        BindingFlags.DeclaredOnly))
+                                                              BindingFlags.NonPublic | BindingFlags.Public |
+                                                              BindingFlags.DeclaredOnly))
                     {
                         Assert(t.IsSubclassOf(typeof(StateGroup)) || t.IsSubclassOf(typeof(State)),
                             "'{0}' is neither a group of states nor a state.", t.Name);
@@ -911,8 +911,8 @@ namespace PChecker.Actors
             foreach (var state in StateInstanceCache[GetType()])
             {
                 foreach (var binding in from b in state.InheritableEventHandlers.Concat(state.EventHandlers)
-                                        where IncludeInCoverage(b.Value)
-                                        select b)
+                         where IncludeInCoverage(b.Value)
+                         select b)
                 {
                     pairs.Add(Tuple.Create(NameResolver.GetQualifiedStateName(state.GetType()), binding.Key.FullName));
                 }

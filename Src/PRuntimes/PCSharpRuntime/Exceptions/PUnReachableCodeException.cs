@@ -16,9 +16,5 @@ namespace Plang.CSharpRuntime.Exceptions
         public PUnreachableCodeException(string message, Exception innerException) : base(message, innerException)
         {
         }
-
-        protected PUnreachableCodeException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
 }

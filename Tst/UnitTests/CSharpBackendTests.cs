@@ -1,5 +1,5 @@
-﻿using NUnit.Framework;
-using System.IO;
+﻿using System.IO;
+using NUnit.Framework;
 using UnitTests.Core;
 using UnitTests.Runners;
 using UnitTests.Validators;

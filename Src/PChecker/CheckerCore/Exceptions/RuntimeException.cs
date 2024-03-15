@@ -36,13 +36,5 @@ namespace PChecker.Exceptions
             : base(message, innerException)
         {
         }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RuntimeException"/> class.
-        /// </summary>
-        protected RuntimeException(SerializationInfo serializationInfo, StreamingContext streamingContext)
-            : base(serializationInfo, streamingContext)
-        {
-        }
     }
 }

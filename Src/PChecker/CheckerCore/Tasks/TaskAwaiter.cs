@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using PChecker.SystematicTesting;
 using SystemCompiler = System.Runtime.CompilerServices;
 using SystemTasks = System.Threading.Tasks;
@@ -14,8 +14,8 @@ namespace PChecker.Tasks
     /// Implements a <see cref="Task"/> awaiter. This type is intended for compiler use only.
     /// </summary>
     /// <remarks>This type is intended for compiler use rather than use directly in code.</remarks>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public readonly struct TaskAwaiter : ICriticalNotifyCompletion, INotifyCompletion
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public readonly struct TaskAwaiter : SystemCompiler.ICriticalNotifyCompletion, SystemCompiler.INotifyCompletion
     {
         // WARNING: The layout must remain the same, as the struct is used to access
         // the generic TaskAwaiter<> as TaskAwaiter.
@@ -99,8 +99,8 @@ namespace PChecker.Tasks
     /// </summary>
     /// <typeparam name="TResult">The type of the produced result.</typeparam>
     /// <remarks>This type is intended for compiler use rather than use directly in code.</remarks>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public readonly struct TaskAwaiter<TResult> : ICriticalNotifyCompletion, INotifyCompletion
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public readonly struct TaskAwaiter<TResult> : SystemCompiler.ICriticalNotifyCompletion, SystemCompiler.INotifyCompletion
     {
         // WARNING: The layout must remain the same, as the struct is used to access
         // the generic TaskAwaiter<> as TaskAwaiter.

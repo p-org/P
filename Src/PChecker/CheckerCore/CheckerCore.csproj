@@ -5,7 +5,7 @@
         <RootNamespace>PChecker</RootNamespace>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Description>The P Checker</Description>
         <PackageProjectUrl>https://github.com/p-org/P</PackageProjectUrl>

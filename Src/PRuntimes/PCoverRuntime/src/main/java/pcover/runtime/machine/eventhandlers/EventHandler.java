@@ -1,7 +1,7 @@
 package pcover.runtime.machine.eventhandlers;
 
 import pcover.values.PEvent;
-import pcover.runtime.machine.Machine;
+import pcover.runtime.machine.PMachine;
 import pcover.values.PValue;
 
 import java.io.Serializable;
@@ -25,5 +25,5 @@ public abstract class EventHandler implements Serializable {
      * @param target Target machine on which the event is executed
      * @param payload Payload associated with the event
      */
-    public abstract void handleEvent(Machine target, PValue<?> payload);
+    public abstract void handleEvent(PMachine target, PValue<?> payload);
 }

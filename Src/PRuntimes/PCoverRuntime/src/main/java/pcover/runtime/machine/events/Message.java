@@ -1,7 +1,7 @@
 package pcover.runtime.machine.events;
 
 import lombok.Getter;
-import pcover.runtime.machine.Machine;
+import pcover.runtime.machine.PMachine;
 import pcover.utils.exceptions.NotImplementedException;
 import pcover.values.PEvent;
 import pcover.values.PValue;
@@ -11,7 +11,7 @@ import pcover.values.PValue;
  */
 public class Message extends PValue<Message> {
     @Getter private PEvent event;
-    @Getter private Machine target;
+    @Getter private PMachine target;
     @Getter private PValue<?> payload;
 
     /**
@@ -20,7 +20,7 @@ public class Message extends PValue<Message> {
      * @param target Target machine
      * @param payload Event payload
      */
-    public Message(PEvent event, Machine target, PValue<?> payload) {
+    public Message(PEvent event, PMachine target, PValue<?> payload) {
         this.event = event;
         this.target = target;
         this.payload = payload;

@@ -2,7 +2,7 @@ package pcover.runtime.scheduler;
 
 import lombok.Getter;
 import lombok.Setter;
-import pcover.runtime.machine.Machine;
+import pcover.runtime.machine.PMachine;
 import pcover.values.PValue;
 
 import java.io.Serializable;
@@ -13,9 +13,10 @@ import java.util.List;
  * Represents a schedule or data choice
  */
 public class Choice implements Serializable {
-    @Getter @Setter Machine repeatScheduleChoice = null;
+    @Getter @Setter
+    PMachine repeatScheduleChoice = null;
     @Getter @Setter PValue<?> repeatDataChoice = null;
-    @Getter List<Machine> backtrackScheduleChoice = new ArrayList<>();
+    @Getter List<PMachine> backtrackScheduleChoice = new ArrayList<>();
     @Getter List<PValue<?>> backtrackDataChoice = new ArrayList<>();
 
     @Getter int schedulerDepth = 0;
@@ -75,7 +76,7 @@ public class Choice implements Serializable {
      * Add a backtrack schedule choice to this choice.
      * @param choice Machine to add as schedule choice
      */
-    public void addBacktrackScheduleChoice(Machine choice) {
+    public void addBacktrackScheduleChoice(PMachine choice) {
         backtrackScheduleChoice.add(choice);
     }
 

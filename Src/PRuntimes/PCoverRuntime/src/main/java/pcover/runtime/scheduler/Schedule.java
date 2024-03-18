@@ -4,15 +4,15 @@ import java.io.Serializable;
 import java.util.*;
 import lombok.Getter;
 import lombok.Setter;
-import pcover.runtime.machine.Machine;
+import pcover.runtime.machine.PMachine;
 import pcover.values.PValue;
 
 /**
  * Represents a single (possibly partial) schedule.
  */
 public class Schedule implements Serializable {
-  private Map<Class<? extends Machine>, List<Machine>> createdMachines = new HashMap<>();
-  private Set<Machine> machines = new HashSet<>();
+  private Map<Class<? extends PMachine>, List<PMachine>> createdMachines = new HashMap<>();
+  private Set<PMachine> machines = new HashSet<>();
 
   @Getter @Setter private List<Choice> choices = new ArrayList<>();
   @Getter @Setter private int schedulerDepth = 0;
@@ -31,8 +31,8 @@ public class Schedule implements Serializable {
    */
   private Schedule(
       List<Choice> choices,
-      Map<Class<? extends Machine>, List<Machine>> createdMachines,
-      Set<Machine> machines) {
+      Map<Class<? extends PMachine>, List<PMachine>> createdMachines,
+      Set<PMachine> machines) {
     this.choices = new ArrayList<>(choices);
     this.createdMachines = new HashMap<>(createdMachines);
     this.machines = new HashSet<>(machines);
@@ -105,7 +105,7 @@ public class Schedule implements Serializable {
    * @param choice Machine to set as repeat schedule choice
    * @param idx Choice depth
    */
-  public void setRepeatScheduleChoice(Machine choice, int idx) {
+  public void setRepeatScheduleChoice(PMachine choice, int idx) {
     if (idx >= choices.size()) {
       choices.add(newChoice());
     }
@@ -129,11 +129,11 @@ public class Schedule implements Serializable {
    * @param machines List of machines to add as backtrack schedule choice
    * @param idx Choice depth
    */
-  public void addBacktrackScheduleChoice(List<Machine> machines, int idx) {
+  public void addBacktrackScheduleChoice(List<PMachine> machines, int idx) {
     if (idx >= choices.size()) {
       choices.add(newChoice());
     }
-    for (Machine choice : machines) {
+    for (PMachine choice : machines) {
       choices.get(idx).addBacktrackScheduleChoice(choice);
     }
   }
@@ -157,7 +157,7 @@ public class Schedule implements Serializable {
    * @param idx Choice depth
    * @return Repeat schedule choice
    */
-  public Machine getRepeatScheduleChoice(int idx) {
+  public PMachine getRepeatScheduleChoice(int idx) {
     return choices.get(idx).getRepeatScheduleChoice();
   }
 
@@ -175,7 +175,7 @@ public class Schedule implements Serializable {
    * @param idx Choice depth
    * @return List of machines
    */
-  public List<Machine> getBacktrackScheduleChoice(int idx) {
+  public List<PMachine> getBacktrackScheduleChoice(int idx) {
     return choices.get(idx).getBacktrackScheduleChoice();
   }
 
@@ -216,7 +216,7 @@ public class Schedule implements Serializable {
    * Add a machine to the schedule.
    * @param machine Machine to add
    */
-  public void makeMachine(Machine machine) {
+  public void makeMachine(PMachine machine) {
     createdMachines.getOrDefault(machine.getClass(), new ArrayList<>()).add(machine);
     machines.add(machine);
   }
@@ -227,7 +227,7 @@ public class Schedule implements Serializable {
    * @param idx Machine index
    * @return true if machine is in this schedule, false otherwise
    */
-  public boolean hasMachine(Class<? extends Machine> type, int idx) {
+  public boolean hasMachine(Class<? extends PMachine> type, int idx) {
     if (!createdMachines.containsKey(type))
       return false;
     return idx < createdMachines.get(type).size();
@@ -239,7 +239,7 @@ public class Schedule implements Serializable {
    * @param idx Machine index
    * @return Machine
    */
-  public Machine getMachine(Class<? extends Machine> type, int idx) {
+  public PMachine getMachine(Class<? extends PMachine> type, int idx) {
     assert (hasMachine(type, idx));
     return createdMachines.get(type).get(idx);
   }

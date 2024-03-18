@@ -1,6 +1,6 @@
 package pcover.runtime.machine.buffer;
 
-import pcover.runtime.machine.Machine;
+import pcover.runtime.machine.PMachine;
 import pcover.values.PEvent;
 import pcover.values.PValue;
 
@@ -14,5 +14,5 @@ public interface EventBuffer {
      * @param event Event
      * @param payload Event payload
      */
-    void send(Machine target, PEvent event, PValue<?> payload);
+    void send(PMachine target, PEvent event, PValue<?> payload);
 }

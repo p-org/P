@@ -1,6 +1,6 @@
 package pcover.runtime.machine.buffer;
 
-import pcover.runtime.machine.Machine;
+import pcover.runtime.machine.PMachine;
 import pcover.values.PEvent;
 import pcover.values.PValue;
 import pcover.utils.exceptions.NotImplementedException;
@@ -12,13 +12,13 @@ import java.io.Serializable;
  */
 public class FifoQueue extends MessageQueue implements EventBuffer, Serializable {
 
-  private final Machine sender;
+  private final PMachine sender;
 
   /**
    * Constructor
    * @param sender Sender machine (owner of the queue)
    */
-  public FifoQueue(Machine sender) {
+  public FifoQueue(PMachine sender) {
     super(sender);
     this.sender = sender;
   }
@@ -26,7 +26,7 @@ public class FifoQueue extends MessageQueue implements EventBuffer, Serializable
   /**
    * @inheritDoc
    */
-  public void send(Machine target, PEvent eventName, PValue<?> payload) {
+  public void send(PMachine target, PEvent eventName, PValue<?> payload) {
     throw new NotImplementedException();
   }
 

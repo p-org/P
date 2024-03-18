@@ -2,7 +2,7 @@ package pcover.runtime.machine.eventhandlers;
 
 import pcover.values.PValue;
 import pcover.values.PEvent;
-import pcover.runtime.machine.Machine;
+import pcover.runtime.machine.PMachine;
 
 /**
  * Represents the ignore event handler
@@ -21,7 +21,7 @@ public class IgnoreEventHandler extends EventHandler {
      * @inheritDoc
      */
     @Override
-    public void handleEvent(Machine target, PValue<?> payload) {
+    public void handleEvent(PMachine target, PValue<?> payload) {
         // Ignore
     }
 }

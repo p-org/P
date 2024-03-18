@@ -1,7 +1,7 @@
 package pcover.runtime.machine.eventhandlers;
 
 
-import pcover.runtime.machine.Machine;
+import pcover.runtime.machine.PMachine;
 import pcover.utils.exceptions.NotImplementedException;
 import pcover.values.PEvent;
 import pcover.values.PValue;
@@ -23,7 +23,7 @@ public class DeferEventHandler extends EventHandler {
      * TODO
      */
     @Override
-    public void handleEvent(Machine target, PValue<?> payload) {
+    public void handleEvent(PMachine target, PValue<?> payload) {
         throw new NotImplementedException();
     }
 }

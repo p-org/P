@@ -1,19 +1,19 @@
 package pcover.values;
 
 import lombok.Getter;
-import pcover.runtime.machine.Machine;
+import pcover.runtime.machine.PMachine;
 
 /**
  * Represents the PValue for P machine
  */
 public class PMachineValue extends PValue<PMachineValue> {
-  @Getter private final Machine value;
+  @Getter private final PMachine value;
 
   /**
    * Constructor
    * @param val machine value to set to
    */
-  public PMachineValue(Machine val) {
+  public PMachineValue(PMachine val) {
     value = val;
   }
 
@@ -24,7 +24,7 @@ public class PMachineValue extends PValue<PMachineValue> {
 
   public PMachineValue(Object val) {
     if (val instanceof PMachineValue) value = ((PMachineValue) val).value;
-    else value = (Machine) val;
+    else value = (PMachine) val;
   }
 
   /**

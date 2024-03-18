@@ -3,7 +3,7 @@ package pcover.runtime.machine;
 /**
  * Represents a P monitor.
  */
-public class Monitor extends Machine {
+public class PMonitor extends PMachine {
     /**
      * Monitor constructor
      * @param name Name of the monitor
@@ -11,14 +11,14 @@ public class Monitor extends Machine {
      * @param startState Start state
      * @param states All states of this monitor
      */
-    public Monitor(String name, int id, State startState, State... states) {
+    public PMonitor(String name, int id, State startState, State... states) {
         super(name, id, startState, states);
         this.instanceId = 0;
         globalMachineId--;
     }
 
     @Override
-    public int compareTo(Machine rhs) {
+    public int compareTo(PMachine rhs) {
         return name.compareTo(rhs.getName());
     }
 
@@ -30,12 +30,12 @@ public class Monitor extends Machine {
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
-        else if (!(obj instanceof Machine)) {
+        else if (!(obj instanceof PMachine)) {
             return false;
         }
         if (this.name == null)
-            return (((Machine) obj).name == null);
-        return this.name.equals(((Machine) obj).name);
+            return (((PMachine) obj).name == null);
+        return this.name.equals(((PMachine) obj).name);
     }
 
     @Override

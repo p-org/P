@@ -12,9 +12,9 @@ import java.util.Map;
  * Represents the base class for a P test driver.
  */
 public abstract class PTestDriver implements Serializable {
-    public Machine mainMachine;
-    public List<Monitor> monitorList;
-    public Map<PEvent, List<Monitor>> observerMap;
+    public PMachine mainMachine;
+    public List<PMonitor> monitorList;
+    public Map<PEvent, List<PMonitor>> observerMap;
 
     /**
      * Test driver constructor
@@ -30,7 +30,7 @@ public abstract class PTestDriver implements Serializable {
      * Get the start/main machine of this test driver.
      * @return the start/main machine of this test driver.
      */
-    public Machine getStart() {
+    public PMachine getStart() {
         return mainMachine;
     }
 
@@ -38,7 +38,7 @@ public abstract class PTestDriver implements Serializable {
      * Get the list of monitors of this test driver.
      * @return List of monitors
      */
-    public List<Monitor> getMonitors() {
+    public List<PMonitor> getMonitors() {
         return monitorList;
     }
 
@@ -46,7 +46,7 @@ public abstract class PTestDriver implements Serializable {
      * Get all event monitors mapping of this test driver.
      * @return Map from event to list of monitors listening/observing that event
      */
-    public Map<PEvent, List<Monitor>> getListeners() {
+    public Map<PEvent, List<PMonitor>> getListeners() {
         return observerMap;
     }
 

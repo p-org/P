@@ -1,7 +1,7 @@
 package pcover.runtime;
 
-import pcover.runtime.machine.Machine;
-import pcover.runtime.machine.Monitor;
+import pcover.runtime.machine.PMachine;
+import pcover.runtime.machine.PMonitor;
 import pcover.runtime.machine.PTestDriver;
 import pcover.values.PEvent;
 
@@ -12,24 +12,24 @@ import java.util.Map;
 /**
  * Interface of a PCover IR model/program.
  */
-public interface Program extends Serializable {
+public interface PModel extends Serializable {
     /**
      * Get the start/main machine
      * @return Machine
      */
-    Machine getStart();
+    PMachine getStart();
 
     /**
      * Get the mapping from events to monitors listening/observing an event
      * @return
      */
-    Map<PEvent, List<Monitor>> getListeners();
+    Map<PEvent, List<PMonitor>> getListeners();
 
     /**
      * Get the list of monitors
      * @return List of monitors
      */
-    List<Monitor> getMonitors();
+    List<PMonitor> getMonitors();
 
     /**
      * Get the test driver

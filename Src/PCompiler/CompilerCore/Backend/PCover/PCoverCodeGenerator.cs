@@ -92,11 +92,11 @@ namespace Plang.Compiler.Backend.PCover
 
 
             // copy source files
-            args = new[] { $"{job.ProjectName}Program.java {sourceDirectory}" };
+            args = new[] { $"{job.ProjectName}PModel.java {sourceDirectory}" };
             exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "cp", args);
             if (exitCode != 0)
             {
-                throw new TranslationException($"Unable to copy source file {job.ProjectName}Program.java to source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
+                throw new TranslationException($"Unable to copy source file {job.ProjectName}PModel.java to source directory {sourceDirectory}\n" + $"{stdout}\n" + $"{stderr}\n");
             }
         }
 
@@ -135,11 +135,11 @@ namespace Plang.Compiler.Backend.PCover
             context.WriteLine(source.Stream);
 
             context.WriteLine(source.Stream, "@Generated");
-            context.WriteLine(source.Stream, "public Machine getStart() { return testDriver.getStart(); }");
+            context.WriteLine(source.Stream, "public PMachine getStart() { return testDriver.getStart(); }");
             context.WriteLine(source.Stream, "@Generated");
-            context.WriteLine(source.Stream, "public List<Monitor> getMonitors() { return testDriver.getMonitors(); }");
+            context.WriteLine(source.Stream, "public List<PMonitor> getMonitors() { return testDriver.getMonitors(); }");
             context.WriteLine(source.Stream, "@Generated");
-            context.WriteLine(source.Stream, "public Map<PEvent, List<Monitor>> getListeners() { return testDriver.getListeners(); }");
+            context.WriteLine(source.Stream, "public Map<PEvent, List<PMonitor>> getListeners() { return testDriver.getListeners(); }");
             context.WriteLine(source.Stream);
 
             WriteSourceEpilogue(context, source.Stream);
@@ -172,7 +172,7 @@ namespace Plang.Compiler.Backend.PCover
                         {
                             context.WriteLine(output);
                             var declName = context.GetNameForDecl(machine);
-                            context.WriteLine(output, $"    Monitor instance_{declName} = new {declName}(0);");
+                            context.WriteLine(output, $"    PMonitor instance_{declName} = new {declName}(0);");
                             context.WriteLine(output, $"    monitorList.add(instance_{declName});");
                             foreach (var pEvent in machine.Observes.Events)
                             {
@@ -265,7 +265,7 @@ namespace Plang.Compiler.Backend.PCover
         private void WriteMonitor(CompilationContext context, StringWriter output, Machine machine)
         {
             var declName = context.GetNameForDecl(machine);
-            context.WriteLine(output, $"public static class {declName} extends Monitor {{");
+            context.WriteLine(output, $"public static class {declName} extends PMonitor {{");
 
             context.WriteLine(output);
 
@@ -326,7 +326,7 @@ namespace Plang.Compiler.Backend.PCover
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
         {
             var declName = context.GetNameForDecl(machine);
-            context.WriteLine(output, $"public static class {declName} extends Machine {{");
+            context.WriteLine(output, $"public static class {declName} extends PMachine {{");
 
             context.WriteLine(output);
 
@@ -447,7 +447,7 @@ namespace Plang.Compiler.Backend.PCover
             {
                 context.WriteLine(output, "@Generated");
                 context.WriteLine(output, "@Override");
-                context.WriteLine(output, $"public void entry(Machine machine, PValue<?> payload) {{");
+                context.WriteLine(output, $"public void entry(PMachine machine, PValue<?> payload) {{");
                 context.WriteLine(output, $"super.entry(machine, payload);");
 
                 var entryFunc = state.Entry;
@@ -464,7 +464,7 @@ namespace Plang.Compiler.Backend.PCover
             }
             if (state.Exit != null)
             {
-                context.WriteLine(output, "@Override public void exit(Machine machine) {");
+                context.WriteLine(output, "@Override public void exit(PMachine machine) {");
                 context.WriteLine(output, $"super.exit(machine);");
 
                 var exitFunc = state.Exit;
@@ -490,7 +490,7 @@ namespace Plang.Compiler.Backend.PCover
                     break;
                 case EventDoAction action:
                     context.WriteLine(output, $"new EventHandler({eventTag}) {{");
-                    context.WriteLine(output, "@Override public void handleEvent(Machine machine, PValue<?> payload) {");
+                    context.WriteLine(output, "@Override public void handleEvent(PMachine machine, PValue<?> payload) {");
                     var actionFunc = action.Target;
                     if (actionFunc.Name == "")
                         actionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}";
@@ -513,7 +513,7 @@ namespace Plang.Compiler.Backend.PCover
                     if (gotoState.TransitionFunction != null)
                     {
                         context.WriteLine(output, " {");
-                        context.WriteLine(output, "@Override public void transitionFunction(Machine machine, PValue<?> payload) {");
+                        context.WriteLine(output, "@Override public void transitionFunction(PMachine machine, PValue<?> payload) {");
 
                         var transitionFunc = gotoState.TransitionFunction;
                         Debug.Assert(!(transitionFunc.CanChangeState ?? false));
@@ -675,7 +675,7 @@ namespace Plang.Compiler.Backend.PCover
             context.Write(output, functionName);
 
             context.WriteLine(output, $"(");
-            context.Write(output, $"Machine {CompilationContext.CurrentMachine}");
+            context.Write(output, $"PMachine {CompilationContext.CurrentMachine}");
             foreach (var param in function.Signature.Parameters)
             {
                 context.WriteLine(output, ",");
@@ -1200,7 +1200,7 @@ namespace Plang.Compiler.Backend.PCover
             context.Write(output, continuationName);
 
             context.WriteLine(output, $"(");
-            context.Write(output, $"Machine {CompilationContext.CurrentMachine}");
+            context.Write(output, $"PMachine {CompilationContext.CurrentMachine}");
             context.WriteLine(output, ",");
             var messageName = $"{continuationName}_msg";
             context.WriteLine(output, $"Message {messageName}");
@@ -2376,7 +2376,7 @@ namespace Plang.Compiler.Backend.PCover
             context.WriteLine(output, "import java.text.MessageFormat;");
             context.WriteLine(output, "import lombok.Generated;");
             context.WriteLine(output);
-            context.WriteLine(output, $"public class {context.MainClassName} implements Program {{");
+            context.WriteLine(output, $"public class {context.MainClassName} implements PModel {{");
             context.WriteLine(output);
         }
 

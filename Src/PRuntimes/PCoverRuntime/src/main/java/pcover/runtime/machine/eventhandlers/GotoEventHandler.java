@@ -1,6 +1,6 @@
 package pcover.runtime.machine.eventhandlers;
 
-import pcover.runtime.machine.Machine;
+import pcover.runtime.machine.PMachine;
 import pcover.runtime.machine.State;
 import pcover.utils.exceptions.NotImplementedException;
 import pcover.values.PEvent;
@@ -26,7 +26,7 @@ public class GotoEventHandler extends EventHandler {
      * TODO
      */
     @Override
-    public void handleEvent(Machine target, PValue<?> payload) {
+    public void handleEvent(PMachine target, PValue<?> payload) {
         throw new NotImplementedException();
     }
 }

@@ -37,7 +37,7 @@ namespace Plang.Compiler.Backend.PCover
                     "When generating code for the 'Symbolic' target, the project name should " +
                     "begin with an alphabetic character and contain only alphanumeric characters");
 
-            MainClassName = ProjectName+"Program";
+            MainClassName = ProjectName+"PModel";
             anonFuncIds = new Dictionary<Function, int>();
             continuationNames = new Dictionary<Continuation, int>();
         }

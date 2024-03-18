@@ -9,7 +9,7 @@ public class PBool extends PValue<PBool> {
   public static PBool PTRUE = new PBool(true);
   public static PBool PFALSE = new PBool(false);
 
-  @Getter private final boolean value;
+  private final boolean value;
 
   /**
    * Constructor
@@ -35,6 +35,14 @@ public class PBool extends PValue<PBool> {
    */
   public PBool(PBool val) {
     value = val.value;
+  }
+
+  /**
+   * Get the boolean value of the PBool.
+   * @return Boolean value
+   */
+  public boolean getValue() {
+    return value;
   }
 
   @Override

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import lombok.Getter;
-import pcover.runtime.machine.Machine;
+import pcover.runtime.machine.PMachine;
 import pcover.runtime.machine.events.Message;
 import pcover.utils.exceptions.NotImplementedException;
 
@@ -14,7 +14,7 @@ import pcover.utils.exceptions.NotImplementedException;
  */
 public abstract class MessageQueue implements Serializable {
 
-  private final Machine owner;
+  private final PMachine owner;
   @Getter protected List<Message> elements;
   private Message peek;
 
@@ -22,7 +22,7 @@ public abstract class MessageQueue implements Serializable {
    * Constructor
    * @param owner Owner of the queue
    */
-  public MessageQueue(Machine owner) {
+  public MessageQueue(PMachine owner) {
     this.owner = owner;
     this.elements = new ArrayList<>();
     resetPeek();

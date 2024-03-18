@@ -5,10 +5,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 import lombok.Getter;
-import pcover.runtime.Program;
+import pcover.runtime.PModel;
 import pcover.runtime.logger.TraceLogger;
-import pcover.runtime.machine.Machine;
-import pcover.runtime.machine.Monitor;
+import pcover.runtime.machine.PMachine;
+import pcover.runtime.machine.PMonitor;
 import pcover.runtime.machine.events.Message;
 import pcover.utils.exceptions.NotImplementedException;
 import pcover.values.*;
@@ -17,35 +17,35 @@ import pcover.values.*;
  * Represents the base class that all schedulers extend.
  */
 public abstract class Scheduler implements SchedulerInterface {
-  @Getter protected final List<Machine> machines;                   /** List of all machines along any path */
-  protected final SortedSet<Machine> currentMachines;               /** Set of machines along the current schedule */
-  @Getter private final Program program;                            /** Program */
+  @Getter protected final List<PMachine> machines;                   /** List of all machines along any path */
+  protected final SortedSet<PMachine> currentMachines;               /** Set of machines along the current schedule */
+  @Getter private final PModel model;                                /** P Model */
   public Schedule schedule;                                         /** The scheduling choices made */
   public boolean isFinalResult = false;                             /** Whether final result is set or not */
-  protected Map<Class<? extends Machine>, Integer> machineCounters; /** How many instances of each Machine there are */
+  protected Map<Class<? extends PMachine>, Integer> machineCounters; /** How many instances of each Machine there are */
   protected boolean done = false;                                   /** Whether or not search is done */
   protected int choiceDepth = 0;                                    /** Choice depth */
   protected int depth = 0;                                          /** Current depth of exploration */
   protected Boolean stickyStep = true;                              /** Flag whether current step is a create or sync machine step */
   protected boolean allMachinesHalted = false;                      /** Flag whether current execution finished */
   protected boolean terminalLivenessEnabled = true;                 /** Flag whether check for liveness at the end */
-  List<Monitor> monitors;                                           /** List of monitors instances */
-  private Machine start;                                            /** The machine to start with */
-  private Map<PEvent, List<Monitor>> listeners;                     /** The map from events to listening monitors */
+  List<PMonitor> monitors;                                           /** List of monitors instances */
+  private PMachine start;                                            /** The machine to start with */
+  private Map<PEvent, List<PMonitor>> listeners;                     /** The map from events to listening monitors */
 
   /**
    * Constructor
    * @param p Program
    * @param machines The machines initially in the scheduler
    */
-  protected Scheduler(Program p, Machine... machines) {
-    program = p;
+  protected Scheduler(PModel p, PMachine... machines) {
+    model = p;
     this.schedule = new Schedule();
     this.machines = new ArrayList<>();
     this.currentMachines = new TreeSet<>();
     this.machineCounters = new HashMap<>();
 
-    for (Machine machine : machines) {
+    for (PMachine machine : machines) {
       this.machines.add(machine);
       this.currentMachines.add(machine);
       if (this.machineCounters.containsKey(machine.getClass())) {
@@ -81,7 +81,7 @@ public abstract class Scheduler implements SchedulerInterface {
   /**
    * TODO
    */
-  protected abstract Machine getNextSchedulingChoice();
+  protected abstract PMachine getNextSchedulingChoice();
 
   /**
    * TODO
@@ -151,7 +151,7 @@ public abstract class Scheduler implements SchedulerInterface {
   /**
    * TODO
    */
-  public void startWith(Machine machine) {
+  public void startWith(PMachine machine) {
     if (this.machineCounters.containsKey(machine.getClass())) {
       this.machineCounters.put(machine.getClass(), this.machineCounters.get(machine.getClass())+1);
     } else {
@@ -173,12 +173,12 @@ public abstract class Scheduler implements SchedulerInterface {
   protected void initializeSearch() {
     assert (depth == 0);
 
-    listeners = program.getListeners();
-    monitors = new ArrayList<>(program.getMonitors());
-    for (Machine m : program.getMonitors()) {
+    listeners = model.getListeners();
+    monitors = new ArrayList<>(model.getMonitors());
+    for (PMachine m : model.getMonitors()) {
       startWith(m);
     }
-    Machine target = program.getStart();
+    PMachine target = model.getStart();
     startWith(target);
     start = target;
   }
@@ -188,7 +188,7 @@ public abstract class Scheduler implements SchedulerInterface {
    * @param machine Machine to remove a message from
    * @return Message
    */
-  protected Message rmBuffer(Machine machine) {
+  protected Message rmBuffer(PMachine machine) {
     return machine.getSendBuffer().remove();
   }
 
@@ -198,10 +198,10 @@ public abstract class Scheduler implements SchedulerInterface {
    * @param constructor
    * @return
    */
-  public Machine setupNewMachine(
+  public PMachine setupNewMachine(
       int count,
-      Function<Integer, ? extends Machine> constructor) {
-    Machine newMachine = constructor.apply(count);
+      Function<Integer, ? extends PMachine> constructor) {
+    PMachine newMachine = constructor.apply(count);
 
     if (!machines.contains(newMachine)) {
       machines.add(newMachine);
@@ -219,9 +219,9 @@ public abstract class Scheduler implements SchedulerInterface {
    * @param message Message
    */
   public void runMonitors(Message message) {
-    List<Monitor> listenersForEvent = listeners.get(message.getEvent());
+    List<PMonitor> listenersForEvent = listeners.get(message.getEvent());
     if (listenersForEvent != null) {
-      for (Monitor m: listenersForEvent) {
+      for (PMonitor m: listenersForEvent) {
         m.processEventToCompletion(message);
       }
     }

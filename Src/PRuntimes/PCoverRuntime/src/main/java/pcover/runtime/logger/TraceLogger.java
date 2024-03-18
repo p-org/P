@@ -15,7 +15,7 @@ import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.appender.OutputStreamAppender;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import pcover.runtime.machine.Machine;
+import pcover.runtime.machine.PMachine;
 import pcover.runtime.machine.State;
 import pcover.runtime.machine.events.Message;
 
@@ -98,7 +98,7 @@ public class TraceLogger {
    * @param machine Machine that is processing the state transition
    * @param newState New state
    */
-  public static void onProcessStateTransition(Machine machine, State newState) {
+  public static void onProcessStateTransition(PMachine machine, State newState) {
     if (verbosity > 3) {
       String msg =
           String.format("Machine %s transitioning to state %s", machine, newState);
@@ -110,7 +110,7 @@ public class TraceLogger {
    * Log when a machine is created
    * @param machine Machine that is created
    */
-  public static void onCreateMachine(Machine machine) {
+  public static void onCreateMachine(PMachine machine) {
     if (verbosity > 3) {
       String msg = "Machine " + machine + " was created";
       log.info(msg);
@@ -121,7 +121,7 @@ public class TraceLogger {
    * Log when a machine is starting
    * @param machine Machine that is starting
    */
-  public static void onMachineStart(Machine machine) {
+  public static void onMachineStart(PMachine machine) {
     if (verbosity > 3) {
       String msg = String.format("Machine %s starting", machine.toString());
       log.info(msg);
@@ -158,7 +158,7 @@ public class TraceLogger {
    * @param sender Sender machine
    */
 
-  public static void schedule(int depth, Message message, Machine sender) {
+  public static void schedule(int depth, Message message, PMachine sender) {
     if (verbosity > 0) {
       String msg =
               String.format("  Depth %d: %s sent %s to %s", depth, sender, message.getEvent(), message.getTarget());

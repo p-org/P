@@ -40,7 +40,7 @@ public abstract class State implements Serializable {
      * @param machine
      * @param payload
      */
-    public void entry(Machine machine, PValue<?> payload) {
+    public void entry(PMachine machine, PValue<?> payload) {
         throw new NotImplementedException();
     }
 
@@ -48,7 +48,7 @@ public abstract class State implements Serializable {
      * TODO
      * @param machine
      */
-    public void exit(Machine machine) {
+    public void exit(PMachine machine) {
         throw new NotImplementedException();
     }
 
@@ -106,7 +106,7 @@ public abstract class State implements Serializable {
      * @param message
      * @param machine
      */
-    public void handleEvent(Message message, Machine machine) {
+    public void handleEvent(Message message, PMachine machine) {
         throw new NotImplementedException();
     }
 

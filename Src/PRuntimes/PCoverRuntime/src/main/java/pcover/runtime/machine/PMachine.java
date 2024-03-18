@@ -16,9 +16,9 @@ import java.util.function.Function;
 /**
  * Represents the base class for all P machines.
  */
-public abstract class Machine implements Serializable, Comparable<Machine> {
+public abstract class PMachine implements Serializable, Comparable<PMachine> {
     @Getter private static final int mainMachineId = 2;
-    @Getter private static final Map<String, Machine> nameToMachine = new HashMap<>();
+    @Getter private static final Map<String, PMachine> nameToMachine = new HashMap<>();
     protected static int globalMachineId = mainMachineId;
 
     @Getter protected final String name;
@@ -43,7 +43,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
      * @param startState Start state
      * @param states All states corresponding to this machine
      */
-    public Machine(String name, int id, State startState, State... states) {
+    public PMachine(String name, int id, State startState, State... states) {
         this.name = name;
 //        this.instanceId = id;
         this.instanceId = globalMachineId++;
@@ -88,9 +88,9 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
      * @return
      */
     public PMachineValue create(
-            Class<? extends Machine> machineType,
+            Class<? extends PMachine> machineType,
             PValue<?> payload,
-            Function<Integer, ? extends Machine> constructor) {
+            Function<Integer, ? extends PMachine> constructor) {
         throw new NotImplementedException();
     }
 
@@ -101,8 +101,8 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
      * @return
      */
     public PMachineValue create(
-            Class<? extends Machine> machineType,
-            Function<Integer, ? extends Machine> constructor) {
+            Class<? extends PMachine> machineType,
+            Function<Integer, ? extends PMachine> constructor) {
         return create(machineType, null, constructor);
     }
 
@@ -166,7 +166,7 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     }
 
     @Override
-    public int compareTo(Machine rhs) {
+    public int compareTo(PMachine rhs) {
         return instanceId - rhs.getInstanceId();
     }
 
@@ -179,13 +179,13 @@ public abstract class Machine implements Serializable, Comparable<Machine> {
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
-        else if (!(obj instanceof Machine)) {
+        else if (!(obj instanceof PMachine)) {
             return false;
         }
         if (this.name == null)
-            return (((Machine) obj).name == null) && this.instanceId == (((Machine) obj).instanceId);
-        return this.name.equals(((Machine) obj).name)
-                && this.instanceId == (((Machine) obj).instanceId);
+            return (((PMachine) obj).name == null) && this.instanceId == (((PMachine) obj).instanceId);
+        return this.name.equals(((PMachine) obj).name)
+                && this.instanceId == (((PMachine) obj).instanceId);
     }
 
     @Override

@@ -7,7 +7,7 @@ P is built to be cross-platform and can be used on MacOS, Linux, and Windows. We
 
 ### [Step 1] Install .Net Core SDK
 The P compiler is implemented in C# and hence the tool chain requires `dotnet`.
-P currently uses the specific version of [.Net SDK 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
+P currently uses the specific version of [.Net SDK 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
 
 
 === "MacOS"
@@ -16,10 +16,10 @@ P currently uses the specific version of [.Net SDK 6.0](https://dotnet.microsoft
 
     ```shell
     brew tap isen-ng/dotnet-sdk-versions
-    brew install --cask dotnet-sdk6-0-400
+    brew install --cask dotnet-sdk8-0-200
     ```
 
-    Dont have Homebrew? :upside_down_face: Install manually using the installer for [x64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-macos-x64-installer) or [Arm64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-macos-arm64-installer).
+    Dont have Homebrew? :upside_down_face: Install manually using the installer for [x64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-8.0.201-macos-x64-installer) or [Arm64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-8.0.201-macos-arm64-installer).
 
 === "Ubuntu"
 
@@ -32,32 +32,38 @@ P currently uses the specific version of [.Net SDK 6.0](https://dotnet.microsoft
     ```
 
     ```shell
-    sudo apt update && sudo apt install -y dotnet-sdk-6.0
+    sudo apt update && sudo apt install -y dotnet-sdk-8.0
     ```
 
 
 === "Amazon Linux"
+
+    Installing .Net SDK on Amazon Linux 2 ([details](https://learn.microsoft.com/en-us/dotnet/core/install/linux-scripted-manual#scripted-install))
     
-    Installing .Net SDK on Amazon Linux ([details](https://docs.servicestack.net/deploy-netcore-to-amazon-linux-2-ami))
-
     ```shell
-    sudo rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
-    ```
+    wget https://dotnet.microsoft.com/download/dotnet/scripts/v1/dotnet-install.sh
+    chmod +x dotnet-install.sh
+    ./dotnet-install.sh  -c 8.0 -i ~/.dotnet
+    
+    # If using a bash shell, replace .zshrc with .bashrc in the below commands
+    echo 'PATH=$HOME/.dotnet:$HOME/.dotnet/tools:$PATH' >> ~/.zshrc
+    echo 'export PATH' >> ~/.zshrc
+    source ~/.zshrc
 
-    ```shell
-    sudo yum install -y dotnet-sdk-6.0
+    sudo mkdir /usr/share/dotnet/
+    sudo cp -r ~/.dotnet/* /usr/share/dotnet/
     ```
 
 === "Windows"
 
-    Installing .Net SDK on Windows using the installer for [x64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-windows-x64-installer) or [Arm64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.405-windows-arm64-installer)
+    Installing .Net SDK on Windows using the installer for [x64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-8.0.201-windows-x64-installer) or [Arm64](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-8.0.201-windows-arm64-installer)
 
 ??? hint "Troubleshoot: Confirm that dotnet is correctly installed on your machine."
     ```shell
     dotnet --list-sdks
     ```
 
-    You must see an SDK with `6.0.*` dotnet version installed.
+    You must see an SDK with `8.0.*` dotnet version installed.
     If you get `dotnet` command not found error, mostly likely, you need to add the path to dotnet in your `PATH`.
     
     Useful resources:
@@ -88,10 +94,10 @@ The P compiler also requires Java (`java` version 11 or higher).
 
 === "Amazon Linux"
 
-    Installing Java 11 on Amazon Linux (you can use any version of java >= 11)
+    Installing Java 17 on Amazon Linux (you can use any version of java >= 11)
 
     ```shell
-    sudo yum install -y java-11-amazon-corretto
+    sudo yum install -y java-17-amazon-corretto
     ```
 
 === "Windows"

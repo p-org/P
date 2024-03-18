@@ -114,7 +114,6 @@ namespace Plang.Parser
             var projectDependencies = new HashSet<string>(preProjectDependencies);
             var inputFiles = new HashSet<string>(preInputFiles);
             var projectXml = XElement.Load(projectFilePath.FullName);
-            projectDependencies.Add(GetProjectName(projectFilePath));
             // add all input files from the current project
             inputFiles.UnionWith(ReadAllInputFiles(projectFilePath));
 
@@ -128,7 +127,9 @@ namespace Plang.Parser
 
                 CommandLineOutput.WriteInfo($"==== Loading project file: {fullProjectDepenPathName.FullName}");
 
-                if (projectDependencies.Contains(GetProjectName(fullProjectDepenPathName))) continue;
+                if (projectDependencies.Contains(fullProjectDepenPathName.DirectoryName)) continue;
+                // add path of imported project as project dependency
+                projectDependencies.Add(fullProjectDepenPathName.DirectoryName);
                 var inputsAndDependencies = GetAllProjectDependencies(fullProjectDepenPathName, inputFiles, projectDependencies);
                 projectDependencies.UnionWith(inputsAndDependencies.projectDependencies);
                 inputFiles.UnionWith(inputsAndDependencies.inputFiles);

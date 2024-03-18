@@ -421,7 +421,7 @@ namespace Plang.Compiler.Backend.PCover
 
         private void WriteHandlerUpdate(CompilationContext context, StringWriter output, State state)
         {
-            context.Write(output, $"{context.GetNameForDecl(state)}.addHandlers(");
+            context.Write(output, $"{context.GetNameForDecl(state)}.registerHandlers(");
             var first = true;
             foreach (var handler in state.AllEventHandlers)
             {
@@ -442,14 +442,6 @@ namespace Plang.Compiler.Backend.PCover
         {
             var temperature = Enum.GetName(state.Temperature.GetType(), state.Temperature);
             context.Write(output, $"new State(\"{context.GetNameForDecl(state)}\", \"{context.GetNameForDecl(machine)}\", StateTemperature.{temperature}");
-            /*
-            foreach (var handler in state.AllEventHandlers)
-            {
-                context.WriteLine(output, ",");
-                WriteEventHandler(context, output, handler, state);
-            }
-            context.WriteLine(output);
-            */
             context.WriteLine(output, ") {");
             if (state.Entry != null)
             {
@@ -2073,33 +2065,33 @@ namespace Plang.Compiler.Backend.PCover
                     break;
                 case NondetExpr _:
                 case FairNondetExpr _:
-                    context.Write(output, $"{CompilationContext.SchedulerVar}.getNextBoolean()");
+                    context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomBool()");
                     break;
                 case ChooseExpr chooseExpr:
                     if (chooseExpr.SubExpr == null)
                     {
-                        context.Write(output, $"({CompilationContext.SchedulerVar}.getNextBoolean())");
+                        context.Write(output, $"({CompilationContext.SchedulerVar}.getRandomBool())");
                         return;
                     }
                     switch (chooseExpr.SubExpr.Type.Canonicalize())
                     {
                         case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                            context.Write(output, $"{CompilationContext.SchedulerVar}.getNextInteger(");
+                            context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomInt(");
                             WriteExpr(context, output, chooseExpr.SubExpr);
                             context.Write(output, ")");
                             break;
                         case SequenceType sequenceType:
-                            context.Write(output, $"({GetPCoverType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
+                            context.Write(output, $"({GetPCoverType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getRandomEntry(");
                             WriteExpr(context, output, chooseExpr.SubExpr);
                             context.Write(output, ")");
                             break;
                         case SetType setType:
-                            context.Write(output, $"({GetPCoverType(setType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
+                            context.Write(output, $"({GetPCoverType(setType.ElementType)}) {CompilationContext.SchedulerVar}.getRandomEntry(");
                             WriteExpr(context, output, chooseExpr.SubExpr);
                             context.Write(output, ")");
                             break;
                         case MapType mapType:
-                            context.Write(output, $"({GetPCoverType(mapType.KeyType)}) {CompilationContext.SchedulerVar}.getNextElement(");
+                            context.Write(output, $"({GetPCoverType(mapType.KeyType)}) {CompilationContext.SchedulerVar}.getRandomEntry(");
                             WriteExpr(context, output, chooseExpr.SubExpr);
                             context.Write(output, ")");
                             break;

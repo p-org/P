@@ -5,11 +5,13 @@ import lombok.Getter;
 /**
  * Represents the PValue for P integer
  */
+@Getter
 public class PInt extends PValue<PInt> {
-    @Getter private final int value;
+    private final int value;
 
     /**
      * Constructor
+     *
      * @param val integer value to set to
      */
     public PInt(int val) {
@@ -18,6 +20,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Constructor
+     *
      * @param val object from where value to set to
      */
     public PInt(Object val) {
@@ -29,6 +32,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Copy constructor
+     *
      * @param val value to copy from
      */
     public PInt(PInt val) {

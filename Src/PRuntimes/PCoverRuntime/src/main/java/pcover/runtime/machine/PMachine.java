@@ -17,31 +17,38 @@ import java.util.function.Function;
  * Represents the base class for all P machines.
  */
 public abstract class PMachine implements Serializable, Comparable<PMachine> {
-    @Getter private static final int mainMachineId = 2;
-    @Getter private static final Map<String, PMachine> nameToMachine = new HashMap<>();
+    @Getter
+    private static final int mainMachineId = 2;
+    @Getter
+    private static final Map<String, PMachine> nameToMachine = new HashMap<>();
     protected static int globalMachineId = mainMachineId;
 
-    @Getter protected final String name;
-    @Getter protected int instanceId;
-
+    @Getter
+    protected final String name;
     private final Set<State> states;
     private final State startState;
-    @Getter private State currentState;
-
-    @Getter private FifoQueue sendBuffer;
-    @Getter private DeferQueue deferredQueue;
-
-    @Getter private boolean started = false;
-    @Getter private boolean halted = false;
+    @Getter
+    private final State currentState;
+    @Getter
+    private final FifoQueue sendBuffer;
+    @Getter
+    private final DeferQueue deferredQueue;
+    @Getter
+    private final boolean started = false;
+    @Getter
+    private final boolean halted = false;
+    @Getter
+    protected int instanceId;
 
 
     /**
      * TODO
      * Machine constructor
-     * @param name Name of the machine
-     * @param id Input id
+     *
+     * @param name       Name of the machine
+     * @param id         Input id
      * @param startState Start state
-     * @param states All states corresponding to this machine
+     * @param states     All states corresponding to this machine
      */
     public PMachine(String name, int id, State startState, State... states) {
         this.name = name;
@@ -65,6 +72,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * TODO
+     *
      * @return
      */
     protected List<Object> getLocalVars() {
@@ -73,6 +81,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * TODO
+     *
      * @param localVars
      * @return
      */
@@ -82,6 +91,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * TODO
+     *
      * @param machineType
      * @param payload
      * @param constructor
@@ -96,6 +106,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * TODO
+     *
      * @param machineType
      * @param constructor
      * @return
@@ -108,6 +119,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * TODO
+     *
      * @param target
      * @param event
      * @param payload
@@ -118,6 +130,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * TODO
+     *
      * @param state
      * @param payload
      */
@@ -127,6 +140,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * TODO
+     *
      * @param event
      */
     public void unblock(Message event) {
@@ -135,6 +149,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * Process an event until completion
+     *
      * @param msg Message
      */
     public void processEventToCompletion(Message msg) {
@@ -152,13 +167,14 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * Run events from the deferred queue
      */
     void runDeferredEvents() {
-        for (Message msg: deferredQueue.getElements()) {
+        for (Message msg : deferredQueue.getElements()) {
             runOutcomesToCompletion(msg);
         }
     }
 
     /**
      * TODO
+     *
      * @param msg
      */
     void runOutcomesToCompletion(Message msg) {

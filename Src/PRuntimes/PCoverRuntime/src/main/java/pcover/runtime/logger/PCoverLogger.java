@@ -13,14 +13,18 @@ import pcover.utils.exceptions.NotImplementedException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-/** Represents the main PCover logger */
+/**
+ * Represents the main PCover logger
+ */
 public class PCoverLogger {
     static Logger log = null;
     static LoggerContext context = null;
-    @Setter static int verbosity;
+    @Setter
+    static int verbosity;
 
     /**
      * Initializes the logger with the given verbosity level.
+     *
      * @param verb Verbosity level
      */
     public static void Initialize(int verb) {
@@ -53,6 +57,7 @@ public class PCoverLogger {
 
     /**
      * TODO
+     *
      * @param totalIter
      * @param newIter
      * @param timeSpent
@@ -64,6 +69,7 @@ public class PCoverLogger {
 
     /**
      * Logs the given message based on the current verbosity level.
+     *
      * @param message Message to print
      */
     public static void log(String message) {
@@ -74,6 +80,7 @@ public class PCoverLogger {
 
     /**
      * Logs the given info message.
+     *
      * @param message Message to print
      */
 
@@ -83,6 +90,7 @@ public class PCoverLogger {
 
     /**
      * Logs the given warning message.
+     *
      * @param message Message to print
      */
     public static void warn(String message) {
@@ -91,6 +99,7 @@ public class PCoverLogger {
 
     /**
      * Logs the given error message.
+     *
      * @param message Message to print
      */
     public static void error(String message) {
@@ -99,6 +108,7 @@ public class PCoverLogger {
 
     /**
      * TODO
+     *
      * @param verbosity
      * @param projectName
      * @param outputFolder
@@ -110,7 +120,8 @@ public class PCoverLogger {
 
     /**
      * Print error trace
-     * @param e Exception object
+     *
+     * @param e          Exception object
      * @param stderrOnly Print to stderr only
      */
     public static void printStackTrace(Exception e, boolean stderrOnly) {

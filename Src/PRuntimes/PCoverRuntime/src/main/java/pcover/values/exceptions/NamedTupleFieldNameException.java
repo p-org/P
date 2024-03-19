@@ -8,13 +8,13 @@ import pcover.values.PNamedTuple;
  */
 public class NamedTupleFieldNameException extends PCoverRuntimeException {
 
-  /**
-   * Constructor for the exception
-   */
-  public NamedTupleFieldNameException(PNamedTuple tuple, String fieldName) {
-    super(
-        String.format(
-            "Invalid field access: Trying to access field [%s] in the tuple [%s]",
-            fieldName, tuple.toString()));
-  }
+    /**
+     * Constructor for the exception
+     */
+    public NamedTupleFieldNameException(PNamedTuple tuple, String fieldName) {
+        super(
+                String.format(
+                        "Invalid field access: Trying to access field [%s] in the tuple [%s]",
+                        fieldName, tuple.toString()));
+    }
 }

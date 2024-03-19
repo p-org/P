@@ -5,11 +5,13 @@ import lombok.Getter;
 /**
  * Represents the PValue for P float
  */
+@Getter
 public class PFloat extends PValue<PFloat> {
-    @Getter private final double value;
+    private final double value;
 
     /**
      * Constructor
+     *
      * @param val Value to set to
      */
     public PFloat(double val) {
@@ -18,6 +20,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Constructor
+     *
      * @param val Value to set to
      */
 
@@ -30,6 +33,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Copy constructor
+     *
      * @param val Value to set to
      */
     public PFloat(PFloat val) {

@@ -14,8 +14,9 @@ public class GotoEventHandler extends EventHandler {
 
     /**
      * Constructor
+     *
      * @param event Event
-     * @param dest Destination state
+     * @param dest  Destination state
      */
     public GotoEventHandler(PEvent event, State dest) {
         super(event);

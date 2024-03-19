@@ -10,8 +10,9 @@ import pcover.values.PValue;
 public interface EventBuffer {
     /**
      * Send an event
-     * @param target Target machine
-     * @param event Event
+     *
+     * @param target  Target machine
+     * @param event   Event
      * @param payload Event payload
      */
     void send(PMachine target, PEvent event, PValue<?> payload);

@@ -6,10 +6,11 @@ package pcover.runtime.machine;
 public class PMonitor extends PMachine {
     /**
      * Monitor constructor
-     * @param name Name of the monitor
-     * @param id Input id of the monitor
+     *
+     * @param name       Name of the monitor
+     * @param id         Input id of the monitor
      * @param startState Start state
-     * @param states All states of this monitor
+     * @param states     All states of this monitor
      */
     public PMonitor(String name, int id, State startState, State... states) {
         super(name, id, startState, states);

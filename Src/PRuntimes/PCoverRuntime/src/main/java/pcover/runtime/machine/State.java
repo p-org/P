@@ -3,11 +3,11 @@ package pcover.runtime.machine;
 import pcover.runtime.machine.eventhandlers.DeferEventHandler;
 import pcover.runtime.machine.eventhandlers.EventHandler;
 import pcover.runtime.machine.eventhandlers.IgnoreEventHandler;
+import pcover.runtime.machine.events.Message;
 import pcover.runtime.machine.events.StateEvents;
 import pcover.utils.exceptions.NotImplementedException;
 import pcover.values.PEvent;
 import pcover.values.PValue;
-import pcover.runtime.machine.events.Message;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -22,7 +22,8 @@ public abstract class State implements Serializable {
 
     /**
      * Constructor
-     * @param name Name of the state
+     *
+     * @param name        Name of the state
      * @param machineName Machine name
      * @param temperature State temperature
      */
@@ -37,6 +38,7 @@ public abstract class State implements Serializable {
 
     /**
      * TODO
+     *
      * @param machine
      * @param payload
      */
@@ -46,6 +48,7 @@ public abstract class State implements Serializable {
 
     /**
      * TODO
+     *
      * @param machine
      */
     public void exit(PMachine machine) {
@@ -54,6 +57,7 @@ public abstract class State implements Serializable {
 
     /**
      * Get a unique key corresponding to this machine state
+     *
      * @return
      */
     private String getStateKey() {
@@ -62,6 +66,7 @@ public abstract class State implements Serializable {
 
     /**
      * TODO
+     *
      * @return
      */
     private StateEvents getStateEvents() {
@@ -70,6 +75,7 @@ public abstract class State implements Serializable {
 
     /**
      * Register all event handlers corresponding to this state.
+     *
      * @param eventHandlers Event handlers to register
      */
     public void registerHandlers(EventHandler... eventHandlers) {
@@ -85,6 +91,7 @@ public abstract class State implements Serializable {
 
     /**
      * Returns true if this event is ignored in this state
+     *
      * @param event Event to check
      * @return true if event is ignored in this state, else false
      */
@@ -94,6 +101,7 @@ public abstract class State implements Serializable {
 
     /**
      * Returns true if this event is deferred in this state
+     *
      * @param event Event to check
      * @return true if event is deferred in this state, else false
      */
@@ -103,6 +111,7 @@ public abstract class State implements Serializable {
 
     /**
      * TODO
+     *
      * @param message
      * @param machine
      */
@@ -112,6 +121,7 @@ public abstract class State implements Serializable {
 
     /**
      * Returns true if this state is a hot state
+     *
      * @return true if this state is hot, else false
      */
     public boolean isHotState() {

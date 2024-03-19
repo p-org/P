@@ -1,11 +1,6 @@
 package pcover.runtime.scheduler;
 
-import pcover.values.PMap;
-import pcover.values.PSeq;
-import pcover.values.PSet;
-import pcover.values.PValue;
-import pcover.values.PBool;
-import pcover.values.PInt;
+import pcover.values.*;
 
 import java.io.Serializable;
 import java.util.concurrent.TimeoutException;

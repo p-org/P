@@ -14,36 +14,38 @@ import org.reflections.Reflections;
  * Represents Log4J configuration for PCover runtime.
  */
 public class Log4JConfig {
-  private static final String pattern = "%msg%n";
-  @Getter private static LoggerContext context = null;
-  @Getter private static PatternLayout patternLayout = null;
+    private static final String pattern = "%msg%n";
+    @Getter
+    private static LoggerContext context = null;
+    @Getter
+    private static PatternLayout patternLayout = null;
 
-  /**
-   * Configure Log4J for PCover runtime.
-   */
-  public static void configureLog4J() {
-    ConfigurationBuilder<BuiltConfiguration> builder =
-        ConfigurationBuilderFactory.newConfigurationBuilder();
+    /**
+     * Configure Log4J for PCover runtime.
+     */
+    public static void configureLog4J() {
+        ConfigurationBuilder<BuiltConfiguration> builder =
+                ConfigurationBuilderFactory.newConfigurationBuilder();
 
-    // configure a console appender
-    builder.add(
-        builder
-            .newAppender("stdout", "Console")
-            .add(
+        // configure a console appender
+        builder.add(
                 builder
-                    .newLayout(PatternLayout.class.getSimpleName())
-                    .addAttribute("pattern", pattern)));
+                        .newAppender("stdout", "Console")
+                        .add(
+                                builder
+                                        .newLayout(PatternLayout.class.getSimpleName())
+                                        .addAttribute("pattern", pattern)));
 
-    // configure the root logger
-    builder.add(builder.newRootLogger(Level.INFO).add(builder.newAppenderRef("stdout")));
+        // configure the root logger
+        builder.add(builder.newRootLogger(Level.INFO).add(builder.newAppenderRef("stdout")));
 
-    // apply the configuration
-    context = Configurator.initialize(builder.build());
+        // apply the configuration
+        context = Configurator.initialize(builder.build());
 
-    // set pattern layout
-    patternLayout = PatternLayout.newBuilder().withPattern(pattern).build();
+        // set pattern layout
+        patternLayout = PatternLayout.newBuilder().withPattern(pattern).build();
 
-    // set level for reflections class
-    Configurator.setLevel(Reflections.class, Level.ERROR);
-  }
+        // set level for reflections class
+        Configurator.setLevel(Reflections.class, Level.ERROR);
+    }
 }

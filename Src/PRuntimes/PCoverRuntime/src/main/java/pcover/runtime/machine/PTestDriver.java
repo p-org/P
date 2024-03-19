@@ -13,8 +13,8 @@ import java.util.Map;
  */
 public abstract class PTestDriver implements Serializable {
     public PMachine mainMachine;
-    public List<PMonitor> monitorList;
-    public Map<PEvent, List<PMonitor>> observerMap;
+    public final List<PMonitor> monitorList;
+    public final Map<PEvent, List<PMonitor>> observerMap;
 
     /**
      * Test driver constructor
@@ -28,6 +28,7 @@ public abstract class PTestDriver implements Serializable {
 
     /**
      * Get the start/main machine of this test driver.
+     *
      * @return the start/main machine of this test driver.
      */
     public PMachine getStart() {
@@ -36,6 +37,7 @@ public abstract class PTestDriver implements Serializable {
 
     /**
      * Get the list of monitors of this test driver.
+     *
      * @return List of monitors
      */
     public List<PMonitor> getMonitors() {
@@ -44,6 +46,7 @@ public abstract class PTestDriver implements Serializable {
 
     /**
      * Get all event monitors mapping of this test driver.
+     *
      * @return Map from event to list of monitors listening/observing that event
      */
     public Map<PEvent, List<PMonitor>> getListeners() {

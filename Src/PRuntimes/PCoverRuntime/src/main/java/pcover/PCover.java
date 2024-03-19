@@ -9,17 +9,17 @@ import pcover.utils.exceptions.NotImplementedException;
  */
 public class PCover {
 
-  /**
-   * Main entry point for PCover runtime.
-   * TODO
-   */
-  public static void main(String[] args) {
-    // configure Log4J
-    Log4JConfig.configureLog4J();
+    /**
+     * Main entry point for PCover runtime.
+     * TODO
+     */
+    public static void main(String[] args) {
+        // configure Log4J
+        Log4JConfig.configureLog4J();
 
-    // get reflection to fetch pcover model IR
-    Reflections reflections = new Reflections("pcover.model");
+        // get reflection to fetch pcover model IR
+        Reflections reflections = new Reflections("pcover.model");
 
-    throw new NotImplementedException();
-  }
+        throw new NotImplementedException();
+    }
 }

@@ -9,15 +9,17 @@ import pcover.values.PValue;
 /**
  * Represents a message containing details about the event, target machine, and event payload.
  */
+@Getter
 public class Message extends PValue<Message> {
-    @Getter private PEvent event;
-    @Getter private PMachine target;
-    @Getter private PValue<?> payload;
+    private final PEvent event;
+    private final PMachine target;
+    private final PValue<?> payload;
 
     /**
      * Constructor
-     * @param event Event
-     * @param target Target machine
+     *
+     * @param event   Event
+     * @param target  Target machine
      * @param payload Event payload
      */
     public Message(PEvent event, PMachine target, PValue<?> payload) {
@@ -28,6 +30,7 @@ public class Message extends PValue<Message> {
 
     /**
      * Clone a message
+     *
      * @return Cloned message
      */
     @Override
@@ -37,6 +40,7 @@ public class Message extends PValue<Message> {
 
     /**
      * TODO
+     *
      * @return
      */
     @Override
@@ -46,6 +50,7 @@ public class Message extends PValue<Message> {
 
     /**
      * TODO
+     *
      * @return
      */
     @Override
@@ -55,6 +60,7 @@ public class Message extends PValue<Message> {
 
     /**
      * TODO
+     *
      * @return
      */
     @Override

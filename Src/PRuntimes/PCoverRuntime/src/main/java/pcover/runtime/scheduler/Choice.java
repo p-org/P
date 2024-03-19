@@ -12,23 +12,27 @@ import java.util.List;
 /**
  * Represents a schedule or data choice
  */
+@Getter
 public class Choice implements Serializable {
-    @Getter @Setter
+    @Setter
     PMachine repeatScheduleChoice = null;
-    @Getter @Setter PValue<?> repeatDataChoice = null;
-    @Getter List<PMachine> backtrackScheduleChoice = new ArrayList<>();
-    @Getter List<PValue<?>> backtrackDataChoice = new ArrayList<>();
+    @Setter
+    PValue<?> repeatDataChoice = null;
+    List<PMachine> backtrackScheduleChoice = new ArrayList<>();
+    List<PValue<?>> backtrackDataChoice = new ArrayList<>();
 
-    @Getter int schedulerDepth = 0;
-    @Getter int schedulerChoiceDepth = 0;
+    int schedulerDepth = 0;
+    int schedulerChoiceDepth = 0;
 
     /**
      * Constructor
      */
-    public Choice() {}
+    public Choice() {
+    }
 
     /**
      * Copy-constructor for Choice
+     *
      * @param old The choice to copy
      */
     private Choice(Choice old) {
@@ -42,6 +46,7 @@ public class Choice implements Serializable {
 
     /**
      * Copy the Choice
+     *
      * @return A new cloned copy of the Choice
      */
     public Choice getCopy() {
@@ -50,6 +55,7 @@ public class Choice implements Serializable {
 
     /**
      * Check if this choice has a backtrack choice remaining.
+     *
      * @return true if this choice has a backtrack choice, false otherwise
      */
     public boolean isBacktrackNonEmpty() {
@@ -58,6 +64,7 @@ public class Choice implements Serializable {
 
     /**
      * Check if this choice has a backtrack schedule choice remaining.
+     *
      * @return true if this choice has a backtrack schedule choice, false otherwise
      */
     public boolean isScheduleBacktrackNonEmpty() {
@@ -66,6 +73,7 @@ public class Choice implements Serializable {
 
     /**
      * Check if this choice has a backtrack data choice remaining.
+     *
      * @return true if this choice has a backtrack data choice, false otherwise
      */
     public boolean isDataBacktrackNonEmpty() {
@@ -74,6 +82,7 @@ public class Choice implements Serializable {
 
     /**
      * Add a backtrack schedule choice to this choice.
+     *
      * @param choice Machine to add as schedule choice
      */
     public void addBacktrackScheduleChoice(PMachine choice) {
@@ -82,6 +91,7 @@ public class Choice implements Serializable {
 
     /**
      * Add a backtrack data choice to this choice.
+     *
      * @param choice PValue to add as data choice
      */
     public void addBacktrackDataChoice(PValue<?> choice) {

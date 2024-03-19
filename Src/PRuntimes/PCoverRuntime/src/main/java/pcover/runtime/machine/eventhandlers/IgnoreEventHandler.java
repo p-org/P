@@ -17,9 +17,6 @@ public class IgnoreEventHandler extends EventHandler {
         super(event);
     }
 
-    /**
-     * @inheritDoc
-     */
     @Override
     public void handleEvent(PMachine target, PValue<?> payload) {
         // Ignore

@@ -24,7 +24,10 @@ public class FifoQueue extends MessageQueue implements EventBuffer, Serializable
   }
 
   /**
-   * @inheritDoc
+   * TODO
+   * @param target Target machine
+   * @param eventName Event
+   * @param payload Event payload
    */
   public void send(PMachine target, PEvent eventName, PValue<?> payload) {
     throw new NotImplementedException();

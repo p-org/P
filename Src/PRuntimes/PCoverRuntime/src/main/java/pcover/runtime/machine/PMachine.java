@@ -3,7 +3,7 @@ package pcover.runtime.machine;
 import lombok.Getter;
 import pcover.runtime.machine.buffer.DeferQueue;
 import pcover.runtime.machine.buffer.FifoQueue;
-import pcover.runtime.machine.events.Message;
+import pcover.runtime.machine.events.PMessage;
 import pcover.utils.exceptions.NotImplementedException;
 import pcover.values.PEvent;
 import pcover.values.PMachineValue;
@@ -143,7 +143,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      *
      * @param event
      */
-    public void unblock(Message event) {
+    public void unblock(PMessage event) {
         throw new NotImplementedException();
     }
 
@@ -152,7 +152,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      *
      * @param msg Message
      */
-    public void processEventToCompletion(Message msg) {
+    public void processEventToCompletion(PMessage msg) {
         // Process events from the deferred queue first
         runDeferredEvents();
 
@@ -167,7 +167,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * Run events from the deferred queue
      */
     void runDeferredEvents() {
-        for (Message msg : deferredQueue.getElements()) {
+        for (PMessage msg : deferredQueue.getElements()) {
             runOutcomesToCompletion(msg);
         }
     }
@@ -177,7 +177,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      *
      * @param msg
      */
-    void runOutcomesToCompletion(Message msg) {
+    void runOutcomesToCompletion(PMessage msg) {
         throw new NotImplementedException();
     }
 

@@ -1203,7 +1203,7 @@ namespace Plang.Compiler.Backend.PCover
             context.Write(output, $"PMachine {CompilationContext.CurrentMachine}");
             context.WriteLine(output, ",");
             var messageName = $"{continuationName}_msg";
-            context.WriteLine(output, $"Message {messageName}");
+            context.WriteLine(output, $"PMessage {messageName}");
             context.WriteLine(output);
             context.Write(output, ") ");
 
@@ -1219,7 +1219,7 @@ namespace Plang.Compiler.Backend.PCover
             var idx = 0;
             foreach (var (_, value) in continuation.Cases)
             {
-                context.WriteLine(output, $"Message {messageName}_{idx} = {messageName};");
+                context.WriteLine(output, $"PMessage {messageName}_{idx} = {messageName};");
                 context.WriteLine(output, $"if (!{messageName}_{idx}.isEmpty())");
                 context.WriteLine(output, "{");
                 context.WriteLine(output, $"{CompilationContext.CurrentMachine}.unblock({messageName}_{idx});");

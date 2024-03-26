@@ -13,7 +13,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import pcover.runtime.machine.PMachine;
 import pcover.runtime.machine.State;
-import pcover.runtime.machine.events.Message;
+import pcover.runtime.machine.events.PMessage;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -88,7 +88,7 @@ public class TraceLogger {
      *
      * @param message Message that is being processed
      */
-    public static void onProcessEvent(Message message) {
+    public static void onProcessEvent(PMessage message) {
         if (verbosity > 3) {
             String msg =
                     String.format(
@@ -142,7 +142,7 @@ public class TraceLogger {
      * @param message Message that is sent
      */
 
-    public static void send(Message message) {
+    public static void send(PMessage message) {
         if (verbosity > 3) {
             String msg = String.format("Send %s to %s", message.getEvent(), message.getTarget());
             log.info(msg);
@@ -154,7 +154,7 @@ public class TraceLogger {
      *
      * @param message
      */
-    public static void unblock(Message message) {
+    public static void unblock(PMessage message) {
         if (verbosity > 3) {
             String msg = String.format("Unblock %s on receiving %s", message.getTarget(), message.getEvent());
             log.info(msg);
@@ -169,7 +169,7 @@ public class TraceLogger {
      * @param sender  Sender machine
      */
 
-    public static void schedule(int depth, Message message, PMachine sender) {
+    public static void schedule(int depth, PMessage message, PMachine sender) {
         if (verbosity > 0) {
             String msg =
                     String.format("  Depth %d: %s sent %s to %s", depth, sender, message.getEvent(), message.getTarget());

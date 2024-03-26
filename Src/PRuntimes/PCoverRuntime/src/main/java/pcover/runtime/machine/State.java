@@ -3,7 +3,7 @@ package pcover.runtime.machine;
 import pcover.runtime.machine.eventhandlers.DeferEventHandler;
 import pcover.runtime.machine.eventhandlers.EventHandler;
 import pcover.runtime.machine.eventhandlers.IgnoreEventHandler;
-import pcover.runtime.machine.events.Message;
+import pcover.runtime.machine.events.PMessage;
 import pcover.runtime.machine.events.StateEvents;
 import pcover.utils.exceptions.NotImplementedException;
 import pcover.values.PEvent;
@@ -115,7 +115,7 @@ public abstract class State implements Serializable {
      * @param message
      * @param machine
      */
-    public void handleEvent(Message message, PMachine machine) {
+    public void handleEvent(PMessage message, PMachine machine) {
         throw new NotImplementedException();
     }
 

@@ -2,7 +2,7 @@ package pcover.runtime.machine.buffer;
 
 import lombok.Getter;
 import pcover.runtime.machine.PMachine;
-import pcover.runtime.machine.events.Message;
+import pcover.runtime.machine.events.PMessage;
 import pcover.utils.exceptions.NotImplementedException;
 
 import java.io.Serializable;
@@ -16,8 +16,8 @@ public abstract class MessageQueue implements Serializable {
 
     private final PMachine owner;
     @Getter
-    protected List<Message> elements;
-    private Message peek;
+    protected List<PMessage> elements;
+    private PMessage peek;
 
     /**
      * Constructor
@@ -60,7 +60,7 @@ public abstract class MessageQueue implements Serializable {
      *
      * @return Peek message in the queue
      */
-    public Message peek() {
+    public PMessage peek() {
         return peekOrDequeueHelper(false);
     }
 
@@ -71,7 +71,7 @@ public abstract class MessageQueue implements Serializable {
      * @param dequeue Whether or not to dequeue the message from the queue
      * @return The next message in the queue, or null if queue is empty
      */
-    private Message peekOrDequeueHelper(boolean dequeue) {
+    private PMessage peekOrDequeueHelper(boolean dequeue) {
         throw new NotImplementedException();
     }
 
@@ -80,7 +80,7 @@ public abstract class MessageQueue implements Serializable {
      *
      * @param e
      */
-    public void add(Message e) {
+    public void add(PMessage e) {
         throw new NotImplementedException();
     }
 
@@ -89,7 +89,7 @@ public abstract class MessageQueue implements Serializable {
      *
      * @return
      */
-    public Message remove() {
+    public PMessage remove() {
         throw new NotImplementedException();
     }
 
@@ -98,7 +98,7 @@ public abstract class MessageQueue implements Serializable {
      *
      * @param messages Input messages
      */
-    public void setElements(List<Message> messages) {
+    public void setElements(List<PMessage> messages) {
         this.elements = messages;
         resetPeek();
     }

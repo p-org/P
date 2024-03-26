@@ -5,7 +5,7 @@ import pcover.runtime.PModel;
 import pcover.runtime.logger.TraceLogger;
 import pcover.runtime.machine.PMachine;
 import pcover.runtime.machine.PMonitor;
-import pcover.runtime.machine.events.Message;
+import pcover.runtime.machine.events.PMessage;
 import pcover.utils.exceptions.NotImplementedException;
 import pcover.values.*;
 
@@ -215,7 +215,7 @@ public abstract class Scheduler implements SchedulerInterface {
         TraceLogger.onCreateMachine(machine);
         schedule.makeMachine(machine);
 
-        processEventAtTarget(new Message(PEvent.createMachine, machine, null));
+        processEventAtTarget(new PMessage(PEvent.createMachine, machine, null));
     }
 
     /**
@@ -240,7 +240,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * @param machine Machine to remove a message from
      * @return Message
      */
-    protected Message rmBuffer(PMachine machine) {
+    protected PMessage rmBuffer(PMachine machine) {
         return machine.getSendBuffer().remove();
     }
 
@@ -272,7 +272,7 @@ public abstract class Scheduler implements SchedulerInterface {
      *
      * @param message Message
      */
-    public void runMonitors(Message message) {
+    public void runMonitors(PMessage message) {
         List<PMonitor> listenersForEvent = listeners.get(message.getEvent());
         if (listenersForEvent != null) {
             for (PMonitor m : listenersForEvent) {
@@ -286,7 +286,7 @@ public abstract class Scheduler implements SchedulerInterface {
      *
      * @param message Message to process
      */
-    public void processEventAtTarget(Message message) {
+    public void processEventAtTarget(PMessage message) {
         message.getTarget().processEventToCompletion(message);
     }
 
@@ -300,7 +300,7 @@ public abstract class Scheduler implements SchedulerInterface {
         if (event == null) {
             throw new NotImplementedException("Machine cannot announce a null event");
         }
-        Message message = new Message(event, null, payload);
+        PMessage message = new PMessage(event, null, payload);
         runMonitors(message);
     }
 }

@@ -213,7 +213,7 @@ namespace Plang.Options
                             checkerConfiguration.Mode = CheckerMode.Coverage;
                             break;
                         case "coverage_new":
-                            checkerConfiguration.Mode = CheckerMode.CoverageNew;
+                            checkerConfiguration.Mode = CheckerMode.Explicit;
                             break;
                         default:
                             Error.CheckerReportAndExit($"Invalid checker mode '{option.Value}'.");
@@ -374,7 +374,7 @@ namespace Plang.Options
                     CheckerMode.BugFinding => "*.dll",
                     CheckerMode.Verification => "*-jar-with-dependencies.jar",
                     CheckerMode.Coverage => "*-jar-with-dependencies.jar",
-                    CheckerMode.CoverageNew => "*-jar-with-dependencies.jar",
+                    CheckerMode.Explicit => "*-jar-with-dependencies.jar",
                     _ => "*.dll"
                 };
                 
@@ -406,9 +406,9 @@ namespace Plang.Options
                         if (!fileName.Contains($"Symbolic{pathSep}"))
                             continue;
                     }
-                    else if (checkerConfiguration.Mode == CheckerMode.CoverageNew)
+                    else if (checkerConfiguration.Mode == CheckerMode.Explicit)
                     {
-                        if (!fileName.Contains($"PCover{pathSep}"))
+                        if (!fileName.Contains($"PExplicit{pathSep}"))
                             continue;
                     }
                     else

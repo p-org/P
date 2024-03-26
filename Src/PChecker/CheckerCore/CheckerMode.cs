@@ -20,5 +20,5 @@ public enum CheckerMode
     /// <summary>
     /// Mode for exhaustive explicit-state search with state-space coverage reporting
     /// </summary>
-    CoverageNew
+    Explicit
 }

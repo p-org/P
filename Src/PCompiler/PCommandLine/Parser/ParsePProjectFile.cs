@@ -235,9 +235,9 @@ namespace Plang.Parser
                         case "pcover":
                             outputLanguages.Add(CompilerOutput.Symbolic);
                             break;
-                        case "coverage_new":
-                        case "pcover_new":
-                            outputLanguages.Add(CompilerOutput.PCover);
+                        case "explicit":
+                        case "pexplicit":
+                            outputLanguages.Add(CompilerOutput.PExplicit);
                             break;
                         case "pobserve":
                         case "java":

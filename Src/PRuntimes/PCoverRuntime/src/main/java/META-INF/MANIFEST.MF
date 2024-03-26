@@ -1,3 +1,0 @@
-Manifest-Version: 0.0.1
-Main-Class: pcover.PCover
-Multi-Release: true

@@ -45,8 +45,6 @@ machine Client
 
   state WithdrawMoney {
     entry {
-      var index : int;
-
       // If current balance is <= 10 then we need more deposits before any more withdrawal
       if(currentBalance <= 10)
         goto NoMoneyToWithDraw;

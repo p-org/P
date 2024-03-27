@@ -132,17 +132,16 @@ namespace PChecker.Actors
         /// <summary>
         /// Sends an asynchronous <see cref="Event"/> to an actor.
         /// </summary>
-        public virtual void SendEvent(ActorId targetId, Event initialEvent, Guid opGroupId = default,
-            SendOptions options = null) =>
-            SendEvent(targetId, initialEvent, null, opGroupId, options);
+        public virtual void SendEvent(ActorId targetId, Event initialEvent, Guid opGroupId = default) =>
+            SendEvent(targetId, initialEvent, null, opGroupId);
 
         /// <summary>
         /// Sends an <see cref="Event"/> to an actor. Returns immediately if the target was already
         /// running. Otherwise blocks until the target handles the event and reaches quiescense.
         /// </summary>
         public virtual Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event initialEvent,
-            Guid opGroupId = default, SendOptions options = null) =>
-            SendEventAndExecuteAsync(targetId, initialEvent, null, opGroupId, options);
+            Guid opGroupId = default) =>
+            SendEventAndExecuteAsync(targetId, initialEvent, null, opGroupId);
 
         /// <summary>
         /// Returns the operation group id of the actor with the specified id. Returns <see cref="Guid.Empty"/>
@@ -263,7 +262,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Sends an asynchronous <see cref="Event"/> to an actor.
         /// </summary>
-        internal virtual void SendEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId, SendOptions options)
+        internal virtual void SendEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId)
         {
             var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
@@ -277,7 +276,7 @@ namespace PChecker.Actors
         /// already running. Otherwise blocks until the target handles the event and reaches quiescense.
         /// </summary>
         internal virtual async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Actor sender,
-            Guid opGroupId, SendOptions options)
+            Guid opGroupId)
         {
             var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)

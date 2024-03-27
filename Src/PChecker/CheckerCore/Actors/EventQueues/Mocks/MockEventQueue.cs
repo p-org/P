@@ -95,14 +95,6 @@ namespace PChecker.Actors.EventQueues.Mocks
             ActorManager.OnEnqueueEvent(e, opGroupId, info);
             Queue.AddLast((e, opGroupId, info));
 
-            if (info.Assert >= 0)
-            {
-                var eventCount = Queue.Count(val => val.e.GetType().Equals(e.GetType()));
-                ActorManager.Assert(eventCount <= info.Assert,
-                    "There are more than {0} instances of '{1}' in the input queue of {2}.",
-                    info.Assert, info.EventName, Actor.Id);
-            }
-
             if (!ActorManager.IsEventHandlerRunning)
             {
                 if (TryDequeueEvent(true).e is null)

@@ -24,17 +24,6 @@ namespace PChecker.Actors.Events
         internal EventOriginInfo OriginInfo { get; private set; }
 
         /// <summary>
-        /// True if this event must always be handled, else false.
-        /// </summary>
-        internal bool MustHandle { get; set; }
-
-        /// <summary>
-        /// Asserts that there must not be more than N instances of the
-        /// event type in the inbox queue of the receiver.
-        /// </summary>
-        internal int Assert { get; set; }
-
-        /// <summary>
         /// User-defined hash of the event. The default value is 0. Override to
         /// improve the accuracy of stateful techniques during testing.
         /// </summary>
@@ -46,8 +35,6 @@ namespace PChecker.Actors.Events
         internal EventInfo(Event e)
         {
             EventName = e.GetType().FullName;
-            MustHandle = false;
-            Assert = -1;
             HashedState = 0;
         }
 

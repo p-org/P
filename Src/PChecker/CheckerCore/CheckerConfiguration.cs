@@ -310,7 +310,6 @@ namespace PChecker
             MaxFairSchedulingSteps = 100000; // 10 times the unfair steps
             MaxUnfairSchedulingSteps = 10000;
             UserExplicitlySetMaxFairSchedulingSteps = false;
-            TestingSchedulerEndPoint = "CoyoteTestScheduler.4723bb92-c413-4ecb-8e8a-22eb2ba22234";
             TestingProcessId = 0;
             ConsiderDepthBoundHitAsBug = false;
             StrategyBound = 0;
@@ -329,8 +328,6 @@ namespace PChecker
 
             IsVerbose = false;
             EnableDebugging = false;
-
-            AdditionalCodeCoverageAssemblies = new Dictionary<string, bool>();
             
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;

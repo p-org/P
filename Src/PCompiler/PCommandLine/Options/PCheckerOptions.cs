@@ -31,7 +31,7 @@ namespace Plang.Options
             basicOptions.AddPositionalArgument("path", "Path to the compiled file to check for correctness (*.dll)."+
                                                        " If this option is not passed, the compiler searches for a *.dll file in the current folder").IsRequired = false;
             var modes = basicOptions.AddArgument("mode", "md", "Choose a checker mode (options: bugfinding, verification, coverage, pobserve). (default: bugfinding)");
-            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
+            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "coverage_new" };
             modes.IsHidden = true;
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
             // basicOptions.AddArgument("smoke-testing", "tsmoke",
@@ -212,6 +212,9 @@ namespace Plang.Options
                         case "coverage":
                             checkerConfiguration.Mode = CheckerMode.Coverage;
                             break;
+                        case "coverage_new":
+                            checkerConfiguration.Mode = CheckerMode.Explicit;
+                            break;
                         default:
                             Error.CheckerReportAndExit($"Invalid checker mode '{option.Value}'.");
                             break;
@@ -371,6 +374,7 @@ namespace Plang.Options
                     CheckerMode.BugFinding => "*.dll",
                     CheckerMode.Verification => "*-jar-with-dependencies.jar",
                     CheckerMode.Coverage => "*-jar-with-dependencies.jar",
+                    CheckerMode.Explicit => "*-jar-with-dependencies.jar",
                     _ => "*.dll"
                 };
                 
@@ -400,6 +404,11 @@ namespace Plang.Options
                     else if (checkerConfiguration.Mode == CheckerMode.Verification || checkerConfiguration.Mode == CheckerMode.Coverage)
                     {
                         if (!fileName.Contains($"Symbolic{pathSep}"))
+                            continue;
+                    }
+                    else if (checkerConfiguration.Mode == CheckerMode.Explicit)
+                    {
+                        if (!fileName.Contains($"PExplicit{pathSep}"))
                             continue;
                     }
                     else

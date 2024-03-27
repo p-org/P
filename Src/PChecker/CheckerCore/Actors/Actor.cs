@@ -205,9 +205,8 @@ namespace PChecker.Actors
         /// <param name="id">The id of the target.</param>
         /// <param name="e">The event to send.</param>
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
-        /// <param name="options">Optional checkerConfiguration of a send operation.</param>
-        protected void SendEvent(ActorId id, Event e, Guid opGroupId = default, SendOptions options = null) =>
-            Runtime.SendEvent(id, e, this, opGroupId, options);
+        protected void SendEvent(ActorId id, Event e, Guid opGroupId = default) =>
+            Runtime.SendEvent(id, e, this, opGroupId);
 
         /// <summary>
         /// Waits to receive an <see cref="Event"/> of the specified type

@@ -128,8 +128,6 @@ namespace PChecker.Actors.Managers.Mocks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnDropEvent(Event e, Guid opGroupId, EventInfo eventInfo)
         {
-            Runtime.Assert(!eventInfo.MustHandle, "{0} halted before dequeueing must-handle event '{1}'.",
-                Instance.Id, e.GetType().FullName);
             Runtime.TryHandleDroppedEvent(e, Instance.Id);
         }
 

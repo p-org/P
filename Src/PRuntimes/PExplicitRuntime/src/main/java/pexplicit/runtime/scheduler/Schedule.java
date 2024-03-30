@@ -86,147 +86,147 @@ public class Schedule implements Serializable {
     }
 
     /**
-     * Get the number of backtrack choices in this schedule
+     * Get the number of unexplored choices in this schedule
      *
-     * @return Number of backtrack choices
+     * @return Number of unexplored choices
      */
-    public int getNumBacktracksInSchedule() {
-        int numBacktracks = 0;
-        for (Choice backtrack : choices) {
-            if (backtrack.isBacktrackNonEmpty()) {
-                numBacktracks++;
+    public int getNumUnexploredChoicesInSchedule() {
+        int numUnexplored = 0;
+        for (Choice c : choices) {
+            if (c.isUnexploredNonEmpty()) {
+                numUnexplored++;
             }
         }
-        return numBacktracks;
+        return numUnexplored;
     }
 
     /**
-     * Get the number of backtrack data choices in this schedule
+     * Get the number of unexplored data choices in this schedule
      *
-     * @return Number of backtrack data choices
+     * @return Number of unexplored data choices
      */
-    public int getNumDataBacktracksInSchedule() {
-        int numDataBacktracks = 0;
-        for (Choice backtrack : choices) {
-            if (backtrack.isDataBacktrackNonEmpty()) {
-                numDataBacktracks++;
+    public int getNumUnexploredDataChoicesInSchedule() {
+        int numUnexplpredData = 0;
+        for (Choice c : choices) {
+            if (c.isUnexploredDataChoicesNonEmpty()) {
+                numUnexplpredData++;
             }
         }
-        return numDataBacktracks;
+        return numUnexplpredData;
     }
 
     /**
-     * Set the repeat schedule choice at a choice depth.
+     * Set the current schedule choice at a choice depth.
      *
-     * @param choice Machine to set as repeat schedule choice
+     * @param choice Machine to set as current schedule choice
      * @param idx    Choice depth
      */
-    public void setRepeatScheduleChoice(PMachine choice, int idx) {
+    public void setCurrentScheduleChoice(PMachine choice, int idx) {
         if (idx >= choices.size()) {
             choices.add(newChoice());
         }
-        choices.get(idx).setRepeatScheduleChoice(choice);
+        choices.get(idx).setCurrentScheduleChoice(choice);
     }
 
     /**
-     * Set the repeat data choice at a choice depth.
+     * Set the current data choice at a choice depth.
      *
-     * @param choice PValue to set as repeat data choice
+     * @param choice PValue to set as current data choice
      * @param idx    Choice depth
      */
-    public void setRepeatDataChoice(PValue<?> choice, int idx) {
+    public void setCurrentDataChoice(PValue<?> choice, int idx) {
         if (idx >= choices.size()) {
             choices.add(newChoice());
         }
-        choices.get(idx).setRepeatDataChoice(choice);
+        choices.get(idx).setCurrentDataChoice(choice);
     }
 
     /**
-     * Add backtrack schedule choices at a choice depth.
+     * Add unexplored schedule choices at a choice depth.
      *
-     * @param machines List of machines to add as backtrack schedule choice
+     * @param machines List of machines to add as unexplored schedule choice
      * @param idx      Choice depth
      */
-    public void addBacktrackScheduleChoice(List<PMachine> machines, int idx) {
+    public void addUnexploredScheduleChoice(List<PMachine> machines, int idx) {
         if (idx >= choices.size()) {
             choices.add(newChoice());
         }
         for (PMachine choice : machines) {
-            choices.get(idx).addBacktrackScheduleChoice(choice);
+            choices.get(idx).addUnexploredScheduleChoice(choice);
         }
     }
 
     /**
-     * Add backtrack data choices at a choice depth.
+     * Add unexplored data choices at a choice depth.
      *
-     * @param values List of PValue to add as backtrack data choice
+     * @param values List of PValue to add as unexplored data choice
      * @param idx    Choice depth
      */
-    public void addBacktrackDataChoice(List<PValue<?>> values, int idx) {
+    public void addUnexploredDataChoice(List<PValue<?>> values, int idx) {
         if (idx >= choices.size()) {
             choices.add(newChoice());
         }
         for (PValue<?> choice : values) {
-            choices.get(idx).addBacktrackDataChoice(choice);
+            choices.get(idx).addUnexploredDataChoice(choice);
         }
     }
 
     /**
-     * Get the repeat schedule choice at a choice depth.
+     * Get the current schedule choice at a choice depth.
      *
      * @param idx Choice depth
-     * @return Repeat schedule choice
+     * @return Current schedule choice
      */
-    public PMachine getRepeatScheduleChoice(int idx) {
-        return choices.get(idx).getRepeatScheduleChoice();
+    public PMachine getCurrentScheduleChoice(int idx) {
+        return choices.get(idx).getCurrentScheduleChoice();
     }
 
     /**
-     * Get the repeat data choice at a choice depth.
+     * Get the current data choice at a choice depth.
      *
      * @param idx Choice depth
-     * @return Repeat data choice
+     * @return Current data choice
      */
-    public PValue<?> getRepeatDataChoice(int idx) {
-        return choices.get(idx).getRepeatDataChoice();
+    public PValue<?> getCurrentDataChoice(int idx) {
+        return choices.get(idx).getCurrentDataChoice();
     }
 
     /**
-     * Get backtrack schedule choices at a choice depth.
+     * Get unexplored schedule choices at a choice depth.
      *
      * @param idx Choice depth
      * @return List of machines
      */
-    public List<PMachine> getBacktrackScheduleChoice(int idx) {
-        return choices.get(idx).getBacktrackScheduleChoice();
+    public List<PMachine> getUnexploredScheduleChoice(int idx) {
+        return choices.get(idx).getUnexploredScheduleChoice();
     }
 
     /**
-     * Get backtrack data choices at a choice depth.
+     * Get unexplored data choices at a choice depth.
      *
      * @param idx Choice depth
      * @return List of PValue
      */
-    public List<PValue<?>> getBacktrackDataChoice(int idx) {
-        return choices.get(idx).getBacktrackDataChoice();
+    public List<PValue<?>> getUnexploredDataChoice(int idx) {
+        return choices.get(idx).getUnexploredDataChoice();
     }
 
     /**
-     * Clear repeat choices at a choice depth
+     * Clear current choices at a choice depth
      *
      * @param idx Choice depth
      */
-    public void clearRepeat(int idx) {
-        choices.get(idx).clearRepeat();
+    public void clearCurrent(int idx) {
+        choices.get(idx).clearCurrent();
     }
 
     /**
-     * Clear backtrack choices at a choice depth
+     * Clear unexplored choices at a choice depth
      *
      * @param idx Choice depth
      */
-    public void clearBacktrack(int idx) {
-        choices.get(idx).clearBacktrack();
+    public void clearUnexplored(int idx) {
+        choices.get(idx).clearUnexplored();
     }
 
     /**

@@ -15,11 +15,11 @@ import java.util.List;
 @Getter
 public class Choice implements Serializable {
     @Setter
-    PMachine repeatScheduleChoice = null;
+    PMachine currentScheduleChoice = null;
     @Setter
-    PValue<?> repeatDataChoice = null;
-    List<PMachine> backtrackScheduleChoice = new ArrayList<>();
-    List<PValue<?>> backtrackDataChoice = new ArrayList<>();
+    PValue<?> currentDataChoice = null;
+    List<PMachine> unexploredScheduleChoice = new ArrayList<>();
+    List<PValue<?>> unexploredDataChoice = new ArrayList<>();
 
     int schedulerDepth = 0;
     int schedulerChoiceDepth = 0;
@@ -36,10 +36,10 @@ public class Choice implements Serializable {
      * @param old The choice to copy
      */
     private Choice(Choice old) {
-        repeatScheduleChoice = old.repeatScheduleChoice;
-        repeatDataChoice = old.repeatDataChoice;
-        backtrackScheduleChoice = new ArrayList<>(old.backtrackScheduleChoice);
-        backtrackDataChoice = new ArrayList<>(old.backtrackDataChoice);
+        currentScheduleChoice = old.currentScheduleChoice;
+        currentDataChoice = old.currentDataChoice;
+        unexploredScheduleChoice = new ArrayList<>(old.unexploredScheduleChoice);
+        unexploredDataChoice = new ArrayList<>(old.unexploredDataChoice);
         schedulerDepth = old.schedulerDepth;
         schedulerChoiceDepth = old.schedulerChoiceDepth;
     }
@@ -54,71 +54,71 @@ public class Choice implements Serializable {
     }
 
     /**
-     * Check if this choice has a backtrack choice remaining.
+     * Check if this choice has an unexplored choice remaining.
      *
-     * @return true if this choice has a backtrack choice, false otherwise
+     * @return true if this choice has an unexplored choice, false otherwise
      */
-    public boolean isBacktrackNonEmpty() {
-        return isScheduleBacktrackNonEmpty() || isDataBacktrackNonEmpty();
+    public boolean isUnexploredNonEmpty() {
+        return isUnexploredScheduleChoicesNonEmpty() || isUnexploredDataChoicesNonEmpty();
     }
 
     /**
-     * Check if this choice has a backtrack schedule choice remaining.
+     * Check if this choice has an unexplored schedule choice remaining.
      *
-     * @return true if this choice has a backtrack schedule choice, false otherwise
+     * @return true if this choice has an unexplored schedule choice, false otherwise
      */
-    public boolean isScheduleBacktrackNonEmpty() {
-        return !getBacktrackScheduleChoice().isEmpty();
+    public boolean isUnexploredScheduleChoicesNonEmpty() {
+        return !getUnexploredScheduleChoice().isEmpty();
     }
 
     /**
-     * Check if this choice has a backtrack data choice remaining.
+     * Check if this choice has an unexplored data choice remaining.
      *
-     * @return true if this choice has a backtrack data choice, false otherwise
+     * @return true if this choice has an unexplored data choice, false otherwise
      */
-    public boolean isDataBacktrackNonEmpty() {
-        return !getBacktrackDataChoice().isEmpty();
+    public boolean isUnexploredDataChoicesNonEmpty() {
+        return !getUnexploredDataChoice().isEmpty();
     }
 
     /**
-     * Add a backtrack schedule choice to this choice.
+     * Add an unexplored schedule choice to this choice.
      *
      * @param choice Machine to add as schedule choice
      */
-    public void addBacktrackScheduleChoice(PMachine choice) {
-        backtrackScheduleChoice.add(choice);
+    public void addUnexploredScheduleChoice(PMachine choice) {
+        unexploredScheduleChoice.add(choice);
     }
 
     /**
-     * Add a backtrack data choice to this choice.
+     * Add an unexplored data choice to this choice.
      *
      * @param choice PValue to add as data choice
      */
-    public void addBacktrackDataChoice(PValue<?> choice) {
-        backtrackDataChoice.add(choice);
+    public void addUnexploredDataChoice(PValue<?> choice) {
+        unexploredDataChoice.add(choice);
     }
 
     /**
-     * Clear repeat choices
+     * Clear current choices
      */
-    public void clearRepeat() {
-        repeatScheduleChoice = null;
-        repeatDataChoice = null;
+    public void clearCurrent() {
+        currentScheduleChoice = null;
+        currentDataChoice = null;
     }
 
     /**
-     * Clean backtrack choices
+     * Clean unexplored choices
      */
-    public void clearBacktrack() {
-        backtrackScheduleChoice.clear();
-        backtrackDataChoice.clear();
+    public void clearUnexplored() {
+        unexploredScheduleChoice.clear();
+        unexploredDataChoice.clear();
     }
 
     /**
      * Clear this choice
      */
     public void clear() {
-        clearRepeat();
-        clearBacktrack();
+        clearCurrent();
+        clearUnexplored();
     }
 }

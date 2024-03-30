@@ -126,7 +126,7 @@ public abstract class Scheduler implements SchedulerInterface {
     /**
      * TODO
      */
-    protected abstract PMachine getNextSchedulingChoice();
+    protected abstract PMachine getNextScheduleChoice();
 
     /**
      * TODO

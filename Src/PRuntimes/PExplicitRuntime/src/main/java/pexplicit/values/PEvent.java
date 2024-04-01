@@ -39,6 +39,10 @@ public class PEvent extends PValue<PEvent> {
         this.name = event.name;
     }
 
+    public boolean isCreateMachineEvent() {
+        return this.equals(createMachine);
+    }
+
     @Override
     public PEvent clone() {
         return new PEvent(name);

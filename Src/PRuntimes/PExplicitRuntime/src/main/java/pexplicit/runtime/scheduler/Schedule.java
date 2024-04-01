@@ -12,39 +12,42 @@ import java.util.*;
  * Represents a single (possibly partial) schedule.
  */
 public class Schedule implements Serializable {
-    private Map<Class<? extends PMachine>, List<PMachine>> createdMachines = new HashMap<>();
-    private Set<PMachine> machines = new HashSet<>();
+    /**
+     * Mapping from machine type to list of machine instances
+     */
+    private Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
 
+    /**
+     * Set of machines
+     */
+    @Getter
+    private SortedSet<PMachine> machineSet = new TreeSet<>();
+
+    /**
+     * List of choices
+     */
     @Getter
     @Setter
     private List<Choice> choices = new ArrayList<>();
+
+    /**
+     * Step number
+     */
     @Getter
     @Setter
-    private int schedulerDepth = 0;
+    private int stepNumber = 0;
+
+    /**
+     * Choice number
+     */
     @Getter
     @Setter
-    private int schedulerChoiceDepth = 0;
+    private int choiceNumber = 0;
 
     /**
      * Constructor
      */
     public Schedule() {
-    }
-
-    /**
-     * Constructor
-     *
-     * @param choices         Choice list
-     * @param createdMachines Map of machine type to list of created machines
-     * @param machines        Set of machines
-     */
-    private Schedule(
-            List<Choice> choices,
-            Map<Class<? extends PMachine>, List<PMachine>> createdMachines,
-            Set<PMachine> machines) {
-        this.choices = new ArrayList<>(choices);
-        this.createdMachines = new HashMap<>(createdMachines);
-        this.machines = new HashSet<>(machines);
     }
 
     /**
@@ -142,33 +145,29 @@ public class Schedule implements Serializable {
     }
 
     /**
-     * Add unexplored schedule choices at a choice depth.
+     * Set unexplored schedule choices at a choice depth.
      *
-     * @param machines List of machines to add as unexplored schedule choice
+     * @param machines List of machines to set as unexplored schedule choices
      * @param idx      Choice depth
      */
-    public void addUnexploredScheduleChoice(List<PMachine> machines, int idx) {
+    public void setUnexploredScheduleChoice(List<PMachine> machines, int idx) {
         if (idx >= choices.size()) {
             choices.add(newChoice());
         }
-        for (PMachine choice : machines) {
-            choices.get(idx).addUnexploredScheduleChoice(choice);
-        }
+        choices.get(idx).setUnexploredScheduleChoice(machines);
     }
 
     /**
-     * Add unexplored data choices at a choice depth.
+     * Set unexplored data choices at a choice depth.
      *
-     * @param values List of PValue to add as unexplored data choice
+     * @param values List of PValue to set as unexplored data choices
      * @param idx    Choice depth
      */
-    public void addUnexploredDataChoice(List<PValue<?>> values, int idx) {
+    public void setUnexploredDataChoice(List<PValue<?>> values, int idx) {
         if (idx >= choices.size()) {
             choices.add(newChoice());
         }
-        for (PValue<?> choice : values) {
-            choices.get(idx).addUnexploredDataChoice(choice);
-        }
+        choices.get(idx).setUnexploredDataChoice(values);
     }
 
     /**
@@ -195,20 +194,28 @@ public class Schedule implements Serializable {
      * Get unexplored schedule choices at a choice depth.
      *
      * @param idx Choice depth
-     * @return List of machines
+     * @return List of machines, or null if index is invalid
      */
     public List<PMachine> getUnexploredScheduleChoice(int idx) {
-        return choices.get(idx).getUnexploredScheduleChoice();
+        if (idx < size()) {
+            return choices.get(idx).getUnexploredScheduleChoice();
+        } else {
+            return null;
+        }
     }
 
     /**
      * Get unexplored data choices at a choice depth.
      *
      * @param idx Choice depth
-     * @return List of PValue
+     * @return List of PValue, or null if index is invalid
      */
     public List<PValue<?>> getUnexploredDataChoice(int idx) {
-        return choices.get(idx).getUnexploredDataChoice();
+        if (idx < size()) {
+            return choices.get(idx).getUnexploredDataChoice();
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -244,8 +251,8 @@ public class Schedule implements Serializable {
      * @param machine Machine to add
      */
     public void makeMachine(PMachine machine) {
-        createdMachines.getOrDefault(machine.getClass(), new ArrayList<>()).add(machine);
-        machines.add(machine);
+        machineListByType.getOrDefault(machine.getClass(), new ArrayList<>()).add(machine);
+        machineSet.add(machine);
     }
 
     /**
@@ -256,9 +263,9 @@ public class Schedule implements Serializable {
      * @return true if machine is in this schedule, false otherwise
      */
     public boolean hasMachine(Class<? extends PMachine> type, int idx) {
-        if (!createdMachines.containsKey(type))
+        if (!machineListByType.containsKey(type))
             return false;
-        return idx < createdMachines.get(type).size();
+        return idx < machineListByType.get(type).size();
     }
 
     /**
@@ -270,6 +277,6 @@ public class Schedule implements Serializable {
      */
     public PMachine getMachine(Class<? extends PMachine> type, int idx) {
         assert (hasMachine(type, idx));
-        return createdMachines.get(type).get(idx);
+        return machineListByType.get(type).get(idx);
     }
 }

@@ -21,9 +21,6 @@ public class Choice implements Serializable {
     List<PMachine> unexploredScheduleChoice = new ArrayList<>();
     List<PValue<?>> unexploredDataChoice = new ArrayList<>();
 
-    int schedulerDepth = 0;
-    int schedulerChoiceDepth = 0;
-
     /**
      * Constructor
      */
@@ -40,8 +37,6 @@ public class Choice implements Serializable {
         currentDataChoice = old.currentDataChoice;
         unexploredScheduleChoice = new ArrayList<>(old.unexploredScheduleChoice);
         unexploredDataChoice = new ArrayList<>(old.unexploredDataChoice);
-        schedulerDepth = old.schedulerDepth;
-        schedulerChoiceDepth = old.schedulerChoiceDepth;
     }
 
     /**

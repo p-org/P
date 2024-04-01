@@ -1,0 +1,24 @@
+name: Publish Docs
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install pip
+        run: python3 -m pip install --upgrade pip setuptools wheel
+      - name: Install MkDocs
+        run: |
+          pip install mkdocs
+          pip install mkdocs-macros-plugin
+      - name: MkDocs build
+        working-directory: ./Docs
+        run: mkdocs build
+      - name: MkDocs deploy
+        working-directory: ./Docs
+        run: mkdocs gh-deploy --force

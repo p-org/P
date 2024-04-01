@@ -8,6 +8,7 @@ import pexplicit.utils.exceptions.NotImplementedException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Represents an event queue
@@ -101,6 +102,38 @@ public abstract class MessageQueue implements Serializable {
     public void setElements(List<PMessage> messages) {
         this.elements = messages;
         resetPeek();
+    }
+
+    /**
+     * Check if the next message in the queue satisfies the predicate
+     *
+     * @param pred Predicate to check
+     * @return true if next message satisfies the predicate, else false
+     */
+    public boolean nextSatisfiesPred(Function<PMessage, Boolean> pred) {
+        PMessage next = peek();
+        if (next != null) {
+            return pred.apply(next);
+        }
+        return false;
+    }
+
+    /**
+     * Check if the next message in the queue is a create machine message
+     *
+     * @return true if next message is a create machine message, else false
+     */
+    public boolean nextIsCreateMachineMsg() {
+        return nextSatisfiesPred(x -> x.getEvent().isCreateMachineEvent());
+    }
+
+    /**
+     * Check if the next message in the queue has the target machine running
+     *
+     * @return true if next message has target machine running, else false
+     */
+    public boolean nextHasTargetRunning() {
+        return nextSatisfiesPred(x -> x.getTarget().canRun());
     }
 
     @Override

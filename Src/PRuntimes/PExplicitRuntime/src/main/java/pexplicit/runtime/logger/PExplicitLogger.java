@@ -8,7 +8,10 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import pexplicit.utils.exceptions.NotImplementedException;
+import pexplicit.runtime.PExplicitGlobal;
+import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.machine.events.PMessage;
+import pexplicit.utils.monitor.MemoryMonitor;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -56,18 +59,6 @@ public class PExplicitLogger {
     }
 
     /**
-     * TODO
-     *
-     * @param totalIter
-     * @param newIter
-     * @param timeSpent
-     * @param result
-     */
-    public static void finished(int totalIter, int newIter, long timeSpent, String result) {
-        throw new NotImplementedException();
-    }
-
-    /**
      * Logs the given message based on the current verbosity level.
      *
      * @param message Message to print
@@ -107,15 +98,10 @@ public class PExplicitLogger {
     }
 
     /**
-     * TODO
-     *
-     * @param verbosity
-     * @param projectName
-     * @param outputFolder
+     * Initialize all loggers and writers
      */
-    public static void ResetAllConfigurations(
-            int verbosity, String projectName, String outputFolder) {
-        throw new NotImplementedException();
+    public static void InitializeLoggers() {
+        StatWriter.Initialize();
     }
 
     /**
@@ -136,5 +122,59 @@ public class PExplicitLogger {
             info("... Stack trace:");
             info(sw.toString());
         }
+    }
+
+    /**
+     * Log at the start of an iteration
+     * @param iter Iteration number
+     * @param step Starting step number
+     */
+    public static void logStartIteration(int iter, int step) {
+        if (verbosity > 0) {
+            log.info("--------------------");
+            log.info("Starting Schedule: " + iter + " from step: " + step);
+        }
+    }
+
+    public static void logStartStep(int step, PMachine sender, PMessage msg) {
+        if (verbosity > 0) {
+            log.info(String.format(
+                    "  Step %d: %s sent %s to %s",
+                    step, sender, msg.getEvent(), msg.getTarget()));
+            if (verbosity > 5) {
+                log.info(String.format("    payload: %s", msg.getPayload()));
+            }
+        }
+    }
+
+    /**
+     * Log at the end of an iteration
+     * @param step Step number
+     */
+    public static void logFinishedIteration(int step) {
+        if (verbosity > 0) {
+            log.info(String.format("  Schedule finished at step %d", step));
+        }
+    }
+
+    /**
+     * Logs message at the end of a run.
+     *
+     * @param totalIter Total number of completed iterations
+     * @param newIter Number of newly complexted iterations
+     * @param timeSpent Time spent in seconds
+     * @param result Result of the run
+     */
+    public static void logEndOfRun(int totalIter, int newIter, long timeSpent, String result) {
+        log.info("--------------------");
+        log.info(
+                String.format(
+                        "Explored %d schedules%s",
+                        totalIter, ((totalIter == newIter) ? "" : String.format(" (%d new)", newIter))));
+        log.info(
+                String.format(
+                        "Took %d seconds and %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
+        log.info(String.format("Result: " + result));
+        log.info("--------------------");
     }
 }

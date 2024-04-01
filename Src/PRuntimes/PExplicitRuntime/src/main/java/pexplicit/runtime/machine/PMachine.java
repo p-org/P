@@ -64,6 +64,14 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     /**
+     * Check if this machine can run.
+     * @return true if machine has started and is not halted, else false
+     */
+    public boolean canRun() {
+        return started && !halted;
+    }
+
+    /**
      * TODO
      */
     protected void reset() {

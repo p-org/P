@@ -2,7 +2,6 @@ name: Publish Docs
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
 permissions:
   contents: write
 jobs:
@@ -16,6 +15,7 @@ jobs:
         run: |
           pip install mkdocs
           pip install mkdocs-macros-plugin
+          pip install mkdocs-material
       - name: MkDocs build
         working-directory: ./Docs
         run: mkdocs build

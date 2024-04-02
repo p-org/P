@@ -15,6 +15,7 @@ public class Schedule implements Serializable {
     /**
      * Mapping from machine type to list of machine instances
      */
+    @Getter
     private Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
 
     /**
@@ -93,29 +94,35 @@ public class Schedule implements Serializable {
      *
      * @return Number of unexplored choices
      */
-    public int getNumUnexploredChoicesInSchedule() {
+    public int getNumUnexploredChoices() {
         int numUnexplored = 0;
         for (Choice c : choices) {
             if (c.isUnexploredNonEmpty()) {
-                numUnexplored++;
+                numUnexplored += c.unexploredScheduleChoices.size() + c.unexploredDataChoices.size();
             }
         }
         return numUnexplored;
     }
 
     /**
-     * Get the number of unexplored data choices in this schedule
+     * Get the percentage of unexplored choices in this schedule that are data choices
      *
-     * @return Number of unexplored data choices
+     * @return Percentage of unexplored choices that are data choices
      */
-    public int getNumUnexploredDataChoicesInSchedule() {
-        int numUnexplpredData = 0;
+    public double getUnexploredDataChoicesPercent() {
+        int totalUnexplored = getNumUnexploredChoices();
+        if (totalUnexplored == 0) {
+            return 0;
+        }
+
+        int numUnexploredData = 0;
         for (Choice c : choices) {
             if (c.isUnexploredDataChoicesNonEmpty()) {
-                numUnexplpredData++;
+                numUnexploredData += c.unexploredDataChoices.size();
             }
         }
-        return numUnexplpredData;
+
+        return (numUnexploredData * 100.0) / totalUnexplored;
     }
 
     /**
@@ -150,11 +157,11 @@ public class Schedule implements Serializable {
      * @param machines List of machines to set as unexplored schedule choices
      * @param idx      Choice depth
      */
-    public void setUnexploredScheduleChoice(List<PMachine> machines, int idx) {
+    public void setUnexploredScheduleChoices(List<PMachine> machines, int idx) {
         if (idx >= choices.size()) {
             choices.add(newChoice());
         }
-        choices.get(idx).setUnexploredScheduleChoice(machines);
+        choices.get(idx).setUnexploredScheduleChoices(machines);
     }
 
     /**
@@ -163,11 +170,11 @@ public class Schedule implements Serializable {
      * @param values List of PValue to set as unexplored data choices
      * @param idx    Choice depth
      */
-    public void setUnexploredDataChoice(List<PValue<?>> values, int idx) {
+    public void setUnexploredDataChoices(List<PValue<?>> values, int idx) {
         if (idx >= choices.size()) {
             choices.add(newChoice());
         }
-        choices.get(idx).setUnexploredDataChoice(values);
+        choices.get(idx).setUnexploredDataChoices(values);
     }
 
     /**
@@ -196,11 +203,11 @@ public class Schedule implements Serializable {
      * @param idx Choice depth
      * @return List of machines, or null if index is invalid
      */
-    public List<PMachine> getUnexploredScheduleChoice(int idx) {
+    public List<PMachine> getUnexploredScheduleChoices(int idx) {
         if (idx < size()) {
-            return choices.get(idx).getUnexploredScheduleChoice();
+            return choices.get(idx).getUnexploredScheduleChoices();
         } else {
-            return null;
+            return new ArrayList<>();
         }
     }
 
@@ -210,11 +217,11 @@ public class Schedule implements Serializable {
      * @param idx Choice depth
      * @return List of PValue, or null if index is invalid
      */
-    public List<PValue<?>> getUnexploredDataChoice(int idx) {
+    public List<PValue<?>> getUnexploredDataChoices(int idx) {
         if (idx < size()) {
-            return choices.get(idx).getUnexploredDataChoice();
+            return choices.get(idx).getUnexploredDataChoices();
         } else {
-            return null;
+            return new ArrayList<>();
         }
     }
 
@@ -278,5 +285,15 @@ public class Schedule implements Serializable {
     public PMachine getMachine(Class<? extends PMachine> type, int idx) {
         assert (hasMachine(type, idx));
         return machineListByType.get(type).get(idx);
+    }
+
+    /**
+     * Get the number of machines of a given type in the schedule.
+     *
+     * @param type Machine type
+     * @return Number of machine of a given type
+     */
+    public int getMachineCount(Class<? extends PMachine> type) {
+        return machineListByType.getOrDefault(type, new ArrayList<>()).size();
     }
 }

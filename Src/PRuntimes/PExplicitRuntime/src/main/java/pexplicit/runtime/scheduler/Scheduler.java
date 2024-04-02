@@ -1,8 +1,7 @@
 package pexplicit.runtime.scheduler;
 
-import lombok.Getter;
-import pexplicit.runtime.PModel;
-import pexplicit.runtime.logger.TraceLogger;
+import pexplicit.runtime.PExplicitGlobal;
+import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.machine.events.PMessage;
@@ -18,120 +17,58 @@ import java.util.function.Function;
  */
 public abstract class Scheduler implements SchedulerInterface {
     /**
-     * P Model
+     * Current schedule
      */
     public final Schedule schedule;
-    @Getter
-    protected final List<PMachine> machines;
-    /**
-     * List of all machines along any path
-     */
-    protected final SortedSet<PMachine> currentMachines;
-    /**
-     * Whether final result is set or not
-     */
-    protected final Map<Class<? extends PMachine>, Integer> machineCounters;
-    /**
-     * Choice depth
-     */
-    protected final int depth = 0;
-    /**
-     * Set of machines along the current schedule
-     */
-    @Getter
-    private final PModel model;
-    /**
-     * The scheduling choices made
-     */
-    public boolean isFinalResult = false;
-    /**
-     * How many instances of each Machine there are
-     */
-    protected boolean done = false;
-    /**
-     * Whether or not search is done
-     */
-    protected int choiceDepth = 0;
-    /**
-     * Current depth of exploration
-     */
-    protected Boolean stickyStep = true;
-    /**
-     * Flag whether current step is a create or sync machine step
-     */
-    protected boolean allMachinesHalted = false;
-    /**
-     * Flag whether current execution finished
-     */
-    protected boolean terminalLivenessEnabled = true;
+
     /**
      * Flag whether check for liveness at the end
      */
-    List<PMonitor> monitors;
-    /**
-     * List of monitors instances
-     */
-    private PMachine start;
-    /**
-     * The machine to start with
-     */
-    private Map<PEvent, List<PMonitor>> listeners;                     /* The map from events to listening monitors */
+    protected boolean terminalLivenessEnabled = true;
 
     /**
      * Constructor
-     *
-     * @param p        Program
-     * @param machines The machines initially in the scheduler
      */
-    protected Scheduler(PModel p, PMachine... machines) {
-        model = p;
+    protected Scheduler() {
         this.schedule = new Schedule();
-        this.machines = new ArrayList<>();
-        this.currentMachines = new TreeSet<>();
-        this.machineCounters = new HashMap<>();
-
-        for (PMachine machine : machines) {
-            this.machines.add(machine);
-            this.currentMachines.add(machine);
-            if (this.machineCounters.containsKey(machine.getClass())) {
-                this.machineCounters.put(machine.getClass(), this.machineCounters.get(machine.getClass()) + 1);
-            } else {
-                this.machineCounters.put(machine.getClass(), 1);
-            }
-            TraceLogger.onCreateMachine(machine);
-            schedule.makeMachine(machine);
-        }
     }
 
     /**
-     * TODO
+     * Run the scheduler.
+     *
+     * @throws TimeoutException Throws timeout exception if timeout is reached
+     * @throws InterruptedException Throws interrupt exception if interrupted
      */
-    public abstract void doSearch() throws TimeoutException, InterruptedException;
+    public abstract void run() throws TimeoutException, InterruptedException;
 
     /**
-     * TODO
+     * Run an iteration.
+     * @throws TimeoutException Throws timeout exception if timeout is reached.
      */
-    public abstract void resumeSearch() throws TimeoutException, InterruptedException;
+    protected abstract void runIteration() throws TimeoutException;
 
     /**
-     * TODO
+     * Run a step in the current iteration.
+     * @throws TimeoutException Throws timeout exception if timeout is reached.
      */
-    protected abstract void performSearch() throws TimeoutException;
+    protected abstract void runStep() throws TimeoutException;
 
     /**
-     * TODO
+     * Reset the scheduler.
      */
-    protected abstract void step() throws TimeoutException;
+    protected abstract void reset();
 
     /**
-     * TODO
+     * Get the next schedule choice.
+     * @return PMachine as schedule choice
      */
     protected abstract PMachine getNextScheduleChoice();
 
     /**
-     * TODO
+     * Get the next data choice.
+     * @return PValue as data choice
      */
-    protected abstract PValue<?> getNextDataChoice(List<PValue<?>> choices);
+    protected abstract PValue<?> getNextDataChoice(List<PValue<?>> input_choices);
 
     /**
      * Get the next random boolean choice
@@ -200,71 +137,52 @@ public abstract class Scheduler implements SchedulerInterface {
     }
 
     /**
-     * TODO
+     * Start the scheduler.
+     * Starts monitors and main machine.
      */
-    public void startWith(PMachine machine) {
-        if (this.machineCounters.containsKey(machine.getClass())) {
-            this.machineCounters.put(machine.getClass(), this.machineCounters.get(machine.getClass()) + 1);
-        } else {
-            this.machineCounters.put(machine.getClass(), 1);
+    protected void start() {
+        assert (schedule.getStepNumber() == 0);
+
+        // start monitors first
+        for (PMonitor monitor: PExplicitGlobal.getModel().getMonitors()) {
+            startMachine(monitor);
         }
 
-        machines.add(machine);
-        currentMachines.add(machine);
-        start = machine;
-        TraceLogger.onCreateMachine(machine);
-        schedule.makeMachine(machine);
+        // start main machine
+        startMachine(PExplicitGlobal.getModel().getStart());
+    }
 
+    /**
+     * Start a machine.
+     * Runs the constructor of this machine.
+     */
+    public void startMachine(PMachine machine) {
+        PExplicitLogger.logCreateMachine(machine);
+        schedule.makeMachine(machine);
         processEventAtTarget(new PMessage(PEvent.createMachine, machine, null));
     }
 
     /**
-     * TODO
-     */
-    protected void initializeSearch() {
-        assert (depth == 0);
-
-        listeners = model.getListeners();
-        monitors = new ArrayList<>(model.getMonitors());
-        for (PMachine m : model.getMonitors()) {
-            startWith(m);
-        }
-        PMachine target = model.getStart();
-        startWith(target);
-        start = target;
-    }
-
-    /**
-     * Remove a message from the send buffer of a machine.
-     *
-     * @param machine Machine to remove a message from
-     * @return Message
-     */
-    protected PMessage rmBuffer(PMachine machine) {
-        return machine.getSendBuffer().remove();
-    }
-
-    /**
-     * TODO
-     *
-     * @param count
+     * Allocate a machine
+     * @param machineType
      * @param constructor
      * @return
      */
-    public PMachine setupNewMachine(
-            int count,
+    public PMachine allocateMachine(
+            Class<? extends PMachine> machineType,
             Function<Integer, ? extends PMachine> constructor) {
-        PMachine newMachine = constructor.apply(count);
+        // get machine count for given type from schedule
+        int machineCount = schedule.getMachineCount(machineType);
 
-        if (!machines.contains(newMachine)) {
-            machines.add(newMachine);
-        }
-        currentMachines.add(newMachine);
-        assert (machines.size() >= currentMachines.size());
+        // create a new machine
+        PMachine machine = constructor.apply(machineCount);
 
-        TraceLogger.onCreateMachine(newMachine);
-        schedule.makeMachine(newMachine);
-        return newMachine;
+        // add machine to schedule
+        schedule.makeMachine(machine);
+
+        // log machine creation
+        PExplicitLogger.logCreateMachine(machine);
+        return machine;
     }
 
     /**
@@ -273,7 +191,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * @param message Message
      */
     public void runMonitors(PMessage message) {
-        List<PMonitor> listenersForEvent = listeners.get(message.getEvent());
+        List<PMonitor> listenersForEvent = PExplicitGlobal.getModel().getListeners().get(message.getEvent());
         if (listenersForEvent != null) {
             for (PMonitor m : listenersForEvent) {
                 m.processEventToCompletion(message);

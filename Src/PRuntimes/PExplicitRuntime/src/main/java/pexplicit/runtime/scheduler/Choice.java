@@ -18,8 +18,10 @@ public class Choice implements Serializable {
     PMachine currentScheduleChoice = null;
     @Setter
     PValue<?> currentDataChoice = null;
-    List<PMachine> unexploredScheduleChoice = new ArrayList<>();
-    List<PValue<?>> unexploredDataChoice = new ArrayList<>();
+    @Setter
+    List<PMachine> unexploredScheduleChoices = new ArrayList<>();
+    @Setter
+    List<PValue<?>> unexploredDataChoices = new ArrayList<>();
 
     /**
      * Constructor
@@ -35,8 +37,8 @@ public class Choice implements Serializable {
     private Choice(Choice old) {
         currentScheduleChoice = old.currentScheduleChoice;
         currentDataChoice = old.currentDataChoice;
-        unexploredScheduleChoice = new ArrayList<>(old.unexploredScheduleChoice);
-        unexploredDataChoice = new ArrayList<>(old.unexploredDataChoice);
+        unexploredScheduleChoices = new ArrayList<>(old.unexploredScheduleChoices);
+        unexploredDataChoices = new ArrayList<>(old.unexploredDataChoices);
     }
 
     /**
@@ -63,7 +65,7 @@ public class Choice implements Serializable {
      * @return true if this choice has an unexplored schedule choice, false otherwise
      */
     public boolean isUnexploredScheduleChoicesNonEmpty() {
-        return !getUnexploredScheduleChoice().isEmpty();
+        return !getUnexploredScheduleChoices().isEmpty();
     }
 
     /**
@@ -72,25 +74,7 @@ public class Choice implements Serializable {
      * @return true if this choice has an unexplored data choice, false otherwise
      */
     public boolean isUnexploredDataChoicesNonEmpty() {
-        return !getUnexploredDataChoice().isEmpty();
-    }
-
-    /**
-     * Add an unexplored schedule choice to this choice.
-     *
-     * @param choice Machine to add as schedule choice
-     */
-    public void addUnexploredScheduleChoice(PMachine choice) {
-        unexploredScheduleChoice.add(choice);
-    }
-
-    /**
-     * Add an unexplored data choice to this choice.
-     *
-     * @param choice PValue to add as data choice
-     */
-    public void addUnexploredDataChoice(PValue<?> choice) {
-        unexploredDataChoice.add(choice);
+        return !getUnexploredDataChoices().isEmpty();
     }
 
     /**
@@ -105,8 +89,8 @@ public class Choice implements Serializable {
      * Clean unexplored choices
      */
     public void clearUnexplored() {
-        unexploredScheduleChoice.clear();
-        unexploredDataChoice.clear();
+        unexploredScheduleChoices.clear();
+        unexploredDataChoices.clear();
     }
 
     /**

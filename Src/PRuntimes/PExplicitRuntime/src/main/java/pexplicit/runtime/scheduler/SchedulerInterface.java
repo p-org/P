@@ -13,12 +13,7 @@ public interface SchedulerInterface extends Serializable {
     /**
      * Perform the search
      */
-    void doSearch() throws TimeoutException, InterruptedException;
-
-    /**
-     * Resume the search
-     */
-    void resumeSearch() throws TimeoutException, InterruptedException;
+    void run() throws TimeoutException, InterruptedException;
 
     /**
      * Return a random PBool based on the search and strategy.

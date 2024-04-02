@@ -84,35 +84,6 @@ public class TraceLogger {
     }
 
     /**
-     * Log when a machine processes an event
-     *
-     * @param message Message that is being processed
-     */
-    public static void onProcessEvent(PMessage message) {
-        if (verbosity > 3) {
-            String msg =
-                    String.format(
-                            "Machine %s is processing event %s in state %s",
-                            message.getTarget(), message.getEvent(), message.getTarget().getCurrentState());
-            log.info(msg);
-        }
-    }
-
-    /**
-     * Log when a machine processes a state transition
-     *
-     * @param machine  Machine that is processing the state transition
-     * @param newState New state
-     */
-    public static void onProcessStateTransition(PMachine machine, State newState) {
-        if (verbosity > 3) {
-            String msg =
-                    String.format("Machine %s transitioning to state %s", machine, newState);
-            log.info(msg);
-        }
-    }
-
-    /**
      * Log when a machine sends an event to another machine.
      *
      * @param message Message that is sent

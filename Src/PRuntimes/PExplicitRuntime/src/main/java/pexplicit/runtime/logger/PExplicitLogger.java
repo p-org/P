@@ -10,8 +10,10 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.utils.monitor.MemoryMonitor;
+import pexplicit.values.PEvent;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -214,4 +216,34 @@ public class PExplicitLogger {
             log.info(msg);
         }
     }
+
+    /**
+     * Log when a machine processes an event
+     *
+     * @param message Message that is being processed
+     */
+    public static void logEvent(PMessage message) {
+        if (verbosity > 3) {
+            String msg =
+                    String.format(
+                            "Machine %s is handling event %s in state %s",
+                            message.getTarget(), message.getEvent(), message.getTarget().getCurrentState());
+            log.info(msg);
+        }
+    }
+
+    /**
+     * Log when a machine transitions to a new state
+     *
+     * @param machine  Machine that is processing the state transition
+     * @param newState New state
+     */
+    public static void logStateTransition(PMachine machine, State newState) {
+        if (verbosity > 3) {
+            String msg =
+                    String.format("Machine %s transitioning to state %s", machine, newState);
+            log.info(msg);
+        }
+    }
+
 }

@@ -113,30 +113,6 @@ public class TraceLogger {
     }
 
     /**
-     * Log when a machine is created
-     *
-     * @param machine Machine that is created
-     */
-    public static void onCreateMachine(PMachine machine) {
-        if (verbosity > 3) {
-            String msg = "Machine " + machine + " was created";
-            log.info(msg);
-        }
-    }
-
-    /**
-     * Log when a machine is starting
-     *
-     * @param machine Machine that is starting
-     */
-    public static void onMachineStart(PMachine machine) {
-        if (verbosity > 3) {
-            String msg = String.format("Machine %s starting", machine.toString());
-            log.info(msg);
-        }
-    }
-
-    /**
      * Log when a machine sends an event to another machine.
      *
      * @param message Message that is sent

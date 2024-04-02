@@ -129,6 +129,14 @@ public abstract class MessageQueue implements Serializable {
     }
 
     /**
+     * Clear the queue.
+     */
+    public void clear() {
+        elements.clear();
+        resetPeek();
+    }
+
+    /**
      * Set the queue elements based on the input messages
      *
      * @param messages Input messages

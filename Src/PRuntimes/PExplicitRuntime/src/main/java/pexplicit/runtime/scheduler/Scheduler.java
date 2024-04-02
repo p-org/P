@@ -174,8 +174,12 @@ public abstract class Scheduler implements SchedulerInterface {
         // get machine count for given type from schedule
         int machineCount = schedule.getMachineCount(machineType);
 
-        // create a new machine
-        PMachine machine = constructor.apply(machineCount);
+        PMachine machine = PExplicitGlobal.getGlobalMachine(machineType, machineCount);
+        if (machine == null) {
+            // create a new machine
+            machine = constructor.apply(machineCount);
+            PExplicitGlobal.addGlobalMachine(machine, machineCount);
+        }
 
         // add machine to schedule
         schedule.makeMachine(machine);

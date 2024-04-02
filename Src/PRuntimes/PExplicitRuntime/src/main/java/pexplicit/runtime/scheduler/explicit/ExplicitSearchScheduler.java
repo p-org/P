@@ -81,6 +81,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     if (PExplicitGlobal.getConfig().getVerbosity() == 0) {
       printProgressHeader(true);
     }
+    isDoneIterating = false;
     while (!isDoneIterating) {
       iteration++;
       PExplicitLogger.logStartIteration(iteration, schedule.getStepNumber());
@@ -95,6 +96,7 @@ public class ExplicitSearchScheduler extends Scheduler {
    */
   @Override
   protected void runIteration() throws TimeoutException {
+    isDoneStepping = false;
     while (!isDoneStepping) {
       printProgress(false);
       runStep();
@@ -188,6 +190,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     // pick the first choice
     result = choices.get(0);
+    schedule.setCurrentScheduleChoice(result, schedule.getChoiceNumber());
 
     // remove the first choice from unexplored choices
     choices.remove(0);
@@ -233,6 +236,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     // pick the first choice
     result = choices.get(0);
+    schedule.setCurrentDataChoice(result, schedule.getChoiceNumber());
 
     // remove the first choice from unexplored choices
     choices.remove(0);

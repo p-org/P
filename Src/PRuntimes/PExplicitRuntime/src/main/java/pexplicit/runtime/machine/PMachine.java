@@ -7,7 +7,6 @@ import pexplicit.runtime.machine.buffer.FifoQueue;
 import pexplicit.runtime.machine.eventhandlers.EventHandler;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.utils.exceptions.NotImplementedException;
-import pexplicit.utils.misc.Assert;
 import pexplicit.values.PEvent;
 import pexplicit.values.PMachineValue;
 import pexplicit.values.PValue;
@@ -27,21 +26,24 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     protected static int globalMachineId = mainMachineId;
 
     @Getter
+    protected int instanceId;
+    @Getter
+    protected final int typeId;
+    @Getter
     protected final String name;
+
     private final Set<State> states;
     private final State startState;
     @Getter
     private State currentState;
+
     @Getter
     private final FifoQueue sendBuffer;
+
     @Getter
     private boolean started = false;
     @Getter
     private boolean halted = false;
-    @Getter
-    protected int instanceId;
-    @Getter
-    protected int typeId;
 
 
     /**
@@ -101,10 +103,13 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     /**
-     * TODO
+     * Reset the machine.
      */
     public void reset() {
-        throw new NotImplementedException();
+        this.currentState = startState;
+        this.sendBuffer.clear();
+        this.started = false;
+        this.halted = false;
     }
 
     /**

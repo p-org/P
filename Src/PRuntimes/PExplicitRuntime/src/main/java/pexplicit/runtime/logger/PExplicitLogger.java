@@ -102,6 +102,7 @@ public class PExplicitLogger {
      */
     public static void InitializeLoggers() {
         StatWriter.Initialize();
+        ScratchLogger.Initialize();
     }
 
     /**
@@ -176,5 +177,41 @@ public class PExplicitLogger {
                         "Took %d seconds and %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
         log.info(String.format("Result: " + result));
         log.info("--------------------");
+    }
+
+
+    /**
+     * Log when backtracking to a new choice number
+     *
+     * @param choiceNum Choice number to which backtracking to
+     */
+    public static void logBacktrack(int choiceNum) {
+        if (verbosity > 3) {
+            log.info(String.format("Backtracking to choice %d", choiceNum));
+        }
+    }
+
+    /**
+     * Log when a machine is starting
+     *
+     * @param machine Machine that is starting
+     */
+    public static void logMachineStart(PMachine machine) {
+        if (verbosity > 3) {
+            String msg = String.format("Machine %s starting", machine.toString());
+            log.info(msg);
+        }
+    }
+
+    /**
+     * Log when a machine is created
+     *
+     * @param machine Machine that is created
+     */
+    public static void logCreateMachine(PMachine machine) {
+        if (verbosity > 3) {
+            String msg = "Machine " + machine + " was created";
+            log.info(msg);
+        }
     }
 }

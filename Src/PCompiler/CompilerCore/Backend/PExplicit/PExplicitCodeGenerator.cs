@@ -2109,13 +2109,13 @@ namespace Plang.Compiler.Backend.PExplicit
                     {
                         baseString = TransformPrintMessage(baseString);
                     }
-                    context.Write(output, $"new { GetPExplicitType(PrimitiveType.String) }(StringVS.formattedStringVS(\"{baseString}\"");
+                    context.Write(output, $"new { GetPExplicitType(PrimitiveType.String) }(\"{baseString}\"");
                     foreach(var arg in stringExpr.Args)
                     {
                         context.Write(output, ", ");
                         WriteExpr(context, output, arg);
                     }
-                    context.Write(output, "))");
+                    context.Write(output, ")");
                     break;
                 case NullLiteralExpr _:
                     context.Write(output, "null");

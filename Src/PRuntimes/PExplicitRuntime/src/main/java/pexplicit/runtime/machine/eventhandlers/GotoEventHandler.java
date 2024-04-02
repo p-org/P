@@ -24,10 +24,13 @@ public class GotoEventHandler extends EventHandler {
     }
 
     /**
-     * TODO
+     * Handle the goto event at the target machine.
+     *
+     * @param target  Target machine on which the state transition is to be performed.
+     * @param payload Payload associated with the goto state entry function.
      */
     @Override
     public void handleEvent(PMachine target, PValue<?> payload) {
-        throw new NotImplementedException();
+        target.processStateTransition(gotoState, payload);
     }
 }

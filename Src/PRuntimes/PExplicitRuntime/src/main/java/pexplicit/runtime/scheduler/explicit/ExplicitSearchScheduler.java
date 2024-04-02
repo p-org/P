@@ -327,7 +327,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     StatWriter.log("max-step", String.format("%d", maxStepNumber));
     PExplicitLogger.log( String.format("Max Schedule Length       %d", maxStepNumber));
     StatWriter.log("#-choices-unexplored", String.format("%d", schedule.getNumUnexploredChoices()));
-    StatWriter.log("%%-choices-unexplored-data", String.format("%.1f", schedule.getUnexploredDataChoicesPercent()));
+    StatWriter.log("%-choices-unexplored-data", String.format("%.1f", schedule.getUnexploredDataChoicesPercent()));
   }
 
   private void printCurrentStatus(double newRuntime) {

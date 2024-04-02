@@ -4,6 +4,7 @@ import lombok.Getter;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.utils.exceptions.NotImplementedException;
+import pexplicit.utils.misc.Assert;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -66,32 +67,65 @@ public abstract class MessageQueue implements Serializable {
     }
 
     /**
-     * TODO
-     * Get (or dequeue) the next message in the queue
+     * Peek (or dequeue) the next non-deferred message in the queue
      *
-     * @param dequeue Whether or not to dequeue the message from the queue
+     * @param dequeue Whether to dequeue the message from the queue
      * @return The next message in the queue, or null if queue is empty
      */
     private PMessage peekOrDequeueHelper(boolean dequeue) {
-        throw new NotImplementedException();
+        if (!dequeue && (peek != null)) {
+            // just peeking and peek is not null
+            return peek;
+        }
+
+        PMessage result = null;
+        int idx = 0;
+
+        // find the first non-deferred message
+        for (PMessage msg: elements) {
+            if (!owner.getCurrentState().isDeferred(msg.getEvent())) {
+                result = msg;
+                break;
+            }
+            idx++;
+        }
+
+        // update peek
+        peek = result;
+
+        // dequeue the peek
+        if (dequeue) {
+            if (result == null) {
+                if (elements.isEmpty()) {
+                    Assert.prop(false, "Cannot dequeue from empty queue");
+                } else {
+                    Assert.prop(false, "Cannot dequeue since all events in the queue are deferred");
+                }
+            } else {
+                elements.remove(idx);
+                resetPeek();
+            }
+        }
+
+        return result;
     }
 
     /**
-     * TODO
+     * Add a message to the queue.
      *
-     * @param e
+     * @param msg Message to add
      */
-    public void add(PMessage e) {
-        throw new NotImplementedException();
+    public void add(PMessage msg) {
+        elements.add(msg);
     }
 
     /**
-     * TODO
+     * Pop a non-deferred event from the queue
      *
-     * @return
+     * @return Next non-deferred event in the queue, or null if no such event exists.
      */
     public PMessage remove() {
-        throw new NotImplementedException();
+        return peekOrDequeueHelper(true);
     }
 
     /**

@@ -6,6 +6,7 @@ import pexplicit.runtime.machine.eventhandlers.IgnoreEventHandler;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.runtime.machine.events.StateEvents;
 import pexplicit.utils.exceptions.NotImplementedException;
+import pexplicit.utils.misc.Assert;
 import pexplicit.values.PEvent;
 import pexplicit.values.PValue;
 
@@ -101,13 +102,33 @@ public abstract class State implements Serializable {
     }
 
     /**
-     * TODO
+     * Handle an event by executing the corresponding event handler.
      *
-     * @param message
-     * @param machine
+     * @param msg PMessage to handle
+     * @param machine PMachine to handle the event at
      */
-    public void handleEvent(PMessage message, PMachine machine) {
-        throw new NotImplementedException();
+    public void handleEvent(PMessage msg, PMachine machine) {
+        boolean done = false;
+
+        // get event handler, if exists
+        EventHandler handler = stateEvents.eventHandlers.get(msg.getEvent());
+
+        if (handler != null) {
+            // execute the event handler
+            handler.handleEvent(machine, msg.getPayload());
+            done = true;
+        }
+
+        // check if halt event
+        if (msg.getEvent().isHaltMachineEvent()) {
+            // execute the event handler
+            machine.halt();
+            done = true;
+        }
+
+        // make sure event is handled (or is halt event)
+        Assert.prop(done, String.format("%s received event %s that cannot be handled in state %s",
+                machine, msg.getEvent(), this.name));
     }
 
     /**

@@ -19,6 +19,7 @@ public abstract class State implements Serializable {
     public final String name;
     public final String machineName;
     public final StateTemperature temperature;
+    public final StateEvents stateEvents;
 
     /**
      * Constructor
@@ -34,25 +35,24 @@ public abstract class State implements Serializable {
         this.name = name;
         this.machineName = machineName;
         this.temperature = temperature;
+        this.stateEvents = new StateEvents();
     }
 
     /**
-     * TODO
+     * Default entry function for a state
      *
-     * @param machine
-     * @param payload
+     * @param machine Machine entering the state
+     * @param payload Entry function payload
      */
     public void entry(PMachine machine, PValue<?> payload) {
-        throw new NotImplementedException();
     }
 
     /**
-     * TODO
+     * Default exit function for a state
      *
-     * @param machine
+     * @param machine Machine exiting the state
      */
     public void exit(PMachine machine) {
-        throw new NotImplementedException();
     }
 
     /**
@@ -65,26 +65,17 @@ public abstract class State implements Serializable {
     }
 
     /**
-     * TODO
-     *
-     * @return
-     */
-    private StateEvents getStateEvents() {
-        throw new NotImplementedException();
-    }
-
-    /**
      * Register all event handlers corresponding to this state.
      *
      * @param eventHandlers Event handlers to register
      */
     public void registerHandlers(EventHandler... eventHandlers) {
         for (EventHandler handler : eventHandlers) {
-            getStateEvents().eventHandlers.put(handler.event, handler);
+            stateEvents.eventHandlers.put(handler.event, handler);
             if (handler instanceof IgnoreEventHandler) {
-                getStateEvents().ignored.add(handler.event);
+                stateEvents.ignored.add(handler.event);
             } else if (handler instanceof DeferEventHandler) {
-                getStateEvents().deferred.add(handler.event);
+                stateEvents.deferred.add(handler.event);
             }
         }
     }
@@ -96,7 +87,7 @@ public abstract class State implements Serializable {
      * @return true if event is ignored in this state, else false
      */
     public boolean isIgnored(PEvent event) {
-        return getStateEvents().ignored.contains(event);
+        return stateEvents.ignored.contains(event);
     }
 
     /**
@@ -106,7 +97,7 @@ public abstract class State implements Serializable {
      * @return true if event is deferred in this state, else false
      */
     public boolean isDeferred(PEvent event) {
-        return getStateEvents().deferred.contains(event);
+        return stateEvents.deferred.contains(event);
     }
 
     /**

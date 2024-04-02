@@ -1,8 +1,9 @@
 package pexplicit.runtime.machine;
 
 import lombok.Getter;
-import pexplicit.runtime.machine.buffer.DeferQueue;
+import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.buffer.FifoQueue;
+import pexplicit.runtime.machine.eventhandlers.EventHandler;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.values.PEvent;
@@ -28,17 +29,17 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     private final Set<State> states;
     private final State startState;
     @Getter
-    private final State currentState;
+    private State currentState;
     @Getter
     private final FifoQueue sendBuffer;
     @Getter
-    private final DeferQueue deferredQueue;
+    private boolean started = false;
     @Getter
-    private final boolean started = false;
-    @Getter
-    private final boolean halted = false;
+    private boolean halted = false;
     @Getter
     protected int instanceId;
+    @Getter
+    protected int typeId;
 
 
     /**
@@ -51,16 +52,37 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * @param states     All states corresponding to this machine
      */
     public PMachine(String name, int id, State startState, State... states) {
+        // initialize name, ids
         this.name = name;
-//        this.instanceId = id;
         this.instanceId = globalMachineId++;
+        this.typeId = id;
         nameToMachine.put(toString(), this);
 
-        this.startState = startState;
+        // initialize states
         this.states = new HashSet<>();
         Collections.addAll(this.states, states);
+        this.startState = startState;
 
-        throw new NotImplementedException();
+        // register create machine handler
+        startState.registerHandlers(
+                new EventHandler(PEvent.createMachine) {
+                    @Override
+                    public void handleEvent(PMachine target, PValue<?> payload) {
+                        assert (!target.isStarted());
+                        target.start(payload);
+                    }
+                });
+
+        // initialize send buffer
+        this.sendBuffer = new FifoQueue(this);
+    }
+
+    public void start(PValue<?> payload) {
+        PExplicitLogger.logMachineStart(this);
+        this.currentState = startState;
+        this.started = true;
+
+        startState.entry(this, payload);
     }
 
     /**
@@ -74,7 +96,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     /**
      * TODO
      */
-    protected void reset() {
+    public void reset() {
         throw new NotImplementedException();
     }
 
@@ -161,31 +183,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * @param msg Message
      */
     public void processEventToCompletion(PMessage msg) {
-        // Process events from the deferred queue first
-        runDeferredEvents();
-
-        // Process event
-        runOutcomesToCompletion(msg);
-
-        // Process events from the deferred queue again
-        runDeferredEvents();
-    }
-
-    /**
-     * Run events from the deferred queue
-     */
-    void runDeferredEvents() {
-        for (PMessage msg : deferredQueue.getElements()) {
-            runOutcomesToCompletion(msg);
-        }
-    }
-
-    /**
-     * TODO
-     *
-     * @param msg
-     */
-    void runOutcomesToCompletion(PMessage msg) {
+        // run msg to completion
         throw new NotImplementedException();
     }
 

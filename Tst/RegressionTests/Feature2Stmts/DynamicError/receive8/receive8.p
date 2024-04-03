@@ -33,7 +33,7 @@ machine B {
 			}
 			receive {
 				case F: { 	
-					assert(x ==  1); x = x + 1; 
+					assert(x ==  1); x = x + 1;
 					receive {
 						case F : { assert(false), format("Assertion 1 failed"); }
 					}

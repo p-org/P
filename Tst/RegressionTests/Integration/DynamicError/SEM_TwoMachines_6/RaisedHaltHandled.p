@@ -1,6 +1,6 @@
 // P semantics XYZ: two machines, machine is halted with "raise halt" (handled)
 // This XYZ is for the case when "halt" is explicitly handled - hence, it is processed as any other event.
-// 
+//
 event Ping assert 1 : machine;
 event Pong assert 1;
 event Success;
@@ -13,21 +13,21 @@ machine Main {
     start state Ping_Init {
         entry {
 			pongId = new PONG();
-			raise Success;   	   
+			raise Success;   	
         }
         on Success goto Ping_SendPing;
     }
 
     state Ping_SendPing {
         entry {
-			send pongId, Ping, this; 
+			send pongId, Ping, this;
 			raise Success;
 	}
         on Success goto Ping_WaitPong;
      }
 
      state Ping_WaitPong {
-		on Pong goto Ping_SendPing; 
+		on Pong goto Ping_SendPing;
      }
 
     state Done { }

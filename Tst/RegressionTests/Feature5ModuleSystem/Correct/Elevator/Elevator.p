@@ -38,7 +38,7 @@ eOperationSuccess, eOperationFailure;
     state DoorClosed {
         ignore eCloseDoor;
 
-        entry { 
+        entry {
             send DoorV, eSendCommandToResetDoor;
         }
 
@@ -93,7 +93,7 @@ eOperationSuccess, eOperationFailure;
     }
 
     state StoppingDoor {
-        defer eCloseDoor; 
+        defer eCloseDoor;
         ignore eOpenDoor, eObjectDetected;
 
         entry {
@@ -110,7 +110,7 @@ eOperationSuccess, eOperationFailure;
 
         entry {
              send TimerV,eStopDoorCloseTimer;
-        } 
+        }
 
         on eOperationSuccess goto ReturnState;
         on eOperationFailure goto WaitingForTimer;
@@ -136,7 +136,7 @@ machine Main {
     start state Init {
         entry {
             ElevatorV = new Elevator();
-            raise eUnit; 
+            raise eUnit;
         }
 
         on eUnit goto Loop;
@@ -256,7 +256,7 @@ machine Timer receives eStartDoorCloseTimer, eStopDoorCloseTimer;
     state SendTimerFired {
         defer eStartDoorCloseTimer;
         entry {
-            send ElevatorV,eTimerFired; raise eUnit; 
+            send ElevatorV,eTimerFired; raise eUnit;
         }
         on eUnit goto Init;
     }

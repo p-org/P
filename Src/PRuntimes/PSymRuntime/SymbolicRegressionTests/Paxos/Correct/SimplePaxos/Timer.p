@@ -13,7 +13,7 @@ fun CancelTimer(timer : machine) {
 	send timer, CANCEL;
 //  receive {
 //    case CANCEL_SUCCESS: {}
-//    case CANCEL_FAILURE: { 
+//    case CANCEL_FAILURE: {
 //      receive {
 //        case TIMEOUT: {}
 //      }
@@ -34,16 +34,16 @@ machine Timer {
 
   state WaitForReq {
     on CANCEL goto WaitForReq;
-    // with { 
+    // with {
     //  send client, CANCEL_FAILURE, this;
-    // } 
+    // }
     on START goto WaitForCancel;
   }
 
   state WaitForCancel {
     ignore START;
-    on null goto WaitForReq with { 
-	  send client, TIMEOUT, this; 
+    on null goto WaitForReq with {
+	  send client, TIMEOUT, this;
 	}
     on CANCEL goto WaitForReq;
     //with {

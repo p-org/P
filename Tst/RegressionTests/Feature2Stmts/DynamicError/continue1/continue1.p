@@ -9,7 +9,7 @@ machine Main {
 
                 if ((i / 2) * 2 == i)
                     continue;
-                
+
                 num_odd = num_odd + 1;
             }
 

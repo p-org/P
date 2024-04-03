@@ -6,11 +6,11 @@ event E3 assert 1: int;
 
 machine Main {
 	var x: int;
-	var y: bool; 
+	var y: bool;
 	var m: map[int, int];
 	var client1, client2: machine;
-    start state S { 
-        entry { 
+    start state S {
+        entry {
 			var locvar: int;
 			var xloc, yloc: int;
 			var mloc: map[int, int];
@@ -19,7 +19,7 @@ machine Main {
 			assert xloc == 1;                   //holds
 			foo(xloc move);
 			yloc = xloc + 1;                      //error (variable xloc is not available)
-			xloc = 15;                           //to make xloc available 
+			xloc = 15;                           //to make xloc available
 			yloc = xloc + 1;			          //OK
 			
 			assert x == 1;                    //holds
@@ -30,23 +30,23 @@ machine Main {
 			xloc = xloc + 2;                          //OK
 			assert xloc == yloc;                     //error (variable yloc is not available)
 			assert xloc == 7;                       //holds
-			yloc = 20;                           //to make yloc available 
+			yloc = 20;                           //to make yloc available
 			
 			baz(xloc swap, xloc move);              //error: "Linear argument should be passed for exactly one parameter"	
 			baz(xloc swap, xloc + yloc);           //error: " Variable is not available"
 			baz(xloc move, xloc + yloc);           //error: " Variable is not available"
-			xloc = 20;                          //to make xloc available 
+			xloc = 20;                          //to make xloc available
 			baz(xloc move, xloc move);              //error: "Linear argument should be passed for exactly one parameter"
-			xloc = 20;                             //to make xloc available 
+			xloc = 20;                             //to make xloc available
 			baz(xloc swap, xloc swap);              //error: "Linear argument should be passed for exactly one parameter"
 			
-			xloc = 20;                          //to make xloc available 
+			xloc = 20;                          //to make xloc available
 			x = xloc move;                        //OK
 			yloc = xloc;                        //error (variable xloc is not available)
 			foo(x move);                        //error (argument should be a local variable)
 			x = 4;                              //to make x available
 			
-			xloc = 20;                          //to make xloc available 
+			xloc = 20;                          //to make xloc available
 			
 			m[0] = x swap;                     //error (argument x should be a local variable)
 			m[1] = xloc swap;                  //OK
@@ -90,7 +90,7 @@ machine Main {
 		assert x == 1;               //holds
 		x = a;                       //error (variable is not available)
 	}
-	fun bar(): int {                 
+	fun bar(): int {
 		var x, y: int;
 		y = x swap;
 		foo(y);                       //OK

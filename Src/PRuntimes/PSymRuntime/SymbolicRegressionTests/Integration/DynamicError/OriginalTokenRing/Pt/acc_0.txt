@@ -4,9 +4,9 @@ OUT: Writing linker.cs ...
 OUT: Writing linker.dll ...
 EXIT: 0
 =================================
-         Console output          
+         Console output
 =================================
 EXIT (csc.exe): 0
 OUT: ERROR: < Exception > Attempting to enqueue message Sending more than max instance of 1\n
-OUT: 
+OUT:
 EXIT: -1

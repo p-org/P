@@ -39,7 +39,7 @@ For example, running:
     ./scripts/run_psym.sh Examples/tests/pingPong/ psymExample \
     --strategy learn --timeout 60 --memout 2 --schedules 4 --max-steps 5
 ````
-runs PSym with 
+runs PSym with
 - learning-based explicit-state search strategy
 - with a time limit of 60 seconds and memory limit of 2 GB
 - with at most 4 schedules

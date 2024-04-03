@@ -3,7 +3,7 @@ options { tokenVocab=PLexer; }
 
 // A small overview of ANTLRs parser rules:
 //
-// Parser rules begin with a lower case letter, lexer rules begin 
+// Parser rules begin with a lower case letter, lexer rules begin
 // with an Uppercase letter. To create a parser rule, write the name
 // followed by a colon (:) and then a list of alternatives, separated
 // by pipe (|) characters. You can use parenthesis for sub-expressions,
@@ -142,14 +142,14 @@ statement : LBRACE statement* RBRACE							# CompoundStmt
 		  | lvalue INSERT LPAREN rvalue RPAREN SEMI				# AddStmt
           | lvalue REMOVE expr SEMI								# RemoveStmt
           | WHILE LPAREN expr RPAREN statement					# WhileStmt
-          | FOREACH LPAREN item=iden IN collection=expr 
+          | FOREACH LPAREN item=iden IN collection=expr
                                         RPAREN statement		# ForeachStmt
-          | IF LPAREN expr RPAREN thenBranch=statement 
+          | IF LPAREN expr RPAREN thenBranch=statement
                             (ELSE elseBranch=statement)?		# IfStmt
           | NEW iden LPAREN rvalueList? RPAREN SEMI				# CtorStmt
           | fun=iden LPAREN rvalueList? RPAREN SEMI				# FunCallStmt
           | RAISE expr (COMMA rvalueList)? SEMI					# RaiseStmt
-          | SEND machine=expr COMMA event=expr 
+          | SEND machine=expr COMMA event=expr
                               (COMMA rvalueList)? SEMI			# SendStmt
           | ANNOUNCE expr (COMMA rvalueList)? SEMI				# AnnounceStmt
           | GOTO stateName (COMMA rvalueList)? SEMI				# GotoStmt
@@ -178,7 +178,7 @@ expr : primitive                                      # PrimitiveExpr
      | fun=VALUES LPAREN expr RPAREN                  # KeywordExpr
      | fun=SIZEOF LPAREN expr RPAREN                  # KeywordExpr
      | fun=DEFAULT LPAREN type RPAREN                 # KeywordExpr
-     | NEW interfaceName=iden 
+     | NEW interfaceName=iden
                             LPAREN rvalueList? RPAREN # CtorExpr
      | fun=iden LPAREN rvalueList? RPAREN             # FunCallExpr
      | op=(SUB | LNOT) expr                           # UnaryExpr
@@ -194,8 +194,8 @@ expr : primitive                                      # PrimitiveExpr
      ;
 
 formatedString	:	StringLiteral
-				|	FORMAT LPAREN StringLiteral (COMMA rvalueList)? RPAREN 
-				;	 
+				|	FORMAT LPAREN StringLiteral (COMMA rvalueList)? RPAREN
+				;	
 
 primitive : iden
           | floatLiteral

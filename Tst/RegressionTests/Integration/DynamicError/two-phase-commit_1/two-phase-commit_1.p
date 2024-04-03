@@ -115,7 +115,7 @@ machine Replica {
 		}
 	}
 
-	fun ShouldCommitWrite(): bool 
+	fun ShouldCommitWrite(): bool
 	{
 		return $;
 	}
@@ -156,11 +156,11 @@ machine Coordinator {
 			client = payload.client;
 			key = payload.key;
 			
-			if($) 
+			if($)
 				send replicas[0], READ_REQ_REPLICA, key;
 			else
 				send replicas[sizeof(replicas) - 1], READ_REQ_REPLICA, key;
-			receive 
+			receive
 			{
 				case REP_READ_FAIL : { readResult = (true, -1); }
 				case REP_READ_SUCCESS : (payload1 : int) { readResult = (false, payload1); }
@@ -262,7 +262,7 @@ machine Client {
     var coordinator: machine;
 	var mydata : int;
 	var counter : int;
-   
+
 	
 	start state Init {
 	    entry (payload :(machine, int)){
@@ -277,7 +277,7 @@ machine Client {
 	
 	state DoWrite {
 	    entry (payload: any) {
-			mydata = mydata + 1; 
+			mydata = mydata + 1;
 			counter = counter + 1;
 			if(counter == 3)
 				raise(goEnd);

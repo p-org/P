@@ -24,7 +24,7 @@ event eUnit assert 1;
 machine Main {
     var Driver: machine;
     var count: int;
-    
+
 	start state User_Init {
 		entry{
 			Driver = new OSRDriver();
@@ -50,7 +50,7 @@ machine Main {
 		}
 		on eUnit goto S0;
 	}
-  
+
 }
 
 machine Switch {
@@ -73,7 +73,7 @@ machine Switch {
 	     send Driver, eSwitchStatusChange;
              count = count + 1;
              if (count < 3) {
-	         raise (eUnit);		 	  
+	         raise (eUnit);		 	
              }
 	}
         on eUnit goto ChangeSwitchStatus;
@@ -97,7 +97,7 @@ machine LED {
 	}
 	
 	state ProcessUpdateLED {
-		entry { 
+		entry {
 			if($)
 			{
 				send Driver, eTransferSuccess;

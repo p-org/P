@@ -27,7 +27,7 @@ machine Participant {
 			}
 		}
 		
-		on ePrepare do (prepareReq :tPrepareForTrans) { 
+		on ePrepare do (prepareReq :tPrepareForTrans) {
 			pendingWrTrans = prepareReq;
 			assert (pendingWrTrans.transId > lastTransId);
 			if ($) {

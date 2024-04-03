@@ -15,7 +15,7 @@ namespace Plang.Compiler.Backend.Java {
     {
 
         private Machine _currentMachine; // Some generated code is machine-dependent, so stash the current machine here.
-        private HashSet<Function> _calledStaticFunctions = new HashSet<Function>(); // static functions allowed 
+        private HashSet<Function> _calledStaticFunctions = new HashSet<Function>(); // static functions allowed
         private bool debug = false;
 
         internal MachineGenerator(ICompilerConfiguration job, string filename) : base(job, filename)
@@ -56,13 +56,13 @@ namespace Plang.Compiler.Backend.Java {
                 }
                 _currentMachine = null;
             }
-            
+
             // static functions
             foreach (var f in _calledStaticFunctions)
             {
                 WriteFunction(f);
             }
-            
+
             WriteLine("}");
         }
 

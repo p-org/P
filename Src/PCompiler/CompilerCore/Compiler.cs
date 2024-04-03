@@ -14,7 +14,7 @@ namespace Plang.Compiler
         public int Compile(ICompilerConfiguration job)
         {
             job.Output.WriteInfo($"Parsing ...");
-            
+
             // Run parser on every input file
             PParser.ProgramContext[] trees = null;
             try
@@ -59,7 +59,7 @@ namespace Plang.Compiler
                 job.OutputDirectory = Directory.CreateDirectory(Path.Combine(parentDirectory.FullName, entry.ToString()));
                 job.Output = new DefaultCompilerOutput(job.OutputDirectory);
                 job.Backend = TargetLanguage.GetCodeGenerator(entry);
-                
+
                 job.Output.WriteInfo($"----------------------------------------");
                 job.Output.WriteInfo($"Code generation for {entry}...");
 
@@ -96,7 +96,7 @@ namespace Plang.Compiler
 
             job.Output.WriteInfo($"----------------------------------------");
             job.Output.WriteInfo($"Compilation succeeded.");
-            
+
             Environment.ExitCode = 0;
             return Environment.ExitCode;
         }

@@ -23,7 +23,7 @@ machine Coordinator
 
 	start state Init {
 		entry (payload: seq[machine]) {
-			var i : int; 
+			var i : int;
 			//initialize variables
 			participants = payload;
 			i = 0; currTransId = 0; timer = CreateTimer(this);

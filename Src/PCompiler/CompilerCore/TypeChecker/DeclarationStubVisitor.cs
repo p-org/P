@@ -369,7 +369,7 @@ namespace Plang.Compiler.TypeChecker
         {
             return null;
         }
-        
+
 
         public override object VisitGotoStmt(PParser.GotoStmtContext context)
         {

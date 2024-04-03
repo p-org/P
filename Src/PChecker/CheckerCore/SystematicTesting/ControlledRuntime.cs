@@ -65,7 +65,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal readonly int? RootTaskId;
 
-        
+
         /// <summary>
         /// Returns the current hashed state of the monitors.
         /// </summary>
@@ -89,7 +89,7 @@ namespace PChecker.SystematicTesting
                 return hash;
             }
         }
-        
+
         /// <summary>
         /// Returns the current hashed state of the execution.
         /// </summary>
@@ -822,7 +822,7 @@ namespace PChecker.SystematicTesting
         {
             Scheduler.CheckIfSchedulingStepsBoundIsReached();
         }
-        
+
         /// <summary>
         /// Schedules the next controlled asynchronous operation. This method
         /// is only used during testing.

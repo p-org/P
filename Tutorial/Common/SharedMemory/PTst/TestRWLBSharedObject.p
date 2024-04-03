@@ -19,7 +19,7 @@ machine TestDriver2 {
   start state Init {
     entry {
       var i : int;
-      
+
       sharedObj = new RWLBSharedObject(1);
       // create 10 users
       while (i < 10)

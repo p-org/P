@@ -79,7 +79,7 @@ P supports unioning multiple modules together to create larger, more complex mod
 
 `module system = (union client, server);`
 
-`system` is a module which is a union of the modules `client` and `server`. 
+`system` is a module which is a union of the modules `client` and `server`.
 
 `module systemAbs = (union client, serverAbs);`
 
@@ -87,7 +87,7 @@ P supports unioning multiple modules together to create larger, more complex mod
 
 ### Assert Monitors Module
 
-P allows attaching monitors (or specifications) to modules. When attaching monitors to a module, the events observed by the monitors must be sent by `some` machine in the module. 
+P allows attaching monitors (or specifications) to modules. When attaching monitors to a module, the events observed by the monitors must be sent by `some` machine in the module.
 
 !!! info ""
     The way to think about assert monitors module is that: `attaching these monitors to the module asserts (during P checker exploration) that each execution of the module satisfies the global properties specified by the monitors._

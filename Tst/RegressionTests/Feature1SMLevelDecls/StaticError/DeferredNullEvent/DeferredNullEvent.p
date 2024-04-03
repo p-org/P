@@ -7,10 +7,10 @@ event unit assert 1;
 machine Main {
     var XYZ: bool;  //init with "false"
     start state Real1_Init {
-        entry { 
+        entry {
 			raise unit;
         }
-		on unit do {send this, E1; }  
+		on unit do {send this, E1; }
 		on null do Action2;   //Action2 handler for E1 is inherited by Real1_S1
         exit { send this, E1;  }
 	}

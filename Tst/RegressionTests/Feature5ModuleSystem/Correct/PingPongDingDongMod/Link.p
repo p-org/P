@@ -1,4 +1,4 @@
-module PingPongDingDong = 
+module PingPongDingDong =
 {
   PongDongMachine,
   PingDingMachine

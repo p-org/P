@@ -23,7 +23,7 @@ namespace PChecker.SystematicTesting.Operations
 
         /// <inheritdoc/>
         public AsyncOperationStatus Status { get; internal set; }
-        
+
         /// <summary>
         /// The type of the operation.
         /// </summary>

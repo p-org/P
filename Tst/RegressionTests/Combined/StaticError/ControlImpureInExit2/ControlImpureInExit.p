@@ -11,18 +11,18 @@ event unit assert 1;
 machine Main {
     var i: int;	
     start state Real1_Init {
-        entry { 
+        entry {
 			raise unit;
 			 }
-			 
-		on unit do { send this, E1; 
-		             send this, E2; 
-		             send this, E3; 
-					 }   
-		on E2 do Action1;   
+			
+		on unit do { send this, E1;
+		             send this, E2;
+		             send this, E3;
+					 }
+		on E2 do Action1;
         on E1 do { } 	
 		
-        exit { 
+        exit {
 			pop;                            //no error - OK, only first one is reported
 			raise unit;                     //no error - OK
 			if (i == 3) {
@@ -37,7 +37,7 @@ machine Main {
 	state Real1_S1 {
 		entry {}
 		ignore E1;
-	    defer E2;    
+	    defer E2;
 		on E3 do { pop; }
     }
 	state Real1_S2 {
@@ -53,8 +53,8 @@ machine Main {
 	state Real1_S5 {
 		entry { }
 	}
-	fun Action1() {		                          
-		pop;                                 
+	fun Action1() {		
+		pop;
     }
 	fun Action2() {
 
@@ -62,8 +62,8 @@ machine Main {
 	fun Action3() {
 		raise unit;
     }
-	fun Action4() : int {		                          
-		pop;   
+	fun Action4() : int {		
+		pop;
 		return 1;
     }
 	fun Action5() : int {

@@ -3,7 +3,7 @@
 //TODO(not included): anonymous tuples;
 //TODO(add later): XYZs for variables declared but not used
 
-event E assert 1; 
+event E assert 1;
 event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;
@@ -46,10 +46,10 @@ machine Main {
           assert t1.x == foo0;
           assert t1.y == bar0;
 		  assert t1 == default(Tuple);
-		  
+		
 		  assert v1 == default(SeqFoo);
-		  assert sizeof(v1) == 0; 
-		  
+		  assert sizeof(v1) == 0;
+		
 		  /////////////////////////tuples of enum type:
 		  t1 = (x = foo1, y = bar2);
 		  //assert t1.x == foo1 && t1.y = bar2;
@@ -57,38 +57,38 @@ machine Main {
 		  t1 = (foo2, bar3);          //error
 		  t1 += (foo1, bar1);         //error
 		  t1 -= (foo1, bar2);        //error
-		  
+		
 		  t1.x = foo4;
-		  
+		
 		  t1 = baz();
 		  //assert t1.x == foo1 && t1.y == bar2;
-		  
+		
 	      /////////////////////////sequences with enum type:
 		  v1 += (0, foo1);
 		  v1 += (1, foo2);
-		  v3 = v1;                   
+		  v3 = v1;
 		  v1 -= (1);
-		  
+		
 		  v1 += (0, foo3);
 		  v1 += (0, foo4);
 		  v1 -= (1);
 		  assert (foo3 in v1);             //error: "assert" expects a boolean value", "in" expects a map"
 		  //Removal of 5th element from sequence of size 1:
 		  v1 -= (5,7);               //static error: "index must be an integer"
-		  
+		
 		  v1 = default(SeqFoo);
 		  v1 += (0,foo1);
 		  v1[0] = foo2;
 		  v1[true] = foo3;           //error
 		  v1 += (1,null);           //error
 		  v1 -= (foo() - 1);         //OK
-		  
+		
 		  /////////////////////////sequence of enum type as payload:
 		  v1 = default(SeqFoo);
 		  v1 += (0,foo1);
           v1 += (0,foo3);
 	      mac = new XYZ(v1);
-		  
+		
 		  /////////////////////////map with sequences of enum type:
 		  v1 = default(SeqFoo);
 		  v1 += (0,foo1);
@@ -104,7 +104,7 @@ machine Main {
 		  t2 -= (0);
 		  //assert sizeof(t2) == 0;                     //holds
 		  //i = 0;
-		  assert t2[i] == v1;                            //holds 
+		  assert t2[i] == v1;                            //holds
 
 		  v3 = default(SeqFoo);
 		  v3 += (0,foo3);
@@ -114,7 +114,7 @@ machine Main {
 		  //assert t2[1][0] == foo3 && t2[1][1] = foo4;    //holds
 		  t2 -= (1);
 		  //assert sizeof(t2) == 1;                     //holds
-		  
+		
 		  ////////////////////////sequence of maps (casting any => map[int, SeqFoo] is involved)
 		  //s6: seq[any];
 		  //var t2: MapIntSeqFoo;
@@ -127,15 +127,15 @@ machine Main {
 		  v3 += (0,foo3);
 		  v3 += (1,foo4);
 		  t2[1] = v3;
-		  
+		
 		  s6 = default(seq[any]);
 		  s6 += (0,t2);                        //OK
 		  t2 = default(MapIntSeqFoo);
 		  t2 = s6[0];                  //error
-		  
+		
 		  t2[1] = s6;                       //error: invalid casting
 		  t2[0][0] = s6[0] as Foo;          //error: not detected for now (casting any -> Foo)
-		  
+		
 		  ////////////////////////////map of sequences of enum type
 		  v1 = default(SeqFoo);
 		  v1 += (0,foo1);
@@ -148,37 +148,37 @@ machine Main {
 		  //assert sizeof(t2) == 2;            //holds
 		  //assert t2[0] == ((0,foo1), (1,foo2));   //holds
 		  //assert t2[1] == ((0,foo3), (1,foo4));   //holds
-		  
+		
 		  ////////////////////////tuple with sequence and map:
 		  //var t0: MapIntFoo;
 		  t1 = default(Tuple);
 		  t1 = (x = foo3, y = bar0);
 		  v2 = default(SeqTuple);
 		  v2[0] = t1;
-		  
+		
 		  t0[0] = foo0;              //error
 		  //t0 += (1,foo1);
 		  t0[2] = foo2;              //error
 		  //t0 += (3,foo3);
 		  //assert t0[0] = foo0 && t0[1] = foo1 && t0[2] = foo2 && t0[3] = foo3;   //holds
-		  
+		
 		  //var t3: (x: SeqTuple, y: MapIntFoo);
 		  v2 = default(SeqTuple);
 		  t3 = (x = v2, y = t0);
 		  //assert t3.x[0].x == foo3 && t3.y[0] == foo0;              //holds
-		  //assert sizeof(t3.x) == 1 && sizeof(t3.y) == 2;            //holds 
-       }    
+		  //assert sizeof(t3.x) == 1 && sizeof(t3.y) == 2;            //holds
+       }
     }
-    
+
     fun foo() : int
     {
        return 1;
-    }   
+    }
 
 	fun baz() : Tuple
 	{
 		return (x = default(Foo), y = default(Bar));
-	}      
+	}
 }
 
 machine XYZ {

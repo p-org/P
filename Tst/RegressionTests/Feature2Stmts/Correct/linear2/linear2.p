@@ -16,14 +16,14 @@ machine Main {
 	}
 
 	fun A(y: int) : int
-	{ 
+	{
 		return y;
 	}
 
 	fun B(y: int) : int
 	{
 		var b: int;
-		b = y; 
+		b = y;
 		return b;
 	}
 

@@ -114,7 +114,7 @@ namespace Plang.Compiler.TypeChecker
             implementations.Add(defaultImplDecl.Name, defaultImplDecl);
         }
         #endregion Add Default Impl. Declaration
-        
+
         #region Add Tuple Declaration
         public bool AddTuple(TupleType tuple)
         {
@@ -173,7 +173,7 @@ namespace Plang.Compiler.TypeChecker
         {
             return states.TryGetValue(name, out tree);
         }
-        
+
         public bool Get(string name, out TypeDef tree)
         {
             return typedefs.TryGetValue(name, out tree);
@@ -605,10 +605,10 @@ namespace Plang.Compiler.TypeChecker
             {
                 if (filePath.StartsWith(dependencyPath))
                 {
-                    return null; 
+                    return null;
                 }
             }
-            
+
             var safetyTest = new SafetyTest(tree, name);
             CheckConflicts(safetyTest,
                 Namespace(implementations),

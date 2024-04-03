@@ -15,7 +15,7 @@ Follow the installation steps on https://p-org.github.io/P/getstarted/install/
 ### Portfolio Configuration File
 
 First, you will need to add a configuration file named `portfolio-config.json` in your P project directory. This file will  contain the needed information to configure the portfolio run.
-    
+
 Note that `portfolio-config.json` should be present at the top level of the P project directory, i.e., same directory as `<project-name>.pproj` file.
 
 Checkout an example `portfolio-config.json` file [here](../../../Tutorial/1_ClientServer/portfolio-config.json).

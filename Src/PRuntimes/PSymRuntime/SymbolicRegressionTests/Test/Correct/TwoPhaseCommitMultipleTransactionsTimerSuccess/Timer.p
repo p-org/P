@@ -1,8 +1,8 @@
-/* 
+/*
 This file implements the model machine for a asynchronous timer
 */
 
-machine Timer 
+machine Timer
 {
 	var target: machine;
 	start state Init {

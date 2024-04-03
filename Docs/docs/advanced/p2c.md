@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
         processGuid.data3 = 0;
         processGuid.data4 = 0;
         MAIN_P_PROCESS = PrtStartProcess(processGuid, &P_GEND_IMPL_DefaultImpl, ErrorHandler, Log);
-        
+
         if (cooperative) {
             PrtSetSchedulingPolicy(MAIN_P_PROCESS, PRT_SCHEDULINGPOLICY_COOPERATIVE);
         }
@@ -113,12 +113,12 @@ int main(int argc, char *argv[]) {
         PrtUpdateAssertFn(MyAssert);
         PRT_UINT32 machineId;
         PRT_BOOLEAN foundMainMachine = PrtLookupMachineByName("myMachine", &machineId);
-        
+
         if (foundMainMachine == PRT_FALSE) {
             printf("%s\n", "FAILED TO FIND DroneMachine");
             exit(1);
         }
-       
+
         PrtMkMachine(MAIN_P_PROCESS, machineId, 1, &payload);
 
         if (cooperative) {

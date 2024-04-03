@@ -78,7 +78,7 @@ machine BenOr {
               }
               change = true;
             }
-            p2v[processes[i]] = -1; 
+            p2v[processes[i]] = -1;
             pc[processes[i]] = 1;
           }
         }
@@ -162,7 +162,7 @@ machine BenOr {
          send driver, eNext;
       }
     }
-    
+
     on EvalP1 do (pld: (process : int, val : int)) {
       print("EvalP1");
       p2v[pld.process] = pld.val;
@@ -203,7 +203,7 @@ machine BenOr {
         p1v[process] = 0;
       } else {
         p1v[process] = choose(1);
-      } 
+      }
       r[process] = r[process] + 1;
       pc[process] = 0;
       send driver, eNext;

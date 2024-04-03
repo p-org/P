@@ -83,7 +83,7 @@ the second test.  So, let me change the `@Test` annotation to a `@PSpecTest`:
     }
 ```
 
-This annotation says: 
+This annotation says:
 
 1) For all instances of the `Ring` class in this test, intercept all messages
 written to the Log4j appender for that class;

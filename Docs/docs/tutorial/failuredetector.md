@@ -6,7 +6,7 @@ By this point in the tutorial, we have gotten familiar with the P language and m
 ??? note "How to use this example"
 
     We assume that you have cloned the P repository locally.
-    ```shell 
+    ```shell
     git clone https://github.com/p-org/P.git
     ```
 
@@ -29,7 +29,7 @@ The [4_FailureDetector](https://github.com/p-org/P/tree/master/Tutorial/4_Failur
 The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDetector/PSrc)) for the FailureDetector example consist of four files:
 
 - [FailureDetector.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p): Implements the `FailureDetector` machine.
-  
+
 ??? tip "[Expand]: Let's walk through FailureDetector.p"
 
     - ([L1 - L4](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L1-L4))  &rarr; Event `ePing` and `ePong` are used to communicate between the `FailureDetector` and the `Node` state machines (manual: [event declaration](../manual/events.md)).
@@ -37,7 +37,7 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDe
     - ([L14 - L129](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L14-L129))  &rarr; Declares the `FailureDetector` state machine (manual: [P state machine](../manual/statemachines.md)). The key points to note in the `FailureDetector` machine are the usage of the [Timer](https://github.com/p-org/P/tree/master/Tutorial/Common/Timer) machine to model the usage of OS timer, the usage of [ReliableBroadCast](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L81), and the usage of [UnReliableBroadCast](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetector.p#L48) defined in [NetworkFunctions.p](https://github.com/p-org/P/blob/master/Tutorial/Common/FailureInjector/PSrc/NetworkFunctions.p).
 
 - [Node.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/Node.p): Implements the `Node` machine.
-  
+
 ??? tip "[Expand]: Let's walk through Node.p"
     - ([L4 - L14](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/Node.p#L4-L14)) &rarr; Declares the `Node` state machine. The `Node` machine responds with a `ePong` message on receiving a `ePing` message from the `FailureDetector`. On receiving a `eShutDown` message from the `FailureInjector`, the machine halts itself.
 
@@ -45,7 +45,7 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDe
 
 ??? tip "[Expand]: Let's walk through  Client.p"
     The `Client` machine is a dummy machine that gets a set of alive nodes when the system starts and maintains the set of currently alive nodes by removing the nodes that are marked as down by the `FailureDetector`.
-  
+
 - [FailureDetectorModules.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSrc/FailureDetectorModules.p): Declares the `FailureDetector` module.
 
 ??? tip "[Expand]: Let's walk through FailureDetectorModules.p"
@@ -72,7 +72,7 @@ The test scenarios folder for FailureDetector ([PTst](https://github.com/p-org/P
     This file consists of a single test driver machine that sets up the system under test given the number of nodes and clients in the system. The [`SetupSystemWithFailureInjector`](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PTst/TestDriver.p#L20-L42) function creates the clients, nodes, failure injector and the failure detector machines.
 
 ??? tip "[Expand]: Let's walk through TestScript.p"
-    There is a single testcase ([TestFailureDetector](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PTst/TestScript.p#L1-L3)) defined for the FailureDetector system. The test case asserts the `ReliableFailureDetector` specification on a system which is a composition of the `FailureDetector`, `FailureInjector`, and the test-driver `TestMultipleClients`. 
+    There is a single testcase ([TestFailureDetector](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PTst/TestScript.p#L1-L3)) defined for the FailureDetector system. The test case asserts the `ReliableFailureDetector` specification on a system which is a composition of the `FailureDetector`, `FailureInjector`, and the test-driver `TestMultipleClients`.
 
 ### Compiling FailureDetector
 
@@ -114,14 +114,14 @@ p compile
     Determining projects to restore...
     Restored P/Tutorial/4_FailureDetector/PGenerated/CSharp/FailureDetector.csproj (in 93 ms).
     FailureDetector -> P/Tutorial/4_FailureDetector/PGenerated/CSharp/net6.0/FailureDetector.dll
-    
+
     Build succeeded.
     0 Warning(s)
     0 Error(s)
-    
+
     Time Elapsed 00:00:04.42
-    
-    
+
+
     ----------------------------------------
     ~~ [PTool]: Thanks for using P! ~~
     ```

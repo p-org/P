@@ -66,6 +66,6 @@ namespace Plang.Compiler.Backend
         {
             return declNames.TryGetValue(node, out name);
         }
-        
+
     }
 }

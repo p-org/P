@@ -139,10 +139,10 @@ namespace PChecker.SystematicTesting
 
             // Checks if the scheduling steps bound has been reached.
             CheckIfSchedulingStepsBoundIsReached();
-            
+
             // Update the operation type.
             current.Type = type;
-            
+
             if (CheckerConfiguration.IsProgramStateHashingEnabled)
             {
                 // Update the current operation with the hashed program state.

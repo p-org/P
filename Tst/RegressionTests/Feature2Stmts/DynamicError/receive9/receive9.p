@@ -19,7 +19,7 @@ machine Main {
 			send this, F, 10;
 			receive {
 				case F: (payload1: int) { 	
-					assert(payload1 == 10); 
+					assert(payload1 == 10);
 					send this, G, default(seq[int]);
 					receive {
 						case G : (payload2: seq[int]) { assert(sizeof(payload2) == 0); raise E;}

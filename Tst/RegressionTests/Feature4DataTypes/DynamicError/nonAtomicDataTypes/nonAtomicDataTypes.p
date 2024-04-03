@@ -1,5 +1,5 @@
 //XYZs complex data types in assign/remove/insert: sequences, tuples, maps
-event E assert 1; 
+event E assert 1;
 event E1 assert 1;
 event E2 assert 1;
 machine Main {
@@ -21,27 +21,27 @@ machine Main {
 	      /////////////////////////default expression:
 		  y = 2;
 		  assert(y == 2);
-		  y = default(int);    
+		  y = default(int);
           assert(y == 0);	
-		  
+		
 		  b = true;
 		  assert(b == true);
-          b = default(bool);	  
+          b = default(bool);	
           assert(b == false);
 
 		  e = E;
 		  assert(e == E);
-          e = default(event);	  
+          e = default(event);	
           assert(e == null);
-		  
+		
 		  mac = this;
-          mac = default(machine);	  
+          mac = default(machine);	
           assert(mac == null);
-		  
+		
 		  a = true;
 		  a = default(any);
 		  assert (a == null);
-		  
+		
 		  m5[1] = true;
 		  assert (m5[1] == true);
 		  m5 = default(map[int,any]);
@@ -49,8 +49,8 @@ machine Main {
 		  //assert (m5[1] == null);             //dynamic error: key not found
 		  m5[1] = E;
 		  assert (m5[1] == E);
-		  
+		
 		  raise halt;
-       }    
+       }
     }
 }

@@ -1,6 +1,6 @@
 event ACC: int;
 
-machine Main 
+machine Main
 sends ACC;
 {
 	var accumulator: AccumulatorMachine;

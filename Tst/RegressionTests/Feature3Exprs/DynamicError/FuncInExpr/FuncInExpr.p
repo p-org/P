@@ -4,7 +4,7 @@ event y;
 machine Main {
 	start state Init {
 		entry {
-			if (!F2().Success || F1().Success) 
+			if (!F2().Success || F1().Success)
 			{
 				assert(false);
 			}

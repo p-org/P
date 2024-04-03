@@ -49,7 +49,7 @@ namespace Plang.Parser
 
                 // get output directory
                 var outputDirectory = GetOutputDirectory(projectFilePath);
-                
+
                 // get targets
                 var outputLanguages = GetTargetLanguages(projectFilePath);
 
@@ -57,7 +57,7 @@ namespace Plang.Parser
                 var pObservePackageName = GetPObservePackage(projectFilePath);
 
                 job = new CompilerConfiguration(output: new DefaultCompilerOutput(outputDirectory), outputDir: outputDirectory,
-                    outputLanguages: outputLanguages, inputFiles: inputFiles.ToList(), projectName: projectName, 
+                    outputLanguages: outputLanguages, inputFiles: inputFiles.ToList(), projectName: projectName,
                     projectRoot: projectFilePath.Directory, projectDependencies: projectDependencies.ToList(),
                     pObservePackageName: pObservePackageName);
 
@@ -100,7 +100,7 @@ namespace Plang.Parser
                 Error.ReportAndExit($"<Internal Error>:\n {other.Message}\n <Please report to the P team or create a issue on GitHub, Thanks!>");
             }
         }
-       
+
 
         /// <summary>
         /// Parse the P Project file and return all the input P files and project dependencies (includes transitive dependencies)
@@ -218,7 +218,7 @@ namespace Plang.Parser
             }
             else
             {
-                string[] values = projectXml.Element("Target")?.Value.Split(new[] { ',', ' ' }, 
+                string[] values = projectXml.Element("Target")?.Value.Split(new[] { ',', ' ' },
                     StringSplitOptions.RemoveEmptyEntries);
                 for (int i = 0; i < values!.Length; i++)
                 {
@@ -253,7 +253,7 @@ namespace Plang.Parser
         }
 
         /// <summary>
-        /// Read all the input P files included in the pproj 
+        /// Read all the input P files included in the pproj
         /// </summary>
         /// <param name="fullPathName">Path to the pproj file</param>
         /// <returns>List of the all the P files included in the project</returns>
@@ -274,7 +274,7 @@ namespace Plang.Parser
                     {
                         var enumerate = new EnumerationOptions();
                         enumerate.RecurseSubdirectories = true;
-                        var getFiles = 
+                        var getFiles =
                             from file in Directory.GetFiles(inputFileNameFull, "*.*", enumerate)
                             where ( CheckFileValidity.IsPFile(file) || CheckFileValidity.IsForeignFile(file))
                             let info = new FileInfo(file)

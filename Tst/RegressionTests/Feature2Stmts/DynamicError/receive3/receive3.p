@@ -14,8 +14,8 @@ machine Main {
 	}
 	fun foo() {
 		send this, E;
-		receive { 
-			case E: { raise F; } 
+		receive {
+			case E: { raise F; }
 		}
 		x = x + 1;
 	}

@@ -11,7 +11,7 @@ namespace Plang.Compiler.Backend.Symbolic
             Cont = continuation;
         }
 
-        public Continuation Cont { get; } 
+        public Continuation Cont { get; }
         public ParserRuleContext SourceLocation { get; }
     }
 }

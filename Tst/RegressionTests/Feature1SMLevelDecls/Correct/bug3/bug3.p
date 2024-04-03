@@ -4,7 +4,7 @@ event y;
 
 machine Main {
 		var part: map[int, int];
-		start state S 
+		start state S
 		{
 			entry {
 				var container : machine;

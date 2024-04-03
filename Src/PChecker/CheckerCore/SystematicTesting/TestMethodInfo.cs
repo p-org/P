@@ -119,10 +119,10 @@ namespace PChecker.SystematicTesting
             // Filter by test method name
             // find the test case with exact match
             var findExactMatch = testMethods.FindAll(mi => mi.DeclaringType.Name == (methodName));
-            var filteredTestMethods = 
+            var filteredTestMethods =
                 findExactMatch.Any()? findExactMatch: testMethods.FindAll(mi => mi.DeclaringType.Name.Contains(methodName));
-   
-            
+
+
             if (filteredTestMethods.Count == 0)
             {
                 if (testMethods.Count > 0)

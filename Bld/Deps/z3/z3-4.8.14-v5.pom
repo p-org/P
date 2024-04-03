@@ -5,7 +5,7 @@
       <artifactId>z3</artifactId>
       <version>4.8.14-v5</version>
       <packaging>jar</packaging>
-     
+
       <name>Z3 Java Bindings</name>
       <description>Z3 Java Bindings</description>
       <url>https://github.com/Z3Prover/z3</url>
@@ -15,13 +15,13 @@
           <url>${project.url}</url>
         </developer>
       </developers>
-     
+
       <licenses>
         <license>
           <url>${project.url}</url>
         </license>
       </licenses>
-     
+
       <scm>
         <url>${project.url}</url>
       </scm>

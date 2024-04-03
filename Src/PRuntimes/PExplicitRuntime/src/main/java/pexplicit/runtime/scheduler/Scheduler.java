@@ -157,8 +157,18 @@ public abstract class Scheduler implements SchedulerInterface {
      * Runs the constructor of this machine.
      */
     public void startMachine(PMachine machine) {
-        PExplicitLogger.logCreateMachine(machine);
+        if (!PExplicitGlobal.getMachineSet().contains(machine)) {
+            // add machine to global context
+            PExplicitGlobal.addGlobalMachine(machine, 0);
+        }
+
+        // add machine to schedule
         schedule.makeMachine(machine);
+
+        // log machine creation
+        PExplicitLogger.logCreateMachine(machine);
+
+        // run create machine event
         processEventAtTarget(new PMessage(PEvent.createMachine, machine, null));
     }
 

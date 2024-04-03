@@ -1,7 +1,7 @@
 ??? note "How to use this example"
 
     We assume that you have cloned the P repository locally.
-    ```shell 
+    ```shell
     git clone https://github.com/p-org/P.git
     ```
 
@@ -24,10 +24,10 @@ The [1_ClientServer](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
 
 ### Models
 
-The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer/PSrc)) for the ClientServer example consist of four files: 
+The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer/PSrc)) for the ClientServer example consist of four files:
 
 - [Client.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p): Implements the Client state machine.
-  
+
 ??? tip "[Expand]: Let's walk through Client.p"
     - ([L19 - L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L19-L22))  &rarr; Events `eWithDrawReq` and `eWithDrawResp` are used to communicate between the `Client` and the `Server` machines (manual: [event declaration](../manual/events.md)).
     - ([L3 - L17](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Client.p#L3-L17)) &rarr; Declares the payload types for the `eWithDrawReq` and `eWithDrawResp` events (manual: [user defined type](../manual/datatypes.md#user-defined)).
@@ -38,7 +38,7 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
 
 
 - [Server.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p): Implements the BankServer and the backend Database state machines.
-  
+
 ??? tip "[Expand]: Let's walk through Server.p"
     - ([L1 - L7](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p#L1-L7)) &rarr; Declares the events used to communicate between the bank server and the backend database.
     - ([L9 - L48](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/Server.p#L9-L48)) &rarr; Declares the `BankServer` machine. The BankServer machine uses a database machine as a service to store the bank balance for all its clients.
@@ -60,7 +60,7 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
 - [ClientServerModules.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/ClientServerModules.p): Declares the P modules corresponding to each component in the system.
 
 ??? tip "[Expand]: Let's walk through ClientServerModules.p"
-    - ([L1 - L5](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/ClientServerModules.p#L1-L5)) &rarr; Declares the `Client` and `Bank` modules. A module in P is a collection of state machines that together implement that module or component. A system model in P is then a composition or union of modules. The `Client` module consists of a single machine `Client` and the `Bank` module is implemented by machines `BankServer` and `Database` together (manual: [P module system](../manual/modulesystem.md)).  
+    - ([L1 - L5](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/ClientServerModules.p#L1-L5)) &rarr; Declares the `Client` and `Bank` modules. A module in P is a collection of state machines that together implement that module or component. A system model in P is then a composition or union of modules. The `Client` module consists of a single machine `Client` and the `Bank` module is implemented by machines `BankServer` and `Database` together (manual: [P module system](../manual/modulesystem.md)).
     - ([L7 - L8](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/ClientServerModules.p#L7-L8)) &rarr; The `AbstractBank` module uses the `binding` feature in P modules to bind the `BankServer` machine to the `AbstractBankServer` machine. Basically, what this implies is that whenever `AbstractBank` module is used the creation of the `BankServer` machine will result in creation of `AbstractBankServer`, replacing the implementation with its abstraction (manual: [primitive modules](../manual/modulesystem.md#primitive-module)).
 
 ### Specifications
@@ -87,7 +87,7 @@ The test scenarios folder for ClientServer ([PTst](https://github.com/p-org/P/tr
 
 ??? tip "[Expand]: Let's walk through TestDriver.p"
     - ([L36 - L60](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L36-L60)) &rarr; Function `SetupClientServerSystem` takes as input the number of clients to be created and configures the ClientServer system by creating the `Client` and `BankServer` machines. The [`CreateRandomInitialAccounts`](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L25-L34) function uses the [`choose`](../manual/expressions.md#choose) primitive to randomly initialize the accounts map.
-    The function also  [`announce` the event](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L49-L51) `eSpec_BankBalanceIsAlwaysCorrect_Init` to initialize the monitors with initial balance for all accounts (manual: [annouce statement](../manual/statements.md#announce)). 
+    The function also  [`announce` the event](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L49-L51) `eSpec_BankBalanceIsAlwaysCorrect_Init` to initialize the monitors with initial balance for all accounts (manual: [annouce statement](../manual/statements.md#announce)).
     - ([L3 - L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L3-L22)) &rarr; Machines `TestWithSingleClient` and `TestWithMultipleClients` are simple test driver machines that configure the system to be checked by the P checker for different scenarios. In this case, test the ClientServer system by first randomly initializing the accounts map and then checking it with either one `Client` or with multiple `Client`s (between 2 and 4)).
 
 ??? tip "[Expand]: Let's walk through TestScript.p"
@@ -130,14 +130,14 @@ p compile
     Determining projects to restore...
     Restored P/Tutorial/1_ClientServer/PGenerated/CSharp/ClientServer.csproj (in 102 ms).
     ClientServer -> P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
-    
+
     Build succeeded.
     0 Warning(s)
     0 Error(s)
-    
+
     Time Elapsed 00:00:02.25
-    
-    
+
+
     ----------------------------------------
     ~~ [PTool]: Thanks for using P! ~~
     ```
@@ -163,7 +163,7 @@ p check
     tcSingleClient
     tcMultipleClients
     tcAbstractServer
-    
+
     ~~ [PTool]: Thanks for using P! ~~
     ```
 

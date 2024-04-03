@@ -16,10 +16,10 @@ machine Main {
 		}
 	}
 	fun foo(b: machine, p: int) {
-		send b, E, 0; 
+		send b, E, 0;
 		send b, G, 1;
-		receive { 
-			case E: (payload: int) { x = x + p + 1; } 
+		receive {
+			case E: (payload: int) { x = x + p + 1; }
 			case F: { x = x + p + 2; }
 			case G: (payload: int) { x = x + p + payload; }
 		}
@@ -36,8 +36,8 @@ machine B {
 			receive {
 				case E: (payload2: int) {
 					assert payload2 == 0;
-					receive { 
-						case G: (payload3: int) { 
+					receive {
+						case G: (payload3: int) {
 							var x: int;
 							var a, b: int;
 							var c: event;	
@@ -47,7 +47,7 @@ machine B {
 							a = 10;
 							b = 11;
 							assert b == a + z;
-						} 
+						}
 					}
 					assert payload2 == 0;
 				}

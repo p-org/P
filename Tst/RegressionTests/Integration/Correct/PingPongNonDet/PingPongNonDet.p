@@ -8,7 +8,7 @@ machine Main {
     start state Ping_Init {
         entry {
       	    pongId = new PONG();
-    	    raise Success;   	   
+    	    raise Success;   	
         }
         on Success goto Ping_SendPing;
     }

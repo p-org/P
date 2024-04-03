@@ -9,7 +9,7 @@
 !!! hint "Recommendation: Using Foreign Types and Functions"
     Programmers can consider implementing a particular type as Foreign type in P if it's a complicated data structure and implementing them using P types is either not possible or too cumbersome. For example, P does not support declaring recursive data types, and hence, implementing a linked-list or a tree like data-structure in P is hard. Hence, we recommend programmers to implement such types as foreign types.
 
-    When modeling complex systems, many times programmers need to implement complicated logic/functions that manipulate or iterate over data-structures. Such functions can be easily implemented in foreign languages like Java and C# as compared to P. For example, sorting a list is easier in Java and C# through standard library functions and verbose in P. Also, functions that manipulate foreign types are implemented as foreign functions.   
+    When modeling complex systems, many times programmers need to implement complicated logic/functions that manipulate or iterate over data-structures. Such functions can be easily implemented in foreign languages like Java and C# as compared to P. For example, sorting a list is easier in Java and C# through standard library functions and verbose in P. Also, functions that manipulate foreign types are implemented as foreign functions.
 
 The [Two Phase Commit](../tutorial/twophasecommit.md) example had introduced the foreign function feature. We will now use a simple PriorityQueue example to go into the details of foreign interface in P.
 
@@ -76,14 +76,14 @@ p compile
     Determining projects to restore...
     Restored P/Tutorial/PriorityQueue/PGenerated/CSharp/PriorityQueue.csproj (in 392 ms).
     PriorityQueue -> P/Tutorial/PriorityQueue/PGenerated/CSharp/net6.0/PriorityQueue.dll
-    
+
     Build succeeded.
     0 Warning(s)
     0 Error(s)
-    
+
     Time Elapsed 00:00:04.08
-    
-    
+
+
     ----------------------------------------
     [PTool]: Thanks for using P!
     ```

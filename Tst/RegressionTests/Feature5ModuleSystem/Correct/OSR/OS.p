@@ -1,5 +1,5 @@
 machine SwitchMachine
-sends eSwitchStatusChange; 
+sends eSwitchStatusChange;
 {
 	var Driver: OSRDriverInterface;
     start state _Init {
@@ -17,7 +17,7 @@ sends eSwitchStatusChange;
   state ChangeSwitchStatus {
 		entry {
 	     send Driver, eSwitchStatusChange;
-	     raise (eUnit);		 	  
+	     raise (eUnit);		 	
 		}
         on eUnit goto ChangeSwitchStatus;
     }
@@ -39,7 +39,7 @@ sends eTransferSuccess, eTransferFailure;
 	}
 	
 	state ProcessUpdateLED {
-		entry { 
+		entry {
 			if($)
 			{
 				send Driver, eTransferSuccess;

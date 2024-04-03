@@ -9,7 +9,7 @@ machine Main {
     start state Real_Init {
         entry {
 			x = 0;
-			ghost_machine = new Ghost(this);  
+			ghost_machine = new Ghost(this);
         	send ghost_machine, E0;
         }
 		on E1 do Action1;
@@ -22,8 +22,8 @@ machine Main {
 machine Ghost {
     var real_machine: machine;
     start state _Init {
-	entry (payload: machine) { 
-		real_machine = payload; 
+	entry (payload: machine) {
+		real_machine = payload;
 		send real_machine, E1;
 		}
     }

@@ -1,5 +1,5 @@
 // P semantics XYZ: one machine, "push" transition, action inherited by the pushed state
-// This XYZ checks that after "push" transition, action of the pushing state is inherited by the pushed state 
+// This XYZ checks that after "push" transition, action of the pushing state is inherited by the pushed state
 // Compare error trace for this XYZ with the one for PushExplicitPop.p
 
 event E2 assert 1;
@@ -9,7 +9,7 @@ event E3 assert 1;
 machine Main {
     var XYZ: bool;
     start state Real1_Init {
-        entry { 
+        entry {
 			send this, E1;
         }
 		

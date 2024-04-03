@@ -9,7 +9,7 @@ event E3 assert 1;
 machine Main {
     var XYZ: bool;
     start state Real1_Init {
-        entry { 
+        entry {
 			send this, E1;
         }
 		
@@ -40,7 +40,7 @@ Trace-Log 0:
 <StateLog> Machine Real1-0 entering State Real1_Init
 <EnqueueLog> Enqueued Event < ____E1, null > in Machine ____Real1-0 by ____Real1-0
 <DequeueLog> Dequeued Event < ____E2, null > at Machine ____Real1-0
-<StateLog> Machine Real1-0 entering State Real1_S1                                  
+<StateLog> Machine Real1-0 entering State Real1_S1
 <EnqueueLog> Enqueued Event < ____E3, null > in Machine ____Real1-0 by ____Real1-0
 <DequeueLog> Dequeued Event < ____E1, null > at Machine ____Real1-0
 <StateLog> Machine Real1-0 exiting State Real1_S1                                    --implicit pop

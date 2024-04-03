@@ -1,9 +1,9 @@
-//XYZs cast operator in expressions 
+//XYZs cast operator in expressions
 //XYZs dynamic error
 //Basic types: int, bool, event
 
 event E assert 1: int;
-event EI1: int; 
+event EI1: int;
 event EI2: int;
 event EI3: int;
 event EI4: int;
@@ -39,8 +39,8 @@ machine Main {
 	var s: seq[int];
     var s1: seq[any];
     var s2: seq[int];
-    var s3: seq[seq[any]];           
-	var s4, s8: seq[(int,int)];              
+    var s3: seq[seq[any]];
+	var s4, s8: seq[(int,int)];
 	var s5: seq[bool];
 	var s6: seq[map[int,any]];
 	var s7: seq[int];
@@ -69,8 +69,8 @@ machine Main {
 		  y = a as int;             //dynamic error: "value must be a member of type"
 		  assert(y == 1);
 		  raise halt;
-       }    
-    }       
+       }
+    }
 }
 
 machine XYZ {
@@ -178,7 +178,7 @@ machine XYZ {
 	// default(map[int,int]) is sent
 	state XYZEMAP1 {
 		entry (payload: map[int,int]) {
-			mi = payload;     
+			mi = payload;
 			//assert (mi[0] == 0);  //dynamic error: "key not found" (other XYZs)
 			mi[0] = 0;
 			mi[3] = 3;
@@ -204,7 +204,7 @@ machine XYZ {
 	state XYZEMAP11 {
 		entry (payload: map[int,int]) {
 			mi = default(map[int,int]);
-			mi = payload;     
+			mi = payload;
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
 			
 			mi = default(map[int,int]);

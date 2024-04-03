@@ -6,7 +6,7 @@ event TIMEOUT: machine;
 event CANCEL_SUCCESS: machine;
 event CANCEL_FAILURE: machine;
 // local event for control transfer within timer
-event UNIT; 
+event UNIT;
 machine Timer {
   var client: machine;
   start state Init {
@@ -18,16 +18,16 @@ machine Timer {
   }
 
   state WaitForReq {
-    on CANCEL goto WaitForReq with { 
+    on CANCEL goto WaitForReq with {
       send client, CANCEL_FAILURE, this;
-    }  
+    }
     on START goto WaitForCancel;
   }
 
   state WaitForCancel {
     ignore START;
     on null goto WaitForReq with {
-	   send client, TIMEOUT, this; 
+	   send client, TIMEOUT, this;
 	}
     on CANCEL goto WaitForReq with {
       if ($) {

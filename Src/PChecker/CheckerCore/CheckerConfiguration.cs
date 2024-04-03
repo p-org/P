@@ -23,19 +23,19 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public string PCompiledPath;
-        
+
         /// <summary>
         /// The output path.
         /// </summary>
         [DataMember]
         public string OutputPath;
-        
+
         /// <summary>
         /// Timeout in seconds.
         /// </summary>
         [DataMember]
         public string OutputDirectory;
-        
+
         /// <summary>
         /// Timeout in seconds.
         /// </summary>
@@ -170,7 +170,7 @@ namespace PChecker
         /// If this option is enabled, the tester is hashing the program state.
         /// </summary>
         [DataMember] public bool IsProgramStateHashingEnabled;
-        
+
         /// <summary>
         /// The schedule file to be replayed.
         /// </summary>
@@ -223,14 +223,14 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public bool IsXmlLogEnabled { get; set; }
-        
+
         /// <summary>
         /// Produce a JSON formatted runtime log file.
         /// Defaults to true.
         /// </summary>
         [DataMember]
         public bool IsJsonLogEnabled { get; set; } = true;
-        
+
         /// <summary>
         /// If specified, requests a custom runtime log to be used instead of the default.
         /// This is the AssemblyQualifiedName of the type to load.
@@ -328,7 +328,7 @@ namespace PChecker
 
             IsVerbose = false;
             EnableDebugging = false;
-            
+
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
 
@@ -379,7 +379,7 @@ namespace PChecker
             StrategyBound = (int)numPrioritySwitchPoints;
             return this;
         }
-        
+
         /// <summary>
         /// Updates the configuration to use the reinforcement learning (RL) scheduling strategy
         /// during systematic testing.
@@ -390,7 +390,7 @@ namespace PChecker
             this.IsProgramStateHashingEnabled = true;
             return this;
         }
-        
+
         /// <summary>
         /// Updates the checkerConfiguration to use the dfs scheduling strategy during systematic testing.
         /// </summary>
@@ -515,7 +515,7 @@ namespace PChecker
             IsXmlLogEnabled = isEnabled;
             return this;
         }
-        
+
         /// <summary>
         /// Set the <see cref="OutputDirectory"/> to either the user-specified <see cref="CheckerConfiguration.OutputPath"/>
         /// or to a unique output directory name in the same directory as <see cref="CheckerConfiguration.AssemblyToBeAnalyzed"/>

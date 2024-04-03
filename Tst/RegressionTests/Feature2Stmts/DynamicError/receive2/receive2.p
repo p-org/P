@@ -16,9 +16,9 @@ machine Main {
 		}
 	}
 	fun foo(b: machine, p: int) {
-		send b, E; 
-		receive { 
-			case E: { x = x + p + 1; } 
+		send b, E;
+		receive {
+			case E: { x = x + p + 1; }
 			case F: { x = x + p + 2; }
 			case G: (payload: int) { x = x + p + payload; }
 			case null: { }
@@ -35,9 +35,9 @@ machine B {
 			y = payload;
 			receive {
 				case E: {
-					receive { 
-						case G: (x: int) { 
-						} 
+					receive {
+						case G: (x: int) {
+						}
 					}
 				}
 			}

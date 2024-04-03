@@ -133,7 +133,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 needComma = true;
             }
         }
-        
+
         private static bool IsAsciiAlphabetic(char c)
         {
             return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');

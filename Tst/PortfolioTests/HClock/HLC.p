@@ -27,7 +27,7 @@ machine HLC {
         C[i] = 0;
         msg[i] = ((l = 0, c = 0));
         i = i + 1;
-      } 
+      }
     }
     on eNext do {
       var j : int;

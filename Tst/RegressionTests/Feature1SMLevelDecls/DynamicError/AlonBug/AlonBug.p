@@ -7,12 +7,12 @@ machine Main {
 	start state Init {
 			 entry { i = 0; raise E; }
 		//this assert is reachable:
-		exit { assert (false); }  
+		exit { assert (false); }
 		on E goto Call;    //exit actions are executed before this transition
 	}
 
 	state Call {
-		   entry { 
+		   entry {
 			 if (i == 3) {
 //				    pop;
 			}
@@ -20,7 +20,7 @@ machine Main {
 			    {
 					i = i + 1;
 			    }
-			     raise E; 
+			     raise E;
 			 }
 	}
 }

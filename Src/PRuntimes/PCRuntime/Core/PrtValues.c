@@ -89,7 +89,7 @@ static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodePrtString(_In_ PRT_STRING value)
 	}
 	PRT_UINT32 code = 5381;
 	int c;
-	while (c = *value++) 
+	while (c = *value++)
 	{
 		code = ((code << 5) + code) + c; /* code * 33 + c */	
 	}
@@ -1608,7 +1608,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE* value1, _In_ PRT_VALUE
 		return
 			value1->valueUnion.ft == value2->valueUnion.ft ? PRT_TRUE : PRT_FALSE;
 	case PRT_VALUE_KIND_STRING:
-		return 
+		return
 			strcmp(value1->valueUnion.str, value2->valueUnion.str)==0 ? PRT_TRUE : PRT_FALSE;
 	case PRT_VALUE_KIND_FOREIGN:
 		{
@@ -1618,7 +1618,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE* value1, _In_ PRT_VALUE
 				       ? program->foreignTypes[fVal1->typeTag]->isEqualFun(fVal1->value, fVal2->value)
 				       : PRT_FALSE;
 		}
-	case PRT_VALUE_KIND_SET: 
+	case PRT_VALUE_KIND_SET:
 		{
 			PRT_SETVALUE* uVal1 = value1->valueUnion.set;
 			PRT_SETVALUE* uVal2 = value2->valueUnion.set;
@@ -1731,7 +1731,7 @@ PRT_VALUE* PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE* value)
 		return PrtMkIntValue(value->valueUnion.nt);
 	case PRT_VALUE_KIND_FLOAT:
 		return PrtMkFloatValue(value->valueUnion.ft);
-	case PRT_VALUE_KIND_STRING: 
+	case PRT_VALUE_KIND_STRING:
 	{
 		PRT_STRING copy = (PRT_STRING) PrtMalloc(strlen(value->valueUnion.str) + 1);
 		strcpy(copy, value->valueUnion.str);

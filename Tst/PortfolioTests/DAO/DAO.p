@@ -17,7 +17,7 @@ machine DAO {
       attack = 3;
       driver = pld.driver;
     }
-    on eNext do { 
+    on eNext do {
       // withdraw
       if (pc == 0 && (bankBalance >= amount)) {
         pc = 1;

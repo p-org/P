@@ -16,11 +16,11 @@
 ![GitHub Action (CI on Ubuntu)](https://github.com/p-org/P/workflows/CI%20on%20Ubuntu/badge.svg)
 ![GitHub Action (CI on MacOS)](https://github.com/p-org/P/workflows/CI%20on%20MacOS/badge.svg)
 
-**Challenge**: 
+**Challenge**:
 Distributed systems are notoriously hard to get right. Programming these systems is challenging because of the need to reason about correctness in the presence of myriad possible interleaving of messages and failures. Unsurprisingly, it is common for service teams to uncover correctness bugs after deployment. Formal methods can play an important role in addressing this challenge!
 
 
-**P Overview:** 
+**P Overview:**
 P is a state machine based programming language for formally modeling and specifying complex
 distributed systems. P allows programmers to model their system design as a collection of
 communicating state machines. P supports several backend analysis engines
@@ -50,7 +50,7 @@ In our experience of using P inside AWS, Academia, and Microsoft. We have observ
 ## Let the fun begin!
 
 You can find most of the information about the P framework on this webpage:
-[what is P?](whatisP.md),  
+[what is P?](whatisP.md),
 [getting started](getstarted/install.md), [tutorials](tutsoutline.md),
 [case studies](casestudies.md) and related [research publications](publications.md). If
 you have any further questions, please feel free to create an
@@ -58,7 +58,7 @@ you have any further questions, please feel free to create an
 [discussions](https://github.com/p-org/P/discussions), or
 [email us](mailto:ankushdesai@gmail.com)
 
-!!! info "Contributions"  
+!!! info "Contributions"
     _P has always been a collaborative project between industry and academia (since 2013)
     :drum:. The P team welcomes contributions and suggestions from all of you!! :punch:._
 

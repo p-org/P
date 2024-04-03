@@ -3,14 +3,14 @@ OUT: Compiling InfiniteLoopInAtomicBlock.zing to InfiniteLoopInAtomicBlock.dll .
 OUT: Writing linker.c ...
 OUT: Writing linker.h ...
 =================================
-         Console output          
+         Console output
 =================================
 OUT: Program Runtime Error
-OUT: 
+OUT:
 OUT: Error:
 OUT: The Zing model appears to have encountered a loop within an atomic block. Zinger executed 1000000 internals steps without executing a nondeterminitic external choice statement
-OUT: 
-OUT: 
+OUT:
+OUT:
 OUT: Stack trace:
 OUT:     PRT_VALUE.PrtMkDefaultValue (InfiniteLoopInAtomicBlock.zing, Line 3287)
 OUT:     Continuation.Return (InfiniteLoopInAtomicBlock.zing, Line 2858)
@@ -19,10 +19,10 @@ OUT:     MACHINE_Main.ReentrancyHelper (InfiniteLoopInAtomicBlock.zing, Line 127
 OUT:     MACHINE_Main.RunHelper (InfiniteLoopInAtomicBlock.zing, Line 1054)
 OUT:     MACHINE_Main.Run (InfiniteLoopInAtomicBlock.zing, Line 887)
 OUT:     MACHINE_Main.Start (InfiniteLoopInAtomicBlock.zing, Line 859)
-OUT: 
-OUT: 
+OUT:
+OUT:
 OUT: 10 distinct states explored
-OUT: 
+OUT:
 EXIT: 4
 
 =================================

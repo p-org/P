@@ -55,13 +55,13 @@ machine Global {
       var emptyBalVSet : map[int, map[int, bool]];
       var emptySlotSet : map[int, map[int, bool]];
       var emptyValSet : map[int, map[int, map[int, bool]]];
-      var quorumMap : map[int, bool]; 
+      var quorumMap : map[int, bool];
       M = pld.M;
       driver = pld.driver;
       highestP1ABallot = -1;
       acceptors = pld.acceptSeq;
       leaders = pld.leadSeq;
-      slots = pld.slotSeq; 
+      slots = pld.slotSeq;
       ballots = pld.ballotSeq;
       vals = leaders;
       vals += (sizeof(vals), -1);
@@ -76,7 +76,7 @@ machine Global {
       while (i < sizeof(ballots) + M) {
         emptyBalVSet[i] = emptyVSet;
         i = i + 1;
-      } 
+      }
       i = 0;
       emptySlotSet[-1] = emptyVSet;
       emptyValSet[-1] = emptyBalVSet;
@@ -189,7 +189,7 @@ machine Global {
             }
           }
           j = j + 1;
-        } 
+        }
         i = i + 1;
       }
       i = 0;
@@ -206,7 +206,7 @@ machine Global {
             }
             else {
               choices += (sizeof(choices), (3, leaders[i], b[leaders[i]]));
-            } 
+            }
           }
           if (pc[leaders[i]] == 2 || pc[leaders[i]] == 4) {
             // CP1L - collect responses
@@ -242,7 +242,7 @@ machine Global {
       }
 
       if (sizeof(choices) > 0) {
-        choice = choices[choose(sizeof(choices))]; 
+        choice = choices[choose(sizeof(choices))];
         if (choice.0 == 0) {
           raise eReplyP1, (acceptor=choice.1, b=choice.2);
         }
@@ -356,7 +356,7 @@ machine Global {
       }
       SatQ2[pld.b] = exists;
       send driver, eNext;
-    } 
+    }
 
     on eSendP1 do (leader : int) {
       b[leader] = b[leader] + M;
@@ -407,8 +407,8 @@ machine Global {
       while (i < sizeof(ballots) + M) {
         j = 0;
         while (j < sizeof(slots)) {
-          k = 0; 
-          while (k < sizeof(vals)) { 
+          k = 0;
+          while (k < sizeof(vals)) {
             if (pVal[leader][slots[j]][i][vals[k]]) {
               pVals += (sizeof(pVals), (slots[j], i, vals[k]));
             }
@@ -441,7 +441,7 @@ machine Global {
           if(SentP2B[b[leader]][vals[i]]) {
             vvs += (sizeof(vvs), vals[i]);
           }
-          i = i + 1; 
+          i = i + 1;
         }
         // choose message
         vv = choose(vvs);
@@ -486,7 +486,7 @@ machine Main {
         leaders += (sizeof(leaders), i);
         i = i + 1;
       }
-      i = 1; 
+      i = 1;
       while (i <= STOP) {
         slots += (sizeof(slots), i);
         i = i + 1;

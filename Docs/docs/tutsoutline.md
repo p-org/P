@@ -9,7 +9,7 @@ In this tutorial, we use a series of examples along with exercise problems to he
     We recommend that you work through these examples one-by-one by solving the accompanying exercise problems before moving to the next example. If you have any doubts or questions, **please feel free to ask them in [discussions](https://github.com/p-org/P/discussions/categories/q-a) or create an [issue](https://github.com/p-org/P/issues)**.
 
     Also, we assume that you have cloned the P repository locally.
-    ```shell 
+    ```shell
     git clone https://github.com/p-org/P.git
     ```
 
@@ -34,7 +34,7 @@ Now that we understand the basic features of the P language, lets spice things u
 
 ### **[[Example 2] Two Phase Commit](tutorial/twophasecommit.md)**
 
-We use a simplified version of the [classic two phase commit protocol](https://s2.smu.edu/~mhd/8330f11/p133-gray.pdf) to model a transaction commit service. 
+We use a simplified version of the [classic two phase commit protocol](https://s2.smu.edu/~mhd/8330f11/p133-gray.pdf) to model a transaction commit service.
 The protocol uses a (single) coordinator to achieve consensus for a transaction spanning across multiple participants. A transaction in our case is simply a `put` operation for a key-value data store where the data store is replicated across participants.
 
 **Assumptions:** Note that our transaction commit system is ridiculously simplified, for example, it is not fault tolerant to node failures, failure of either coordinator or any of the participants will block the progress forever. Also, we rely on [P's send semantics](advanced/psemantics.md) to model the behavior of the underlying network.

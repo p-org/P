@@ -136,7 +136,7 @@ namespace Plang
         {
             CommandLineOutput.WriteInfo("~~ [PTool]: Thanks for using P! ~~");
         }
-        
+
         public static void RunCompiler(string[] args)
         {
             var configuration = new PCompilerOptions().Parse(args);

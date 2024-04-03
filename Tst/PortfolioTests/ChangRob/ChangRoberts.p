@@ -43,7 +43,7 @@ machine ChangRoberts {
         if (pc[nodes[i]] == 0) {
           if(initiator[nodes[i]]) {
             if (!(ids[nodes[i]] in msgs[nodes[succ]])) {
-              choices += (sizeof(choices), (0, nodes[i], nodes[succ], ids[nodes[i]])); 
+              choices += (sizeof(choices), (0, nodes[i], nodes[succ], ids[nodes[i]]));
             }
           } else {
             pc[nodes[i]] = 1;
@@ -88,10 +88,10 @@ machine ChangRoberts {
           } else {
             print("win");
             st[choices[i].1] = 2;
-          } 
+          }
         }
         send driver, eNext;
-      } 
+      }
     }
   }
 }

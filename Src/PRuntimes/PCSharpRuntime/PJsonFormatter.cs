@@ -36,7 +36,7 @@ namespace Plang.CSharpRuntime
 
             return log;
         }
-        
+
         /// <summary>
         /// Method taken from PLogFormatter.cs file. Takes in a string and only get the
         /// last element of the string separated by a period.
@@ -47,7 +47,7 @@ namespace Plang.CSharpRuntime
         /// <param name="name">String representing the name to be parsed.</param>
         /// <returns>The split string.</returns>
         private static string GetShortName(string name) => name?.Split('.').Last();
-        
+
         /// <summary>
         /// Method taken from PLogFormatter.cs file. Takes in Event e and returns string
         /// with details about the event such as event name and its payload. Slightly modified
@@ -62,7 +62,7 @@ namespace Plang.CSharpRuntime
             {
                 return e.GetType().Name;
             }
-            
+
             var pe = (PEvent)(e);
             var payload = pe.Payload == null ? "null" : pe.Payload.ToEscapedString();
             var msg = pe.Payload == null ? "" : $" with payload ({payload})";
@@ -135,7 +135,7 @@ namespace Plang.CSharpRuntime
             Writer.AddLog(log);
             Writer.AddToLogs(updateVcMap: true);
         }
-        
+
         public override void OnDefaultEventHandler(ActorId id, string stateName)
         {
             stateName = GetShortName(stateName);

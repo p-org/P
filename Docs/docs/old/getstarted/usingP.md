@@ -1,6 +1,6 @@
 # Using P Compiler and Checker
 
-!!! check ""  
+!!! check ""
     Before moving forward, we assume that you have successfully installed the
     [P Compiler and Checker](install.md#step-3-install-p-compiler).
 
@@ -10,12 +10,12 @@ section, we provide an overview of the steps involved in compiling and testing a
 using the [client server](../../tutorial/clientserver.md) example in Tutorials.
 
 
-??? info "Get the Client Server Example Locally"  
+??? info "Get the Client Server Example Locally"
     We will use the [ClientServer](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer) example from Tutorial folder in P repository to describe the process of compiling and testing a P program. Please clone the P repo and navigate to the
     ClientServer example in Tutorial.
 
     Clone P Repo locally:
-    ```shell 
+    ```shell
     git clone https://github.com/p-org/P.git
     ```
     Navigate to the ClientServer examples folder:
@@ -32,23 +32,23 @@ There are two ways of compiling a P program:
 1. Using a **P project file** (`*.pproj`) to provides all the required inputs to the compiler or
 2. Passing all the P files (`*.p`) along with other options (e.g., `-generate`) **as commandline arguments** to the compiler.
 
-!!! tip "Recommendation"  
+!!! tip "Recommendation"
     We recommend using the P project files to compile a P program.
 
 ??? help "P Compiler commandline options:"
     The P compiler provides the following commandline options:
 
     ```shell
-    ------------------------------------------ 
-    Recommended usage: 
-    
+    ------------------------------------------
+    Recommended usage:
+
     >> pc -proj:<.pproj file>
-    
-    ------------------------------------------ 
-    Optional usage: 
-    
+
+    ------------------------------------------
+    Optional usage:
+
     >> pc file1.p [file2.p ...][options]
-    
+
     options:
         -t:[target project name]   -- project name (as well as the generated file) if not supplied, use file1
         -outputDir:[path]          -- where to write the generated files
@@ -68,7 +68,7 @@ There are two ways of compiling a P program:
     ``` shell
     pc -proj:ClientServer.pproj
     ```
-    
+
     ??? info "Expected Output"
         ```
         $ pc -proj:ClientServer.pproj
@@ -118,12 +118,12 @@ There are two ways of compiling a P program:
         <OutputDir>./PGenerated/</OutputDir>
         </Project>
         ```
-        The `<InputFiles>` block provides all the P files that must be compiled together for this project. 
+        The `<InputFiles>` block provides all the P files that must be compiled together for this project.
         In `<PFile>` one can either specify the path to a P file or to a folder and the P compiler includes all the `*.p` files in the folder during compilation.
         The `<ProjectName>` block provides the name for the project which is used as the output file name for the generated code.
         The `<OutputDir>` block provides the output directory for the generated code.
-        Finally, the `<IncludeProject>` block provides a path to other P projects that must be included as dependencies during compilation. 
-        The P compiler simply recursively copies all the P files in the dependency projects (transitively including all P files in dependent projects) and compiles them together. 
+        Finally, the `<IncludeProject>` block provides a path to other P projects that must be included as dependencies during compilation.
+        The P compiler simply recursively copies all the P files in the dependency projects (transitively including all P files in dependent projects) and compiles them together.
         This feature provides a way to split the P models for a large system into sub projects that can share models.
 
 === "Compile P files directly"
@@ -133,9 +133,9 @@ There are two ways of compiling a P program:
     pc PSpec/*.p PSrc/*.p PTst/*.p \
     -generate:csharp -outputDir:PGenerated -target:ClientServer
     ```
-    
+
     ??? info "Expected Output"
-    
+
         ```
         ----------------------------------------
         ....... includes p file: P/Tutorial/1_ClientServer/PSpec/BankBalanceCorrect.p
@@ -187,7 +187,7 @@ Expected Output:
 ```shell hl_lines="5 6 7"
 pmc <Path>/ClientServer.dll
 
-Provide /method or -m flag to qualify the test method name you wish to use. 
+Provide /method or -m flag to qualify the test method name you wish to use.
 Possible options are::
 PImplementation.tcSingleClient.Execute
 PImplementation.tcMultipleClients.Execute

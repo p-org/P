@@ -24,12 +24,12 @@ machine AbstractBankServer
       if(balance[wReq.accountId] - wReq.amount > 10) /* hint: bug */
       {
         balance[wReq.accountId] = balance[wReq.accountId] - wReq.amount;
-        send wReq.source, eWithDrawResp, 
+        send wReq.source, eWithDrawResp,
           (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, balance = balance[wReq.accountId], rId = wReq.rId);
       }
       else
       {
-        send wReq.source, eWithDrawResp, 
+        send wReq.source, eWithDrawResp,
           (status = WITHDRAW_ERROR, accountId = wReq.accountId, balance = balance[wReq.accountId], rId = wReq.rId);
       }
     }

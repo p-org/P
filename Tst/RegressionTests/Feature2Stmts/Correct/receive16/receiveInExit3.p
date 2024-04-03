@@ -7,7 +7,7 @@ machine Main {
 			var x: machine;
 			x = new N();
 			send x, E, 0;
-			send x, E, 0; 
+			send x, E, 0;
 		}
 	}
 
@@ -28,7 +28,7 @@ machine N {
 		exit {
 		    DoReceive();
 		}
-		on Unit goto T with { 
+		on Unit goto T with {
 			DoReceive();
 		}
 	}

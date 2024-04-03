@@ -219,7 +219,7 @@ namespace Plang.Compiler.Backend.Java
             // Write toString() in the same output style as a Java record.
             WriteLine("public String toString() {");
             WriteLine($"StringBuilder sb = new StringBuilder(\"{tname}\");");
-            
+
             WriteLine("sb.append(\"[\");");
             foreach (var (sep, (_, fieldName)) in fields.WithPrefixSep(", "))
             {

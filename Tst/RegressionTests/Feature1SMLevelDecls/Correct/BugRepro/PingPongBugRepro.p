@@ -1,5 +1,5 @@
 // This test found a bug in treatment of function parameters
-// in the case when there is a scheduling point inside the function (such as a send), 
+// in the case when there is a scheduling point inside the function (such as a send),
 // and the mutation performed before the scheduling point is used after it
 
 
@@ -53,7 +53,7 @@ machine FailureDetector {
   	        nodes = payload;
 			InitializeAliveSet(0);
 			timer = new Timer(this);
-	        goto SendPing;   	   
+	        goto SendPing;   	
         }
 		on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; }
 		on UNREGISTER_CLIENT do  (payload: machine) { if (payload in clients) clients -= payload; }
@@ -65,16 +65,16 @@ machine FailureDetector {
 	    }
 	    on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; }
 		on UNREGISTER_CLIENT do  (payload: machine) { if (payload in clients) clients -= payload; }
-    	on PONG do (payload: machine) { 
+    	on PONG do (payload: machine) {
 		    if (payload in alive) {
-				 responses[payload] = true; 
+				 responses[payload] = true;
 				 if (sizeof(responses) == sizeof(alive)) {
 			         send timer, CANCEL;
 					 raise TIMER_CANCELED;
 			     }
 			}
 		}
-		on TIMEOUT do (payload: machine) { 
+		on TIMEOUT do (payload: machine) {
 			attempts = attempts + 1;
 		    if (sizeof(responses) < sizeof(alive) && attempts < 2) {
 				raise UNIT;
@@ -151,13 +151,13 @@ event M_PONG: machine;
 spec Safety observes M_PING, M_PONG {
 	var pending: map[machine, int];
     start state Init {
-	    on M_PING do (payload: machine) { 
+	    on M_PING do (payload: machine) {
 			if (!(payload in pending))
 				pending[payload] = 0;
 			pending[payload] = pending[payload] + 1;
 			assert (pending[payload] <= 3);   //fails
 		}
-		on M_PONG do (payload: machine) { 
+		on M_PONG do (payload: machine) {
 			assert (payload in pending);
 			assert (0 < pending[payload]);
 			pending[payload] = pending[payload] - 1;
@@ -173,11 +173,11 @@ spec Liveness observes M_START, NODE_DOWN {
 	}
 	hot state Wait {
 		entry (payload: map[machine, bool]) {
-			nodes = payload; 
+			nodes = payload;
 		}
-		on NODE_DOWN do (payload: machine) { 
+		on NODE_DOWN do (payload: machine) {
 			nodes -= payload;
-			if (sizeof(nodes) == 0) 
+			if (sizeof(nodes) == 0)
 				raise UNIT;
 		}
 		on UNIT goto Done;

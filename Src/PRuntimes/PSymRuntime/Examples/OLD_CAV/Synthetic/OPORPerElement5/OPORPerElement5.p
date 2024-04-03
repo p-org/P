@@ -23,7 +23,7 @@ machine ArrayElement {
 }
 
 machine ThreadZero {
-        var array: seq[machine]; 
+        var array: seq[machine];
         var i:int;
 	start state Init {
 		entry (pld : (array:seq[machine], n:int)) {
@@ -42,7 +42,7 @@ machine ThreadZero {
                            send array[i], eReadZeroIndexReq, this;
                         }
                 }
-                    
+
         }
 
 }

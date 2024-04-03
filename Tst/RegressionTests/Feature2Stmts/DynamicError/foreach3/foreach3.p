@@ -1,7 +1,7 @@
 /********************
  * This example explains the usage of foreach iterator with break
  * ******************/
- 
+
 
  machine Main {
  	var ss: set[int];
@@ -29,5 +29,5 @@
  			assert sum != 223, "Should get triggered";
  		}
  	}
- } 
+ }
 

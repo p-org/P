@@ -39,7 +39,7 @@ The P module system enables programmers to model their system _modularly_ and
 perform _compositional_ testing to scale the analysis to large distributed systems.
 
 
-!!! Tip "Models, Specifications, Model Checking Scenario"  
+!!! Tip "Models, Specifications, Model Checking Scenario"
     A quick primer on what a model
     is, versus a specification, and model checking scenarios: (1) a specification says what
     the system should do (correctness properties); (2) a model captures the details of how the

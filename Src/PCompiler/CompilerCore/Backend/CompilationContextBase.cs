@@ -35,8 +35,8 @@ namespace Plang.Compiler.Backend
             // Unindent for every } at the beginning of the line, save the index
             // of one past the last leading }.
             int i;
-            for (i = 0; i < format.Length; i++) { 
-                if (format[i] == '}' || format[i] == ')') { 
+            for (i = 0; i < format.Length; i++) {
+                if (format[i] == '}' || format[i] == ')') {
                     IndentationLevel--;
                 }
                 else if (!char.IsWhiteSpace(format[i]))
@@ -70,8 +70,8 @@ namespace Plang.Compiler.Backend
             // Unindent for every } at the beginning of the line, store the index
             // of one past the last leading }.
             int i;
-            for (i = 0; i < format.Length; i++) { 
-                if (format[i] == '}' || format[i] == ')') { 
+            for (i = 0; i < format.Length; i++) {
+                if (format[i] == '}' || format[i] == ')') {
                     IndentationLevel--;
                 }
                 else if (!char.IsWhiteSpace(format[i]))

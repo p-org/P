@@ -1,6 +1,6 @@
 !!! info "If you are using an older P version 1.x.x, please find the usage guide [here](../old/getstarted/usingP.md)"
 
-!!! check ""  
+!!! check ""
     Before moving forward, we assume that you have successfully installed
     [P](install.md) and the [Peasy extension](PeasyIDE.md) :metal:.
 
@@ -10,12 +10,12 @@ section, we provide an overview of the steps involved in compiling and checking 
 using the [client server](../tutorial/clientserver.md) example in Tutorials.
 
 
-??? info "Get the Client Server Example Locally"  
+??? info "Get the Client Server Example Locally"
     We will use the [ClientServer](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer) example from Tutorial folder in P repository to describe the process of compiling and checking a P program. Please clone the P repo and navigate to the
     ClientServer example in Tutorial.
 
     Clone P Repo locally:
-    ```shell 
+    ```shell
     git clone https://github.com/p-org/P.git
     ```
     Navigate to the ClientServer examples folder:
@@ -32,7 +32,7 @@ There are two ways of compiling a P program:
 1. Using a **P project file** (`*.pproj`) to provide all the required inputs to the compiler or
 2. Passing all the P files (`*.p`) along with other options **as commandline arguments** to the compiler.
 
-!!! tip "Recommendation" 
+!!! tip "Recommendation"
     We recommend using the P project files to compile a P program.
 
 ??? help "P Compiler commandline options"
@@ -40,22 +40,22 @@ There are two ways of compiling a P program:
 
     ```
     -----------------------------------------------
-    usage: p compile [--help] [--pproj string] [--pfiles string] [--projname string] [--outdir string] 
+    usage: p compile [--help] [--pproj string] [--pfiles string] [--projname string] [--outdir string]
 
     The P compiler compiles all the P files in the project together and generates the executable that
     can be checked for correctness by the P checker.
-    
+
     Compiling using `.pproj` file:
     ------------------------------
     -pp, --pproj string         : P project file to compile (*.pproj). If this option is not passed,
     the compiler searches for a *.pproj in the current folder
-    
+
     Compiling P files directly through commandline:
     -----------------------------------------------
     -pf, --pfiles string        : List of P files to compile
     -pn, --projname string      : Project name for the compiled output
     -o, --outdir string         : Dump output to directory (absolute or relative path)
-    
+
     Optional Arguments:
     -------------------
     -h, --help                  Show this help menu
@@ -96,14 +96,14 @@ There are two ways of compiling a P program:
         Determining projects to restore...
         Restored P/Tutorial/1_ClientServer/PGenerated/CSharp/ClientServer.csproj (in 102 ms).
         ClientServer -> P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
-        
+
         Build succeeded.
         0 Warning(s)
         0 Error(s)
-        
+
         Time Elapsed 00:00:02.25
-        
-        
+
+
         ----------------------------------------
         ~~ [PTool]: Thanks for using P! ~~
         ```
@@ -127,12 +127,12 @@ There are two ways of compiling a P program:
         <OutputDir>./PGenerated/</OutputDir>
         </Project>
         ```
-        The `<InputFiles>` block provides all the P files that must be compiled together for this project. 
+        The `<InputFiles>` block provides all the P files that must be compiled together for this project.
         In `<PFile>` one can either specify the path to a P file or to a folder and the P compiler includes all the `*.p` files in the folder during compilation.
         The `<ProjectName>` block provides the name for the project which is used as the output file name for the generated code.
         The `<OutputDir>` block provides the output directory for the generated code.
-        Finally, the `<IncludeProject>` block provides a path to other P projects that must be included as dependencies during compilation. 
-        The P compiler simply recursively copies all the P files in the dependency projects (transitively including all P files in dependent projects) and compiles them together. 
+        Finally, the `<IncludeProject>` block provides a path to other P projects that must be included as dependencies during compilation.
+        The P compiler simply recursively copies all the P files in the dependency projects (transitively including all P files in dependent projects) and compiles them together.
         This feature provides a way to split the P models for a large system into sub projects that can share models.
 
 
@@ -142,7 +142,7 @@ There are two ways of compiling a P program:
     ```shell
     p compile -pf PSpec/*.p PSrc/*.p PTst/*.p -pn ClientServer -o PGenerated
     ```
-    
+
     ??? info "Expected Output"
         ```
         $ p compile -pf PSpec/*.p PSrc/*.p PTst/*.p -pn ClientServer -o PGenerated
@@ -157,14 +157,14 @@ There are two ways of compiling a P program:
         Determining projects to restore...
         Restored P/Tutorial/1_ClientServer/PGenerated/CSharp/ClientServer.csproj (in 115 ms).
         ClientServer -> P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
-        
+
         Build succeeded.
         0 Warning(s)
         0 Error(s)
-        
+
         Time Elapsed 00:00:05.74
-        
-        
+
+
         ----------------------------------------
         ~~ [PTool]: Thanks for using P! ~~
         ```
@@ -187,7 +187,7 @@ p check
 !!! info "Expected Output"
     ```hl_lines="8 9 10"
     $ p check
-    
+
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
@@ -196,7 +196,7 @@ p check
     tcSingleClient
     tcMultipleClients
     tcAbstractServer
-    
+
     ~~ [PTool]: Thanks for using P! ~~
     ```
 

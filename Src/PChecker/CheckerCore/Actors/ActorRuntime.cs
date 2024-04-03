@@ -41,7 +41,7 @@ namespace PChecker.Actors
         /// to replace the logger with a custom one.
         /// </summary>
         public override TextWriter Logger => LogWriter.Logger;
-        
+
         /// <summary>
         /// Used to log json trace outputs.
         /// </summary>
@@ -392,7 +392,7 @@ namespace PChecker.Actors
                 return;
             }
         }
-        
+
         /// <inheritdoc/>
         internal override void TryCreateMonitor(Type type)
         {
@@ -696,7 +696,7 @@ namespace PChecker.Actors
 
         /// <inheritdoc/>
         public override TextWriter SetLogger(TextWriter logger) => LogWriter.SetLogger(logger);
-        
+
         /// <summary>
         /// Sets the JsonLogger in LogWriter.cs
         /// </summary>

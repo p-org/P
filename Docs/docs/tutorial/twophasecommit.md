@@ -1,7 +1,7 @@
 ??? note "How to use this example"
 
     We assume that you have cloned the P repository locally.
-    ```shell 
+    ```shell
     git clone https://github.com/p-org/P.git
     ```
 
@@ -32,7 +32,7 @@ Please feel free to read details about the recommended [P program structure](../
 The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseCommit/PSrc)) for the TwoPhaseCommit example consists of three files:
 
 - [Coordinator.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/Coordinator.p): Implements the Coordinator state machine.
-  
+
 ??? tip "[Expand]: Let's walk through Coordinator.p"
     - ([L25 - L33](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/Coordinator.p#L25-L33)) &rarr; Declares the `write` and `read` transaction events used to communicate between the coordinator and the client machines (manual: [event declaration](../manual/events.md)).
     - ([L35 - L43](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/Coordinator.p#L35-L43)) &rarr; Declares the `prepare`, `commit`, and `abort` events used to communicate between the coordinator and the participants in the system.
@@ -45,12 +45,12 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseC
     times out and aborts the transaction. On receiving a read transaction, the coordinator randomly selects
     a participant and forwards the read request to that participant.
 - [Participant.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/Participant.p): Implements the Participant state machine.
-  
+
 ??? tip "[Expand]: Let's walk through Participant.p"
     - Unlike the `Coordinator` state machine that has multiple states, the `Participant` state machine is fairly simple. Each participant waits for requests from the `Coordinator` and sends the response back based on whether the request can be accepted or has to be rejected.
     - On receiving an `eShutDown` event, the participant executes a `raise halt` to destroy itself. To know more about the special `halt` event, please check the manual: [halt event](../manual/expressions.md#primitive).
     - Each participant maintains a local key-value store which is updated based on the transactions committed by the coordinator. On receiving a prepare request from the coordinator, the participant chooses to either accept or reject the transaction based on the associated transaction id.
-  
+
 - [TwoPhaseCommitModules.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/TwoPhaseCommitModules.p): Declares the P module corresponding to the two phase commit system.
 
 ### Timer and Failure Injector
@@ -86,12 +86,12 @@ The test scenarios folder for TwoPhaseCommit ([PTst](https://github.com/p-org/P/
     P allows programmers to write different test cases. Each test case is checked separately and can use a different test driver. Using different test drivers triggers different behaviors in the system under test, as it implies different system configurations and input generators. To better understand the P test cases, please look at manual: [P test cases](../manual/testcases.md).
 
     - ([L1 - L12](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/TestScripts.p#L1-L12)) &rarr; Declares three test cases each checking a different scenario in the system. The system under test is the `union` of the modules representing each component in the system (manual: [P module system](../manual/modulesystem.md#union-module)). The `assert` module constructor is used to attach monitors or specifications to be checked on the modules (manual: [assert](../manual/modulesystem.md#assert-monitors-module)).
-  
+
 ??? tip "[Expand]: Let's walk through Client.p"
     The `Client` machine implements the client of the two-phase-commit transaction service. Each client issues N non-deterministic write-transactions, if the transaction succeeds then it performs a read-transaction on the same key and asserts that the value read is same as what was written by the write transaction.
 
     - ([L60](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/Client.p#L60)) &rarr; Declares a foreign function in P. Foreign functions are functions that are declared in P but implemented in the external foreign language. Please read the example in [P foreign interface](../manual/foriegntypesfunctions.md) to know more about this functionality. In this example, the `ChooseRandomTransaction` function could have been very easily written in P itself but it's implemented as foreign function just to demonstrate that P supports this functionality.
-  
+
 ### Compiling TwoPhaseCommit
 
 Navigate to the [2_TwoPhaseCommit](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseCommit) folder and run the following command to compile the TwoPhaseCommit project:
@@ -133,14 +133,14 @@ p compile
     Determining projects to restore...
     Restored P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/TwoPhaseCommit.csproj (in 92 ms).
     TwoPhaseCommit -> P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/net6.0/TwoPhaseCommit.dll
-    
+
     Build succeeded.
     0 Warning(s)
     0 Error(s)
-    
+
     Time Elapsed 00:00:04.65
-    
-    
+
+
     ----------------------------------------
     ~~ [PTool]: Thanks for using P! ~~
     ```
@@ -166,7 +166,7 @@ p check
     tcSingleClientNoFailure
     tcMultipleClientsNoFailure
     tcMultipleClientsWithFailure
-    
+
     ~~ [PTool]: Thanks for using P! ~~
     ```
 
@@ -202,7 +202,7 @@ p check -tc tcMultipleClientsWithFailure -s 10000
 ```
 
 !!! danger "Error"
-    `tcMultipleClientsWithFailure` demonstrates the known case where in the presence of node failures the two phase commit protocol does not guarantee progress. 
+    `tcMultipleClientsWithFailure` demonstrates the known case where in the presence of node failures the two phase commit protocol does not guarantee progress.
 
     `<ErrorLog> Deadlock detected. Client(7) is waiting to receive an event, but no other controlled tasks are enabled.`
 

@@ -154,7 +154,7 @@ machine Voldchain {
           i = i + 1;
         }
       }
-      added = false; 
+      added = false;
       if (!ifBranch) {
         i = 0;
         while (!added && (i < sizeof(chain))) {

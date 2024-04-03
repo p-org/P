@@ -10,23 +10,23 @@ event E4 assert 1;
 event unit assert 1;
 
 machine Main {
-    var i: int;	  
+    var i: int;	
     start state Real1_Init {
-        entry { 
+        entry {
 			raise unit;
         }
-		on unit do { send this, E1; 
-		             send this, E2; 
-		             send this, E3; 
+		on unit do { send this, E1;
+		             send this, E2;
+		             send this, E3;
 					 send this, E4;
-					 }   
+					 }
 		on E2 goto Real1_S1 with { }
 		on E3 goto Real1_S3 with { pop;}                         //error
 	}
 	state Real1_S1 {
 		entry {
 			}
-		on E1 goto Real1_S1 with Action2; 
+		on E1 goto Real1_S1 with Action2;
     }
 	state Real1_S2 {
 		entry { }
@@ -40,15 +40,15 @@ machine Main {
 	state Real1_S5 {
 		entry { }
 	}
-	fun Action1() {		                                       
+	fun Action1() {		
     }
 	fun Action2() {
 
     }
 	fun Action3() {
     }
-	fun Action4() : int {		                          
-		pop;                                   
+	fun Action4() : int {		
+		pop;
 		return 1;
     }
 	fun Action5() : int {
@@ -56,10 +56,10 @@ machine Main {
 		return 1;
     }
 	fun Action6() : int {
-		raise unit;                                   
+		raise unit;
 		return 1;
     }
-	fun Action7() : int {                                   
-		return Action5();                    
+	fun Action7() : int {
+		return Action5();
     }
 }

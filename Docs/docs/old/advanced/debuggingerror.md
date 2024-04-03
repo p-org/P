@@ -43,7 +43,7 @@ trace and single step through the P program with the generated error trace for d
 The `*.txt` file contains a textual error trace representing the sequence of steps (i.e, messages sent, messages received, machines created) from the initial state to the final error state. In the end of the error trace is the final error message, for example, in the case of ClientServer example above, you must see the following in the end of the error trace.
 
 ``` xml
-<ErrorLog> Assertion Failed: Bank must accept the with draw request for 1, 
+<ErrorLog> Assertion Failed: Bank must accept the with draw request for 1,
   bank balance is 11!
 ```
 
@@ -66,7 +66,7 @@ For debugging the error trace, you must open the generated `csproj` file (its ge
 ```c# hl_lines="7 9" linenums="1"
 public class _TestRegression {
   public static void Main(string[] args)
-  { 
+  {
     Configuration configuration = Configuration.Create();
     configuration.WithVerbosityEnabled(true);
     // update the path to the schedule file.
@@ -79,7 +79,7 @@ public class _TestRegression {
     {
         Console.WriteLine(bug);
     }
-      
+
   }
 }
 ```
@@ -102,11 +102,11 @@ String.Format("Bank must accept the with draw request for {0}, bank balance is {
 One can also replay the error schedule using commandline and enabling verbose feature to dump out the error trace on the commandline.
 
 ```
-pmc <path to dll>.dll --schedule <buggy>.schedule -m <testcaseName> -v 
+pmc <path to dll>.dll --schedule <buggy>.schedule -m <testcaseName> -v
 ```
 
 For example,
 
 ```
-pmc ClientServer.dll --schedule ClientServer_0_0.schedule -m PImplementation.tcSingleClientAbstractServer.Execute -v 
+pmc ClientServer.dll --schedule ClientServer_0_0.schedule -m PImplementation.tcSingleClientAbstractServer.Execute -v
 ```

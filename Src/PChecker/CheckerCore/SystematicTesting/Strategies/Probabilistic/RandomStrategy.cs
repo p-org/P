@@ -37,7 +37,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             MaxScheduledSteps = maxSteps;
             ScheduledSteps = 0;
         }
-        
+
         /// <inheritdoc/>
         public virtual bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
         {

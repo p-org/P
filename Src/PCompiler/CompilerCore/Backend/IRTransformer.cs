@@ -62,13 +62,13 @@ namespace Plang.Compiler.Backend
                     (var mapIndex, var mapIndexDeps) = SimplifyExpression(mapAccessExpr.IndexExpr);
                     return (new MapAccessExpr(location, mapExpr, mapIndex, type),
                         mapExprDeps.Concat(mapIndexDeps).ToList());
-                
+
                 case SetAccessExpr setAccessExpr:
                     (var setExpr, var setExprDeps) = SimplifyLvalue(setAccessExpr.SetExpr);
                     (var setIndex, var setIndexDeps) = SimplifyExpression(setAccessExpr.IndexExpr);
                     return (new SetAccessExpr(location, setExpr, setIndex, type),
                         setExprDeps.Concat(setIndexDeps).ToList());
-                
+
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     (var ntExpr, var ntExprDeps) = SimplifyLvalue(namedTupleAccessExpr.SubExpr);
                     return (new NamedTupleAccessExpr(location, ntExpr, namedTupleAccessExpr.Entry), ntExprDeps);
@@ -237,7 +237,7 @@ namespace Plang.Compiler.Backend
                     deps.AddRange(mapDeps.Concat(mapIdxDeps));
                     deps.Add(mapItemStore);
                     return (mapItemTemp, deps);
-                
+
                 case SetAccessExpr setAccessExpr:
                     (var setExpr, var setDeps) = SimplifyExpression(setAccessExpr.SetExpr);
                     (var setIdxExpr, var setIdxDeps) = SimplifyExpression(setAccessExpr.IndexExpr);
@@ -356,7 +356,7 @@ namespace Plang.Compiler.Backend
                     {
                         return assertDeps.Concat(messageDeps).Concat(new []{new AssertStmt(location, assertExpr, messageExpr)}).ToList();
                     }
-                    
+
                     var ifStmtForAssert = new IfStmt(location, assertExpr, new NoStmt(location), new CompoundStmt(
                         location, messageDeps.Concat(new[]
                         {
@@ -621,17 +621,17 @@ namespace Plang.Compiler.Backend
             newBody.Add(new AssignStmt(location, new VariableAccessExpr(location, sizeVar), new SizeofExpr(location, collectionCopy)));
 
             // while(i < (sizeof - 1))
-            IPExpr cond = new BinOpExpr(location, BinOpType.Lt, 
-                new VariableAccessExpr(location, iVar), 
-                new BinOpExpr(location, BinOpType.Sub, 
-                    new VariableAccessExpr(location, sizeVar), 
+            IPExpr cond = new BinOpExpr(location, BinOpType.Lt,
+                new VariableAccessExpr(location, iVar),
+                new BinOpExpr(location, BinOpType.Sub,
+                    new VariableAccessExpr(location, sizeVar),
                     new IntLiteralExpr(location, 1)));
 
             // inside loop: i = i+1;
-            IPStmt incrementI = new AssignStmt(location, new VariableAccessExpr(location, iVar), 
-                new BinOpExpr(location, 
+            IPStmt incrementI = new AssignStmt(location, new VariableAccessExpr(location, iVar),
+                new BinOpExpr(location,
                     BinOpType.Add,
-                    new VariableAccessExpr(location, iVar), 
+                    new VariableAccessExpr(location, iVar),
                     new IntLiteralExpr(location, 1)));
 
             // inside loop: item = collection[i]

@@ -6,7 +6,7 @@ machine Main {
     var y : int;
 	var tmp: int;
 	var tmp1: int;
-    
+
     start state S
     {
        entry
@@ -14,27 +14,27 @@ machine Main {
           //1 = 2;
 	
           //x.a[foo()] = 1;
-          //GetX().a[foo()] = 1;  
+          //GetX().a[foo()] = 1;
 		  tmp = foo();
 		  tmp1 = IncY();
-          x.a[tmp] = tmp1;          
+          x.a[tmp] = tmp1;
           y = IncY();
-       }      
+       }
     }
-    
+
     fun foo() : int
     {
        return 1;
-    }         
-    
+    }
+
     fun GetX() : (a: seq [int], b: map[int, seq[int]])
     {
         return x;
-    }       
-    
+    }
+
     fun IncY() : int
-    { 
+    {
        y = y + 1;
-       return y;    
-    }           
+       return y;
+    }
 }

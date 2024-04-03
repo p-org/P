@@ -161,9 +161,9 @@ namespace Plang.CSharpRuntime
         public void LogLine(string message)
         {
             Logger.WriteLine($"<PrintLog> {message}");
-            
+
             // Log message to JSON output
-            JsonLogger.AddLogType(JsonWriter.LogType.Print); 
+            JsonLogger.AddLogType(JsonWriter.LogType.Print);
             JsonLogger.AddLog(message);
             JsonLogger.AddToLogs(updateVcMap: false);
         }
@@ -184,20 +184,20 @@ namespace Plang.CSharpRuntime
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
             var pText = payload == null ? "" : $" with payload {((IPrtValue)payload).ToEscapedString()}";
-            
+
             Logger.WriteLine($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
-            
+
             // Log message to JSON output
             JsonLogger.AddLogType(JsonWriter.LogType.Announce);
             JsonLogger.LogDetails.Id = $"{Id}";
             JsonLogger.LogDetails.Event = ev.GetType().Name;
             if (payload != null)
             {
-                JsonLogger.LogDetails.Payload = ((IPrtValue)payload).ToDict();    
+                JsonLogger.LogDetails.Payload = ((IPrtValue)payload).ToDict();
             }
             JsonLogger.AddLog($"{Id} announced event {ev.GetType().Name}{pText}.");
             JsonLogger.AddToLogs(updateVcMap: true);
-            
+
             AnnounceInternal(@event);
         }
 
@@ -208,7 +208,7 @@ namespace Plang.CSharpRuntime
             {
                 return;
             }
-            
+
             foreach (var monitor in PModule.monitorMap[interfaceName])
             {
                 if (PModule.monitorObserves[monitor.Name].Contains(ev.GetType().Name))

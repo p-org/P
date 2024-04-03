@@ -141,10 +141,10 @@ machine CoffeeMakerControlPanel
 
     // the user commands will be handled next after finishing this espresso
     defer eOpenGroundsDoor, eCloseGroundsDoor, eEspressoButtonPressed;
-    
+
     // Can't make steam while we are making espresso
     ignore eSteamerButtonOn, eSteamerButtonOff;
-    
+
     // ignore old commands and cannot reset when making coffee
     ignore eWarmUpCompleted, eResetCoffeeMaker;
   }
@@ -181,7 +181,7 @@ machine CoffeeMakerControlPanel
     // grounds door is open cannot handle these requests just ignore them
     ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff;
   }
-  
+
   state EncounteredError {
     entry {
       // inform the specification about current state of the coffee maker
@@ -195,11 +195,11 @@ machine CoffeeMakerControlPanel
       // inform the specification about current state of the coffee maker
       announce eResetPerformed;
     }
-    
+
     // error, ignore these requests until reset.
     ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff,
         eOpenGroundsDoor, eCloseGroundsDoor, eWarmUpCompleted, eEspressoCompleted, eGrindBeansCompleted;
-    
+
     // ignore other simultaneous errors
     ignore eNoBeansError, eNoWaterError;
   }

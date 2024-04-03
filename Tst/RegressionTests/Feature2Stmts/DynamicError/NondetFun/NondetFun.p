@@ -9,18 +9,18 @@ machine Main {
 	n2 = $;
 	return (n1 && n2);
   }
-  fun Baz() : bool 
+  fun Baz() : bool
   {
 	var b: bool;
 	b = Foo();
 	return b;
   }
-  fun Bar() : bool 
+  fun Bar() : bool
   {
 	x = x + 1;
 	if (x >= 5) return false;
 	return $;
-  }  
+  }
   start state Init {
     entry {
 		var b: bool;
@@ -31,7 +31,7 @@ machine Main {
 		}
 		assert x == 0;   //fails
 		b = Bar();
-		while (b) 
+		while (b)
 		{
 			b = Bar();
 		}

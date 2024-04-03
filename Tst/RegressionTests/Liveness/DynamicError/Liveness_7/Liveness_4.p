@@ -16,14 +16,14 @@ machine Main {
 				}
             on UserEvent goto HandleEvent;
        }
-  
+
        state HandleEvent
        {
-            entry { 
+            entry {
 				announce Computing;
 				send this, Continue;
 				}			
-            on Continue goto HandleEvent;  
+            on Continue goto HandleEvent;
        }
 }
 
@@ -43,7 +43,7 @@ spec WatchDog observes Computing, Waiting
       {
              on Waiting goto CanGetUserInput;
              on Computing goto CannotGetUserInput;
-      } 
+      }
 	  hot state CannotGetUserInput
      {
 		entry {

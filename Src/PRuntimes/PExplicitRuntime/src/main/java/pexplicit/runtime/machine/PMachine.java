@@ -236,9 +236,19 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         PExplicitLogger.logStateTransition(this, newState);
 
         if (currentState != null) {
+            // execute exit function of current state
             currentState.exit(this);
         }
+
+        if (currentState != newState) {
+            // reset peek since transitioning to a different state
+            sendBuffer.resetPeek();
+        }
+
+        // change current state to new state
         currentState = newState;
+
+        // change current state to new state
         newState.entry(this, payload);
     }
 

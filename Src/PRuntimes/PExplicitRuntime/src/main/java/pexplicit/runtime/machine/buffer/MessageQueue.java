@@ -19,7 +19,7 @@ public abstract class MessageQueue implements Serializable {
     private final PMachine owner;
     @Getter
     protected List<PMessage> elements;
-    private PMessage peek;
+    private int peekIdx;
 
     /**
      * Constructor
@@ -33,10 +33,46 @@ public abstract class MessageQueue implements Serializable {
     }
 
     /**
+     * Set the peek message index in the queue
+     *
+     * @param idx Index to set as peek
+     */
+    private void setPeek(int idx) {
+        peekIdx = idx;
+    }
+
+    /**
      * Reset the queue peek
      */
     public void resetPeek() {
-        peek = null;
+        setPeek(-1);
+    }
+
+    /**
+     * Check whether the peek is valid
+     * @return true if peek is valid, else false
+     */
+    private boolean isPeekValid() {
+        if (peekIdx == -1) {
+            return false;
+        } else {
+            assert (peekIdx >= 0 && peekIdx <= elements.size());
+            return true;
+        }
+    }
+
+    /**
+     * Get the peek message corresponding to the peek index
+     * Assumes peek index is already valid
+     * @return peek message corresponding to the peek index
+     */
+    private PMessage getPeekMsg() {
+        assert (isPeekValid());
+        if (peekIdx < elements.size()) {
+            return elements.get(peekIdx);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -68,46 +104,63 @@ public abstract class MessageQueue implements Serializable {
 
     /**
      * Peek (or dequeue) the next non-deferred message in the queue
+     * Utilizes valid peek to improve performance and resetting peek only on state transitions
      *
      * @param dequeue Whether to dequeue the message from the queue
      * @return The next message in the queue, or null if queue is empty
      */
     private PMessage peekOrDequeueHelper(boolean dequeue) {
-        if (!dequeue && (peek != null)) {
-            // just peeking and peek is not null
-            return peek;
+        boolean validPeek = isPeekValid();
+
+        if (!dequeue && validPeek) {
+            // just peeking and peek is valid
+            return getPeekMsg();
         }
 
-        PMessage result = null;
-        int idx = 0;
+        PMessage msg = null;
+        int msgIdx = 0;
 
-        // find the first non-deferred message
-        for (PMessage msg: elements) {
-            if (!owner.getCurrentState().isDeferred(msg.getEvent())) {
-                result = msg;
-                break;
+        if (validPeek) {
+            // peek is valid, so we can use it
+            msgIdx = peekIdx;
+            msg = getPeekMsg();
+        } else {
+            // peek is not valid, so we need to find the first non-deferred message
+
+            // find the first non-deferred message
+            for (PMessage m: elements) {
+                if (!owner.getCurrentState().isDeferred(m.getEvent())) {
+                    msg = m;
+                    break;
+                }
+                msgIdx++;
             }
-            idx++;
-        }
 
-        // update peek
-        peek = result;
+            // update peek
+            setPeek(msgIdx);
+        }
 
         // dequeue the peek
         if (dequeue) {
-            if (result == null) {
+            if (msg == null) {
                 if (elements.isEmpty()) {
                     Assert.prop(false, "Cannot dequeue from empty queue");
                 } else {
                     Assert.prop(false, "Cannot dequeue since all events in the queue are deferred");
                 }
             } else {
-                elements.remove(idx);
-                resetPeek();
+                elements.remove(msgIdx);
+                if (msgIdx < elements.size()) {
+                    // add the next element as peek
+                    setPeek(msgIdx);
+                } else {
+                    // no next element, reset peek
+                    resetPeek();
+                }
             }
         }
 
-        return result;
+        return msg;
     }
 
     /**

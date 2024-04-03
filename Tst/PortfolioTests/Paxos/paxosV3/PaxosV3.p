@@ -24,7 +24,7 @@ machine Global {
   var maxQuorum : int;
   var maxValue : int;
   var driver : machine;
- 
+
   start state Init {
     entry (pld : (driver : machine, ids : seq[mid], maxRound : int, maxQuorum : int, maxValue : int)) {
       var i : int;
@@ -38,7 +38,7 @@ machine Global {
       var valBoolMap : map[value, bool];
       var quorumBoolMap : map[quorum, bool];
       driver = pld.driver;
-      mids = pld.ids; 
+      mids = pld.ids;
       maxRound = pld.maxRound;
       maxQuorum = pld.maxQuorum;
       maxValue = pld.maxValue;
@@ -51,7 +51,7 @@ machine Global {
           j = j + 1;
         }
         i = i + 1;
-      } 
+      }
       i = 0;
       j = 0;
       while (i < sizeof(mids)) {
@@ -91,7 +91,7 @@ machine Global {
       }
       i = 0;
       while (i < maxQuorum) {
-        j = i + 1; 
+        j = i + 1;
         while (j < maxQuorum) {
           n = mids[choose(sizeof(mids))];
           member[n][k] = true;
@@ -206,7 +206,7 @@ machine Global {
           }
           send driver, eNext;
        }
-      } 
+      }
     }
 
     on eProposeCase do {
@@ -237,20 +237,20 @@ machine Global {
           j = j + 1;
         }
         if (!trackProposal) {
-          j = 0;          
+          j = 0;
           while (j < maxQuorum) {
             trackImpl = true;
             k = 0;
             while (k < sizeof(mids)) {
               if (member[mids[k]][j] && !one_b[mids[k]][i]) {
                 trackImpl = false;
-              } 
+              }
               k = k + 1;
             }
             if (trackImpl) {
               roundQuorumChoices += (l, (r=i, q=j));
               l = l + 1;
-            } 
+            }
             j = j + 1;
           }
         }
@@ -281,8 +281,8 @@ machine Global {
         i = 0;
         k = 0;
         while (i < sizeof(mids)) {
-          j = 0; 
-          while (j < maxValue) { 
+          j = 0;
+          while (j < maxValue) {
             if (vote[mids[i]][maxr][j]) {
               valChoices += (k, j);
               k = k + 1;
@@ -318,7 +318,7 @@ machine Global {
         }
       }
 
-    } 
+    }
 
     on eCastVote do {
       var nvrChoice : seq[(n:mid, v:value, r:round)];
@@ -349,8 +349,8 @@ machine Global {
       if (sizeof(nvrChoice) > 0) {
         i = choose(sizeof(nvrChoice));
         n = nvrChoice[i].n;
-        v = nvrChoice[i].v; 
-        r = nvrChoice[i].v; 
+        v = nvrChoice[i].v;
+        r = nvrChoice[i].v;
         vote[n][r][v] = true;
         send driver, eNext;
       }
@@ -436,7 +436,7 @@ machine Main {
       while (i < 6) {
         mids += (i, i);
         i = i + 1;
-      } 
+      }
       global = new Global((driver=this, ids=mids, maxRound = maxRounds, maxQuorum = maxQuorum, maxValue = maxVal));
       raise eNext;
     }

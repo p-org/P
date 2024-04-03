@@ -1,7 +1,7 @@
 //XYZs "Value must have a concrete type" error
 //Basic types: int, bool, event
 //This XYZ found a bug in Zinger
-event E assert 1; 
+event E assert 1;
 event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;
@@ -20,29 +20,29 @@ machine Main {
 	      /////////////////////////default expression:
 		  y = 2;
 		  assert(y == 2);      //holds
-		  y = default(int);    
+		  y = default(int);
           assert(y == 0);	   //holds
-		  
+		
 		  b = true;
 		  assert(b == true);   //holds
-          b = default(bool);	  
+          b = default(bool);	
           assert(b == false);  //holds
-		  
+		
 		  e = E;
 		  assert(e == E);       //holds
-          e = default(event);	  
+          e = default(event);	
           assert(e == null);    //holds
-		  
+		
 		  mac = this;
-          mac = default(machine);	  
+          mac = default(machine);	
           assert(mac == null);    //holds
-		  
+		
 		  a = true;
 		  a = default(any);
 		  if (a == null) { a = 1;};  //Zing bug(fixed): error: "Value must have a concrete type"; runtime: no error
-		  
+		
 		  raise halt;
-       }    
-    }  
+       }
+    }
 }
 

@@ -35,13 +35,13 @@ namespace Plang.CSharpRuntime
         {
             Assert(predicate, s, args);
         }
-        
+
         public void LogLine(string message)
         {
             Logger.WriteLine($"<PrintLog> {message}");
-            
+
             // Log message to JSON output
-            JsonLogger.AddLogType(JsonWriter.LogType.Print); 
+            JsonLogger.AddLogType(JsonWriter.LogType.Print);
             JsonLogger.AddLog(message);
             JsonLogger.AddToLogs(updateVcMap: false);
         }

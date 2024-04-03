@@ -4,7 +4,7 @@ An event in P has two parts: an event name and a payload value (optional) that c
 ??? note "P Event Declaration Grammar"
 
     ```
-    eventDecl :          
+    eventDecl :
         | event iden (: type)?;     # P Event Declaration
     ```
 
@@ -24,7 +24,7 @@ An event in P has two parts: an event name and a payload value (optional) that c
     // declaration of events that have payloads
     type tRequest = (client: Client, key: string, value: int, requestId: int);
     // eRequest event with payload of type tRequest
-    event eRequest: tRequest; 
+    event eRequest: tRequest;
     // eResponse event that can have a payload of type (requestId: int, status: bool)
-    event eResponse: (requestId: int, status: bool); 
+    event eResponse: (requestId: int, status: bool);
     ```

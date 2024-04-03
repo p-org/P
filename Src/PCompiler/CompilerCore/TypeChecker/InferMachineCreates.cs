@@ -37,9 +37,9 @@ namespace Plang.Compiler.TypeChecker
                     }
                     if(_visitedFunctions.Contains(function))
                         return Enumerable.Empty<Interface>();
-                    else 
+                    else
                         _visitedFunctions.Add(function);
-                    
+
                     return InferCreates(function.Body, handler);
 
                 case AddStmt addStmt:
@@ -115,11 +115,11 @@ namespace Plang.Compiler.TypeChecker
                     return InferCreatesForExpr(sendStmt.MachineExpr, handler)
                         .Union(InferCreatesForExpr(sendStmt.Evt, handler))
                         .Union(sendStmt.Arguments.SelectMany(expr => InferCreatesForExpr(expr, handler)));
-                
+
                 case ForeachStmt foreachStmt:
                     return InferCreatesForExpr(foreachStmt.IterCollection, handler)
                         .Union(InferCreates(foreachStmt.Body, handler));
-                
+
                 case WhileStmt whileStmt:
                     return InferCreatesForExpr(whileStmt.Condition, handler)
                         .Union(InferCreates(whileStmt.Body, handler));
@@ -175,11 +175,11 @@ namespace Plang.Compiler.TypeChecker
                 case SeqAccessExpr seqAccessExpr:
                     return InferCreatesForExpr(seqAccessExpr.SeqExpr, handler)
                         .Union(InferCreatesForExpr(seqAccessExpr.IndexExpr, handler));
-                
+
                 case SetAccessExpr setAccessExpr:
                     return InferCreatesForExpr(setAccessExpr.SetExpr, handler)
                         .Union(InferCreatesForExpr(setAccessExpr.IndexExpr, handler));
-                
+
                 case SizeofExpr sizeofExpr:
                     return InferCreatesForExpr(sizeofExpr.Expr, handler);
 

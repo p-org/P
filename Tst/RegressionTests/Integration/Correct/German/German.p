@@ -15,7 +15,7 @@ event wait;
 event invalidate_sharers: int;
 event sharer_id: machine;
 
-//Host machine 
+//Host machine
 machine Main {
 	var curr_client : machine;
 	var clients : seq[machine];
@@ -131,7 +131,7 @@ machine Client {
 	var pending : bool;
 	start state init {
 		entry (payload: (machine,bool)) {
-		        host = payload.0; 
+		        host = payload.0;
 		        pending = payload.1;
 			raise unit;
 		}
@@ -139,7 +139,7 @@ machine Client {
 	}
 
 	state invalid {
-		entry { 
+		entry {
 			
 		}
 		on ask_share goto asked_share;
@@ -255,7 +255,7 @@ machine CPU {
 			{
 				if ($)
 			              send cache[1], ask_share;
-				else 
+				else
 			              send cache[1], ask_excl;
 			}
 			else

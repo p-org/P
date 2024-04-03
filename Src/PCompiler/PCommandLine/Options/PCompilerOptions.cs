@@ -24,9 +24,9 @@ namespace Plang.Options
                 "The P compiler compiles all the P files in the project together and generates the executable that can be checked for correctness by the P checker."
                 // + "\n\nCompiler modes :: (default: bugfinding)\n" +
                 // "  --mode bugfinding   : for bug finding through stratified random search\n" +
-                // "  --mode verification : for verification through exhaustive symbolic exploration\n" + 
+                // "  --mode verification : for verification through exhaustive symbolic exploration\n" +
                 // "  --mode coverage     : for achieving state-space coverage through exhaustive explicit-state search\n" +
-                // "  --mode pobserve     : for runtime monitoring of P specs against implementation logs" 
+                // "  --mode pobserve     : for runtime monitoring of P specs against implementation logs"
             );
 
             var projectGroup = Parser.GetOrCreateGroup("project", "Compiling using `.pproj` file");
@@ -62,13 +62,13 @@ namespace Plang.Options
 
                 // load pproj file first
                 UpdateConfigurationWithPProjectFile(compilerConfiguration, result);
-                
+
                 // load parsed arguments that can override pproj configuration
                 foreach (var arg in result)
                 {
                     UpdateConfigurationWithParsedArgument(compilerConfiguration, arg);
                 }
-                
+
                 SanitizeConfiguration(compilerConfiguration);
             }
             catch (CommandLineException ex)
@@ -102,7 +102,7 @@ namespace Plang.Options
             }
 
             CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
-            var filtered = 
+            var filtered =
                 from file in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj")
                 let info = new FileInfo(file)
                 where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
@@ -142,8 +142,8 @@ namespace Plang.Options
                 }
             }
         }
-        
-        
+
+
         /// <summary>
         /// Updates the checkerConfiguration with the specified parsed argument.
         /// </summary>
@@ -239,7 +239,7 @@ namespace Plang.Options
                     Error.CompilerReportAndExit($"Illegal P file name {fullPathName.FullName} (file name cannot have special characters) or file not found.");
                 }
             }
-            
+
             if (!CheckFileValidity.IsLegalProjectName(compilerConfiguration.ProjectName))
             {
                 Error.CompilerReportAndExit($"{compilerConfiguration.ProjectName} is not a legal project name");
@@ -251,7 +251,7 @@ namespace Plang.Options
                 compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
             }
         }
-        
+
 
         private static void FindLocalPFiles(CompilerConfiguration compilerConfiguration)
         {
@@ -262,8 +262,8 @@ namespace Plang.Options
                 var enumerationOptions = new EnumerationOptions();
                 enumerationOptions.RecurseSubdirectories = true;
                 enumerationOptions.MaxRecursionDepth = 1;
-                
-                var filtered = 
+
+                var filtered =
                     from file in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.p", enumerationOptions)
                     let info = new FileInfo(file)
                     where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
@@ -275,6 +275,6 @@ namespace Plang.Options
                 }
             }
         }
-        
+
     }
 }

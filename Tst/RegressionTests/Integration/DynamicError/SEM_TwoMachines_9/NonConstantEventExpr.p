@@ -4,24 +4,24 @@ event E1 assert 1;
 event E2 assert 1: bool;
 
 machine Main {
-    var XYZ: bool; 
+    var XYZ: bool;
 	var mac: machine;
 	var ev1: event;
 	var ev2: event;
 	var ev3: int;
     start state Real1_Init {
-        entry { 
+        entry {
 			mac = new Real2();
 			announce ev2, true;  //zing error (ev2 is nulll)
 			ev1 = E1;			
 			raise ev1;  		
         } 	
-        on E1 do Action1;   
+        on E1 do Action1;
 		on null goto Real1_S1;
 		//on E2 do Action2;
-        exit {  
+        exit {
 			ev2 = E2;
-            send mac, ev2, XYZ;			 
+            send mac, ev2, XYZ;			
 		}
 	}
 	state Real1_S1 {
@@ -37,11 +37,11 @@ machine Real2 {
 		entry {	
 		}
 		on E2 do (payload: bool) {
-			 
-			 
-				Action2(payload); 
 			
-			 
+			
+				Action2(payload);
+			
+			
 			
 		}
 	}

@@ -5,7 +5,7 @@ machine Main {
     var model_machine: machine;
     start state Init {
         entry {
-            model_machine = new M(); 
+            model_machine = new M();
         }
     }
 

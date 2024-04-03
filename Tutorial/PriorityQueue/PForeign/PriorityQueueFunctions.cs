@@ -33,7 +33,7 @@ namespace PImplementation
           machine.LogLine("Adding Element in the Priority Queue!");
           return queue;
       }
-      
+
       public static PrtNamedTuple RemoveElement(tPriorityQueue queue, PMachine machine)
       {
           var element = queue.PriorityRemove();

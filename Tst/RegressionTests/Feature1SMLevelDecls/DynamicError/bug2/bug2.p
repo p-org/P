@@ -4,7 +4,7 @@ event y;
 
 machine Main {
 		var id: machine;
-		start state S 
+		start state S
 		{
 			entry {
 				raise x, (a, 3);

@@ -11,7 +11,7 @@ machine Main {
 		exit {   }
 
 		on E1 do {send this, null; };
-		on null do {assert(false);};      //unreachable 
+		on null do {assert(false);};      //unreachable
 	}
 	fun Action2() {
 		assert(false);   //unreachable

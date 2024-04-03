@@ -5,7 +5,7 @@
       <artifactId>monosat</artifactId>
       <version>1.6.0-v5</version>
       <packaging>jar</packaging>
-     
+
       <name>MonoSAT Java Bindings</name>
       <description>MonoSAT Java Bindings</description>
       <url>https://github.com/sambayless/monosat</url>
@@ -15,15 +15,15 @@
           <url>${project.url}</url>
         </developer>
       </developers>
-     
+
       <licenses>
         <license>
           <url>${project.url}</url>
         </license>
       </licenses>
-     
+
       <scm>
         <url>${project.url}</url>
       </scm>
-     
+
     </project>

@@ -4,14 +4,14 @@ event Success;
 event M_Ping;
 event M_Pong;
 
-machine PING 
+machine PING
 {
     var pongMachine: (machine,machine);
 
     start state Init {
         entry (payload: (machine, machine)) {
 			pongMachine = payload;
-			raise (Success);   	   
+			raise (Success);   	
         }
         on Success goto SendPing;
     }
@@ -47,7 +47,7 @@ machine PONG
 	    entry (payload: machine) {
 	        announce M_Pong;
 			_SEND(payload, Pong, this);
-			raise (Success);		 	  
+			raise (Success);		 	
 	    }
         on Success goto End;
     }

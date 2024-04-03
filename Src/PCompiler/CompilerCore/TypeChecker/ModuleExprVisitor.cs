@@ -50,7 +50,7 @@ namespace Plang.Compiler.TypeChecker
             else if (!globalScope.SafetyTests.Any())
             {
                 if (globalScope.Machines.All(m => m.Name != "Main")) return;
-                
+
                 var defaultImplDecl = new Implementation(ParserRuleContext.EmptyContext, "DefaultImpl")
                 {
                     Main = "Main"

@@ -1,4 +1,4 @@
-Programmers can write safety and liveness specifications in P as monitors or `spec` machines. 
+Programmers can write safety and liveness specifications in P as monitors or `spec` machines.
 `spec` machines are monitor state machines or observer state machines that observe a set of events during the execution of the system and
 assert the desired correctness specifications based on these observations.
 
@@ -51,7 +51,7 @@ The above specification checks a very simple global invariant that all `eRequest
 
 ``` kotlin linenums="1" hl_lines="13"
 /**************************************************************************
-GuaranteedProgress observes the eRequest and eResponse events, 
+GuaranteedProgress observes the eRequest and eResponse events,
 it asserts that every request is always responded by a successful response.
 ***************************************************************************/
 spec GuaranteedProgress observes eRequest, eResponse {
@@ -64,7 +64,7 @@ spec GuaranteedProgress observes eRequest, eResponse {
     }
     hot state PendingReqs {
         on eResponse do (resp: tResponse) {
-            assert resp.rId in pendingReqs, 
+            assert resp.rId in pendingReqs,
                 format ("unexpected rId: {0} received, expected one of {1}", resp.rId, pendingReqs);
             if(resp.status == SUCCESS)
             {

@@ -1,4 +1,4 @@
-// unreliable send 
+// unreliable send
 fun _SEND(target:machine, e:event, p:any) {
 		send target, e, p;
 }

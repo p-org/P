@@ -64,7 +64,7 @@ machine Main {
             assert(b);
             b = IsSorted(rev);
             assert(!b);
-            // Assert that BubbleSort returns the sorted list 
+            // Assert that BubbleSort returns the sorted list
             sorted = BubbleSort(rev);
             assert(sizeof(sorted) == 10);
             b = IsSorted(sorted);

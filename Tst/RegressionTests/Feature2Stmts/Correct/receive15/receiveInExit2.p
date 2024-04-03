@@ -7,7 +7,7 @@ machine Main {
 			var x: machine;
 			x = new N();
 			send x, E, 0;
-			send x, E, 0; 
+			send x, E, 0;
 		}
 	}
 
@@ -24,7 +24,7 @@ machine N {
 				case E: (payload: int) {}
 			}
 		}
-		on Unit goto T with { 
+		on Unit goto T with {
 			receive {
 				case E: (payload: int) {}
 			}

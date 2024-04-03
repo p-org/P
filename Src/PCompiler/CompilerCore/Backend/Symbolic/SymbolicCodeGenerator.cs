@@ -34,11 +34,11 @@ namespace Plang.Compiler.Backend.Symbolic
             var pomPath = Path.Combine(job.OutputDirectory.FullName, "pom.xml");
             var stdout = "";
             var stderr = "";
-            
+
             // create the pom.xml file
             var pomTemplate = Constants.pomTemplate;
             pomTemplate = pomTemplate.Replace("-project-name-",job.ProjectName);
-            
+
             string foreignInclude = "";
             var foreignFiles = job.InputForeignFiles.Where(x => x.EndsWith(".java"));
             if (foreignFiles.Any())
@@ -62,7 +62,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 foreignInclude = foreignInclude.Replace("-foreign-source-include-", foreignSourceInclude);
             }
             pomTemplate = pomTemplate.Replace("-foreign-include-", foreignInclude);
-            
+
             File.WriteAllText(pomPath, pomTemplate);
 
             // compile the csproj file
@@ -214,7 +214,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 if ((decl is SafetyTest) && (context.GetNameForDecl(decl) == "DefaultImpl"))
                     return;
             }
-            
+
             context.WriteLine(output, "@Generated");
             context.WriteLine(output, "public static class DefaultImpl extends PTestDriver {");
             WriteDriver(context, output, mainMachine.Name, decls);
@@ -1506,7 +1506,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 return "";
             }
-            
+
             var valueIsMachineRef = valueType.IsSameTypeAs(PrimitiveType.Machine) || valueType is PermissionType;
             var locationIsMachineRef = locationType.IsSameTypeAs(PrimitiveType.Machine) || locationType is PermissionType;
 
@@ -2557,11 +2557,11 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"{typeDefType.CanonicalRepresentation}";
                 case ForeignType foreignType:
                     return $"{foreignType.CanonicalRepresentation}";
-                case NamedTupleType _: 
+                case NamedTupleType _:
                     return "String";
-                case TupleType _: 
+                case TupleType _:
                     return "String";
-                case EnumType _: 
+                case EnumType _:
                     return "Integer";
                 default:
                     return "Object";

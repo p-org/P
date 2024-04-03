@@ -52,7 +52,7 @@ namespace PChecker.Scheduling
         /// The scheduler lock.
         /// </summary>
         private readonly object SchedulerLock;
-        
+
 
         /// <summary>
         /// Set if ctrl-c or ctrl-break occurred.
@@ -74,7 +74,7 @@ namespace PChecker.Scheduling
             GlobalTestReport = new TestReport(checkerConfiguration);
             Profiler = new Profiler();
             SchedulerLock = new object();
-            
+
             IsVerbose = checkerConfiguration.IsVerbose;
 
             checkerConfiguration.EnableColoredConsoleOutput = true;
@@ -98,7 +98,7 @@ namespace PChecker.Scheduling
             Profiler.StartMeasuringExecutionTime();
 
             CreateAndRunInMemoryTestingProcess();
-            
+
             Profiler.StopMeasuringExecutionTime();
 
             if (!IsProcessCanceled)

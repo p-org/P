@@ -22,7 +22,7 @@ machine Main {
 }
 machine Receiver {
 	var x: int;
-	var y: event; 
+	var y: event;
 	var z : int;
 	var ts: (a: int, b: int);
 	start state Init {
@@ -44,7 +44,7 @@ machine Receiver {
 					assert foo0 == 5;    //OK
 					Foo = default(Bar) to int;
 					assert Foo == bar0 to int;   //OK
-					z = foo0(y);          
+					z = foo0(y);
 					assert z == 1;      //OK
 					z = foo1(y);
 					assert z == 1;      //OK

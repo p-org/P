@@ -10,7 +10,7 @@ event E3 assert 1;
 machine Main {
     var XYZ: bool;
     start state Real1_Init {
-        entry { 
+        entry {
 			send this, E1;
         }	
         on E1 goto Real1_S1;

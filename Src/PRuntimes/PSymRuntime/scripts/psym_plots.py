@@ -34,7 +34,7 @@ def read_input():
     global stepStatus
     global time, coverage, execution, memory, finished, remaining, depth, states, distinctStates, repetitionRatio
     global timeLimit, coverageLimit, executionLimit, memoryLimit, finishedLimit, remainingLimit, depthLimit, statesLimit, distinctStatesLimit, repetitionRatioLimit
-    
+
     time.append(0)
     coverage.append(0)
     execution.append(0)

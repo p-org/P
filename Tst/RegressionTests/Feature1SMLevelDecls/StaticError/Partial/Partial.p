@@ -15,7 +15,7 @@ machine A
 machine A
 [partial = null]
 {
-    start state S2 { 
+    start state S2 {
         entry {
             goto S1;
         }

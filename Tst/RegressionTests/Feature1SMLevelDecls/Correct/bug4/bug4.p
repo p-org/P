@@ -5,7 +5,7 @@ event y;
 machine Main {
 		var id: machine;
 		var part: map[int, int];
-		start state S 
+		start state S
 		{
 			entry {
 				var container : machine;
@@ -32,7 +32,7 @@ machine Main {
 	{
 		var id: machine;
 		var part: map[int, int];
-		start state S 
+		start state S
 		{
 			entry (payload: machine) {
 				send payload, x, (0, 0);

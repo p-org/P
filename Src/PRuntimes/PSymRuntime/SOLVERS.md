@@ -8,7 +8,7 @@ Run: `` ./scripts/build.sh ``
 This installs PSym with the default BDD backend (powered by BDDs using the [PJBDD](https://gitlab.com/sosy-lab/software/paralleljbdd) package).
 
 ### Installing ABC
-Run: `` cd scripts && ./setup_abc.sh `` 
+Run: `` cd scripts && ./setup_abc.sh ``
 
 If installing ABC in a different directory, make changes to [pom.xml](https://github.com/p-org/P/blob/master/Src/PRuntimes/PSymRuntime/pom.xml) to update ``<abc.jarpath>`` and ``<abc.libpath>``
 
@@ -18,18 +18,18 @@ Run: `` cd scripts && ./setup_monosat.sh ``
 If installing MonoSAT in a different directory, make changes to [pom.xml](https://github.com/p-org/P/blob/master/Src/PRuntimes/PSymRuntime/pom.xml) to update ``<monosat.jarpath>`` and ``<monosat.libpath>``
 
 ### Installing Yices 2
-Run: `` cd scripts && ./setup_yices2.sh `` 
+Run: `` cd scripts && ./setup_yices2.sh ``
 
 If installing Yices 2 in a different directory, make changes to [pom.xml](https://github.com/p-org/P/blob/master/Src/PRuntimes/PSymRuntime/pom.xml) to update ``<yices.jarpath>`` and ``<yices.libpath>``
 
 ### Installing Z3
-Run: `` cd scripts && ./setup_z3.sh `` 
+Run: `` cd scripts && ./setup_z3.sh ``
 
 If installing Z3 in a different directory, make changes to [pom.xml](https://github.com/p-org/P/blob/master/Src/PRuntimes/PSymRuntime/pom.xml) to update ``<z3.jarpath>`` and ``<z3.libpath>``
 
 
 ### Installing CVC5
-Run: `` cd scripts && ./setup_cvc5.sh `` 
+Run: `` cd scripts && ./setup_cvc5.sh ``
 
 If installing CVC5 in a different directory, make changes to [pom.xml](https://github.com/p-org/P/blob/master/Src/PRuntimes/PSymRuntime/pom.xml) to update ``<cvc5.jarpath>`` and ``<cvc5.libpath>``
 

@@ -6,7 +6,7 @@ machine Main {
    var y : tFloat;
    var z : tytFloat;
    start state Init {
-   	entry 
+   	entry
    	{
    		x = def();
    		y = def();

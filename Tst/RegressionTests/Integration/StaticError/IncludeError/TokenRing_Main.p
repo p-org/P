@@ -44,12 +44,12 @@ machine Main {
                 if ($)
                   Rand1 = true;
                 else
-                  Rand1 = false;                                   
+                  Rand1 = false;
                 if ($)
                   Rand2 = true;
                 else
                   Rand2 = false;
-                                  
+
                 if (!Rand1 && !Rand2)
                    RandSrc = N1;
                 if (!Rand1 && Rand2)
@@ -61,7 +61,7 @@ machine Main {
                 if ($)
                   Rand1 = true;
                 else
-                  Rand1 = false;                                   
+                  Rand1 = false;
                 if ($)
                   Rand2 = true;
                 else
@@ -74,7 +74,7 @@ machine Main {
                    RandDst = N3;
                 else
                    RandDst = N4;
-                   
+
                 send RandSrc, Send, RandDst;
                 raise unit;
       }

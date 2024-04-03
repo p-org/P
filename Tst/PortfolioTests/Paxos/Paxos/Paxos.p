@@ -63,12 +63,12 @@ machine Global {
       highestP1ABallot = -1;
       acceptors = pld.acceptSeq;
       leaders = pld.leadSeq;
-      slots = pld.slotSeq; 
+      slots = pld.slotSeq;
       ballots = pld.ballotSeq;
       valSet += ((-1, -1, -1));
       // acceptor initialization
       while (i < sizeof(slots)) {
-        decidedMap += (slots[i], emptySet); 
+        decidedMap += (slots[i], emptySet);
         i = i + 1;
       }
       i = 0;
@@ -170,7 +170,7 @@ machine Global {
             }
           }
           j = j + 1;
-        } 
+        }
         i = i + 1;
       }
       i = 0;
@@ -187,7 +187,7 @@ machine Global {
             }
             else {
               choices += (sizeof(choices), (3, leaders[i], b[leaders[i]]));
-            } 
+            }
           }
           if (pc[leaders[i]] == 2 || pc[leaders[i]] == 4) {
             // CP1L - collect responses
@@ -223,7 +223,7 @@ machine Global {
       }
 
       if (sizeof(choices) > 0) {
-        choice = choices[choose(sizeof(choices))]; 
+        choice = choices[choose(sizeof(choices))];
         if (choice.0 == 0) {
           raise eReplyP1, (acceptor=choice.1, b=choice.2);
         }
@@ -317,7 +317,7 @@ machine Global {
       }
       SatQ2[pld.b] = exists;
       send driver, eNext;
-    } 
+    }
 
     on eRecvP3 do (pld : (acceptor : int, b : int)) {
       var choices : seq[(slot : int, dcd : int)];
@@ -337,7 +337,7 @@ machine Global {
       decided[pld.acceptor][choice.slot] += (choice.dcd);
       assert(sizeof(decided[pld.acceptor][choice.slot]) == 1);
       send driver, eNext;
-    } 
+    }
 
     on eSendP1 do (leader : int) {
       b[leader] = b[leader] + M;
@@ -434,7 +434,7 @@ machine Main {
         leaders += (sizeof(leaders), i);
         i = i + 1;
       }
-      i = 1; 
+      i = 1;
       while (i <= STOP) {
         slots += (sizeof(slots), i);
         i = i + 1;

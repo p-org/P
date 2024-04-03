@@ -75,7 +75,7 @@ namespace Plang.CSharpRuntime
             return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
         }
 
-        public void TrySendEvent(PMachineValue target, Event ev, object payload = null)
+        public void TrySendEvent(PMachineValue target, int loc, Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot send a null event");
             Assert(target != null, "Machine in send cannot be null");
@@ -87,7 +87,7 @@ namespace Plang.CSharpRuntime
             ev = (Event)oneArgConstructor.Invoke(new[] { payload });
 
             AnnounceInternal(ev);
-            SendEvent(target.Id, ev);
+            SendEvent(target.Id, loc, ev);
         }
 
         public void TryRaiseEvent(Event ev, object payload = null)
@@ -208,7 +208,7 @@ namespace Plang.CSharpRuntime
             {
                 return;
             }
-            
+
             foreach (var monitor in PModule.monitorMap[interfaceName])
             {
                 if (PModule.monitorObserves[monitor.Name].Contains(ev.GetType().Name))

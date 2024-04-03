@@ -84,6 +84,7 @@ namespace Plang.Compiler.TypeChecker
                 case RemoveStmt _:
                 case ReturnStmt _:
                 case SendStmt _:
+                case ConstraintStmt _:
                     break;
 
                 default:

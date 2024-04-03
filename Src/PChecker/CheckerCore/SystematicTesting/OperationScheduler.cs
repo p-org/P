@@ -139,10 +139,10 @@ namespace PChecker.SystematicTesting
 
             // Checks if the scheduling steps bound has been reached.
             CheckIfSchedulingStepsBoundIsReached();
-            
+
             // Update the operation type.
             current.Type = type;
-            
+
             if (CheckerConfiguration.IsProgramStateHashingEnabled)
             {
                 // Update the current operation with the hashed program state.
@@ -150,7 +150,7 @@ namespace PChecker.SystematicTesting
             }
 
             // Get and order the operations by their id.
-            var ops = OperationMap.Values.OrderBy(op => op.Id);
+            var ops = OperationMap.Values.OrderBy(op => op.Id).ToList();
 
             // Try enable any operation that is currently waiting, but has its dependencies already satisfied.
             foreach (var op in ops)
@@ -161,6 +161,8 @@ namespace PChecker.SystematicTesting
                     Debug.WriteLine("<ScheduleDebug> Operation '{0}' has status '{1}'.", op.Id, op.Status);
                 }
             }
+
+            // ops = Utils.FindHighPriorityOperations(ops, CheckerConfiguration.InterestingEvents);
 
             if (!Strategy.GetNextOperation(current, ops, out var next))
             {

@@ -29,13 +29,13 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public string OutputPath;
-        
+
         /// <summary>
         /// Timeout in seconds.
         /// </summary>
         [DataMember]
         public string OutputDirectory;
-        
+
         /// <summary>
         /// Timeout in seconds.
         /// </summary>
@@ -170,7 +170,7 @@ namespace PChecker
         /// If this option is enabled, the tester is hashing the program state.
         /// </summary>
         [DataMember] public bool IsProgramStateHashingEnabled;
-        
+
         /// <summary>
         /// The schedule file to be replayed.
         /// </summary>
@@ -223,14 +223,14 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public bool IsXmlLogEnabled { get; set; }
-        
+
         /// <summary>
         /// Produce a JSON formatted runtime log file.
         /// Defaults to true.
         /// </summary>
         [DataMember]
-        public bool IsJsonLogEnabled { get; set; } = true;
-        
+        public bool IsJsonLogEnabled { get; set; } = false;
+
         /// <summary>
         /// If specified, requests a custom runtime log to be used instead of the default.
         /// This is the AssemblyQualifiedName of the type to load.
@@ -256,6 +256,12 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public uint TestingProcessId;
+
+        /// <summary>
+        /// The source of the pattern generator.
+        /// </summary>
+        [DataMember]
+        public string PatternSource;
 
         /// <summary>
         /// Additional assembly specifications to instrument for code coverage, besides those in the
@@ -287,6 +293,42 @@ namespace PChecker
         public string JvmArgs;
 
         /// <summary>
+        /// For feedback strategy, save input if the pattern are partially matched.
+        /// </summary>
+        [DataMember]
+        public bool SavePartialMatch;
+
+        /// <summary>
+        /// For feedback strategy, discard saved generators if the size of the buffer is greater than N.
+        /// </summary>
+        [DataMember]
+        public int DiscardAfter;
+
+        /// <summary>
+        /// For feedback strategy, schedule generator mutations based on diversity.
+        /// </summary>
+        [DataMember]
+        public bool DiversityBasedPriority;
+
+        /// <summary>
+        /// For feedback strategy, ignore the pattern feedback.
+        /// </summary>
+        [DataMember]
+        public bool IgnorePatternFeedback;
+
+        /// <summary>
+        /// For feedback strategy, use priority based sampling.
+        /// </summary>
+        [DataMember]
+        public bool PriorityBasedSampling;
+
+        /// <summary>
+        /// Enable conflict analysis for scheduling optimization.
+        /// </summary>
+        [DataMember]
+        public bool EnableConflictAnalysis;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="CheckerConfiguration"/> class.
         /// </summary>
         protected CheckerConfiguration()
@@ -307,7 +349,7 @@ namespace PChecker
             RandomGeneratorSeed = null;
             IncrementalSchedulingSeed = false;
             PerformFullExploration = false;
-            MaxFairSchedulingSteps = 100000; // 10 times the unfair steps
+            MaxFairSchedulingSteps = 10000; // 10 times the unfair steps
             MaxUnfairSchedulingSteps = 10000;
             UserExplicitlySetMaxFairSchedulingSteps = false;
             TestingProcessId = 0;
@@ -328,12 +370,19 @@ namespace PChecker
 
             IsVerbose = false;
             EnableDebugging = false;
-            
+
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
+            SavePartialMatch = true;
+            DiscardAfter = 100;
+            DiversityBasedPriority = true;
+            IgnorePatternFeedback = false;
+            PriorityBasedSampling = true;
+            EnableConflictAnalysis = false;
 
             PSymArgs = "";
             JvmArgs = "";
+            PatternSource = "";
         }
 
         /// <summary>
@@ -379,7 +428,7 @@ namespace PChecker
             StrategyBound = (int)numPrioritySwitchPoints;
             return this;
         }
-        
+
         /// <summary>
         /// Updates the configuration to use the reinforcement learning (RL) scheduling strategy
         /// during systematic testing.
@@ -390,7 +439,7 @@ namespace PChecker
             this.IsProgramStateHashingEnabled = true;
             return this;
         }
-        
+
         /// <summary>
         /// Updates the checkerConfiguration to use the dfs scheduling strategy during systematic testing.
         /// </summary>
@@ -515,7 +564,7 @@ namespace PChecker
             IsXmlLogEnabled = isEnabled;
             return this;
         }
-        
+
         /// <summary>
         /// Set the <see cref="OutputDirectory"/> to either the user-specified <see cref="CheckerConfiguration.OutputPath"/>
         /// or to a unique output directory name in the same directory as <see cref="CheckerConfiguration.AssemblyToBeAnalyzed"/>

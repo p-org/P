@@ -18,6 +18,7 @@ using PChecker.Actors.Managers;
 using PChecker.Actors.Managers.Mocks;
 using PChecker.Coverage;
 using PChecker.Exceptions;
+using PChecker.Feedback;
 using PChecker.Random;
 using PChecker.Runtime;
 using PChecker.Specifications.Monitors;
@@ -65,7 +66,14 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal readonly int? RootTaskId;
 
-        
+        /// <summary>
+        /// The observer that extracts the timeline information of the scheduling.
+        /// </summary>
+        internal readonly TimelineObserver TimelineObserver = new();
+
+        public List<ISendEventMonitor> SendEventMonitors = new();
+
+
         /// <summary>
         /// Returns the current hashed state of the monitors.
         /// </summary>
@@ -89,7 +97,7 @@ namespace PChecker.SystematicTesting
                 return hash;
             }
         }
-        
+
         /// <summary>
         /// Returns the current hashed state of the execution.
         /// </summary>
@@ -148,6 +156,7 @@ namespace PChecker.SystematicTesting
             // Update the current asynchronous control flow with this runtime instance,
             // allowing future retrieval in the same asynchronous call stack.
             AssignAsyncControlFlowRuntime(this);
+            RegisterLog(TimelineObserver);
         }
 
         /// <inheritdoc/>
@@ -190,17 +199,17 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        public override void SendEvent(ActorId targetId, Event e, Guid opGroupId = default)
+        public override void SendEvent(ActorId targetId, Event e, int loc, Guid opGroupId = default)
         {
             var senderOp = Scheduler.GetExecutingOperation<ActorOperation>();
-            SendEvent(targetId, e, senderOp?.Actor, opGroupId);
+            SendEvent(targetId, e, senderOp?.Actor, loc, opGroupId);
         }
 
         /// <inheritdoc/>
-        public override Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Guid opGroupId = default)
+        public override Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, int loc, Guid opGroupId = default)
         {
             var senderOp = Scheduler.GetExecutingOperation<ActorOperation>();
-            return SendEventAndExecuteAsync(targetId, e, senderOp?.Actor, opGroupId);
+            return SendEventAndExecuteAsync(targetId, e, senderOp?.Actor, loc, opGroupId);
         }
 
         /// <inheritdoc/>
@@ -396,7 +405,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void SendEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId)
+        internal override void SendEvent(ActorId targetId, Event e, Actor sender, int loc, Guid opGroupId)
         {
             if (e is null)
             {
@@ -417,7 +426,7 @@ namespace PChecker.SystematicTesting
 
             AssertExpectedCallerActor(sender, "SendEvent");
 
-            var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
+            var enqueueStatus = EnqueueEvent(targetId, e, sender, loc, opGroupId, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {
                 RunActorEventHandler(target, null, false, null);
@@ -425,7 +434,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Actor sender,
+        internal override async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Actor sender, int loc,
             Guid opGroupId)
         {
             Assert(sender is StateMachine, "Only an actor can call 'SendEventAndExecuteAsync': avoid " +
@@ -434,7 +443,7 @@ namespace PChecker.SystematicTesting
             Assert(targetId != null, "{0} is sending event {1} to a null actor.", sender.Id, e);
             AssertExpectedCallerActor(sender, "SendEventAndExecuteAsync");
 
-            var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
+            var enqueueStatus = EnqueueEvent(targetId, e, sender, loc, opGroupId, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {
                 RunActorEventHandler(target, null, false, sender as StateMachine);
@@ -453,12 +462,20 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Enqueues an event to the actor with the specified id.
         /// </summary>
-        private EnqueueStatus EnqueueEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId, out Actor target)
+        private EnqueueStatus EnqueueEvent(ActorId targetId, Event e, Actor sender, int loc, Guid opGroupId, out Actor target)
         {
             target = Scheduler.GetOperationWithId<ActorOperation>(targetId.Value)?.Actor;
             Assert(target != null,
                 "Cannot send event '{0}' to actor id '{1}' that is not bound to an actor instance.",
                 e.GetType().FullName, targetId.Value);
+
+            Scheduler.ScheduledOperation.LastEvent = e;
+            Scheduler.ScheduledOperation.LastSentLoc = loc;
+            Scheduler.ScheduledOperation.LastSentReceiver = targetId.ToString();
+
+            foreach (var monitor in SendEventMonitors) {
+                monitor.OnSendEvent(sender.Id, loc, targetId, LogWriter.JsonLogger.VcGenerator);
+            }
 
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Send);
             ResetProgramCounter(sender as StateMachine);
@@ -480,6 +497,9 @@ namespace PChecker.SystematicTesting
                 return EnqueueStatus.Dropped;
             }
 
+            foreach (var monitor in SendEventMonitors) {
+                monitor.OnSendEventDone(sender.Id, loc, targetId, LogWriter.JsonLogger.VcGenerator);
+            }
             var enqueueStatus = EnqueueEvent(target, e, sender, opGroupId);
             if (enqueueStatus == EnqueueStatus.Dropped)
             {
@@ -517,6 +537,7 @@ namespace PChecker.SystematicTesting
 
             LogWriter.LogSendEvent(actor.Id, sender?.Id.Name, sender?.Id.Type, stateName,
                 e, opGroupId, isTargetHalted: false);
+
             return actor.Enqueue(e, opGroupId, eventInfo);
         }
 
@@ -822,7 +843,7 @@ namespace PChecker.SystematicTesting
         {
             Scheduler.CheckIfSchedulingStepsBoundIsReached();
         }
-        
+
         /// <summary>
         /// Schedules the next controlled asynchronous operation. This method
         /// is only used during testing.

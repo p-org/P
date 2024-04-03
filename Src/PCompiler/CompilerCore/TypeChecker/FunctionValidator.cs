@@ -11,7 +11,7 @@ namespace Plang.Compiler.TypeChecker
     {
         public static void CheckAllPathsReturn(ITranslationErrorHandler handler, Function function)
         {
-            if (function.IsForeign)
+            if (function.IsForeign || function.Role == FunctionRole.Scenario)
             {
                 return;
             }

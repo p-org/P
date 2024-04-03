@@ -37,7 +37,8 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             MaxScheduledSteps = maxSteps;
             ScheduledSteps = 0;
         }
-        
+
+
         /// <inheritdoc/>
         public virtual bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
         {
@@ -48,7 +49,11 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 return false;
             }
 
-            var idx = RandomValueGenerator.Next(enabledOperations.Count);
+            var idx = 0;
+            if (enabledOperations.Count > 1) {
+                idx = RandomValueGenerator.Next(enabledOperations.Count);
+            }
+
             next = enabledOperations[idx];
 
             ScheduledSteps++;

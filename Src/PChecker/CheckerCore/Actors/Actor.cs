@@ -203,10 +203,12 @@ namespace PChecker.Actors
         /// Sends an asynchronous <see cref="Event"/> to a target.
         /// </summary>
         /// <param name="id">The id of the target.</param>
+        /// <param name="loc">LOC where the event is sent.</param>
         /// <param name="e">The event to send.</param>
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
-        protected void SendEvent(ActorId id, Event e, Guid opGroupId = default) =>
-            Runtime.SendEvent(id, e, this, opGroupId);
+        /// <param name="options">Optional checkerConfiguration of a send operation.</param>
+        protected void SendEvent(ActorId id, int loc, Event e, Guid opGroupId = default) =>
+            Runtime.SendEvent(id, e, this, loc, opGroupId);
 
         /// <summary>
         /// Waits to receive an <see cref="Event"/> of the specified type

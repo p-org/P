@@ -22,6 +22,8 @@ namespace Plang.Compiler.Backend.CSharp
         /// </summary>
         public bool HasCompilationStage => true;
 
+        private int _sendEventIndex = 0;
+
         public void Compile(ICompilerConfiguration job)
         {
             var csprojName = $"{job.ProjectName}.csproj";
@@ -29,7 +31,7 @@ namespace Plang.Compiler.Backend.CSharp
             var mainFilePath = Path.Combine(job.OutputDirectory.FullName, "Test.cs");
             var stdout = "";
             var stderr = "";
-            
+
             // create the .csproj file
             var csprojTemplate = Constants.csprojTemplate;
             csprojTemplate = csprojTemplate.Replace("-directory-",
@@ -151,6 +153,7 @@ namespace Plang.Compiler.Backend.CSharp
         {
             context.WriteLine(output, "using PChecker;");
             context.WriteLine(output, "using PChecker.Actors;");
+            context.WriteLine(output, "using PChecker.Matcher;");
             context.WriteLine(output, "using PChecker.Actors.Events;");
             context.WriteLine(output, "using PChecker.Runtime;");
             context.WriteLine(output, "using PChecker.Specifications;");
@@ -706,7 +709,7 @@ namespace Plang.Compiler.Backend.CSharp
 
             var staticKeyword = isStatic ? "static " : "";
             var asyncKeyword = isAsync ? "async " : "";
-            var returnType = GetCSharpType(signature.ReturnType);
+            var returnType = function.Role != FunctionRole.Scenario ? GetCSharpType(signature.ReturnType) : "int";
 
             if (isAsync)
             {
@@ -719,6 +722,10 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 functionParameters = "Event currentMachine_dequeuedEvent";
             }
+            else if (function.Role == FunctionRole.Scenario)
+            {
+                functionParameters = "List<EventObj> events";
+            }
             else
             {
                 functionParameters = string.Join(
@@ -727,7 +734,7 @@ namespace Plang.Compiler.Backend.CSharp
                         $"{GetCSharpType(param.Type)} {context.Names.GetNameForDecl(param)}"));
             }
 
-            if (isStatic) // then we need to generate two versions of the function
+            if (isStatic && function.Role != FunctionRole.Scenario) // then we need to generate two versions of the function
             {
                 // for machine
                 var seperator = functionParameters == "" ? "" : ", ";
@@ -735,7 +742,7 @@ namespace Plang.Compiler.Backend.CSharp
                 context.WriteLine(output,
                     $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_machine})");
                 WriteFunctionBody(context, output, function);
-                
+
                 // for monitor
                 if (!(function.CanCreate == true || function.CanSend == true || function.IsNondeterministic == true || function.CanReceive == true))
                 {
@@ -744,15 +751,15 @@ namespace Plang.Compiler.Backend.CSharp
                         $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_monitor})");
                     WriteFunctionBody(context, output, function);
                 }
-                
+
             }
             else
             {
                 context.WriteLine(output,
                     $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters})");
-                WriteFunctionBody(context, output, function);   
+                WriteFunctionBody(context, output, function);
             }
-            
+
         }
 
         private void WriteFunctionBody(CompilationContext context, StringWriter output, Function function)
@@ -783,13 +790,68 @@ namespace Plang.Compiler.Backend.CSharp
                     $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(type)};");
             }
 
-            foreach (var bodyStatement in function.Body.Statements)
+            if (function.Role != FunctionRole.Scenario)
             {
-                WriteStmt(context: context, output: output, function: function, stmt: bodyStatement);
+                foreach (var bodyStatement in function.Body.Statements)
+                {
+                    WriteStmt(context: context, output: output, function: function, stmt: bodyStatement);
+                }
             }
+            else
+            {
+                WriteScenario(context, output, function);
+            }
+
 
             context.WriteLine(output, "}");
         }
+
+        private void WriteScenario(CompilationContext context, StringWriter output, Function function)
+        {
+            int numOfStmt = function.Body.Statements.Count + 1;
+            context.WriteLine(output, $"int state = {numOfStmt};");
+            var eventPredicates = string.Join(" or ", function.Signature.ParameterEvents.Select(it => it.Name));
+            context.WriteLine(output, $"events = events.Where(it => it.Event is {eventPredicates}).ToList();");
+            WriteConstraintsRecursive(context, output, function, 0, new HashSet<Variable>(), 0);
+            context.WriteLine(output, "return state;");
+        }
+
+        private void WriteConstraintsRecursive(CompilationContext context, StringWriter output, Function function, int index, HashSet<Variable> visitedVariables, int satisfiedConstraints)
+        {
+            if (index >= function.Signature.Parameters.Count)
+            {
+                context.WriteLine(output, "return 1;");
+                return;
+            }
+            var param = function.Signature.Parameters[index];
+            var e = function.Signature.ParameterEvents[index];
+            visitedVariables.Add(param);
+            var start = index == 0 ? "0" : $"i{index - 1} + 1";
+            var paramName = context.Names.GetNameForDecl(param);
+            context.WriteLine(output, $"for (var i{index} = {start} ; i{index} < events.Count; i{index} ++) " + "{");
+            context.WriteLine(output, $"var {paramName}_obj = events[i{index}];");
+            context.WriteLine(output, $"if ({paramName}_obj.Event is not {e.Name}) continue;");
+            context.WriteLine(output, $"var {paramName} = ((PEvent) {paramName}_obj.Event).Payload;");
+
+            foreach (var bodyStatement in function.Body.Statements)
+            {
+                if (bodyStatement is ConstraintStmt stmt)
+                {
+                    var variables = ConstraintVariableCollector.FindVariablesRecursive(stmt.Constraint);
+                    if (variables.Contains(param) && visitedVariables.IsSupersetOf(variables))
+                    {
+                        context.Write(output, $"if (!(");
+                        WriteExpr(context, output, stmt.Constraint);
+                        context.WriteLine(output, $")) continue;");
+                        satisfiedConstraints += 1;
+                        context.WriteLine(output, $"state = Math.Min({function.Body.Statements.Count - satisfiedConstraints + 1}, state);");
+                    }
+                }
+            }
+            WriteConstraintsRecursive(context, output, function, index + 1, visitedVariables, satisfiedConstraints);
+            context.WriteLine(output, "}");
+        }
+
 
         private void WriteStmt(CompilationContext context, StringWriter output, Function function, IPStmt stmt)
         {
@@ -1103,6 +1165,7 @@ namespace Plang.Compiler.Backend.CSharp
                 case SendStmt sendStmt:
                     context.Write(output, "currentMachine.TrySendEvent(");
                     WriteExpr(context, output, sendStmt.MachineExpr);
+                    context.Write(output, $", {_sendEventIndex++}");
                     context.Write(output, ", (Event)");
                     WriteExpr(context, output, sendStmt.Evt);
 
@@ -1179,9 +1242,19 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    context.Write(output, "((PrtNamedTuple)");
-                    WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
-                    context.Write(output, $")[\"{namedTupleAccessExpr.FieldName}\"]");
+                    if (ExprVisitor.ReservedEventFeilds.ContainsValue(namedTupleAccessExpr.Entry))
+                    {
+                        var type = GetCSharpType(namedTupleAccessExpr.Entry.Type);
+                        context.Write(output, $"(({type}) (");
+                        WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
+                        context.Write(output, $"_obj).{namedTupleAccessExpr.FieldName})");
+                    }
+                    else
+                    {
+                        context.Write(output, "((PrtNamedTuple)");
+                        WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
+                        context.Write(output, $")[\"{namedTupleAccessExpr.FieldName}\"]");
+                    }
                     break;
 
                 case SeqAccessExpr seqAccessExpr:
@@ -1225,9 +1298,9 @@ namespace Plang.Compiler.Backend.CSharp
                         context.Write(output, $"({negate}PrtValues.SafeEquals(");
                         if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
                         {
-                            context.Write(output, "PrtValues.Box((long) ");
+                            context.Write(output, "PrtValues.Box((long) ((PrtInt)");
                             WriteExpr(context, output, binOpExpr.Lhs);
-                            context.Write(output, "),");
+                            context.Write(output, ")),");
                         }
                         else
                         {
@@ -1237,9 +1310,9 @@ namespace Plang.Compiler.Backend.CSharp
 
                         if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
                         {
-                            context.Write(output, "PrtValues.Box((long) ");
+                            context.Write(output, "PrtValues.Box((long) ((PrtInt)");
                             WriteExpr(context, output, binOpExpr.Rhs);
-                            context.Write(output, ")");
+                            context.Write(output, "))");
                         }
                         else
                         {

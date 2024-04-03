@@ -120,8 +120,10 @@ namespace PChecker.Actors
         /// </summary>
         /// <param name="targetId">The id of the target.</param>
         /// <param name="e">The event to send.</param>
+        /// <param name="loc">Source location where event is sent.</param>
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
-        void SendEvent(ActorId targetId, Event e, Guid opGroupId = default);
+        /// <param name="options">Optional checkerConfiguration of a send operation.</param>
+        void SendEvent(ActorId targetId, Event e, int loc, Guid opGroupId = default);
 
         /// <summary>
         /// Sends an <see cref="Event"/> to an actor. Returns immediately if the target was already
@@ -129,10 +131,11 @@ namespace PChecker.Actors
         /// </summary>
         /// <param name="targetId">The id of the target.</param>
         /// <param name="e">The event to send.</param>
+        /// <param name="loc">Source location where event is sent.</param>
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
         /// <returns>Task that represents the asynchronous operation. The task result is true if
         /// the event was handled, false if the event was only enqueued.</returns>
-        Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Guid opGroupId = default);
+        Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, int loc, Guid opGroupId = default);
 
         /// <summary>
         /// Returns the operation group id of the actor with the specified id. Returns <see cref="Guid.Empty"/>

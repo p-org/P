@@ -3,7 +3,9 @@ package pexplicit.runtime.machine.events;
 import lombok.Getter;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.utils.exceptions.NotImplementedException;
+import pexplicit.values.ComputeHash;
 import pexplicit.values.PEvent;
+import pexplicit.values.PTuple;
 import pexplicit.values.PValue;
 
 /**
@@ -28,43 +30,45 @@ public class PMessage extends PValue<PMessage> {
         this.payload = payload;
     }
 
-    /**
-     * Clone a message
-     *
-     * @return Cloned message
-     */
     @Override
     public PMessage clone() {
         return new PMessage(this.event, this.target, this.payload);
     }
 
-    /**
-     * TODO
-     *
-     * @return
-     */
     @Override
     public int hashCode() {
-        throw new NotImplementedException();
+        return ComputeHash.getHashCode(target, event, payload);
     }
 
-    /**
-     * TODO
-     *
-     * @return
-     */
     @Override
-    public boolean equals(Object other) {
-        throw new NotImplementedException();
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+
+        if (!(obj instanceof PMessage)) {
+            return false;
+        }
+
+        PMessage other = (PMessage) obj;
+        if (this.target != other.target) {
+            return false;
+        }
+        if (this.event != other.event) {
+            return false;
+        }
+        if (this.payload != other.payload) {
+            return false;
+        }
+
+        return true;
     }
 
-    /**
-     * TODO
-     *
-     * @return
-     */
     @Override
     public String toString() {
-        throw new NotImplementedException();
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%s@%s", event, target));
+        if (payload != null) {
+            sb.append(String.format(" :payload %s", payload));
+        }
+        return sb.toString();
     }
 }

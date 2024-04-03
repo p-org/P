@@ -100,4 +100,22 @@ public class Choice implements Serializable {
         clearCurrent();
         clearUnexplored();
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        if (currentScheduleChoice != null) {
+            sb.append(String.format("curr@%s", currentScheduleChoice));
+        }
+        if (currentDataChoice != null) {
+            sb.append(String.format("curr:%s", currentDataChoice));
+        }
+        if (unexploredScheduleChoices != null && !unexploredScheduleChoices.isEmpty()) {
+            sb.append(String.format(" rem@%s", unexploredScheduleChoices));
+        }
+        if (unexploredDataChoices != null && !unexploredDataChoices.isEmpty()) {
+            sb.append(String.format(" rem:%s", unexploredDataChoices));
+        }
+        return sb.toString();
+    }
 }

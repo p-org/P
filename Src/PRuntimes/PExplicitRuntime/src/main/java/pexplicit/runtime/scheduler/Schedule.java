@@ -258,7 +258,10 @@ public class Schedule implements Serializable {
      * @param machine Machine to add
      */
     public void makeMachine(PMachine machine) {
-        machineListByType.getOrDefault(machine.getClass(), new ArrayList<>()).add(machine);
+        if (!machineListByType.containsKey(machine.getClass())) {
+            machineListByType.put(machine.getClass(), new ArrayList<>());
+        }
+        machineListByType.get(machine.getClass()).add(machine);
         machineSet.add(machine);
     }
 

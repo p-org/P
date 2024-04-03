@@ -53,7 +53,10 @@ namespace PChecker.Coverage
         {
             using (var writer = new StreamWriter(coverageFile))
             {
-                WriteCoverageText(writer);
+                if (CoverageInfo.CoverageGraph != null)
+                {
+                    WriteCoverageText(writer);
+                }
             }
         }
 
